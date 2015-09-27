@@ -2,6 +2,7 @@
   "ecmaFeatures": {
     "arrowFunctions": true,
     "objectLiteralShorthandMethods": true,
+    "templateStrings": true,
     "jsx": true,
   },
   "plugins": [
@@ -108,6 +109,7 @@
     "operator-assignment": [2, "always"],
     "operator-linebreak": [2, "after"],
     "prefer-reflect": 2,
+    "prefer-template": 2,
     "quote-props": [2, "consistent-as-needed"],
     "quotes": [2, "double"],
     "radix": 2,
