@@ -141,7 +141,7 @@ var CodeView = React.createClass({
 		// Is this tile out of view? If so, return a placeholder.
 		if (i <= tileInView - 2 || i >= tileInView + 3) {
 			return (
-				<div key={"placeholder-"+i}
+				<div key={`placeholder-${i}`}
 					className={"line-numbered-code placeholder tile"}
 					style={{height: linesPerTile * this.state.lineHeight}} />
 			);
@@ -153,7 +153,7 @@ var CodeView = React.createClass({
 		var tileHeight = i === totalTiles-1 ? "auto" : linesPerTile * this.state.lineHeight;
 
 		return (
-			<table key={"tile-"+i} className={cx+" tile"} style={{height: tileHeight}}>
+			<table key={`tile-${i}`} className={`${cx} tile`} style={{height: tileHeight}}>
 				<tbody>
 					{this.state.lines.slice(startLine, endLine).map(
 						line => <CodeLineView {...this.props} key={line.cid} model={line} style={{height: this.state.lineHeight}} />
@@ -188,7 +188,8 @@ var CodeView = React.createClass({
 		var cx = classNames({
 			"pale": this.props.loading,
 			"theme-default": this.props.theme === "default",
-		}) + " line-numbered-code";
+			"line-numbered-code": true,
+		});
 
 		return this._isTiled() ? this._renderTiles(cx) : (
 			<table className={cx}>

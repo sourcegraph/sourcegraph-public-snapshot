@@ -36,7 +36,7 @@ function registerToken(token) {
 	history.pushState({
 		file: file,
 		selected: token.tid,
-	}, "", fileUrl+"#selected="+token.tid);
+	}, "", `${fileUrl}#selected=${token.tid}`);
 }
 
 function unregisterTokens() {
@@ -58,14 +58,14 @@ function registerDefinition(def) {
 function registerSnippet(snippet) {
 	var file = snippet.file;
 	var fileUrl = router.fileURL(file.RepoRev.URI, file.RepoRev.Rev||file.RepoRev.CommitID, file.Path);
-	var hash = "#startline="+snippet.startLine+"&endline="+snippet.endLine;
+	var hash = `#startline=${snippet.startLine}&endline=${snippet.endLine}`;
 	var state = {
 		file: file,
 		lineRange: [snippet.startLine, snippet.endLine],
 	};
 
 	if (snippet.defUrl) {
-		hash += "&defUrl="+snippet.defUrl;
+		hash += `&defUrl=${snippet.defUrl}`;
 		state.defUrl = snippet.defUrl;
 	}
 
@@ -78,7 +78,7 @@ function registerLineSelection(lineArray) {
 	var fileUrl = router.fileURL(file.RepoRev.URI, file.RepoRev.Rev||file.RepoRev.CommitID, file.Path);
 	var start = lineArray[0].get("number");
 	var end = lineArray[lineArray.length-1].get("number");
-	var hash = "#startline="+start+"&endline="+end;
+	var hash = `#startline=${start}&endline=${end}`;
 	var state = {
 		file: file,
 		lineRange: [start, end],

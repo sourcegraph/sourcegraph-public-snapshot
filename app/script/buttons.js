@@ -10,7 +10,7 @@ function addLoadingIndicatorClickListener(element) {
 		var target = e.target;
 		while (target && target.tagName !== "BUTTON") target = target.parentNode;
 		var origHTML = target.innerHTML;
-		target.innerHTML = "<i class=\"fa fa-refresh fa-spin\"></i> " + target.dataset.loadingText;
+		target.innerHTML = `<i class="fa fa-refresh fa-spin"></i> ${target.dataset.loadingText}`;
 		target.classList.add("disabled");
 
 		if (target.dataset.loadingTime) {

@@ -78,9 +78,9 @@ module.exports = (function(doc) {
 			escapedPatterns.push(escapeRegexp(patterns[i]));
 		}
 
-		if (wordsOnly) regexStr = "\\b(" + escapedPatterns.join("|") + ")\\b";
-		else if (expandToWord) regexStr = "(" + escapedPatterns.join("|") + "[^\\b]*)";
-		else regexStr = "(" + escapedPatterns.join("|") + ")";
+		if (wordsOnly) regexStr = `\\b(${escapedPatterns.join("|")})\\b`;
+		else if (expandToWord) regexStr = `(${escapedPatterns.join("|")}[^\\b]*)`;
+		else regexStr = `(${escapedPatterns.join("|")})`;
 
 		return caseSensitive ? new RegExp(regexStr) : new RegExp(regexStr, "i");
 	}

@@ -13,7 +13,7 @@ function sourcegraph_activateDefnPopovers(el, baseURL) {
 		if (!t) return;
 		if (activeA !== t) {
 			activeA = t;
-			var url = activeA.classList.contains("ann") ? activeA.dataset.popover : (activeA.href + "/.popover");
+			var url = activeA.classList.contains("ann") ? activeA.dataset.popover : (`${activeA.href}/.popover`);
 			ajaxGet(url, function(html) {
 				if (activeA) showPopover(html);
 			});
@@ -66,8 +66,8 @@ function sourcegraph_activateDefnPopovers(el, baseURL) {
 
 	function positionPopover(x, y) {
 		if (!popover || !showingPopover) return;
-		popover.style.top = (y + 15) + "px";
-		popover.style.left = (x + 15) + "px";
+		popover.style.top = `${y + 15}px`;
+		popover.style.left = `${x + 15}px`;
 	}
 
 	var ajaxCache = {};

@@ -26,10 +26,7 @@ var ReviewCollection = Backbone.Collection.extend({
 	comments: null,
 
 	initialize(models, opts) {
-		this._storageKey = "review-draft/" +
-			opts.repo +
-			"/" + opts.changesetId +
-			(CurrentUser !== null ? "/" + CurrentUser.Login : "");
+		this._storageKey = `review-draft/${opts.repo}/${opts.changesetId}${CurrentUser !== null ? `/${CurrentUser.Login}` : ""}`;
 
 		this.comments = new CommentCollection();
 		this.comments.on("add remove", () => this.trigger("change"));

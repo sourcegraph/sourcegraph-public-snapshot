@@ -27,14 +27,14 @@ module.exports.create = function(searchBar) {
 		prefetch: {
 			// TODO What is the purpose of this request? Does it actually get
 			// any meaningful results?
-			url: QueryURL + "?Text=&InsertionPoint=0",
+			url: `${QueryURL}?Text=&InsertionPoint=0`,
 
 			// TODO I don"t see `transform` in the typeahead/bloodhound
 			// documentation or source code. Is this a mistake?
 			transform: addLabel("prefetch", tokenCompTransformer),
 		},
 		remote: {
-			url: QueryURL + "?Text=%s&InsertionPoint=%d",
+			url: `${QueryURL}?Text=%s&InsertionPoint=%d`,
 			replace(url, rawQuery) {
 				var q = searchBar.getQuery();
 				return url.replace("%s", q.Text).replace("%d", q.InsertionPoint);
@@ -56,7 +56,7 @@ module.exports.create = function(searchBar) {
 
 		// TODO I don"t see this in the typeahead/bloodhound documentation
 		// or source code. Is this a mistake?
-		identify(d) { return d.Type + ":" + d.val; },
+		identify(d) { return `${d.Type}:${d.val}`; },
 	});
 
 	// TODO What is `async`? It looks like it"s ignored. __ttAdapter()

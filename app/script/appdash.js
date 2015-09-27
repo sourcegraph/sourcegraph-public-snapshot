@@ -43,7 +43,7 @@ function setupMeasurement() {
 		});
 
 		// Update the debug display on the page with the time.
-		$("body>#debug>a").html(loadTimeSeconds + "s");
+		$("body>#debug>a").html(`${loadTimeSeconds}s`);
 	};
 
 	// When all AJAX requests stop, start the timer.

@@ -35,15 +35,15 @@ var CodeFileToolbarView = React.createClass({
 	 */
 	_getBreadcrumb() {
 		var rev = this.props.file.RepoRev,
-			basePath = "/" + rev.URI + "@" + (rev.Rev||rev.CommitID) + "/.tree",
+			basePath = `/${rev.URI}@${rev.Rev||rev.CommitID}/.tree`,
 			uriSegs = rev.URI.split("/"),
 			breadcrumb = [<a key="feature_toolbar_breadcrumb" href={basePath}>{uriSegs[uriSegs.length-1]}</a>];
 
 		this.props.file.Path.split("/").forEach((seg, i) => {
-			basePath += "/" + seg;
+			basePath += `/${seg}`;
 
 			breadcrumb.push(
-				<span key={"separator"+i.toString()}> / </span>,
+				<span key={`separator${i.toString()}`}> / </span>,
 				<a key={basePath+seg} href={basePath}>{seg}</a>
 			);
 		});
@@ -63,11 +63,11 @@ var CodeFileToolbarView = React.createClass({
 			"fa-spinner fa-spin": this.props.loading,
 		});
 
-		var embedLink = "/" + rev.URI + "@" + (rev.Rev||rev.CommitID) + "/.tree/" + this.props.file.Path + "/.share",
+		var embedLink = `/${rev.URI}@${rev.Rev||rev.CommitID}/.tree/${this.props.file.Path}/.share`,
 			snippet = this.props.snippet;
 
 		if (snippet && snippet.start && snippet.end) {
-			embedLink += "?StartLine="+snippet.start+"&EndLine="+snippet.end;
+			embedLink += `?StartLine=${snippet.start}&EndLine=${snippet.end}`;
 		}
 
 		var buildInfo = null;

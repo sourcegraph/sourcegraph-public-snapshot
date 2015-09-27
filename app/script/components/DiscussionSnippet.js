@@ -40,7 +40,7 @@ var DiscussionSnippet = React.createClass({
 		var url = this.props.defKey;
 
 		return (
-			<li className="discussion" key={"snippet-d-"+d.ID}>
+			<li className="discussion" key={`snippet-d-${d.ID}`}>
 				<a onClick={e => this.props.onClick(url, d, e)} className="title truncate">{d.Title}</a>
 				<div className="stats">
 					<span className="octicon octicon-comment-discussion" /> {d.Comments.length}

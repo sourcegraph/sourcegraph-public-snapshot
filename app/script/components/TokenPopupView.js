@@ -284,7 +284,7 @@ var TokenPopupView = React.createClass({
 
 			),
 			isDefinition, (
-				<a key="popup-embed-btn" className="btn btn-toolbar btn-default" href={this.state.URL + "/.share"}>
+				<a key="popup-embed-btn" className="btn btn-toolbar btn-default" href={`${this.state.URL}/.share`}>
 					Embed
 				</a>
 			)
@@ -340,7 +340,7 @@ var TokenPopupView = React.createClass({
 	 */
 	_renderCreateDiscussionPage() {
 		var name = this.state.QualifiedName;
-		var key = "create"+name;
+		var key = `create${name}`;
 
 		return this._renderConditional(
 			true, (

@@ -13,7 +13,7 @@ var CodeReviewTimelineCommit = React.createClass({
 	mixins: [ModelPropWatcherMixin],
 
 	render() {
-		var url = router.repoURL(this.state.RepoURI) + "/.commits/" + this.state.ID;
+		var url = `${router.repoURL(this.state.RepoURI)}/.commits/${this.state.ID}`;
 
 		return (
 			<tr className="changeset-timeline-header timeline-commit">

@@ -14,7 +14,7 @@ var DeltaImpactContainer = React.createClass({
 
 				client.listAffectedAuthors(this.props.deltaRouteVars, {UnitType: unit.Type, Unit: unit.Name}).success(function(resp2) {
 					var deltaAffectedAuthorsByUnit = this.state.deltaAffectedAuthorsByUnit;
-					deltaAffectedAuthorsByUnit[unit.Type + ":" + unit.Name] = resp2 || [];
+					deltaAffectedAuthorsByUnit[`${unit.Type}:${unit.Name}`] = resp2 || [];
 					if (resp2) this.setState({deltaAffectedAuthorsByUnit: deltaAffectedAuthorsByUnit});
 				}.bind(this)).error(function(err) {
 					console.error(err);
@@ -23,7 +23,7 @@ var DeltaImpactContainer = React.createClass({
 
 				client.listAffectedClients(this.props.deltaRouteVars, {UnitType: unit.Type, Unit: unit.Name}).success(function(resp2) {
 					var deltaAffectedClientsByUnit = this.state.deltaAffectedClientsByUnit;
-					deltaAffectedClientsByUnit[unit.Type + ":" + unit.Name] = resp2 || [];
+					deltaAffectedClientsByUnit[`${unit.Type}:${unit.Name}`] = resp2 || [];
 					if (resp2) this.setState({deltaAffectedClientsByUnit: deltaAffectedClientsByUnit});
 				}.bind(this)).error(function(err) {
 					console.error(err);
@@ -37,8 +37,8 @@ var DeltaImpactContainer = React.createClass({
 	},
 	renderUnitCount(unitDelta) {
 		var unit = unitDelta.Base || unitDelta.Head;
-		var authors = this.state.deltaAffectedAuthorsByUnit[unit.Type + ":" + unit.Name];
-		var clients = this.state.deltaAffectedClientsByUnit[unit.Type + ":" + unit.Name];
+		var authors = this.state.deltaAffectedAuthorsByUnit[`${unit.Type}:${unit.Name}`];
+		var clients = this.state.deltaAffectedClientsByUnit[`${unit.Type}:${unit.Name}`];
 		return (
 			<tr className="delta-item-counts" key={unit.Name}>
 			<td className="scope">
@@ -59,8 +59,8 @@ var DeltaImpactContainer = React.createClass({
 			</div>
 			<DeltaImpact deltaRouteVars={this.props.deltaRouteVars}
 				deltaSpec={this.props.deltaSpec}
-				deltaAffectedAuthors={this.state.deltaAffectedAuthorsByUnit[unit.Type + ":" + unit.Name]}
-				deltaAffectedClients={this.state.deltaAffectedClientsByUnit[unit.Type + ":" + unit.Name]}
+				deltaAffectedAuthors={this.state.deltaAffectedAuthorsByUnit[`${unit.Type}:${unit.Name}`]}
+				deltaAffectedClients={this.state.deltaAffectedClientsByUnit[`${unit.Type}:${unit.Name}`]}
 				deltaFilter={{UnitType: unit.Type, Unit: unit.Name}}/>
 			</div>
 		);

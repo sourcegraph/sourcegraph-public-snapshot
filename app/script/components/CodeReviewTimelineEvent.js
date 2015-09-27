@@ -41,7 +41,7 @@ var CodeReviewTimelineEvent = React.createClass({
 		return (
 			<tr className="changeset-timeline-header timeline-event">
 				<td className="changeset-timeline-icon">
-					<span className={"octicon "+icon}></span>
+					<span className={`octicon ${icon}`}></span>
 				</td>
 				<td colSpan="3" className="timeline-header-message">
 					{login} {msg}

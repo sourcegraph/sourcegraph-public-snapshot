@@ -41,11 +41,11 @@ module.exports = function(body) {
 			// Validate actions
 			Object.keys(this.actions).forEach(action => {
 				if (!globals.Actions.hasOwnProperty(action)) {
-					console.warn("Action "+action+" not found in (globals.Actions) definitions");
+					console.warn(`Action ${action} not found in (globals.Actions) definitions`);
 				}
 
 				if (typeof this[this.actions[action]] !== "function") {
-					console.warn("Action "+action+" is bound to inexistent callback: "+this.actions[action]);
+					console.warn(`Action ${action} is bound to inexistent callback: ${this.actions[action]}`);
 				}
 			});
 			// Register with set dispatcher

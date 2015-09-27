@@ -22,7 +22,7 @@ module.exports.receivedReviewChanges = function(data) {
  * @returns {void}
  */
 module.exports.receivedReviewChangesFailed = function(data) {
-	notify.error("Failed to load: " + data);
+	notify.error(`Failed to load: ${data}`);
 };
 
 /**

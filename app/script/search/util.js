@@ -6,7 +6,7 @@ exports.highlightWordRemainingChars = function(html, pat, onlyClass) {
 		// 2-step process to highlight the part that was autocompleted,
 		// not the part the user has already typed.
 		var node = $(html);
-		var hlNode = onlyClass ? node[0].querySelector("." + onlyClass) : node[0];
+		var hlNode = onlyClass ? node[0].querySelector(`.${onlyClass}`) : node[0];
 		highlight({
 			node: hlNode,
 			pattern: pat,

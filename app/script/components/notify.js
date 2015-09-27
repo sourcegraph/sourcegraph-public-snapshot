@@ -17,11 +17,11 @@ function displayNotification(cls, message, timeout) {
 	}[cls];
 
 	var $el = $(
-		"<div class=\"alert-notify "+cls+"\">" +
-			"<a class=\"close\">×</a>" +
-			"<i class=\"fa "+iconCls+"\"></i>" +
-			message +
-		"</div>"
+		`<div class="alert-notify ${cls}">
+			<a class="close">×</a>
+			<i class="fa ${iconCls}"></i>
+			${message}
+		</div>`
 	);
 
 	var remove = () => $el.fadeOut(250, "linear", () => $el.remove());

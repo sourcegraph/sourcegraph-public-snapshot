@@ -1,34 +1,34 @@
 module.exports = {
 
 	repoURL(repo, rev) {
-		return "/" + repo + (rev ? "@" + rev : "");
+		return `/${repo}${rev ? `@${rev}` : ""}`;
 	},
 
 	changesetURL(repo, id) {
-		return module.exports.repoURL(repo) + "/.changesets/" + id;
+		return `${module.exports.repoURL(repo)}/.changesets/${id}`;
 	},
 
 	discussionURL(defKey, id) {
 		// TODO we probably want to pass on more than just the repo
 		var parts = module.exports.deconstructDefURL(defKey);
-		return module.exports.repoURL(parts.repo) + "/.discussion/" + id;
+		return `${module.exports.repoURL(parts.repo)}/.discussion/${id}`;
 	},
 
 	discussionListURL(defKey, order) {
-		var params = order ? "?order=" + order : "";
+		var params = order ? `?order=${order}` : "";
 		return module.exports._discussionsURL(defKey) + params;
 	},
 
 	discussionCreateURL(defKey) {
-		return module.exports._discussionsURL(defKey) + "/create";
+		return `${module.exports._discussionsURL(defKey)}/create`;
 	},
 
 	discussionCreateCommentURL(defKey, id) {
-		return module.exports._discussionsURL(defKey) + "/" + id + "/.comment";
+		return `${module.exports._discussionsURL(defKey)}/${id}/.comment`;
 	},
 
 	_discussionsURL(defKey) {
-		return defKey + "/.discussions";
+		return `${defKey}/.discussions`;
 	},
 
 	// defURL constructs the application (not API) URL to a def. The def
@@ -43,7 +43,7 @@ module.exports = {
 			unit = defSpec.Unit;
 			path = defSpec.Path;
 		}
-		return module.exports.repoURL(repo, rev) + "/." + unitType + "/" + unit + "/.def" + (path !== "." ? "/" + path : "");
+		return `${module.exports.repoURL(repo, rev)}/.${unitType}/${unit}/.def${path !== "." ? `/${path}` : ""}`;
 	},
 
 	// Returns an object having keys repo, rev, unitType, unit and path extracted from
@@ -72,20 +72,20 @@ module.exports = {
 	},
 
 	defExamplesURL(repo, rev, unitType, unit, path) {
-		return module.exports.defURL(repo, rev, unitType, unit, path) + "/.examples";
+		return `${module.exports.defURL(repo, rev, unitType, unit, path)}/.examples`;
 	},
 
 	fileURL(repo, rev, path) {
 		path = (path ? path : "");
-		return module.exports.repoURL(repo, rev) + "/.tree/" + path;
+		return `${module.exports.repoURL(repo, rev)}/.tree/${path}`;
 	},
 
 	fileListURL(repo, rev) {
-		return module.exports.repoURL(repo, rev) + "/.filefinder";
+		return `${module.exports.repoURL(repo, rev)}/.filefinder`;
 	},
 
 	commitsURL(repo, rev) {
-		return module.exports.repoURL(repo, rev) + "/.commits";
+		return `${module.exports.repoURL(repo, rev)}/.commits`;
 	},
 
 	/**
@@ -97,15 +97,15 @@ module.exports = {
 	 * @returns {string} The resulting URL
 	 */
 	compareURL(repo, base, head, filter) {
-		return module.exports.repoURL(repo, base) + "/.compare/" + head + (filter ? "?filter="+filter : "");
+		return `${module.exports.repoURL(repo, base)}/.compare/${head}${filter ? `?filter=${filter}` : ""}`;
 	},
 
 	signInURL(returnTo) {
-		return "/login" + (returnTo ? "?return-to=" + returnTo : "");
+		return `/login${returnTo ? `?return-to=${returnTo}` : ""}`;
 	},
 
 	personURL(login) {
-		return "/" + login;
+		return `/${login}`;
 	},
 
 	logInURL() { return "/login"; },
@@ -117,19 +117,19 @@ module.exports = {
 			"person.settings.integrations": "/.settings/integrations",
 			"person.settings.auth": "/.settings/auth",
 		};
-		if (!subroutePaths[route]) throw new Error("No such route: " + route);
+		if (!subroutePaths[route]) throw new Error(`No such route: ${route}`);
 		return module.exports.personURL(login) + subroutePaths[route];
 	},
 
 	abs(url) {
 		if (/^https?:\/\//.test(url)) return url;
-		return window.location.protocol + "//" + window.location.host + url;
+		return `${window.location.protocol}//${window.location.host}${url}`;
 	},
 
 	// appdashUploadPageLoadURL constructs a URL string to which a POST
 	// request can be made, given start and end unix timestamps in milliseconds
 	// representing the start and end of page content loading.
 	appdashUploadPageLoadURL(start, end) {
-		return "/ui/.appdash/upload-page-load?S=" + start + "&E=" + end;
+		return `/ui/.appdash/upload-page-load?S=${start}&E=${end}`;
 	},
 };

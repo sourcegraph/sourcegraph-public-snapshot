@@ -18,12 +18,12 @@ describe("components/DiscussionList", () => {
 			Ratings: ["gbbr", "sqs", "dmitri"],
 			CreatedAt: new Date(),
 			Comments: [{
-				ID: id+"1",
+				ID: `${id}1`,
 				Author: {Login: "gbbr"},
 				CreatedAt: new Date(),
 				Body: "comment_body",
 			}, {
-				ID: id+"2",
+				ID: `${id}2`,
 				Author: {Login: "sqs"},
 				CreatedAt: new Date(),
 				Body: "comment_body",
@@ -59,9 +59,9 @@ describe("components/DiscussionList", () => {
 		// to render the given props.
 		var checkAgainst = (node, attrs) => {
 			var $header = $(node).find("header");
-			expect($header.find("h1 .contents").text()).to.be(attrs.Title+" #"+attrs.ID);
-			expect($header.find(".stats").text()).to.be(" "+attrs.Comments.length+"  "+attrs.Ratings.length);
-			expect($header.find(".subtitle").text()).to.be("@"+attrs.Author.Login+" a few seconds ago");
+			expect($header.find("h1 .contents").text()).to.be(`${attrs.Title} #${attrs.ID}`);
+			expect($header.find(".stats").text()).to.be(` ${attrs.Comments.length}  ${attrs.Ratings.length}`);
+			expect($header.find(".subtitle").text()).to.be(`@${attrs.Author.Login} a few seconds ago`);
 			expect($(node).find("p.body").text()).to.contain(attrs.Description);
 		};
 

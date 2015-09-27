@@ -55,7 +55,7 @@ describe("RepoBuildIndicator", () => {
 	};
 
 	Object.keys(renderTests).forEach((name) => {
-		it("should have correct classes, attributes and state when build is: " + name, () => {
+		it(`should have correct classes, attributes and state when build is: ${name}`, () => {
 			var test = renderTests[name];
 			sandbox.stub(client, "builds", () => {
 				return $.Deferred().resolve({Builds: [test]}).promise();
@@ -69,9 +69,9 @@ describe("RepoBuildIndicator", () => {
 
 			expect(client.builds.callCount).to.be(1);
 			expect(component.state.status).to.be(component.BuildStatus[name]);
-			expect($node.hasClass("btn-"+test.expect.cls)).to.be(true);
-			expect($node.attr("href")).to.be("/test-uri/.builds/"+test.CommitID+"/"+test.Attempt);
-			expect($node.attr("title")).to.contain(test.CommitID.slice(0, 6)+" "+test.expect.txt);
+			expect($node.hasClass(`btn-${test.expect.cls}`)).to.be(true);
+			expect($node.attr("href")).to.be(`/test-uri/.builds/${test.CommitID}/${test.Attempt}`);
+			expect($node.attr("title")).to.contain(`${test.CommitID.slice(0, 6)} ${test.expect.txt}`);
 
 			tag = TestUtils.findRenderedDOMComponentWithTag(component, "i");
 			expect($(tag.getDOMNode()).hasClass(test.expect.icon)).to.be(true);

@@ -136,13 +136,13 @@ var RepoBuildIndicator = React.createClass({
 		case this.BuildStatus.NA:
 			if (this.props.Buildable) {
 				return (
-					<a key="indicator" data-tooltip={this.props.tooltipPosition} title="Click to build." onClick={this.triggerBuild} className={"build-indicator btn " + this.props.btnSize + " btn-warning"}>
+					<a key="indicator" data-tooltip={this.props.tooltipPosition} title="Click to build." onClick={this.triggerBuild} className={`build-indicator btn ${this.props.btnSize} btn-warning`}>
 						{this.props.label === "yes" ? <span>Not built </span> : null}<i className="fa fa-exclamation-triangle"></i>
 					</a>
 				);
 			}
 			return (
-				<a key="indicator" data-tooltip={this.props.tooltipPosition} title="Not yet built." className={"build-indicator btn " + this.props.btnSize + " btn-warning"}>
+				<a key="indicator" data-tooltip={this.props.tooltipPosition} title="Not yet built." className={`build-indicator btn ${this.props.btnSize} btn-warning`}>
 					{this.props.label === "yes" ? <span>Not built </span> : null}<i className="fa fa-exclamation-triangle"></i>
 				</a>
 			);
@@ -181,11 +181,11 @@ var RepoBuildIndicator = React.createClass({
 		}
 		return (
 			<a key="indicator"
-				className={"build-indicator btn " + this.props.btnSize + " btn-"+cls}
-				href={"/" + this.props.RepoURI + "/.builds/" + this.state.LastBuild.CommitID + "/" + this.state.LastBuild.Attempt}
+				className={`build-indicator btn ${this.props.btnSize} btn-${cls}`}
+				href={`/${this.props.RepoURI}/.builds/${this.state.LastBuild.CommitID}/${this.state.LastBuild.Attempt}`}
 				data-tooltip={this.props.tooltipPosition}
-				title={this.state.LastBuild.CommitID.slice(0, 6) + " " + txt + " " + moment(at).fromNow()}>
-				{this.props.Label === "yes" ? label+" " : ""}<i className={"fa "+icon}></i>
+				title={`${this.state.LastBuild.CommitID.slice(0, 6)} ${txt} ${moment(at).fromNow()}`}>
+				{this.props.Label === "yes" ? `${label} ` : ""}<i className={`fa ${icon}`}></i>
 			</a>
 		);
 	},

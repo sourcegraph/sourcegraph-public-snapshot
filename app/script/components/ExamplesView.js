@@ -98,7 +98,7 @@ var ExampleView = React.createClass({
 				</div>
 
 				<footer>
-					<a target="_blank" href={defUrl + "/.examples"} className="pull-right">
+					<a target="_blank" href={`${defUrl}/.examples`} className="pull-right">
 						<i className="fa fa-eye" /> View all
 					</a>
 				</footer>
@@ -126,14 +126,13 @@ function SnippetToBreadcrumb(repo, rev, path, startLine, endLine, defURL, cb) {
 	};
 
 	for (var i = 0; i < segs.length; i++) {
-		if (i > 0) breadcrumb.push(<span key={"ex_sep_"+i} className="sep">/</span>);
+		if (i > 0) breadcrumb.push(<span key={`ex_sep_${i}`} className="sep">/</span>);
 		if (segs[i] === ".") break;
 
 		var linktext = segs[i];
 		if (i === segs.length - 1 && startLine !== 0) {
-			linktext += endLine !== 0 ? ":" + startLine + "-" + endLine : ":" + startLine;
-			var href = router.fileURL(repo, rev, path) +
-				"#startline="+startLine+"&endline="+endLine+"&defUrl="+defURL;
+			linktext += endLine !== 0 ? `:${startLine}-${endLine}` : `:${startLine}`;
+			var href = `${router.fileURL(repo, rev, path)}#startline=${startLine}&endline=${endLine}&defUrl=${defURL}`;
 
 			breadcrumb.push(
 				<a key={repo+rev+path+defURL+linktext}
@@ -152,7 +151,7 @@ function SnippetToBreadcrumb(repo, rev, path, startLine, endLine, defURL, cb) {
 		} else {
 			breadcrumb.push(<a key={curPath+segs[i]+linktext} href={curPath + segs[i]}>{linktext}</a>);
 		}
-		curPath += segs[i] + "/";
+		curPath += `${segs[i]}/`;
 	}
 
 	return breadcrumb;
@@ -170,7 +169,7 @@ function repoLink(repoURI) {
 			repo = parts[2];
 
 		collection.push(
-			<a key={user} className="owner" href={"/"+user}>{user}</a>,
+			<a key={user} className="owner" href={`/${user}`}>{user}</a>,
 			<span key="separator" className="sep">/</span>,
 			<a className="name" key={repoURI+repo} href={router.repoURL(repoURI)} title={repoURI}>{repo}</a>
 		);

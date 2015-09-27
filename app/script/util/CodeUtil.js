@@ -49,10 +49,10 @@ module.exports = {
 	fetchFile(url, start, end) {
 		var opt = "";
 		if (start) {
-			opt = "?StartLine="+start+(end ? "&EndLine="+end : "");
+			opt = `?StartLine=${start}${end ? `&EndLine=${end}` : ""}`;
 		}
 		return $.ajax({
-			url: "/ui" + url + opt,
+			url: `/ui${url}${opt}`,
 			contentType: "application/json",
 		}).then(module.exports.receivedFile);
 	},
@@ -65,7 +65,7 @@ module.exports = {
 	 * @returns {jQuery.jqXHR} - Promise.
 	 */
 	createChangeset(repo, changeSet) {
-		var createUrl = "/ui" + router.repoURL(repo) + "/.changesets/create";
+		var createUrl = `/ui${router.repoURL(repo)}/.changesets/create`;
 
 		return $.ajax({
 			method: "POST",
@@ -135,7 +135,7 @@ module.exports = {
 		};
 
 		defListXhr = $.ajax({
-			url: "/ui/.defs?key="+fromServer.map(encodeURIComponent).join("&key="),
+			url: `/ui/.defs?key=${fromServer.map(encodeURIComponent).join("&key=")}`,
 		});
 
 		return defListXhr.then(onDone, onError).always(() => { defListXhr = null; });
@@ -158,7 +158,7 @@ module.exports = {
 		if (exampleXhr) exampleXhr.abort();
 
 		popupXhr = $.ajax({
-			url: "/ui" + url,
+			url: `/ui${url}`,
 			headers: {
 				"X-Definition-Data-Only": "yes",
 			},
@@ -188,7 +188,7 @@ module.exports = {
 
 		module.exports.abortPopoverXhr();
 
-		popoverXhr = $.ajax({url: url + "/.popover"});
+		popoverXhr = $.ajax({url: `${url}/.popover`});
 
 		var receivedPopover = function(data) {
 			popoverXhr = null;
@@ -225,7 +225,7 @@ module.exports = {
 			FallbackRepoURI: fallbackRepoURI,
 		};
 		var opts = {
-			url: "/ui" + url + "/.examples",
+			url: `/ui${url}/.examples`,
 			data: data,
 			dataType: "json",
 		};
@@ -253,7 +253,7 @@ module.exports = {
 	 * @returns {jQuery.jqXHR} - Promise.
 	 */
 	submitReview(repo, changesetId, body, drafts) {
-		var url = "/ui" + router.changesetURL(repo, changesetId) + "/submit-review";
+		var url = `/ui${router.changesetURL(repo, changesetId)}/submit-review`;
 
 		return $.ajax({
 			url: url,
@@ -280,7 +280,7 @@ module.exports = {
 	 * @returns {jQuery.jqXHR} - Promise.
 	 */
 	updateChangesetStatus(repo, changesetId, status) {
-		var url = "/ui" + router.changesetURL(repo, changesetId) + "/update";
+		var url = `/ui${router.changesetURL(repo, changesetId)}/update`;
 
 		return $.ajax({
 			url: url,
@@ -295,7 +295,7 @@ module.exports = {
 	},
 
 	submitDiscussionComment(defKey, id, body) {
-		var url = "/ui" + router.discussionCreateCommentURL(defKey, id);
+		var url = `/ui${router.discussionCreateCommentURL(defKey, id)}`;
 		var desc = {
 			Body: body,
 		};
@@ -312,7 +312,7 @@ module.exports = {
 	},
 
 	submitDiscussion(defKey, title, body) {
-		var url = "/ui" + router.discussionCreateURL(defKey);
+		var url = `/ui${router.discussionCreateURL(defKey)}`;
 		var desc = {
 			Title: title,
 			Description: body,
@@ -330,7 +330,7 @@ module.exports = {
 	},
 
 	fetchDiscussion(defKey, dsc) {
-		return $.ajax({url: "/ui/" + router.discussionURL(defKey, dsc.ID)}).then(data => {
+		return $.ajax({url: `/ui/${router.discussionURL(defKey, dsc.ID)}`}).then(data => {
 			if (data.hasOwnProperty("Error")) {
 				return $.Deferred().reject(data.Error);
 			}
@@ -342,7 +342,7 @@ module.exports = {
 		if (!globals.Features.Discussions) {
 			return $.Deferred().resolve({Discussions: []});
 		}
-		return $.ajax({url: "/ui" + router.discussionListURL(defKey, "Top")}).then(data => {
+		return $.ajax({url: `/ui${router.discussionListURL(defKey, "Top")}`}).then(data => {
 			if (data.hasOwnProperty("Error")) {
 				return $.Deferred().reject(data.Error);
 			}
@@ -351,11 +351,11 @@ module.exports = {
 	},
 
 	fetchDiscussionList(defKey) {
-		return $.ajax({url: "/ui" + router.discussionListURL(defKey, "Date")});
+		return $.ajax({url: `/ui${router.discussionListURL(defKey, "Date")}`});
 	},
 
 	fetchAllDiscussions(repo) {
-		var url = "/ui" + router.repoURL(repo) + "/.discussions?order=Date";
+		var url = `/ui${router.repoURL(repo)}/.discussions?order=Date`;
 		return $.ajax({url: url}).then(data => {
 			if (data.hasOwnProperty("Error")) {
 				return $.Deferred().reject(data.Error);

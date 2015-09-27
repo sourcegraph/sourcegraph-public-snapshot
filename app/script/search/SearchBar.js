@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	var nonDeletableLeadingTokenCount = parseInt($input.dataset.nonDeletableLeadingTokenCount, 10) || 0;
 	for (var i = 0; i < nonDeletableLeadingTokenCount; i++) {
-		if (!tokens[i]) throw new Error("nonDeletableLeadingTokenCount (" + nonDeletableLeadingTokenCount + ") exceeds tokens.length (" + tokens.length + ")");
+		if (!tokens[i]) throw new Error(`nonDeletableLeadingTokenCount (${nonDeletableLeadingTokenCount}) exceeds tokens.length (${tokens.length})`);
 		tokens[i]._preventDelete = true;
 	}
 
@@ -71,13 +71,13 @@ function SearchBar(o) {
 	o = o || {};
 
 	this.$form = $(o.form);
-	if (!this.$form.length) throw new Error("no form: " + o.form);
+	if (!this.$form.length) throw new Error(`no form: ${o.form}`);
 	this.$origInput = $(o.input);
-	if (!this.$origInput.length) throw new Error("no input: " + o.input);
+	if (!this.$origInput.length) throw new Error(`no input: ${o.input}`);
 
 	this.$navContainer = o.navContainer ? $(o.navContainer) : null;
 
-	this.implicitQueryString = (o.implicitQueryString ? o.implicitQueryString + " " : "");
+	this.implicitQueryString = (o.implicitQueryString ? `${o.implicitQueryString} ` : "");
 
 	this.engine = Engine.create(this);
 	if (this.engine.initialize) {
@@ -345,7 +345,7 @@ SearchBar.prototype._fillNavWidth = function($e) {
 	// Subtract the logo and nav links.
 	availableWidth -= this.$navContainer.find(".navbar-header .navbar-brand").get(0).offsetWidth + this.$navContainer.find("ul.navbar-right").get(0).offsetWidth + this.$navContainer.find(".navbar-toggle").get(0).offsetWidth;
 	availableWidth -= 35;
-	$e.css("width", availableWidth + "px");
+	$e.css("width", `${availableWidth}px`);
 };
 
 // getQueryScopePrefix returns the query string prefix that the
@@ -353,7 +353,7 @@ SearchBar.prototype._fillNavWidth = function($e) {
 // prefix, if any).
 SearchBar.prototype.getQueryScopePrefix = function() {
 	var prefix = this.$origInput.tokenfield("getTokens").map(function(tok) { return tok.val; }).join(" ");
-	return prefix ? prefix + " " : "";
+	return prefix ? `${prefix} ` : "";
 };
 
 // getQuery returns the current query (without the implicit query

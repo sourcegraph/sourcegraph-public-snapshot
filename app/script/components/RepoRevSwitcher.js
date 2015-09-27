@@ -28,17 +28,17 @@ var RepoRevSwitcher = React.createClass({
 
 	loadItemsOfType(what) {
 		$.get(
-			"/api/repos/" + this.props.repoSpec + "/." + what
+			`/api/repos/${this.props.repoSpec}/.${what}`
 		).success(function(resp) {
 			resp = resp || [];
 			var newState = {};
 			newState[what] = resp;
-			newState[what+"Error"] = false;
+			newState[`${what}Error`] = false;
 			this.setState(newState);
 		}.bind(this)).error(function(err) {
 			console.error(err);
 			var newState = {};
-			newState[what+"Error"] = true;
+			newState[`${what}Error`] = true;
 			this.setState(newState);
 		}.bind(this));
 	},
@@ -58,7 +58,7 @@ var RepoRevSwitcher = React.createClass({
 	makeItem(name, commitID) {
 		var isCurrent = name === this.props.rev;
 		return (
-			<li key={"r"+name+"."+commitID} role="presentation" className={isCurrent && "current-rev"}>
+			<li key={`r${name}.${commitID}`} role="presentation" className={isCurrent && "current-rev"}>
 				<a onClick={this._onClickBranch.bind(this, this.props.repoSpec, name, this.props.path)} href={this._revSwitcherURL(name)} title={commitID}>
 					{isCurrent && <i className="fa fa-caret-right"></i>}
 					{name}
@@ -85,7 +85,7 @@ var RepoRevSwitcher = React.createClass({
 	_revSwitcherURL(rev) {
 		var repo = this.props.repoSpec,
 			path = this.props.path,
-			fn = router[this.props.route+"URL"];
+			fn = router[`${this.props.route}URL`];
 
 		if (typeof fn === "function") {
 			return fn(repo, rev, path);

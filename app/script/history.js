@@ -6,7 +6,7 @@ $(function() {
 		var orig = window.history[method];
 		window.history[method] = function() {
 			Reflect.apply(orig, this, arguments);
-			window.dispatchEvent(new Event("sg:"+method));
+			window.dispatchEvent(new Event(`sg:${method}`));
 		};
 	});
 

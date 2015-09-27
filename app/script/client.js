@@ -8,7 +8,7 @@ var $ = require("jquery");
 
 function userOrgs(uid) {
 	return $.ajax({
-		url: "/api/users/$" + uid + "/orgs",
+		url: `/api/users/$${uid}/orgs`,
 	});
 }
 
@@ -25,7 +25,7 @@ exports.repos = repos;
 
 function repoFiles(repo, rev) {
 	return $.ajax({
-		url: "/ui/" + router.fileListURL(repo, rev),
+		url: `/ui/${router.fileListURL(repo, rev)}`,
 	});
 }
 
@@ -42,7 +42,7 @@ exports.searchSuggestions = searchSuggestions;
 
 function builds(repoURI, rev, noCache) {
 	return $.ajax({
-		url: "/api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=" + (repoURI || "") + "&CommitID=" + (rev || ""),
+		url: `/api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=${repoURI || ""}&CommitID=${rev || ""}`,
 		cache: !noCache,
 	});
 }
@@ -51,7 +51,7 @@ exports.builds = builds;
 
 function createRepoBuild(repoURI, rev) {
 	return $.ajax({
-		url: "/api/repos/" + repoURI + "@" + rev + "/.builds",
+		url: `/api/repos/${repoURI}@${rev}/.builds`,
 		method: "post",
 		data: JSON.stringify({
 			Import: true,
@@ -66,7 +66,7 @@ function listExamples(defKey, query) {
 	query = query ? query : "";
 	var d = defKey;
 	return $.ajax({
-		url: apirouter.defExamplesURL(d.Repo, d.CommitID, d.UnitType, d.Unit, d.Path) + "?" + query,
+		url: `${apirouter.defExamplesURL(d.Repo, d.CommitID, d.UnitType, d.Unit, d.Path)}?${query}`,
 		type: "GET",
 		dataType: "json",
 	});
@@ -74,12 +74,12 @@ function listExamples(defKey, query) {
 exports.listExamples = listExamples;
 
 function createDeltaRoute(routeVars) {
-	return "/api/repos/" + routeVars["Repo"] + "/.deltas/" + routeVars["Rev"] + ".." + routeVars["DeltaHeadRev"];
+	return `/api/repos/${routeVars["Repo"]}/.deltas/${routeVars["Rev"]}..${routeVars["DeltaHeadRev"]}`;
 }
 
 function deltaListUnits(routeVars) {
 	return $.ajax({
-		url: createDeltaRoute(routeVars) + "/.units",
+		url: `${createDeltaRoute(routeVars)}/.units`,
 		method: "get",
 	});
 }
@@ -87,7 +87,7 @@ exports.deltaListUnits = deltaListUnits;
 
 function deltaListDefs(routeVars, opt) {
 	return $.ajax({
-		url: createDeltaRoute(routeVars) + "/.defs",
+		url: `${createDeltaRoute(routeVars)}/.defs`,
 		data: opt,
 		method: "get",
 	});
@@ -97,11 +97,11 @@ exports.deltaListDefs = deltaListDefs;
 function listFiles(routeVars, opt, cb) {
 	var optPieces = [];
 	if (opt.Filter) {
-		optPieces.push("Filter="+encodeURIComponent(opt.Filter));
+		optPieces.push(`Filter=${encodeURIComponent(opt.Filter)}`);
 	}
-	var url = createDeltaRoute(routeVars) + "/.files";
+	var url = `${createDeltaRoute(routeVars)}/.files`;
 	if (optPieces.length > 0) {
-		url = url + "?" + optPieces.join("&");
+		url = `${url}?${optPieces.join("&")}`;
 	}
 	return $.ajax({
 		url: url,
@@ -114,7 +114,7 @@ exports.listFiles = listFiles;
 
 function listAffectedDependents(routeVars, opt) {
 	return $.ajax({
-		url: createDeltaRoute(routeVars) + "/.affected-dependents" + (opt.NotFormatted ? "?NotFormatted=true" : ""),
+		url: `${createDeltaRoute(routeVars)}/.affected-dependents${opt.NotFormatted ? "?NotFormatted=true" : ""}`,
 		method: "get",
 	});
 }
@@ -122,7 +122,7 @@ exports.listAffectedDependents = listAffectedDependents;
 
 function listReviewers(routeVars) {
 	return $.ajax({
-		url: createDeltaRoute(routeVars) + "/.reviewers",
+		url: `${createDeltaRoute(routeVars)}/.reviewers`,
 		method: "get",
 	});
 }
@@ -130,7 +130,7 @@ exports.listReviewers = listReviewers;
 
 function listAffectedAuthors(routeVars, opt) {
 	return $.ajax({
-		url: createDeltaRoute(routeVars) + "/.affected-authors",
+		url: `${createDeltaRoute(routeVars)}/.affected-authors`,
 		data: opt,
 		method: "get",
 	});
@@ -139,7 +139,7 @@ exports.listAffectedAuthors = listAffectedAuthors;
 
 function listAffectedClients(routeVars, opt) {
 	return $.ajax({
-		url: createDeltaRoute(routeVars) + "/.affected-clients",
+		url: `${createDeltaRoute(routeVars)}/.affected-clients`,
 		data: opt,
 		method: "get",
 	});

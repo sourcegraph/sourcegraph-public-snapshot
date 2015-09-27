@@ -60,16 +60,16 @@ var DiscussionView = React.createClass({
 						<header>
 							<h1>
 								<div className="contents">
-									{state.Title}<span className="id">{" #"+state.ID}</span>
+									{state.Title}<span className="id">{` #${state.ID}`}</span>
 								</div>
 							</h1>
 							<div className="stats">
-								<span className="octicon octicon-comment-discussion" />{" "+state.Comments.length+" "}
-								<span className="octicon octicon-star" />{" "+state.Ratings.length}
+								<span className="octicon octicon-comment-discussion" />{` ${state.Comments.length} `}
+								<span className="octicon octicon-star" />{` ${state.Ratings.length}`}
 							</div>
 							<div className="subtitle">
-								<span className="author"><a>{"@"+state.Author.Login}</a></span>
-								<span className="date">{" "+moment(state.CreatedAt).fromNow()}</span>
+								<span className="author"><a>{`@${state.Author.Login}`}</a></span>
+								<span className="date">{` ${moment(state.CreatedAt).fromNow()}`}</span>
 								<span className="subject"> on <b className="backtick" dangerouslySetInnerHTML={this.props.defName} /></span>
 							</div>
 						</header>
@@ -77,9 +77,9 @@ var DiscussionView = React.createClass({
 						{state.Comments.length > 0 ? (
 							<ul className="thread-comments">
 								{state.Comments.map(c => (
-									<li className="thread-comment" key={"discussion-view-comment-"+c.ID}>
+									<li className="thread-comment" key={`discussion-view-comment-${c.ID}`}>
 										<div className="signature">
-											<a>{"@"+c.Author.Login}</a> replied <i>{moment(c.CreatedAt).fromNow()}</i>
+											<a>{`@${c.Author.Login}`}</a> replied <i>{moment(c.CreatedAt).fromNow()}</i>
 										</div>
 										<MarkdownView content={c.Body} />
 									</li>

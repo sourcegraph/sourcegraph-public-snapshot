@@ -7,7 +7,7 @@ var traceData = {};
  */
 module.exports.start = function(name) {
 	traceData[name] = new Date();
-	console.info("[" + name + "]: started");
+	console.info(`[${name}]: started`);
 };
 
 /**
@@ -17,6 +17,6 @@ module.exports.start = function(name) {
  */
 module.exports.end = function(name) {
 	var elapsed = traceData[name] ? (new Date() - traceData[name]) / 1000 : "never started";
-	console.info("[" + name + "]: ended (" + elapsed + "s)");
+	console.info(`[${name}]: ended (${elapsed}s)`);
 	Reflect.deleteProperty(traceData, name);
 };

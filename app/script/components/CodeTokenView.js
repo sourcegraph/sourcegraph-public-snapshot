@@ -105,7 +105,7 @@ var CodeTokenView = React.createClass({
 
 		return (
 			<a href={this.state.url} className={classes} onClick={this._onClick}>
-				<span className={this.state.syntax + " " + this.state.extraClass}>{this.state.html}</span>
+				<span className={`${this.state.syntax} ${this.state.extraClass}`}>{this.state.html}</span>
 			</a>
 		);
 	},

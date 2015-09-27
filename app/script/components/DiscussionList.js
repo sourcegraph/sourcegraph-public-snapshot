@@ -42,20 +42,20 @@ var DiscussionList = React.createClass({
 	_renderDiscussion(model) {
 		var d = model.attributes;
 		return (
-			<li onClick={this.props.onClick.bind(this, this.props.defKey, d)} key={"list-item-"+d.ID}>
+			<li onClick={this.props.onClick.bind(this, this.props.defKey, d)} key={`list-item-${d.ID}`}>
 				<header>
 					<h1>
 						<div className="contents">
-							<a>{d.Title}</a><span className="id">{" #"+d.ID}</span>
+							<a>{d.Title}</a><span className="id">{` #${d.ID}`}</span>
 						</div>
 					</h1>
 					<div className="stats">
-						<span className="octicon octicon-comment-discussion" />{" "+d.Comments.length+" "}
-						<span className="octicon octicon-star" />{" "+d.Ratings.length}
+						<span className="octicon octicon-comment-discussion" />{` ${d.Comments.length} `}
+						<span className="octicon octicon-star" />{` ${d.Ratings.length}`}
 					</div>
 					<div className="subtitle">
-						<span className="author"><a>{"@"+d.Author.Login}</a></span>
-						<span className="date">{" "+moment(d.CreatedAt).fromNow()}</span>
+						<span className="author"><a>{`@${d.Author.Login}`}</a></span>
+						<span className="date">{` ${moment(d.CreatedAt).fromNow()}`}</span>
 					</div>
 				</header>
 				<p className="body">{d.Description.slice(0, 250)+(d.Description.length > 250 ? "..." : "")}</p>

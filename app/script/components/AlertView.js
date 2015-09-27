@@ -61,7 +61,7 @@ var AlertView = React.createClass({
 	 * @private
 	 */
 	_cookieCode() {
-		return "alert-view-closed-" + hashCode(this.props.label || this.props.content || this.props.html);
+		return `alert-view-closed-${hashCode(this.props.label || this.props.content || this.props.html)}`;
 	},
 
 	render() {
@@ -84,7 +84,7 @@ var AlertView = React.createClass({
 				{this.props.closeable ? <div className="btn-close" onClick={this._close}>×</div> : null}
 				<table className="over-threshold-warning">
 					<tbody>
-						<td className="icon"><i className={"fa fa-icon " + icon} /></td>
+						<td className="icon"><i className={`fa fa-icon ${icon}`} /></td>
 						{text}
 					</tbody>
 				</table>

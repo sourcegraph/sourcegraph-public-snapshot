@@ -17,12 +17,12 @@ describe("components/DiscussionSnippet", () => {
 			Author: {Login: "gbbr"},
 			Ratings: ["gbbr", "sqs", "dmitri"],
 			Comments: [{
-				ID: id+"1",
+				ID: `${id}1`,
 				Author: {Login: "gbbr"},
 				CreatedAt: new Date(),
 				Body: "comment_body",
 			}, {
-				ID: id+"2",
+				ID: `${id}2`,
 				Author: {Login: "sqs"},
 				CreatedAt: new Date(),
 				Body: "comment_body",

@@ -26,7 +26,7 @@ var TreeEntryDefs = React.createClass({
 			Direction: "desc",
 			Exported: true,
 			PerPage: 6,
-			RepoRevs: repo+"@"+commit,
+			RepoRevs: `${repo}@${commit}`,
 			Sort: "def_len",
 		};
 

@@ -13,7 +13,7 @@ var DeltaDefsContainer = React.createClass({
 				var unit = unitDelta.Base || unitDelta.Head;
 				client.deltaListDefs(this.props.deltaRouteVars, {UnitType: unit.Type, Unit: unit.Name}).success(function(resp2) {
 					var deltaDefsByUnit = this.state.deltaDefsByUnit || [];
-					deltaDefsByUnit[unit.Type + ":" + unit.Name] = resp2.Defs ? resp2 : {Defs: []};
+					deltaDefsByUnit[`${unit.Type}:${unit.Name}`] = resp2.Defs ? resp2 : {Defs: []};
 					if (resp2) this.setState({deltaDefsByUnit: deltaDefsByUnit});
 				}.bind(this)).error(function(err) {
 					console.error(err);
@@ -27,7 +27,7 @@ var DeltaDefsContainer = React.createClass({
 	},
 	renderUnitCount(unitDelta) {
 		var unit = unitDelta.Base || unitDelta.Head;
-		var dds = this.state.deltaDefsByUnit[unit.Type + ":" + unit.Name];
+		var dds = this.state.deltaDefsByUnit[`${unit.Type}:${unit.Name}`];
 		return (
 			<tr className="delta-item-counts">
 				<td className="scope">
@@ -48,7 +48,7 @@ var DeltaDefsContainer = React.createClass({
 			</div>
 			<DeltaDefs deltaRouteVars={this.props.deltaRouteVars}
 				deltaSpec={this.props.deltaSpec}
-				deltaDefs={this.state.deltaDefsByUnit[unit.Type + ":" + unit.Name]}
+				deltaDefs={this.state.deltaDefsByUnit[`${unit.Type}:${unit.Name}`]}
 				deltaFilter={{UnitType: unit.Type, Unit: unit.Name}}/>
 			</div>
 		);

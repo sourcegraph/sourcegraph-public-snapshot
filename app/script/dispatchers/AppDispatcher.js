@@ -104,7 +104,7 @@ AppDispatcher.dispatchAsync = function(promise, types) {
 function typesValid(types) {
 	return ["started", "success", "failure"].every(key => {
 		if (!types.hasOwnProperty(key)) {
-			console.error("Didn't provide action for '"+key+"' on a request", types);
+			console.error(`Didn't provide action for "${key}" on a request`, types);
 			return false;
 		}
 		return true;

@@ -48,7 +48,7 @@ var MarkdownTextarea = React.createClass({
 			"tab-content": true,
 			"show-edit": this.state.activeTab === TAB_EDIT,
 			"show-preview": this.state.activeTab === TAB_PREVIEW,
-		}) + (this.props.className ? " " + this.props.className : "");
+		}) + (this.props.className ? ` ${this.props.className}` : "");
 
 		return (
 			<div className="markdown-textarea">

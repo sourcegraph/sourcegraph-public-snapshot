@@ -160,7 +160,7 @@ describe("SearchBar", function() {
 		beforeEach(function() {
 			sandbox.stub(Tokens, "setValAndLabel", mockSetValAndLabelImpl);
 			sandbox.stub(Tokens, "renderTokenSuggestion", function(tok) {
-				return "<p>" + tok.label + "</p>";
+				return `<p>${tok.label}</p>`;
 			});
 		});
 
@@ -221,7 +221,7 @@ describe("SearchBar", function() {
 			Object.keys(keys).forEach(function(keyName) {
 				var keyCode = keys[keyName];
 
-				it("if a prefix of the val is typed and " + keyName + " is entered, a rich token is created", function() {
+				it(`if a prefix of the val is typed and ${keyName} is entered, a rich token is created`, function() {
 					suggestions = [{val: "xx", label: "xx", foo: "bar"}];
 					var sb = newSearchBar();
 					sb.focus();
@@ -236,7 +236,7 @@ describe("SearchBar", function() {
 					expect(sb.$origInput.tokenfield("getTokens")).to.eql([{val: "xx", label: "xx", foo: "bar"}]);
 				});
 
-				it("if the exact val and " + keyName + " is entered, a rich token is created", function() {
+				it(`if the exact val and ${keyName} is entered, a rich token is created`, function() {
 					suggestions = [{val: "xx", label: "xx", foo: "bar"}];
 					var sb = newSearchBar();
 					sb.focus();

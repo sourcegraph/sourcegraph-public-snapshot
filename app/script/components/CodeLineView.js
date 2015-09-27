@@ -76,7 +76,7 @@ var CodeLineView = React.createClass({
 			"main-byte-range": this.state.highlight,
 			"new-line": this.state.prefix === "+",
 			"old-line": this.state.prefix === "-",
-		}) + (this.state.extraClass ? " "+this.state.extraClass : "");
+		}) + (this.state.extraClass ? ` ${this.state.extraClass}` : "");
 
 		return (
 			<tr className={classes} data-start={this.state.start} data-end={this.state.end} style={this.props.style}>
@@ -110,7 +110,7 @@ var CodeLineView = React.createClass({
 							return <span key={token.cid} className={xClass}>{token.get("html")}</span>;
 
 						case globals.TokenType.SPAN:
-							return <span key={token.cid} className={token.get("syntax")+" "+xClass}>{token.get("html")}</span>;
+							return <span key={token.cid} className={`${token.get("syntax")} ${xClass}`}>{token.get("html")}</span>;
 
 						default:
 							return <CodeToken {...this.props} key={token.cid} model={token} />;

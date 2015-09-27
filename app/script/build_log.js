@@ -51,7 +51,7 @@ function updateLogView(href, $e) {
 
 	var maxID = $e.dataset.maxId;
 	var reqHref = href;
-	if (maxID) reqHref += "?MinID=" + maxID;
+	if (maxID) reqHref += `?MinID=${maxID}`;
 
 	var request = new XMLHttpRequest();
 	request.open("GET", reqHref, true);

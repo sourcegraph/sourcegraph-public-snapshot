@@ -107,7 +107,7 @@ var HunkView = React.createClass({
 	_commentThread(line, comments, withForm) {
 		var items = [
 			comments.map((comment, i) => (
-				<div className="comment-container" key={line.cid+"-"+comment.cid}>
+				<div className="comment-container" key={`${line.cid}-${comment.cid}`}>
 					<CodeReviewComment
 						comment={comment}
 						onEdit={this._onCommentEdit.bind(this, line, comment)}

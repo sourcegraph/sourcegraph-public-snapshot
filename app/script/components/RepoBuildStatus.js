@@ -68,7 +68,7 @@ var RepoBuildStatus = React.createClass({
 				cls = "text-warning";
 			}
 			return (
-				<a href={"/" + this.props.Repo.URI + "/.builds/" + this.state.LastBuild.BID}>
+				<a href={`/${this.props.Repo.URI}/.builds/${this.state.LastBuild.BID}`}>
 					<span className={cls}><span className="commit-id">{this.state.LastBuild.CommitID.slice(0, 6)}</span> {txt} <TimeAgo time={at} /></span>
 				</a>
 			);

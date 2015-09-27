@@ -88,7 +88,7 @@ var CodeReview = React.createClass({
 
 	render() {
 		if (typeof this.state.Changeset === "undefined") return null;
-		var url = router.changesetURL(this.state.Changeset.DeltaSpec.Base.URI, this.state.Changeset.ID) + "/files";
+		var url = `${router.changesetURL(this.state.Changeset.DeltaSpec.Base.URI, this.state.Changeset.ID)}/files`;
 
 		return (
 			<div className="code-review-inner">

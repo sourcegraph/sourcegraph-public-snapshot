@@ -25,15 +25,15 @@ var CodeReviewTimelineReview = React.createClass({
 
 		return Object.keys(byFile).map((filename, i) => {
 			var commentGroup = [
-				<div key={"file-"+i} className="file-name">
+				<div key={`file-${i}`} className="file-name">
 					<i className="fa fa-file-text-o"></i> {filename}
 				</div>,
 			];
 
 			commentGroup.push((
-				<table className="comment-group" key={"comment-group-"+filename+"-"+i}>
+				<table className="comment-group" key={`comment-group-${filename}-${i}`}>
 					{byFile[filename].map((comment, j) => (
-						<tr className="comment" key={"review-comment-"+i+"-"+j}>
+						<tr className="comment" key={`review-comment-${i}-${j}`}>
 							<td className="comment-line-number" onClick={CodeReviewActions.showComment.bind(this, comment)}>
 								<i className="fa fa-reply"></i> {comment.get("LineNumber")}
 							</td>
@@ -48,7 +48,7 @@ var CodeReviewTimelineReview = React.createClass({
 			));
 
 			return (
-				<div key={"review-group-"+filename} className="comment-file-group">{commentGroup}</div>
+				<div key={`review-group-${filename}`} className="comment-file-group">{commentGroup}</div>
 			);
 		});
 	},

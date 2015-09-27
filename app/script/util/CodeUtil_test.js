@@ -71,7 +71,7 @@ describe("util/CodeUtil", () => {
 		CodeUtil.fetchExample(testUrl, 1);
 
 		expect($.ajax.callCount).to.be(1);
-		expect($.ajax.firstCall.args[0].url).to.contain("/ui"+testUrl);
+		expect($.ajax.firstCall.args[0].url).to.contain(`/ui${testUrl}`);
 		expect($.ajax.firstCall.args[0].dataType).to.be("json");
 		expect($.ajax.firstCall.args[0].data.Page).to.be(1);
 	});

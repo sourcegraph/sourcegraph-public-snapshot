@@ -55,7 +55,7 @@ var CodeFileView = React.createClass({
 
 		CodeFileRouter.matchInitialHashState();
 		if (this.state.file && this.state.file.Path !== prevState.file.Path) {
-			notify.info("Loaded file <i>" + this.state.file.Path + "</i>...");
+			notify.info(`Loaded file <i>${this.state.file.Path}</i>...`);
 		}
 	},
 

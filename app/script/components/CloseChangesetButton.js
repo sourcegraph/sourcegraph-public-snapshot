@@ -22,7 +22,7 @@ var CloseChangesetButton = React.createClass({
 		e.preventDefault();
 
 		return $.ajax({
-			url: "/ui" + router.changesetURL(this.props.repo, this.props.changesetId) + "/update",
+			url: `/ui${router.changesetURL(this.props.repo, this.props.changesetId)}/update`,
 			method: "POST",
 			data: JSON.stringify({Close: true}),
 		}).then(function(data) {

@@ -41,7 +41,7 @@ function setupHeapAnalytics() {
 		// Custom page view tracking by route name
 		//
 		function trackPageView() {
-			$.get("/_/route/" + window.location.pathname, null, function(routeName) {
+			$.get(`/_/route/${window.location.pathname}`, null, function(routeName) {
 				var properties = {path: window.location.pathname, query: window.location.search};
 
 				var statusCodeElem = $("#sg-status-code");
@@ -55,14 +55,14 @@ function setupHeapAnalytics() {
 					}
 				}
 
-				window.heap.track("Page(route): "+routeName, properties);
+				window.heap.track(`Page(route): ${routeName}`, properties);
 			});
 		}
 
 		trackPageView();
 
 		["pushState", "popState", "replaceState"].forEach(function(method) {
-			window.addEventListener("sg:"+method, function(e) {
+			window.addEventListener(`sg:${method}`, function(e) {
 				trackPageView();
 			});
 		});
@@ -87,7 +87,7 @@ function setupGoogleAnalytics() {
 	window.ga("send", "pageview");
 
 	["pushState", "popState", "replaceState"].forEach(function(method) {
-		window.addEventListener("sg:"+method, function(e) {
+		window.addEventListener(`sg:${method}`, function(e) {
 			window.ga("send", "pageview", window.location.pathname);
 		});
 	});
