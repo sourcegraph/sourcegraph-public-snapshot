@@ -103,9 +103,6 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"absURL": func(appURL, other *url.URL) *url.URL { return appURL.ResolveReference(other) },
 
-	// isLocalhost is true if the server is running on localhost.
-	"isLocalhost": func(host string) bool { return host == "localhost" || strings.HasPrefix(host, "localhost:") },
-
 	"urlTo":                      router.Rel.URLTo,
 	"urlToBlogPost":              router.Rel.URLToBlogPost,
 	"urlToBlogAtomFeed":          router.Rel.URLToBlogAtomFeed,
