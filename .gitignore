@@ -44,8 +44,6 @@ app/node_modules/jsdom/node_modules/contextify/build/
 app/node_modules/node-sass/vendor
 eb-bundle.zip
 
-app/assets/bindata.go
-app/templates/bindata.go
 *_vfsdata.go
 
 /release/
