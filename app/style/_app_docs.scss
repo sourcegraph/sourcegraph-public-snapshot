@@ -114,12 +114,19 @@
 		float: right;
 		margin-left: 20px;
 		margin-bottom: 20px;
+		min-width: 200px;
+		width: 30%;
+		max-width: 400px;
 		ul {
 			margin-bottom: 0;
+			padding-left: 0;
 			li {
-				padding-left: 7px;
+				padding-left: 20px;
 				list-style-type: none;
 			}
+		}
+		& > nav > ul > li {
+			padding-left: 0;
 		}
 	}
 }
