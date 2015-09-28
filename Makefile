@@ -168,5 +168,6 @@ deploy-dev: clone-private
 	cat conf/private/src.sourcegraph.com.env | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "mkdir -p /etc/sourcegraph && cat > /etc/sourcegraph/config.env"'
 	cat conf/private/ext-ca/src.sourcegraph.com.cert.pem | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "mkdir -p /etc/sourcegraph && cat > /etc/sourcegraph/sourcegraph.cert.pem"'
 	cat conf/private/ext-ca/src.sourcegraph.com.key.pem | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "mkdir -p /etc/sourcegraph && cat > /etc/sourcegraph/sourcegraph.key.pem"'
+	ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "setcap 'cap_net_bind_service=+ep' /usr/bin/src"'
 	ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo stop src; sudo start src'
 	curl -s https://src.sourcegraph.com/.well-known/sourcegraph | python -c 'import json, sys; assert json.load(sys.stdin)["Version"] == sys.argv[1], "src.sourcegraph.com reported wrong version"' $(V)
