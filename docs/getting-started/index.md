@@ -63,7 +63,7 @@ Sourcegraph only supports Go and Java.)
 On the repository page, you can see the progress of Sourcegraph's code
 analysis. If there is an issue, it will be red. Need to
 [troubleshoot a failed or incomplete build?]({{< relref
-"troubleshooting/builds.md" >}}).
+"troubleshooting/builds.md" >}})
 
 Now, you can start using some of the killer features of Sourcegraph:
 
@@ -73,7 +73,6 @@ Now, you can start using some of the killer features of Sourcegraph:
 
 # 5. Get the rest of your team on Sourcegraph
 
-TODO
-
-* link to User access control page
-* tell them to make Sourcegraph their git origin
+As the server admin, you need to [grant access to your teammates]({{<
+relref "config/access-control.md" >}}) so they can access your
+Sourcegraph server.
