@@ -1,6 +1,7 @@
 var $ = require("jquery");
 var React = require("react");
 
+var globals = require("./globals");
 var CodeFileView = require("./components/CodeFileView");
 var CodeReview = require("./components/CodeReview");
 var CloseChangesetButton = require("./components/CloseChangesetButton");
@@ -12,6 +13,7 @@ var RefCountLink = require("./components/RefCountLink");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoBuildStatus = require("./components/RepoBuildStatus");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
+var SearchBar = require("./components/SearchBar");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
@@ -19,6 +21,14 @@ var AlertView = require("./components/AlertView");
 // TODO use some common method for all components
 document.addEventListener("DOMContentLoaded", () => {
 	var el;
+
+	if (globals.Features.SearchNext) {
+		el = $("#SearchBar");
+		React.render(
+			<SearchBar />,
+			el[0]
+		);
+	}
 
 	el = $("#CodeFileView");
 	if (el.length > 0) {
