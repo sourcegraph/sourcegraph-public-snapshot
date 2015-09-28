@@ -7,8 +7,8 @@ Setting up Sourcegraph for your team is a breeze. Let's get started.
 
 # 1. Install Sourcegraph on a server
 
-Choose the **Server installation** link on the left for your preferred
-platform. Follow those instructions, and come back here when you're
+Choose the **Installation** link on the left for your preferred
+platform. Follow those instructions and come back here when you're
 done.
 
 For simplicity, the rest of this document assumes your new Sourcegraph
