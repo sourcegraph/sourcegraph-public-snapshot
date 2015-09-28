@@ -3,8 +3,7 @@ title = "Getting started with Sourcegraph for your team"
 navtitle = "Getting started"
 +++
 
-Setting up Sourcegraph for your team usually takes less than 7
-minutes. Let's get started.
+Setting up Sourcegraph for your team is a breeze. Let's get started.
 
 # 1. Install Sourcegraph on a server
 
