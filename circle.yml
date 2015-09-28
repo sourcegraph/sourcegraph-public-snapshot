@@ -39,7 +39,7 @@ dependencies:
 
   override:
     - rm -rf $HOME/.go_workspace/src
-    - mkdir -p $HOME/.go_workspace/src/sourcegraph.com/sourcegraph
+    - mkdir -p $HOME/.go_workspace/src/src.sourcegraph.com
     - cp -r $PWD $REPO
 
     - go get github.com/tools/godep github.com/jteeuwen/go-bindata/go-bindata
