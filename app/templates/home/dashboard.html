@@ -17,7 +17,7 @@
 </div>
 <div class="row">
 	<div class="col-md-12">
-		<p><b>Add a new repository:</b> <code>src --endpoint={{.AppURL}} repo create my/repo</code></p>
+		<p><b>Create a new repository:</b> <code>src --endpoint={{.AppURL}} repo create my/repo</code></p>
 		{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
 			<p><b>Have private repositories on GitHub:</b> <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">Import them</a>.</p>
 		{{end}}
