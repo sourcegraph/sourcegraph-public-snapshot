@@ -25,7 +25,6 @@
 		margin-bottom: 20px;
 	}
 
-	/* All levels of nav */
 	.sidebar > .nav {
 		a {
 			background: none;
@@ -75,6 +74,52 @@
 		margin-top: 8px;
 		& > section > h1 {
 			font-weight: bold;
+		}
+
+		code {
+			color: #b93d6a;
+			border-radius: 3px;
+			border: solid 1px #f0f5f5;
+			background: #fafcfc;
+			padding: 0 4px;
+			display: inline-block;
+		}
+		pre code {
+			background: none;
+			border: none;
+			padding: 0;
+		}
+
+		h1#title {
+			font-size: 36px;
+		}
+		h1 {
+			font-size: 27px;
+		}
+		h2 {
+			font-size: 22px;
+		}
+		h3 {
+			font-size: 18px;
+		}
+		h4 {
+			font-size: 14px;
+		}
+		p {
+			line-height: 1.6;
+		}
+	}
+
+	.toc {
+		float: right;
+		margin-left: 20px;
+		margin-bottom: 20px;
+		ul {
+			margin-bottom: 0;
+			li {
+				padding-left: 7px;
+				list-style-type: none;
+			}
 		}
 	}
 }
