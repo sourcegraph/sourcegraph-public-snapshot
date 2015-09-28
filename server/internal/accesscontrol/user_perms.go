@@ -59,12 +59,16 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
 		return VerifyUserHasAdminAccess(ctx, method)
 	}
 
-	// all authenticated users have write access
-	// TODO: call RegisteredClients.GetUserPermissions and check for write access.
+	// Get UserPermissions info for this user from the root server.
 	// Making such a call to root server for every write operation will be quite slow, so
 	// cache the user permissions on the client (i.e. local instance).
-	return nil
-
+	if perms, err := getUserPermissionsFromRoot(ctx); err != nil {
+		return err
+	} else if !(perms.Write || perms.Admin) {
+		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
+	} else {
+		return nil
+	}
 }
 
 func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
@@ -85,26 +89,36 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 		isAdmin = user.Admin
 	} else {
 		// get UserPermissions info for this user from the root server.
-		// TODO: cache UserPermissions to avoid making call to root server for every admin operation.
-		rootGRPCURL, err := fed.Config.RootGRPCEndpoint()
-		if err != nil {
+		if perms, err := getUserPermissionsFromRoot(ctx); err != nil {
 			return err
+		} else {
+			isAdmin = perms.Admin
 		}
-		ctx = sourcegraph.WithGRPCEndpoint(ctx, rootGRPCURL)
-		ctx = svc.WithServices(ctx, remote.Services)
-		rootCl := sourcegraph.NewClientFromContext(ctx)
-		userPermissions, err := rootCl.RegisteredClients.GetUserPermissions(ctx, &sourcegraph.UserPermissionsOptions{
-			UID:        int32(actor.UID),
-			ClientSpec: &sourcegraph.RegisteredClientSpec{ID: actor.ClientID},
-		})
-		if err != nil {
-			return err
-		}
-		isAdmin = userPermissions.Admin
 	}
 
 	if !isAdmin {
 		return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: user does not have admin status", method)
 	}
 	return nil
+}
+
+func getUserPermissionsFromRoot(ctx context.Context) (*sourcegraph.UserPermissions, error) {
+	// TODO: cache UserPermissions to avoid making a call to root server for every
+	// write/admin operation.
+	rootGRPCURL, err := fed.Config.RootGRPCEndpoint()
+	if err != nil {
+		return nil, err
+	}
+	actor := auth.ActorFromContext(ctx)
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, rootGRPCURL)
+	ctx = svc.WithServices(ctx, remote.Services)
+	rootCl := sourcegraph.NewClientFromContext(ctx)
+	userPermissions, err := rootCl.RegisteredClients.GetUserPermissions(ctx, &sourcegraph.UserPermissionsOptions{
+		UID:        int32(actor.UID),
+		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: actor.ClientID},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return userPermissions, nil
 }

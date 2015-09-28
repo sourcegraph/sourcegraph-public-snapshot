@@ -17,6 +17,6 @@ AllowAnonReaders = true
 AllowAllLogins = true
 
 ; Only allow git push, repo updates, changeset creation, etc.,
-; by users with the 'write' permission grant.
+; by users with the 'admin' permission grant.
 RestrictWriteAccess = true
 ```
