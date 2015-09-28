@@ -120,6 +120,10 @@ var cliCtx context.Context
 
 func init() {
 	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
+		// The "src version" command does not need a cli context at all.
+		if cli.CLI.Active != nil && cli.CLI.Active.Name == "version" {
+			return
+		}
 		cliCtx = context.Background()
 		// The "src serve" command is the only non-client command; it
 		// must not have credentials set (because it is not a client
