@@ -1,9 +1,9 @@
 +++
-title = "Getting started with Sourcegraph for your team"
+title = "Getting started with Sourcegraph"
 navtitle = "Getting started"
 +++
 
-Setting up Sourcegraph for your team is a breeze. Let's get started.
+Setting up Sourcegraph is a breeze. Let's get started.
 
 # 1. Install Sourcegraph on a server
 
