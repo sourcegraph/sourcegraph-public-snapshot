@@ -101,7 +101,6 @@ var localHugoDir = os.Getenv("DEV_LOCAL_HUGO_DIR")
 
 func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir string, fs afero.Fs, err error) {
 	if localHugoDir != "" {
-		//		return "docs", aferoVFS{rwvfs.OS(localHugoDir + "/..")}, nil
 		return localHugoDir, afero.OsFs{}, nil
 	}
 
