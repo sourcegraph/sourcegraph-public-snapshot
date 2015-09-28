@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 // handler is a wrapper func for app HTTP handlers.

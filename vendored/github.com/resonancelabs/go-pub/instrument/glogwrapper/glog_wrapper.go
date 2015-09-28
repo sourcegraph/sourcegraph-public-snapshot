@@ -5,7 +5,7 @@
 package glogwrapper
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
 
 	"github.com/golang/glog"
 )

@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func (s *defs) ListClients(ctx context.Context, op *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {

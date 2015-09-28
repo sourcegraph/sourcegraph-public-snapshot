@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
 )
 
 type PageLoadEvent struct {

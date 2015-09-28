@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/makex"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/buildutil"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/util/buildutil"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"

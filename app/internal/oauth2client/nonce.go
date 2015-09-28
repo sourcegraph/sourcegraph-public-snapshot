@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/randstring"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
 const (

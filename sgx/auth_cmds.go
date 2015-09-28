@@ -7,10 +7,10 @@ import (
 	"os"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 	"sourcegraph.com/sqs/pbtypes"
+	appauth "src.sourcegraph.com/sourcegraph/app/auth"
+	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func init() {

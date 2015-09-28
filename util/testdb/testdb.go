@@ -2,7 +2,7 @@ package testdb
 
 import (
 	"github.com/sqs/modl"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
+	"src.sourcegraph.com/sourcegraph/util/dbutil2"
 )
 
 // NewHandle creates new test DB handles.

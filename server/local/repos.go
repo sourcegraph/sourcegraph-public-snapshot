@@ -9,12 +9,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/doc"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sqs/pbtypes"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/doc"
+	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 var Repos sourcegraph.ReposServer = &repos{}

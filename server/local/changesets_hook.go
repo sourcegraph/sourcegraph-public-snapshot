@@ -10,8 +10,8 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func init() {

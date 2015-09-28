@@ -8,11 +8,11 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	apirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
+	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 var RepoBadges sourcegraph.RepoBadgesServer = &repoBadges{}

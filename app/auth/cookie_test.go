@@ -9,7 +9,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func TestCookieMiddleware(t *testing.T) {

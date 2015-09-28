@@ -4,10 +4,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
-	"log"
-	"sourcegraph.com/sourcegraph/sourcegraph/devdoc/assets"
+	"src.sourcegraph.com/sourcegraph/devdoc/assets"
 )
 
 func main() {

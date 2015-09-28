@@ -3,10 +3,10 @@ package authzchecked
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // RepoVCS wraps base's methods with authorization checks.

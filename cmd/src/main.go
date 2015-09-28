@@ -4,27 +4,27 @@ package main
 import (
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx"
+	"src.sourcegraph.com/sourcegraph/sgx"
 
 	// App
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
+	_ "src.sourcegraph.com/sourcegraph/app/cmd"
 
 	// Stores
-	_ "sourcegraph.com/sourcegraph/sourcegraph/server/cmd"
+	_ "src.sourcegraph.com/sourcegraph/server/cmd"
 
 	// External services
-	_ "sourcegraph.com/sourcegraph/sourcegraph/ext/aws"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/ext/github"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/ext/papertrail"
+	_ "src.sourcegraph.com/sourcegraph/ext/aws"
+	_ "src.sourcegraph.com/sourcegraph/ext/github"
+	_ "src.sourcegraph.com/sourcegraph/ext/papertrail"
 
 	// Misc.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/devdoc"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
+	_ "src.sourcegraph.com/sourcegraph/devdoc"
+	_ "src.sourcegraph.com/sourcegraph/pkg/wellknown"
+	_ "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
 
 	// Platform applications
 	_ "sourcegraph.com/sourcegraph/issues"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/platform/apps/docs"
+	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 )
 
 func main() {

@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func Discussions_Create_ok(ctx context.Context, t *testing.T, store store.Discussions, repo string) {

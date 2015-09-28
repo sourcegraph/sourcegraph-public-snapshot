@@ -13,10 +13,10 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/randstring"
 	"sourcegraph.com/sqs/grpccache"
+	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
 var ClientContextFuncs []func(context.Context) context.Context

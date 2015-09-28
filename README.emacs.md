@@ -10,8 +10,8 @@ applications needed to set up your dev environment in Emacs.
   (let ((serve-dev (get-buffer-process (shell "*shell*<serve-dev>")))
         (webpack-dev-server (get-buffer-process (shell "*shell*<webpack-dev-server>")))
         (vcsstore (get-buffer-process (shell "*shell*<vcsstore>"))))
-    (process-send-string serve-dev "cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph\ngit pull\nmake serve-dev\n")
-    (process-send-string webpack-dev-server "cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph/app\nnpm start\n")
+    (process-send-string serve-dev "cd $GOPATH/src/src.sourcegraph.com/sourcegraph\ngit pull\nmake serve-dev\n")
+    (process-send-string webpack-dev-server "cd $GOPATH/src/src.sourcegraph.com/sourcegraph/app\nnpm start\n")
     (process-send-string vcsstore "cd $GOPATH/src/github.com/sourcegraph/vcsstore/\ndocker run -e GOMAXPROCS=8 -p 9090:80 -v /tmp/vcsstore vcsstore\n")))
 
 # web-mode tab indentation

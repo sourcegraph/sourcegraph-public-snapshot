@@ -5,10 +5,10 @@ import (
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
+	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 var GitTransport gitpb.GitTransportServer = &gitTransport{}

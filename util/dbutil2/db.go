@@ -11,7 +11,7 @@ import (
 
 	"code.google.com/p/rog-go/parallel"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
+	"src.sourcegraph.com/sourcegraph/util/dbutil"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"

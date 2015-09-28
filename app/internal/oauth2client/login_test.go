@@ -5,16 +5,16 @@ import (
 	"net/url"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/client/pkg/oauth2client"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
+	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
+	"src.sourcegraph.com/sourcegraph/fed"
 
 	// Register the login handler.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/localauth"
+	_ "src.sourcegraph.com/sourcegraph/app/internal/localauth"
 )
 
 // TestLogIn_OAuthRedirect tests that if the auth source is "oauth",

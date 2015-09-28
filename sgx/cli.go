@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-flags"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 // globalOpt contains global options.

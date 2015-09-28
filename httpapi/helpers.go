@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 // writeJSON writes a JSON Content-Type header and a JSON-encoded object to the

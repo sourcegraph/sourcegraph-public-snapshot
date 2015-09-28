@@ -6,7 +6,8 @@ package crouton_thrift
 import (
 	"bytes"
 	"fmt"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/thrift_0_9_2/lib/go/thrift"
+
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/thrift_0_9_2/lib/go/thrift"
 )
 
 // (needed to ensure safety because of naive import list construction.)

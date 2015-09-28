@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/envutil"
+	"src.sourcegraph.com/sourcegraph/util/envutil"
 )
 
 // statusEndpoint is the endpoint used by AWS Elastic Load Balancers to check

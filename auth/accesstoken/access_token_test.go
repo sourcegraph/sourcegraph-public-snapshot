@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 )
 
 func TestParseSelfSignedToken(t *testing.T) {

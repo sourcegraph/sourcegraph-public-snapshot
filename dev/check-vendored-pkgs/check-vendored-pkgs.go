@@ -16,7 +16,7 @@ import (
 
 var (
 	rootDir  = flag.String("rootdir", ".", "root source dir")
-	rootPkg  = flag.String("rootpkg", "sourcegraph.com/sourcegraph/sourcegraph", "root package path (imports not beginning with this path must be found in Godeps/_workspace or GOROOT)")
+	rootPkg  = flag.String("rootpkg", "src.sourcegraph.com/sourcegraph", "root package path (imports not beginning with this path must be found in Godeps/_workspace or GOROOT)")
 	useGodep = flag.Bool("godep", true, "prepend {root}/Godeps/_workspace to GOPATH")
 
 	godepGOPATH string
@@ -105,7 +105,7 @@ func checkImport(path, fromFile string) {
 
 	if pathHasPrefix(path, *rootPkg) {
 		// pkg is a
-		// sourcegraph.com/sourcegraph/sourcegraph/... package; we
+		// src.sourcegraph.com/sourcegraph/... package; we
 		// assume this is properly added the repo.
 		return
 	}

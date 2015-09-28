@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
 )
 
 const kEllipsis = "…"

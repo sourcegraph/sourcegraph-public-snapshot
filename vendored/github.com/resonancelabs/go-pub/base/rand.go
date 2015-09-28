@@ -3,7 +3,7 @@ package base
 import (
 	"math/rand"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
 )
 
 var gRandomFloat64Pool []float64

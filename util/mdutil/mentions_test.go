@@ -13,7 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/mdutil"
+	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
 func TestMentions(t *testing.T) {

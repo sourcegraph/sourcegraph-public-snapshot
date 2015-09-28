@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/store/testsuite"
 
 	"golang.org/x/net/context"
 )

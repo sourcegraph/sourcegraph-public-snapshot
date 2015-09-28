@@ -13,16 +13,16 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
-	appauthutil "sourcegraph.com/sourcegraph/sourcegraph/app/internal/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/app/internal"
+	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
+	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // TODO(public-release) This is a very WIP OAuth provider

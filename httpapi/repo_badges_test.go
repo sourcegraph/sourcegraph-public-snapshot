@@ -7,8 +7,8 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	apirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
 	"sourcegraph.com/sqs/pbtypes"
+	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 )
 
 func TestRepoBadge(t *testing.T) {

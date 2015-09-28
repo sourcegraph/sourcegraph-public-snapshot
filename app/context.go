@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 type contextKey int

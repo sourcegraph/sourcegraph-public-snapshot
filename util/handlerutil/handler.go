@@ -14,8 +14,8 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
 	"github.com/gorilla/schema"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/httpwrapper"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/httpwrapper"
 
 	"code.google.com/p/rog-go/parallel"
 
@@ -26,11 +26,11 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
+	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
 var (

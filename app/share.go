@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/ui/payloads"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 func serveDefShare(w http.ResponseWriter, r *http.Request) error {

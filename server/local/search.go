@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	searchpkg "sourcegraph.com/sourcegraph/sourcegraph/search"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	searchpkg "src.sourcegraph.com/sourcegraph/search"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 var Search sourcegraph.SearchServer = &search{}

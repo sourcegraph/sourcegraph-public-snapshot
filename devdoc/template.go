@@ -10,7 +10,7 @@ import (
 	"reflect"
 
 	"github.com/sourcegraph/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/devdoc/tmpl"
+	"src.sourcegraph.com/sourcegraph/devdoc/tmpl"
 )
 
 var (

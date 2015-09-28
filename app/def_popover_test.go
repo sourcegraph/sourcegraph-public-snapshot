@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
+	"src.sourcegraph.com/sourcegraph/app/router"
 )
 
 func TestDefPopover(t *testing.T) {

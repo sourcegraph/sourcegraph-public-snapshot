@@ -9,10 +9,10 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	searchpkg "sourcegraph.com/sourcegraph/sourcegraph/search"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	searchpkg "src.sourcegraph.com/sourcegraph/search"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 var Units sourcegraph.UnitsServer = &units{}

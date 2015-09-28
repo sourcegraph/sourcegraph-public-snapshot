@@ -12,9 +12,9 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/server/serverctx"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // Flags exposes CLI flags to the sgx program that configure which store implementation to use for each interface.

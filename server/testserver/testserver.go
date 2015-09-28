@@ -24,18 +24,18 @@ import (
 
 	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/store/fs"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
-	storecli "sourcegraph.com/sourcegraph/sourcegraph/store/cli"
-	appdashcli "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
+	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
+	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/pkg/wellknown"
+	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
+	"src.sourcegraph.com/sourcegraph/sgx"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
+	storecli "src.sourcegraph.com/sourcegraph/store/cli"
+	appdashcli "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
 )
 
 var (
@@ -517,7 +517,7 @@ func bareEnvConfig() []string {
 // occurrence). Note that you should delete srclib-sample's .git and
 // testdata dirs and NOT check them into the sourcegraph repo.
 func getSRCLIBPATHWithSampleToolchain() (srclibpath string) {
-	p, err := build.Default.Import("sourcegraph.com/sourcegraph/sourcegraph/util/testutil", "", build.FindOnly)
+	p, err := build.Default.Import("src.sourcegraph.com/sourcegraph/util/testutil", "", build.FindOnly)
 	if err != nil {
 		log.Fatal("Couldn't find testutil package (while getting SRCLIBPATH for test app):", err)
 	}

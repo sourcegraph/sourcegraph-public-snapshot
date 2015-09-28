@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/conf"
 )
 
 const (

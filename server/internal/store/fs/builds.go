@@ -15,7 +15,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // Builds is a local FS-backed implementation of the Builds store. It stores

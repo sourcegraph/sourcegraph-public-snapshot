@@ -15,8 +15,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 )
 
 type contextKey int

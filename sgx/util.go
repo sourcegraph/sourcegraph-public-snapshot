@@ -9,9 +9,9 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 // cmdWithClientArgs prepends --endpoint, --grpc-endpoint, etc., and

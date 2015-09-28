@@ -2,8 +2,8 @@ package authzchecked
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // ExternalAuthTokens wraps base's methods with authorization checks.

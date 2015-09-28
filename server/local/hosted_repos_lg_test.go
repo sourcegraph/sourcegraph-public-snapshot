@@ -5,10 +5,10 @@ package local_test
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/server/testserver"
+	"src.sourcegraph.com/sourcegraph/util/httptestutil"
+	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
 var httpClient = &httptestutil.Client{}

@@ -5,8 +5,8 @@ import (
 	"net/url"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc/middleware/remote"
+	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
 
 	"golang.org/x/net/context"
 )

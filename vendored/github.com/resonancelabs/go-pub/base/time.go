@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
 )
 
 // We use "Micros" to represent timestamps. The units are microseconds since

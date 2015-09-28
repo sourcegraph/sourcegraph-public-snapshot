@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb"
-	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/gitserver/router"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
+	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 
 	"github.com/sourcegraph/mux"
 )

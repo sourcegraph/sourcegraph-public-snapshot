@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
 )
 
 // LogBuilder is a mechanism for constructing LogRecords. Each of its

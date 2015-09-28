@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"src.sourcegraph.com/sourcegraph/store/mockstore"
 )
 
 func TestUnitsService_Get(t *testing.T) {

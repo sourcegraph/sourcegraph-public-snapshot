@@ -25,8 +25,8 @@ RUN mkdir -p $SGPATH/repos/github.com/gorilla/mux \
     && git clone https://github.com/gorilla/mux $SGPATH/repos/github.com/gorilla/mux
 
 # Install src
-ADD . /sg/src/sourcegraph.com/sourcegraph/sourcegraph
-WORKDIR /sg/src/sourcegraph.com/sourcegraph/sourcegraph
+ADD . /sg/src/src.sourcegraph.com/sourcegraph
+WORKDIR /sg/src/src.sourcegraph.com/sourcegraph
 RUN make dist PACKAGEFLAGS="--os linux" && mv release/snapshot/linux-amd64 $GOBIN/src
 
 # Trust our internal CA

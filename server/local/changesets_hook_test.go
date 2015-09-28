@@ -14,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // TestChangesetHook_couldAffectChangesets tests if a list of events is correctly

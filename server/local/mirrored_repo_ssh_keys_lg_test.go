@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"src.sourcegraph.com/sourcegraph/server/testserver"
 )
 
 func TestMirroredRepoSSHKeys_lg(t *testing.T) {

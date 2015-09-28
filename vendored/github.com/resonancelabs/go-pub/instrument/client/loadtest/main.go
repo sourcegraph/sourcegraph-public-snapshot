@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/client"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/client"
 )
 
 func spazzOut(numSpanClasses int, sleepMean, sleepStddev base.Micros, payloadFieldsMean, payloadFieldsStddev, messageLenMean, messageLenStddev int) {

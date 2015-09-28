@@ -15,8 +15,8 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
+	"src.sourcegraph.com/sourcegraph/pkg/wellknown"
+	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
 
 func init() {

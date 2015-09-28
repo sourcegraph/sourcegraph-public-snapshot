@@ -15,10 +15,10 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sourcegraph/httpcache"
 	"github.com/sourcegraph/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
+	"src.sourcegraph.com/sourcegraph/app/internal"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil"
 )
 
 const (

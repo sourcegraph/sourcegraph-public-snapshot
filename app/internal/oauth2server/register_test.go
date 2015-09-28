@@ -9,9 +9,9 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
+	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 )
 
 func TestServeRegisterClient(t *testing.T) {

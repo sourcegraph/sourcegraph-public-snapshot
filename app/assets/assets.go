@@ -22,7 +22,7 @@ func defaultBase(path string) string {
 
 // Assets is a virtual filesystem that contains static files served by Sourcegraph app.
 var Assets = filter.NewIgnore(
-	http.Dir(defaultBase("sourcegraph.com/sourcegraph/sourcegraph/app/assets")),
+	http.Dir(defaultBase("src.sourcegraph.com/sourcegraph/app/assets")),
 	func(fi os.FileInfo, _ string) bool {
 		return fi.IsDir() == false && (pathpkg.Ext(fi.Name()) == ".go" || pathpkg.Ext(fi.Name()) == ".html")
 	},

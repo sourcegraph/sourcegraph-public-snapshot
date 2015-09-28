@@ -10,11 +10,11 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx"
-	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
+	"src.sourcegraph.com/sourcegraph/server/serverctx"
+	"src.sourcegraph.com/sourcegraph/sgx"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
 )
 
 // initClient is called by the appdash_server.go server init func to

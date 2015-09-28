@@ -2,7 +2,7 @@ package auth
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 )
 
 type key int

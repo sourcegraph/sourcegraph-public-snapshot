@@ -13,8 +13,8 @@ import (
 
 	"github.com/sourcegraph/mux"
 	netctx "golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform/pctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform/putil"
+	"src.sourcegraph.com/sourcegraph/platform/pctx"
+	"src.sourcegraph.com/sourcegraph/platform/putil"
 )
 
 func unmarshalIssueSpec(r *http.Request) IssueSpec {

@@ -2,9 +2,9 @@ package httpapi
 
 import (
 	"github.com/sourcegraph/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/notif"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
+	"src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/util/httptestutil"
 )
 
 func init() {

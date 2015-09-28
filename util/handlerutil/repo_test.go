@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app"
+	"src.sourcegraph.com/sourcegraph/app"
 )
 
 // Tests that when the URL contains no revision and a build exists, the newest build's commit ID is used.

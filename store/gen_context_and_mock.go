@@ -18,7 +18,7 @@ import (
 	"sort"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/gen"
+	"src.sourcegraph.com/sourcegraph/gen"
 )
 
 var (
@@ -242,7 +242,7 @@ func writeMockStores(ifaces []*ast.TypeSpec, outPkgName string) ([]byte, error) 
 	fmt.Fprintln(&w)
 	fmt.Fprintln(&w, "import (")
 	fmt.Fprint(&w, "\t", `srcstore "sourcegraph.com/sourcegraph/srclib/store"`, "\n")
-	fmt.Fprint(&w, "\t", `"sourcegraph.com/sourcegraph/sourcegraph/store"`, "\n")
+	fmt.Fprint(&w, "\t", `"src.sourcegraph.com/sourcegraph/store"`, "\n")
 	fmt.Fprintln(&w, ")")
 	fmt.Fprintln(&w)
 

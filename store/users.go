@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth"
 )
 
 // Users defines the interface for getting and listing users and their

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
+	"src.sourcegraph.com/sourcegraph/store/mockstore"
 
 	"golang.org/x/net/context"
 )

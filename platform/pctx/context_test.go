@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/app/router"
 )
 
 // Test_repoFrameBaseURI tests that RepoFrameBaseURI returns the correct URL

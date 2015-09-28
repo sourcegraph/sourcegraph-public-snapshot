@@ -3,8 +3,8 @@ package sgx
 import (
 	"log"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 func init() {

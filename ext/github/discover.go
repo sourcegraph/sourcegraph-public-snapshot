@@ -8,12 +8,12 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed/discover"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/local"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc/middleware/remote"
+	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/server/local"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
 )
 
 func init() {

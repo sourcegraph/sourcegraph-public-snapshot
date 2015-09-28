@@ -1,6 +1,6 @@
 package github
 
-import "sourcegraph.com/sourcegraph/sourcegraph/store"
+import "src.sourcegraph.com/sourcegraph/store"
 
 // RepoOrigin is an implementation of the RepoOrigin store for
 // mirrored repos whose external origin is GitHub.

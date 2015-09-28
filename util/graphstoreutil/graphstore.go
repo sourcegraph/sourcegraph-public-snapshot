@@ -14,8 +14,8 @@ import (
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"sourcegraph.com/sourcegraph/rwvfs/cloudstoragevfs"
 	"sourcegraph.com/sourcegraph/s3vfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/srclib/store"
+	"src.sourcegraph.com/sourcegraph/util/httputil"
 )
 
 var keepAliveTransport = &http.Transport{

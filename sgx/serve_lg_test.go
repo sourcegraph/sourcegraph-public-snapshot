@@ -10,13 +10,13 @@ import (
 	"os"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/server/testserver"
 
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/conf"
 )
 
 // Test that spawning one server works (the simple case).

@@ -7,8 +7,8 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/util"
 )
 
 const (

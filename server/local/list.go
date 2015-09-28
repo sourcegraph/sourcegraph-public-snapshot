@@ -12,7 +12,7 @@
 package local
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // Services contains all services implemented in this package.

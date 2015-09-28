@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"sourcegraph.com/sourcegraph/go-flags"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func init() {

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base/imath"
 
 	"gopkg.in/check.v1"
 )

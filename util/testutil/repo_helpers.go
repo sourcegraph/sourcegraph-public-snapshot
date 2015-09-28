@@ -18,7 +18,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	storecli "sourcegraph.com/sourcegraph/sourcegraph/store/cli"
+	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 )
 
 func EnsureRepoExists(t *testing.T, ctx context.Context, repoURI string) {

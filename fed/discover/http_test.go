@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
+	"src.sourcegraph.com/sourcegraph/pkg/wellknown"
 
 	"golang.org/x/net/context"
 )

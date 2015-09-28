@@ -3,7 +3,7 @@ package federated
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // The Builds.List function has a custom federated implementation because it is currently

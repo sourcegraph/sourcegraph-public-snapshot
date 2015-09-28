@@ -5,7 +5,7 @@ package main
 import (
 	"text/template"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/gen"
+	"src.sourcegraph.com/sourcegraph/gen"
 )
 
 func main() {
@@ -34,7 +34,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/conf"
 )
 
 var (

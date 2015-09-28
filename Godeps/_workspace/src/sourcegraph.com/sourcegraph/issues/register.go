@@ -1,6 +1,6 @@
 package issues
 
-import "sourcegraph.com/sourcegraph/sourcegraph/platform"
+import "src.sourcegraph.com/sourcegraph/platform"
 
 func init() {
 	platform.RegisterFrame(platform.RepoFrame{

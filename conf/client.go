@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/fed/discover"
 )
 
 // EndpointOpts sets the URLs to use for contacting the Sourcegraph

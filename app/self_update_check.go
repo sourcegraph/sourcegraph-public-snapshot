@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/appconf"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
+	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 // Stores the latest available update version string (or an empty string if

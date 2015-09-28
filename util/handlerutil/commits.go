@@ -6,8 +6,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/ui/payloads"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // AugmentCommit fills in fields on this package's commit type for

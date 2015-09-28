@@ -5,14 +5,14 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/client/pkg/oauth2client"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed/discover"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc/middleware/remote"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
+	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
 )
 
 func CustomAuthGetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRequest, s sourcegraph.AuthServer) (*sourcegraph.AccessTokenResponse, error) {

@@ -9,9 +9,9 @@ import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/spec"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/appconf"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/gitserver/router"
+	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
 )
 
 const (

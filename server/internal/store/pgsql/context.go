@@ -3,7 +3,7 @@ package pgsql
 import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
 type contextKey int

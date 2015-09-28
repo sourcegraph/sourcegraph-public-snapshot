@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
-	"sourcegraph.com/sourcegraph/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/ext/slack"
+	"src.sourcegraph.com/sourcegraph/notif"
 )
 
 func serveBetaSignup(w http.ResponseWriter, r *http.Request) error {

@@ -1,7 +1,7 @@
 package context
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
 
 	"golang.org/x/net/context"
 )

@@ -3,7 +3,7 @@ machine:
     - docker
     - postgresql
   environment:
-    REPO: ../.go_workspace/src/sourcegraph.com/sourcegraph/sourcegraph
+    REPO: ../.go_workspace/src/src.sourcegraph.com/sourcegraph
     CGO_ENABLED: 0
     PGUSER: ubuntu
     PGDATABASE: circle_test
@@ -53,7 +53,7 @@ dependencies:
 
 test:
   override:
-    - godep go install -v sourcegraph.com/sourcegraph/sourcegraph/...
+    - godep go install -v src.sourcegraph.com/sourcegraph/...
     - npm run dep:
         pwd: $REPO/app
     - npm test:

@@ -106,9 +106,9 @@ needs to install into your `$PATH`.
 ```bash
 mkdir -p $GOPATH/src/sourcegraph.com/sourcegraph
 cd $GOPATH/src/sourcegraph.com/sourcegraph
-git clone https://USER:PASSWORD@src.sourcegraph.com/sourcegraph.com/sourcegraph/sourcegraph
+git clone https://USER:PASSWORD@src.sourcegraph.com/sourcegraph
 
-cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
+cd $GOPATH/src/src.sourcegraph.com/sourcegraph
 make install
 
 # Check that "src" was installed:

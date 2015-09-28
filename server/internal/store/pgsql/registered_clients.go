@@ -10,9 +10,9 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/store/pgsql/dbtypes"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
+	"src.sourcegraph.com/sourcegraph/server/internal/store/pgsql/dbtypes"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
 
 func init() {

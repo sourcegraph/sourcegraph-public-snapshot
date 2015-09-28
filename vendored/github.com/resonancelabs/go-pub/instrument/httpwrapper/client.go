@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
 )
 
 type ClientConfig struct {

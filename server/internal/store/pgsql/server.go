@@ -2,8 +2,8 @@ package pgsql
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	storecli "sourcegraph.com/sourcegraph/sourcegraph/store/cli"
+	"src.sourcegraph.com/sourcegraph/server/serverctx"
+	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 )
 
 func init() {

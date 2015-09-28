@@ -1,8 +1,7 @@
 # Development README (WIP)
 
 The best way to become familiar with the Sourcegraph repository is by
-reading the code at
-https://src.sourcegraph.com/sourcegraph.com/sourcegraph/sourcegraph.
+reading the code at https://src.sourcegraph.com/sourcegraph.
 
 
 ## Code standards

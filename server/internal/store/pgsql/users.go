@@ -8,7 +8,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func init() {

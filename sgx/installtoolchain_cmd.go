@@ -1,8 +1,8 @@
 package sgx
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func init() {

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
+	"src.sourcegraph.com/sourcegraph/app/router"
 )
 
 func TestBuilds(t *testing.T) {

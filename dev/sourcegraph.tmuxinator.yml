@@ -13,7 +13,7 @@
 # * Add to Makefile
 
 name: sourcegraph
-root: ~/src/sourcegraph.com/sourcegraph/sourcegraph
+root: ~/src/src.sourcegraph.com/sourcegraph
 
 pre: sudo launchctl limit maxfiles 16384 && ulimit -n 16384
 

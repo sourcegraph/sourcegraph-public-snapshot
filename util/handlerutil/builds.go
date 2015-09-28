@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/buildutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/util/buildutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // RepoBuildCommon holds all of the commit-specific information

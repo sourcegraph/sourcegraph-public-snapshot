@@ -9,7 +9,7 @@ import (
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
-	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	approuter "src.sourcegraph.com/sourcegraph/app/router"
 )
 
 type contextKey int

@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/rwvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 var tmpBuildStore = filepath.Join(os.TempDir(), "fs.builds.tests")

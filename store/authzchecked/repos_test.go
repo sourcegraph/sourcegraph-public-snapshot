@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth"
 )
 
 type mockRepoChecker struct {

@@ -12,9 +12,9 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httptestutil"
 )
 
 // serviceMocker holds the Sourcegraph API client and enriches payloads with

@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/testsuite"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/jsonutil"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
 
 func TestBuilds_Get(t *testing.T) {

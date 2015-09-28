@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/ext/slack"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // Repo config hooks are actions that are performed when a

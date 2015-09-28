@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/dev/release"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
+	"src.sourcegraph.com/sourcegraph/dev/release"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 func init() {

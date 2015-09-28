@@ -11,7 +11,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // Session is the information stored in a session cookie.

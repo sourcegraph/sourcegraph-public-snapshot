@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func init() {

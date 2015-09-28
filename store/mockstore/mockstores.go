@@ -12,8 +12,8 @@
 package mockstore
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // Stores has a field for each store interface with the concrete mock type (to obviate the need for tedious type assertions in test code).

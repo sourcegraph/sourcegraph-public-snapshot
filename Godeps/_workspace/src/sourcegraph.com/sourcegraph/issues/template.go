@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/issues/assets"
 	"sourcegraph.com/sourcegraph/issues/markdown"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform/putil"
+	"src.sourcegraph.com/sourcegraph/platform/putil"
 )
 
 var fmap = map[string]interface{}{

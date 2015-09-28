@@ -8,9 +8,9 @@ import (
 	"github.com/mattbaird/gochimp"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/notif"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/notif"
 
 	"golang.org/x/net/context"
 )

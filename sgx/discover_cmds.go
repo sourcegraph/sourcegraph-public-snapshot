@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed/discover"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func init() {

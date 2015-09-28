@@ -28,10 +28,10 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform/pctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/platform"
+	"src.sourcegraph.com/sourcegraph/platform/pctx"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {

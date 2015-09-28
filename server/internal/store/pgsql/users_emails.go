@@ -4,7 +4,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
+	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
 
 type userEmailAddrRow struct {

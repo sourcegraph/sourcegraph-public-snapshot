@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
+	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
 )
 
 // Recorder creates a new appdash Recorder for an existing span.

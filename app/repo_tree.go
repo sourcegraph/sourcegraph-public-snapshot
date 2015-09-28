@@ -11,14 +11,14 @@ import (
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/doc"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/doc"
+	"src.sourcegraph.com/sourcegraph/ui/payloads"
+	"src.sourcegraph.com/sourcegraph/util/cacheutil"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // repoTreeTemplate holds data necessary to populate the repository tree templates

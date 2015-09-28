@@ -13,8 +13,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil"
+	"src.sourcegraph.com/sourcegraph/util/traceutil"
 
 	"github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/httpcache"

@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
+	"src.sourcegraph.com/sourcegraph/store/mockstore"
 )
 
 func TestBuildLogs_Get(t *testing.T) {

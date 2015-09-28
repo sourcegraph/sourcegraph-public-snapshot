@@ -31,8 +31,8 @@ func init() {
 }
 
 var Overrides = map[string]*Repository{
-	"sourcegraph.com/sourcegraph/sourcegraph": {
-		URI: "sourcegraph.com/sourcegraph/sourcegraph",
+	"src.sourcegraph.com/sourcegraph": {
+		URI: "src.sourcegraph.com/sourcegraph",
 		Tree: Tree{
 			SkipDirs: []string{"app/node_modules", "app/bower_components"},
 			SkipUnits: []struct{ Name, Type string }{

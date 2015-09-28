@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
 )
 
 // (An arbitrary function)

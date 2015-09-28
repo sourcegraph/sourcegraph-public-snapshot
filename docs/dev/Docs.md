@@ -7,7 +7,7 @@ All packages and exported identifiers should be documented.
 To measure documentation coverage, run:
 
 ```
-go install sourcegraph.com/sourcegraph/sourcegraph/dev/doccover
+go install src.sourcegraph.com/sourcegraph/dev/doccover
 doccover ./...
 ```
 

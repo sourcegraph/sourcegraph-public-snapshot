@@ -7,9 +7,9 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/randstring"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/dbutil"
+	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
 func init() {

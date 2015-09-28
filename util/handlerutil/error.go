@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/errcode"
 )
 
 type HTTPErr struct {

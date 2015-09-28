@@ -8,7 +8,7 @@ package notif
 import (
 	"github.com/mattbaird/gochimp"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
+	"src.sourcegraph.com/sourcegraph/ext/slack"
 )
 
 // MustBeDisabled panics if sending notifications is enabled.

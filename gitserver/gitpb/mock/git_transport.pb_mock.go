@@ -5,7 +5,7 @@ package mock
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 )
 
 type GitTransportClient struct {

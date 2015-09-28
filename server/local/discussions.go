@@ -7,13 +7,13 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
-	"sourcegraph.com/sourcegraph/sourcegraph/notif"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/mdutil"
 	"sourcegraph.com/sqs/pbtypes"
+	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/ext/slack"
+	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
 // TODO(keegan) temporary override to make discussions more discoverable

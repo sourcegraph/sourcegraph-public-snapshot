@@ -11,7 +11,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/fed"
 )
 
 var numReposGauge = prometheus.NewGauge(stdprometheus.GaugeOpts{

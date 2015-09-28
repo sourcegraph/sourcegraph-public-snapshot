@@ -8,9 +8,9 @@ import (
 	"code.google.com/p/rog-go/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func (s *deltas) ListUnits(ctx context.Context, op *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error) {

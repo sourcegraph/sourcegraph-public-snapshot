@@ -6,9 +6,9 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed"
-	"sourcegraph.com/sourcegraph/sourcegraph/fed/discover"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func TestDiscoverRepoLocal_found(t *testing.T) {
@@ -20,7 +20,7 @@ func TestDiscoverRepoLocal_found(t *testing.T) {
 	}()
 
 	fed.Config.IsRoot = true
-	
+
 	info, err := discover.Repo(context.Background(), "github.com/o/r")
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +50,7 @@ func TestDiscoverRepoRemote_found(t *testing.T) {
 
 	fed.Config.IsRoot = false
 	fed.Config.RootGRPCURLStr = "https://demo-mothership:13100"
-	
+
 	info, err := discover.Repo(context.Background(), "github.com/o/r")
 	if err != nil {
 		t.Fatal(err)

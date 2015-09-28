@@ -13,8 +13,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"sourcegraph.com/sourcegraph/prototools/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/devdoc/assets"
-	tmplassets "sourcegraph.com/sourcegraph/sourcegraph/devdoc/tmpl"
+	"src.sourcegraph.com/sourcegraph/devdoc/assets"
+	tmplassets "src.sourcegraph.com/sourcegraph/devdoc/tmpl"
 )
 
 // cacheController wraps the given HTTP handler and sets the Cache-Control

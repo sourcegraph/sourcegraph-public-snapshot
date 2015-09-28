@@ -5,7 +5,7 @@ package pgsql
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 func TestPasswords_CheckUIDPassword_valid(t *testing.T) {

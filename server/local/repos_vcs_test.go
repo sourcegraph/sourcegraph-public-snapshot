@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	vcstest "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
-	localcli "sourcegraph.com/sourcegraph/sourcegraph/server/local/cli"
+	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 )
 
 type listCommitsTest struct {

@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/csp"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
-	apirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/conf"
+	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
+	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 
 	"github.com/gorilla/schema"
 	"github.com/sourcegraph/mux"

@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sqs/pbtypes"
+	appauth "src.sourcegraph.com/sourcegraph/app/auth"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // This file contains getters and middleware setters for data that

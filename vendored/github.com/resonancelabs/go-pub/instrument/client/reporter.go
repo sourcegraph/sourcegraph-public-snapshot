@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/crouton_thrift"
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/thrift_0_9_2/lib/go/thrift"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/crouton_thrift"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/thrift_0_9_2/lib/go/thrift"
 
 	"github.com/golang/glog"
 )

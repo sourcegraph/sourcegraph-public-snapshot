@@ -182,7 +182,7 @@ note: git diff reports:
 
 	var ldflags []string
 	for name, val := range buildvars {
-		ldflags = append(ldflags, fmt.Sprintf("-X sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar.%s %q", name, val))
+		ldflags = append(ldflags, fmt.Sprintf("-X src.sourcegraph.com/sourcegraph/sgx/buildvar.%s %q", name, val))
 	}
 
 	// main ldflags

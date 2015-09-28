@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
+	"src.sourcegraph.com/sourcegraph/server/testserver"
+	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
 func TestBuildRepo_serverside_github_lg(t *testing.T) {

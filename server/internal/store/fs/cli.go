@@ -8,12 +8,12 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/cli"
+	"src.sourcegraph.com/sourcegraph/server/serverctx"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store/cli"
 
-	_ "sourcegraph.com/sourcegraph/sourcegraph/sgx"
+	_ "src.sourcegraph.com/sourcegraph/sgx"
 )
 
 var Stores = store.Stores{

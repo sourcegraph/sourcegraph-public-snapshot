@@ -9,9 +9,9 @@ import (
 
 	"github.com/sqs/modl"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/store/pgsql"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testdb"
+	"src.sourcegraph.com/sourcegraph/server/internal/store/pgsql"
+	"src.sourcegraph.com/sourcegraph/util/dbutil2"
+	"src.sourcegraph.com/sourcegraph/util/testdb"
 )
 
 // dbConfig is embedded in TestServer.

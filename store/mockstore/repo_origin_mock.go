@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 type RepoOrigin struct {

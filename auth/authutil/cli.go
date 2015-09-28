@@ -5,7 +5,7 @@ import (
 
 	"strings"
 
-	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func init() {

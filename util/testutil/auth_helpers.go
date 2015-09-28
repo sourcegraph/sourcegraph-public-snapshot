@@ -4,8 +4,8 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 )
 
 // AddSystemAuthToURL adds credentials to urlStr (which is assumed to

@@ -7,12 +7,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	searchpkg "sourcegraph.com/sourcegraph/sourcegraph/search"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/htmlutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
+	searchpkg "src.sourcegraph.com/sourcegraph/search"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/htmlutil"
 )
 
 var Defs sourcegraph.DefsServer = &defs{}

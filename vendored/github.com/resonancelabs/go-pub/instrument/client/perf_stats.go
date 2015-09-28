@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/base"
 )
 
 var (

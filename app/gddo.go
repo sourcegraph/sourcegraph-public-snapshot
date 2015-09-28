@@ -5,8 +5,8 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"src.sourcegraph.com/sourcegraph/app/router"
 )
 
 func serveGDDORefs(w http.ResponseWriter, r *http.Request) error {

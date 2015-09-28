@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // Users is a GitHub-backed implementation of the Users store.

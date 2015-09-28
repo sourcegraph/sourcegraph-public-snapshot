@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"reflect"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/schema"

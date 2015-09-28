@@ -11,8 +11,8 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 
 func pluralizeWord(noun string, n int) string {

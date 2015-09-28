@@ -8,10 +8,10 @@ package cmd
 
 import (
 	// Import this package for the side effect of registering cli flags.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/server/local/cli"
+	_ "src.sourcegraph.com/sourcegraph/server/local/cli"
 
 	// Import these packages for their side effects of registering
 	// stores.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/server/internal/store/fs"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/server/internal/store/pgsql"
+	_ "src.sourcegraph.com/sourcegraph/server/internal/store/fs"
+	_ "src.sourcegraph.com/sourcegraph/server/internal/store/pgsql"
 )

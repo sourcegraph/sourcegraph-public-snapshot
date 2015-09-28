@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

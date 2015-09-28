@@ -3,7 +3,7 @@ package fs
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 func TestAuthorizations_CreateAuthCode_MarkExchanged_ok(t *testing.T) {

@@ -16,9 +16,9 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
 	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/hgcmd"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
+	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/util"
 )
 
 func init() {

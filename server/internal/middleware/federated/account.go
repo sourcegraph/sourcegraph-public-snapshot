@@ -3,8 +3,8 @@ package federated
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func CustomAccountsUpdate(ctx context.Context, in *sourcegraph.User, s sourcegraph.AccountsServer) (*pbtypes.Void, error) {

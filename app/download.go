@@ -6,9 +6,9 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/dev/release"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/dev/release"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 var downloadBaseURL = "https://" + release.S3Bucket + ".s3.amazonaws.com/" + sgxcmd.Name + "/"

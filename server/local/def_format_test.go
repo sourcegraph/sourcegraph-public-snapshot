@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil/srclibtest"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"src.sourcegraph.com/sourcegraph/util/testutil/srclibtest"
 )
 
 func TestPopulateDefFormatStrings(t *testing.T) {

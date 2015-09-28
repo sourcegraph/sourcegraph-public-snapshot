@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 // CreateUserFunc is used by Users_Get_* tests to create test users.

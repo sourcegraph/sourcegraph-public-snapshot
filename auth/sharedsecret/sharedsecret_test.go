@@ -3,7 +3,7 @@ package sharedsecret
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 )
 
 func TestToken(t *testing.T) {

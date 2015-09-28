@@ -8,8 +8,8 @@ import (
 
 	// Load in toolchain formatters.
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/srclib_support"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	_ "src.sourcegraph.com/sourcegraph/srclib_support"
 )
 
 var initOnce sync.Once

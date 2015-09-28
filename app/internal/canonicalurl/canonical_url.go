@@ -5,7 +5,7 @@ package canonicalurl
 import (
 	"net/url"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
+	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 )
 
 // nonCanonicalQueryParams are query parameters that do not affect

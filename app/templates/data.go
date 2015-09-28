@@ -22,7 +22,7 @@ func defaultBase(path string) string {
 
 // Data is a virtual filesystem that contains template data used by Sourcegraph app.
 var Data = filter.NewIgnore(
-	http.Dir(defaultBase("sourcegraph.com/sourcegraph/sourcegraph/app/templates")),
+	http.Dir(defaultBase("src.sourcegraph.com/sourcegraph/app/templates")),
 	func(fi os.FileInfo, _ string) bool {
 		return fi.IsDir() == false && pathpkg.Ext(fi.Name()) == ".go"
 	},

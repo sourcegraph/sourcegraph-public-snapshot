@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	appauth "src.sourcegraph.com/sourcegraph/app/auth"
+	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 var (

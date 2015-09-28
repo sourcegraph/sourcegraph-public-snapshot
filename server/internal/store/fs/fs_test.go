@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/conf"
 
 	"golang.org/x/net/context"
 )

@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/sqs/go-selfupdate/selfupdate"
-	"sourcegraph.com/sourcegraph/sourcegraph/dev/release"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
+	"src.sourcegraph.com/sourcegraph/dev/release"
+	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
 
 var (

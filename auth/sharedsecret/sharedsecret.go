@@ -11,9 +11,9 @@ import (
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 )
 
 // TokenSource returns an OAuth2 token source that produces temporary,

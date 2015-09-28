@@ -11,10 +11,10 @@ import (
 	"code.google.com/p/rog-go/parallel"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/buildutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/textutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/util/buildutil"
+	"src.sourcegraph.com/sourcegraph/util/textutil"
+	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 
 func init() {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 func TestRepos_Get_existing(t *testing.T) {

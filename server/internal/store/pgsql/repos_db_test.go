@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/testsuite"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/jsonutil"
+	"src.sourcegraph.com/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
 
 func preCreateRepo(repo *sourcegraph.Repo) *sourcegraph.Repo {

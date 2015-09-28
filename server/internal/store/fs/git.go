@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
+	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"

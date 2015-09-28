@@ -3,10 +3,10 @@ package local
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
-	gitmock "sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb/mock"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	gitmock "src.sourcegraph.com/sourcegraph/gitserver/gitpb/mock"
+	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/store/mockstore"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // testContext creates a new context.Context for use by tests that has

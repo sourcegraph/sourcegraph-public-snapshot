@@ -21,13 +21,13 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/buildutil"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
+	"src.sourcegraph.com/sourcegraph/util/buildutil"
 )
 
 func init() {

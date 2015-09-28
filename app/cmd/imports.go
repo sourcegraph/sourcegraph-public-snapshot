@@ -9,8 +9,8 @@ package cmd
 import (
 	// Import these packages for their side effects of registering
 	// route handlers.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/localauth"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/oauth2client"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/oauth2server"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/static"
+	_ "src.sourcegraph.com/sourcegraph/app/internal/localauth"
+	_ "src.sourcegraph.com/sourcegraph/app/internal/oauth2client"
+	_ "src.sourcegraph.com/sourcegraph/app/internal/oauth2server"
+	_ "src.sourcegraph.com/sourcegraph/app/internal/static"
 )

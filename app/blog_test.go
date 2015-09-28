@@ -8,9 +8,9 @@ package app_test
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/appconf"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
+	"src.sourcegraph.com/sourcegraph/app/router"
 )
 
 // Use real data because this is currently not easy to mock.

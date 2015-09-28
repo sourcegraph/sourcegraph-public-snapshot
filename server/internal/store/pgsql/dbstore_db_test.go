@@ -4,7 +4,7 @@ package pgsql
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testdb"
+	"src.sourcegraph.com/sourcegraph/util/testdb"
 )
 
 // testContext constructs a new context that holds a temporary test DB

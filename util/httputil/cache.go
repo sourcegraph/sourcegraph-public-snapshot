@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/loggedcache"
 	"sourcegraph.com/sourcegraph/multicache"
 	"sourcegraph.com/sourcegraph/s3cache"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/fileutil"
+	"src.sourcegraph.com/sourcegraph/util/fileutil"
 )
 
 // httpCacheDir is the directory used for caching HTTP responses. It can be reused

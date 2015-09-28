@@ -10,9 +10,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
+	"src.sourcegraph.com/sourcegraph/sgx"
+	"src.sourcegraph.com/sourcegraph/util/httputil"
+	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
 func init() {

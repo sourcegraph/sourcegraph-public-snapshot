@@ -6,7 +6,7 @@ import (
 	"go/ast"
 	"text/template"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/gen"
+	"src.sourcegraph.com/sourcegraph/gen"
 )
 
 func main() {
@@ -105,11 +105,11 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/gitserver/gitpb"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/federated"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/trace"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/federated"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/trace"
+	"src.sourcegraph.com/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"

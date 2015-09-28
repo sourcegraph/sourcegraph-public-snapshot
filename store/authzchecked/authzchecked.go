@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth"
 
 	"golang.org/x/net/context"
 )

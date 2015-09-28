@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/devdoc"
+	"src.sourcegraph.com/sourcegraph/devdoc"
 )
 
 var port = flag.String("http", ":9999", "port on which to serve")

@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-flags"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 var CLI = flags.NewNamedParser(sgxcmd.Name, flags.PrintErrors|flags.PassDoubleDash)

@@ -13,7 +13,7 @@ package cached
 
 import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // Wrap wraps services with an implementation of each service that sets grpccache trailers after each method returns.
