@@ -133,7 +133,7 @@ compile-test:
 
 
 check: generate-dep
-	cd app && ./node_modules/.bin/eslint ./*.js script
+	cd app && ./node_modules/.bin/eslint script
 	cd app && ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
 	GOBIN=Godeps/_workspace/bin $(GODEP) go install sourcegraph.com/sourcegraph/go-template-lint && Godeps/_workspace/bin/go-template-lint -f app/tmpl_funcs.go,app/internal/godocsupport/template.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines

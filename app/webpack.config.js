@@ -37,7 +37,7 @@ module.exports = {
 		_goTemplates: allGoTemplates,
 	},
 	output: {
-		path: `${__dirname}/assets`,
+		path: __dirname+"/assets",
 		publicPath: "/assets",
 		filename: "[name].js",
 	},
@@ -46,14 +46,14 @@ module.exports = {
 		preLoaders: [
 			{
 				test:	/\.js$/,
-				exclude: [`${__dirname}/node_modules`, `${__dirname}/bower_components`],
+				exclude: [__dirname+"/node_modules", __dirname+"/bower_components"],
 				loader: "eslint-loader",
 			},
 			{
 				// TODO(slimsag): determine why this doesn't check each file. Travis
 				// will still, but this doesn't for some reason.
 				test: /(\.scss|\.html)$/,
-				exclude: [`${__dirname}/node_modules`, `${__dirname}/bower_components`],
+				exclude: [__dirname+"/node_modules", __dirname+"/bower_components"],
 				loader: "lintspaces-loader",
 			},
 		],
@@ -85,7 +85,7 @@ module.exports = {
 	resolve: {
 		modulesDirectories: ["node_modules", "bower_components"],
 		unsafeCache: true,
-		root: `${__dirname}/node_modules`,
+		root: __dirname+"/node_modules",
 	},
 
 	plugins: plugins,
