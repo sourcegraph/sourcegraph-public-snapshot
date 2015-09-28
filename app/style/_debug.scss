@@ -1,0 +1,20 @@
+#debug {
+	position: fixed;
+	bottom: 15px;
+	left: 0;
+	padding: 5px 8px;
+	background-color: #efefef;
+	font-size: 0.75em;
+	font-family: 'Monaco';
+	z-index: 99999;
+
+	.verbose {
+		display: none;
+	}
+}
+
+#debug:hover {
+	.verbose {
+		display: block;
+	}
+}

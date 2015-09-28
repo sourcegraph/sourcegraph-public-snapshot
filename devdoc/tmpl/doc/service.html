@@ -1,0 +1,62 @@
+{{template "common.html" .}}
+
+<style>
+	.doc h2>span>span {
+		vertical-align: middle;
+	}
+	.doc h2>span>span.types {
+		font-size: 60%;
+	}
+	.doc.httproute {
+		padding-bottom: 1em;
+	}
+</style>
+
+<div class="doc">
+	{{range $s := .Service}}
+		{{if eq $s.GetName $.Data.Service}}
+			<div class="doc services">
+				{{template "h1" $s.GetName}}
+
+				<p class="doc indent2">Service from the <a href="{{$.Ctx.BaseURL}}api/{{trimExt $.Name}}">{{$.Package}}</a> package</p>
+
+				{{template "CommentsParagraph" $s}}
+
+				<!-- TODO(slimsag): methods need permalinks -->
+
+				<div class="doc indent">
+					{{range $s.Method}}
+						<div id="{{$s.Name}}-{{.Name}}">
+							<a class="doc anchor" id="{{.Name}}"></a>
+							<h2 class="doc">
+								<span class="v-middle">
+									<span title="{{$s.Name}}.{{.Name}} method">{{.Name}}</span>
+									<span class="types">
+										(<a href="{{urlToType .InputType}}" title="method input type '{{cleanType .InputType}}'">{{cleanType .InputType}}</a>)
+										<a href="{{urlToType .OutputType}}" title="method output type '{{cleanType .OutputType}}'">{{cleanType .OutputType}}</a>
+									</span>
+								</span>
+							</h2>
+
+							<!--
+							{{$method := .}}
+							{{$h := gatewayMethod .}}
+							{{with $h}}
+								{{range .Bindings}}
+									<div class="doc indent2 httproute">
+										<strong><a href="{{$.Ctx.BaseURL}}api#restful">HTTP/1.1</a>:</strong> <code>{{.HTTPMethod}} {{gatewayPath .PathTmpl $method}}</code>
+									</div>
+								{{end}}
+							{{end}}
+							-->
+
+							<div class="doc indent" data-ref="ref-{{$s.Name}}-{{.Name}}">
+								{{template "CommentsParagraph" .}}
+							</div>
+						</div>
+					{{end}}
+				</div>
+			</div>
+		{{end}}
+	{{end}}
+</div>

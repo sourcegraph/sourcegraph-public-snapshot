@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <script src="jquery-1.4.2.js"></script>
+        <script src="jquery.hotkeys.js"></script>
+    </head>
+
+    <body>
+        <input type="button" id="bindCtrlS" value="bind ctrl+s" />
+        <input type="button" id="unBindCtrlS" value="unbind ctrl+s" />
+        <script>
+            function bindCtrlS(){
+                jQuery(document).bind('keydown', 'ctrl+s',function (evt){
+                    alert("Ctrl+S");
+                    return false;
+                });
+            }
+            
+            function unBindCtrlS(){
+                jQuery(document).unbind('keydown', 'ctrl+s');
+            }
+            
+            $(document).ready(function(){
+                $('#bindCtrlS').bind('click', bindCtrlS);
+                $('#unBindCtrlS').bind('click', unBindCtrlS);
+                }
+            );
+            
+        </script>
+    </body></html>

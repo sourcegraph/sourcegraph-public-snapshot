@@ -1,0 +1,28 @@
+{{define "Head"}}<title>Sourcegraph</title>
+{{end}}
+
+{{define "Body"}}
+<br/>
+<h3>Local repositories</h3>
+<div class="row">
+	<div class="col-md-12">
+		<div class="list-group">
+			{{range .Repos}}
+				<a class="list-group-item" href="{{urlToRepo .URI}}">
+					{{template "RepoIcon" .}}</span>&nbsp; {{template "RepoLabel" (repoLabelForOwner "" .URI)}}
+				</a>
+			{{end}}
+		</div>
+	</div>
+</div>
+<div class="row">
+	<div class="col-md-12">
+		{{if isLocalhost .RequestHost}}
+			<p>To link a local repository, run <code>$ SGPATH={{.SGPath}} src repo link &lt;repo-name&gt; -p &lt;path/to/repo&gt;</code> (Replace <code>&lt;repo-name&gt;</code> with the full import path of your repo, eg. <code>github.com/gorilla/mux</code>).</p>
+		{{end}}
+		{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
+			<p>Have private repositories on GitHub? You can add them on the <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">integrations page</a>.</p>
+		{{end}}
+	</div>
+</div>
+{{end}}

@@ -1,0 +1,37 @@
+.panel .panel-heading {
+	a { color: $text-color; }
+}
+
+.panel.panel-main {
+	.panel-heading {
+		font-size: $font-size-large;
+		font-weight: bold;
+		img.avatar {
+			width: 28px;
+			height: 28px;
+		}
+	}
+	ol.panel-body, ul.panel-body {
+		padding: 0;
+	}
+}
+
+.panel.panel-sidebar {
+	.panel-heading, .panel-body {
+		padding: $padding-small-vertical $padding-small-horizontal;
+	}
+	.panel-title {
+		color: $gray-light;
+		font-size: $font-size-base;
+		font-weight: bold;
+	}
+	.panel-body {
+		li > a:not(.btn) { color: $gray-light; }
+	}
+
+	img.avatar {
+		@include square(22px);
+		border-radius: $border-radius-small;
+	}
+
+}

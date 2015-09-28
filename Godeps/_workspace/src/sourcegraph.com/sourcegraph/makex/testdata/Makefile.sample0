@@ -1,0 +1,8 @@
+default: sample0/x0 sample0/x1
+
+sample0/x0: sample0/y
+sample0/x1: sample0/y
+
+sample0/y:
+	mkdir -p sample0
+	echo hello bar > sample0/y

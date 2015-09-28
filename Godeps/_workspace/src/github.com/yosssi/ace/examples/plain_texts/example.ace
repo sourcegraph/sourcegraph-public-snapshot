@@ -1,0 +1,17 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title Plain Texts
+  body
+    div
+      | This is a single line.
+    div
+      |
+        This is a
+        block line.
+    div
+      ||
+        This is a
+        block line
+        with BR tags.

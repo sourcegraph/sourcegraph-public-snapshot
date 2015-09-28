@@ -1,0 +1,243 @@
+var React = require("react/addons");
+var TestUtils = React.addons.TestUtils;
+var CodeFileView = require("../components/CodeFileView");
+var CodeLineView = require("../components/CodeLineView");
+var CodeTokenView = require("../components/CodeTokenView");
+var TokenPopupView = require("../components/TokenPopupView");
+var ContextMenu = require("../components/ContextMenu");
+var $ = require("jquery");
+$.support.cors = true;
+
+var SERVER_BASE_URL = "http://localhost:3000";
+
+describe("components/CodeFileView", function() {
+	var $, CodeFileView, React;
+
+	/*
+	 * @description nextRequestUses configures the consequent AJAX requests to
+	 * use settings necessary for integration tests. It sets all requests to use
+	 * POST, a special header and additionally attaches mock data for the back-end
+	 * service and API client.
+	 * @param {Object} mock - The JSON mock that will be matched against the service
+	 * and Sourcegraph API client return values. Please see the `mockPayload`
+	 * structure in ui/service_mocker.go for key/value pairs.
+	 */
+	function nextRequestUses(mock) {
+		$.ajaxSetup({
+			method: "POST",
+			headers: { "X-Mock-Response": "yes" },
+			beforeSend(xhr, settings) {
+				settings.url = SERVER_BASE_URL+settings.url;
+			},
+			data: JSON.stringify(mock),
+			processData: false
+		});
+	}
+
+	function setUpPopupResponse() {
+		nextRequestUses({
+			"Def": {
+				"Name": "ABC",
+				"Unit": "unit",
+				"UnitType": "GoPackage",
+				"Repo":     "url.to/repo",
+				"CommitID": "abcdefghijklmnopqrstuv"
+			},
+			"Examples": {
+				"Examples": [{
+					"DefRepo":     "github.com/gbbr/gomez",
+					"DefUnitType": "GoPackage",
+					"DefUnit":     "github.com/gbbr/gomez/smtp",
+					"DefPath":     "transaction",
+					"Repo":        "github.com/gbbr/gomez",
+					"CommitID":    "ab725e29f93c8450a8565327e06bb810e247d053",
+					"UnitType":    "GoPackage",
+					"Unit":        "github.com/gbbr/gomez/smtp",
+					"Def":         false,
+					"File":        "smtp/commands.go",
+					"SourceCode": {
+						"Lines": [
+							{
+								"StartByte": 0,
+								"EndByte": 150,
+								"Tokens": [
+									{
+										"Label": "space"
+									},
+									{
+										"Class": "pln",
+										"Label": "zxc"
+									},
+									{
+										"URL": ["/repo/path@revision/.unitType/path/to/def/.def/exampleRef"],
+										"IsDef": true,
+										"Class": "xxx",
+										"Label": "exampleRef"
+									}
+								]
+							}
+						]
+					}
+				}]
+			}
+		});
+	}
+
+	function setUpTwoLineResponse() {
+		nextRequestUses({
+			"TreeEntry": {
+				"SourceCode": {
+					"Lines": [
+						{
+							"StartByte": 0,
+							"EndByte": 150,
+							"Tokens": [
+								{
+									"Label": "space"
+								},
+								{
+									"Class": "pln",
+									"Label": "zxc"
+								},
+								{
+									"URL": ["/repo/path@revision/.unitType/path/to/def/.def/defName"],
+									"IsDef": true,
+									"Class": "iii",
+									"Label": "asd"
+								}
+							]
+						}, {
+							"StartByte": 151,
+							"EndByte": 300,
+							"Tokens": [
+								{
+									"URL": ["b"],
+									"IsDef": false,
+									"Class": "syn",
+									"Label": "qwe"
+								},
+								{
+									"URL": ["/repo/path@revision/.unitType/path/to/def/.def/exampleDefRef1", "/repo/path@revision/.unitType/path/to/def/.def/exampleDefRef2"],
+									"IsDef": false,
+									"Class": "multi-defs",
+									"Label": "multiDef"
+								},
+								{
+									"Label": "spc"
+								}
+							]
+						}
+					]
+				}
+			}
+		});
+	}
+
+	it("should highlight lines when clicked", () => {
+		var cfv, lines;
+
+		setUpTwoLineResponse();
+
+		runs(function() {
+			cfv = sandbox.renderComponent(
+				<CodeFileView source="/repo/path@revision/.tree/file" />
+			);
+		});
+
+		waitsFor(function() {
+			return cfv.state.loading === false;
+		}, "component to mount.", 500);
+
+		runs(function() {
+			lines = TestUtils.scryRenderedComponentsWithType(cfv, CodeLineView);
+			var lineNo = TestUtils.findRenderedDOMComponentWithClass(lines[0], "line-number");
+			TestUtils.Simulate.click(lineNo);
+		});
+
+		waitsFor(function() {
+			return $(lines[0].getDOMNode()).hasClass("main-byte-range") === true;
+		}, "line 1 to highlight", 200);
+
+		runs(function() {
+			expect($(lines[1].getDOMNode()).hasClass("main-byte-range")).to.beFalsy();
+		});
+	});
+
+	it("should display popup with examples when clicking def", () => {
+		var cfv, popup;
+
+		setUpTwoLineResponse();
+
+		runs(function() {
+			cfv = sandbox.renderComponent(
+				<CodeFileView source="/repo/path@revision/.tree/file" />
+			);
+			popup = TestUtils.findRenderedComponentWithType(cfv, TokenPopupView);
+		});
+
+		waitsFor(function() {
+			return cfv.state.loading === false;
+		}, "component to mount.", 500);
+
+		runs(function() {
+			var lines = TestUtils.scryRenderedComponentsWithType(cfv, CodeLineView);
+			var def = TestUtils.findRenderedDOMComponentWithClass(lines[0], "def");
+
+			setUpPopupResponse();
+			TestUtils.Simulate.click(def);
+		});
+
+		waitsFor(function() {
+			return popup.state.closed === false;
+		}, "popup to show", 500);
+
+		runs(function() {
+			expect($(popup.getDOMNode()).find("span.name")[0].innerHTML).to.be("ABC");
+
+			var example = TestUtils.findRenderedDOMComponentWithClass(popup, "example");
+			var codeView = TestUtils.findRenderedDOMComponentWithClass(example, "line-numbered-code");
+			var codeLine = TestUtils.findRenderedComponentWithType(codeView, CodeLineView);
+			var refToken = TestUtils.findRenderedComponentWithType(codeView, CodeTokenView);
+
+			var $ref = $(refToken.getDOMNode());
+			expect($ref.hasClass("ref")).to.beTruthy();
+			expect($ref.hasClass("def")).to.beTruthy();
+			expect($ref.attr("href")).to.be("/repo/path@revision/.unitType/path/to/def/.def/exampleRef");
+			expect($ref.find("span")[0].innerHTML).to.be("exampleRef");
+		});
+	});
+
+	it("should display context menu if clicking on a ref with multiple definitions", () => {
+		var cfv, menu;
+
+		setUpTwoLineResponse();
+
+		runs(function() {
+			cfv = sandbox.renderComponent(
+				<CodeFileView source="/repo/path@revision/.tree/file" />
+			);
+			menu = TestUtils.findRenderedComponentWithType(cfv, ContextMenu);
+			popup = TestUtils.findRenderedComponentWithType(cfv, TokenPopupView);
+		});
+
+		waitsFor(function() {
+			return cfv.state.loading === false;
+		}, "component to mount.", 500);
+
+		runs(function() {
+			var def = TestUtils.findRenderedDOMComponentWithClass(cfv, "multi-defs");
+			TestUtils.Simulate.click(def);
+		});
+
+		waitsFor(function() {
+			return menu.state.closed === false;
+		}, "context menu to open", 500);
+
+		runs(function() {
+			var menuItems = $(menu.getDOMNode()).find("li");
+			expect(menuItems[0].innerHTML).to.contain("ABC");
+			expect(menuItems[1].innerHTML).to.contain("QWE");
+			expect(popup.state.closed).to.be(true);
+		});
+	});
+});

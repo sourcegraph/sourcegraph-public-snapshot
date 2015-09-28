@@ -1,0 +1,86 @@
+{{define "Title"}}Sourcegraph Developer{{end}}
+
+{{define "Main"}}
+
+<style>
+.root .intro-title {
+  margin-top: 5em;
+}
+.root .intro-title p {
+  font-weight: bold;
+  font-size: 85px;
+  padding: 0;
+  margin: 0;
+  line-height: 1.15em;
+}
+.root .intro {
+  padding-top: 7em;
+}
+.root .intro p {
+  font-size: 25px;
+  line-height: 1.15em;
+  margin-left: 2em;
+}
+.root .star {
+  font-family: "Gotham";
+  font-size: 600px;
+  margin: 0;
+  padding: 0;
+  float: right;
+  height: 0;
+  color: {{template "c-sg-blue"}};
+  line-height: 1.15em;
+}
+
+.root .btn-block {
+  display: inline-block;
+}
+.root .big-btn a {
+  color: {{template "c-off-white"}};
+  background-color: {{template "c-sg-blue"}};
+  margin-top: 3em;
+  margin-left: 1em;
+  margin-bottom: 3em;
+  width: 11em;
+  font-size: 20px;
+  font-weight: bold;
+}
+.root .big-btn a:hover {
+  background-color: {{template "c-sg-blue-70%"}};
+}
+.root .big-btn i {
+  line-height: 0; /* do not effect the height of the button */
+  font-size: 30px;
+  position: relative;
+  top: 5px;
+}
+</style>
+
+<div class="root">
+  <span class="star noselect">✱</span>
+
+  <div class="intro-title noselect">
+    <p>SOURCEGRAPH</p>
+    <p>DEVELOPER</p>
+    <p>NETWORK</p>
+  </div>
+
+  <div class="intro">
+    <p>Build better tools through code insight.</p>
+    <p>Browse API documentation.</p>
+    <p>Join the community.</p>
+
+    <span class="big-btn">
+      <a href="{{urlTo "devdoc.api"}}" class="btn btn-block btn-lg">
+        <i class="fa fa-book big-btn"></i> Documentation
+      </a>
+    </span>
+    <span class="big-btn">
+      <a href="{{urlTo "devdoc.community"}}" class="btn btn-block btn-lg">
+        <i class="fa fa-users big-btn"></i> Community
+      </a>
+    </span>
+  </div>
+</div>
+
+{{end}}

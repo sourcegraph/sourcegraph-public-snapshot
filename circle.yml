@@ -1,0 +1,102 @@
+machine:
+  services:
+    - docker
+    - postgresql
+  environment:
+    REPO: ../.go_workspace/src/sourcegraph.com/sourcegraph/sourcegraph
+    CGO_ENABLED: 0
+    PGUSER: ubuntu
+    PGDATABASE: circle_test
+    PGSSLMODE: disable
+    PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
+    LD_LIBRARY_PATH: $HOME/protobuf/lib
+    CLOUDSDK_CORE_DISABLE_PROMPTS: 1
+
+dependencies:
+  pre:
+    # HACK(slimsag): restore back to Go 1.5 once search issue is tracked down
+    #- cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
+
+    # The version of curl provided with CircleCI / Ubuntu 12.04 is not up to
+    # date enough to support HTTP plain auth usernames/passwords greater than
+    # 255 characters. No updated debs are available online, and for this
+    # reason, we must install it manually from source here.
+    - sudo apt-get install librtmp-dev
+    - if [ ! -d ~/curl ]; then mkdir ~/curl; cd ~/curl; wget http://curl.askapache.com/download/curl-7.44.0.tar.gz; tar -xzf ./curl-7.44.0.tar.gz --strip-components=1; ./configure --prefix=/usr --without-ssl --with-gnutls; make -j2; fi
+    # Remove libcurl* files (used by git) which are provided by the libcurl
+    # package. It can't be removed via apt or we will also lose git etc.
+    - sudo rm /usr/lib/x86_64-linux-gnu/libcurl*; cd ~/curl; sudo make install
+    # Ubuntu curl package has all of it's dynamic libraries suffixed with
+    # "-gnutls" for those respective versions. Since we always use gnutls for
+    # ours, we just create symlinks to ours so that apt and git can find it.
+    - for FILE in /usr/lib/libcurl*; do sudo ln -s "$FILE" "$(dirname $FILE)/$(basename ${FILE%%.*})-gnutls.${FILE#*.}"; done
+
+  cache_directories:
+    - ~/protobuf
+    - ~/google-cloud-sdk
+    - ~/daemonize
+    - ~/curl
+
+  override:
+    - rm -rf $HOME/.go_workspace/src
+    - mkdir -p $HOME/.go_workspace/src/sourcegraph.com/sourcegraph
+    - cp -r $PWD $REPO
+
+    - go get github.com/tools/godep github.com/jteeuwen/go-bindata/go-bindata
+
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "CI User"
+
+    - if [ ! -d ~/protobuf ]; then wget https://github.com/google/protobuf/archive/v3.0.0-alpha-3.tar.gz && tar zxf v3.0.0-alpha-3.tar.gz && cd protobuf-3.0.0-alpha-3 && ./autogen.sh && ./configure && make -j2 install DESTDIR=$PWD/build/ && mv ./build/usr/local $HOME/protobuf; fi
+    - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
+    - if [ ! -d ~/daemonize ]; then mkdir ~/daemonize; package/linux/scripts/install_daemonize.sh ~/daemonize/; fi
+
+test:
+  override:
+    - godep go install -v sourcegraph.com/sourcegraph/sourcegraph/...
+    - npm run dep:
+        pwd: $REPO/app
+    - npm test:
+        pwd: $REPO/app
+    - make check:
+        pwd: $REPO
+    - set -o pipefail; make mdtest TESTFLAGS="-test.v -test.timeout 1m" | tee $HOME/mdtest.out:
+        pwd: $REPO
+  post:
+    - go get github.com/jstemmer/go-junit-report
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit
+    - go-junit-report < $HOME/mdtest.out > $CIRCLE_TEST_REPORTS/junit/mdtest.xml
+
+deployment:
+  registry:
+    branch: master
+    commands:
+      # Build linux dist
+      # Version format: {date}-{build_num}-{short_git_sha1}
+      - echo $(date +"%y%m%d")-${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7} > ~/VERSION:
+          pwd: $REPO
+      - cat ~/VERSION
+      - make dist PACKAGEFLAGS=$(cat ~/VERSION):
+          pwd: $REPO
+
+      # Push to gcloud docker registery
+      - cp $REPO/release/$(cat ~/VERSION)/linux-amd64 $REPO/docker/src
+      - echo $GCLOUD_SERVICE_ACCOUNT | base64 --decode > gcloud-service-account.json
+      - gcloud auth activate-service-account --key-file gcloud-service-account.json
+      - gcloud config set project sourcegraph-dev
+      - docker build -t us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 .:
+          pwd: $REPO/docker
+      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 us.gcr.io/sourcegraph-dev/sourcegraph:latest
+      - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1
+      - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
+
+      # Push to sourcegraph-release bucket on s3
+      - gem install fpm
+      - sudo pip install awscli
+      - sudo apt-get install -y rpm
+      - cp ~/daemonize/daemonize ${REPO}/package/linux/bin
+      - cp ${REPO}/release/$(cat ~/VERSION)/linux-amd64 ${REPO}/package/linux/bin/src
+      - make VERSION=$(cat ~/VERSION) DIST=../dist:
+          pwd: $REPO/package/linux
+      - sgtool -v release --skip-package --skip-dist-package --s3-dir continuous $(cat ~/VERSION):
+          pwd: $REPO

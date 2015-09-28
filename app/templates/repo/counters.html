@@ -1,0 +1,23 @@
+{{define "Head"}}<title>Counters - {{.Repo.URI}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "RepoBody"}}
+<h1>Repository view counters</h1>
+<p>
+	Add these to the README file or your website to see how popular your
+	repository is. Each time someone visits your GitHub repository or your
+	website, the counter will increment by 1.
+</p>
+
+<p>
+	If you add both counters to the same page, visitors will be double-counted.
+	To avoid this, append a <tt>?no-record=1</tt> querystring to one of
+	the image URLs.
+</p>
+<table class="table">
+	{{range .Counters}}
+	{{template "BadgeAndCounterRow" .}}
+	{{end}}
+</table>
+{{end}}

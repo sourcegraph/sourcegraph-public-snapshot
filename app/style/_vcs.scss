@@ -1,0 +1,17 @@
+.vcs-ref {
+	font-family: monospace;
+	border: solid 1px lighten($link-color, 35%);
+	border-radius: $border-radius-small;
+	padding: $padding-small-vertical/2.5 $padding-small-horizontal/2.5;
+
+	display: inline-block;
+	vertical-align: bottom;
+	max-width: 200px;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	&:hover {
+		max-width: auto;
+		white-space: inherit;
+	}
+}

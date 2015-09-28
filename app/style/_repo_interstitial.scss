@@ -1,0 +1,18 @@
+.repo-interstitial {
+	padding-top: 7.5vh;
+	padding-bottom: 7.5vh;
+
+	.alert-interstitial, .info-interstitial {
+		text-align: center;
+	}
+
+	.details {
+		color: $gray-light;
+		font-size: $font-size-small;
+		margin-top: 7px;
+	}
+
+	form, .btn {
+		text-align: center;
+	}
+}

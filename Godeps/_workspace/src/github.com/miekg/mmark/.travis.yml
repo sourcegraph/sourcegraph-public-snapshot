@@ -1,0 +1,11 @@
+language: go
+
+go:
+    - 1.4
+
+install:
+    - go get -d -t -v ./...
+    - go build -v ./...
+
+script:
+    - go test -v ./...

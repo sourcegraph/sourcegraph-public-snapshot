@@ -1,0 +1,13 @@
+{
+  "name": "typeahead.js",
+  "version": "0.10.0",
+  "main": [
+    "bloodhound.js",
+    "typeahead.jquery.js",
+    "typeahead.bundle.js",
+    "typeahead.bundle.min.js"
+  ],
+  "dependencies": {
+    "jquery": "~1.9"
+  }
+}

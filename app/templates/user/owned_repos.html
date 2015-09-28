@@ -1,0 +1,7 @@
+{{define "Head"}}<title>{{.User.Login|personLabel}} - Sourcegraph</title>
+<meta name="description" content="{{userMetaDescription .User}}">
+{{end}}
+
+{{define "PersonBody"}}
+{{template "PersonOwnedRepos" $}}
+{{end}}

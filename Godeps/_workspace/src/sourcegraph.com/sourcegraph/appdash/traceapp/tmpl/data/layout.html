@@ -1,0 +1,223 @@
+{{define "ROOT"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="{{.BaseURL}}">
+    <title>{{template "Title" $}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.6.0/bootstrap-table.min.css">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <style>
+     html {
+       position: relative;
+       min-height: 100%;
+     }
+     body {
+       padding-top: 50px;
+       background-color: #f2f2f2;
+       color: #333333;
+       font-family: 'Open Sans', sans-serif;
+
+       /* Margin bottom by footer height */
+       margin-bottom: 60px;
+     }
+     .d0 { background-color: #bbb; }
+     .d1 { background-color: #ccb7b7; }
+     .d2 { background-color: #cca7a7; }
+     .d3 { background-color: #cc9999; }
+     .d4 { background-color: #cc8282; }
+     .d5 { background-color: #cc7676; }
+     .d6 { background-color: #cc4f4f; }
+     .d7 { background-color: #cc3939; }
+     .d8 { background-color: #cc2a2a; }
+     .d9 { background-color: #cc1c1c; }
+     .d10 { background-color: #cc0e0e; }
+
+     /* Navigation bar colors */
+     .navbar-inverse {
+       background-color: #333333;
+       border: none;
+     }
+
+     /* Navigation bar link colors */
+     .navbar-inverse .navbar-nav>li>a {
+       color: #f2f2f2;
+     }
+     .navbar-inverse .navbar-nav>li>a:hover, .navbar-inverse .navbar-nav>li>a:focus {
+       color: #ddd;
+     }
+     .navbar-inverse .navbar-nav>.active>a, .navbar-inverse .navbar-nav>.active>a:hover, .navbar-inverse .navbar-nav>.active>a:focus {
+       color: black;
+       background-color: #f2f2f2;
+     }
+     #logo {
+       width: auto;
+       height: 40px;
+       margin: 5px;
+       margin-right: 1em;
+     }
+
+     .ico-navbar {
+       font-size: 30px;
+       position: relative;
+       top: -4px;
+       float: left;
+       padding-right: .3em;
+     }
+
+     .footer {
+       position: absolute;
+       bottom: 0;
+       width: 100%;
+       /* Set the fixed height of the footer here */
+       height: 60px;
+       background-color: #f5f5f5;
+       text-align: center;
+     }
+     .footer a {
+       text-decoration: underline;
+     }
+    </style>
+    <script src="//code.jquery.com/jquery-2.1.1.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.6.0/bootstrap-table.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.4/d3.js"></script>
+    <script src="{{.BaseURL}}static/jiahuang/d3-timeline/d3-timeline.js"></script>
+    <script src="{{.BaseURL}}static/krisk/fuse/fuse.min.js"></script>
+    <script src="{{.BaseURL}}static/zeroclipboard/zeroclipboard/ZeroClipboard.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a href="{{.BaseURL}}" class="pull-left"><img id="logo" src="/static/logo_white.png"></a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse pull-right">
+          <ul class="nav navbar-nav">
+
+            <!-- Traces dropdown menu -->
+            <li class="dropdown">
+               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-area-chart ico-navbar"></i> Traces <span class="caret"></span></a>
+               <ul class="dropdown-menu" role="menu">
+                 <li><a href="dashboard" title="shows the dashboard">Dashboard</a></li>
+                 <li><a href="traces" title="shows all traces, excluding aggregated ones">All Traces</a></li>
+               </ul>
+             </li>
+
+            <li>
+              <a href="https://godoc.org/sourcegraph.com/sourcegraph/appdash" target="_blank">
+                <i class="fa fa-book ico-navbar"></i> Docs
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/sourcegraph/appdash" target="_blank">
+                <i class="fa fa-github ico-navbar"></i> GitHub
+              </a>
+            </li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+      {{template "Main" $}}
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">Appdash is an open-source project created by <a href="https://sourcegraph.com/">Sourcegraph</a>.</p>
+      </div>
+    </footer>
+
+    <script>
+      (function() {
+        // Fade the footer in initially.
+        $(".footer p").hide().fadeIn();
+
+        var hints = [
+          'Appdash provides a Go HTTP middleware in the <a target="_blank" href="https://godoc.org/sourcegraph.com/sourcegraph/appdash/httptrace">appdash/httptrace</a> package!',
+          'It can be used from <a target="_blank" href="https://sourcegraph.com/sourcegraph.com/sourcegraph/appdash@master/.tree/python">within Python applications</a> too! Awesome!',
+          'Hint: Click the <strong>Copy as JSON</strong> button to export a trace as JSON and share it with your friends!',
+          'Hint: The <strong>Verbose Data View</strong> tab shows all of the data associated with the current span.',
+          'Hint: The <strong>Profile View</strong> tab lets you see a trace just like in a profiler!',
+          'Hint: Click on any span (the colored rectangles) to narrow in on it and see its meta-data!',
+          'Hint: On the <strong>Traces</strong> page you can select and export multiple traces as JSON!',
+          'Hint: Import a JSON trace from another Appdash instance by clicking <strong>Import JSON</strong> button on the <strong>Traces</strong> page!'
+        ];
+
+        // nextHint returns the next hint in the hints array that has not been
+        // previously displayed.
+        var usedHints = [];
+        var lastHint = null;
+        function nextHint(i) {
+          var n = Math.floor((Math.random() * 1e9) % hints.length);
+
+          // First iteration? Start with a new random number then.
+          if(i == null || i == lastHint) {
+            return nextHint(n);
+          }
+
+          // Clear usedHints array when it is full.
+          if(usedHints.length >= hints.length) {
+            usedHints = [];
+          }
+
+          // Determine if the hint i has been used already.
+          $.each(usedHints, function(unused, e) {
+            if(e == i) {
+              // Used already, try the next random number.
+              return nextHint(n);
+            }
+          });
+
+          lastHint = i;
+          usedHints.push(i);
+          return i;
+        }
+
+        function displayHint()
+        {
+          $(".footer p").fadeOut(function() {
+            $(this).html(hints[nextHint(null)]).fadeIn();
+          });
+        }
+        setInterval(displayHint, 10000);
+      })();
+    </script>
+  </body>
+</html>
+{{end}}
+
+{{define "ImportExport"}}
+  <!-- import-export menu -->
+  <div id="{{.ID}}" class="collapse">
+    <!-- TextArea -->
+    <form role="form">
+      <div class="form-group">
+        {{with .Title}}
+          <label for="comment" class="title">{{.}}</label>
+        {{end}}
+        <textarea autocomplete="off" class="form-control textarea" rows="5">{{with .Value}}{{.}}{{end}}</textarea>
+      </div>
+    </form>
+    <br/>
+    <!-- Action / Cancel buttons -->
+    <div class="btn-toolbar">
+      {{with .Action}}
+        <button class="btn btn-default pull-right action" type="button">{{.}}</button>
+      {{end}}
+      <button class="btn btn-default pull-right cancel" type="button" data-toggle="collapse" data-target="#{{.ID}}">Cancel</button>
+    </div>
+    <hr/>
+  </div>
+{{end}}

@@ -1,0 +1,28 @@
+{{define "OrgMembersHeading"}}
+<div class="panel-heading">
+	Members of {{.Org.Login}}
+</div>
+{{end}}
+
+{{define "OrgMembers"}}
+{{$org := .Org}}
+<div class="panel panel-default panel-main">
+	{{template "OrgMembersHeading" $}}
+	{{if hasField . "Members"}}
+	{{if len .Members}}
+	<ol class="people members list-group media-list panel-body">
+		{{range .Members}}
+		<li class="person list-group-item">
+			{{template "UserLink" .Login}}
+		</li>
+		{{end}}
+	</ol>
+	{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+	{{else}}
+	<div class="panel-footer">
+		No members found.
+	</div>
+	{{end}}
+	{{end}}
+</div>
+{{end}}

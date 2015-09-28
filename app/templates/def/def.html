@@ -1,0 +1,10 @@
+{{define "RepoBody"}}
+<h2 class="def-title">
+	{{template "DefPageTitlePrefix" $}}
+	<span class="def-title">
+		{{.Def.Fmt.DefKeyword}}
+		<a href="{{urlToDef .Def.DefKey}}">{{defQualifiedNameAndType .Def "scope"}}</a>
+	</span>
+</h2>
+{{template "DefPage" $}}
+{{end}}

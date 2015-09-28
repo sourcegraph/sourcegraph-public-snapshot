@@ -1,0 +1,12 @@
+.diffstat {
+	.added {
+		color: $diff-added-color;
+	}
+	.changed {
+		color: $diff-changed-color;
+	}
+	.deleted {
+		color: $diff-deleted-color;
+	}
+
+}

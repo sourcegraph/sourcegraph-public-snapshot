@@ -1,0 +1,15 @@
+{
+  "name": "jquery.hotkeys",
+  "homepage": "https://github.com/jeresig/jquery.hotkeys",
+  "version": "0.1.0",
+  "_release": "0.1.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.0",
+    "commit": "d73131df8a3a1a9cdfd6e5e0f740d7773d46702c"
+  },
+  "_source": "git://github.com/jeresig/jquery.hotkeys.git",
+  "_target": "~0.1.0",
+  "_originalSource": "jeresig/jquery.hotkeys",
+  "_direct": true
+}

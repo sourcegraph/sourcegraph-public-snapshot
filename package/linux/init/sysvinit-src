@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# src      Start/Stop the sourcegraph daemon.
+#
+# chkconfig: 2345 85 15
+# description: See sourcegraph.com
+# processname: src
+# config: /etc/sysconfig/src
+# pidfile: /var/run/src.pid
+#
+### BEGIN INIT INFO
+# Provides: src
+# Required-Start: $local_fs $remote_fs $network
+# Required-Stop: $local_fs $remote_fs $network
+# Short-Description: start and stop the Sourcegraph server
+# Description: See sourcegraph.com
+### END INIT INFO
+
+prog="src"
+exec=/usr/bin/src
+lockfile=/var/lock/src
+logfile=/var/log/src.log
+config=/etc/sourcegraph/config.env
+ini=/etc/sourcegraph/config.ini
+pidfile=/var/run/src.pid
+runasuser=sourcegraph
+
+if [ "$UID" -ne 0 ]; then
+    echo "service must run as root"
+    exit 4
+fi
+
+[ -e $config ] && . $config
+
+set -e
+
+start() {
+    [ -x $exec ] || exit 5
+
+    if [ ! -f $logfile ]; then
+	touch $logfile
+	chown $runasuser $logfile
+    fi
+
+    echo "Starting $prog"
+    /usr/bin/daemonize.sourcegraph \
+	-a \
+	-c /home/$runasuser \
+	-u $runasuser \
+	-e $logfile \
+	-o $logfile \
+	-p $pidfile \
+	-l $lockfile \
+	$exec --config $ini serve $SRCSERVEARGS
+}
+
+stop() {
+    kill `cat $pidfile`
+}
+
+restart() {
+    status_q && stop
+    start
+}
+
+status_q() {
+    kill -0 `cat $pidfile 2>/dev/null` &> /dev/null
+}
+
+status() {
+    status_q && echo "$prog (pid $(cat $pidfile)) is running..." || echo "$prog is stopped"
+}
+
+case "$1" in
+    start)
+        status_q && exit 0
+        $1
+        ;;
+    stop)
+        status_q || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    status)
+        status
+        ;;
+    condrestart|try-restart)
+        status_q || exit 0
+        restart
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart}"
+        exit 2
+esac
+exit $?

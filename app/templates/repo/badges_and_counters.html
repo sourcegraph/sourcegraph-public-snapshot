@@ -1,0 +1,23 @@
+{{define "BadgeAndCounterRow"}}
+<tr>
+	<td>
+		<img src="{{.UncountedImageURL}}" alt="{{.Name}}">
+	</td>
+	<td>
+		<p>{{.Description}}</p>
+		<table class="table table-condensed">
+			<tr><th>URL</th><th>HTML</th><th>Markdown</th></tr>
+			<tr>
+				<td><input type="text" class="code form-control" value="{{.ImageURL}}"></td>
+				<td><input type="text" class="code form-control" value="{{.HTML}}"></td>
+				<td><input type="text" class="code form-control" value="{{.Markdown}}"></td>
+			</tr>
+		</table>
+		<!-- <table class="table table-condensed"> -->
+		<!--   <tr><th>URL</th><td><input type="text" class="code form-control" value="{{.ImageURL}}"></td></tr> -->
+		<!--   <tr><th>HTML</th><td><input type="text" class="code form-control" value="{{.HTML}}"></td></tr> -->
+		<!--   <tr><th>Markdown</th><td><input type="text" class="code form-control" value="{{.Markdown}}"></td></tr> -->
+		<!-- </table> -->
+	</td>
+</tr>
+{{end}}

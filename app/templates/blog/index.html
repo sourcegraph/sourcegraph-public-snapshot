@@ -1,0 +1,21 @@
+{{define "Head"}}<title>The Sourcegraph Blog</title>
+<meta name="description" content="The Sourcegraph Blog: product announcements, programming tips, etc., from Sourcegraph">
+{{end}}
+
+{{define "Body"}}
+<h1>The Sourcegraph Blog</h1>
+<ul class="blog-posts-index list-unstyled">
+	{{template "PostList" .Posts}}
+</ul>
+
+{{$toPosts := min (add .Offset .Limit) .Response.TotalPosts}}
+<div class="tumblr-pagination text-center">
+	{{if ge .Offset 1}}
+	<a href="{{nextPageURL .CurrentURI -1}}"><i class="fa fa-arrow-left"></i></a>
+	{{end}}
+	Posts {{add .Offset 1}} to {{$toPosts}} of {{.Response.TotalPosts}}
+	{{if lt $toPosts .Response.TotalPosts}}
+	<a href="{{nextPageURL .CurrentURI 1}}"><i class="fa fa-arrow-right"></i></a>
+	{{end}}
+</div>
+{{end}}

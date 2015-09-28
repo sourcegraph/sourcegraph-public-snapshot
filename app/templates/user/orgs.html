@@ -1,0 +1,7 @@
+{{define "Head"}}<title>Organizations - {{.User.Login|personLabel}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "PersonBody"}}
+{{template "PersonOrgs" $}}
+{{end}}

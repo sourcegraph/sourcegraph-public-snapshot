@@ -1,0 +1,17 @@
+language: go
+
+go:
+  - 1.3
+  - tip
+  
+install:
+  - go get github.com/PuerkitoBio/goquery
+  - go get github.com/headzoo/ut
+  
+script:
+ - go test -v ./...
+ 
+notifications:
+  email:
+    - sean@headzoo.io
+    

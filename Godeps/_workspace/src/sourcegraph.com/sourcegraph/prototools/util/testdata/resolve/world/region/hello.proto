@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "world/region/human.proto";
+import "world/region/building.proto";
+
+message Hello {
+	string name = 1;
+  world.human.Options options = 2;
+	world.building.Options building = 3;
+}

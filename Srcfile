@@ -1,0 +1,7 @@
+{
+  "SkipDirs": ["app/node_modules", "app/bower_components"],
+  "SkipUnits": [
+    {"Name":".", "Type":"ruby"},
+    {"Name":"app", "Type":"CommonJSPackage"}
+  ]
+}

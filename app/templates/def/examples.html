@@ -1,0 +1,21 @@
+{{define "Head"}}<title>Refs to {{.Def.Fmt.Name "scope"}} - {{.Def.Repo|repoBasename}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "DefPageTitlePrefix"}}Refs to{{end}}
+
+{{define "DefPage"}}
+{{/* TODO(new-arch): find a way to highlight the active def here */}}
+{{template "DefPageContent" $}}
+{{end}}
+
+{{define "DefPageContent"}}
+
+<hr>
+
+{{ $def := .Def }}
+{{ $options := .Options }}
+
+{{template "DefExamples" $}}
+
+{{end}}

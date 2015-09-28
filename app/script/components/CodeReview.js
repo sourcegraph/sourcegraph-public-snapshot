@@ -1,0 +1,160 @@
+var React = require("react");
+var router = require("../routing/router");
+var CurrentUser = require("../CurrentUser");
+var $ = require("jquery");
+
+var CodeReviewStore = require("../stores/CodeReviewStore");
+var CodeReviewActions = require("../actions/CodeReviewActions");
+
+var Changes = require("./CodeReviewChanges");
+var Timeline = require("./CodeReviewTimeline");
+var SubmitForm = require("./CodeReviewSubmitReviewForm");
+var ControlPanel = require("./CodeReviewControlPanel");
+var CodeReviewHeader = require("./CodeReviewHeader");
+
+/**
+ * @description CodeReview is the main component that contains all of the functionality
+ * for the "Changes" application".
+ */
+var CodeReview = React.createClass({
+
+	propTypes: {
+		// Data may hold the JSON object that is used
+		// to popuplate this component. This can be attached server-side as a
+		// preloading optimization.
+		data: React.PropTypes.object,
+	},
+
+	getInitialState() {
+		return CodeReviewStore.attributes;
+	},
+
+	componentDidMount() {
+		CodeReviewStore.on("change", () => {
+			this.setState(CodeReviewStore.attributes);
+		});
+
+		CodeReviewStore.on("scrollTop", X => {
+			$("html, body").animate({scrollTop: X - 130}, 400, "linear");
+		});
+
+		if (this.props.data !== null) {
+			CodeReviewActions.loadData(this.props.data);
+		}
+	},
+
+	componentWillUnmount() {
+		CodeReviewStore.off("change");
+		CodeReviewStore.off("scrollTop");
+	},
+
+	/**
+	 * @description Triggers the action that shows the review form. Called on
+	 * user click.
+	 * @param {Event} e - The (click) event that triggered the action.
+	 * @returns {void}
+	 * @private
+	 */
+	_submitReviewShow(e) {
+		if (CurrentUser === null) {
+			window.location = "/login";
+			return;
+		}
+		// TODO(gbbr): Do an action here
+		CodeReviewStore.set({submittingReview: true});
+	},
+
+	/**
+	 * @description Called when the user cancels submitting a review.
+	 * @param {Event} e - The (click) event that triggered the action.
+	 * @returns {void}
+	 * @private
+	 */
+	_submitReviewHide(e) {
+		// TODO(gbbr): Do an action here
+		CodeReviewStore.set({submittingReview: false});
+	},
+
+	/**
+	 * @description Triggers the action to submit a review on the current changeset.
+	 * @param {string} body - The text body of the review.
+	 * @param {Event} e - The (click) event that triggered the action.
+	 * @returns {void}
+	 * @private
+	 */
+	_submitReview(body, e) {
+		CodeReviewActions.submitReview(body);
+	},
+
+	render() {
+		if (typeof this.state.Changeset === "undefined") return null;
+		var url = router.changesetURL(this.state.Changeset.DeltaSpec.Base.URI, this.state.Changeset.ID) + "/files";
+
+		return (
+			<div className="code-review-inner">
+				<CodeReviewHeader
+					changeset={this.state.Changeset}
+					delta={this.state.Delta}
+					commits={this.state.commits}
+					onSubmitTitle={CodeReviewActions.submitTitle} />
+
+				<div className="changeset-tab-content changeset-timeline">
+					<div className="left-panel">
+						{/*
+							TODO(gbbr): Obtain base tip when commit n/a
+
+							{this.state.Changeset.DeltaSpec.Base.CommitID !== this.state.Delta.BaseCommit.ID ? (
+								<span className="warning">
+									<i className="fa fa-icon fa-warning merge-base-warning" />{" Does not merge cleanly (merge-base is "+this.state.Delta.BaseCommit.ID.substring(0, 7)+")"}
+								</span>
+							) : null}
+					    */}
+
+						<Timeline
+							commits={this.state.commits}
+							reviews={this.state.reviews}
+							events={this.state.events}
+							changeset={this.state.Changeset} />
+
+						<SubmitForm
+							visible={this.state.submittingReview}
+							drafts={this.state.reviews.drafts}
+							onShow={this._submitReviewShow}
+							onSubmit={this._submitReview}
+							onCancel={this._submitReviewHide} />
+					</div>
+
+					<div className="right-panel">
+						<ControlPanel
+							changeset={this.state.Changeset}
+							onStatusChange={CodeReviewActions.changeChangesetStatus} />
+					</div>
+				</div>
+
+				<div className="changeset-tab-content tab-changes">
+					{this.state.FileFilter ? (
+						<div className="filter-warning">
+							<i className="fa fa-icon fa-warning" />
+							<span>Currently there is a filter applied to this view (<i className="backtick">{this.state.FileFilter}</i>). To clear it, you may <a href={url}>click here</a>.</span>
+						</div>
+					) : null}
+
+					<Changes
+						onTokenFocus={CodeReviewActions.focusToken}
+						onCommentSubmit={CodeReviewActions.saveDraft}
+						onCommentEdit={CodeReviewActions.updateDraft}
+						onCommentDelete={CodeReviewActions.deleteDraft}
+						onTokenBlur={CodeReviewActions.blurTokens}
+						onTokenClick={CodeReviewActions.selectToken}
+						onExpandHunk={CodeReviewActions.expandHunk}
+						onFileClick={CodeReviewActions.selectFile}
+						model={this.state.changes}
+						urlBase={url}
+						reviews={this.state.reviews} />
+				</div>
+			</div>
+		);
+	},
+});
+
+module.exports = CodeReview;

@@ -1,0 +1,31 @@
+{{define "Head"}}
+<title>{{.BlogTitle}}</title>
+{{end}}
+
+{{define "BlogBody"}}
+
+<div class="row">
+	<div class="col-md-2"></div>
+	<div class="col-md-6">
+		{{range .Response.Posts}}
+		{{template "TumblrPost" .}}
+		{{end}}
+		<div class="tumblr-pagination-center">
+			{{template "TumblrPagination" .}}
+		</div>
+	</div>
+	<div class="col-md-4 index-container">
+		<h3>Index</h3>
+		<p>{{template "TumblrPagination" .}}</p>
+		<ul class="list-unstyled">
+			{{range .Response.Posts}}
+			<li class="index-item">
+				<a href="{{.SGURL}}">
+					{{.Title}}
+				</a>
+			</li>
+			{{end}}
+		</ul>
+	</div>
+</div>
+{{end}}

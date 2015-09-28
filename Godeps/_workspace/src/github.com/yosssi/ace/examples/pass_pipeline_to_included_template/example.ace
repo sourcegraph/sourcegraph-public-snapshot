@@ -1,0 +1,11 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title Pass a Pipeline (Parameter) to the Included Template
+  body
+    h1 Pass a Pipeline (Parameter) to the Included Template
+    ul
+      {{range .Pets}}
+        = include pet .
+      {{end}}

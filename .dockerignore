@@ -1,0 +1,15 @@
+*.test
+*/*.test
+*/*/*.test
+*/*/*/*.test
+*/*/*/*/*.test
+.srclib-cache/
+.srclib-store/
+.vagrant/
+Godeps/_workspace/pkg
+package/baseimage
+package/dist
+package/linux
+package/release
+release/
+Dockerfile

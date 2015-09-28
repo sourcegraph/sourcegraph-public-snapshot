@@ -1,0 +1,49 @@
+{{define "Head"}}<title>Building {{.Repo.Name}} - Sourcegraph</title>
+{{end}}
+
+{{define "RepoBody"}}
+<div class="well repo-interstitial repo-no-build">
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-md-6 col-md-push-3">
+				{{if .NeedsLogin}}
+					<p class="alert alert-interstitial">
+						<span class="octicon octicon-stop"></span>
+						<strong>This repository must be built</strong> to use on Sourcegraph.
+					</p>
+					<form action="{{urlToWithReturnTo "log-in" .ReturnTo}}" method="POST" class="navbar-form">
+						<button class="btn btn-lg btn-success repo-login" href="#"><span class="octicon octicon-key"></span> Sign in to start build</button>
+						<div class="details">using your GitHub account</div>
+						<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+					</form>
+				{{else if .Build.EndedAt}}
+					<p class="alert alert-danger alert-interstitial">
+						<span class="octicon octicon-alert"></span>
+						<strong>Build failed</strong>
+					</p>
+					<p>
+						Sourcegraph failed to compile and analyze this repository's code.
+						<a href="{{urlToRepoBuild .Repo.URI .Build.CommitID .Build.Attempt}}">View build details.</a>
+					</p>
+					<p>
+						<strong>How to fix:</strong>
+					</p>
+					<ol>
+						<li>Sourcegraph builds projects using <a href="https://srclib.org/" target="_blank">srclib</a>, an open-source, multi-language source code analysis tool. <a href="https://srclib.org/#install" target="_blank">Install srclib locally</a> and run it on this project's code to diagnose the problem, then submit a patch.</li>
+						<li><a href="https://github.com/sourcegraph/sourcegraph.com/issues/new?title=Build+failure+in+{{.Repo.URI}}" target="_blank">Post an issue</a> asking the Sourcegraph community to research and fix the problem.</li>
+					</ol>
+				{{else}}
+					<p class="alert alert-interstitial">
+						<span class="octicon octicon-hourglass"></span>
+						<strong>Building...</strong>
+					</p>
+					<p class="info-interstitial">
+						Reload this page in a bit.
+						<a href="{{urlToRepoBuild .Repo.URI .Build.CommitID .Build.Attempt}}">View build status.</a>
+					</p>
+				{{end}}
+			</div>
+		</div>
+	</div>
+</div>
+{{end}}

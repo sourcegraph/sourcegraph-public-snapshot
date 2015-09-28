@@ -1,0 +1,72 @@
+{
+  "name": "object.omit",
+  "description": "Return a copy of an object without the given key, or array of keys.",
+  "version": "1.1.0",
+  "homepage": "https://github.com/jonschlinkert/object.omit",
+  "author": {
+    "name": "Jon Schlinkert",
+    "url": "https://github.com/jonschlinkert"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jonschlinkert/object.omit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jonschlinkert/object.omit/issues"
+  },
+  "license": {
+    "type": "MIT",
+    "url": "https://github.com/jonschlinkert/object.omit/blob/master/LICENSE"
+  },
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [
+    "clear",
+    "delete",
+    "key",
+    "value",
+    "object",
+    "omit",
+    "property",
+    "remove"
+  ],
+  "dependencies": {
+    "for-own": "^0.1.3",
+    "isobject": "^1.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.2.4",
+    "should": "^5.2.0"
+  },
+  "gitHead": "9dc4d35d57b04515e32c644cf7c59d0e0f363137",
+  "_id": "object.omit@1.1.0",
+  "_shasum": "9d17ea16778e5057deba7752c6f55f1496829e94",
+  "_from": "object.omit@>=1.1.0 <2.0.0",
+  "_npmVersion": "2.5.1",
+  "_nodeVersion": "0.12.0",
+  "_npmUser": {
+    "name": "jonschlinkert",
+    "email": "github@sellside.com"
+  },
+  "maintainers": [
+    {
+      "name": "jonschlinkert",
+      "email": "github@sellside.com"
+    }
+  ],
+  "dist": {
+    "shasum": "9d17ea16778e5057deba7752c6f55f1496829e94",
+    "tarball": "http://registry.npmjs.org/object.omit/-/object.omit-1.1.0.tgz"
+  },
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/object.omit/-/object.omit-1.1.0.tgz",
+  "readme": "ERROR: No README data found!"
+}

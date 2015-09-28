@@ -1,0 +1,17 @@
+{
+	"AppName": "srclib",
+	"ArtifactsDest": "release",
+	"OutPath": "{{.Dest}}{{.PS}}{{.Version}}{{.PS}}{{.Os}}-{{.Arch}}",
+	"Tasks": [
+		"xc"
+	],
+	"Arch": "amd64",
+	"Os": "linux darwin",
+	"ConfigVersion": "0.9",
+	"BuildSettings": {
+		"LdFlagsXVars": {
+			"Version": "sourcegraph.com/sourcegraph/srclib/cli.Version"
+		},
+		"ExtraArgs": "-a"
+	}
+}

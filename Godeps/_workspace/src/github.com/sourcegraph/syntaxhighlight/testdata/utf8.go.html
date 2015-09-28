@@ -1,0 +1,16 @@
+<span class="com">// +build ignore</span>
+<span class="kwd">package</span> <span class="pln">utf8</span>
+
+<span class="kwd">import</span> <span class="str">&#34;fmt&#34;</span>
+
+<span class="com">// →→→→→→→→→→→→→→→→→→→→→→→→→</span>
+<span class="kwd">var</span> <span class="typ">A</span> <span class="pun">=</span> <span class="str">&#34;x → y&#34;</span>
+
+<span class="com">// ᚠᛇᚻ᛫ᛒᛦᚦ᛫ᚠᚱᚩᚠᚢᚱ᛫ᚠᛁᚱᚪ᛫ᚷᛖᚻᚹᛦᛚᚳᚢᛗ</span>
+<span class="com">// ᛋᚳᛖᚪᛚ᛫ᚦᛖᚪᚻ᛫ᛗᚪᚾᚾᚪ᛫ᚷᛖᚻᚹᛦᛚᚳ᛫ᛗᛁᚳᛚᚢᚾ᛫ᚻᛦᛏ᛫ᛞᚫᛚᚪᚾ</span>
+<span class="com">// ᚷᛁᚠ᛫ᚻᛖ᛫ᚹᛁᛚᛖ᛫ᚠᚩᚱ᛫ᛞᚱᛁᚻᛏᚾᛖ᛫ᛞᚩᛗᛖᛋ᛫ᚻᛚᛇᛏᚪᚾ᛬</span>
+<span class="kwd">var</span> <span class="typ">B</span> <span class="pun">=</span> <span class="str">&#34;Τὴ γλῶσσα μοῦ ἔδωσαν ἑλληνικὴ&#34;</span>
+
+<span class="kwd">func</span> <span class="typ">F</span><span class="pun">(</span><span class="pun">)</span> <span class="pun">{</span>
+	<span class="pln">fmt</span><span class="pun">.</span><span class="typ">Println</span><span class="pun">(</span><span class="typ">A</span><span class="pun">,</span> <span class="typ">B</span><span class="pun">)</span>
+<span class="pun">}</span>

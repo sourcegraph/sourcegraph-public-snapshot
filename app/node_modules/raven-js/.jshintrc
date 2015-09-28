@@ -1,0 +1,9 @@
+{
+    "es3": true,
+    "globalstrict": true,
+    "browser": true,
+    "predef": [
+        "TraceKit",
+        "console"
+    ]
+}

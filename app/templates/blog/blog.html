@@ -1,0 +1,19 @@
+{{define "PostList"}}
+<div class="row">
+	<div class="col-sm-12 col-md-12 col-lg-12">
+		{{range .}}
+		<div class="media">
+			<div class="media-body">
+				<h5 class="media-heading"><a href="{{urlToBlogPost .URL}}">{{.Title}}</a></h5>
+				{{if .Author.Login}}
+				<span class="byline">by <a href="{{urlToUser .Author.Login}}">{{.Author.Name}}</a></span>
+				<span class="date">on {{template "Date" .Date}}</span>
+				{{else}}
+				<span class="date">{{template "Date" .Date}}</span>
+				{{end}}
+			</div>
+		</div>
+		{{end}}
+	</div>
+</div>
+{{end}}

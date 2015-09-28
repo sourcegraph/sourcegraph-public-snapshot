@@ -1,0 +1,63 @@
+lib_path = File.join(File.dirname(__FILE__), 'lib')
+$:.unshift(lib_path) unless $:.include?(lib_path)
+
+load './tasks/bower.rake'
+
+require 'rake/testtask'
+task :test do |t|
+  $: << File.expand_path('test/')
+  Dir.glob('./test/**/*_test.rb').each { |file| require file }
+end
+
+desc 'Dumps output to a CSS file for testing'
+task :debug do
+  require 'sass'
+  path = Bootstrap.stylesheets_path
+  %w(bootstrap).each do |file|
+    engine = Sass::Engine.for_file("#{path}/#{file}.scss", syntax: :scss, load_paths: [path])
+    File.open("./#{file}.css", 'w') { |f| f.write(engine.render) }
+  end
+end
+
+desc 'Convert bootstrap to bootstrap-sass'
+task :convert, :branch do |t, args|
+  require './tasks/converter'
+  Converter.new(branch: args[:branch]).process_bootstrap
+end
+
+desc 'LESS to stdin -> Sass to stdout'
+task :less_to_scss, :branch do |t, args|
+  require './tasks/converter'
+  puts Converter.new(branch: args[:branch]).convert_less(STDIN.read)
+end
+
+desc 'Compile bootstrap-sass to tmp/ (or first arg)'
+task :compile, :css_path do |t, args|
+  require 'sass'
+  require 'term/ansicolor'
+
+  path = 'assets/stylesheets'
+  css_path = args.with_defaults(css_path: 'tmp')[:css_path]
+  puts Term::ANSIColor.bold "Compiling SCSS in #{path}"
+  Dir.mkdir(css_path) unless File.directory?(css_path)
+  %w(_bootstrap bootstrap/_theme).each do |file|
+    save_path = "#{css_path}/#{file.sub(/(^|\/)?_+/, '\1').sub('/', '-')}.css"
+    puts Term::ANSIColor.cyan("  #{save_path}") + '...'
+    engine    = Sass::Engine.for_file("#{path}/#{file}.scss", syntax: :scss, load_paths: [path])
+    css       = engine.render
+    File.open(save_path, 'w') { |f| f.write css }
+  end
+end
+
+desc 'Start a dummy (test) Rails app server'
+task :dummy_rails do
+  require 'rack'
+  require 'term/ansicolor'
+  port = ENV['PORT'] || 9292
+  puts %Q(Starting on #{Term::ANSIColor.cyan "http://localhost:#{port}"})
+  Rack::Server.start(
+    config: 'test/dummy_rails/config.ru',
+    Port: port)
+end
+
+task default: :test

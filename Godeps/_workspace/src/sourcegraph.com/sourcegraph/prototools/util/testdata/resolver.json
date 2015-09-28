@@ -1,0 +1,579 @@
+{
+  "file_to_generate": [
+    "world/region/hello.proto"
+  ],
+  "parameter": "out=resolver.json",
+  "proto_file": [
+    {
+      "name": "world/region/human.proto",
+      "package": "world.human",
+      "message_type": [
+        {
+          "name": "Options",
+          "field": [
+            {
+              "name": "HasHair",
+              "number": 1,
+              "label": 1,
+              "type": 8
+            }
+          ]
+        }
+      ],
+      "source_code_info": {
+        "location": [
+          {
+            "span": [
+              0,
+              0,
+              6,
+              1
+            ]
+          },
+          {
+            "path": [
+              2
+            ],
+            "span": [
+              2,
+              8,
+              19
+            ]
+          },
+          {
+            "path": [
+              4,
+              0
+            ],
+            "span": [
+              4,
+              0,
+              6,
+              1
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              1
+            ],
+            "span": [
+              4,
+              8,
+              15
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0
+            ],
+            "span": [
+              5,
+              8,
+              25
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              4
+            ],
+            "span": [
+              5,
+              8,
+              4,
+              17
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              5
+            ],
+            "span": [
+              5,
+              8,
+              12
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              1
+            ],
+            "span": [
+              5,
+              13,
+              20
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              3
+            ],
+            "span": [
+              5,
+              23,
+              24
+            ]
+          }
+        ]
+      },
+      "syntax": "proto3"
+    },
+    {
+      "name": "world/region/building.proto",
+      "package": "world.building",
+      "message_type": [
+        {
+          "name": "Options",
+          "field": [
+            {
+              "name": "HasRoof",
+              "number": 1,
+              "label": 1,
+              "type": 8
+            }
+          ]
+        }
+      ],
+      "source_code_info": {
+        "location": [
+          {
+            "span": [
+              0,
+              0,
+              6,
+              1
+            ]
+          },
+          {
+            "path": [
+              2
+            ],
+            "span": [
+              2,
+              8,
+              22
+            ]
+          },
+          {
+            "path": [
+              4,
+              0
+            ],
+            "span": [
+              4,
+              0,
+              6,
+              1
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              1
+            ],
+            "span": [
+              4,
+              8,
+              15
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0
+            ],
+            "span": [
+              5,
+              8,
+              25
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              4
+            ],
+            "span": [
+              5,
+              8,
+              4,
+              17
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              5
+            ],
+            "span": [
+              5,
+              8,
+              12
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              1
+            ],
+            "span": [
+              5,
+              13,
+              20
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              3
+            ],
+            "span": [
+              5,
+              23,
+              24
+            ]
+          }
+        ]
+      },
+      "syntax": "proto3"
+    },
+    {
+      "name": "world/region/hello.proto",
+      "dependency": [
+        "world/region/human.proto",
+        "world/region/building.proto"
+      ],
+      "message_type": [
+        {
+          "name": "Hello",
+          "field": [
+            {
+              "name": "name",
+              "number": 1,
+              "label": 1,
+              "type": 9
+            },
+            {
+              "name": "options",
+              "number": 2,
+              "label": 1,
+              "type": 11,
+              "type_name": ".world.human.Options"
+            },
+            {
+              "name": "building",
+              "number": 3,
+              "label": 1,
+              "type": 11,
+              "type_name": ".world.building.Options"
+            }
+          ]
+        }
+      ],
+      "source_code_info": {
+        "location": [
+          {
+            "span": [
+              0,
+              0,
+              9,
+              1
+            ]
+          },
+          {
+            "path": [
+              3,
+              0
+            ],
+            "span": [
+              2,
+              7,
+              33
+            ]
+          },
+          {
+            "path": [
+              3,
+              1
+            ],
+            "span": [
+              3,
+              7,
+              36
+            ]
+          },
+          {
+            "path": [
+              4,
+              0
+            ],
+            "span": [
+              5,
+              0,
+              9,
+              1
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              1
+            ],
+            "span": [
+              5,
+              8,
+              13
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0
+            ],
+            "span": [
+              6,
+              8,
+              24
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              4
+            ],
+            "span": [
+              6,
+              8,
+              5,
+              15
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              5
+            ],
+            "span": [
+              6,
+              8,
+              14
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              1
+            ],
+            "span": [
+              6,
+              15,
+              19
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              0,
+              3
+            ],
+            "span": [
+              6,
+              22,
+              23
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              1
+            ],
+            "span": [
+              7,
+              2,
+              34
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              1,
+              4
+            ],
+            "span": [
+              7,
+              2,
+              6,
+              24
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              1,
+              6
+            ],
+            "span": [
+              7,
+              2,
+              21
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              1,
+              1
+            ],
+            "span": [
+              7,
+              22,
+              29
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              1,
+              3
+            ],
+            "span": [
+              7,
+              32,
+              33
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              2
+            ],
+            "span": [
+              8,
+              8,
+              44
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              2,
+              4
+            ],
+            "span": [
+              8,
+              8,
+              7,
+              34
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              2,
+              6
+            ],
+            "span": [
+              8,
+              8,
+              30
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              2,
+              1
+            ],
+            "span": [
+              8,
+              31,
+              39
+            ]
+          },
+          {
+            "path": [
+              4,
+              0,
+              2,
+              2,
+              3
+            ],
+            "span": [
+              8,
+              42,
+              43
+            ]
+          }
+        ]
+      },
+      "syntax": "proto3"
+    }
+  ]
+}

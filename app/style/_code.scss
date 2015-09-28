@@ -1,0 +1,164 @@
+.line.main-byte-range .line-content {
+	background-color: $active-code-bg;
+	-webkit-animation:highlight-flash 1s;
+	-moz-animation:highlight-flash 1s;
+	animation:highlight-flash 1s;
+
+	box-shadow:0px 0px 7px $active-code-bg;
+}
+
+pre.code {
+	border: 0;
+	border-radius: 0;
+	white-space: nowrap;
+	background-color: transparent;
+}
+
+pre code {
+	display: block;
+	border: none;
+	border-radius: 0;
+}
+
+pre code {
+	overflow: auto;
+	white-space: pre;
+}
+
+.code-box {
+	background: #ffffff;
+	border: 1px solid #979797;
+}
+
+.line-numbered-code td {
+	overflow: visible;
+	white-space: pre-wrap;
+}
+
+/* this class can be used to insert Markdown (backtick-style) entries in
+the middle of prose */
+.backtick {
+	font-family: $code-font-family;
+	border: 1px solid #eaeaea;
+	padding: 2px 3px;
+}
+
+pre code, .line-numbered-code td {
+	tab-size: 4;
+
+	background-color: $code-bg;
+
+	line-height: $code-line-height;
+	font-size: $code-font-size;
+	font-family: $code-font-family;
+	padding-top: 0;
+	padding-bottom: 0;
+
+	a.ref, a.ann-link, a.defn-popover {
+		padding: 0 1.7px;
+		margin: 0 -1.7px;
+		text-decoration: none;
+		border-radius: 2px;
+		border: solid 1px transparent;
+		display: inline-block;
+
+		&:hover, &.highlight, &.highlight-primary, &.highlight-mainbox-primary {
+			.x {
+				background-color: $highlight-ref-bg !important;
+			}
+			background: $highlight-ref-bg;
+			border: $highlight-ref-border;
+			-webkit-filter: brightness(0.9) contrast(1.55);
+		}
+		&.highlight-secondary, &.highlight-mainbox-secondary {
+			.x {
+				background-color: $highlight-ref-secondary-bg !important;
+			}
+			background: $highlight-ref-secondary-bg;
+			border: $highlight-ref-secondary-border;
+			-webkit-filter: brightness(1.0) contrast(1.2);
+		}
+
+		&.selected-primary {
+			.x {
+				background-color: rgba(78, 155, 212, 0.15) !important;
+			}
+			border-bottom: 1px dotted $sg-blue-color;
+			background-color: rgba(78, 155, 212, 0.15);
+			padding: 2px 2px 1px 2px;
+		}
+
+		&.selected-secondary {
+			.x {
+				background-color: rgba(78, 155, 212, 0.3) !important;
+			}
+			background-color: rgba(78, 155, 212, 0.3);
+			padding: 2px 2px 1px 2px;
+		}
+
+				/* color: #89bdff; // from sunburst theme */
+				color: #333; // from default theme
+	}
+
+	span.match {
+		background: $highlight-ref-bg;
+		border: $highlight-ref-border;
+		-webkit-filter: brightness(0.9) contrast(1.55);
+		color: $text-color !important;
+	}
+
+	a.def.highlight {
+		font-weight: bold;
+	}
+}
+
+.line-numbered-code {
+	width: 100%;
+	word-wrap: break-word;
+	table-layout: fixed;
+	border-collapse: separate;
+
+	.line-number {
+		width: 50px;
+		text-align: right;
+		vertical-align: top;
+		overflow: hidden;
+		// match code
+		font-family: $code-font-family;
+		font-size: $code-font-size;
+		line-height: $code-line-height;
+		border-right: 1px solid #eeeeee;
+
+		color: $code-line-fg;
+
+		padding: $line-number-padding;
+
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+		&:before { content: attr(data-line); }
+	}
+
+	tr:hover .line-number {
+		color: $gray-mid;
+	}
+
+	.line-content {
+		padding-left: 14px;
+	}
+}
+
+$flash-color: #fc0;
+$highlight-flash-transparency: 0.65;
+@-webkit-keyframes highlight-flash {
+	5% { background-color: transparentize($flash-color, $highlight-flash-transparency); }
+}
+@-moz-keyframes highlight-flash {
+	5% { background-color: transparentize($flash-color, $highlight-flash-transparency); }
+}
+@keyframes highlight-flash {
+	5% { background-color: transparentize($flash-color, $highlight-flash-transparency); }
+}

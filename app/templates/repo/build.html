@@ -1,0 +1,122 @@
+{{define "Head"}}<title>Build #{{.Build.Attempt}} - {{.Repo.URI}}@{{.Build.CommitID}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "RepoBody"}}
+<nav class="page-actions">
+	<a class="btn btn-default btn-sm" href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">&laquo; View all builds</a>
+	<a class="btn btn-default btn-sm" href="{{urlToRepoBuildSubroute "repo.build.log" .Repo.URI .Build.CommitID .Build.Attempt}}" target="_blank"><i class="fa fa-file-text"></i>&nbsp; Download logs</a>
+	<form action="{{urlToRepoSubroute "repo.builds.create" .Repo.URI}}" method="post" class="form-inline">
+		<input type="hidden" name="CommitID" value="{{.Build.CommitID}}">
+		<input type="hidden" name="Import" value="{{.Build.Import}}">
+		<input type="hidden" name="Queue" value="true">
+		<input type="hidden" name="UseCache" value="{{.Build.UseCache}}">
+		<input type="hidden" name="Priority" value="{{.Build.Priority}}">
+		<input type="hidden" name="Force" value="true">
+		<button
+		{{if not .Commit}}disabled{{end}}
+		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Rebuild</button>
+		{{if not .Commit}}
+		<span class="help-sm-fade">Disabled because the commit could not be retrieved</span>
+		{{end}}
+		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+	</form>
+</nav>
+
+<div class="row">
+
+	<div class="col-md-6">
+		<div class="media">
+			<header class="repo-build pull-left">
+				<h1 class="label label-{{buildClass .Build}}">
+					<span class="number">#{{.Build.Attempt}}</span>
+					<span class="status">{{buildStatus .Build}}</span>
+				</h1>
+			</header>
+			<div class="media-body">
+				<table class="table repo-build table-condensed">
+					{{if not .Build.StartedAt}}<tr><th>Created</th><td>{{template "TimeAgo" .Build.CreatedAt}}</td></tr>{{end}}
+					{{if not .Build.EndedAt}}<tr><th>Started</th><td>{{template "TimeAgo" .Build.StartedAt}}</td></tr>{{end}}
+					{{if .Build.EndedAt}}<tr><th>Ended</th><td>{{template "TimeAgo" .Build.EndedAt}}</td></tr>{{end}}
+					{{if .Build.StartedAt}}<tr><th>Elapsed</th><td>{{duration .Build.StartedAt (minTime .Build.EndedAt now)}}</td></tr>{{end}}
+					<tr>
+						<th>Priority</th>
+						<td>
+							{{.Build.Priority}}
+							{{if and .CurrentUser (not .Build.StartedAt)}}
+							<form method="post" class="build-priority pull-right">
+								<button type="submit" class="btn btn-default btn-xs" name="Priority" value="{{add32 .Build.Priority 1}}" data-tooltip title="Increase build priority by 1">+1</button>
+								<button type="submit" class="btn btn-default btn-xs" name="Priority" value="{{add32 .Build.Priority 5}}" data-tooltip title="Increase build priority by 5">+5</button>
+								<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+							</form>
+							{{end}}
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		{{with .Commit}}
+		<div class="commit single media repo-build">
+			{{template "Commit" .}}
+			{{$commitRest := commitRestOfMessage .Message}}
+			{{if $commitRest}}
+			<pre class="commit-rest">{{$commitRest}}</pre>
+			{{end}}
+		</div>
+	{{else}}
+		<p>Commit: <code>{{.Build.CommitID}}</code></p>
+		<div class="alert alert-warning">Unable to retrieve commit</div>
+		{{end}}
+	</div>
+
+</div>
+
+{{if .Build.Failure}}
+<div class="alert alert-danger">
+{{if .DisableExternalLinks}}
+	<strong>Build failed.</strong> Check the logs for more information about why
+	this build failed. Frequent causes are compile errors, dependency fetching
+	dependency fetching errors, or limitations in srclib (the underlying code
+	analysis engine).
+{{else}}
+	<strong>Build failed.</strong> Check the logs for more information about why
+	this build failed. Frequent causes are compile errors, dependency fetching
+	errors, limitations in <a href="https://srclib.org/">srclib</a> (the
+	underlying code analysis engine), and internal issues in
+	Sourcegraph. <a href="https://github.com/sourcegraph/sourcegraph.com/issues?q=is%3Aopen+sort%3Aupdated-desc">Post
+	an issue</a> or <a href="mailto:support@sourcegraph.com">contact us</a> for help.
+{{end}}
+</div>
+{{end}}
+
+{{if .Tasks}}
+<table class="table repo-build-tasks table-condensed">
+	<thead>
+		<tr><th>Task ID</th><th>Source unit</th><th>Title</th><th>Status</th><th>Started</th><th>Elapsed</th><th></th></tr>
+	</thead>
+	{{$currentUser := .CurrentUser}}
+	{{$repo := .Repo}}
+	{{range .Tasks}}
+	<tr class="{{if .Failure}}danger{{else if .Success}}success{{else if and (.StartedAt) (not .EndedAt)}}info{{end}}">
+		<th>#{{.TaskID}}</th>
+		<td>{{if .UnitType}}{{.UnitType}} at {{.Unit}}{{end}}</td>
+		<td class="op">{{.Op}}</td>
+		<td>
+			{{if .Failure}} Failed
+			{{else if .Success}} Succeeded
+			{{else if and (.StartedAt) (not .EndedAt)}} In progress
+			{{else}} Queued
+			{{end}}
+		</td>
+		<td>{{template "TimeAgo" .StartedAt}}</td>
+		<td>{{duration .StartedAt .EndedAt}}</td>
+		<td><a href="{{urlToRepoBuildTaskSubroute "repo.build.task.log" $repo.URI .CommitID .Attempt .TaskID}}" class="build-task-logs" target="_blank">Logs</a></td>
+	</tr>
+	{{end}}
+</table>
+{{else if not .Build.Failure}}
+<div class="alert alert-warning">This build has no tasks created yet. Refresh this page later to see progress.</div>
+{{end}}
+{{end}}

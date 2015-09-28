@@ -1,0 +1,38 @@
+$doc-font-size: 16px;
+
+.repo-doc-body {
+	padding: 35px;
+	font-size: $doc-font-size;
+}
+
+.repo-doc-body, .app-docs-body {
+	line-height: 1.6;
+
+	h1, h2 {
+		margin-top: 30px;
+	}
+
+	h1, h2, h3, h4, h5, h6 {
+		margin-bottom: $doc-font-size;
+	}
+
+	p, pre, ul, ol, table, blockquote {
+		margin-bottom: $doc-font-size;
+	}
+
+	h1:first-child {
+		margin-top: 0;
+		padding-bottom: 12px;
+		border-bottom: solid 2px $hr-border;
+	}
+
+	pre {
+		padding: $padding-large-vertical $padding-large-horizontal;
+		background-color: #f5fafe;
+		code {
+			font-size: 14px;
+			line-height: 1.42;
+			background: none;
+		}
+	}
+}

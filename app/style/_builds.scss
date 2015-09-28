@@ -1,0 +1,28 @@
+.builds .build {
+	.bid {
+		font-weight: normal;
+	}
+	.repo-link {
+		font-weight: bold;
+	}
+	.commit-id {
+		font-size: $font-size-small*0.9;
+		opacity: 0.3;
+	}
+	&:hover .commit-id {
+		opacity: 1;
+	}
+}
+
+.build-indicator {
+	color: #fff !important;
+	&.text-danger {
+		font-size: 13px;
+		display: block;
+		padding: 0 7px;
+		color: #dd0000 !important;
+	}
+	i {
+		margin-right: 1px !important;
+	}
+}

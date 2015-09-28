@@ -1,0 +1,17 @@
+{{define "Head"}}<title>{{.EntrySpec.Path}} at {{.EntrySpec.RepoRev.Rev}} - {{.Repo.URI}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "RepoBody"}}
+{{if .Documentation}}
+<div class="plain-file readme panel panel-default">
+	<div class="panel-heading readme-file">
+		<i class="fa fa-book"></i> {{template "Breadcrumb" (fileToBreadcrumb .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path)}}
+	</div>
+	<div class="panel-body theme-default repo-doc-body">
+		{{sanitizeHTML .Documentation}}
+	</div>
+</div>
+
+{{end}}
+{{end}}

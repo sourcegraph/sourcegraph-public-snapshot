@@ -1,0 +1,47 @@
+{{/*
+	code/file is the main template for the code browsing view. Non-code files are
+	rendered using repo/tree/plain_file.
+*/}}
+
+{{define "Head"}}<title>{{.EntrySpec.Path}} at {{.EntrySpec.RepoRev.Rev}} - {{.Repo.URI}} - Sourcegraph</title>
+{{if .MetaDescription}}<meta name="description" content="{{.MetaDescription}}">{{end}}
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:site" content="@srcgraph" />
+{{with .Definition}}
+	<meta name="twitter:title" content="{{.Def.Fmt.DefKeyword}} {{.Def.Fmt.Name "scope"}}{{.Def.Fmt.NameAndTypeSeparator}}{{.Def.Fmt.Type "scope"}} (in {{.Def.Repo}}: {{.Def.File}})" />
+	<meta name="twitter:description" content="{{truncate 200 (textFromHTML .Def.DocHTML.HTML)}}" />
+{{else}}
+	<meta name="twitter:title" content="{{.EntrySpec.Path}} in {{.EntrySpec.RepoRev.URI}} at {{.EntrySpec.RepoRev.Rev}}" />
+{{end}}
+{{end}}
+
+{{define "RepoBody"}}
+	{{with .Definition}}
+	<noscript>
+		<h2 class="def-title">
+			{{.Def.Fmt.DefKeyword}}
+			<a href="{{urlToDef .Def.Def.DefKey}}">{{defQualifiedName .Def "scope"}}</a>
+		</h2>
+		<pre class="code">
+			{{overrideStyleViaRegexpFlags (defQualifiedNameAndType .Def "scope")}}
+		</pre>
+		<p class="doc">
+			{{sanitizeHTML .Def.DocHTML.HTML}}
+		</p>
+	</noscript>
+	{{end}}
+	{{if .Entry}}{{if .Entry.SourceCode}}
+		<script ignore-csp>
+			window.preloadedCodeViewFile = {
+				"url": "{{urlToRepoTreeEntry .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path}}",
+				"data": "{{json .}}"
+			};
+		</script>
+	{{end}}{{end}}
+	<div id="CodeFileView" class="theme-default"></div>
+
+	<div data-react="TreeEntrySearch"
+			data-repo="{{.EntrySpec.RepoRev.URI}}"
+			data-rev="{{.EntrySpec.RepoRev.Rev}}"
+			data-commit="{{.EntrySpec.RepoRev.CommitID}}"></div>
+{{end}}

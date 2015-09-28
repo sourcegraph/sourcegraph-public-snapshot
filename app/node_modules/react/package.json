@@ -1,0 +1,71 @@
+{
+  "name": "react",
+  "description": "React is a JavaScript library for building user interfaces.",
+  "version": "0.13.3",
+  "keywords": [
+    "react"
+  ],
+  "homepage": "https://github.com/facebook/react/tree/master/npm-react",
+  "bugs": {
+    "url": "https://github.com/facebook/react/issues?labels=react-core"
+  },
+  "license": "BSD-3-Clause",
+  "files": [
+    "README.md",
+    "addons.js",
+    "react.js",
+    "dist/",
+    "lib/"
+  ],
+  "main": "react.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/react.git"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "dependencies": {
+    "envify": "^3.0.0"
+  },
+  "browserify": {
+    "transform": [
+      "envify"
+    ]
+  },
+  "_id": "react@0.13.3",
+  "_shasum": "a2dfa85335d7dc02b82b482f089582e64cc13356",
+  "_resolved": "https://registry.npmjs.org/react/-/react-0.13.3.tgz",
+  "_from": "react@>=0.13.3 <0.14.0",
+  "scripts": {},
+  "_npmVersion": "2.7.3",
+  "_nodeVersion": "0.10.38",
+  "_npmUser": {
+    "name": "zpao",
+    "email": "paul@oshannessy.com"
+  },
+  "maintainers": [
+    {
+      "name": "zpao",
+      "email": "paul@oshannessy.com"
+    },
+    {
+      "name": "jeffmo",
+      "email": "jeff@anafx.com"
+    },
+    {
+      "name": "sebmarkbage",
+      "email": "sebastian@calyptus.eu"
+    },
+    {
+      "name": "spicyj",
+      "email": "ben@benalpert.com"
+    }
+  ],
+  "dist": {
+    "shasum": "a2dfa85335d7dc02b82b482f089582e64cc13356",
+    "tarball": "http://registry.npmjs.org/react/-/react-0.13.3.tgz"
+  },
+  "directories": {},
+  "readme": "ERROR: No README data found!"
+}

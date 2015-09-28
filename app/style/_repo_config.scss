@@ -1,0 +1,26 @@
+.repo-config.panel {
+	.indicator {
+		font-weight: bold;
+		margin-left: 5px;
+	}
+	form.disabled {
+		label {
+			color: $input-color-placeholder !important;
+		}
+	}
+	.well {
+		margin-top: 35px;
+		margin-bottom: 0px;
+	}
+}
+
+
+.alert-repo-config-perms-insufficient {
+	.request-enable {
+		font-weight: bold;
+	}
+	.not-owner {
+		color: $gray;
+		font-size: $font-size-small;
+	}
+}

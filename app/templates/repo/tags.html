@@ -1,0 +1,19 @@
+{{define "Head"}}<title>Tags - {{.Repo.URI}} - Sourcegraph</title>
+{{end}}
+
+{{define "RepoBody"}}
+{{if .Tags}}
+<ol class="list-group">
+	{{$repoURI := .Repo.URI}}
+	{{range .Tags}}
+	<li class="list-group-item">
+		<div class="pull-right" data-react="RepoBuildIndicator" data-uri="{{$repoURI}}" data-rev="{{.CommitID}}" data-buildable="{{autoBuild}}"></div>
+		<a href="{{urlToRepoCommit $repoURI .CommitID}}">{{.Name}}</a>
+	</li>
+	{{end}}
+</ol>
+{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+{{else}}
+<div class="alert alert-info">No tags found.</div>
+{{end}}
+{{end}}

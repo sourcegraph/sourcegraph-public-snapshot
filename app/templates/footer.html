@@ -1,0 +1,47 @@
+{{define "Footer"}}
+{{if eq appconf.HeaderAndFooterLinks 1}}
+	<footer id="footer">
+		<div class="footer-inner">
+			<div class="container{{if .FullWidth}}-fluid{{end}}">
+				<div class="container">
+					<div class="row">
+						<div class="col-sm-12 binary-downloads">
+							<p class="text-center">
+								<strong><span class="logo">&#x2731; Sourcegraph</span></strong>
+								<span class="version"
+									title="{{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}"
+									>{{buildvar.Version}}</span>
+								{{with updateAvailable}}
+									(<u title="Run `src selfupdate` to update Sourcegraph to {{.}}, then restart Sourcegraph / `src serve`">v{{.}}</u> update available)
+								{{end}}
+							</p>
+							{{if (not .DisableExternalLinks)}}
+								<p><i class="fa fa-life-ring"></i> <a href="mailto:support@sourcegraph.com">support@sourcegraph.com</a></p>
+							{{end}}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+{{end}}
+{{if eq appconf.HeaderAndFooterLinks 2}}
+	<footer id="footer">
+		<div class="footer-inner footer-corporate">
+			<div class="container{{if .FullWidth}}-fluid{{end}}">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-12">
+							<p><a href="/"><img class="footer-corporate-logo" src="{{assetURL "/img/logo0-white.svg"}}" alt="Sourcegraph logo"></a></p>
+							{{if (not .DisableExternalLinks)}}
+								<p><a href="https://github.com/sourcegraph/sourcegraph.com/issues">Issue tracker</a></p>
+								<p><a href="mailto:support@sourcegraph.com">Contact us</a></p>
+							{{end}}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+{{end}}
+{{end}}

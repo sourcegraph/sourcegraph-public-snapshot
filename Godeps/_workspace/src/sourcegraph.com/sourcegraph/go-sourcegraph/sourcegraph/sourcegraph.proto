@@ -1,0 +1,2912 @@
+syntax = "proto3";
+package sourcegraph;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "sourcegraph.com/sourcegraph/go-diff/diff/diff.proto";
+import "sourcegraph.com/sourcegraph/go-vcs/vcs/vcs.proto";
+import "sourcegraph.com/sourcegraph/srclib/graph/def.proto";
+import "sourcegraph.com/sourcegraph/srclib/graph/ref.proto";
+import "sourcegraph.com/sourcegraph/srclib/unit/unit.proto";
+import "sourcegraph.com/sourcegraph/vcsstore/vcsclient/vcsclient.proto";
+import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
+import "sourcegraph.com/sqs/pbtypes/void.proto";
+import "sourcegraph.com/sqs/pbtypes/html.proto";
+import "google/api/annotations.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Badge {
+	string name = 1;
+	string description = 2;
+	string image_url = 3 [(gogoproto.customname) = "ImageURL"];
+	string uncounted_image_url = 4 [(gogoproto.customname) = "UncountedImageURL"];
+	string markdown = 5;
+}
+
+// CombinedStatus is the combined status (i.e., incorporating statuses from all
+// contexts) of the repository at a specific rev.
+message CombinedStatus {
+	// Rev is the revision that this status describes. It is set mutually exclusive with CommitID.
+	string rev = 4;
+
+	// CommitID is the full commit ID of the commit this status describes. It is set mutually exclusively with Rev.
+	string commit_id = 1 [(gogoproto.customname) = "CommitID"];
+
+	// State is the combined status of the repository. Possible values are: failure,
+	// pending, or success.
+	string state = 2;
+
+	// Statuses are the statuses for each context.
+	repeated RepoStatus statuses = 3;
+}
+
+message Counter {
+	string name = 1;
+	string description = 2;
+	string image_url = 3 [(gogoproto.customname) = "ImageURL"];
+	string uncounted_image_url = 4 [(gogoproto.customname) = "UncountedImageURL"];
+	string markdown = 5;
+}
+
+// ListOptions specifies general pagination options for fetching a list of results.
+message ListOptions {
+	int32 per_page = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 page = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// ListResponse specifies general pagination response when fetching a list of results.
+message ListResponse {
+	// HasMore is true if there are more entries available after the returned page.
+	bool has_more = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// Discussion stores information about a discussion
+message Discussion {
+	// ID is the unique identifier for this discussion, relative to the repository
+	// that contains it.
+	int64 id = 1 [(gogoproto.customname) = "ID"];
+
+	// Title holds a summary about this discussion.
+	string title = 2;
+
+	// Description holds the description for this discussion.
+	string description = 3;
+
+	// Author is the user that initiated this discussion.
+	UserSpec author = 4 [(gogoproto.nullable) = false];
+
+	// DefKey is the unit the discussion is about. Note that a DefKey
+	// contains a commit component, but we track Discussions across
+	// commits. So all lookups normalize out the commit component, but the
+	// commit component records the commit at the time the Discussion was
+	// created.
+	graph.DefKey def_key = 5 [(gogoproto.nullable) = false];
+
+	// Ratings contains a list of users who have "starred" the discussion
+	repeated UserSpec ratings = 6;
+
+	// Comments contains comments by users in the discussion
+	repeated DiscussionComment comments = 7;
+
+	// CreatedAt holds the creation time of this changeset.
+	pbtypes.Timestamp created_at = 8;
+}
+
+// DiscussionComment contains information about a single comment by a user.
+message DiscussionComment {
+	// ID holds the unique identifier (with reference to the Discussion) of the
+	// comment.
+	int64 id = 1 [(gogoproto.customname) = "ID"];
+
+	// Body holds the text description of the comment.
+	string body = 2;
+
+	// Author is the spec of the user that submitted this comment.
+	UserSpec author = 3 [(gogoproto.nullable) = false];
+
+	// DefKey is the unit the discussion is about. Note this will be the
+	// same as the Discussion's DefKey, except the commit component will
+	// be the commit the user submitted on.
+	graph.DefKey def_key = 5 [(gogoproto.nullable) = false];
+
+	// CreatedAt is the date at which this comment was submitted.
+	pbtypes.Timestamp created_at = 6;
+}
+
+// Changeset stores information about a changeset.
+message Changeset {
+	// ID is the unique identifier for this changeset, relative to the repository
+	// that contains it.
+	int64 id = 1 [(gogoproto.customname) = "ID"];
+
+	// Title holds a summary about this changeset.
+	string title = 2;
+
+	// Description holds the description for this changeset.
+	string description = 3;
+
+	// Author is the user that initiated this changeset.
+	UserSpec author = 4 [(gogoproto.nullable) = false];
+
+	// DeltaSpec contains information about the base and head spec for this
+	// changeset.
+	DeltaSpec delta_spec = 5 [(gogoproto.nullable) = true];
+
+	// Merged specifies whether this changeset was merged.
+	bool merged = 6;
+
+	// CreatedAt holds the creation time of this changeset.
+	pbtypes.Timestamp created_at = 7;
+
+	// ClosedAt holds the time when this changeset was closed or merged.
+	pbtypes.Timestamp closed_at = 8;
+}
+
+// ChangesetReview contains information about a review submitted on a changeset.
+message ChangesetReview {
+	// ID holds the unique identifier (with reference to the changeset) of the
+	// review.
+	int64 id = 1 [(gogoproto.customname) = "ID"];
+
+	// Body holds the text description of the review.
+	string body = 2;
+
+	// Author is the spec of the user that submitted this review.
+	UserSpec author = 3 [(gogoproto.nullable) = false];
+
+	// CreatedAt is the date at which this review was submitted.
+	pbtypes.Timestamp created_at = 4;
+
+	// EditedAt is the last time at which this review was edited. If the review
+	// has never been edited, this value will be nil.
+	pbtypes.Timestamp edited_at = 5;
+
+	// Comments holds any inline comments that were submitted along with this
+	// review.
+	repeated InlineComment comments = 6 [(gogoproto.nullable) = true];
+
+	// Deleted specifies whether this review has been removed.
+	bool deleted = 7;
+}
+
+// ChangesetEvent holds information about an update that occurred on the
+// properties of a Changeset.
+message ChangesetEvent {
+	// Before holds the changeset as it was before the event.
+	Changeset before = 2 [(gogoproto.nullable) = true];
+
+	// After holds the changeset as it became after the event.
+	Changeset after = 3 [(gogoproto.nullable) = true];
+
+	// Op holds the update operation that changed the state.
+	ChangesetUpdateOp op = 4;
+
+	// CreatedAt is the date at which the event was created.
+	pbtypes.Timestamp created_at = 5;
+}
+
+// InlineComment represents a comment made on a line of code. It is uniquely identified
+// via Filename + LineNumber + CommitID. In a Changeset, the CommitID might vary
+// within the same file based on whether the comment was made on the lines that
+// match the pre-index SHA-1 or the lines that match the post-index SHA-1. Pre
+// and post index values may differ from Base and Head of the diff.
+// For more information on indexes see http://git-scm.com/docs/git-diff-index
+message InlineComment {
+	// Filename is the name of the file where this comment was made.
+	string filename = 1;
+
+	// LineNumber is the line number relative to the beginning of the file in
+	// the specified commit.
+	int32 line_number = 2;
+
+	// CommitID is the SHA-1 for the post-image of this file, where the comment
+	// was placed. The post-image can be deduced from the file entry in the diff
+	// that it belong by extracting it's extended header's index entry.
+	string commit_id = 3 [(gogoproto.customname) = "CommitID"];
+
+	// Author is the user that initiated this changeset.
+	UserSpec author = 4 [(gogoproto.nullable) = false];
+
+	// Body holds the body of this comment.
+	string body = 5;
+
+	// CreatedAt holds the creation date of this comment.
+	pbtypes.Timestamp created_at = 6;
+
+	// EditedAt holds the time when this comment was last edited. If no edits occurred,
+	// it will be null.
+	pbtypes.Timestamp edited_at = 7;
+
+	// Deleted indicates whether the comment has been deleted.
+	bool deleted = 8;
+}
+
+// A Readme represents a formatted "README"-type file in a repository.
+message Readme {
+	// Path is the relative path of this readme file from the repository root.
+	string path = 1;
+
+	// HTML is the formatted HTML of this readme.
+	string html = 2 [(gogoproto.customname) = "HTML"];
+}
+
+// GitHubRepo holds additional metadata about GitHub repos.
+message GitHubRepo {
+	int32 stars = 1;
+}
+
+// RepoConfig describes a repository's config. This config is
+// Sourcegraph-specific and is persisted locally.
+//
+// Note: See the RepoOrigins doc for more information on the split
+// between Sourcegraph-specific data and origin-specific data.
+message RepoConfig {
+	// Enabled is whether this repository has been enabled for use on
+	// Sourcegraph by a repository owner or a site admin.
+	bool enabled = 1;
+
+	// LastAdminUID is the UID of the last repo admin user to modify
+	// this repo's settings (for mirrored repos only). When
+	// Sourcegraph needs to perform actions on mirrored GitHub repos
+	// that require OAuth authorization outside of an authorized API
+	// request (e.g., during builds or asynchronous operations), it
+	// consults the repo's LastAdminUID to determine whose identity it
+	// should assume to perform the operation.
+	//
+	// If the LastAdminUID refers to a user who no longer has
+	// permissions to perform the action, GitHub will refuse to
+	// perform the operation. In that case, another admin of the
+	// repository needs to update the settings so that she will become
+	// the new LastAdminUID.
+	int32 last_admin_uid = 2 [(gogoproto.customname) = "LastAdminUID"];
+}
+
+// Repo represents a source code repository.
+message Repo {
+	// URI is a normalized identifier for this repository based on its primary clone
+	// URL. E.g., "github.com/user/repo".
+	string uri = 1 [(gogoproto.customname) = "URI"];
+
+	// Origin is populated for repos fetched via federation or
+	// discovery. It is the hostname of the host that owns the repo.
+	string origin = 21;
+
+	// Name is the base name (the final path component) of the repository, typically
+	// the name of the directory that the repository would be cloned into. (For
+	// example, for git://example.com/foo.git, the name is "foo".)
+	string name = 2;
+
+	// Description is a brief description of the repository.
+	string description = 3;
+
+	// VCS is the short name of the VCS system that this repository uses: "git" or
+	// "hg".
+	string vcs = 4 [(gogoproto.customname) = "VCS"];
+
+	// HTTPCloneURL is the HTTPS clone URL of the repository (or the HTTP clone URL, if
+	// no HTTPS clone URL is available).
+	string http_clone_url = 5 [(gogoproto.customname) = "HTTPCloneURL"];
+
+	// SSHCloneURL is the SSH clone URL if the repository, if any.
+	string ssh_clone_url = 6 [(gogoproto.customname) = "SSHCloneURL"];
+
+	// HomepageURL is the URL to the repository's homepage, if any.
+	string homepage_url = 7 [(gogoproto.customname) = "HomepageURL"];
+
+	// DefaultBranch is the default VCS branch used (typically "master" for git
+	// repositories and "default" for hg repositories).
+	string default_branch = 8;
+
+	// Language is the primary programming language used in this repository.
+	string language = 9;
+
+	// Blocked is whether this repo has been blocked by an admin (and
+	// will not be returned via the external API).
+	bool blocked = 10;
+
+	// Deprecated repositories are labeled as such and hidden from global search
+	// results.
+	bool deprecated = 11;
+
+	// Fork is whether this repository is a fork.
+	bool fork = 12;
+
+	// Mirror indicates whether this repo's canonical location is on
+	// another server. Mirror repos track their upstream.
+	bool mirror = 13;
+
+	// Private is whether this repository is private.
+	bool private = 14;
+
+	// CreatedAt is when this repository was created. If it represents an externally
+	// hosted (e.g., GitHub) repository, the creation date is when it was created at
+	// that origin.
+	pbtypes.Timestamp created_at = 15 [(gogoproto.nullable) = false];
+
+	// UpdatedAt is when this repository's metadata was last updated (on its origin if
+	// it's an externally hosted repository).
+	pbtypes.Timestamp updated_at = 16 [(gogoproto.nullable) = false];
+
+	// PushedAt is when this repository's was last (VCS-)pushed to.
+	pbtypes.Timestamp pushed_at = 17 [(gogoproto.nullable) = false];
+
+	// Permissions describes the permissions that the current user (or anonymous users,
+	// if there is no current user) is granted to this repository.
+	RepoPermissions permissions = 18;
+
+	GitHubRepo github = 19 [(gogoproto.customname) = "GitHub"];
+
+	RepoConfig config = 20;
+}
+
+message BadgeList {
+	repeated Badge badges = 1;
+}
+
+message CounterList {
+	repeated Counter counters = 1;
+}
+
+message RepoBadgesCountHitsOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp since = 2;
+}
+
+message RepoBadgesCountHitsResult {
+	int32 hits = 1;
+}
+
+message RepoListOptions {
+	string name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Specifies a search query for repositories. If specified, then the Sort and
+	// Direction options are ignored
+	string query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	repeated string uri_s = 3 [(gogoproto.customname) = "URIs", (gogoproto.moretags) = "url:\",comma,omitempty\""];
+	bool built_only = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string sort = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string direction = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool no_fork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string state = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions list_options = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// RepoPermissions describes the possible permissions that a user (or an anonymous
+// user) can be granted to a repository.
+message RepoPermissions {
+	bool read = 1;
+	bool write = 2;
+	bool admin = 3;
+}
+
+// RepoRevSpec specifies a repository at a specific commit (or revision specifier,
+// such as a branch, which is resolved on the server side to a specific commit).
+//
+// Filling in CommitID is an optional optimization. It avoids the need for another
+// resolution of Rev. If CommitID is filled in, the "Rev" route variable becomes
+// "Rev===CommitID" (e.g., "master===af4cd6"). Handlers can parse this string to
+// retrieve the pre-resolved commit ID (e.g., "af4cd6") and still return data that
+// constructs URLs using the unresolved revspec (e.g., "master").
+//
+// Why is it important/useful to pass the resolved commit ID instead of just using
+// a revspec everywhere? Consider this case. Your application wants to make a bunch
+// of requests for resources relating to "master"; for example, it wants to
+// retrieve a source file foo.go at master and all of the definitions and
+// references contained in the file. This may consist of dozens of API calls. If
+// each API call specified just "master", there would be 2 problems: (1) each API
+// call would have to re-resolve "master" to its actual commit ID, which takes a
+// lot of extra work; and (2) if the "master" ref changed during the API calls (if
+// someone pushed in the middle of the API call, for example), then your
+// application would receive data from 2 different commits. The solution is for
+// your application to resolve the revspec once and pass both the original revspec
+// and the resolved commit ID in all API calls it makes.
+//
+// And why do we want to preserve the unresolved revspec? In this case, your app
+// wants to let the user continue browsing "master". If the API data all referred
+// to a specific commit ID, then the user would cease browsing master the next time
+// she clicked a link on your app. Preserving the revspec gives the user a choice
+// whether to use the absolute commit ID or the revspec (similar to how GitHub lets
+// you canonicalize a URL with 'y' but does not default to using the canonical
+// URL).
+message RepoRevSpec {
+	RepoSpec repo_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string rev = 2;
+	string commit_id = 3 [(gogoproto.customname) = "CommitID"];
+}
+
+// RepoSpec specifies a repository.
+message RepoSpec {
+	string uri = 1 [(gogoproto.customname) = "URI"];
+}
+
+// RepoStatus is the status of the repository at a specific rev (in a single
+// context).
+message RepoStatus {
+	// State is the current status of the repository. Possible values are: pending,
+	// success, error, or failure.
+	string state = 2;
+
+	// TargetURL is the URL of the page representing this status. It will be linked
+	// from the UI to allow users to see the source of the status.
+	string target_url = 3 [(gogoproto.customname) = "TargetURL"];
+
+	// Description is a short, high-level summary of the status.
+	string description = 4;
+
+	// A string label to differentiate this status from the statuses of other systems.
+	string context = 5;
+
+	pbtypes.Timestamp created_at = 6 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp updated_at = 7 [(gogoproto.nullable) = false];
+}
+
+message RepoStatusesCreateOp {
+	RepoRevSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoStatus status = 2 [(gogoproto.nullable) = false];
+}
+
+message RepoList {
+	repeated Repo repos = 1;
+}
+
+
+service RepoBadges {
+	// ListBadges lists the available badges for repo.
+	rpc ListBadges(RepoSpec) returns (BadgeList) {
+		option (google.api.http) = {
+			get: "/repo_badges/list_badges"
+		};
+	};
+
+	// ListCounters lists the available counters for repo.
+	rpc ListCounters(RepoSpec) returns (CounterList) {
+		option (google.api.http) = {
+			get: "/repo_badges/list_counters"
+		};
+	};
+
+	// RecordHit records a visit to a repo (that will be reflected in
+	// its counter).
+	rpc RecordHit(RepoSpec) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			put: "/repo_badges/record_hit"
+		};
+	};
+
+	// CountHits returns the hit count (optionally in a recent time
+	// period).
+	rpc CountHits(RepoBadgesCountHitsOp) returns (RepoBadgesCountHitsResult) {
+		option (google.api.http) = {
+			get: "/repo_badges/count_hits"
+		};
+	};
+}
+
+service RepoStatuses {
+	// GetCombined fetches the combined repository status for the given commit.
+	rpc GetCombined(RepoRevSpec) returns (CombinedStatus) {
+		option (google.api.http) = {
+			get: "/repo_statuses"
+		};
+	};
+
+	// Create creates a repository status for the given commit.
+	rpc Create(RepoStatusesCreateOp) returns (RepoStatus) {
+		option (google.api.http) = {
+			post: "/repo_statuses"
+		};
+	};
+}
+
+// Repos exposes information about and actions on both locally hosted
+// and remote repositories.
+service Repos {
+	// Get fetches a repository.
+	rpc Get(RepoSpec) returns (Repo) {
+		option (google.api.http) = {
+			get: "/repos"
+		};
+	};
+
+	// List repositories.
+	rpc List(RepoListOptions) returns (RepoList) {
+		option (google.api.http) = {
+			get: "/repos/list"
+		};
+	};
+
+	// Create creates a new repository.
+	rpc Create(ReposCreateOp) returns (Repo) {
+		option (google.api.http) = {
+			post: "/repos"
+		};
+	};
+
+	// Delete removes a repository.
+	rpc Delete(RepoSpec) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			delete: "/repos"
+		};
+	};
+
+	// GetReadme fetches the formatted README file for a repository.
+	rpc GetReadme(RepoRevSpec) returns (Readme) {
+		option (google.api.http) = {
+			get: "/repos/get_readme"
+		};
+	};
+
+	// Enable enables the specified repository.
+	rpc Enable(RepoSpec) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			put: "/repos/enable"
+		};
+	};
+
+	// Disable disables the specified repository.
+	rpc Disable(RepoSpec) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			put: "/repos/disable"
+		};
+	};
+
+	// GetConfig retrieves the configuration for a repository. To
+	// update the config, use Enable or Disable (direct updating is
+	// not currently supported).
+	rpc GetConfig(RepoSpec) returns (RepoConfig) {
+		option (google.api.http) = {
+			get: "/repos/get_config"
+		};
+	};
+
+	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
+	// TODO(slimsag): add google.api.http annotations to these once moved
+	rpc GetCommit(RepoRevSpec) returns (vcs.Commit);
+	// ListCommits returns the list of commits that span between the revisions
+	// specified in the given DeltaSpec. By default, it will return 1 page of
+	// commits with a maximum of DefaultPerPage entries. To retrieve all commits
+	// the PerPage value can be set to -1.
+	rpc ListCommits(ReposListCommitsOp) returns (CommitList);
+	rpc ListBranches(ReposListBranchesOp) returns (BranchList);
+	rpc ListTags(ReposListTagsOp) returns (TagList);
+
+	// ListCommitters returns the list of authors who have contributed
+	// to the main branch of the repo.
+	rpc ListCommitters(ReposListCommittersOp) returns (CommitterList);
+}
+
+service Changesets {
+	// Create creates a new Changeset and returns it, populating
+	// its fields, such as ID and CreatedAt.
+	rpc Create(ChangesetCreateOp) returns (Changeset);
+
+	// Get returns the changeset by RepoSpec and ID.
+	rpc Get(ChangesetSpec) returns (Changeset);
+
+	// List lists changesets for a repository.
+	rpc List(ChangesetListOp) returns (ChangesetList);
+
+	// UpdateChangeset updates a changeset's fields and returns the
+	// update event. If no update occurred, it returns nil.
+	rpc Update(ChangesetUpdateOp) returns (ChangesetEvent);
+
+	// CreateReview creates a new Review and returns it, populating
+	// its fields, such as ID and CreatedAt.
+	rpc CreateReview(ChangesetCreateReviewOp) returns (ChangesetReview);
+
+	// ListReviews returns all reviews for a given changeset.
+	rpc ListReviews(ChangesetListReviewsOp) returns (ChangesetReviewList);
+
+	// ListEvents returns all the events that occurred on a given changeset.
+	rpc ListEvents(ChangesetSpec) returns (ChangesetEventList);
+}
+
+// Discussions is a service for discussing units in a repository
+service Discussions {
+	// Create creates a new Discussion and returns it, populating its
+	// fields, such as ID and CreatedAt.
+	rpc Create(Discussion) returns (Discussion);
+
+	// Get returns the Discussion by RepoSpec and ID.
+	rpc Get(DiscussionSpec) returns (Discussion);
+
+	// List lists changesets for a DefKey
+	rpc List(DiscussionListOp) returns (DiscussionList);
+
+	// CreateComment creates a new DiscussionComment and returns it,
+	// populating its fields, such as ID and CreatedAt.
+	rpc CreateComment(DiscussionCommentCreateOp) returns (DiscussionComment);
+
+	// UpdateRating either adds or removes a star by a User
+	rpc UpdateRating(DiscussionRatingUpdateOp) returns (pbtypes.Void);
+}
+
+message ReposCreateOp {
+	// URI is the desired URI of the new repository.
+	string uri = 1 [(gogoproto.customname) = "URI"];
+
+	// VCS is the desired VCS type of the new repository (only "git"
+	// is currently supported).
+	string vcs = 2 [(gogoproto.customname) = "VCS"];
+
+	// CloneURL is the clone URL of the repository for mirrored
+	// repositories. If blank, a new hosted repository is created
+	// (i.e., a repo whose origin is on the server). If Mirror is
+	// true, a clone URL must be provided.
+	string clone_url = 3 [(gogoproto.customname) = "CloneURL"];
+
+	// Mirror is a boolean value indicating whether the newly created
+	// repository should be a mirror. Mirror repositories are
+	// periodically updated to track their upstream (which is
+	// specified using the CloneURL field of this message).
+	bool mirror = 4;
+
+	// Private is whether this repository is private.
+	bool private = 5;
+}
+
+message ReposListCommitsOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoListCommitsOptions opt = 2;
+}
+
+message RepoListCommitsOptions {
+	string head = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string base = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string path = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool refresh_cache = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+message CommitList {
+	repeated vcs.Commit commits = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message ReposListBranchesOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoListBranchesOptions opt = 2;
+}
+
+message RepoListBranchesOptions {
+	bool include_commit = 4;
+	string behind_ahead_branch = 5;
+	string contains_commit = 6;
+	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message BranchList {
+	repeated vcs.Branch branches = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message ReposListTagsOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoListTagsOptions opt = 2;
+}
+
+message ReposListCommittersOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoListCommittersOptions opt = 2;
+}
+
+message RepoListCommittersOptions {
+	string rev = 1;
+	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message CommitterList {
+	repeated vcs.Committer committers = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message ChangesetCreateOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	Changeset changeset = 2;
+}
+
+message ChangesetCreateReviewOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	int64 changeset_id = 2 [(gogoproto.customname) = "ChangesetID"];
+	ChangesetReview review = 3;
+}
+
+message ChangesetListReviewsOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	int64 changeset_id = 2 [(gogoproto.customname) = "ChangesetID"];
+}
+
+message ChangesetSpec {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	int64 id = 2 [(gogoproto.customname) = "ID"];
+}
+
+message ChangesetUpdateOp {
+	// Repo holds the RepoSpec where the Changeset to be updated is located.
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// ID holds the ID of the changeset that is to be updated.
+	int64 id = 2 [(gogoproto.customname) = "ID"];
+
+	// Title, if non-empty, will be set as the new title of the changeset.
+	string title = 3;
+
+	// Description, if specified, will become the new description of the changeset.
+	string description = 4;
+
+	// Open, if true, will set the changeset's ClosedAt value to nil.
+	bool open = 5;
+
+	// Close, if true, will set the ClosedAt date.
+	bool close = 6;
+
+	// Merged, if true, will update the changeset to indicate that it was priorly
+	// merged.
+	bool merged = 7;
+
+	// Author is the user that initiated this event.
+	UserSpec Author = 8 [(gogoproto.nullable) = false];
+}
+
+message DiscussionSpec {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	int64 id = 2 [(gogoproto.customname) = "ID"];
+}
+
+enum DiscussionListOrder {
+	// List discussions in reverse chronological order
+	Date = 0;
+
+	// List discussion such that highly rated items are in front
+	Top = 1;
+}
+
+message DiscussionListOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	graph.DefKey def_key = 2 [(gogoproto.nullable) = false];
+	DiscussionListOrder order = 3;
+	ListOptions list_options = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message DiscussionCommentCreateOp {
+	int64 discussion_id = 1 [(gogoproto.customname) = "DiscussionID"];
+	DiscussionComment comment = 2;
+}
+
+message DiscussionRatingUpdateOp {
+	int64 discussion_id = 1 [(gogoproto.customname) = "DiscussionID"];
+	UserSpec user = 2;
+}
+
+message RepoListTagsOptions {
+	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message TagList {
+	repeated vcs.Tag tags = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message MirrorReposRefreshVCSOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	VCSCredentials credentials = 2;
+}
+
+// VCSCredentials for authentication during communication with VCS remotes.
+message VCSCredentials {
+	// Pass is the password provided to the VCS.
+	string pass = 1 [(gogoproto.nullable) = false];
+}
+
+// MirrorRepos handles operations related to maintaining mirrors on
+// Sourcegraph of repositories hosted elsewhere.
+service MirrorRepos {
+	// Refresh fetches the newest VCS data from the repo's origin.
+	rpc RefreshVCS(MirrorReposRefreshVCSOp) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			put: "/mirror_repos"
+		};
+	};
+}
+
+
+// MirroredRepoSSHKeys stores repository SSH keys (e.g., to access
+// private repos on some external origin that we mirror).
+service MirroredRepoSSHKeys {
+	rpc Create(MirroredRepoSSHKeysCreateOp) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			post: "/mirrored_repo_ssh_keys"
+		};
+	};
+
+	rpc Get(RepoSpec) returns (SSHPrivateKey) {
+		option (google.api.http) = {
+			get: "/mirrored_repo_ssh_keys"
+		};
+	};
+
+	rpc Delete(RepoSpec) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			delete: "/mirrored_repo_ssh_keys"
+		};
+	};
+}
+
+message MirroredRepoSSHKeysCreateOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	SSHPrivateKey key = 2 [(gogoproto.nullable) = false];
+}
+
+// An SSHPrivateKey is an SSH key used to access a repository.
+message SSHPrivateKey {
+	// PEM is the encoded key.
+	bytes pem = 2 [(gogoproto.customname) = "PEM"];
+}
+
+
+// A Build represents a scheduled, completed, or failed repository analysis and
+// import job.
+//
+// A build is composed of many tasks. The worker that is responsible for a build or
+// task determines whether a task failure causes the whole build to fail. (Keep
+// reading to see how we determine who is responsible for a build or task.) There
+// is no single kind of worker; currently there are 2 things that could be
+// considered workers because they build builds or perform tasks: the builders on
+// Sourcegraph.com, and anyone who runs `src push` locally.
+//
+// Each task has logs associated with it, and each task can be associated with a
+// single source unit (or not).
+//
+// Builds have a Queue bool field. If a process creates a build that
+// has Queue=true, that means that it relinquishes responsibility for
+// it; some other queue workers (on the server, for example) will
+// dequeue and complete it. If Queue=false, then the process that
+// created it is responsible for completing it. The only exception to
+// this is that after a certain timeout (on the order of 45 minutes),
+// started but unfinished builds are marked as failed.
+//
+// Builds and tasks are simple "build"ing blocks (no pun intended) with simple
+// behavior. As we encounter new requirements for the build system, they may
+// evolve.
+message Build {
+	// Attempt is the 1-indexed number representing sequential attempts at building
+	// this repository.
+	uint32 attempt = 1;
+
+	// Repo is the URI of the repository this build is for.
+	string repo = 2;
+
+	// CommitID is the full resolved commit ID to build.
+	string commit_id = 3 [(gogoproto.customname) = "CommitID"];
+
+	pbtypes.Timestamp created_at = 4 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp started_at = 5;
+	pbtypes.Timestamp ended_at = 6;
+	pbtypes.Timestamp heartbeat_at = 7;
+	bool success = 8;
+	bool failure = 9;
+
+	// Killed is true if this build's worker didn't exit on its own accord. It is
+	// generally set when no heartbeat has been received within a certain interval. If
+	// Killed is true, then Failure must also always be set to true. Unqueued builds
+	// are never killed for lack of a heartbeat.
+	bool killed = 10;
+
+	// Host is the hostname of the machine that is working on this build.
+	string host = 11;
+
+	bool purged = 12;
+	BuildConfig build_config = 13 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// BuildConfig configures a repository build.
+message BuildConfig {
+	// Import is whether to import the build data into the database
+	// when the build is complete. The data must be imported for
+	// Sourcegraph's web app or API to use it.
+	bool import = 1;
+
+	// Queue is whether this build should be enqueued. If enqueued, any worker may
+	// begin running this build. If not enqueued, it is up to the client to run the
+	// build and update it accordingly.
+	bool queue = 2;
+
+	// UseCache is whether to use cached build data files. If false, the
+	// .sourcegraph-data directory will be wiped out before the build begins.
+	//
+	// Regardless of the value of UseCache, the build data files will be uploaded to
+	// the central cache after the build ends.
+	bool use_cache = 3;
+
+	// Priority of the build in the queue (higher numbers mean the build is dequeued
+	// sooner).
+	int32 priority = 4;
+}
+
+message BuildCreateOptions {
+	BuildConfig build_config = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// Force creation of build. If false, the build will not be created if a build for
+	// the same repository and with the same BuildConfig exists.
+	//
+	// TODO(bliu): test this
+	bool force = 2;
+}
+
+// BuildGetLogOptions specifies options for build log API methods.
+message BuildGetLogOptions {
+	// MinID indicates that only log entries whose monotonically increasing ID is
+	// greater than MinID should be returned.
+	//
+	// To "tail -f" or watch a log for updates, set each subsequent request's MinID to
+	// the MaxID of the previous request.
+	string min_id = 1 [(gogoproto.customname) = "MinID"];
+}
+
+message BuildListOptions {
+	bool queued = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool active = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool ended = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool succeeded = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool failed = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool purged = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string repo = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string commit_id = 8 [(gogoproto.customname) = "CommitID", (gogoproto.moretags) = "url:\",omitempty\""];
+	string sort = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string direction = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions list_options = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message ChangesetListOp {
+	string repo = 1;
+
+	// Open, when true, will only return open changesets.
+	bool open = 2;
+
+	// Closed, when true, will only return closed changeset.
+	bool closed = 3;
+
+	// Head, if set, will restrict the returned list to only changesets
+	// that have this branch as head.
+	string head = 4;
+
+	// Base, when set, will restrict the list to changesets that have this
+	// branch as a base.
+	string base = 5;
+	ListOptions list_options = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message BuildSpec {
+	string commit_id = 1 [(gogoproto.customname) = "CommitID"];
+	uint32 attempt = 2;
+	RepoSpec repo = 3 [(gogoproto.nullable) = false];
+}
+
+// A BuildTask represents an individual step of a build.
+//
+// See the documentation for Build for more information about how builds and tasks
+// relate to each other.
+message BuildTask {
+	// TaskID is the unique ID of this task. It is unique over all tasks, not just
+	// tasks in the same build.
+	int64 task_id = 1 [(gogoproto.customname) = "TaskID"];
+
+	// Repo is the URI of the repository that this task's build is for.
+	string repo = 2;
+
+	string commit_id = 3 [(gogoproto.customname) = "CommitID"];
+
+	uint32 attempt = 4;
+
+	// UnitType is the srclib source unit type of the source unit that this task is
+	// associated with.
+	string unit_type = 5;
+
+	// Unit is the srclib source unit name of the source unit that this task is
+	// associated with.
+	string unit = 6;
+
+	// Op is the srclib toolchain operation (graph, depresolve, etc.) that this task
+	// performs.
+	string op = 7;
+
+	// Order is the order in which this task is performed, relative to other tasks in
+	// the same build. Lower-number-ordered tasks are built first. Multiple tasks may
+	// have the same order.
+	int32 order = 8;
+
+	// CreatedAt is when this task was initially created.
+	pbtypes.Timestamp created_at = 9 [(gogoproto.nullable) = false];
+
+	// StartedAt is when this task's execution began.
+	pbtypes.Timestamp started_at = 10;
+
+	// EndedAt is when this task's execution ended (whether because it succeeded or
+	// failed).
+	pbtypes.Timestamp ended_at = 11;
+
+	// Success is whether this task's execution succeeded.
+	bool success = 13;
+
+	// Failure is whether this task's execution failed.
+	bool failure = 14;
+}
+
+message BuildTaskListOptions {
+	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// A BuildUpdate contains updated information to update on an existing build.
+message BuildUpdate {
+	pbtypes.Timestamp started_at = 1;
+	pbtypes.Timestamp ended_at = 2;
+	pbtypes.Timestamp heartbeat_at = 3;
+	string host = 4;
+	bool success = 5;
+	bool purged = 6;
+	bool failure = 7;
+	bool killed = 8;
+	int32 priority = 9;
+}
+
+// BuildsGetRepoBuildInfoOptions sets options for the Repos.GetBuild call.
+message BuildsGetRepoBuildInfoOptions {
+	// Exact is whether only a build whose commit ID exactly matches the revspec should
+	// be returned. (For non-full-commit ID revspecs, such as branches, tags, and
+	// partial commit IDs, this means that the build's commit ID matches the resolved
+	// revspec's commit ID.)
+	//
+	// If Exact is false, then builds for older commits that are reachable from the
+	// revspec may also be returned. For example, if there's a build for master~1 but
+	// no build for master, and your revspec is master, using Exact=false will return
+	// the build for master~1.
+	//
+	// Using Exact=true is faster as the commit and build history never needs to be
+	// searched. If the exact build is not found, or the exact build was found but it
+	// failed, LastSuccessful and LastSuccessfulCommit for RepoBuildInfo will be nil.
+	bool exact = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// IncludeVCSMetadata is whether the returned RepoBuildInfo should
+	// set the VCS-related fields (CommitsBehind, LastSuccessfulCommit).
+	// These require an extra VCS lookup operation to compute.
+	bool include_vcs_metadata = 2 [(gogoproto.moretags) = "url:\",omitempty\"", (gogoproto.customname) = "IncludeVCSMetadata"];
+}
+
+message BuildsGetRepoBuildInfoOp {
+	RepoRevSpec repo = 1 [(gogoproto.nullable) = false];
+	BuildsGetRepoBuildInfoOptions opt = 2;
+}
+
+message BuildList {
+	repeated Build builds = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message BuildsCreateOp {
+	RepoRevSpec repo_rev = 1 [(gogoproto.nullable) = false];
+	BuildCreateOptions opt = 2;
+}
+
+message BuildsUpdateOp {
+	BuildSpec build = 1 [(gogoproto.nullable) = false];
+	BuildUpdate info = 2 [(gogoproto.nullable) = false];
+}
+
+message BuildsListBuildTasksOp {
+	BuildSpec build = 1 [(gogoproto.nullable) = false];
+	BuildTaskListOptions opt = 2;
+}
+
+message BuildTaskList {
+	repeated BuildTask build_tasks = 1;
+}
+
+message ChangesetReviewList {
+	repeated ChangesetReview reviews = 1;
+}
+
+message ChangesetList {
+	repeated Changeset changesets = 1;
+}
+
+message ChangesetEventList {
+	repeated ChangesetEvent events = 1;
+}
+
+message DiscussionList {
+	repeated Discussion discussions = 1;
+}
+
+message BuildsCreateTasksOp {
+	BuildSpec build = 1 [(gogoproto.nullable) = false];
+	repeated BuildTask tasks = 2;
+}
+
+message BuildsUpdateTaskOp {
+	TaskSpec task = 1 [(gogoproto.nullable) = false];
+	TaskUpdate info = 2 [(gogoproto.nullable) = false];
+}
+
+message BuildsGetLogOp {
+	BuildSpec build = 1 [(gogoproto.nullable) = false];
+	BuildGetLogOptions opt = 2;
+}
+
+message BuildsGetTaskLogOp {
+	TaskSpec task = 1 [(gogoproto.nullable) = false];
+	BuildGetLogOptions opt = 2;
+}
+
+message BuildsDequeueNextOp {
+}
+
+// EmailAddr is an email address associated with a user.
+message EmailAddr {
+	// the email address (case-insensitively compared in the DB and API)
+	string email = 1;
+
+	// whether this email address has been verified
+	bool verified = 2;
+
+	// indicates this is the user's primary email (only 1 email can be primary per user)
+	bool primary = 3;
+
+	// whether Sourcegraph inferred via public data that this is an email for the user
+	bool guessed = 4;
+
+	// indicates that this email should not be associated with the user (even if guessed in the future)
+	bool blacklisted = 5;
+}
+
+message LogEntries {
+	string max_id = 1 [(gogoproto.customname) = "MaxID"];
+	repeated string entries = 2;
+}
+
+message Org {
+	User user = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message OrgListMembersOptions {
+	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// OrgSpec specifies an organization. At least one of Email, Login, and UID must be
+// nonempty.
+message OrgSpec {
+	string org = 1;
+	int32 uid = 2 [(gogoproto.customname) = "UID"];
+}
+
+message OrgsListMembersOp {
+	OrgSpec org = 1 [(gogoproto.nullable) = false];
+	OrgListMembersOptions opt = 2;
+}
+
+message UserList {
+	repeated User users = 1;
+}
+
+// A Person represents either a registered user or a committer to a repository
+// (typically when their commit email can't be resolved to a user).
+message Person {
+	// PersonSpec is an identifier for the person. If the person was resolved to a
+	// user, then both Login and UID are set. Otherwise only Email is set, and it may
+	// be obfuscated (to protect privacy).
+	PersonSpec person_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// FullName is the (possibly empty) full name of the person.
+	string full_name = 2;
+
+	// AvatarURL is the URL to the user's avatar image.
+	string avatar_url = 3 [(gogoproto.customname) = "AvatarURL"];
+}
+
+// PersonSpec specifies a person. At least one of Email, Login, and UID must be
+// nonempty.
+message PersonSpec {
+	// Email is a person's email address. It may be obfuscated (to protect privacy).
+	string email = 1;
+
+	// Login is a user's login.
+	string login = 2;
+
+	// UID is a user's UID.
+	int32 uid = 3 [(gogoproto.customname) = "UID"];
+}
+
+// RepoBuildInfo holds a repository build (if one exists for the originally
+// specified revspec) and additional information. It is returned by
+// Repos.GetRepoBuildInfo.
+message RepoBuildInfo {
+	Build exact = 1;
+	Build last_successful = 2;
+	int32 commits_behind = 3;
+	vcs.Commit last_successful_commit = 4;
+}
+
+message TaskSpec {
+	BuildSpec build_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	int64 task_id = 2 [(gogoproto.customname) = "TaskID"];
+}
+
+// A TaskUpdate contains updated information to update on an existing task.
+message TaskUpdate {
+	pbtypes.Timestamp started_at = 1;
+	pbtypes.Timestamp ended_at = 2;
+	bool success = 3;
+	bool failure = 4;
+}
+
+// User represents a registered user.
+message User {
+	// UID is the numeric primary key for a user.
+	int32 uid = 1 [(gogoproto.customname) = "UID"];
+
+	// Login is the user's username.
+	string login = 2;
+
+	// Domain is the host that the user originates from. If empty, it
+	// is assumed to be the domain of the server.
+	string domain = 3;
+
+	// Name is the (possibly empty) full name of the user.
+	string name = 4;
+
+	// IsOrganization is whether this user represents an organization.
+	bool is_organization = 5;
+
+	// AvatarURL is the URL to an avatar image specified by the user.
+	string avatar_url = 6 [(gogoproto.customname) = "AvatarURL"];
+
+	// Location is the user's physical location.
+	string location = 7;
+
+	// Company is the user's company.
+	string company = 8;
+
+	// HomepageURL is the user's homepage or blog URL.
+	string homepage_url = 9 [(gogoproto.customname) = "HomepageURL"];
+
+	// Disabled is whether the user account is disabled.
+	bool disabled = 10;
+
+	// Admin is whether the user is a site admin for the site named by
+	// the Domain field.
+	bool admin = 12;
+
+	// RegisteredAt is the date that the user registered. If the user has not
+	// registered (i.e., we have processed their repos but they haven't signed into
+	// Sourcegraph), it is null.
+	pbtypes.Timestamp registered_at = 11;
+}
+
+// UserSpec specifies a user. At least one of Login and UID must be
+// nonempty.
+message UserSpec {
+	// Login is a user's login.
+	string login = 1;
+
+	// UID is a user's UID.
+	int32 uid = 2 [(gogoproto.customname) = "UID"];
+
+	// Domain is the host that the user originates from. If empty, it
+	// is assumed to be the domain of the server.
+	string domain = 3;
+}
+
+// UsersListOptions specifies options for the UsersService.List method.
+message UsersListOptions {
+	// Query filters the results to only those whose logins match. The search algorithm
+	// is an implementation detail (currently it is a prefix match).
+	string query = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	string sort = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string direction = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions list_options = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message OrgsListOp {
+	UserSpec member = 1 [(gogoproto.nullable) = false];
+	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message EmailAddrList {
+	repeated EmailAddr email_addrs = 1;
+}
+
+message OrgList {
+	repeated Org orgs = 1;
+}
+
+
+// BuildsService communicates with the build-related endpoints in the Sourcegraph
+// API.
+service Builds {
+	// Get fetches a build.
+	rpc Get(BuildSpec) returns (Build) {
+		option (google.api.http) = {
+			get: "/builds"
+		};
+	};
+
+	// GetRepoBuildInfo gets the best-match build for a specific repo revspec. It
+	// returns additional information about the build, such as whether it is exactly
+	// up-to-date with the revspec or a few commits behind the revspec. The opt param
+	// controls what is returned in this case.
+	rpc GetRepoBuildInfo(BuildsGetRepoBuildInfoOp) returns (RepoBuildInfo) {
+		option (google.api.http) = {
+			get: "/builds/get_repo_build_info"
+		};
+	};
+
+	// List builds.
+	rpc List(BuildListOptions) returns (BuildList) {
+		option (google.api.http) = {
+			get: "/builds/list"
+		};
+	};
+
+	// Create a new build. The build will run asynchronously (Create does not wait for
+	// it to return. To monitor the build's status, use Get.)
+	rpc Create(BuildsCreateOp) returns (Build) {
+		option (google.api.http) = {
+			post: "/builds"
+		};
+	};
+
+	// Update updates information about a build and returns the build after the update
+	// has been applied.
+	rpc Update(BuildsUpdateOp) returns (Build) {
+		option (google.api.http) = {
+			put: "/builds/update"
+		};
+	};
+
+	// ListBuildTasks lists the tasks associated with a build.
+	rpc ListBuildTasks(BuildsListBuildTasksOp) returns (BuildTaskList) {
+		option (google.api.http) = {
+			get: "/builds/list_build_tasks"
+		};
+	};
+
+	// CreateTasks creates tasks associated with a build and returns them with their
+	// TID fields set.
+	rpc CreateTasks(BuildsCreateTasksOp) returns (BuildTaskList) {
+		option (google.api.http) = {
+			post: "/builds/create_tasks"
+		};
+	};
+
+	// UpdateTask updates a task associated with a build.
+	rpc UpdateTask(BuildsUpdateTaskOp) returns (BuildTask) {
+		option (google.api.http) = {
+			put: "/builds/update_task"
+		};
+	};
+
+	// GetLog gets log entries associated with a build.
+	rpc GetLog(BuildsGetLogOp) returns (LogEntries) {
+		option (google.api.http) = {
+			get: "/builds/get_log"
+		};
+	};
+
+	// GetTaskLog gets log entries associated with a task.
+	rpc GetTaskLog(BuildsGetTaskLogOp) returns (LogEntries) {
+		option (google.api.http) = {
+			get: "/builds/get_task_log"
+		};
+	};
+
+	// DequeueNext returns the next queued build and marks it as
+	// having started (atomically). If there are no builds in the
+	// queue, a NotFound error is returned.
+	rpc DequeueNext(BuildsDequeueNextOp) returns (Build) {
+		option (google.api.http) = {
+			get: "/builds/dequeue_next"
+		};
+	};
+}
+
+// OrgsService communicates with the organizations-related endpoints in the
+// Sourcegraph API.
+service Orgs {
+	// Get fetches an organization.
+	rpc Get(OrgSpec) returns (Org) {
+		option (google.api.http) = {
+			get: "/orgs"
+		};
+	};
+
+	// List lists organizations that a user is a member of.
+	rpc List(OrgsListOp) returns (OrgList) {
+		option (google.api.http) = {
+			get: "/orgs/list"
+		};
+	};
+
+	// ListMembers lists members of an organization.
+	rpc ListMembers(OrgsListMembersOp) returns (UserList) {
+		option (google.api.http) = {
+			get: "/orgs/list_members"
+		};
+	};
+}
+
+// PeopleService communicates with the people-related endpoints in the Sourcegraph
+// API.
+service People {
+	// Get gets a person. If an email is provided and it resolves to a registered user,
+	// information about that user is returned. Otherwise a transient person is created
+	// and returned.
+	rpc Get(PersonSpec) returns (Person) {
+		option (google.api.http) = {
+			get: "/people"
+		};
+	};
+}
+
+// Accounts communicates with the account-related endpoints in the
+// Sourcegraph API.
+//
+// For each account, there is also a corresponding user, but there is
+// not an account for every user. This is because users may represent
+// accounts on external services that Sourcegraph doesn't manage (and
+// can't create/update information about).
+service Accounts {
+	// Create creates a new user account.
+	rpc Create(NewAccount) returns (UserSpec) {
+		option (google.api.http) = {
+			post: "/accounts/create"
+		};
+	};
+
+  // RequestPasswordReset stores a password reset token in the database, to
+  // later verify the authenticity of a user using CheckResetToken
+	rpc RequestPasswordReset(UserSpec) returns (User) {
+		option (google.api.http) = {
+			post: "/accounts/request_password_reset"
+		};
+	};
+
+  // CheckResetToken verifies a password reset token is authentic and valid
+	rpc ResetPassword(NewPassword) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			post: "/accounts/reset_password"
+		};
+	};
+
+	// Update profile of existing account.
+	rpc Update(User) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			post: "/accounts/update"
+		};
+	};
+}
+
+message PasswordResetToken {
+  // token is the hard to guess token that allows a user to set a new password.
+  string token = 1;
+}
+
+message NewPassword {
+  // password is the new password for the user who requested the password reset
+  // token.
+  string password = 1;
+
+  PasswordResetToken token = 2;
+}
+
+message NewAccount {
+	// Login is the desired login for the new user account.
+	string login = 1;
+
+	// Email is the primary email address for the new user account.
+	string email = 2;
+
+  // Password is the password for the new user account.
+  string password = 3;
+}
+
+// UsersService communicates with the users-related endpoints in the Sourcegraph
+// API.
+service Users {
+	// Get fetches a user.
+	rpc Get(UserSpec) returns (User) {
+		option (google.api.http) = {
+			get: "/users"
+		};
+	};
+
+	// ListEmails returns a list of a user's email addresses.
+	rpc ListEmails(UserSpec) returns (EmailAddrList) {
+		option (google.api.http) = {
+			get: "/users/list_emails"
+		};
+	};
+
+	// List users.
+	rpc List(UsersListOptions) returns (UserList) {
+		option (google.api.http) = {
+			get: "/users/list"
+		};
+	};
+}
+
+// Auth manages authentication and authorization (via OAuth2).
+service Auth {
+	// GetAuthorizationCodeGrant gets an OAuth2 authorization code
+	// grant from the server that can be traded in for an access token
+	// by calling GetAccessToken. See
+	// https://tools.ietf.org/html/rfc6749#section-4.1 for more
+	// information.
+	rpc GetAuthorizationCode(AuthorizationCodeRequest) returns (AuthorizationCode);
+
+	// GetAccessToken requests the server to issue an access token
+	// using the credentials provided in the AccessTokenRequest.
+	//
+	// If this call is requesting an access token for a
+	// client_credentials grant (i.e., the access token would identify
+	// the client, not any specific user), then the request must not
+	// be authenticated. If the call is requesting an access token to
+	// identify a user, the request must be authenticated using the
+	// client's credentials.
+	//
+	// If the credentials are invalid, grpc.PermissionDenied is
+	// returned.
+	rpc GetAccessToken(AccessTokenRequest) returns (AccessTokenResponse);
+
+	// Identify describes the currently authenticated user and/or
+	// client (if any). It is akin to "whoami".
+	rpc Identify(pbtypes.Void) returns (AuthInfo) {
+		option (google.api.http) = {
+			get: "/auth/identify"
+		};
+	};
+}
+
+// AuthorizationCodeRequest: see
+// https://tools.ietf.org/html/rfc6749#section-4.1.1.
+message AuthorizationCodeRequest {
+	string response_type = 1;
+	string client_id = 2 [(gogoproto.customname) = "ClientID"];
+	string redirect_uri = 3 [(gogoproto.customname) = "RedirectURI"];
+	repeated string scope = 4;
+
+	// UID is the UID of the user who will be presented with the code.
+	int32 uid = 5 [(gogoproto.customname) = "UID"];
+}
+
+// AuthorizationCode represents an access token request using the
+// authorization_code OAuth2 grant type. See
+// http://tools.ietf.org/html/rfc6749#section-4.1.3 for more
+// information.
+//
+// The client_id field is not set in this message; it is taken from
+// the authenticated client for the request (which must exist).
+message AuthorizationCode {
+	string code = 1;
+	string redirect_uri = 2 [(gogoproto.customname) = "RedirectURI"];
+}
+
+// LoginCredentials is the information a user submits to log in.
+message LoginCredentials {
+	// Login is the user's claimed login.
+	string login = 1;
+
+	// Password is the password (possibly) corresponding to the login.
+	string password = 2;
+
+	// In the future we can add 2FA tokens, etc., here.
+}
+
+// BearerJWT is a Bearer JSON Web Token, which is used for client
+// authentication during an authentication grant. See
+// https://tools.ietf.org/html/draft-ietf-oauth-jwt-bearer-12#section-2.1
+// for more information.
+message BearerJWT {
+	// Assertion is a JWT.
+	string assertion = 1;
+}
+
+// AccessTokenRequest contains the information necessary to
+// request an OAuth2 access token. It supports a subset of
+// authorization grant types specified in
+// http://tools.ietf.org/html/rfc6749#section-4.
+message AccessTokenRequest {
+	// See http://tools.ietf.org/html/rfc6749#section-1.3 for more
+	// information on OAuth2 authorization grant types.
+	oneof authorization_grant {
+		AuthorizationCode authorization_code = 1;
+		LoginCredentials resource_owner_password = 2;
+		BearerJWT bearer_jwt = 3 [(gogoproto.customname) = "BearerJWT"];
+	}
+
+	// TokenURL is the token endpoint URL on the OAuth2 authorization
+	// server that the client is requesting an access token from.
+	string token_url = 9 [(gogoproto.customname) = "TokenURL"];
+
+	repeated string scope = 17;
+}
+
+// AccessTokenResponse is a successful access token response. See
+// http://tools.ietf.org/html/rfc6749#section-5.1 for more
+// information.
+message AccessTokenResponse {
+	string access_token = 1;
+	string token_type = 2;
+	int32 expires_in_sec = 3; // optional
+	string refresh_token = 4; // optional
+	repeated string scope = 5; // optional if equal to the requested scope
+}
+
+// AuthInfo describes the currently authenticated client and/or user
+// (if any).
+message AuthInfo {
+	// ClientID is the client ID of the currently authenticated
+	// client. If a user is authenticated using an access token,
+	// ClientID is the client ID of the registered client that the
+	// access token was granted to.
+	string client_id = 1 [(gogoproto.customname) = "ClientID"];
+
+	// UID is the UID of the currently authenticated user (if any).
+	int32 uid = 2 [(gogoproto.customname) = "UID"];
+
+	// Domain is the domain of the currently authenticated user (if
+	// any), or blank if the user account was registered on the
+	// current server.
+	string domain = 3;
+
+}
+
+message AuthorshipInfo {
+	string author_email = 1;
+	pbtypes.Timestamp last_commit_date = 2 [(gogoproto.nullable) = false];
+
+	// LastCommitID is the commit ID of the last commit that this author made to the
+	// thing that this info describes.
+	string last_commit_id = 3 [(gogoproto.customname) = "LastCommitID"];
+}
+
+// Completions holds search query completions.
+message Completions {
+	// TokenCompletions are suggested completions for the token at the raw query's
+	// InsertionPoint.
+	repeated PBToken token_completions = 1 [(gogoproto.nullable) = false];
+
+	// ResolvedTokens is the resolution of the original query's tokens used to produce
+	// the completions. It is useful for debugging.
+	repeated PBToken resolved_tokens = 2 [(gogoproto.nullable) = false];
+
+	repeated TokenError resolve_errors = 3 [(gogoproto.nullable) = false];
+	bool resolution_fatal = 4;
+}
+
+// Def is a code def returned by the Sourcegraph API.
+message Def {
+	graph.Def def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	pbtypes.HTML doc_html = 2 [(gogoproto.customname) = "DocHTML"];
+	graph.DefFormatStrings fmt_strings = 3;
+}
+
+message DefAuthor {
+	int32 uid = 1 [(gogoproto.customname) = "UID"];
+	string email = 2;
+	DefAuthorship def_authorship = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message DefAuthorship {
+	AuthorshipInfo authorship_info = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// Exported is whether the def is exported.
+	bool exported = 2;
+
+	int32 bytes = 3;
+	double bytes_proportion = 4;
+}
+
+message DefClient {
+	int32 uid = 1 [(gogoproto.customname) = "UID"];
+	string email = 2;
+	AuthorshipInfo authorship_info = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// UseCount is the number of times this person referred to the def.
+	int32 use_count = 4;
+}
+
+// A DefDelta represents a single definition that was changed. It has fields for
+// the before (Base) and after (Head) versions. If both Base and Head are non-nil,
+// then the def was changed from base to head. Otherwise, one of the fields being
+// nil means that the def did not exist in that revision (e.g., it was added or
+// deleted from base to head).
+message DefDelta {
+	// the def in the base commit (if nil, this def was added in the head)
+	Def base = 1;
+
+	// the def in the head commit (if nil, this def was deleted in the head)
+	Def head = 2;
+}
+
+// DefGetOptions specifies options for DefsService.Get.
+message DefGetOptions {
+	bool doc = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// DefListAuthorsOptions specifies options for DefsService.ListAuthors.
+message DefListAuthorsOptions {
+	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DefListClientsOptions specifies options for DefsService.ListClients.
+message DefListClientsOptions {
+	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DefListExamplesOptions specifies options for DefsService.ListExamples.
+message DefListExamplesOptions {
+	bool formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Filter by a specific Repo URI
+	string repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// TokenizedSource requests that the source code be returned as a tokenized data
+	// structure rather than an (annotated) string.
+	//
+	// This is useful when the client wants to take full control of rendering and
+	// manipulating the contents.
+	bool tokenized_source = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	ListOptions list_options = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DefListOptions specifies options for DefsService.List.
+message DefListOptions {
+	string name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Specifies a search query for defs. If specified, then the Sort and Direction
+	// options are ignored
+	string query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
+	// with the specified start and end byte offsets. This filter is only applied if
+	// both values are set.
+	uint32 byte_start = 3;
+
+	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
+	// with the specified start and end byte offsets. This filter is only applied if
+	// both values are set.
+	uint32 byte_end = 4;
+
+	// DefKeys, if set, will return the definitions that match the given DefKey
+	repeated graph.DefKey def_keys = 5;
+
+	// RepoRevs constrains the results to a set of repository revisions (given by their
+	// URIs plus an optional "@" and a revision specifier). For example,
+	// "repo.com/foo@revspec".
+	repeated string repo_revs = 6 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
+
+	string unit_type = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string unit = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string path = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// File, if specified, will restrict the results to only defs defined in the
+	// specified file.
+	string file = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// FilePathPrefix, if specified, will restrict the results to only defs defined in
+	// files whose path is underneath the specified prefix.
+	string file_path_prefix = 11 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	repeated string kinds = 12 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
+	bool exported = 13 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool nonlocal = 14 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// IncludeTest is whether the results should include definitions in test files.
+	bool include_test = 15 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Enhancements
+	bool doc = 16 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	bool fuzzy = 17 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Sorting
+	string sort = 18 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	string direction = 19 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Paging
+	ListOptions list_options = 20 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message DefListRefsOptions {
+	bool authorship = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DefSpec specifies a def.
+message DefSpec {
+	string repo = 1;
+	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
+	string unit_type = 3;
+	string unit = 4;
+	string path = 5;
+}
+
+message DefsGetOp {
+	DefSpec def = 1 [(gogoproto.nullable) = false];
+	DefGetOptions opt = 2;
+}
+
+message DefList {
+	repeated Def defs = 1;
+}
+
+message DefsListRefsOp {
+	DefSpec def = 1 [(gogoproto.nullable) = false];
+	DefListRefsOptions opt = 2;
+}
+
+message RefList {
+	repeated Ref refs = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message DefsListExamplesOp {
+	DefSpec def = 1 [(gogoproto.nullable) = false];
+	// If set, source code in the examples will be linked to this branch, rather
+	// than to the commit ID.
+	string rev = 2;
+	DefListExamplesOptions opt = 3;
+}
+
+message ExampleList {
+	repeated Example examples = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message DefsListAuthorsOp {
+	DefSpec def = 1 [(gogoproto.nullable) = false];
+	DefListAuthorsOptions opt = 2;
+}
+
+message DefsListClientsOp {
+	DefSpec def = 1 [(gogoproto.nullable) = false];
+	DefListClientsOptions opt = 2;
+}
+
+// Delta represents the difference between two commits (possibly in 2 separate
+// repositories).
+message Delta {
+	RepoRevSpec base = 1 [(gogoproto.nullable) = false];
+	RepoRevSpec head = 2 [(gogoproto.nullable) = false];
+	vcs.Commit base_commit = 3;
+	vcs.Commit head_commit = 4;
+	Repo base_repo = 5;
+	Repo head_repo = 6;
+	Build base_build = 7;
+	Build head_build = 8;
+}
+
+// DeltaAffectedPerson describes a person (registered user or committer email
+// address) that is affected by a delta. It includes fields for the person affected
+// as well as the defs that are the reason why we consider them to be affected.
+//
+// The person's relationship to the Defs depends on what method returned this
+// DeltaAffectedPerson. If it was returned by a method that lists authors, then the
+// Defs are definitions that the Person committed. If it was returned by a method
+// that lists clients (a.k.a users), then the Defs are definitions that the Person
+// uses.
+message DeltaAffectedPerson {
+	// the affected person
+	Person person = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// the defs they authored or use (the reason why they're affected)
+	repeated Def defs = 2;
+}
+
+// DeltaDefs describes definitions added/changed/deleted in a delta.
+message DeltaDefs {
+	// added/changed/deleted defs
+	repeated DefDelta defs = 1;
+
+	// overall diffstat (not subject to pagination)
+	diff.Stat diff_stat = 2 [(gogoproto.nullable) = false];
+}
+
+// FileDiff holds data about a diff, and additionally stores extended
+// information about its hunks.
+message FileDiff {
+	diff.FileDiff file_diff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated Hunk hunks = 2;
+	// PreImage is the CommitID at which this file was before the change occurred.
+	string pre_image = 3 [(gogoproto.jsontag) = ",omitempty"];
+	// PostImage is the CommitID at which this file was after the change occurred.
+	string post_image = 4 [(gogoproto.jsontag) = ",omitempty"];
+	// Stat contains statistics about additions and deletions to this diff.
+	diff.Stat stats = 5 [(gogoproto.nullable) = false];
+}
+
+// Hunk holds data about a hunk in a diff.
+message Hunk {
+	diff.Hunk hunk = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// LinePrefixes holds a string where each character's index corresponds
+	// to a line in the BodySource, and its value reflects whether the line
+	// is an addition, deletion, or change ('+', '-', ' ').
+	string line_prefixes = 2;
+
+	// BaseSource holds the source code for the original hunk, having all
+	// lines starting from the original line down to the end of the hunk.
+	SourceCode base_source = 3;
+
+	// HeadSource contains the source code for the new hunk, holding
+	// all consecutive lines from the start to the end.
+	SourceCode head_source = 4;
+
+	// BodySource contains the source code for the Hunk body and is a mix
+	// of both additions and deletions.
+	SourceCode body_source = 5;
+}
+
+// DeltaFiles describes files added/changed/deleted in a delta.
+message DeltaFiles {
+	repeated FileDiff file_diffs = 1;
+	Delta delta = 2;
+	diff.Stat stats = 3 [(gogoproto.nullable) = false];
+
+	// OverThreshold will be true when the source code contents of the diff
+	// have not been tokenized and linked. This occurs when the 'MaxSize'
+	// limit in DeltaListFilesOptions has been met.
+	bool over_threshold = 4;
+}
+
+// DeltaFilter specifies criteria by which to filter results from DeltaListXxx
+// methods.
+message DeltaFilter {
+	string unit = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string unit_type = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// DeltaListAffectedAuthorsOptions specifies options for ListAffectedAuthors.
+message DeltaListAffectedAuthorsOptions {
+	DeltaFilter delta_filter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DeltaListAffectedClientsOptions specifies options for ListAffectedClients.
+message DeltaListAffectedClientsOptions {
+	DeltaFilter delta_filter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DeltaListDefsOptions specifies options for ListDefs.
+message DeltaListDefsOptions {
+	DeltaFilter delta_filter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DeltaListFilesOptions specifies options for ListFiles.
+message DeltaListFilesOptions {
+	// Formatted is whether the files should have their contents code-formatted
+	// (syntax-highlighted and reference-linked) if they contain code.
+	bool formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Filter filters the list of returned files to those whose name matches Filter.
+	string filter = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Tokenized, when set, will tokenize the whole source code
+	// contained in the diff, returning 3 versions for each hunk: Head
+	// revision, Base revision and Hunk body. For more information,
+	// see sourcegraph.Hunk.
+    bool tokenized = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// MaxSize stores the maximum number of bytes that will be accepted for tokenizing
+	// the diff. If the size of the diff exceeds this value, the returned structure
+	// will not contain the linked and tokenized source code.
+	// This option is useful when one wishes to present the data in a browser and it
+	// may be too large for that. DeltaFiles structure size can be up to 4 times the
+	// size of the raw diff when tokenized and linked.
+	int32 max_size = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	DeltaFilter delta_filter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// DeltaListUnitsOptions specifies options for ListUnits.
+message DeltaListUnitsOptions {
+}
+
+// A DeltaSpec specifies a delta.
+message DeltaSpec {
+	RepoRevSpec base = 1 [(gogoproto.nullable) = false];
+	RepoRevSpec head = 2 [(gogoproto.nullable) = false];
+}
+
+message DeltasListUnitsOp {
+	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
+	DeltaListUnitsOptions opt = 2;
+}
+
+message UnitDeltaList {
+	repeated UnitDelta unit_deltas = 1;
+}
+
+message DeltasListDefsOp {
+	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
+	DeltaListDefsOptions opt = 2;
+}
+
+message DeltasListFilesOp {
+	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
+	DeltaListFilesOptions opt = 2;
+}
+
+message DeltasListAffectedAuthorsOp {
+	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
+	DeltaListAffectedAuthorsOptions opt = 2;
+}
+
+message DeltaAffectedPersonList {
+	repeated DeltaAffectedPerson delta_affected_persons = 1;
+}
+
+message DeltasListAffectedClientsOp {
+	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
+	DeltaListAffectedClientsOptions opt = 2;
+}
+
+// Example is a usage example of a def.
+message Example {
+	graph.Ref ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+	// SrcHTML is the formatted HTML source code of the example, with links to
+	// definitions.
+	string src_html = 2 [(gogoproto.customname) = "SrcHTML"];
+
+	// SourceCode contains the parsed source for this example, if requested via
+	// DefListExamplesOptions.
+	SourceCode source_code = 3;
+
+	// The line that the given example starts on
+	int32 start_line = 4;
+
+	// The line that the given example ends on
+	int32 end_line = 5;
+
+	// Error is whether an error occurred while fetching this example.
+	bool error = 6;
+
+	// If the example has been requested by revision name (ie. branch, tag), this
+	// value will be set.
+	string rev = 7 [(gogoproto.jsontag) = ",omitempty"];
+}
+
+// FormatResult contains information about and warnings from the formatting
+// operation (if Formatted is true in the options).
+message FormatResult {
+	// TooManyRefs indicates that the file being formatted exceeded the maximum number
+	// of refs that are linked. Only the first NumRefs refs are linked.
+	bool too_many_refs = 1;
+
+	// NumRefs is the number of refs that were linked in this file. If the total number
+	// of refs in the file exceeds the (server-defined) limit, NumRefs is capped at the
+	// limit.
+	int32 num_refs = 2;
+
+	// LineStartByteOffsets is the byte offset of each line's first byte.
+	repeated int32 line_start_byte_offsets = 3;
+}
+
+message MarkdownData {
+	bytes rendered = 1;
+	Checklist checklist = 2;
+}
+
+message MarkdownOpt {
+	bool enable_checkboxes = 1;
+}
+
+message MarkdownRequestBody {
+	bytes markdown = 1;
+	MarkdownOpt markdown_opt = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message MarkdownRenderOp {
+	bytes markdown = 1;
+	MarkdownOpt opt = 2 [(gogoproto.nullable) = false];
+}
+
+message Ref {
+	graph.Ref ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	AuthorshipInfo authorship = 2;
+}
+
+// RepoTreeGetOptions specifies options for (RepoTreeService).Get.
+message RepoTreeGetOptions {
+	// Formatted is whether the specified entry, if it's a file, should have its
+	// Contents code-formatted using HTML.
+	bool formatted = 1;
+
+	// HighlightStrings is a list of fixed strings that should be wrapped in a <span
+	// class="highlight"> in the returned HTML. It only takes effect if Formatted is
+	// true.
+	repeated string highlight_strings = 2;
+
+	// TokenizedSource requests that the source code be returned as a tokenized data
+	// structure rather than an (annotated) string.
+	//
+	// This is useful when the client wants to take full control of rendering and
+	// manipulating the contents.
+	bool tokenized_source = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	bool contents_as_string = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	vcsclient.GetFileOptions get_file_options = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message RepoTreeSearchOptions {
+	vcs.SearchOptions search_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	bool formatted = 2;
+}
+
+// A RepoTreeSearchResult is a tree search result that includes the repo and rev it
+// came from.
+message RepoTreeSearchResult {
+	vcs.SearchResult search_result = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	RepoRevSpec repo_rev = 2 [(gogoproto.nullable) = false];
+}
+
+message RepoTreeGetOp {
+	TreeEntrySpec entry = 1 [(gogoproto.nullable) = false];
+	RepoTreeGetOptions opt = 2;
+}
+
+message RepoTreeSearchOp {
+	RepoRevSpec rev = 1 [(gogoproto.nullable) = false];
+	RepoTreeSearchOptions opt = 2;
+}
+
+message RepoTreeListOp {
+	RepoRevSpec rev = 1 [(gogoproto.nullable) = false];
+}
+
+message RepoTreeListResult {
+	repeated string files = 1;
+}
+
+message VCSSearchResultList {
+	repeated vcs.SearchResult search_results = 1;
+}
+
+message SearchOptions {
+	string query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
+	bool defs = 2;
+	bool repos = 3;
+	bool people = 4;
+	bool tree = 5;
+	ListOptions list_options = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message SearchResults {
+	repeated Def defs = 1;
+	repeated Person people = 2;
+	repeated Repo repos = 3;
+	repeated RepoTreeSearchResult tree = 4;
+
+	// RawQuery is the raw query passed to search.
+	RawQuery raw_query = 5 [(gogoproto.nullable) = false];
+
+	// Tokens are the unresolved tokens.
+	repeated PBToken tokens = 6 [(gogoproto.nullable) = false];
+
+	// Plan is the query plan used to fetch the results.
+	Plan plan = 7;
+
+	// ResolvedTokens holds the resolved tokens from the original query string.
+	repeated PBToken resolved_tokens = 8 [(gogoproto.nullable) = false];
+
+	repeated TokenError resolve_errors = 9 [(gogoproto.nullable) = false];
+
+	// Tips are helpful tips for the user about their query. They are not errors per
+	// se, but they use the TokenError type because it allows us to associate a message
+	// with a particular token (and JSON de/serialize that).
+	repeated TokenError tips = 10 [(gogoproto.nullable) = false];
+
+	// Canceled is true if the query was canceled. More information about how to
+	// correct the issue can be found in the ResolveErrors and Tips.
+	bool canceled = 11;
+}
+
+message SuggestionList {
+	repeated Suggestion suggestions = 1;
+}
+
+// SourceCode contains a snippet of code with linked and classed tokens, along with
+// other information about the contents.
+//
+// This data structure is useful when one desires to take full control of rendering
+// and manipulating the contents of the requested TreeEntry or snippet, rather than
+// dealing with an (annotated) string or parsing text. To obtain this structure in
+// the TreeEntry, TokenizedSource must be set to "true" in the RepoTreeGetOptions.
+message SourceCode {
+	// Lines contains all the lines of the contained code snippet.
+	repeated SourceCodeLine lines = 1;
+
+	int32 num_refs = 2;
+	bool too_many_refs = 3;
+}
+
+// SourceCodeLine contains all tokens on this line along with other information
+// such as byte offsets in original source.
+message SourceCodeLine {
+	// StartByte and EndByte are the start and end offsets in bytes, in the original
+	// file.
+	int32 start_byte = 1;
+
+	int32 end_byte = 2;
+
+	// Tokens contains any tokens that may be on this line, including whitespace. New
+	// lines ('\n') are not present.
+	repeated SourceCodeToken tokens = 3;
+}
+
+// SourceCodeToken contains information about a code token.
+message SourceCodeToken {
+	// Start and end byte offsets in original file.
+	int32 start_byte = 1 [(gogoproto.jsontag) = "-"];
+
+	int32 end_byte = 2 [(gogoproto.jsontag) = "-"];
+
+	// If the token is a reference URL contains the DefKey-based URLs for all the
+	// definitions at this position.
+	repeated string url = 3 [(gogoproto.customname) = "URL", (gogoproto.jsontag) = ",omitempty"];
+
+	// IsDef specifies whether the token is a definition.
+	bool is_def = 4 [(gogoproto.jsontag) = ",omitempty"];
+
+	// Class specifies the token type as per
+	// [google-code-prettify](https://code.google.com/p/google-code-prettify/).
+	// All tokens except Whitespace will have this field.
+	string class = 5 [(gogoproto.jsontag) = ",omitempty"];
+
+	// ExtraClasses may additionally contain other classes for this token, such as
+	// for example highlighting in a diff.
+	string extraClasses = 6 [(gogoproto.jsontag) = ",omitempty"];
+
+	// Label is non-whitespace HTML encoded source code.
+	string label = 7;
+}
+
+// TreeEntry is a file or directory in a repository, with additional feedback from
+// the formatting operation (if Formatted is true in the options).
+message TreeEntry {
+	vcsclient.TreeEntry tree_entry = 1 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	vcsclient.FileRange file_range = 2 [(gogoproto.embed) = true];
+	string contents_string = 3;
+
+	// SourceCode is set when TokenizedSource is enabled in RepoTreeGetOptions.
+	SourceCode source_code = 4;
+
+	// FormatResult is only set if this TreeEntry is a file.
+	FormatResult format_result = 5;
+}
+
+message TreeEntrySpec {
+	RepoRevSpec repo_rev = 1 [(gogoproto.nullable) = false];
+	string path = 2;
+}
+
+// A UnitDelta represents a single source unit that was changed. It has fields for
+// the before (Base) and after (Head) versions. If both Base and Head are non-nil,
+// then the unit was changed from base to head. Otherwise, one of the fields being
+// nil means that the unit did not exist in that revision (e.g., it was added or
+// deleted from base to head).
+message UnitDelta {
+	unit.RepoSourceUnit base = 1;
+	unit.RepoSourceUnit head = 2;
+}
+
+// UnitListOptions specifies options for UnitsService.List.
+message UnitListOptions {
+	// RepoRevs constrains the results to a set of repository revisions (given by their
+	// URIs plus an optional "@" and a revision specifier). For example,
+	// "repo.com/foo@revspec".
+	repeated string repo_revs = 1 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
+
+	string unit_type = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string unit = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// NameQuery specifies a full-text search query over the unit name.
+	string name_query = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Query specifies a full-text search query over the repo URI, unit name, and unit
+	// data.
+	string query = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Paging
+	ListOptions list_options = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// UnitSpec specifies a source unit.
+message UnitSpec {
+	RepoRevSpec repo_rev_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string unit_type = 2;
+	string unit = 3;
+}
+
+message RepoSourceUnitList {
+	repeated unit.RepoSourceUnit units = 1;
+}
+
+message DefAuthorList {
+	repeated DefAuthor def_authors = 1;
+}
+
+message DefClientList {
+	repeated DefClient def_clients = 1;
+}
+
+// DefsService communicates with the def- and graph-related endpoints in the
+// Sourcegraph API.
+service Defs {
+	// Get fetches a def.
+	rpc Get(DefsGetOp) returns (Def) {
+		option (google.api.http) = {
+			get: "/defs/get"
+		};
+	};
+
+	// List defs.
+	rpc List(DefListOptions) returns (DefList) {
+		option (google.api.http) = {
+			get: "/defs/list"
+		};
+	};
+
+	// ListRefs lists references to def.
+	rpc ListRefs(DefsListRefsOp) returns (RefList) {
+		option (google.api.http) = {
+			get: "/defs/list_refs"
+		};
+	};
+
+	// ListExamples lists examples for def.
+	rpc ListExamples(DefsListExamplesOp) returns (ExampleList) {
+		option (google.api.http) = {
+			get: "/defs/list_examples"
+		};
+	};
+
+	// ListExamples lists people who committed parts of def's definition.
+	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList) {
+		option (google.api.http) = {
+			get: "/defs/list_authors"
+		};
+	};
+
+	// ListClients lists people who use def in their code.
+	rpc ListClients(DefsListClientsOp) returns (DefClientList) {
+		option (google.api.http) = {
+			get: "/defs/list_clients"
+		};
+	};
+}
+
+// DeltasService interacts with the delta-related endpoints of the Sourcegraph API.
+// A delta is all of the changes between two commits, possibly from two different
+// repositories. It includes the usual file diffs as well as definition-level
+// diffs, affected author/repo impact information, etc.
+service Deltas {
+	// Get fetches a summary of a delta.
+	rpc Get(DeltaSpec) returns (Delta) {
+		option (google.api.http) = {
+			get: "/deltas/get"
+		};
+	};
+
+	// ListUnits lists units added/changed/deleted in a delta.
+	rpc ListUnits(DeltasListUnitsOp) returns (UnitDeltaList) {
+		option (google.api.http) = {
+			get: "/deltas/list_units"
+		};
+	};
+
+	// ListDefs lists definitions added/changed/deleted in a delta.
+	rpc ListDefs(DeltasListDefsOp) returns (DeltaDefs) {
+		option (google.api.http) = {
+			get: "/deltas/list_defs"
+		};
+	};
+
+	// ListFiles fetches the file diff for a delta.
+	rpc ListFiles(DeltasListFilesOp) returns (DeltaFiles) {
+		option (google.api.http) = {
+			get: "/deltas/list_files"
+		};
+	};
+
+	// ListAffectedAuthors lists authors whose code is added/deleted/changed in a
+	// delta.
+	rpc ListAffectedAuthors(DeltasListAffectedAuthorsOp) returns (DeltaAffectedPersonList) {
+		option (google.api.http) = {
+			get: "/deltas/list_affected_authors"
+		};
+	};
+
+	// ListAffectedClients lists clients whose code is affected by a delta.
+	rpc ListAffectedClients(DeltasListAffectedClientsOp) returns (DeltaAffectedPersonList) {
+		option (google.api.http) = {
+			get: "/deltas/list_affected_clients"
+		};
+	};
+}
+
+service Markdown {
+	rpc Render(MarkdownRenderOp) returns (MarkdownData) {
+		option (google.api.http) = {
+			get: "/markdown/render"
+		};
+	};
+}
+
+// RepoTreeService communicates with the Sourcegraph API endpoints that fetch file
+// and directory entries in repositories.
+service RepoTree {
+	rpc Get(RepoTreeGetOp) returns (TreeEntry) {
+		option (google.api.http) = {
+			get: "/repo_tree"
+		};
+	};
+
+	rpc Search(RepoTreeSearchOp) returns (VCSSearchResultList) {
+		option (google.api.http) = {
+			post: "/repo_tree/search"
+		};
+	};
+
+	// List returns a list of all the files in the repo tree at
+	// the given revision.
+	rpc List(RepoTreeListOp) returns (RepoTreeListResult) {
+		option (google.api.http) = {
+			post: "/repo_tree/list"
+		};
+	};
+}
+
+// SearchService communicates with the search-related endpoints in the Sourcegraph
+// API.
+service Search {
+	// Search searches the full index.
+	rpc Search(SearchOptions) returns (SearchResults) {
+		option (google.api.http) = {
+			post: "/search"
+		};
+	};
+
+	// Complete completes the token at the RawQuery's InsertionPoint.
+	rpc Complete(RawQuery) returns (Completions) {
+		option (google.api.http) = {
+			post: "/search/complete"
+		};
+	};
+
+	// Suggest suggests queries given an existing query. It can be called with an empty
+	// query to get example queries that pertain to the current user's repositories,
+	// orgs, etc.
+	rpc Suggest(RawQuery) returns (SuggestionList) {
+		option (google.api.http) = {
+			get: "/search/suggest"
+		};
+	};
+}
+
+// UnitsService communicates with the source unit-related endpoints in the
+// Sourcegraph API.
+service Units {
+	// Get fetches a unit.
+	rpc Get(UnitSpec) returns (unit.RepoSourceUnit) {
+		option (google.api.http) = {
+			get: "/units"
+		};
+	};
+
+	// List units.
+	rpc List(UnitListOptions) returns (RepoSourceUnitList) {
+		option (google.api.http) = {
+			get: "/units/list"
+		};
+	};
+}
+
+message Checklist {
+	// number of tasks to be done (unchecked)
+	int32 todo = 1;
+
+	// number of tasks that are done (checked)
+	int32 done = 2;
+}
+
+message FileToken {
+	string path = 1;
+	vcsclient.TreeEntry entry = 2;
+}
+
+// A Plan is a query plan that fetches the data necessary to satisfy (and provide
+// autocomplete suggestions for) a query.
+message Plan {
+	RepoListOptions repos = 1;
+	DefListOptions defs = 2;
+	UsersListOptions users = 3;
+	RepoTreeSearchOptions tree = 4;
+
+	// TreeRepoRevs constrains the Tree search results to a set of repository revisions
+	// (given by their URIs plus an optional "@" and a revision specifier). For
+	// example, "repo.com/foo@revspec".
+	//
+	// TODO(sqs): gorilla/schema does not respect ",comma" and it has no similar
+	// option, so specifying multiple repo revs here does NOT work.
+	repeated string tree_repo_revs = 5 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
+}
+
+// A RawQuery is a raw search query. To obtain the results for the query, it must
+// be tokenized, parsed, resolved, planned, etc.
+message RawQuery {
+	// Text is the raw query string from the client.
+	string text = 1;
+
+	// InsertionPoint is the 0-indexed character offset of the text insertion cursor on
+	// the client.
+	int32 insertion_point = 2;
+}
+
+// A RepoToken represents a repository, although it does not necessarily uniquely
+// identify the repository. It consists of any number of slash-separated path
+// components, such as "a/b" or "github.com/foo/bar".
+message RepoToken {
+	string uri = 1 [(gogoproto.customname) = "URI"];
+	Repo repo = 2;
+}
+
+// A ResolvedQuery is a query that has been parsed and resolved so that each token
+// is given an unambiguous meaning.
+message ResolvedQuery {
+	// Tokens are resolved tokens, each of whose meaning is unambiguous.
+	repeated PBToken tokens = 1 [(gogoproto.nullable) = false];
+}
+
+// A RevToken represents a specific revision (either a revspec or a commit ID) of a
+// repository (which must be specified by a previous RepoToken in the query).
+message RevToken {
+	// Rev is either a revspec or commit ID
+	string rev = 1;
+
+	vcs.Commit commit = 2;
+}
+
+// A Suggestion is a possible completion of a query (returned by Suggest method).
+// It does not attempt to "complete" a query but rather indicate to the user what
+// types of queries are possible.
+message Suggestion {
+	// Query is a suggested query related to the original query.
+	repeated PBToken query = 1 [(gogoproto.nullable) = false];
+
+	// QueryString is what the user needs to enter into the search field to search
+	// using this suggested query.
+	string query_string = 2;
+
+	// Description is the human-readable description of Query (usually generated by
+	// calling the Describe func).
+	string description = 3;
+}
+
+// A UnitToken represents a source unit in a repository.
+message UnitToken {
+	// UnitType is the type of the source unit (e.g., GoPackage).
+	string unit_type = 1;
+
+	// Name is the name of the source unit (e.g., mypkg).
+	string name = 2;
+
+	unit.RepoSourceUnit unit = 3;
+}
+
+// A UserToken represents a user or org, although it does not necessarily uniquely
+// identify one. It consists of the string "@" followed by a full or partial
+// user/org login.
+message UserToken {
+	string login = 1;
+	User user = 2;
+}
+
+// A TokenError is an error about a specific token.
+message TokenError {
+	// Index is the 1-indexed index of the token that caused the error (0 means not
+	// associated with any particular token).
+	//
+	// NOTE: Index is 1-indexed (not 0-indexed) because some TokenErrors don't pertain
+	// to a token, and it's misleading if the Index in the JSON is 0 (which could mean
+	// that it pertains to the 1st token if index was 0-indexed).
+	int32 index = 1;
+
+	PBToken token = 2;
+	string message = 3;
+}
+
+// A PBToken is a protobuf wrapper (hence the prefix "PB") for a
+// search token. Exactly one field must be non-empty.
+message PBToken {
+	// TODO(sqs!nodb-ctx): how to get protobuf unions to work?
+	//
+	// option (gogoproto.onlyone) = true;
+
+	oneof token {
+		string term = 1;
+		string any_token = 2;
+		RepoToken repo_token = 3;
+		RevToken rev_token = 4;
+		UnitToken unit_token = 5;
+		FileToken file_token = 6;
+		UserToken user_token = 7;
+	}
+}
+
+// Meta provides meta-information about Sourcegraph.
+service Meta {
+	// Status returns status information from the server's point of
+	// view.
+	rpc Status(pbtypes.Void) returns (ServerStatus) {
+		option (google.api.http) = {
+			get: "/meta/status"
+		};
+	};
+
+	// Config returns the server's configuration.
+	rpc Config(pbtypes.Void) returns (ServerConfig) {
+		option (google.api.http) = {
+			get: "/meta/config"
+		};
+	};
+}
+
+// ServerStatus describes the server's status.
+message ServerStatus {
+	// Info contains arbitrary human-readable status information about
+	// the server.
+	string info = 1;
+}
+
+// ServerConfig describes the server's configuration.
+//
+// DEV NOTE: There is some overlap with Go CLI flag structs. In the
+// future we may consolidate these.
+message ServerConfig {
+	// Version is the version of Sourcegraph that this server is
+	// running.
+	string version = 1;
+
+	// AppURL is the base URL of the user-facing web application
+	// (e.g., "https://sourcegraph.com").
+	string app_url = 2 [(gogoproto.customname) = "AppURL"];
+
+	// GRPCEndpoint is the external base URL of the GRPC API (e.g.,
+	// "https://sourcegraph.com:3100"). This is the address to which
+	// external gRPC clients should connect.
+	string grpc_endpoint = 3 [(gogoproto.customname) = "GRPCEndpoint"];
+
+	// HTTPEndpoint is the external base URL of the HTTP API. It
+	// typically should end in "/api/" (note the trailing slash). For
+	// example, "https://sourcegraph.com/api/". This is the address
+	// that external HTTP clients should use.
+	string http_endpoint = 4 [(gogoproto.customname) = "HTTPEndpoint"];
+
+	// FederationRootURL is the --fed.root-url CLI flag's value. It is
+	// the URL of the federation root server, or blank if this server
+	// is itself a federation root (in which case IsFederationRoot is
+	// true).
+	string federation_root_url = 5 [(gogoproto.customname) = "FederationRootURL"];
+
+	// IsFederationRoot is whether this server is itself a federation
+	// root. If true, then FederationRootURL is empty.
+	bool is_federation_root = 6;
+
+	// IDKey is the server's identity key (ID key).
+	string id_key = 7 [(gogoproto.customname) = "IDKey"];
+
+    // AllowAnonymousReaders is whether anonymous (unauthenticated)
+    // users may perform "read" operations, such as viewing
+    // repositories.
+	bool allow_anonymous_readers = 9;
+}
+
+// A RegisteredClient is a registered API client.
+//
+// Many fields correspond to those listed at
+// http://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata.
+//
+// It's called RegisteredClient instead of Client to avoid a name
+// conflict with the existing Client (Go) type.
+message RegisteredClient {
+	// ID is a unique identifier for this client.
+	string id = 1 [(gogoproto.customname) = "ID"];
+
+	// RedirectURIs is a list of allowed redirect URIs.
+	repeated string redirect_uris = 2 [(gogoproto.customname) = "RedirectURIs"];
+
+	// ClientName is the name of the client to be presented to the
+	// end-user.
+	string client_name = 3;
+
+	// LogoURI is a URL to this client's logo.
+	string logo_uri = 4 [(gogoproto.customname) = "LogoURI"];
+
+	// ClientURI is a URL to this client's homepage.
+	string client_uri = 5 [(gogoproto.customname) = "ClientURI"];
+
+	// JWKS is the client's JSON Web Key Set. It contains the client's
+	// public keys, if any.
+	string jwks = 6 [(gogoproto.customname) = "JWKS"];
+
+	// ClientSecret is the secret value that authenticates the
+	// client. It may be empty (e.g., if JWKS keys are used for
+	// authentication instead).
+	string client_secret = 7;
+
+	// Description is a human-readable description of this API client
+	// that's shown to the user during, e.g., OAuth2 authentication.
+	string description = 8;
+
+	// Meta holds arbitrary metadata about this API client. The
+	// structure is defined by the API client and is opaque to the
+	// server.
+	map<string, string> meta = 9;
+
+	// RegisteredClientType describes this client's type.
+	RegisteredClientType type = 10;
+
+	// CreatedAt is when this API client's record was created.
+	pbtypes.Timestamp created_at = 11 [(gogoproto.nullable) = false];
+
+	// UpdatedAt is when this API client's record was last updated.
+	pbtypes.Timestamp updated_at = 12 [(gogoproto.nullable) = false];
+}
+
+// RegisteredClientType is the set of kinds of clients.
+enum RegisteredClientType {
+	// Any is any type of API client. It should only be used when
+	// listing and not actually set on a RegisteredClient object.
+	Any = 0;
+
+	// Other is all other kinds of clients that are not
+	// SourcegraphServers.
+	Other = 1;
+
+	// SourcegraphServer indicates this client is a Sourcegraph server
+	// instance.
+	SourcegraphServer = 2;
+}
+
+// A RegisteredClientSpec uniquely identifies a RegisteredClient.
+message RegisteredClientSpec {
+	// ID is the client's ID.
+	string id = 1 [(gogoproto.customname) = "ID"];
+}
+
+// A RegisteredClientCredentials authenticates a RegisteredClient.
+message RegisteredClientCredentials {
+	// ID is the client's ID.
+	string id = 1 [(gogoproto.customname) = "ID"];
+
+	// Secret is the client's secret.
+	string secret = 2;
+}
+
+// RegisteredClientListOptions configures a call to
+// RegisteredClients.List.
+message RegisteredClientListOptions {
+	RegisteredClientType type = 1;
+	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// RegisteredClientList holds a list of clients.
+message RegisteredClientList {
+	repeated RegisteredClient clients = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message UserPermissions {
+	// UID is a user's UID.
+	int32 uid = 1 [(gogoproto.customname) = "UID"];
+
+	// ClientID is the ID of the client whose whitelist is to
+	// be fetched and/or modified.
+	string client_id = 2 [(gogoproto.customname) = "ClientID"];
+
+	// Read is true if the user has read permissions on the client.
+	bool read = 3;
+
+	// Write is true if the user has write permissions on the client.
+	bool write = 4;
+
+	// Admin is true if the user should be considered an admin on
+	// the client.
+	bool admin = 5;
+}
+
+message UserPermissionsList {
+	repeated UserPermissions user_permissions = 1 [(gogoproto.customname) = "UserPermissions"];
+}
+
+message UserPermissionsOptions {
+	RegisteredClientSpec client_spec = 1 [(gogoproto.customname) = "ClientSpec"];
+
+	int32 uid = 2 [(gogoproto.customname) = "UID"];
+}
+
+// RegisteredClients manages registered API clients.
+//
+// The server may check authorization for methods that retrieve or
+// fetch API client records (e.g., only allowing authenticated calls
+// with a client's own credentials to get or modify it).
+//
+// Like the RegisteredClient message type, it's called
+// RegisteredClients instead of Clients to avoid a name conflict with
+// the existing Client (Go) type.
+service RegisteredClients {
+	// Get retrieves an API client's record given its client ID.
+	rpc Get(RegisteredClientSpec) returns (RegisteredClient);
+
+	// GetCurrent is equivalent to a call to Get with the client ID of
+	// the currently authenticated client.
+	rpc GetCurrent(pbtypes.Void) returns (RegisteredClient);
+
+	// Create registers an API client.
+	rpc Create(RegisteredClient) returns (RegisteredClient);
+
+	// Update modifies an API client's record. The RegisteredClient
+	// arg's ID must be set (to specify which client to update). Its
+	// Secret field is ignored (the secret may not be updated after
+	// creation).
+	rpc Update(RegisteredClient) returns (pbtypes.Void);
+
+	// Delete removes an API client. Immediately after deletion, it
+	// may no longer be used.
+	rpc Delete(RegisteredClientSpec) returns (pbtypes.Void);
+
+	// List enumerates API clients according to the options.
+	rpc List(RegisteredClientListOptions) returns (RegisteredClientList);
+
+	// Get the permissions of the user on the specified client.
+	rpc GetUserPermissions(UserPermissionsOptions) returns (UserPermissions);
+
+	// Set the permissions of the user on the specified client.
+	rpc SetUserPermissions(UserPermissions) returns (pbtypes.Void);
+
+	// List the permissions of all users that are registered on this client.
+	rpc ListUserPermissions(RegisteredClientSpec) returns (UserPermissionsList);
+}
+
+// TelemetryType is the format MetricsSnapshot.TelemetryData is encoded in
+enum TelemetryType {
+	// PrometheusDelimited0dot0dot4 indicates the metrics can be decoded using
+	// Prometheus 0.0.4 delimited protobuf format
+	PrometheusDelimited0dot0dot4 = 0;
+}
+
+// MetricsSnapshots encodes
+message MetricsSnapshot {
+	// Type is the encoding of TelemetryData
+	TelemetryType type = 1;
+
+	// TelemetryData is the encoded metrics
+	bytes telemetry_data = 2;
+}
+
+// GraphUplink interfaces with the metric collectors.
+service GraphUplink {
+	// Push sends the latest metrics to the upstream instance
+	rpc Push(MetricsSnapshot) returns (pbtypes.Void);
+}

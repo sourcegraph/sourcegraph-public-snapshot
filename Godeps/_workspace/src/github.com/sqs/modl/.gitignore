@@ -1,0 +1,7 @@
+_test
+_testmain.go
+_obj
+*~
+*.6
+6.out
+environ

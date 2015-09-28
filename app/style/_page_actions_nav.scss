@@ -1,0 +1,11 @@
+nav.page-actions {
+	margin-bottom: $grid-gutter-width/2;
+
+	form { display: inline-block; }
+	.btn {
+		color: $gray;
+		&:hover {
+			color: $text-color;
+		}
+	}
+}

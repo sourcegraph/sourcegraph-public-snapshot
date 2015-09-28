@@ -1,0 +1,69 @@
+{{define "Nav"}}
+<nav class="navbar navbar-tint" role="navigation" id="nav">
+	<div class="container{{if .FullWidth}}-fluid{{end}}">
+		<div class="navbar-header">
+			<a class="navbar-brand logo logo-symbol-and-text" href="/">
+				{{customLogo}}
+				<img class="logo" src="{{assetURL "/img/logo0-white.svg"}}" alt="Sourcegraph logo">
+			</a>
+
+			{{template "SearchBar" $}}
+
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#top-nav-collapse">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+		</div>
+
+		<div class="collapse navbar-collapse" id="top-nav-collapse">
+			<ul class="nav navbar-nav navbar-right">
+				{{if appconf.Blog}}
+					<li><a href="{{urlTo "blog"}}">Blog</a></li>
+				{{end}}
+				{{if authFlags.HasUserAccounts}}
+				{{if .CurrentUser}}
+					<li class="current-user name{{if not authFlags.HasUserProfiles}} disabled{{end}}">
+						<a {{if authFlags.HasUserProfiles}}href="{{urlToUser .CurrentUser.Login}}"{{end}} class="user">
+							{{if .CurrentUser.AvatarURL}}
+								<img src="{{.CurrentUser.AvatarURL}}" class="navbar-avatar nav-avatar avatar">
+							{{end}}
+							{{.CurrentUser.Login}}
+						</a>
+					</li>
+					<li class="current-user settings">
+						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}">
+							<i class="octicon octicon-gear"></i>
+							<span class="hidden-sm hidden-md hidden-lg">Settings</span>
+						</a>
+					</li>
+					<li class="sign-out">
+						<form action="{{urlTo "log-out"}}" method="POST" class="navbar-form">
+							<button class="btn btn-link">
+								<i class="octicon octicon-sign-out"></i>
+								<span class="hidden-sm hidden-md hidden-lg">Sign out</span>
+							</button>
+							<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+						</form>
+					</li>
+				{{else}}
+					{{if authFlags.HasSignup}}
+					<li class="sign-up">
+						<a class="sign-up" href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">
+							Sign up
+						</a>
+					</li>
+					{{end}}
+					<li class="sign-in">
+						<a class="sign-in" href="{{urlToWithReturnTo "log-in" .ReturnTo}}">
+							Sign in
+						</a>
+					</li>
+				{{end}}
+				{{end}}
+			</ul>
+		</div>
+	</div>
+</nav>
+{{end}}

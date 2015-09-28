@@ -1,0 +1,119 @@
+@import "_repo.scss";
+
+.subnav.repo-subnav {
+	$active-indicator-width: 3px;
+	$active-indicator-color: $sg-blue-color;
+
+	background-color: $light-blue;
+
+	@include z-index(navbar);
+
+	border-bottom: solid 1px darken($light-blue, 6.5%);
+	border-radius: 0;
+	border-top-width: 0;
+
+	a {
+		color: $dark-blue;
+	}
+
+	.beta-tag {
+		background: #ededed;
+		padding: 3px 5px;
+		line-height: 10px;
+		color: #888;
+		text-transform: uppercase;
+		font-size: 11px;
+		margin-left: 5px;
+		display: inline-block;
+	}
+
+	.navbar-header {
+		padding-top: 3px;
+		.github {
+			color: #bbb;
+		}
+	}
+
+	ul.navbar-nav {
+		float: none;
+	}
+
+	//background-color: saturate(lighten($sg-blue-color, 41%), 60%);
+
+	ul.repo-subnav > li {
+		$active-color: $active-indicator-color;
+
+		$icon-size: 18px;
+		$icon-margin-left: 2px;
+		$icon-margin-right: 4px;
+
+		box-shadow: none;
+		border-radius: 0;
+
+		padding: 0;
+		margin: 0 0 -1px 0;
+
+		font-size: $font-size-base*1.05;
+
+		> a {
+			display: block;
+			border-bottom: solid $active-indicator-width transparent;
+			&:hover {
+				background: none;
+				text-decoration: underline;
+				i { color: $dark-blue; }
+			}
+		}
+
+		i, span.caret {
+				color: $gray-light;
+		}
+
+		i {
+			font-size: $icon-size;
+			margin-left: $icon-margin-left;
+			margin-right: $icon-margin-right;
+			width: 18px;
+			&.octicon-book {
+				vertical-align: -1px;
+			}
+		}
+
+		.count {
+			font-weight: bold;
+		}
+
+		&.action-button {
+			padding: 12px 4px 0 0;
+		}
+
+	a:focus { background: none; }
+
+		&.active, &:hover {
+			& > a:hover { text-decoration: none !important; }
+			& > a, & > a > i { color: darken($active-indicator-color, 5%); }
+		}
+		&.active > a {
+			background-color: inherit;
+			border-bottom-color: $active-indicator-color !important;
+			font-weight: bold;
+			&, i { color: darken($active-indicator-color, 10%) !important; }
+		}
+		&:hover {
+
+			> a {
+				border-bottom-color: saturate(lighten($active-indicator-color, 10%), 5%);
+			}
+		}
+
+	&.open > a { background-color: transparent; }
+
+	&.dropdown {
+		cursor: default;
+
+		& > .dropdown-menu {
+			i { display: none; }
+		}
+	}
+	}
+}

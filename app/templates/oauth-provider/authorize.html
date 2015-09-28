@@ -1,0 +1,23 @@
+{{define "Head"}}<title>Authorize - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+<div class="row">
+	<div class="col-md-offset-2 col-md-8">
+		<div class="well oauth-provider authorize">
+			<h1>Authorize <strong>{{.RegisteredClient.ClientName}}</strong>?</h1>
+			<p>The application at <strong>{{.RedirectURL.Host}}</strong> requests:</p>
+			<ul>
+				<li>Your public user profile (username and company)</li>
+			</ul>
+			<p>You are logged in as <strong>{{.CurrentUser.Login}}</strong>. Only proceed if you trust this application.</p>
+			<hr/>
+			<p>
+				<a href="{{.RedirectURL}}" class="btn btn-success btn-lg authorize">Authorize</a>
+				<a href="/" class="btn btn-danger btn-lg cancel">Cancel</a>
+			</p>
+		</div>
+	</div>
+</div>
+{{end}}

@@ -1,0 +1,32 @@
+
+.error-page {
+	h1 {
+		margin: 30px 0 5px 0;
+
+		.status-code {
+			margin-right: -5px;
+			font-size: 48px;
+		}
+
+		.status-message {
+			font-family: $home-header-font;
+		}
+	}
+
+	.error-message {
+		margin: 15px 0;
+		border: 1px solid #ddd;
+		background: #fafafa;
+		padding: 15px;
+		font-family: $code-font-family;
+
+		.actions {
+			margin: 10px 0 0 -5px;
+		}
+	}
+
+	.error-common {
+		width: 100%;
+		max-width: 800px;
+	}
+}

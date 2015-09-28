@@ -1,0 +1,89 @@
+// Copyright (c) 2015, Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.protobuf;
+
+import "google/protobuf/source_context.proto";
+import "google/protobuf/type.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ApiProto";
+option java_package = "com.google.protobuf";
+
+
+// Api is a light-weight descriptor for a protocol buffer service.
+message Api {
+  // The fully qualified name of this api, including package name
+  // followed by the api's simple name.
+  string name = 1;
+
+  // The methods of this api, in unspecified order.
+  repeated Method methods = 2;
+
+  // Any metadata attached to the API.
+  repeated Option options = 3;
+
+  // A version string for this api. If specified, must have the form
+  // `major-version.minor-version`, as in `1.10`. If the minor version
+  // is omitted, it defaults to zero. If the entire version field is
+  // empty, the major version is derived from the package name, as
+  // outlined below. If the field is not empty, the version in the
+  // package name will be verified to be consistent with what is
+  // provided here.
+  //
+  // The versioning schema uses [semantic
+  // versioning](http://semver.org) where the major version number
+  // indicates a breaking change and the minor version an additive,
+  // non-breaking change. Both version numbers are signals to users
+  // what to expect from different versions, and should be carefully
+  // chosen based on the product plan.
+  //
+  // The major version is also reflected in the package name of the
+  // API, which must end in `v<major-version>`, as in
+  // `google.feature.v1`. For major versions 0 and 1, the suffix can
+  // be omitted. Zero major versions must only be used for
+  // experimental, none-GA apis.
+  //
+  // See also: [design doc](http://go/api-versioning).
+  //
+  //
+  string version = 4;
+
+  // Source context for the protocol buffer service represented by this
+  // message.
+  SourceContext source_context = 5;
+}
+
+// Method represents a method of an api.
+message Method {
+  // The simple name of this method.
+  string name = 1;
+
+  // A URL of the input message type.
+  string request_type_url = 2;
+
+  // If true, the request is streamed.
+  bool request_streaming = 3;
+
+  // The URL of the output message type.
+  string response_type_url = 4;
+
+  // If true, the response is streamed.
+  bool response_streaming = 5;
+
+  // Any metadata attached to the method.
+  repeated Option options = 6;
+}

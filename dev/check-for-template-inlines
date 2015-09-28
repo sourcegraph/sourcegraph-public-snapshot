@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -euf -o pipefail
+unset CDPATH
+REPOROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
+
+
+# Fails and prints matches if any HTML template files contain inline
+# scripts or styles.
+
+found=$(grep -EHnr --exclude=sourcebox.js '(<script|<style|style=)' "$REPOROOT"/app/templates | grep -v '<script src=' | grep -v '<script ignore-csp' || echo -n)
+
+if [[ ! "$found" == "" ]]; then
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    echo 'Found instances of inline script and style tags in HTML templates. These violate our CSP. Fix these!'
+    echo '(See http://www.html5rocks.com/en/tutorials/security/content-security-policy/ for more info about CSP.)'
+    echo '<script src="foo"> tags are OK, and <link rel="stylesheet" href=""> tags are OK. To make the former pass'
+    echo 'this check script, put the src attribute immediately after "<script". (This script just uses a simple grep.)'
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    echo "$found"
+    exit 1
+fi
+
+exit 0

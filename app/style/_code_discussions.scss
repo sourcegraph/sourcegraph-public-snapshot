@@ -1,0 +1,385 @@
+$code-discussion-margin: 10px;
+$code-discussion-width: $code-popup-width/2 - 2*$code-discussion-margin;
+$code-discussion-stats: 70px;
+$code-discussion-comments: 60px;
+$code-discussion-body: $code-discussion-width - 2*$code-discussion-margin;
+$code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-discussion-margin;
+
+.discussion-create {
+	.form {
+		padding: 15px 10px 15px 10px;
+		color: #555;
+		font-size: 13px;
+
+		h1 {
+			font-size: 21px;
+		}
+
+		input, textarea {
+			width: 100%;
+			border: 1px solid #ddd;
+			display: block;
+			padding: 5px;
+			margin-bottom: 10px;
+		}
+
+		input.title {
+			font-size: 14px;
+		}
+
+		.markdown-textarea {
+			margin-bottom: 10px;
+
+			ul.nav > li > a {
+				font-size: 12px;
+				padding: 7px 10px;
+			}
+
+			textarea, .markdown-view {
+				padding: 5px;
+				height: 100px;
+				font-size: 13px;
+				overflow-y: scroll;
+			}
+		}
+
+		.buttons {
+			margin-bottom: 10px;
+
+			.sgblue {
+				font-size: 12px;
+			}
+		}
+	}
+}
+
+.discussions-list.discussions {
+	.qualified-name {
+		font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+		word-wrap: break-word;
+		color: #333;
+		padding: 10px;
+		line-height: 21px;
+		border-bottom: 1px solid #ddd;
+
+		.name {
+			font-weight: bold;
+		}
+	}
+
+	.padded-form {
+		padding-top: 5px;
+	}
+
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+
+		li {
+			&:hover {
+				background-color: #f8f8f8;
+				border: 1px solid #eee;
+			}
+
+			cursor: pointer;
+			padding: 5px 10px;
+			border: 1px solid transparent;
+
+			header {
+				position: relative;
+				margin-bottom: 3px;
+
+				h1 {
+					padding: 0px 0px 0px 0px;
+					border: 0;
+					margin: 0;
+					font-size: 14px;
+
+					.contents {
+						width: 450px;
+					}
+
+					a {
+						text-decoration: none;
+						cursor: pointer;
+					}
+				}
+
+				.subtitle {
+					color: #666;
+					font-size: 13px;
+				}
+
+				.stats {
+					top: 4px;
+					font-size: 13px;
+					color: #999;
+
+					.octicon {
+						font-size: 14px;
+					}
+				}
+			}
+		}
+	}
+}
+
+.discussions {
+	.container {
+		background-color: #fbfbfb;
+
+		.padded-form {
+			background-color: #fff;
+			padding: 12px 10px 10px 10px;
+		}
+
+		padding: 0;
+		margin: 0;
+		color: #555;
+		width: 100%;
+		position: relative;
+		overflow-y: auto;
+		height: 400px;
+		max-height: 100%;
+		font-size: 13px;
+
+		header {
+			margin-bottom: 10px;
+
+			h1 {
+				font-size: 18px;
+				margin-bottom: 5px;
+				border-bottom: 1px solid #ddd;
+				padding-bottom: 5px;
+				color: #444;
+				line-height: 23px;
+
+				.contents {
+					width: 500px;
+				}
+
+				span.id {
+					color: #aaa;
+				}
+			}
+
+			.stats {
+				color: #666;
+				position: absolute;
+				top: 17px;
+				right: 15px;
+			}
+		}
+
+		main.body {
+			width: $code-discussion-body;
+			border: 1px solid rgba(78, 155, 212, 0.15);
+			border-radius: 4px;
+			padding: 10px;
+			background-color: rgba(78, 155, 212, 0.05);
+			width: 100%;
+		}
+
+		.thread-comments {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+
+			.thread-comment {
+				&:before {
+					content: "";
+					position: absolute;
+					border-style: solid;
+					border-color: #eaeaea transparent;
+					display: block;
+					width: 0;
+					top: -8px;
+					bottom: auto;
+					right: auto;
+					left: 20px;
+					border-width: 0 7px 7px;
+				}
+
+				&:after {
+					content: "";
+					position: absolute;
+					border-style: solid;
+					border-color: #fbfbfb transparent;
+					display: block;
+					width: 0;
+					top: -6px;
+					bottom: auto;
+					right: auto;
+					left: 21px;
+					border-width: 0 6px 6px;
+				}
+
+				position: relative;
+				padding: 10px 10px 0 10px;
+				margin: 13px 0 13px 0;
+				&:last-child { margin-bottom: 0px; }
+				border: 1px solid #eaeaea;
+				background-color: #fbfbfb;
+				color: #333;
+
+				-webkit-border-radius: 10px;
+				-moz-border-radius: 10px;
+				border-radius: 4px;
+
+				a {
+					cursor: pointer;
+					&:hover {
+						text-decoration: none;
+					}
+				}
+
+				.signature {
+					color: #666;
+				}
+
+				.markdown-view {
+					margin: 5px 0 0 0;
+					padding: 0;
+				}
+			}
+		}
+	}
+
+	.add-comment {
+		.padder {
+			padding: 10px;
+			background-color: #fbfbfb;
+			border-top: 1px solid #ddd;
+			width: 100%;
+			position: relative;
+		}
+
+		.markdown-textarea {
+			width: 100%;
+
+			ul.nav > li > a {
+				font-size: 12px;
+				padding: 6px 10px;
+				.octicon {
+					font-size: 12px;
+				}
+			}
+
+			textarea, .markdown-view {
+				padding: 5px;
+				width: 100%;
+				height: 100px;
+				font-size: 13px;
+				overflow-y: scroll;
+				border-color: #ddd;
+				background-color: #fff;
+			}
+		}
+
+		a.btn {
+			margin-top: 5px;
+		}
+	}
+
+	footer {
+		border-top: 1px solid #ddd;
+		padding: 4px 10px;
+		background-color: #fafafa;
+		color: #777;
+		font-size: 12px;
+		position: relative;
+		height: 25px;
+		clear: both;
+
+		a {
+			margin-right: 10px;
+			float: right;
+			cursor: pointer;
+			outline: none;
+			text-decoration: none;
+		}
+	}
+}
+
+.code-discussions {
+	border-top: 1px solid #ddd;
+	font-size: 12px;
+	padding-top: $code-discussion-margin;
+	clear: both;
+
+	.no-discussions {
+		padding: 0 10px 10px 10px;
+		font-size: 13px;
+	}
+
+	ul.list {
+		padding: 0;
+		margin: 0;
+		list-style: none;
+		list-style-type: none;
+		width: $code-popup-width;
+
+		li.discussion {
+			float: left;
+			padding: 0;
+			margin: 0 $code-discussion-margin $code-discussion-margin;
+			width: $code-discussion-width;
+			position: relative;
+
+			a.title {
+				display: block;
+				width: $code-discussion-title;
+				font-weight: bold;
+				cursor: pointer;
+			}
+
+			div.stats {
+				.octicon {
+					font-size: 13px;
+				}
+
+				width: $code-discussion-stats;
+				display: inline-block;
+				position: absolute;
+				top: 0;
+				right: 0;
+				color: #888;
+				font-size: 12px;
+			}
+
+			p.body {
+				margin-bottom: 0;
+				width: $code-discussion-body;
+			}
+
+			.truncate {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		}
+	}
+
+	footer {
+		border-top: 1px solid #eee;
+		padding: 4px 10px;
+		background-color: #fafafa;
+		color: #777;
+		font-size: 12px;
+		position: relative;
+		height: 25px;
+		clear: both;
+
+		a {
+			margin-right: 10px;
+			float: right;
+			cursor: pointer;
+
+			&:hover {
+				.fa { font-size: 12px; }
+				text-decoration: none;
+			}
+		}
+	}
+}

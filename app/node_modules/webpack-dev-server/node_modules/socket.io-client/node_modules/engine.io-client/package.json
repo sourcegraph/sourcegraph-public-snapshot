@@ -1,0 +1,84 @@
+{
+  "name": "engine.io-client",
+  "description": "Client for the realtime Engine",
+  "version": "1.5.2",
+  "homepage": "http://socket.io",
+  "contributors": [
+    {
+      "name": "Guillermo Rauch",
+      "email": "rauchg@gmail.com"
+    },
+    {
+      "name": "Vladimir Dronnikov",
+      "email": "dronnikov@gmail.com"
+    },
+    {
+      "name": "Christoph Dorn",
+      "url": "https://github.com/cadorn"
+    },
+    {
+      "name": "Mark Mokryn",
+      "email": "mokesmokes@gmail.com"
+    }
+  ],
+  "dependencies": {
+    "component-emitter": "1.1.2",
+    "component-inherit": "0.0.3",
+    "debug": "1.0.4",
+    "engine.io-parser": "1.2.1",
+    "has-cors": "1.0.3",
+    "indexof": "0.0.1",
+    "parsejson": "0.0.1",
+    "parseqs": "0.0.2",
+    "parseuri": "0.0.4",
+    "ws": "0.7.2",
+    "xmlhttprequest": "https://github.com/rase-/node-XMLHttpRequest/archive/a6b6f2.tar.gz"
+  },
+  "devDependencies": {
+    "blob": "0.0.2",
+    "browserify": "6.2.0",
+    "concat-stream": "1.4.6",
+    "derequire": "1.2.0",
+    "engine.io": "1.5.2",
+    "expect.js": "0.2.0",
+    "express": "3.4.8",
+    "istanbul": "0.2.3",
+    "mocha": "1.16.2",
+    "zuul": "github:rase-/zuul#9d3a02"
+  },
+  "scripts": {
+    "test": "make test"
+  },
+  "browser": {
+    "xmlhttprequest": "./lib/xmlhttprequest.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Automattic/engine.io-client.git"
+  },
+  "gitHead": "717e4af4b556bc9a0bf3bb4896b8ed351265ebe5",
+  "bugs": {
+    "url": "https://github.com/Automattic/engine.io-client/issues"
+  },
+  "_id": "engine.io-client@1.5.2",
+  "_shasum": "5fd4a521bdd3dca3c7f50e38f9437b5f66957ebc",
+  "_from": "engine.io-client@1.5.2",
+  "_npmVersion": "2.8.3",
+  "_nodeVersion": "0.12.2",
+  "_npmUser": {
+    "name": "rauchg",
+    "email": "rauchg@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "rauchg",
+      "email": "rauchg@gmail.com"
+    }
+  ],
+  "dist": {
+    "shasum": "5fd4a521bdd3dca3c7f50e38f9437b5f66957ebc",
+    "tarball": "http://registry.npmjs.org/engine.io-client/-/engine.io-client-1.5.2.tgz"
+  },
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/engine.io-client/-/engine.io-client-1.5.2.tgz"
+}

@@ -1,0 +1,49 @@
+{{define "Body"}}
+<div class="padded-container">
+	<div class="row">
+		<div class="col-md-12">
+			{{template "PersonProfile" $}}
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-3">
+			{{template "PersonNavbar" $}}
+		</div>
+		<div class="col-sm-9">
+			<div class="person-body">
+				{{template "PersonBody" $}}
+			</div>
+		</div>
+	</div>
+</div>
+{{end}}
+
+{{define "PersonNavbar"}}
+<div class="sidebar person-sidebar">
+	<ul class="list-group">
+		<a href="{{urlToUserSubroute "person" .User.Login}}">
+			<li class="list-group-item {{if eq .CurrentRoute "person"}}active{{end}}">
+				{{if (userStat .User "owned-repos")}}<span class="count pull-right">{{(userStat .User "owned-repos")}}</span>{{end}}
+				Repositories
+			</li>
+		</a>
+		<!-- TODO(slimsag): hide link to orgs page for github.com organizations; listing members for GitHub orgs is not currently implemented -->
+		{{if and .User.IsOrganization (not (eq .User.Domain "github.com"))}}
+		<a href="{{urlToUserSubroute "org.members" .User.Login}}">
+			<li class="list-group-item {{if eq .CurrentRoute "org.members"}}active{{end}}">
+				{{/* TODO(sqs): add org members count when we start storing it */}}
+				Members
+			</li>
+		</a>
+		{{end}}
+		{{if not .User.IsOrganization}}
+		<a href="{{urlToUserSubroute "person.orgs" .User.Login}}">
+			<li class="list-group-item {{if eq .CurrentRoute "person.orgs"}}active{{end}}">
+				{{/* TODO(sqs): add org membership count when we start storing it */}}
+				Organizations
+			</li>
+		</a>
+		{{end}}
+	</ul>
+</div>
+{{end}}

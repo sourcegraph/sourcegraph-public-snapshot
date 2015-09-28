@@ -1,0 +1,19 @@
+---
+
+# external installations are non production mothership installations
+
+global:
+  scrape_interval:     30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+
+    target_groups:
+      - targets: ['localhost:9090']
+
+  # service metrics from external installations
+  - job_name: 'src'
+    target_groups:
+      - targets: ['pushgateway:9091']

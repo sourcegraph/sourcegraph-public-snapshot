@@ -1,0 +1,26 @@
+{{define "Head"}}<title>Emails - {{.User.Login|personLabel}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "PersonSettingsBody"}}
+<div class="panel panel-default panel-main person-settings">
+	<div class="panel-heading">Email addresses</div>
+	<div class="panel-body">
+		{{if .EmailAddrs}}
+		<ol class="list-group emails">
+			{{range .EmailAddrs}}
+				{{if not .Blacklisted}}
+					<li class="list-group-item email">
+						<span class="addr">{{.Email}}</span>
+						{{if not .Verified}}<span class="label label-warning">Unverified</span>{{end}}
+						{{if .Primary}}<span class="label label-primary">Primary</span>{{end}}
+					</li>
+				{{end}}
+			{{end}}
+		</ol>
+		{{else}}
+		<p>You haven't added any email addresses yet.</p>
+		{{end}}
+	</div>
+</div>
+{{end}}

@@ -1,0 +1,36 @@
+{
+  "name": "hotkeys",
+  "title": "jQuery Hotkeys",
+  "description": "jQuery Hotkeys lets you watch for keyboard events anywhere in your code supporting almost any key combination.",
+  "keywords": [
+    "keyboard",
+    "events"
+  ],
+  "version": "0.1.0",
+  "author": {
+    "name": "John Resig",
+    "url": "https://ejohn.org/"
+  },
+  "maintainers": [
+    {
+      "name": "John Resig",
+      "email": "jeresig@gmail.com",
+      "url": "http://ejohn.org/"
+    }
+  ],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    },
+    {
+      "type": "GPLv2",
+      "url": "http://www.gnu.org/licenses/gpl-2.0.html"
+    }
+  ],
+  "homepage": "https://github.com/jeresig/jquery.hotkeys",
+  "docs": "https://github.com/jeresig/jquery.hotkeys",
+  "dependencies": {
+    "jquery": ">=1.4.2"
+  }
+}

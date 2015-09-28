@@ -1,0 +1,47 @@
+syntax = "proto3";
+package ann;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// An Ann is a source code annotation.
+//
+// Annotations are unique on (Repo, CommitID, UnitType, Unit, File,
+// Start, End, Type).
+message Ann {
+    // Repo is the VCS repository in which this ann exists.
+    string repo = 1 [(gogoproto.jsontag) = "Repo,omitempty"];
+
+    // CommitID is the ID of the VCS commit that this ann exists
+    // in. The CommitID is always a full commit ID (40 hexadecimal
+    // characters for git and hg), never a branch or tag name.
+    string commit_id = 2 [(gogoproto.customname) = "CommitID", (gogoproto.jsontag) = "CommitID,omitempty"];
+
+    // UnitType is the source unit type that the annotation exists
+    // on. It is either the source unit type during whose processing
+    // the annotation was detected/created. Multiple annotations may
+    // exist on the same file from different source unit types if a
+    // file is contained in multiple source units.
+    string unit_type = 3 [(gogoproto.customname) = "UnitType", (gogoproto.jsontag) = "UnitType,omitempty"];
+
+    // Unit is the name of the source unit that this ann exists in.
+    string unit = 4 [(gogoproto.jsontag) = "Unit,omitempty"];
+
+    // File is the filename in which this Ann exists.
+    string file = 5 [(gogoproto.jsontag) = "File,omitempty"];
+
+    // Start is the byte offset of this ann's first byte in File.
+    uint32 start = 6 [(gogoproto.jsontag) = "Start"];
+
+    // End is the byte offset of this ann's last byte in File.
+    uint32 end = 7 [(gogoproto.jsontag) = "End"];
+
+    // Type is the type of the annotation. See this package's type
+    // constants for a list of possible types.
+    string type = 8 [(gogoproto.jsontag) = "Type"];
+
+    // Data contains arbitrary JSON data that is specific to this
+    // annotation type (e.g., the link URL for Link annotations).
+    bytes data = 9 [(gogoproto.customtype) = "sourcegraph.com/sqs/pbtypes.RawMessage", (gogoproto.jsontag) = "Data,omitempty"];
+};

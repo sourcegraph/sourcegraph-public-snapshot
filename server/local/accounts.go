@@ -1,0 +1,190 @@
+package local
+
+import (
+	"errors"
+	"fmt"
+	"net/url"
+	"os"
+	"regexp"
+	"time"
+
+	"github.com/mattbaird/gochimp"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sqs/pbtypes"
+)
+
+var Accounts sourcegraph.AccountsServer = &accounts{}
+
+type accounts struct{}
+
+func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
+	defer noCache(ctx)
+
+	accountsStore := store.AccountsFromContextOrNil(ctx)
+	if accountsStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
+	}
+
+	if !isValidLogin(newAcct.Login) {
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
+	}
+
+	if !authutil.ActiveFlags.AllowSignUpOrLogInForUser(newAcct.Login) {
+		return nil, grpc.Errorf(codes.InvalidArgument, "user %q is not on whitelist of permitted usernames", newAcct.Login)
+	}
+
+	now := pbtypes.NewTimestamp(time.Now())
+	newUser := &sourcegraph.User{
+		Login:        newAcct.Login,
+		RegisteredAt: &now,
+	}
+
+	created, err := accountsStore.Create(ctx, newUser)
+	if err != nil {
+		return nil, err
+	}
+	userSpec := created.Spec()
+
+	if newAcct.Email != "" {
+		email := []*sourcegraph.EmailAddr{
+			{Email: newAcct.Email, Primary: true},
+		}
+		if err := accountsStore.UpdateEmails(ctx, userSpec, email); err != nil {
+			return nil, err
+		}
+	}
+
+	passwordStore := store.PasswordFromContextOrNil(ctx)
+	if accountsStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "user passwords"}
+	}
+
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID)})
+	if err := passwordStore.SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
+		return nil, err
+	}
+
+	return &userSpec, nil
+}
+
+func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
+	defer noCache(ctx)
+
+	// TODO(richard) permission should be checked at store level
+	if int(in.UID) != authpkg.ActorFromContext(ctx).UID {
+		return nil, os.ErrPermission
+	}
+
+	accountsStore := store.AccountsFromContextOrNil(ctx)
+	if accountsStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
+	}
+
+	// TODO(beyang): Right now we do not allow setting a user as having
+	// admin privileges through the API. It must be done by editing the DB or
+	// users file for now. At a later point in time we can allow for this to be
+	// done through the API once we have full ACLs and testing for them.
+	if in.Admin {
+		// Only allow this update to proceed if the user is already an admin.
+		user, err := (&users{}).Get(ctx, &sourcegraph.UserSpec{UID: in.UID})
+		if err != nil {
+			return nil, err
+		}
+		if !user.Admin || user.Domain != "" {
+			return nil, grpc.Errorf(codes.PermissionDenied, "can't set user as admin through API")
+		}
+	}
+
+	if err := accountsStore.Update(ctx, in); err != nil {
+		return nil, err
+	}
+
+	return &pbtypes.Void{}, nil
+}
+
+var validLoginRE = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+
+func isValidLogin(login string) bool {
+	return validLoginRE.MatchString(login)
+}
+
+// sendEmail lets us avoid sending emails in tests.
+var sendEmail = notif.SendMandrillTemplate
+
+func (s *accounts) RequestPasswordReset(ctx context.Context, us *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+	defer noCache(ctx)
+
+	accountsStore := store.AccountsFromContextOrNil(ctx)
+	if accountsStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
+	}
+
+	usersStore := store.UsersFromContextOrNil(ctx)
+	if usersStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "users"}
+	}
+	user, err := usersStore.Get(ctx, *us)
+	if err != nil {
+		return nil, err
+	}
+
+	us.UID = user.UID
+	emails, err := usersStore.ListEmails(ctx, *us)
+	if err != nil {
+		return nil, err
+	}
+
+	// Choose the best email to contact a user.
+	var email string
+	for _, e := range emails {
+		if e.Verified {
+			email = e.Email
+		}
+	}
+	if email == "" {
+		if len(emails) == 0 {
+			return nil, errors.New("This account does not have an associated email address.")
+		}
+		email = emails[0].Email
+	}
+
+	token, err := accountsStore.RequestPasswordReset(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	u := conf.AppURL(ctx).ResolveReference(app_router.Rel.URLTo(app_router.ResetPassword))
+	v := url.Values{}
+	v.Set("token", token.Token)
+	u.RawQuery = v.Encode()
+	_, err = sendEmail("forgot-password", user.Name, email,
+		[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: u.String()}})
+	if err != nil {
+		return nil, fmt.Errorf("Error sending email: %s", err)
+	}
+	return user, nil
+}
+
+func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) (*pbtypes.Void, error) {
+	defer noCache(ctx)
+
+	accountsStore := store.AccountsFromContextOrNil(ctx)
+	if accountsStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "user password reset"}
+	}
+	err := accountsStore.ResetPassword(ctx, newPass)
+	if err != nil {
+		return nil, err
+	}
+	return &pbtypes.Void{}, nil
+}

@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+'''Add a new host to a papertrail group.
+
+We can't just use papertrail-cli, since it has some defeciencies:
+* The operations are not idempotent, so we can end up joining a group twice, etc.
+* The system must exist (ie we need to have logged something already)
+* When things go wrong it gives no information why
+
+'''
+
+import argparse
+import json
+import urllib
+import urllib2
+
+
+class PapertrailAPI(object):
+
+    BASE_API_URL = 'https://papertrailapp.com/api/v1/'
+
+    def __init__(self, api_token):
+        self.api_token = api_token
+
+    def systems_list(self):
+        return self._query('systems.json')
+
+    def system_register(self, name, destination_port):
+        return self._query(
+            'systems.json',
+            data={
+                'system[name]': name,
+                'system[hostname]': name,
+                'destination_port': destination_port,
+            },
+        )
+
+    def system_join_group(self, system_id, group_id):
+        return self._query(
+            'systems/{}/join.json'.format(system_id),
+            data={'group_id': group_id},
+        )
+
+    def groups_list(self):
+        return self._query('groups.json')
+
+    def _query(self, endpoint, data=None):
+        if data is not None:
+            data = urllib.urlencode(data)
+        req = urllib2.Request(
+            url=self.BASE_API_URL + endpoint,
+            headers={'X-Papertrail-Token': self.api_token},
+            data=data,
+        )
+        f = urllib2.urlopen(req)
+        return json.load(f)
+
+
+def dynamic_join_group(api, destination_port, group_name, system_name):
+    '''Lets system join group easily.
+
+    Will dynamically create system if it is missing, but will not dynamically
+    create group_name. The reason being is our only option for dynamic group
+    creation is not atomic, so if we have multiple systems attempting it we
+    will have duplicate groups. However, we expect non-concurrent system
+    creates since only a system should try create itself.
+
+    '''
+    system = [system for system in api.systems_list()
+              if system['hostname'] == system_name]
+    if not system:
+        print('Registering system {}'.format(system_name))
+        system = [api.system_register(system_name, destination_port)]
+    system = system[0]
+    print('System: {}'.format(json.dumps(system)))
+
+    group = [group for group in api.groups_list()
+             if group['name'] == group_name]
+    assert group, 'Group {} is missing'.format(group_name)
+    group = group[0]
+    print('Group: {}'.format(json.dumps(group)))
+
+    if any(s['id'] == system['id'] for s in group['systems']):
+        print('Already registered as part of group')
+    else:
+        registration = api.system_join_group(system['id'], group['id'])
+        print('Registration: {}'.format(json.dumps(registration)))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--api-token', required=True)
+    parser.add_argument('--syslog-host', required=True)
+    parser.add_argument('--group-name', required=True)
+    parser.add_argument('--system-name', required=True)
+    args = parser.parse_args()
+
+    api = PapertrailAPI(api_token=args.api_token)
+    destination_port = int(args.syslog_host.split(':', 2)[1])
+    dynamic_join_group(api, destination_port, args.group_name, args.system_name)
+
+main()

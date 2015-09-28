@@ -1,0 +1,20 @@
+{{define "Head"}}<title>Notifications - {{.User.Login|personLabel}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+
+{{define "PersonSettingsBody"}}
+<div class="panel panel-default panel-main person-settings">
+	<div class="panel-heading">Notifications</div>
+	<div class="panel-body">
+		<p>
+			All emails are sent to your <a href="{{urlToUserSubroute "person.settings.emails" .User.Login}}">primary email address</a>. Regardless of your settings here, you'll always receive email related to account permissions, security, and billing.
+		</p>
+		<form role="form" class="notifications" action="{{urlToUserSubroute "person.settings.update" .User.Login}}" method="post">
+			{{/* After removing the build emails checkbox, I added this placeholder to make it not seem like we are too lame to have notifications. We'll remove this when we add notifications. */}}
+			<div class="alert alert-info">You aren't currently eligible for any notifications.</div>
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+		</form>
+	</div>
+</div>
+{{end}}

@@ -1,0 +1,61 @@
+{{define "Head"}}<title>{{.Repo.Name}}@{{truncateCommitID .RepoCommit.ID}} - Sourcegraph</title>
+{{end}}
+
+{{define "RepoBody"}}
+
+{{$commitID := .RepoCommit.ID}}
+{{$repoURI := .Repo.URI}}
+
+<nav class="page-actions">
+	{{range .RepoCommit.Parents}}
+	<a class="btn btn-default btn-sm" href="{{urlToRepoCommit $repoURI .}}"
+			data-tooltip title="View parent commit {{.}}">
+		<span class="octicon octicon-git-commit"></span> Parent {{truncateCommitID .}}
+	</a>
+	{{end}}
+	<a class="btn btn-default btn-sm" href="{{urlToRepoTreeEntry $repoURI .RepoCommit.ID "."}}"
+		data-tooltip title="Browse files as of {{.RepoCommit.ID}}">
+		<span class="octicon octicon-file-directory"></span> Browse files at this commit
+	</a>
+</nav>
+
+{{with .RepoCommit}}
+<div class="commit single media">
+	{{template "Commit" .}}
+	{{$commitRest := commitRestOfMessage .Message}}
+	{{if $commitRest}}
+	<pre class="commit-rest">{{$commitRest}}</pre>
+	{{end}}
+</div>
+{{end}}
+
+{{if .Delta}}
+{{template "commitDelta" $}}
+{{end}}
+
+{{if not .RepoCommit.Parents}}
+<p><span class="label label-default">Root commit</span></p>
+{{end}}
+
+{{end}}
+
+
+{{define "commitDelta"}}
+{{$Repo := .Repo}}
+
+<div class="delta">
+	{{if not .Delta.Base}}
+	<div class="alert alert-warning"><strong>Can't (yet) show diff for initial commit.</strong></div>
+	{{else if and (not .Delta.HeadBuild) (not .Delta.BaseBuild)}}
+	{{else if (not .Delta.HeadBuild)}}
+	<div class="alert alert-warning"><strong>Commits not yet built.</strong> Both this commit and <a href="{{urlToRepoCommit .Delta.Base.URI .Delta.Base.CommitID}}">{{truncateCommitID .Delta.Base.CommitID}}</a> <span data-react="RepoBuildIndicator" data-uri="{{.Delta.Base.URI}}" data-rev="{{.Delta.Base.CommitID}}" data-buildable="{{autoBuild}}"></span> must be built in order for the diff to be interactive.</div>
+	<div class="alert alert-warning"><strong>This commit must be built in order for the diff to be interactive.</strong></div>
+	{{else if (not .Delta.BaseBuild)}}
+	<div class="alert alert-warning"><strong>Base commit <a href="{{urlToRepoCommit .Delta.Base.URI .Delta.Base.CommitID}}">{{truncateCommitID .Delta.Base.CommitID}}</a> <span data-react="RepoBuildIndicator" data-uri="{{.Delta.Base.URI}}" data-rev="{{.Delta.Base.CommitID}}" data-buildable="{{autoBuild}}"></span> must be built in order for the diff to be interactive.</strong></div>
+	{{end}}
+
+	<script ignore-csp>window.preloadedDiffData = {{json .}}</script>
+	<div id="RepoCompareView" data-revision-header="no" class="compare-view"></div>
+</div>
+
+{{end}}

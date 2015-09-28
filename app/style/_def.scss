@@ -1,0 +1,77 @@
+.def-title {
+	margin-top: 30px;
+	margin-bottom: 30px;
+	font-size: $font-size-h3;
+	.name {
+		font-weight: bold;
+		color: black;
+	}
+	.signature {
+		color: $text-quieted;
+	}
+}
+
+span.def-title {
+	color: #707070;
+}
+
+span {
+	&.def-qualified-name-hide {
+		display: none;
+	}
+	&.def-qualified-name-dim {
+		color: #aaa;
+	}
+	&.def-qualified-name-bold {
+		font-weight: bold;
+	}
+}
+
+.def-sidebar {
+	padding: $padding-base-vertical $padding-base-horizontal;
+	border-radius: $border-radius-base;
+	border: 1px solid $gray-lighter;
+	background-color: $gray-lightest;
+
+	a {
+		color: $gray;
+		&:hover {
+			color: $link-color;
+		}
+	}
+
+	.def-toc2 {
+		li.current {
+			font-weight: bold;
+			border-radius: 2px;
+			a {
+				color: $link-color;
+			}
+		}
+
+		.def-sub-toc2 {
+			padding-left: 1em;
+			li {
+				/* poor man's hanging indent */
+				padding-left: 1em;
+				text-indent: -1em;
+			}
+		}
+	}
+}
+
+h3.section-header {
+	margin-top: 4 * $padding-large-vertical;
+}
+
+.auto-description {
+	background-color: $gray-lightest;
+	border: 1px solid $gray-lighter;
+	padding: $padding-base-vertical $padding-base-horizontal;
+	border-radius: $border-radius-base;
+}
+
+.repository-select {
+	border-radius: 0px;
+	box-shadow: none !important;
+}

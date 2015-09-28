@@ -1,0 +1,17 @@
+<!--
+
+This is a sample template file that can be hosted on a Sourcegraph app server using the static file hosting feature.
+
+To try it out, run:
+
+  src serve --app.static-dev --app.static-dir=app/testdata/static
+
+Then go to http://localhost:3000/sample.
+
+-->
+
+<h1>Hello, world!</h1>
+
+<p>This template is at: {{.CurrentURL}}</p>
+
+<p>The current user is: {{with .CurrentUser}}{{.Login}}{{else}}(none){{end}}</p>

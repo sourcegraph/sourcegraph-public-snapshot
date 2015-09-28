@@ -1,0 +1,29 @@
+{{ $BaseURI := .BaseURI }}
+<h2>Open Issues</h2>
+<div class="panel">
+    <table class="table">
+        <tbody>
+            {{ range .Open.Issues }}
+            <tr>
+                <td>
+                    <a href="{{$BaseURI}}/{{.UID}}">{{.UID}}: {{.Title}}</a>
+                    <a href="/~{{.Author.Name }}" class="pull-right">{{.Author.Name }}</a>
+                </td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</div>
+<h2> Create an issue: </h2>
+<form action="{{$BaseURI}}/new" method="POST">
+	<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    Title: <textarea name="title" rows="1" cols="74"></textarea>
+    <p>Describe your issue:</p>
+    <textarea name="content" rows="10" cols="80"></textarea>
+    <br>
+    <input type="submit" value="submit">
+</form>
+<h3>Closed Issues</h3>
+{{ range .Closed.Issues }}
+<p><a href="{{$BaseURI}}/{{.UID}}">{{.UID}}: {{.Title}}</a></p>
+{{ end }}

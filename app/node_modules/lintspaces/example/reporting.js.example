@@ -1,0 +1,8 @@
+    
+(function() {
+    /**
+     * This is a foo bar variable 
+    */
+    var foo = 'bar'; 
+     window.alert(foo);
+})();

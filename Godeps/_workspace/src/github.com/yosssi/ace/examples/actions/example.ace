@@ -1,0 +1,15 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title {{.Title}}
+  body
+    h1 {{.Title}}
+    ul
+      {{range .Msgs}}
+        li {{.}}
+      {{end}}
+    div
+      {{"<div>Escaped String</div>"}}
+    div
+      {{HTML "<div>Non-Escaped String</div>"}}

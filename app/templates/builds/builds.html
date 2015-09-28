@@ -1,0 +1,52 @@
+{{define "Head"}}<title>Builds - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+<h1>Builds</h1>
+
+<ul class="nav nav-tabs">
+	{{$currentOpt:=.Opt}}
+	{{range .Tabs}}
+	<li {{if schemaMatchesExceptListAndSortOptions .BuildListOptions $currentOpt}}class="active"{{end}}><a href="{{urlWithSchema .BuildListOptions}}">{{.Name}}</a></li>
+	{{end}}
+</ul>
+
+{{if .Builds}}
+<table class="table builds">
+	<thead>
+		<tr><th>Attempt</th><th>Repository</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th><th>Host</th></tr>
+	</thead>
+	{{range .Builds}}
+	{{template "BuildRow" .}}
+	{{end}}
+</table>
+{{else}}
+<br>
+<div class="alert alert-info">No matching builds found.</div>
+{{end}}
+
+{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+{{end}}
+
+{{define "BuildRow"}}
+<tr class="build {{buildClass .}}">
+	<th class="bid">
+		<a href="{{urlToRepoBuild .Repo .CommitID .Attempt}}">#{{.Attempt}}</a>
+	</th>
+	<td>
+		{{template "RepoLink" (repoLink .Repo)}}
+		<br>
+		<tt class="commit-id">{{.CommitID}}</tt>
+	</td>
+	<td>
+		{{buildStatus .}}
+		{{template "BuildPriorityLabel" .}}
+	</td>
+	<td>{{template "TimeAgo" .StartedAt}}</td>
+	<td>{{template "TimeAgo" .EndedAt}}</td>
+	<td>{{duration .StartedAt (minTime .EndedAt now)}}</td>
+	<td>{{.Host}}</td>
+	{{template "BuildLinkCells" .}}
+</tr>
+{{end}}

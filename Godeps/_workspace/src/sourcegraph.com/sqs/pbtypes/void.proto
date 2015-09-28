@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package pbtypes;
+
+// Void is an empty type used as the protobuf RPC method arg or result
+// for methods that take no parameters or yield no results,
+// respectively.
+message Void {}

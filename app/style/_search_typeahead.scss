@@ -1,0 +1,330 @@
+/*
+	* typehead.js-bootstrap3.less
+	* @version 0.2.3
+	* https://github.com/hyspace/typeahead.js-bootstrap3.less
+	*
+	* Licensed under the MIT license:
+	* http://www.opensource.org/licenses/MIT
+*/
+.has-warning .twitter-typeahead .tt-input,
+.has-warning .twitter-typeahead .tt-hint {
+	border-color: #8a6d3b;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+.has-warning .twitter-typeahead .tt-input:focus,
+.has-warning .twitter-typeahead .tt-hint:focus {
+	border-color: #66512c;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #c0a16b;
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #c0a16b;
+}
+.has-error .twitter-typeahead .tt-input,
+.has-error .twitter-typeahead .tt-hint {
+	border-color: #a94442;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+.has-error .twitter-typeahead .tt-input:focus,
+.has-error .twitter-typeahead .tt-hint:focus {
+	border-color: #843534;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ce8483;
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ce8483;
+}
+.has-success .twitter-typeahead .tt-input,
+.has-success .twitter-typeahead .tt-hint {
+	border-color: #3c763d;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+.has-success .twitter-typeahead .tt-input:focus,
+.has-success .twitter-typeahead .tt-hint:focus {
+	border-color: #2b542c;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #67b168;
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #67b168;
+}
+.input-group .twitter-typeahead:first-child .tt-input,
+.input-group .twitter-typeahead:first-child .tt-hint {
+	border-bottom-left-radius: 4px;
+	border-top-left-radius: 4px;
+}
+.input-group .twitter-typeahead:last-child .tt-input,
+.input-group .twitter-typeahead:last-child .tt-hint {
+	border-bottom-right-radius: 4px;
+	border-top-right-radius: 4px;
+}
+.input-group.input-group-sm .twitter-typeahead .tt-input,
+.input-group.input-group-sm .twitter-typeahead .tt-hint {
+	height: 30px;
+	padding: 5px 10px;
+	font-size: 12px;
+	line-height: 1.5;
+	border-radius: 3px;
+}
+select.input-group.input-group-sm .twitter-typeahead .tt-input,
+select.input-group.input-group-sm .twitter-typeahead .tt-hint {
+	height: 30px;
+	line-height: 30px;
+}
+textarea.input-group.input-group-sm .twitter-typeahead .tt-input,
+textarea.input-group.input-group-sm .twitter-typeahead .tt-hint,
+select[multiple].input-group.input-group-sm .twitter-typeahead .tt-input,
+select[multiple].input-group.input-group-sm .twitter-typeahead .tt-hint {
+	height: auto;
+}
+.input-group.input-group-sm .twitter-typeahead:not(:first-child):not(:last-child) .tt-input,
+.input-group.input-group-sm .twitter-typeahead:not(:first-child):not(:last-child) .tt-hint {
+	border-radius: 0;
+}
+.input-group.input-group-sm .twitter-typeahead:first-child .tt-input,
+.input-group.input-group-sm .twitter-typeahead:first-child .tt-hint {
+	border-bottom-left-radius: 3px;
+	border-top-left-radius: 3px;
+	border-bottom-right-radius: 0;
+	border-top-right-radius: 0;
+}
+.input-group.input-group-sm .twitter-typeahead:last-child .tt-input,
+.input-group.input-group-sm .twitter-typeahead:last-child .tt-hint {
+	border-bottom-left-radius: 0;
+	border-top-left-radius: 0;
+	border-bottom-right-radius: 3px;
+	border-top-right-radius: 3px;
+}
+.input-group.input-group-lg .twitter-typeahead .tt-input,
+.input-group.input-group-lg .twitter-typeahead .tt-hint {
+	height: 46px;
+	padding: 10px 16px;
+	font-size: 18px;
+	line-height: 1.33;
+	border-radius: 6px;
+}
+select.input-group.input-group-lg .twitter-typeahead .tt-input,
+select.input-group.input-group-lg .twitter-typeahead .tt-hint {
+	height: 46px;
+	line-height: 46px;
+}
+textarea.input-group.input-group-lg .twitter-typeahead .tt-input,
+textarea.input-group.input-group-lg .twitter-typeahead .tt-hint,
+select[multiple].input-group.input-group-lg .twitter-typeahead .tt-input,
+select[multiple].input-group.input-group-lg .twitter-typeahead .tt-hint {
+	height: auto;
+}
+.input-group.input-group-lg .twitter-typeahead:not(:first-child):not(:last-child) .tt-input,
+.input-group.input-group-lg .twitter-typeahead:not(:first-child):not(:last-child) .tt-hint {
+	border-radius: 0;
+}
+.input-group.input-group-lg .twitter-typeahead:first-child .tt-input,
+.input-group.input-group-lg .twitter-typeahead:first-child .tt-hint {
+	border-bottom-left-radius: 6px;
+	border-top-left-radius: 6px;
+	border-bottom-right-radius: 0;
+	border-top-right-radius: 0;
+}
+.input-group.input-group-lg .twitter-typeahead:last-child .tt-input,
+.input-group.input-group-lg .twitter-typeahead:last-child .tt-hint {
+	border-bottom-left-radius: 0;
+	border-top-left-radius: 0;
+	border-bottom-right-radius: 6px;
+	border-top-right-radius: 6px;
+}
+/* .input-group .twitter-typeahead { */
+/*   display: table-cell !important; */
+/*   float: left; */
+/* } */
+.twitter-typeahead .tt-hint {
+	color: #999999;
+}
+.twitter-typeahead .tt-input {
+	@include z-index(nav-search-input);
+}
+.twitter-typeahead .tt-input[disabled],
+.twitter-typeahead .tt-input[readonly],
+fieldset[disabled] .twitter-typeahead .tt-input {
+	cursor: not-allowed;
+	background-color: #eeeeee !important;
+}
+.tt-menu {
+	////////////////////////////
+	// DEV: always display menu
+	// display: block !important;
+	////////////////////////////
+
+	@include z-index(nav-search-input);
+	position: absolute;
+	top: 100%;
+	left: 0;
+	min-width: 380px;
+	width: 100%;
+	padding: 0;
+	margin: 2px 0 0;
+	list-style: none;
+	background-color: #ffffff;
+	border: 1px solid #cccccc;
+	border: 1px solid rgba(0, 0, 0, 0.15);
+	border-radius: 4px;
+	overflow: hidden;
+	-webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+	box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+	background-clip: padding-box;
+	*border-right-width: 2px;
+	*border-bottom-width: 2px;
+
+	$dropdown-v-padding: 4px;
+	$dropdown-h-padding: 12px;
+
+	&.hide-tt-menu {
+		display: none !important;
+	}
+
+	.tt-dataset {
+		.tt-header, .tt-error {
+			display: block;
+		}
+		.tt-header {
+			font-weight: bold;
+			background-color: $gray-lighter;
+			padding: $dropdown-v-padding $dropdown-h-padding;
+		}
+		.tt-error {
+			white-space: normal;
+			padding: $dropdown-v-padding*2 $dropdown-h-padding;
+		}
+		.tt-help {
+			font-size: $font-size-small;
+			white-space: normal;
+			padding: $dropdown-v-padding $dropdown-h-padding;
+			margin-bottom: 0;
+		}
+
+		h1.tt-header {
+			margin: 0;
+			padding-top: 10px !important;
+			padding-bottom: 10px !important;
+			font-size: $font-size-base*1.1;
+			font-weight: bold;
+		}
+
+		.tt-suggestion {
+			display: block;
+			padding: $dropdown-v-padding $dropdown-h-padding;
+			margin: 0;
+			clear: both;
+			font-weight: normal;
+			line-height: 1.42857143;
+			color: #333333;
+			white-space: nowrap;
+
+			a {
+				color: #262626;
+			}
+
+			&.tt-cursor, &:hover {
+				cursor: default;
+				text-decoration: none;
+				outline: 0;
+				background-color: darken($sg-blue-color, 7%);
+				&, span { color: $component-active-color !important; }
+			}
+
+			overflow: hidden;
+			text-overflow: ellipsis;
+
+			.title {
+				// Highlight the part that was autocompleted, not the part the user has already typed.
+				.matched-word {
+					font-weight: bold;
+					.matched-chars { font-weight: normal; }
+				}
+			}
+
+			.main-icon {
+				padding-right: 5px;
+			}
+			.more {
+				color: $gray-light;
+				font-size: $font-size-small;
+				padding-left: 4px;
+				text-overflow: ellipsis;
+			}
+
+			// DEBUGGING: indicate whether a suggestion was from prefetch or remote.
+			/* &.prefetch, &.remote { */
+			/*     border-right: solid 5px transparent; */
+			/* } */
+			/* &.prefetch { */
+			/*     border-right-color: #60b044; */
+			/* } */
+			/* &.remote { */
+			/*     border-right-color: red; */
+			/* } */
+
+		}
+	}
+}
+
+
+// TOKENINPUT
+
+.twitter-typeahead {
+	width: 100%;
+	position: relative;
+	vertical-align: top;
+}
+.twitter-typeahead .tt-input,
+.twitter-typeahead .tt-hint {
+	margin: 0;
+	width: 100%;
+	vertical-align: middle;
+	background-color: #ffffff;
+}
+
+.tokenfield .twitter-typeahead {
+	width: auto;
+}
+.tokenfield .twitter-typeahead .tt-hint {
+	padding: 0;
+	height: 20px;
+}
+.tokenfield.input-sm .twitter-typeahead .tt-input,
+.tokenfield.input-sm .twitter-typeahead .tt-hint {
+	height: 18px;
+	font-size: 12px;
+	line-height: 1.5;
+}
+.tokenfield.input-lg .twitter-typeahead .tt-input,
+.tokenfield.input-lg .twitter-typeahead .tt-hint {
+	height: 23px;
+	font-size: 18px;
+	line-height: 1.33;
+}
+.tokenfield .twitter-typeahead .tt-suggestions {
+	font-size: 14px;
+}
+.token.prevent-delete {
+	padding-right: 5px;
+	&:hover {
+		border-color: #d9d9d9;
+	}
+}
+.tokenfield .token {
+	.close {
+		opacity: 0.4;
+	}
+
+	&.active {
+		background-color: $input-border-focus;
+		&, .close { color: white; }
+		.close {
+			opacity: 0.75;
+		}
+	}
+}
+.tokenfield .token.invalid {
+	background: lighten($state-danger-bg, 3%);
+	&, .close { color: $state-danger-text; }
+	border-radius: 3px;
+	border: 1px dashed lighten($state-danger-text, 20%);
+	&.active {
+		background-color: $state-danger-text;
+		&, .close { color: $state-danger-bg; }
+	}
+}

@@ -1,0 +1,34 @@
+{{define "Head"}}<title>Sharing {{.EntrySpec.Path}} at {{.EntrySpec.RepoRev.CommitID}} - {{.Repo.URI}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "RepoBody"}}
+
+<h2>Embed sourcebox from <tt>{{trimPrefix .EntrySpec.Path "/"}}</tt></h2>
+<p>Paste the following HTML code to embed a portion of this file's code (with links and mouseover tooltips) in any web page or blog.</p>
+<p><strong>Want to embed a different line range?</strong> <a href="{{urlToRepoTreeEntry .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.CommitID .EntrySpec.Path}}">Go back to the file</a> and select the line range you want, then click Embed.</p>
+<textarea class="code" rows="4" cols="60">&lt;script type="text/javascript" src="{{absURL .AppURL .SourceboxURL}}"&gt&lt/script&gt;</textarea>
+
+<h2>Request JSON</h2>
+<p>You may also request the contents of the Sourcebox's in JSON format via the URL:</p>
+<textarea class="code" rows="4" cols="60">{{absURL .AppURL .SourceboxJSONURL}}</textarea>
+
+<h3>Options</h3>
+<ul>
+	<li>
+		<b>Line Numbers:</b> display line numbers in Sourcebox by adding a <code>LineNumbers=true</code> querystring  parameter to the end of the embed URL.
+	</li>
+	<li>
+		<b>Start Line:</b> begin the Sourcebox at a specific line by adding a <code>StartLine=n</code> querystring parameter to the end of the embed URL, substituting "n" for the new start line.
+	</li>
+	<li>
+		<b>End Line:</b> end the Sourcebox at a specific line by adding a <code>EndLine=n</code> querystring parameter to the end of the embed URL, substituting "n" for the new end line.
+	</li>
+</ul>
+
+<h3>Preview</h3>
+<script src="{{absURL .AppURL .SourceboxURL}}"></script>
+
+<br>
+
+{{end}}

@@ -1,0 +1,16 @@
+{{define "Head"}}<title>Commits - {{.Repo.URI}} - Sourcegraph</title>
+{{end}}
+
+{{define "RepoBody"}}
+
+<span data-react="RepoRevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="commits" data-repo-spec="{{.CurrentRouteVars.Repo}}"></span>
+
+{{if isNil .CommitDays}}
+<div class="alert alert-danger"><strong>Error fetching commits.</strong></div>
+{{else if not .CommitDays}}
+<div class="alert alert-info">No commits found.</div>
+{{else}}
+{{template "CommitDays" .CommitDays}}
+{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+{{end}}
+{{end}}

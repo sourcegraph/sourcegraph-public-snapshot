@@ -1,0 +1,73 @@
+makex: a Go "make" clone for creating simple, custom build tools
+Pre-GopherCon 2014 Kickoff Party
+20:00 23 Apr 2014
+Tags: gophercon2014, gophercon, makex, make
+
+Quinn Slack
+Co-Creator, Sourcegraph
+sqs@sourcegraph.com
+https://sourcegraph.com/sourcegraph.com/sourcegraph/makex
+@sqs
+
+
+* makex: yet another build tool?
+
+No.
+
+- Works like make.
+- Reads and writes existing Makefile format.
+- But instead of just calling `make`, it topo sorts in Go and executes shell commands *individually*.
+
+
+* Build tools
+
+- Common need: parallel task pipeline with intermediate and final outputs
+- Example: Sourcegraph needs to pre-process, compile, and post-process 100k+ open source projects
+- Solutions: make, grunt, shell scripts, etc.
+- But what if we want to track task progress, collect errors/logs, and programmatically introspect these from Go?
+
+
+* Example
+
+Implement your own kinds of rules.
+
+ type Makefile struct {
+ 	Rules []Rule
+ }
+
+ type Rule interface {
+ 	Target() string    // filename
+ 	Prereqs() []string // filenames
+ 	Recipes() []string // shell commands
+ }
+ 
+
+* Example
+
+Then write a standard Makefile to disk, or run it in Go:
+
+ mf := &Makefile{...}
+ conf := makex.Default
+ mk := conf.NewMaker(mf, "targ1", "targ2")
+ err := mk.Run()
+
+Or just see what targets are unbuilt, and in what dependency order they can be built:
+
+ targetSets, err := mk.TargetSetsNeedingBuild()
+
+
+* How we use it
+
+We replaced 2,500 lines of custom "task runner" code, which includes:
+
+- logging per-task output
+- tracking per-task errors
+- ordering task dependencies
+- tracking task progress
+
+with code that uses makex to construct and run Makefiles to do the same work.
+
+In addition to the above, makex lets us:
+
+- more easily inspect what will be built (just run `make`--dry-run`)
+- more easily debug issues with specific tasks (just run the recipes for the target)

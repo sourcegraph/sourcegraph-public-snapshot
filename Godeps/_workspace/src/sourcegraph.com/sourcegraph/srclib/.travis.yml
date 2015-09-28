@@ -1,0 +1,31 @@
+language: go
+go: 1.4
+python: 2.7
+jdk: oraclejdk8
+
+before_install:
+  - mkdir -p $HOME/gopath/src/sourcegraph.com/sourcegraph
+  - mv $TRAVIS_BUILD_DIR $HOME/gopath/src/sourcegraph.com/sourcegraph/srclib
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/sourcegraph.com/sourcegraph/srclib
+  # for rst2html (package doc)
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq python-docutils
+  - export PATH=$PATH:$HOME/gopath/bin
+  - export GOBIN=$HOME/gopath/bin
+  - sudo pip install virtualenv
+  # ruby 2.2.2
+  - gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+  - curl -sSL https://get.rvm.io | bash -s stable --ruby
+  - rvm reload
+  - rvm install ruby-2.2.2
+  - rvm use 2.2.2
+
+install:
+  - go get -d -v ./... && go build -v ./...
+  - go install ./cmd/srclib
+
+script:
+  - go test -v ./...
+  - make install-all-toolchains
+  - make test-all-toolchains
+

@@ -1,0 +1,107 @@
+// +build exectest
+
+package gitserver_test
+
+import (
+	"net/url"
+	"testing"
+
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/fed"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
+)
+
+func TestGitClone(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	a, ctx := testserver.NewUnstartedServer()
+	a.Config.ServeFlags = append(a.Config.ServeFlags,
+		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
+	)
+	if err := a.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+
+	_, done, err := testutil.CreateRepo(t, ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer done()
+	repo, err := a.Client.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: "myrepo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := testutil.PushRepo(t, ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Can clone if authed.
+	if err := testutil.CloneRepo(t, repo.HTTPCloneURL, ""); err != nil {
+		t.Fatalf("git clone %s: %s", repo.HTTPCloneURL, err)
+	}
+}
+
+func TestGitClone_authRequired(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	a, ctx := testserver.NewUnstartedServer()
+	a.Config.ServeFlags = append(a.Config.ServeFlags,
+		&authutil.Flags{Source: "local"},
+		&fed.Flags{IsRoot: true},
+	)
+	if err := a.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+
+	user, err := a.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "u", Email: "u@example.com", Password: "p"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authedCtx := a.AsUID(ctx, int(user.UID))
+
+	_, done, err := testutil.CreateRepo(t, authedCtx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer done()
+	repo, err := a.Client.Repos.Get(authedCtx, &sourcegraph.RepoSpec{URI: "myrepo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authedCloneURL, err := url.Parse(repo.HTTPCloneURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authedCloneURL.User = url.UserPassword("u", "p")
+	unauthedCloneURL := repo.HTTPCloneURL
+	repo.HTTPCloneURL = authedCloneURL.String()
+
+	if _, err := testutil.PushRepo(t, authedCtx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Can't clone if unauthed.
+	if err := testutil.CloneRepo(t, unauthedCloneURL, ""); err == nil {
+		t.Fatalf("git clone %s: err == nil, wanted auth denied", unauthedCloneURL)
+	}
+
+	// Can clone if authed.
+	if err := testutil.CloneRepo(t, authedCloneURL.String(), ""); err != nil {
+		t.Fatalf("git clone %s: %s", authedCloneURL, err)
+	}
+}

@@ -1,0 +1,7 @@
+{{define "Head"}}<title>{{.EntrySpec.Path}} at {{.EntrySpec.RepoRev.CommitID}} - {{.Repo.URI}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "RepoBody"}}
+{{template "RepoTreeDir" .}}
+{{end}}

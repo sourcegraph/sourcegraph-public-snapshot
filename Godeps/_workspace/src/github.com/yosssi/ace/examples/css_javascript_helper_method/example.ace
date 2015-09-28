@@ -1,0 +1,18 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title CSS and Javascript Helper Method
+    = css
+      h1 {
+        color: blue;
+      }
+      h2 {
+        color: green;
+      }
+  body
+    h1 CSS and Javascript Helper Method
+    h2 This example shows how to use the css and javascript helper method.
+    = javascript
+      var msg = 'CSS and Javascript Helper Method';
+      alert(msg);

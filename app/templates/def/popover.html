@@ -1,0 +1,14 @@
+{{define "ROOT"}}
+<div class="popover-data">
+	<div class="title"><tt>{{.Def.Fmt.DefKeyword}} {{overrideStyleViaRegexpFlags (defQualifiedNameAndType .Def "scope")}}</tt></div>
+	<div class="content">
+		{{if .Def.DocHTML}}<p class="doc">{{(textFromHTML .Def.DocHTML.HTML)|truncate 200}}</p>{{end}}
+		{{if not (eq .CurrentRepo .Def.Repo)}}
+		<span class="repo">{{.Def.Repo}}</span>
+		{{end}}
+		{{if and (eq .CurrentRepo .Def.Repo) (not (eq .CurrentFile .Def.File))}}
+		<span class="repo">{{.Def.File}}</span>
+		{{end}}
+	</div>
+</div>
+{{end}}

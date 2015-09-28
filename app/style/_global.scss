@@ -1,0 +1,71 @@
+.alert-view {
+	position: relative;
+
+	&.closed { display: none; }
+
+	.btn-close {
+		position: absolute;
+		color: #666;
+		font-weight: bold;
+		top: 10px;
+		right: 14px;
+		cursor: pointer;
+		display: inline-block;
+	}
+}
+
+.heading-tight {
+	margin-top: 0;
+	margin-bottom: 3px;
+}
+
+li.spacer {
+	height: 10px;
+}
+
+.sep {
+	color: $gray-light;
+	padding: 0 0.2em;
+}
+
+a.block-link {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+}
+
+[data-href]:hover {
+	cursor: pointer;
+}
+
+tt {
+	font-family: $font-family-monospace;
+}
+
+textarea.code {
+	font-family: $font-family-monospace;
+	font-size: 0.9em;
+	word-wrap: break-word;
+}
+
+.capitalize-first {
+	text-transform: capitalize;
+}
+
+.padded-container {
+	padding-top: 15px;
+}
+
+.help-sm-fade {
+	color: #666;
+	font-size: $font-size-small;
+}
+
+.noselect {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}

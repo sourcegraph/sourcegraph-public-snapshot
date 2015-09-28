@@ -1,0 +1,34 @@
+syntax = "proto3";
+package gitpb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/sourcegraph.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+service GitTransport {
+	rpc InfoRefs(InfoRefsOp) returns (Packet);
+	rpc ReceivePack(ReceivePackOp) returns (Packet);
+	rpc UploadPack(UploadPackOp) returns (Packet);
+}
+
+message InfoRefsOp {
+	sourcegraph.RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	string service = 2;
+}
+
+message ReceivePackOp {
+	sourcegraph.RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	string content_encoding = 2; // gzip, flate, or empty
+	bytes data = 3;
+}
+
+message UploadPackOp {
+	sourcegraph.RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	string content_encoding = 2; // gzip, flate, or empty
+	bytes data = 3;
+}
+
+message Packet {
+	bytes data = 1;
+}

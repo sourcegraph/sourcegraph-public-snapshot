@@ -1,0 +1,88 @@
+
+<html>
+    <head>
+        <style>
+            * {font-family: mono; font-size:0.95em}
+            .eventNotifier{width: 100px; float: left; color:navy; border: dotted 1px navy; padding: 4px; background-color:white; margin:3px}
+            .dirty{border: solid 1px #0ca2ff; color:white; background-color:#0ca2ff}
+            
+        </style>
+    </head>
+    <body>
+        <h3>Test #01</h3>
+        <input type='text' id='input_01'/>
+        <p>
+            type 'ctrl+l ' to focus.<br/>
+            type 'shift+3' to insert 'Shift#' into the text box.<br/>
+            type 'a' inside the textbox and have 'b' inserted instead.
+        </p>
+        <hr />
+        <h3>Test #02</h3>
+        <table>
+            <tbody>
+                <tr>
+                    <td><input type='text' id='input_02' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_03' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_04' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_05' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_06' class='foo'></td>
+                    </tr>
+                </tbody>
+            </table>
+            <input type='button' value='UnBind Click' onclick="unbindClick()" />
+            <input type='button' value='UnBind Keyup' onclick="unbindKeyup()" />
+    </body>
+    <hr />
+    <div id="logger"></div>
+    <script src="jquery-1.4.2.js"></script>
+    <script src="jquery.hotkeys.js"></script>
+    <script>
+        $(document).ready(function(){
+            $(document).bind('keydown', 'ctrl+l', function(){$('#input_01')[0].focus();})
+                .bind('keydown', 'shift+#', function(){$('#input_01')[0].value = "Shift#";})
+                //.bind('keyup', function () { alert (arguments); })
+                .bind('click', function (event){
+                    if (event.target == $('html')[0]){
+                        alert("save the planet, don't waste energy over meaningless clicking");
+                    }    
+                });
+
+            $('#input_01').bind('keyup', 'a', function(event){
+            	this.value = this.value.replace(/a/g, "b");
+            });
+
+            $('input.foo').bind('keydown', 'ctrl+k', function(event){
+            	log('binding keydown/ctrl+k to <b>input</b> applied on <b>#' + event.target.id + '</b>');
+            	return false;
+            });
+
+            $('table').bind('keydown click keyup', 'ctrl+l', clickHandler);
+        });
+        
+        function clickHandler(event){
+            log('binding ' + event.type + ' with(ctrl+l) to <b>table</b> applied on <b>#' + event.target.id + '</b>');
+            return false;          
+        }
+        
+        function unbindClick(){
+            $('table').unbind('click', clickHandler).unbind('keyup', 'ctrl+l', clickHandler);
+        }
+        
+        function unbindKeyup(){
+            $('table').unbind('keyup', 'ctrl+l', clickHandler);
+        }
+        
+        
+        function log(msg){
+            $('#logger').html(msg);
+        }
+    </script>
+</html>

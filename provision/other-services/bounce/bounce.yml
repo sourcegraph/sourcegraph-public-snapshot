@@ -1,0 +1,54 @@
+---
+
+- name: Provision on EC2
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  tasks:  
+    - name: Provision instance
+      ec2:
+        key_name: sg-dev
+        instance_type: t2.micro
+        image: ami-5189a661
+        region: us-west-2
+        zone: us-west-2b
+        monitoring: yes
+        instance_tags:
+          Name: bounce.sgdev.org
+        exact_count: 1
+        count_tag:
+          Name: bounce.sgdev.org
+        group:
+          - sg-3e8b715a # next-production
+          - sg-c2a16ca6 # www-production
+          - sg-308b7154 # admin_access_production
+        wait: true
+        assign_public_ip: yes
+        vpc_subnet_id: subnet-bcd1a5d9
+      register: instances
+    
+    - name: add route53 entry
+      route53: >
+        command=create
+        zone=sgdev.org
+        record=bounce.sgdev.org
+        type=CNAME
+        ttl=300
+        overwrite=true
+        value="{{ item.public_dns_name }}"
+      with_items: instances.tagged_instances
+    
+    - name: wait for host
+      wait_for:
+        state=started
+        host={{ item.public_dns_name }}
+        port=22
+      with_items: instances.tagged_instances
+
+- name: Setup host
+  hosts: bounce
+  vars:
+    ansible_ssh_user: ubuntu
+  tasks:
+    - name: Remove annoying landscape-common package
+      apt: name=landscape-common state=absent

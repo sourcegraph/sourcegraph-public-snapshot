@@ -1,0 +1,41 @@
+{{define "PersonOwnedReposHeading"}}
+<div class="panel-heading">
+	Repositories owned by {{template "personNominative" $}}
+</div>
+{{end}}
+
+{{define "PersonOwnedRepos"}}
+{{$user := .User}}
+<div class="panel panel-default panel-main">
+	{{template "PersonOwnedReposHeading" $}}
+	{{if hasField . "Repos"}}
+	{{if len .Repos}}
+	<ol class="person-repos repos list-group panel-body">
+		{{range .Repos}}
+		<li class="repo list-group-item">
+			<div class="repo-item"><a href="{{urlToRepo .URI}}">
+				<ul class="stats list-unstyled list-inline pull-right">
+					{{if .Language}}
+						<li class="lang">{{.Language}}</li>
+					{{end}}
+					{{if .GitHub}}
+						{{if gt .GitHub.Stars 0}}
+							<li title="{{.Name}} has {{pluralize "stargazer" (toInt .GitHub.Stars)}} on GitHub"><span class="fa fa-star"></span> {{.GitHub.Stars}}</li>
+						{{end}}
+					{{end}}
+				</ul>
+				<span class="list-group-item-heading">{{template "RepoIcon" .}}{{template "RepoLabel" (repoLabelForOwner $user.Login .URI)}}</span>
+				<span class="description list-group-item-text">{{.Description}}</span>
+			</a></div>
+		</li>
+		{{end}}
+	</ol>
+	{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+	{{else}}
+	<div class="panel-footer">
+		No repositories found.
+	</div>
+	{{end}}
+	{{end}}
+</div>
+{{end}}

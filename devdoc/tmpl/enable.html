@@ -1,0 +1,85 @@
+{{define "Title"}}Sourcegraph Developer{{end}}
+
+{{define "Main"}}
+
+<style>
+.enable .intro-title {
+  margin-top: 5em;
+}
+.enable .intro-title p {
+  font-weight: bold;
+  font-size: 45px;
+  padding: 0;
+  margin: 0;
+  line-height: 1.15em;
+}
+.enable .intro {
+  padding-top: 6em;
+  width: 500px;
+  margin: auto;
+}
+.enable .intro h1 {
+    font-size: 25px;
+    margin-left: 16px;
+    margin-bottom: .7em;
+}
+.enable .intro p {
+    font-size: 16px;
+    margin-left: 2em;
+}
+.enable .intro p, .enable .intro h1 {
+  line-height: 1.15em;
+}
+.enable .star {
+  font-family: "Gotham";
+  font-size: 300px;
+  margin: 0;
+  padding: 0;
+  float: right;
+  height: 0;
+  color: {{template "c-sg-blue"}};
+  line-height: 1.15em;
+}
+
+.enable .btn-block {
+  display: inline-block;
+}
+.enable .big-btn a {
+  color: {{template "c-off-white"}};
+  background-color: {{template "c-sg-blue"}};
+  margin-top: 3em;
+  margin-left: 1em;
+  margin-bottom: 3em;
+  width: 11em;
+  font-size: 20px;
+  font-weight: bold;
+}
+.enable .big-btn a:hover {
+  background-color: {{template "c-sg-blue-70%"}};
+}
+.enable .big-btn i {
+  line-height: 0; /* do not effect the height of the button */
+  font-size: 30px;
+  position: relative;
+  top: 5px;
+}
+</style>
+
+<div class="enable">
+  <span class="star noselect">✱</span>
+
+  <div class="intro-title noselect">
+    <p>SOURCEGRAPH</p>
+    <p>DEVELOPER</p>
+    <p>NETWORK</p>
+  </div>
+
+  <div class="intro">
+    <h1>Whoops!</h1>
+    <hr/>
+    <p>Your Sourcegraph binary does not have developer documentation built into it!</p>
+    <p>Please contact your Sourcegraph instance manager!</p>
+  </div>
+</div>
+
+{{end}}

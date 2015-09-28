@@ -1,0 +1,48 @@
+{{define "Head"}}<title>Sign up - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+<div class="row">
+	<div class="col-md-5">
+		<h1>Create a personal account</h1>
+
+		<form method="post" action="{{urlToWithReturnTo "sign-up" .ReturnTo}}" class="sign-up">
+			<p class="help-block">{{.SignupForm.FormError}}</p>
+			<div class="form-group {{.SignupForm.FieldClass "Login"}}">
+				<label for="login">Username</label>
+				<input name="Login" type="text" class="form-control" id="login" value="{{.SignupForm.Login}}" required pattern="[\w-]+" tabindex=1 autofocus>
+				<p class="help-block">
+					{{with .SignupForm.FieldError "Login"}}
+						{{.}}
+					{{else}}
+						This is your username. <!--<a href="#" onclick="alert('TODO')">Signing up for an organization?</a>-->
+					{{end}}
+				</p>
+			</div>
+			<div class="form-group {{.SignupForm.FieldClass "Email"}}">
+				<label for="email">Email address</label>
+				<input name="Email" type="email" class="form-control" id="email" value="{{.SignupForm.Email}}" required tabindex=2>
+				<p class="help-block">
+					{{with .SignupForm.FieldError "Email"}}
+						{{.}}
+					{{else}}
+						You'll receive occasional emails about your account. We won't share your email address with anyone.
+					{{end}}
+				</p>
+			</div>
+			<div class="form-group {{.SignupForm.FieldClass "Password"}}">
+				<label for="password">Password</label>
+				<input name="Password" type="password" class="form-control" id="password" value="{{.SignupForm.Password}}" required tabindex=3>
+				<p class="help-block">{{.SignupForm.FieldError "Password"}}</p>
+			</div>
+
+			<p class="notice">
+				By clicking on "Create an account" below, you agree to our <a href="https://sourcegraph.com/privacy">privacy policy</a> and <a href="https://sourcegraph.com/terms">terms</a>.
+			</p>
+			<button type="submit" class="btn btn-primary btn-lg" tabindex=4>Create an account</button>
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+		</form>
+	</div>
+</div>
+{{end}}

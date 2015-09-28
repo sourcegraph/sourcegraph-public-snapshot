@@ -1,0 +1,6 @@
+files:
+  - /var/log/upstart/src.log
+destination:
+  host: logs.papertrailapp.com
+  port: 50140
+  protocol: tls

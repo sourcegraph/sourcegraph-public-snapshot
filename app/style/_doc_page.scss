@@ -1,0 +1,17 @@
+.doc-page {
+	ul, ol, li {
+		list-style-type: none;
+	}
+	ul, ol {
+		padding: 0;
+	}
+	li li {
+		padding-left: 13px;
+	}
+}
+
+.doc-page-toc {
+	a {
+		font-weight: bold;
+	}
+}

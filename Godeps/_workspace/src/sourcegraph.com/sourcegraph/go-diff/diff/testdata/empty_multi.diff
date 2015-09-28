@@ -1,0 +1,13 @@
+diff --git Godeps/_workspace/src/sourcegraph.com/sourcegraph/go-diff/diff/testdata/empty.diff Godeps/_workspace/src/sourcegraph.com/sourcegraph/go-diff/diff/testdata/empty.diff
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+--- /dev/null
++++ Godeps/_workspace/src/sourcegraph.com/sourcegraph/go-diff/diff/testdata/empty.diff
+diff --git Godeps/_workspace/src/sourcegraph.com/sourcegraph/go-diff/diff/testdata/empty_new.diff Godeps/_workspace/src/sourcegraph.com/sourcegraph/go-diff/diff/testdata/empty_new.diff
+new file mode 100644
+index 0000000000000000000000000000000000000000..527e2e70f57b02e709f53e3ac2b7f59e2b5a46bc
+--- /dev/null
++++ Godeps/_workspace/src/sourcegraph.com/sourcegraph/go-diff/diff/testdata/empty_new.diff
+@@ -0,0 +1,2 @@
++@@ -1,1 +0,0 @@
++-b

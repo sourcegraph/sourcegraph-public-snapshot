@@ -1,0 +1,54 @@
+{{define "TumblrPost"}}
+
+<div class="post">
+	<h3 class="title"><a href="{{.SGURL}}">{{.Title}}</a></h3>
+	<h4 class="byline">{{if .PostAuthor}}authored by {{.PostAuthor}},{{end}} {{template "TimeAgo" .Timestamp}}</h4>
+
+	<div class="post-body">
+		{{if eq .Type "text"}}
+			{{template "TumblrTextPost" .}}
+		{{else if eq .Type "link"}}
+			{{template "TumblrLinkPost" .}}
+		{{else if eq .Type "photo"}}
+			{{template "TumblrPhotoPost" .}}
+		{{else if eq .Type "quote"}}
+			{{template "TumblrQuotePost" .}}
+		{{else}}
+			[Post omitted because type ({{.type}}) was unrecognized. Please contact support@sourcegraph.com]
+		{{end}}
+	</div>
+</div>
+{{end}}
+
+{{define "TumblrLinkPost"}}
+{{.Description}}
+{{end}}
+
+{{define "TumblrTextPost"}}
+{{.Body}}
+{{end}}
+
+
+{{define "TumblrPhotoPost"}}
+{{range .Photos}}
+	<a target="_blank" href="{{.original_size.url}}">
+		<img class="img-responsive" alt="image" src="{{.original_size.url}}">
+	</a>
+	<div class="caption">{{.caption}}</div>
+{{end}}
+	<div class="caption">{{.Caption}}</div>
+{{end}}
+
+{{define "TumblrQuotePost"}}
+	<blockquote>{{.Text}}</blockquote>
+	&mdash;{{.Source}}
+{{end}}
+
+
+{{define "TumblrPagination"}}
+	<div class="tumblr-pagination">
+		<a href="{{nextPageURL .CurrentURI -1}}"><i class="fa fa-arrow-left"></i></a>
+		Posts {{add .Offset 1}} to {{min (add .Offset .Limit) .Response.TotalPosts}} of {{.Response.TotalPosts}}
+		<a href="{{nextPageURL .CurrentURI 1}}"><i class="fa fa-arrow-right"></i></a>
+	</div>
+{{end}}

@@ -1,0 +1,46 @@
+{{define "Head"}}<title>Edit profile - {{.User.Login|personLabel}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+
+{{define "PersonSettingsBody"}}
+<div class="panel panel-default panel-main person-settings">
+	<div class="panel-heading">Profile</div>
+	<div class="panel-body">
+		<form role="form" class="person-profile" method="post">
+			{{if .User.AvatarURL}}
+			<div class="form-group">
+				<label for="AvatarURL">Profile picture</label>
+				<img src="{{.User.AvatarURL}}" class="avatar img-rounded">
+			</div>
+			{{end}}
+			<div class="form-group">
+				<label for="Name">Name</label>
+				<input type="text" class="form-control" id="Name" name="Name" value="{{.User.Name}}" placeholder="Not set">
+			</div>
+			{{if not .User.IsOrganization}}
+			<div class="form-group">
+				<label for="Email">Email</label>
+				<p class="help-block"><a href="{{urlToUserSubroute "person.settings.emails" .User.Login}}">View &amp; edit email addresses</a></p>
+			</div>
+			{{end}}
+			<div class="form-group">
+				<label for="HomepageURL">URL</label>
+				<input type="url" class="form-control" id="HomepageURL" name="HomepageURL" value="{{.User.HomepageURL}}" placeholder="Not set">
+			</div>
+			{{if not .User.IsOrganization}}
+			<div class="form-group">
+				<label for="Company">Company</label>
+				<input type="text" class="form-control" id="Company" name="Company" value="{{.User.Company}}" placeholder="Not set">
+			</div>
+			{{end}}
+			<div class="form-group">
+				<label for="Location">Location</label>
+				<input type="text" class="form-control" id="Location" name="Location" value="{{.User.Location}}" placeholder="Not set">
+			</div>
+			<input type="submit" value="Save" class="btn btn-sgblue">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+		</form>
+	</div>
+</div>
+{{end}}

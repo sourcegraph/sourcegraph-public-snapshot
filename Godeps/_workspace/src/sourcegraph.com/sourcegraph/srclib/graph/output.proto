@@ -1,0 +1,17 @@
+syntax = "proto3";
+package graph;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "def.proto";
+import "doc.proto";
+import "ref.proto";
+import "sourcegraph.com/sourcegraph/srclib/ann/ann.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Output {
+    repeated Def defs = 1 [(gogoproto.jsontag) = "Defs,omitempty"];
+    repeated Ref refs = 2 [(gogoproto.jsontag) = "Refs,omitempty"];
+    repeated Doc docs = 3 [(gogoproto.jsontag) = "Docs,omitempty"];
+    repeated ann.Ann anns = 4 [(gogoproto.jsontag) = "Anns,omitempty"];
+};

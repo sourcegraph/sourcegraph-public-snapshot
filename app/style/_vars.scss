@@ -1,0 +1,61 @@
+$row-highlight-color: #DCE7F3;
+$sg-blue-color: rgba(78, 155, 212, 1); // less-saturated version of actual sg-blue (#459def)
+$footer-height: 110px;//180px;
+$panel-head-color: #f5f5f5;
+
+$white: #ffffff;
+$off-white: #f9f9f9;
+$light-blue: #f5fafe;
+$mid-blue: #2a74ac;
+$dark-blue: #163c5b;
+$gray-mid: lighten(#000, 46%);
+$gray-lightest: lighten(#000, 96%);
+
+$highlight-ref-bg: rgba(255, 204, 0, 0.4);
+$highlight-ref-border: 1px solid darken($highlight-ref-bg, 5%);
+
+$highlight-ref-secondary-bg: rgba(255, 204, 0, 0.2);
+$highlight-ref-secondary-border: 1px solid darken($highlight-ref-secondary-bg, 5%);
+
+$code-file-toolbar-height: 40px;
+$navbar-logo-width: 158px;
+$subnav-height: $navbar-height + 7;
+
+$search-form-padding-left: 30px;
+
+$z-index:            (
+	loading-indicator: 3100,
+	modal:             3010,
+	tree-search-modal: 3005,
+	modal-backdrop:    3000,
+	tooltip:           2020,
+	nav-search-input:  2010,
+	navbar:            2000,
+	alert:             1040,
+	popover:           1020,
+	dropdown:          1000,
+	token-popover:     1000,
+	token-details-box: 200,
+	context-menu:      100,
+);
+
+// Code View
+$code-bg: #fff;
+$code-line-fg: rgba(0,0,0,0.3);
+$code-font-family: Consolas, Menlo, Monaco, "Courier New", monospace;
+$code-line-height: 1.35em;
+$code-font-size: 13px;
+$code-popup-width: 600px;
+$line-number-padding: 0 9px 0 2px;
+
+$inactive-code-color: darken($gray-light, 2%);
+$active-code-bg: lighten(#fc0, 43%);
+
+$home-header-font: Raleway, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$regular-font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+$diff-added-color: #54a63e;
+$diff-changed-color: lighten(#c98d00, 4%);
+$diff-deleted-color: lighten(#c71111, 3%);
+
+$motd-height: 29px;

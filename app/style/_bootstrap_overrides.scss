@@ -1,0 +1,48 @@
+// Override Bootstrap variables (defined in
+// node_modules/bootstrap-sass/assets/stylesheets/bootstrap/_variables.scss)
+// here.
+
+@import "~bootstrap-sass/assets/stylesheets/bootstrap/variables";
+@import "_mixins";
+@import "_vars";
+
+$brand-primary: $dark-blue;
+$non-brand-success: $brand-success;
+$brand-success: $sg-blue-color;
+
+$text-quieted: $gray-mid;
+
+$link-color: $mid-blue;
+
+$btn-primary-color:              #fff;
+$btn-primary-bg:                 $brand-primary;
+$btn-primary-border:             darken($btn-primary-bg, 5%);
+
+$list-group-border: #ccc;
+$list-group-active-bg: $sg-blue-color;
+$list-group-active-color: white;
+$list-group-active-border: $sg-blue-color;
+
+$navbar-default-bg: $dark-blue;
+$navbar-default-link-color: #444;
+$navbar-default-link-active-color: #222;
+$navbar-default-link-hover-color: $link-color;
+$navbar-border-radius: 0;
+$nav-link-hover-bg: $light-blue;
+
+$font-family-monospace: Menlo, Monaco, Consolas, "Courier New", monospace;
+
+$code-color:                  none;
+$code-bg:                     none;
+$pre-bg:                      none;
+$pre-color:                   none;
+$pre-border-color:            none;
+$pre-scrollable-max-height:   none;
+
+$zindex-dropdown:         z-index(dropdown);
+$zindex-popover:          z-index(popover);
+$zindex-tooltip:          z-index(tooltip);
+$zindex-navbar-fixed:     z-index(navbar);
+$zindex-navbar:           z-index(navbar);
+$zindex-modal-background: z-index(modal-backdrop);
+$zindex-modal:            z-index(modal);

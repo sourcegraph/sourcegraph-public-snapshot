@@ -1,0 +1,122 @@
+{{define "Title"}}Dashboard - appdash{{end}}
+
+{{define "Main"}}
+
+<script src="{{.BaseURL}}static/seiyria/bootstrap-slider/bootstrap-slider.min.js"></script>
+<link href="{{.BaseURL}}static/seiyria/bootstrap-slider/bootstrap-slider.css" rel="stylesheet">
+
+
+<style>
+#dataTable>table {
+  /* Stretch across container */
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  margin: 0;
+  padding: 0;
+}
+
+/*
+  Fixes issue where clicking on a colum to sort by it would cause the column
+  width to jump due to arrow down/up icon having a width
+*/
+#dataTable span.order {
+  display: inline-block;
+  width: 0;
+}
+
+#dataTable {
+  position: relative;
+  top: -35px;
+}
+
+.timeline {
+  text-align: center;
+}
+.timeline .slider {
+  width: 100%;
+}
+</style>
+
+<!-- page title -->
+<h1>Dashboard</h1>
+
+<div class="timeline">
+  <!--
+    TODO(slimsag): AggregateStore is not restricted to 72-hours, so this
+    shouldn't be either.
+  -->
+  <h3>Timeline: 0-72 hours ago</h3>
+  <input id="slider" type="text" class="span2" value="" data-slider-min="0" data-slider-max="72" data-slider-step="1" data-slider-value="[0,72]"/>
+</div>
+
+<hr/>
+
+<div id="dataTable">
+  <table data-toggle="table" data-url="{{.DataURL}}" class="table table-condensed"
+    data-sort-name="Average"
+    data-query-params="queryParams"
+    data-search="true"
+    data-show-refresh="true"
+    data-show-columns="true"
+    data-sort-order="desc">
+  <thead>
+    <tr>
+      <th data-sortable="true" data-field="Name"><span title="Name of the root span (e.g. for HTTP requests the route)">Name</span></th>
+      <th data-sortable="true" data-field="Average"><span title="Average/mean timespan length">Average (ms)</span></th>
+      <th data-sortable="true" data-field="Min"><span title="Minimum/smallest timespan length">Min (ms)</span></th>
+      <th data-sortable="true" data-field="Max"><span title="Maximum/largest timespan length">Max (ms)</span></th>
+      <th data-sortable="true" data-field="StdDev"><span title="Standard deviation of timespan length">Std. Deviation (ms)</span></th>
+      <th data-sortable="true" data-field="Timespans"><span title="Number of timespans aggregated">Timespans</span></th>
+    </tr>
+  </thead>
+  <tbody>
+      <!-- Example data useful for previewing the table UI
+      <tr>
+        <td>/tmp?foo=true</td>
+        <td>1050</td>
+        <td>3000</td>
+        <td>23000</td>
+      </tr>
+      -->
+  </tbody>
+  </table>
+</div>
+
+<script>
+  function queryParams() {
+    var t = $("#slider").slider('getValue');
+    return {"start": t[0], "end": t[1]};
+  }
+
+  // Initialize slider.
+  var t = null;
+  $("#slider").slider({tooltip: "hide"}).on("change", function(e) {
+    var v = e.value.newValue;
+    $(".timeline h3").html("Timeline: " + v[0] + "-" + v[1] + " hours ago")
+
+    // Maintain a timeout or else we will be asking that the server do much
+    // more than it needs to.
+    clearTimeout(t);
+    t = setTimeout(function() {
+      $('#dataTable table').bootstrapTable("refresh", {
+        silent: true,
+      });
+    }, 100);
+  });
+
+  $(function() {
+    /*
+      Clicking on a data table row will redirect you to the traces page, showing
+      just the N-slowest traces for that group.
+    */
+    $("#dataTable table").on('click-row.bs.table', function (e, row, $element) {
+      window.location.href = row.URL;
+    });
+  })
+</script>
+
+{{end}}

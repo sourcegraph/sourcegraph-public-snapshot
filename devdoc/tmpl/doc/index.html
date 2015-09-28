@@ -1,0 +1,62 @@
+{{template "common.html" dict "Request" .CodeGeneratorRequest "Ctx" .Ctx}}
+
+<div id="doc-container" class="doc">
+    {{template "h1-id" dict "ID" "welcome" "Name" "Welcome"}}
+    <hr/>
+    <div class="doc indent">
+        <p>Welcome to the Sourcegraph API documentation!</p>
+        <p>Here you'll find all the information you need to start developing intelligent code collaboration applications and tools using the Sourcegraph API.</p>
+    </div>
+
+    {{template "h1-id" dict "ID" "getting-started" "Name" "Getting Started"}}
+    <hr/>
+    <div class="doc indent">
+        <p>The easiest way to get started is to:</p>
+        <ol>
+            <li>Download the <a href="{{$.Ctx.BaseURL}}libraries">API library</a> available for your language of choice.</li>
+            <li>Read over the brief <a href="#hdr-Introduction">introduction</a> below.</li>
+            <li>Check out the API services available by clicking on the menu bar to the right.</li>
+        </ol>
+        <p>If you have any questions or concerns do not hesitate to <a href="https://github.com/sourcegraph/api/issues/new">open an issue</a>!</p>
+    </div>
+
+    {{template "h1-id" dict "ID" "introduction" "Name" "API Introduction"}}
+    <hr/>
+    <div class="doc indent">
+        <p>Before getting started, it's important to understand the underlying concepts at hand.</p>
+
+        {{template "h2-id" dict "ID" "grpc" "Name" "gRPC"}}
+        <hr/>
+        <div class="doc indent">
+            <p>Sourcegraph uses a high-performance RPC framework called <a href="http://www.grpc.io/">gRPC</a> to provide API access, this means:</p>
+            <ul>
+                <li>Generated libraries for over over <a href="{{$.Ctx.BaseURL}}libraries">ten languages</a> can be used to access the Sourcegraph API!</li>
+                <li>The entire API is described generic and simple <a href="https://developers.google.com/protocol-buffers/docs/proto3">Protobuf</a> files.</li>
+            </ul>
+            <p>For more information about gRPC check out the <a href="http://www.grpc.io/faq/">gRPC FAQ</a>.</p>
+        </div>
+
+        {{template "h2-id" dict "ID" "restful" "Name" "RESTful (coming soon)"}}
+        <hr/>
+        <div class="doc indent">
+            <!--
+            <p>Unfortunately gRPC cannot yet be used in browser-based applications due to technical limitations. For this reason the Sourcegraph API is also available as a first-class HTTP/1.1 RESTful JSON API.</p>
+            <p>The RESTful JSON API is actually mapped right onto the very same high-performance gRPC API using a project called <a href="https://github.com/gengo/grpc-gateway">grpc-gateway</a>.</p>
+            -->
+            <p>Unfortunately gRPC cannot yet be used in browser-based applications due to technical limitations. For this reason the Sourcegraph API will also be available as a first-class HTTP/1.1 RESTful JSON API.</p>
+            <p>Note: The Sourcegraph RESTful API is being actively worked on and will be available soon! <a target="_blank" href="https://twitter.com/intent/user?screen_name=srcgraph">Follow us on Twitter</a> to get the latest news.</p>
+        </div>
+
+        {{template "h2-id" dict "ID" "structure" "Name" "Structure"}}
+        <hr/>
+        <div class="doc indent">
+            <p>The usage of two different APIs (gRPC and REST) means that in the documentation is structures as such:</p>
+            <ul>
+                <li>Broken into services, messages, and enumerations (these are gRPC/Protobuf concepts).</li>
+                <li>How these gRPC concepts apply to the REST API (the HTTP URL, method, it's fields, etc).</li>
+            </ul>
+            <p>Remember that you can always view documentation specific to your languages API library (i.e. <em>code</em> rather than <em>concepts</em>) by clicking on the documentation link provided on the language-specific library.</p>
+            <p>Once you get started, you'll see that the documentation is very nice! To dive in just click on a service that sounds interesting on the right!</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,93 @@
+---
+
+prometheus:
+  image: prom/prometheus
+  volumes:
+    - ./data/prometheus:/prometheus
+    - ./data/tgroups:/tgroups
+    - ./conf/prometheus.yml:/etc/prometheus/prometheus.yml
+  ports:
+    - 9090
+  environment:
+    VIRTUAL_HOST: prom.metrics.sgdev.org
+
+promdash:
+  image: prom/promdash
+  volumes:
+    - ./data/promdash:/promdash-data
+  ports:
+    - 3000
+  environment:
+    VIRTUAL_HOST: dash.metrics.sgdev.org
+    DATABASE_URL:
+
+alertmanager:
+  image: prom/alertmanager
+  command: -config.file=/alertmanager.conf
+  volumes:
+    - ./conf/alertmanager.conf:/alertmanager.conf
+  ports:
+    - 9093
+  environment:
+    VIRTUAL_HOST: alert.metrics.sgdev.org
+
+pushgateway:
+  image: prom/pushgateway
+  ports:
+    - 9091
+  environment:
+    VIRTUAL_HOST: push.metrics.sgdev.org
+
+external_prometheus:
+  image: prom/prometheus
+  volumes:
+    - ./data/external-prometheus:/prometheus
+    - ./conf/external-prometheus.yml:/etc/prometheus/prometheus.yml
+  links:
+    - pushgateway
+  ports:
+    - 9090
+  environment:
+    VIRTUAL_HOST: external.metrics.sgdev.org
+
+discovery_src:
+  image: keegancsmith/prometheus-ec2-discovery
+  command: -sleep 60s -port 6060 -tags Type,Deployment,Version -dest /tgroups/src.json
+  volumes_from:
+    - prometheus
+  restart: always
+  environment:
+    AWS_ACCESS_KEY:
+    AWS_SECRET_ACCESS_KEY:
+
+discovery_node:
+  image: keegancsmith/prometheus-ec2-discovery
+  command: -sleep 60s -port 9100 -tags Type,Deployment,Version -dest /tgroups/node.json
+  volumes_from:
+    - prometheus
+  restart: always
+  environment:
+    AWS_ACCESS_KEY:
+    AWS_SECRET_ACCESS_KEY:
+
+index:
+  build: index
+  ports:
+    - 80
+  environment:
+    VIRTUAL_HOST: metrics.sgdev.org
+
+# Uncomment DOCKER_ lines on OS X
+nginx:
+  image: jwilder/nginx-proxy
+  volumes:
+    #- "$DOCKER_CERT_PATH:$DOCKER_CERT_PATH"
+    # Comment next line on OS X
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+  ports:
+    - "80:80"
+  environment:
+    #DOCKER_HOST:
+    #DOCKER_CERT_PATH:
+    #DOCKER_TLS_VERIFY:
+    DEFAULT_HOST: metrics.sgdev.org

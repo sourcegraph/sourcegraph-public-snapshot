@@ -1,0 +1,149 @@
+.orgs-and-self.panel-group {
+	.panel {
+		margin-bottom: 15px;
+	}
+	.panel-heading {
+		border-bottom: solid 1px #ccc;
+		&:last-child { border-bottom: none; }
+		a {
+			display: block;
+			text-decoration: none;
+		}
+	}
+
+	// Remove vertical space between different user and orgs.
+	& > .panel {
+		margin-top: 0;
+		margin-bottom: 0;
+
+		&:first-child {
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
+		}
+		&:last-child {
+			overflow: hidden;
+			border-top-left-radius: 0;
+			border-top-right-radius: 0;
+		}
+		&:not(:first-child):not(:last-child) {
+			border-radius: 0;
+		}
+	}
+}
+
+.alert-org-membership-perms-insufficient {
+	margin-top: 15px;
+	a.btn {
+		display: block;
+		margin-bottom: $padding-large-vertical;
+	}
+	label {
+		display: block;
+	}
+}
+
+.person-settings.panel {
+	form.person-profile {
+		img.avatar {
+			display: block;
+			width: 64px;
+			height: 64px;
+		}
+	}
+
+	.notifications {
+		.frequency { color: $text-muted; }
+		.uncheck-all {
+			margin-top: -10px;
+			margin-bottom: 20px;
+		}
+	}
+
+	input[type=submit] {
+		float: right;
+	}
+
+	&.person-settings-auth {
+		pre {
+			border: solid 1px mix($gray-mid, $gray-lighter);
+			border-radius: $border-radius-base;
+			background-color: $gray-lightest;
+			padding: $padding-small-vertical $padding-small-horizontal;
+		}
+		.warning {
+			padding-top: 7px;
+			margin-bottom: 0;
+			color: $gray;
+		}
+	}
+	&.person-settings-integration {
+		.panel-heading {
+			font-weight: bold;
+			a { color: $text-color; }
+		}
+		.panel-body > :last-child {
+			margin-bottom: 0;
+		}
+		.api-status {
+			color: $gray;
+			.success {
+				color: $non-brand-success;
+			}
+			.warning {
+				color: $brand-warning;
+			}
+			.danger {
+				color: $brand-danger;
+			}
+			.disabled {
+				color: $gray;
+			}
+		}
+		.access-token-form {
+			margin-bottom: $padding-large-vertical*2;
+		}
+
+		&.srclib {
+			.panel-heading { font-size: 1.8em; }
+			img.srclib-logo {
+				width: 45px;
+				height: 45px;
+			}
+		}
+		&.github {
+			h3 {
+				font-size: $font-size-large;
+			}
+			.panel-heading {
+				padding-top: $padding-large-vertical*1.5;
+				span { font-size: 1.5em; }
+				span.octicon-logo-github {
+					color: black;
+					vertical-align: -3px;
+				}
+			}
+			.repo-list {
+				tr > td {
+					vertical-align: middle;
+					&:last-child {
+						text-align: right;
+					}
+					&.disabled {
+						color: $gray;
+					}
+					i.github-link {
+						color: black;
+						margin-left: 4px;
+					}
+				}
+			}
+		}
+
+		h4 { font-weight: bold; }
+		h3 .octicon {
+			font-size: 24px;
+			position: relative;
+			top: -1px;
+		}
+	}
+}

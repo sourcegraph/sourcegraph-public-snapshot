@@ -1,0 +1,539 @@
+{{define "Title"}}{{if .Trace.ID.Parent}}span {{.Trace.ID.Span}} - {{end}} trace {{.Trace.ID.Trace}} - appdash{{end}}
+
+{{define "Main"}}
+<style>
+  #copy-json:hover {
+    cursor: pointer;
+  }
+</style>
+
+<h1>Trace {{.Trace.ID.Trace}}
+  {{if not .Trace.ID.Parent}}
+    <span style="font-size: 12px; vertical-align: middle;">
+      <!--
+        Note the [] brackets around the trace JSON string. We add these as we
+        support exporting/importing multiple traces as a json array type. The
+        Trace.String method just gives us a single JSON-encoded Trace object,
+        but using arrays across the entire system simplifies the encoding and
+        decoding processes slightly.
+      -->
+      <span id="copy-json-clip">(<a id="copy-json" data-clipboard-text="[{{.Trace.String}}]">Copy as JSON</a>)</span>
+    </span>
+    {{end}}
+</h1>
+
+<!-- TextArea (non-Flash) fallback for Copy+Paste of JSON traces -->
+{{template "ImportExport" dict "ID" "copy-json-text" "Title" "Use ctrl+c or command+c to copy the JSON trace below:" "Value" (printf "[%s]" .Trace.String)}}
+
+<script type="text/javascript">
+  (function() {
+    var client = new ZeroClipboard( document.getElementById("copy-json") );
+
+    client.on("ready", function( readyEvent ) {
+      client.on("aftercopy", function( event ) {
+        alert("JSON Trace copied to clipboard.");
+      });
+    });
+
+    // On any ZeroClipboard error (primarily when Flash is not available) we
+    // fallback to using the standard textarea.
+    client.on("error", function(e) {
+      client.destroy()
+      $("#copy-json").click(function() {
+        $("#copy-json-clip").hide();
+        $("#copy-json-text").collapse("show");
+        $("#copy-json-text .textarea").focus().select();
+      });
+    });
+  })();
+</script>
+
+<div>
+<div id="#trace-{{.Trace.ID.Trace}}" class="trace-timeline"></div>
+<div id="hoverRes">
+  <div class="coloredDiv"></div>
+  <div id="name"></div>
+  <div id="scrolled_date"></div>
+</div>
+</div>
+
+
+<div id="contextMenu" class="dropdown clearfix">
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
+    <li role="presentation" class="name dropdown-header"></li>
+
+    <li><a tabindex="-1" data-action="show-children" href="#" data-toggle="tooltip" data-placement="right" title="show all children below this span">Show Children</a></li>
+    <li><a tabindex="-1" data-action="hide-children" href="#" data-toggle="tooltip" data-placement="right" title="hide all children below this span">Hide Children</a></li>
+    <li><a tabindex="-1" data-action="filter" href="#" data-toggle="tooltip" data-placement="right" title="show/hide all children based on a filter">Filter</a></li>
+
+    <li><a tabindex="-1" href="#" data-action="close">Close</a></li>
+  </ul>
+</div>
+
+
+<div id="contextFilterMenu" class="dropdown clearfix">
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
+    <li role="presentation" class="dropdown-header"><span class="name"></span>: Filter</li>
+
+    <li><input type="text" class="filter form-control" data-toggle="tooltip" data-placement="right" title="type a key:value pair and press enter to apply the filter" placeholder='key:value...'></li>
+
+    <li><a tabindex="-1" href="#" data-action="close">Close</a></li>
+  </ul>
+</div>
+
+
+<style type="text/css">
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+  }
+  .axis text {
+    font-family: sans-serif;
+    font-size: 10px;
+  }
+  .timeline-label {
+    font-family: sans-serif;
+    font-size: 12px;
+  }
+  #timeline2 .axis {
+    transform: translate(0px,30px);
+    -ms-transform: translate(0px,30px); /* IE 9 */
+    -webkit-transform: translate(0px,30px); /* Safari and Chrome */
+    -o-transform: translate(0px,30px); /* Opera */
+    -moz-transform: translate(0px,30px); /* Firefox */
+  }
+  #hoverRes .coloredDiv {
+    height:20px; width:20px; float:left;
+  }
+  #hoverRes #name {
+    display: inline-block;
+    margin-left: 0.3em;
+  }
+  #contextMenu, #contextFilterMenu {
+    font-family: sans-serif;
+    font-size: 12px;
+    position: absolute;
+    display: none;
+    z-index: 100;
+  }
+  #contextMenu .dropdown-menu>li>span {
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: 400;
+    line-height: 1.42857143;
+    color: #333;
+    white-space: nowrap;
+  }
+</style>
+
+<script type="text/javascript">
+  (function() {
+    var data = {{.VisData}};
+    var width = $(".container").width();
+
+    // em converts the input (in em units) to pixels units and returns it.
+    function em(emUnits) {
+      var fontSize = parseFloat($('body').css('font-size'));
+      return fontSize * emUnits;
+    }
+
+    // numFromEnd returns the number from the end of the potentially garbage
+    // string, e.g. "timelineItem_1443" -> 1443
+    function numFromEnd(str) {
+      return parseInt(str.match(/(\d+)$/)[0], 10);
+    }
+
+    // Initialize bootstrap tooltips.
+    $('[data-toggle="tooltip"]').tooltip();
+
+    // setChildrenVisible walks through the data and finds all children (including
+    // distant ones) of the given spanID. It marks each one as visible (true or
+    // false).
+    function setChildrenVisible(spanID, visible) {
+      $.each(data, function(i, other) {
+        if(other.parentSpanID != spanID) {
+          return;
+        }
+        other.visible = visible;
+        setChildrenVisible(other.spanID, visible);
+      });
+    }
+
+    // cloneObjNoDots clones the given object (all of it's keys and values). It
+    // returns the clone, but with all keys containing dots (.) replaced with
+    // underscores. This is useful because Fuse treats keys with dots as accessors
+    // into sub-objects (not literally the key).
+    function cloneObjNoDots(o) {
+      var noDots = {};
+      $.each(o, function(k, v) {
+        noDots[k.replace(/\./g,'_')] = v
+      });
+      return noDots;
+    }
+
+    // filterChildrenFuzzy uses Fuse to fuzzy-search through the data (
+    // specifically, the names and tags) and hides all children elements that do
+    // not match.
+    function filterChildrenFuzzy(spanID, filter) {
+      // Fuse has a limitation of 32 character search pattern strings, so we just
+      // slice to 32 incase someone enters more (which would cause Fuse to raise
+      // an exception).
+      filter = filter.slice(0, 32);
+
+      // Recursively descend into each span showing and hiding each one based on
+      // our search results.
+      var descend = null;
+      descend = function(parentSpanID) {
+        $.each(data, function(i, other) {
+          // Check that the span we're looking at is a child of the given parent
+          // span.
+          if(other.parentSpanID != parentSpanID) {
+            return;
+          }
+
+          // Perform a fuzzy search on this spans' keys. We do this as not all
+          // spans have identical keys to search on, and Fuse wants specific keys
+          // to search on.
+          var r = cloneObjNoDots(other.rawData);
+          var fuse = new Fuse([r], {
+            caseSensitive: false,
+            shouldSort: true,
+            threshold: 0.3,       // A lower threshold is more strict, higher is less.
+            keys: Object.keys(r), // Data fields to search on.
+          });
+          var results = fuse.search(filter);
+
+          // Depending on whether or not the fuzzy search on this span turned up
+          // any results, the span is visible or hidden.
+          other.visible = results.length > 0;
+
+          // Descend into that span's children.
+          descend(other.spanID);
+        });
+      }
+      descend(spanID);
+    }
+
+    // filterChildren walks through the data and finds all children (including
+    // distant ones) of the given spanID. It uses a filter to mark each child span
+    // as visible or not.
+    //
+    // A strict search is defined by a key followed by a colon and a quoted value.
+    //
+    //  Key:"expected value"
+    //
+    // For example:
+    //
+    //  Name:"Request"
+    //
+    // If a filter does not match the above strict-searching pattern,
+    // filterChildren silently falls back to fuse-based fuzzy searching.
+    function filterChildren(spanID, filter) {
+      // Validate the filter.
+      var splitFilter = filter.split(":");
+      if(splitFilter.length != 2) {
+        // Missing colon for strict search, fallback to fuzzy search then.
+        filterChildrenFuzzy(spanID, filter);
+        return;
+      }
+      var k = splitFilter[0];
+      var v = splitFilter[1];
+      if(v[0] !== '"' || v[v.length-1] !== '"') {
+        // Missing quoted value for strict search, fallback to fuzzy search then.
+        filterChildrenFuzzy(spanID, filter);
+        return;
+      }
+      // Strip leading and trailing quotes from value:
+      v = v.slice(1, v.length-1);
+
+      $.each(data, function(i, other) {
+        if(other.parentSpanID != spanID) {
+          return;
+        }
+
+        // Check if the span has a key and value exactly matching our filter.
+        if(other.rawData[k] == v) {
+          other.visible = true;
+        } else {
+          other.visible = false;
+        }
+        filterChildren(other.spanID, filter);
+      });
+    }
+
+    // When the user presses the Close button in the context menu, we hide it. We
+    // declare this as a separate function so that other context menu items can
+    // quickly hide the context menu as well (see below).
+    function ctxMenuActionClose(e) {
+      e.preventDefault();
+      $("#contextMenu").hide();
+    }
+    $('#contextMenu a[data-action="close"]').on("click", ctxMenuActionClose);
+
+    // ctxMenuActionShowHide is the implementation for the context menu's Show
+    // Children and Hide Children buttons.
+    function ctxMenuActionShowHide(e, visible) {
+      ctxMenuActionClose(e);
+      var spanID = $("#contextMenu").data("dataObject").spanID;
+      setChildrenVisible(spanID, visible)
+      timelineHover();
+    }
+
+    // Event handlers for each context menu Show/Hide button.
+    $('#contextMenu a[data-action="show-children"]').on("click", function(e) { ctxMenuActionShowHide(e, true) });
+    $('#contextMenu a[data-action="hide-children"]').on("click", function(e) { ctxMenuActionShowHide(e, false) });
+
+    // Event handler for the filter submenu.
+    $('#contextMenu a[data-action="filter"]').on("click", function(e) {
+      // Close the normal context menu.
+      ctxMenuActionClose(e);
+
+      // Display the submenu.
+      $("#contextFilterMenu .name").html($("#contextMenu .name").html());
+      $("#contextFilterMenu").css({
+        display: "block",
+        left: $("#contextMenu").css("left"),
+        top: $("#contextMenu").css("top")
+      });
+      $('#contextFilterMenu .filter').select();
+    });
+
+    // Hide the filter context-submenu when the user presses the close button.
+    $('#contextFilterMenu a[data-action="close"]').on("click", function(e) {
+      e.preventDefault();
+      $("#contextFilterMenu").hide();
+    });
+
+    // When the user types something into the filter text input and presses enter,
+    // we apply the filter to all children below the target span.
+    $('#contextFilterMenu .filter').keyup(function(e) {
+      if(e.keyCode != 13) {
+        return; // Not enter.
+      }
+      // Hide the context menu, grab the target span ID, and filter the children.
+      var spanID = $("#contextMenu").data("dataObject").spanID;
+      filterChildren(spanID, $(this).val())
+      $("#contextFilterMenu").hide();
+      timelineHover();
+    });
+
+    function ctxMenuOpen(e, datum, obj) {
+      $("#contextFilterMenu").hide();
+      $("#contextMenu").data("dataObject", obj);
+      $("#contextMenu .name").html(datum.label);
+      $("#contextMenu").css({
+        display: "block",
+        left: e.pageX,
+        top: e.pageY
+      });
+      return false;
+    }
+
+    function timelineHover() {
+      // When rebuilding the timeline to account for changes, we must first empty
+      // it completely.
+      $(".trace-timeline").empty();
+
+      // Copy just the visible objects of the data for passing into d3-timeline.
+      var visibleData = [];
+      $.each(data, function(i, obj) {
+        if(!obj.visible) {
+          return;
+        }
+        visibleData.push(obj);
+      });
+      if(visibleData.length == 0) {
+        return;
+      }
+
+      var timespanHover = function(chart, index) {
+        var div = $('#hoverRes');
+        var colors = chart.colors();
+        div.find('.coloredDiv').css('background-color', colors(index));
+        div.find('#name').text(visibleData[index].label);
+      }
+
+      // Initialize the timeline chart.
+      var chart = d3.timeline()
+                    .width(width)
+                    .stack()
+                    .margin({left:em(6), right:0, top:0, bottom:0})
+                    .hover(function (d, i, datum) { timespanHover(chart, i) })
+                    .click(function (d, i, datum) {
+                      window.location.href = datum.url;
+                      //alert(JSON.stringify(datum.rawData, null, 2));
+                    });
+      var svg = d3.select(".trace-timeline").append("svg").attr("width", width)
+                  .datum(visibleData).call(chart);
+
+      // Make text on each timeline element click-able. d3-timeline.js doesn't
+      // seem to have a way to support this easily.
+      //
+      // We do this by selecting the text element, finding the prev element (the
+      // SVG rect), and then parsing the ID (which looks like: "timelineItem_1").
+      //
+      // The last number of that is the index into our visibleData.
+      $(".trace-timeline g>text").each(function() {
+        var index = numFromEnd($(this).prev().attr('id'));
+        $(this).hover(function() {
+          timespanHover(chart, index);
+        });
+        $(this).click(function() {
+          window.location.href = visibleData[index].url;
+        });
+
+        // When there is a contextmenu (e.g. right click) event we open the
+        // context menu on the timespan rectangle.
+        var datum = d3.select($(this).prev()[0]).data()[0];
+        $(this).on("contextmenu", function(e) { return ctxMenuOpen(e, datum, visibleData[index]) });
+        $(this).prev().on("contextmenu", function(e) { return ctxMenuOpen(e, datum, visibleData[index]) });
+      });
+    }
+
+    if(data != null) {
+      timelineHover();
+    }
+  })();
+</script>
+
+
+<!-- Trace Table -->
+<style type="text/css">
+  .viewMode {
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
+  #profileView, #verboseDataView {
+    display: none;
+  }
+  .fixed-table-container {
+    border: none;
+  }
+  .table th {
+    font-weight: normal;
+  }
+  .table td {
+      word-break: break-all;
+  }
+</style>
+
+<!-- Justified radio-buttons for switching between data and profile views -->
+<div class="viewMode btn-group btn-group-justified btn-group-xs" data-toggle="buttons" id="radioopt">
+  <label class="btn btn-primary active">
+    <input type="radio" name="view" id="btnDataView" value="Data View">Data View</input>
+  </label>
+  <label class="btn btn-primary">
+    <input type="radio" name="view" id="btnVerboseDataView" value="Verbose Data View">Verbose Data View</input>
+  </label>
+  <label class="btn btn-primary">
+    <input type="radio" name="view" id="btnProfileView" value="Profile View">Profile View</input>
+  </label>
+</div>
+
+<!--
+ JavaScript code to hide and show the data / profile views depending on which
+ radio button is selected
+-->
+<script type="text/javascript">
+  $(".viewMode input:radio").change(function(){
+      var id = $(this).attr("id");
+      if(id == "btnDataView") {
+        $("#dataView").show();
+      } else {
+        $("#dataView").hide();
+      }
+
+      if(id == "btnVerboseDataView") {
+        $("#verboseDataView").show();
+      } else {
+        $("#verboseDataView").hide();
+      }
+
+      if(id == "btnProfileView") {
+        $("#profileView").show();
+      } else {
+        $("#profileView").hide();
+      }
+  });
+</script>
+
+<!-- The important data view layout -->
+<ul id="dataView" class="traces">
+  <li class="trace" id="span-{{.Trace.Span.ID.Span}}">
+    {{if .Trace.Name}}
+    <strong title="{{.Trace.ID}}">{{.Trace.Name}}</strong>
+    {{else}}
+    <strong title="{{.Trace.ID}}">{{.Trace.ID.Span}}</strong>
+    {{end}}
+
+    {{if .Trace.Span.Annotations}}
+    <table class="table table-condensed table-striped">
+      {{range (filterAnnotations .Trace.Span.Annotations)}}
+        {{if .Important}}
+          <tr><th>{{.Key}}</th><td>{{str .Value}}</td></tr>
+        {{end}}
+      {{end}}
+    </table>
+    {{end}}
+  </li>
+</ul>
+
+<!-- The verbose data view layout -->
+<ul id="verboseDataView" class="traces">
+  <li class="trace" id="span-{{.Trace.Span.ID.Span}}">
+    {{if .Trace.Name}}
+    <strong title="{{.Trace.ID}}">{{.Trace.Name}}</strong>
+    {{else}}
+    <strong title="{{.Trace.ID}}">{{.Trace.ID.Span}}</strong>
+    {{end}}
+
+    {{if .Trace.Span.Annotations}}
+    <table class="table table-condensed table-striped">
+      {{range (filterAnnotations .Trace.Span.Annotations)}}
+        <tr><th>{{.Key}}</th><td>{{str .Value}}</td></tr>
+      {{end}}
+    </table>
+    {{end}}
+  </li>
+</ul>
+
+<!-- The profile view layout -->
+<div id="profileView">
+  <table data-toggle="table" data-url="{{.ProfileURL}}" class="table table-condensed" data-height="299">
+    <thead>
+      <tr>
+        <th data-sortable="true" data-field="Name">Name</th>
+        <th data-sortable="true" data-field="Time">Time (ms)</th>
+        <th data-sortable="true" data-field="TimeChildren">Time + Children (ms)</th>
+        <th data-sortable="true" data-field="TimeCum">Cumulative Time (ms)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Example data useful for previewing the table UI
+      <tr>
+        <td>/tmp?foo=true</td>
+        <td>1050</td>
+        <td>3000</td>
+        <td>23000</td>
+      </tr>
+      -->
+    </tbody>
+  </table>
+</div>
+
+<!--
+ When clicking on a profile-view table row, we want it to redirect us to the
+ proper sub-span page.
+-->
+<script type="text/javascript">
+  $("#profileView .table").on('click-row.bs.table', function (e, row, $element) {
+    if(window.location.pathname != row.URL) {
+      window.location.href = row.URL;
+    }
+  });
+</script>
+
+{{end}}

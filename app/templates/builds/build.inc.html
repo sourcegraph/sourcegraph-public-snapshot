@@ -1,0 +1,14 @@
+{{define "BuildPriorityLabel"}}
+{{if gt .Priority 0}}
+<div class="label label-success" title="Priority build">+{{.Priority}}</div>
+{{end}}
+{{end}}
+
+{{define "BuildLinkCells"}}
+<td>
+	<a href="{{urlToRepoBuildSubroute "repo.build.log" .Repo .CommitID .Attempt}}">Logs</a>
+</td>
+<td>
+	<a href="{{urlToRepoBuild .Repo .CommitID .Attempt}}">Details</a>
+</td>
+{{end}}

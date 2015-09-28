@@ -1,0 +1,24 @@
+.person-profile {
+	margin-bottom: 15px;
+	img.avatar {
+		max-width: 110px;
+	}
+
+	.person-info {
+		padding-top: 9px;
+		font-size: $font-size-small;
+		&, a { color: $text-quieted !important; }
+		a {
+			text-decoration: none;
+		}
+	}
+
+	.actions {
+		form {
+			display: inline;
+			.status {
+				display: none;
+			}
+		}
+	}
+}

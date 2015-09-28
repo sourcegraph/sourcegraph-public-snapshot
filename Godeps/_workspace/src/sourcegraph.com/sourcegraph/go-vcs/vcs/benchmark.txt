@@ -1,0 +1,14 @@
+PASS
+BenchmarkFileSystem_GitLibGit2-12	    2000	    747143 ns/op	   50179 B/op	     621 allocs/op
+BenchmarkFileSystem_GitCmd-12	       5	 284360217 ns/op	  867638 B/op	   10726 allocs/op
+BenchmarkFileSystem_HgNative-12	     200	   9408378 ns/op	14442232 B/op	   10933 allocs/op
+BenchmarkFileSystem_HgCmd-12	       1	3840172414 ns/op	 1051152 B/op	   13996 allocs/op
+BenchmarkGetCommit_GitLibGit2-12	   10000	    181664 ns/op	    1401 B/op	      38 allocs/op
+BenchmarkGetCommit_GitCmd-12	       5	 383478420 ns/op	  642497 B/op	    9732 allocs/op
+BenchmarkGetCommit_HgNative-12	   10000	    162833 ns/op	  214565 B/op	     264 allocs/op
+BenchmarkGetCommit_HgCmd-12	       1	1798020537 ns/op	  635240 B/op	    9888 allocs/op
+BenchmarkCommits_GitLibGit2-12	    5000	    614865 ns/op	   15744 B/op	     360 allocs/op
+BenchmarkCommits_GitCmd-12	       5	 349698408 ns/op	  655616 B/op	    9865 allocs/op
+BenchmarkCommits_HgNative-12	    2000	    805939 ns/op	 1348860 B/op	    1281 allocs/op
+BenchmarkCommits_HgCmd-12	       1	2363699001 ns/op	  801680 B/op	   12121 allocs/op
+ok  	sourcegraph.com/sourcegraph/go-vcs/vcs	60.076s

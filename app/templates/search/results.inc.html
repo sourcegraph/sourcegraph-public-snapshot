@@ -1,0 +1,154 @@
+{{define "PJAX"}}{{template "SearchResults" $}}{{end}}
+
+{{define "SearchResults"}}
+<div class="search-status">
+	<div class="row">
+		<div class="col-sm-2"></div>
+		<div class="col-sm-10 search-status-main">
+			{{range .SearchResults.ResolveErrors}}
+			<div class="alert alert-danger">
+				<span class="octicon octicon-alert"></span> {{.Message}}
+			</div>
+			{{end}}
+
+			{{range .SearchResults.Tips}}
+			<div class="alert alert-info">
+				<span class="octicon octicon-alert"></span> {{.Message}}
+			</div>
+			{{end}}
+
+
+			{{if not .SearchResults.Canceled}}
+			<p class="search-description">
+				Search: <span class="description">{{queryDescribe .SearchResults.ResolvedTokens}}</span>
+			</p>
+			{{end}}
+		</div>
+	</div>
+</div>
+
+{{if not .SearchResults.Canceled}}
+<div class="padded-container all-search-results">
+	{{if .SearchResults.Repos}}
+	<div class="search-result-type repos row">
+		<div class="col-sm-2 type">
+			Repositories
+		</div>
+		<div class="col-sm-10 results">
+			{{range .SearchResults.Repos}}
+			{{template "RepoResult" .}}
+			{{end}}
+		</div>
+	</div>
+	{{end}}
+
+	{{if .SearchResults.Defs}}
+	<div class="search-result-type defs row">
+		<div class="col-sm-2 type">
+			Code
+		</div>
+		<div class="col-sm-10 results">
+			{{$rev := queryRevision .SearchResults.ResolvedTokens}}
+			{{range .SearchResults.Defs}}
+			{{template "DefResult" (map "Def" . "Rev" $rev)}}
+			{{end}}
+		</div>
+	</div>
+	{{end}}
+
+	{{if .SearchResults.People}}
+	<div class="search-result-type people row">
+		<div class="col-sm-2 type">
+			People
+		</div>
+		<div class="col-sm-10 results">
+			{{range .SearchResults.People}}
+			{{template "PersonResult" .}}
+			{{end}}
+		</div>
+	</div>
+	{{end}}
+
+	{{if .SearchResults.Tree}}
+	<div class="search-result-type text row">
+		<div class="col-sm-2 type">
+			Matches
+		</div>
+		<div class="col-sm-10 results">
+			{{range .SearchResults.Tree}}
+			{{template "TreeResult" .}}
+			{{end}}
+			{{if ge (len .SearchResults.Tree) .MaxResults}}
+				<span class="footnote">A maximum of {{.MaxResults}} search results are shown</span>
+			{{end}}
+		</div>
+	</div>
+	{{end}}
+
+	{{if .SearchResults.Empty}}
+	<div class="search-result-type row no-results-found">
+		<div class="col-sm-2 type">
+			&nbsp;
+		</div>
+		<div class="col-sm-10 results">
+			<p>Your search - <strong>{{.SearchOptions.Query}}</strong> - did not match anything.</p>
+		</div>
+	</div>
+	{{end}}
+
+	{{if eq .SearchOptions.Query ""}}
+	<div class="search-results-footer">
+		<ul class="pagination">
+			<li><a href="{{nextPageURL .CurrentURL -1}}" data-pjax>&laquo;</a></li>
+			<li><a>{{effectivePage (toInt .SearchOptions.Page)}}</a></li>
+			<li><a href="{{nextPageURL .CurrentURL 1}}" data-pjax>&raquo;</a></li>
+		</ul>
+	</div>
+	{{end}}
+</div>
+{{end}}
+{{end}}
+
+
+{{define "RepoResult"}}
+<div class="result repo" tabindex="1">
+	<h3>{{template "RepoIcon" .}} <a href="{{urlToRepo .URI}}">{{template "RepoLabel" (repoLabelForOwner "" .URI)}}</a></h3>
+	{{if .Description}}<p class="text">{{.Description}}</p>{{end}}
+	{{if gt (repoStat . "dependents") 0}}
+	<div class="stats">Used by <strong>{{number (repoStat . "dependents")}}</strong> {{pluralizeWord "other project" (repoStat . "dependents")}}</div>
+	{{end}}
+
+
+</div>
+{{end}}
+
+{{define "DefResult"}}
+<div class="result def" tabindex="1">
+	<div class="repo-link pull-right">
+		<a href="{{urlToRepo .Def.Repo}}">{{template "RepoLabel" (repoLabelForOwner "" .Def.Repo)}}</a>
+	</div>
+	<h3>
+		<a href="{{urlToDefAtRev .Def.DefKey .Rev}}"><tt>{{.Def.Fmt.DefKeyword}} {{overrideStyleViaRegexpFlags (defQualifiedNameAndType .Def "dep")}}</tt></a>
+	</h3>
+	{{if .Def.DocHTML}}<p class="text">{{firstSentence (textFromHTML .Def.DocHTML.HTML|firstChars)}}</p>{{end}}
+</div>
+{{end}}
+
+{{define "PersonResult"}}
+{{/* Assumes all people returned by search have Logins (and are not transient). */}}
+<div class="result person" tabindex="1">
+	<h3><a href="{{urlToUser .Login}}">{{.ShortName}} {{if .FullName}}({{.FullName}}){{end}}</a></h3>
+</div>
+{{end}}
+
+{{define "TreeResult"}}
+<div class="result tree" tabindex="1">
+	<div class="example">
+			<header>
+					<div class="pull-right">{{template "RepoLink" (repoLink .RepoRev.URI)}}</div>
+					{{template "Breadcrumb" (snippetToBreadcrumb .RepoRev.URI .RepoRev.Rev .File (toInt .StartLine) (toInt .EndLine) nil)}}
+			</header>
+			<pre class="code theme-default"><code>{{sanitizeFormattedCode (bytesToString .Match)}}</code></pre>
+	</div>
+</div>
+{{end}}

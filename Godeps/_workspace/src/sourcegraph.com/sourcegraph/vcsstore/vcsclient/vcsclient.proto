@@ -1,0 +1,70 @@
+syntax = "proto3";
+package vcsclient;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
+
+// FileRange is a line and byte range in a file.
+message FileRange {
+	// start of line range
+	int64 start_line = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// end of line range
+	int64 end_line = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// start of byte range
+	int64 start_byte = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// end of byte range
+	int64 end_byte = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// GetFileOptions specifies options for GetFileWithOptions.
+message GetFileOptions {
+	// line or byte range to fetch (can't set both line *and* byte range)
+	FileRange file_range = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// EntireFile is whether the entire file contents should be returned. If true,
+	// Start/EndLine and Start/EndBytes are ignored.
+	bool entire_file = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ExpandContextLines is how many lines of additional output context to include (if
+	// Start/EndLine and Start/EndBytes are specified). For example, specifying 2 will
+	// expand the range to include 2 full lines before the beginning and 2 full lines
+	// after the end of the range specified by Start/EndLine and Start/EndBytes.
+	int32 expand_context_lines = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// FullLines is whether a range that includes partial lines should be extended to
+	// the nearest line boundaries on both sides. It is only valid if StartByte and
+	// EndByte are specified.
+	bool full_lines = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Recursive only applies if the returned entry is a directory. It will
+	// return the full file tree of the host repository, recursing into all
+	// sub-directories.
+	bool recursive = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// RecurseSingleSubfolder only applies if the returned entry is a directory.
+	// It will recursively find and include all sub-directories with a single sub-directory.
+	bool recurse_single_subfolder = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+enum TreeEntryType {
+	FileEntry = 0;
+	DirEntry = 1;
+	SymlinkEntry = 2;
+}
+
+message TreeEntry {
+	string name = 1;
+
+	TreeEntryType type = 2;
+
+	int64 size = 3;
+
+	pbtypes.Timestamp mod_time = 4 [(gogoproto.nullable) = false];
+
+	bytes contents = 5;
+
+	repeated TreeEntry entries = 6;
+}

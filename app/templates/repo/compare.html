@@ -1,0 +1,9 @@
+{{define "Head"}}<title>{{.Repo.URI}} - comparing {{.RepoRevSpec.Rev}} to {{.DiffData.Delta.Head.Rev}} - Sourcegraph</title>
+{{end}}
+
+{{define "RepoBody"}}
+	<script ignore-csp>
+		window.preloadedDiffData = {{json .}}
+	</script>
+	<div id="RepoCompareView" data-revision-header="yes" class="compare-view"></div>
+{{end}}

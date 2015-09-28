@@ -1,0 +1,90 @@
+body {
+	margin-bottom: $footer-height;
+
+	&.route-def, &.route-repo-tree {
+		margin-bottom: 0;
+
+		#footer {
+			display: none;
+		}
+	}
+}
+
+html {
+	position: relative;
+	min-height: 100%;
+}
+
+#footer {
+	position: absolute;
+	width: 100%;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: $footer-height;
+	text-align: center;
+	color: $off-white;
+
+	.footer-inner {
+		height: $footer-height;
+		margin-top: 30px;
+		background-color: $dark-blue;
+		padding-top: 18px;
+		padding-bottom: 130px;
+		border-top: solid 1px $table-border-color;
+	}
+	.footer-corporate {
+		padding-top: 30px;
+	}
+	.footer-corporate a {
+		color: white;
+	}
+	.footer-corporate-logo {
+		height: 20px;
+	}
+
+	.container-fluid {
+		width: auto;
+		background-color: $dark-blue;
+	}
+
+	.logo {
+		font-size: $font-size-base*1.2;
+	}
+
+	h2 {
+		font-size: 12px;
+		font-weight: bold;
+		padding: 0;
+		padding-bottom: 3px;
+		margin: 0;
+	}
+
+	ul {
+		color: black;
+	}
+
+	.version {
+		margin-left: 3px;
+		opacity: 0.8;
+	}
+
+
+	.binary-downloads {
+		text-align: left;
+		a {
+			margin-right: 10px;
+			color: $sg-blue-color;
+			&:hover {
+				color: $link-color;
+			}
+		}
+	}
+	.instructions {
+		font-size: $font-size-small*1.1;
+		i {
+			margin: 0 6px;
+		}
+		code { margin: 0; padding: 0; }
+	}
+}

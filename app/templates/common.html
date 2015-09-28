@@ -1,0 +1,165 @@
+{{define "SearchBar"}}
+{{$fi := searchFormInfo .}}
+{{if and (showSearchForm .Ctx .CurrentQuery) $fi}}
+<form class="navbar-form search-form" role="search"
+			action="{{$fi.ActionURL}}"
+			data-action-implicit-query-string="{{$fi.ActionImplicitQueryPrefix.RawQueryString}}"
+			data-pjax="{{$fi.PJAXContainer}}"
+			id="search-form"
+			>
+	<div class="input-group">
+		<input type="text" class="form-control" name="q" tabIndex="1"
+						placeholder="Search"
+						data-pjax="{{$fi.PJAXContainer}}"
+						autocomplete="off"
+
+						value="{{$fi.InputValue}}"
+						data-initial-resolved-tokens="{{$fi.ResolvedTokens|json}}"
+						data-initial-resolve-errors="{{$fi.ResolveErrors|json}}"
+						data-non-deletable-leading-token-count="{{len $fi.ActionImplicitQueryPrefix}}"
+						>
+	</div>
+</form>
+{{else if appconf.CustomNavLayout}}
+	{{appconf.CustomNavLayout}}
+{{end}}
+{{end}}
+
+{{define "Pagination"}}
+<div class="pagination-controls">
+	<ul class="pagination">
+		{{range .}}
+		<li class="{{if .Current}}active{{end}} {{if .Disabled}}disabled{{end}}"><a href="{{.URL}}">{{.Label}}</a></li>
+		{{end}}
+	</ul>
+</div>
+{{end}}
+
+{{define "KeyboardShortcutsHelp"}}
+<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true" id="keyboard-shortcuts-help">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">Keyboard shortcuts</h4>
+			</div>
+			<div class="modal-body">
+				<table>
+					{{if (showSearchForm .Ctx .CurrentQuery)}}
+						<tr><th><span class="shortcut-key">/</span></th><td>focus search field</td></tr>
+						<tr><th>
+								<span class="shortcut-key">o</span> or <span class="shortcut-key">Enter</span></th><td>
+								open the selected result
+								(use <span class="shortcut-key">TAB</span>,<span class="shortcut-key">&uarr;</span>,<span class="shortcut-key">&darr;</span> to
+								select)
+						</td></tr>
+						<tr><td colspan="2"><hr></td></tr>
+					{{end}}
+					<tr><th><span class="shortcut-key">g</span><span class="shortcut-key">r</span></th><td>go to repository</td></tr>
+					<tr><th><span class="shortcut-key">g</span><span class="shortcut-key">b</span></th><td>go to repository builds</td></tr>
+					<tr><th><span class="shortcut-key">t</span></th><td>fuzzy search files in this repository</td></tr>
+					<tr><td colspan="2"><hr></td></tr>
+					<tr><th><span class="shortcut-key">esc</span></th><td>close token popup box</td></tr>
+					<tr><th><span class="shortcut-key">g</span><span class="shortcut-key">h</span></th><td>go to homepage</td></tr>
+					<tr><th><span class="shortcut-key">?</span></th><td>show this help screen</td></tr>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+{{end}}
+
+{{define "Breadcrumb"}}<!-- expects []*BreadcrumbLink --><!--
+	-->{{range $i, $link := .}}<!--
+		-->{{if gt $i 0}}<!--
+			--><span class="sep">/</span><!--
+		-->{{end}}<!--
+		--><a href="{{$link.URL}}">{{$link.Text}}</a><!--
+	-->{{end}}<!--
+-->{{end}}
+
+{{define "PersonLink"}}<!-- expects *sourcegraph.Person -->
+	{{if .}}
+		{{if .Login}}
+			{{template "UserLink" .Login}}
+		{{else}}
+			<span class="person">{{.Email|personLabel}}</span>
+		{{end}}
+	{{else}}
+		<span class="person">none</span>
+	{{end}}
+{{end}}
+
+{{define "UserLink"}}<!-- expects string -->
+	{{if .}}
+		<a class="user" href="{{urlToUser .}}">{{.|personLabel}}</a>
+	{{else}}
+		<span class="user">unknown</span>
+	{{end}}
+{{end}}
+
+{{define "RepoIcon"}}<!-- expects *sourcegraph.Repo -->
+	{{if .Private}}
+		<span title="Private repository" data-tooltip data-placement="bottom" class="octicon octicon-lock repo-attr-icon"></span>
+	{{else if .Fork}}
+		<span title="Fork repository" data-tooltip data-placement="bottom" class="octicon octicon-repo-forked repo-attr-icon"></span>
+	{{else if .Mirror}}
+		<span title="Mirror repository" data-tooltip data-placement="bottom" class="octicon octicon-mirror repo-attr-icon"></span>
+	{{else}}
+		<span title="Repository" data-tooltip data-placement="bottom" class="octicon octicon-repo repo-attr-icon"></span>
+	{{end}}
+{{end}}
+
+{{define "RepoLabel"}}<!-- expects []string --><!--
+	--><span class="repo-label"><!--
+		-->{{$last := add (len .) -1}}<!--
+		-->{{range $i, $name := .}}<!--
+			-->{{if eq $i $last}}<!--
+				--><span class="name">{{$name}}</span><!--
+			-->{{else}}<!--
+				--><span>{{$name}}</span><!--
+				--><span class="sep">/</span><!--
+			-->{{end}}<!--
+		-->{{end}}<!--
+	--></span><!--
+-->{{end}}
+
+{{define "RepoLink"}}<!-- expects *RepoLink --><!--
+	--><span class="repo-link"><!--
+		-->{{range .LeadingParts}}<!--
+			--><span class="part">{{.}}</span><!--
+			--><span class="sep">/</span><!--
+		-->{{end}}<!--
+		--><a class="name" href="{{.URL}}" title="{{.Title}}">{{.NamePart}}</a><!--
+	--></span><!--
+-->{{end}}
+
+{{define "Date"}}
+	{{with timeOrNil .}}
+		{{if .}}
+			<time datetime="{{.}}">{{.Format "Jan 2, 2006"}}</time>
+		{{else}}
+			n/a
+		{{end}}
+	{{end}}
+{{end}}
+
+{{define "DateTime"}}
+	{{with timeOrNil .}}
+		{{if .}}
+			<time datetime="{{.}}">{{.Format "Jan 2, 2006, at 3:04pm MST"}}</time>
+		{{else}}
+			n/a
+		{{end}}
+	{{end}}
+{{end}}
+
+{{define "TimeAgo"}}
+	{{with timeOrNil .}}
+		{{if .}}
+			<time datetime="{{.}}" title="{{.}}">{{timeAgo .}}</time>
+		{{else}}
+			never
+		{{end}}
+	{{end}}
+{{end}}

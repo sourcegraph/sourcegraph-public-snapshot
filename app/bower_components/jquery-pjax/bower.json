@@ -1,0 +1,16 @@
+{
+  "name": "jquery-pjax",
+  "main": "./jquery.pjax.js",
+  "dependencies": {
+    "jquery": ">=1.8"
+  },
+  "ignore": [
+    ".travis.yml",
+    "Gemfile",
+    "Gemfile.lock",
+    "CONTRIBUTING.md",
+    "vendor/",
+    "script/",
+    "test/"
+  ]
+}

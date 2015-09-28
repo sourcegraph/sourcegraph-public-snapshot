@@ -1,0 +1,205 @@
+{{define "Comments"}}
+	{{$l := location .}}
+	{{if $l}}
+		{{if or $l.LeadingComments $l.TrailingComments}}
+			{{with $l.LeadingComments}}{{.}}{{end}}
+			{{with $l.TrailingComments}}{{.}}{{end}}
+		{{end}}
+	{{end}}
+{{end}}
+
+{{define "CommentsParagraph"}}
+	{{$l := location .}}
+	{{if $l}}
+		{{if or $l.LeadingComments $l.TrailingComments}}
+			<div class="doc indent description">
+				{{with $l.LeadingComments}}
+					{{range comments .}}
+						<p>{{.}}</p>
+					{{end}}
+				{{end}}
+				{{with $l.TrailingComments}}
+					{{range comments .}}
+						<p>{{.}}</p>
+					{{end}}
+				{{end}}
+			</div>
+		{{end}}
+	{{end}}
+{{end}}
+
+{{define "h1-id"}}
+	<a class="doc anchor" id="{{.ID}}"></a>
+	<h1 class="doc hdr permalink-hdr">
+		<span>{{.Name}}</span>
+		<a href="{{filepath}}#{{.ID}}" title="permalink" class="doc permalink">
+			<i class="fa fa-link"></i>
+		</a>
+	</h1>
+{{end}}
+
+{{define "h2-id"}}
+	<a class="doc anchor" id="{{.ID}}"></a>
+	<h2 class="doc hdr permalink-hdr">
+		<span>{{.Name}}</span>
+		<a href="{{filepath}}#{{.ID}}" title="permalink" class="doc permalink">
+			<i class="fa fa-link"></i>
+		</a>
+	</h2>
+{{end}}
+
+{{define "h1"}}
+	{{template "h1-id" dict "ID" (print "hdr-" .) "Name" .}}
+{{end}}
+
+{{define "h2"}}
+	{{template "h2-id" dict "ID" . "Name" .}}
+{{end}}
+
+{{define "h2-expander"}}
+	<a class="doc anchor" id="{{.name}}"></a>
+	<h2 class="doc hdr permalink-hdr">
+		<span>{{.name}}</span>
+		<a class="doc expander" data-ref="{{.ref}}" href="#" title="expand documentation"><i class="fa fa-caret-down"></i></a>
+		<a href="{{filepath}}#{{.name}}" title="permalink" class="doc permalink">
+			<i class="fa fa-link"></i>
+		</a>
+	</h2>
+{{end}}
+
+{{define "index-sub"}}
+	{{if .data}}
+		<li><h4>{{.title}}</h4>
+			<ul>
+				{{range $i, $v := .data}}
+					{{if lt $i 10}}
+						<li><a href="{{filepath}}#{{$v.Name}}">{{$v.Name}}</a></li>
+					{{end}}
+				{{end}}
+			</ul>
+
+			{{if gt (len .data) 10}}
+				<ul id="{{$.title}}-more" style="display: none;">
+					{{range $i, $v := .data}}
+						{{if gt $i 10}}
+							<li><a href="{{filepath}}#{{$v.Name}}">{{$v.Name}}</a></li>
+						{{end}}
+					{{end}}
+				</ul>
+
+				<ul id="{{$.title}}-show-more">
+					<li>...and {{sub (len .data) 10}} more <a href="#">(show)</a></li>
+				</ul>
+
+				<!-- Binding to show more items when clicked -->
+				<script>
+					$(function() {
+						$("#{{$.title}}-show-more a").click(function(e) {
+							e.preventDefault();
+							$("#{{$.title}}-show-more").slideUp();
+							$("#{{$.title}}-more").slideDown();
+						});
+					});
+				</script>
+			{{end}}
+		</li>
+	{{end}}
+{{end}}
+
+<style>
+#doc-container {
+	margin-bottom: 3em;
+}
+
+.doc.indent {
+	margin-left: 12.5px;
+}
+.doc.indent2 {
+	margin-left: 25px;
+}
+
+.doc.permalink {
+	display: none;
+	font-size: 70%;
+}
+.doc.permalink:hover {
+	text-decoration: none;
+}
+
+h1.doc.hdr {
+	margin-top: 1em;
+}
+.doc.hdr .permalink {
+	position: relative;
+	top: .1em;
+}
+.doc.hdr .permalink, .doc.hdr span {
+	vertical-align: middle;
+}
+
+.doc.index h4 {
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+
+/* Hide expanded content by default */
+.doc.expanded {
+	display: none;
+	border: 1px solid transparent;
+	overflow: hidden;
+}
+.doc .expander i {
+	font-size: 24px;
+	vertical-align: middle;
+}
+.doc.services .expander i {
+	font-size: 16px;
+}
+.doc .v-middle {
+	vertical-align: middle;
+}
+</style>
+
+<!-- Fade in/out the header permalinks on hover -->
+<script>
+	$(function() {
+		var timer;
+		$(".doc.permalink-hdr").hover(function() {
+			var e = $(this);
+			clearTimeout(timer);
+			timer = setTimeout(function() {
+				e.find(".doc.permalink").fadeIn("fast");
+			}, 350);
+		}, function() {
+			clearTimeout(timer);
+			$(this).find(".doc.permalink").fadeOut("fast");
+		});
+	})
+</script>
+
+<!-- Content Expansion -->
+<script>
+	$(function() {
+		// Bindings to toggle expanded content
+		$(".doc .expander").click(function(e) {
+			e.preventDefault();
+			var ref = $(this).attr("data-ref");
+			$(".doc .expander[data-ref='" + ref + "'] i.fa").fadeOut(function() {
+				$(this).toggleClass("fa-caret-down").toggleClass("fa-caret-up").fadeIn();
+				$(".doc .expanded[data-ref='" + ref + "']").slideToggle();
+			})
+		});
+
+		// Upon page load or when the hash changes, expand the specified
+		// content.
+		function hashChange() {
+			var ref = "ref-" + window.location.hash.substr(1);
+			$(".doc .expander[data-ref='" + ref + "'] i.fa").removeClass("fa-caret-down").addClass("fa-caret-up");
+			$(".doc .expanded[data-ref='" + ref + "']").show();
+		}
+		$(window).on('hashchange', hashChange);
+		hashChange();
+	});
+</script>
+
+{{template "menu.html" .}}

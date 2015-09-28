@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Runs go generate on all directories
+
+blacklist_re='(_workspace|devdoc|gitserver)'
+
+set -e
+cd $(git rev-parse --show-toplevel)
+
+export GOPATH="$PWD/Godeps/_workspace:$GOPATH"
+
+git grep -l go:generate \
+    | grep '\.go$' \
+    | egrep -v ${blacklist_re} \
+    | xargs -n1 dirname \
+    | sort | uniq \
+    | awk '{ print "./" $1 }' \
+    | xargs go generate

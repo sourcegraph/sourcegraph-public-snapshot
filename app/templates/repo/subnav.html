@@ -1,0 +1,77 @@
+{{define "RepoSubnav"}}
+<nav class="navbar navbar-default subnav repo-subnav" id="repo-subnav">
+	<div class="container{{if .FullWidth}}-fluid{{end}}">
+		<div class="navbar-header">
+			<span class="navbar-brand repo">
+				{{template "RepoIcon" .Repo}}
+				{{template "RepoLink" (repoLink .Repo.URI)}}
+			</span>
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#repo-nav-collapse">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+		</div>
+		<div class="collapse navbar-collapse" id="repo-nav-collapse">
+			<ul class="nav navbar-nav repo-subnav">
+				<li class="{{if or (eq .CurrentRoute "repo") (eq .CurrentRoute "repo.tree")}}active{{end}}">
+					<a href="{{urlToRepo .Repo.URI}}">
+						<i class="octicon octicon-code"></i><span class="txt">Code</span>
+					</a>
+				</li>
+
+				{{if repoEnabledFrameChangesets .Repo}}
+					<li {{if (eq .CurrentRoute "repo.changeset.list")}}class="active"{{end}}>
+						<a href="{{urlToRepoChangesets .Repo.URI false}}">
+							<i class="octicon octicon-git-pull-request"></i>
+							<span class="txt">Changes</span>
+							<span class="beta-tag">beta</span>
+						</a>
+					</li>
+				{{end}}
+
+				{{if eq .Repo.Language "Go"}}
+					<li class="{{if hasPrefix .CurrentRoute "repo.godoc"}}active{{end}}">
+						<a href="{{urlToRepoGoDoc .Repo.URI "" ""}}">
+							<i class="octicon octicon-book"></i><span class="txt">godoc</span>
+						</a>
+					</li>
+				{{end}}
+
+				{{range (repoEnabledFrames .Repo)}}
+					<li>
+						<a href="{{urlToRepoApp $.Repo.URI .ID}}">
+							<i class="octicon octicon-{{.Icon}}"></i><span class="txt">{{.Title}}</span>
+							<span class="beta-tag">beta</span>
+						</a>
+					</li>
+				{{end}}
+
+				{{if .Repo.GitHub}}
+					<li class="github navbar-right">
+						<a target="_blank" href="{{.Repo.GitHubHTMLURL}}"
+							data-tooltip title="GitHub" data-placement="bottom">
+							<i class="octicon octicon-mark-github"></i><span class="hidden-sm hidden-md hidden-lg">GitHub</span>
+						</a>
+					</li>
+					<li class="github navbar-right">
+						<a target="_blank" href="{{.Repo.GitHubHTMLURL}}/stargazers"
+							data-tooltip title="Stargazers" data-placement="bottom">
+							<i class="octicon octicon-star"></i><span class="txt">{{.Repo.GitHub.Stars}} </span><span class="hidden-sm hidden-md hidden-lg">Stargazers</span>
+						</a>
+					</li>
+				{{end}}
+
+				{{if or (repoPerms .Repo.Permissions).Admin (repoEnabled .RepoConfig)}}
+				<li class="{{if eq .CurrentRoute "repo.builds"}}active {{end}}navbar-right">
+										<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}" title="Builds" data-placement="bottom">
+												<i class="octicon octicon-database"></i><span class="txt">Builds</span>
+					</a>
+				</li>
+				{{end}}
+			</ul>
+		</div>
+	</div>
+</nav>
+{{end}}

@@ -1,0 +1,27 @@
+{{define "Head"}}<title>Branches - {{.Repo.URI}} - Sourcegraph</title>
+{{end}}
+
+{{define "DefaultLabel"}}<span class="pull-right default-branch label label-default">Default</span>{{end}}
+
+{{define "RepoBody"}}
+{{if .Branches}}
+<ol class="list-group">
+	{{$repoURI := .Repo.URI}}
+	{{range .Branches}}
+	<li class="list-group-item branch">
+		<div class="pull-right" data-react="RepoBuildIndicator" data-uri="{{$repoURI}}" data-rev="{{.Head}}" data-buildable="{{autoBuild}}"></div>
+		{{if (eq .Name $.BehindAheadBranch)}}
+			{{template "DefaultLabel"}}
+		{{else}}
+			{{with .Counts}}<div class="pull-right ahead-behind" data-tooltip title="{{.Behind}} commits behind, {{.Ahead}} commits ahead {{$.BehindAheadBranch}}"><sub>{{.Behind}}</sub> | <sub>{{.Ahead}}</sub></div>{{end}}
+		{{end}}
+		<a class="name" href="{{urlToRepoRev $repoURI .Name}}">{{.Name}}</a>
+		{{with .Commit}}<span class="last-updated">updated by {{.Author.Name}} {{template "TimeAgo" .Author.Date}}</span>{{end}}
+	</li>
+	{{end}}
+</ol>
+{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+{{else}}
+<div class="alert alert-info">No branches found.</div>
+{{end}}
+{{end}}

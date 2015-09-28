@@ -1,0 +1,10 @@
+{{define "Snippet"}}
+<div class="snippet">
+	<div class="snippet-header">
+		{{template "RepoLink" (repoLink .Repo)}}
+		<span class="fa fa-file"></span>
+		{{template "Breadcrumb" (fileLinesToBreadcrumb .Repo .CommitID .File .Lines)}}
+	</div>
+	<pre><code>{{.Src}}</code></pre>
+</div>
+{{end}}

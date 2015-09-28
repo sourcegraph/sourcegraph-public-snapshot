@@ -1,0 +1,27 @@
+{{define "Head"}}<title>Sign in - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+<div class="row">
+	<div class="col-md-5">
+		<h1>Sign into your account</h1>
+
+		<form method="post" action="{{urlToWithReturnTo "log-in" .ReturnTo}}" class="log-in">
+			<p class="help-block">{{.LoginForm.FormError}}</p>
+			<div class="form-group {{.LoginForm.FieldClass "Login"}}">
+				<label for="login">Username</label>
+				<input name="Login" type="text" class="form-control" id="login" value="{{.LoginForm.Login}}" required pattern="[\w-]+" tabindex=1 autofocus>
+				<p class="help-block">{{.LoginForm.FieldError "Login"}} No account yet? <a href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">Sign up.</a></p>
+			</div>
+			<div class="form-group {{.LoginForm.FieldClass "Password"}}">
+				<label for="password">Password</label>
+				<input name="Password" type="password" class="form-control" id="password" required tabindex=2>
+				<p class="help-block">{{.LoginForm.FieldError "Password"}} <a href="{{urlToWithReturnTo "forgot-password" .ReturnTo}}">Forgot your password?</a></p>
+			</div>
+			<button type="submit" class="btn btn-primary btn-lg" tabindex=3>Sign in</button>
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+		</form>
+	</div>
+</div>
+{{end}}

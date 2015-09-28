@@ -1,0 +1,8 @@
+a:hover img.avatar {
+	opacity: 0.88;
+}
+
+img.avatar-sm {
+	border-radius: $border-radius-base;
+	@include square(32px);
+}

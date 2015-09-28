@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <script src="jquery-1.4.2.js"></script>
+    </head>
+
+    <body>
+        <h1>KeyDown.</h1>
+        currentTarget: <input id="kd_currentTarget"><br/>
+        which: <input id="kd_which"></br>
+        shiftKey: <input id="kd_shiftKey"><br/>
+        ctrlKey: <input id="kd_ctrlKey"><br/>
+        altKey: <input id="kd_altKey"><br/>
+        <h1>KeyPress.</h1>
+        currentTarget: <input id="kp_currentTarget"><br/>
+        which: <input id="kp_which"></br>
+        shiftKey: <input id="kp_shiftKey"><br/>
+        ctrlKey: <input id="kp_ctrlKey"><br/>
+        altKey: <input id="kp_altKey"><br/>
+        <script>
+        
+            $(document).bind('keydown', KdDescribeEvent);
+            $(document).bind('keypress', KpDescribeEvent);
+            
+            function KdDescribeEvent(event){
+                $('#kd_currentTarget').val(event.currentTarget);
+                $('#kd_which').val(event.which);
+                $('#kd_shiftKey').val(event.shiftKey);
+                $('#kd_ctrlKey').val(event.ctrlKey);
+                $('#kd_altKey').val(event.altKey);            
+            }
+            function KpDescribeEvent(event){
+                $('#kp_currentTarget').val(event.currentTarget);
+                $('#kp_which').val(event.which);
+                $('#kp_shiftKey').val(event.shiftKey);
+                $('#kp_ctrlKey').val(event.ctrlKey);
+                $('#kp_altKey').val(event.altKey);            
+            }
+            
+        </script>
+    </body>
+</html>

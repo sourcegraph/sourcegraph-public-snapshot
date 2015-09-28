@@ -1,0 +1,210 @@
+{{define "c-sg-blue"}}#459def{{end}}
+{{define "c-sg-blue-90%"}}#3e8dd7{{end}}
+{{define "c-sg-blue-70%"}}#306da7{{end}}
+{{define "c-sg-blue-40%"}}#1b3e5f{{end}}
+{{define "c-off-white"}}#F5F5F5{{end}}
+{{define "c-text"}}#333333{{end}}
+
+{{define "ROOT"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="{{.BaseURL}}">
+    <title>{{template "Title" $}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="{{.BaseURL}}static/img/favicon.png" />
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{{.BaseURL}}static/proxima-nova/proxima-nova.css">
+    <link rel="stylesheet" href="{{.BaseURL}}static/gotham-black/gotham-black.css">
+    <style>
+    html {
+      position: relative;
+      min-height: 100%;
+    }
+    body {
+      padding-top: 50px;
+      background-color: {{template "c-off-white"}};
+      color: {{template "c-text"}};
+      font-family: 'Proxima Nova', sans-serif;
+
+      /* Margin bottom by footer height */
+      margin-bottom: 60px;
+    }
+    .d0 { background-color: #bbb; }
+    .d1 { background-color: #ccb7b7; }
+    .d2 { background-color: #cca7a7; }
+    .d3 { background-color: #cc9999; }
+    .d4 { background-color: #cc8282; }
+    .d5 { background-color: #cc7676; }
+    .d6 { background-color: #cc4f4f; }
+    .d7 { background-color: #cc3939; }
+    .d8 { background-color: #cc2a2a; }
+    .d9 { background-color: #cc1c1c; }
+    .d10 { background-color: #cc0e0e; }
+
+    a {
+        color: {{template "c-sg-blue-70%"}};
+    }
+    a:hover {
+      color: {{template "c-sg-blue-90%"}};
+    }
+
+    hr{
+        border-top: 1px solid #D7D7D7;
+    }
+    code{
+        background-color: #DADADA;
+    }
+
+    /* Navigation bar colors */
+    .navbar-inverse {
+      background-color: {{template "c-sg-blue"}};
+      border-bottom: 1px solid #e3f1fb;
+      font-size: 17px;
+    }
+
+    /* Navigation bar link colors */
+    .navbar-inverse .navbar-nav>li>a {
+      padding-top: 21px;
+      height: 59px; /* -1px parent border */
+      color: {{template "c-off-white"}};
+    }
+    .navbar-inverse .navbar-nav>li>a:hover, .navbar-inverse .navbar-nav>li>a:focus {
+      color: {{template "c-off-white"}};
+      background-color: {{template "c-sg-blue-70%"}};
+    }
+    .navbar-inverse .navbar-nav>.active>a, .navbar-inverse .navbar-nav>.active>a:hover, .navbar-inverse .navbar-nav>.active>a:focus {
+      color: {{template "c-off-white"}};
+      background-color: {{template "c-sg-blue-70%"}};
+    }
+
+    .logo, .logo:hover {
+      height: 59px; /* -1px parent border */
+      font-family: 'Gotham Black', sans-serif;
+      text-decoration: none;
+      color: {{template "c-off-white"}};
+      padding-top: 16px;
+      position: relative;
+    }
+    .logo .star{
+      vertical-align: middle;
+      padding-right: .2em;
+      font-size: 22px;
+      position: relative;
+      top: 1px;
+    }
+    .logo .text{
+      vertical-align: middle;
+      font-size: 18px;
+    }
+
+    .ico-navbar {
+      text-decoration: none;
+      color: {{template "c-off-white"}};
+
+      font-size: 18px;
+      float: left;
+      padding-right: .3em;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      /* Set the fixed height of the footer here */
+      height: 60px;
+      text-align: center;
+      padding-top: .25em;
+      font-size: 90%;
+      background-color: transparent;
+    }
+    .footer p {
+      margin: 0;
+      text-decoration: none;
+    }
+    .footer a{
+        color: inherit;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    #pageTitle {
+      margin-top: 1em;
+      text-align: center;
+      font-size: 40px;
+    }
+
+    .anchor {
+    	display: block;
+    	position: relative;
+    	top: -60px;
+    	visibility: hidden;
+    }
+
+    .noselect {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    .noselect {
+      cursor: default;
+    }
+    </style>
+    <script src="//code.jquery.com/jquery-2.1.1.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a href="{{.BaseURL}}" class="logo pull-left"><span class="star">✱</span><span class="text">Sourcegraph</span></a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse pull-right">
+          <ul class="nav navbar-nav">
+            <li {{if eq .CurrentRoute "devdoc.api"}}class="active"{{end}}>
+              <a href="{{urlTo "devdoc.api"}}">
+                <i class="fa fa-book ico-navbar"></i> Docs
+              </a>
+            </li>
+            <li {{if eq .CurrentRoute "devdoc.libraries"}}class="active"{{end}}>
+              <a href="{{urlTo "devdoc.libraries"}}">
+                <i class="fa fa-code ico-navbar"></i> Libraries
+              </a>
+            </li>
+            <li {{if eq .CurrentRoute "devdoc.community"}}class="active"{{end}}>
+              <a href="{{urlTo "devdoc.community"}}">
+                <i class="fa fa-users ico-navbar"></i> Community
+              </a>
+            </li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+      {{template "Main" $}}
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">
+          <a href="https://sourcegraph.com">Sourcegraph: Intelligent code collaboration for you & your team</a><br/>
+          <a href="https://sourcegraph.com/about">About</a> | <a href="mailto:support@sourcegraph.com">Contact</a> | <a target="_blank" href="https://github.com/sourcegraph/api/issues/new">Issues</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+{{end}}

@@ -1,0 +1,42 @@
+
+<html>
+    <head>
+        <style>
+            * {font-family: mono; font-size:0.95em}
+            .eventNotifier{width: 100px; float: left; color:navy; border: dotted 1px navy; padding: 4px; background-color:white; margin:3px}
+            .dirty{border: solid 1px #0ca2ff; color:white; background-color:#0ca2ff}
+            
+        </style>
+    </head>
+    <body>
+        <h3>Test #01</h3>
+        <table>
+            <tbody>
+                <tr>
+                    <td><input type='text' id='input_02' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_03' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_04' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_05' class='foo'></td>
+                    </tr>
+                <tr>
+                    <td><input type='text' id='input_06' class='foo'></td>
+                    </tr>
+                </tbody>
+            </table>
+    </body>
+    <script src="jquery-1.4.2.js"></script>
+    <script src="jquery.hotkeys.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('input.foo').bind('keyup', '$', function(){
+                this.value = this.value.replace('$', '€');
+            });
+        });
+    </script>
+</html>

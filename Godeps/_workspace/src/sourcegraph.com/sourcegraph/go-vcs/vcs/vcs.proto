@@ -1,0 +1,117 @@
+syntax = "proto3";
+package vcs;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
+
+message Commit {
+	string id = 1 [(gogoproto.customname) = "ID", (gogoproto.customtype) = "CommitID"];
+	Signature author = 2 [(gogoproto.nullable) = false];
+	Signature committer = 3;
+	string message = 4;
+
+	// Parents are the commit IDs of this commit's parent commits.
+	repeated string parents = 5 [(gogoproto.customtype) = "CommitID"];
+}
+
+message Signature {
+	string name = 1;
+	string email = 2;
+	pbtypes.Timestamp date = 3 [(gogoproto.nullable) = false];
+}
+
+// A Branch is a VCS branch.
+message Branch {
+	// Name is the name of this branch.
+	string name = 1;
+
+	// Head is the commit ID of this branch's head commit.
+	string head = 2 [(gogoproto.customtype) = "CommitID"];
+
+	// Commit optionally contains commit information for this branch's head commit.
+	// It is populated if IncludeCommit option is set.
+	Commit commit = 4;
+
+	// Counts optionally contains the commit counts relative to specified branch.
+	BehindAhead counts = 3;
+}
+
+// BehindAhead is a set of behind/ahead counts.
+message BehindAhead {
+	uint32 behind = 1;
+	uint32 ahead = 2;
+}
+
+// BranchesOptions specifies options for the list of branches returned by
+// (Repository).Branches.
+message BranchesOptions {
+	// MergedInto will cause the returned list to be restricted to only
+	// branches that were merged into this branch name.
+	string merged_into = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// IncludeCommit controls whether complete commit information is included.
+	bool include_commit = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// BehindAheadBranch specifies a branch name. If set to something other than blank
+	// string, then each returned branch will include a behind/ahead commit counts
+	// information against the specified base branch. If left blank, then branches will
+	// not include that information and their Counts will be nil.
+	string behind_ahead_branch = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ContainsCommit filters the list of branches to only those that
+	// contain a specific commit ID (if set).
+	string contains_commit = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// A Tag is a VCS tag.
+message Tag {
+	string name = 1;
+	string commit_id = 2 [(gogoproto.customname) = "CommitID", (gogoproto.customtype) = "CommitID"];
+
+	// TODO(sqs): A git tag can point to other tags, or really any
+	// other object. How should we handle this case? For now, we're
+	// just assuming they're all commit IDs.
+}
+
+// SearchOptions specifies options for a repository search.
+message SearchOptions {
+	// the query string
+	string query = 1;
+
+	// currently only FixedQuery ("fixed") is supported
+	string query_type = 2;
+
+	// the number of lines before and after each hit to display
+	int32 context_lines = 3;
+
+	// max number of matches to return
+	int32 n = 4;
+
+	// starting offset for matches (use with N for pagination)
+	int32 offset = 5;
+}
+
+// A SearchResult is a match returned by a search.
+message SearchResult {
+	// File is the file that contains this match.
+	string file = 1;
+
+	// The byte range [start,end) of the match.
+	uint32 start_byte = 2;
+	uint32 end_byte = 3;
+
+	// The line range [start,end] of the match.
+	uint32 start_line = 4;
+	uint32 end_line = 5;
+
+	// Match is the matching portion of the file from [StartByte,
+	// EndByte).
+	bytes match = 6;
+}
+
+// A Committer is a contributor to a repository.
+message Committer {
+	string name = 1;
+	string email = 2;
+	int32 commits = 3;
+}

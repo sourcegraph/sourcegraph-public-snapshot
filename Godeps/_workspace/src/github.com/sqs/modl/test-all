@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# To use this script, set the following environment variables:
+#
+#   MODL_MYSQL_DSN - mysql connect DSN, like "modltest/modltest/modltest"
+#   MODL_POSTGRES_DSN - postgres connect DSN, eg:
+#        "username=modltest password=modltest dbname=modltest ssl-mode=disable"
+#   MODL_SQLITE_DSN - sqlite connect DSN, which is a path to a sqlite file.
+#   MODL_FAIL_ON_SKIP - optional, will fail if any DBs are skipped (for CI, mostly)
+#
+# In addition to this, you can create an `environ` file in this directory which
+# will be sourced and ignored by git.
+#
+# Additional arguments to test-all will be used after go-test, so to run
+# the benchmark suite on all dbs you can do:
+#   ./test-all -bench=. -benchmem
+#
+
+if [ -f "./environ" ]; then
+    . ./environ
+fi
+
+function exit_on_error {
+    if [ $1 != 0 ]; then
+        exit $1
+    fi
+}
+
+# set -e
+
+if [ -n "$MODL_MYSQL_DSN" ]; then
+    export MODL_TEST_DSN="$MODL_MYSQL_DSN"
+    export MODL_TEST_DIALECT="mysql"
+    echo "Testing MySQL"
+    go test $@
+    exit_on_error $?
+else
+    echo "Skipping MySQL, \$MODL_MYSQL_DSN=$MODL_MYSQL_DSN"
+    if [ -n "$MODL_FAIL_ON_SKIP" ]; then
+        exit -1
+    fi
+fi
+
+if [ -n "$MODL_POSTGRES_DSN" ]; then
+    export MODL_TEST_DSN="$MODL_POSTGRES_DSN"
+    export MODL_TEST_DIALECT="postgres"
+    echo "Testing PostgreSQL"
+    go test $@
+    exit_on_error $?
+else
+    echo "Skipping PostgreSQL, \$MODL_POSTGRES_DSN=$MODL_POSTGRES_DSN"
+    if [ -n "$MODL_FAIL_ON_SKIP" ]; then
+        exit -1
+    fi
+fi
+
+if [ -n "$MODL_SQLITE_DSN" ]; then
+    export MODL_TEST_DSN="$MODL_SQLITE_DSN"
+    export MODL_TEST_DIALECT="sqlite"
+    echo "Testing SQLite"
+    go test $@
+    exit_on_error $?
+else
+    echo "Skipping SQLite, \$MODL_SQLITE_DSN=$MODL_SQLITE_DSN"
+    if [ -n "$MODL_FAIL_ON_SKIP" ]; then
+        exit -1
+    fi
+fi
+

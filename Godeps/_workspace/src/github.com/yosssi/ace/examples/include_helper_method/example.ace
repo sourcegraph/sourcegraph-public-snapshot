@@ -1,0 +1,8 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title Include Helper Method
+  body
+    h1 This is a base template
+    = include inc

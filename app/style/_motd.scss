@@ -1,0 +1,30 @@
+.motd {
+	position: fixed;
+	top: 0;
+	width: 100%;
+	height: $motd-height;
+	text-align: center;
+	white-space: nowrap;
+	font-size: $font-size-base * 0.95;
+	background-color: $alert-warning-bg;
+	border-bottom: solid 1px darken($alert-warning-border, 5%);
+	padding: 5px 10px;
+	z-index: $zindex-navbar-fixed + 1;
+}
+
+body.has-motd {
+	#nav {
+		margin-top: $motd-height;
+	}
+
+	// Check that these stay consistent with _nav.scss and _code_file.scss.
+	.repo-subnav {
+		top: $navbar-height + $motd-height !important;
+	}
+	&.route-repo, &.route-def {
+		padding-top: 2*$navbar-height + 14px + $motd-height !important;
+	}
+	.code-file-toolbar {
+		top: 2*$navbar-height + $motd-height + 11px !important;
+	}
+}

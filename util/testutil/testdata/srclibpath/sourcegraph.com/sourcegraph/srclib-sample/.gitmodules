@@ -1,0 +1,3 @@
+[submodule "testdata/case/tiny-test-repo-with-readme"]
+	path = testdata/case/tiny-test-repo-with-readme
+	url = ttps://github.com/sgtest/tiny-test-repo-wth-readme.git

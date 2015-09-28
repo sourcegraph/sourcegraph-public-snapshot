@@ -1,0 +1,158 @@
+{{template "common.html" .}}
+
+<style>
+.doc.table {
+	margin-top: 3em;
+}
+.doc.json {
+	padding: 1em;
+}
+</style>
+
+<div id="doc-container" class="doc">
+	{{$enums := AllEnums true}}
+	{{$messages := AllMessages true}}
+
+	<div class="doc package">
+		<h1 class="doc permalink-hdr">
+			<span>{{.Package}}</span>
+			<a href="{{filepath}}" title="permalink" class="doc permalink">
+				<i class="fa fa-link"></i>
+			</a>
+		</h1>
+
+		<p class="doc indent">
+			<code>{{.Name}}</code> (syntax: <code>{{with .Syntax}}{{.}}{{else}}proto2{{end}}</code>)
+		</p>
+		<br/>
+		<ul>
+			<li><a href="{{filepath}}#hdr-Index">Index</a></li>
+			{{with $enums}}<li><a href="{{filepath}}#hdr-Enums">Enums</a></li>{{end}}
+			{{with .Extension}}<li><a href="{{filepath}}#hdr-Extensions">Extensions</a></li>{{end}}
+			{{with $messages}}<li><a href="{{filepath}}#hdr-Messages">Messages</a></li>{{end}}
+			{{with .Dependency}}<li><a href="{{filepath}}#hdr-Dependencies">Dependencies</a></li>{{end}}
+		</ul>
+	</div>
+
+	<!-- Index -->
+	<div class="doc index">
+		{{template "h1" "Index"}}
+		<hr/>
+		<div class="doc indent2">
+			<ul>
+				{{template "index-sub" dict "title" "Enums" "data" $enums}}
+				{{template "index-sub" dict "title" "Extensions" "data" .Extension}}
+				{{template "index-sub" dict "title" "Messages" "data" $messages}}
+			</ul>
+		</div>
+	</div>
+
+	<!-- Enumerations -->
+	{{if $enums}}
+		<div class="doc enum-types">
+			{{template "h1" "Enums"}}
+			<hr/>
+			{{range $e := $enums}}
+				<div class="doc indent">
+					{{template "h2-expander" dict "name" $e.Name "ref" (print "ref-" $e.GetName)}}
+					<div class="doc expanded" data-ref="ref-{{$e.Name}}">
+						{{template "CommentsParagraph" $e}}
+						{{if $e.Value}}
+							<table class="table table-striped doc indent2">
+								<tr><th>Name</th><th>Value</th><th>Description</th></tr>
+								{{range .Value}}
+									<tr>
+										<td>{{.Name}}</td>
+										<td>{{.Number}} {{if .Options}}{{if .Options.Deprecated}}(deprecated){{end}}{{end}}</td>
+										<td>{{template "Comments" .}}</td>
+									</tr>
+								{{end}}
+							</table>
+						{{end}}
+					</div>
+				</div>
+			{{end}}
+		</div>
+	{{end}}
+
+	<!-- Extensions -->
+	{{if .Extension}}
+		<div class="doc extensions">
+			{{template "h1" "Extensions"}}
+			<hr/>
+			{{range $e := .Extension}}
+				<div class="doc indent">
+					{{template "h2" $e.Name}}
+					{{template "CommentsParagraph" $e}}
+				</div>
+			{{end}}
+		</div>
+	{{end}}
+
+	<!-- Messages -->
+	{{if $messages}}
+		<div class="doc message-types">
+			{{template "h1" "Messages"}}
+			<hr/>
+			{{range $m := $messages}}
+				<div class="doc indent">
+					{{template "h2-expander" dict "name" $m.Name "ref" (print "ref-" $m.GetName)}}
+					<div class="doc expanded" data-ref="ref-{{$m.Name}}">
+						{{template "CommentsParagraph" $m}}
+
+						<!-- Tabbed view -->
+						<div role="tabpanel" class="doc indent2">
+							<ul class="nav nav-tabs" role="tablist">
+								<li role="presentation" class="active">
+									<a href="#{{$m.Name}}-documentation" aria-controls="{{$m.Name}}-documentation" role="tab" data-toggle="tab">Documentation</a>
+								</li>
+								<li role="presentation">
+									<a href="#{{$m.Name}}-json" aria-controls="{{$m.Name}}-json" role="tab" data-toggle="tab">JSON</a>
+								</li>
+							</ul>
+
+							<div class="tab-content">
+								<div role="tabpanel" class="tab-pane active" id="{{$m.Name}}-documentation">
+									<!-- Table documentation view -->
+									<table class="table table-striped">
+										<tr><th>Field</th><th>Label</th><th>Type</th><th>Description</th></tr>
+										{{range $m.Field}}
+											<tr>
+												<td>{{.Name}}</td>
+												<td>{{cleanLabel .Label}}</td>
+												{{if .TypeName}}
+													<td><a href="{{urlToType .TypeName}}">{{fieldType .}}</td>
+												{{else}}
+													<td>{{fieldType .}}</td>
+												{{end}}
+												<td>{{template "Comments" .}}</td>
+											</tr>
+										{{end}}
+									</table>
+								</div>
+								<div role="tabpanel" class="tab-pane" id="{{$m.Name}}-json">
+									<!-- JSON documentation view -->
+									<pre class="doc json">{{jsonMessage $m}}</pre>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			{{end}}
+		</div>
+	{{end}}
+
+	<!-- Dependencies -->
+	{{if .Dependency}}
+		<div class="doc dependencies">
+			{{template "h1" "Dependencies"}}
+			<p class="doc indent">Package <em>{{.Package}}</em> has the following dependencies:</p>
+			<ul class="doc indent">
+				{{range $d := .Dependency}}
+					<li>{{$d}}</li>
+				{{end}}
+			</ul>
+		</div>
+	{{end}}
+</div>

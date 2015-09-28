@@ -1,0 +1,63 @@
+{{define "PersonProfile"}}
+
+<!-- Warning if user is not a Sourcegraph user but instead a GitHub one -->
+{{if eq .User.Domain "github.com"}}
+<div class="alert alert-warning" role="alert">
+	<center>
+		<strong>Note:</strong> {{.User.Login}} is not a Sourcegraph user. Displaying information from {{.User.Login}}'s public <a href="https://github.com/{{.User.Login}}">GitHub profile</a>.
+	</center>
+</div>
+{{end}}
+
+<div class="person-profile">
+	<div class="media">
+		{{if .User.AvatarURL}}
+		<a href="{{.User.AvatarURL}}" class="pull-left">
+			<img src="{{.User.AvatarURL}}" class="avatar media-object img-rounded">
+		</a>
+		{{end}}
+
+		<div class="media-body">
+			<div class="pull-right actions">
+				{{if .CurrentUser}}{{if eq .CurrentUser.UID .User.UID}}
+				<a href="{{urlToUserSubroute "person.settings.profile" .User.Login}}" class="btn btn-primary edit-profile"><i class="fa fa-pencil"></i> &nbsp;Edit profile</a>
+				{{end}}{{end}}
+			</div>
+
+			<h1 class="person-label media-heading heading-tight">
+				{{if .User.Name}}
+				{{.User.Name}}
+				{{else}}
+				{{.User.Login|personLabel}}
+				{{end}}
+			</h1>
+			{{if .User.Name}}
+			<h3 class="person-name media-heading heading-tight">
+				{{.User.Login|personLabel}}
+				{{if .User.IsOrganization}}
+				<span class="label label-default">organization</span>
+				{{end}}
+			</h3>
+			{{end}}
+
+			<ul class="list-unstyled list-inline person-info">
+				{{if .User.Location}}<li><i class="fa fa-map-marker"></i> {{.User.Location}}</li>{{end}}
+				{{if .User.Company}}<li><i class="fa fa-building-o"></i> {{.User.Company}}</li>{{end}}
+				{{if .User.HomepageURL}}<li><a href="{{.User.HomepageURL}}" target="_blank"><i class="fa fa-home"></i> {{.User.HomepageURL|displayURL}}</a></li>{{end}}
+			</ul>
+		</div>
+	</div>
+</div>
+{{end}}
+
+{{define "personPossessive"}}
+{{if .CurrentUser}}{{if eq .CurrentUser.UID .User.UID}}your{{else}}{{.User.Login|personLabel}}'s{{end}}
+{{else}}{{.User.Login|personLabel}}'s
+{{end}}
+{{end}}
+
+{{define "personNominative"}}
+{{if .CurrentUser}}{{if eq .CurrentUser.UID .User.UID}}you{{else}}{{.User.Login|personLabel}}{{end}}
+{{else}}{{.User.Login|personLabel}}
+{{end}}
+{{end}}

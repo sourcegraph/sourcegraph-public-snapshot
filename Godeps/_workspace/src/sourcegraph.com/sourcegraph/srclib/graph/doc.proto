@@ -1,0 +1,30 @@
+syntax = "proto3";
+package graph;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "def.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Doc is documentation on a Def.
+message Doc {
+    // DefKey points to the Def that this documentation pertains to.
+    DefKey key = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+    // Format is the the MIME-type that the documentation is stored
+    // in. Valid formats include 'text/html', 'text/plain',
+    // 'text/x-markdown', text/x-rst'.
+    string format = 2 [(gogoproto.jsontag) = "Format"];
+
+    // Data is the actual documentation text.
+    string data = 3 [(gogoproto.jsontag) = "Data"];
+
+    // File is the filename where this Doc exists.
+    string file = 4 [(gogoproto.jsontag) = "File,omitempty"];
+
+    // Start is the byte offset of this Doc's first byte in File.
+    uint32 start = 5 [(gogoproto.jsontag) = "Start,omitempty"];
+
+    // End is the byte offset of this Doc's last byte in File.
+    uint32 end = 6 [(gogoproto.jsontag) = "End,omitempty"];
+};

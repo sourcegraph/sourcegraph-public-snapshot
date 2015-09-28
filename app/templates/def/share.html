@@ -1,0 +1,31 @@
+{{define "Head"}}<title>Sharing {{.Def.Name}} in {{.Repo.URI}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "DefPageTitlePrefix"}}Sharing {{end}}
+
+{{define "DefPage"}}
+<h2>Embed sourcebox</h2>
+<p>Paste the following HTML code to embed this definition's code (with links and mouseover tooltips) in any web page or blog.</p>
+<textarea class="code" rows="4" cols="60">&lt;script type="text/javascript" src="{{absURL .AppURL (router.URLToSourceboxDef .Def.DefKey "js")}}"&gt&lt/script&gt;</textarea>
+
+<h2>Request JSON</h2>
+<p>You may also request the contents of the Sourcebox's in JSON format via the URL:</p>
+<textarea class="code" rows="4" cols="60">{{absURL .AppURL (router.URLToSourceboxDef .Def.DefKey "json")}}</textarea>
+
+<h3>Options</h3>
+<ul>
+	<li>
+		<b>Line Numbers:</b> display line numbers in Sourcebox by adding a <code>LineNumbers=true</code> querystring  parameter to the end of the embed URL.
+	</li>
+	<li>
+		<b>Start Line:</b> begin the Sourcebox at a specific line by adding a <code>StartLine=n</code> querystring parameter to the end of the embed URL, substituting "n" for the new start line.
+	</li>
+	<li>
+		<b>End Line:</b> end the Sourcebox at a specific line by adding a <code>EndLine=n</code> querystring parameter to the end of the embed URL, substituting "n" for the new end line.
+	</li>
+</ul>
+
+<h3>Preview</h3>
+<script src="{{absURL .AppURL (router.URLToSourceboxDef .Def.DefKey "js")}}"></script>
+{{end}}

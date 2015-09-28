@@ -1,0 +1,5 @@
+= content main
+  h2 This is a content named "main" of an inner template.
+
+= content sub
+  h2 This is a content named "sub" of an inner template.

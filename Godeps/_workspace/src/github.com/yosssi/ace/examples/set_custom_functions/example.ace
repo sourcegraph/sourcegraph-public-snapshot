@@ -1,0 +1,7 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title Set Custom Functions
+  body
+    h1 {{Greeting "Ace"}}

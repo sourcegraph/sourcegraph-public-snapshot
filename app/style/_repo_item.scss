@@ -1,0 +1,30 @@
+.repo-label {
+	text-decoration: none;
+}
+
+.repo-item {
+	a {
+		display: block;
+		text-decoration: none;
+		.repo-label {
+			font-size: $font-size-large;
+		}
+
+		// Only underline the repo owner and name, not the sep ("/").
+		&:hover .repo-label span:not(.sep) {
+			text-decoration: underline;
+		}
+	}
+	.name { font-weight: bold; }
+	.description {
+		display: block;
+		color: $text-quieted;
+	}
+	.lang {
+		color: $text-muted;
+	}
+	.repo-attr-icon {
+		margin-right: 6px;
+		color: $gray-light;
+	}
+}

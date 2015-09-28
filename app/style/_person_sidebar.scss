@@ -1,0 +1,10 @@
+.person-sidebar {
+	.list-group-item {
+		&.active {
+			background-color: $dark-blue;
+			border: $dark-blue;
+			.by { color: white; }
+		}
+		.by { color: $gray-light; }
+	}
+}

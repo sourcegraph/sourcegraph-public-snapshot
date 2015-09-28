@@ -1,0 +1,10 @@
+#!upstart
+description "sourcegraph"
+
+start on filesystem and net-device-up IFACE!=lo and started docker
+
+exec su -l sourcegraph -c '[ ! -e /etc/sourcegraph/config.env ] || . /etc/sourcegraph/config.env; /usr/bin/src --config /etc/sourcegraph/config.ini serve'
+limit nofile 65536 65536
+
+respawn
+respawn limit 1000 5

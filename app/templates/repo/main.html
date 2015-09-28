@@ -1,0 +1,53 @@
+{{define "Head"}}<title>{{.Repo.Name}} - Sourcegraph</title>
+<meta name="description" content="{{repoMetaDescription .Repo}}">
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@srcgraph" />
+<meta name="twitter:title" content="Repository {{.Repo.URI}}{{if .Repo.GitHub}} ({{.Repo.GitHub.Stars}} stars){{end}}"/>
+<meta name="twitter:description" content="{{.Repo.Description}}{{if and .Repo.Description .Repo.HomepageURL}} - {{end}}{{.Repo.HomepageURL}}" />
+{{end}}
+
+{{define "RepoBody"}}
+
+{{if and .ExactBuild}}
+{{if .ExactBuild.Failure}}
+<div class="alert alert-danger">
+	<p>
+		<strong>Build failed.</strong>
+		See <a href="{{urlToRepoBuild .ExactBuild.Repo .ExactBuild.CommitID .ExactBuild.Attempt}}">build details</a> for more information.
+	</p>
+</div>
+{{end}}
+{{end}}
+
+{{template "RepoBuildWarning" $}}
+
+{{if or (or .Repo.Description .Repo.HomepageURL) (not disableCloneURL)}}
+<div class="repo-meta row">
+	{{if or .Repo.Description .Repo.HomepageURL}}
+	<p class="description">
+		{{sanitizeHTML .Repo.Description}}
+		{{if and .Repo.Description .Repo.HomepageURL}}&mdash;{{end}}
+		{{if .Repo.HomepageURL}}
+		<a href="{{.Repo.HomepageURL}}" target="_blank" rel="nofollow">{{displayURL (toString2 .Repo.HomepageURL)}}</a>
+		{{end}}
+	</p>
+	{{end}}
+
+	{{if not disableCloneURL}}
+	<div class="clone-url-container">
+		<div class="input-group input-group-sm">
+			<input type="text" class="clone-url form-control" id="clone-url"
+						value="{{.Repo.CloneURL}}"
+						onclick="this.select()"
+						readonly="readonly">
+			<span class="input-group-addon" id="sizing-addon1"><i class="fa fa-files-o"></i></span>
+		</div>
+	</div>
+	{{end}}
+</div>
+{{end}}
+
+{{template "RepoTree" $}}
+{{template "RepoReadme" $}}
+
+{{end}}

@@ -1,0 +1,6 @@
+#!/bin/bash
+# A wrapper for `git` that logs the command to a file and adds a 1sec delay.
+
+sleep 1.5
+echo -e '\e[1;33m'git "$@"'\e[0m' >> /tmp/slow-git.log
+exec /usr/bin/git "$@"

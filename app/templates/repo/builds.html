@@ -1,0 +1,31 @@
+{{define "Head"}}<title>Builds - {{.Repo.URI}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "RepoBody"}}
+<h1>Builds</h1>
+
+<p>To trigger a build for a specific commit, click the checkmark box next to the commit in the file browser or commits list.</p>
+
+<table class="table">
+	<thead>
+		<tr><th>Commit</th><th>Attempt</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th></tr>
+	</thead>
+	{{range .Builds}}
+	<tr class="{{buildClass .}}">
+		<td><a href="{{urlToRepoCommit .Repo .CommitID}}"><tt>{{truncateCommitID .CommitID}}</tt></a></td>
+		<th><a href="{{urlToRepoBuild .Repo .CommitID .Attempt}}">{{.Attempt}}</a></th>
+		<td>
+			{{buildStatus .}}
+			{{template "BuildPriorityLabel" .}}
+		</td>
+		<td>{{template "TimeAgo" .StartedAt}}</td>
+		<td>{{template "TimeAgo" .EndedAt}}</td>
+		<td>{{duration .StartedAt (minTime .EndedAt now)}}</td>
+		{{template "BuildLinkCells" .}}
+	</tr>
+	{{end}}
+</table>
+
+{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+{{end}}

@@ -1,0 +1,18 @@
+{{define "Head"}}<title>Welcome to Sourcegraph!</title>
+{{end}}
+
+{{define "Body"}}
+<div class="row">
+	<div class="col-md-offset-3 col-md-6">
+		<br>
+		<div class="well oauth-provider">
+			<h1>Welcome to Sourcegraph!</h1>
+			<p>To start using this Sourcegraph server, you must log in via <strong>{{.RootHostname}}</strong>. You can create an account if you do not already have one.</p>
+			<p>
+				<a href="{{urlToWithReturnTo "log-in" .ReturnTo}}" id="continue-oauth" class="btn btn-success btn-lg"><i class="octicon octicon-key"></i> Sign in</a>
+			</p>
+			<div class="clearfix"></div>
+		</div>
+	</div>
+</div>
+{{end}}

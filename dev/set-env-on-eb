@@ -1,0 +1,1 @@
+grep '^env' /etc/init/nodejs.conf | sed 's/^env/export/g'

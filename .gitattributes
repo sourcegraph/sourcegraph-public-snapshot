@@ -1,0 +1,4 @@
+/app/node_modules/**/* -diff
+/app/vendor/**/* -diff
+/grapher/javascript/node_modules/**/* -diff
+# /Godeps/_workspace/**/* -diff

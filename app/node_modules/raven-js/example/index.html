@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+    <title>Scratch Disk</title>
+</head>
+<script src="../vendor/TraceKit/tracekit.js"></script>
+<script src="../src/raven.js"></script>
+<!-- <script src="scratch.min.js"></script> -->
+<script src="scratch.js" crossorigin></script>
+<script src="file.min.js" crossorigin></script>
+<script>
+//cool
+//really cool
+//awesome
+Raven.config('http://50dbe04cd1224d439e9c49bf1d0464df@localhost:8000/1', {
+    whitelistUrls: [
+        /localhost/
+    ],
+    dataCallback: function(data) {
+        console.log(data);
+        return data;
+    }
+}).install();
+
+Raven.setUserContext({
+    email: 'matt@ydekproductions.com',
+    id: 5
+})
+
+</script>
+<body>
+<button id="test">Break me</button>
+<script>ready()</script>
+
+<button onclick="divide(1, 0)">Sourcemap breakage</button>
+<button onclick="derp()">window.onerror</button>
+<button onclick="testOptions()">test options</button>
+<button onclick="throwString()">throw string</button>
+
+</body>
+</html>

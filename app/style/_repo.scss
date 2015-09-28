@@ -1,0 +1,134 @@
+.navbar-header {
+	$repo-text-color: #636363;
+	.navbar-brand.repo {
+		font-size: 1.4em;
+		margin-right: 10px;
+		.repo-attr-icon {
+			font-size: 1.1em;
+			color: $repo-text-color;
+			margin-left: 1px;
+			margin-right: 5px;
+			vertical-align: middle;
+			display: inline-block;
+		}
+	.repo-link {
+		color: $repo-text-color;
+	}
+		.name {
+			font-weight: bold;
+		}
+	}
+}
+
+.repo-rev-switcher {
+	.search-section {
+		padding: 0 5px;
+		input {
+				width: 100%;
+				margin-bottom: -4px;
+		}
+	}
+	.list-section {
+		@include dropdown-list;
+		max-height: 360px;
+		overflow-y: scroll;
+		a {
+			cursor: pointer;
+			&:hover {
+				background-color: $light-blue;
+			}
+		}
+	}
+}
+
+.current-rev > a {
+	font-weight: bold !important;
+	& > i.fa {
+		padding-right: 3px;
+		margin-left: -10px;
+	}
+}
+
+.route-repo .subnav.repo .repo-link .name {
+	font-weight: bold;
+}
+
+.route-repo {
+	.panel-heading { font-weight: bold; }
+	.panel-heading a { color: #222; }
+}
+
+.fork, .mirror {
+	color: $gray-light;
+}
+
+// columns
+
+div.repo-body {
+	padding-top: 11px;
+
+	&.repo-body-full-width {
+		max-width: none;
+	}
+
+	.nav {
+		a {
+			color: $dark-blue;
+		}
+	}
+
+	h1 {
+		margin-top: 0;
+	}
+
+	& > .well {
+		margin-top: 30px;
+	}
+
+	.repo-meta {
+		margin-top: 0.75em;
+		margin-bottom: 1em;
+		position: relative;
+
+		.description {
+			position: absolute;
+			left: 1em;
+			font-size: $font-size-base * 1.05;
+			color: $gray-dark;
+		}
+	}
+
+	.clone-url-container {
+		position: absolute;
+		right: 1em;
+		width: 12em;
+
+		.clone-url {
+			cursor: copy;
+			background-color: white;
+		}
+	}
+}
+
+.alert-container {
+	padding: 0;
+	margin-bottom: 14px;
+	.alert-body {
+		padding: ($alert-padding - 2px) $alert-padding;
+		.btn {
+			margin-right: 4px;
+			font-weight: bold;
+		}
+		label {
+			font-weight: normal;
+		}
+	}
+	.alert-footer {
+		background-color: $panel-footer-bg;
+		border: solid 1px $table-border-color;
+		border-top-width: 0;
+		padding: $padding-small-vertical $alert-padding;
+		color: $gray;
+		font-size: $font-size-small;
+	}
+}

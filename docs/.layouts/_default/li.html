@@ -1,0 +1,4 @@
+<li>
+	<a href="{{ .Permalink }}">{{ .Title }}</a>
+	{{if not .Date.IsZero}}<div class="meta">{{ .Date.Format "Mon, Jan 2, 2006" }}</div>{{end}}
+</li>

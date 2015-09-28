@@ -1,0 +1,110 @@
+{{define "Title"}}Libraries - Sourcegraph Developer{{end}}
+
+{{define "Main"}}
+
+<link rel="stylesheet" href="{{.BaseURL}}static/font-mfizz-1.2/font-mfizz.css" />
+<!--[if lte IE 7]><link rel="stylesheet" href="{{.BaseURL}}static/font-mfizz-1.2/fontcustom-ie7.css" /><![endif]-->
+
+<style>
+/* div for preloading images */
+#preload {
+  display: none;
+  background-image: url({{.BaseURL}}static/img/gopher-hover.png);
+}
+.icon-go {
+  height: 1em;
+  margin-top: .125em;
+  margin-bottom: .125em;
+  background-size: cover;
+  background-image: url({{.BaseURL}}static/img/gopher.png);
+}
+.icon-go:hover {
+  background-image: url({{.BaseURL}}static/img/gopher-hover.png);
+}
+.languages {
+  margin-left: 2em;
+  margin-right: 2em;
+}
+.language {
+  margin: 1em;
+  display: inline-block;
+  text-align: center;
+}
+.language a:hover {
+  text-decoration: none;
+}
+.language i, .language .icon-go i {
+  line-height: 1.25em;
+  width: 1em;
+  display: block;
+  font-size: 100px;
+}
+h2 {
+  margin-left: 25px;
+}
+h5 {
+  width: 50%;
+  margin-left: 75px;
+  text-indent: -2.7em;
+}
+</style>
+
+<div id="preload"></div>
+
+<h1 id="pageTitle">Libraries</h1>
+
+<h2><a href="http://www.grpc.io/">gRPC</a> based libraries</h2>
+<h5>Note: <em>gRPC libraries cannot be used in browsers yet due to technical limitations. Instead, consider using the HTTP/1.1 based JavaScript library below.</em></h5>
+
+<div class="languages">
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/java-api"><i class="icon-java"></i> Java</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/go-api"><i class="icon-go"></i> Go</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/python-api"><i class="icon-python"></i> Python</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/nodejs-api"><i class="icon-nodejs"></i> Node.js</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/ruby-api"><i class="icon-ruby"></i> Ruby</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/c-api"><i class="icon-c"></i> C</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/cpp-api"><i class="icon-cplusplus"></i> C++</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/objc-api"><i class="icon-objc"></i> Obj-C</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/php-api"><i class="icon-php-alt"></i> PHP</a>
+  </div>
+
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/csharp-api"><i class="icon-csharp"></i> C#</a>
+  </div>
+</div>
+
+<h2>HTTP/1.1-based libraries (<a href="{{.BaseURL}}api#restful">coming soon</a>)</h2>
+<h5>Recommended for browser and client-side applications.</h5>
+
+<div class="languages">
+  <div class="language">
+    <a href="https://sourcegraph.com/sourcegraph/js-api"><i class="icon-javascript"></i> JavaScript</a>
+  </div>
+</div>
+
+{{end}}

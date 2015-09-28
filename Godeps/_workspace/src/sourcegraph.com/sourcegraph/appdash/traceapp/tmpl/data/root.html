@@ -1,0 +1,42 @@
+{{define "Title"}}appdash{{end}}
+
+{{define "Main"}}
+
+<style>
+.sub {
+  margin-left: 1em;
+  font-size: 16px;
+}
+.footer {
+  text-align: center;
+}
+.red-logo {
+  padding-top: 2.5em;
+}
+.red-spinner {
+  padding-top: 2.5em;
+}
+#big-btn {
+  margin: auto;
+  width: 21em;
+  padding-top: 5.5em;
+}
+#big-btn i {
+  line-height: 0; /* do not effect the height of the button */
+  font-size: 30px;
+  position: relative;
+  top: 3px;
+}
+</style>
+
+<img class="red-logo img-responsive center-block" src="/static/logo_red.png"></img>
+<h3 style="text-align: center;">Application tracing system for Go.</h3>
+<img class="red-spinner img-responsive center-block" src="/static/red_spinner.png"></img>
+
+<div id="big-btn">
+  <a href="/traces" class="btn btn-block btn-lg btn-danger">
+    <i class="fa fa-area-chart big-btn"></i> View Traces
+  </a>
+</div>
+
+{{end}}

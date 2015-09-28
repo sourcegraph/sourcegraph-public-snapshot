@@ -1,0 +1,21 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title HTML Tags
+  body
+    header
+      h1 HTML Tags
+    section#main-section.class1.class2 class=class3
+      #container
+        .wrapper
+          div Single text line can follow the tag name.
+          p..
+            This is a block text.
+            BR tags are inserted automatically.
+          a href=https://github.com Go to GitHub
+          input type=checkbox checked=
+    footer
+    script.
+      var msg = 'Hello Ace';
+      alert(msg);

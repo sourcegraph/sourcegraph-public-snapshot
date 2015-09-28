@@ -1,0 +1,64 @@
+{{define "Commit"}}
+{{if .AuthorPerson}}<a class="pull-left" {{if not .AuthorPerson.Transient}}href="{{urlToUser .AuthorPerson.Login}}"{{end}}><img class="media-object avatar img-rounded" src="{{.AuthorPerson.AvatarURL}}"></a>{{end}}
+<div class="media-body">
+	{{template "commitLinks" $}}
+	<h4 class="media-heading commit-title">
+		<a href="{{urlToRepoCommit .RepoURI .ID}}" title="{{.Message}}">{{commitSummary .Message}}</a>
+	</h4>
+	<p class="author committer">
+		{{if .AuthorPerson}}<cite>{{template "PersonLink" .AuthorPerson}}</cite>{{end}} <span class="date">authored {{template "TimeAgo" .Author.Date}}</span>
+		{{if .CommitterPerson}}
+		<span class="sep">&</span>
+		<cite>{{template "PersonLink" .CommitterPerson}}</cite> <span class="date">committed {{template "TimeAgo" .Committer.Date}}</span>
+		{{end}}
+	</p>
+</div>
+{{end}}
+
+{{/* TreeTopCommit is a commit displayed on top of a tree (e.g., a dir listing). */}}
+{{define "TreeTopCommit"}}
+{{template "commitLinks" $}}
+<h4 class="commit-title" title="{{.Message}}"><a href="{{urlToRepoCommit .RepoURI .ID}}">{{commitSummary .Message}}</a></h4>
+{{if .AuthorPerson}}{{/* AuthorPerson should never be nil in any circumstances, except for tests. */}}
+<div class="last-commit">
+	<a class="pull-left" {{if not .AuthorPerson.Transient}}href="{{urlToUser .AuthorPerson.Login}}"{{end}}>
+	<img class="avatar" src="{{.AuthorPerson.AvatarURL}}"></a>
+	<div class="pull-left">
+		<p class="author committer">
+			<cite>{{template "PersonLink" .AuthorPerson}}</cite> <span class="date">authored {{template "TimeAgo" .Author.Date}}</span>
+			{{if .CommitterPerson}}
+				<span class="sep">&</span>
+				<cite>{{template "PersonLink" .CommitterPerson}}</cite> <span class="date">committed {{template "TimeAgo" .Committer.Date}}</span>
+			{{end}}
+		</p>
+	</div>
+	<div class="commit-id pull-right">
+		<span class="vcs-ref">commit</span>
+		<a data-tooltip title="View commit diff" class="commit-id vcs-ref" href="{{urlToRepoCommit .RepoURI .ID}}">{{truncateCommitID .ID}}</a>
+		<!--<a data-tooltip title="Browse files as of this commit" class="files-at-commit vcs-ref" href="{{urlToRepoTreeEntry .RepoURI .ID "."}}"><i class="fa fa-file-o"></i></a> -->
+	</div>
+</div>
+{{end}}
+{{end}}
+
+{{define "commitLinks"}}
+<div class="pull-right repo-build">
+	<div data-react="RepoBuildIndicator" data-label="yes" data-uri="{{.RepoURI}}" data-rev="{{.ID}}" data-buildable="{{autoBuild}}"></div>
+</div>
+{{end}}
+
+{{define "CommitDays"}}
+{{/* CommitDays produces an ordered list of commits, grouped by day. */}}
+<ol class="commit-days list-unstyled">
+	{{range . }}
+	<li class="commit-day">
+		<span class="commit-day-start">{{template "Date" .Start}}</span>
+		<ol class="media-list commits">
+			{{range .Commits}}
+			<li class="media commit">{{template "Commit" .}}</li>
+			{{end}}
+		</ol>
+	</li>
+	{{end}}
+</ol>
+{{end}}

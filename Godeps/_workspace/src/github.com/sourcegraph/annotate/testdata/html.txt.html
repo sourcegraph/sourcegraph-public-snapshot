@@ -1,0 +1,32 @@
+function Animal(name) {
+  this.name = name;
+}
+
+Animal.prototype.sayHello = function() {
+  return &#39;Hello from &#39; + this.name;
+};
+
+Animal.prototype.makeNoise = function() {
+  return this.noise || <1>&#39;&lt;chirp&gt;&#39;;</1>
+};
+
+function Dog(name, breed) {
+  this.name = name;
+  this.breed = breed;
+  this.noise = &#39;Woof!&#39;;
+}
+
+Dog.prototype = new Animal();
+
+<WOOF>Dog</WOOF>.prototype.sayExtendedHello = function() {
+  return this.sayHello() + &#39;, &#39; + this.breed;
+};
+
+Dog.prototype.bark = function() {
+  return this.noise;
+};
+
+module.exports = {
+  Animal: Animal,
+  Dog: Dog,
+};

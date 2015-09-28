@@ -1,0 +1,16 @@
+<div class="menu">
+	<h1 id="title"><a href="{{.Site.BaseURL}}">{{ .Title }}</a></h1>
+	{{range $.Site.Params.SectionOrder}}
+		{{ $section := . }}
+		{{ range $.Site.Pages.GroupBy "Section" }}{{if eq .Key $section}}
+			<h3>{{with index $.Site.Params.SectionNames .Key}}{{.}}{{else}}{{title .Key}}{{end}}</h3>
+			<ul>
+				{{ range .Pages }}
+					<li>
+						<a href="{{ .Permalink }}">{{ .Title }}</a>
+					</li>
+				{{ end }}
+			</ul>
+		{{end}}{{end}}
+	{{end}}
+</div>

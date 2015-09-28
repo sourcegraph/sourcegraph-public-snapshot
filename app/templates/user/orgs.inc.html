@@ -1,0 +1,28 @@
+{{define "PersonOrgsHeading"}}
+<div class="panel-heading">
+	<span class="capitalize-first">{{template "personPossessive" $}}</span> organizations
+</div>
+{{end}}
+
+{{define "PersonOrgs"}}
+{{$user := .User}}
+<div class="panel panel-default panel-main">
+	{{template "PersonOrgsHeading" $}}
+	{{if hasField . "Orgs"}}
+	{{if len .Orgs}}
+	<ol class="orgs list-group panel-body">
+		{{range .Orgs}}
+		<li class="org list-group-item">
+			{{template "UserLink" .Login}}
+		</li>
+		{{end}}
+	</ol>
+	{{if .PageLinks}}{{template "Pagination" .PageLinks}}{{end}}
+	{{else}}
+	<div class="panel-footer">
+		No organizations found.
+	</div>
+	{{end}}
+	{{end}}
+</div>
+{{end}}

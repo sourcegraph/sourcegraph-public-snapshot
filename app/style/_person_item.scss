@@ -1,0 +1,6 @@
+.person-item {
+	img.avatar {
+		@include square(32px);
+		border-radius: $border-radius-large;
+	}
+}

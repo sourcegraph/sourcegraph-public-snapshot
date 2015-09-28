@@ -1,0 +1,12 @@
+{{define "Body"}}
+<div class="container liveblog-container">
+	<div class="row">
+		<div class="col-md-2"></div>
+		<div class="col-md-8">{{.BlogBanner}}</div>
+		<div class="col-md-2"></div>
+	</div>
+	<div class="blog-body">
+		{{template "BlogBody" .}}
+	</div>
+</div>
+{{end}}

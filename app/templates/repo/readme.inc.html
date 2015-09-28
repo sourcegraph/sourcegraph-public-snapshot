@@ -1,0 +1,13 @@
+{{define "RepoReadme"}}
+{{if .Readme}}
+<div class="plain-file readme panel panel-default">
+	<div class="panel-heading readme-file">
+		<i class="fa fa-book"></i> {{.Readme.Path}}
+	</div>
+	<div class="panel-body theme-default repo-doc-body">
+		{{sanitizeHTML .Readme.HTML}}
+	</div>
+</div>
+
+{{end}}
+{{end}}

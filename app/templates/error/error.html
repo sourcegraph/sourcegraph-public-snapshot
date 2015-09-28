@@ -1,0 +1,14 @@
+{{define "Head"}}<title>{{.StatusCode}} {{.Status}} - Sourcegraph</title>{{end}}
+
+{{define "Body"}}
+<div class="error-page">
+	<h1>
+		<span class="status-code">{{.StatusCode}} </span>
+		<span class="status-message">{{.Status}}</span>
+	</h1>
+	{{template "ErrorCommon" $}}
+</div>
+{{end}}
+
+{{define "PJAX"}}<p>{{.StatusCode}} {{.Status}}</p>{{end}}
+{{define "RepoPJAX"}}<p>{{.StatusCode}} {{.Status}}</p>{{end}}

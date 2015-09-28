@@ -1,0 +1,8 @@
+# language doesn't matter, we're only using phantom.js
+language: node_js
+node_js:
+    - "0.10"
+script:
+    - ./node_modules/.bin/grunt test build
+notifications:
+    irc: "irc.freenode.org#sentry"

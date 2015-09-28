@@ -1,0 +1,66 @@
+{{define "Head"}}<title>Sourcegraph</title>
+{{end}}
+
+{{define "Body"}}
+<div class="row">
+	<div class="col-md-12">
+		<br />
+		<br />
+
+		<h3>Add a repository:</h3>
+
+		<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+			<div class="panel panel-default">
+				<div class="panel-heading" role="tab" id="local">
+					<h4 class="panel-title">
+						<a role="button" data-toggle="collapse" data-parent="#accordion" href="#localCollapse" aria-expanded="true" aria-controls="localCollapse">Local repository</a>
+					</h4>
+				</div>
+				<div id="localCollapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="local">
+					<div class="panel-body">
+						<br />
+						<code class="well">
+							<span class="noselect">$</span> SGPATH={{.SGPath}} src repo link <span class="code-box" data-tooltip title="Name of repo, such as 'myrepo' or 'myteam/myrepo'">&lt;repo-name&gt;</span> -p <span class="code-box">&lt;path/to/repo&gt;</span>
+						</code>
+						<br />
+						<br />
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading" role="tab" id="publicGitHub">
+					<h4 class="panel-title">
+						<a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#publicGitHubCollapse" aria-expanded="false" aria-controls="publicGitHubCollapse">Public GitHub repository</a>
+					</h4>
+				</div>
+				<div id="publicGitHubCollapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="publicGitHub">
+					<div class="panel-body">
+						<br />
+						<code class="well">
+							<span class="noselect">$</span> src repo create -m --clone-url=<span class="code-box" data-tooltip title="Repo URL">&lt;https://github.com/...&gt;</span> <span class="code-box" data-tooltip title="Full import path, e.g. github.com/gorilla/mux">&lt;repo-name&gt;</span>
+						</code>
+						<br />
+						<br />
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading" role="tab" id="privateGitHub">
+					<h4 class="panel-title">
+						<a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#privateGitHubCollapse" aria-expanded="false" aria-controls="privateGitHubCollapse">Private GitHub repository</a>
+					</h4>
+				</div>
+				<div id="privateGitHubCollapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="privateGitHub">
+					<div class="panel-body">
+						{{if .CurrentUser}}
+						<a href="{{urlToUserSubroute "person.settings.integrations" .CurrentUser.Login}}">Add a personal access token.</a>
+						{{else}}
+						<p>You need to login to do this.</p>
+						{{end}}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{{end}}

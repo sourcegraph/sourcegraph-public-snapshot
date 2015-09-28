@@ -1,0 +1,18 @@
+.plain-file {
+	margin-top: 22px;
+
+	& > .panel-heading {
+		font-size: 1.0em;
+		color: #333;
+		i { margin-right: 5px; }
+	}
+
+	& > .panel-body {
+		& > pre {
+			border: none;
+		}
+		table {
+			overflow: auto;
+		}
+	}
+}

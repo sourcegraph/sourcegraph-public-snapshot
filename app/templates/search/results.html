@@ -1,0 +1,7 @@
+{{define "Head"}}<title>{{.SearchOptions.Query}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+{{template "SearchResults" $}}
+{{end}}

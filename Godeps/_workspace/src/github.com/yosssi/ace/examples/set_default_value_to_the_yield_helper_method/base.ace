@@ -1,0 +1,11 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title Set a Default Value to the Yield Helper Method
+  body
+    h1 This is a base template
+    = yield main
+      | This message is rendered if the "main" content is not defined in the inner template.
+    = yield sub
+      | This message is rendered if the "sub" content is not defined in the inner template.

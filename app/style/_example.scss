@@ -1,0 +1,10 @@
+ol.examples {
+	li {
+		max-width:900px;
+		div.alert-warning {
+			margin: 0;
+			padding: $padding-small-vertical $padding-small-horizontal;
+			font-size: $font-size-small;
+		}
+	}
+}

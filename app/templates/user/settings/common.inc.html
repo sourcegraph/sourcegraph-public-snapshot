@@ -1,0 +1,59 @@
+{{define "Body"}}
+<div class="padded-container">
+	<div class="row">
+		<div class="col-sm-3 sidebar">
+			{{template "settingsSidebar" $}}
+		</div>
+		<div class="col-sm-9">
+			{{template "PersonSettingsBody" $}}
+		</div>
+	</div>
+</div>
+{{end}}
+
+{{define "settingsSidebar"}}
+<div class="panel-group orgs-and-self">
+	{{$currentURI := .CurrentURI}}
+	{{$currentlyDisplayedUserOrOrg := .User}}
+	{{range .OrgsAndSelf}}
+	<div class="panel panel-main panel-default adminable {{if .IsOrganization}}org{{else}}self{{end}}" data-name="{{.Login}}">
+		<div class="panel-heading">
+			<a href="{{urlToUserSubroute "person.settings.profile" .Login}}">
+				{{if .AvatarURL}}<img src="{{.AvatarURL}}" class="avatar img-rounded">{{end}}
+				{{.Login}}
+			</a>
+		</div>
+		{{if eq $currentlyDisplayedUserOrOrg.UID .UID}}
+		<ul class="list-group">
+			<a href="{{urlToUserSubroute "person.settings.profile" .Login}}">
+				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.profile" .Login).String)}}active{{end}}">
+					{{if .IsOrganization}}Organization profile{{else}}Profile{{end}}
+				</li>
+			</a>
+			{{if not appconf.DisableIntegrations}}
+			<a href="{{urlToUserSubroute "person.settings.integrations" .Login}}">
+				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.integrations" .Login).String)}}active{{end}}">
+					Integrations
+				</li>
+			</a>
+			{{end}}
+			{{if not .IsOrganization}}
+			<a href="{{urlToUserSubroute "person.settings.emails" .Login}}">
+				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.emails" .Login).String)}}active{{end}}">
+					Emails
+				</li>
+			</a>
+			{{end}}
+			{{if not .IsOrganization}}
+			<a href="{{urlToUserSubroute "person.settings.auth" .Login}}">
+				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.auth" .Login).String)}}active{{end}}">
+					Authentication
+				</li>
+			</a>
+			{{end}}
+		</ul>
+		{{end}}
+	</div>
+	{{end}}
+</div>
+{{end}}

@@ -1,0 +1,56 @@
+/vagrant_ansible_inventory_default
+/.vagrant
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.\#*
+
+# Go
+*.o
+*.a
+*.so
+
+# Mac OS X
+.DS_Store
+
+# Python
+*.py[cod]
+__pycache__
+
+# langkit
+/workspace/
+
+# Test binaries
+*.test
+
+.srclib-cache
+.srclib-store
+
+grapher/python/pysonar2/tests
+grapher/ruby/rubysonar/target
+grapher/ruby/rubysonar/dependency-reduced-pom.xml
+grapher/ruby/yard/.bundle
+npm-debug.log
+.codemod.bookmark
+.elasticbeanstalk/
+Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
+
+.tmp/*.jar
+
+app/node_modules/jsdom/node_modules/contextify/build/
+app/node_modules/node-sass/vendor
+eb-bundle.zip
+
+app/assets/bindata.go
+app/templates/bindata.go
+*_vfsdata.go
+
+/release/
+
+/conf/private
+
+/provision/kubernetes/gen
+/docker/src

@@ -1,0 +1,20 @@
+site_name: "Surf - Stateful programmatic web browsing in Go"
+repo_url: "https://github.com/headzoo/surf"
+site_author: "Sean Hickey"
+copyright: "2015, Sean Hickey"
+markdown_extensions: [fenced_code]
+theme: "readthedocs"
+
+pages:
+- ["index.md", "Home"]
+- ["overview.md", "User Guide", "Overview"]
+- ["settings.md", "User Guide", "Settings"]
+- ["user_agents.md", "User Guide", "User Agents"]
+- ["debugging.md", "User Guide", "Debugging"]
+- ["api/packages/surf.md", "Packages", "surf"]
+- ["api/packages/browser.md", "Packages", "browser"]
+- ["api/packages/agent.md", "Packages", "agent"]
+- ["api/packages/jar.md", "Packages", "jar"]
+- ["api/packages/util.md", "Packages", "util"]
+- ["about/credits.md", "About", "Credits"]
+- ["about/license.md", "About", "License"]

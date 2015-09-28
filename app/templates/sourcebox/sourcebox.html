@@ -1,0 +1,40 @@
+{{define "ROOT"}}
+<div class="sourcegraph-sourcebox">
+	<table class="line-numbered-code theme-default">
+		<tbody>
+			{{range $index, $line := .Lines}}
+				<tr class="line">
+					{{if $.LineNumbers}}
+						{{$currentLine := (add $index $.StartLine)}}
+						<td class="line-number"><a href="{{absURL $.AppURL (urlToRepoTreeEntrySubroute "repo.tree" $.EntrySpec.RepoRev.URI $.EntrySpec.RepoRev.CommitID $.EntrySpec.Path)}}#startline={{$currentLine}}&endline={{$currentLine}}">{{$currentLine}}</a></td>
+					{{end}}
+					<td class="line-content">{{ range $token := $line.Tokens }}{{/*
+						*/}}{{ if $token.URL }}<a href="{{$.AppURL}}{{index $token.URL 0}}" class="defn-popover"><span class="{{$token.Class}}">{{ $token.Label }}</span></a>{{/*
+						*/}}{{ else }}<span class="{{$token.Class}}">{{ $token.Label }}</span>{{ end }}{{/*
+						*/}}{{ end }} </td>
+				</tr>
+			{{end}}
+		</tbody>
+	</table>
+	{{if or (eq .FooterStyle "full") (eq .FooterStyle "path")}}
+		<div class="sourcegraph-footer">
+			{{if eq .FooterStyle "full"}}
+				<div class="view">
+					<a target="_blank" href="{{if .Def}}{{absURL .AppURL (urlToDef .Def.DefKey)}}{{else}}{{absURL .AppURL (urlToRepoTreeEntrySubroute "repo.tree" .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.CommitID .EntrySpec.Path)}}{{end}}">View in context</a>
+				</div>
+			{{end}}
+			{{if .Def}}
+				{{.Def.Fmt.DefKeyword}}
+				<a href="{{absURL .AppURL (urlToDef .Def.DefKey)}}" class="defn defn-popover">{{defQualifiedName .Def "scope"}}</a>
+			{{else}}
+				<a href="{{absURL .AppURL (urlToRepoTreeEntrySubroute "repo.tree" .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.CommitID .EntrySpec.Path)}}">{{trimPrefix .EntrySpec.Path "/"}}</a>
+			{{end}}
+			<span class="in">in</span>
+			{{template "RepoLink" (absRepoLink .AppURL .EntrySpec.RepoRev.URI)}}{{if eq .FooterStyle "path"}}<span class="sep">/</span>{{template "Breadcrumb" (absSnippetToBreadcrumb .AppURL .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.CommitID .EntrySpec.Path .StartLine .EndLine nil false)}}{{end}}
+			{{if eq .FooterStyle "full"}}
+				<span class="hosted">on <a class="brand" href="{{absURL .AppURL (urlTo "home")}}">&#x2731; Sourcegraph</a></span>
+			{{end}}
+		</div>
+	{{end}}
+</div>
+{{end}}

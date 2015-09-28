@@ -1,0 +1,718 @@
+h1.changeset-title {
+	font-family: $home-header-font;
+	font-size: 26px;
+	margin: 15px 0 0 0;
+
+	.title-edit {
+		cursor: pointer;
+		display: inline-block;
+		margin: 0 0 0 10px;
+		position: relative;
+		top: -3px;
+	}
+
+	span.changeset-id {
+		font-size: 22px;
+		color: #bfbfbf;
+		display: inline-block;
+		margin-right: 5px;
+	}
+}
+
+.title-editing {
+	.input-title {
+		font-family: $home-header-font;
+		font-size: 26px;
+		padding: 0px 10px;
+		width: 400px;
+		border: 1px solid #ddd;
+	}
+
+	.btn {
+		margin-top: -5px;
+	}
+}
+
+.code-review-inner {
+	margin-top: 15px;
+	word-break: break-word;
+
+	.changeset-subtitle {
+		margin-top: 10px;
+		font-size: 13px;
+
+		.changeset-status {
+			margin: 0 10px 0 0;
+			font-size: 13px;
+		}
+
+		.branch {
+			display: inline-block;
+			border: 1px solid #e9e9e9;
+			border-radius: 3px;
+			padding-left: 5px;
+			font-family: $code-font-family;
+			font-size: 11px;
+			background: #fafafa;
+			margin: 0 7px 0 5px;
+			border-width: 1px 0 1px 1px;
+
+			.build-indicator {
+				margin-left: 5px;
+				border-top-left-radius: 0px;
+				border-bottom-left-radius: 0px;
+				padding: 0 4px;
+				margin-right: -2px;
+			}
+		}
+
+	}
+
+	.changeset-tabs {
+		margin-top: 25px;
+
+		li {
+			a {
+				cursor: pointer;
+				color: #666;
+
+				.octicon {
+					&.octicon-alert {
+						&:before {
+							font-size: 13px;
+						}
+						margin-left: 8px;
+					}
+
+					margin-right: 3px;
+				}
+
+				.fa-spinner {
+					display: none;
+				}
+
+				&:hover {
+					background-color: #fff;
+					color: #000;
+				}
+			}
+
+			&.active.loading {
+				a .fa-spinner {
+					display: inline-block;
+					margin-left: 10px
+				}
+			}
+
+			&.active {
+				a {
+					color: #000;
+				}
+			}
+		}
+	}
+
+	.changeset-status {
+		display: inline-block;
+		padding: 3px 13px;
+		font-size: 13px;
+		cursor: pointer;
+		margin-left: 3px;
+		border: 1px solid #dedede;
+		border-radius: 3px;
+
+		&.status-merged {
+			&.selected, &:hover {
+				background-color: #6e5494;
+				border-color: darken(#6e5494, 15%);
+				color: #fff;
+			}
+		}
+
+		&.status-open {
+			&.selected, &:hover {
+				background-color: #5cb85c;
+				border-color: #4cae4c;
+				color: #fff;
+			}
+		}
+
+		&.status-closed {
+			&.selected, &:hover {
+				background-color: #767676;
+				border-color: darken(#767676, 15%);
+				color: #fff;
+			}
+		}
+
+		&:hover {
+			cursor: pointer;
+		}
+	}
+
+	.changeset-timeline {
+		&:after {
+			content: ".";
+			display: block;
+			visibility: hidden;
+			width: 0;
+			height: 0;
+			clear: both;
+		}
+
+		.warning {
+			color: #bd2c00;
+			font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+			font-size: 12px;
+		}
+
+		.left-panel {
+			border-left: 1px solid #e3e3e3;
+			margin: 25px 0px 30px 25px;
+			padding-left: 20px;
+			width: 65%;
+			float: left;
+		}
+
+		.right-panel {
+			border-left: 1px solid #eee;
+			float: left;
+			width: 32.5%;
+			padding: 20px 0 50px 20px;
+		}
+
+		.changeset-control-panel {
+			.panel-label {
+				display: block;
+				margin: 0 0 5px 3px;
+			}
+
+			.status-options {
+				width: 150px;
+			}
+		}
+
+		.changeset-timeline-block {
+			position: relative;
+			table-layout: fixed;
+
+			.changeset-timeline-icon {
+				position: absolute;
+				left: -28px;
+				background: #fff;
+			}
+		}
+
+		.timeline-review {
+			.timeline-header-message {
+				i {
+					color: #888;
+				}
+			}
+
+			.review-body {
+				margin-top: 10px;
+			}
+
+			.file-name {
+				margin: 10px 0 5px 0;
+				i { margin-right: 3px; }
+			}
+
+			.comment-file-group {
+				border-bottom: 1px solid #dedede;
+				width: 660px;
+
+				.comment-group {
+					width: 100%;
+
+					.comment {
+						border: 1px solid #dedede;
+						border-width: 1px 1px 0 1px;
+
+						.comment-line-number {
+							cursor: pointer;
+							text-align: right;
+							background: #eee;
+							display: inline-block;
+							width: 60px;
+							padding: 5px 10px 5px 0;
+							font-size: 11px;
+						}
+
+						.markdown-view {
+							padding: 0 0 0 10px;
+						}
+
+						.comment-body {
+							text-align: left;
+							width: 100%;
+						}
+
+						.comment-body-inner {
+							margin: 2px 0;
+							line-height: 21px;
+						}
+					}
+				}
+			}
+		}
+
+		.changeset-timeline-header {
+			&.timeline-review {
+				.changeset-timeline-icon {
+					span {
+						&:before { left: 10px; }
+						background-color: lighten($sg-blue-color, 35%);
+						color: lighten($sg-blue-color, 17%);
+					}
+				}
+			}
+
+			&.timeline-event {
+				.timeline-header-message {
+					padding-bottom: 28px;
+				}
+			}
+
+			&.timeline-commit {
+				.changeset-timeline-icon {
+					span {
+						background-color: lighten(#5cb85c, 35%);
+						color: #5cb85c;
+					}
+				}
+				.header {
+					margin: 15px 0 0 10px;
+				}
+				.user-icon {
+					width: 18px;
+					height: 18px;
+					margin: -2px 7px 0 0;
+				}
+				.commit-id {
+					font-family: $code-font-family;
+					color: #666;
+				}
+			}
+
+			.changeset-timeline-icon {
+				left: -38px;
+				margin-top: 9px;
+				padding-top: 0;
+
+				span {
+					&:before {
+						position: relative;
+						top: 11px;
+						left: 11px;
+					}
+
+					&.octicon-git-merge:before {
+						left: 13px;
+					}
+
+					&.octicon-x:before {
+						left: 12px;
+					}
+
+					&.octicon-git-commit:before, &.octicon-issue-opened:before {
+						left: 10px;
+					}
+
+					color: #999;
+					border-radius: 24px;
+					width: 34px;
+					height: 34px;
+					background-color: #efefef;
+				}
+			}
+
+			.timeline-header-message {
+				padding: 15px 20px 20px 6px;
+
+				.markdown-view {
+					padding: 10px 10px 0 10px;
+				}
+			}
+		}
+
+		.changeset-timeline-icon {
+			color: #cacaca;
+			line-height: 12px;
+			padding-top: 3px;
+
+			span {
+				line-height: 12px;
+			}
+		}
+	}
+
+	.changeset-description {
+		position: relative;
+		bottom: 10px;
+	}
+
+	.date {
+		display: inline-block;
+		margin-left: 5px;
+		font-style: italic;
+		color: #999;
+	}
+
+	.changeset-submit-review {
+		position: relative;
+		top: 10px;
+
+		&:hover {
+			cursor: pointer;
+
+			.changeset-icon-submit a {
+				@include scale(1.2);
+			}
+		}
+
+		.changeset-review-submit-form {
+			td {
+				position: relative;
+				left: -35px;
+				top: 30px;
+				background-color: #fff;
+
+				textarea, .markdown-view {
+					border: 1px solid #ddd;
+					width: 700px;
+					height: 150px;
+					padding: 10px;
+				}
+
+				.markdown-view { height: auto; }
+
+				.actions {
+					text-align: right;
+					margin: 10px 0 15px 0;
+				}
+			}
+		}
+
+		.changeset-timeline-icon.changeset-icon-submit {
+			a {
+				display: inline-block;
+				@include transition(0.1s all ease-in);
+
+				span {
+					&:before { left: 12px; }
+					color: #fff;
+					background-color: $sg-blue-color;
+				}
+			}
+		}
+	}
+
+	.filter-warning {
+		.fa-warning {
+			color: #dd9b00;
+			font-size: 24px;
+			float: left;
+			vertical-align: middle;
+			margin-right: 15px;
+		}
+
+		color: #555;
+		margin-top: 20px;
+		border: 1px solid darken($light-blue, 6.5%);
+		background: $light-blue;
+		border-radius: 3px;
+		padding: 20px 25px;
+	}
+
+	.file-diff-hunk {
+		.line:hover {
+			.line-comment {
+				display: table-row;
+			}
+		}
+
+		.line:hover {
+			.btn-inline-comment {
+				display: inline-block;
+			}
+		}
+
+		.comment-thread {
+			border-top: 1px solid #eee;
+		}
+
+		.comment-container {
+			&:first-child {
+				border-top: 1px solid #eee;
+			}
+
+			border-bottom: 1px solid #eee;
+		}
+
+		.inline-comment {
+			padding: 10px;
+			font-family: $regular-font;
+
+			&.draft-form {
+				border: 1px solid #eee;
+				border-width: 1px 0;
+			}
+
+			.label-draft {
+				background: #ededed;
+				padding: 3px 5px;
+				line-height: 10px;
+				color: #888;
+				text-transform: uppercase;
+				font-size: 11px;
+				margin-left: 5px;
+				display: inline-block;
+			}
+
+			.draft-help {
+				color: #666;
+				cursor: pointer;
+			}
+
+			.comment-body {
+				padding: 5px 0 0 0;
+
+				.markdown-view {
+					padding: 10px 0;
+				}
+			}
+
+			.comment-edit-wrapper {
+				display: block;
+				margin: 10px 0 10px 0;
+			}
+
+			.comment-actions {
+				padding: 15px 0 5px 0;
+				display: inline-block;
+				position: absolute;
+				top: 0px;
+				right: 10px;
+
+				a {
+					margin-right: 10px;
+					cursor: pointer;
+				}
+			}
+
+			textarea, .markdown-textarea .markdown-view {
+				width: 450px;
+				height: 80px;
+				padding: 5px;
+				border: 1px solid #dedede;
+				margin-bottom: 5px;
+			}
+
+			.markdown-textarea .markdown-view {
+				height: auto;
+			}
+		}
+
+		.comment-add-note {
+			padding: 10px 0 10px 5px;
+			border-top: 1px solid #eee;
+			background-color: #fefefe;
+
+			a {
+				font-size: 12px;
+				cursor: pointer;
+
+				&:hover {
+					text-decoration: none;
+				}
+			}
+		}
+
+		.line-number {
+			position: relative;
+			overflow: visible;
+
+			.btn-inline-comment {
+				background-color: $sg-blue-color;
+				border-radius: 3px;
+				color: #fff;
+				text-align: center;
+				box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+				width: 16px;
+				height: 16px;
+				display: none;
+				padding: 0 0 0 1px;
+				cursor: pointer;
+				position: absolute;
+				right: -9px;
+				top: 1px;
+
+				span {
+					font-size: 13px;
+				}
+			}
+		}
+	}
+}
+
+.changeset-empty-list {
+	text-align: center;
+	color: #999;
+	padding: 100px 0;
+	font-size: 20px;
+	font-family: $home-header-font;
+	border-bottom: 1px solid #eee;
+}
+
+.changeset-list {
+	position: relative;
+
+	.btn.compare-review {
+		span.octicon {
+			margin-right: 3px;
+		}
+
+		position: absolute;
+		top: 15px;
+		right: 5px;
+		font-size: 14px;
+	}
+
+	.changeset-tabs.nav {
+		padding: 15px 0 0 0;
+
+		li {
+			a {
+				span {
+					margin-right: 7px;
+				}
+			}
+		}
+	}
+
+	.changeset-list-tab-content {
+		padding: 5px 0 0 0;
+
+		table {
+			width: 100%;
+
+			tr {
+				td {
+					vertical-align: top;
+					text-align: left;
+					padding: 10px 0;
+					border-bottom: 1px solid #eee;
+
+					&.table-cell-id {
+						width: 35px;
+					}
+
+					&.table-cell-time {
+						vertical-align: middle;
+						width: 150px;
+					}
+
+					.changeset-id, .changeset-id a {
+						&:hover { text-decoration: none; }
+						font-size: 21px;
+						line-height: 24px;
+						color: #bfbfbf;
+						padding: 5px;
+					}
+
+					.changeset-title {
+						font-family: $home-header-font;
+						font-size: 19px;
+						line-height: 24px;
+						padding: 5px 0 0 5px;
+					}
+
+					.changeset-spec {
+						display: inline-block;
+						padding: 0 0 0 5px;
+					}
+
+					.changeset-author {
+						font-style: italic;
+						color: #888;
+						display: inline-block;
+					}
+
+					.changeset-time {
+						font-style: italic;
+						color: #888;
+						display: inline-block;
+						padding: 5px 0 0 0;
+					}
+				}
+			}
+		}
+	}
+}
+
+.changeset-not-found {
+	#close-changeset {
+		cursor: pointer;
+	}
+
+	h1 {
+		margin: 20px 0 0 0 !important;
+		font-family: $home-header-font;
+
+		span.changeset-id {
+			display: inline-block;
+			margin-right: 5px;
+		}
+	}
+
+	p.description {
+		margin: 10px 0 0 0;
+	}
+
+	p.subtitle {
+		margin: 3px 0 0 0;
+	}
+}
+
+.markdown-view {
+	white-space: normal;
+	min-height: 20px;
+	padding: 10px;
+
+	img {
+		max-width: 100%;
+	}
+}
+
+.btn.btn-default.close-changeset-button {
+	margin: 10px 0 0 0;
+}
+
+.markdown-textarea {
+	white-space: normal;
+
+	.tab-content {
+		.tab-edit, .tab-preview { display: none; }
+		&.show-edit .tab-edit { display: block; }
+		&.show-preview .tab-preview { display: block; }
+	}
+
+	.markdown-view {
+		border: 1px solid #eee;
+		padding: 5px;
+	}
+
+	textarea {
+		border: 1px solid #eee;
+	}
+
+	.nav-tabs {
+		border-bottom: none;
+
+		a {
+			cursor: pointer;
+		}
+	}
+}

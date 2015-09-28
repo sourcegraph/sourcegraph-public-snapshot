@@ -1,0 +1,172 @@
+// table.delta-counts is a table showing diffstats for multiple items.
+table.delta-counts {
+	margin-bottom: $grid-gutter-width/2;
+	// delta-item-counts is a box showing # added/changed/deleted.
+	.delta-item-counts {
+		& > td {
+			padding-top: $padding-base-vertical;
+			padding-bottom: $padding-base-vertical;
+
+			padding-left: $padding-base-horizontal;
+			padding-right: $padding-base-horizontal;
+
+			$border-width: 1px;
+			&:first-child {
+				border-radius: $border-radius-base 0 0 $border-radius-base;
+				border-left-width: $border-width !important;
+			}
+			&:last-child {
+				border-radius: 0 $border-radius-base $border-radius-base 0;
+				border-right-width: $border-width !important;
+			}
+
+			&.scope {
+				&.total { font-weight: bold; }
+				padding-right: $padding-base-horizontal;
+				border: solid $border-width #bbb;
+				color: $gray-dark;
+			}
+
+			&.diffstat-cell {
+				border: solid $border-width #bbb;
+				border-left-width: 0;
+			}
+		}
+	}
+}
+
+// delta-list-item is a single changed item in a list of changed items (such as an added def or a deleted file).
+.delta-list-item {
+	&, a { color: $text-quieted; }
+	.name {
+		color: $text-color;
+		font-weight: bold;
+	}
+
+	i {
+		padding-right: $padding-base-horizontal;
+	}
+
+	$background-lighten: 50%;
+	border-left: solid 4px transparent;
+	&.added {
+		border-color: $diff-added-color;
+		background-color: lighten($diff-added-color, $background-lighten);
+		i { color: $diff-added-color; }
+	}
+	&.changed {
+		border-color: $diff-changed-color;
+		background-color: lighten($diff-changed-color, $background-lighten);
+		i { color: $diff-changed-color; }
+	}
+	&.deleted {
+		border-color: $diff-deleted-color;
+		background-color: lighten($diff-deleted-color, $background-lighten);
+		i { color: $diff-deleted-color; }
+	}
+}
+
+.split-diff-hunk {
+		$diff-added-background-color: lighten($diff-added-color, 50%);
+		$diff-deleted-background-color: lighten($diff-deleted-color, 50%);
+		$diff-null-background-color: $gray-lighter;
+
+		padding: 0;
+
+		pre.code {
+				margin: 0;
+				padding: 0;
+		}
+
+		.old {
+				padding: 0;
+		}
+		.new {
+				padding: 0;
+				border-left: 1px solid $gray-lighter
+		}
+		table.split-diff {
+				table-layout: fixed;
+				col.line-number {
+						width: 2%;
+				}
+				col.line-body {
+						width: 48%;
+				}
+
+				width: 100%;
+
+				td {
+						pre {
+								font-size: 9px; /* kludge to get rid of extra pixel */
+						}
+				}
+
+				td.lineNum {
+						width: 3em;
+						min-width: 3em;
+						padding-right: 0.25em;
+						text-align: right;
+
+						border-right: 1px solid $gray-lighter;
+						border-left: 1px solid $gray-lighter;
+						&:first-child { border-left: 0; }
+
+						color: $gray-light;
+						pre {
+								padding: 0;
+								margin: 0;
+						}
+				}
+
+				td.line {
+						/* width: auto; */
+						.add-comment-btn-wrapper {
+								position: absolute;
+								.add-comment-btn {
+										position: relative;
+
+										top: -2px;
+										padding: 0;
+										font-size: 10px;
+										width: 2em;
+										height: 2em;
+										left: -50%;
+										&:hover {
+												font-size: 12px;
+												top: -4px;
+										}
+
+										opacity: 0;
+								}
+						}
+						&:hover {
+								.add-comment-btn {
+										opacity: 1.0;
+								}
+						}
+
+
+						&.added {
+								background-color: $diff-added-background-color;
+								code { background-color: $diff-added-background-color; }
+						}
+						&.deleted {
+								background-color: $diff-deleted-background-color;
+								code { background-color: $diff-deleted-background-color; }
+						}
+						&.null {
+								.null-line {
+										display: inline-block;
+								}
+								background-color: $diff-null-background-color;
+								code { background-color: $diff-null-background-color; }
+						}
+				}
+
+				.highlighted {
+						background-color: #FFFF99;
+						border: 1px solid #E6B800;
+				}
+		}
+}

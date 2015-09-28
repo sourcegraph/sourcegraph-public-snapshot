@@ -1,0 +1,18 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title Comments
+  body
+    / This is a single line comment which is not rendered.
+    /
+      This is a multiple lines comment
+      which is not rendered.
+    // This is a single line comment which is rendered as an HTML comment.
+    //
+      This is a multiple lines comment
+      which is rendered as an HTML comment.
+    = conditionalComment hidden IE 6
+      <p>You are using Internet Explorer 6.</p>
+    = conditionalComment revealed !IE
+      <link href="non-ie.css" rel="stylesheet">

@@ -1,0 +1,80 @@
+.app-docs {
+	.menu {
+		h1 {
+			font-size: $font-size-large;
+		}
+		h2 {
+			font-size: $font-size-base;
+		}
+		a.list-group-item {
+			font-size: $font-size-small;
+		}
+	}
+
+
+	.sidebar {
+		margin-top: 10px;
+		h1 {
+			font-size: $font-size-base*1.1;
+			font-weight: bold;
+		}
+	}
+
+	.sidenav {
+		margin-top: 10px;
+		margin-bottom: 20px;
+	}
+
+	/* All levels of nav */
+	.sidebar > .nav {
+		a {
+			background: none;
+		}
+
+		& > li > a {
+			display: block;
+			padding: 2px 7px;
+			font-size: 13px;
+			font-weight: 500;
+			border-left: 2px solid transparent;
+		}
+		& > .active > a {
+			font-weight: bold;
+		}
+		& > .active > a, & > li > a:hover {
+			color: $sg-blue-color;
+			background-color: transparent;
+			border-left: 2px solid $sg-blue-color;
+		}
+
+		// 2nd-level nav
+		.nav {
+			padding-bottom: 10px;
+			& > li > a {
+				padding-top: 1px;
+				padding-bottom: 1px;
+				padding-left: 20px;
+				font-size: 12px;
+				border-left: 1px solid transparent;
+			}
+			& > li > a:hover,
+			& > li > a:focus {
+				color: $sg-blue-color;
+				border-left: 1px solid $sg-blue-color;
+			}
+			& > .active {
+				& > a, & > a:hover, & > a:focus {
+					color: $sg-blue-color;
+					border-left: 2px solid $sg-blue-color;
+				}
+			}
+		}
+	}
+
+	.body {
+		margin-top: 8px;
+		& > section > h1 {
+			font-weight: bold;
+		}
+	}
+}

@@ -1,0 +1,13 @@
+{{define "Head"}}
+<title>
+	{{if .AppSubtitle}}{{.AppSubtitle}} - {{end}}{{.AppTitle}} - {{.Repo.URI}} - Sourcegraph
+</title>
+{{end}}
+
+{{define "RepoBody"}}
+	{{with .AppError}}
+		<strong>App Error:</strong> {{.}}
+	{{else}}
+		{{.AppHTML}}
+	{{end}}
+{{end}}

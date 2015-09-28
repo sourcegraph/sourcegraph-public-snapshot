@@ -1,0 +1,35 @@
+{{define "Head"}}<title>Page not found - Sourcegraph</title>
+{{end}}
+
+{{define "Body"}}
+
+<div class="alert alert-danger">
+	<p>
+		<i class="fa fa-warning"></i>
+		Sorry, we could not find <strong><tt>{{.DefSpec.Path}}</tt></strong> in this repository.
+		{{if .Defs}}<strong>Maybe you were looking for one of the results below?</strong>{{end}}
+	</p>
+	<p>
+		(If you can&rsquo;t find what you&rsquo;re looking for, please <a href="https://github.com/sourcegraph/sourcegraph.com/issues/new" target="_blank">let us know</a>!)
+	</p>
+</div>
+
+
+{{if .Defs}}
+<div class="panel panel-default panel-main">
+	<div class="panel-heading">
+		Items matching &ldquo;<tt>{{.Query}}</tt>&rdquo; in the repository <tt class="inline">{{template "RepoLink" (repoLink .Repo.URI)}}</tt>
+	</div>
+	<ul class="list-group">
+		{{range .Defs}}
+		<li class="def list-group-item">
+			<a class="def list-group-item" href="{{urlToDef .DefKey}}">
+				<tt>{{defQualifiedName . "scope"}}</tt>
+			</a>
+		</li>
+		{{end}}
+	</ul>
+</div>
+{{end}}
+
+{{end}}

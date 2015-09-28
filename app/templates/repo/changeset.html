@@ -1,0 +1,9 @@
+{{define "Head"}}<title>{{.Repo.URI}} - Changeset #{{.Changeset.Changeset.ID}}</title>
+{{end}}
+
+{{define "RepoBody"}}
+	<script ignore-csp>
+		window.preloadedReviewData = JSON.parse("{{json .}}");
+	</script>
+	<div id="CodeReviewView"></div>
+{{end}}

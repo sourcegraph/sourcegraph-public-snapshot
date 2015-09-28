@@ -1,0 +1,40 @@
+{{define "Includes"}}
+<Includes>
+    <Include>common.html</Include>
+    <Include>menu.html</Include>
+</Includes>
+{{end}}
+
+<FileMap>
+    <!-- Index page -->
+    <Generate>
+        <Template>index.html</Template>
+        <Output>index.html</Output>
+        {{template "Includes"}}
+    </Generate>
+
+{{$protoTemplate := "proto.html"}}
+{{$serviceTemplate := "service.html"}}
+{{range $f := .ProtoFile}}
+    <!-- Main page for each proto file -->
+    <Generate>
+        <Template>{{$protoTemplate}}</Template>
+        <Target>{{$f.Name}}</Target>
+        <Output>{{trimExt $f.Name}}</Output>
+        {{template "Includes"}}
+    </Generate>
+
+    <!-- Page for each service in proto file -->
+    {{range $s := .Service}}
+        <Generate>
+            <Template>{{$serviceTemplate}}</Template>
+            <Target>{{$f.Name}}</Target>
+            <Output>{{dir $f.Name}}{{$s.Name}}</Output>
+            {{template "Includes"}}
+            <Data>
+                <Item><Key>Service</Key><Value>{{$s.Name}}</Value></Item>
+            </Data>
+        </Generate>
+    {{end}}
+{{end}}
+</FileMap>

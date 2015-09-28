@@ -1,0 +1,80 @@
+{{define "RepoTreeDir"}}
+{{if .Entry}}
+
+<div class="panel panel-repo-tree">
+	<header class="rev-and-breadcrumb">
+	{{if showRepoRevSwitcher .CurrentRoute}}
+		<a class="btn btn-sgblue compare-review" data-tooltip title="Compare" href="{{urlToRepoCompare .Repo.URI .RepoRevSpec.Rev .RepoRevSpec.Rev}}">
+			<span class="octicon octicon-git-compare"></span>
+		</a>
+		<span data-react="RepoRevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="file" data-repo-spec="{{.CurrentRouteVars.Repo}}" data-path="{{.EntrySpec.Path}}"></span>
+	{{end}}
+		<span class="tree-breadcrumb">
+		{{template "Breadcrumb" (fileToBreadcrumb .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path)}}
+		</span>
+	<ul class="nav nav-pills list-inline branch-commit-tag pull-right">
+		<li>
+			<a href="{{urlToRepoSubrouteRev "repo.rev.commits" .Repo.URI .RepoRevSpec.Rev}}">
+				<i class="octicon octicon-git-commit"></i>
+				<span class="text">Commits</span>
+			</a>
+		</li>
+		<li>
+			<a href="{{urlToRepoSubroute "repo.branches" .Repo.URI}}">
+				<i class="octicon octicon-git-branch"></i>
+				<span class="text">Branches</span>
+			</a>
+		</li>
+		<li>
+			<a href="{{urlToRepoSubroute "repo.tags" .Repo.URI}}">
+				<i class="octicon octicon-tag"></i>
+				<span class="text">Tags</span>
+			</a>
+		</li>
+	</ul>
+	</header>
+
+	{{$repo:=.Repo}}
+	{{$repoRevSpec:=.EntrySpec.RepoRev}}
+	{{$parentEntryPath:=.EntryPath}}
+
+	<div data-react="TreeEntrySearch"
+			data-repo="{{$repo.URI}}"
+			data-rev="{{$repoRevSpec.Rev}}"
+			data-commit="{{$repoRevSpec.CommitID}}"></div>
+
+	<header class="commit">
+		{{with .RepoCommit}}{{template "TreeTopCommit" .}}{{end}}
+	</header>
+
+	<table class="table repo-tree-dir">
+	{{if not (eq .EntryPath ".")}}
+		<tr class="entry">
+			<td class="icon"></td>
+			<td class="name"><a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev (pathJoin $parentEntryPath "..")}}">..</a></td>
+		</tr>
+	{{end}}
+	{{range .Entry.Entries}}
+		{{$fullPath := (pathJoin $parentEntryPath (flattenName .))}}
+		{{$isDir := eq .Type.String "DirEntry"}}
+		<tr class="entry">
+			<td class="icon"><i class="fa {{if eq .Type.String "FileEntry"}}fa-file-text-o{{else if eq .Type.String "DirEntry"}}fa-folder{{else}}fa-file-o{{end}}"></i></td>
+			<td class="name {{if not appconf.DisableDirDefs}}name-thin{{end}}">
+				<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
+			</td>
+			{{if not appconf.DisableDirDefs}}
+			<td class="defs">
+				<div data-react="TreeEntryDefs"
+					data-repo="{{$repo.URI}}"
+					data-rev="{{$repoRevSpec.Rev}}"
+					data-commit="{{$repoRevSpec.CommitID}}"
+					data-path="{{$fullPath}}"
+					data-is-dir="{{$isDir}}"></div>
+			</td>
+			{{end}}
+		</tr>
+	{{end}}
+	</table>
+</div>
+{{end}}
+{{end}}

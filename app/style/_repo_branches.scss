@@ -1,0 +1,20 @@
+.branch {
+	.label.default-branch {
+		margin-right: 10px;
+		font-weight: bold;
+	}
+
+	.ahead-behind {
+		margin-right: 10px;
+		color: $gray;
+	}
+
+	.name {
+		font-weight: bold;
+	}
+
+	.last-updated {
+		color: $gray-light;
+		font-size: $font-size-small;
+	}
+}

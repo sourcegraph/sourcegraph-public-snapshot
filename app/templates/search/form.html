@@ -1,0 +1,23 @@
+{{define "Head"}}<title>Search - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+{{template "SearchForm" $}}
+{{end}}
+
+{{define "PJAX"}}{{template "SearchForm" $}}{{end}}
+
+{{define "SearchForm"}}
+<div class="padded-container">
+	<div class="search-result-type row">
+		<div class="col-sm-2 type">
+			&nbsp;
+		</div>
+		<div class="col-sm-10 results">
+			<br/><br/>
+			<p>Enter a search query above.</p>
+		</div>
+	</div>
+</div>
+{{end}}

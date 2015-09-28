@@ -1,0 +1,85 @@
+.commits {
+}
+
+.commit {
+	.commit-title {
+		font-size: $font-size-base;
+		a {
+			color: $text-color;
+
+			// only show 1 line
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			overflow: hidden;
+
+			display: block;
+			margin-right: 20px;
+		}
+	}
+	.links {
+		text-align: right;
+		& > * { display: inline-block; }
+	}
+	.links > a {
+		font-size: $font-size-small*0.9;
+		height: 21px;
+		vertical-align: top;
+		&:hover {
+			background-color: $link-color;
+			border-color: $link-color;
+			color: white;
+		}
+	}
+	.commit-id {
+		font-size: $font-size-small;
+	}
+	p.author {
+		margin: 0;
+		span.date {
+			color: $gray-mid;
+		}
+	}
+}
+
+.commit-days {
+	.commit-day {
+		margin-top: $padding-large-vertical*2;
+		.commit-day-start {
+			color: $gray-mid;
+		}
+		.commit {
+			margin-left: 0;
+			margin-right: 0;
+			&:first-child {
+				margin-top: $padding-base-vertical;
+			}
+		}
+	}
+}
+
+.commits .commit {
+	border: solid 1px $gray-lighter;
+	margin-left: 10px;
+	margin-right: 10px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.commits .commit, .commit.single {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+
+	.commit-title a {
+		font-weight: bold;
+	}
+	.avatar {
+		@include square(42px);
+		margin-right: 4px;
+	}
+	&:hover {
+		background-color: lighten($gray-lightest, 2%);
+		border-color: darken($gray-lighter, 4%);
+	}
+}

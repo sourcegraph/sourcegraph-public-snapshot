@@ -1,0 +1,7 @@
+= doctype html
+html lang=en
+  head
+    meta charset=utf-8
+    title Load templates from binary data
+  body
+    h1 Load templates from binary data
