@@ -93,20 +93,32 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func build(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, error) {
+// localHugoDir is a development mode switch that makes Hugo build docs
+// from the specified dir on the local filesystem, not from the git
+// repository. It is useful when you want to see live previews while
+// editing docs.
+var localHugoDir = os.Getenv("DEV_LOCAL_HUGO_DIR")
+
+func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir string, fs afero.Fs, err error) {
+	if localHugoDir != "" {
+		//		return "docs", aferoVFS{rwvfs.OS(localHugoDir + "/..")}, nil
+		return localHugoDir, afero.OsFs{}, nil
+	}
+
 	// TODO(sqs): Assumes that repo is on local disk. To remove this
 	// assumption, we would need a VFS interface that operates over
 	// gRPC to the RepoTree service.
 	vcsRepo, err := vcs.Open("git", filepath.Join(os.Getenv("SGPATH"), "repos", repoRev.URI))
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	fs, err := vcsRepo.FileSystem(vcs.CommitID(repoRev.CommitID))
+	vfs, err := vcsRepo.FileSystem(vcs.CommitID(repoRev.CommitID))
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
+	fs = aferoVFS{vfs}
 
-	hugoDir, err := findHugoDataDir(ctx, repoRev)
+	hugoDir, err = findHugoDataDir(ctx, repoRev)
 	if err != nil {
 		var msg string
 		if grpc.Code(err) == codes.NotFound {
@@ -114,10 +126,19 @@ func build(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, erro
 		} else {
 			msg = "Error configuring Hugo static site generator"
 		}
-		return nil, errors.New(msg)
+		return "", nil, errors.New(msg)
 	}
 
-	hugofs.SourceFs = aferoVFS{fs}
+	return hugoDir, fs, nil
+}
+
+func build(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, error) {
+	hugoDir, fs, err := getSourceFS(ctx, repoRev)
+	if err != nil {
+		return nil, err
+	}
+
+	hugofs.SourceFs = fs
 	hugofs.DestinationFS = &afero.MemMapFs{}
 	hugofs.OsFs = nil
 
