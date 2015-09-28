@@ -17,11 +17,9 @@
 </div>
 <div class="row">
 	<div class="col-md-12">
-		{{if isLocalhost .RequestHost}}
-			<p>To link a local repository, run <code>$ SGPATH={{.SGPath}} src repo link &lt;repo-name&gt; -p &lt;path/to/repo&gt;</code> (Replace <code>&lt;repo-name&gt;</code> with the full import path of your repo, eg. <code>github.com/gorilla/mux</code>).</p>
-		{{end}}
+		<p><b>Add a new repository:</b> <code>src --endpoint={{.AppURL}} repo create my/repo</code></p>
 		{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
-			<p>Have private repositories on GitHub? You can add them on the <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">integrations page</a>.</p>
+			<p><b>Have private repositories on GitHub:</b> <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">Import them</a>.</p>
 		{{end}}
 	</div>
 </div>
