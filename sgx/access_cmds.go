@@ -52,8 +52,9 @@ func (c *accessCmd) Execute(args []string) error { return nil }
 
 type accessGrantCmd struct {
 	Args struct {
-		Users []string `value-name:"USERS" description:"user logins (or login@domain)"`
+		Users []string `value-name:"USERS" description:"user logins"`
 	} `positional-args:"yes"`
+	Write bool `long:"write" description:"set write permissions on all specified users"`
 	Admin bool `long:"admin" description:"set admin permissions on all specified users"`
 }
 
@@ -80,7 +81,7 @@ func (c *accessGrantCmd) Execute(args []string) error {
 		permsOpt := &sourcegraph.UserPermissions{
 			UID:   user.UID,
 			Read:  true,
-			Write: true,
+			Write: (c.Write || c.Admin),
 			Admin: c.Admin,
 		}
 		if _, err := cl.RegisteredClients.SetUserPermissions(cliCtx, permsOpt); err != nil {
@@ -97,7 +98,7 @@ func (c *accessGrantCmd) Execute(args []string) error {
 
 type accessRevokeCmd struct {
 	Args struct {
-		Users []string `value-name:"USERS" description:"user logins (or login@domain)"`
+		Users []string `value-name:"USERS" description:"user logins"`
 	} `positional-args:"yes"`
 }
 
