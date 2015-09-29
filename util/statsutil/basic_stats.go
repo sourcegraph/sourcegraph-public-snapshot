@@ -3,9 +3,7 @@ package statsutil
 import (
 	"time"
 
-	"github.com/go-kit/kit/metrics"
-	"github.com/go-kit/kit/metrics/prometheus"
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -14,15 +12,15 @@ import (
 	"src.sourcegraph.com/sourcegraph/fed"
 )
 
-var numReposGauge = prometheus.NewGauge(stdprometheus.GaugeOpts{
+var numReposGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "usage_stats",
 	Name:      "repos_total",
 	Help:      "Total repos on the local Sourcegraph instance.",
-}, nil)
+})
 
 var committerLabels = []string{"domain"}
-var numCommittersGauge = prometheus.NewGauge(stdprometheus.GaugeOpts{
+var numCommittersGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "usage_stats",
 	Name:      "committers_total",
@@ -30,19 +28,26 @@ var numCommittersGauge = prometheus.NewGauge(stdprometheus.GaugeOpts{
 }, committerLabels)
 
 var buildLabels = []string{"build_type"}
-var numBuildsGauge = prometheus.NewGauge(stdprometheus.GaugeOpts{
+var numBuildsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "usage_stats",
 	Name:      "builds_total",
 	Help:      "Total builds on the local Sourcegraph instance.",
 }, buildLabels)
 
-var numUsersGauge = prometheus.NewGauge(stdprometheus.GaugeOpts{
+var numUsersGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "usage_stats",
 	Name:      "users_total",
 	Help:      "Total users on the local Sourcegraph instance.",
-}, nil)
+})
+
+func init() {
+	prometheus.MustRegister(numReposGauge)
+	prometheus.MustRegister(numCommittersGauge)
+	prometheus.MustRegister(numBuildsGauge)
+	prometheus.MustRegister(numUsersGauge)
+}
 
 // ComputeUsageStats takes a daily snapshot of the basic statistics of all
 // local repos.
@@ -79,8 +84,7 @@ func updateNumReposAndCommitters(cl *sourcegraph.Client, ctx context.Context) {
 		return
 	}
 	for domain, count := range numCommitters {
-		domainLabel := metrics.Field{Key: "domain", Value: domain}
-		numCommittersGauge.With(domainLabel).Set(float64(count))
+		numCommittersGauge.WithLabelValues(domain).Set(float64(count))
 	}
 }
 
@@ -97,8 +101,7 @@ func updateNumBuilds(cl *sourcegraph.Client, ctx context.Context) {
 		return
 	}
 	for buildType, buildCount := range numBuilds {
-		buildTypeLabel := metrics.Field{Key: "build_type", Value: buildType}
-		numBuildsGauge.With(buildTypeLabel).Set(float64(buildCount))
+		numBuildsGauge.WithLabelValues(buildType).Set(float64(buildCount))
 	}
 }
 

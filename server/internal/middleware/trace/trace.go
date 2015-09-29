@@ -7,10 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/go-kit/kit/metrics"
-	"github.com/go-kit/kit/metrics/prometheus"
 	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
 	tg_context "src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/context"
 
@@ -47,19 +45,19 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 }
 
 var metricLabels = []string{"method", "success"}
-var requestCount = prometheus.NewCounter(stdprometheus.CounterOpts{
+var requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "grpc",
 	Name:      "client_requests_total",
 	Help:      "Total number of requests sent to grpc endpoints.",
 }, metricLabels)
-var requestDuration = prometheus.NewSummary(stdprometheus.SummaryOpts{
+var requestDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "grpc",
 	Name:      "client_request_duration_nanoseconds",
 	Help:      "Total time spent on grpc endpoints.",
 }, metricLabels)
-var requestHeartbeat = prometheus.NewGauge(stdprometheus.GaugeOpts{
+var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "grpc",
 	Name:      "client_requests_last_timestamp_unixtime",
@@ -67,12 +65,19 @@ var requestHeartbeat = prometheus.NewGauge(stdprometheus.GaugeOpts{
 }, metricLabels)
 
 var userMetricLabels = []string{"uid", "service"}
-var requestPerUser = prometheus.NewCounter(stdprometheus.CounterOpts{
+var requestPerUser = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "grpc",
 	Name:      "client_requests_per_user",
 	Help:      "Total number of requests per user id.",
 }, userMetricLabels)
+
+func init() {
+	prometheus.MustRegister(requestCount)
+	prometheus.MustRegister(requestDuration)
+	prometheus.MustRegister(requestHeartbeat)
+	prometheus.MustRegister(requestPerUser)
+}
 
 // After is called after a method executes and is passed the elapsed
 // execution time since the method's BeforeFunc was called and the
@@ -95,14 +100,18 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	rec.Name(server + "." + method)
 	rec.Event(call)
 	// TODO measure metrics on the server, rather than the client
-	methodLabel := metrics.Field{Key: "method", Value: server + "." + method}
-	successLabel := metrics.Field{Key: "success", Value: strconv.FormatBool(err == nil)}
-	requestCount.With(methodLabel).With(successLabel).Add(1)
-	requestDuration.With(methodLabel).With(successLabel).Observe(elapsed.Nanoseconds())
-	requestHeartbeat.With(methodLabel).With(successLabel).Set(float64(time.Now().Unix()))
+	labels := prometheus.Labels{
+		"method":  server + "." + method,
+		"success": strconv.FormatBool(err == nil),
+	}
+	requestCount.With(labels).Inc()
+	requestDuration.With(labels).Observe(float64(elapsed.Nanoseconds()))
+	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-	uidLabel := metrics.Field{Key: "uid", Value: strconv.Itoa(authpkg.ActorFromContext(ctx).UID)}
-	serviceLabel := metrics.Field{Key: "service", Value: server}
-	requestPerUser.With(uidLabel).With(serviceLabel).Add(1)
+	labels = prometheus.Labels{
+		"uid":     strconv.Itoa(authpkg.ActorFromContext(ctx).UID),
+		"service": server,
+	}
+	requestPerUser.With(labels).Inc()
 	log15.Debug("gRPC "+server+"."+method+" after", "spanID", traceutil.SpanIDFromContext(ctx), "elapsed", elapsed)
 }

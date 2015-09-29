@@ -9,10 +9,8 @@ import (
 	"sync"
 	"time"
 
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/go-kit/kit/metrics"
-	"github.com/go-kit/kit/metrics/prometheus"
 	"github.com/gorilla/schema"
 	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
 	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/httpwrapper"
@@ -91,24 +89,30 @@ var httpwrapperConfig = &httpwrapper.ServerConfig{
 }
 
 var metricLabels = []string{"route", "method", "code"}
-var requestCount = prometheus.NewCounter(stdprometheus.CounterOpts{
+var requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "http",
 	Name:      "requests_total",
 	Help:      "Total number of HTTP requests made.",
 }, metricLabels)
-var requestDuration = prometheus.NewSummary(stdprometheus.SummaryOpts{
+var requestDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "http",
 	Name:      "request_duration_nanoseconds",
 	Help:      "The HTTP request latencies in nanoseconds.",
 }, metricLabels)
-var requestHeartbeat = prometheus.NewGauge(stdprometheus.GaugeOpts{
+var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "http",
 	Name:      "requests_last_timestamp_unixtime",
 	Help:      "Last time a request finished for a http endpoint.",
 }, metricLabels)
+
+func init() {
+	prometheus.MustRegister(requestCount)
+	prometheus.MustRegister(requestDuration)
+	prometheus.MustRegister(requestHeartbeat)
+}
 
 var logMiddleware = func(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	rwIntercept := &metricutil.ResponseWriterStatusIntercept{ResponseWriter: rw}
@@ -116,12 +120,14 @@ var logMiddleware = func(rw http.ResponseWriter, r *http.Request, next http.Hand
 	next(rwIntercept, r)
 
 	duration := time.Now().Sub(start)
-	routeLabel := metrics.Field{Key: "route", Value: httpctx.RouteName(r)}
-	methodLabel := metrics.Field{Key: "method", Value: strings.ToLower(r.Method)}
-	successLabel := metrics.Field{Key: "code", Value: strconv.Itoa(rwIntercept.Code)}
-	requestCount.With(routeLabel).With(methodLabel).With(successLabel).Add(1)
-	requestDuration.With(routeLabel).With(methodLabel).With(successLabel).Observe(duration.Nanoseconds())
-	requestHeartbeat.With(routeLabel).With(methodLabel).With(successLabel).Set(float64(time.Now().Unix()))
+	labels := prometheus.Labels{
+		"route":  httpctx.RouteName(r),
+		"method": strings.ToLower(r.Method),
+		"code":   strconv.Itoa(rwIntercept.Code),
+	}
+	requestCount.With(labels).Inc()
+	requestDuration.With(labels).Observe(float64(duration.Nanoseconds()))
+	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 	log15.Debug("Request", "pkg", "handlerutil", "method", r.Method, "URL", r.URL.String(), "routename", httpctx.RouteName(r), "duration", duration, "code", rwIntercept.Code)
 }
