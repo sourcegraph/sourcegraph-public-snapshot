@@ -128,10 +128,6 @@
 			"Rev": "3fd636ed242c26c0f55bc9ee1fe47e1d6d2d77f7"
 		},
 		{
-			"ImportPath": "github.com/go-kit/kit/metrics",
-			"Rev": "cf7b46ced86ae5e2d364bc1f6f1d0bf3b98e3f5b"
-		},
-		{
 			"ImportPath": "github.com/gogo/protobuf/io",
 			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
 		},
