@@ -86,10 +86,28 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]")).map((el2) => {
-		React.render(<RepoBuildIndicator btnSize="btn-xs" RepoURI={el2.dataset.uri} Rev={el2.dataset.rev} SuccessReload={el2.dataset.successReload} Label={el2.dataset.label} Buildable={el2.dataset.buildable === "true"} />, el2);
+		React.render(
+			<RepoBuildIndicator
+				btnSize="btn-xs"
+				RepoURI={el2.dataset.uri}
+				Rev={el2.dataset.rev}
+				SuccessReload={el2.dataset.successReload}
+				Label={el2.dataset.label}
+				Buildable={el2.dataset.buildable === "true"} />,
+			el2
+		);
 	});
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]")).map((el2) => {
-		React.render(<RepoBuildIndicator btnSize="btn-md" RepoURI={el2.dataset.uri} Rev={el2.dataset.rev} SuccessReload={el2.dataset.successReload} Label={el2.dataset.label} Buildable={el2.dataset.buildable === "true"} />, el2);
+		React.render(
+			<RepoBuildIndicator
+				btnSize="btn-md"
+				RepoURI={el2.dataset.uri}
+				Rev={el2.dataset.rev}
+				SuccessReload={el2.dataset.successReload}
+				Label={el2.dataset.label}
+				Buildable={el2.dataset.buildable === "true"} />,
+			el2
+		);
 	});
 
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildStatus]")).map(function(el2) {
@@ -98,7 +116,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = document.querySelector("[data-react=RepoRevSwitcher]");
 	if (el) {
-		React.render(<RepoRevSwitcher repoSpec={el.dataset.repoSpec} rev={el.dataset.rev} path={el.dataset.path} route={el.dataset.route} />, el);
+		React.render(
+			<RepoRevSwitcher
+				repoSpec={el.dataset.repoSpec}
+				rev={el.dataset.rev}
+				path={el.dataset.path}
+				route={el.dataset.route} />, el
+		);
 	}
 
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryDefs]"))
