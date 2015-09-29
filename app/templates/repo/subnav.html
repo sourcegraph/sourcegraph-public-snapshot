@@ -21,6 +21,15 @@
 					</a>
 				</li>
 
+				{{if .Features.Discussions}}
+					<li {{if (eq .CurrentRoute "repo.discussions")}}class="active"{{end}}>
+						<a href="{{urlToRepoSubroute "repo.discussions" .Repo.URI}}">
+							<i class="octicon octicon-comment-discussion"></i>
+							<span class="txt">Discussions</span>
+						</a>
+					</li>
+				{{end}}
+
 				{{if repoEnabledFrameChangesets .Repo}}
 					<li {{if (eq .CurrentRoute "repo.changeset.list")}}class="active"{{end}}>
 						<a href="{{urlToRepoChangesets .Repo.URI false}}">

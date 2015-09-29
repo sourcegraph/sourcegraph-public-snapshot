@@ -45,21 +45,23 @@ const (
 	UserOrgs                       = "person.orgs"
 	OrgMembers                     = "org.members"
 
-	Repo             = "repo"
-	RepoBadges       = "repo.badges"
-	RepoCounters     = "repo.counters"
-	RepoBuilds       = "repo.builds"
-	RepoBuild        = "repo.build"
-	RepoBuildUpdate  = "repo.build.update"
-	RepoBuildLog     = "repo.build.log"
-	RepoBuildTaskLog = "repo.build.task.log"
-	RepoBuildsCreate = "repo.builds.create"
-	RepoSearch       = "repo.search"
-	RepoRefresh      = "repo.refresh"
-	RepoTree         = "repo.tree"
-	RepoTreeShare    = "repo.tree.share"
-	RepoCompare      = "repo.compare"
-	RepoCompareAll   = "repo.compare.all"
+	Repo               = "repo"
+	RepoBadges         = "repo.badges"
+	RepoCounters       = "repo.counters"
+	RepoBuilds         = "repo.builds"
+	RepoBuild          = "repo.build"
+	RepoBuildUpdate    = "repo.build.update"
+	RepoBuildLog       = "repo.build.log"
+	RepoBuildTaskLog   = "repo.build.task.log"
+	RepoBuildsCreate   = "repo.builds.create"
+	RepoSearch         = "repo.search"
+	RepoRefresh        = "repo.refresh"
+	RepoTree           = "repo.tree"
+	RepoTreeShare      = "repo.tree.share"
+	RepoCompare        = "repo.compare"
+	RepoCompareAll     = "repo.compare.all"
+	RepoDiscussion     = "repo.discussion"
+	RepoDiscussionList = "repo.discussions"
 
 	RepoEnable = "repo.enable"
 
@@ -202,6 +204,8 @@ func New(base *mux.Router) *Router {
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
 	repoRev.Path("/.counters").Methods("GET").Name(RepoCounters)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
+	repoRev.Path(`/.discussion/{ID:\d+}`).Methods("GET", "POST").Name(RepoDiscussion)
+	repoRev.Path("/.discussions").Methods("GET").Name(RepoDiscussionList)
 
 	repoRev.Path(`/.changesets/{ID:\d+}`).Methods("GET").Name(Changeset)
 	repoRev.Path(`/.changesets`).Methods("GET").Name(ChangesetList)

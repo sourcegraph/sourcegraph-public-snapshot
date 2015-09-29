@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $("[data-react-component=MarkdownView]");
 	if (el.length) {
-		React.render(<MarkdownView {...el[0].dataset} />, el[0]);
+		el.each((_, e) => React.render(<MarkdownView {...e.dataset} />, e));
 	}
 
 	el = document.querySelectorAll("[data-react=RefCountLink]");

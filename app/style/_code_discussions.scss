@@ -54,7 +54,70 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 }
 
 .discussions-list.discussions {
-	.qualified-name {
+	/* Discussions Tab */
+	&.discussions-list-page {
+		&.related-small {
+			width: 39%;
+			padding-left: 1%;
+
+			> h1 {
+				font-size: 20px;
+				margin-bottom: 10px !important;
+			}
+
+			ul.discussions-list > li h1 {
+				font-size: 15px;
+
+				.contents {
+					width: 320px;
+				}
+			}
+		}
+
+		width: 50%;
+		padding-right: 20px;
+
+		> h1 {
+			margin: 15px 0 15px 10px !important;
+			font-family: $home-header-font;
+			font-size: 24px;
+		}
+
+		.container {
+			background: #FFF;
+			width: auto;
+			height: auto;
+			overflow-y: initial;
+		}
+
+		ul.discussions-list > li {
+			header {
+				h1 {
+					font-size: 16px;
+
+					.id {
+						margin-left: 5px;
+					}
+
+					.contents {
+						line-height: 19px;
+						margin-bottom: 3px;
+					}
+				}
+			}
+
+			cursor: auto;
+		}
+	}
+	
+	p.body {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Discussions in Pop-up */
+	div.qualified-name {
 		font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
 		word-wrap: break-word;
 		color: #333;
@@ -126,6 +189,65 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 }
 
 .discussions {
+	/* Discussions Tab */
+	&.discussion-thread-page {
+		width: 60%;
+
+		.container {
+			background-color: #FFF;
+
+			header {
+				h1 {
+					font-size: 24px;
+					padding-bottom: 10px;
+
+					.id {
+						margin-left: 10px;
+					}
+
+					.contents {
+						width: 600px;
+					}
+				}
+			}
+
+			main.body {
+				font-size: 16px;
+				margin: 0;
+				padding: 0;
+			}
+
+			.thread-comment > p {
+				font-size: 14px;
+				margin-top: 5px;
+			}
+
+			.add-comment {
+				margin-top: 15px;
+
+				#add-discussion-comment {
+					margin-top: 3px;
+				}
+
+				.padder {
+					padding: 15px;
+				}
+
+				textarea {
+					border: 1px solid #ddd;
+					width: 100%;
+					border-radius: 3px;
+					padding: 5px;
+					height: 70px;
+					margin-top: 3px;
+				}
+			}
+
+			overflow-y: initial;
+		}
+	}
+
+	/* Discussions in Pop-up */
 	.container {
 		background-color: #fbfbfb;
 
@@ -351,6 +473,9 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 			p.body {
 				margin-bottom: 0;
 				width: $code-discussion-body;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
 			}
 
 			.truncate {

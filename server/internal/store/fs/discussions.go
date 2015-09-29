@@ -112,6 +112,11 @@ func (s *Discussions) List(ctx context.Context, op *sourcegraph.DiscussionListOp
 
 	fs, err := s.repoFS(ctx, repo)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return &sourcegraph.DiscussionList{
+				Discussions: []*sourcegraph.Discussion{},
+			}, nil
+		}
 		return nil, err
 	}
 

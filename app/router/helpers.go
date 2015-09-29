@@ -32,6 +32,10 @@ func (r *Router) URLToRepo(uri string) *url.URL {
 	return r.URLToRepoSubroute(Repo, uri)
 }
 
+func (r *Router) URLToRepoDiscussion(uri string, id int64) *url.URL {
+	return r.URLTo(RepoDiscussion, "Repo", uri, "ID", strconv.FormatInt(id, 10))
+}
+
 func (r *Router) URLToRepoChangeset(uri string, id int64) *url.URL {
 	return r.URLTo(Changeset, "Repo", uri, "ID", strconv.FormatInt(id, 10))
 }

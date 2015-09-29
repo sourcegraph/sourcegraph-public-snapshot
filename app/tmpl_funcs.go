@@ -13,9 +13,11 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
+
 	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -112,6 +114,7 @@ var TemplateFunctions = htmpl.FuncMap{
 	"urlToRepoRev":               router.Rel.URLToRepoRev,
 	"urlToRepoChangesets":        router.Rel.URLToRepoChangesets,
 	"urlToRepoChangeset":         router.Rel.URLToRepoChangeset,
+	"urlToRepoDiscussion":        router.Rel.URLToRepoDiscussion,
 	"urlToRepoBuild":             router.Rel.URLToRepoBuild,
 	"urlToRepoSubroute":          router.Rel.URLToRepoSubroute,
 	"urlToRepoSubrouteRev":       router.Rel.URLToRepoSubrouteRev,

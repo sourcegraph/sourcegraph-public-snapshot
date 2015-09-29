@@ -1,0 +1,32 @@
+{{define "Head"}}
+	<title>{{.Repo.URI}} - Discussions</title>
+{{end}}
+
+{{define "RepoBody"}}
+	{{if gt (len .Latest) 0}}
+		<div class="discussions discussions-list discussions-list-page pull-left">
+			<h1>Latest</h1>
+			<div class="container">
+				<ul class="discussions-list">
+					{{range .Latest}}
+						{{template "Discussion" (map "Discussion" . "Repo" $.Repo)}}
+					{{end}}
+				</ul>
+			</div>
+		</div>
+
+		<div class="discussions discussions-list discussions-list-page pull-left">
+			<h1>Trending</h1>
+			<div class="container">
+				<ul class="discussions-list">
+					{{range .Trending}}
+						{{template "Discussion" (map "Discussion" . "Repo" $.Repo)}}
+					{{end}}
+				</ul>
+			</div>
+		</div>
+	{{else}}
+		<h3>Nothing here...</h3>
+		No code discussions have been started yet. Start one by navigating to a definition and writing a comment.
+	{{end}}
+{{end}}

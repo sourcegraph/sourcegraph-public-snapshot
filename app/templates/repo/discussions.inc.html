@@ -1,0 +1,24 @@
+{{define "Discussion"}}
+	{{with .Discussion}}
+		<li>
+			<header>
+				<h1>
+					<div class="contents">
+						<a href="{{urlToRepoDiscussion $.Repo.URI .ID}}">{{.Title}}</a>
+						<span class="id">#{{.ID}}</span>
+					</div>
+				</h1>
+				<div class="stats">
+					<span class="octicon octicon-comment-discussion"></span> {{len .Comments}}
+					<span class="octicon octicon-star"></span> {{len .Ratings}}
+				</div>
+				<div class="subtitle">
+					<span class="author"><a>@{{.Author.Login}}</a></span>
+					<span class="date">{{template "TimeAgo" .CreatedAt}}</span>
+					on <a href="{{urlToDef .DefKey}}" class="backtick qualified-name">{{.DefKey.Path}}</a>
+				</div>
+			</header>
+			<p class="body">{{.Description}}</p>
+		</li>
+	{{end}}
+{{end}}

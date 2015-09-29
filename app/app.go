@@ -28,6 +28,14 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
+// NewHandlerWithCSRFProtection creates a new handler that uses the provided
+// router. It additionally adds support for cross-site request forgery. To make
+// your forms compliant you will have to include a hidden input which contains
+// the CSRFToken that is made available to you in the template via tmpl.Common.
+//
+// Example:
+// 	<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+//
 func NewHandlerWithCSRFProtection(r *router.Router) http.Handler {
 	h := nosurf.New(NewHandler(r))
 	h.ExemptRegexps("^/login/oauth/", "git-[\\w-]+$")
@@ -149,6 +157,8 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoCounters).Handler(internal.Handler(serveRepoCounters))
 	r.Get(router.RepoCompare).Handler(internal.Handler(serveRepoCompare))
 	r.Get(router.RepoCompareAll).Handler(internal.Handler(serveRepoCompare))
+	r.Get(router.RepoDiscussion).Handler(internal.Handler(serveRepoDiscussion))
+	r.Get(router.RepoDiscussionList).Handler(internal.Handler(serveRepoDiscussions))
 	r.Get(router.Changeset).Handler(internal.Handler(serveRepoChangeset))
 	r.Get(router.ChangesetList).Handler(internal.Handler(serveRepoChangesetList))
 	r.Get(router.ChangesetFiles).Handler(internal.Handler(serveRepoChangeset))
