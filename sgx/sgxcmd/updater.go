@@ -2,7 +2,6 @@ package sgxcmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/sqs/go-selfupdate/selfupdate"
 	"src.sourcegraph.com/sourcegraph/dev/release"
@@ -33,22 +32,19 @@ type binaryRelease struct {
 // various platforms. The binaries are of the same version as the
 // currently running binary. Dev versions return an empty list.
 func BinaryReleaseURLs() []binaryRelease {
-	version := os.Getenv("SG_BINARY_RELEASE_VERSION")
-	if version == "" {
-		version = buildvar.Version
-	}
-	if version == "dev" {
+	if buildvar.Version == "dev" {
 		return nil
 	}
 
 	u := SelfUpdater
+
 	var brs []binaryRelease
 	for _, os := range oses {
 		for _, arch := range archs {
 			brs = append(brs, binaryRelease{
 				Name:    fmt.Sprintf("%s (%s)", osNames[os], archNames[arch]),
-				Version: version,
-				URL:     u.ApiURL + version + "/" + os + "-" + arch + "/" + u.CmdName + ".gz",
+				Version: buildvar.Version,
+				URL:     u.ApiURL + buildvar.Version + "/" + os + "-" + arch + "/" + u.CmdName + ".gz",
 			})
 		}
 	}
