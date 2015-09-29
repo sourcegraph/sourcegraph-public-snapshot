@@ -16,7 +16,13 @@ func TestSearch(t *testing.T) {
 		t.Skip()
 	}
 
-	a, ctx := testserver.NewServer()
+	a, ctx := testserver.NewUnstartedServer()
+	a.Config.ServeFlags = append(a.Config.ServeFlags,
+		&authutil.Flags{AllowAllLogins: true},
+	)
+	if err := a.Start(); err != nil {
+		t.Fatal(err)
+	}
 	defer a.Close()
 
 	_, done, err := testutil.CreateRepo(t, ctx, "a/b")
