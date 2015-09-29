@@ -55,20 +55,15 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
 	}
 
-	if authutil.ActiveFlags.RestrictWriteAccess || authutil.ActiveFlags.IsLocal() {
+	if authutil.ActiveFlags.RestrictWriteAccess {
 		return VerifyUserHasAdminAccess(ctx, method)
 	}
 
-	// Get UserPermissions info for this user from the root server.
+	// all authenticated users have write access
+	// TODO: call RegisteredClients.GetUserPermissions and check for write access.
 	// Making such a call to root server for every write operation will be quite slow, so
 	// cache the user permissions on the client (i.e. local instance).
-	if perms, err := getUserPermissionsFromRoot(ctx); err != nil {
-		return err
-	} else if !(perms.Write || perms.Admin) {
-		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
-	} else {
-		return nil
-	}
+	return nil
 }
 
 func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
