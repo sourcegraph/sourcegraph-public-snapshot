@@ -14,7 +14,7 @@ To set up Sourcegraph on a new [Google Compute Engine](https://cloud.google.com/
 ```
 {{% userdata %}}
 ```
-* Allow external access to the API on port 3100 so you can use the `src` CLI tool to manage your Sourcegraph server. To do this, first [install the `gcloud` command](https://cloud.google.com/sdk/#Quick_Start) then run the command below (substituting [your `PROJECT-ID`](https://cloud.google.com/compute/docs/projects#projectids)).
+* Allow external access to the API on port 3100 so you can use the `src` CLI tool to manage your Sourcegraph server. To do this, first [install the `gcloud` command](https://cloud.google.com/sdk/#Quick_Start) then run the command below ([substituting your `PROJECT-ID`](https://cloud.google.com/compute/docs/projects#projectids)).
 ```
 gcloud --project PROJECT-ID compute firewall-rules create sourcegraph-grpc-allow-3100 --allow tcp:3100
 ```
