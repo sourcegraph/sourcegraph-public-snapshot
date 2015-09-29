@@ -5,6 +5,10 @@ apt-get install -y libcap2-bin
 wget -O - https://sourcegraph.com/.download/install.sh | bash
 setcap cap_net_bind_service=+ep /usr/bin/src
 
+apt-get install -y python-software-properties make
+add-apt-repository -y ppa:evarlast/golang1.5 && apt-get update -y && (apt-get install -y golang-go || echo ok) && apt-get install -y -f golang-go
+sudo -iu sourcegraph sh -c 'GOPATH=/tmp src toolchain install go'
+
 export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/metadata/v1/hostname http://169.254.169.254/latest/meta-data/public-hostname)
 if [ "$SRC_HOSTNAME" == "" ]; then
   # Not all EC2 VPC instances have public DNS; use the public IP in that case.
@@ -18,7 +22,3 @@ sed -i 's|^;AppURL =.*|AppURL = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config
 echo 'HTTPAddr = :80' >> /etc/sourcegraph/config.ini
 restart src || echo ok
 # TODO: set up self-signed TLS certs
-
-apt-get install -y python-software-properties make
-add-apt-repository -y ppa:evarlast/golang1.5 && apt-get update -y && (apt-get install -y golang-go || echo ok) && apt-get install -y -f golang-go
-sudo -iu sourcegraph sh -c 'GOPATH=/tmp src toolchain install go'
