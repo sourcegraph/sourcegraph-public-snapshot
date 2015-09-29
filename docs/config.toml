@@ -8,7 +8,7 @@ SectionOrder = ["getting-started", "install", "config", "concepts", "dev", "trou
 
 [params.SectionNames]
 getting-started = "Getting started"
-install = "Server installation"
+install = "Installation"
 config = "Configuration"
 dev = "Development"
 concepts = "Concepts"

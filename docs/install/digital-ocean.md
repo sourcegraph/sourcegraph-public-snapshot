@@ -7,7 +7,7 @@ To set up Sourcegraph on a new [Digital Ocean](https://www.digitalocean.com/) cl
 
 * Open the [**Create Droplet**](https://cloud.digitalocean.com/droplets/new) screen on the [Digital Ocean Control Panel](https://cloud.digitalocean.com/).
 * **Droplet Hostname:** Choose a valid, externally accessible DNS name for your Sourcegraph server. For example, if you choose `src.mycompany.com`, then you must also set up a DNS record (or a temporary `/etc/hosts` entry) so that `src.mycompany.com` points to your droplet's IP (which you can view shortly after the droplet is created).
-* **Select Size:** Select a droplet size with at least 1 GB of RAM.
+* **Select Size:** Select a droplet size with at least 2 GB of RAM.
 * **Select Image:** Select the Ubuntu 14.04 x64 image.
 * **Available Settings:** Check the **User Data** box and paste in the following:
 ```
