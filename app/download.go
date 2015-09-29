@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"path"
@@ -21,14 +22,22 @@ func serveDownload(w http.ResponseWriter, r *http.Request) error {
 	// for them as part of the redirect.
 	if s := strings.Split(target, "/"); len(s) >= 1 && s[0] == "latest" {
 		// Determine latest version.
-		bins := sgxcmd.BinaryReleaseURLs()
-		if len(bins) == 0 {
-			return fmt.Errorf("expected at least one version for latest URL")
+		resp, err := http.Get(downloadBaseURL + "linux-amd64/src.json")
+		if err != nil {
+			return err
 		}
-		latest := bins[0].Version
+		defer resp.Body.Close()
+
+		var data struct {
+			Version string
+			Sha256  string
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			return err
+		}
 
 		// Reform target URL by swapping out "latest" with the version.
-		target = path.Join(latest, path.Join(s[1:]...))
+		target = path.Join(data.Version, path.Join(s[1:]...))
 	}
 	http.Redirect(w, r, downloadBaseURL+target, http.StatusSeeOther)
 	return nil
