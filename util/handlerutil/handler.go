@@ -95,11 +95,12 @@ var requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name:      "requests_total",
 	Help:      "Total number of HTTP requests made.",
 }, metricLabels)
-var requestDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "http",
-	Name:      "request_duration_nanoseconds",
-	Help:      "The HTTP request latencies in nanoseconds.",
+	Name:      "request_duration_seconds",
+	Help:      "The HTTP request latencies in seconds.",
+	Buckets:   []float64{1, 5, 10, 60, 300},
 }, metricLabels)
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -126,7 +127,7 @@ var logMiddleware = func(rw http.ResponseWriter, r *http.Request, next http.Hand
 		"code":   strconv.Itoa(rwIntercept.Code),
 	}
 	requestCount.With(labels).Inc()
-	requestDuration.With(labels).Observe(float64(duration.Nanoseconds()))
+	requestDuration.With(labels).Observe(duration.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 	log15.Debug("Request", "pkg", "handlerutil", "method", r.Method, "URL", r.URL.String(), "routename", httpctx.RouteName(r), "duration", duration, "code", rwIntercept.Code)

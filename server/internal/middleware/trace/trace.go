@@ -51,11 +51,12 @@ var requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name:      "client_requests_total",
 	Help:      "Total number of requests sent to grpc endpoints.",
 }, metricLabels)
-var requestDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "grpc",
-	Name:      "client_request_duration_nanoseconds",
+	Name:      "client_request_duration_seconds",
 	Help:      "Total time spent on grpc endpoints.",
+	Buckets:   []float64{1, 5, 10, 60, 300},
 }, metricLabels)
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -105,7 +106,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 		"success": strconv.FormatBool(err == nil),
 	}
 	requestCount.With(labels).Inc()
-	requestDuration.With(labels).Observe(float64(elapsed.Nanoseconds()))
+	requestDuration.With(labels).Observe(elapsed.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 	labels = prometheus.Labels{
