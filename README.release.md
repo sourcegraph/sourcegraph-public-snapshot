@@ -2,7 +2,7 @@
 
 1. `make dist-dep`
 1. Ensure you have the AWS credentials set so that the AWS CLI (`aws`) can write to the `sourcegraph-release` bucket.
-1. Run `sgtool release VERSION`, where `VERSION` is a number like `0.1.2`.
+1. Run `sgtool release --public VERSION`, where `VERSION` is a number like `0.1.2`.
 
 If you just want to build and package the binaries (and not publish a new release), use `sgtool package`.
 

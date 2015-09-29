@@ -26,6 +26,7 @@ type ReleaseCmd struct {
 	SkipPackage      bool `long:"skip-package" description:"skip package step (assumes it has already been run)"`
 	SkipDistPackage  bool `long:"skip-dist-package" description:"skip create deb and rpm step (assumes it has already been run)"`
 	InspectArtifacts bool `long:"inspect-artifacts" description:"avoids upload, but puts all artifacts in ./selfupdate"`
+	Public           bool `long:"public" description:"upload src.json files to make this version the latest public version"`
 
 	S3Dir string `long:"s3-dir" description:"S3 base directory to upload release to (default: src)"`
 
@@ -70,6 +71,18 @@ func (c *ReleaseCmd) Execute(args []string) error {
 	}
 	if err := execCmd(exec.Command("cp", distDir+"/src-docker.deb", selfupdateDir+"/"+c.Args.Version+"/linux-amd64/")); err != nil {
 		return err
+	}
+
+	if !c.Public {
+		matches, err := filepath.Glob(selfupdateDir + "/*/src.json")
+		if err != nil {
+			return err
+		}
+		for _, match := range matches {
+			if err := os.Remove(match); err != nil {
+				return err
+			}
+		}
 	}
 
 	if c.InspectArtifacts {
