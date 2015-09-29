@@ -20,7 +20,7 @@ src: ${GOBIN}/src
 ${GOBIN}/src: $(shell find . -type f -and -name '*.go' -not -path './Godeps/*')
 	$(GODEP) go install ./cmd/src
 
-dep: app-dep
+dep: dist-dep app-dep
 
 app-dep:
 	cd app && npm run dep
