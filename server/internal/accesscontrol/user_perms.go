@@ -55,7 +55,7 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
 	}
 
-	if authutil.ActiveFlags.RestrictWriteAccess {
+	if authutil.ActiveFlags.RestrictWriteAccess || authutil.ActiveFlags.IsLocal() {
 		return VerifyUserHasAdminAccess(ctx, method)
 	}
 
