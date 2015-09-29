@@ -320,6 +320,30 @@ func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
+func serveRepoSearchNext(w http.ResponseWriter, r *http.Request) error {
+	var search RepoSearch
+	err := schemautil.Decode(&search, r.URL.Query())
+	if err != nil {
+		return err
+	}
+
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	if err != nil {
+		return err
+	}
+
+	return tmpl.Exec(r, w, "repo/search.html", http.StatusOK, nil, &struct {
+		RepoSearch *RepoSearch
+		handlerutil.RepoCommon
+		handlerutil.RepoRevCommon
+		tmpl.Common
+	}{
+		RepoSearch:    &search,
+		RepoCommon:    *rc,
+		RepoRevCommon: *vc,
+	})
+}
+
 func renderRepoNoVCSDataTemplate(w http.ResponseWriter, r *http.Request, rc *handlerutil.RepoCommon) error {
 	return tmpl.Exec(r, w, "repo/no_vcs_data.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
@@ -336,6 +360,10 @@ func renderRepoNotEnabledTemplate(w http.ResponseWriter, r *http.Request, rc *ha
 	}{
 		RepoCommon: *rc,
 	})
+}
+
+type RepoSearch struct {
+	Query string `url:"q" schema:"q"`
 }
 
 type RepoLink struct {
