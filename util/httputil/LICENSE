@@ -1,6 +1,9 @@
 gzip middleware in util/httputil taken from
 https://github.com/PuerkitoBio/ghost (license follows).
 
+Note: this license does NOT apply to the Sourcegraph codebase as a
+whole.
+
 Copyright (c) 2013, Martin Angers. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
