@@ -23,20 +23,20 @@ document.addEventListener("DOMContentLoaded", () => {
 	var el;
 
 	if (globals.Features.SearchNext) {
-		var currentRepo, repoSearch;
+		var currentRepo, searchOptions;
 
 		if (window.preloadedRepo) {
 			currentRepo = JSON.parse(window.preloadedRepo.data);
 		}
-		if (window.preloadedRepoSearch) {
-			repoSearch = JSON.parse(window.preloadedRepoSearch.data);
+		if (window.preloadedSearchOptions) {
+			searchOptions = JSON.parse(window.preloadedSearchOptions.data);
 		}
 
 		el = $("#SearchBar");
 		React.render(
 			<SearchBar
 				repo={currentRepo||null}
-				repoSearch={repoSearch||null} />,
+				searchOptions={searchOptions||null} />,
 			el[0]
 		);
 	}
