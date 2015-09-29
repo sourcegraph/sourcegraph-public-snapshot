@@ -40,7 +40,7 @@ func TestOAuth2ServerAuthorize_notEnabled(t *testing.T) {
 }
 
 func TestOAuth2ServerAuthorize_notLoggedIn(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true}
+	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true, AllowAllLogins: true}
 	defer func() {
 		authutil.ActiveFlags = authutil.Flags{}
 	}()
@@ -67,7 +67,7 @@ func TestOAuth2ServerAuthorize_notLoggedIn(t *testing.T) {
 }
 
 func TestOAuth2ServerAuthorize(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true}
+	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true, AllowAllLogins: true}
 	defer func() {
 		authutil.ActiveFlags = authutil.Flags{}
 	}()
@@ -141,7 +141,7 @@ func readOAuth2ServerAuthorizePage(resp *http.Response) (*oauthProviderAuthorize
 }
 
 func TestOAuth2ServerAuthorize_newClientID(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true}
+	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true, AllowAllLogins: true}
 	defer func() {
 		authutil.ActiveFlags = authutil.Flags{}
 	}()

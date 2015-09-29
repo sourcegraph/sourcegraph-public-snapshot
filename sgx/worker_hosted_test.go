@@ -91,7 +91,7 @@ func TestBuildRepo_serverside_hosted_authRequired_lg(t *testing.T) {
 
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "local"},
+		&authutil.Flags{Source: "local", AllowAllLogins: true},
 		&fed.Flags{IsRoot: true},
 	)
 	if err := a.Start(); err != nil {
@@ -138,7 +138,7 @@ func TestBuildRepo_push_hosted_authRequired_lg(t *testing.T) {
 
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "local"},
+		&authutil.Flags{Source: "local", AllowAllLogins: true},
 		&fed.Flags{IsRoot: true},
 	)
 	if err := a.Start(); err != nil {

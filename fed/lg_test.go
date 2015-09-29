@@ -35,7 +35,7 @@ func TestFederation(t *testing.T) {
 	a1, ctx1 := testserver.NewUnstartedServer()
 	a1.Config.ServeFlags = append(a1.Config.ServeFlags,
 		&fed.Flags{IsRoot: true},
-		&authutil.Flags{Source: "local", OAuth2AuthServer: true},
+		&authutil.Flags{Source: "local", OAuth2AuthServer: true, AllowAllLogins: true},
 	)
 	if err := a1.Start(); err != nil {
 		t.Fatal(err)
