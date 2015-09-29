@@ -1,5 +1,5 @@
 languageCode = "en-us"
-title = "Sourcegraph documentation"
+title = "Documentation"
 layoutDir = "docs/.layouts"
 contentDir = "docs"
 
