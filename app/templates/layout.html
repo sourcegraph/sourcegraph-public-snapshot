@@ -70,27 +70,29 @@
 			</div>
 		</header>
 
-		{{if eq $.TemplateName "home/dashboard.html"}}
-			<div class="container{{if .FullWidth}}-fluid{{end}}">
-				{{if not haveToolchain}}
+		{{if not $.DisableExternalLinks}}
+			{{if eq $.TemplateName "home/dashboard.html"}}
+				<div class="container{{if .FullWidth}}-fluid{{end}}">
+					{{if not haveToolchain}}
+						<div
+							data-react="AlertView"
+							data-html="
+								<strong>Sourcegraph is running without support for your language!</strong> <a href='https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/toolchains/'>Please troubleshoot this issue!</a>
+							">
+						</div>
+					{{end}}
+
 					<div
 						data-react="AlertView"
+						data-closeable="true"
+						data-has-cookie="true"
+						data-icon="fa-users"
 						data-html="
-							<strong>Sourcegraph is running without support for your language!</strong> <a href='https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/toolchains/'>Please troubleshoot this issue!</a>
+							<strong>Invite team members to this Sourcegraph instance by following <a href='https://src.sourcegraph.com/sourcegraph/.docs/config/appurl-dns/'>these simple instructions</a>!</strong>
 						">
 					</div>
-				{{end}}
-
-				<div
-					data-react="AlertView"
-					data-closeable="true"
-					data-has-cookie="true"
-					data-icon="fa-users"
-					data-html="
-						<strong>Invite team members to this Sourcegraph instance by following <a href='https://src.sourcegraph.com/sourcegraph/.docs/config/appurl-dns/'>these simple instructions</a>!</strong>
-					">
 				</div>
-			</div>
+			{{end}}
 		{{end}}
 
 		<div class="container{{if .FullWidth}}-fluid{{end}} body" id="pjax-container" data-pjax-container>
