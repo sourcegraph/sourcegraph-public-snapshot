@@ -1,16 +1,24 @@
 var React = require("react");
+var SearchRouter = require("../routing/SearchRouter");
 
 var SearchBar = React.createClass({
 	componentDidMount() {
 		if (this.props.searchOptions) {
 			var query = this.props.searchOptions.Query;
 			React.findDOMNode(this.refs.queryInput).value = query;
+			this._submitSearch();
 		}
+	},
+
+	_submitSearch(e) {
+		if (e) e.preventDefault();
+		var query = React.findDOMNode(this.refs.queryInput).value;
+		SearchRouter.searchRepo(query, this.props.repo);
 	},
 
 	render() {
 		return (
-			<form className="navbar-form" role="search">
+			<form className="navbar-form" onSubmit={this._submitSearch}>
 				<div className="form-group">
 					<div className="input-group">
 						<input className="form-control search-input-next"
