@@ -22,7 +22,7 @@ gcloud --project PROJECT-ID compute firewall-rules create sourcegraph-grpc-allow
 
 # Next steps
 
-* [Getting started with Sourcegraph for your team]({{< relref "config/team-config.md" >}})
+* [Getting started with Sourcegraph for your team]({{< relref "config/appurl-dns.md" >}})
 
 # Troubleshooting
 

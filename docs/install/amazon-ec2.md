@@ -20,7 +20,7 @@ To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instanc
 
 # Next steps
 
-* [Configuring Sourcegraph for your team]({{< relref "config/team-config.md" >}})
+* [Configuring Sourcegraph for your team]({{< relref "config/appurl-dns.md" >}})
 
 # Troubleshooting
 

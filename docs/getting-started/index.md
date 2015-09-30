@@ -5,7 +5,7 @@ navtitle = "Getting started"
 
 Setting up Sourcegraph for your team is a breeze. Let's get started.
 
-# 1. Choose your cloud
+# 1. Choose your cloud provider
 
 Follow instructions for deploying Sourcegraph to your cloud provider of choice.
 
