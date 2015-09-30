@@ -57,5 +57,5 @@ run `git remote add origin ...` to create a new `origin`.
 
 To fix this, just run:
 ```
-git remote set-url origin https://src.mycompany.com/my/repo
+git remote set-url origin http://src.mycompany.com/my/repo
 ```
