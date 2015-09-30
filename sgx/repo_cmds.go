@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"code.google.com/p/rog-go/parallel"
@@ -51,15 +50,6 @@ func init() {
 		"create a repo",
 		"The `sgx repo create` command creates a new repo.",
 		&repoCreateCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = reposGroup.AddCommand("link",
-		"symlink an existing repo",
-		"The `sgx repo link` command creates a symlink to an existing local repo.",
-		&repoLinkCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -205,42 +195,6 @@ func (c *repoCreateCmd) Execute(args []string) error {
 		return err
 	}
 	log.Printf("# created: %s", repo.URI)
-	return nil
-}
-
-type repoLinkCmd struct {
-	Args struct {
-		URI string `name:"REPO-URI" description:"desired repository URI (e.g., host.com/myrepo)"`
-	} `positional-args:"yes" required:"yes" count:"1"`
-	Path   string `short:"p" long:"path" description:"path to local repo" default:"."`
-	SGPath string `short:"s" long:"sgpath" description:"path to Sourcegraph dir" default:"$SGPATH"`
-}
-
-func (c *repoLinkCmd) Execute(args []string) error {
-	c.Args.URI = filepath.Clean(c.Args.URI)
-	if absPath, err := filepath.Abs(c.Path); err == nil {
-		c.Path = filepath.Clean(absPath)
-	} else {
-		return err
-	}
-	c.SGPath = os.ExpandEnv(c.SGPath)
-	if c.SGPath == "" {
-		return fmt.Errorf("SGPATH not set. Use `-s` flag to specify path to Sourcegraph dir (eg. `-s ~/.sourcegraph`)")
-	}
-	_, err := os.Stat(c.SGPath)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("Path %s does not exist. Use `-s` flag to specify path to Sourcegraph dir (eg. `-s ~/.sourcegraph`)", c.SGPath)
-	}
-	repoPath := filepath.Join(c.SGPath, "repos", c.Args.URI)
-	repoDir := filepath.Dir(repoPath)
-	if err := os.MkdirAll(repoDir, 0755); err != nil {
-		return err
-	}
-	if err := os.Symlink(c.Path, repoPath); err != nil {
-		return err
-	}
-	log.Printf("# symlinked repo '%s' to local dir '%s'", c.Args.URI, c.Path)
-	log.Printf("#   %s -> %s'", repoPath, c.Path)
 	return nil
 }
 
