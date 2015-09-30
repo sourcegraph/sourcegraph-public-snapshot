@@ -5,15 +5,17 @@ apt-get install -y libcap2-bin
 wget -O - https://sourcegraph.com/.download/install.sh | bash
 setcap cap_net_bind_service=+ep /usr/bin/src
 
-export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/metadata/v1/hostname http://169.254.169.254/latest/meta-data/public-hostname)
+# First we try for DigitalOcean, using their API.
+export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
 if [ "$SRC_HOSTNAME" == "" ]; then
-  # Not all EC2 VPC instances have public DNS; use the public IP in that case.
+  # Maybe it's EC2 then? Let's try.
   export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/latest/meta-data/public-ipv4)
 fi
 if [ "$SRC_HOSTNAME" == "" ]; then
-  # Google Compute Engine
+  # Lastly we try for Google Compute Engine
   export SRC_HOSTNAME=$(curl -H 'Metadata-Flavor: Google' -fs http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
 fi
+
 sed -i 's|^;AppURL =.*|AppURL = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
 echo 'HTTPAddr = :80' >> /etc/sourcegraph/config.ini
 restart src || echo ok
