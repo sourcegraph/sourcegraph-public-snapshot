@@ -41,3 +41,7 @@ or [make your Sourcegraph publicly accessible]({{< relref "config/public.md" >}}
 
 [Enabling TLS]({{< relref "config/https.md" >}}) is *strongly recommended*,
 to avoid leaking credentials.
+
+# Inviting team members
+
+In conclusion, to invite a team member (after following the above configuration steps) you just need to grant them access via <code>src access grant</code> and give them a link to your Sourcegraph instance (the <code>AppURL</code> you configured).
