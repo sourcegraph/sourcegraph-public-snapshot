@@ -39,6 +39,7 @@ window.addEventListener("popstate", (e) => {
 		showResultsView();
 		SearchActions.searchRepo(e.state.searchRepo.query, e.state.searchRepo.repo);
 	} else if (searchViewIsActive) {
+		// Navigate away from the search view by performing a refresh of the previous URL.
 		searchViewIsActive = false;
 		window.location.href = window.location.href;
 	}

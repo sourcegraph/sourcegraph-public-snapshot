@@ -17,8 +17,10 @@ var SearchResultsView = React.createClass({
 
 	render() {
 		return (
-			<div className="search-results">
-				<i>No search results found for {this.state.query}</i>
+			<div className="search-results row">
+				<div className="col-md-10 col-md-offset-1">
+					<i>No search results found for {this.state.query}</i>
+				</div>
 			</div>
 		);
 	},
