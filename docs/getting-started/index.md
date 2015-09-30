@@ -16,4 +16,6 @@ Follow instructions for deploying Sourcegraph to your cloud provider of choice:
 # 2. Enjoy
 
 Once your cloud VM is provisioned, navigate your browser to the instance's
-external IP address. Enjoy!
+external IP address to register your Sourcegraph server. The first user
+will automatically become the server admin. (So make sure to register
+your server before sharing a link with teammates!)
