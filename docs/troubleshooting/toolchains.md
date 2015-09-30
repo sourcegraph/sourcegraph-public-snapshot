@@ -1,6 +1,6 @@
 +++
-title = "Toolchain Troubleshooting"
-navtitle = "Toolchains"
+title = "Language support troubleshooting"
+navtitle = "Language support"
 +++
 
 Sourcegraph uses [srclib](https://srclib.org) toolchains to parse and perform analysis on your source code at the AST level. Here we'll discuss common questions and problems relating to toolchains.
