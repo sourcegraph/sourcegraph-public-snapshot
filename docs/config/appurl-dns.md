@@ -44,4 +44,4 @@ to avoid leaking credentials.
 
 # Inviting team members
 
-In conclusion, to invite a team member (after following the above configuration steps) you just need to grant them access via <code>src access grant</code> and give them a link to your Sourcegraph instance (the <code>AppURL</code> you configured).
+In conclusion, to invite a team member (after following the above configuration steps) you just need to grant them access via <code>src access grant USERNAME</code> and give them a link to your Sourcegraph instance (the <code>AppURL</code> you configured).
