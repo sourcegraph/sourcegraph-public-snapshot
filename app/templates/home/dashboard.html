@@ -4,8 +4,8 @@
 {{define "Body"}}
 <br/>
 <div class="row">
-	<div class="col-md-{{if .CurrentUser.Admin}}6{{else}}12{{end}}">
-		<h3>Repositories <button class="btn btn-default" data-toggle="collapse" data-target="#addRepo">+</button></h3>
+	<div class="col-md-{{if .Users}}6{{else}}12{{end}}">
+		<h3>Repositories <button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addRepo">
 			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
 				<div>
@@ -24,16 +24,16 @@
 			{{end}}
 		</div>
 	</div>
-	{{if .CurrentUser.Admin}}
+	{{if .Users}}
 	<div class="col-md-6">
-		<h3>Users <button class="btn btn-default" data-toggle="collapse" data-target="#addUser">+</button></h3>
+		<h3>Users <button class="btn btn-default" data-toggle="collapse" data-target="#addUser"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addUser">
 			<div class="well">
 				<code>src --endpoint={{.AppURL}} access grant USERNAME</code>
 			</div>
 		</div>
 		<div class="list-group">
-			{{range .OrgUsers}}
+			{{range .Users}}
 				<li class="list-group-item">
 					{{.}}
 				</li>

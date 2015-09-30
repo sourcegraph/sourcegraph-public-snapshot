@@ -37,15 +37,19 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	var template string
-	var orgUsers []string
+	var users []string
 	if len(repos.Repos) > 0 {
 		userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
-		if err == nil {
+		if err != nil && grpc.Code(err) != codes.PermissionDenied {
+			return err
+		}
+		if err == nil { // current user is admin of the instance
 			for _, perms := range userPerms.UserPermissions {
 				user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
-				if err == nil {
-					orgUsers = append(orgUsers, user.Login)
+				if err != nil {
+					return err
 				}
+				users = append(users, user.Login)
 			}
 		}
 		template = "home/dashboard.html"
@@ -54,14 +58,14 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return tmpl.Exec(r, w, template, http.StatusOK, nil, &struct {
-		Repos    []*sourcegraph.Repo
-		SGPath   string
-		OrgUsers []string
+		Repos  []*sourcegraph.Repo
+		SGPath string
+		Users  []string
 		tmpl.Common
 	}{
-		Repos:    repos.Repos,
-		SGPath:   os.Getenv("SGPATH"),
-		OrgUsers: orgUsers,
+		Repos:  repos.Repos,
+		SGPath: os.Getenv("SGPATH"),
+		Users:  users,
 	})
 }
 
