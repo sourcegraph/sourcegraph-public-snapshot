@@ -40,6 +40,7 @@ var CodeReviewPopup = React.createClass({
 	render() {
 		var classes = classNames({
 			"token-details": true,
+			"token-details-review": true,
 			"error": this.state.error,
 			"closed": this.state.closed,
 		});
@@ -55,7 +56,7 @@ var CodeReviewPopup = React.createClass({
 								Open definition
 							</a>
 								{this.state.File ? <span className="fileInfo">
-									&nbsp;in <i>{this.state.File.Path}</i> @ {this.state.File.RepoRev.CommitID.substring(0, 7)}
+									&nbsp;in <i className="file-path" title={this.state.File.Path}>{this.state.File.Path}</i> @ {this.state.File.RepoRev.CommitID.substring(0, 7)}
 								</span> : null}
 							<a className="close top-action" onClick={this._close}>×</a>
 						</header>

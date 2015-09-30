@@ -265,6 +265,17 @@
 }
 
 .token-details {
+	&.token-details-review {
+		i.file-path {
+			display: inline-block;
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
+			width: 355px;
+			vertical-align: -4px;
+		}
+	}
+
 	overflow: hidden;
 
 	&.closed {
