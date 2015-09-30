@@ -3,11 +3,17 @@ var React = require("react");
 var SearchResultsView = require("../components/SearchResultsView");
 var SearchActions = require("../actions/SearchActions");
 
+var searchViewIsActive = false;
+
+// TODO(renfredxh) This router is implemented in a way that's similar to
+// CodeFileRouter. There are a lot of improvements that need to be made to
+// make this more robust.
+
 module.exports.searchRepo = (query, repo) => {
 	history.pushState({
 		searchRepo: {query: query, repo: repo},
 	}, "", `/${repo.URI}/.search?q=${query}`);
-	initializeResultsView();
+	showResultsView();
 	SearchActions.searchRepo(query, repo);
 };
 
@@ -17,22 +23,23 @@ module.exports.searchRepo = (query, repo) => {
  * user is currently on.
  * @returns {void}
  */
-function initializeResultsView() {
-	// TODO If we're already have a search results view, don't render a new one.
-	window.tester = React.render((
+function showResultsView() {
+	if (searchViewIsActive) return;
+
+	React.render((
 		<SearchResultsView />
 	), document.getElementById("main"));
+	searchViewIsActive = true;
 }
 
 // When a history event occcurs check to see if the state contains search data
 // and if so initiate a new search.
 window.addEventListener("popstate", (e) => {
-	if (!e.state) {
-		window.location.href = window.location.href;
-	} else if (e.state.searchRepo) {
-		initializeResultsView();
+	if (e.state && e.state.searchRepo) {
+		showResultsView();
 		SearchActions.searchRepo(e.state.searchRepo.query, e.state.searchRepo.repo);
-	} else {
+	} else if (searchViewIsActive) {
+		searchViewIsActive = false;
 		window.location.href = window.location.href;
 	}
 });

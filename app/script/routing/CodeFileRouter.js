@@ -224,7 +224,7 @@ module.exports.start = function() {
 			}
 		}
 
-		if (!CodeFileStore.isSameFile(e.state.file)) {
+		if (e.state.file && !CodeFileStore.isSameFile(e.state.file)) {
 			var file = e.state.file;
 			var fileUrl = router.fileURL(file.RepoRev.URI, file.RepoRev.Rev||file.RepoRev.CommitID, file.Path);
 			CodeFileRouterActions.loadFile(fileUrl).then(matchState);
