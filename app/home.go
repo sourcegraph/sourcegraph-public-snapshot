@@ -17,7 +17,6 @@ import (
 )
 
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
-	// cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 	cl := sourcegraph.NewClientFromContext(ctx)
 
