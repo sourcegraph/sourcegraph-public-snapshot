@@ -20,12 +20,9 @@ gcloud --project PROJECT-ID compute firewall-rules create sourcegraph-grpc-allow
 ```
 * In 5 minutes, your Sourcegraph server should be available via HTTP (not HTTPS) at the VM's external IP. ***Note:** The link from the Web Console is `https://EXTERNAL-IP`, which will not work because there is no HTTPS listener. Make sure you go to `http://EXTERNAL-IP`!*
 
-Note: [Enabling TLS]({{< relref "config/https.md" >}}) is *strongly
-recommended*, to avoid leaking credentials.
-
 # Next steps
 
-* [Getting started with Sourcegraph for your team]({{< relref "getting-started/index.md" >}})
+* [Getting started with Sourcegraph for your team]({{< relref "config/team-config.md" >}})
 
 # Troubleshooting
 

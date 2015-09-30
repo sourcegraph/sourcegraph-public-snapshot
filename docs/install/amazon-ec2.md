@@ -18,12 +18,9 @@ To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instanc
   * Port 3100 (for the API)
 * In 5 minutes, your Sourcegraph server should be available via HTTP at the EC2 instance's public IP or hostname.
 
-Note: [Enabling TLS]({{< relref "config/https.md" >}}) is *strongly
-recommended*, to avoid leaking credentials.
-
 # Next steps
 
-* [Getting started with Sourcegraph for your team]({{< relref "getting-started/index.md" >}})
+* [Configuring Sourcegraph for your team]({{< relref "config/team-config.md" >}})
 
 # Troubleshooting
 

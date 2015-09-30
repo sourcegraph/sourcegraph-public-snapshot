@@ -17,12 +17,9 @@ To set up Sourcegraph on a new [Digital Ocean](https://www.digitalocean.com/) cl
 * After creating the droplet, be sure to set up a DNS record (or `/etc/hosts` entry) for your Droplet's hostname.
 * In 3-4 minutes, your Sourcegraph server should be available at `http://HOSTNAME`.
 
-Note: [Enabling TLS]({{< relref "config/https.md" >}}) is *strongly
-recommended*, to avoid leaking credentials.
-
 # Next steps
 
-* [Getting started with Sourcegraph for your team]({{< relref "getting-started/index.md" >}})
+* [Getting started with Sourcegraph for your team]({{< relref "config/team-config.md" >}})
 
 # Troubleshooting
 
