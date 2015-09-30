@@ -2,8 +2,6 @@
 title = "AppURL and DNS"
 +++
 
-# Update hostname
-
 If you installed using one of the standard distribution or cloud provider packages,
 Sourcegraph will run with configuration found at `/etc/sourcegraph/config.ini`.
 
