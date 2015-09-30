@@ -1,5 +1,6 @@
 var React = require("react");
 
+var globals = require("../globals");
 var SearchResultsView = require("../components/SearchResultsView");
 var SearchActions = require("../actions/SearchActions");
 
@@ -34,13 +35,16 @@ function showResultsView() {
 
 // When a history event occcurs check to see if the state contains search data
 // and if so initiate a new search.
-window.addEventListener("popstate", (e) => {
-	if (e.state && e.state.searchRepo) {
-		showResultsView();
-		SearchActions.searchRepo(e.state.searchRepo.query, e.state.searchRepo.repo);
-	} else if (searchViewIsActive) {
-		// Navigate away from the search view by performing a refresh of the previous URL.
-		searchViewIsActive = false;
-		window.location.href = window.location.href;
-	}
-});
+if (globals.Features.SearchNext) {
+	console.log("enabled");
+	window.addEventListener("popstate", (e) => {
+		if (e.state && e.state.searchRepo) {
+			showResultsView();
+			SearchActions.searchRepo(e.state.searchRepo.query, e.state.searchRepo.repo);
+		} else if (searchViewIsActive) {
+			// Navigate away from the search view by performing a refresh of the previous URL.
+			searchViewIsActive = false;
+			window.location.href = window.location.href;
+		}
+	});
+}
