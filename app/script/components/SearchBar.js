@@ -13,7 +13,9 @@ var SearchBar = React.createClass({
 	_submitSearch(e) {
 		if (e) e.preventDefault();
 		var query = React.findDOMNode(this.refs.queryInput).value;
-		SearchRouter.searchRepo(query, this.props.repo);
+		if (this.props.repo) {
+			SearchRouter.searchRepo(query, this.props.repo);
+		}
 	},
 
 	render() {
