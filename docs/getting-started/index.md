@@ -3,7 +3,7 @@ title = "Getting started with Sourcegraph"
 navtitle = "Getting started"
 +++
 
-Setting up Sourcegraph for your team is a breeze. Let's get started.
+Setting up Sourcegraph for your team is easy. Let's get started.
 
 # 1. Choose your cloud provider
 
