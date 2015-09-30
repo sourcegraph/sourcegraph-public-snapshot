@@ -7,11 +7,11 @@ Setting up Sourcegraph for your team is easy. Let's get started.
 
 # 1. Choose your cloud provider
 
-Follow instructions for deploying Sourcegraph to your cloud provider of choice.
+Follow instructions for deploying Sourcegraph to your cloud provider of choice:
 
-* [Digital Ocean]({{< relref "install/digital-ocean.md" >}})
-* [AWS]({{< relref "install/amazon-ec2.md" >}})
-* [Google Cloud Platform]({{< relref "install/google-cloud-platform.md" >}})
+* [Digital Ocean]({{< relref "deploy/digital-ocean.md" >}})
+* [AWS]({{< relref "deploy/amazon-ec2.md" >}})
+* [Google Cloud Platform]({{< relref "deploy/google-cloud-platform.md" >}})
 
 # 2. Enjoy
 
