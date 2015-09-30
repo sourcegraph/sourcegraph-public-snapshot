@@ -1,6 +1,6 @@
 +++
-title = "Installing on Docker"
-navtitle = "on Docker"
+title = "Deploying with Docker"
+navtitle = "with Docker"
 +++
 
 The `Dockerfile` in the Sourcegraph repository can be used to build a
