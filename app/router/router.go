@@ -65,11 +65,6 @@ const (
 
 	RepoEnable = "repo.enable"
 
-	Changeset            = "repo.changeset"
-	ChangesetList        = "repo.changeset.list"
-	ChangesetFiles       = "repo.changeset.files"
-	ChangesetFilesFilter = "repo.changeset.files.filter"
-
 	RepoRevCommits = "repo.rev.commits"
 	RepoCommit     = "repo.commit"
 	RepoTags       = "repo.tags"
@@ -206,11 +201,6 @@ func New(base *mux.Router) *Router {
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
 	repoRev.Path(`/.discussion/{ID:\d+}`).Methods("GET", "POST").Name(RepoDiscussion)
 	repoRev.Path("/.discussions").Methods("GET").Name(RepoDiscussionList)
-
-	repoRev.Path(`/.changesets/{ID:\d+}`).Methods("GET").Name(Changeset)
-	repoRev.Path(`/.changesets`).Methods("GET").Name(ChangesetList)
-	repoRev.Path(`/.changesets/{ID:\d+}/files`).Methods("GET").Name(ChangesetFiles)
-	repoRev.Path(`/.changesets/{ID:\d+}/files/{Filter:.+}`).Methods("GET").Name(ChangesetFilesFilter)
 
 	headVar := "{Head:" + routevar.NamedToNonCapturingGroups(spec.RevPattern) + "}"
 	repoRev.Path("/.compare/" + headVar).Methods("GET").Name(RepoCompare)

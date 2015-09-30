@@ -36,20 +36,6 @@ func (r *Router) URLToRepoDiscussion(uri string, id int64) *url.URL {
 	return r.URLTo(RepoDiscussion, "Repo", uri, "ID", strconv.FormatInt(id, 10))
 }
 
-func (r *Router) URLToRepoChangeset(uri string, id int64) *url.URL {
-	return r.URLTo(Changeset, "Repo", uri, "ID", strconv.FormatInt(id, 10))
-}
-
-func (r *Router) URLToRepoChangesets(uri string, closed bool) *url.URL {
-	url := r.URLTo(ChangesetList, "Repo", uri)
-	if closed {
-		q := url.Query()
-		q.Set("Closed", "1")
-		url.RawQuery = q.Encode()
-	}
-	return url
-}
-
 func (r *Router) URLToRepoRev(repoURI string, rev string) (*url.URL, error) {
 	return r.URLToRepoSubrouteRev(Repo, repoURI, rev)
 }

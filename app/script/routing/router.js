@@ -5,7 +5,7 @@ module.exports = {
 	},
 
 	changesetURL(repo, id) {
-		return `${module.exports.repoURL(repo)}/.changesets/${id}`;
+		return `${module.exports.repoURL(repo)}/.changes/${id}`;
 	},
 
 	discussionURL(defKey, id) {

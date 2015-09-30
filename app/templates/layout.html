@@ -27,7 +27,10 @@
 		<link href="{{assetURL "/sourcebox.css"}}" rel="stylesheet">
 		<link href="{{assetURL "/font/octicons/octicons.css"}}" rel="stylesheet">
 
-		{{if .Features}}<script ignore-csp>window._featureToggles = JSON.parse({{.Features|json}});</script>{{end}}
+		<script ignore-csp>
+			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
+			window._csrfToken = "{{.CSRFToken}}";
+		</script>
 
 		<script src="{{assetURL "/analytics.js"}}"></script>
 

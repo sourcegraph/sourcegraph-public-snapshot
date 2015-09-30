@@ -12,10 +12,6 @@ const (
 
 	RepoFileFinder = "repo.file.finder"
 
-	ChangesetCreate       = "repo.changeset.create"
-	ChangesetSubmitReview = "repo.changeset.submit-review"
-	ChangesetUpdate       = "repo.changeset.update"
-
 	Definition  = "def"
 	DefList     = "def.list"
 	DefPopover  = "def.popover"
@@ -61,18 +57,6 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Name(DefList)
 
 	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
-
-	repo.Path("/.changesets/create").
-		Methods(m("POST")...).
-		Name(ChangesetCreate)
-
-	repo.Path(`/.changesets/{ID:\d+}/submit-review`).
-		Methods(m("POST")...).
-		Name(ChangesetSubmitReview)
-
-	repo.Path(`/.changesets/{ID:\d+}/update`).
-		Methods(m("POST")...).
-		Name(ChangesetUpdate)
 
 	repoRevPath := `/` + routevar.RepoRev
 	repoRev := base.PathPrefix(repoRevPath).

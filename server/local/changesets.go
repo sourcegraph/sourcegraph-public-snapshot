@@ -1,17 +1,11 @@
 package local
 
 import (
-	"bytes"
-	"fmt"
-
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
 var Changesets sourcegraph.ChangesetsServer = &changesets{}
@@ -28,6 +22,7 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 	defer noCache(ctx)
 
 	{
+		// TODO(x): Do this after pushing any branch instead?
 		// Enqueue builds (if they don't yet exist) for the newly
 		// created changeset's base and head.
 		//
@@ -54,46 +49,6 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 	if err := store.ChangesetsFromContext(ctx).Create(ctx, op.Repo.URI, op.Changeset); err != nil {
 		return nil, err
 	}
-
-	{
-		// Send Slack notification.
-		userStr, err := getUserDisplayName(ctx)
-		if err != nil {
-			return nil, err
-		}
-		notif.Action(notif.ActionContext{
-			Person:        &sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: userStr}},
-			ActionType:    "created",
-			ObjectURL:     appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.Changeset.ID)),
-			ObjectRepo:    op.Repo.URI,
-			ObjectType:    "changeset",
-			ObjectID:      op.Changeset.ID,
-			ObjectTitle:   op.Changeset.Title,
-			ActionContent: op.Changeset.Description,
-		})
-
-		// Notify mentioned people.
-		ppl, err := mdutil.Mentions(ctx, []byte(op.Changeset.Description))
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range ppl {
-			msg := fmt.Sprintf(
-				"*%s* mentioned @%s in <%s|%s changeset #%d>: %s\n\n%s",
-				userStr, p.Login,
-				appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.Changeset.ID)),
-				op.Repo.URI, op.Changeset.ID, op.Changeset.Title, op.Changeset.Description,
-			)
-			notif.Mention(p, notif.MentionContext{
-				Mentioner:    userStr,
-				MentionerURL: appURL(ctx, router.Rel.URLToUser(userStr)),
-				Where:        fmt.Sprintf("in a changeset %s/%d", op.Repo.URI, op.Changeset.ID),
-				WhereURL:     appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.Changeset.ID)),
-				SlackMsg:     msg,
-			})
-		}
-	}
-
 	return op.Changeset, nil
 }
 
@@ -112,65 +67,6 @@ func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.Changeset
 	if err != nil {
 		return nil, err
 	}
-
-	{
-		// Send Slack notification.
-		userStr, err := getUserDisplayName(ctx)
-		if err != nil {
-			return nil, err
-		}
-		cs, err := s.Get(ctx, &sourcegraph.ChangesetSpec{Repo: op.Repo, ID: op.ChangesetID})
-		if err != nil {
-			return nil, err
-		}
-
-		msg := bytes.NewBufferString(op.Review.Body)
-		for _, c := range op.Review.Comments {
-			msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
-		}
-		notif.Action(notif.ActionContext{
-			Person: &sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: userStr}},
-			Recipients: []*sourcegraph.Person{
-				&sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: cs.Author.Login}},
-			},
-			ActionType:    "reviewed",
-			ObjectURL:     appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.ChangesetID)),
-			ObjectRepo:    op.Repo.URI,
-			ObjectType:    "changeset",
-			ObjectID:      op.ChangesetID,
-			ObjectTitle:   cs.Title,
-			ActionContent: msg.String(),
-		})
-
-		// Notify mentions.
-		ppl, err := mdutil.Mentions(ctx, []byte(op.Review.Body))
-		if err != nil {
-			return nil, err
-		}
-		for _, c := range op.Review.Comments {
-			ppll, err := mdutil.Mentions(ctx, []byte(c.Body))
-			if err != nil {
-				return nil, err
-			}
-			ppl = append(ppl, ppll...)
-		}
-		for _, p := range ppl {
-			msg := fmt.Sprintf(
-				"*%s* mentioned @%s in a review on <%s|changeset #%d>",
-				userStr, p.Login,
-				appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.ChangesetID)),
-				op.ChangesetID,
-			)
-			notif.Mention(p, notif.MentionContext{
-				Mentioner:    userStr,
-				MentionerURL: appURL(ctx, router.Rel.URLToUser(userStr)),
-				Where:        fmt.Sprintf("in review %s/%d", op.Repo.URI, op.ChangesetID),
-				WhereURL:     appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.ChangesetID)),
-				SlackMsg:     msg,
-			})
-		}
-	}
-
 	return review, err
 }
 

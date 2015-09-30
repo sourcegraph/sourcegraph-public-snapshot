@@ -130,4 +130,6 @@ module.exports = {
 	}),
 
 	Features: window._featureToggles,
+
+	CsrfToken: window._csrfToken,
 };

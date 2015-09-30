@@ -60,10 +60,6 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 
 	r.Get(ui_router.RepoFileFinder).Handler(p.handler(serveRepoFileFinder))
 
-	r.Get(ui_router.ChangesetCreate).Handler(p.handler(serveChangesetCreate))
-	r.Get(ui_router.ChangesetSubmitReview).Handler(p.handler(serveChangesetSubmitReview))
-	r.Get(ui_router.ChangesetUpdate).Handler(p.handler(serveChangesetUpdate))
-
 	r.Get(ui_router.Definition).Handler(p.handler(serveDef))
 	r.Get(ui_router.DefList).Handler(p.handler(serveDefList))
 	r.Get(ui_router.DefExamples).Handler(p.handler(serveDefExamples))

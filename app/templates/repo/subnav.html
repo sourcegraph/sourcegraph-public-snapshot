@@ -30,15 +30,6 @@
 					</li>
 				{{end}}
 
-				{{if repoEnabledFrameChangesets .Repo}}
-					<li {{if (eq .CurrentRoute "repo.changeset.list")}}class="active"{{end}}>
-						<a href="{{urlToRepoChangesets .Repo.URI false}}">
-							<i class="octicon octicon-git-pull-request"></i>
-							<span class="txt">Changes</span>
-						</a>
-					</li>
-				{{end}}
-
 				{{range (repoEnabledFrames .Repo)}}
 					<li>
 						<a href="{{urlToRepoApp $.Repo.URI .ID}}">

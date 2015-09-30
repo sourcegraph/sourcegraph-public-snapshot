@@ -65,10 +65,13 @@ module.exports = {
 	 * @returns {jQuery.jqXHR} - Promise.
 	 */
 	createChangeset(repo, changeSet) {
-		var createUrl = `/ui${router.repoURL(repo)}/.changesets/create`;
+		var createUrl = `${router.repoURL(repo)}/.changes/create`;
 
 		return $.ajax({
 			method: "POST",
+			headers: {
+				"X-CSRF-Token": globals.CsrfToken,
+			},
 			url: createUrl,
 			data: JSON.stringify(changeSet),
 		}).then(data => {
@@ -253,11 +256,14 @@ module.exports = {
 	 * @returns {jQuery.jqXHR} - Promise.
 	 */
 	submitReview(repo, changesetId, body, drafts) {
-		var url = `/ui${router.changesetURL(repo, changesetId)}/submit-review`;
+		var url = `${router.changesetURL(repo, changesetId)}/submit-review`;
 
 		return $.ajax({
 			url: url,
 			method: "POST",
+			headers: {
+				"X-CSRF-Token": globals.CsrfToken,
+			},
 			data: JSON.stringify({
 				Body: body,
 				Comments: drafts,
@@ -280,11 +286,14 @@ module.exports = {
 	 * @returns {jQuery.jqXHR} - Promise.
 	 */
 	updateChangesetStatus(repo, changesetId, status) {
-		var url = `/ui${router.changesetURL(repo, changesetId)}/update`;
+		var url = `${router.changesetURL(repo, changesetId)}/update`;
 
 		return $.ajax({
 			url: url,
 			method: "POST",
+			headers: {
+				"X-CSRF-Token": globals.CsrfToken,
+			},
 			data: JSON.stringify(status),
 		}).then(data => {
 			if (data.hasOwnProperty("Error")) {

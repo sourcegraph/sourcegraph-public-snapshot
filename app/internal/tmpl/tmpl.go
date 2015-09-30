@@ -88,9 +88,6 @@ func repoTemplates() error {
 		{"repo/compare.html", "repo/commit.inc.html"},
 		{"repo/discussion.html", "repo/discussions.inc.html"},
 		{"repo/discussions.html", "repo/discussions.inc.html"},
-		{"repo/changeset.html"},
-		{"repo/changeset.list.html"},
-		{"repo/changeset.notfound.html"},
 		{"repo/no_vcs_data.html"},
 		{"repo/no_build.html"},
 
