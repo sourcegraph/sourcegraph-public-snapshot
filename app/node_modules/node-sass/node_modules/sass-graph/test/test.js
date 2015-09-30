@@ -4,21 +4,21 @@ var path = require("path");
 
 var fixtures = path.resolve("test/fixtures");
 var files = {
-  'a.scss': fixtures + '/a.scss',
-  'b.scss': fixtures + '/b.scss',
-  '_c.scss': fixtures + '/_c.scss',
-  'd.scss': fixtures + '/d.scss',
-  '_e.scss': fixtures + '/components/_e.scss',
-  'f.scss': fixtures + '/f.scss',
-  'g.scss': fixtures + '/g.scss',
-  '_h.scss': fixtures + '/nested/_h.scss',
-  '_i.scss': fixtures + '/nested/_i.scss',
-  'i.scss': fixtures + '/_i.scss',
-  'j.scss': fixtures + '/j.scss',
-  'k.l.scss': fixtures + '/components/k.l.scss',
-  'm.scss': fixtures + '/m.scss',
-  '_n.scss': fixtures + '/compass/_n.scss',
-  '_compass.scss': fixtures + '/components/_compass.scss'
+  'a.scss': path.join(fixtures, 'a.scss'),
+  'b.scss': path.join(fixtures, 'b.scss'),
+  '_c.scss': path.join(fixtures, '_c.scss'),
+  'd.scss': path.join(fixtures, 'd.scss'),
+  '_e.scss': path.join(fixtures, 'components/_e.scss'),
+  'f.scss': path.join(fixtures, 'f.scss'),
+  'g.scss': path.join(fixtures, 'g.scss'),
+  '_h.scss': path.join(fixtures, 'nested/_h.scss'),
+  '_i.scss': path.join(fixtures, 'nested/_i.scss'),
+  'i.scss': path.join(fixtures, '_i.scss'),
+  'j.scss': path.join(fixtures, 'j.scss'),
+  'k.l.scss': path.join(fixtures, 'components/k.l.scss'),
+  'm.scss': path.join(fixtures, 'm.scss'),
+  '_n.scss': path.join(fixtures, 'compass/_n.scss'),
+  '_compass.scss': path.join(fixtures, 'components/_compass.scss')
 }
 
 describe('sass-graph', function(){

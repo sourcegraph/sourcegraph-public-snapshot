@@ -94,33 +94,60 @@
         return id === 'eval' || id === 'arguments';
     }
 
-    function isIdentifierName(id) {
+    function isIdentifierNameES5(id) {
         var i, iz, ch;
 
-        if (id.length === 0) {
-            return false;
-        }
+        if (id.length === 0) { return false; }
 
         ch = id.charCodeAt(0);
-        if (!code.isIdentifierStart(ch) || ch === 92) {  // \ (backslash)
+        if (!code.isIdentifierStartES5(ch)) {
             return false;
         }
 
         for (i = 1, iz = id.length; i < iz; ++i) {
             ch = id.charCodeAt(i);
-            if (!code.isIdentifierPart(ch) || ch === 92) {  // \ (backslash)
+            if (!code.isIdentifierPartES5(ch)) {
                 return false;
             }
         }
         return true;
     }
 
+    function decodeUtf16(lead, trail) {
+        return (lead - 0xD800) * 0x400 + (trail - 0xDC00) + 0x10000;
+    }
+
+    function isIdentifierNameES6(id) {
+        var i, iz, ch, lowCh, check;
+
+        if (id.length === 0) { return false; }
+
+        check = code.isIdentifierStartES6;
+        for (i = 0, iz = id.length; i < iz; ++i) {
+            ch = id.charCodeAt(i);
+            if (0xD800 <= ch && ch <= 0xDBFF) {
+                ++i;
+                if (i >= iz) { return false; }
+                lowCh = id.charCodeAt(i);
+                if (!(0xDC00 <= lowCh && lowCh <= 0xDFFF)) {
+                    return false;
+                }
+                ch = decodeUtf16(ch, lowCh);
+            }
+            if (!check(ch)) {
+                return false;
+            }
+            check = code.isIdentifierPartES6;
+        }
+        return true;
+    }
+
     function isIdentifierES5(id, strict) {
-        return isIdentifierName(id) && !isReservedWordES5(id, strict);
+        return isIdentifierNameES5(id) && !isReservedWordES5(id, strict);
     }
 
     function isIdentifierES6(id, strict) {
-        return isIdentifierName(id) && !isReservedWordES6(id, strict);
+        return isIdentifierNameES6(id) && !isReservedWordES6(id, strict);
     }
 
     module.exports = {
@@ -129,7 +156,8 @@
         isReservedWordES5: isReservedWordES5,
         isReservedWordES6: isReservedWordES6,
         isRestrictedWord: isRestrictedWord,
-        isIdentifierName: isIdentifierName,
+        isIdentifierNameES5: isIdentifierNameES5,
+        isIdentifierNameES6: isIdentifierNameES6,
         isIdentifierES5: isIdentifierES5,
         isIdentifierES6: isIdentifierES6
     };

@@ -2,7 +2,7 @@ var jsdom = require("jsdom").jsdom;
 var sinon = require("sinon");
 
 global.document = jsdom("<html><body></body></html>");
-global.window = document.parentWindow;
+global.window = document.defaultView;
 global.navigator = {
 	userAgent: "test",
 };

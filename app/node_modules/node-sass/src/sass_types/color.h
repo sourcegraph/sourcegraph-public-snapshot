@@ -6,15 +6,13 @@
 
 namespace SassTypes
 {
-  using namespace v8;
-
   class Color : public SassValueWrapper<Color> {
     public:
       Color(Sass_Value*);
       static char const* get_constructor_name() { return "SassColor"; }
-      static Sass_Value* construct(const std::vector<Local<v8::Value>>);
+      static Sass_Value* construct(const std::vector<v8::Local<v8::Value>>, Sass_Value **);
 
-      static void initPrototype(Handle<ObjectTemplate>);
+      static void initPrototype(v8::Local<v8::FunctionTemplate>);
 
       static NAN_METHOD(GetR);
       static NAN_METHOD(GetG);

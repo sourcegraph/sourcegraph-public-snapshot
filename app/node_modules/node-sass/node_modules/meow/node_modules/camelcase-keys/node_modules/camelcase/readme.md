@@ -37,6 +37,12 @@ console.log(process.argv[3]);
 //=> --foo-bar
 camelCase(process.argv[3]);
 //=> fooBar
+
+camelCase('foo', 'bar');
+//=> fooBar
+
+camelCase('__foo__', '--bar');
+//=> fooBar
 ```
 
 

@@ -9,12 +9,10 @@
 
 namespace SassTypes
 {
-  using namespace v8;
-
   // Include this in any SassTypes::Value subclasses to handle all the heavy lifting of constructing JS
   // objects and wrapping sass values inside them
   template <class T>
-  class SassValueWrapper : public Value {
+  class SassValueWrapper : public SassTypes::Value {
     public:
       static char const* get_constructor_name() { return "SassValue"; }
 
@@ -22,23 +20,24 @@ namespace SassTypes
       virtual ~SassValueWrapper();
 
       Sass_Value* get_sass_value();
-      Local<Object> get_js_object();
+      v8::Local<v8::Object> get_js_object();
 
-      static Handle<Function> get_constructor();
-      static Local<FunctionTemplate> get_constructor_template();
+      static v8::Local<v8::Function> get_constructor();
+      static v8::Local<v8::FunctionTemplate> get_constructor_template();
       static NAN_METHOD(New);
+      static Sass_Value *fail(const char *, Sass_Value **);
 
     protected:
       Sass_Value* value;
-      static T* unwrap(Local<Object>);
+      static T* unwrap(v8::Local<v8::Object>);
 
     private:
-      static Persistent<Function> constructor;
-      Persistent<Object> js_object;
+      static Nan::Persistent<v8::Function> constructor;
+      Nan::Persistent<v8::Object> js_object;
   };
 
   template <class T>
-  Persistent<Function> SassValueWrapper<T>::constructor;
+  Nan::Persistent<v8::Function> SassValueWrapper<T>::constructor;
 
   template <class T>
   SassValueWrapper<T>::SassValueWrapper(Sass_Value* v) {
@@ -47,7 +46,7 @@ namespace SassTypes
 
   template <class T>
   SassValueWrapper<T>::~SassValueWrapper() {
-    NanDisposePersistent(this->js_object);
+    this->js_object.Reset();
     sass_delete_value(this->value);
   }
 
@@ -57,75 +56,76 @@ namespace SassTypes
   }
 
   template <class T>
-  Local<Object> SassValueWrapper<T>::get_js_object() {
+  v8::Local<v8::Object> SassValueWrapper<T>::get_js_object() {
     if (this->js_object.IsEmpty()) {
-      Local<Object> wrapper = NanNew(T::get_constructor())->NewInstance();
-      delete static_cast<T*>(NanGetInternalFieldPointer(wrapper, 0));
-      NanSetInternalFieldPointer(wrapper, 0, this);
-      NanAssignPersistent(this->js_object, wrapper);
+      v8::Local<v8::Object> wrapper = Nan::NewInstance(T::get_constructor()).ToLocalChecked();
+      delete static_cast<T*>(Nan::GetInternalFieldPointer(wrapper, 0));
+      Nan::SetInternalFieldPointer(wrapper, 0, this);
+      this->js_object.Reset(wrapper);
     }
 
-    return NanNew(this->js_object);
+    return Nan::New(this->js_object);
   }
 
   template <class T>
-  Local<FunctionTemplate> SassValueWrapper<T>::get_constructor_template() {
-    Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
-    tpl->SetClassName(NanNew(NanNew(T::get_constructor_name())));
+  v8::Local<v8::FunctionTemplate> SassValueWrapper<T>::get_constructor_template() {
+    Nan::EscapableHandleScope scope;
+    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
+    tpl->SetClassName(Nan::New<v8::String>(T::get_constructor_name()).ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    T::initPrototype(tpl->PrototypeTemplate());
+    T::initPrototype(tpl);
 
-    return tpl;
+    return scope.Escape(tpl);
   }
 
   template <class T>
-  Handle<Function> SassValueWrapper<T>::get_constructor() {
+  v8::Local<v8::Function> SassValueWrapper<T>::get_constructor() {
     if (constructor.IsEmpty()) {
-      NanAssignPersistent(constructor, T::get_constructor_template()->GetFunction());
+      constructor.Reset(Nan::GetFunction(T::get_constructor_template()).ToLocalChecked());
     }
 
-    return NanNew(constructor);
+    return Nan::New(constructor);
   }
 
   template <class T>
   NAN_METHOD(SassValueWrapper<T>::New) {
-    NanScope();
+    std::vector<v8::Local<v8::Value>> localArgs(info.Length());
 
-    if (!args.IsConstructCall()) {
-      unsigned argc = args.Length();
-      std::vector<Handle<v8::Value>> argv;
+    for (auto i = 0; i < info.Length(); ++i) {
+      localArgs[i] = info[i];
+    }
+    if (info.IsConstructCall()) {
+      Sass_Value* value;
+      if (T::construct(localArgs, &value) != NULL) {
+        T* obj = new T(value);
+        sass_delete_value(value);
 
-      argv.reserve(argc);
-      for (unsigned i = 0; i < argc; i++) {
-        argv.push_back(args[i]);
+        Nan::SetInternalFieldPointer(info.This(), 0, obj);
+        obj->js_object.Reset(info.This());
+      } else {
+        return Nan::ThrowError(Nan::New<v8::String>(sass_error_get_message(value)).ToLocalChecked());
       }
-
-      NanReturnValue(NanNew(T::get_constructor())->NewInstance(argc, &argv[0]));
+    } else {
+      v8::Local<v8::Function> cons = T::get_constructor();
+      v8::Local<v8::Object> inst;
+      if (Nan::NewInstance(cons, info.Length(), &localArgs[0]).ToLocal(&inst)) {
+        info.GetReturnValue().Set(inst);
+      } else {
+        info.GetReturnValue().Set(Nan::Undefined());
+      }
     }
-
-    std::vector<Local<v8::Value>> localArgs(args.Length());
-
-    for (auto i = 0; i < args.Length(); ++i) {
-      localArgs[i] = args[i];
-    }
-
-    try {
-      Sass_Value* value = T::construct(localArgs);
-      T* obj = new T(value);
-      sass_delete_value(value);
-
-      NanSetInternalFieldPointer(args.This(), 0, obj);
-      NanAssignPersistent(obj->js_object, args.This());
-    } catch (const std::exception& e) {
-      return NanThrowError(NanNew(e.what()));
-    }
-
-    NanReturnUndefined();
   }
 
   template <class T>
-  T* SassValueWrapper<T>::unwrap(Local<Object> obj) {
+  T* SassValueWrapper<T>::unwrap(v8::Local<v8::Object> obj) {
+    /* This maybe NULL */
     return static_cast<T*>(Factory::unwrap(obj));
+  }
+
+  template <class T>
+  Sass_Value *SassValueWrapper<T>::fail(const char *reason, Sass_Value **out) {
+    *out = sass_make_error(reason);
+    return NULL;
   }
 }
 

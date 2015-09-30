@@ -1,3 +1,4 @@
+var isBuffer = require('is-buffer');
 var toString = Object.prototype.toString;
 
 /**
@@ -19,15 +20,15 @@ module.exports = function kindOf(val) {
     return 'boolean';
   }
   if (typeof val === 'string' || val instanceof String) {
-    return 'string'
+    return 'string';
   }
   if (typeof val === 'number' || val instanceof Number) {
-    return 'number'
+    return 'number';
   }
 
   // functions
   if (typeof val === 'function' || val instanceof Function) {
-    return 'function'
+    return 'function';
   }
 
   // array
@@ -57,7 +58,7 @@ module.exports = function kindOf(val) {
   }
 
   // buffer
-  if (typeof Buffer !== 'undefined' && Buffer.isBuffer(val)) {
+  if (typeof Buffer !== 'undefined' && isBuffer(val)) {
     return 'buffer';
   }
 

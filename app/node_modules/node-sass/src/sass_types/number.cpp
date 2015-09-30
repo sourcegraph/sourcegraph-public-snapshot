@@ -2,77 +2,70 @@
 #include "number.h"
 #include "../create_string.h"
 
-using namespace v8;
-
 namespace SassTypes
 {
   Number::Number(Sass_Value* v) : SassValueWrapper(v) {}
 
-  Sass_Value* Number::construct(const std::vector<Local<v8::Value>> raw_val) {
+  Sass_Value* Number::construct(const std::vector<v8::Local<v8::Value>> raw_val, Sass_Value **out) {
     double value = 0;
     char const* unit = "";
 
     if (raw_val.size() >= 1) {
       if (!raw_val[0]->IsNumber()) {
-        throw std::invalid_argument("First argument should be a number.");
+        return fail("First argument should be a number.", out);
       }
 
-      value = raw_val[0]->ToNumber()->Value();
+      value = Nan::To<double>(raw_val[0]).FromJust();
 
       if (raw_val.size() >= 2) {
         if (!raw_val[1]->IsString()) {
-          throw std::invalid_argument("Second argument should be a string.");
+          return fail("Second argument should be a string.", out);
         }
 
         unit = create_string(raw_val[1]);
       }
     }
 
-    return sass_make_number(value, unit);
+    return *out = sass_make_number(value, unit);
   }
 
-  void Number::initPrototype(Handle<ObjectTemplate> proto) {
-    proto->Set(NanNew("getValue"), NanNew<FunctionTemplate>(GetValue)->GetFunction());
-    proto->Set(NanNew("getUnit"), NanNew<FunctionTemplate>(GetUnit)->GetFunction());
-    proto->Set(NanNew("setValue"), NanNew<FunctionTemplate>(SetValue)->GetFunction());
-    proto->Set(NanNew("setUnit"), NanNew<FunctionTemplate>(SetUnit)->GetFunction());
+  void Number::initPrototype(v8::Local<v8::FunctionTemplate> proto) {
+    Nan::SetPrototypeMethod(proto, "getValue", GetValue);
+    Nan::SetPrototypeMethod(proto, "getUnit", GetUnit);
+    Nan::SetPrototypeMethod(proto, "setValue", SetValue);
+    Nan::SetPrototypeMethod(proto, "setUnit", SetUnit);
   }
 
   NAN_METHOD(Number::GetValue) {
-    NanScope();
-    NanReturnValue(NanNew(sass_number_get_value(unwrap(args.This())->value)));
+    info.GetReturnValue().Set(Nan::New<v8::Number>(sass_number_get_value(unwrap(info.This())->value)));
   }
 
   NAN_METHOD(Number::GetUnit) {
-    NanScope();
-    NanReturnValue(NanNew(sass_number_get_unit(unwrap(args.This())->value)));
+    info.GetReturnValue().Set(Nan::New<v8::String>(sass_number_get_unit(unwrap(info.This())->value)).ToLocalChecked());
   }
 
   NAN_METHOD(Number::SetValue) {
-    NanScope();
 
-    if (args.Length() != 1) {
-      return NanThrowError(NanNew("Expected just one argument"));
+    if (info.Length() != 1) {
+      return Nan::ThrowTypeError(Nan::New("Expected just one argument").ToLocalChecked());
     }
 
-    if (!args[0]->IsNumber()) {
-      return NanThrowError(NanNew("Supplied value should be a number"));
+    if (!info[0]->IsNumber()) {
+      return Nan::ThrowTypeError(Nan::New("Supplied value should be a number").ToLocalChecked());
     }
 
-    sass_number_set_value(unwrap(args.This())->value, args[0]->ToNumber()->Value());
-    NanReturnUndefined();
+    sass_number_set_value(unwrap(info.This())->value, Nan::To<double>(info[0]).FromJust());
   }
 
   NAN_METHOD(Number::SetUnit) {
-    if (args.Length() != 1) {
-      return NanThrowError(NanNew("Expected just one argument"));
+    if (info.Length() != 1) {
+      return Nan::ThrowTypeError(Nan::New("Expected just one argument").ToLocalChecked());
     }
 
-    if (!args[0]->IsString()) {
-      return NanThrowError(NanNew("Supplied value should be a string"));
+    if (!info[0]->IsString()) {
+      return Nan::ThrowTypeError(Nan::New("Supplied value should be a string").ToLocalChecked());
     }
 
-    sass_number_set_unit(unwrap(args.This())->value, create_string(args[0]));
-    NanReturnUndefined();
+    sass_number_set_unit(unwrap(info.This())->value, create_string(info[0]));
   }
 }

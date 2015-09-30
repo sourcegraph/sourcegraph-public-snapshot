@@ -1,20 +1,19 @@
 #include <nan.h>
+#include <stdexcept>
 #include "custom_importer_bridge.h"
 #include "create_string.h"
 
-SassImportList CustomImporterBridge::post_process_return_value(Handle<Value> val) const {
+SassImportList CustomImporterBridge::post_process_return_value(v8::Local<v8::Value> returned_value) const {
   SassImportList imports = 0;
-  NanScope();
-
-  Local<Value> returned_value = NanNew(val);
+  Nan::HandleScope scope;
 
   if (returned_value->IsArray()) {
-    Handle<Array> array = Handle<Array>::Cast(returned_value);
+    v8::Local<v8::Array> array = returned_value.As<v8::Array>();
 
     imports = sass_make_import_list(array->Length());
 
     for (size_t i = 0; i < array->Length(); ++i) {
-      Local<Value> value = array->Get(static_cast<uint32_t>(i));
+      v8::Local<v8::Value> value = Nan::Get(array, static_cast<uint32_t>(i)).ToLocalChecked();
 
       if (!value->IsObject()) {
         auto entry = sass_make_import_entry(0, 0, 0);
@@ -22,10 +21,10 @@ SassImportList CustomImporterBridge::post_process_return_value(Handle<Value> val
         continue;
       }
 
-      Local<Object> object = Local<Object>::Cast(value);
+      v8::Local<v8::Object> object = value.As<v8::Object>();
 
       if (value->IsNativeError()) {
-        char* message = create_string(object->Get(NanNew<String>("message")));
+        char* message = create_string(Nan::Get(object, Nan::New<v8::String>("message").ToLocalChecked()));
 
         imports[i] = sass_make_import_entry(0, 0, 0);
 
@@ -38,8 +37,8 @@ SassImportList CustomImporterBridge::post_process_return_value(Handle<Value> val
   }
   else if (returned_value->IsNativeError()) {
     imports = sass_make_import_list(1);
-    Local<Object> object = Local<Object>::Cast(returned_value);
-    char* message = create_string(object->Get(NanNew<String>("message")));
+    v8::Local<v8::Object> object = returned_value.As<v8::Object>();
+    char* message = create_string(Nan::Get(object, Nan::New<v8::String>("message").ToLocalChecked()));
 
     imports[0] = sass_make_import_entry(0, 0, 0);
 
@@ -47,36 +46,42 @@ SassImportList CustomImporterBridge::post_process_return_value(Handle<Value> val
   }
   else if (returned_value->IsObject()) {
     imports = sass_make_import_list(1);
-    imports[0] = get_importer_entry(Local<Object>::Cast(returned_value));
+    imports[0] = get_importer_entry(returned_value.As<v8::Object>());
   }
 
   return imports;
 }
 
-Sass_Import* CustomImporterBridge::get_importer_entry(const Local<Object>& object) const {
-  auto returned_file = object->Get(NanNew<String>("file"));
-
-  if (!returned_file->IsUndefined() && !returned_file->IsString()) {
+Sass_Import* CustomImporterBridge::check_returned_string(Nan::MaybeLocal<v8::Value> value, const char *msg) const
+{
+    v8::Local<v8::Value> checked;
+    if (value.ToLocal(&checked)) { 
+      if (!checked->IsUndefined() && !checked->IsString()) {
+        goto err;
+      } else {
+        return nullptr;
+      } 
+    }
+err:
     auto entry = sass_make_import_entry(0, 0, 0);
-    sass_import_set_error(entry, "returned value of `file` must be a string", -1, -1);
+    sass_import_set_error(entry, msg, -1, -1);
     return entry;
-  }
+}
 
-  auto returned_contents = object->Get(NanNew<String>("contents"));
+Sass_Import* CustomImporterBridge::get_importer_entry(const v8::Local<v8::Object>& object) const {
+  auto returned_file = Nan::Get(object, Nan::New<v8::String>("file").ToLocalChecked());
+  auto returned_contents = Nan::Get(object, Nan::New<v8::String>("contents").ToLocalChecked()).ToLocalChecked();
+  auto returned_map = Nan::Get(object, Nan::New<v8::String>("map").ToLocalChecked());
+  Sass_Import *err;
 
-  if (!returned_contents->IsUndefined() && !returned_contents->IsString()) {
-    auto entry = sass_make_import_entry(0, 0, 0);
-    sass_import_set_error(entry, "returned value of `contents` must be a string", -1, -1);
-    return entry;
-  }
+  if ((err = check_returned_string(returned_file, "returned value of `file` must be a string")))
+    return err;
 
-  auto returned_map = object->Get(NanNew<String>("map"));
+  if ((err = check_returned_string(returned_contents, "returned value of `contents` must be a string")))
+    return err;
 
-  if (!returned_map->IsUndefined() && !returned_map->IsString()) {
-    auto entry = sass_make_import_entry(0, 0, 0);
-    sass_import_set_error(entry, "returned value of `map` must be a string", -1, -1);
-    return entry;
-  }
+  if ((err = check_returned_string(returned_map, "returned value of `returned_map` must be a string")))
+    return err;
 
   char* path = create_string(returned_file);
   char* contents = create_string(returned_contents);
@@ -85,11 +90,11 @@ Sass_Import* CustomImporterBridge::get_importer_entry(const Local<Object>& objec
   return sass_make_import_entry(path, contents, srcmap);
 }
 
-std::vector<Handle<Value>> CustomImporterBridge::pre_process_args(std::vector<void*> in) const {
-  std::vector<Handle<Value>> out;
+std::vector<v8::Local<v8::Value>> CustomImporterBridge::pre_process_args(std::vector<void*> in) const {
+  std::vector<v8::Local<v8::Value>> out;
 
   for (void* ptr : in) {
-    out.push_back(NanNew<String>((char const*)ptr));
+    out.push_back(Nan::New<v8::String>((char const*)ptr).ToLocalChecked());
   }
 
   return out;

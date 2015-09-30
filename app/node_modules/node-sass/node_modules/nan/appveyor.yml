@@ -9,18 +9,19 @@ environment:
     - nodejs_version: "0.12"
   # io.js
     - nodejs_version: "1"
+    - nodejs_version: "2"
+    - nodejs_version: "3"
 
 # Install scripts. (runs after repo cloning)
 install:
   # Get the latest stable version of Node 0.STABLE.latest
   - ps: if($env:nodejs_version -eq "0.8") {Install-Product node $env:nodejs_version}
   - ps: if($env:nodejs_version -ne "0.8") {Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version)}
-  - IF NOT %nodejs_version% == 1 npm -g install npm
-  - IF NOT %nodejs_version% == 1 set PATH=%APPDATA%\npm;%PATH%
+  - IF %nodejs_version% LSS 1 npm -g install npm
+  - IF %nodejs_version% LSS 1 set PATH=%APPDATA%\npm;%PATH%
   # Typical npm stuff.
   - npm install
-  - IF %nodejs_version% == 0.8 node node_modules\node-gyp\bin\node-gyp.js rebuild --directory test
-  - IF NOT %nodejs_version% == 0.8 npm run rebuild-tests
+  - IF %nodejs_version% EQU 0.8 (node node_modules\node-gyp\bin\node-gyp.js rebuild --msvs_version=2013 --directory test) ELSE (npm run rebuild-tests)
 
 # Post-install test scripts.
 test_script:
@@ -28,8 +29,7 @@ test_script:
   - node --version
   - npm --version
   # run tests
-  - IF NOT %nodejs_version% == 1 npm test
-  - IF %nodejs_version% == 1 iojs node_modules\tap\bin\tap.js --gc test\js\*-test.js
+  - IF %nodejs_version% LSS 1 (npm test) ELSE (iojs node_modules\tap\bin\tap.js --gc test/js/*-test.js)
 
 # Don't actually build.
 build: off

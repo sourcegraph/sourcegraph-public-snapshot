@@ -237,10 +237,14 @@ and an array of objects is returned, each with the following properties:
 
 * `column`: The column number in the generated source, or null.
 
-#### SourceMapConsumer.prototype.sourceContentFor(source)
+#### SourceMapConsumer.prototype.sourceContentFor(source[, returnNullOnMissing])
 
 Returns the original source content for the source provided. The only
 argument is the URL of the original source file.
+
+If the source content for the given source is not found, then an error is
+thrown. Optionally, pass `true` as the second param to have `null` returned
+instead.
 
 #### SourceMapConsumer.prototype.eachMapping(callback, context, order)
 

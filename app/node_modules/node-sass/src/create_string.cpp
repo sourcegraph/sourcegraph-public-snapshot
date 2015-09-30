@@ -3,12 +3,18 @@
 #include <string.h>
 #include "create_string.h"
 
-char* create_string(Local<Value> value) {
-  if (value->IsNull() || !value->IsString()) {
+char* create_string(Nan::MaybeLocal<v8::Value> maybevalue) {
+  v8::Local<v8::Value> value;
+  
+  if (maybevalue.ToLocal(&value)) {
+    if (value->IsNull() || !value->IsString()) {
+      return 0;
+    }
+  } else {
     return 0;
   }
 
-  String::Utf8Value string(value);
+  v8::String::Utf8Value string(value);
   char *str = (char *)malloc(string.length() + 1);
   strcpy(str, *string);
   return str;

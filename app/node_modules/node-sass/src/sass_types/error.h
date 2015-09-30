@@ -6,15 +6,13 @@
 
 namespace SassTypes
 {
-  using namespace v8;
-
   class Error : public SassValueWrapper<Error> {
     public:
       Error(Sass_Value*);
       static char const* get_constructor_name() { return "SassError"; }
-      static Sass_Value* construct(const std::vector<Local<v8::Value>>);
+      static Sass_Value* construct(const std::vector<v8::Local<v8::Value>>, Sass_Value **);
 
-      static void initPrototype(Handle<ObjectTemplate>);
+      static void initPrototype(v8::Local<v8::FunctionTemplate>);
   };
 }
 

@@ -6,15 +6,14 @@
 
 namespace SassTypes
 {
-  using namespace v8;
 
   class Number : public SassValueWrapper<Number> {
     public:
       Number(Sass_Value*);
       static char const* get_constructor_name() { return "SassNumber"; }
-      static Sass_Value* construct(const std::vector<Local<v8::Value>>);
+      static Sass_Value* construct(const std::vector<v8::Local<v8::Value>>, Sass_Value **out);
 
-      static void initPrototype(Handle<ObjectTemplate>);
+      static void initPrototype(v8::Local<v8::FunctionTemplate>);
 
       static NAN_METHOD(GetValue);
       static NAN_METHOD(GetUnit);

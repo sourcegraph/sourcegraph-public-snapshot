@@ -179,8 +179,9 @@ function getLinefeed(options) {
 function getOptions(options, cb) {
   options = options || {};
   options.sourceComments = options.sourceComments || false;
-  options.data = options.data || null;
-  options.file = getInputFile(options);
+  if (options.hasOwnProperty('file')) {
+    options.file = getInputFile(options);
+  }
   options.outFile = getOutputFile(options);
   options.includePaths = (options.includePaths || []).join(path.delimiter);
   options.precision = parseInt(options.precision) || 5;
@@ -351,7 +352,13 @@ module.exports.render = function(options, cb) {
     });
   }
 
-  return options.data ? binding.render(options) : binding.renderFile(options);
+  if (options.data) {
+    binding.render(options);
+  } else if (options.file) {
+    binding.renderFile(options);
+  } else {
+    cb({status: 3, message: 'No input specified: provide a file name or a source string to process' });
+  }
 };
 
 /**
@@ -398,7 +405,15 @@ module.exports.renderSync = function(options) {
     });
   }
 
-  var status = options.data ? binding.renderSync(options) : binding.renderFileSync(options);
+  var status;
+  if (options.data) {
+     status = binding.renderSync(options);
+  } else if (options.file) {
+     status = binding.renderFileSync(options);
+  } else {
+     throw new Error('No input specified: provide a file name or a source string to process');
+  }
+
   var result = options.result;
 
   if (status) {

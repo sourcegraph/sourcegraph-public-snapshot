@@ -22,18 +22,11 @@
 #ifndef NAN_STRING_BYTES_H_
 #define NAN_STRING_BYTES_H_
 
-// Decodes a v8::Handle<v8::String> or Buffer to a raw char*
+// Decodes a v8::Local<v8::String> or Buffer to a raw char*
 
-#include <node.h>
-#include <node_buffer.h>
-#include <assert.h>
-#include <string.h>  // memcpy
-#include <limits.h>
-
-namespace NanIntern {
+namespace imp {
 
 using v8::Local;
-using v8::Handle;
 using v8::Object;
 using v8::String;
 using v8::Value;
@@ -45,7 +38,7 @@ using v8::Value;
 
 
 
-//// Nan::HEX ////
+//// HEX ////
 
 static bool contains_non_ascii_slow(const char* buf, size_t len) {
   for (size_t i = 0; i < len; ++i) {
@@ -230,32 +223,32 @@ static size_t hex_encode(const char* src, size_t slen, char* dst, size_t dlen) {
 
 static Local<Value> Encode(const char* buf,
                            size_t buflen,
-                           enum Nan::Encoding encoding) {
+                           enum Encoding encoding) {
   assert(buflen <= node::Buffer::kMaxLength);
-  if (!buflen && encoding != Nan::BUFFER)
-    return NanNew("");
+  if (!buflen && encoding != BUFFER)
+    return New("").ToLocalChecked();
 
   Local<String> val;
   switch (encoding) {
-    case Nan::BUFFER:
-      return NanNewBufferHandle(buf, buflen);
+    case BUFFER:
+      return CopyBuffer(buf, buflen).ToLocalChecked();
 
-    case Nan::ASCII:
+    case ASCII:
       if (contains_non_ascii(buf, buflen)) {
         char* out = new char[buflen];
         force_ascii(buf, out, buflen);
-        val = NanNew<String>(out, buflen);
+        val = New<String>(out, buflen).ToLocalChecked();
         delete[] out;
       } else {
-        val = NanNew<String>(buf, buflen);
+        val = New<String>(buf, buflen).ToLocalChecked();
       }
       break;
 
-    case Nan::UTF8:
-      val = NanNew<String>(buf, buflen);
+    case UTF8:
+      val = New<String>(buf, buflen).ToLocalChecked();
       break;
 
-    case Nan::BINARY: {
+    case BINARY: {
       // TODO(isaacs) use ExternalTwoByteString?
       const unsigned char *cbuf = reinterpret_cast<const unsigned char*>(buf);
       uint16_t * twobytebuf = new uint16_t[buflen];
@@ -263,36 +256,36 @@ static Local<Value> Encode(const char* buf,
         // XXX is the following line platform independent?
         twobytebuf[i] = cbuf[i];
       }
-      val = NanNew<String>(twobytebuf, buflen);
+      val = New<String>(twobytebuf, buflen).ToLocalChecked();
       delete[] twobytebuf;
       break;
     }
 
-    case Nan::BASE64: {
+    case BASE64: {
       size_t dlen = base64_encoded_size(buflen);
       char* dst = new char[dlen];
 
       size_t written = base64_encode(buf, buflen, dst, dlen);
       assert(written == dlen);
 
-      val = NanNew<String>(dst, dlen);
+      val = New<String>(dst, dlen).ToLocalChecked();
       delete[] dst;
       break;
     }
 
-    case Nan::UCS2: {
+    case UCS2: {
       const uint16_t* data = reinterpret_cast<const uint16_t*>(buf);
-      val = NanNew<String>(data, buflen / 2);
+      val = New<String>(data, buflen / 2).ToLocalChecked();
       break;
     }
 
-    case Nan::HEX: {
+    case HEX: {
       size_t dlen = buflen * 2;
       char* dst = new char[dlen];
       size_t written = hex_encode(buf, buflen, dst, dlen);
       assert(written == dlen);
 
-      val = NanNew<String>(dst, dlen);
+      val = New<String>(dst, dlen).ToLocalChecked();
       delete[] dst;
       break;
     }
@@ -307,6 +300,6 @@ static Local<Value> Encode(const char* buf,
 
 #undef base64_encoded_size
 
-}  // namespace NanIntern
+}  // end of namespace imp
 
 #endif  // NAN_STRING_BYTES_H_

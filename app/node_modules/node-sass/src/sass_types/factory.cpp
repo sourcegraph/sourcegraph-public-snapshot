@@ -10,11 +10,9 @@
 #include "null.h"
 #include "error.h"
 
-using namespace v8;
-
 namespace SassTypes
 {
-  Value* Factory::create(Sass_Value* v) {
+  SassTypes::Value* Factory::create(Sass_Value* v) {
     switch (sass_value_get_tag(v)) {
     case SASS_NUMBER:
       return new Number(v);
@@ -41,30 +39,33 @@ namespace SassTypes
       return new Error(v);
 
     default:
-      throw std::invalid_argument("Unknown type encountered.");
+      const char *msg = "Unknown type encountered.";
+      Nan::ThrowTypeError(Nan::New<v8::String>(msg).ToLocalChecked());
+      return new Error(sass_make_error(msg));
     }
   }
 
-  void Factory::initExports(Handle<Object> exports) {
-    Local<Object> types = NanNew<Object>();
-    exports->Set(NanNew("types"), types);
+  NAN_MODULE_INIT(Factory::initExports) {
+    Nan::HandleScope scope;
+    v8::Local<v8::Object> types = Nan::New<v8::Object>();
 
-    types->Set(NanNew("Number"), Number::get_constructor());
-    types->Set(NanNew("String"), String::get_constructor());
-    types->Set(NanNew("Color"), Color::get_constructor());
-    types->Set(NanNew("Boolean"), Boolean::get_constructor());
-    types->Set(NanNew("List"), List::get_constructor());
-    types->Set(NanNew("Map"), Map::get_constructor());
-    types->Set(NanNew("Null"), Null::get_constructor());
-    types->Set(NanNew("Error"), Error::get_constructor());
+    Nan::Set(types, Nan::New("Number").ToLocalChecked(), Number::get_constructor());
+    Nan::Set(types, Nan::New("String").ToLocalChecked(), String::get_constructor());
+    Nan::Set(types, Nan::New("Color").ToLocalChecked(), Color::get_constructor());
+    Nan::Set(types, Nan::New("Boolean").ToLocalChecked(), Boolean::get_constructor());
+    Nan::Set(types, Nan::New("List").ToLocalChecked(), List::get_constructor());
+    Nan::Set(types, Nan::New("Map").ToLocalChecked(), Map::get_constructor());
+    Nan::Set(types, Nan::New("Null").ToLocalChecked(), Null::get_constructor());
+    Nan::Set(types, Nan::New("Error").ToLocalChecked(), Error::get_constructor());
+    Nan::Set(target, Nan::New<v8::String>("types").ToLocalChecked(), types);
   }
 
-  Value* Factory::unwrap(Handle<v8::Value> obj) {
+  Value* Factory::unwrap(v8::Local<v8::Value> obj) {
     // Todo: non-SassValue objects could easily fall under that condition, need to be more specific.
-    if (!obj->IsObject() || obj->ToObject()->InternalFieldCount() != 1) {
-      throw std::invalid_argument("A SassValue object was expected.");
+    if (!obj->IsObject() || obj.As<v8::Object>()->InternalFieldCount() != 1) {
+      return NULL;
     }
 
-    return static_cast<Value*>(NanGetInternalFieldPointer(obj->ToObject(), 0));
+    return static_cast<Value*>(Nan::GetInternalFieldPointer(obj.As<v8::Object>(), 0));
   }
 }

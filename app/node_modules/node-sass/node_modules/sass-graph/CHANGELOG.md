@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 ### Tests
 
+## [2.0.1]
+### Fixed
+- Fixed tests for Windows - [@pleunv](https://github.com/pleunv)
+
 ## [2.0.0]
 ### BREAKING CHANGES
 - `.sass` files are not included in the graph by default. Use the `-e .sass` flag.

@@ -1,11 +1,9 @@
 #include <nan.h>
 #include "null.h"
 
-using namespace v8;
-
 namespace SassTypes
 {
-  Persistent<Function> Null::constructor;
+  Nan::Persistent<v8::Function> Null::constructor;
   bool Null::constructor_locked = false;
 
   Null::Null() {}
@@ -15,45 +13,47 @@ namespace SassTypes
     return singleton_instance;
   }
 
-  Handle<Function> Null::get_constructor() {
+  v8::Local<v8::Function> Null::get_constructor() {
+    Nan::EscapableHandleScope scope;
+    v8::Local<v8::Function> conslocal;
     if (constructor.IsEmpty()) {
-      Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
+      v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
 
-      tpl->SetClassName(NanNew("SassNull"));
+      tpl->SetClassName(Nan::New("SassNull").ToLocalChecked());
       tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-      NanAssignPersistent(constructor, tpl->GetFunction());
+      conslocal = Nan::GetFunction(tpl).ToLocalChecked();
+      constructor.Reset(conslocal);
 
-      NanAssignPersistent(get_singleton().js_object, NanNew(constructor)->NewInstance());
-      NanSetInternalFieldPointer(NanNew(get_singleton().js_object), 0, &get_singleton());
-      NanNew(constructor)->Set(NanNew("NULL"), NanNew(get_singleton().js_object));
+      get_singleton().js_object.Reset(Nan::NewInstance(conslocal).ToLocalChecked());
+      Nan::SetInternalFieldPointer(Nan::New(get_singleton().js_object), 0, &get_singleton());
+      Nan::Set(conslocal, Nan::New("NULL").ToLocalChecked(), Nan::New(get_singleton().js_object));
 
       constructor_locked = true;
+    } else {
+      conslocal = Nan::New(constructor);
     }
 
-    return NanNew(constructor);
+    return scope.Escape(conslocal);
   }
 
   Sass_Value* Null::get_sass_value() {
     return sass_make_null();
   }
 
-  Local<Object> Null::get_js_object() {
-    return NanNew(this->js_object);
+  v8::Local<v8::Object> Null::get_js_object() {
+    return Nan::New(this->js_object);
   }
 
   NAN_METHOD(Null::New) {
-    NanScope();
 
-    if (args.IsConstructCall()) {
+    if (info.IsConstructCall()) {
       if (constructor_locked) {
-        return NanThrowError(NanNew("Cannot instantiate SassNull"));
+        return Nan::ThrowTypeError(Nan::New("Cannot instantiate SassNull").ToLocalChecked());
       }
     }
     else {
-      NanReturnValue(NanNew(get_singleton().get_js_object()));
+      info.GetReturnValue().Set(get_singleton().get_js_object());
     }
-
-    NanReturnUndefined();
   }
 }

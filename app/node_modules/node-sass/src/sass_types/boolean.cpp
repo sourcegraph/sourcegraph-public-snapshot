@@ -1,11 +1,9 @@
 #include <nan.h>
 #include "boolean.h"
 
-using namespace v8;
-
 namespace SassTypes
 {
-  Persistent<Function> Boolean::constructor;
+  Nan::Persistent<v8::Function> Boolean::constructor;
   bool Boolean::constructor_locked = false;
 
   Boolean::Boolean(bool v) : value(v) {}
@@ -15,59 +13,63 @@ namespace SassTypes
     return v ? instance_true : instance_false;
   }
 
-  Handle<Function> Boolean::get_constructor() {
+  v8::Local<v8::Function> Boolean::get_constructor() {
+    Nan::EscapableHandleScope scope;
+    v8::Local<v8::Function> conslocal; 
     if (constructor.IsEmpty()) {
-      Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
+      v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
 
-      tpl->SetClassName(NanNew("SassBoolean"));
+      tpl->SetClassName(Nan::New("SassBoolean").ToLocalChecked());
       tpl->InstanceTemplate()->SetInternalFieldCount(1);
-      tpl->PrototypeTemplate()->Set(NanNew("getValue"), NanNew<FunctionTemplate>(GetValue)->GetFunction());
+      Nan::SetPrototypeTemplate(tpl, "getValue", Nan::GetFunction(Nan::New<v8::FunctionTemplate>(GetValue)).ToLocalChecked());
 
-      NanAssignPersistent(constructor, tpl->GetFunction());
+      conslocal = Nan::GetFunction(tpl).ToLocalChecked();
+      constructor.Reset(conslocal);
 
-      NanAssignPersistent(get_singleton(false).js_object, NanNew(constructor)->NewInstance());
-      NanSetInternalFieldPointer(NanNew(get_singleton(false).js_object), 0, &get_singleton(false));
-      NanNew(constructor)->Set(NanNew("FALSE"), NanNew(get_singleton(false).js_object));
+      get_singleton(false).js_object.Reset(Nan::NewInstance(conslocal).ToLocalChecked());
+      Nan::SetInternalFieldPointer(Nan::New(get_singleton(false).js_object), 0, &get_singleton(false));
+      Nan::Set(conslocal, Nan::New("FALSE").ToLocalChecked(), Nan::New(get_singleton(false).js_object));
 
-      NanAssignPersistent(get_singleton(true).js_object, NanNew(constructor)->NewInstance());
-      NanSetInternalFieldPointer(NanNew(get_singleton(true).js_object), 0, &get_singleton(true));
-      NanNew(constructor)->Set(NanNew("TRUE"), NanNew(get_singleton(true).js_object));
+      get_singleton(true).js_object.Reset(Nan::NewInstance(conslocal).ToLocalChecked());
+      Nan::SetInternalFieldPointer(Nan::New(get_singleton(true).js_object), 0, &get_singleton(true));
+      Nan::Set(conslocal, Nan::New("TRUE").ToLocalChecked(), Nan::New(get_singleton(true).js_object));
 
       constructor_locked = true;
+    } else {
+      conslocal = Nan::New(constructor);
     }
 
-    return NanNew(constructor);
+    return scope.Escape(conslocal);
   }
 
   Sass_Value* Boolean::get_sass_value() {
     return sass_make_boolean(value);
   }
 
-  Local<Object> Boolean::get_js_object() {
-    return NanNew(this->js_object);
+  v8::Local<v8::Object> Boolean::get_js_object() {
+    return Nan::New(this->js_object);
   }
 
   NAN_METHOD(Boolean::New) {
-    NanScope();
 
-    if (args.IsConstructCall()) {
+    if (info.IsConstructCall()) {
       if (constructor_locked) {
-        return NanThrowError(NanNew("Cannot instantiate SassBoolean"));
+        return Nan::ThrowTypeError(Nan::New("Cannot instantiate SassBoolean").ToLocalChecked());
       }
     }
     else {
-      if (args.Length() != 1 || !args[0]->IsBoolean()) {
-        return NanThrowError(NanNew("Expected one boolean argument"));
+      if (info.Length() != 1 || !info[0]->IsBoolean()) {
+        return Nan::ThrowTypeError(Nan::New("Expected one boolean argument").ToLocalChecked());
       }
 
-      NanReturnValue(NanNew(get_singleton(args[0]->ToBoolean()->Value()).get_js_object()));
+      info.GetReturnValue().Set(get_singleton(Nan::To<bool>(info[0]).FromJust()).get_js_object());
     }
-
-    NanReturnUndefined();
   }
 
   NAN_METHOD(Boolean::GetValue) {
-    NanScope();
-    NanReturnValue(NanNew(static_cast<Boolean*>(Factory::unwrap(args.This()))->value));
+    Boolean *out;
+    if ((out = static_cast<Boolean*>(Factory::unwrap(info.This())))) { 
+      info.GetReturnValue().Set(Nan::New(out->value));
+    }
   }
 }

@@ -10,6 +10,10 @@ module.exports = function (str, indent, count) {
 		throw new TypeError('`count` should be a number');
 	}
 
+	if (count === 0) {
+		return str;
+	}
+
 	indent = count > 1 ? repeating(indent, count) : indent;
 
 	return str.replace(/^(?!\s*$)/mg, indent);

@@ -2,62 +2,82 @@
  * node-sass: scripts/coverage.js
  */
 
-require('../lib/extensions');
-
-var bin = require('path').join.bind(null, __dirname, '..', 'node_modules', '.bin'),
-    spawn = require('child_process').spawn;
-
-/**
- * Run test suite
- *
- * @api private
- */
-
-function suite() {
-  process.env.NODESASS_COV = 1;
-
-  var coveralls = spawn(bin('coveralls'));
-
-  var args = [bin('_mocha')].concat(['--reporter', 'mocha-lcov-reporter']);
-  var mocha = spawn(process.sass.runtime.execPath, args, {
-    env: process.env
-  });
-
-  mocha.on('error', function(err) {
-    console.error(err);
-    process.exit(1);
-  });
-
-  mocha.stderr.setEncoding('utf8');
-  mocha.stderr.on('data', function(err) {
-    console.error(err);
-    process.exit(1);
-  });
-
-  mocha.stdout.pipe(coveralls.stdin);
-}
-
-/**
- * Generate coverage files
- *
- * @api private
- */
+var Mocha = require('mocha'),
+    fs = require('fs'),
+    path = require('path'),
+    mkdirp = require('mkdirp'),
+    coveralls = require('coveralls'),
+    Instrumenter = require('istanbul').Instrumenter,
+    Report = require('istanbul').Report,
+    Collector = new require('istanbul').Collector,
+    sourcefiles = ['index.js', 'extensions.js', 'render.js'],
+    summary= Report.create('text-summary'),
+    lcov = Report.create('lcovonly', { dir: path.join('coverage') }),
+    html = Report.create('html', { dir: path.join('coverage', 'html') });
 
 function coverage() {
-  var jscoverage = spawn(bin('jscoverage'), ['lib', 'lib-cov']);
-
-  jscoverage.on('error', function(err) {
-    console.error(err);
-    process.exit(1);
-  });
-
-  jscoverage.stderr.setEncoding('utf8');
-  jscoverage.stderr.on('data', function(err) {
-    console.error(err);
-    process.exit(1);
-  });
-
-  jscoverage.on('close', suite);
+    var mocha = new Mocha();
+    var rep = function(runner) {
+      runner.on('end', function(){
+        var cov = global.__coverage__,
+            collector = new Collector();
+        if (cov) {
+          mkdirp(path.join('coverage', 'html'), function(err) {
+            if (err) { throw err; }
+            collector.add(cov);
+            summary.writeReport(collector, true);
+            html.writeReport(collector, true);
+            lcov.on('done', function() {
+              fs.readFile(path.join('coverage', 'lcov.info'), function(err, data) {
+                 if (err) { console.error(err); }
+                 coveralls.handleInput(data.toString(),
+                   function (err) { if (err) { console.error(err); } });
+              });
+            });
+            lcov.writeReport(collector, true);
+          });
+        } else {
+          console.warn('No coverage');
+        }
+      });
+    };
+    var instrumenter = new Instrumenter();
+    var instrumentedfiles = [];
+    var processfile = function(source) {
+         fs.readFile(path.join('lib', source), function(err, data) {
+           if (err) { throw err; }
+           mkdirp('lib-cov', function(err) {
+             if (err) { throw err; }
+             fs.writeFile(path.join('lib-cov', source),
+               instrumenter.instrumentSync(data.toString(),
+                 path.join('lib', source)),
+               function(err) {
+                 if (err) { throw err; }
+                 instrumentedfiles.push(source);
+                 if (instrumentedfiles.length === sourcefiles.length) {
+                   fs.readdirSync('test').filter(function(file){
+                     return file.substr(-6)  === 'api.js' ||
+                            file.substr(-11) === 'runtime.js' ||
+                            file.substr(-7)  === 'spec.js';
+                   }).forEach(function(file){
+                     mocha.addFile(
+                       path.join('test', file)
+                     );
+                   });
+                   process.env.NODESASS_COV = 1;
+                   mocha.reporter(rep).run(function(failures) {
+                     process.on('exit', function () {
+                       process.exit(failures);
+                     });
+                   });
+                 }
+               });
+           });
+         });
+       };
+    for (var i in sourcefiles) {
+      processfile(sourcefiles[i]);
+    }
 }
 
 /**

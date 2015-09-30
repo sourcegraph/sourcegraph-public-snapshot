@@ -3,8 +3,6 @@
 
 #include <nan.h>
 
-using namespace v8;
-
-char* create_string(Local<Value>);
+char* create_string(Nan::MaybeLocal<v8::Value>);
 
 #endif

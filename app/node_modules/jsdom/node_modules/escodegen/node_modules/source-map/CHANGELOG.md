@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.2.0
+
+* Support for consuming "indexed" source maps which do not have any remote
+  sections. See pull request #127. This introduces a minor backwards
+  incompatibility if you are monkey patching `SourceMapConsumer.prototype`
+  methods.
+
 ## 0.1.43
 
 * Performance improvements for `SourceMapGenerator` and `SourceNode`. See issue

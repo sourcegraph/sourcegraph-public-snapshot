@@ -1,5 +1,5 @@
-### esutils [![Build Status](https://secure.travis-ci.org/Constellation/esutils.svg)](http://travis-ci.org/Constellation/esutils)
-esutils ([esutils](http://github.com/Constellation/esutils)) is
+### esutils [![Build Status](https://secure.travis-ci.org/estools/esutils.svg)](http://travis-ci.org/estools/esutils)
+esutils ([esutils](http://github.com/estools/esutils)) is
 utility box for ECMAScript language tools.
 
 ### API

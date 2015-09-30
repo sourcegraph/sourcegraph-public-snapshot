@@ -11,6 +11,8 @@ machine:
     PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
     LD_LIBRARY_PATH: $HOME/protobuf/lib
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
+  node:
+    version: 4.1.0
 
 dependencies:
   pre:

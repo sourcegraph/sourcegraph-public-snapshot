@@ -57,28 +57,15 @@
         ['OS=="mac"', {
           'xcode_settings': {
             'OTHER_CPLUSPLUSFLAGS': [
-              '-std=c++11',
-              '-stdlib=libc++'
+              '-std=c++11'
             ],
             'OTHER_LDFLAGS': [],
-            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
-            'GCC_ENABLE_CPP_RTTI': 'YES',
+            'GCC_ENABLE_CPP_EXCEPTIONS': 'NO',
             'MACOSX_DEPLOYMENT_TARGET': '10.7'
-          }
-        }],
-        ['OS=="win"', {
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'AdditionalOptions': [
-                '/GR',
-                '/EHsc'
-              ]
-            }
           }
         }],
         ['OS!="win"', {
           'cflags_cc+': [
-            '-fexceptions',
             '-std=c++0x'
           ]
         }]

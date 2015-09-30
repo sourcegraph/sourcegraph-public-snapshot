@@ -40,8 +40,9 @@ Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 
 .tmp/*.jar
 
-app/node_modules/jsdom/node_modules/contextify/build/
-app/node_modules/node-sass/vendor
+/app/node_modules/node-sass/vendor
+/app/.sass-cache
+
 eb-bundle.zip
 
 *_vfsdata.go

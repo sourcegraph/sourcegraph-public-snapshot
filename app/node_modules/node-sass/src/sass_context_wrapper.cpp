@@ -37,7 +37,7 @@ extern "C" {
     delete ctx_w->error_callback;
     delete ctx_w->success_callback;
 
-    NanDisposePersistent(ctx_w->result);
+    ctx_w->result.Reset();
 
     free(ctx_w->include_path);
     free(ctx_w->linefeed);
@@ -46,8 +46,18 @@ extern "C" {
     free(ctx_w->source_map_root);
     free(ctx_w->indent);
 
-    ctx_w->importer_bridges.resize(0);
-    ctx_w->function_bridges.resize(0);
+    std::vector<CustomImporterBridge *>::iterator imp_it = ctx_w->importer_bridges.begin();
+    while (imp_it != ctx_w->importer_bridges.end()) {
+      CustomImporterBridge* p = *imp_it;
+      imp_it = ctx_w->importer_bridges.erase(imp_it);
+      delete p;
+    }
+    std::vector<CustomFunctionBridge *>::iterator func_it = ctx_w->function_bridges.begin();
+    while (func_it != ctx_w->function_bridges.end()) {
+      CustomFunctionBridge* p = *func_it;
+      func_it = ctx_w->function_bridges.erase(func_it);
+      delete p;
+    }
 
     free(ctx_w);
   }
