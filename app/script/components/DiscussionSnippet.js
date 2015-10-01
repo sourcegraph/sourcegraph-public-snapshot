@@ -55,7 +55,7 @@ var DiscussionSnippet = React.createClass({
 		return (
 			<div className="code-discussions">
 				{!this._hasDiscussions() ? (
-					<div className="no-discussions"><a ref="createBtn" onClick={this.props.onCreate}>Start a code discussion</a></div>
+					<div className="no-discussions"><a ref="createBtn" onClick={this.props.onCreate}><i className="octicon octicon-plus" /> Start a code discussion</a></div>
 				) : (
 					<div className="contents">
 						<ul className="list">
