@@ -26,6 +26,8 @@ const (
 	DiscussionCreate   = "discussion.create"
 	DiscussionComment  = "discussion.comment"
 
+	SearchTokens = "search.tokens"
+
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 )
 
@@ -124,6 +126,10 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 	def.Path("/.discussions/{ID:[0-9]+}/.comment").
 		Methods(m("POST")...).
 		Name(DiscussionComment)
+
+	repo.Path("/.search/tokens").
+		Methods(m("GET")...).
+		Name(SearchTokens)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods(m("POST")...).

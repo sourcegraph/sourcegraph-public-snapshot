@@ -73,6 +73,8 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 	r.Get(ui_router.DiscussionListDef).Handler(p.handler(serveDiscussionListDef))
 	r.Get(ui_router.DiscussionListRepo).Handler(p.handler(serveDiscussionListRepo))
 
+	r.Get(ui_router.SearchTokens).Handler(p.handler(serveTokenSearch))
+
 	r.Get(ui_router.AppdashUploadPageLoad).Handler(p.handler(serveAppdashUploadPageLoad))
 
 	return handlerutil.WithMiddleware(r, mw...)
