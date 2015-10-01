@@ -17,8 +17,8 @@ import (
 )
 
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
+	cl := sourcegraph.NewClientFromContext(ctx)
 
 	var listOpts sourcegraph.ListOptions
 	if err := schemautil.Decode(&listOpts, r.URL.Query()); err != nil {
@@ -37,7 +37,21 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	var template string
+	var users []string
 	if len(repos.Repos) > 0 {
+		userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
+		if err != nil && grpc.Code(err) != codes.PermissionDenied {
+			return err
+		}
+		if err == nil { // current user is admin of the instance
+			for _, perms := range userPerms.UserPermissions {
+				user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
+				if err != nil {
+					return err
+				}
+				users = append(users, user.Login)
+			}
+		}
 		template = "home/dashboard.html"
 	} else {
 		template = "home/new.html"
@@ -46,10 +60,12 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, template, http.StatusOK, nil, &struct {
 		Repos  []*sourcegraph.Repo
 		SGPath string
+		Users  []string
 		tmpl.Common
 	}{
 		Repos:  repos.Repos,
 		SGPath: os.Getenv("SGPATH"),
+		Users:  users,
 	})
 }
 
