@@ -8,6 +8,8 @@ package appdashctx
 import (
 	"net/url"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/appdash"
 
 	"golang.org/x/net/context"
@@ -25,9 +27,19 @@ func WithAppdashURL(ctx context.Context, url *url.URL) context.Context {
 }
 
 func AppdashURL(ctx context.Context) *url.URL {
-	url, _ := ctx.Value(urlKey).(*url.URL)
+	url := AppdashURLSafe(ctx)
 	if url == nil {
 		panic("no Appdash URL in context")
+	}
+	return url
+}
+
+// AppdashURLSafe does not panic in the case of the url missing. This should
+// only be used in top-level error handling routines, not normal code.
+func AppdashURLSafe(ctx context.Context) *url.URL {
+	url, _ := ctx.Value(urlKey).(*url.URL)
+	if url == nil {
+		log15.Crit("no Appdash URL in context")
 	}
 	return url
 }
