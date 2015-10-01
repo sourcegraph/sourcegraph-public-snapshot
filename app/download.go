@@ -99,25 +99,29 @@ have_git() {
 	fi
 }
 
-# cloud_pre runs commands for cloud installation before src is installed.
+# is_cloud_install returns 0 if being installed as an appliance in a cloud service.
+is_cloud_install() {
+	if [ "$SRC_DIGITAL_OCEAN" == "1" ] || [ "$SRC_AMAZON_EC2" == "1" ] || [ "$SRC_GOOGLE_COMPUTE_ENGINE" == "1" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 cloud_pre() {
 	apt-get update -y
 	apt-get install -y libcap2-bin curl
 }
 
-# cloud_post runs commands for cloud installation after src is installed.
 cloud_post() {
 	setcap cap_net_bind_service=+ep /usr/bin/src
 
-	# First we try for DigitalOcean, using their API.
-	export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
-	if [ "$SRC_HOSTNAME" == "" ]; then
-	  # Maybe it's EC2 then? Let's try.
-	  export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/latest/meta-data/public-ipv4)
-	fi
-	if [ "$SRC_HOSTNAME" == "" ]; then
-	  # Lastly we try for Google Compute Engine
-	  export SRC_HOSTNAME=$(curl -H 'Metadata-Flavor: Google' -fs http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
+	if [ "$SRC_DIGITAL_OCEAN" == "1" ]; then
+		export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
+	elif [ "$SRC_AMAZON_EC2" == "1" ]; then
+		export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/latest/meta-data/public-ipv4)
+	elif [ "$SRC_GOOGLE_COMPUTE_ENGINE" == "1" ]; then
+		export SRC_HOSTNAME=$(curl -H 'Metadata-Flavor: Google' -fs http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
 	fi
 
 	sed -i 's|^;AppURL =.*|AppURL = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
@@ -144,7 +148,7 @@ do_install() {
 	# Create tmp directory, this works on OS X and Linux (see http://unix.stackexchange.com/a/84980).
 	download_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'sourcegraph')
 
-	if [ "$SRC_CLOUD_INSTALL" == "1" ]; then
+	if is_cloud_install; then
 		cloud_pre
 	fi
 
@@ -235,7 +239,7 @@ do_install() {
 		echo "********************************************************************************"
 	fi
 
-	if [ "$SRC_CLOUD_INSTALL" == "1" ]; then
+	if is_cloud_install; then
 		cloud_post
 	fi
 }
