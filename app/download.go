@@ -45,7 +45,7 @@ func serveDownload(w http.ResponseWriter, r *http.Request) error {
 
 func serveDownloadInstall(w http.ResponseWriter, r *http.Request) error {
 	// Write the bash script.
-	fmt.Fprintf(w, `#!/bin/bash
+	fmt.Fprint(w, `#!/bin/bash
 
 # This bash script is meant to be piped directly into bash:
 #
@@ -99,11 +99,54 @@ have_git() {
 	fi
 }
 
+# cloud_pre runs commands for cloud installation before src is installed.
+cloud_pre() {
+	apt-get update -y
+	apt-get install -y libcap2-bin curl
+}
+
+# cloud_post runs commands for cloud installation after src is installed.
+cloud_post() {
+	setcap cap_net_bind_service=+ep /usr/bin/src
+
+	# First we try for DigitalOcean, using their API.
+	export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
+	if [ "$SRC_HOSTNAME" == "" ]; then
+	  # Maybe it's EC2 then? Let's try.
+	  export SRC_HOSTNAME=$(curl -fs http://169.254.169.254/latest/meta-data/public-ipv4)
+	fi
+	if [ "$SRC_HOSTNAME" == "" ]; then
+	  # Lastly we try for Google Compute Engine
+	  export SRC_HOSTNAME=$(curl -H 'Metadata-Flavor: Google' -fs http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
+	fi
+
+	sed -i 's|^;AppURL =.*|AppURL = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
+	echo 'HTTPAddr = :80' >> /etc/sourcegraph/config.ini
+	restart src || echo ok
+	# TODO: set up self-signed TLS certs
+
+	if [ "$SRC_LANGUAGE_GO" == "1" ]; then
+		apt-get install -y make
+		curl -L https://golang.org/dl/go1.5.1.linux-amd64.tar.gz | sudo tar zx -C /usr/local/
+		echo 'export PATH="$PATH:/usr/local/go/bin"' >> /etc/profile
+		source /etc/profile
+		sudo -iu sourcegraph GOPATH=/tmp sh -c 'src toolchain install go'
+	fi
+
+	if [ "$SRC_LANGUAGE_JAVA" == "1" ]; then
+		sudo -iu sourcegraph sh -c 'src toolchain install java'
+	fi
+}
+
 do_install() {
 	trap 'on_error' ERR
 
 	# Create tmp directory, this works on OS X and Linux (see http://unix.stackexchange.com/a/84980).
 	download_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'sourcegraph')
+
+	if [ "$SRC_CLOUD_INSTALL" == "1" ]; then
+		cloud_pre
+	fi
 
 	# Detect the OS using the pattern described at http://stackoverflow.com/a/17072017
 	if [ "$(uname)" == "Darwin" ]; then
@@ -190,6 +233,10 @@ do_install() {
 		echo "** Success! Sourcegraph has been installed!                                   **"
 		echo "** -> Visit http://localhost:3000 to use Sourcegraph!                         **"
 		echo "********************************************************************************"
+	fi
+
+	if [ "$SRC_CLOUD_INSTALL" == "1" ]; then
+		cloud_post
 	fi
 }
 
