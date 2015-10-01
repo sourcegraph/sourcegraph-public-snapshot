@@ -15,7 +15,6 @@
 						</h1>
 						<div class="stats">
 							<span class="octicon octicon-comment-discussion"></span> {{len .Comments}}
-							<span class="octicon octicon-star"></span> {{len .Ratings}}
 						</div>
 						<div class="subtitle">
 							<span class="author"><a>@{{.Author.Login}}</a></span>
@@ -55,9 +54,9 @@
 		</div>
 	{{end}}
 
-	{{if gt (len .Related) 0}}
+	{{if gt (len .Related) 1}}
 		<div class="discussions discussions-list discussions-list-page related-small pull-left">
-			<h1>Related</h1>
+			<h1>Other discussions</h1>
 			<div class="container">
 				<ul class="discussions-list">
 					{{range .Related}}

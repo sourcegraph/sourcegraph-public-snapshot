@@ -4,6 +4,16 @@
 
 {{define "RepoBody"}}
 	{{if gt (len .Latest) 0}}
+		<div
+			data-react="AlertView"
+			data-closeable="true"
+			data-has-cookie="true"
+			data-icon="fa-info"
+			data-html="
+				<i>Start more code discussions by navigating to a definition in this repository and writing a comment.</i>
+			">
+		</div>
+
 		<div class="discussions discussions-list discussions-list-page pull-left">
 			<h1>Latest</h1>
 			<div class="container">

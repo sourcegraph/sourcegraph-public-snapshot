@@ -51,7 +51,6 @@ var DiscussionList = React.createClass({
 					</h1>
 					<div className="stats">
 						<span className="octicon octicon-comment-discussion" />{` ${d.Comments.length} `}
-						<span className="octicon octicon-star" />{` ${d.Ratings.length}`}
 					</div>
 					<div className="subtitle">
 						<span className="author"><a>{`@${d.Author.Login}`}</a></span>

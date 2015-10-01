@@ -59,7 +59,10 @@ var DiscussionModel = Backbone.Model.extend({
 	 */
 	addComment(c) {
 		var all = this.get("Comments");
-		this.set("Comments", all.concat([c]));
+		this.set({
+			Comments: all.concat([c]),
+			submitting: false,
+		});
 	},
 });
 

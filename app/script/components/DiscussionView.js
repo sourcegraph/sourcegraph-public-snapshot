@@ -5,6 +5,7 @@ var MarkdownTextarea = require("./MarkdownTextarea");
 var MarkdownView = require("./MarkdownView");
 var DiscussionModel = require("../stores/models/DiscussionModel");
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
+var router = require("../routing/router");
 
 /**
  * @description DiscussionView displays all details about a discussion.
@@ -46,7 +47,14 @@ var DiscussionView = React.createClass({
 		};
 	},
 
+	componentDidUpdate(_, prevState) {
+		if (prevState.submitting === true && this.state.submitting === false) {
+			this.refs.commentTextarea.value("");
+		}
+	},
+
 	_onComment() {
+		this.setState({submitting: true});
 		this.props.onComment(this.state.ID, this.refs.commentTextarea.value());
 	},
 
@@ -60,12 +68,11 @@ var DiscussionView = React.createClass({
 						<header>
 							<h1>
 								<div className="contents">
-									{state.Title}<span className="id">{` #${state.ID}`}</span>
+									{state.Title}<a href={router.discussionURL(state.DefKey, state.ID)} className="id">{` #${state.ID}`}</a>
 								</div>
 							</h1>
 							<div className="stats">
 								<span className="octicon octicon-comment-discussion" />{` ${state.Comments.length} `}
-								<span className="octicon octicon-star" />{` ${state.Ratings.length}`}
 							</div>
 							<div className="subtitle">
 								<span className="author"><a>{`@${state.Author.Login}`}</a></span>

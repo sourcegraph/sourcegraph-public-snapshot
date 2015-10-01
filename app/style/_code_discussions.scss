@@ -40,6 +40,7 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 				height: 100px;
 				font-size: 13px;
 				overflow-y: scroll;
+				outline: none;
 			}
 		}
 
@@ -240,6 +241,7 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 					padding: 5px;
 					height: 70px;
 					margin-top: 3px;
+					outline: none;
 				}
 			}
 
@@ -281,8 +283,11 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 					width: 500px;
 				}
 
-				span.id {
+				.id {
 					color: #aaa;
+					&:hover {
+						text-decoration: none;
+					}
 				}
 			}
 
@@ -396,6 +401,7 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 				overflow-y: scroll;
 				border-color: #ddd;
 				background-color: #fff;
+				outline: none;
 			}
 		}
 

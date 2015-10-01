@@ -38,8 +38,17 @@ var MarkdownTextarea = React.createClass({
 		});
 	},
 
-	value() {
+	/**
+	 * @description Gets or sets the value of the textarea.
+	 * @param {string=} str - (Optional) If provided, this value will be set in
+	 * the text area.
+	 * @returns {string|undefined} If a new value is set, undefined is returned.
+	 */
+	value(str) {
 		var txt = $(this.getDOMNode()).find(".raw-body");
+		if (typeof str === "string") {
+			return txt.val(str);
+		}
 		return txt.val();
 	},
 

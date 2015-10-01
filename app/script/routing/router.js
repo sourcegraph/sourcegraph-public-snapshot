@@ -9,9 +9,15 @@ module.exports = {
 	},
 
 	discussionURL(defKey, id) {
-		// TODO we probably want to pass on more than just the repo
-		var parts = module.exports.deconstructDefURL(defKey);
-		return `${module.exports.repoURL(parts.repo)}/.discussion/${id}`;
+		var repo;
+		if (typeof defKey === "string") {
+			var parts = module.exports.deconstructDefURL(defKey);
+			repo = parts.repo;
+		}
+		if (typeof defKey === "object") {
+			repo = defKey.Repo;
+		}
+		return `${module.exports.repoURL(repo)}/.discussion/${id}`;
 	},
 
 	discussionListURL(defKey, order) {

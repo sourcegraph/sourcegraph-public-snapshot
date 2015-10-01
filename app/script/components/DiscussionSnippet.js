@@ -44,7 +44,6 @@ var DiscussionSnippet = React.createClass({
 				<a onClick={e => this.props.onClick(url, d, e)} className="title truncate">{d.Title}</a>
 				<div className="stats">
 					<span className="octicon octicon-comment-discussion" /> {d.Comments.length}
-					&nbsp;<span className="octicon octicon-star" /> {d.Ratings.length}
 				</div>
 				<p className="body truncate">{d.Description}</p>
 			</li>
