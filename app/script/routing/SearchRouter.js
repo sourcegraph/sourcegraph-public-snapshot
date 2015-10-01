@@ -36,7 +36,6 @@ function showResultsView() {
 // When a history event occcurs check to see if the state contains search data
 // and if so initiate a new search.
 if (globals.Features.SearchNext) {
-	console.log("enabled");
 	window.addEventListener("popstate", (e) => {
 		if (e.state && e.state.searchRepo) {
 			showResultsView();
