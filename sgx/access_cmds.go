@@ -60,7 +60,7 @@ type accessGrantCmd struct {
 
 func (c *accessGrantCmd) Execute(args []string) error {
 	cl := Client()
-	endpointURL := getEndpointURL().String()
+	endpointURL := Endpoints.EndpointURL().String()
 
 	for _, login := range c.Args.Users {
 		userSpec, err := sourcegraph.ParseUserSpec(login)
@@ -104,7 +104,7 @@ type accessRevokeCmd struct {
 
 func (c *accessRevokeCmd) Execute(args []string) error {
 	cl := Client()
-	endpointURL := getEndpointURL().String()
+	endpointURL := Endpoints.EndpointURL().String()
 
 	for _, login := range c.Args.Users {
 		userSpec, err := sourcegraph.ParseUserSpec(login)
@@ -140,7 +140,7 @@ type accessListCmd struct{}
 
 func (c *accessListCmd) Execute(args []string) error {
 	cl := Client()
-	endpointURL := getEndpointURL().String()
+	endpointURL := Endpoints.EndpointURL().String()
 
 	fmt.Printf("# fetching list of users with access to server running at %s... ", endpointURL)
 	userList, err := cl.RegisteredClients.ListUserPermissions(cliCtx, &sourcegraph.RegisteredClientSpec{})

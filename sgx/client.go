@@ -4,10 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"log"
-	"net/url"
 	"os"
-
-	"strings"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -47,8 +44,9 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 
 		// Prefer explicitly specified endpoint, then auth file
 		// default endpoint, then fallback default.
-		ua := userAuth[Endpoints.Endpoint]
-		if Endpoints.Endpoint == "" {
+		endpoint := Endpoints.EndpointURL()
+		ua := userAuth[endpoint.String()]
+		if endpoint.Host == "" {
 			if ua == nil {
 				var ep string
 				ep, ua = userAuth.getDefault()
@@ -57,7 +55,7 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 				}
 			}
 			if ua == nil {
-				ua = userAuth[getEndpointURL().String()]
+				ua = userAuth[endpoint.String()]
 			}
 		}
 		if ua != nil {
@@ -149,19 +147,4 @@ func WithClientContext(parent context.Context) context.Context {
 		log.Fatalf("Error constructing API client endpoints: %s.", err)
 	}
 	return ctx
-}
-
-func getEndpointURL() *url.URL {
-	e := Endpoints.Endpoint
-	if e == "" {
-		e = "http://localhost:3000"
-	}
-	if !strings.HasPrefix(e, "https://") && !strings.HasPrefix(e, "http://") {
-		e = "https://" + e
-	}
-	url, err := url.Parse(e)
-	if err != nil {
-		log.Fatal(err, " (in getEndpointURL)")
-	}
-	return url
 }

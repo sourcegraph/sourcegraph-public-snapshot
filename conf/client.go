@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"log"
 	"net/url"
 
 	"golang.org/x/net/context"
@@ -27,8 +28,9 @@ type EndpointOpts struct {
 // auto-detect endpoint is specified, it discovers the gRPC endpoint
 // from that endpoint; otherwise it uses the GRPCEndpoint field.
 func (c *EndpointOpts) WithEndpoints(ctx context.Context) (context.Context, error) {
-	if c.Endpoint != "" {
-		info, err := discover.SiteURL(ctx, c.Endpoint)
+	endpoint := c.EndpointURL()
+	if endpoint.Host != "" {
+		info, err := discover.SiteURL(ctx, endpoint.String())
 		if err != nil {
 			return nil, err
 		}
@@ -42,4 +44,37 @@ func (c *EndpointOpts) WithEndpoints(ctx context.Context) (context.Context, erro
 	ctx = sourcegraph.WithGRPCEndpoint(ctx, grpcEndpoint)
 
 	return ctx, nil
+}
+
+// EndpointURL returns c.Endpoint as a *url.URL but with various modifications
+// (e.g. a sensible default, no path component, etc). It is also responsible for
+// erroring out when the user provides a garbage endpoint URL. Always use
+// c.EndpointURL instead of c.Endpoint, even when you just need a string form
+// (just call EndpointURL().String()).
+func (c *EndpointOpts) EndpointURL() *url.URL {
+	e := c.Endpoint
+	if e == "" {
+		e = "http://localhost:3000"
+	}
+	endpoint, err := url.Parse(c.Endpoint)
+	if err != nil {
+		log.Fatal(err, "invalid endpoint URL specified (in EndpointOpts.EndpointURL")
+	}
+
+	// This prevents users who might be using e.g. Sourcegraph under a reverse proxy
+	// at mycompany.com/sourcegraph (a subdirectory) from logging in -- but this
+	// is not a typical case and otherwise users who effectively run:
+	//
+	//  src --endpoint=http://localhost:3000 login
+	//
+	// will be unable to authenticate in the event that they add a slash suffix:
+	//
+	//  src --endpoint=http://localhost:3000/ login
+	//
+	endpoint.Path = ""
+
+	if endpoint.Scheme == "" {
+		endpoint.Scheme = "https"
+	}
+	return endpoint
 }

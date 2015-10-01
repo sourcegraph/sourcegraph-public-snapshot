@@ -126,7 +126,7 @@ func (c *loginCmd) Execute(args []string) error {
 		a = userAuth{}
 	}
 
-	endpointURL := getEndpointURL()
+	endpointURL := Endpoints.EndpointURL()
 	cl := Client()
 	unauthedCtx := sourcegraph.WithCredentials(cliCtx, nil)
 
@@ -254,7 +254,7 @@ func (c *whoamiCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	endpointURL := getEndpointURL()
+	endpointURL := Endpoints.EndpointURL()
 	ua := a[endpointURL.String()]
 	if ua == nil {
 		log.Fatalf("# No authentication info set for %s (use `%s login` to authenticate)", endpointURL, sgxcmd.Name)
