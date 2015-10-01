@@ -56,12 +56,3 @@ func (p PermType) String() string {
 		panic(fmt.Sprintf("unrecognized PermType %q", string(p)))
 	}
 }
-
-// PermOnRepo is a convenience function for constructing a single
-// permission on a repository.
-func PermOnRepo(uri string, permType PermType) Perm {
-	if uri == "" {
-		panic("uri is empty")
-	}
-	return Perm{Resource: Resource{URI: uri, Type: ResourceRepo}, Type: permType}
-}
