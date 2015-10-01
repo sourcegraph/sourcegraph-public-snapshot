@@ -20,8 +20,8 @@ for public, open-source code.
 
 ## Installation
 
-Check out [Sourcegraph Docs](https://src.sourcegraph.com/sourcegraph/.docs) for
-detailed instructions.
+See the [Sourcegraph documentation](https://src.sourcegraph.com/sourcegraph/.docs) for
+installation instructions.
 
 ## Under the hood
 
