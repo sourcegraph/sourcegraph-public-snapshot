@@ -60,7 +60,6 @@ type accessGrantCmd struct {
 
 func (c *accessGrantCmd) Execute(args []string) error {
 	cl := Client()
-	endpointURL := getEndpointURL().String()
 
 	for _, login := range c.Args.Users {
 		userSpec, err := sourcegraph.ParseUserSpec(login)
@@ -72,11 +71,7 @@ func (c *accessGrantCmd) Execute(args []string) error {
 			fmt.Printf("# fetching user info for login %s failed: %s\n", login, err)
 			continue
 		}
-		if c.Admin {
-			fmt.Printf("# granting admin access to user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
-		} else {
-			fmt.Printf("# granting read/write access to user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
-		}
+		fmt.Printf("%s: ", user.Login)
 
 		permsOpt := &sourcegraph.UserPermissions{
 			UID:   user.UID,
@@ -85,11 +80,10 @@ func (c *accessGrantCmd) Execute(args []string) error {
 			Admin: c.Admin,
 		}
 		if _, err := cl.RegisteredClients.SetUserPermissions(cliCtx, permsOpt); err != nil {
-			fmt.Println("FAILED")
-			fmt.Printf("   ERROR: %v\n", err)
+			fmt.Printf("ERROR: %v\n", err)
 			continue
 		} else {
-			fmt.Println("SUCCESS")
+			fmt.Println("ok")
 		}
 	}
 
