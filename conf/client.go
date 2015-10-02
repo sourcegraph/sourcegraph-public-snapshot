@@ -74,7 +74,7 @@ func (c *EndpointOpts) EndpointURL() *url.URL {
 	endpoint.Path = ""
 
 	if endpoint.Scheme == "" {
-		endpoint.Scheme = "https"
+		log.Fatal("invalid endpoint URL specified, endpoint URL must start with a schema (e.g. http://mydomain.com)")
 	}
 	return endpoint
 }
