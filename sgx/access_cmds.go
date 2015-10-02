@@ -62,6 +62,10 @@ func (c *accessGrantCmd) Execute(args []string) error {
 	cl := Client()
 	endpointURL := getEndpointURL().String()
 
+	if len(c.Args.Users) == 0 {
+		return fmt.Errorf("Must specify at least one user to grant access to (e.g. \"src access grant bill\")")
+	}
+
 	for _, login := range c.Args.Users {
 		userSpec, err := sourcegraph.ParseUserSpec(login)
 		if err != nil {
