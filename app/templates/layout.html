@@ -121,7 +121,9 @@
 		</div>
 		{{end}}
 
-		{{customFeedbackForm}}
+		{{if appconf.CustomFeedbackForm}}
+			<div id="custom-feedback-form">{{customFeedbackForm}}</div>
+		{{end}}
 
 		{{template "KeyboardShortcutsHelp" $}}
 

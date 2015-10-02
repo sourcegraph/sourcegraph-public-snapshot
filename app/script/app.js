@@ -47,6 +47,7 @@ require("./build_log");
 require("./buttons");
 require("./debounce");
 require("./defn-popover");
+require("./feedback-form");
 require("./history");
 require("./input");
 require("./keyboard_shortcuts");
