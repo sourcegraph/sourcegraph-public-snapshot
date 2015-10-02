@@ -44,7 +44,19 @@ func RegisterFrame(frame RepoFrame) {
 	if _, exists := repoFrames[frame.ID]; exists {
 		panic(fmt.Sprintf("RepoFrame with ID %s already exists", frame.ID))
 	}
+	frame.Handler = pathFixer{frame.Handler}
 	repoFrames[frame.ID] = frame
+}
+
+// pathFixer resolves empty paths to the root path. This is useful when building
+// apps and allows binding the app's homepage to "/".
+type pathFixer struct{ h http.Handler }
+
+func (f pathFixer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "" {
+		r.URL.Path = "/"
+	}
+	f.h.ServeHTTP(w, r)
 }
 
 // Frames returns the frames registered in this instance of
