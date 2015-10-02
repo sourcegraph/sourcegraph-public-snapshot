@@ -8,17 +8,6 @@
 
 {{define "RepoBody"}}
 
-{{if and .ExactBuild}}
-{{if .ExactBuild.Failure}}
-<div class="alert alert-danger">
-	<p>
-		<strong>Build failed.</strong>
-		See <a href="{{urlToRepoBuild .ExactBuild.Repo .ExactBuild.CommitID .ExactBuild.Attempt}}">build details</a> for more information.
-	</p>
-</div>
-{{end}}
-{{end}}
-
 {{template "RepoBuildWarning" $}}
 
 {{if or (or .Repo.Description .Repo.HomepageURL) (not disableCloneURL)}}
