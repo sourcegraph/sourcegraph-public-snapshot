@@ -189,7 +189,7 @@ module.exports.start = function() {
 		}
 	});
 
-	window.onpopstate = e => {
+	window.addEventListener("popstate", (e) => {
 		if (!e.state) return;
 
 		var CodeFileStore = require("../stores/CodeFileStore");
@@ -231,5 +231,5 @@ module.exports.start = function() {
 		} else {
 			matchState();
 		}
-	};
+	});
 };
