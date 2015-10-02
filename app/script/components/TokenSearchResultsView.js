@@ -13,7 +13,7 @@ var TokenSearchResultsView = React.createClass({
 		}
 
 		return (
-			<div className="search-results">
+			<div className="token-search-results">
 				{results}
 			</div>
 		);
