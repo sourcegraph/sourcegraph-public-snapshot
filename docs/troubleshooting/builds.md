@@ -20,7 +20,7 @@ be incomplete are:
 
 You may not have the necessary [srclib](https://srclib.org) language support toolchains installed.
 
-* Solution: Run `src toolchain install LANGUAGE` (where `LANGUAGE`
+* **Solution**: Run `src toolchain install LANGUAGE` (where `LANGUAGE`
   is `go` or `java`) to install the toolchains. You must run this
   command as the Sourcegraph server user.
 * If you are using a language other than Go or Java, you can try
@@ -32,7 +32,7 @@ You may not have the necessary [srclib](https://srclib.org) language support too
 
 Srclib toolchains generally assume the language standard for build process and directory structure. If your project uses a non-standard process, it is possible the toolchain doesn't understand your project.
 
-* Solution: You can configure language toolchains to help them
+* **Solution**: You can configure language toolchains to help them
   process your code by committing a special top-level file named
   `Srcfile` to your repository. Check out the READMEs for each
   toolchain to see the supported configuration settings:
