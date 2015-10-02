@@ -182,13 +182,6 @@ do_install() {
 		sudo mv src /usr/local/bin
 		popd
 
-		set +x # echo off
-		echo
-		echo "********************************************************************************"
-		echo "** Success! Sourcegraph has been installed!                                   **"
-		echo "** -> Run 'src serve' to start Sourcegraph!                                   **"
-		echo "********************************************************************************"
-
 	elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 		# Linux
 		set -x # echo on
@@ -230,18 +223,17 @@ do_install() {
 			sudo dpkg -i src.deb
 		fi
 		popd
-
-		set +x # echo off
-		echo
-		echo "********************************************************************************"
-		echo "** Success! Sourcegraph has been installed!                                   **"
-		echo "** -> Visit http://localhost:3000 to use Sourcegraph!                         **"
-		echo "********************************************************************************"
 	fi
 
 	if is_cloud_install; then
 		cloud_post
 	fi
+
+	set +x # echo off
+	echo
+	echo "********************************************************************************"
+	echo "** Success! Sourcegraph has been installed!                                   **"
+	echo "********************************************************************************"
 }
 
 # Just as many other install scripts do, we wrap everything in a function here
