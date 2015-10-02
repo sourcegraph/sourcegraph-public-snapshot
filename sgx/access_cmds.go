@@ -73,7 +73,8 @@ func (c *accessGrantCmd) Execute(args []string) error {
 		}
 		user, err := cl.Users.Get(cliCtx, &userSpec)
 		if err != nil {
-			fmt.Printf("# fetching user info for login %s failed: %s\n", login, err)
+			fmt.Println(err)
+			printErrorHelp(err)
 			continue
 		}
 		if c.Admin {
@@ -90,7 +91,8 @@ func (c *accessGrantCmd) Execute(args []string) error {
 		}
 		if _, err := cl.RegisteredClients.SetUserPermissions(cliCtx, permsOpt); err != nil {
 			fmt.Println("FAILED")
-			fmt.Printf("   ERROR: %v\n", err)
+			fmt.Println(err)
+			printErrorHelp(err)
 			continue
 		} else {
 			fmt.Println("SUCCESS")
@@ -121,7 +123,8 @@ func (c *accessRevokeCmd) Execute(args []string) error {
 		}
 		user, err := cl.Users.Get(cliCtx, &userSpec)
 		if err != nil {
-			fmt.Printf("# fetching user info for login %s failed: %s\n", login, err)
+			fmt.Println(err)
+			printErrorHelp(err)
 			continue
 		}
 		fmt.Printf("# revoking all access from user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
@@ -134,7 +137,8 @@ func (c *accessRevokeCmd) Execute(args []string) error {
 		}
 		if _, err := cl.RegisteredClients.SetUserPermissions(cliCtx, permsOpt); err != nil {
 			fmt.Println("FAILED")
-			fmt.Printf("   ERROR: %v\n", err)
+			fmt.Println(err)
+			printErrorHelp(err)
 			continue
 		} else {
 			fmt.Println("SUCCESS")
@@ -154,7 +158,8 @@ func (c *accessListCmd) Execute(args []string) error {
 	userList, err := cl.RegisteredClients.ListUserPermissions(cliCtx, &sourcegraph.RegisteredClientSpec{})
 	if err != nil {
 		fmt.Println("FAILED")
-		fmt.Printf("   ERROR: %v\n", err)
+		fmt.Println(err)
+		printErrorHelp(err)
 		return nil
 	} else {
 		fmt.Println("SUCCESS")
@@ -164,7 +169,8 @@ func (c *accessListCmd) Execute(args []string) error {
 		var login string
 		user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: userPerms.UID})
 		if err != nil {
-			fmt.Printf("# fetching login info for UID %v failed: %s\n", userPerms.UID, err)
+			fmt.Println(err)
+			printErrorHelp(err)
 		} else {
 			login = user.Login
 		}
