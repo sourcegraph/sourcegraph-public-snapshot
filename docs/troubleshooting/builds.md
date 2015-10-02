@@ -18,15 +18,7 @@ be incomplete are:
 
 ## Missing Language Support
 
-You may not have the necessary [srclib](https://srclib.org) language support toolchains installed.
-
-* **Solution**: Run `src toolchain install LANGUAGE` (where `LANGUAGE`
-  is `go` or `java`) to install the toolchains. You must run this
-  command as the Sourcegraph server user.
-* If you are using a language other than Go or Java, you can try
-  other srclib toolchains (either from Sourcegraph or
-  community-supported toolchains), but be aware that they are not
-  ready for production usage.
+You may not have the necessary [srclib](https://srclib.org) language support toolchains installed. See [language support]({{< relref "config/toolchains.md" >}}).
 
 ## Non-Standard build process
 
