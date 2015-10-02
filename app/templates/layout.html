@@ -82,15 +82,17 @@
 						</div>
 					{{end}}
 
-					<div
-						data-react="AlertView"
-						data-closeable="true"
-						data-has-cookie="true"
-						data-icon="fa-users"
-						data-html="
-							<strong>Invite team members to this Sourcegraph instance by following <a href='https://src.sourcegraph.com/sourcegraph/.docs/config/appurl-dns/'>these simple instructions</a>!</strong>
-						">
-					</div>
+					{{if not $.DisableInvites}}
+						<div
+							data-react="AlertView"
+							data-closeable="true"
+							data-has-cookie="true"
+							data-icon="fa-users"
+							data-html="
+								<strong>Invite team members to this Sourcegraph instance by following <a href='https://src.sourcegraph.com/sourcegraph/.docs/config/appurl-dns/'>these simple instructions</a>!</strong>
+							">
+						</div>
+					{{end}}
 				</div>
 			{{end}}
 		{{end}}
