@@ -1,5 +1,5 @@
 +++
-title = "Language support troubleshooting"
+title = "Language support"
 navtitle = "Language support"
 +++
 
@@ -13,8 +13,8 @@ Toolchains allow Sourcegraph to deliver features like clicking on a symbol to se
 
 Sourcegraph currently supports both Go and Java. To install a toolchain on your Sourcegraph server just run:
 
-* Mac OS X: `src toolchain install <language>`
-* Linux: `sudo -u sourcegraph -i src toolchain install <language>`
+* **Mac OS X:** `src toolchain install <language>`
+* **Linux:** `sudo -u sourcegraph -i src toolchain install <language>`
 
 Where `<language>` is either `go` or `java`.
 
