@@ -28,7 +28,7 @@ if (performance) {
 function setupMeasurement() {
 	var delay = 1000;
 	var measured = false;
-	var endTime = null;
+	var endTime = new Date().getTime();
 
 	var measure = function() {
 		// At this point the page is considered loaded fully, so we send a POST
@@ -52,11 +52,10 @@ function setupMeasurement() {
 		// Store the time at which the last AJAX request ended.
 		endTime = new Date().getTime();
 
-		// Clear any previous timeout just to be safe.
-		clearTimeout(timeout);
-
 		// Only set a new timeout if we haven't yet measured the page load time.
 		if (!measured) {
+			// Clear any previous timeout just to be safe.
+			clearTimeout(timeout);
 			timeout = setTimeout(measure, delay);
 		}
 	});
@@ -65,6 +64,17 @@ function setupMeasurement() {
 	$(document).ajaxStart(function() {
 		clearTimeout(timeout);
 	});
+
+	// Only set a new timeout if we haven't yet measured the page load time. We do
+	// this here for pages that do not contain any AJAX (we still want Appdash to
+	// measure the page load time in this event). If the page does have AJAX,
+	// ajaxStart will be called above and the timeout set here will be cleared /
+	// signored.
+	if (!measured) {
+		// Clear any previous timeout just to be safe.
+		clearTimeout(timeout);
+		timeout = setTimeout(measure, delay);
+	}
 }
 
 /**
