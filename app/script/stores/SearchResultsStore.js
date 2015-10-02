@@ -4,8 +4,8 @@ var AppDispatcher = require("../dispatchers/AppDispatcher");
 var SearchResultsStore = {
 	state: {
 		query: null,
-		textResults: null,
-		tokenResults: null,
+		textSearch: null,
+		tokenSearch: null,
 	},
 
 	onChange: new Event("SearchResultsStoreChange"),
@@ -14,6 +14,11 @@ var SearchResultsStore = {
 		switch (payload.action.type) {
 		case globals.Actions.SEARCH_SUBMIT:
 			SearchResultsStore.state.query = payload.action.query;
+			SearchResultsStore.state.textSearch = null;
+			SearchResultsStore.state.tokenSearch = null;
+			break;
+		case globals.Actions.SEARCH_RECEIVED_TOKEN_RESULTS:
+			SearchResultsStore.state.tokenSearch = payload.action.data;
 			break;
 		}
 		window.dispatchEvent(SearchResultsStore.onChange);

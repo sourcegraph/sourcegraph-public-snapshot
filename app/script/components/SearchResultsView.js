@@ -1,5 +1,6 @@
 var React = require("react");
 var SearchResultsStore = require("../stores/SearchResultsStore");
+var TokenSearchResultsView = require("./TokenSearchResultsView");
 
 var SearchResultsView = React.createClass({
 	getInitialState() {
@@ -16,10 +17,19 @@ var SearchResultsView = React.createClass({
 	},
 
 	render() {
+		var currentResultsView;
+		if (this.state.tokenSearch) {
+			currentResultsView = (
+				<TokenSearchResultsView
+					query={this.state.query}
+					results={this.state.tokenSearch.Results} />
+			);
+		}
+
 		return (
 			<div className="search-results row">
 				<div className="col-md-10 col-md-offset-1">
-					<i>No search results found for {this.state.query}</i>
+					{currentResultsView}
 				</div>
 			</div>
 		);
