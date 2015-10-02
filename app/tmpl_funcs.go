@@ -72,9 +72,12 @@ var TemplateFunctions = htmpl.FuncMap{
 		}
 		return b
 	},
-	"json": func(v interface{}) string {
-		b, _ := json.Marshal(v)
-		return string(b)
+	"json": func(v interface{}) (string, error) {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+		return string(b), nil
 	},
 
 	// map creates a map of string keys and interface{} values given pairs. It can
