@@ -39,7 +39,7 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 	results := make([]payloads.TokenSearchResult, len(defList.Defs))
 	for i, def := range defList.Defs {
 		def.DocHTML = htmlutil.SanitizeForPB(def.DocHTML.HTML)
-		qualifiedName := sourcecode.DefQualifiedNameAndType(def, "scope")
+		qualifiedName := sourcecode.DefQualifiedNameAndType(def, "dep")
 		qualifiedName = sourcecode.OverrideStyleViaRegexpFlags(qualifiedName)
 		results[i] = payloads.TokenSearchResult{
 			Def:           def,

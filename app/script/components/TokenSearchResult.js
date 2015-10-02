@@ -12,6 +12,7 @@ var TokenSearchResult = React.createClass({
 			<div className="token-search-result">
 				<hr/>
 				<a href={this.props.result.URL}>
+					<code>{this.props.result.Def.Kind} </code>
 					{/* This HTML should be sanitized in ui/search.go */}
 					<code dangerouslySetInnerHTML={this.props.result.QualifiedName}></code>
 				</a>
