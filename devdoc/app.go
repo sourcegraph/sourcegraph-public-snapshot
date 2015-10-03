@@ -63,7 +63,7 @@ func New(r *Router) *App {
 	// Try to initialize the doc generator, if we can't then we serve without
 	// API docs (e.g. if it's not a release binary).
 	if err := a.initGenerator(); err != nil {
-		log15.Error("Serving without API documentation", "app", "devdoc", "error", err)
+		log15.Debug("Serving without API documentation", "app", "devdoc", "error", err)
 	}
 
 	return a
