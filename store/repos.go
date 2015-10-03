@@ -28,6 +28,9 @@ type Repos interface {
 	// Create creates a repository.
 	Create(context.Context, *sourcegraph.Repo) (*sourcegraph.Repo, error)
 
+	// Update updates a repository.
+	Update(context.Context, *sourcegraph.ReposUpdateOp) error
+
 	// Delete deletes a repository.
 	Delete(ctx context.Context, repo string) error
 }

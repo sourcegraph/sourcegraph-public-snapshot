@@ -211,6 +211,14 @@ func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, err
 		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepo(uri)).String()
 	}
 
+	gitConfig, err := s.getGitConfig(ctx, fs, dir)
+	if err != nil {
+		log.Printf("warning: failed to read config for git repo at %s: %s", dir, err)
+	}
+	if gitConfig != nil {
+		repo.Description = gitConfig.Sourcegraph.Description
+	}
+
 	return repo, nil
 }
 
@@ -321,11 +329,14 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	}
 
 	if repo.Private {
-		cmd := exec.Command("git", "config", "sourcegraph.private", "true")
-		cmd.Dir = dir
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			return nil, fmt.Errorf("making %s repository %s private failed with %v:\n%s", repo.VCS, repo.URI, err, string(out))
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.private", "true"); err != nil {
+			return nil, err
+		}
+	}
+
+	if repo.Description != "" {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.description", repo.Description); err != nil {
+			return nil, err
 		}
 	}
 
@@ -350,6 +361,18 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	}
 
 	return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master"}, nil
+}
+
+func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error {
+	dir := absolutePathForRepo(ctx, op.Repo.URI)
+
+	if op.Description != "" {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.description", strings.TrimSpace(op.Description)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *Repos) Delete(ctx context.Context, repo string) error {
@@ -389,4 +412,14 @@ func dirForRepo(repoURI string) string {
 // located.
 func repoForDir(dir string) string {
 	return strings.TrimPrefix(path.Clean(dir), "/")
+}
+
+// checkGitArg returns an error if arg could be a command-line flag,
+// to avoid CLI injection.
+func checkGitArg(arg string) error {
+	arg = strings.TrimSpace(arg)
+	if strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "/") {
+		return fmt.Errorf("invalid git arg %q", arg)
+	}
+	return nil
 }

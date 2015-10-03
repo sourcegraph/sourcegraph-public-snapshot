@@ -224,6 +224,10 @@ func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourceg
 	return nil, errors.New("GitHub repo creation is not implemented")
 }
 
+func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error {
+	return errors.New("GitHub repo updating is not implemented")
+}
+
 func (s *Repos) Delete(ctx context.Context, repo string) error {
 	return errors.New("GitHub repo deletion is not implemented")
 }

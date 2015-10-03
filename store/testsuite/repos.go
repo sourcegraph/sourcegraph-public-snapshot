@@ -117,6 +117,35 @@ func Repos_List_URIs(ctx context.Context, t *testing.T, s store.Repos, preCreate
 	}
 }
 
+// Repos_Update_Description tests the behavior of Repos.Update to
+// update a repo's description.
+func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+	// Add a repo.
+	if _, err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b"})); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := ""; repo.Description != want {
+		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
+
+	if err := s.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "d"; repo.Description != want {
+		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
+}
+
 func repoURIs(repos []*sourcegraph.Repo) []string {
 	var uris []string
 	for _, repo := range repos {
