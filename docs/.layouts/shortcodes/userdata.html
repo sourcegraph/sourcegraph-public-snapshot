@@ -1,0 +1,45 @@
+<div class="checkbox">
+	<label for="go">
+		<input type="checkbox" id="go" checked onclick="refreshUserdata()"> Go
+	</label>
+</div>
+<div class="checkbox">
+	<label for="java">
+		<input type="checkbox" id="java" onclick="refreshUserdata()"> Java
+	</label>
+</div>
+
+<pre><code id="userdata"></code></pre>
+
+<script>
+var userdata = function(go, java) {
+	// The template identifies the cloud provider, one of:
+	//    SRC_DIGITAL_OCEAN
+	//    SRC_AMAZON_EC2
+	//    SRC_GOOGLE_COMPUTE_ENGINE
+	// It is passed as an argument to the shortcode.
+	var str = "#!/bin/bash\n\nexport {{ .Get 0 }}=1\n";
+
+	if (go) {
+		str += "export SRC_LANGUAGE_GO=1\n";
+	}
+	if (java) {
+		str += "export SRC_LANGUAGE_JAVA=1\n";
+	}
+
+	str += "wget -O - https://sourcegraph.com/.download/install.sh | bash";
+	return str;
+}
+
+var setUserdata = function(userdata) {
+	document.getElementById("userdata").textContent = userdata;
+}
+
+var refreshUserdata = function() {
+	var go = document.getElementById("go").checked;
+	var java = document.getElementById("java").checked;
+	setUserdata(userdata(go, java));
+}
+
+refreshUserdata() // initialization
+</script>
