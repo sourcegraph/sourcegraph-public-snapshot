@@ -87,9 +87,7 @@ ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 dist-dep: libvfsgen ${GOBIN}/go-bindata ${GOBIN}/protoc-gen-gogo ${GOBIN}/protoc-gen-dump ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
 
 dist: dist-dep app-dep
-	$(MAKE) -C devdoc dist
-	@echo "HACK(slimsag): using sgtool package --ignore-dirty due to Go 1.4 bug! Restore during return to Go 1.5"
-	${GOBIN}/sgtool -v package $(PACKAGEFLAGS) --ignore-dirty
+	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
 
 generate: generate-dep
 	./dev/go-generate-all
@@ -141,7 +139,6 @@ check: generate-dep
 	bash dev/todo-security
 
 distclean:
-	$(MAKE) -C devdoc clean
 	$(GODEP) go clean ./...
 	rm -rf ${GOBIN}/src Godeps/_workspace/pkg
 

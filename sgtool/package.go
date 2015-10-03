@@ -59,7 +59,7 @@ func (c *PackageCmd) Execute(args []string) error {
 		}
 	}
 
-	if err := execCmd(exec.Command("go", "generate", "-tags=dist", "./app/assets", "./app/templates", "./devdoc")); err != nil {
+	if err := execCmd(exec.Command("go", "generate", "./app/assets", "./app/templates", "./devdoc/...")); err != nil {
 		return err
 	}
 
