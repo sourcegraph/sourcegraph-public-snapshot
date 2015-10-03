@@ -36,6 +36,7 @@ It has these top-level messages:
 	RepoStatusesCreateOp
 	RepoList
 	ReposCreateOp
+	ReposUpdateOp
 	ReposListCommitsOp
 	RepoListCommitsOptions
 	CommitList
@@ -805,11 +806,26 @@ type ReposCreateOp struct {
 	Mirror bool `protobuf:"varint,4,opt,name=mirror,proto3" json:",omitempty"`
 	// Private is whether this repository is private.
 	Private bool `protobuf:"varint,5,opt,name=private,proto3" json:",omitempty"`
+	// Description is the description of the repository.
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:",omitempty"`
 }
 
 func (m *ReposCreateOp) Reset()         { *m = ReposCreateOp{} }
 func (m *ReposCreateOp) String() string { return proto.CompactTextString(m) }
 func (*ReposCreateOp) ProtoMessage()    {}
+
+// ReposUpdateOp is an operation to update a repository's metadata.
+type ReposUpdateOp struct {
+	// Repo is the repository to update.
+	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
+	// Description is the new description of the repository. If empty,
+	// the description is not changed.
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:",omitempty"`
+}
+
+func (m *ReposUpdateOp) Reset()         { *m = ReposUpdateOp{} }
+func (m *ReposUpdateOp) String() string { return proto.CompactTextString(m) }
+func (*ReposUpdateOp) ProtoMessage()    {}
 
 type ReposListCommitsOp struct {
 	Repo RepoSpec                `protobuf:"bytes,1,opt,name=repo" `
@@ -3310,6 +3326,8 @@ type ReposClient interface {
 	List(ctx context.Context, in *RepoListOptions, opts ...grpc.CallOption) (*RepoList, error)
 	// Create creates a new repository.
 	Create(ctx context.Context, in *ReposCreateOp, opts ...grpc.CallOption) (*Repo, error)
+	// Update updates a repository.
+	Update(ctx context.Context, in *ReposUpdateOp, opts ...grpc.CallOption) (*Repo, error)
 	// Delete removes a repository.
 	Delete(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// GetReadme fetches the formatted README file for a repository.
@@ -3366,6 +3384,15 @@ func (c *reposClient) List(ctx context.Context, in *RepoListOptions, opts ...grp
 func (c *reposClient) Create(ctx context.Context, in *ReposCreateOp, opts ...grpc.CallOption) (*Repo, error) {
 	out := new(Repo)
 	err := grpc.Invoke(ctx, "/sourcegraph.Repos/Create", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reposClient) Update(ctx context.Context, in *ReposUpdateOp, opts ...grpc.CallOption) (*Repo, error) {
+	out := new(Repo)
+	err := grpc.Invoke(ctx, "/sourcegraph.Repos/Update", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3471,6 +3498,8 @@ type ReposServer interface {
 	List(context.Context, *RepoListOptions) (*RepoList, error)
 	// Create creates a new repository.
 	Create(context.Context, *ReposCreateOp) (*Repo, error)
+	// Update updates a repository.
+	Update(context.Context, *ReposUpdateOp) (*Repo, error)
 	// Delete removes a repository.
 	Delete(context.Context, *RepoSpec) (*pbtypes1.Void, error)
 	// GetReadme fetches the formatted README file for a repository.
@@ -3532,6 +3561,18 @@ func _Repos_Create_Handler(srv interface{}, ctx context.Context, codec grpc.Code
 		return nil, err
 	}
 	out, err := srv.(ReposServer).Create(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Repos_Update_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(ReposUpdateOp)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ReposServer).Update(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -3673,6 +3714,10 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _Repos_Create_Handler,
+		},
+		{
+			MethodName: "Update",
+			Handler:    _Repos_Update_Handler,
 		},
 		{
 			MethodName: "Delete",

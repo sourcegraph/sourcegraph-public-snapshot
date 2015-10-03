@@ -2019,6 +2019,35 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 
 }
 
+func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdateOp) (res *sourcegraph.Repo, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "Update", param)
+	defer func() {
+		trace.After(ctx, "Repos", "Update", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Repos.Update")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.ReposServer = s.u
+
+	var fedCtx context.Context
+	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
+	if err != nil {
+		return
+	}
+	if fedCtx != nil {
+		target = svc.Repos(fedCtx)
+		ctx = fedCtx
+	}
+
+	res, err = target.Update(ctx, param)
+	return
+
+}
+
 func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "Delete", param)

@@ -525,6 +525,9 @@ service Repos {
 		};
 	};
 
+	// Update updates a repository.
+	rpc Update(ReposUpdateOp) returns (Repo);
+
 	// Delete removes a repository.
 	rpc Delete(RepoSpec) returns (pbtypes.Void) {
 		option (google.api.http) = {
@@ -646,7 +649,20 @@ message ReposCreateOp {
 
 	// Private is whether this repository is private.
 	bool private = 5;
+
+	// Description is the description of the repository.
+	string description = 6;
 }
+
+// ReposUpdateOp is an operation to update a repository's metadata.
+message ReposUpdateOp {
+	// Repo is the repository to update.
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// Description is the new description of the repository. If empty,
+	// the description is not changed.
+	string description = 2;
+};
 
 message ReposListCommitsOp {
 	RepoSpec repo = 1 [(gogoproto.nullable) = false];

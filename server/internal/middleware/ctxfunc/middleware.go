@@ -1286,6 +1286,20 @@ func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp)
 	return rv, s.errFunc(err)
 }
 
+func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.ReposOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+	rv, err := svc.Update(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
 func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)

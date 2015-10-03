@@ -2846,6 +2846,17 @@ func (s *CachedReposServer) Create(ctx context.Context, in *ReposCreateOp) (*Rep
 	return result, err
 }
 
+func (s *CachedReposServer) Update(ctx context.Context, in *ReposUpdateOp) (*Repo, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.Update(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
 func (s *CachedReposServer) Delete(ctx context.Context, in *RepoSpec) (*pbtypes.Void, error) {
 	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
 	result, err := s.ReposServer.Delete(ctx, in)
@@ -3033,6 +3044,32 @@ func (s *CachedReposClient) Create(ctx context.Context, in *ReposCreateOp, opts 
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Repos.Create", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedReposClient) Update(ctx context.Context, in *ReposUpdateOp, opts ...grpc.CallOption) (*Repo, error) {
+	if s.Cache != nil {
+		var cachedResult Repo
+		cached, err := s.Cache.Get(ctx, "Repos.Update", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.ReposClient.Update(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Repos.Update", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

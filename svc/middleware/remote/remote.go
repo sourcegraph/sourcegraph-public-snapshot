@@ -388,6 +388,10 @@ func (s remoteRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp) 
 	return sourcegraph.NewClientFromContext(ctx).Repos.Create(ctx, v1)
 }
 
+func (s remoteRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+	return sourcegraph.NewClientFromContext(ctx).Repos.Update(ctx, v1)
+}
+
 func (s remoteRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	return sourcegraph.NewClientFromContext(ctx).Repos.Delete(ctx, v1)
 }
