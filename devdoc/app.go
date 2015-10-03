@@ -9,9 +9,9 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"github.com/shurcooL/httpfs/vfsutil"
 	"sourcegraph.com/sourcegraph/prototools/tmpl"
 	"src.sourcegraph.com/sourcegraph/devdoc/assets"
 	tmplassets "src.sourcegraph.com/sourcegraph/devdoc/tmpl"
@@ -57,11 +57,7 @@ func New(r *Router) *App {
 		panic(err)
 	}
 	staticPath := path.Join(u.Path, "static/")
-	staticHandler := http.StripPrefix(staticPath, http.FileServer(&assetfs.AssetFS{
-		Asset:    assets.Asset,
-		AssetDir: assets.AssetDir,
-		Prefix:   "",
-	}))
+	staticHandler := http.StripPrefix(staticPath, http.FileServer(assets.Data))
 	r.r.Get(StaticRoute).Handler(cacheController(staticHandler, "max-age=300, public"))
 
 	// Try to initialize the doc generator, if we can't then we serve without
@@ -85,11 +81,13 @@ func (a *App) initGenerator() error {
 	a.generator = tmpl.New()
 
 	// Load all templates from the template assets.
-	a.generator.ReadFile = tmplassets.Asset
+	a.generator.ReadFile = func(path string) ([]byte, error) {
+		return vfsutil.ReadFile(tmplassets.Data, "/"+path)
+	}
 
 	// Unmarshal the Protobuf-encoded request.
 	a.docs = new(plugin.CodeGeneratorRequest)
-	protoRequest, err := assets.Asset("sourcegraph.dump")
+	protoRequest, err := vfsutil.ReadFile(assets.Data, "/sourcegraph.dump")
 	if err != nil {
 		return err
 	}
@@ -115,7 +113,7 @@ func (a *App) initGenerator() error {
 	}
 
 	// Load the filemap from the template assets.
-	fileMap, err := tmplassets.Asset("doc/filemap.xml")
+	fileMap, err := vfsutil.ReadFile(tmplassets.Data, "/doc/filemap.xml")
 	if err != nil {
 		return err
 	}

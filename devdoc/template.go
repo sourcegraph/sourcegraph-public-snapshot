@@ -9,6 +9,7 @@ import (
 
 	"reflect"
 
+	"github.com/shurcooL/httpfs/vfsutil"
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/devdoc/tmpl"
 )
@@ -109,7 +110,7 @@ func (a *App) parseHTMLTemplates(sets [][]string) error {
 			"urlTo": a.URLTo,
 		})
 		for _, tmp := range set {
-			tmplBytes, err := tmpl.Asset(tmp)
+			tmplBytes, err := vfsutil.ReadFile(tmpl.Data, "/"+tmp)
 			if err != nil {
 				return fmt.Errorf("template %v: %s", set, err)
 			}
