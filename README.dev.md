@@ -101,7 +101,7 @@ Also, sometimes there are erroneous diffs. This occurs for a few
 reasons, none of which are legitimate (i.e., they are tech debt items
 we need to address):
 
-* Your codegen tool (e.g., `go-bindata`) version might differ from
+* Your codegen tool (e.g., `gen-mocks`) version might differ from
   the last committer's in the code it produces. We need to version
   these tools.
 * The codegen tool might emit code that depends on system
