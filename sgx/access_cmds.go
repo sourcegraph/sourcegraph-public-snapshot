@@ -60,7 +60,6 @@ type accessGrantCmd struct {
 
 func (c *accessGrantCmd) Execute(args []string) error {
 	cl := Client()
-	endpointURL := Endpoints.EndpointURL().String()
 
 	if len(c.Args.Users) == 0 {
 		return fmt.Errorf(`Must specify at least one user to grant access to (e.g. "src access grant USER")`)
@@ -75,11 +74,7 @@ func (c *accessGrantCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		if c.Admin {
-			fmt.Printf("# granting admin access to user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
-		} else {
-			fmt.Printf("# granting read/write access to user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
-		}
+		fmt.Printf("%s: ", user.Login)
 
 		permsOpt := &sourcegraph.UserPermissions{
 			UID:   user.UID,
@@ -105,7 +100,6 @@ type accessRevokeCmd struct {
 
 func (c *accessRevokeCmd) Execute(args []string) error {
 	cl := Client()
-	endpointURL := Endpoints.EndpointURL().String()
 
 	if len(c.Args.Users) == 0 {
 		return fmt.Errorf(`Must specify at least one user to revoke access from (e.g. "src access revoke USER")`)
@@ -120,7 +114,7 @@ func (c *accessRevokeCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("# revoking all access from user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
+		fmt.Printf("%s: ", user.Login)
 
 		permsOpt := &sourcegraph.UserPermissions{
 			UID:   user.UID,
