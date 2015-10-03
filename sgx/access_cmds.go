@@ -62,6 +62,10 @@ func (c *accessGrantCmd) Execute(args []string) error {
 	cl := Client()
 	endpointURL := Endpoints.EndpointURL().String()
 
+	if len(c.Args.Users) == 0 {
+		return fmt.Errorf(`Must specify at least one user to grant access to (e.g. "src access grant USER")`)
+	}
+
 	for _, login := range c.Args.Users {
 		userSpec, err := sourcegraph.ParseUserSpec(login)
 		if err != nil {
@@ -69,8 +73,7 @@ func (c *accessGrantCmd) Execute(args []string) error {
 		}
 		user, err := cl.Users.Get(cliCtx, &userSpec)
 		if err != nil {
-			fmt.Printf("# fetching user info for login %s failed: %s\n", login, err)
-			continue
+			return err
 		}
 		if c.Admin {
 			fmt.Printf("# granting admin access to user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
@@ -86,11 +89,9 @@ func (c *accessGrantCmd) Execute(args []string) error {
 		}
 		if _, err := cl.RegisteredClients.SetUserPermissions(cliCtx, permsOpt); err != nil {
 			fmt.Println("FAILED")
-			fmt.Printf("   ERROR: %v\n", err)
-			continue
-		} else {
-			fmt.Println("SUCCESS")
+			return err
 		}
+		fmt.Println("SUCCESS")
 	}
 
 	return nil
@@ -106,6 +107,10 @@ func (c *accessRevokeCmd) Execute(args []string) error {
 	cl := Client()
 	endpointURL := Endpoints.EndpointURL().String()
 
+	if len(c.Args.Users) == 0 {
+		return fmt.Errorf(`Must specify at least one user to revoke access from (e.g. "src access revoke USER")`)
+	}
+
 	for _, login := range c.Args.Users {
 		userSpec, err := sourcegraph.ParseUserSpec(login)
 		if err != nil {
@@ -113,8 +118,7 @@ func (c *accessRevokeCmd) Execute(args []string) error {
 		}
 		user, err := cl.Users.Get(cliCtx, &userSpec)
 		if err != nil {
-			fmt.Printf("# fetching user info for login %s failed: %s\n", login, err)
-			continue
+			return err
 		}
 		fmt.Printf("# revoking all access from user %s (UID %d) on server running at %s... ", user.Login, user.UID, endpointURL)
 
@@ -126,11 +130,9 @@ func (c *accessRevokeCmd) Execute(args []string) error {
 		}
 		if _, err := cl.RegisteredClients.SetUserPermissions(cliCtx, permsOpt); err != nil {
 			fmt.Println("FAILED")
-			fmt.Printf("   ERROR: %v\n", err)
-			continue
-		} else {
-			fmt.Println("SUCCESS")
+			return err
 		}
+		fmt.Println("SUCCESS")
 	}
 
 	return nil
@@ -146,21 +148,16 @@ func (c *accessListCmd) Execute(args []string) error {
 	userList, err := cl.RegisteredClients.ListUserPermissions(cliCtx, &sourcegraph.RegisteredClientSpec{})
 	if err != nil {
 		fmt.Println("FAILED")
-		fmt.Printf("   ERROR: %v\n", err)
-		return nil
-	} else {
-		fmt.Println("SUCCESS")
+		return err
 	}
+	fmt.Println("SUCCESS")
 
 	for _, userPerms := range userList.UserPermissions {
-		var login string
 		user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: userPerms.UID})
 		if err != nil {
-			fmt.Printf("# fetching login info for UID %v failed: %s\n", userPerms.UID, err)
-		} else {
-			login = user.Login
+			return err
 		}
-		fmt.Printf("# User %s (UID %d): read=%v, write=%v, admin=%v\n", login, userPerms.UID, userPerms.Read, userPerms.Write, userPerms.Admin)
+		fmt.Printf("# User %s (UID %d): read=%v, write=%v, admin=%v\n", user.Login, userPerms.UID, userPerms.Read, userPerms.Write, userPerms.Admin)
 	}
 
 	return nil
