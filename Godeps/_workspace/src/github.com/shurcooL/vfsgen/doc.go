@@ -1,7 +1,6 @@
 /*
-Package vfsgen generates a vfsdata.go file that statically implements the given virtual filesystem.
-
-vfsgen is simple and minimalistic. You provide an input filesystem, and it generates an output .go file.
+Package vfsgen takes an input http.FileSystem (likely at `go generate` time) and
+generates Go code that statically implements the given http.FileSystem.
 
 Features:
 
@@ -11,6 +10,6 @@ Features:
 
 -	Enables direct access to internal gzip compressed bytes via an optional interface.
 
--	Outputs gofmt-compatible .go code.
+-	Outputs `gofmt`ed Go code.
 */
 package vfsgen

@@ -1,6 +1,6 @@
 {
 	"ImportPath": "src.sourcegraph.com/sourcegraph",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.5.1",
 	"Packages": [
 		"./..."
 	],
@@ -14,11 +14,6 @@
 			"ImportPath": "bitbucket.org/ww/goautoneg",
 			"Comment": "null-5",
 			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
-		},
-		{
-			"ImportPath": "code.google.com/p/go.crypto/ssh/terminal",
-			"Comment": "null-236",
-			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
 		},
 		{
 			"ImportPath": "code.google.com/p/rog-go/parallel",
@@ -93,10 +88,6 @@
 		{
 			"ImportPath": "github.com/eknkc/amber",
 			"Rev": "ee5a5b8364bb73899fdd529d23af6ad9230f8a06"
-		},
-		{
-			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
-			"Rev": "bea323321994103859d60197d229f1a94699dde3"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-shlex",
@@ -174,10 +165,6 @@
 		{
 			"ImportPath": "github.com/howeyc/gopass",
 			"Rev": "e8c0d21f59eb7f01086a39e47e05568acc9bb736"
-		},
-		{
-			"ImportPath": "github.com/inconshreveable/go-update",
-			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/mousetrap",
@@ -304,11 +291,11 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/filter",
-			"Rev": "0a8f492bc2c6ec4744aa778731278f842c30d185"
+			"Rev": "30ae5985d3492b97a894a8543df78df5514618ab"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/vfsutil",
-			"Rev": "0a8f492bc2c6ec4744aa778731278f842c30d185"
+			"Rev": "30ae5985d3492b97a894a8543df78df5514618ab"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/sanitized_anchor_name",
@@ -316,7 +303,7 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/vfsgen",
-			"Rev": "9467ba831fba55e187d191abbe443ccdcd8433e1"
+			"Rev": "ba39b2120b3137bc1867bfc242bae267bcf2f9bb"
 		},
 		{
 			"ImportPath": "github.com/smartystreets/mafsa",
@@ -474,7 +461,7 @@
 		},
 		{
 			"ImportPath": "github.com/sqs/go-selfupdate/selfupdate",
-			"Rev": "385c6ca8b9c42d78e7e0aacfb690cf28107a8306"
+			"Rev": "d36f0a97c909dccd193274709266ff9b68a003db"
 		},
 		{
 			"ImportPath": "github.com/sqs/modl",
@@ -565,6 +552,10 @@
 			"ImportPath": "gopkg.in/fsnotify.v1",
 			"Comment": "v1.2.0",
 			"Rev": "96c060f6a6b7e0d6f75fddd10efeaca3e5d1bcb0"
+		},
+		{
+			"ImportPath": "gopkg.in/inconshreveable/go-update.v0",
+			"Rev": "d8b0b1d421aa1cbf392c05869f8abbc669bb7066"
 		},
 		{
 			"ImportPath": "gopkg.in/inconshreveable/log15.v2",

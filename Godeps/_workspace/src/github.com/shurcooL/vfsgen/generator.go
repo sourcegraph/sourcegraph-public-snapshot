@@ -250,6 +250,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	pathpkg "path"
 	"time"
 )
 
@@ -312,7 +313,7 @@ var ⦗⦗.VariableName⦘⦘ = func() http.FileSystem {
 type _vfsgen_fs map[string]interface{}
 
 func (fs _vfsgen_fs) Open(path string) (http.File, error) {
-	// TODO: Maybe clean path?
+	path = pathpkg.Clean("/" + path)
 	f, ok := fs[path]
 	if !ok {
 		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}

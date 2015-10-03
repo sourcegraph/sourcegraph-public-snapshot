@@ -8,13 +8,14 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"github.com/shurcooL/httpfs/vfsutil"
 	"src.sourcegraph.com/sourcegraph/devdoc/assets"
 )
 
 func main() {
 	// Unmarshal the Protobuf-encoded request.
 	docs := new(plugin.CodeGeneratorRequest)
-	protoRequest, err := assets.Asset("sourcegraph.dump")
+	protoRequest, err := vfsutil.ReadFile(assets.Data, "/sourcegraph.dump")
 	if err != nil {
 		log.Fatalln(err)
 	}

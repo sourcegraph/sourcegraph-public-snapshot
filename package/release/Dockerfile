@@ -22,7 +22,6 @@ RUN curl -Ls https://s3-us-west-2.amazonaws.com/public-dev/protobuf-bin-v3.0.0-a
 # Pre-emptively fetch some dependencies of creating the release, so we don't
 # need to refetch each time we run the image
 RUN go get \
-    github.com/jteeuwen/go-bindata/go-bindata \
     github.com/tools/godep \
     sourcegraph.com/sourcegraph/prototools/cmd/protoc-gen-dump
 
