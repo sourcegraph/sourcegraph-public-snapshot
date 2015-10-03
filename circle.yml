@@ -44,7 +44,7 @@ dependencies:
     - mkdir -p $HOME/.go_workspace/src/src.sourcegraph.com
     - cp -r $PWD $REPO
 
-    - go get github.com/tools/godep github.com/jteeuwen/go-bindata/go-bindata
+    - go get github.com/tools/godep
 
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"

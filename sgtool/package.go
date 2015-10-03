@@ -16,7 +16,7 @@ import (
 func init() {
 	c, err := CLI.AddCommand("package",
 		"build a binary package for release locally",
-		"The package command builds and packages a new Sourcegraph binary version by (1) generating frontend assets (with webpack), (2) generating Go template and asset bindata, and (3) cross-compiling binaries for all target platforms.",
+		"The package command builds and packages a new Sourcegraph binary version by (1) generating frontend assets (with webpack), (2) generating Go template and asset vfsdata, and (3) cross-compiling binaries for all target platforms.",
 		&packageCmd,
 	)
 	if err != nil {

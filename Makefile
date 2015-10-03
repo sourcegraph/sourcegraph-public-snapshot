@@ -63,9 +63,6 @@ serve-dep:
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
 
-${GOBIN}/go-bindata:
-	go get github.com/jteeuwen/go-bindata/go-bindata
-
 ${GOBIN}/protoc-gen-gogo:
 	go get github.com/gogo/protobuf/protoc-gen-gogo
 
@@ -84,7 +81,7 @@ ${GOBIN}/gen-mocks:
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 	$(GODEP) go install ./sgtool
 
-dist-dep: libvfsgen ${GOBIN}/go-bindata ${GOBIN}/protoc-gen-gogo ${GOBIN}/protoc-gen-dump ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
+dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/protoc-gen-dump ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
 
 dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
@@ -92,7 +89,7 @@ dist: dist-dep app-dep
 generate: generate-dep
 	./dev/go-generate-all
 
-generate-dep: ${GOBIN}/go-bindata ${GOBIN}/gen-mocks
+generate-dep: ${GOBIN}/gen-mocks
 
 db-reset: src
 	src pgsql reset
