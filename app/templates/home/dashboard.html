@@ -3,7 +3,7 @@
 
 {{define "Body"}}
 <br/>
-<div class="row">
+<div class="row dashboard">
 	<div class="col-md-{{if .Users}}6{{else}}12{{end}}">
 		<h3>Repositories <button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addRepo">
@@ -16,10 +16,11 @@
 				<code>src --endpoint={{.AppURL}} repo create my/repo</code>
 			</div>
 		</div>
-		<div class="list-group">
+		<div class="list-group repos">
 			{{range .Repos}}
 				<a class="list-group-item" href="{{urlToRepo .URI}}">
-					{{template "RepoIcon" .}}</span>&nbsp; {{template "RepoLabel" (repoLabelForOwner "" .URI)}}
+					<h4>{{template "RepoIcon" .}} {{template "RepoLabel" (repoLabelForOwner "" .URI)}}</h4>
+					{{with .Description}}<p class="description">{{.}}</p>{{end}}
 				</a>
 			{{end}}
 		</div>
