@@ -63,7 +63,7 @@ func (c *accessGrantCmd) Execute(args []string) error {
 	endpointURL := getEndpointURL().String()
 
 	if len(c.Args.Users) == 0 {
-		return fmt.Errorf("Must specify at least one user to grant access to (e.g. \"src access grant bill\")")
+		return fmt.Errorf(`Must specify at least one user to grant access to (e.g. "src access grant USER")`)
 	}
 
 	for _, login := range c.Args.Users {
@@ -113,7 +113,7 @@ func (c *accessRevokeCmd) Execute(args []string) error {
 	endpointURL := getEndpointURL().String()
 
 	if len(c.Args.Users) == 0 {
-		return fmt.Errorf("Must specify at least one user to revoke access from (e.g. \"src access revoke bill\")")
+		return fmt.Errorf(`Must specify at least one user to revoke access from (e.g. "src access revoke USER")`)
 	}
 
 	for _, login := range c.Args.Users {
