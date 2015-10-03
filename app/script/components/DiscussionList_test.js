@@ -60,7 +60,7 @@ describe("components/DiscussionList", () => {
 		var checkAgainst = (node, attrs) => {
 			var $header = $(node).find("header");
 			expect($header.find("h1 .contents").text()).to.be(`${attrs.Title} #${attrs.ID}`);
-			expect($header.find(".stats").text()).to.be(` ${attrs.Comments.length}  ${attrs.Ratings.length}`);
+			expect($header.find(".stats").text()).to.be(` ${attrs.Comments.length} `);
 			expect($header.find(".subtitle").text()).to.be(`@${attrs.Author.Login} a few seconds ago`);
 			expect($(node).find("p.body").text()).to.contain(attrs.Description);
 		};

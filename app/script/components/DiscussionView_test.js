@@ -34,7 +34,7 @@ describe("components/DiscussionView", () => {
 		var $header = $root.find("header");
 
 		expect($header.find("h1").text()).to.be("title #1");
-		expect($header.find(".stats").text()).to.be(" 1  2");
+		expect($header.find(".stats").text()).to.be(" 1 ");
 		expect($header.find(".subtitle .author").text()).to.be("@gbbr");
 		expect($header.find(".subtitle .date").text()).to.be(" a few seconds ago");
 		expect($header.find(".subtitle .subject").text()).to.be(" on name");

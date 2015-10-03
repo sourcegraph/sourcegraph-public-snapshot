@@ -79,7 +79,6 @@ describe("components/DiscussionSnippet", () => {
 
 		expect($(lis[0]).find("a.title").text()).to.be("title1");
 		expect($(lis[0]).find(".stats").text()).to.contain("2");
-		expect($(lis[0]).find(".stats").text()).to.contain("3");
 		expect($(lis[0]).find("p.body").text()).to.contain("description1");
 
 		expect($(lis[1]).find("a.title").text()).to.be("title2");
