@@ -11,16 +11,9 @@ To set up Sourcegraph on a new [Google Compute Engine](https://cloud.google.com/
 * **Boot disk:** Ubuntu 14.04 LTS
 * **Firewall:** Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic**
 * Expand the **Management, disk, networking, access & security groups** panel and set the following **Startup script**:
-```
-#!/bin/bash
 
-export SRC_GOOGLE_COMPUTE_ENGINE=1
+{{< userdata SRC_GOOGLE_COMPUTE_ENGINE >}}
 
-export SRC_LANGUAGE_GO=1
-export SRC_LANGUAGE_JAVA=1
-
-wget -O - https://sourcegraph.com/.download/install.sh | bash
-```
 * Click **Create**
 * Once your instance is running, allow external access to the API on port 3100 so you can
 use the `src` CLI tool to manage your Sourcegraph server. To do this, first

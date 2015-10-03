@@ -9,16 +9,9 @@ To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instanc
 * **Choose an AMI:** Ubuntu Server 14.04 AMI.
 * **Choose an Instance Type:** Any instance with at least 2 GB of RAM (t2.small or better)
 * **Configure Instance Details:** Expand **Edit instance details** then **Advanced details** and set the following **User data**:
-```
-#!/bin/bash
 
-export SRC_AMAZON_EC2=1
+{{< userdata SRC_AMAZON_EC2 >}}
 
-export SRC_LANGUAGE_GO=1
-export SRC_LANGUAGE_JAVA=1
-
-wget -O - https://sourcegraph.com/.download/install.sh | bash
-```
 * **Configure Security Group:** Allow external access to the following ports (or just choose All TCP).
   * Port 22 (for server administration via SSH)
   * Ports 80 and 443 (for the Web app)
