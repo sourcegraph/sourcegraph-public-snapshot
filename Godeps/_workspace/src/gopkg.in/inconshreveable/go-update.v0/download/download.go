@@ -49,9 +49,9 @@ type Download struct {
 
 // New initializes a new Download object which will download
 // the content from url into target.
-func New(url string, target Target) *Download {
+func New(url string, target Target, httpClient *http.Client) *Download {
 	return &Download{
-		HttpClient: new(http.Client),
+		HttpClient: httpClient,
 		Progress:   make(chan int),
 		Method:     "GET",
 		Url:        url,
@@ -81,6 +81,11 @@ func (d *Download) Get() (err error) {
 	req, err := http.NewRequest(d.Method, d.Url, nil)
 	if err != nil {
 		return
+	}
+
+	// create an http client if one does not exist
+	if d.HttpClient == nil {
+		d.HttpClient = http.DefaultClient
 	}
 
 	// we have to add headers like this so they get used across redirects

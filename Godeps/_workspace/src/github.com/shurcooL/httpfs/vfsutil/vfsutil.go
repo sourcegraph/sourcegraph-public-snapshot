@@ -1,3 +1,4 @@
+// Package vfsutil implements some I/O utility functions for http.FileSystem.
 package vfsutil
 
 import (
