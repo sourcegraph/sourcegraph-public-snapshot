@@ -42,11 +42,11 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 			return nil, err
 		}
 
-		// Prefer explicitly specified endpoint, then auth file
-		// default endpoint, then fallback default.
-		endpoint := Endpoints.EndpointURL()
-		ua := userAuth[endpoint.String()]
-		if endpoint.Host == "" {
+		// Prefer explicitly specified endpoint, then auth file default endpoint,
+		// then fallback default. For this reason, we use Endpoint not EndpointURL
+		// (which provides the fallback default) here.
+		ua := userAuth[Endpoints.Endpoint]
+		if Endpoints.Endpoint == "" {
 			if ua == nil {
 				var ep string
 				ep, ua = userAuth.getDefault()
@@ -55,7 +55,7 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 				}
 			}
 			if ua == nil {
-				ua = userAuth[endpoint.String()]
+				ua = userAuth[Endpoints.EndpointURL().String()]
 			}
 		}
 		if ua != nil {
