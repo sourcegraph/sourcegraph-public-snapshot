@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 
 	"strings"
 
@@ -181,42 +180,34 @@ func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, err
 		repo.DefaultBranch = "default"
 	}
 
-	isPrivate, err := readGitIsPrivate(fs, dir)
-	if err != nil {
-		log.Printf("warning: failed to determine whether git repo at %s is private: %s.\n", dir, err)
-	} else if isPrivate {
-		repo.Private = true
-	}
-
-	isMirror, err := readGitIsMirror(fs, dir)
-	if err != nil {
-		log.Printf("warning: failed to determine whether git repo at %s is a mirror: %s.\n", dir, err)
-	} else if isMirror {
-		repo.Mirror = true
-	}
-	if isMirror {
-		// Mirrored repos are set to clone from their original source.
-		cloneURL, err := readGitOriginURL(fs, dir)
-		if err != nil || cloneURL == "" {
-			log.Printf("warning: failed to determine clone URL for git repo at %s: %s.\n", dir, err)
-		} else if strings.HasPrefix(cloneURL, "http") {
-			repo.HTTPCloneURL = cloneURL
-		} else if strings.HasPrefix(cloneURL, "file:") || strings.HasPrefix(cloneURL, "/") {
-			// no-op; leave blank
-		} else {
-			repo.SSHCloneURL = cloneURL
-		}
-	} else {
-		// The clone URL for a repo stored locally is set to the repo's path at the current host.
-		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepo(uri)).String()
-	}
-
 	gitConfig, err := s.getGitConfig(ctx, fs, dir)
 	if err != nil {
 		log.Printf("warning: failed to read config for git repo at %s: %s", dir, err)
 	}
 	if gitConfig != nil {
 		repo.Description = gitConfig.Sourcegraph.Description
+		repo.Private = gitConfig.Sourcegraph.Private
+
+		if origin := gitConfig.Remote["origin"]; origin != nil {
+			repo.Mirror = origin.Mirror
+
+			if repo.Mirror {
+				if origin.URL == "" {
+					log.Printf("warning: failed to determine clone URL for git repo at %s: %s.\n", dir, err)
+				} else if strings.HasPrefix(origin.URL, "http") {
+					repo.HTTPCloneURL = origin.URL
+				} else if strings.HasPrefix(origin.URL, "file:") || strings.HasPrefix(origin.URL, "/") {
+					// no-op; leave blank
+				} else {
+					repo.SSHCloneURL = origin.URL
+				}
+			}
+		}
+	}
+
+	if !repo.Mirror {
+		// The clone URL for a repo stored locally is set to the repo's path at the current host.
+		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepo(uri)).String()
 	}
 
 	return repo, nil
@@ -239,64 +230,6 @@ func readGitDefaultBranch(fs vfs.FileSystem, dir string) (string, error) {
 	data = bytes.TrimPrefix(data, []byte("ref: refs/heads/"))
 	data = bytes.TrimSpace(data)
 	return string(data), nil
-}
-
-var originURLPat = regexp.MustCompile(`\[remote "origin"\]
-\s*url\s*=\s*(.*)`)
-
-func readGitOriginURL(fs vfs.FileSystem, dir string) (string, error) {
-	// TODO(sqs): move this to go-vcs; hacky
-	var configPath string
-	if _, err := fs.Stat(filepath.Join(dir, ".git")); err == nil {
-		configPath = filepath.Join(dir, ".git", "config") // non-bare repo
-	} else if os.IsNotExist(err) {
-		configPath = filepath.Join(dir, "config") // bare repo
-	} else {
-		return "", err
-	}
-	data, err := vfs.ReadFile(fs, configPath)
-	if err != nil {
-		return "", err
-	}
-	matches := originURLPat.FindStringSubmatch(string(data))
-	if len(matches) == 2 {
-		return matches[1], nil
-	}
-	return "", nil
-}
-
-func readGitIsPrivate(fs vfs.FileSystem, dir string) (bool, error) {
-	// TODO: Figure out long term solution.
-	var configPath string
-	if _, err := fs.Stat(filepath.Join(dir, ".git")); err == nil {
-		configPath = filepath.Join(dir, ".git", "config") // non-bare repo
-	} else if os.IsNotExist(err) {
-		configPath = filepath.Join(dir, "config") // bare repo
-	} else {
-		return false, err
-	}
-	data, err := vfs.ReadFile(fs, configPath)
-	if err != nil {
-		return false, err
-	}
-	return bytes.Contains(data, []byte("private = true")), nil
-}
-
-func readGitIsMirror(fs vfs.FileSystem, dir string) (bool, error) {
-	// TODO(sqs): move this to go-vcs; hacky
-	var configPath string
-	if _, err := fs.Stat(filepath.Join(dir, ".git")); err == nil {
-		configPath = filepath.Join(dir, ".git", "config") // non-bare repo
-	} else if os.IsNotExist(err) {
-		configPath = filepath.Join(dir, "config") // bare repo
-	} else {
-		return false, err
-	}
-	data, err := vfs.ReadFile(fs, configPath)
-	if err != nil {
-		return false, err
-	}
-	return bytes.Contains(data, []byte("mirror = true")), nil
 }
 
 func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {

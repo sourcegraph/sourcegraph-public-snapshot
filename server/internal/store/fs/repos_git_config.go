@@ -14,8 +14,14 @@ import (
 // repoGitConfig represents a git config file in a repository (e.g.,
 // ".git/config", or simply "config" in a bare repo).
 type repoGitConfig struct {
+	Remote map[string]*struct {
+		URL    string
+		Mirror bool
+	}
+
 	Sourcegraph struct {
 		Description string
+		Private     bool
 	}
 }
 
