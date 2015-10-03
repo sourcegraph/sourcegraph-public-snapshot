@@ -3,8 +3,6 @@ package authutil
 import (
 	"log"
 
-	"strings"
-
 	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
@@ -23,8 +21,6 @@ type Flags struct {
 
 	RestrictWriteAccess bool `long:"auth.restrict-write-access" description:"only allow admin users to perform write operations (create/delete repo, push to repo, etc.)" default:"false"`
 
-	RestrictToUsers string `long:"auth.users" description:"restrict to only users listed here (space-separated logins) and forbid all anonymous access ('<ALL>' means allow all users)" default:"<ALL>"`
-
 	Source string `long:"auth.source" description:"source of authentication to use (none|local|oauth)" default:"oauth"`
 
 	OAuth2AuthServer bool `long:"auth.oauth2-auth-server" description:"enable OAuth2 authentication server (allow users to authenticate via this server)"`
@@ -32,21 +28,6 @@ type Flags struct {
 	DisableUserProfiles bool `long:"auth.disable-user-profiles" description:"do not show user profile pages"`
 
 	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login. CAUTION: use only for testing."`
-}
-
-func (f *Flags) allowAllUsers() bool { return f.RestrictToUsers == "<ALL>" || f.RestrictToUsers == "" }
-
-func (f *Flags) AllowSignUpOrLogInForUser(login string) bool {
-	if f.allowAllUsers() {
-		return true
-	}
-	logins := strings.Fields(f.RestrictToUsers)
-	for _, l := range logins {
-		if l == login {
-			return true
-		}
-	}
-	return false
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
