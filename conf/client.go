@@ -56,7 +56,7 @@ func (c *EndpointOpts) EndpointURL() *url.URL {
 	if e == "" {
 		e = "http://localhost:3000"
 	}
-	endpoint, err := url.Parse(c.Endpoint)
+	endpoint, err := url.Parse(e)
 	if err != nil {
 		log.Fatal(err, "invalid endpoint URL specified (in EndpointOpts.EndpointURL")
 	}
