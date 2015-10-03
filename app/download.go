@@ -232,7 +232,7 @@ do_install() {
 	set +x # echo off
 	echo
 	echo "********************************************************************************"
-	echo "** Success! Sourcegraph has been installed!                                   **"
+	echo "** Success! Sourcegraph has been installed as the 'src' command.              **"
 	echo "********************************************************************************"
 }
 
