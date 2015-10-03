@@ -28,9 +28,11 @@ type EndpointOpts struct {
 // auto-detect endpoint is specified, it discovers the gRPC endpoint
 // from that endpoint; otherwise it uses the GRPCEndpoint field.
 func (c *EndpointOpts) WithEndpoints(ctx context.Context) (context.Context, error) {
-	endpoint := c.EndpointURL()
-	if endpoint.Host != "" {
-		info, err := discover.SiteURL(ctx, endpoint.String())
+	// Note: intentional use of c.Endpoint instead of EndpointURL here. We want to
+	// check if the user input an endpoint URL that we should discover from -- we
+	// don't want the default value returned by EndpointURL.
+	if c.Endpoint != "" {
+		info, err := discover.SiteURL(ctx, c.EndpointURL().String())
 		if err != nil {
 			return nil, err
 		}
