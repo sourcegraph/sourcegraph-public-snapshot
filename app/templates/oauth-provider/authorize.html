@@ -6,8 +6,9 @@
 <div class="row">
 	<div class="col-md-offset-2 col-md-8">
 		<div class="well oauth-provider authorize">
+			<h5 class="pull-right">Your <strong>{{.AppURL.Host}}</strong> account</h5>
 			<h1>Authorize <strong>{{.RegisteredClient.ClientName}}</strong>?</h1>
-			<p>The application at <strong>{{.RedirectURL.Host}}</strong> requests:</p>
+			<p>The application at <strong>{{.RedirectURL.Host}}</strong> requests the following information from your <strong>{{.AppURL.Host}}</strong> account:</p>
 			<ul>
 				<li>Your public user profile (username and company)</li>
 			</ul>
