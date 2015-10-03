@@ -41,6 +41,10 @@ func (c *doBuildCmd) Execute(args []string) error {
 		execOpt.ExeMethods = "program"
 	}
 
+	if err := os.Setenv("SRCLIB_FETCH_DEPS", "t"); err != nil {
+		return err
+	}
+
 	configCmd := &srclib.ConfigCmd{
 		Options:          config.Options{Repo: repo.URI, Subdir: "."},
 		ToolchainExecOpt: execOpt,
