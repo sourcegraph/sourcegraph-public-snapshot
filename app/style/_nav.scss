@@ -78,28 +78,16 @@ header.page-header {
 	}
 
 	.navbar-brand {
-		margin-right: 15px;
-		&.logo, &.repo {
+		margin-right: 5px;
+		&.logo {
 			white-space: nowrap;
-			font-size: $font-size-large*1.6;
-		}
-		&.logo-symbol-and-text {
-			img.logo {
-				width: $navbar-logo-width - $search-form-padding-left/2;
-				margin-top: -3px;
-			}
-			&:hover img.logo {
-				opacity: 0.7;
+			font-size: $font-size-large;
+			&:hover {
+				opacity: 0.8;
 			}
 		}
-		.fa, .symbol {
-			line-height: 20px;
-		}
-		.fa {
-			opacity: 0.5;
-		}
-		img {
-			display: inline;
+		.name {
+			font-weight: 500;
 		}
 	}
 
