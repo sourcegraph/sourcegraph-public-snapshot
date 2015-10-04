@@ -87,22 +87,14 @@ div.repo-body {
 
 	.repo-meta {
 		margin-top: 0.75em;
-		margin-bottom: 1em;
-		position: relative;
-
 		.description {
-			position: absolute;
-			left: 1em;
 			font-size: $font-size-base * 1.05;
 			color: $gray-dark;
 		}
 	}
 
 	.clone-url-container {
-		position: absolute;
-		right: 1em;
-		width: 12em;
-
+		max-width: 25em;
 		.clone-url {
 			cursor: copy;
 			background-color: white;

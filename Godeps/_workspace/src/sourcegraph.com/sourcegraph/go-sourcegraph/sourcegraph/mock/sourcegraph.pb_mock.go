@@ -95,6 +95,7 @@ type ReposClient struct {
 	Get_            func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	List_           func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
 	Create_         func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
+	Update_         func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_         func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
 	GetReadme_      func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
 	Enable_         func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -117,6 +118,10 @@ func (s *ReposClient) List(ctx context.Context, in *sourcegraph.RepoListOptions,
 
 func (s *ReposClient) Create(ctx context.Context, in *sourcegraph.ReposCreateOp, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
 	return s.Create_(ctx, in)
+}
+
+func (s *ReposClient) Update(ctx context.Context, in *sourcegraph.ReposUpdateOp, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
+	return s.Update_(ctx, in)
 }
 
 func (s *ReposClient) Delete(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
@@ -165,6 +170,7 @@ type ReposServer struct {
 	Get_            func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	List_           func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
 	Create_         func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
+	Update_         func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
 	GetReadme_      func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
 	Enable_         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -187,6 +193,10 @@ func (s *ReposServer) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) 
 
 func (s *ReposServer) Create(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
 	return s.Create_(v0, v1)
+}
+
+func (s *ReposServer) Update(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+	return s.Update_(v0, v1)
 }
 
 func (s *ReposServer) Delete(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {

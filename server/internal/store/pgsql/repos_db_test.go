@@ -146,3 +146,10 @@ func TestRepos_List_URIs(t *testing.T) {
 	defer done()
 	testsuite.Repos_List_URIs(ctx, t, &Repos{}, preCreateRepo)
 }
+
+func TestRepos_Update_Description(t *testing.T) {
+	t.Parallel()
+	ctx, done := testContext()
+	defer done()
+	testsuite.Repos_Update_Description(ctx, t, &Repos{}, preCreateRepo)
+}

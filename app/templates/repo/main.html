@@ -11,29 +11,30 @@
 {{template "RepoBuildWarning" $}}
 
 {{if or (or .Repo.Description .Repo.HomepageURL) (not disableCloneURL)}}
-<div class="repo-meta row">
-	{{if or .Repo.Description .Repo.HomepageURL}}
-	<p class="description">
-		{{sanitizeHTML .Repo.Description}}
-		{{if and .Repo.Description .Repo.HomepageURL}}&mdash;{{end}}
-		{{if .Repo.HomepageURL}}
-		<a href="{{.Repo.HomepageURL}}" target="_blank" rel="nofollow">{{displayURL (toString2 .Repo.HomepageURL)}}</a>
+	<div class="repo-meta row">
+		{{if or .Repo.Description .Repo.HomepageURL}}
+			<p class="description col-sm-8 col-md-10">
+				{{sanitizeHTML .Repo.Description}}
+				{{if and .Repo.Description .Repo.HomepageURL}}&mdash;{{end}}
+				{{if .Repo.HomepageURL}}
+					<a href="{{.Repo.HomepageURL}}" target="_blank" rel="nofollow">{{displayURL (toString2 .Repo.HomepageURL)}}</a>
+				{{end}}
+			</p>
 		{{end}}
-	</p>
-	{{end}}
 
-	{{if not disableCloneURL}}
-	<div class="clone-url-container">
-		<div class="input-group input-group-sm">
-			<input type="text" class="clone-url form-control" id="clone-url"
+		{{if not disableCloneURL}}
+			<div class="clone-url-container col-sm-4 col-md-2 pull-right">
+				<div class="input-group input-group-sm">
+					<input type="text" class="clone-url form-control" id="clone-url"
 						value="{{.Repo.CloneURL}}"
 						onclick="this.select()"
 						readonly="readonly">
-			<span class="input-group-addon" id="sizing-addon1"><i class="fa fa-files-o"></i></span>
-		</div>
+					<span class="input-group-addon" id="sizing-addon1"><i class="fa fa-files-o"></i></span>
+				</div>
+			</div>
+		{{end}}
+
 	</div>
-	{{end}}
-</div>
 {{end}}
 
 {{template "RepoTree" $}}

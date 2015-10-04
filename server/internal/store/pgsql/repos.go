@@ -322,6 +322,16 @@ func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourceg
 	return r.toRepo(), nil
 }
 
+func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error {
+	if op.Description != "" {
+		_, err := dbh(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *Repos) Delete(ctx context.Context, repo string) error {
 	_, err := dbh(ctx).Exec(`DELETE FROM repo WHERE uri=$1;`, repo)
 	return err

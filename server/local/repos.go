@@ -103,6 +103,18 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 	return store.ReposFromContext(ctx).Get(ctx, op.URI)
 }
 
+func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update"); err != nil {
+		return nil, err
+	}
+
+	store := store.ReposFromContext(ctx)
+	if err := store.Update(ctx, op); err != nil {
+		return nil, err
+	}
+	return s.get(ctx, op.Repo.URI)
+}
+
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete"); err != nil {
 		return nil, err

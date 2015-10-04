@@ -55,6 +55,15 @@ func init() {
 		log.Fatal(err)
 	}
 
+	_, err = reposGroup.AddCommand("update",
+		"update a repo",
+		"The `sgx repo update` command updates a repo.",
+		&repoUpdateCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	deleteC, err := reposGroup.AddCommand("delete",
 		"delete a repo",
 		"The `sgx repo rm` command deletes a repo.",
@@ -195,6 +204,27 @@ func (c *repoCreateCmd) Execute(args []string) error {
 		return err
 	}
 	log.Printf("# created: %s", repo.URI)
+	return nil
+}
+
+type repoUpdateCmd struct {
+	Args struct {
+		URI string `name:"REPO-URI" description:"desired repository URI (e.g., host.com/myrepo)"`
+	} `positional-args:"yes" required:"yes" count:"1"`
+	Description string `long:"description" description:"new description for repository"`
+}
+
+func (c *repoUpdateCmd) Execute(args []string) error {
+	cl := Client()
+
+	repo, err := cl.Repos.Update(cliCtx, &sourcegraph.ReposUpdateOp{
+		Repo:        sourcegraph.RepoSpec{URI: c.Args.URI},
+		Description: c.Description,
+	})
+	if err != nil {
+		return err
+	}
+	log.Printf("# updated: %s", repo.URI)
 	return nil
 }
 

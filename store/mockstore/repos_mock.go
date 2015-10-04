@@ -18,6 +18,7 @@ type Repos struct {
 	GetPerms_ func(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error)
 	List_     func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
 	Create_   func(v0 context.Context, v1 *sourcegraph.Repo) (*sourcegraph.Repo, error)
+	Update_   func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
 	Delete_   func(ctx context.Context, repo string) error
 }
 
@@ -35,6 +36,10 @@ func (s *Repos) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*so
 
 func (s *Repos) Create(v0 context.Context, v1 *sourcegraph.Repo) (*sourcegraph.Repo, error) {
 	return s.Create_(v0, v1)
+}
+
+func (s *Repos) Update(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error {
+	return s.Update_(v0, v1)
 }
 
 func (s *Repos) Delete(ctx context.Context, repo string) error { return s.Delete_(ctx, repo) }
