@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -37,10 +36,6 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 
 	if !isValidLogin(newAcct.Login) {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
-	}
-
-	if !authutil.ActiveFlags.AllowSignUpOrLogInForUser(newAcct.Login) {
-		return nil, grpc.Errorf(codes.InvalidArgument, "user %q is not on whitelist of permitted usernames", newAcct.Login)
 	}
 
 	now := pbtypes.NewTimestamp(time.Now())

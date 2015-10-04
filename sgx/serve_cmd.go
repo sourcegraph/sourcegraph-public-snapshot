@@ -90,8 +90,6 @@ Starts an HTTP server serving the app and API.
 
     Authentication:
           --auth.allow-anon-readers              allow unauthenticated users to perform read operations (viewing repos, etc.)
-          --auth.users=                          restrict to only users listed here (space-separated logins) and forbid all anonymous access ('<ALL>' means allow all
-                                                 users) (<ALL>)
           --auth.source=                         source of authentication to use (none|local|oauth) (none)
 
     Local:

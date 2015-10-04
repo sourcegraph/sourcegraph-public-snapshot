@@ -125,10 +125,6 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 		return nil, grpc.Errorf(codes.Unimplemented, "no Users")
 	}
 
-	if !authutil.ActiveFlags.AllowSignUpOrLogInForUser(cred.Login) {
-		return nil, grpc.Errorf(codes.InvalidArgument, "user %q is not on whitelist of permitted usernames", cred.Login)
-	}
-
 	user, err := usersStore.Get(ctx, sourcegraph.UserSpec{Login: cred.Login})
 	if err != nil {
 		return nil, err
