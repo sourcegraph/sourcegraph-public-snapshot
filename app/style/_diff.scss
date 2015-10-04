@@ -225,7 +225,7 @@ div.file-list {
 
 		.repo-rev-switcher {
 			.label {
-				font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+				font-family: $code-font-family;
 				color: #777;
 				font-weight: normal;
 				font-size: 11px;
@@ -245,7 +245,7 @@ div.file-list {
 		}
 
 		.warning {
-			font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+			font-family: $code-font-family;
 			font-size: 12px;
 			display: block;
 			margin: 7px 12px 0 0;

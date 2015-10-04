@@ -118,7 +118,7 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 
 	/* Discussions in Pop-up */
 	div.qualified-name {
-		font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+		font-family: $code-font-family;
 		word-wrap: break-word;
 		color: #333;
 		padding: 10px;

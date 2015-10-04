@@ -160,7 +160,7 @@
 					margin: 0;
 					padding: 3px 10px 3px 7px;
 					color: #333;
-					font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+					font-family: $code-font-family;
 
 					.name {
 						font-weight: bold;
@@ -286,7 +286,7 @@
 	}
 
 	.fileInfo {
-		font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+		font-family: $code-font-family;
 		font-size: 11px;
 	}
 
@@ -340,7 +340,7 @@
 				}
 
 				.qualified-name {
-					font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+					font-family: $code-font-family;
 					word-wrap: break-word;
 					color: #333;
 					.name {

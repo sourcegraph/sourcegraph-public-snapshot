@@ -5,7 +5,7 @@
 	padding: 5px 8px;
 	background-color: #efefef;
 	font-size: 0.75em;
-	font-family: 'Monaco';
+	font-family: $code-font-family;
 	z-index: 99999;
 
 	.verbose {

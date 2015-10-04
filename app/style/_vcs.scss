@@ -1,5 +1,5 @@
 .vcs-ref {
-	font-family: monospace;
+	font-family: $code-font-family;
 	border: solid 1px lighten($link-color, 35%);
 	border-radius: $border-radius-small;
 	padding: $padding-small-vertical/2.5 $padding-small-horizontal/2.5;
