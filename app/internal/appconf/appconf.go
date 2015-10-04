@@ -58,8 +58,6 @@ type Flags struct {
 
 	DisableExternalLinks bool `long:"app.disable-external-links" description:"Disable links to external websites"`
 
-	DisableInvites bool `long:"app.disable-invites" description:"Disable 'Invite you team members!' links / alerts (only considered if --app.disable-external-links is not set)"`
-
 	ReloadAssets bool `long:"reload" description:"(development mode only) reload app templates and other assets on each request"`
 }
 

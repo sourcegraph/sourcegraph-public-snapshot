@@ -218,10 +218,6 @@ type Common struct {
 	// sourcegraph.com and the issue tracker on github.com
 	DisableExternalLinks bool
 
-	// DisableInvites determines whether or not links and alerts to invite team
-	// members should be shown.
-	DisableInvites bool
-
 	// Features is a struct containing feature toggles. See conf/feature
 	Features interface{}
 
@@ -294,7 +290,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			ReturnTo:         returnTo,
 
 			DisableExternalLinks: appconf.Current.DisableExternalLinks,
-			DisableInvites:       appconf.Current.DisableInvites,
 			Features:             feature.Features,
 			FullWidth:            existingCommon.FullWidth,
 
