@@ -39,8 +39,6 @@ function addBuildTaskLogClickListener(target) {
 	});
 }
 
-var NO_LOGS_FOUND_MESSAGE = "(No logs found. Logs are typically removed after 3 days. Contact support@sourcegraph.com for help.)";
-
 function updateLogView(href, $e) {
 	// removal check
 	if (!updateLogViews[href]) {
@@ -68,8 +66,6 @@ function updateLogView(href, $e) {
 
 				var scrollToBottom = $e.parentNode.querySelector("input[type=checkbox]").checked;
 				if (scrollToBottom) $e.scrollTop = $e.scrollHeight;
-			} else {
-				$status.innerText = NO_LOGS_FOUND_MESSAGE;
 			}
 
 			setTimeout(function() { updateLogView(href, $e); }, 2000);
