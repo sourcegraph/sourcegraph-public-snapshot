@@ -18,8 +18,6 @@ import (
 type Flags struct {
 	NoAutoBuild bool `long:"app.no-auto-build" description:"disable automatic building of repositories from the UI"`
 
-	HeaderAndFooterLinks int `long:"app.header-footer-links" description:"show Sourcegraph header and footer links: 2 for corporate footer, 1 for individual instance links, 0 for no links." default:"1"`
-
 	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
 
 	DisableDirDefs bool `long:"app.disable-dir-defs" description:"do not show defs in each file/dir in repo tree viewer (slower for large repos)"`

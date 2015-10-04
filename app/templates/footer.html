@@ -1,42 +1,31 @@
 {{define "Footer"}}
-{{if eq appconf.HeaderAndFooterLinks 1}}
+{{if not .DisableExternalLinks}}
 	<footer id="footer">
 		<div class="footer-inner">
 			<div class="container{{if .FullWidth}}-fluid{{end}}">
 				<div class="container">
 					<div class="row">
-						<div class="col-sm-12 binary-downloads">
-							<p class="text-center">
-								<strong><span class="logo">&#x2731; Sourcegraph</span></strong>
-								<span class="version"
-									title="{{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}"
-									>{{buildvar.Version}}</span>
+						<div class="col-sm-6">
+							<ul class="list-unstyled">
+								<li><a href="/"><strong>Home</strong></a></li>
+								<li class="separator"></li>
+								{{if not (eq .AppURL.Host "sourcegraph.com")}}
+									{{/* TODO(public-release): Don't show this on the public site until the public release. */}}
+									<li><a href="https://src.sourcegraph.com/sourcegraph/.docs" target="_blank">Help &amp; documentation</a></li>
+								{{end}}
+								<li><a href="mailto:support@sourcegraph.com">Email support</a></li>
+							</ul>
+						</div>
+						<div class="col-sm-6 info">
+							<p>
+								<span class="powered-by">Powered by</span>
+								<a href="https://sourcegraph.com" target="_blank"
+									title="version {{buildvar.Version}} {{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}">Sourcegraph</a>
 								{{with updateAvailable}}
-									(<u title="Run `src selfupdate` to update Sourcegraph to {{.}}, then restart Sourcegraph / `src serve`">v{{.}}</u> update available)
+									<br>
+									<u title="Run `src selfupdate` to update Sourcegraph to {{.}}, then restart Sourcegraph / `src serve`">v{{.}}</u> update available
 								{{end}}
 							</p>
-							{{if not .DisableExternalLinks}}
-								<p><i class="fa fa-life-ring"></i> <a href="mailto:support@sourcegraph.com">support@sourcegraph.com</a></p>
-							{{end}}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</footer>
-{{end}}
-{{if eq appconf.HeaderAndFooterLinks 2}}
-	<footer id="footer">
-		<div class="footer-inner footer-corporate">
-			<div class="container{{if .FullWidth}}-fluid{{end}}">
-				<div class="container">
-					<div class="row">
-						<div class="col-md-12">
-							<p><a href="/"><img class="footer-corporate-logo" src="{{assetURL "/img/logo0-white.svg"}}" alt="Sourcegraph logo"></a></p>
-							{{if (not .DisableExternalLinks)}}
-								<p><a href="https://github.com/sourcegraph/sourcegraph.com/issues">Issue tracker</a></p>
-								<p><a href="mailto:support@sourcegraph.com">Contact us</a></p>
-							{{end}}
 						</div>
 					</div>
 				</div>
