@@ -35,7 +35,6 @@
 						<a href="{{urlToRepoChangesets .Repo.URI false}}">
 							<i class="octicon octicon-git-pull-request"></i>
 							<span class="txt">Changes</span>
-							<span class="beta-tag">beta</span>
 						</a>
 					</li>
 				{{end}}
@@ -52,7 +51,6 @@
 					<li>
 						<a href="{{urlToRepoApp $.Repo.URI .ID}}">
 							<i class="octicon octicon-{{.Icon}}"></i><span class="txt">{{.Title}}</span>
-							<span class="beta-tag">beta</span>
 						</a>
 					</li>
 				{{end}}
