@@ -1481,15 +1481,15 @@ service Accounts {
 		};
 	};
 
-  // RequestPasswordReset stores a password reset token in the database, to
-  // later verify the authenticity of a user using CheckResetToken
-	rpc RequestPasswordReset(UserSpec) returns (User) {
+  	// RequestPasswordReset stores a password reset token in the database, to
+	// later verify the authenticity of a user using CheckResetToken
+	rpc RequestPasswordReset(EmailAddr) returns (User) {
 		option (google.api.http) = {
 			post: "/accounts/request_password_reset"
 		};
 	};
 
-  // CheckResetToken verifies a password reset token is authentic and valid
+  	// CheckResetToken verifies a password reset token is authentic and valid
 	rpc ResetPassword(NewPassword) returns (pbtypes.Void) {
 		option (google.api.http) = {
 			post: "/accounts/reset_password"

@@ -34,7 +34,7 @@ func (s *CachedAccountsServer) Create(ctx context.Context, in *NewAccount) (*Use
 	return result, err
 }
 
-func (s *CachedAccountsServer) RequestPasswordReset(ctx context.Context, in *UserSpec) (*User, error) {
+func (s *CachedAccountsServer) RequestPasswordReset(ctx context.Context, in *EmailAddr) (*User, error) {
 	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
 	result, err := s.AccountsServer.RequestPasswordReset(ctx, in)
 	if !cc.IsZero() {
@@ -98,7 +98,7 @@ func (s *CachedAccountsClient) Create(ctx context.Context, in *NewAccount, opts 
 	return result, nil
 }
 
-func (s *CachedAccountsClient) RequestPasswordReset(ctx context.Context, in *UserSpec, opts ...grpc.CallOption) (*User, error) {
+func (s *CachedAccountsClient) RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*User, error) {
 	if s.Cache != nil {
 		var cachedResult User
 		cached, err := s.Cache.Get(ctx, "Accounts.RequestPasswordReset", in, &cachedResult)
