@@ -26,7 +26,7 @@ func init() {
 type userForm struct {
 	form.Validation
 
-	Login string
+	Email string
 }
 
 func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
@@ -61,11 +61,11 @@ func serveForgotPasswordSubmit(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, err := cl.Accounts.RequestPasswordReset(ctx, &sourcegraph.UserSpec{Login: form.Login})
+	_, err := cl.Accounts.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: form.Email})
 	if err != nil {
 		switch errcode.GRPC(err) {
 		case codes.NotFound:
-			form.AddFieldError("Login", formErrorNoUserExists)
+			form.AddFieldError("Email", formErrorNoEmailExists)
 			return serveForgotPasswordForm(w, r, form)
 		default:
 			return err

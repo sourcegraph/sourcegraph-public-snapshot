@@ -1,7 +1,6 @@
 package local
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -116,7 +115,7 @@ func isValidLogin(login string) bool {
 // sendEmail lets us avoid sending emails in tests.
 var sendEmail = notif.SendMandrillTemplate
 
-func (s *accounts) RequestPasswordReset(ctx context.Context, us *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	defer noCache(ctx)
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
@@ -128,29 +127,9 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, us *sourcegraph.Use
 	if usersStore == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "users"}
 	}
-	user, err := usersStore.Get(ctx, *us)
+	user, err := usersStore.GetWithEmail(ctx, *email)
 	if err != nil {
 		return nil, err
-	}
-
-	us.UID = user.UID
-	emails, err := usersStore.ListEmails(ctx, *us)
-	if err != nil {
-		return nil, err
-	}
-
-	// Choose the best email to contact a user.
-	var email string
-	for _, e := range emails {
-		if e.Verified {
-			email = e.Email
-		}
-	}
-	if email == "" {
-		if len(emails) == 0 {
-			return nil, errors.New("This account does not have an associated email address.")
-		}
-		email = emails[0].Email
 	}
 
 	token, err := accountsStore.RequestPasswordReset(ctx, user)
@@ -162,7 +141,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, us *sourcegraph.Use
 	v := url.Values{}
 	v.Set("token", token.Token)
 	u.RawQuery = v.Encode()
-	_, err = sendEmail("forgot-password", user.Name, email,
+	_, err = sendEmail("forgot-password", user.Name, email.Email,
 		[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: u.String()}})
 	if err != nil {
 		return nil, fmt.Errorf("Error sending email: %s", err)
