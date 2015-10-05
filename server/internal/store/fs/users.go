@@ -88,6 +88,24 @@ func (s *Users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 	return &e.User, nil
 }
 
+func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	users, err := readUserDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range users {
+		for _, userEmail := range e.EmailAddrs {
+			if emailAddr.Email != "" && emailAddr.Email == userEmail.Email && userEmail.Primary {
+				return &e.User, nil
+			}
+		}
+
+	}
+
+	return nil, &store.UserNotFoundError{Email: emailAddr.Email}
+}
+
 func (s *Users) getDBEntry(ctx context.Context, userSpec sourcegraph.UserSpec) (*userDBEntry, error) {
 	users, err := readUserDB(ctx)
 	if err != nil {
