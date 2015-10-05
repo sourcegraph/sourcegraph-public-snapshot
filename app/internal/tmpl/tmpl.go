@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -29,6 +30,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
@@ -245,9 +247,22 @@ func executeTemplateBase(w http.ResponseWriter, templateName, templateSubName st
 
 // Exec executes the template (named by `name`) using the template data.
 func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, header http.Header, data interface{}) error {
-	if data != nil {
-		ctx := httpctx.FromRequest(req)
+	ctx := httpctx.FromRequest(req)
+	currentUser := handlerutil.UserFromRequest(req)
+	var currentUID int32
+	if currentUser != nil {
+		currentUID = currentUser.UID
+	}
 
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:    "app",
+		UID:     currentUID,
+		Service: "template",
+		Method:  name,
+		Result:  strconv.Itoa(status),
+	})
+
+	if data != nil {
 		sess, err := appauth.ReadSessionCookie(req)
 		if err != nil && err != appauth.ErrNoSession {
 			return err
@@ -265,7 +280,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		returnTo, _ := returnto.BestGuess(req)
 
 		field.Set(reflect.ValueOf(Common{
-			CurrentUser: handlerutil.UserFromRequest(req),
+			CurrentUser: currentUser,
 
 			RequestHost: req.Host,
 

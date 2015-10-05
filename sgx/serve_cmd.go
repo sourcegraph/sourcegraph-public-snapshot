@@ -510,6 +510,21 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Send heartbeat pings to federation root to monitor connection status
 	go c.fedRootHeartbeat(clientCtx)
 
+	if fed.Config.IsRoot {
+		// Listen for events and flush them to elasticsearch
+		metricutil.StartEventForwarder(clientCtx)
+		metricutil.StartEventLogger(clientCtx, 4*2048, 2048)
+	} else if c.GraphUplinkPeriod != 0 {
+		// Listen for events and periodically push them upstream
+		metricutil.StartEventLogger(clientCtx, 4096, 256)
+		metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
+			Type:    "notif",
+			Service: "serve_cmd",
+			Method:  "start",
+			Result:  "success",
+		})
+	}
+
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)

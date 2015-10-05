@@ -2921,8 +2921,36 @@ message MetricsSnapshot {
 	bytes telemetry_data = 2;
 }
 
+// UserEvent encodes any user initiated event on the local instance.
+message UserEvent {
+	string type = 1;
+
+	int32 uid = 2 [(gogoproto.customname) = "UID"];
+
+	string client_id = 3 [(gogoproto.customname) = "ClientID"];
+
+	string service = 4;
+
+	string method = 5;
+
+	string result = 6;
+
+	// CreatedAt holds the time when this event was logged.
+	pbtypes.Timestamp created_at = 7;
+
+	string message = 8;
+}
+
+message UserEventList {
+	repeated UserEvent events = 1; 
+}
+
 // GraphUplink interfaces with the metric collectors.
 service GraphUplink {
 	// Push sends the latest metrics to the upstream instance
 	rpc Push(MetricsSnapshot) returns (pbtypes.Void);
+
+	// PushEvents flushes the local event logs to the upstream
+	// instance
+	rpc PushEvents(UserEventList) returns (pbtypes.Void);
 }

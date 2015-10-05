@@ -14,6 +14,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
 var Builds sourcegraph.BuildsServer = &builds{}
@@ -166,6 +167,21 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 		if err := updateRepoStatusForBuild(ctx, b); err != nil {
 			log.Printf("WARNING: failed to update repo status for modified build #%s (repo %s): %s.", b.Spec().IDString(), b.Repo, err)
 		}
+	}
+
+	var Result string
+	if b.Success {
+		Result = "success"
+	} else if b.Failure {
+		Result = "failed"
+	}
+	if Result != "" {
+		metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+			Type:    "notif",
+			Service: "Builds",
+			Method:  "Update",
+			Result:  Result,
+		})
 	}
 
 	return b, nil

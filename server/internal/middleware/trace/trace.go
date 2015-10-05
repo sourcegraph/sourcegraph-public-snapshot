@@ -15,7 +15,9 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
@@ -114,5 +116,20 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 		"service": server,
 	}
 	requestPerUser.With(labels).Inc()
+
+	result := "success"
+	var message string
+	if err != nil {
+		result = "failed"
+		message = err.Error()
+	}
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:    "grpc",
+		Service: server,
+		Method:  method,
+		Result:  result,
+		Message: message,
+	})
+
 	log15.Debug("gRPC "+server+"."+method+" after", "spanID", traceutil.SpanIDFromContext(ctx), "elapsed", elapsed)
 }

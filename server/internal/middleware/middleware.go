@@ -1292,6 +1292,25 @@ func (s wrappedGraphUplink) Push(ctx context.Context, param *sourcegraph.Metrics
 
 }
 
+func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.UserEventList) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "GraphUplink", "PushEvents", param)
+	defer func() {
+		trace.After(ctx, "GraphUplink", "PushEvents", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "GraphUplink.PushEvents")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.GraphUplinkServer = s.u
+
+	res, err = target.PushEvents(ctx, param)
+	return
+
+}
+
 type wrappedMarkdown struct {
 	u sourcegraph.MarkdownServer
 	c *auth.Config

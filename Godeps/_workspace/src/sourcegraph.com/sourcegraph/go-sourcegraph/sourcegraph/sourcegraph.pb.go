@@ -210,6 +210,8 @@ It has these top-level messages:
 	UserPermissionsList
 	UserPermissionsOptions
 	MetricsSnapshot
+	UserEvent
+	UserEventList
 */
 package sourcegraph
 
@@ -3072,6 +3074,31 @@ type MetricsSnapshot struct {
 func (m *MetricsSnapshot) Reset()         { *m = MetricsSnapshot{} }
 func (m *MetricsSnapshot) String() string { return proto.CompactTextString(m) }
 func (*MetricsSnapshot) ProtoMessage()    {}
+
+// UserEvent encodes any user initiated event on the local instance.
+type UserEvent struct {
+	Type     string `protobuf:"bytes,1,opt,name=type,proto3" json:",omitempty"`
+	UID      int32  `protobuf:"varint,2,opt,name=uid,proto3" json:",omitempty"`
+	ClientID string `protobuf:"bytes,3,opt,name=client_id,proto3" json:",omitempty"`
+	Service  string `protobuf:"bytes,4,opt,name=service,proto3" json:",omitempty"`
+	Method   string `protobuf:"bytes,5,opt,name=method,proto3" json:",omitempty"`
+	Result   string `protobuf:"bytes,6,opt,name=result,proto3" json:",omitempty"`
+	// CreatedAt holds the time when this event was logged.
+	CreatedAt *pbtypes.Timestamp `protobuf:"bytes,7,opt,name=created_at" json:",omitempty"`
+	Message   string             `protobuf:"bytes,8,opt,name=message,proto3" json:",omitempty"`
+}
+
+func (m *UserEvent) Reset()         { *m = UserEvent{} }
+func (m *UserEvent) String() string { return proto.CompactTextString(m) }
+func (*UserEvent) ProtoMessage()    {}
+
+type UserEventList struct {
+	Events []*UserEvent `protobuf:"bytes,1,rep,name=events" json:",omitempty"`
+}
+
+func (m *UserEventList) Reset()         { *m = UserEventList{} }
+func (m *UserEventList) String() string { return proto.CompactTextString(m) }
+func (*UserEventList) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("sourcegraph.DiscussionListOrder", DiscussionListOrder_name, DiscussionListOrder_value)
@@ -6497,6 +6524,9 @@ var _RegisteredClients_serviceDesc = grpc.ServiceDesc{
 type GraphUplinkClient interface {
 	// Push sends the latest metrics to the upstream instance
 	Push(ctx context.Context, in *MetricsSnapshot, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// PushEvents flushes the local event logs to the upstream
+	// instance
+	PushEvents(ctx context.Context, in *UserEventList, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
 
 type graphUplinkClient struct {
@@ -6516,11 +6546,23 @@ func (c *graphUplinkClient) Push(ctx context.Context, in *MetricsSnapshot, opts 
 	return out, nil
 }
 
+func (c *graphUplinkClient) PushEvents(ctx context.Context, in *UserEventList, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.GraphUplink/PushEvents", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for GraphUplink service
 
 type GraphUplinkServer interface {
 	// Push sends the latest metrics to the upstream instance
 	Push(context.Context, *MetricsSnapshot) (*pbtypes1.Void, error)
+	// PushEvents flushes the local event logs to the upstream
+	// instance
+	PushEvents(context.Context, *UserEventList) (*pbtypes1.Void, error)
 }
 
 func RegisterGraphUplinkServer(s *grpc.Server, srv GraphUplinkServer) {
@@ -6539,6 +6581,18 @@ func _GraphUplink_Push_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
+func _GraphUplink_PushEvents_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(UserEventList)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(GraphUplinkServer).PushEvents(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _GraphUplink_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.GraphUplink",
 	HandlerType: (*GraphUplinkServer)(nil),
@@ -6546,6 +6600,10 @@ var _GraphUplink_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Push",
 			Handler:    _GraphUplink_Push_Handler,
+		},
+		{
+			MethodName: "PushEvents",
+			Handler:    _GraphUplink_PushEvents_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

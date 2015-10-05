@@ -17,6 +17,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
@@ -139,6 +140,14 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 			}
 		}
 	}
+
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:     "notif",
+		ClientID: client.ID,
+		Service:  "RegisteredClients",
+		Method:   "Create",
+		Result:   "success",
+	})
 
 	return client, nil
 }
@@ -308,6 +317,16 @@ func setPermissionsForUser(ctx context.Context, userPerms *sourcegraph.UserPermi
 	if err := userPermsStore.Set(ctx, userPerms); err != nil {
 		return nil, err
 	}
+
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:     "notif",
+		UID:      userPerms.UID,
+		ClientID: userPerms.ClientID,
+		Service:  "RegisteredClients",
+		Method:   "SetPermissionsForUser",
+		Result:   "success",
+	})
+
 	return &pbtypes.Void{}, nil
 }
 

@@ -783,6 +783,20 @@ func (s wrappedGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSna
 	return rv, s.errFunc(err)
 }
 
+func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.UserEventList) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.GraphUplinkOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "GraphUplink")
+	}
+	rv, err := svc.PushEvents(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
 type wrappedMarkdown struct {
 	ctxFunc ContextFunc
 	errFunc ErrorFunc

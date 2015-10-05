@@ -234,6 +234,10 @@ func (s remoteGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSnap
 	return sourcegraph.NewClientFromContext(ctx).GraphUplink.Push(ctx, v1)
 }
 
+func (s remoteGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.UserEventList) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).GraphUplink.PushEvents(ctx, v1)
+}
+
 type remoteMarkdown struct{ sourcegraph.MarkdownServer }
 
 func (s remoteMarkdown) Render(ctx context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {

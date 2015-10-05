@@ -1637,6 +1637,17 @@ func (s *CachedGraphUplinkServer) Push(ctx context.Context, in *MetricsSnapshot)
 	return result, err
 }
 
+func (s *CachedGraphUplinkServer) PushEvents(ctx context.Context, in *UserEventList) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.GraphUplinkServer.PushEvents(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
 type CachedGraphUplinkClient struct {
 	GraphUplinkClient
 	Cache *grpccache.Cache
@@ -1662,6 +1673,32 @@ func (s *CachedGraphUplinkClient) Push(ctx context.Context, in *MetricsSnapshot,
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "GraphUplink.Push", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedGraphUplinkClient) PushEvents(ctx context.Context, in *UserEventList, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "GraphUplink.PushEvents", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.GraphUplinkClient.PushEvents(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "GraphUplink.PushEvents", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

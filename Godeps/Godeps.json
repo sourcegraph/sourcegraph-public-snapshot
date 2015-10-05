@@ -52,12 +52,20 @@
 			"Rev": "54abbbf07a45a3ef346ebe903e0715d9a3c19352"
 		},
 		{
+			"ImportPath": "github.com/araddon/gou",
+			"Rev": "0c2ab7394d785afff14c983fedce4be70ccc431f"
+		},
+		{
 			"ImportPath": "github.com/aybabtme/color",
 			"Rev": "0db0bdb3cc7ff8ddff622052366e17f0d506b0ef"
 		},
 		{
 			"ImportPath": "github.com/beorn7/perks/quantile",
 			"Rev": "b965b613227fddccbfffe13eae360ed3fa822f8d"
+		},
+		{
+			"ImportPath": "github.com/bitly/go-hostpool",
+			"Rev": "d0e59c22a56e8dadfed24f74f452cea5a52722d2"
 		},
 		{
 			"ImportPath": "github.com/bradfitz/http2",
@@ -214,6 +222,11 @@
 			"ImportPath": "github.com/magiconair/properties",
 			"Comment": "v1.5.4",
 			"Rev": "359442d561ca28acd0fe503aa9f075f505bc9ed0"
+		},
+		{
+			"ImportPath": "github.com/mattbaird/elastigo/lib",
+			"Comment": "v1.0-248-g53bd637",
+			"Rev": "53bd637ad02af3043244da16c1b9f13633e8e912"
 		},
 		{
 			"ImportPath": "github.com/mattbaird/gochimp",
@@ -593,15 +606,15 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/routevar",
-			"Rev": "f4da65694e336f0f86db4cbfcbbe3fb0594982b5"
+			"Rev": "15c2c24602170d2317a582067770c0215b256980"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph",
-			"Rev": "f4da65694e336f0f86db4cbfcbbe3fb0594982b5"
+			"Rev": "15c2c24602170d2317a582067770c0215b256980"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/spec",
-			"Rev": "f4da65694e336f0f86db4cbfcbbe3fb0594982b5"
+			"Rev": "15c2c24602170d2317a582067770c0215b256980"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
