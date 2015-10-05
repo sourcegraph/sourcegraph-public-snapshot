@@ -1,6 +1,10 @@
 {{define "Title"}}{{if .Trace.ID.Parent}}span {{.Trace.ID.Span}} - {{end}} trace {{.Trace.ID.Trace}} - appdash{{end}}
 
 {{define "Main"}}
+
+<script src="{{.BaseURL}}static/Caged/d3-tip/index.js"></script>
+<link rel="stylesheet" href="{{.BaseURL}}static/Caged/d3-tip/example-styles.css">
+
 <style>
   #copy-json:hover {
     cursor: pointer;
@@ -349,11 +353,21 @@
         return;
       }
 
-      var timespanHover = function(chart, index) {
-        var div = $('#hoverRes');
-        var colors = chart.colors();
-        div.find('.coloredDiv').css('background-color', colors(index));
-        div.find('#name').text(visibleData[index].label);
+      var hoverTooltip = null;
+
+      var timespanHover = function(within, chart, index) {
+        if(within) {
+          var div = $('#hoverRes');
+          var colors = chart.colors();
+          div.find('.coloredDiv').css('background-color', colors(index));
+          div.find('#name').text(visibleData[index].fullLabel);
+          div.find('#name').attr("title", visibleData[index].label);
+
+          tip.html(visibleData[index].fullLabel);
+          tip.show(this, $("#timelineItem_"+index)[0]);
+        } else {
+          tip.hide();
+        }
       }
 
       // Initialize the timeline chart.
@@ -361,13 +375,20 @@
                     .width(width)
                     .stack()
                     .margin({left:em(6), right:0, top:0, bottom:0})
-                    .hover(function (d, i, datum) { timespanHover(chart, i) })
+                    .hover(function (d, i, datum) { timespanHover(true, chart, i) })
+                    .mouseout(function (d, i, datum) { timespanHover(false, chart, i) })
                     .click(function (d, i, datum) {
                       window.location.href = datum.url;
                       //alert(JSON.stringify(datum.rawData, null, 2));
                     });
+
+      // Initialize tooltip
+      var tip = d3.tip().attr('class', 'd3-tip');
+      tip.offset([-10, 0]);
+
       var svg = d3.select(".trace-timeline").append("svg").attr("width", width)
-                  .datum(visibleData).call(chart);
+                  .datum(visibleData).call(chart)
+                  .call(tip);
 
       // Make text on each timeline element click-able. d3-timeline.js doesn't
       // seem to have a way to support this easily.
@@ -378,12 +399,15 @@
       // The last number of that is the index into our visibleData.
       $(".trace-timeline g>text").each(function() {
         var index = numFromEnd($(this).prev().attr('id'));
-        $(this).hover(function() {
-          timespanHover(chart, index);
-        });
-        $(this).click(function() {
-          window.location.href = visibleData[index].url;
-        });
+
+        d3.select(this)
+          .on("mouseover", function() {
+            timespanHover(true, chart, index);
+          })
+          .on("mouseout", function() { timespanHover(false, chart, index); })
+          .on("click", function() {
+            window.location.href = visibleData[index].url;
+          });
 
         // When there is a contextmenu (e.g. right click) event we open the
         // context menu on the timespan rectangle.

@@ -585,11 +585,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash",
-			"Rev": "955366b27d4851653681b18179a6b905f932f2ed"
+			"Rev": "bbe46f1ef16e81b3941d64a5ff0b4d2413688cb0"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash-data",
-			"Rev": "7ca07e99db53a04ba9d9a6f1104875edeaf11584"
+			"Rev": "73f23eafcf67cad684fba328dd545a116ac273ff"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/csp",

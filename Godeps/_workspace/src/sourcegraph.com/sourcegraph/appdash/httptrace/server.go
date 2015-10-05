@@ -100,7 +100,7 @@ func Middleware(c appdash.Collector, conf *MiddlewareConfig) func(rw http.Respon
 		if e.Route != "" {
 			rec.Name(e.Route)
 		} else {
-			rec.Name(e.Request.Host)
+			rec.Name(r.URL.Host + r.URL.Path)
 		}
 		rec.Event(e)
 	}

@@ -15,6 +15,7 @@ import (
 
 type timelineItem struct {
 	Label        string                  `json:"label"`
+	FullLabel    string                  `json:"fullLabel"`
 	Times        []*timelineItemTimespan `json:"times"`
 	Data         map[string]string       `json:"rawData"`
 	SpanID       string                  `json:"spanID"`
@@ -56,11 +57,17 @@ func (a *App) d3timelineInner(t *appdash.Trace, depth int) ([]timelineItem, erro
 		}
 	}
 
+	name := t.Span.Name()
+	if len(name) > 13 {
+		name = name[:13]
+		name += "…"
+	}
 	item := timelineItem{
-		Label:  t.Span.Name(),
-		Data:   t.Annotations.StringMap(),
-		SpanID: t.Span.ID.Span.String(),
-		URL:    u.String(),
+		Label:     name,
+		FullLabel: t.Span.Name(),
+		Data:      t.Annotations.StringMap(),
+		SpanID:    t.Span.ID.Span.String(),
+		URL:       u.String(),
 	}
 	if t.Span.ID.Parent != 0 {
 		item.ParentSpanID = t.Span.ID.Parent.String()

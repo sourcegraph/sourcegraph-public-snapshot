@@ -140,7 +140,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	child := t.Recorder.Child()
 	if t.SetName {
-		child.Name(req.URL.Host)
+		child.Name(req.URL.Host + req.URL.Path)
 	}
 	SetSpanIDHeader(req.Header, child.SpanID)
 
