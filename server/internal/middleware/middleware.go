@@ -259,7 +259,7 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.User, err error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.EmailAddr) (res *sourcegraph.User, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "RequestPasswordReset", param)
 	defer func() {
@@ -272,16 +272,6 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 	}
 
 	var target sourcegraph.AccountsServer = s.u
-
-	var fedCtx context.Context
-	fedCtx, err = federated.UserContext(ctx, *param)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Accounts(fedCtx)
-		ctx = fedCtx
-	}
 
 	res, err = target.RequestPasswordReset(ctx, param)
 	return

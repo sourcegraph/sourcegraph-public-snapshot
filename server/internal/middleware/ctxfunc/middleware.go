@@ -160,7 +160,7 @@ func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount)
 	return rv, s.errFunc(err)
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
