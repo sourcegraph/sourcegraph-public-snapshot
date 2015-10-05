@@ -21,7 +21,7 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	e := json.NewEncoder(w)
 
-	repoURI, query := mux.Vars(r)["Repo"], r.URL.Query()["q"][0]
+	repoURI, query := mux.Vars(r)["Repo"], r.URL.Query().Get("q")
 	rawQuery := fmt.Sprintf("%s %s", repoURI, query)
 	opt := sourcegraph.SearchOptions{
 		Defs:  true,
