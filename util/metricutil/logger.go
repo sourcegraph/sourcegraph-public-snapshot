@@ -24,11 +24,20 @@ type Worker struct {
 func (w *Worker) Work() {
 	for {
 		event := <-w.Channel
-		if w.Position >= len(w.Buffer) {
-			w.Flush()
+		if event.Type == "command" {
+			switch event.Method {
+			case "flush":
+				w.Flush()
+			default:
+				log15.Debug("EventLogger got unknown command", "command", event.Method)
+			}
+			continue
 		}
 		w.Buffer[w.Position] = event
 		w.Position += 1
+		if w.Position >= len(w.Buffer) {
+			w.Flush()
+		}
 	}
 }
 
@@ -68,16 +77,19 @@ func (l *Logger) Log(ctx context.Context, event *sourcegraph.UserEvent) {
 }
 
 func (l *Logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool {
+	// don't track grpc and app events on mothership
+	if fed.Config.IsRoot {
+		switch event.Type {
+		case "grpc", "app":
+			return false
+		}
+	}
 	if event.Type != "grpc" {
 		// all events that are not grpc calls are important
 		return true
 	}
-	if fed.Config.IsRoot {
-		// don't track grpc events on mothership
-		return false
-	}
 	if event.UID == 0 && !authutil.ActiveFlags.AllowAnonymousReaders {
-		// this is not a user initiated event
+		// this is not a user initiated grpc call
 		return false
 	}
 	switch event.Service {
@@ -95,6 +107,16 @@ func (l *Logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool 
 	}
 }
 
+func (l *Logger) Uploader(ctx context.Context, flushInterval time.Duration) {
+	for {
+		time.Sleep(flushInterval)
+		l.Log(ctx, &sourcegraph.UserEvent{
+			Type:   "command",
+			Method: "flush",
+		})
+	}
+}
+
 var ActiveLogger *Logger
 
 // StartEventLogger sets up a buffered channel for posting events to, and workers that consume
@@ -104,7 +126,7 @@ var ActiveLogger *Logger
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
 // maximum number of buffered events after which the worker will flush the buffer upstream to
 // the federation root via graph uplink.
-func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int) {
+func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
 	rootCtx := ctx
 	if !fed.Config.IsRoot {
 		mothership, err := fed.Config.RootGRPCEndpoint()
@@ -126,6 +148,8 @@ func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int
 	}
 
 	go ActiveLogger.Worker.Work()
+
+	go ActiveLogger.Uploader(rootCtx, flushInterval)
 
 	log15.Debug("EventLogger initialized")
 }
