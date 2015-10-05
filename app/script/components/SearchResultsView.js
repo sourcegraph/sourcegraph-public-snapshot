@@ -12,6 +12,14 @@ var SearchResultsView = React.createClass({
 		window.addEventListener(SearchResultsStore.onChange.type, this.onChange);
 	},
 
+	componentDidUpdate(prevProps, prevState) {
+		if (prevState.query !== this.state.query) {
+			// When initiating a new search query, scroll to top of page to
+			// view new results.
+			window.scrollTo(0, 0);
+		}
+	},
+
 	onChange() {
 		this.setState(SearchResultsStore.state);
 	},
@@ -22,6 +30,9 @@ var SearchResultsView = React.createClass({
 			currentResultsView = (
 				<TokenSearchResultsView
 					query={this.state.query}
+					repo={this.state.repo}
+					loading={this.state.tokenSearchLoading}
+					total={this.state.tokenSearch.Total}
 					results={this.state.tokenSearch.Results} />
 			);
 		}

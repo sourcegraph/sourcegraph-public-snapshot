@@ -152,7 +152,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	// }
 
 	fs := opt.DefFilters()
-	fs = append(fs, srcstore.Limit(opt.Limit()+opt.Offset(), 0), srcstore.DefsSortByKey{})
+	fs = append(fs, srcstore.DefsSortByKey{})
 	defs0, err := store.GraphFromContext(ctx).Defs(fs...)
 	if err != nil {
 		return nil, err
@@ -165,6 +165,8 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		}
 	}
 	// End kludge
+	total := len(defs0)
+	hasMore := (opt.Offset() + opt.Limit()) < total
 
 	if opt.Doc {
 		for _, def := range defs {
@@ -179,7 +181,13 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		populateDefFormatStrings(def)
 	}
 
-	return &sourcegraph.DefList{Defs: defs}, nil
+	return &sourcegraph.DefList{
+		Defs: defs,
+		ListResponse: sourcegraph.ListResponse{
+			HasMore: hasMore,
+			Total:   int32(total),
+		},
+	}, nil
 }
 
 func populateDefFormatStrings(def *sourcegraph.Def) {

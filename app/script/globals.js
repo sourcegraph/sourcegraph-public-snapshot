@@ -15,6 +15,8 @@ module.exports = {
 	// Number of entries in the discussion snippet.
 	DiscussionSnippetEntries: 4,
 
+	TokenSearchResultsPerPage: 10,
+
 	Actions: keyMirror({
 		// CodeFile Actions
 		FETCH_FILE: null,
@@ -101,6 +103,8 @@ module.exports = {
 
 		// Search Actions
 		SEARCH_SUBMIT: null,
+		SEARCH_TOKENS_SUBMIT: null,
+		SEARCH_TOKENS_RECEIVED_RESULTS: null,
 	}),
 
 	ChangesetStatus: keyMirror({

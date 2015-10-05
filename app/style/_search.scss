@@ -191,7 +191,10 @@ div.search-result-type {
 }
 
 .search-results {
-	padding-top: $padding-large-vertical;
+	padding-top: $line-height-computed;
+	.summary {
+		color: $gray-mid;
+	}
 }
 
 .token-search-result {
