@@ -108,8 +108,18 @@ func (l *Logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool 
 }
 
 func (l *Logger) Uploader(ctx context.Context, flushInterval time.Duration) {
+	// For the first 60 minutes after boot up, flush log every minute
+	remainingMinutes := 60
+	if flushInterval <= time.Minute {
+		remainingMinutes = 0
+	}
 	for {
-		time.Sleep(flushInterval)
+		if remainingMinutes > 0 {
+			time.Sleep(time.Minute)
+			remainingMinutes -= 1
+		} else {
+			time.Sleep(flushInterval)
+		}
 		l.Log(ctx, &sourcegraph.UserEvent{
 			Type:   "command",
 			Method: "flush",
