@@ -3,5 +3,8 @@
   "SkipUnits": [
     {"Name":".", "Type":"ruby"},
     {"Name":"app", "Type":"CommonJSPackage"}
-  ]
+  ],
+  "Config": {
+    "ImportPathRoot": "src.sourcegraph.com"
+  }
 }
