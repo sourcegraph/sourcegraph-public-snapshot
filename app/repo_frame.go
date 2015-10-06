@@ -10,6 +10,7 @@ import (
 
 	"strings"
 
+	gcontext "github.com/gorilla/context"
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
@@ -93,6 +94,8 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	httpctx.SetForRequest(&rCopy, framectx)
+	defer gcontext.Clear(&rCopy) // clear the app context after finished to avoid a memory leak
+
 	rr := httptest.NewRecorder()
 
 	stripPrefix := pctx.BaseURI(framectx)

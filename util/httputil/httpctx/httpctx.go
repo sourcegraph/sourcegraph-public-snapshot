@@ -18,6 +18,15 @@ const (
 
 // SetForRequest sets the context for the HTTP request. It will be
 // available for the lifetime of the HTTP request.
+//
+// Typically this function is called in the following pattern:
+//   ctx := FromRequest(r)
+//   ctx = modifyContextInSomeWay(ctx)
+//   SetForRequest(r, ctx)
+//
+// If calling this function on a request for which previously there
+// was no context, it is the caller's responsibility to clean up the
+// gorilla context (e.g., by calling `defer gcontext.Clear(r)`).
 func SetForRequest(r *http.Request, ctx context.Context) {
 	gcontext.Set(r, contextKey, ctx)
 }
