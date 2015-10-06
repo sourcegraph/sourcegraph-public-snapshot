@@ -17,6 +17,7 @@ $highlight-ref-border: 1px solid darken($highlight-ref-bg, 5%);
 $highlight-ref-secondary-bg: rgba(255, 204, 0, 0.2);
 $highlight-ref-secondary-border: 1px solid darken($highlight-ref-secondary-bg, 5%);
 
+// TODO(sqs): Remove hardcoded dimensions.
 $code-file-toolbar-height: 40px;
 $navbar-logo-width: 140px;
 $subnav-height: $navbar-height + 7;
