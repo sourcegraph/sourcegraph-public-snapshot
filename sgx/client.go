@@ -122,22 +122,21 @@ func init() {
 		if cli.CLI.Active != nil && cli.CLI.Active.Name == "version" {
 			return
 		}
-		cliCtx = context.Background()
-		// The "src serve" command is the only non-client command; it
-		// must not have credentials set (because it is not a client
-		// command) or a default discovery endpoint (because it is
-		// what creates the endpoint, and the check would occur before
-		// the server could start).
-		if cli.CLI.Active != nil && cli.CLI.Active.Name == "serve" {
-			Credentials.AuthFile = ""
-		}
-		cliCtx = WithClientContext(cliCtx)
+		cliCtx = WithClientContext(context.Background())
 	})
 }
 
 // WithClientContext returns a copy of parent with client endpoint and
 // auth information added.
 func WithClientContext(parent context.Context) context.Context {
+	// The "src serve" command is the only non-client command; it
+	// must not have credentials set (because it is not a client
+	// command) or a default discovery endpoint (because it is
+	// what creates the endpoint, and the check would occur before
+	// the server could start).
+	if cli.CLI.Active != nil && cli.CLI.Active.Name == "serve" {
+		Credentials.AuthFile = ""
+	}
 	ctx, err := Credentials.WithCredentials(parent)
 	if err != nil {
 		log.Fatalf("Error constructing API client credentials: %s.", err)
