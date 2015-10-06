@@ -5,6 +5,10 @@ import (
 	"net/url"
 	"os"
 
+	"code.google.com/p/rog-go/parallel"
+
+	"sync"
+
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
@@ -37,19 +41,32 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	var template string
-	var users []string
+	var (
+		users   []string
+		usersMu sync.Mutex
+	)
 	if len(repos.Repos) > 0 {
 		userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
 		if err != nil && grpc.Code(err) != codes.PermissionDenied {
 			return err
 		}
 		if err == nil { // current user is admin of the instance
-			for _, perms := range userPerms.UserPermissions {
-				user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
-				if err != nil {
-					return err
-				}
-				users = append(users, user.Login)
+			par := parallel.NewRun(10)
+			for _, perms_ := range userPerms.UserPermissions {
+				perms := perms_
+				par.Do(func() error {
+					user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
+					if err != nil {
+						return err
+					}
+					usersMu.Lock()
+					users = append(users, user.Login)
+					usersMu.Unlock()
+					return nil
+				})
+			}
+			if err := par.Wait(); err != nil {
+				return err
 			}
 		}
 		template = "home/dashboard.html"
