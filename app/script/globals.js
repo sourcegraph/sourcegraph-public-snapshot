@@ -15,7 +15,7 @@ module.exports = {
 	// Number of entries in the discussion snippet.
 	DiscussionSnippetEntries: 4,
 
-	TokenSearchResultsPerPage: 10,
+	TokenSearchResultsPerPage: 50,
 
 	Actions: keyMirror({
 		// CodeFile Actions
