@@ -34,7 +34,7 @@ var TokenSearchResultsView = React.createClass({
 			return <TokenSearchResult key={result.URL} result={result} />;
 		});
 
-		var summary = `${this.props.total} results`;
+		var summary = `${this.props.total} results for "${this.props.query}"`;
 		if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 
 		return (
