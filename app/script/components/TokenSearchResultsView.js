@@ -41,11 +41,13 @@ var TokenSearchResultsView = React.createClass({
 			<div className="token-search-results">
 				<i className="summary">{summary}</i>
 				{results}
-				<Pagination
-					currentPage={this.state.currentPage}
-					totalPages={Math.ceil(this.props.total/globals.TokenSearchResultsPerPage)}
-					pageRange={11}
-					onPageChange={this.onPageChange} />
+				<div className="search-pagination">
+					<Pagination
+						currentPage={this.state.currentPage}
+						totalPages={Math.ceil(this.props.total/globals.TokenSearchResultsPerPage)}
+						pageRange={11}
+						onPageChange={this.onPageChange} />
+				</div>
 			</div>
 		);
 	},

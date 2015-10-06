@@ -52,7 +52,7 @@ var Pagination = React.createClass({
 		for (var i=pageOffsets[0]; i<=pageOffsets[1]; i++) {
 			pageList.push(
 				<li key={i} className={i===this.props.currentPage ? "active" : ""}>
-					<a onClick={this._onPageChange.bind(this, i)}>{i}</a>
+					<a title={`Page ${i}`} onClick={this._onPageChange.bind(this, i)}>{i}</a>
 				</li>
 			);
 		}
@@ -61,6 +61,7 @@ var Pagination = React.createClass({
 			<ul className="pagination">
 				<li>
 					<a aria-label="Previous"
+						title={"Page 1"}
 						onClick={this._onPageChange.bind(this, 1)}>
 						<span aria-hidden="true">&laquo;</span>
 					</a>
@@ -68,6 +69,7 @@ var Pagination = React.createClass({
 				{pageList}
 				<li>
 					<a aria-label="Previous"
+						title={`Page ${this.props.totalPages}`}
 						onClick={this._onPageChange.bind(this, this.props.totalPages)}>
 						<span aria-hidden="true">&raquo;</span>
 					</a>
