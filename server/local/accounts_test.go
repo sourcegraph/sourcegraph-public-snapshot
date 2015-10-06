@@ -51,15 +51,12 @@ func TestRequestPasswordReset(t *testing.T) {
 	mock.stores.Accounts.RequestPasswordReset_ = func(ctx context.Context, us *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
 		return &sourcegraph.PasswordResetToken{Token: "secrettoken"}, nil
 	}
-	mock.stores.Users.ListEmails_ = func(context.Context, sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
-		return []*sourcegraph.EmailAddr{&sourcegraph.EmailAddr{Email: "user@example.com"}}, nil
-	}
-	mock.stores.Users.Get_ = func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error) {
+	mock.stores.Users.GetWithEmail_ = func(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 		return &sourcegraph.User{Name: "some user", Login: "user1"}, nil
 	}
 
 	s := accounts{}
-	u, err := s.RequestPasswordReset(ctx, &sourcegraph.UserSpec{Login: "user1"})
+	u, err := s.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: "user@example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
