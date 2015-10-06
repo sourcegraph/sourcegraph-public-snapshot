@@ -14,17 +14,19 @@ It has these top-level messages:
 package wire
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
 import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
 var _ = math.Inf
 
 // CollectPacket is the message sent to a remote collector server by one of
 // it's clients.
 type CollectPacket struct {
 	Spanid           *CollectPacket_SpanID       `protobuf:"group,1,req,name=SpanID" json:"spanid,omitempty"`
-	Annotation       []*CollectPacket_Annotation `protobuf:"group,5,rep" json:"annotation,omitempty"`
+	Annotation       []*CollectPacket_Annotation `protobuf:"group,5,rep,name=Annotation" json:"annotation,omitempty"`
 	XXX_unrecognized []byte                      `json:"-"`
 }
 
@@ -111,7 +113,4 @@ func (m *CollectPacket_Annotation) GetValue() []byte {
 		return m.Value
 	}
 	return nil
-}
-
-func init() {
 }
