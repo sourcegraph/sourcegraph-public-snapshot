@@ -45,9 +45,6 @@
 
 	.body {
 		margin-top: 1em;
-
-		font-family: $font-family-serif;
-		font-size: 1.2*$font-size-base;
 		@include clear-sections();
 		img { @include image-figure(); }
 	}
@@ -73,7 +70,6 @@
 	}
 
 	h2, h3, h4 {
-		font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 		margin-top: 20px;
 		font-weight: bold;
 	}
