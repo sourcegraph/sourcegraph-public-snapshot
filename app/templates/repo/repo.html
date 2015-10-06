@@ -3,7 +3,7 @@
 <div class="repo-body {{if hasField . "FullWidth"}}{{if .FullWidth}}repo-body-full-width{{end}}{{end}}" data-pjax-container id="repo-pjax-container">
 	{{template "RepoBody" $}}
 </div>
-<script>
+<script ignore-csp>
 	window.preloadedRepo = {
 		"data": {{json .Repo}}
 	}
