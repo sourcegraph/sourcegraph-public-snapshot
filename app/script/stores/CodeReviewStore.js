@@ -88,6 +88,7 @@ var CodeReviewStore = FluxStore({
 			Delta: d.Delta,
 			BaseTip: d.BaseTip,
 			FileFilter: d.FileFilter,
+			ReviewGuidelines: d.ReviewGuidelines,
 			loading: false,
 			reviews: reviews,
 			events: events,

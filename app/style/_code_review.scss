@@ -148,6 +148,28 @@ h1.changeset-title {
 		}
 	}
 
+	.review-guidelines {
+		margin: 5px 0;
+		padding: 12px 15px 13px;
+		border-radius: 3px;
+		border: 1px solid #d7ebfb;
+		background: #f5fafe;
+
+		a {
+			cursor: pointer;
+			font-size: 13px;
+
+			&:hover {
+				text-decoration: none;
+			}
+		}
+
+		i.fa {
+			color: #dd9b00;
+			font-size: 21px;
+		}
+	}
+
 	.changeset-timeline {
 		&:after {
 			content: ".";

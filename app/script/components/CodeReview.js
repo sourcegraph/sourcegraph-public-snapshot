@@ -89,6 +89,7 @@ var CodeReview = React.createClass({
 	render() {
 		if (typeof this.state.Changeset === "undefined") return null;
 		var url = `${router.changesetURL(this.state.Changeset.DeltaSpec.Base.URI, this.state.Changeset.ID)}/files`;
+		var showingGuidelines = this.state.guidelinesVisible;
 
 		return (
 			<div className="code-review-inner">
@@ -115,6 +116,21 @@ var CodeReview = React.createClass({
 							reviews={this.state.reviews}
 							events={this.state.events}
 							changeset={this.state.Changeset} />
+
+						{this.state.ReviewGuidelines && this.state.ReviewGuidelines.__html ? (
+							<div className="review-guidelines">
+								<i className="fa fa-warning pull-left" /> There are guidelines for contributing to this repository!
+								<a
+									className="pull-right"
+									onClick={() => this.setState({guidelinesVisible: !Boolean(showingGuidelines)})}>
+										<i className={showingGuidelines ? "octicon octicon-triangle-up" : "octicon octicon-triangle-down"} />
+										{showingGuidelines ? " Hide" : " Show"}
+								</a>
+								{showingGuidelines ? (
+									<div className="markdown-view" dangerouslySetInnerHTML={this.state.ReviewGuidelines} />
+								) : null}
+							</div>
+						) : null}
 
 						<SubmitForm
 							visible={this.state.submittingReview}
