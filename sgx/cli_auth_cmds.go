@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"path/filepath"
 
 	"github.com/howeyc/gopass"
 	"golang.org/x/oauth2"
@@ -18,8 +17,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
-
-var userAuthFile = filepath.Join(os.Getenv("HOME"), ".src-auth")
 
 // userAuth holds user auth credentials keyed on API endpoint
 // URL. It's typically saved in a file named by userAuthFile.
@@ -61,7 +58,10 @@ type userEndpointAuth struct {
 // doesn't exist; in that case, an empty userAuth and a nil error is
 // returned.
 func readUserAuth() (userAuth, error) {
-	f, err := os.Open(userAuthFile)
+	if Credentials.AuthFile == "/dev/null" {
+		return userAuth{}, nil
+	}
+	f, err := os.Open(os.ExpandEnv(Credentials.AuthFile))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -77,7 +77,7 @@ func readUserAuth() (userAuth, error) {
 
 // writeUserAuth writes ua to the userAuthFile.
 func writeUserAuth(a userAuth) error {
-	f, err := os.Create(userAuthFile)
+	f, err := os.Create(os.ExpandEnv(Credentials.AuthFile))
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func (c *loginCmd) Execute(args []string) error {
 	if err := writeUserAuth(a); err != nil {
 		return err
 	}
-	log.Printf("# Credentials saved to %s.", userAuthFile)
+	log.Printf("# Credentials saved to %s.", os.ExpandEnv(Credentials.AuthFile))
 	log.Printf("# Default endpoint set to %s.", endpointURL)
 	return nil
 }
