@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/vfsutil"
 )
 
 const (
@@ -396,6 +397,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 
 	skip := op.Offset()
 	limit := op.Limit()
+	var paths []string
 	for _, fi := range fis {
 		// skip files
 		if !fi.IsDir() {
@@ -405,12 +407,16 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		if _, err := strconv.Atoi(fi.Name()); err != nil {
 			continue
 		}
-		b, err := vfs.ReadFile(fs, filepath.Join(fi.Name(), changesetMetadataFile))
-		if err != nil {
-			return nil, err
+		paths = append(paths, filepath.Join(fi.Name(), changesetMetadataFile))
+	}
+	readCh, done := vfsutil.ConcurrentRead(fs, paths)
+	defer done.Done()
+	for readRet := range readCh {
+		if readRet.Error != nil {
+			return nil, readRet.Error
 		}
 		var cs sourcegraph.Changeset
-		if err := json.Unmarshal(b, &cs); err != nil {
+		if err := json.Unmarshal(readRet.Bytes, &cs); err != nil {
 			return nil, err
 		}
 		if op.Open && cs.ClosedAt == nil || op.Closed && cs.ClosedAt != nil {
