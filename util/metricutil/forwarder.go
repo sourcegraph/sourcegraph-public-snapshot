@@ -53,6 +53,6 @@ func ForwardEvents(ctx context.Context, eventList *sourcegraph.UserEventList) {
 }
 
 func getIndexNameWithSuffix() string {
-	t := time.Now()
+	t := time.Now().UTC()
 	return fmt.Sprintf("events-%d-%02d-%02d", t.Year(), t.Month(), t.Day())
 }

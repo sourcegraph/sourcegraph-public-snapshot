@@ -171,7 +171,7 @@ func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
 		}
 
 		if event.CreatedAt == nil {
-			ts := pbtypes.NewTimestamp(time.Now())
+			ts := pbtypes.NewTimestamp(time.Now().UTC())
 			event.CreatedAt = &ts
 		}
 
