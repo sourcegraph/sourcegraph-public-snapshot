@@ -85,7 +85,7 @@
 			{{end}}
 		{{end}}
 
-		<div class="container{{if .FullWidth}}-fluid{{end}} body" id="pjax-container" data-pjax-container>
+		<div class="container{{if .FullWidth}}-fluid{{end}} body" id="{{if .Features.SearchNext}}main{{else}}pjax-container{{end}}" data-pjax-container>
 			{{template "Body" $}}
 		</div>
 

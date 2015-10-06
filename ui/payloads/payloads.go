@@ -90,3 +90,15 @@ type AugmentedCommit struct {
 	AuthorPerson, CommitterPerson *sourcegraph.Person
 	RepoURI                       string
 }
+
+type TokenSearchResult struct {
+	// Def holds information about this definition.
+	Def *sourcegraph.Def
+
+	// QualifiedName is the user-friendly form of this definition containing its
+	// name and type, and is used as the title for this definition.
+	QualifiedName *pbtypes.HTML
+
+	// URL is the DefKey-based URL that can be used to request this definition.
+	URL string
+}

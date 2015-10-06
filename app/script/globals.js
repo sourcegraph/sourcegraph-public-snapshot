@@ -98,6 +98,9 @@ module.exports = {
 		CR_RECEIVED_CHANGED_STATUS: null,
 		CR_SUBMIT_REVIEW_SUCCESS: null,
 		CR_SHOW_COMMENT: null,
+
+		// Search Actions
+		SEARCH_SUBMIT: null,
 	}),
 
 	ChangesetStatus: keyMirror({

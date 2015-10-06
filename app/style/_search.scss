@@ -158,3 +158,56 @@ div.search-result-type {
 .no-results-found {
 	font-size: $font-size-large;
 }
+
+// SearchNext
+.search-bar-next {
+	form {
+		@include box-shadow(none);
+		@include z-index(nav-search-input);
+	}
+	.search-input-next {
+		border: none;
+		&:focus {
+			@include box-shadow(none);
+		}
+	}
+	// CSS hack to make the form input fill the width of the
+	// middle of the nav bar.
+	.form-group {
+		display: inline;
+		.input-group {
+			display: table;
+			.input-group-addon {
+				width: 1%;
+				visibility: hidden;
+			}
+			.form-control {
+				&:first-child {
+					border-radius: 4px;
+				}
+			}
+		}
+	}
+}
+
+.search-results {
+	padding-top: $padding-large-vertical;
+}
+
+.token-search-result {
+	a {
+		font-size: 16px;
+		color: $gray-mid;
+		code {
+			padding: 0;
+		}
+		.name {
+			color: $link-color;
+			font-weight: bold;
+		}
+	}
+	p {
+		color: $gray-mid;
+		padding-top: 4px;
+	}
+}

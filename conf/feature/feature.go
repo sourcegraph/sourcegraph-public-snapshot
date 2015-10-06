@@ -13,6 +13,7 @@ import (
 // querying whether a feature is toggled or not
 var Features struct {
 	Discussions bool
+	SearchNext  bool
 }
 
 func init() {

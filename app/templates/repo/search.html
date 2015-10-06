@@ -1,0 +1,17 @@
+{{define "Head"}}
+{{if .RepoSearch.Query}}
+<title>{{.RepoSearch.Query}} - {{.Repo.Name}} - Sourcegraph</title>
+{{else}}
+<title>Search - {{.Repo.Name}} - Sourcegraph</title>
+{{end}}
+
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "RepoBody"}}
+<script ignore-csp>
+	window.preloadedSearchOptions = {
+		"data": "{{json .RepoSearch}}"
+	};
+</script>
+{{end}}
