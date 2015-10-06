@@ -62,6 +62,10 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 	}
 	events = collapseDuplicateEvents(events)
 	for _, fn := range postPushHooks {
+		// This technically can block, but only when we have a large
+		// backlog of hooks to process (buffered channel). Blocking in
+		// that case is intentional to apply back pressure even though
+		// it degrades client performance.
 		fn(ctx, op, events)
 	}
 	return &gitpb.Packet{Data: data}, nil

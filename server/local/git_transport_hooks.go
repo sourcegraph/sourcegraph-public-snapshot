@@ -36,7 +36,11 @@ var postPushHooks = make(map[string]func(context.Context, *gitpb.ReceivePackOp, 
 var errHookExists = errors.New("ID already exists")
 
 // AddGitPostPushHook adds a new git post-push hook with the given ID. The
-// hook receives the context, pack operation information and git events.
+// hook receives the context, pack operation information and git events. We
+// gaurentee that a hook will never run concurrently with itself. However, it
+// does not block the git push and will run concurrently with other hooks. As
+// such hooks should not block for a long time, and must handle the repo state
+// being different to the advertised events.
 func AddGitPostPushHook(ID string, fn func(context.Context, *gitpb.ReceivePackOp, []githttp.Event)) error {
 	if _, ok := postPushHooks[ID]; ok {
 		return &os.PathError{
@@ -45,12 +49,32 @@ func AddGitPostPushHook(ID string, fn func(context.Context, *gitpb.ReceivePackOp
 			Err:  errHookExists,
 		}
 	}
-	postPushHooks[ID] = fn
+	postPushHooks[ID] = linearizePushHook(fn)
 	return nil
 }
 
 // RemoveGitPostPushHook removes the git hook with the given ID.
 func RemoveGitPostPushHook(ID string) { delete(postPushHooks, ID) }
+
+// linearizePushHook wraps a push hook to ensure that the commit hook is never
+// run concurrently and is run in FIFO order.
+func linearizePushHook(fn func(context.Context, *gitpb.ReceivePackOp, []githttp.Event)) func(context.Context, *gitpb.ReceivePackOp, []githttp.Event) {
+	type args struct {
+		ctx    context.Context
+		op     *gitpb.ReceivePackOp
+		events []githttp.Event
+	}
+	// I don't expect the queue to ever be larger than single digits, it
+	// is this high for safety.
+	ch := make(chan args, 30)
+	go func() {
+		a := <-ch
+		fn(a.ctx, a.op, a.events)
+	}()
+	return func(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
+		ch <- args{ctx, op, events}
+	}
+}
 
 func slackContributionsHook(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
 	userStr, err := getUserDisplayName(ctx)
