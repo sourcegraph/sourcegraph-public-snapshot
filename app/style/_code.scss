@@ -38,7 +38,7 @@ pre code {
 /* this class can be used to insert Markdown (backtick-style) entries in
 the middle of prose */
 .backtick {
-	font-family: $code-font-family;
+	font-family: $font-family-monospace;
 	border: 1px solid #eaeaea;
 	padding: 2px 3px;
 }
@@ -50,7 +50,7 @@ pre code, .line-numbered-code td {
 
 	line-height: $code-line-height;
 	font-size: $code-font-size;
-	font-family: $code-font-family;
+	font-family: $font-family-monospace;
 	padding-top: 0;
 	padding-bottom: 0;
 
@@ -124,7 +124,7 @@ pre code, .line-numbered-code td {
 		vertical-align: top;
 		overflow: hidden;
 		// match code
-		font-family: $code-font-family;
+		font-family: $font-family-monospace;
 		font-size: $code-font-size;
 		line-height: $code-line-height;
 		border-right: 1px solid #eeeeee;

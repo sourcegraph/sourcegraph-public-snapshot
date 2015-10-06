@@ -6,6 +6,10 @@
 @import "_mixins";
 @import "_vars";
 
+$font-family-sans-serif: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+$font-family-base: $font-family-sans-serif;
+$font-family-monospace: "Roboto Mono", Consolas, Menlo, Monaco, "Courier New", monospace;
+
 $brand-primary: $dark-blue;
 $non-brand-success: $brand-success;
 $brand-success: $sg-blue-color;
@@ -29,8 +33,6 @@ $navbar-default-link-active-color: #222;
 $navbar-default-link-hover-color: $link-color;
 $navbar-border-radius: 0;
 $nav-link-hover-bg: $light-blue;
-
-$font-family-monospace: $code-font-family;
 
 $code-color:                  none;
 $code-bg:                     none;

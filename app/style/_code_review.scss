@@ -49,7 +49,7 @@ h1.changeset-title {
 			border: 1px solid #e9e9e9;
 			border-radius: 3px;
 			padding-left: 5px;
-			font-family: $code-font-family;
+			font-family: $font-family-monospace;
 			font-size: 11px;
 			background: #fafafa;
 			margin: 0 7px 0 5px;
@@ -160,7 +160,7 @@ h1.changeset-title {
 
 		.warning {
 			color: #bd2c00;
-			font-family: $code-font-family;
+			font-family: $font-family-monospace;
 			font-size: 12px;
 		}
 
@@ -289,7 +289,7 @@ h1.changeset-title {
 					margin: -2px 7px 0 0;
 				}
 				.commit-id {
-					font-family: $code-font-family;
+					font-family: $font-family-monospace;
 					color: #666;
 				}
 			}

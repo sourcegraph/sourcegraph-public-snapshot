@@ -120,7 +120,7 @@ div.file-list {
 
 		.stats {
 			position: relative; top: 2px;
-			font-family: $code-font-family;
+			font-family: $font-family-monospace;
 			font-weight: bold;
 			.diff-stat-scale {
 				margin-left: 8px;
@@ -187,7 +187,7 @@ div.file-list {
 			}
 
 			.stats {
-				font-family: $code-font-family;
+				font-family: $font-family-monospace;
 				font-weight: bold;
 				.diff-stat-scale {
 					margin-left: 8px;
@@ -225,7 +225,7 @@ div.file-list {
 
 		.repo-rev-switcher {
 			.label {
-				font-family: $code-font-family;
+				font-family: $font-family-monospace;
 				color: #777;
 				font-weight: normal;
 				font-size: 11px;
@@ -245,7 +245,7 @@ div.file-list {
 		}
 
 		.warning {
-			font-family: $code-font-family;
+			font-family: $font-family-monospace;
 			font-size: 12px;
 			display: block;
 			margin: 7px 12px 0 0;
