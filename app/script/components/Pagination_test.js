@@ -1,0 +1,84 @@
+var sandbox = require("../testSandbox");
+var expect = require("expect.js");
+var sinon = require("sinon");
+
+var React = require("react/addons");
+var TestUtils = React.addons.TestUtils;
+
+var Pagination = require("./Pagination");
+
+describe("components/Pagination", () => {
+	it("displays the correct number of page links", () => {
+		var props = {
+			currentPage: 1,
+			totalPages: 10,
+			pageRange: 10,
+			onPageChange: () => {},
+		};
+
+		var component = sandbox.renderComponent(<Pagination {...props} />);
+		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
+		// Exclude the first and last non-numbered page links in the list.
+		pageListItems = pageListItems.slice(1, props.totalPages+1);
+
+		expect(pageListItems.length).to.be(props.totalPages);
+
+		var pageLink;
+		for (var i=0; i < props.totalPages; i++) {
+			pageLink = TestUtils.findRenderedDOMComponentWithTag(pageListItems[i], "a");
+			expect(pageLink).to.be.ok();
+			expect(React.findDOMNode(pageLink).textContent).to.be((i+1).toString());
+		}
+	});
+
+	it("is bounded by the total number of page links", () => {
+		var props = {
+			currentPage: 1,
+			totalPages: 5,
+			pageRange: 10,
+			onPageChange: () => {},
+		};
+
+		var component = sandbox.renderComponent(<Pagination {...props} />);
+		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
+
+		// Subtract 2 to account for the two non-numbered page links in the list.
+		expect(pageListItems.length - 2).to.be(props.totalPages);
+	});
+
+	it("is bounded by the total number of page links on the last page", () => {
+		var props = {
+			currentPage: 42,
+			totalPages: 42,
+			pageRange: 10,
+			onPageChange: () => {},
+		};
+
+		var component = sandbox.renderComponent(<Pagination {...props} />);
+		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
+		var lastPageListItem = pageListItems[pageListItems.length-2];
+
+		expect(React.findDOMNode(lastPageListItem).textContent).to.be(props.totalPages.toString());
+	});
+
+	it("calls the onPageChange callback when a new page is selected", () => {
+		var props = {
+			currentPage: 1,
+			totalPages: 10,
+			pageRange: 10,
+			onPageChange: sinon.stub(),
+		};
+
+		var component = sandbox.renderComponent(<Pagination {...props} />);
+		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
+		pageListItems = pageListItems.slice(1, props.totalPages+1);
+
+		var newPage = 7;
+		var newPageListItem = pageListItems[newPage-1];
+		var newPageLink = TestUtils.findRenderedDOMComponentWithTag(newPageListItem, "a");
+		TestUtils.Simulate.click(newPageLink);
+
+		expect(props.onPageChange.callCount).to.be(1);
+		expect(props.onPageChange.firstCall.args[0]).to.be(newPage);
+	});
+});
