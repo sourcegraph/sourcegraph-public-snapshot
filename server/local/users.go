@@ -21,6 +21,7 @@ func (s *users) Get(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegra
 		return nil, &sourcegraph.NotImplementedError{What: "Users"}
 	}
 
+	shortCache(ctx)
 	return store.Get(ctx, *user)
 }
 
