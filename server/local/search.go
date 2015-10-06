@@ -16,6 +16,16 @@ type search struct{}
 
 var _ sourcegraph.SearchServer = (*search)(nil)
 
+func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
+	//TODO(renfred) implement.
+	return nil, nil
+}
+
+func (s *search) SearchText(ctx context.Context, opt *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
+	//TODO(renfred) implement.
+	return nil, nil
+}
+
 func (s *search) Search(ctx context.Context, opt *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error) {
 	if opt == nil {
 		panic("Search: nil opt")
