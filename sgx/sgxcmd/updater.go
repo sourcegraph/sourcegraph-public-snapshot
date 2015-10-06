@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	releaseBaseURL = "https://sourcegraph.com/.download/"
+	releaseBaseURL = "https://" + release.S3Bucket + ".s3.amazonaws.com/"
 
 	// SelfUpdater checks and updates release versions.
 	SelfUpdater = &selfupdate.Updater{
