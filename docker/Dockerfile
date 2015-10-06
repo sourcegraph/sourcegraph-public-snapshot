@@ -10,7 +10,7 @@ RUN curl -Ls $STATIC_SITE_URL | tar x
 # ADD wrapdocker /usr/local/bin/wrapdocker # currently not supported on Container Engine, add lxc package when using
 ADD src /usr/local/bin/src
 
-RUN for lang in "python" "ruby" "javascript" "go" "java"; do src toolchain get sourcegraph.com/sourcegraph/srclib-$lang; done
+RUN for lang in "python" "go" "java"; do src toolchain get sourcegraph.com/sourcegraph/srclib-$lang; done
 
 ENTRYPOINT ["src"]
 CMD ["serve", "--http-addr=:3000"]
