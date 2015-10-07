@@ -2,7 +2,6 @@ package ui
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/mux"
@@ -27,8 +26,10 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repoURI := mux.Vars(r)["Repo"]
-	opt.Query = fmt.Sprintf("%s %s", repoURI, opt.Query)
+	opt.RepoRev = sourcegraph.RepoRevSpec{
+		RepoSpec: sourcegraph.RepoSpec{URI: mux.Vars(r)["Repo"]},
+		Rev:      mux.Vars(r)["Rev"],
+	}
 
 	defList, err := apiclient.Search.SearchTokens(ctx, &opt)
 	if err != nil {

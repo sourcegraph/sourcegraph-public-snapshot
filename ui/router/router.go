@@ -127,7 +127,7 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Methods(m("POST")...).
 		Name(DiscussionComment)
 
-	repo.Path("/.search/tokens").
+	repoRev.Path("/.search/tokens").
 		Methods(m("GET")...).
 		Name(SearchTokens)
 
