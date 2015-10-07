@@ -3,6 +3,7 @@ package vfsutil
 import "golang.org/x/tools/godoc/vfs"
 
 type readRet struct {
+	Path  string
 	Bytes []byte
 	Error error
 }
@@ -36,6 +37,7 @@ func ConcurrentRead(fs vfs.Opener, paths []string) (chan readRet, doneSignal) {
 
 	read := func(path string, n int) {
 		b, err := vfs.ReadFile(fs, path)
+		res[n].Path = path
 		res[n].Bytes = b
 		res[n].Error = err
 		select {

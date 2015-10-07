@@ -46,6 +46,9 @@ func TestConcurrentRead(t *testing.T) {
 		if paths[i] != out {
 			t.Fatalf("Reading path %s got path %s instead", paths[i], out)
 		}
+		if paths[i] != ret.Path {
+			t.Fatalf("%s != %s", paths[i], ret.Path)
+		}
 		i += 1
 	}
 }

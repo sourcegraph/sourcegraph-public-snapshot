@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/vfsutil"
 )
 
 // TODO(keegan) Lots of duplication with changesets with storage layer in git
@@ -135,6 +136,7 @@ func (s *Discussions) list(ctx context.Context, fs vfs.FileSystem, filter func(g
 		}
 		return nil, err
 	}
+	var paths []string
 	for _, fi := range fis {
 		if !fi.IsDir() {
 			continue
@@ -143,15 +145,18 @@ func (s *Discussions) list(ctx context.Context, fs vfs.FileSystem, filter func(g
 		if err != nil {
 			continue
 		}
-		b, err := vfs.ReadFile(fs, discussionPath(int64(id)))
-		if err != nil {
-			log15.Warn("Could not read discussion", "fs", fs, "ID", id)
+		paths = append(paths, discussionPath(int64(id)))
+	}
+	readCh, done := vfsutil.ConcurrentRead(fs, paths)
+	defer done.Done()
+	for readRet := range readCh {
+		if readRet.Error != nil {
+			log15.Warn("Could not read discussion", "path", readRet.Path, "error", readRet.Error)
 			continue
 		}
-
 		var d sourcegraph.Discussion
-		if err := json.Unmarshal(b, &d); err != nil {
-			log15.Warn("Could not unmarshal discussion", "fs", fs, "ID", id)
+		if err := json.Unmarshal(readRet.Bytes, &d); err != nil {
+			log15.Warn("Could not unmarshal discussion", "path", readRet.Path, "error", readRet.Error)
 		} else if filter(d.DefKey) {
 			ds = append(ds, &d)
 		}
