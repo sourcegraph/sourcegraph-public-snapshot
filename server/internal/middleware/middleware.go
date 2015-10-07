@@ -2381,6 +2381,64 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOpti
 
 }
 
+func (s wrappedSearch) SearchTokens(ctx context.Context, param *sourcegraph.TokenSearchOptions) (res *sourcegraph.DefList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Search", "SearchTokens", param)
+	defer func() {
+		trace.After(ctx, "Search", "SearchTokens", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Search.SearchTokens")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.SearchServer = s.u
+
+	var fedCtx context.Context
+	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
+	if err != nil {
+		return
+	}
+	if fedCtx != nil {
+		target = svc.Search(fedCtx)
+		ctx = fedCtx
+	}
+
+	res, err = target.SearchTokens(ctx, param)
+	return
+
+}
+
+func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSearchOptions) (res *sourcegraph.VCSSearchResultList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Search", "SearchText", param)
+	defer func() {
+		trace.After(ctx, "Search", "SearchText", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Search.SearchText")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.SearchServer = s.u
+
+	var fedCtx context.Context
+	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
+	if err != nil {
+		return
+	}
+	if fedCtx != nil {
+		target = svc.Search(fedCtx)
+		ctx = fedCtx
+	}
+
+	res, err = target.SearchText(ctx, param)
+	return
+
+}
+
 func (s wrappedSearch) Complete(ctx context.Context, param *sourcegraph.RawQuery) (res *sourcegraph.Completions, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Search", "Complete", param)
