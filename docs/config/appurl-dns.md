@@ -26,7 +26,7 @@ If you have already authorized your Sourcegraph server with OAuth, you'll also
 need to reset the redirect URI of your instance:
 
 ```
-src --endpoint http://src.mycompany.com registered-clients update --redirect-uri http://src.mycompany.com CLIENT-ID
+src --endpoint https://sourcegraph.com registered-clients update --redirect-uri http://src.mycompany.com CLIENT-ID
 ```
 
 Replace `CLIENT-ID` above with the `"IDKey"` value returned by running
