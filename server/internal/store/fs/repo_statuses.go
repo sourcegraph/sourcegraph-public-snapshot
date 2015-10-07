@@ -110,9 +110,8 @@ func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 	}
 
 	// TODO(beyang): if the app crashes after vfs.Create is called but before the statuses
-	// are written, then the status file will be deleted. We should eventually fix this by
-	// renaming the old file and write the new file (and detecting and fixing the dirty
-	// state).
+	// are written, then the status file will be deleted. We should eventually fix this
+	// somehow.
 	w, err := vfs.Create(path)
 	if err != nil {
 		return err
