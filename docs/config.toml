@@ -4,13 +4,14 @@ layoutDir = "docs/.layouts"
 contentDir = "docs"
 
 [params]
-SectionOrder = ["getting-started", "install", "deploy", "config", "concepts", "dev", "troubleshooting"]
+SectionOrder = ["getting-started", "install", "deploy", "config", "management", "concepts", "dev", "troubleshooting"]
 
 [params.SectionNames]
 getting-started = "Getting started"
 install = "Installation"
 deploy = "Deployment"
 config = "Configuration"
+management = "Management"
 dev = "Development"
 concepts = "Concepts"
 troubleshooting = "Troubleshooting"
