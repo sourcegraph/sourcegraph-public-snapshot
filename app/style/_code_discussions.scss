@@ -438,6 +438,9 @@ $code-discussion-title: $code-discussion-body - $code-discussion-stats + $code-d
 	.no-discussions {
 		padding: 0 10px 10px 10px;
 		font-size: 13px;
+		a {
+			cursor: pointer;
+		}
 	}
 
 	ul.list {
