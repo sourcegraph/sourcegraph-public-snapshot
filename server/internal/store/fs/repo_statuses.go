@@ -3,6 +3,7 @@ package fs
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -87,7 +88,8 @@ func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 		}
 		defer r.Close()
 		if err := json.NewDecoder(r).Decode(&statuses); err != nil {
-			return err
+			// if the existing cached status file is corrupted, create it afresh
+			log.Printf("error unmarshalling repository statuses for %+v: %s; creating status file anew", repoRev, err)
 		}
 	}
 
@@ -107,6 +109,9 @@ func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 		return err
 	}
 
+	// TODO(beyang): if the app crashes after vfs.Create is called but before the statuses
+	// are written, then the status file will be deleted. We should eventually fix this by
+	// writing to a new file and atomically replacing it.
 	w, err := vfs.Create(path)
 	if err != nil {
 		return err
