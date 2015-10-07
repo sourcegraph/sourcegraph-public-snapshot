@@ -27,6 +27,7 @@ const (
 	DiscussionComment  = "discussion.comment"
 
 	SearchTokens = "search.tokens"
+	SearchText   = "search.text"
 
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 )
@@ -130,6 +131,10 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 	repoRev.Path("/.search/tokens").
 		Methods(m("GET")...).
 		Name(SearchTokens)
+
+	repoRev.Path("/.search/text").
+		Methods(m("GET")...).
+		Name(SearchText)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods(m("POST")...).

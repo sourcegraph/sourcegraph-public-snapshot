@@ -74,6 +74,7 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 	r.Get(ui_router.DiscussionListRepo).Handler(p.handler(serveDiscussionListRepo))
 
 	r.Get(ui_router.SearchTokens).Handler(p.handler(serveTokenSearch))
+	r.Get(ui_router.SearchText).Handler(p.handler(serveTextSearch))
 
 	r.Get(ui_router.AppdashUploadPageLoad).Handler(p.handler(serveAppdashUploadPageLoad))
 

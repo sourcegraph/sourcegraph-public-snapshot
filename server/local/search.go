@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	searchpkg "src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -43,8 +44,22 @@ func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchO
 }
 
 func (s *search) SearchText(ctx context.Context, opt *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
-	// TODO(renfred) implement.
-	return &sourcegraph.VCSSearchResultList{}, nil
+	vcsSearchOpts := &sourcegraph.RepoTreeSearchOptions{
+		Formatted: false,
+		SearchOptions: vcs.SearchOptions{
+			Query:        opt.Query,
+			QueryType:    "fixed",
+			ContextLines: 1,
+			N:            10,
+		},
+	}
+
+	results, err := svc.RepoTree(ctx).Search(ctx, &sourcegraph.RepoTreeSearchOp{Rev: opt.RepoRev, Opt: vcsSearchOpts})
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func (s *search) Search(ctx context.Context, opt *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error) {
