@@ -2,7 +2,7 @@ var sandbox = require("../testSandbox");
 var expect = require("expect.js");
 
 var $ = require("jquery");
-var React = require("react/addons");
+var React = require("react");
 var ContextMenu = require("./ContextMenu");
 var ContextMenuModel = require("../stores/models/ContextMenuModel");
 

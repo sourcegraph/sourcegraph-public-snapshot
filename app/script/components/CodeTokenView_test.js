@@ -2,8 +2,8 @@ var sandbox = require("../testSandbox");
 var expect = require("expect.js");
 
 var $ = require("jquery");
-var React = require("react/addons");
-var TestUtils = React.addons.TestUtils;
+var React = require("react");
+var TestUtils = require("react-addons-test-utils");
 var CodeTokenView = require("./CodeTokenView");
 var CodeTokenModel = require("../stores/models/CodeTokenModel");
 var globals = require("../globals");

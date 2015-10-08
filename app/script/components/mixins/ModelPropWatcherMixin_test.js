@@ -1,7 +1,7 @@
 var sandbox = require("../../testSandbox");
 var expect = require("expect.js");
 
-var React = require("react/addons");
+var React = require("react");
 var Backbone = require("backbone");
 var ModelPropWatcherMixin = require("./ModelPropWatcherMixin");
 

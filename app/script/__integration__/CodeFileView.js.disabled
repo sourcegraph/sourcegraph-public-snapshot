@@ -1,5 +1,5 @@
-var React = require("react/addons");
-var TestUtils = React.addons.TestUtils;
+var React = require("react");
+var TestUtils = require("react-addons-test-utils");
 var CodeFileView = require("../components/CodeFileView");
 var CodeLineView = require("../components/CodeLineView");
 var CodeTokenView = require("../components/CodeTokenView");

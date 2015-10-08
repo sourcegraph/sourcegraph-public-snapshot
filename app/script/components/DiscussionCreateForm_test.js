@@ -3,8 +3,8 @@ var expect = require("expect.js");
 var sinon = require("sinon");
 
 var $ = require("jquery");
-var React = require("react/addons");
-var TestUtils = React.addons.TestUtils;
+var React = require("react");
+var TestUtils = require("react-addons-test-utils");
 var DiscussionCreateForm = require("./DiscussionCreateForm");
 
 describe("components/DiscussionCreateForm", () => {
