@@ -17,7 +17,7 @@ describe("components/CodeView", () => {
 		);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "i");
-		expect($(tag.getDOMNode()).hasClass("file-loader")).to.be(true);
+		expect($(React.findDOMNode(tag)).hasClass("file-loader")).to.be(true);
 
 		var children = TestUtils.scryRenderedComponentsWithType(component, CodeLineView);
 		expect(children.length).to.be(0);

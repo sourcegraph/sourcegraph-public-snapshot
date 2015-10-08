@@ -47,7 +47,7 @@ var FileDiffView = React.createClass({
 	mixins: [ModelPropWatcherMixin],
 
 	componentDidMount() {
-		if (this.isMounted) this.props.model.__node = require("jquery")(this.getDOMNode());
+		if (this.isMounted) this.props.model.__node = require("jquery")(React.findDOMNode(this));
 	},
 
 	_onTokenFocus(token, evt) {

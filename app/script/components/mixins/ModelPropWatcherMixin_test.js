@@ -53,7 +53,7 @@ describe("ModelPropWatcherMixin", () => {
 		model.off = sandbox.mock();
 		var component = sandbox.renderComponent(<Item model={model} />);
 
-		React.unmountComponentAtNode(component.getDOMNode().parentNode);
+		React.unmountComponentAtNode(React.findDOMNode(component).parentNode);
 		expect(model.off.callCount).to.be(1);
 	});
 });

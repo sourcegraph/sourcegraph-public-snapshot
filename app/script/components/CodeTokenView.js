@@ -36,7 +36,7 @@ var CodeTokenView = React.createClass({
 	componentDidMount() {
 		if (!this.isMounted()) return;
 
-		var el = this.getDOMNode();
+		var el = React.findDOMNode(this);
 
 		if (typeof this.props.onTokenFocus === "function") {
 			el.addEventListener("mouseenter", this._onFocus);
@@ -52,7 +52,7 @@ var CodeTokenView = React.createClass({
 	componentWillUnmount() {
 		if (!this.isMounted()) return;
 
-		var el = this.getDOMNode();
+		var el = React.findDOMNode(this);
 		el.removeEventListener("mouseenter", this._onFocus);
 		el.removeEventListener("mouseleave", this._onBlur);
 	},

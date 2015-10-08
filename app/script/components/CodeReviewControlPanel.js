@@ -26,7 +26,7 @@ var CodeReviewControlPanel = React.createClass({
 	 * @private
 	 */
 	_changeStatus(evt) {
-		var status = $(this.getDOMNode()).find(".status-options").val();
+		var status = $(React.findDOMNode(this)).find(".status-options").val();
 
 		if (typeof this.props.onStatusChange === "function") {
 			this.props.onStatusChange(status, evt);

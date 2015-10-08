@@ -18,7 +18,7 @@ var TokenPopoverView = React.createClass({
 			var x = evt.clientX, pw = 380; // popover width
 			if (x > window.innerWidth-pw) x = window.innerWidth-pw;
 
-			$(this.getDOMNode()).css({
+			$(React.findDOMNode(this)).css({
 				top: evt.clientY + 15,
 				left: x + 15,
 			});

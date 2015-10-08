@@ -65,7 +65,7 @@ describe("RepoBuildIndicator", () => {
 				<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
 			);
 			var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
-			var $node = $(tag.getDOMNode());
+			var $node = $(React.findDOMNode(tag));
 
 			expect(client.builds.callCount).to.be(1);
 			expect(component.state.status).to.be(component.BuildStatus[name]);
@@ -74,7 +74,7 @@ describe("RepoBuildIndicator", () => {
 			expect($node.attr("title")).to.contain(`${test.CommitID.slice(0, 6)} ${test.expect.txt}`);
 
 			tag = TestUtils.findRenderedDOMComponentWithTag(component, "i");
-			expect($(tag.getDOMNode()).hasClass(test.expect.icon)).to.be(true);
+			expect($(React.findDOMNode(tag)).hasClass(test.expect.icon)).to.be(true);
 		});
 	}, this);
 
@@ -88,7 +88,7 @@ describe("RepoBuildIndicator", () => {
 		);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
-		var $node = $(tag.getDOMNode());
+		var $node = $(React.findDOMNode(tag));
 		expect($node.attr("title")).to.contain("Not yet built.");
 	});
 
@@ -96,7 +96,7 @@ describe("RepoBuildIndicator", () => {
 		var component = sandbox.renderComponent(
 			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
 		);
-		var $el = $(component.getDOMNode());
+		var $el = $(React.findDOMNode(component));
 		expect($el.html()).not.to.contain("Build started");
 	});
 
@@ -104,7 +104,7 @@ describe("RepoBuildIndicator", () => {
 		var component = sandbox.renderComponent(
 			<RepoBuildIndicator LastBuild={renderTests.STARTED} Label="yes" btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
 		);
-		var $el = $(component.getDOMNode());
+		var $el = $(React.findDOMNode(component));
 		expect($el.html()).to.contain("Build started");
 	});
 
@@ -131,7 +131,7 @@ describe("RepoBuildIndicator", () => {
 		expect(component.state.status).to.be(component.BuildStatus.ERROR);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "span");
-		var $node = $(tag.getDOMNode());
+		var $node = $(React.findDOMNode(tag));
 
 		expect($node.hasClass("text-danger")).to.be(true);
 		expect($node.text()).to.contain("Error");

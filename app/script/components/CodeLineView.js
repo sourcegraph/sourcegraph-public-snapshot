@@ -51,7 +51,7 @@ var CodeLineView = React.createClass({
 	mixins: [ModelPropWatcherMixin],
 
 	componentDidMount() {
-		if (this.isMounted()) this.props.model.__node = $(this.getDOMNode());
+		if (this.isMounted()) this.props.model.__node = $(React.findDOMNode(this));
 	},
 
 	/**

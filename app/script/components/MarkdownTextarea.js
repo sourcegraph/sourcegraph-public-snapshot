@@ -34,7 +34,7 @@ var MarkdownTextarea = React.createClass({
 	_showPreview() {
 		this.setState({
 			activeTab: TAB_PREVIEW,
-			bodyMarkdown: $(this.getDOMNode()).find(".raw-body").val(),
+			bodyMarkdown: $(React.findDOMNode(this)).find(".raw-body").val(),
 		});
 	},
 
@@ -45,7 +45,7 @@ var MarkdownTextarea = React.createClass({
 	 * @returns {string|undefined} If a new value is set, undefined is returned.
 	 */
 	value(str) {
-		var txt = $(this.getDOMNode()).find(".raw-body");
+		var txt = $(React.findDOMNode(this)).find(".raw-body");
 		if (typeof str === "string") {
 			return txt.val(str);
 		}

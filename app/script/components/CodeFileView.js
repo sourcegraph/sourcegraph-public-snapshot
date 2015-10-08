@@ -46,7 +46,7 @@ var CodeFileView = React.createClass({
 
 	componentDidUpdate(prevProps, prevState) {
 		if (this.isMounted() && !this.codeViewEventBound) {
-			$(this.getDOMNode())
+			$(React.findDOMNode(this))
 				.find(".line-numbered-code")
 				.on("click", CodeFileActions.focusCodeView);
 

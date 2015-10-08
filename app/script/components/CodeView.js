@@ -65,7 +65,7 @@ var CodeView = React.createClass({
 	},
 
 	componentDidUpdate() {
-		var node = $(this.getDOMNode());
+		var node = $(React.findDOMNode(this));
 
 		node.off("scroll");
 		if (this._isTiled()) {
@@ -74,7 +74,7 @@ var CodeView = React.createClass({
 	},
 
 	componentWillUnmount() {
-		$(this.getDOMNode()).off("scroll");
+		$(React.findDOMNode(this)).off("scroll");
 	},
 
 	/**
@@ -92,7 +92,7 @@ var CodeView = React.createClass({
 		if (this._isTiled()) {
 			var lineNumber = lineOrToken.get("number") || lineOrToken.get("line").get("number");
 			amount = this.state.lineHeight * lineNumber - 80;
-			node = $(this.getDOMNode());
+			node = $(React.findDOMNode(this));
 			duration = 0;
 		} else {
 			amount = lineOrToken.getRelativePosition().top - 200;
@@ -109,7 +109,7 @@ var CodeView = React.createClass({
 	 */
 	_onScroll() {
 		var linesPerTile = Math.ceil(screen.height / this.state.lineHeight);
-		var tile = Math.round($(this.getDOMNode()).scrollTop() / (linesPerTile * this.state.lineHeight));
+		var tile = Math.round($(React.findDOMNode(this)).scrollTop() / (linesPerTile * this.state.lineHeight));
 
 		if (tile !== this.state.tileInView) {
 			this.setState({tileInView: tile});

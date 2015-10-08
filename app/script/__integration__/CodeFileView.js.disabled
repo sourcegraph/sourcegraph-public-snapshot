@@ -192,14 +192,14 @@ describe("components/CodeFileView", function() {
 		}, "popup to show", 500);
 
 		runs(function() {
-			expect($(popup.getDOMNode()).find("span.name")[0].innerHTML).to.be("ABC");
+			expect($(React.findDOMNode(popup)).find("span.name")[0].innerHTML).to.be("ABC");
 
 			var example = TestUtils.findRenderedDOMComponentWithClass(popup, "example");
 			var codeView = TestUtils.findRenderedDOMComponentWithClass(example, "line-numbered-code");
 			var codeLine = TestUtils.findRenderedComponentWithType(codeView, CodeLineView);
 			var refToken = TestUtils.findRenderedComponentWithType(codeView, CodeTokenView);
 
-			var $ref = $(refToken.getDOMNode());
+			var $ref = $(React.findDOMNode(refToken));
 			expect($ref.hasClass("ref")).to.beTruthy();
 			expect($ref.hasClass("def")).to.beTruthy();
 			expect($ref.attr("href")).to.be("/repo/path@revision/.unitType/path/to/def/.def/exampleRef");
@@ -234,7 +234,7 @@ describe("components/CodeFileView", function() {
 		}, "context menu to open", 500);
 
 		runs(function() {
-			var menuItems = $(menu.getDOMNode()).find("li");
+			var menuItems = $(React.findDOMNode(menu)).find("li");
 			expect(menuItems[0].innerHTML).to.contain("ABC");
 			expect(menuItems[1].innerHTML).to.contain("QWE");
 			expect(popup.state.closed).to.be(true);
