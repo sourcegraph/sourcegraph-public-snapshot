@@ -81,7 +81,7 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 				appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.Changeset.ID)),
 				op.Repo.URI, op.Changeset.ID, op.Changeset.Title, op.Changeset.Description,
 			)
-			notif.Mention(p, notif.Context{
+			notif.Mention(p, notif.MentionContext{
 				Mentioner:    userStr,
 				MentionerURL: appURL(ctx, router.Rel.URLToUser(userStr)),
 				Where:        fmt.Sprintf("in a changeset %s/%d", op.Repo.URI, op.Changeset.ID),
@@ -152,7 +152,7 @@ func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.Changeset
 				appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.ChangesetID)),
 				op.ChangesetID,
 			)
-			notif.Mention(p, notif.Context{
+			notif.Mention(p, notif.MentionContext{
 				Mentioner:    userStr,
 				MentionerURL: appURL(ctx, router.Rel.URLToUser(userStr)),
 				Where:        fmt.Sprintf("in review %s/%d", op.Repo.URI, op.ChangesetID),

@@ -7,7 +7,7 @@ import (
 )
 
 // Context holds details about the context in which a user was mentioned.
-type Context struct {
+type MentionContext struct {
 	// Mentioner is the person who triggered the mention.
 	Mentioner string
 
@@ -27,7 +27,7 @@ type Context struct {
 
 // Mention notifies a person that it has been mentioned within the given context.
 // The person is contacted by e-mail and/or Slack, whichever available.
-func Mention(p *sourcegraph.Person, nctx Context) {
+func Mention(p *sourcegraph.Person, nctx MentionContext) {
 	if p.Login != "" {
 		slack.PostMessage(slack.PostOpts{Msg: nctx.SlackMsg})
 	}

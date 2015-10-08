@@ -61,7 +61,7 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 				appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
 				in.DefKey.Repo, in.ID, in.Title,
 			)
-			notif.Mention(p, notif.Context{
+			notif.Mention(p, notif.MentionContext{
 				Mentioner:    userStr,
 				MentionerURL: appURL(ctx, app_router.Rel.URLToUser(userStr)),
 				Where:        fmt.Sprintf("in a discussion %s/%d", in.DefKey, in.ID),
@@ -135,7 +135,7 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 				appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
 				in.Comment.DefKey.Repo, discussion.ID, discussion.Title,
 			)
-			notif.Mention(p, notif.Context{
+			notif.Mention(p, notif.MentionContext{
 				Mentioner:    userStr,
 				MentionerURL: appURL(ctx, app_router.Rel.URLToUser(userStr)),
 				Where:        fmt.Sprintf("in a comment of discussion %s/%d", in.Comment.DefKey, discussion.ID),
