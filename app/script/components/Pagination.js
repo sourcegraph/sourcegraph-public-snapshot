@@ -49,27 +49,33 @@ var Pagination = React.createClass({
 		var pageOffsets = this._calculatePageOffsets();
 
 		var pageList = [];
+		if (pageOffsets[0] > 1) {
+			pageList.push(<li key="previous-indicator" className="disabled"><a>…</a></li>);
+		}
 		for (var i=pageOffsets[0]; i<=pageOffsets[1]; i++) {
 			pageList.push(
 				<li key={i} className={i===this.props.currentPage ? "active" : ""}>
-					<a title={`Page ${i}`} onClick={this._onPageChange.bind(this, i)}>{i}</a>
+					<a className="num-page-link"
+						title={`Page ${i}`}
+						onClick={this._onPageChange.bind(this, i)}>{i}</a>
 				</li>
 			);
+		}
+		if (i < this.props.totalPages) {
+			pageList.push(<li key="next-indicator" className="disabled"><a>…</a></li>);
 		}
 
 		return (
 			<ul className="pagination">
-				<li>
-					<a aria-label="Previous"
-						title={"Page 1"}
+				<li key="first" className={this.props.currentPage === 1 ? "disabled" : null}>
+					<a title={"Page 1"}
 						onClick={this._onPageChange.bind(this, 1)}>
 						<span aria-hidden="true">&laquo;</span>
 					</a>
 				</li>
 				{pageList}
-				<li>
-					<a aria-label="Previous"
-						title={`Page ${this.props.totalPages}`}
+				<li key="last" className={this.props.currentPage === this.props.totalPages ? "disabled" : null}>
+					<a title={`Page ${this.props.totalPages}`}
 						onClick={this._onPageChange.bind(this, this.props.totalPages)}>
 						<span aria-hidden="true">&raquo;</span>
 					</a>

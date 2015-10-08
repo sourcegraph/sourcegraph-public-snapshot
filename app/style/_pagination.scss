@@ -1,3 +1,13 @@
-.pagination > li > a {
-	cursor: pointer;
+.pagination {
+	& > li > a {
+		cursor: pointer;
+	}
+
+	.disabled {
+		a, a:hover {
+			color: $gray-mid;
+			background-color: $gray-lightest;
+			cursor: default;
+		}
+	}
 }
