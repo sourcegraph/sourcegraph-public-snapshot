@@ -37,7 +37,7 @@ func (s *repos) changedConfig_Enabled(ctx context.Context, repo *sourcegraph.Rep
 	if repo.GitHub != nil {
 		details = append(details, fmt.Sprintf("%d ★", repo.GitHub.Stars))
 	}
-	go slack.PostMessage(slack.PostOpts{
+	slack.PostMessage(slack.PostOpts{
 		Msg:       fmt.Sprintf("<%s|%s> (%s) enabled by %s", repo.GitHubHTMLURL(), repo.URI, strings.Join(details, ","), login),
 		Username:  "enable",
 		IconEmoji: ":heavy_check_mark:",

@@ -67,7 +67,7 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 			appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.Changeset.ID)),
 			op.Repo.URI, op.Changeset.ID, op.Changeset.Title, op.Changeset.Description,
 		)
-		go slack.PostMessage(slack.PostOpts{Msg: msg})
+		slack.PostMessage(slack.PostOpts{Msg: msg})
 
 		// Notify mentioned people.
 		ppl, err := mdutil.Mentions(ctx, []byte(op.Changeset.Description))
@@ -142,7 +142,7 @@ func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.Changeset
 			}
 			ppl = append(ppl, ppll...)
 		}
-		go slack.PostMessage(slack.PostOpts{Msg: msg.String()})
+		slack.PostMessage(slack.PostOpts{Msg: msg.String()})
 
 		// Notify mentions.
 		for _, p := range ppl {

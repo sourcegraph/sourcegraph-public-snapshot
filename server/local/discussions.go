@@ -47,7 +47,7 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 			appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
 			in.DefKey.Repo, in.ID, in.Title,
 		)
-		go slack.PostMessage(slack.PostOpts{Msg: msg, Channel: slackChannel})
+		slack.PostMessage(slack.PostOpts{Msg: msg, Channel: slackChannel})
 
 		// Notify mentioned people.
 		ppl, err := mdutil.Mentions(ctx, []byte(in.Description))
@@ -121,7 +121,7 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 			appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
 			in.Comment.DefKey.Repo, discussion.ID, discussion.Title,
 		)
-		go slack.PostMessage(slack.PostOpts{Msg: msg, Channel: slackChannel})
+		slack.PostMessage(slack.PostOpts{Msg: msg, Channel: slackChannel})
 
 		// Notify mentioned people.
 		ppl, err := mdutil.Mentions(ctx, []byte(in.Comment.Body))

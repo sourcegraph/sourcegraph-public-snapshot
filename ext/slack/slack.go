@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -97,7 +99,9 @@ func PostMessage(opt PostOpts) {
 		return nil
 	}
 
-	if err := postMessage(); err != nil {
-		log.Printf("WARNING: failed to post Slack message %+v: %s.", o, err)
-	}
+	go func() {
+		if err := postMessage(); err != nil {
+			log15.Warn("Failed to post Slack message", "payload", o, "error", err)
+		}
+	}()
 }

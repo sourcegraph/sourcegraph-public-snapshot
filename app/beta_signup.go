@@ -21,7 +21,7 @@ func serveBetaSignup(w http.ResponseWriter, r *http.Request) error {
 	if err := notif.SendAdminEmail("Beta signup", txt); err != nil {
 		txt += "\n*WARNING*: Failed to send-email"
 	}
-	go slack.PostMessage(slack.PostOpts{
+	slack.PostMessage(slack.PostOpts{
 		Msg:       txt,
 		Username:  "beta signup",
 		IconEmoji: ":+1:",

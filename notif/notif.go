@@ -53,7 +53,7 @@ type Context struct {
 // The person is contacted by e-mail and/or Slack, whichever available.
 func Mention(p *sourcegraph.Person, nctx Context) {
 	if p.Login != "" {
-		go slack.PostMessage(slack.PostOpts{Msg: nctx.SlackMsg})
+		slack.PostMessage(slack.PostOpts{Msg: nctx.SlackMsg})
 	}
 	if p.Email != "" {
 		SendMandrillTemplate("mentions-generic", p.FullName, p.Email,

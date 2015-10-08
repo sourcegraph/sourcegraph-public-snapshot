@@ -111,7 +111,7 @@ func slackContributionsHook(ctx context.Context, op *gitpb.ReceivePackOp, events
 				appURL(ctx, branchURL),
 				repo.URI+"@"+e.Branch,
 			)
-			go slack.PostMessage(slack.PostOpts{Msg: msg})
+			slack.PostMessage(slack.PostOpts{Msg: msg})
 			continue
 		}
 
@@ -136,7 +136,7 @@ func slackContributionsHook(ctx context.Context, op *gitpb.ReceivePackOp, events
 				userStr,
 				appURL(ctx, branchURL), repo.URI+"@"+e.Branch,
 			)
-			go slack.PostMessage(slack.PostOpts{Msg: msg})
+			slack.PostMessage(slack.PostOpts{Msg: msg})
 			continue
 		}
 
@@ -161,7 +161,7 @@ func slackContributionsHook(ctx context.Context, op *gitpb.ReceivePackOp, events
 			appURL(ctx, branchURL), repo.URI+"@"+e.Branch,
 			strings.Join(commitMessages, "\n"),
 		)
-		go slack.PostMessage(slack.PostOpts{Msg: msg})
+		slack.PostMessage(slack.PostOpts{Msg: msg})
 	}
 }
 
