@@ -21,7 +21,7 @@ var DiscussionCreateForm = React.createClass({
 	},
 
 	_create() {
-		var title = this.refs.titleText.getDOMNode().value;
+		var title = this.refs.titleText.value;
 		var body = this.refs.bodyText.value();
 		this.props.onCreate(title, body);
 	},

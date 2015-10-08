@@ -39,7 +39,7 @@ var CodeReviewHeader = React.createClass({
 	 * @private
 	 */
 	_bindKeys() {
-		var el = $(this.refs.inputTitle.getDOMNode());
+		var el = $(this.refs.inputTitle);
 
 		el.keyup(e => {
 			if (!this.isMounted()) return;
@@ -57,7 +57,7 @@ var CodeReviewHeader = React.createClass({
 	 */
 	_unbindKeys() {
 		if (!this.isMounted()) return;
-		$(this.refs.inputTitle.getDOMNode()).off("keyup");
+		$(this.refs.inputTitle).off("keyup");
 	},
 
 	/**
@@ -79,7 +79,7 @@ var CodeReviewHeader = React.createClass({
 	_submitEdit() {
 		if (!this.isMounted()) return;
 
-		var el = $(this.refs.inputTitle.getDOMNode());
+		var el = $(this.refs.inputTitle);
 
 		if (el.val() === this.props.changeset.Title) {
 			this._cancelEdit();
@@ -103,7 +103,7 @@ var CodeReviewHeader = React.createClass({
 		if (!this.isMounted()) return;
 
 		this.setState({editing: true}, () => {
-			$(this.refs.inputTitle.getDOMNode()).focus();
+			$(this.refs.inputTitle).focus();
 			this._bindKeys();
 		});
 	},
