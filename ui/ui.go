@@ -77,6 +77,8 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 
 	r.Get(ui_router.AppdashUploadPageLoad).Handler(p.handler(serveAppdashUploadPageLoad))
 
+	r.Get(ui_router.UserContentUpload).Handler(p.handler(serveUserContentUpload))
+
 	return handlerutil.WithMiddleware(r, mw...)
 }
 

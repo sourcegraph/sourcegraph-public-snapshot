@@ -29,6 +29,8 @@ const (
 	SearchTokens = "search.tokens"
 
 	AppdashUploadPageLoad = "appdash.upload-page-load"
+
+	UserContentUpload = "usercontent.upload"
 )
 
 func New(base *mux.Router, isTest bool) *mux.Router {
@@ -134,6 +136,10 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 	base.Path("/.appdash/upload-page-load").
 		Methods(m("POST")...).
 		Name(AppdashUploadPageLoad)
+
+	base.Path("/.usercontent").
+		Methods(m("POST")...).
+		Name(UserContentUpload)
 
 	return base
 }
