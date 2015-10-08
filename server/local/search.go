@@ -60,6 +60,8 @@ func (s *search) Search(ctx context.Context, opt *sourcegraph.SearchOptions) (*s
 		res.Repos = repos.Repos
 	}
 
+	var defsUnavailable bool
+
 	if res.Plan.Defs != nil && opt.Defs {
 		res.Plan.Defs.ListOptions = opt.ListOptions
 		res.Plan.Defs.Doc = true
@@ -68,6 +70,9 @@ func (s *search) Search(ctx context.Context, opt *sourcegraph.SearchOptions) (*s
 			return nil, err
 		}
 		res.Defs = defList.Defs
+		if len(res.Defs) == 0 {
+			defsUnavailable = true
+		}
 	}
 
 	if res.Plan.Users != nil && opt.People {
@@ -103,7 +108,11 @@ func (s *search) Search(ctx context.Context, opt *sourcegraph.SearchOptions) (*s
 		}
 	}
 
-	mediumCache(ctx)
+	if defsUnavailable {
+		noCache(ctx)
+	} else {
+		mediumCache(ctx)
+	}
 	return res, nil
 }
 
