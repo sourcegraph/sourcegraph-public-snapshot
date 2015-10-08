@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/mattbaird/gochimp"
 	"github.com/sourcegraph/go-ses"
 )
@@ -48,7 +50,26 @@ func SendAdminEmail(title string, body string) error {
 }
 
 // SendMandrillTemplate sends an email template through mandrill.
-func SendMandrillTemplate(template string, name string, email string, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
+func SendMandrillTemplate(template, name, email string, mergeVars []gochimp.Var) {
+	if !mandrillEnabled {
+		log15.Info("skipped sending email because MANDRILL_KEY is empty", "template", template, "name", name, "email", email)
+		return
+	}
+	go func() {
+		responses, err := SendMandrillTemplateBlocking(template, name, email, mergeVars)
+		if err != nil {
+			log15.Error("Failed to send email through Mandrill", "template", template, "name", name, "email", email)
+		} else if len(responses) != 1 {
+			log15.Error("Unexpected responses from Mandrill", "template", template, "name", name, "email", email, "responses", responses)
+		} else if responses[0].RejectedReason != "" {
+			log15.Error("Email rejected by Mandrill", "template", template, "name", name, "email", email, "response", responses[0])
+		}
+	}()
+}
+
+// SendMandrillTemplateBlocking sends an email template through mandrill, but
+// blocks until we have a response from Mandrill
+func SendMandrillTemplateBlocking(template string, name string, email string, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
 	if !mandrillEnabled {
 		return nil, fmt.Errorf("skipped sending email because MANDRILL_KEY is empty:\nname: %s, email: %s", name, email)
 	}

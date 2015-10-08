@@ -113,7 +113,7 @@ func isValidLogin(login string) bool {
 }
 
 // sendEmail lets us avoid sending emails in tests.
-var sendEmail = notif.SendMandrillTemplate
+var sendEmail = notif.SendMandrillTemplateBlocking
 
 func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	defer noCache(ctx)
