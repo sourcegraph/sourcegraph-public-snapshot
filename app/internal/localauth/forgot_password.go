@@ -64,7 +64,7 @@ func serveForgotPasswordSubmit(w http.ResponseWriter, r *http.Request) error {
 	_, err := cl.Accounts.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: form.Email})
 	if err != nil {
 		switch errcode.GRPC(err) {
-		case codes.NotFound:
+		case codes.NotFound, codes.InvalidArgument:
 			form.AddFieldError("Email", formErrorNoEmailExists)
 			return serveForgotPasswordForm(w, r, form)
 		default:
