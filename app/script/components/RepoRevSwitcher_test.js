@@ -20,7 +20,7 @@ describe("components/RepoRevSwitcher", () => {
 		var btn = TestUtils.findRenderedDOMComponentWithClass(component, "repo-rev-switcher");
 		TestUtils.Simulate.click(btn);
 
-		expect($(btn.getDOMNode()).find(".dropdown-menu").html()).to.be.ok();
+		expect($(React.findDOMNode(btn)).find(".dropdown-menu").html()).to.be.ok();
 	});
 
 	it("should link to file URLs for available branches", () => {
@@ -50,8 +50,7 @@ describe("components/RepoRevSwitcher", () => {
 		var menu = TestUtils.findRenderedDOMComponentWithClass(component, "dropdown-menu");
 		TestUtils.Simulate.click(btn);
 
-		var branchLinks = TestUtils.scryRenderedDOMComponentsWithTag(menu, "a");
-		var branchHrefs = branchLinks.map((a) => $(a.getDOMNode()).attr("href"));
+		var branchHrefs = Reflect.apply(Array.prototype.map, menu.querySelectorAll("a"), [(a) => $(a).attr("href")]);
 		expect(branchHrefs).to.contain(router.fileURL(props.repoSpec, "master", props.path));
 		expect(branchHrefs).to.contain(router.fileURL(props.repoSpec, "hotfix", props.path));
 	});
@@ -80,8 +79,7 @@ describe("components/RepoRevSwitcher", () => {
 		var menu = TestUtils.findRenderedDOMComponentWithClass(component, "dropdown-menu");
 		TestUtils.Simulate.click(btn);
 
-		var branchLinks = TestUtils.scryRenderedDOMComponentsWithTag(menu, "a");
-		var branchHrefs = branchLinks.map((a) => $(a.getDOMNode()).attr("href"));
+		var branchHrefs = Reflect.apply(Array.prototype.map, menu.querySelectorAll("a"), [(a) => $(a).attr("href")]);
 		expect(branchHrefs).to.contain(router.commitsURL(props.repoSpec, "master"));
 	});
 });

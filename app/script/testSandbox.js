@@ -11,8 +11,8 @@ var React = require("react");
 var sandbox = sinon.sandbox.create();
 
 sandbox.reactContainers = [];
-sandbox.renderComponent = function(instance) {
-	var container = global.document.createElement("div");
+sandbox.renderComponent = function(instance, container) {
+	container = container || global.document.createElement("div");
 	sandbox.reactContainers.push(container);
 	return React.render(instance, container);
 };

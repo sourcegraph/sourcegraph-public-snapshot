@@ -128,8 +128,7 @@ describe("components/DiscussionSnippet", () => {
 		TestUtils.Simulate.click(view.refs.createBtn);
 		expect(onCreate.callCount).to.be(1);
 
-		var discussion = TestUtils.findRenderedDOMComponentWithClass(view, "discussion");
-		var discussionTitle = TestUtils.findRenderedDOMComponentWithTag(discussion, "a");
+		var discussionTitle = React.findDOMNode(view).querySelector(".discussion a");
 
 		TestUtils.Simulate.click(discussionTitle);
 		expect(onClick.callCount).to.be(1);
