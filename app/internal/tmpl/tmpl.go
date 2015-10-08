@@ -19,8 +19,8 @@ import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/canonicalurl"
 	"src.sourcegraph.com/sourcegraph/app/internal/godocsupport"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
@@ -305,7 +305,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			Debug:            handlerutil.DebugMode(req),
 			ReturnTo:         returnTo,
 
-			DisableExternalLinks: appconf.Current.DisableExternalLinks,
+			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,
 			FullWidth:            existingCommon.FullWidth,
 

@@ -13,9 +13,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
-// Flags configure the app. The values set by CLI flags (or during
-// testing) are stored in Current.
-type Flags struct {
+// Flags configure the app. The values are set by CLI flags (or during testing).
+var Flags struct {
 	NoAutoBuild bool `long:"app.no-auto-build" description:"disable automatic building of repositories from the UI"`
 
 	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
@@ -59,12 +58,8 @@ type Flags struct {
 	ReloadAssets bool `long:"reload" description:"(development mode only) reload app templates and other assets on each request"`
 }
 
-// Current is the configuration set by the CLI flags (if any) and
-// consulted by the app.
-var Current Flags
-
 func init() {
 	cli.PostInit = append(cli.PostInit, func() {
-		cli.Serve.AddGroup("App", "App flags", &Current)
+		cli.Serve.AddGroup("App", "App flags", &Flags)
 	})
 }

@@ -18,7 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -57,7 +57,7 @@ var TemplateFunctions = htmpl.FuncMap{
 	"defQualifiedNameAndType":     sourcecode.DefQualifiedNameAndType,
 	"overrideStyleViaRegexpFlags": sourcecode.OverrideStyleViaRegexpFlags,
 
-	"appconf":   func() *appconf.Flags { return &appconf.Current },
+	"appconf":   func() interface{} { return &appconf.Flags },
 	"authFlags": func() *authutil.Flags { return &authutil.ActiveFlags },
 
 	"buildClass":  buildClass,
@@ -96,10 +96,10 @@ var TemplateFunctions = htmpl.FuncMap{
 		return m
 	},
 
-	"customLogo":         func() htmpl.HTML { return appconf.Current.CustomLogo },
-	"motd":               func() htmpl.HTML { return appconf.Current.MOTD },
-	"customFeedbackForm": func() htmpl.HTML { return appconf.Current.CustomFeedbackForm },
-	"autoBuild":          func() bool { return !appconf.Current.NoAutoBuild },
+	"customLogo":         func() htmpl.HTML { return appconf.Flags.CustomLogo },
+	"motd":               func() htmpl.HTML { return appconf.Flags.MOTD },
+	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
+	"autoBuild":          func() bool { return !appconf.Flags.NoAutoBuild },
 
 	"trimPrefix": strings.TrimPrefix,
 
@@ -228,8 +228,8 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"hasPrefix":                 strings.HasPrefix,
 	"ifTemplate":                ifTemplate,
-	"googleAnalyticsTrackingID": func() string { return appconf.Current.GoogleAnalyticsTrackingID },
-	"heapAnalyticsID":           func() string { return appconf.Current.HeapAnalyticsID },
+	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
+	"heapAnalyticsID":           func() string { return appconf.Flags.HeapAnalyticsID },
 
 	"deployedGitCommitID": func() string { return envutil.GitCommitID },
 	"hostname":            func() string { return hostname },
@@ -255,8 +255,8 @@ var TemplateFunctions = htmpl.FuncMap{
 	"repoEnabledFrames":          repoEnabledFrames,
 	"repoEnabledFrameChangesets": repoEnabledFrameChangesets,
 	"showSearchForm":             showSearchForm,
-	"fileSearchDisabled":         func() bool { return appconf.Current.DisableSearch },
-	"disableCloneURL":            func() bool { return appconf.Current.DisableCloneURL },
+	"fileSearchDisabled":         func() bool { return appconf.Flags.DisableSearch },
+	"disableCloneURL":            func() bool { return appconf.Flags.DisableCloneURL },
 
 	// Returns whether or not any srclib toolchains are installed.
 	"haveToolchain": func() bool {

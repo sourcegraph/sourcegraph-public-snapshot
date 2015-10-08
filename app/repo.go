@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -93,7 +93,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	// Special-case: redirect "user/repo" URLs (with no "github.com/") to the
 	// path "/github.com/user/repo". This lets you use
 	// "sourcegraph.com/user/repo" as your repo's URL.
-	if appconf.Current.EnableGitHubRepoShortURIAliases {
+	if appconf.Flags.EnableGitHubRepoShortURIAliases {
 		if parts := strings.Split(repoSpec.URI, "/"); len(parts) == 2 && !strings.Contains(parts[0], ".") {
 			http.Redirect(w, r, router.Rel.URLToRepo("github.com/"+repoSpec.URI).String(), http.StatusSeeOther)
 			return nil
@@ -127,7 +127,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	// to "/~xyz" for the live site. That's because people have
 	// existing links to http://sourcegraph.com/myname and we don't
 	// want to break these.
-	if appconf.Current.EnableGitHubStyleUserPaths {
+	if appconf.Flags.EnableGitHubStyleUserPaths {
 		if strings.Count(repoSpec.URI, "/") == 0 {
 			http.Redirect(w, r, router.Rel.URLToUser(repoSpec.URI).String(), http.StatusSeeOther)
 			return nil
@@ -152,7 +152,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// If we have never built this repo, build it.
-		if !appconf.Current.NoAutoBuild && !bc.Built {
+		if !appconf.Flags.NoAutoBuild && !bc.Built {
 			form := sourcegraph.BuildCreateOptions{
 				BuildConfig: sourcegraph.BuildConfig{
 					Import:   true,
@@ -293,7 +293,7 @@ func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
 	}
 	opt.Defs = true
 
-	opt.Tree = !appconf.Current.DisableRepoTreeSearch
+	opt.Tree = !appconf.Flags.DisableRepoTreeSearch
 	opt.ListOptions.PerPage = maxResults
 
 	results, err := apiclient.Search.Search(ctx, &opt)

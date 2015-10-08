@@ -18,8 +18,8 @@ import (
 	"golang.org/x/tools/godoc/vfs/httpfs"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
@@ -277,7 +277,7 @@ func (mw *staticMiddleware) walkVFS(dir string, fn func(path string, fi os.FileI
 // The force parameter specifies whether or not to force reloading e.g. if both
 // ReloadAssets==false && Flags.Dev==false (used for first initialization)
 func (mw *staticMiddleware) reloadContent(force bool) error {
-	if !appconf.Current.ReloadAssets && !Flags.Dev && !force {
+	if !appconf.Flags.ReloadAssets && !Flags.Dev && !force {
 		// Don't need to reload yet.
 		return nil
 	}

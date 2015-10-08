@@ -8,7 +8,7 @@ package app_test
 import (
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
 )
@@ -17,7 +17,7 @@ import (
 var sampleBlogPostSlug = "most-popular-django-model-field"
 
 func TestBlogIndex(t *testing.T) {
-	appconf.Current.Blog = true
+	appconf.Flags.Blog = true
 	c, _ := apptest.New()
 
 	resp, err := c.Get(router.Rel.URLTo(router.BlogIndex).String())
@@ -33,7 +33,7 @@ func TestBlogIndex(t *testing.T) {
 }
 
 func TestBlogIndex_Atom(t *testing.T) {
-	appconf.Current.Blog = true
+	appconf.Flags.Blog = true
 	c, _ := apptest.New()
 
 	resp, err := c.Get(router.Rel.URLToBlogAtomFeed().String())
@@ -49,7 +49,7 @@ func TestBlogIndex_Atom(t *testing.T) {
 }
 
 func TestBlogPost(t *testing.T) {
-	appconf.Current.Blog = true
+	appconf.Flags.Blog = true
 	c, _ := apptest.New()
 
 	resp, err := c.Get(router.Rel.URLToBlogPost(sampleBlogPostSlug).String())

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
@@ -32,12 +32,12 @@ func checkForUpdates() {
 		availableUpdate.Unlock()
 
 		// Wait a good duration before checking again.
-		time.Sleep(appconf.Current.CheckForUpdates)
+		time.Sleep(appconf.Flags.CheckForUpdates)
 	}
 }
 
 func init() {
-	if appconf.Current.CheckForUpdates != 0 {
+	if appconf.Flags.CheckForUpdates != 0 {
 		go checkForUpdates()
 	}
 }

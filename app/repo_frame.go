@@ -13,7 +13,7 @@ import (
 	gcontext "github.com/gorilla/context"
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
@@ -23,7 +23,7 @@ import (
 
 // repoEnabledFrames returns apps that are enabled for the given repo. Map key is the app id.
 func repoEnabledFrames(repo *sourcegraph.Repo) map[string]platform.RepoFrame {
-	if appconf.Current.DisableApps {
+	if appconf.Flags.DisableApps {
 		return nil
 	}
 
@@ -43,7 +43,7 @@ func repoEnabledFrames(repo *sourcegraph.Repo) map[string]platform.RepoFrame {
 
 // TODO: Remove this once Changeset is a proper app, then repoEnabledFrames will cover this special case.
 func repoEnabledFrameChangesets(repo *sourcegraph.Repo) bool {
-	if appconf.Current.DisableApps {
+	if appconf.Flags.DisableApps {
 		return false
 	}
 

@@ -11,7 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -33,12 +33,12 @@ func serveSearchResults(w http.ResponseWriter, r *http.Request) error {
 	// If searching in repo or if global search is enabled then it's
 	// okay to search for everything -- otherwise we must disable them
 	// all (defs, people, and tree search are too slow).
-	if inRepo || !appconf.Current.DisableGlobalSearch {
+	if inRepo || !appconf.Flags.DisableGlobalSearch {
 		opt.Defs = true
 		opt.Repos = true
 		opt.People = true
 
-		opt.Tree = !appconf.Current.DisableRepoTreeSearch
+		opt.Tree = !appconf.Flags.DisableRepoTreeSearch
 	}
 
 	ctx := httpctx.FromRequest(r)
@@ -190,7 +190,7 @@ func searchFormInfo(tmplData interface{}) (*searchForm, error) {
 			return nil, err
 		}
 	} else {
-		if appconf.Current.DisableGlobalSearch {
+		if appconf.Flags.DisableGlobalSearch {
 			return nil, nil
 		}
 
@@ -231,11 +231,11 @@ func showSearchForm(ctx context.Context, query url.Values) bool {
 		return true
 	}
 
-	if appconf.Current.DisableSearch {
+	if appconf.Flags.DisableSearch {
 		return false
 	}
 
-	if appconf.Current.CustomNavLayout != "" {
+	if appconf.Flags.CustomNavLayout != "" {
 		return false
 	}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/spec"
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
 )
@@ -159,7 +159,7 @@ func New(base *mux.Router) *Router {
 	user := base.PathPrefix(userPath).Subrouter()
 	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
 	user.Path("/.settings/emails").Methods("GET").Name(UserSettingsEmails)
-	if !appconf.Current.DisableIntegrations {
+	if !appconf.Flags.DisableIntegrations {
 		integrationsPath := "/.settings/integrations"
 		integrations := user.PathPrefix(integrationsPath).Subrouter()
 		user.Path(integrationsPath).Methods("GET").Name(UserSettingsIntegrations)

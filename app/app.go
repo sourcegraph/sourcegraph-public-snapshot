@@ -13,10 +13,10 @@ import (
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/csp"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/assets"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal"
-	"src.sourcegraph.com/sourcegraph/app/internal/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -108,7 +108,7 @@ func NewHandler(r *router.Router) http.Handler {
 	gitserver.AddHandlers(&r.Router)
 
 	// Set handlers for the installed routes.
-	if appconf.Current.Blog {
+	if appconf.Flags.Blog {
 		r.Get(router.BlogIndex).Handler(internal.Handler(serveBlogIndex))
 		r.Get(router.BlogIndexAtom).Handler(internal.Handler(serveBlogIndexAtom))
 		r.Get(router.BlogPost).Handler(internal.Handler(serveBlogPost))
@@ -136,7 +136,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.UserSettingsProfile).Handler(internal.Handler(serveUserSettingsProfile))
 	r.Get(router.UserSettingsEmails).Handler(internal.Handler(serveUserSettingsEmails))
-	if !appconf.Current.DisableIntegrations {
+	if !appconf.Flags.DisableIntegrations {
 		r.Get(router.UserSettingsIntegrations).Handler(internal.Handler(serveUserSettingsIntegrations))
 		r.Get(router.UserSettingsIntegrationsUpdate).Handler(internal.Handler(serveUserSettingsIntegrationsUpdate))
 	}
@@ -218,7 +218,7 @@ func init() {
 }
 
 func tmplReloadMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if appconf.Current.ReloadAssets {
+	if appconf.Flags.ReloadAssets {
 		tmpl.Load()
 	}
 	next(w, r)
