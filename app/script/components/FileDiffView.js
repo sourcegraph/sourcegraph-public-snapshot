@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var router = require("../routing/router");
 
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
@@ -47,7 +48,7 @@ var FileDiffView = React.createClass({
 	mixins: [ModelPropWatcherMixin],
 
 	componentDidMount() {
-		if (this.isMounted) this.props.model.__node = require("jquery")(React.findDOMNode(this));
+		if (this.isMounted) this.props.model.__node = require("jquery")(ReactDOM.findDOMNode(this));
 	},
 
 	_onTokenFocus(token, evt) {

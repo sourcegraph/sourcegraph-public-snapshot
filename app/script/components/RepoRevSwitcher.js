@@ -1,5 +1,6 @@
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var router = require("../routing/router");
 var Fuse = require("fuse.js");
 
@@ -95,9 +96,9 @@ var RepoRevSwitcher = React.createClass({
 	},
 
 	_onToggleDropdown() {
-		var $el = $(React.findDOMNode(this));
+		var $el = $(ReactDOM.findDOMNode(this));
 		if ($el.hasClass("open")) {
-			var searchInput = React.findDOMNode(this.refs.itemSearch);
+			var searchInput = ReactDOM.findDOMNode(this.refs.itemSearch);
 			$(searchInput).focus();
 		}
 
@@ -112,7 +113,7 @@ var RepoRevSwitcher = React.createClass({
 	},
 
 	_onUpdateSearchPattern() {
-		this.setState({searchPattern: React.findDOMNode(this.refs.itemSearch).value});
+		this.setState({searchPattern: ReactDOM.findDOMNode(this.refs.itemSearch).value});
 	},
 
 

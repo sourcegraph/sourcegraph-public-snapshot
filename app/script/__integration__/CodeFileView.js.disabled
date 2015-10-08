@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var CodeFileView = require("../components/CodeFileView");
 var CodeLineView = require("../components/CodeLineView");
@@ -155,11 +156,11 @@ describe("components/CodeFileView", function() {
 		});
 
 		waitsFor(function() {
-			return $(React.findDOMNode(lines[0])).hasClass("main-byte-range") === true;
+			return $(ReactDOM.findDOMNode(lines[0])).hasClass("main-byte-range") === true;
 		}, "line 1 to highlight", 200);
 
 		runs(function() {
-			expect($(React.findDOMNode(lines[1])).hasClass("main-byte-range")).to.beFalsy();
+			expect($(ReactDOM.findDOMNode(lines[1])).hasClass("main-byte-range")).to.beFalsy();
 		});
 	});
 
@@ -192,14 +193,14 @@ describe("components/CodeFileView", function() {
 		}, "popup to show", 500);
 
 		runs(function() {
-			expect($(React.findDOMNode(popup)).find("span.name")[0].innerHTML).to.be("ABC");
+			expect($(ReactDOM.findDOMNode(popup)).find("span.name")[0].innerHTML).to.be("ABC");
 
 			var example = TestUtils.findRenderedDOMComponentWithClass(popup, "example");
 			var codeView = TestUtils.findRenderedDOMComponentWithClass(example, "line-numbered-code");
 			var codeLine = TestUtils.findRenderedComponentWithType(codeView, CodeLineView);
 			var refToken = TestUtils.findRenderedComponentWithType(codeView, CodeTokenView);
 
-			var $ref = $(React.findDOMNode(refToken));
+			var $ref = $(ReactDOM.findDOMNode(refToken));
 			expect($ref.hasClass("ref")).to.beTruthy();
 			expect($ref.hasClass("def")).to.beTruthy();
 			expect($ref.attr("href")).to.be("/repo/path@revision/.unitType/path/to/def/.def/exampleRef");
@@ -234,7 +235,7 @@ describe("components/CodeFileView", function() {
 		}, "context menu to open", 500);
 
 		runs(function() {
-			var menuItems = $(React.findDOMNode(menu)).find("li");
+			var menuItems = $(ReactDOM.findDOMNode(menu)).find("li");
 			expect(menuItems[0].innerHTML).to.contain("ABC");
 			expect(menuItems[1].innerHTML).to.contain("QWE");
 			expect(popup.state.closed).to.be(true);

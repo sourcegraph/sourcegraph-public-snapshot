@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 
 var globals = require("../globals");
 var SearchResultsView = require("../components/SearchResultsView");
@@ -27,7 +28,7 @@ module.exports.searchRepo = (query, repo) => {
 function showResultsView() {
 	if (searchViewIsActive) return;
 
-	React.render((
+	ReactDOM.render((
 		<SearchResultsView />
 	), document.getElementById("main"));
 	searchViewIsActive = true;

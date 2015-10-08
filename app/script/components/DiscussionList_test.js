@@ -4,6 +4,7 @@ var sinon = require("sinon");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var DiscussionCollection = require("../stores/collections/DiscussionCollection");
 var DiscussionList = require("./DiscussionList");
@@ -65,7 +66,7 @@ describe("components/DiscussionList", () => {
 			expect($(node).find("p.body").text()).to.contain(attrs.Description);
 		};
 
-		var $root = $(React.findDOMNode(view));
+		var $root = $(ReactDOM.findDOMNode(view));
 		var all = $root.find(".discussions-list li");
 
 		expect(all.length).to.be(5);

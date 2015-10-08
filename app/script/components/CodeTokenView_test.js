@@ -3,6 +3,7 @@ var expect = require("expect.js");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var CodeTokenView = require("./CodeTokenView");
 var CodeTokenModel = require("../stores/models/CodeTokenModel");
@@ -20,9 +21,9 @@ describe("components/CodeTokenView", () => {
 		var a = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var span = TestUtils.findRenderedDOMComponentWithTag(component, "span");
 
-		expect($(React.findDOMNode(a)).hasClass("ref")).to.be(true);
-		expect($(React.findDOMNode(span)).hasClass("pln")).to.be(true);
-		expect($(React.findDOMNode(span)).html()).to.be("abc");
+		expect($(ReactDOM.findDOMNode(a)).hasClass("ref")).to.be(true);
+		expect($(ReactDOM.findDOMNode(span)).hasClass("pln")).to.be(true);
+		expect($(ReactDOM.findDOMNode(span)).html()).to.be("abc");
 	});
 
 	it("should correctly apply classes for token type DEF", () => {
@@ -36,10 +37,10 @@ describe("components/CodeTokenView", () => {
 		var a = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var span = TestUtils.findRenderedDOMComponentWithTag(component, "span");
 
-		expect($(React.findDOMNode(a)).hasClass("ref")).to.be(true);
-		expect($(React.findDOMNode(a)).hasClass("def")).to.be(true);
-		expect($(React.findDOMNode(span)).hasClass("pln")).to.be(true);
-		expect($(React.findDOMNode(span)).html()).to.be("abc");
+		expect($(ReactDOM.findDOMNode(a)).hasClass("ref")).to.be(true);
+		expect($(ReactDOM.findDOMNode(a)).hasClass("def")).to.be(true);
+		expect($(ReactDOM.findDOMNode(span)).hasClass("pln")).to.be(true);
+		expect($(ReactDOM.findDOMNode(span)).html()).to.be("abc");
 	});
 
 	it("should correctly apply classes for highlighted tokens", () => {
@@ -53,7 +54,7 @@ describe("components/CodeTokenView", () => {
 		var component = sandbox.renderComponent(<CodeTokenView model={model} />);
 		var a = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 
-		expect($(React.findDOMNode(a)).hasClass("highlight-secondary")).to.be(true);
+		expect($(ReactDOM.findDOMNode(a)).hasClass("highlight-secondary")).to.be(true);
 	});
 
 	it("should correctly apply classes for selected tokens", () => {
@@ -67,7 +68,7 @@ describe("components/CodeTokenView", () => {
 		var component = sandbox.renderComponent(<CodeTokenView model={model} />);
 		var a = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 
-		expect($(React.findDOMNode(a)).hasClass("highlight-primary")).to.be(true);
+		expect($(ReactDOM.findDOMNode(a)).hasClass("highlight-primary")).to.be(true);
 	});
 
 	it("the selected property should override the highlighted property", () => {
@@ -82,8 +83,8 @@ describe("components/CodeTokenView", () => {
 		var component = sandbox.renderComponent(<CodeTokenView model={model} />);
 		var a = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 
-		expect($(React.findDOMNode(a)).hasClass("highlight-primary")).to.be(true);
-		expect($(React.findDOMNode(a)).hasClass("highlight-secondary")).to.be(false);
+		expect($(ReactDOM.findDOMNode(a)).hasClass("highlight-primary")).to.be(true);
+		expect($(ReactDOM.findDOMNode(a)).hasClass("highlight-secondary")).to.be(false);
 	});
 
 	it("should call the set function for click events", () => {

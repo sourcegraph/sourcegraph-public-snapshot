@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var $ = require("jquery");
 var classNames = require("classnames");
 var globals = require("../globals");
@@ -36,7 +37,7 @@ var CodeTokenView = React.createClass({
 	componentDidMount() {
 		if (!this.isMounted()) return;
 
-		var el = React.findDOMNode(this);
+		var el = ReactDOM.findDOMNode(this);
 
 		if (typeof this.props.onTokenFocus === "function") {
 			el.addEventListener("mouseenter", this._onFocus);
@@ -52,7 +53,7 @@ var CodeTokenView = React.createClass({
 	componentWillUnmount() {
 		if (!this.isMounted()) return;
 
-		var el = React.findDOMNode(this);
+		var el = ReactDOM.findDOMNode(this);
 		el.removeEventListener("mouseenter", this._onFocus);
 		el.removeEventListener("mouseleave", this._onBlur);
 	},

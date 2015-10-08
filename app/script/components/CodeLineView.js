@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var globals = require("../globals");
 var $ = require("jquery");
 var classNames = require("classnames");
@@ -51,7 +52,7 @@ var CodeLineView = React.createClass({
 	mixins: [ModelPropWatcherMixin],
 
 	componentDidMount() {
-		if (this.isMounted()) this.props.model.__node = $(React.findDOMNode(this));
+		if (this.isMounted()) this.props.model.__node = $(ReactDOM.findDOMNode(this));
 	},
 
 	/**

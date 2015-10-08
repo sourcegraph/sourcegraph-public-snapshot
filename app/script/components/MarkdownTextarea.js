@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var $ = require("jquery");
 var classNames = require("classnames");
 var MarkdownView = require("./MarkdownView");
@@ -34,7 +35,7 @@ var MarkdownTextarea = React.createClass({
 	_showPreview() {
 		this.setState({
 			activeTab: TAB_PREVIEW,
-			bodyMarkdown: $(React.findDOMNode(this)).find(".raw-body").val(),
+			bodyMarkdown: $(ReactDOM.findDOMNode(this)).find(".raw-body").val(),
 		});
 	},
 
@@ -45,7 +46,7 @@ var MarkdownTextarea = React.createClass({
 	 * @returns {string|undefined} If a new value is set, undefined is returned.
 	 */
 	value(str) {
-		var txt = $(React.findDOMNode(this)).find(".raw-body");
+		var txt = $(ReactDOM.findDOMNode(this)).find(".raw-body");
 		if (typeof str === "string") {
 			return txt.val(str);
 		}

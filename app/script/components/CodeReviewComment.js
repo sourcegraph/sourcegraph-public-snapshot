@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var CurrentUser = require("../CurrentUser");
 var moment = require("moment");
 var $ = require("jquery");
@@ -24,7 +25,7 @@ var CodeReviewComment = React.createClass({
 	componentDidMount() {
 		if (this.props.comment) {
 			this.props.comment.on("change", this._updateState, this);
-			this.props.comment.__node = $(React.findDOMNode(this));
+			this.props.comment.__node = $(ReactDOM.findDOMNode(this));
 		}
 	},
 
@@ -46,7 +47,7 @@ var CodeReviewComment = React.createClass({
 	 */
 	_onEdit(e) {
 		e.preventDefault();
-		if (!React.findDOMNode(this)) return;
+		if (!ReactDOM.findDOMNode(this)) return;
 		if (typeof this.props.onEdit === "function") {
 			this.props.onEdit(this.refs.commentEdit.value(), e);
 		}

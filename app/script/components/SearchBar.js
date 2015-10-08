@@ -1,18 +1,19 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var SearchRouter = require("../routing/SearchRouter");
 
 var SearchBar = React.createClass({
 	componentDidMount() {
 		if (this.props.searchOptions) {
 			var query = this.props.searchOptions.Query;
-			React.findDOMNode(this.refs.queryInput).value = query;
+			ReactDOM.findDOMNode(this.refs.queryInput).value = query;
 			this._submitSearch();
 		}
 	},
 
 	_submitSearch(e) {
 		if (e) e.preventDefault();
-		var query = React.findDOMNode(this.refs.queryInput).value;
+		var query = ReactDOM.findDOMNode(this.refs.queryInput).value;
 		if (this.props.repo) {
 			SearchRouter.searchRepo(query, this.props.repo);
 		}

@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
 var $ = require("jquery");
 
@@ -18,7 +19,7 @@ var TokenPopoverView = React.createClass({
 			var x = evt.clientX, pw = 380; // popover width
 			if (x > window.innerWidth-pw) x = window.innerWidth-pw;
 
-			$(React.findDOMNode(this)).css({
+			$(ReactDOM.findDOMNode(this)).css({
 				top: evt.clientY + 15,
 				left: x + 15,
 			});

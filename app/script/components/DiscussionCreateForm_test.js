@@ -4,6 +4,7 @@ var sinon = require("sinon");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var DiscussionCreateForm = require("./DiscussionCreateForm");
 
@@ -16,7 +17,7 @@ describe("components/DiscussionCreateForm", () => {
 				onCreate={() => {}} />
 		);
 
-		expect($(React.findDOMNode(view)).find("p").text()).to.contain("defName");
+		expect($(ReactDOM.findDOMNode(view)).find("p").text()).to.contain("defName");
 	});
 
 	it("should correctly submit or cancel a discussion creation", () => {
@@ -30,7 +31,7 @@ describe("components/DiscussionCreateForm", () => {
 		TestUtils.Simulate.click(view.refs.cancelBtn);
 		expect(view.props.onCancel.callCount).to.be(1);
 
-		$(React.findDOMNode(view.refs.titleText)).val("discussion-title");
+		$(ReactDOM.findDOMNode(view.refs.titleText)).val("discussion-title");
 		sinon.stub(view.refs.bodyText, "value").returns("discussion-body");
 		TestUtils.Simulate.click(view.refs.createBtn);
 		expect(view.props.onCreate.callCount).to.be(1);

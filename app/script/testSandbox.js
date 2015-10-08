@@ -6,7 +6,7 @@ global.window = document.defaultView;
 global.navigator = {
 	userAgent: "test",
 };
-var React = require("react");
+var ReactDOM = require("react-dom");
 
 var sandbox = sinon.sandbox.create();
 
@@ -14,11 +14,11 @@ sandbox.reactContainers = [];
 sandbox.renderComponent = function(instance, container) {
 	container = container || global.document.createElement("div");
 	sandbox.reactContainers.push(container);
-	return React.render(instance, container);
+	return ReactDOM.render(instance, container);
 };
 
 afterEach(function() {
-	sandbox.reactContainers.forEach(React.unmountComponentAtNode);
+	sandbox.reactContainers.forEach(ReactDOM.unmountComponentAtNode);
 	sandbox.reactContainers = [];
 
 	sandbox.restore();

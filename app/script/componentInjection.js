@@ -1,5 +1,6 @@
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 
 var globals = require("./globals");
 var CodeFileView = require("./components/CodeFileView");
@@ -33,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		el = $("#SearchBar");
-		React.render(
+		ReactDOM.render(
 			<SearchBar
 				repo={currentRepo||null}
 				searchOptions={searchOptions||null} />,
@@ -43,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $("#CodeFileView");
 	if (el.length > 0) {
-		React.render(
+		ReactDOM.render(
 			<CodeFileView
 				source={el[0].dataset.source}
 				data={window.preloadedCodeViewFile||null} />,
@@ -53,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $("#CodeReviewView");
 	if (el.length > 0) {
-		React.render(
+		ReactDOM.render(
 			<CodeReview data={window.preloadedReviewData||null} />,
 			el[0]
 		);
@@ -61,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $(".react-close-changeset-button");
 	if (el.length > 0) {
-		React.render(
+		ReactDOM.render(
 			<CloseChangesetButton {...el[0].dataset} />,
 			el[0]
 		);
@@ -69,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $("#RepoCompareView");
 	if (el.length > 0) {
-		React.render(
+		ReactDOM.render(
 			<CompareView data={window.preloadedDiffData||null}
 				revisionHeader={el.data("revisionHeader")} />,
 			el[0]
@@ -78,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = document.querySelector("[data-react=DeltaDefsContainer]");
 	if (el) {
-		React.render(
+		ReactDOM.render(
 			<DeltaDefsContainer
 				deltaSpec={JSON.parse(el.dataset.deltaSpec)}
 				deltaRouteVars={JSON.parse(el.dataset.deltaRouteVars)} />,
@@ -88,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = document.querySelector("[data-react=DeltaImpactContainer]");
 	if (el) {
-		React.render(
+		ReactDOM.render(
 			<DeltaImpactContainer
 				deltaSpec={JSON.parse(el.dataset.deltaSpec)}
 				deltaRouteVars={JSON.parse(el.dataset.deltaRouteVars)} />,
@@ -98,16 +99,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $("[data-react-component=MarkdownView]");
 	if (el.length) {
-		el.each((_, e) => React.render(<MarkdownView {...e.dataset} />, e));
+		el.each((_, e) => ReactDOM.render(<MarkdownView {...e.dataset} />, e));
 	}
 
 	el = document.querySelectorAll("[data-react=RefCountLink]");
 	for (var i = 0; i < el.length; i++) {
-		React.renderComponent(<RefCountLink defSpec={JSON.parse(el[i].dataset.defSpec)}/>, el[i]);
+		ReactDOM.renderComponent(<RefCountLink defSpec={JSON.parse(el[i].dataset.defSpec)}/>, el[i]);
 	}
 
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]")).map((el2) => {
-		React.render(
+		ReactDOM.render(
 			<RepoBuildIndicator
 				btnSize="btn-xs"
 				RepoURI={el2.dataset.uri}
@@ -119,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	});
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]")).map((el2) => {
-		React.render(
+		ReactDOM.render(
 			<RepoBuildIndicator
 				btnSize="btn-md"
 				RepoURI={el2.dataset.uri}
@@ -132,12 +133,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildStatus]")).map(function(el2) {
-		React.render(<RepoBuildStatus Repo={{URI: el2.dataset.repo}} Rev={el2.dataset.rev}/>, el2);
+		ReactDOM.render(<RepoBuildStatus Repo={{URI: el2.dataset.repo}} Rev={el2.dataset.rev}/>, el2);
 	});
 
 	el = document.querySelector("[data-react=RepoRevSwitcher]");
 	if (el) {
-		React.render(
+		ReactDOM.render(
 			<RepoRevSwitcher
 				repoSpec={el.dataset.repoSpec}
 				rev={el.dataset.rev}
@@ -148,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryDefs]"))
 	.forEach(function(e) {
-		React.render(
+		ReactDOM.render(
 			<TreeEntryDefs
 				repo={e.dataset.repo}
 				commit={e.dataset.commit}
@@ -164,13 +165,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		var rev = el.dataset.rev || el.dataset.commit,
 			repo = el.dataset.repo;
 
-		React.render(<TreeEntrySearch repo={repo} rev={rev} />, el);
+		ReactDOM.render(<TreeEntrySearch repo={repo} rev={rev} />, el);
 	}
 
 	el = $("[data-react='AlertView']");
 	if (el.length > 0) {
 		el.each((_, element) => {
-			React.render(
+			ReactDOM.render(
 				<AlertView {...element.dataset}
 					closeable={element.dataset.closeable === "true"}
 					hasCookie={element.dataset.hasCookie === "true"} />, element

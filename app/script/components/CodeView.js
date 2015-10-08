@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
 var CodeLineView = require("./CodeLineView");
 var CodeModel = require("../stores/models/CodeModel");
@@ -65,7 +66,7 @@ var CodeView = React.createClass({
 	},
 
 	componentDidUpdate() {
-		var node = $(React.findDOMNode(this));
+		var node = $(ReactDOM.findDOMNode(this));
 
 		node.off("scroll");
 		if (this._isTiled()) {
@@ -74,7 +75,7 @@ var CodeView = React.createClass({
 	},
 
 	componentWillUnmount() {
-		$(React.findDOMNode(this)).off("scroll");
+		$(ReactDOM.findDOMNode(this)).off("scroll");
 	},
 
 	/**
@@ -92,7 +93,7 @@ var CodeView = React.createClass({
 		if (this._isTiled()) {
 			var lineNumber = lineOrToken.get("number") || lineOrToken.get("line").get("number");
 			amount = this.state.lineHeight * lineNumber - 80;
-			node = $(React.findDOMNode(this));
+			node = $(ReactDOM.findDOMNode(this));
 			duration = 0;
 		} else {
 			amount = lineOrToken.getRelativePosition().top - 200;
@@ -109,7 +110,7 @@ var CodeView = React.createClass({
 	 */
 	_onScroll() {
 		var linesPerTile = Math.ceil(screen.height / this.state.lineHeight);
-		var tile = Math.round($(React.findDOMNode(this)).scrollTop() / (linesPerTile * this.state.lineHeight));
+		var tile = Math.round($(ReactDOM.findDOMNode(this)).scrollTop() / (linesPerTile * this.state.lineHeight));
 
 		if (tile !== this.state.tileInView) {
 			this.setState({tileInView: tile});

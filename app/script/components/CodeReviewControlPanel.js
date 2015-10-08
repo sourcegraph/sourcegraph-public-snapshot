@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var globals = require("../globals");
 var $ = require("jquery");
 
@@ -26,7 +27,7 @@ var CodeReviewControlPanel = React.createClass({
 	 * @private
 	 */
 	_changeStatus(evt) {
-		var status = $(React.findDOMNode(this)).find(".status-options").val();
+		var status = $(ReactDOM.findDOMNode(this)).find(".status-options").val();
 
 		if (typeof this.props.onStatusChange === "function") {
 			this.props.onStatusChange(status, evt);

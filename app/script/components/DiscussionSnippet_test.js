@@ -4,6 +4,7 @@ var sinon = require("sinon");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var DiscussionCollection = require("../stores/collections/DiscussionCollection");
 var DiscussionSnippet = require("./DiscussionSnippet");
@@ -47,7 +48,7 @@ describe("components/DiscussionSnippet", () => {
 			<DiscussionSnippet defKey="key" model={collection} onClick={() => {}} />
 		);
 
-		var $root = $(React.findDOMNode(view));
+		var $root = $(ReactDOM.findDOMNode(view));
 		expect($root.find(".no-discussions").length).to.be(1);
 		expect($root.find(".no-discussions a").length).to.be(1);
 	});
@@ -73,7 +74,7 @@ describe("components/DiscussionSnippet", () => {
 			<DiscussionSnippet defKey="key" toolbar={true} onClick={() => {}} model={collection} />
 		);
 
-		var $root = $(React.findDOMNode(view));
+		var $root = $(ReactDOM.findDOMNode(view));
 		var lis = $root.find("ul.list li");
 		expect(lis.length).to.be(2);
 
@@ -102,7 +103,7 @@ describe("components/DiscussionSnippet", () => {
 			<DiscussionSnippet defKey="key" model={collection} onClick={() => {}} />
 		);
 
-		var lis = $(React.findDOMNode(view)).find("ul.list li");
+		var lis = $(ReactDOM.findDOMNode(view)).find("ul.list li");
 		expect(lis.length).to.be(4);
 	});
 
@@ -128,7 +129,7 @@ describe("components/DiscussionSnippet", () => {
 		TestUtils.Simulate.click(view.refs.createBtn);
 		expect(onCreate.callCount).to.be(1);
 
-		var discussionTitle = React.findDOMNode(view).querySelector(".discussion a");
+		var discussionTitle = ReactDOM.findDOMNode(view).querySelector(".discussion a");
 
 		TestUtils.Simulate.click(discussionTitle);
 		expect(onClick.callCount).to.be(1);

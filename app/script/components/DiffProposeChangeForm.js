@@ -1,4 +1,5 @@
 var React = require("react");
+var ReactDOM = require("react-dom");
 var $ = require("jquery");
 var DiffActions = require("../actions/DiffActions");
 var MarkdownTextarea = require("./MarkdownTextarea");
@@ -15,7 +16,7 @@ var ProposeChangeForm = React.createClass({
 			return;
 		}
 
-		var root = React.findDOMNode(this);
+		var root = ReactDOM.findDOMNode(this);
 
 		DiffActions.proposeChange(this.props.deltaSpec.Base.URI, {
 			DeltaSpec: this.props.deltaSpec,

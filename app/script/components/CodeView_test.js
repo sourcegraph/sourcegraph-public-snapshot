@@ -3,6 +3,7 @@ var expect = require("expect.js");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var CodeView = require("./CodeView");
 var CodeLineView = require("./CodeLineView");
@@ -17,7 +18,7 @@ describe("components/CodeView", () => {
 		);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "i");
-		expect($(React.findDOMNode(tag)).hasClass("file-loader")).to.be(true);
+		expect($(ReactDOM.findDOMNode(tag)).hasClass("file-loader")).to.be(true);
 
 		var children = TestUtils.scryRenderedComponentsWithType(component, CodeLineView);
 		expect(children.length).to.be(0);

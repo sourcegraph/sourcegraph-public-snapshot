@@ -3,6 +3,7 @@ var expect = require("expect.js");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var RepoRevSwitcher = require("./RepoRevSwitcher");
 var router = require("../routing/router");
@@ -20,7 +21,7 @@ describe("components/RepoRevSwitcher", () => {
 		var btn = TestUtils.findRenderedDOMComponentWithClass(component, "repo-rev-switcher");
 		TestUtils.Simulate.click(btn);
 
-		expect($(React.findDOMNode(btn)).find(".dropdown-menu").html()).to.be.ok();
+		expect($(ReactDOM.findDOMNode(btn)).find(".dropdown-menu").html()).to.be.ok();
 	});
 
 	it("should link to file URLs for available branches", () => {

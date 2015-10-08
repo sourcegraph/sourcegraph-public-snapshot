@@ -3,6 +3,7 @@ var expect = require("expect.js");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var ContextMenu = require("./ContextMenu");
 var ContextMenuModel = require("../stores/models/ContextMenuModel");
 
@@ -21,7 +22,7 @@ describe("components/ContextMenu", () => {
 		var model = new ContextMenuModel({options: options, closed: false});
 		var component = sandbox.renderComponent(<ContextMenu model={model} />);
 
-		var $root = $(React.findDOMNode(component));
+		var $root = $(ReactDOM.findDOMNode(component));
 		var lis = $root.find("ul li");
 		expect(lis.length).to.be(2);
 	});

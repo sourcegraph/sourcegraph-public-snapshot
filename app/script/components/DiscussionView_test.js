@@ -4,6 +4,7 @@ var sinon = require("sinon");
 
 var $ = require("jquery");
 var React = require("react");
+var ReactDOM = require("react-dom");
 var TestUtils = require("react-addons-test-utils");
 var DiscussionModel = require("../stores/models/DiscussionModel");
 var DiscussionView = require("./DiscussionView");
@@ -30,7 +31,7 @@ describe("components/DiscussionView", () => {
 			<DiscussionView defName={{__html: "name"}} defKey="key" model={model} />
 		);
 
-		var $root = $(React.findDOMNode(view));
+		var $root = $(ReactDOM.findDOMNode(view));
 		var $header = $root.find("header");
 
 		expect($header.find("h1").text()).to.be("title #1");
@@ -57,7 +58,7 @@ describe("components/DiscussionView", () => {
 			<DiscussionView defName={{__html: "name"}} defKey="key" model={model} />
 		);
 
-		var $root = $(React.findDOMNode(view));
+		var $root = $(ReactDOM.findDOMNode(view));
 
 		expect($root.find("main.body").length).to.be(0);
 		expect($root.find("ul.thread-comments").length).to.be(0);

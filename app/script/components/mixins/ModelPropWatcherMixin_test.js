@@ -2,6 +2,7 @@ var sandbox = require("../../testSandbox");
 var expect = require("expect.js");
 
 var React = require("react");
+var ReactDOM = require("react-dom");
 var Backbone = require("backbone");
 var ModelPropWatcherMixin = require("./ModelPropWatcherMixin");
 
@@ -53,7 +54,7 @@ describe("ModelPropWatcherMixin", () => {
 		model.off = sandbox.mock();
 		var component = sandbox.renderComponent(<Item model={model} />);
 
-		React.unmountComponentAtNode(React.findDOMNode(component).parentNode);
+		ReactDOM.unmountComponentAtNode(ReactDOM.findDOMNode(component).parentNode);
 		expect(model.off.callCount).to.be(1);
 	});
 });
