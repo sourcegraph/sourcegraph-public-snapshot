@@ -26,19 +26,19 @@ var ReactInstanceMap = {
    * transform these to strings for IE support. When this transform is fully
    * supported we can rename it.
    */
-  remove: function(key) {
+  remove: function (key) {
     key._reactInternalInstance = undefined;
   },
 
-  get: function(key) {
+  get: function (key) {
     return key._reactInternalInstance;
   },
 
-  has: function(key) {
+  has: function (key) {
     return key._reactInternalInstance !== undefined;
   },
 
-  set: function(key, value) {
+  set: function (key, value) {
     key._reactInternalInstance = value;
   }
 

@@ -26,6 +26,7 @@
     "lintspaces-cli": "0.1.0",
     "mocha": "2.3.2",
     "raw-loader": "0.5.1",
+    "react-addons-test-utils": "0.14.0",
     "sass-loader": "2.0.1",
     "sinon": "1.15.4",
     "style-loader": "0.12.3",
@@ -39,8 +40,9 @@
     "marked": "0.3.5",
     "moment": "2.10.5",
     "raven-js": "1.1.19",
-    "react": "0.13.3",
+    "react": "0.14.0",
     "react-cookie": "0.2.5",
+    "react-dom": "0.14.0",
     "react-draggable": "0.8.1"
   },
   "scripts": {

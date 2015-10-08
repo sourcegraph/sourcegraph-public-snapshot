@@ -15,7 +15,7 @@
 var nextReactRootIndex = 0;
 
 var ClientReactRootIndex = {
-  createReactRootIndex: function() {
+  createReactRootIndex: function () {
     return nextReactRootIndex++;
   }
 };

@@ -21,7 +21,7 @@
 var GLOBAL_MOUNT_POINT_MAX = Math.pow(2, 53);
 
 var ServerReactRootIndex = {
-  createReactRootIndex: function() {
+  createReactRootIndex: function () {
     return Math.ceil(Math.random() * GLOBAL_MOUNT_POINT_MAX);
   }
 };

@@ -22,8 +22,8 @@ var ReactStateSetters = {
    * @return {function} callback that when invoked uses funcReturningState to
    *                    determined the object literal to setState.
    */
-  createStateSetter: function(component, funcReturningState) {
-    return function(a, b, c, d, e, f) {
+  createStateSetter: function (component, funcReturningState) {
+    return function (a, b, c, d, e, f) {
       var partialState = funcReturningState.call(component, a, b, c, d, e, f);
       if (partialState) {
         component.setState(partialState);
@@ -42,7 +42,7 @@ var ReactStateSetters = {
    * @return {function} callback of 1 argument which calls setState() with
    *                    the provided keyName and callback argument.
    */
-  createStateKeySetter: function(component, key) {
+  createStateKeySetter: function (component, key) {
     // Memoize the setters.
     var cache = component.__keySetters || (component.__keySetters = {});
     return cache[key] || (cache[key] = createStateKeySetter(component, key));
@@ -77,7 +77,7 @@ ReactStateSetters.Mixin = {
    * @return {function} callback that when invoked uses funcReturningState to
    *                    determined the object literal to setState.
    */
-  createStateSetter: function(funcReturningState) {
+  createStateSetter: function (funcReturningState) {
     return ReactStateSetters.createStateSetter(this, funcReturningState);
   },
 
@@ -96,7 +96,7 @@ ReactStateSetters.Mixin = {
    * @return {function} callback of 1 argument which calls setState() with
    *                    the provided keyName and callback argument.
    */
-  createStateKeySetter: function(key) {
+  createStateKeySetter: function (key) {
     return ReactStateSetters.createStateKeySetter(this, key);
   }
 };

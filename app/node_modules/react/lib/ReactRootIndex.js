@@ -16,7 +16,7 @@ var ReactRootIndexInjection = {
   /**
    * @param {function} _createReactRootIndex
    */
-  injectCreateReactRootIndex: function(_createReactRootIndex) {
+  injectCreateReactRootIndex: function (_createReactRootIndex) {
     ReactRootIndex.createReactRootIndex = _createReactRootIndex;
   }
 };
