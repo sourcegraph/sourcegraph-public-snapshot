@@ -17,15 +17,13 @@ describe("components/Pagination", () => {
 		};
 
 		var component = sandbox.renderComponent(<Pagination {...props} />);
-		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
-		// Exclude the first and last non-numbered page links in the list.
-		pageListItems = pageListItems.slice(1, props.totalPages+1);
+		var pageLinks = TestUtils.scryRenderedDOMComponentsWithClass(component, "num-page-link");
 
-		expect(pageListItems.length).to.be(props.totalPages);
+		expect(pageLinks.length).to.be(props.totalPages);
 
 		var pageLink;
 		for (var i=0; i < props.totalPages; i++) {
-			pageLink = TestUtils.findRenderedDOMComponentWithTag(pageListItems[i], "a");
+			pageLink = pageLinks[i];
 			expect(pageLink).to.be.ok();
 			expect(React.findDOMNode(pageLink).textContent).to.be((i+1).toString());
 		}
@@ -40,10 +38,9 @@ describe("components/Pagination", () => {
 		};
 
 		var component = sandbox.renderComponent(<Pagination {...props} />);
-		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
+		var pageLinks = TestUtils.scryRenderedDOMComponentsWithClass(component, "num-page-link");
 
-		// Subtract 2 to account for the two non-numbered page links in the list.
-		expect(pageListItems.length - 2).to.be(props.totalPages);
+		expect(pageLinks.length).to.be(props.totalPages);
 	});
 
 	it("is bounded by the total number of page links on the last page", () => {
@@ -55,10 +52,10 @@ describe("components/Pagination", () => {
 		};
 
 		var component = sandbox.renderComponent(<Pagination {...props} />);
-		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
-		var lastPageListItem = pageListItems[pageListItems.length-2];
+		var pageLinks = TestUtils.scryRenderedDOMComponentsWithClass(component, "num-page-link");
+		var lastPageLink = pageLinks[pageLinks.length-1];
 
-		expect(React.findDOMNode(lastPageListItem).textContent).to.be(props.totalPages.toString());
+		expect(React.findDOMNode(lastPageLink).textContent).to.be(props.totalPages.toString());
 	});
 
 	it("calls the onPageChange callback when a new page is selected", () => {
@@ -70,12 +67,10 @@ describe("components/Pagination", () => {
 		};
 
 		var component = sandbox.renderComponent(<Pagination {...props} />);
-		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
-		pageListItems = pageListItems.slice(1, props.totalPages+1);
+		var pageLinks = TestUtils.scryRenderedDOMComponentsWithClass(component, "num-page-link");
 
 		var newPage = 7;
-		var newPageListItem = pageListItems[newPage-1];
-		var newPageLink = TestUtils.findRenderedDOMComponentWithTag(newPageListItem, "a");
+		var newPageLink = pageLinks[newPage-1];
 		TestUtils.Simulate.click(newPageLink);
 
 		expect(props.onPageChange.callCount).to.be(1);
