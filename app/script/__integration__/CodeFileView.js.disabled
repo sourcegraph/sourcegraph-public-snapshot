@@ -155,11 +155,11 @@ describe("components/CodeFileView", function() {
 		});
 
 		waitsFor(function() {
-			return $(lines[0].getDOMNode()).hasClass("main-byte-range") === true;
+			return $(React.findDOMNode(lines[0])).hasClass("main-byte-range") === true;
 		}, "line 1 to highlight", 200);
 
 		runs(function() {
-			expect($(lines[1].getDOMNode()).hasClass("main-byte-range")).to.beFalsy();
+			expect($(React.findDOMNode(lines[1])).hasClass("main-byte-range")).to.beFalsy();
 		});
 	});
 
