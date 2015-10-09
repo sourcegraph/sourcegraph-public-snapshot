@@ -69,25 +69,32 @@ var SearchResultsView = React.createClass({
 	render() {
 		var currentResultsView = this._getCurrentSearchView();
 
-		var tokenSearchStatusBadge = this.state.tokenSearch ?
-			<span className="badge">{this.state.tokenSearch.Total}</span> : null;
-		var textSearchStatusBadge = this.state.textSearch ?
-			<span className="badge">{this.state.textSearch.Total}</span> : null;
+		var loadingIcon = <i className="fa fa-circle-o-notch fa-spin"></i>;
+		var tokenSearchStatusBadge = null;
+		if (this.state.tokenSearchLoading) {
+			tokenSearchStatusBadge = loadingIcon;
+		} else if (this.state.tokenSearch) {
+			tokenSearchStatusBadge = this.state.tokenSearch.Total;
+		}
+		var textSearchStatusBadge = null;
+		if (this.state.textSearchLoading) {
+			textSearchStatusBadge = loadingIcon;
+		} else if (this.state.textSearch) {
+			textSearchStatusBadge = this.state.textSearch.Total;
+		}
 
 		return (
 			<div className="search-results row">
 				<div className="col-md-10 col-md-offset-1">
 					<ul className="nav nav-pills">
-						<li role="presentation"
-							className={this.state.currentSearchType === globals.SearchType.TOKEN ? "active" : null}>
+						<li className={this.state.currentSearchType === globals.SearchType.TOKEN ? "active" : null}>
 							<a href="#" onClick={this._selectSearchType.bind(this, globals.SearchType.TOKEN)}>
-								<i className="fa fa-asterisk"></i> Token {tokenSearchStatusBadge}
+								<i className="fa fa-asterisk"></i> Token <span className="badge">{tokenSearchStatusBadge}</span>
 							</a>
 						</li>
-						<li role="presentation"
-							className={this.state.currentSearchType === globals.SearchType.TEXT ? "active" : null}>
+						<li className={this.state.currentSearchType === globals.SearchType.TEXT ? "active" : null}>
 							<a href="#" onClick={this._selectSearchType.bind(this, globals.SearchType.TEXT)}>
-								<i className="fa fa-code"></i> Text {textSearchStatusBadge}
+								<i className="fa fa-code"></i> Text <span className="badge">{textSearchStatusBadge}</span>
 							</a>
 						</li>
 					</ul>

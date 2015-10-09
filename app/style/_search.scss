@@ -195,6 +195,20 @@ div.search-result-type {
 	.summary {
 		color: $gray-mid;
 	}
+
+	.nav {
+		li {
+			.badge {
+				font-size: $font-size-base;
+				background-color: $dark-blue;
+			}
+		}
+		li.active {
+			.badge {
+				color: $white;
+			}
+		}
+	}
 }
 
 .token-search-result {
