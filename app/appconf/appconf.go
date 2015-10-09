@@ -17,6 +17,8 @@ import (
 var Flags struct {
 	NoAutoBuild bool `long:"app.no-auto-build" description:"disable automatic building of repositories from the UI"`
 
+	ShowLatestBuiltCommit bool `long:"app.show-latest-built-commit" description:"show the latest built commit instead of the HEAD commit on a branch"`
+
 	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
 
 	DisableDirDefs bool `long:"app.disable-dir-defs" description:"do not show defs in each file/dir in repo tree viewer (slower for large repos)"`

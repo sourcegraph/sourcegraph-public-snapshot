@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -12,7 +13,7 @@ import (
 // RepoBuildCommon holds all of the commit-specific information
 // necessary to render a repository page template for a certain
 // revision's best-match build. It is returned by
-// getBestMatchBuild. It is assumed that pages rendered are also
+// GetRepoBuildCommon. It is assumed that pages rendered are also
 // provided with repoCommon and repoRevCommon template data.
 type RepoBuildCommon struct {
 	BestRevSpec   sourcegraph.RepoRevSpec
@@ -20,15 +21,15 @@ type RepoBuildCommon struct {
 	Built         bool
 }
 
-// GetRepoBuildCommonOpt values configure calls to getBestMatchBuild.
+// GetRepoBuildCommonOpt values configure calls to GetRepoBuildCommon.
 type GetRepoBuildCommonOpt struct {
-	// allowUnbuilt causes getBestMatchBuild to NOT display the "repo
+	// AllowUnbuilt causes GetRepoBuildCommon to NOT display the "repo
 	// revision must be built" interstitial for revisions that lack a
 	// successful build.
 	AllowUnbuilt bool
 }
 
-// AllowBrowsingUnbuiltRepo is whether getBestMatchBuild should apply
+// AllowBrowsingUnbuiltRepo is whether GetRepoBuildCommon should apply
 // allowUnbuilt to the given repo. In general, customer repos should
 // be able to be browsed even when unbuilt, to provide full repo
 // browsing functionality.
@@ -52,10 +53,11 @@ func GetRepoBuildCommon(r *http.Request, rc *RepoCommon, vc *RepoRevCommon, opts
 
 	isAbsoluteCommitID := len(vc.RepoRevSpec.Rev) == 40
 	isDefaultBranch := vc.RepoRevSpec.Rev == rc.Repo.DefaultBranch
+	isExact := !appconf.Flags.ShowLatestBuiltCommit || isAbsoluteCommitID || !isDefaultBranch
 
 	bc.RepoBuildInfo, err = apiclient.Builds.GetRepoBuildInfo(httpctx.FromRequest(r), &sourcegraph.BuildsGetRepoBuildInfoOp{
 		Repo: vc.RepoRevSpec,
-		Opt:  &sourcegraph.BuildsGetRepoBuildInfoOptions{Exact: isAbsoluteCommitID || !isDefaultBranch},
+		Opt:  &sourcegraph.BuildsGetRepoBuildInfoOptions{Exact: isExact},
 	})
 	noBuild := err != nil && IsHTTPErrorCode(err, http.StatusNotFound)
 	noSuccessfulBuild := bc.RepoBuildInfo != nil && bc.RepoBuildInfo.LastSuccessful == nil
