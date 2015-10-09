@@ -104,5 +104,8 @@ type TokenSearchResult struct {
 }
 
 type TextSearchResult struct {
-	*sourcegraph.TreeEntry
+	File      string
+	Lines     []string
+	StartLine uint32
+	EndLine   uint32
 }

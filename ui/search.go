@@ -3,11 +3,11 @@ package ui
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
@@ -74,16 +74,6 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 		Rev:      mux.Vars(r)["Rev"],
 	}
 
-	// The fully resolved commit ID is needed for when this RepoRevSpec is eventually
-	// passed into sourcecode.sanitizeEntry via the RepoTree.Get call below.
-	if opt.RepoRev.CommitID == "" {
-		commit, err := apiclient.Repos.GetCommit(ctx, &opt.RepoRev)
-		if err != nil {
-			return err
-		}
-		opt.RepoRev.CommitID = string(commit.ID)
-	}
-
 	vcsEntryList, err := apiclient.Search.SearchText(ctx, &opt)
 	if err != nil {
 		return err
@@ -92,26 +82,14 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 	results := make([]payloads.TextSearchResult, len(vcsEntryList.SearchResults))
 	// Retrieve the corresponding tokenized TreeEntry for each VCS search result.
 	for i, vcsEntry := range vcsEntryList.SearchResults {
-		entrySpec := sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev, Path: vcsEntry.File}
-		// TODO(perf) speed this process up by converting each vcsEntry into a treeEntry directly
-		// instead of making a grpc call for each result. Right now this is the best we can do,
-		// and is similar to the way formatting is handled in server/local/repo_tree.Search.
-		entry, err := apiclient.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &sourcegraph.RepoTreeGetOptions{
-			TokenizedSource:  true,
-			HighlightStrings: []string{opt.Query},
-			GetFileOptions: vcsclient.GetFileOptions{
-				FileRange: vcsclient.FileRange{
-					StartLine: int64(vcsEntry.StartLine),
-					EndLine:   int64(vcsEntry.EndLine),
-				},
-			},
-		}})
-		if err != nil {
-			return err
-		}
+		matchEntryString := string(vcsEntry.Match)
+		matchEntryLines := strings.Split(matchEntryString, "\n")
 
 		results[i] = payloads.TextSearchResult{
-			TreeEntry: entry,
+			File:      vcsEntry.File,
+			StartLine: vcsEntry.StartLine,
+			EndLine:   vcsEntry.EndLine,
+			Lines:     matchEntryLines,
 		}
 	}
 

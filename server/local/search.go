@@ -45,7 +45,7 @@ func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchO
 
 func (s *search) SearchText(ctx context.Context, opt *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
 	vcsSearchOpts := &sourcegraph.RepoTreeSearchOptions{
-		Formatted: false,
+		Formatted: true,
 		SearchOptions: vcs.SearchOptions{
 			Query:        opt.Query,
 			QueryType:    "fixed",
