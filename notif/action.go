@@ -2,7 +2,10 @@ package notif
 
 import (
 	"bytes"
+	html "html/template"
 	"text/template"
+
+	"github.com/mattbaird/gochimp"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -40,11 +43,48 @@ func Action(nctx ActionContext) {
 
 	}
 	slack.PostMessage(nctx.SlackOpts)
+
+	msg, err := generateHTMLFragment(nctx)
+	if err != nil {
+		log15.Error("Error generating email message for action", "ActionContext", nctx)
+		return
+	}
+	sendEmail := func(p *sourcegraph.Person) {
+		if p.PersonSpec.Email == "" {
+			return
+		}
+		name := p.FullName
+		if name == "" {
+			name = p.PersonSpec.Login
+		}
+		SendMandrillTemplate("message-generic", name, p.PersonSpec.Email, []gochimp.Var{{Name: "MESSAGE", Content: msg}})
+	}
+	actorIncluded := false
+	for _, p := range nctx.Recipients {
+		sendEmail(p)
+		if p.PersonSpec.UID == nctx.Person.PersonSpec.UID {
+			actorIncluded = true
+		}
+	}
+	if !actorIncluded {
+		sendEmail(nctx.Person)
+	}
 }
 
 func generateSlackMessage(nctx ActionContext) (string, error) {
 	tmpl := template.Must(template.New("slack-action").Parse(
 		"*{{.Person.PersonSpec.Login}}* {{.ActionType}} <{{.ObjectURL}}|{{.ObjectRepo}} {{.ObjectType}} #{{.ObjectID}}>: {{.ObjectTitle}}{{if .Recipients}} /cc{{end}}{{range .Recipients}} @{{.PersonSpec.Login}}{{end}}{{if .ActionContent}}\n\n{{.ActionContent}}{{end}}"))
+	var buf bytes.Buffer
+	err := tmpl.Execute(&buf, nctx)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func generateHTMLFragment(nctx ActionContext) (string, error) {
+	tmpl := html.Must(html.New("slack-action").Parse(
+		`<b>{{.Person.PersonSpec.Login}}</b> {{.ActionType}} <a href="{{.ObjectURL}}">{{.ObjectRepo}} {{.ObjectType}} #{{.ObjectID}}</a>: {{.ObjectTitle}}`))
 	var buf bytes.Buffer
 	err := tmpl.Execute(&buf, nctx)
 	if err != nil {
