@@ -12,12 +12,24 @@ var TextSearchResult = React.createClass({
 	},
 
 	render() {
-		var lines = this.props.result.Lines.map((line, i) => {
-			var lineNumber = this.props.result.StartLine + i;
+		var result = this.props.result;
+		var snippetURL = routing.fileSnippetURL(
+			this.props.repo.URI, this.props.repo.DefaultBranch, result.File, result.StartLine, result.EndLine
+		);
+
+		var lines = result.Lines.map((line, i) => {
+			var lineNumber = result.StartLine + i;
+
+			var snippetLink = null;
+			if (i === 0) {
+				snippetLink = <td className="snippet-link"><a href={snippetURL}>{result.StartLine}-{result.EndLine}</a></td>;
+			}
+
 			return (
 				<tr className="line" key={i}>
 					<td className="line-number" onClick={this._goToLine.bind(this, lineNumber)}>{lineNumber}</td>
 					<td className="line-content" dangerouslySetInnerHTML={{__html: line}}></td>
+					{snippetLink}
 				</tr>
 			);
 		});

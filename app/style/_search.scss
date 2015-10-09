@@ -246,6 +246,7 @@ div.search-result-type {
 	.line-numbered-code {
 		border: 1px solid $border-gray;
 		border-top: none;
+		table-layout: auto;
 		$result-section-padding: 6px;
 
 		tr {
@@ -263,6 +264,14 @@ div.search-result-type {
 
 		.line-number {
 			cursor: pointer;
+		}
+
+		.snippet-link {
+			text-align: right;
+			padding-right: $padding-small-horizontal;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
 		}
 	}
 }
