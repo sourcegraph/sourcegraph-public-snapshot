@@ -1,6 +1,7 @@
 var $ = require("jquery");
 var React = require("react");
 var ReactDOM = require("react-dom");
+var URI = require("urijs");
 
 var globals = require("./globals");
 var CodeFileView = require("./components/CodeFileView");
@@ -16,6 +17,7 @@ var SearchBar = require("./components/SearchBar");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
+var CodeFileRouter = require("./new/CodeFileRouter");
 
 // Application-specific JS
 //
@@ -47,12 +49,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $("#CodeFileView");
 	if (el.length > 0) {
-		ReactDOM.render(
-			<CodeFileView
-				source={el[0].dataset.source}
-				data={window.preloadedCodeViewFile||null} />,
-			el[0]
-		);
+		if (URI.parseQuery(window.location.search)["new"] === "true") { // temporary switch
+			ReactDOM.render(
+				<CodeFileRouter />,
+				el[0]
+			);
+		} else {
+			ReactDOM.render(
+				<CodeFileView
+					source={el[0].dataset.source}
+					data={window.preloadedCodeViewFile||null} />,
+				el[0]
+			);
+		}
 	}
 
 	el = $(".react-close-changeset-button");
