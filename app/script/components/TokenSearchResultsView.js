@@ -27,7 +27,7 @@ var TokenSearchResultsView = React.createClass({
 		if (!this.props.results) return null;
 
 		if (this.props.results.length === 0) {
-			return <i>No token results found for {this.props.query}</i>;
+			return <i>No token results found for "{this.props.query}"</i>;
 		}
 
 		var results = this.props.results.map((result) => {

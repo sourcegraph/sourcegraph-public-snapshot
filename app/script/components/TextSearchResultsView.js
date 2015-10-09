@@ -28,7 +28,7 @@ var TextSearchResultsView = React.createClass({
 		if (!this.props.results) return null;
 
 		if (this.props.results.length === 0) {
-			return <i>No token results found for {this.props.query}</i>;
+			return <i>No text results found for "{this.props.query}"</i>;
 		}
 
 		var currentFile, header;
