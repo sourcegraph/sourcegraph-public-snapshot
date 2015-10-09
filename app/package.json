@@ -43,7 +43,8 @@
     "react": "0.14.0",
     "react-cookie": "0.2.5",
     "react-dom": "0.14.0",
-    "react-draggable": "0.8.1"
+    "react-draggable": "0.8.1",
+    "urijs": "^1.16.1"
   },
   "scripts": {
     "start": "./node_modules/.bin/webpack-dev-server --devtool inline-source-map",
