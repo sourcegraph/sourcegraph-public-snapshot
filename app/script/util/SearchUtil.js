@@ -13,7 +13,7 @@ module.exports = {
 	},
 
 	fetchTextResults(query, repoURI, page) {
-		var perPage = 10;
+		var perPage = globals.TextSearchResultsPerPage;
 		var url = `/ui/${repoURI}/.search/text`;
 		return $.get(url, {
 			q: query,
