@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"log/syslog"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -37,6 +36,11 @@ type logger struct {
 	c           []io.Closer
 }
 
+type LogWriter interface {
+	io.Writer
+	io.Closer
+}
+
 func (x *logger) String() string { return x.Destination }
 
 func (x *logger) Close() error {
@@ -62,16 +66,7 @@ func logURLForTag(tag string) string {
 	return fmt.Sprintf(logURLForTagFormat, url.QueryEscape(tag))
 }
 
-var (
-	papertrailHost = os.Getenv("SG_SYSLOG_HOST")
-	usePapertrail  = papertrailHost != ""
-)
-
-func newPapertrailLogger(tag string) (*syslog.Writer, error) {
-	return syslog.Dial("udp", papertrailHost, syslog.LOG_INFO, tag)
-}
-
-func createPath(path string) (*os.File, error) {
+func createPath(path string) (LogWriter, error) {
 	if dir := filepath.Dir(path); dir != "." {
 		if err := os.MkdirAll(dir, 0700); err != nil {
 			return nil, err

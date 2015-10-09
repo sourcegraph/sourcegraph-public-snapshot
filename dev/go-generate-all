@@ -7,7 +7,16 @@ blacklist_re='(_workspace|devdoc|gitserver)'
 set -e
 cd $(git rev-parse --show-toplevel)
 
-export GOPATH="$PWD/Godeps/_workspace:$GOPATH"
+sgxosname=$(uname -o 2>/dev/null || uname -s)
+
+if [[ $sgxosname == "Cygwin" ]] || [[ $sgxosname == "Msys" ]] || [[ $sgxosname == MINGW* ]]; then
+	p=$(cmd /C "echo %cd%/Godeps/_workspace;%GOPATH%")
+	# removing trailing line feed
+	p="$(echo "${p}" | sed -e 's/[[:space:]]*$//')"
+	export GOPATH="$p"
+else
+	export GOPATH=$PWD/Godeps/_workspace:$GOPATH
+fi
 
 git grep -l go:generate \
     | grep '\.go$' \

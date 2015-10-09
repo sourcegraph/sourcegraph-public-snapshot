@@ -4,26 +4,56 @@ MAKEFLAGS+=--no-print-directory
 
 PRIVATE_HASH := c4238160c8cf1d22f3446b13b8ed5c9dfdee686b
 
+SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
+
+ifeq "$(SGX_OS_NAME)" "Cygwin"
+	SGXOS := windows
+	CMD := cmd /C
+else
+	ifeq "$(SGX_OS_NAME)" "Msys"
+		SGXOS := windows
+		CMD := cmd //C
+	else
+	ifneq (,$(findstring MINGW, $(SGX_OS_NAME)))
+		SGXOS := windows
+		CMD := cmd //C
+	endif
+	endif
+endif
+
 ifndef GOBIN
-GOBIN := $(shell echo $$GOPATH | cut -d':' -f1 )/bin
+	ifeq "$(SGXOS)" "windows"
+		GOBIN := $(shell $(CMD) "echo %GOPATH%| cut -d';' -f1")
+		GOBIN := $(subst \,/,$(GOBIN))/bin
+	else
+        GOBIN := $(shell echo $$GOPATH | cut -d':' -f1 )/bin
+	endif
 endif
 
 # Avoid dependency on `godep` by simply specifying its GOPATH. This
 # means we don't need to install godep in CI each time (saving ~20sec
 # per test run).
-GODEP := GOPATH=$(PWD)/Godeps/_workspace:$(GOPATH)
+ifeq "$(SGXOS)" "windows"
+	PWD := $(shell $(CMD) "echo %cd%")
+	GODEP := GOPATH="$(PWD)/Godeps/_workspace;$(GOPATH)"
+	NODE_MODULE_EXE := .bat
+	NPM_RUN_DEP := $(CMD) "npm run dep"
+else
+	GODEP := GOPATH=$(PWD)/Godeps/_workspace:$(GOPATH)
+	NPM_RUN_DEP := npm run dep
+endif
 
 install: src
 
 src: ${GOBIN}/src
 
-${GOBIN}/src: $(shell find . -type f -and -name '*.go' -not -path './Godeps/*')
+${GOBIN}/src: $(shell /usr/bin/find . -type f -and -name '*.go' -not -path './Godeps/*')
 	$(GODEP) go install ./cmd/src
 
 dep: dist-dep app-dep
 
 app-dep:
-	cd app && npm run dep
+	cd app && $(NPM_RUN_DEP)
 
 SERVEFLAGS ?=
 SG_USE_WEBPACK_DEV_SERVER ?= t
@@ -56,7 +86,7 @@ serve-metrics-dev:
 
 serve-dep:
 	go get sourcegraph.com/sqs/rego
-	@[ `ulimit -n` -ge 5000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 16384\n\nOn OS X you may need to first run\n\n  sudo launchctl limit maxfiles 16384\n" 1>&2; exit 1)
+	@[ $(SGXOS) = "windows" ] || [ `ulimit -n` -ge 5000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 16384\n\nOn OS X you may need to first run\n\n  sudo launchctl limit maxfiles 16384\n" 1>&2; exit 1)
 	@[ $(SG_USE_WEBPACK_DEV_SERVER) = t ] && curl -Ss -o /dev/null http://localhost:8080 || (cd app && npm start &)
 
 
