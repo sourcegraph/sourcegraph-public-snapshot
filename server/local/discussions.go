@@ -9,7 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/ext/slack"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -42,12 +41,15 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 		if err != nil {
 			return nil, err
 		}
-		msg := fmt.Sprintf("*%s* created a discussion <%s|%s discussion #%d>: %s",
-			userStr,
-			appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
-			in.DefKey.Repo, in.ID, in.Title,
-		)
-		slack.PostMessage(slack.PostOpts{Msg: msg, Channel: slackChannel})
+		notif.Action(notif.ActionContext{
+			Person:      &sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: userStr}},
+			ActionType:  "created",
+			ObjectURL:   appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
+			ObjectRepo:  in.DefKey.Repo,
+			ObjectType:  "discussion",
+			ObjectID:    in.ID,
+			ObjectTitle: in.Title,
+		})
 
 		// Notify mentioned people.
 		ppl, err := mdutil.Mentions(ctx, []byte(in.Description))
@@ -116,12 +118,15 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		if err != nil {
 			return nil, err
 		}
-		msg := fmt.Sprintf("*%s* commented on a discussion <%s|%s discussion #%d>: %s",
-			userStr,
-			appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
-			in.Comment.DefKey.Repo, discussion.ID, discussion.Title,
-		)
-		slack.PostMessage(slack.PostOpts{Msg: msg, Channel: slackChannel})
+		notif.Action(notif.ActionContext{
+			Person:      &sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: userStr}},
+			ActionType:  "commented on",
+			ObjectURL:   appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
+			ObjectRepo:  in.Comment.DefKey.Repo,
+			ObjectType:  "discussion",
+			ObjectID:    discussion.ID,
+			ObjectTitle: discussion.Title,
+		})
 
 		// Notify mentioned people.
 		ppl, err := mdutil.Mentions(ctx, []byte(in.Comment.Body))

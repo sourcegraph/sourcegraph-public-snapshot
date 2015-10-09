@@ -7,7 +7,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/ext/slack"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -62,12 +61,16 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 		if err != nil {
 			return nil, err
 		}
-		msg := fmt.Sprintf("*%s* created <%s|%s changeset #%d>: %s\n\n%s",
-			userStr,
-			appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.Changeset.ID)),
-			op.Repo.URI, op.Changeset.ID, op.Changeset.Title, op.Changeset.Description,
-		)
-		slack.PostMessage(slack.PostOpts{Msg: msg})
+		notif.Action(notif.ActionContext{
+			Person:        &sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: userStr}},
+			ActionType:    "created",
+			ObjectURL:     appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.Changeset.ID)),
+			ObjectRepo:    op.Repo.URI,
+			ObjectType:    "changeset",
+			ObjectID:      op.Changeset.ID,
+			ObjectTitle:   op.Changeset.Title,
+			ActionContent: op.Changeset.Description,
+		})
 
 		// Notify mentioned people.
 		ppl, err := mdutil.Mentions(ctx, []byte(op.Changeset.Description))
@@ -121,30 +124,36 @@ func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.Changeset
 			return nil, err
 		}
 
-		// TODO: We assume that Sourcegraph author's login is identical
-		// on Slack for the '/cc @login' portion of the message. Provide a way
-		// for users to specify their Slack name, and a CLI option to disable
-		// Slack /cc's.
-		msg := bytes.NewBufferString(fmt.Sprintf("*%s* reviewed <%s|%s changeset #%d>: %s /cc @%s\n\"%s\"",
-			userStr,
-			appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.ChangesetID)),
-			op.Repo.URI, op.ChangesetID, cs.Title, cs.Author.Login, op.Review.Body,
-		))
+		msg := bytes.NewBufferString(op.Review.Body)
+		for _, c := range op.Review.Comments {
+			msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
+		}
+		notif.Action(notif.ActionContext{
+			Person: &sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: userStr}},
+			Recipients: []*sourcegraph.Person{
+				&sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: cs.Author.Login}},
+			},
+			ActionType:    "reviewed",
+			ObjectURL:     appURL(ctx, router.Rel.URLToRepoChangeset(op.Repo.URI, op.ChangesetID)),
+			ObjectRepo:    op.Repo.URI,
+			ObjectType:    "changeset",
+			ObjectID:      op.ChangesetID,
+			ObjectTitle:   cs.Title,
+			ActionContent: msg.String(),
+		})
+
+		// Notify mentions.
 		ppl, err := mdutil.Mentions(ctx, []byte(op.Review.Body))
 		if err != nil {
 			return nil, err
 		}
 		for _, c := range op.Review.Comments {
-			msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
 			ppll, err := mdutil.Mentions(ctx, []byte(c.Body))
 			if err != nil {
 				return nil, err
 			}
 			ppl = append(ppl, ppll...)
 		}
-		slack.PostMessage(slack.PostOpts{Msg: msg.String()})
-
-		// Notify mentions.
 		for _, p := range ppl {
 			msg := fmt.Sprintf(
 				"*%s* mentioned @%s in a review on <%s|changeset #%d>",
