@@ -51,7 +51,7 @@ func (s *search) SearchText(ctx context.Context, opt *sourcegraph.TextSearchOpti
 			QueryType:    "fixed",
 			ContextLines: 1,
 			N:            opt.ListOptions.PerPage,
-			Offset:       opt.ListOptions.Page * opt.ListOptions.PerPage,
+			Offset:       (opt.ListOptions.Page - 1) * opt.ListOptions.PerPage,
 		},
 	}
 

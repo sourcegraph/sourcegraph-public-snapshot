@@ -4,10 +4,11 @@ import (
 	"math"
 	"strings"
 
+	"github.com/cznic/mathutil"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
@@ -172,7 +173,7 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 
 	total := len(res)
 	// Paginate the results.
-	res = res[origOffset : origOffset+origN]
+	res = res[origOffset:mathutil.Min(int(origOffset+origN), total)]
 
 	if opt.Formatted {
 		for _, res := range res {
