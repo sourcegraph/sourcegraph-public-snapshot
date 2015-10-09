@@ -15,7 +15,7 @@ import (
 
 // Flags configure the app. The values are set by CLI flags (or during testing).
 var Flags struct {
-	NoAutoBuild bool `long:"app.no-auto-build" description:"disable automatic building of repositories from the UI"`
+	NoUIBuild bool `long:"app.no-ui-build" description:"disable automatic and manual building of repositories from the UI"`
 
 	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
 

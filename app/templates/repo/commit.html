@@ -48,10 +48,10 @@
 	<div class="alert alert-warning"><strong>Can't (yet) show diff for initial commit.</strong></div>
 	{{else if and (not .Delta.HeadBuild) (not .Delta.BaseBuild)}}
 	{{else if (not .Delta.HeadBuild)}}
-	<div class="alert alert-warning"><strong>Commits not yet built.</strong> Both this commit and <a href="{{urlToRepoCommit .Delta.Base.URI .Delta.Base.CommitID}}">{{truncateCommitID .Delta.Base.CommitID}}</a> <span data-react="RepoBuildIndicator" data-uri="{{.Delta.Base.URI}}" data-rev="{{.Delta.Base.CommitID}}" data-buildable="{{autoBuild}}"></span> must be built in order for the diff to be interactive.</div>
+	<div class="alert alert-warning"><strong>Commits not yet built.</strong> Both this commit and <a href="{{urlToRepoCommit .Delta.Base.URI .Delta.Base.CommitID}}">{{truncateCommitID .Delta.Base.CommitID}}</a> <span data-react="RepoBuildIndicator" data-uri="{{.Delta.Base.URI}}" data-rev="{{.Delta.Base.CommitID}}" data-buildable="{{uiBuild}}"></span> must be built in order for the diff to be interactive.</div>
 	<div class="alert alert-warning"><strong>This commit must be built in order for the diff to be interactive.</strong></div>
 	{{else if (not .Delta.BaseBuild)}}
-	<div class="alert alert-warning"><strong>Base commit <a href="{{urlToRepoCommit .Delta.Base.URI .Delta.Base.CommitID}}">{{truncateCommitID .Delta.Base.CommitID}}</a> <span data-react="RepoBuildIndicator" data-uri="{{.Delta.Base.URI}}" data-rev="{{.Delta.Base.CommitID}}" data-buildable="{{autoBuild}}"></span> must be built in order for the diff to be interactive.</strong></div>
+	<div class="alert alert-warning"><strong>Base commit <a href="{{urlToRepoCommit .Delta.Base.URI .Delta.Base.CommitID}}">{{truncateCommitID .Delta.Base.CommitID}}</a> <span data-react="RepoBuildIndicator" data-uri="{{.Delta.Base.URI}}" data-rev="{{.Delta.Base.CommitID}}" data-buildable="{{uiBuild}}"></span> must be built in order for the diff to be interactive.</strong></div>
 	{{end}}
 
 	<script ignore-csp>window.preloadedDiffData = {{json .}}</script>

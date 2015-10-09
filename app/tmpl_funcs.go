@@ -99,7 +99,7 @@ var TemplateFunctions = htmpl.FuncMap{
 	"customLogo":         func() htmpl.HTML { return appconf.Flags.CustomLogo },
 	"motd":               func() htmpl.HTML { return appconf.Flags.MOTD },
 	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
-	"autoBuild":          func() bool { return !appconf.Flags.NoAutoBuild },
+	"uiBuild":            func() bool { return !appconf.Flags.NoUIBuild },
 
 	"trimPrefix": strings.TrimPrefix,
 

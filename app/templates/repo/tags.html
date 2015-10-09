@@ -7,7 +7,7 @@
 	{{$repoURI := .Repo.URI}}
 	{{range .Tags}}
 	<li class="list-group-item">
-		<div class="pull-right" data-react="RepoBuildIndicator" data-uri="{{$repoURI}}" data-rev="{{.CommitID}}" data-buildable="{{autoBuild}}"></div>
+		<div class="pull-right" data-react="RepoBuildIndicator" data-uri="{{$repoURI}}" data-rev="{{.CommitID}}" data-buildable="{{uiBuild}}"></div>
 		<a href="{{urlToRepoCommit $repoURI .CommitID}}">{{.Name}}</a>
 	</li>
 	{{end}}
