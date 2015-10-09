@@ -94,8 +94,10 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return e.Encode(&struct {
+		Total   int32
 		Results []payloads.TextSearchResult
 	}{
+		Total:   vcsEntryList.Total,
 		Results: results,
 	})
 }

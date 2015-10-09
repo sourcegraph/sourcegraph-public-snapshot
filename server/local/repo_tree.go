@@ -1,6 +1,7 @@
 package local
 
 import (
+	"math"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -161,10 +162,17 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 		repoRev.Rev = repoRev.CommitID
 	}
 
+	origN, origOffset := opt.SearchOptions.N, opt.SearchOptions.Offset
+	// Get all of the matches in the repo so we can count the total.
+	opt.SearchOptions.N, opt.SearchOptions.Offset = math.MaxInt32, 0
 	res, err := rcs.Search(vcs.CommitID(repoRev.CommitID), opt.SearchOptions)
 	if err != nil {
 		return nil, err
 	}
+
+	total := len(res)
+	// Paginate the results.
+	res = res[origOffset : origOffset+origN]
 
 	if opt.Formatted {
 		for _, res := range res {
@@ -187,5 +195,10 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 		}
 	}
 
-	return &sourcegraph.VCSSearchResultList{SearchResults: res}, nil
+	return &sourcegraph.VCSSearchResultList{
+		SearchResults: res,
+		ListResponse: sourcegraph.ListResponse{
+			Total: int32(total),
+		},
+	}, nil
 }
