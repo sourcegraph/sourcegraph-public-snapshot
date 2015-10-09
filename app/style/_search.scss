@@ -197,6 +197,9 @@ div.search-result-type {
 	}
 
 	.nav {
+		a {
+			cursor: pointer;
+		}
 		li {
 			.badge {
 				font-size: $font-size-base;
@@ -244,15 +247,22 @@ div.search-result-type {
 		border: 1px solid $border-gray;
 		border-top: none;
 		$result-section-padding: 6px;
-		tr:first-child {
-			td {
-				padding-top: $result-section-padding;
+
+		tr {
+			&:first-child {
+				td {
+					padding-top: $result-section-padding;
+				}
+			}
+			&:last-child {
+				td {
+					padding-bottom: $result-section-padding;
+				}
 			}
 		}
-		tr:last-child {
-			td {
-				padding-bottom: $result-section-padding;
-			}
+
+		.line-number {
+			cursor: pointer;
 		}
 	}
 }

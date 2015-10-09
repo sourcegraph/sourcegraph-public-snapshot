@@ -1,6 +1,7 @@
 var React = require("react");
 
 var globals = require("../globals");
+var routing = require("../routing/router");
 var Pagination = require("./Pagination");
 var TextSearchResult = require("../components/TextSearchResult");
 var SearchActions = require("../actions/SearchActions");
@@ -33,7 +34,9 @@ var TextSearchResultsView = React.createClass({
 		var currentFile, header;
 		var results = this.props.results.map((result) => {
 			if (currentFile !== result.File) {
-				header = <header>{result.File}</header>;
+				// TODO(renfred) link to user-specified rev instead of default branch.
+				var fileURL = routing.fileURL(this.props.repo.URI, this.props.repo.DefaultBranch, result.File);
+				header = <header><a href={fileURL}>{result.File}</a></header>;
 			} else {
 				header = null;
 			}
@@ -42,7 +45,7 @@ var TextSearchResultsView = React.createClass({
 			return (
 				<div className="text-search-result" key={`${result.File}-${result.StartLine}`}>
 					{header}
-					<TextSearchResult result={result} />
+					<TextSearchResult result={result} repo={this.props.repo} />
 				</div>
 			);
 		});
