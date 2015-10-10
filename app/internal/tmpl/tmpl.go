@@ -22,7 +22,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal/canonicalurl"
-	"src.sourcegraph.com/sourcegraph/app/internal/godocsupport"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	tmpldata "src.sourcegraph.com/sourcegraph/app/templates"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -81,7 +80,6 @@ func repoTemplates() error {
 		{"repo/tree/dir.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
 		{"repo/search_results.html", "search/results.inc.html"},
 		{"repo/search.html"},
-		{"repo/godoc.html", "error/common.html"},
 		{"repo/frame.html", "error/common.html"},
 		{"repo/commit.html", "repo/commit.inc.html"},
 		{"repo/commits.html", "repo/commit.inc.html"},
@@ -377,7 +375,6 @@ func parseHTMLTemplates(sets [][]string, layout []string) error {
 
 			t := htmpl.New("")
 			t.Funcs(FuncMap)
-			t.Funcs(godocsupport.TemplateFuncMap)
 
 			for _, tname := range set {
 				f, err := tmpldata.Data.Open("/" + tname)

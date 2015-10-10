@@ -10,7 +10,6 @@ var CompareView = require("./components/CompareView");
 var DeltaDefsContainer = require("./components/DeltaDefsContainer");
 var DeltaImpactContainer = require("./components/DeltaImpactContainer");
 var MarkdownView = require("./components/MarkdownView");
-var RefCountLink = require("./components/RefCountLink");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoBuildStatus = require("./components/RepoBuildStatus");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
@@ -100,11 +99,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	el = $("[data-react-component=MarkdownView]");
 	if (el.length) {
 		el.each((_, e) => ReactDOM.render(<MarkdownView {...e.dataset} />, e));
-	}
-
-	el = document.querySelectorAll("[data-react=RefCountLink]");
-	for (var i = 0; i < el.length; i++) {
-		ReactDOM.renderComponent(<RefCountLink defSpec={JSON.parse(el[i].dataset.defSpec)}/>, el[i]);
 	}
 
 	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]")).map((el2) => {

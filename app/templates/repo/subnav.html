@@ -39,14 +39,6 @@
 					</li>
 				{{end}}
 
-				{{if eq .Repo.Language "Go"}}
-					<li class="{{if hasPrefix .CurrentRoute "repo.godoc"}}active{{end}}">
-						<a href="{{urlToRepoGoDoc .Repo.URI "" ""}}">
-							<i class="octicon octicon-book"></i><span class="txt">godoc</span>
-						</a>
-					</li>
-				{{end}}
-
 				{{range (repoEnabledFrames .Repo)}}
 					<li>
 						<a href="{{urlToRepoApp $.Repo.URI .ID}}">

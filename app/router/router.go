@@ -97,8 +97,6 @@ const (
 	DefPopover  = "def.popover"
 	DefShare    = "def.share"
 
-	RepoGoDoc = "repo.godoc"
-
 	// Platform routes
 	RepoAppFrame = "repo.appframe"
 )
@@ -211,8 +209,6 @@ func New(base *mux.Router) *Router {
 	headVar := "{Head:" + routevar.NamedToNonCapturingGroups(spec.RevPattern) + "}"
 	repoRev.Path("/.compare/" + headVar).Methods("GET").Name(RepoCompare)
 	repoRev.Path("/.compare/" + headVar + "/.all").Methods("GET").Name(RepoCompareAll)
-
-	repoRev.Path("/.godoc" + routevar.TreeEntryPath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoGoDoc)
 
 	repo.Path("/.enable").Methods("GET", "POST", "DELETE").Name(RepoEnable)
 

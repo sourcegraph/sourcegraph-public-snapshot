@@ -1,14 +1,36 @@
-{{define "Head"}}<title>{{with .PDoc.Name}}{{.}} - doc{{else}}godoc{{end}} - {{.Repo.URI}} - Sourcegraph</title>
-{{end}}
+package godoc
 
-{{define "RepoBody"}}
-{{template "RepoBuildWarning" $}}
-{{if not .RepoIsBuilt}}
-	<div class="alert alert-warning">
-		<div class="pull-left" data-react="RepoBuildIndicator" data-uri="{{.Repo.URI}}" data-rev="{{.RepoRevSpec.CommitID}}" data-buildable="{{uiBuild}}"></div>&nbsp;
-		<strong>Repository not yet built.</strong> Documentation will be displayed, but the code snippets are not interactive and there are no cross-references until a build completes. Click the checkmark to trigger a build.</div>
-{{end}}
+var tmplHTML = `
+<style>
+	h2 {
+		margin-top: 0;
+	}
+	h3 {
+		margin-top: 21px;
+	}
+	h4 {
+		margin-top: 28px;
+	}
 
+	.sourcegraph-sourcebox .sourcegraph-footer {
+		display: none;
+	}
+
+	pre {
+		background-color: #f5f5f5 !important;
+		border: solid 1px #ccc !important;
+	}
+	code {
+		padding-left: 0;
+	}
+
+	a.permalink {
+		opacity: 0;
+	}
+	h3:hover a.permalink, h4:hover a.permalink {
+		opacity: 1;
+	}
+</style>
 {{with .PDoc}}
 	{{$pdoc := .}}
 	{{if or .Doc .Consts .Vars .Funcs .Types}}
@@ -73,7 +95,6 @@
 				{{range .Funcs}}
 					<h3 class="anchor" id="{{.Name}}" data-kind="f">
 						func <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-						{{if $.RepoIsBuilt}}<span class="ref-count" data-react="RefCountLink" data-def-spec="{{$.PDoc.DefSpec . nil $.RepoRevSpec|json}}"></span>{{end}}
 						<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
 					</h3>
 					{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
@@ -84,7 +105,6 @@
 				{{range $t := .Types}}
 					<h3 class="anchor" id="{{.Name}}" data-kind="t">
 						type <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-						{{if $.RepoIsBuilt}}<span class="ref-count" data-react="RefCountLink" data-def-spec="{{$.PDoc.DefSpec . nil $.RepoRevSpec|json}}"></span>{{end}}
 						<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
 					</h3>
 					{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
@@ -95,7 +115,6 @@
 					{{range .Funcs}}
 						<h4 class="anchor" id="{{.Name}}" data-kind="f">
 							func <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-							{{if $.RepoIsBuilt}}<span class="ref-count" data-react="RefCountLink" data-def-spec="{{$.PDoc.DefSpec . nil $.RepoRevSpec|json}}"></span>{{end}}
 							<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
 						</h4>
 						{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
@@ -105,7 +124,6 @@
 					{{range .Methods}}
 						<h4 class="anchor" id="{{$t.Name}}.{{.Name}}" data-kind="m">
 							func ({{.Recv}}) <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-							{{if $.RepoIsBuilt}}<span class="ref-count" data-react="RefCountLink" data-def-spec="{{$.PDoc.DefSpec . $t $.RepoRevSpec|json}}"></span>{{end}}
 							<a class="permalink" href="#{{$t.Name}}.{{.Name}}"><i class="octicon octicon-link"></i></a>
 						</h4>
 						{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
@@ -116,7 +134,7 @@
 	{{else if not $.Subpkgs}}
 			<p>No documentation found.</p>
 	{{end}}
-{{end}}
+
 {{template "PkgCmdFooter" $}}
 {{end}}
 
@@ -150,7 +168,7 @@
 {{if .Subpkgs}}<h3 class="anchor" id="pkg-subdirectories">Directories <a class="permalink" href="#pkg-subdirectories"><i class="octicon octicon-link"></i></a></h3>
 		<table class="table table-condensed">
 		<thead><tr><th>Path</th></tr></thead>
-		<tbody>{{range .Subpkgs}}<tr><td><a href="{{urlToRepoGoDoc $.Repo.URI $.RepoRevSpec.CommitID .Path}}">{{pathBase .Path}}</a></tr>{{end}}</tbody>
+		<tbody>{{range .Subpkgs}}<tr><td><a href="{{urlToRepoGoDoc $.Repo.URI $.RepoRevSpec.Rev .Path}}">{{pathBase .Path}}</a></tr>{{end}}</tbody>
 		</table>
 {{end}}
 <div class="anchor" id="x-pkginfo">
@@ -166,3 +184,4 @@
 {{end}}
 </div>
 {{end}}
+`

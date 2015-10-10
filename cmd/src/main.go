@@ -25,6 +25,7 @@ import (
 	// Platform applications
 	_ "sourcegraph.com/sourcegraph/issues"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
+	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
 )
 
 func main() {

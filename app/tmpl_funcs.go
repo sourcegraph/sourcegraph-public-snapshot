@@ -5,7 +5,6 @@ import (
 	"fmt"
 	htmpl "html/template"
 	"net/url"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -46,8 +45,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"repoLink":          repoLink,
 	"absRepoLink":       absRepoLink,
 	"repoLabelForOwner": repoLabelForOwner,
-
-	"pathBase": path.Base,
 
 	"repoMetaDescription": repoMetaDescription,
 	"repoStat":            repoStat,
@@ -121,7 +118,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"urlToRepoTreeEntrySubroute": router.Rel.URLToRepoTreeEntrySubroute,
 	"urlToRepoCommit":            router.Rel.URLToRepoCommit,
 	"urlToRepoCompare":           router.Rel.URLToRepoCompare,
-	"urlToRepoGoDoc":             router.Rel.URLToRepoGoDoc,
 	"urlToRepoApp":               router.Rel.URLToRepoApp,
 	"urlWithSchema":              schemautil.URLWithSchema,
 	"urlToDef":                   router.Rel.URLToDef,
@@ -225,7 +221,6 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"hasField": hasStructField,
 
-	"hasPrefix":                 strings.HasPrefix,
 	"ifTemplate":                ifTemplate,
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 	"heapAnalyticsID":           func() string { return appconf.Flags.HeapAnalyticsID },
