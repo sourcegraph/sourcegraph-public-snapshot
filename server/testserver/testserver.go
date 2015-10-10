@@ -175,9 +175,16 @@ func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
-	cmd.Env = []string{"USER=" + os.Getenv("USER"), "PATH=" + os.Getenv("PATH"), "HOME=" + os.Getenv("HOME"), "SRCLIBPATH=" + os.Getenv("SRCLIBPATH"), "SRCLIBCACHE=" + os.Getenv("SRCLIBCACHE")}
+	cmd.Env = []string{"USER=" + os.Getenv("USER"), "PATH=" + os.Getenv("PATH"), "HOME=" + os.Getenv("HOME"), "SRCLIBPATH=" + os.Getenv("SRCLIBPATH"), "SRCLIBCACHE=" + os.Getenv("SRCLIBCACHE"),
+		"SRC_AUTH_FILE=/dev/null", // don't heed the local dev user's ~/.src-auth file
+	}
 	cmd.Env = append(cmd.Env, env...)
 	cmd.Env = append(cmd.Env, "GOPATH="+os.Getenv("GOPATH")) // for app templates (defaultBase func)
+
+	if *verbose {
+		log.Printf("# test server cmd: %v", cmd.Args)
+	}
+
 	return cmd
 }
 
