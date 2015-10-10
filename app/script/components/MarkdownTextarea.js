@@ -55,22 +55,29 @@ var MarkdownTextarea = React.createClass({
 		var file = item.getAsFile();
 
 		// Upload the file.
-		var req = new XMLHttpRequest();
-		req.open("POST", "/ui/.usercontent");
-		req.setRequestHeader("Content-Type", "image/png");
-		req.responseType = "json";
-		req.onload = () => {
-			var upload = req.response;
-			if (upload.Error !== undefined) {
-				console.log(upload.Error);
-				return;
-			}
+		$.ajax({
+			url: "/ui/.usercontent",
+			method: "POST",
+			contentType: "image/png",
+			accepts: "json",
+			data: file,
+			processData: false,
+			success: (upload) => {
+				console.log(upload);
 
-			// Insert the file into textarea.
-			var url = `/usercontent/${upload.Name}`;
-			this.insertText(`![Image](${url})`);
-		};
-		req.send(file);
+				if (upload.Error !== undefined) {
+					console.log(upload.Error);
+					return;
+				}
+
+				// Insert the file into textarea.
+				var url = `/usercontent/${upload.Name}`;
+				this.insertText(`![Image](${url})`);
+			},
+			error: (upload, error) => {
+				console.log(error);
+			},
+		});
 	},
 
 	/**
