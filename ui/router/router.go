@@ -2,6 +2,10 @@
 package router
 
 import (
+	"log"
+	"net/url"
+	"os"
+
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 )
@@ -142,4 +146,35 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Name(UserContentUpload)
 
 	return base
+}
+
+func urlToOrError(r *mux.Router, routeName string, params ...string) (*url.URL, error) {
+	route := r.Get(routeName)
+	if route == nil {
+		log.Panicf("no such route: %q (params: %v)", routeName, params)
+	}
+	u, err := route.URL(params...)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func urlTo(r *mux.Router, routeName string, params ...string) *url.URL {
+	u, err := urlToOrError(r, routeName, params...)
+	if err != nil {
+		if os.Getenv("STRICT_URL_GEN") != "" && *u == (url.URL{}) {
+			log.Panicf("Failed to generate route. See log message above.")
+		}
+		log.Printf("Route error: failed to make URL for route %q (params: %v): %s", routeName, params, err)
+		return &url.URL{}
+	}
+	return u
+}
+
+var rel = New(nil, false)
+
+// RelURLTo, used for testing, returns a relative url to given route name.
+func RelURLTo(routeName string, params ...string) *url.URL {
+	return urlTo(rel, routeName, params...)
 }
