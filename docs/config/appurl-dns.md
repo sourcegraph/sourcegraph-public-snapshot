@@ -26,7 +26,9 @@ If you have already logged in and authorized your Sourcegraph server with OAuth,
 you'll also need to reset the redirect URI of your instance. First, get your instance's
 `CLIENT-ID` (it is the `"IDKey"` field printed by the following command):
 
-`src --endpoint http://src.mycompany.com meta config`
+```
+src --endpoint http://src.mycompany.com meta config
+```
 
 Then, update the server redirect URI:
 
