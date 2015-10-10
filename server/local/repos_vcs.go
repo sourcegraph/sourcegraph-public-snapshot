@@ -175,9 +175,9 @@ func (s *repos) listCommitsUncached(ctx context.Context, op *sourcegraph.ReposLi
 	if err != nil {
 		return nil, err
 	}
-	listResponse := sourcegraph.ListResponse{HasMore: total > uint(op.Opt.ListOptions.Offset()+op.Opt.PerPageOrDefault())}
+	streamResponse := sourcegraph.StreamResponse{HasMore: total > uint(op.Opt.ListOptions.Offset()+op.Opt.PerPageOrDefault())}
 
-	return &sourcegraph.CommitList{Commits: commits, ListResponse: listResponse}, nil
+	return &sourcegraph.CommitList{Commits: commits, StreamResponse: streamResponse}, nil
 }
 
 func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {

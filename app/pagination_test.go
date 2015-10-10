@@ -26,35 +26,35 @@ func TestPagination_PageLinks(t *testing.T) {
 		want []pageLink
 	}{
 		"single page": {
-			got: must(paginatePrevNext(myOptions{}, sourcegraph.ListResponse{HasMore: false})),
+			got: must(paginatePrevNext(myOptions{}, sourcegraph.StreamResponse{HasMore: false})),
 			want: []pageLink{
 				{URL: "", Label: prevPageDef, Disabled: true},
 				{Label: nextPageDef, Disabled: true},
 			},
 		},
 		"first page": {
-			got: must(paginatePrevNext(myOptions{}, sourcegraph.ListResponse{HasMore: true})),
+			got: must(paginatePrevNext(myOptions{}, sourcegraph.StreamResponse{HasMore: true})),
 			want: []pageLink{
 				{URL: "", Label: prevPageDef, Disabled: true},
 				{URL: "?Page=2", Label: nextPageDef},
 			},
 		},
 		"middle page": {
-			got: must(paginatePrevNext(myOptions{ListOptions: sourcegraph.ListOptions{Page: 5}}, sourcegraph.ListResponse{HasMore: true})),
+			got: must(paginatePrevNext(myOptions{ListOptions: sourcegraph.ListOptions{Page: 5}}, sourcegraph.StreamResponse{HasMore: true})),
 			want: []pageLink{
 				{URL: "?Page=4", Label: prevPageDef},
 				{URL: "?Page=6", Label: nextPageDef},
 			},
 		},
 		"last page": {
-			got: must(paginatePrevNext(myOptions{ListOptions: sourcegraph.ListOptions{Page: 10}}, sourcegraph.ListResponse{HasMore: false})),
+			got: must(paginatePrevNext(myOptions{ListOptions: sourcegraph.ListOptions{Page: 10}}, sourcegraph.StreamResponse{HasMore: false})),
 			want: []pageLink{
 				{URL: "?Page=9", Label: prevPageDef},
 				{URL: "", Label: nextPageDef, Disabled: true},
 			},
 		},
 		"after last page": {
-			got: must(paginatePrevNext(myOptions{ListOptions: sourcegraph.ListOptions{Page: 100}}, sourcegraph.ListResponse{HasMore: false})),
+			got: must(paginatePrevNext(myOptions{ListOptions: sourcegraph.ListOptions{Page: 100}}, sourcegraph.StreamResponse{HasMore: false})),
 			want: []pageLink{
 				{URL: "?Page=99", Label: prevPageDef},
 				{URL: "", Label: nextPageDef, Disabled: true},

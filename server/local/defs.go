@@ -166,7 +166,6 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	}
 	// End kludge
 	total := len(defs0)
-	hasMore := (opt.Offset() + opt.Limit()) < total
 
 	if opt.Doc {
 		for _, def := range defs {
@@ -184,8 +183,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	return &sourcegraph.DefList{
 		Defs: defs,
 		ListResponse: sourcegraph.ListResponse{
-			HasMore: hasMore,
-			Total:   int32(total),
+			Total: int32(total),
 		},
 	}, nil
 }

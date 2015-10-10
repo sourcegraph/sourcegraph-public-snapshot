@@ -35,9 +35,9 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) (*
 	}
 
 	// Find out if there are more pages.
-	// ListResponse.HasMore is set to true if next page has non-zero entries.
+	// StreamResponse.HasMore is set to true if next page has non-zero entries.
 	// TODO(shurcooL): This can be optimized by structuring how pagination works a little better.
-	var listResponse sourcegraph.ListResponse
+	var streamResponse sourcegraph.StreamResponse
 	if opt != nil {
 		moreOpt := *opt
 		moreOpt.ListOptions.Page = int32(moreOpt.ListOptions.PageOrDefault()) + 1
@@ -45,11 +45,11 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) (*
 		if err != nil {
 			return nil, err
 		}
-		listResponse = sourcegraph.ListResponse{HasMore: len(moreBuilds) > 0}
+		streamResponse = sourcegraph.StreamResponse{HasMore: len(moreBuilds) > 0}
 	}
 
 	veryShortCache(ctx)
-	return &sourcegraph.BuildList{Builds: builds, ListResponse: listResponse}, nil
+	return &sourcegraph.BuildList{Builds: builds, StreamResponse: streamResponse}, nil
 }
 
 func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {

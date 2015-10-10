@@ -214,7 +214,7 @@ func (s *RegisteredClients) List(ctx context.Context, opt sourcegraph.Registered
 	}
 	return &sourcegraph.RegisteredClientList{
 		Clients: toRegisteredClients(clients),
-		ListResponse: sourcegraph.ListResponse{
+		StreamResponse: sourcegraph.StreamResponse{
 			HasMore: len(clients) == limit+1,
 		},
 	}, nil

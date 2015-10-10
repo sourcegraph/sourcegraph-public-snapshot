@@ -40,7 +40,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	pg, err := paginatePrevNext(opt, builds.ListResponse)
+	pg, err := paginatePrevNext(opt, builds.StreamResponse)
 	if err != nil {
 		return err
 	}
