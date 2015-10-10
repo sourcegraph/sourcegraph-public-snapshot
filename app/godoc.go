@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"net/url"
 	pathpkg "path"
 	"path/filepath"
 
@@ -21,23 +20,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
-
-func PkgGoDocURL(pkg string) (*url.URL, error) {
-	var repo, subdir string
-	if gosrc.IsGoRepoPath(pkg) {
-		repo = "github.com/golang/go"
-		subdir = pathpkg.Join("src", pkg)
-	} else if strings.Count(pkg, "/") >= 2 {
-		parts := strings.Split(pkg, "/")
-		repo = strings.Join(parts[:3], "/")
-		subdir = strings.Join(parts[3:], "/")
-	}
-	return router.Rel.URLToRepoGoDoc(repo, "", subdir)
-}
-
-func serveGoDoc(w http.ResponseWriter, r *http.Request) error {
-	return tmpl.Exec(r, w, "godoc/home.html", http.StatusOK, nil, &struct{ tmpl.Common }{})
-}
 
 func serveRepoGoDoc(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)

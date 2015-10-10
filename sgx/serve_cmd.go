@@ -396,9 +396,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(mux.NewRouter())))
 
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
-	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GOSRCDOTORG")); v {
-		mw = append(mw, gosrcDotOrgHandler)
-	}
 	if v, _ := strconv.ParseBool(os.Getenv("SG_FORCE_HTTPS")); v {
 		mw = append(mw, forceHTTPSMiddleware)
 	}
@@ -727,39 +724,6 @@ func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFu
 		r.Host = "github.com"
 	}
 	h.ServeHTTP(w, r)
-}
-
-// gosrcDotOrgHandler redirects requests to "https?://gosrc.org/PKG"
-// to the corresponding Sourcegraph-powered godoc page on the app.
-func gosrcDotOrgHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	ctx := httpctx.FromRequest(r)
-
-	var host string
-	if strings.Contains(r.Host, ":") {
-		host, _, _ = net.SplitHostPort(r.Host)
-	} else {
-		host = r.Host
-	}
-	if host == "gosrc.org" || host == "www.gosrc.org" {
-		var u *url.URL
-		var err error
-		pkg := strings.TrimPrefix(r.URL.Path, "/")
-		if pkg == "" {
-			u, err = app_router.Rel.URLToOrError(app_router.GoDoc)
-		} else {
-			u, err = app.PkgGoDocURL(pkg)
-		}
-		if err != nil {
-			log.Println("repo.godoc route generation error:", err)
-			http.Error(w, "", http.StatusInternalServerError)
-			return
-		}
-		u.Scheme = conf.AppURL(ctx).Scheme
-		u.Host = conf.AppURL(ctx).Host
-		http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
-		return
-	}
-	next(w, r)
 }
 
 // ensureHostnameHandler ensures that the URL hostname is whatever is in SG_URL.

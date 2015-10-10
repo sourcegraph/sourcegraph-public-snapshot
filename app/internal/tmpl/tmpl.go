@@ -144,7 +144,6 @@ func commonTemplates() error {
 		{"oauth-provider/authorize.html"},
 		{"client-registration/register-client.html"},
 		{"org/members.html", "org/members.inc.html", "user/person.html", "user/profile.inc.html"},
-		{"godoc/home.html"},
 	}, []string{
 		"common.html",
 		"layout.html",

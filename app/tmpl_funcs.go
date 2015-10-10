@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
-	"net"
 	"net/url"
 	"path"
 	"path/filepath"
@@ -237,18 +236,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"nl2br": func(s string) htmpl.HTML {
 		return htmpl.HTML(strings.Replace(htmpl.HTMLEscapeString(s), "\n", "<br>", -1))
 	},
-
-	"gosrcBaseURL": func(appURL *url.URL) string {
-		_, port, _ := net.SplitHostPort(appURL.Host)
-		if port != "" {
-			port = ":" + port
-		}
-		return (&url.URL{
-			Scheme: "http", // TODO(sqs): get ssl cert for gosrc.org
-			Host:   "gosrc.org" + port,
-		}).String()
-	},
-	"gosrcBookmarklet": func() htmpl.URL { return htmpl.URL(gosrcBookmarklet) },
 
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 

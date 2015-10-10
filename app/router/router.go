@@ -97,9 +97,7 @@ const (
 	DefPopover  = "def.popover"
 	DefShare    = "def.share"
 
-	GoDoc     = "godoc"
 	RepoGoDoc = "repo.godoc"
-	GDDORefs  = "gddo.refs"
 
 	// Platform routes
 	RepoAppFrame = "repo.appframe"
@@ -149,8 +147,6 @@ func New(base *mux.Router) *Router {
 	base.Path("/login/oauth/token").Methods("POST").Name(OAuth2ServerToken)
 
 	base.Path("/login/oauth/receive").Methods("GET").Name(OAuth2ClientReceive)
-
-	base.Path("/.godoc-refs").Methods("GET").Name(GDDORefs)
 
 	base.Path("/sitemap-index.xml").Methods("GET").Name(SitemapIndex)
 
@@ -216,7 +212,6 @@ func New(base *mux.Router) *Router {
 	repoRev.Path("/.compare/" + headVar).Methods("GET").Name(RepoCompare)
 	repoRev.Path("/.compare/" + headVar + "/.all").Methods("GET").Name(RepoCompareAll)
 
-	base.Path("/.godoc").Methods("GET").Name(GoDoc)
 	repoRev.Path("/.godoc" + routevar.TreeEntryPath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoGoDoc)
 
 	repo.Path("/.enable").Methods("GET", "POST", "DELETE").Name(RepoEnable)
