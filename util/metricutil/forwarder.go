@@ -45,7 +45,11 @@ func ForwardEvents(ctx context.Context, eventList *sourcegraph.UserEventList) {
 	indexName := getIndexNameWithSuffix()
 	if ActiveForwarder != nil {
 		for _, event := range eventList.Events {
-			if err := ActiveForwarder.Index(indexName, "user_event", "", "", "", nil, event); err != nil {
+			indexNameWithPrefix := indexName
+			if event.Version == "dev" {
+				indexNameWithPrefix = "dev-" + indexNameWithPrefix
+			}
+			if err := ActiveForwarder.Index(indexNameWithPrefix, "user_event", "", "", "", nil, event); err != nil {
 				log15.Error("EventForwarder failed to push event", "event", event, "error", err)
 			}
 		}

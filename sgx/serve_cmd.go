@@ -140,6 +140,17 @@ Starts an HTTP server serving the app and API.`,
 	}
 }
 
+// ServeCmdPrivate holds the parameters containing private data about the
+// instance. These fields will not be sent to the federation root server
+// for diagnostic purposes.
+type ServeCmdPrivate struct {
+	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
+	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
+
+	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem" env:"SRC_ID_KEY_FILE"`
+	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
+}
+
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
@@ -156,11 +167,8 @@ type ServeCmd struct {
 	TestUI            bool          `long:"test-ui" description:"starts the UI test server which causes all UI endpoints to return mock data"`
 	GraphUplinkPeriod time.Duration `long:"graphuplink" default:"10m" description:"how often to communicate back to the mothership; if 0, then no periodic communication occurs"`
 
-	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
-	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
-
-	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem" env:"SRC_ID_KEY_FILE"`
-	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
+	// Flags containing sensitive information must be added to this struct.
+	ServeCmdPrivate
 
 	Prefetch bool `long:"prefetch" description:"prefetch directory children"`
 
@@ -517,13 +525,14 @@ func (c *ServeCmd) Execute(args []string) error {
 	} else if c.GraphUplinkPeriod != 0 {
 		// Listen for events and periodically push them upstream
 		metricutil.StartEventLogger(clientCtx, 4096, 256, 10*time.Minute)
-		metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
-			Type:    "notif",
-			Service: "serve_cmd",
-			Method:  "start",
-			Result:  "success",
-		})
 	}
+	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
+		Type:    "notif",
+		Service: "serve_cmd",
+		Method:  "start",
+		Result:  "success",
+	})
+	metricutil.LogConfig(clientCtx, c.safeConfigFlags())
 
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
@@ -918,4 +927,26 @@ func (c *ServeCmd) fedRootHeartbeat(ctx context.Context) {
 		}
 	}
 
+}
+
+// safeConfigFlags returns the commandline flag data for the `src serve` command,
+// by filtering out secrets in the ServeCmdPrivate flag struct.
+func (c *ServeCmd) safeConfigFlags() string {
+	serveFlagData := cli.Serve.GetData()
+	if len(serveFlagData) > 0 {
+		// The first element is the data of the top level group under `src serve`,
+		// i.e. the data of the struct ServeCmd. Since this struct contains private
+		// flags (ServeCmdPrivate), we discard this struct from the returned slice,
+		// and instead append a safe version of this struct.
+		serveFlagData = serveFlagData[1:]
+	}
+	serveCmdSafe := *c
+	serveCmdSafe.ServeCmdPrivate = ServeCmdPrivate{}
+	configStr := fmt.Sprintf("%+v", serveCmdSafe)
+	for _, data := range serveFlagData {
+		if data != nil {
+			configStr = fmt.Sprintf("%s %+v", configStr, data)
+		}
+	}
+	return configStr
 }

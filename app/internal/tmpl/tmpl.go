@@ -250,18 +250,17 @@ func executeTemplateBase(w http.ResponseWriter, templateName, templateSubName st
 func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, header http.Header, data interface{}) error {
 	ctx := httpctx.FromRequest(req)
 	currentUser := handlerutil.UserFromRequest(req)
-	var currentUID int32
-	if currentUser != nil {
-		currentUID = currentUser.UID
-	}
 
-	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+	appEvent := &sourcegraph.UserEvent{
 		Type:    "app",
-		UID:     currentUID,
-		Service: "template",
+		Service: conf.AppURL(ctx).String(),
 		Method:  name,
 		Result:  strconv.Itoa(status),
-	})
+		URL:     req.URL.String(),
+	}
+	if currentUser != nil {
+		appEvent.UID = currentUser.UID
+	}
 
 	if data != nil {
 		sess, err := appauth.ReadSessionCookie(req)
@@ -312,7 +311,14 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			TraceguideAccessToken: os.Getenv("SG_TRACEGUIDE_ACCESS_TOKEN"),
 			TraceguideServiceHost: os.Getenv("SG_TRACEGUIDE_SERVICE_HOST"),
 		}))
+
+		errField := reflect.ValueOf(data).Elem().FieldByName("Err")
+		if errField.IsValid() {
+			appEvent.Message = errField.String()
+		}
 	}
+
+	metricutil.LogEvent(ctx, appEvent)
 
 	// Buffer HTTP response so that if the template execution returns
 	// an error (e.g., a template calls a template func that panics or

@@ -1,6 +1,8 @@
 package metricutil
 
 import (
+	"fmt"
+	"runtime"
 	"time"
 
 	"golang.org/x/net/context"
@@ -10,7 +12,9 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/env"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
 
 type Worker struct {
@@ -164,6 +168,8 @@ func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int
 	log15.Debug("EventLogger initialized")
 }
 
+// LogEvent adds a sourcegraph.UserEvent to the local log buffer, which
+// will be periodically flushed upstream.
 func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
 	if ActiveLogger != nil {
 		if event.UID == 0 {
@@ -175,6 +181,49 @@ func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
 			event.CreatedAt = &ts
 		}
 
+		if event.Version == "" {
+			event.Version = buildvar.Version
+		}
+
 		ActiveLogger.Log(ctx, event)
+	}
+}
+
+// LogConfig dumps config info about the current server into the local
+// log buffer, to push upstream for diagnostic purposes.
+// The config dump contains:
+//
+//   1. Build information about the current src binary.
+//   2. Commandline flags to `src serve`.
+//   3. Env variables of the current process, relevant to the Sourcegraph
+//      installation.
+//
+// The flag data must be sanitized of secrets before passing in to this function.
+func LogConfig(ctx context.Context, flagsSafe string) {
+	if ActiveLogger != nil {
+		LogEvent(ctx, &sourcegraph.UserEvent{
+			Type:    "notif",
+			Service: "config",
+			Method:  "buildvars",
+			Message: fmt.Sprintf("%+v", buildvar.All),
+		})
+
+		LogEvent(ctx, &sourcegraph.UserEvent{
+			Type:    "notif",
+			Service: "config",
+			Method:  "flags",
+			Message: flagsSafe,
+		})
+
+		env := env.GetWhitelistedEnvironment()
+		env = append(env, "GOOS="+runtime.GOOS)
+		env = append(env, "GOARCH="+runtime.GOARCH)
+
+		LogEvent(ctx, &sourcegraph.UserEvent{
+			Type:    "notif",
+			Service: "config",
+			Method:  "env",
+			Message: fmt.Sprintf("%+v", env),
+		})
 	}
 }

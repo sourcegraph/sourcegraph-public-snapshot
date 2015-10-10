@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
@@ -120,7 +122,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	result := "success"
 	var message string
 	if err != nil {
-		result = "failed"
+		result = fmt.Sprintf("%v", grpc.Code(err))
 		message = err.Error()
 	}
 	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
