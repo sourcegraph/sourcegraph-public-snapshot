@@ -89,3 +89,15 @@ func (g *Group) Find(shortDescription string) *Group {
 
 	return ret
 }
+
+// GetData returns the flag data associated with this group and all it's subgroups.
+func (g *Group) GetData() []interface{} {
+	var ret []interface{}
+	ret = append(ret, g.data)
+	for _, subgroup := range g.groups {
+		if subgroup != nil {
+			ret = append(ret, subgroup.GetData()...)
+		}
+	}
+	return ret
+}

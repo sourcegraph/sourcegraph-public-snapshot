@@ -227,6 +227,7 @@ func (c *completion) complete(args []string) []Completion {
 			opt = nil
 		}
 	}
+
 	lastarg := s.args[len(s.args)-1]
 	var ret []Completion
 

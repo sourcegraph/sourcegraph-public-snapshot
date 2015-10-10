@@ -2977,6 +2977,12 @@ message UserEvent {
 	pbtypes.Timestamp created_at = 7;
 
 	string message = 8;
+
+	// Version holds the release version of the Sourcegraph binary.
+	string version = 9;
+
+	// URL holds the http request url.
+	string url = 10 [(gogoproto.customname) = "URL"];
 }
 
 message UserEventList {
