@@ -45,7 +45,12 @@ func init() {
 	commands.LoadDefaultSettings()
 }
 
-var mu sync.Mutex
+var (
+	hugoGlobalMu sync.Mutex // guards hugo globals (e.g., hugofs.DestinationFS)
+
+	cacheMu sync.Mutex                               // guards the following field
+	cache   = map[sourcegraph.RepoRevSpec]afero.Fs{} // caches built static sites
+)
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	ctx := httpctx.FromRequest(r)
@@ -67,10 +72,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	// Hugo uses globals, like hugofs.DestinationFS, so we can only
 	// run one of these handlers at a time.
-	mu.Lock()
-	defer mu.Unlock()
+	hugoGlobalMu.Lock()
+	defer hugoGlobalMu.Unlock()
 
-	fs, err := build(ctx, repoRev)
+	fs, err := cachedBuild(ctx, repoRev)
 	if err != nil {
 		http.Error(w, err.Error(), errcode.HTTP(err))
 		return
@@ -129,6 +134,23 @@ func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir 
 	}
 
 	return hugoDir, fs, nil
+}
+
+func cachedBuild(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, error) {
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
+
+	fs, present := cache[repoRev]
+	if present {
+		return fs, nil
+	}
+
+	fs, err := build(ctx, repoRev)
+	if err != nil {
+		return nil, err
+	}
+	cache[repoRev] = fs
+	return fs, nil
 }
 
 func build(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, error) {
