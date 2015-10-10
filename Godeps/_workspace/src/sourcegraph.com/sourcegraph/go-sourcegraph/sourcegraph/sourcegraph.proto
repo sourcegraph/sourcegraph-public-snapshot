@@ -54,13 +54,17 @@ message ListOptions {
 	int32 page = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// ListResponse specifies general pagination response when fetching a list of results.
+// ListResponse specifies a general paginated response when fetching a list of results.
 message ListResponse {
-	// HasMore is true if there are more entries available after the returned page.
-	bool has_more = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-
 	// Total is the total number of results in the list.
-	int32 total = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 total = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// StreamResponse specifies a paginated response where the total number of results
+// that can be returned is too expensive to compute, unbounded, or unknown.
+message StreamResponse {
+	// HasMore is true if there are more results available after the returned page.
+	bool has_more = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // Discussion stores information about a discussion
@@ -682,7 +686,7 @@ message RepoListCommitsOptions {
 
 message CommitList {
 	repeated vcs.Commit commits = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ReposListBranchesOp {
@@ -699,7 +703,7 @@ message RepoListBranchesOptions {
 
 message BranchList {
 	repeated vcs.Branch branches = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ReposListTagsOp {
@@ -719,7 +723,7 @@ message RepoListCommittersOptions {
 
 message CommitterList {
 	repeated vcs.Committer committers = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ChangesetCreateOp {
@@ -806,7 +810,7 @@ message RepoListTagsOptions {
 
 message TagList {
 	repeated vcs.Tag tags = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message MirrorReposRefreshVCSOp {
@@ -1101,7 +1105,7 @@ message BuildsGetRepoBuildInfoOp {
 
 message BuildList {
 	repeated Build builds = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message BuildsCreateOp {
@@ -1873,7 +1877,7 @@ message DefsListRefsOp {
 
 message RefList {
 	repeated Ref refs = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListExamplesOp {
@@ -1886,7 +1890,7 @@ message DefsListExamplesOp {
 
 message ExampleList {
 	repeated Example examples = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListAuthorsOp {
@@ -2864,7 +2868,7 @@ message RegisteredClientListOptions {
 // RegisteredClientList holds a list of clients.
 message RegisteredClientList {
 	repeated RegisteredClient clients = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message UserPermissions {

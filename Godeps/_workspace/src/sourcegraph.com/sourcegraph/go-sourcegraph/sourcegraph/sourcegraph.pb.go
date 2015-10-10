@@ -14,6 +14,7 @@ It has these top-level messages:
 	Counter
 	ListOptions
 	ListResponse
+	StreamResponse
 	Discussion
 	DiscussionComment
 	Changeset
@@ -368,17 +369,26 @@ func (m *ListOptions) Reset()         { *m = ListOptions{} }
 func (m *ListOptions) String() string { return proto.CompactTextString(m) }
 func (*ListOptions) ProtoMessage()    {}
 
-// ListResponse specifies general pagination response when fetching a list of results.
+// ListResponse specifies a general paginated response when fetching a list of results.
 type ListResponse struct {
-	// HasMore is true if there are more entries available after the returned page.
-	HasMore bool `protobuf:"varint,1,opt,name=has_more,proto3" json:",omitempty" url:",omitempty"`
 	// Total is the total number of results in the list.
-	Total int32 `protobuf:"varint,2,opt,name=total,proto3" json:",omitempty" url:",omitempty"`
+	Total int32 `protobuf:"varint,1,opt,name=total,proto3" json:",omitempty" url:",omitempty"`
 }
 
 func (m *ListResponse) Reset()         { *m = ListResponse{} }
 func (m *ListResponse) String() string { return proto.CompactTextString(m) }
 func (*ListResponse) ProtoMessage()    {}
+
+// StreamResponse specifies a paginated response where the total number of results
+// that can be returned is too expensive to compute, unbounded, or unknown.
+type StreamResponse struct {
+	// HasMore is true if there are more results available after the returned page.
+	HasMore bool `protobuf:"varint,1,opt,name=has_more,proto3" json:",omitempty" url:",omitempty"`
+}
+
+func (m *StreamResponse) Reset()         { *m = StreamResponse{} }
+func (m *StreamResponse) String() string { return proto.CompactTextString(m) }
+func (*StreamResponse) ProtoMessage()    {}
 
 // Discussion stores information about a discussion
 type Discussion struct {
@@ -855,8 +865,8 @@ func (m *RepoListCommitsOptions) String() string { return proto.CompactTextStrin
 func (*RepoListCommitsOptions) ProtoMessage()    {}
 
 type CommitList struct {
-	Commits      []*vcs.Commit `protobuf:"bytes,1,rep,name=commits" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Commits        []*vcs.Commit `protobuf:"bytes,1,rep,name=commits" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *CommitList) Reset()         { *m = CommitList{} }
@@ -884,8 +894,8 @@ func (m *RepoListBranchesOptions) String() string { return proto.CompactTextStri
 func (*RepoListBranchesOptions) ProtoMessage()    {}
 
 type BranchList struct {
-	Branches     []*vcs.Branch `protobuf:"bytes,1,rep,name=branches" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Branches       []*vcs.Branch `protobuf:"bytes,1,rep,name=branches" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *BranchList) Reset()         { *m = BranchList{} }
@@ -920,8 +930,8 @@ func (m *RepoListCommittersOptions) String() string { return proto.CompactTextSt
 func (*RepoListCommittersOptions) ProtoMessage()    {}
 
 type CommitterList struct {
-	Committers   []*vcs.Committer `protobuf:"bytes,1,rep,name=committers" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Committers     []*vcs.Committer `protobuf:"bytes,1,rep,name=committers" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *CommitterList) Reset()         { *m = CommitterList{} }
@@ -1036,8 +1046,8 @@ func (m *RepoListTagsOptions) String() string { return proto.CompactTextString(m
 func (*RepoListTagsOptions) ProtoMessage()    {}
 
 type TagList struct {
-	Tags         []*vcs.Tag `protobuf:"bytes,1,rep,name=tags" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Tags           []*vcs.Tag `protobuf:"bytes,1,rep,name=tags" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *TagList) Reset()         { *m = TagList{} }
@@ -1337,8 +1347,8 @@ func (m *BuildsGetRepoBuildInfoOp) String() string { return proto.CompactTextStr
 func (*BuildsGetRepoBuildInfoOp) ProtoMessage()    {}
 
 type BuildList struct {
-	Builds       []*Build `protobuf:"bytes,1,rep,name=builds" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Builds         []*Build `protobuf:"bytes,1,rep,name=builds" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *BuildList) Reset()         { *m = BuildList{} }
@@ -2059,8 +2069,8 @@ func (m *DefsListRefsOp) String() string { return proto.CompactTextString(m) }
 func (*DefsListRefsOp) ProtoMessage()    {}
 
 type RefList struct {
-	Refs         []*Ref `protobuf:"bytes,1,rep,name=refs" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Refs           []*Ref `protobuf:"bytes,1,rep,name=refs" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *RefList) Reset()         { *m = RefList{} }
@@ -2080,8 +2090,8 @@ func (m *DefsListExamplesOp) String() string { return proto.CompactTextString(m)
 func (*DefsListExamplesOp) ProtoMessage()    {}
 
 type ExampleList struct {
-	Examples     []*Example `protobuf:"bytes,1,rep,name=examples" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Examples       []*Example `protobuf:"bytes,1,rep,name=examples" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *ExampleList) Reset()         { *m = ExampleList{} }
@@ -3047,8 +3057,8 @@ func (*RegisteredClientListOptions) ProtoMessage()    {}
 
 // RegisteredClientList holds a list of clients.
 type RegisteredClientList struct {
-	Clients      []*RegisteredClient `protobuf:"bytes,1,rep,name=clients" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Clients        []*RegisteredClient `protobuf:"bytes,1,rep,name=clients" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *RegisteredClientList) Reset()         { *m = RegisteredClientList{} }
