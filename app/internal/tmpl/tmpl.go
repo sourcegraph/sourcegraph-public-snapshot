@@ -314,7 +314,8 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 		errField := reflect.ValueOf(data).Elem().FieldByName("Err")
 		if errField.IsValid() {
-			appEvent.Message = errField.String()
+			appError := errField.Interface().(error)
+			appEvent.Message = appError.Error()
 		}
 	}
 
