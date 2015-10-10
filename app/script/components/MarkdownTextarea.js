@@ -93,7 +93,7 @@ var MarkdownTextarea = React.createClass({
 	 * @returns {void}
 	 */
 	insertText(inserted) {
-		var txt = $(this.getDOMNode()).find(".raw-body");
+		var txt = $(ReactDOM.findDOMNode(this)).find(".raw-body");
 		var value = txt.val();
 		var start = txt[0].selectionStart;
 		var end = txt[0].selectionEnd;
