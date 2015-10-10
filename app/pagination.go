@@ -14,15 +14,15 @@ import (
 // labels for navigating to previous and next pages in a paged result
 // set. currentSchema should be an *Options struct (e.g.,
 // sourcegraph.RepoListOptions) with an embedded client.ListOptions
-// struct. Those ListOptions along with listResponse are used to
+// struct. Those ListOptions along with streamResponse are used to
 // generate the page links.
-func paginatePrevNext(currentSchema interface{}, listResponse sourcegraph.ListResponse) ([]pageLink, error) {
-	return (&paginationPrevNext{CurrentSchema: currentSchema, listResponse: listResponse}).PageLinks(), nil
+func paginatePrevNext(currentSchema interface{}, streamResponse sourcegraph.StreamResponse) ([]pageLink, error) {
+	return (&paginationPrevNext{CurrentSchema: currentSchema, streamResponse: streamResponse}).PageLinks(), nil
 }
 
 type paginationPrevNext struct {
-	CurrentSchema interface{}
-	listResponse  sourcegraph.ListResponse
+	CurrentSchema  interface{}
+	streamResponse sourcegraph.StreamResponse
 }
 
 func (p *paginationPrevNext) PageLinks() []pageLink {
@@ -41,7 +41,7 @@ func (p *paginationPrevNext) PageLinks() []pageLink {
 
 	next := pageLink{
 		Label:    nextPageDef,
-		Disabled: !p.listResponse.HasMore,
+		Disabled: !p.streamResponse.HasMore,
 	}
 	if !next.Disabled {
 		next.URL = queryForPage(p.CurrentSchema, currentPage+1)

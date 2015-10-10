@@ -6,12 +6,15 @@ module.exports.searchRepo = (query, repo) => {
 	AppDispatcher.handleViewAction({
 		type: globals.Actions.SEARCH_SUBMIT,
 		query: query,
-		repoURI: repo.URI,
+		repo: repo,
 	});
+	module.exports.searchRepoTokens(query, repo, 1);
+};
 
-	AppDispatcher.dispatchAsync(SearchUtil.fetchTokenResults(query, repo.URI), {
-		started: null,
-		success: globals.Actions.SEARCH_RECEIVED_TOKEN_RESULTS,
+module.exports.searchRepoTokens = (query, repo, page) => {
+	AppDispatcher.dispatchAsync(SearchUtil.fetchTokenResults(query, repo.URI, page), {
+		started: globals.Actions.SEARCH_TOKENS_SUBMIT,
+		success: globals.Actions.SEARCH_TOKENS_RECEIVED_RESULTS,
 		failure: null,
 	});
 };

@@ -54,9 +54,16 @@ message ListOptions {
 	int32 page = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// ListResponse specifies general pagination response when fetching a list of results.
+// ListResponse specifies a general paginated response when fetching a list of results.
 message ListResponse {
-	// HasMore is true if there are more entries available after the returned page.
+	// Total is the total number of results in the list.
+	int32 total = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+}
+
+// StreamResponse specifies a paginated response where the total number of results
+// that can be returned is too expensive to compute, unbounded, or unknown.
+message StreamResponse {
+	// HasMore is true if there are more results available after the returned page.
 	bool has_more = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
@@ -679,7 +686,7 @@ message RepoListCommitsOptions {
 
 message CommitList {
 	repeated vcs.Commit commits = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ReposListBranchesOp {
@@ -696,7 +703,7 @@ message RepoListBranchesOptions {
 
 message BranchList {
 	repeated vcs.Branch branches = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ReposListTagsOp {
@@ -716,7 +723,7 @@ message RepoListCommittersOptions {
 
 message CommitterList {
 	repeated vcs.Committer committers = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ChangesetCreateOp {
@@ -803,7 +810,7 @@ message RepoListTagsOptions {
 
 message TagList {
 	repeated vcs.Tag tags = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message MirrorReposRefreshVCSOp {
@@ -1098,7 +1105,7 @@ message BuildsGetRepoBuildInfoOp {
 
 message BuildList {
 	repeated Build builds = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message BuildsCreateOp {
@@ -1860,6 +1867,7 @@ message DefsGetOp {
 
 message DefList {
 	repeated Def defs = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListRefsOp {
@@ -1869,7 +1877,7 @@ message DefsListRefsOp {
 
 message RefList {
 	repeated Ref refs = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListExamplesOp {
@@ -1882,7 +1890,7 @@ message DefsListExamplesOp {
 
 message ExampleList {
 	repeated Example examples = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListAuthorsOp {
@@ -2196,8 +2204,22 @@ message RepoTreeListResult {
 
 message VCSSearchResultList {
 	repeated vcs.SearchResult search_results = 1;
+	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
+message TokenSearchOptions {
+	string query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
+	RepoRevSpec repo_rev = 2 [(gogoproto.nullable) = false];
+	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+message TextSearchOptions {
+	string query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
+	RepoRevSpec repo_rev = 2 [(gogoproto.nullable) = false];
+	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// Deprecated.
 message SearchOptions {
 	string query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
 	bool defs = 2;
@@ -2207,6 +2229,7 @@ message SearchOptions {
 	ListOptions list_options = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
+// Deprecated.
 message SearchResults {
 	repeated Def defs = 1;
 	repeated Person people = 2;
@@ -2497,9 +2520,24 @@ service RepoTree {
 // API.
 service Search {
 	// Search searches the full index.
+	// Deprecated: use one of the more specific search methods below.
 	rpc Search(SearchOptions) returns (SearchResults) {
 		option (google.api.http) = {
 			post: "/search"
+		};
+	};
+
+	// SearchTokens searches the index of tokens.
+	rpc SearchTokens(TokenSearchOptions) returns (DefList) {
+		option (google.api.http) = {
+			post: "/search/tokens"
+		};
+	};
+
+	// SearchText searches the content of files in the repo tree.
+	rpc SearchText(TextSearchOptions) returns (VCSSearchResultList) {
+		option (google.api.http) = {
+			post: "/search/text"
 		};
 	};
 
@@ -2830,7 +2868,7 @@ message RegisteredClientListOptions {
 // RegisteredClientList holds a list of clients.
 message RegisteredClientList {
 	repeated RegisteredClient clients = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message UserPermissions {

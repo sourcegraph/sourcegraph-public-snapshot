@@ -3386,6 +3386,28 @@ func (s *CachedSearchServer) Search(ctx context.Context, in *SearchOptions) (*Se
 	return result, err
 }
 
+func (s *CachedSearchServer) SearchTokens(ctx context.Context, in *TokenSearchOptions) (*DefList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.SearchServer.SearchTokens(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedSearchServer) SearchText(ctx context.Context, in *TextSearchOptions) (*VCSSearchResultList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.SearchServer.SearchText(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
 func (s *CachedSearchServer) Complete(ctx context.Context, in *RawQuery) (*Completions, error) {
 	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
 	result, err := s.SearchServer.Complete(ctx, in)
@@ -3433,6 +3455,58 @@ func (s *CachedSearchClient) Search(ctx context.Context, in *SearchOptions, opts
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Search.Search", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedSearchClient) SearchTokens(ctx context.Context, in *TokenSearchOptions, opts ...grpc.CallOption) (*DefList, error) {
+	if s.Cache != nil {
+		var cachedResult DefList
+		cached, err := s.Cache.Get(ctx, "Search.SearchTokens", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.SearchClient.SearchTokens(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Search.SearchTokens", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedSearchClient) SearchText(ctx context.Context, in *TextSearchOptions, opts ...grpc.CallOption) (*VCSSearchResultList, error) {
+	if s.Cache != nil {
+		var cachedResult VCSSearchResultList
+		cached, err := s.Cache.Get(ctx, "Search.SearchText", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.SearchClient.SearchText(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Search.SearchText", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

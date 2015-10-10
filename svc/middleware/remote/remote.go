@@ -442,6 +442,14 @@ func (s remoteSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOptions)
 	return sourcegraph.NewClientFromContext(ctx).Search.Search(ctx, v1)
 }
 
+func (s remoteSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
+	return sourcegraph.NewClientFromContext(ctx).Search.SearchTokens(ctx, v1)
+}
+
+func (s remoteSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
+	return sourcegraph.NewClientFromContext(ctx).Search.SearchText(ctx, v1)
+}
+
 func (s remoteSearch) Complete(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.Completions, error) {
 	return sourcegraph.NewClientFromContext(ctx).Search.Complete(ctx, v1)
 }

@@ -180,7 +180,7 @@ func (s *RegisteredClients) List(ctx context.Context, opt sourcegraph.Registered
 
 	return &sourcegraph.RegisteredClientList{
 		Clients: clients,
-		ListResponse: sourcegraph.ListResponse{
+		StreamResponse: sourcegraph.StreamResponse{
 			HasMore: false,
 		},
 	}, nil

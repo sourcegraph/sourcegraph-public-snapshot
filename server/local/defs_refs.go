@@ -100,7 +100,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	}
 
 	return &sourcegraph.RefList{
-		Refs:         refs,
-		ListResponse: sourcegraph.ListResponse{HasMore: hasMore},
+		Refs:           refs,
+		StreamResponse: sourcegraph.StreamResponse{HasMore: hasMore},
 	}, nil
 }

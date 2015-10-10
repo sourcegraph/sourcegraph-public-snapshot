@@ -1473,6 +1473,34 @@ func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOptions
 	return rv, s.errFunc(err)
 }
 
+func (s wrappedSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.SearchOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Search")
+	}
+	rv, err := svc.SearchTokens(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.SearchOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Search")
+	}
+	rv, err := svc.SearchText(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
 func (s wrappedSearch) Complete(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.Completions, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)

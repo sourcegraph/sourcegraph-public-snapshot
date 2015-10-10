@@ -126,7 +126,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	pg, err := paginatePrevNext(opt, commits0.ListResponse)
+	pg, err := paginatePrevNext(opt, commits0.StreamResponse)
 	if err != nil {
 		return err
 	}

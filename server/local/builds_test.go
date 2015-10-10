@@ -68,57 +68,57 @@ func TestBuildsService_List_pagination(t *testing.T) {
 		"default pagination options, all pages, asc sort, items 1-3 of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{}},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{buildList[2], buildList[1], buildList[0]},
-				ListResponse: sourcegraph.ListResponse{HasMore: false},
+				Builds:         []*sourcegraph.Build{buildList[2], buildList[1], buildList[0]},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: false},
 			},
 		},
 		"first page, 2 items/page, items 1-2 of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{Page: 1, PerPage: 2}, Sort: "created_at", Direction: "desc"},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{buildList[0], buildList[1]},
-				ListResponse: sourcegraph.ListResponse{HasMore: true},
+				Builds:         []*sourcegraph.Build{buildList[0], buildList[1]},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: true},
 			},
 		},
 		"second page, 2 items/page, item 3 of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{Page: 2, PerPage: 2}, Sort: "created_at", Direction: "desc"},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{buildList[2]},
-				ListResponse: sourcegraph.ListResponse{HasMore: false},
+				Builds:         []*sourcegraph.Build{buildList[2]},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: false},
 			},
 		},
 		"third page, 2 items/page, no items of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{Page: 3, PerPage: 2}, Sort: "created_at", Direction: "desc"},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{},
-				ListResponse: sourcegraph.ListResponse{HasMore: false},
+				Builds:         []*sourcegraph.Build{},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: false},
 			},
 		},
 		"first page, 1 item/page, item 1 of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{Page: 1, PerPage: 1}, Sort: "created_at", Direction: "desc"},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{buildList[0]},
-				ListResponse: sourcegraph.ListResponse{HasMore: true},
+				Builds:         []*sourcegraph.Build{buildList[0]},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: true},
 			},
 		},
 		"second page, 1 item/page, item 2 of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{Page: 2, PerPage: 1}, Sort: "created_at", Direction: "desc"},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{buildList[1]},
-				ListResponse: sourcegraph.ListResponse{HasMore: true},
+				Builds:         []*sourcegraph.Build{buildList[1]},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: true},
 			},
 		},
 		"third page, 1 item/page, item 3 of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{Page: 3, PerPage: 1}, Sort: "created_at", Direction: "desc"},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{buildList[2]},
-				ListResponse: sourcegraph.ListResponse{HasMore: false},
+				Builds:         []*sourcegraph.Build{buildList[2]},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: false},
 			},
 		},
 		"fourth page, 1 item/page, no items of 3": {
 			opt: sourcegraph.BuildListOptions{ListOptions: sourcegraph.ListOptions{Page: 4, PerPage: 1}, Sort: "created_at", Direction: "desc"},
 			wantBuilds: &sourcegraph.BuildList{
-				Builds:       []*sourcegraph.Build{},
-				ListResponse: sourcegraph.ListResponse{HasMore: false},
+				Builds:         []*sourcegraph.Build{},
+				StreamResponse: sourcegraph.StreamResponse{HasMore: false},
 			},
 		},
 	}

@@ -87,5 +87,5 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 		return nil, err
 	}
 
-	return &sourcegraph.ExampleList{Examples: examples, ListResponse: refs.ListResponse}, nil
+	return &sourcegraph.ExampleList{Examples: examples, StreamResponse: refs.StreamResponse}, nil
 }

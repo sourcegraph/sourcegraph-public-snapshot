@@ -14,6 +14,7 @@ It has these top-level messages:
 	Counter
 	ListOptions
 	ListResponse
+	StreamResponse
 	Discussion
 	DiscussionComment
 	Changeset
@@ -173,6 +174,8 @@ It has these top-level messages:
 	RepoTreeListOp
 	RepoTreeListResult
 	VCSSearchResultList
+	TokenSearchOptions
+	TextSearchOptions
 	SearchOptions
 	SearchResults
 	SuggestionList
@@ -366,15 +369,26 @@ func (m *ListOptions) Reset()         { *m = ListOptions{} }
 func (m *ListOptions) String() string { return proto.CompactTextString(m) }
 func (*ListOptions) ProtoMessage()    {}
 
-// ListResponse specifies general pagination response when fetching a list of results.
+// ListResponse specifies a general paginated response when fetching a list of results.
 type ListResponse struct {
-	// HasMore is true if there are more entries available after the returned page.
-	HasMore bool `protobuf:"varint,1,opt,name=has_more,proto3" json:",omitempty" url:",omitempty"`
+	// Total is the total number of results in the list.
+	Total int32 `protobuf:"varint,1,opt,name=total,proto3" json:",omitempty" url:",omitempty"`
 }
 
 func (m *ListResponse) Reset()         { *m = ListResponse{} }
 func (m *ListResponse) String() string { return proto.CompactTextString(m) }
 func (*ListResponse) ProtoMessage()    {}
+
+// StreamResponse specifies a paginated response where the total number of results
+// that can be returned is too expensive to compute, unbounded, or unknown.
+type StreamResponse struct {
+	// HasMore is true if there are more results available after the returned page.
+	HasMore bool `protobuf:"varint,1,opt,name=has_more,proto3" json:",omitempty" url:",omitempty"`
+}
+
+func (m *StreamResponse) Reset()         { *m = StreamResponse{} }
+func (m *StreamResponse) String() string { return proto.CompactTextString(m) }
+func (*StreamResponse) ProtoMessage()    {}
 
 // Discussion stores information about a discussion
 type Discussion struct {
@@ -851,8 +865,8 @@ func (m *RepoListCommitsOptions) String() string { return proto.CompactTextStrin
 func (*RepoListCommitsOptions) ProtoMessage()    {}
 
 type CommitList struct {
-	Commits      []*vcs.Commit `protobuf:"bytes,1,rep,name=commits" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Commits        []*vcs.Commit `protobuf:"bytes,1,rep,name=commits" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *CommitList) Reset()         { *m = CommitList{} }
@@ -880,8 +894,8 @@ func (m *RepoListBranchesOptions) String() string { return proto.CompactTextStri
 func (*RepoListBranchesOptions) ProtoMessage()    {}
 
 type BranchList struct {
-	Branches     []*vcs.Branch `protobuf:"bytes,1,rep,name=branches" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Branches       []*vcs.Branch `protobuf:"bytes,1,rep,name=branches" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *BranchList) Reset()         { *m = BranchList{} }
@@ -916,8 +930,8 @@ func (m *RepoListCommittersOptions) String() string { return proto.CompactTextSt
 func (*RepoListCommittersOptions) ProtoMessage()    {}
 
 type CommitterList struct {
-	Committers   []*vcs.Committer `protobuf:"bytes,1,rep,name=committers" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Committers     []*vcs.Committer `protobuf:"bytes,1,rep,name=committers" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *CommitterList) Reset()         { *m = CommitterList{} }
@@ -1032,8 +1046,8 @@ func (m *RepoListTagsOptions) String() string { return proto.CompactTextString(m
 func (*RepoListTagsOptions) ProtoMessage()    {}
 
 type TagList struct {
-	Tags         []*vcs.Tag `protobuf:"bytes,1,rep,name=tags" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Tags           []*vcs.Tag `protobuf:"bytes,1,rep,name=tags" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *TagList) Reset()         { *m = TagList{} }
@@ -1333,8 +1347,8 @@ func (m *BuildsGetRepoBuildInfoOp) String() string { return proto.CompactTextStr
 func (*BuildsGetRepoBuildInfoOp) ProtoMessage()    {}
 
 type BuildList struct {
-	Builds       []*Build `protobuf:"bytes,1,rep,name=builds" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Builds         []*Build `protobuf:"bytes,1,rep,name=builds" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *BuildList) Reset()         { *m = BuildList{} }
@@ -2037,7 +2051,8 @@ func (m *DefsGetOp) String() string { return proto.CompactTextString(m) }
 func (*DefsGetOp) ProtoMessage()    {}
 
 type DefList struct {
-	Defs []*Def `protobuf:"bytes,1,rep,name=defs" json:",omitempty"`
+	Defs         []*Def `protobuf:"bytes,1,rep,name=defs" json:",omitempty"`
+	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
 }
 
 func (m *DefList) Reset()         { *m = DefList{} }
@@ -2054,8 +2069,8 @@ func (m *DefsListRefsOp) String() string { return proto.CompactTextString(m) }
 func (*DefsListRefsOp) ProtoMessage()    {}
 
 type RefList struct {
-	Refs         []*Ref `protobuf:"bytes,1,rep,name=refs" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Refs           []*Ref `protobuf:"bytes,1,rep,name=refs" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *RefList) Reset()         { *m = RefList{} }
@@ -2075,8 +2090,8 @@ func (m *DefsListExamplesOp) String() string { return proto.CompactTextString(m)
 func (*DefsListExamplesOp) ProtoMessage()    {}
 
 type ExampleList struct {
-	Examples     []*Example `protobuf:"bytes,1,rep,name=examples" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Examples       []*Example `protobuf:"bytes,1,rep,name=examples" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *ExampleList) Reset()         { *m = ExampleList{} }
@@ -2515,12 +2530,34 @@ func (*RepoTreeListResult) ProtoMessage()    {}
 
 type VCSSearchResultList struct {
 	SearchResults []*vcs.SearchResult `protobuf:"bytes,1,rep,name=search_results" json:",omitempty"`
+	ListResponse  `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
 }
 
 func (m *VCSSearchResultList) Reset()         { *m = VCSSearchResultList{} }
 func (m *VCSSearchResultList) String() string { return proto.CompactTextString(m) }
 func (*VCSSearchResultList) ProtoMessage()    {}
 
+type TokenSearchOptions struct {
+	Query       string      `protobuf:"bytes,1,opt,name=query,proto3" json:",omitempty" url:"q" schema:"q"`
+	RepoRev     RepoRevSpec `protobuf:"bytes,2,opt,name=repo_rev" `
+	ListOptions `protobuf:"bytes,3,opt,name=list_options,embedded=list_options" `
+}
+
+func (m *TokenSearchOptions) Reset()         { *m = TokenSearchOptions{} }
+func (m *TokenSearchOptions) String() string { return proto.CompactTextString(m) }
+func (*TokenSearchOptions) ProtoMessage()    {}
+
+type TextSearchOptions struct {
+	Query       string      `protobuf:"bytes,1,opt,name=query,proto3" json:",omitempty" url:"q" schema:"q"`
+	RepoRev     RepoRevSpec `protobuf:"bytes,2,opt,name=repo_rev" `
+	ListOptions `protobuf:"bytes,3,opt,name=list_options,embedded=list_options" `
+}
+
+func (m *TextSearchOptions) Reset()         { *m = TextSearchOptions{} }
+func (m *TextSearchOptions) String() string { return proto.CompactTextString(m) }
+func (*TextSearchOptions) ProtoMessage()    {}
+
+// Deprecated.
 type SearchOptions struct {
 	Query       string `protobuf:"bytes,1,opt,name=query,proto3" json:",omitempty" url:"q" schema:"q"`
 	Defs        bool   `protobuf:"varint,2,opt,name=defs,proto3" json:",omitempty"`
@@ -2534,6 +2571,7 @@ func (m *SearchOptions) Reset()         { *m = SearchOptions{} }
 func (m *SearchOptions) String() string { return proto.CompactTextString(m) }
 func (*SearchOptions) ProtoMessage()    {}
 
+// Deprecated.
 type SearchResults struct {
 	Defs   []*Def                  `protobuf:"bytes,1,rep,name=defs" json:",omitempty"`
 	People []*Person               `protobuf:"bytes,2,rep,name=people" json:",omitempty"`
@@ -3019,8 +3057,8 @@ func (*RegisteredClientListOptions) ProtoMessage()    {}
 
 // RegisteredClientList holds a list of clients.
 type RegisteredClientList struct {
-	Clients      []*RegisteredClient `protobuf:"bytes,1,rep,name=clients" json:",omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=list_response,embedded=list_response" `
+	Clients        []*RegisteredClient `protobuf:"bytes,1,rep,name=clients" json:",omitempty"`
+	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
 }
 
 func (m *RegisteredClientList) Reset()         { *m = RegisteredClientList{} }
@@ -5923,7 +5961,12 @@ var _RepoTree_serviceDesc = grpc.ServiceDesc{
 
 type SearchClient interface {
 	// Search searches the full index.
+	// Deprecated: use one of the more specific search methods below.
 	Search(ctx context.Context, in *SearchOptions, opts ...grpc.CallOption) (*SearchResults, error)
+	// SearchTokens searches the index of tokens.
+	SearchTokens(ctx context.Context, in *TokenSearchOptions, opts ...grpc.CallOption) (*DefList, error)
+	// SearchText searches the content of files in the repo tree.
+	SearchText(ctx context.Context, in *TextSearchOptions, opts ...grpc.CallOption) (*VCSSearchResultList, error)
 	// Complete completes the token at the RawQuery's InsertionPoint.
 	Complete(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*Completions, error)
 	// Suggest suggests queries given an existing query. It can be called with an empty
@@ -5943,6 +5986,24 @@ func NewSearchClient(cc *grpc.ClientConn) SearchClient {
 func (c *searchClient) Search(ctx context.Context, in *SearchOptions, opts ...grpc.CallOption) (*SearchResults, error) {
 	out := new(SearchResults)
 	err := grpc.Invoke(ctx, "/sourcegraph.Search/Search", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *searchClient) SearchTokens(ctx context.Context, in *TokenSearchOptions, opts ...grpc.CallOption) (*DefList, error) {
+	out := new(DefList)
+	err := grpc.Invoke(ctx, "/sourcegraph.Search/SearchTokens", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *searchClient) SearchText(ctx context.Context, in *TextSearchOptions, opts ...grpc.CallOption) (*VCSSearchResultList, error) {
+	out := new(VCSSearchResultList)
+	err := grpc.Invoke(ctx, "/sourcegraph.Search/SearchText", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5971,7 +6032,12 @@ func (c *searchClient) Suggest(ctx context.Context, in *RawQuery, opts ...grpc.C
 
 type SearchServer interface {
 	// Search searches the full index.
+	// Deprecated: use one of the more specific search methods below.
 	Search(context.Context, *SearchOptions) (*SearchResults, error)
+	// SearchTokens searches the index of tokens.
+	SearchTokens(context.Context, *TokenSearchOptions) (*DefList, error)
+	// SearchText searches the content of files in the repo tree.
+	SearchText(context.Context, *TextSearchOptions) (*VCSSearchResultList, error)
 	// Complete completes the token at the RawQuery's InsertionPoint.
 	Complete(context.Context, *RawQuery) (*Completions, error)
 	// Suggest suggests queries given an existing query. It can be called with an empty
@@ -5990,6 +6056,30 @@ func _Search_Search_Handler(srv interface{}, ctx context.Context, codec grpc.Cod
 		return nil, err
 	}
 	out, err := srv.(SearchServer).Search(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Search_SearchTokens_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(TokenSearchOptions)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SearchServer).SearchTokens(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Search_SearchText_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(TextSearchOptions)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SearchServer).SearchText(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -6027,6 +6117,14 @@ var _Search_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Search",
 			Handler:    _Search_Search_Handler,
+		},
+		{
+			MethodName: "SearchTokens",
+			Handler:    _Search_SearchTokens_Handler,
+		},
+		{
+			MethodName: "SearchText",
+			Handler:    _Search_SearchText_Handler,
 		},
 		{
 			MethodName: "Complete",

@@ -82,7 +82,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 		x.SrcHTML = strings.Replace(string(x.SrcHTML), "class=\"", "class=\"defn-popover ", -1)
 	}
 
-	pg, err := paginatePrevNext(opt, examples.ListResponse)
+	pg, err := paginatePrevNext(opt, examples.StreamResponse)
 	if err != nil {
 		return err
 	}
