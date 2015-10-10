@@ -46,6 +46,10 @@ func HTTP(err error) int {
 	}
 
 	switch e := err.(type) {
+	case *sourcegraph.NotImplementedError:
+		// Ignore NotImplementedError's HTTPStatusCode method (which
+		// returns 404).
+		return http.StatusNotImplemented
 	case interface {
 		HTTPStatusCode() int
 	}:
@@ -64,8 +68,6 @@ func HTTP(err error) int {
 		return http.StatusNotFound
 	case *store.AccountAlreadyExistsError:
 		return http.StatusConflict
-	case *sourcegraph.NotImplementedError:
-		return http.StatusNotImplemented
 	}
 
 	if os.IsNotExist(err) {
