@@ -15,7 +15,7 @@ import (
 
 // Flags configure the app. The values are set by CLI flags (or during testing).
 var Flags struct {
-	NoAutoBuild bool `long:"app.no-auto-build" description:"disable automatic building of repositories from the UI"`
+	NoUIBuild bool `long:"app.no-ui-build" description:"disable automatic and manual building of repositories from the UI"`
 
 	ShowLatestBuiltCommit bool `long:"app.show-latest-built-commit" description:"show the latest built commit instead of the HEAD commit on a branch"`
 

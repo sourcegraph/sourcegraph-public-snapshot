@@ -152,7 +152,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// If we have never built this repo, build it.
-		if !appconf.Flags.NoAutoBuild && !bc.Built {
+		if !appconf.Flags.NoUIBuild && !bc.Built {
 			form := sourcegraph.BuildCreateOptions{
 				BuildConfig: sourcegraph.BuildConfig{
 					Import:   true,

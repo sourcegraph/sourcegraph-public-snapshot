@@ -5,7 +5,7 @@
 {{template "RepoBuildWarning" $}}
 {{if not .RepoIsBuilt}}
 	<div class="alert alert-warning">
-		<div class="pull-left" data-react="RepoBuildIndicator" data-uri="{{.Repo.URI}}" data-rev="{{.RepoRevSpec.CommitID}}" data-buildable="{{autoBuild}}"></div>&nbsp;
+		<div class="pull-left" data-react="RepoBuildIndicator" data-uri="{{.Repo.URI}}" data-rev="{{.RepoRevSpec.CommitID}}" data-buildable="{{uiBuild}}"></div>&nbsp;
 		<strong>Repository not yet built.</strong> Documentation will be displayed, but the code snippets are not interactive and there are no cross-references until a build completes. Click the checkmark to trigger a build.</div>
 {{end}}
 
