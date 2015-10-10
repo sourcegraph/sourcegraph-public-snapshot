@@ -4972,7 +4972,7 @@ type AccountsClient interface {
 	Create(ctx context.Context, in *NewAccount, opts ...grpc.CallOption) (*UserSpec, error)
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	RequestPasswordReset(ctx context.Context, in *UserSpec, opts ...grpc.CallOption) (*User, error)
+	RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*User, error)
 	// CheckResetToken verifies a password reset token is authentic and valid
 	ResetPassword(ctx context.Context, in *NewPassword, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Update profile of existing account.
@@ -4996,7 +4996,7 @@ func (c *accountsClient) Create(ctx context.Context, in *NewAccount, opts ...grp
 	return out, nil
 }
 
-func (c *accountsClient) RequestPasswordReset(ctx context.Context, in *UserSpec, opts ...grpc.CallOption) (*User, error) {
+func (c *accountsClient) RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/RequestPasswordReset", in, out, c.cc, opts...)
 	if err != nil {
@@ -5030,7 +5030,7 @@ type AccountsServer interface {
 	Create(context.Context, *NewAccount) (*UserSpec, error)
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	RequestPasswordReset(context.Context, *UserSpec) (*User, error)
+	RequestPasswordReset(context.Context, *EmailAddr) (*User, error)
 	// CheckResetToken verifies a password reset token is authentic and valid
 	ResetPassword(context.Context, *NewPassword) (*pbtypes1.Void, error)
 	// Update profile of existing account.
@@ -5054,7 +5054,7 @@ func _Accounts_Create_Handler(srv interface{}, ctx context.Context, codec grpc.C
 }
 
 func _Accounts_RequestPasswordReset_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(UserSpec)
+	in := new(EmailAddr)
 	if err := codec.Unmarshal(buf, in); err != nil {
 		return nil, err
 	}

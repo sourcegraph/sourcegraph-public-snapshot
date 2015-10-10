@@ -10,13 +10,18 @@ import (
 )
 
 type Users struct {
-	Get_        func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error)
-	List_       func(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
-	ListEmails_ func(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
+	Get_          func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error)
+	GetWithEmail_ func(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
+	List_         func(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
+	ListEmails_   func(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
 }
 
 func (s *Users) Get(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	return s.Get_(ctx, user)
+}
+
+func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	return s.GetWithEmail_(ctx, emailAddr)
 }
 
 func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {

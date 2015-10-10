@@ -52,7 +52,7 @@ func (s remoteAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount) 
 	return sourcegraph.NewClientFromContext(ctx).Accounts.Create(ctx, v1)
 }
 
-func (s remoteAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+func (s remoteAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	return sourcegraph.NewClientFromContext(ctx).Accounts.RequestPasswordReset(ctx, v1)
 }
 

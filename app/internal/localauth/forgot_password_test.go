@@ -31,16 +31,16 @@ func TestGetForgotPassword(t *testing.T) {
 func TestPostForgotPassword(t *testing.T) {
 	c, mock := apptest.New()
 
-	data, err := query.Values(userForm{Login: "randomUser123"})
+	data, err := query.Values(userForm{Email: "who@me.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var called bool
-	mock.Accounts.RequestPasswordReset_ = func(ctx context.Context, us *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+	mock.Accounts.RequestPasswordReset_ = func(ctx context.Context, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 		called = true
-		if want := "randomUser123"; us.Login != want {
-			t.Errorf("wanted %s, got %s", want, us.Login)
+		if want := "who@me.com"; email.Email != want {
+			t.Errorf("wanted %s, got %s", want, email.Email)
 		}
 		return nil, nil
 	}

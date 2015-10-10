@@ -145,6 +145,7 @@ func serveLoginSubmit(w http.ResponseWriter, r *http.Request) error {
 const (
 	formErrorInvalidUsername = "Invalid username (bad format or not whitelisted on this server)."
 	formErrorNoUserExists    = "No user exists with this username."
+	formErrorNoEmailExists   = "No user exists with this email address."
 	formErrorWrongPassword   = "Wrong password."
 )
 

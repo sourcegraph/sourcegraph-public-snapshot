@@ -5,6 +5,9 @@ import (
 	"log"
 	"os"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"strings"
 
 	"golang.org/x/net/context"
@@ -86,6 +89,28 @@ func (s *Users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 		return nil, err
 	}
 	return &e.User, nil
+}
+
+func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	if emailAddr.Email == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "email address must not be empty")
+	}
+
+	users, err := readUserDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range users {
+		for _, userEmail := range e.EmailAddrs {
+			if userEmail.Primary && emailAddr.Email == userEmail.Email {
+				return &e.User, nil
+			}
+		}
+
+	}
+
+	return nil, &store.UserNotFoundError{Email: emailAddr.Email}
 }
 
 func (s *Users) getDBEntry(ctx context.Context, userSpec sourcegraph.UserSpec) (*userDBEntry, error) {

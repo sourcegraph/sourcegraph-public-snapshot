@@ -4,6 +4,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
 
@@ -19,6 +20,18 @@ func init() {
 		`CREATE INDEX user_email_email ON user_email(email) WHERE (NOT blacklisted);`,
 		`CREATE UNIQUE INDEX user_email_email_primary ON user_email(email, "primary") WHERE (NOT blacklisted);`,
 	)
+}
+
+func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	var emailAddrRows []*userEmailAddrRow
+	sql := `SELECT * FROM user_email WHERE email=$1 AND "primary"=true`
+	if err := dbh(ctx).Select(&emailAddrRows, sql, emailAddr.Email); err != nil {
+		return nil, err
+	}
+	if len(emailAddrRows) == 0 {
+		return nil, &store.UserNotFoundError{Email: emailAddr.Email}
+	}
+	return s.getByUID(ctx, emailAddrRows[0].UID)
 }
 
 func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {

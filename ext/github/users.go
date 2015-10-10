@@ -99,6 +99,10 @@ func (s *Users) Update(ctx context.Context, modUser *sourcegraph.User) error {
 	return &sourcegraph.NotImplementedError{What: "GitHub user updating"}
 }
 
+func (s *Users) GetWithEmail(ctx context.Context, email sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	return nil, &sourcegraph.NotImplementedError{What: "GitHub user fetching by email"}
+}
+
 func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
 	return nil, &sourcegraph.NotImplementedError{What: "GitHub email listing"}
 }
