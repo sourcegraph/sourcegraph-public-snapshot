@@ -246,7 +246,6 @@ div.search-result-type {
 	.line-numbered-code {
 		border: 1px solid $border-gray;
 		border-top: none;
-		table-layout: auto;
 		$result-section-padding: 6px;
 
 		tr {
@@ -267,6 +266,7 @@ div.search-result-type {
 		}
 
 		.snippet-link {
+			width: 70px;
 			text-align: right;
 			padding-right: $padding-small-horizontal;
 			text-overflow: ellipsis;
