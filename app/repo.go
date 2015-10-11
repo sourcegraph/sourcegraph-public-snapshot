@@ -125,7 +125,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 
 	// Special-case: Redirect "/xyz" single-path-component repo URIs
 	// to "/~xyz" for the live site. That's because people have
-	// existing links to http://sourcegraph.com/myname and we don't
+	// existing links to https://sourcegraph.com/myname and we don't
 	// want to break these.
 	if appconf.Flags.EnableGitHubStyleUserPaths {
 		if strings.Count(repoSpec.URI, "/") == 0 {
