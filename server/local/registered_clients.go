@@ -347,7 +347,7 @@ func userPermissionsOrError(ctx context.Context) (store.UserPermissions, error) 
 		return nil, &sourcegraph.NotImplementedError{What: "UserPermissions"}
 	}
 	if authpkg.ActorFromContext(ctx).UID == 0 {
-		return nil, grpc.Errorf(codes.PermissionDenied, "RegisteredClients.UserPermissions: no authenticated user in context")
+		return nil, grpc.Errorf(codes.Unauthenticated, "RegisteredClients.UserPermissions: no authenticated user in context")
 	}
 	return s, nil
 }
