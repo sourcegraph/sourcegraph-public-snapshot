@@ -329,6 +329,12 @@ func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error
 			return err
 		}
 	}
+	if op.Language != "" {
+		_, err := dbh(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
