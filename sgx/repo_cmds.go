@@ -189,6 +189,8 @@ type repoCreateCmd struct {
 	VCS      string `long:"vcs" description:"git or hg" default:"git" required:"yes"`
 	CloneURL string `short:"u" long:"clone-url" description:"clone URL of existing repo (if this repo is a mirror)"`
 	Mirror   bool   `short:"m" long:"mirror" description:"create the repo as a mirror"`
+
+	Description string `short:"d" long:"description" description:"repo description"`
 }
 
 func (c *repoCreateCmd) Execute(args []string) error {
@@ -199,6 +201,8 @@ func (c *repoCreateCmd) Execute(args []string) error {
 		VCS:      c.VCS,
 		CloneURL: c.CloneURL,
 		Mirror:   c.Mirror,
+
+		Description: c.Description,
 	})
 	if err != nil {
 		return err
