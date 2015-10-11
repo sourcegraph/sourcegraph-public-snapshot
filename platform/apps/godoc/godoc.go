@@ -7,10 +7,8 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/gddo/doc"
@@ -28,14 +26,13 @@ import (
 )
 
 func init() {
-	if v, _ := strconv.ParseBool(os.Getenv("GODOC_APP")); v {
-		platform.RegisterFrame(platform.RepoFrame{
-			ID:      "godoc",
-			Title:   "godoc",
-			Icon:    "book",
-			Handler: http.HandlerFunc(handler),
-		})
-	}
+	platform.RegisterFrame(platform.RepoFrame{
+		ID:      "godoc",
+		Title:   "godoc",
+		Icon:    "book",
+		Handler: http.HandlerFunc(handler),
+		Enable:  func(repo *sourcegraph.Repo) bool { return strings.EqualFold(repo.Language, "go") },
+	})
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {

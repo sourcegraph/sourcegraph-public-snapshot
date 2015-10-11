@@ -26,10 +26,13 @@ type RepoFrame struct {
 	// should be injected into the main repository page area.
 	Handler http.Handler
 
-	// EnabledRepos is a whitelist of repositories that have this
-	// frame enabled. If empty, then the frame will be enabled for all
-	// repositories.
-	EnabledRepos map[sourcegraph.RepoSpec]struct{}
+	// Enable is called to determine whether the frame should be
+	// enabled for a given repo. If nil, it is enabled for all repos.
+	//
+	// The Enable func, if provided, should not rely on external
+	// resources or heavy computation, as it is called on every repo
+	// page load for every registered frame.
+	Enable func(*sourcegraph.Repo) bool
 }
 
 var repoFrames = map[string]RepoFrame{}
@@ -44,15 +47,12 @@ func RegisterFrame(frame RepoFrame) {
 	repoFrames[frame.ID] = frame
 }
 
-// Frames returns the frames registered in this instance of Sourcegraph
-func Frames(repo sourcegraph.RepoSpec) map[string]RepoFrame {
+// Frames returns the frames registered in this instance of
+// Sourcegraph for the given repo.
+func Frames(repo *sourcegraph.Repo) map[string]RepoFrame {
 	frames := make(map[string]RepoFrame)
 	for _, frame := range repoFrames {
-		if frame.EnabledRepos != nil {
-			if _, enabled := frame.EnabledRepos[repo]; enabled {
-				frames[frame.ID] = frame
-			}
-		} else {
+		if frame.Enable == nil || frame.Enable(repo) {
 			frames[frame.ID] = frame
 		}
 	}
