@@ -81,6 +81,22 @@ func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
 		UID:          currentUser.UID,
 	})
 	if err != nil {
+		if grpc.Code(err) == codes.PermissionDenied {
+			// User is not granted access to server.
+			return tmpl.Exec(r, w,
+				"oauth-provider/auth_required.html",
+				http.StatusForbidden,
+				http.Header{"cache-control": []string{"no-cache"}},
+				&struct {
+					RegClient *sourcegraph.RegisteredClient
+					Err       error
+					tmpl.Common
+				}{
+					RegClient: regClient,
+					Err:       err,
+				},
+			)
+		}
 		return err
 	}
 

@@ -1,5 +1,7 @@
 
 .error-page {
+	text-align: center;
+	margin-top: 25px;
 	h1 {
 		margin: 30px 0 5px 0;
 
@@ -24,5 +26,6 @@
 	.error-common {
 		width: 100%;
 		max-width: 800px;
+		margin: 0 auto;
 	}
 }

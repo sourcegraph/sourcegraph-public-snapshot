@@ -1,0 +1,16 @@
+{{define "Head"}}<title>Authorization required - Sourcegraph</title>{{end}}
+
+{{define "Body"}}
+<div class="error-page">
+	<h1><i class="fa fa-ban"></i> Authorization required</h1>
+	<p>
+		The administrator must grant you {{with .CurrentUser}}(<strong>{{.Login}}</strong>){{end}}
+		access to the Sourcegraph server <strong>{{.RegClient.ClientName}}</strong>.
+	</p>
+	{{if not .DisableExternalLinks}}
+		<p>
+			Administrators: see <a target="_blank" href="https://src.sourcegraph.com/sourcegraph/.docs/config/access-control/">access control documentation</a>.
+		</p>
+	{{end}}
+</div>
+{{end}}

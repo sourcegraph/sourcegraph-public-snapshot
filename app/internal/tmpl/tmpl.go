@@ -142,6 +142,7 @@ func commonTemplates() error {
 		{"builds/builds.html", "builds/build.inc.html"},
 		{"error/error.html", "error/common.html"},
 		{"oauth-provider/authorize.html"},
+		{"oauth-provider/auth_required.html"},
 		{"client-registration/register-client.html"},
 		{"org/members.html", "org/members.inc.html", "user/person.html", "user/profile.inc.html"},
 		{"godoc/home.html"},
