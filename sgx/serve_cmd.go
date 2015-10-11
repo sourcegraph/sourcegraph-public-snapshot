@@ -421,7 +421,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	h := handlerutil.WithMiddleware(sm, mw...)
 
-	// TODO(sqs!nodb-ctx): when deploying to Elastic Beanstalk, how to handle this? do we just spin up an HTTPS server?
 	c.Addr = interpolatePort(c.Addr)
 
 	var srv http.Server
