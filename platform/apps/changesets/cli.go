@@ -299,3 +299,49 @@ func newChangesetInEditor(origTitle string) (title, description string, err erro
 
 	return
 }
+
+type changesetUpdateCmdCommon struct {
+	Repo string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+	Args struct {
+		ID int64 `name:"ID" description:"changeset ID"`
+	} `positional-args:"yes" required:"yes" count:"1"`
+}
+
+type changesetUpdateCmd struct {
+	changesetUpdateCmdCommon
+	Title string `short:"t" long:"title" description:"new changeset title" required:"yes"`
+}
+
+func (c *changesetUpdateCmd) Execute(args []string) error {
+	cl := Client()
+
+	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
+		ID:    c.Args.ID,
+		Title: c.Title,
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("# updated changeset %s #%d", c.Repo, ev.After.ID)
+	return nil
+}
+
+type changesetCloseCmd struct{ changesetUpdateCmdCommon }
+
+func (c *changesetCloseCmd) Execute(args []string) error {
+	cl := Client()
+
+	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
+		ID:    c.Args.ID,
+		Close: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("# closed changeset %s #%d", c.Repo, ev.After.ID)
+	return nil
+}
