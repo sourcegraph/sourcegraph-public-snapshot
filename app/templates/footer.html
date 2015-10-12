@@ -18,14 +18,16 @@
 						</div>
 						<div class="col-sm-6 info">
 							<p>
-								<span class="powered-by">Powered by</span>
-								<a href="https://sourcegraph.com" target="_blank"
-									title="version {{buildvar.Version}} {{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}">Sourcegraph</a>
-								{{with updateAvailable}}
-									<br>
-									<u title="Run `src selfupdate` to update Sourcegraph to {{.}}, then restart Sourcegraph / `src serve`">v{{.}}</u> update available
-								{{end}}
+								<span data-tooltip title="version {{buildvar.Version}} {{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}">
+									<span class="powered-by">Powered by</span>
+									<a href="https://sourcegraph.com" target="_blank">Sourcegraph</a>
+								</span>
 							</p>
+							{{with updateAvailable}}
+								<a class="small" target="_blank" href="https://src.sourcegraph.com/sourcegraph/.docs/management/upgrading">
+									Upgrade to v{{.}} available
+								</a>
+							{{end}}
 						</div>
 					</div>
 				</div>
