@@ -47,6 +47,7 @@ func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
 		Meta:                wrappedMeta{ctxFunc, errFunc},
 		MirrorRepos:         wrappedMirrorRepos{ctxFunc, errFunc},
 		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{ctxFunc, errFunc},
+		Notify:              wrappedNotify{ctxFunc, errFunc},
 		Orgs:                wrappedOrgs{ctxFunc, errFunc},
 		People:              wrappedPeople{ctxFunc, errFunc},
 		RegisteredClients:   wrappedRegisteredClients{ctxFunc, errFunc},
@@ -928,6 +929,39 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 	rv, err := svc.Delete(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+type wrappedNotify struct {
+	ctxFunc ContextFunc
+	errFunc ErrorFunc
+}
+
+func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.NotifyOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
+	}
+	rv, err := svc.GenericEvent(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedNotify) Mention(ctx context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.NotifyOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
+	}
+	rv, err := svc.Mention(ctx, v1)
 	return rv, s.errFunc(err)
 }
 

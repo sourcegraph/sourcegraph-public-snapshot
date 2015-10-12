@@ -87,6 +87,10 @@ func Wrap(s svc.Services, c *auth.Config) svc.Services {
 		s.MirroredRepoSSHKeys = wrappedMirroredRepoSSHKeys{s.MirroredRepoSSHKeys, c}
 	}
 
+	if s.Notify != nil {
+		s.Notify = wrappedNotify{s.Notify, c}
+	}
+
 	if s.Orgs != nil {
 		s.Orgs = wrappedOrgs{s.Orgs, c}
 	}
@@ -1475,6 +1479,49 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, param *sourcegra
 	var target sourcegraph.MirroredRepoSSHKeysServer = s.u
 
 	res, err = target.Delete(ctx, param)
+	return
+
+}
+
+type wrappedNotify struct {
+	u sourcegraph.NotifyServer
+	c *auth.Config
+}
+
+func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.NotifyGenericEvent) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Notify", "GenericEvent", param)
+	defer func() {
+		trace.After(ctx, "Notify", "GenericEvent", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Notify.GenericEvent")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.NotifyServer = s.u
+
+	res, err = target.GenericEvent(ctx, param)
+	return
+
+}
+
+func (s wrappedNotify) Mention(ctx context.Context, param *sourcegraph.NotifyMention) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Notify", "Mention", param)
+	defer func() {
+		trace.After(ctx, "Notify", "Mention", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Notify.Mention")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.NotifyServer = s.u
+
+	res, err = target.Mention(ctx, param)
 	return
 
 }

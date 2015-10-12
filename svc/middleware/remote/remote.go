@@ -34,6 +34,7 @@ var Services = svc.Services{
 	Meta:                remoteMeta{},
 	MirrorRepos:         remoteMirrorRepos{},
 	MirroredRepoSSHKeys: remoteMirroredRepoSSHKeys{},
+	Notify:              remoteNotify{},
 	Orgs:                remoteOrgs{},
 	People:              remotePeople{},
 	RegisteredClients:   remoteRegisteredClients{},
@@ -280,6 +281,16 @@ func (s remoteMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.Repo
 
 func (s remoteMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	return sourcegraph.NewClientFromContext(ctx).MirroredRepoSSHKeys.Delete(ctx, v1)
+}
+
+type remoteNotify struct{ sourcegraph.NotifyServer }
+
+func (s remoteNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Notify.GenericEvent(ctx, v1)
+}
+
+func (s remoteNotify) Mention(ctx context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Notify.Mention(ctx, v1)
 }
 
 type remoteOrgs struct{ sourcegraph.OrgsServer }

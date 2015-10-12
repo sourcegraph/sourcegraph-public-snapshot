@@ -20,6 +20,7 @@ type Client struct {
 	Meta                MetaClient
 	MirrorRepos         MirrorReposClient
 	MirroredRepoSSHKeys MirroredRepoSSHKeysClient
+	Notify              NotifyClient
 	Orgs                OrgsClient
 	People              PeopleClient
 	RegisteredClients   RegisteredClientsClient
@@ -59,6 +60,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Meta = &CachedMetaClient{NewMetaClient(conn), Cache}
 	c.MirrorRepos = &CachedMirrorReposClient{NewMirrorReposClient(conn), Cache}
 	c.MirroredRepoSSHKeys = &CachedMirroredRepoSSHKeysClient{NewMirroredRepoSSHKeysClient(conn), Cache}
+	c.Notify = &CachedNotifyClient{NewNotifyClient(conn), Cache}
 	c.Orgs = &CachedOrgsClient{NewOrgsClient(conn), Cache}
 	c.People = &CachedPeopleClient{NewPeopleClient(conn), Cache}
 	c.RegisteredClients = &CachedRegisteredClientsClient{NewRegisteredClientsClient(conn), Cache}

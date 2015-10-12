@@ -3249,3 +3249,58 @@ service GraphUplink {
 	// instance
 	rpc PushEvents(UserEventList) returns (pbtypes.Void);
 }
+
+// NotifyGenericEvent describes an action being done against an object. For
+// example reviewing a changeset.
+message NotifyGenericEvent {
+	// Actor is the User who did the action
+	UserSpec actor = 1;
+
+	// Recipients is who should be notified of the action
+	repeated UserSpec recipients = 2;
+
+	// ActionType example: "reviewed"
+	string action_type = 3;
+
+	// ActionContent example: "Please add tests for the new functionality"
+	string action_content = 4;
+
+	// ObjectID example: 71
+	int64 object_id = 5 [(gogoproto.customname) = "ObjectID"];
+
+	// ObjectRepo example: "gorilla/mux"
+	string object_repo = 6;
+
+	// ObjectType example: "changeset"
+	string object_type = 7;
+
+	// ObjectTitle example: "search: Simplify tokenizer"
+	string object_title = 8;
+
+	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.changesets/71"
+	string object_url = 9 [(gogoproto.customname) = "ObjectURL"];
+}
+
+
+message NotifyMention {
+	// Actor is the User who did the mention
+	UserSpec actor = 1;
+
+	// Mentioned is a list of users mentioned, which need to be notified
+	repeated UserSpec mentioned = 2;
+
+	// Where is a text representing where a user was mentioned.
+	string where = 3;
+
+	// WhereURL is the URL that leads to the place where the mention occurred.
+	string where_url = 4 [(gogoproto.customname) = "WhereURL"];
+}
+
+// Notify service
+service Notify {
+	// GenericEvent will notify recipients of an event which happened
+	rpc GenericEvent(NotifyGenericEvent) returns (pbtypes.Void);
+
+	// Mention will notify users when they are mentioned
+	rpc Mention(NotifyMention) returns (pbtypes.Void);
+}
