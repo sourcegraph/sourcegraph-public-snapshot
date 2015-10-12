@@ -450,6 +450,7 @@ h1.changeset-title {
 		}
 
 		.inline-comment {
+			@include base-font;
 			padding: 10px;
 
 			&.draft-form {
