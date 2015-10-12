@@ -46,7 +46,7 @@ src registered-clients update --redirect-uri http://src.mycompany.com CLIENT-ID
 
 # Access control
 
-Follow instructions to [restrict access to teammates]({{< relref "config/access-control.md" >}})
+Follow instructions to [restrict access to teammates]({{< relref "management/access-control.md" >}})
 or [make your Sourcegraph publicly accessible]({{< relref "config/public.md" >}}).
 
 # TLS
