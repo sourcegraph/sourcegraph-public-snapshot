@@ -49,6 +49,11 @@ func (s *people) Get(ctx context.Context, personSpec *sourcegraph.PersonSpec) (*
 			return nil, err
 		}
 		p = u.Person()
+
+		// Fallback on gravatarURL if avatarURL is not available
+		if p.AvatarURL == "" {
+			p.AvatarURL = gravatarURL(p.PersonSpec.Email, 0)
+		}
 	}
 
 	return p, nil
