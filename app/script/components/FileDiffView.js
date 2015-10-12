@@ -88,16 +88,8 @@ var FileDiffView = React.createClass({
 	},
 
 	render() {
-		var baseUrl = router.fileURL(this.props.Delta.Base.URI, this.props.Delta.Base.CommitID, this.state.OrigName),
-			newUrl = router.fileURL(this.props.Delta.Head.URI, this.props.Delta.Head.CommitID, this.state.NewName);
-
-		var diffLinks = [];
-		if (this.state.OrigName !== "/dev/null") {
-			diffLinks.push(<a className="button btn btn-default btn-xs" href={baseUrl}>Original</a>);
-		}
-		if (this.state.NewName !== "/dev/null") {
-			diffLinks.push(<a className="button btn btn-default btn-xs" href={newUrl}>New</a>);
-		}
+		var baseUrl = router.fileURL(this.props.Delta.Base.URI, this.props.Delta.Base.CommitID, this.state.OrigName);
+		var newUrl = router.fileURL(this.props.Delta.Head.URI, this.props.Delta.Head.CommitID, this.state.NewName);
 
 		return (
 			<div className="file-diff">
@@ -110,7 +102,8 @@ var FileDiffView = React.createClass({
 					) : null}
 
 					<div className="btn-group pull-right">
-						{diffLinks}
+						{this.state.OrigName !== "/dev/null" && <a className="button btn btn-default btn-xs" href={baseUrl}>Original</a>}
+						{this.state.NewName !== "/dev/null" && <a className="button btn btn-default btn-xs" href={newUrl}>New</a>}
 					</div>
 				</header>
 

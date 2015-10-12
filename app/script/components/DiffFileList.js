@@ -68,7 +68,7 @@ var DiffFileList = React.createClass({
 
 						return (
 							<li key={`fname-${fd.cid}`} className="file-list-item">
-								<a href={`${this.props.urlBase}/${fd.getHeadFilename() || fd.getBaseFilename()}`} onClick={this.props.onFileClick.bind(this, fd)}>
+								<a href={`${this.props.urlBase}/${fd.getHeadFilename() || fd.getBaseFilename()}`} onClick={(event) => this.props.onFileClick(fd, event)}>
 									{!baseName ? <i className="fa change-type octicon octicon-diff-added additions-color" /> : null}
 									{!headName ? <i className="fa change-type octicon octicon-diff-removed deletions-color" /> : null}
 									{Boolean(baseName) && Boolean(headName) ? <i className="fa change-type octicon octicon-diff-modified changes-color" /> : null}

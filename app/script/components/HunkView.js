@@ -131,13 +131,14 @@ var HunkView = React.createClass({
 		if (withForm) {
 			items.push((
 				<CodeReviewComment
+					key={`${line.cid}-comment-form`}
 					draftForm={true}
 					onCancel={this._onCommentClose.bind(this, line)}
 					onSubmit={this._onCommentSubmit.bind(this, line)} />
 			));
 		}
 
-		return <tr><td colSpan={3}>{items}</td></tr>;
+		return <tr key={`${line.cid}-comments`}><td colSpan={3}>{items}</td></tr>;
 	},
 
 	render() {

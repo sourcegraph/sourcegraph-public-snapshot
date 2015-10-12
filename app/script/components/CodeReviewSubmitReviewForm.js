@@ -47,29 +47,31 @@ var CodeReviewSubmitReviewForm = React.createClass({
 	render() {
 		return (
 			<table className="changeset-timeline-block changeset-submit-review">
-				{this.props.visible ? (
-					<tr className="changeset-review-submit-form">
-						<td colSpan={2}>
-							<MarkdownTextarea ref="formBody" placeholder="Enter a description..." />
-							<div className="actions">
-								<i className="pull-left">Includes {this.props.drafts.length} inline comments.</i>
-								<a className="btn btn-success" onClick={this._submit}>Submit</a>
-								<a className="btn" onClick={this.props.onCancel}>Cancel</a>
-							</div>
-						</td>
-					</tr>
-				) : (
-					<tr className="changeset-timeline-header" onClick={this.props.onShow}>
-						<td className="changeset-timeline-icon changeset-icon-submit">
-							<a>
-								<span className="octicon octicon-plus"></span>
-							</a>
-						</td>
-						<td colSpan="3" className="timeline-header-message">
-							Submit your review
-						</td>
-					</tr>
-				)}
+				<tbody>
+					{this.props.visible ? (
+						<tr className="changeset-review-submit-form">
+							<td colSpan={2}>
+								<MarkdownTextarea ref="formBody" placeholder="Enter a description..." />
+								<div className="actions">
+									<i className="pull-left">Includes {this.props.drafts.length} inline comments.</i>
+									<a className="btn btn-success" onClick={this._submit}>Submit</a>
+									<a className="btn" onClick={this.props.onCancel}>Cancel</a>
+								</div>
+							</td>
+						</tr>
+					) : (
+						<tr className="changeset-timeline-header" onClick={this.props.onShow}>
+							<td className="changeset-timeline-icon changeset-icon-submit">
+								<a>
+									<span className="octicon octicon-plus"></span>
+								</a>
+							</td>
+							<td colSpan="3" className="timeline-header-message">
+								Submit your review
+							</td>
+						</tr>
+					)}
+				</tbody>
 			</table>
 		);
 	},

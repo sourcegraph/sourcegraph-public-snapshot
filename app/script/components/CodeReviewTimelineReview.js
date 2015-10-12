@@ -32,18 +32,20 @@ var CodeReviewTimelineReview = React.createClass({
 
 			commentGroup.push((
 				<table className="comment-group" key={`comment-group-${filename}-${i}`}>
-					{byFile[filename].map((comment, j) => (
-						<tr className="comment" key={`review-comment-${i}-${j}`}>
-							<td className="comment-line-number" onClick={CodeReviewActions.showComment.bind(this, comment)}>
-								<i className="fa fa-reply"></i> {comment.get("LineNumber")}
-							</td>
-							<td className="comment-body">
-								<div className="comment-body-inner">
-									<MarkdownView content={comment.get("Body")} />
-								</div>
-							</td>
-						</tr>
-					))}
+					<tbody>
+						{byFile[filename].map((comment, j) => (
+							<tr className="comment" key={`review-comment-${i}-${j}`}>
+								<td className="comment-line-number" onClick={CodeReviewActions.showComment.bind(this, comment)}>
+									<i className="fa fa-reply"></i> {comment.get("LineNumber")}
+								</td>
+								<td className="comment-body">
+									<div className="comment-body-inner">
+										<MarkdownView content={comment.get("Body")} />
+									</div>
+								</td>
+							</tr>
+						))}
+					</tbody>
 				</table>
 			));
 
