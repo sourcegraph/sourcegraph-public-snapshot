@@ -123,7 +123,9 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.SitemapIndex).Handler(internal.Handler(serveSitemapIndex))
 
-	r.Get(router.UserContent).Handler(internal.Handler(serveUserContent))
+	if !appconf.Flags.DisableUserContent {
+		r.Get(router.UserContent).Handler(internal.Handler(serveUserContent))
+	}
 
 	r.Get(router.Def).Handler(internal.Handler(serveDef))
 	r.Get(router.DefExamples).Handler(internal.Handler(serveDefExamples))

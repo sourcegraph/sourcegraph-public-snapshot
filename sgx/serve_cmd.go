@@ -28,13 +28,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
-	tg_client "src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/client"
-
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
@@ -48,6 +46,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/ui"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
+	"src.sourcegraph.com/sourcegraph/usercontent"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/expvarutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -55,6 +54,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/statsutil"
+	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
+	tg_client "src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/client"
 )
 
 // Stripped down help message presented to most users (full help message can be
@@ -335,6 +336,15 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// graphstore
 	serverCtxFuncs = append(serverCtxFuncs, c.GraphStoreOpts.context)
+
+	// User Content.
+	if !appconf.Flags.DisableUserContent {
+		var err error
+		usercontent.Store, err = usercontent.LocalStore()
+		if err != nil {
+			return err
+		}
+	}
 
 	app.Init()
 

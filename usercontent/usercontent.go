@@ -2,21 +2,23 @@
 package usercontent
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
 )
 
-// Store for user uploaded content.
-var Store = func() rwvfs.FileSystem {
+// Store for user uploaded content. Unset by default.
+var Store rwvfs.FileSystem
+
+// LocalStore creates or reuses a local disk-based store for user content
+// that uses $SGPATH/usercontent directory for storage.
+func LocalStore() (rwvfs.FileSystem, error) {
 	dir := filepath.Join(os.Getenv("SGPATH"), "usercontent")
-	log.Println("usercontent.Store path:", dir)
-	err := os.MkdirAll(dir, 0755)
+	err := os.Mkdir(dir, 0755)
 	if err != nil {
-		// TODO: Error-prone things should happen elsewhere where it can be handled better.
-		log.Fatalf("Error creating directory %q: %v.\n", dir, err)
+		return nil, fmt.Errorf("creating directory %q failed: %v", dir, err)
 	}
-	return rwvfs.OS(dir)
-}()
+	return rwvfs.OS(dir), nil
+}

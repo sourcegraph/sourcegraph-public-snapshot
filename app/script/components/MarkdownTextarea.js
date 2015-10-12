@@ -39,6 +39,9 @@ var MarkdownTextarea = React.createClass({
 		});
 	},
 
+	// TODO(dmitri): Create/find a good way to propogate backend CLI flag value (appconf.Flags.DisableUserContent)
+	//               to this frontend component and disable _pasteHandler if that flag is true. For now, it will just
+	//               create a harmless error in console when you try to paste when user content is disabled.
 	_pasteHandler(event) {
 		// Get the file from clipboard event.
 		var items = event.clipboardData.items;
