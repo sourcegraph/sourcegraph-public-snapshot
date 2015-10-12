@@ -51,8 +51,8 @@ or [make your Sourcegraph publicly accessible]({{< relref "config/public.md" >}}
 
 # TLS
 
-[Enabling TLS]({{< relref "config/https.md" >}}) is *strongly recommended*,
-to avoid leaking credentials.
+[Enabling TLS]({{< relref "config/https.md" >}}) is *strongly recommended* to avoid sending
+credentials in plaintext.
 
 # Inviting team members
 
