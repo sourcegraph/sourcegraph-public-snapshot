@@ -8,9 +8,7 @@
 		<hr />
 		<div class="text-center">
 			<h5>Whoops -- looks like you don't have access to this!</h5>
-			{{if (not .DisableExternalLinks)}}
-				<a href="#" class="btn btn-info" data-toggle="collapse" data-target="#request-access"><i class="fa fa-unlock"></i> Request Access</a>
-			{{end}}
+			<a href="#" class="btn btn-info" data-toggle="collapse" data-target="#request-access"><i class="fa fa-unlock"></i> Request Access</a>
 		</div>
 
 		<!-- Expansions section for instructions on requesting permission -->
@@ -22,7 +20,7 @@
 				  <div class="panel-body">
 						<p>Please contact your Sourcegraph administrator:</p>
 						<ol>
-							{{if .DisableExternalLinks}}
+							{{if (not .DisableExternalLinks)}}
 								<li>Tell them to <a href="https://src.sourcegraph.com/sourcegraph/.docs/config/access-control/">grant you access</a>.</li>
 							{{else}}
 								<li>Tell them to grant you access.</li>
