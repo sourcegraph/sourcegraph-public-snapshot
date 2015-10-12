@@ -1,7 +1,6 @@
 package local
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 
@@ -19,22 +18,14 @@ type search struct{}
 var _ sourcegraph.SearchServer = (*search)(nil)
 
 func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
-	rawQuery := sourcegraph.RawQuery{
-		Text: fmt.Sprintf("%s %s", opt.RepoRev.URI, opt.Query),
-	}
-	_, resolvedTokens, _, _, err := s.resolveQuery(ctx, rawQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	plan, err := searchpkg.NewPlan(ctx, sourcegraph.PBTokens(resolvedTokens))
-	if err != nil {
-		return nil, err
+	defListOpts := &sourcegraph.DefListOptions{
+		Query:       opt.Query,
+		RepoRevs:    []string{opt.RepoRev.URI},
+		ListOptions: opt.ListOptions,
+		Nonlocal:    true,
+		Doc:         true,
 	}
 
-	defListOpts := plan.Defs
-	defListOpts.ListOptions = opt.ListOptions
-	defListOpts.Doc = true
 	defList, err := svc.Defs(ctx).List(ctx, defListOpts)
 	if err != nil {
 		return nil, err
