@@ -4,6 +4,7 @@ import (
 	"math"
 	"strings"
 
+	"code.google.com/p/rog-go/parallel"
 	"github.com/cznic/mathutil"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -176,23 +177,38 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 	res = res[origOffset:mathutil.Min(int(origOffset+origN), total)]
 
 	if opt.Formatted {
+		// Format the results in parallel since each call to RepoTree.Get is expensive
+		// (on the order of ~30ms per call) due to blocking I/O constraints.
+		par := parallel.NewRun(8)
 		for _, res := range res {
-			entrySpec := sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: res.File}
-			f, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &sourcegraph.RepoTreeGetOptions{
-				Formatted:        true,
-				HighlightStrings: []string{opt.SearchOptions.Query},
-				GetFileOptions: vcsclient.GetFileOptions{
-					FileRange: vcsclient.FileRange{
-						StartLine: int64(res.StartLine),
-						EndLine:   int64(res.EndLine),
+			r := res
+			par.Do(func() error {
+				entrySpec := sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: r.File}
+				f, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
+					Entry: entrySpec,
+					Opt: &sourcegraph.RepoTreeGetOptions{
+						Formatted:        true,
+						HighlightStrings: []string{opt.SearchOptions.Query},
+						GetFileOptions: vcsclient.GetFileOptions{
+							FileRange: vcsclient.FileRange{
+								StartLine: int64(r.StartLine),
+								EndLine:   int64(r.EndLine),
+							},
+						},
 					},
-				},
-			}})
+				})
 
-			if err != nil {
-				return nil, err
-			}
-			res.Match = f.Contents
+				r.Match = f.Contents
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+		}
+
+		err = par.Wait()
+		if err != nil {
+			return nil, err
 		}
 	}
 
