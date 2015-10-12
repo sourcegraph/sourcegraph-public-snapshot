@@ -824,6 +824,8 @@ type ReposCreateOp struct {
 	Private bool `protobuf:"varint,5,opt,name=private,proto3" json:",omitempty"`
 	// Description is the description of the repository.
 	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:",omitempty"`
+	// Language is the primary programming language of the repository.
+	Language string `protobuf:"bytes,7,opt,name=language,proto3" json:",omitempty"`
 }
 
 func (m *ReposCreateOp) Reset()         { *m = ReposCreateOp{} }
@@ -837,6 +839,9 @@ type ReposUpdateOp struct {
 	// Description is the new description of the repository. If empty,
 	// the description is not changed.
 	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:",omitempty"`
+	// Language is the new primary programming language of the
+	// repository. If empty, the language is not changed.
+	Language string `protobuf:"bytes,3,opt,name=language,proto3" json:",omitempty"`
 }
 
 func (m *ReposUpdateOp) Reset()         { *m = ReposUpdateOp{} }

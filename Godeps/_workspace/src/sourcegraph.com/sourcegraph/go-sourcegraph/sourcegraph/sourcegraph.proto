@@ -659,6 +659,9 @@ message ReposCreateOp {
 
 	// Description is the description of the repository.
 	string description = 6;
+
+	// Language is the primary programming language of the repository.
+	string language = 7;
 }
 
 // ReposUpdateOp is an operation to update a repository's metadata.
@@ -669,6 +672,10 @@ message ReposUpdateOp {
 	// Description is the new description of the repository. If empty,
 	// the description is not changed.
 	string description = 2;
+
+	// Language is the new primary programming language of the
+	// repository. If empty, the language is not changed.
+	string language = 3;
 };
 
 message ReposListCommitsOp {

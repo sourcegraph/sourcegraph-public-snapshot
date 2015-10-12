@@ -38,7 +38,7 @@ func repoEnabledFrames(repo *sourcegraph.Repo) map[string]platform.RepoFrame {
 		return nil
 	}
 
-	return platform.Frames(sourcegraph.RepoSpec{URI: repo.URI})
+	return platform.Frames(repo)
 }
 
 // TODO: Remove this once Changeset is a proper app, then repoEnabledFrames will cover this special case.

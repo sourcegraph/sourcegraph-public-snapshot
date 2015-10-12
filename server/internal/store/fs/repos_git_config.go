@@ -21,6 +21,7 @@ type repoGitConfig struct {
 
 	Sourcegraph struct {
 		Description string
+		Language    string
 		Private     bool
 	}
 }

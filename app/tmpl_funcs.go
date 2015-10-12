@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
-	"net"
 	"net/url"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -47,8 +45,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"repoLink":          repoLink,
 	"absRepoLink":       absRepoLink,
 	"repoLabelForOwner": repoLabelForOwner,
-
-	"pathBase": path.Base,
 
 	"repoMetaDescription": repoMetaDescription,
 	"repoStat":            repoStat,
@@ -122,7 +118,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"urlToRepoTreeEntrySubroute": router.Rel.URLToRepoTreeEntrySubroute,
 	"urlToRepoCommit":            router.Rel.URLToRepoCommit,
 	"urlToRepoCompare":           router.Rel.URLToRepoCompare,
-	"urlToRepoGoDoc":             router.Rel.URLToRepoGoDoc,
 	"urlToRepoApp":               router.Rel.URLToRepoApp,
 	"urlWithSchema":              schemautil.URLWithSchema,
 	"urlToDef":                   router.Rel.URLToDef,
@@ -226,7 +221,6 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"hasField": hasStructField,
 
-	"hasPrefix":                 strings.HasPrefix,
 	"ifTemplate":                ifTemplate,
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 	"heapAnalyticsID":           func() string { return appconf.Flags.HeapAnalyticsID },
@@ -237,18 +231,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"nl2br": func(s string) htmpl.HTML {
 		return htmpl.HTML(strings.Replace(htmpl.HTMLEscapeString(s), "\n", "<br>", -1))
 	},
-
-	"gosrcBaseURL": func(appURL *url.URL) string {
-		_, port, _ := net.SplitHostPort(appURL.Host)
-		if port != "" {
-			port = ":" + port
-		}
-		return (&url.URL{
-			Scheme: "http", // TODO(sqs): get ssl cert for gosrc.org
-			Host:   "gosrc.org" + port,
-		}).String()
-	},
-	"gosrcBookmarklet": func() htmpl.URL { return htmpl.URL(gosrcBookmarklet) },
 
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 

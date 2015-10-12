@@ -43,8 +43,6 @@ func NewTDoc(pdoc *doc.Package) *TDoc {
 }
 
 func (pdoc *TDoc) Code(pos doc.Pos, repoRevSpec sourcegraph.RepoRevSpec) htemp.HTML {
-	v := repoRevSpec.RouteVars()
-
 	var subdir string
 	if pdoc.ImportPath != pdoc.ProjectRoot && strings.HasPrefix(pdoc.ImportPath, pdoc.ProjectRoot) {
 		subdir = relativePathFn(pdoc.ImportPath, pdoc.ProjectRoot)
@@ -52,7 +50,7 @@ func (pdoc *TDoc) Code(pos doc.Pos, repoRevSpec sourcegraph.RepoRevSpec) htemp.H
 		subdir = filepath.Join("src", pdoc.ImportPath)
 	}
 
-	return htemp.HTML(fmt.Sprintf(`<script type="text/javascript" src="/%s@%s/.tree/%s/.sourcebox.js?StartLine=%d&EndLine=%d"></script>`, html.EscapeString(v["Repo"]), html.EscapeString(v["Rev"]), html.EscapeString(path.Join(subdir, pdoc.Files[pos.File].Name)), pos.Line, pos.Line+int32(pos.N)))
+	return htemp.HTML(fmt.Sprintf(`<script type="text/javascript" src="/%s@%s/.tree/%s/.sourcebox.js?StartLine=%d&EndLine=%d"></script>`, html.EscapeString(repoRevSpec.URI), html.EscapeString(repoRevSpec.ResolvedRevString()), html.EscapeString(path.Join(subdir, pdoc.Files[pos.File].Name)), pos.Line, pos.Line+int32(pos.N)))
 }
 
 func (pdoc *TDoc) PageName() string {

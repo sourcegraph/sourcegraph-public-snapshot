@@ -186,6 +186,7 @@ func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, err
 	}
 	if gitConfig != nil {
 		repo.Description = gitConfig.Sourcegraph.Description
+		repo.Language = gitConfig.Sourcegraph.Language
 		repo.Private = gitConfig.Sourcegraph.Private
 
 		if origin := gitConfig.Remote["origin"]; origin != nil {
@@ -273,6 +274,12 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 		}
 	}
 
+	if repo.Language != "" {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", repo.Language); err != nil {
+			return nil, err
+		}
+	}
+
 	if repo.Mirror {
 		// Configure mirror repo but do not clone it (since that would
 		// block this call). The repo may be cloned with
@@ -301,6 +308,12 @@ func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error
 
 	if op.Description != "" {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.description", strings.TrimSpace(op.Description)); err != nil {
+			return err
+		}
+	}
+
+	if op.Language != "" {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", strings.TrimSpace(op.Language)); err != nil {
 			return err
 		}
 	}

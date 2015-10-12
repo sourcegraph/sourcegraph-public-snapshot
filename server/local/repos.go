@@ -96,6 +96,8 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		HTTPCloneURL: op.CloneURL,
 		Mirror:       op.Mirror,
 		Private:      op.Private,
+		Description:  op.Description,
+		Language:     op.Language,
 	}
 	if _, err := store.ReposFromContextOrNil(ctx).Create(ctx, repo); err != nil {
 		return nil, err
