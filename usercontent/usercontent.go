@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"golang.org/x/net/webdav"
+	"sourcegraph.com/sourcegraph/rwvfs"
 )
 
 // Store for user uploaded content.
-var Store = func() webdav.FileSystem {
+var Store = func() rwvfs.FileSystem {
 	dir := filepath.Join(os.Getenv("SGPATH"), "usercontent")
 	log.Println("usercontent.Store path:", dir)
 	err := os.MkdirAll(dir, 0755)
@@ -18,5 +18,5 @@ var Store = func() webdav.FileSystem {
 		// TODO: Error-prone things should happen elsewhere where it can be handled better.
 		log.Fatalf("Error creating directory %q: %v.\n", dir, err)
 	}
-	return webdav.Dir(dir)
+	return rwvfs.OS(dir)
 }()

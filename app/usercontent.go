@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/shurcooL/webdavfs/vfsutil"
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/usercontent"
 )
@@ -16,7 +15,7 @@ func serveUserContent(w http.ResponseWriter, req *http.Request) error {
 	}
 
 	name := mux.Vars(req)["Name"]
-	f, err := vfsutil.Open(usercontent.Store, name)
+	f, err := usercontent.Store.Open(name)
 	if err != nil {
 		return err
 	}

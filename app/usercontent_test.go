@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/net/webdav"
+	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/ui"
@@ -18,7 +18,7 @@ import (
 
 func TestUserContent(t *testing.T) {
 	origStore := usercontent.Store
-	usercontent.Store = webdav.NewMemFS()
+	usercontent.Store = rwvfs.Map(make(map[string]string))
 	defer func() { usercontent.Store = origStore }()
 
 	const content = "ABC...z"

@@ -3,11 +3,12 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/docker/distribution/uuid"
-	"github.com/shurcooL/webdavfs/vfsutil"
+	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/usercontent"
 )
 
@@ -26,7 +27,7 @@ func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 	name := uuid.Generate().String() + ".png"
-	err = vfsutil.WriteFile(usercontent.Store, name, body, 0644)
+	err = writeFile(usercontent.Store, name, body)
 	if err != nil {
 		return err
 	}
@@ -35,4 +36,22 @@ func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 	}{
 		Name: name,
 	})
+}
+
+// writeFile writes data to a file named by name.
+// If the file does not exist, writeFile creates it;
+// otherwise writeFile truncates it before writing.
+func writeFile(fs rwvfs.FileSystem, name string, data []byte) error {
+	f, err := fs.Create(name)
+	if err != nil {
+		return err
+	}
+	n, err := f.Write(data)
+	if err == nil && n < len(data) {
+		err = io.ErrShortWrite
+	}
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }
