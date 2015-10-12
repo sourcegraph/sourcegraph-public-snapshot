@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"src.sourcegraph.com/sourcegraph/app/appconf"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
@@ -37,9 +38,11 @@ func checkForUpdates() {
 }
 
 func init() {
-	if appconf.Flags.CheckForUpdates != 0 {
-		go checkForUpdates()
-	}
+	sgxcli.ServeInit = append(sgxcli.ServeInit, func() {
+		if appconf.Flags.CheckForUpdates != 0 {
+			go checkForUpdates()
+		}
+	})
 }
 
 // updateAvailable returns the version string of an available updated, or

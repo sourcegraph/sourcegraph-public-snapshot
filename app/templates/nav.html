@@ -22,14 +22,6 @@
 		<div class="collapse navbar-collapse" id="top-nav-collapse">
 
 			<ul class="nav navbar-nav navbar-right">
-				{{with updateAvailable}}
-				<li>
-					<a data-tooltip data-placement="bottom" title="Upgrade to v{{.}} today!" href="https://src.sourcegraph.com/sourcegraph/.docs/management/upgrading">
-						<i class="upgrade-icon fa fa-gift"></i>
-					</a>
-				</li>
-				{{end}}
-
 				{{if appconf.Blog}}
 					<li><a href="{{urlTo "blog"}}">Blog</a></li>
 				{{end}}

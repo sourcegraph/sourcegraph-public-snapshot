@@ -1,16 +1,16 @@
 +++
 title = "Upgrading Sourcegraph"
-navtitle = "Upgrading Sourcegraph"
+navtitle = "Upgrading"
 +++
 
-When a new update is available for Sourcegraph, you'll receive a "golden present" icon in the top right of the application.
-
-Not an admin? Contact your Sourcegraph admin and let them know they should upgrade Sourcegraph!
-
-Upgrading is extremely easy and provides new features and important bug fixes.
+When an updated version of Sourcegraph is available for your server, a
+notice will appear in the footer.
 
 # Upgrading
 
-Log into the server running Sourcegraph and run `src selfupdate` to update to the latest version.
-
-Restart the server to use the new version: `sudo restart src`.
+1. Log into the server running Sourcegraph and run `sudo src
+   selfupdate` to update the binary to the latest version.
+1. If you used the cloud provider installation instructions, re-grant
+   the capability to let Sourcegraph listen on privileged ports (if
+   needed): `sudo setcap cap_net_bind_service=+ep /usr/bin/src`
+1. If running Sourcegraph as a system service: `sudo restart src`
