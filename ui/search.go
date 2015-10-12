@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
@@ -80,16 +81,20 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	results := make([]payloads.TextSearchResult, len(vcsEntryList.SearchResults))
-	// Retrieve the corresponding tokenized TreeEntry for each VCS search result.
 	for i, vcsEntry := range vcsEntryList.SearchResults {
 		matchEntryString := string(vcsEntry.Match)
 		matchEntryLines := strings.Split(matchEntryString, "\n")
+
+		sanitizedMatchEntryLines := make([]*pbtypes.HTML, len(matchEntryLines))
+		for j, line := range matchEntryLines {
+			sanitizedMatchEntryLines[j] = htmlutil.SanitizeForPB(line)
+		}
 
 		results[i] = payloads.TextSearchResult{
 			File:      vcsEntry.File,
 			StartLine: vcsEntry.StartLine,
 			EndLine:   vcsEntry.EndLine,
-			Lines:     matchEntryLines,
+			Lines:     sanitizedMatchEntryLines,
 		}
 	}
 

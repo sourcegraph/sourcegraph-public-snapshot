@@ -105,7 +105,7 @@ type TokenSearchResult struct {
 
 type TextSearchResult struct {
 	File      string
-	Lines     []string
+	Lines     []*pbtypes.HTML
 	StartLine uint32
 	EndLine   uint32
 }

@@ -28,7 +28,8 @@ var TextSearchResult = React.createClass({
 			return (
 				<tr className="line" key={i}>
 					<td className="line-number" onClick={this._goToLine.bind(this, lineNumber)}>{lineNumber}</td>
-					<td className="line-content" dangerouslySetInnerHTML={{__html: line}}></td>
+					{/* This HTML should be sanitized in ui/search.go */}
+					<td className="line-content" dangerouslySetInnerHTML={line}></td>
 					{snippetLink}
 				</tr>
 			);
