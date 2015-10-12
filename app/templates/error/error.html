@@ -25,7 +25,7 @@
 							{{else}}
 								<li>Tell them to grant you access.</li>
 							{{end}}
-							<li>They will need to know your Sourcegraph username is <strong>"{{.CurrentUser.Login}}"</strong></li>
+							<li>They will need to know your Sourcegraph username{{with .CurrentUser}} is <strong>"{{.Login}}"</strong>{{end}}</li>
 						</ol>
 					</div>
 				</div>
