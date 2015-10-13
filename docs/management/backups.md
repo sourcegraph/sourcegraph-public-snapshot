@@ -2,10 +2,6 @@
 title = "Data Backups"
 +++
 
-Here we will describe how easy it is to create a backup of all your Sourcegraph
-server data. Then, for those who are curious, we will describe exactly where
-each dataset is located.
-
 # Creating a backup
 
 To create a backup of all your Sourcegraph data and source code repositories,
