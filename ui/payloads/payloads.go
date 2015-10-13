@@ -102,3 +102,10 @@ type TokenSearchResult struct {
 	// URL is the DefKey-based URL that can be used to request this definition.
 	URL string
 }
+
+type TextSearchResult struct {
+	File      string
+	Lines     []*pbtypes.HTML
+	StartLine uint32
+	EndLine   uint32
+}

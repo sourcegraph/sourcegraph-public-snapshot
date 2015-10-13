@@ -86,6 +86,11 @@ module.exports = {
 		return `${module.exports.repoURL(repo, rev)}/.tree/${path}`;
 	},
 
+	fileRangeURL(repo, rev, path, startline, endline) {
+		path = (path ? path : "");
+		return `${module.exports.repoURL(repo, rev)}/.tree/${path}#startline=${startline}&endline=${endline}`;
+	},
+
 	fileListURL(repo, rev) {
 		return `${module.exports.repoURL(repo, rev)}/.filefinder`;
 	},

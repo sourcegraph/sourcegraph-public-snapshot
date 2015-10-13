@@ -3,10 +3,12 @@ package ui
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
@@ -53,6 +55,54 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 		Results []payloads.TokenSearchResult
 	}{
 		Total:   defList.Total,
+		Results: results,
+	})
+}
+
+func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
+	apiclient := handlerutil.APIClient(r)
+	ctx := httpctx.FromRequest(r)
+	e := json.NewEncoder(w)
+
+	var opt sourcegraph.TextSearchOptions
+	err := schemaDecoder.Decode(&opt, r.URL.Query())
+	if err != nil {
+		return err
+	}
+
+	opt.RepoRev = sourcegraph.RepoRevSpec{
+		RepoSpec: sourcegraph.RepoSpec{URI: mux.Vars(r)["Repo"]},
+		Rev:      mux.Vars(r)["Rev"],
+	}
+
+	vcsEntryList, err := apiclient.Search.SearchText(ctx, &opt)
+	if err != nil {
+		return err
+	}
+
+	results := make([]payloads.TextSearchResult, len(vcsEntryList.SearchResults))
+	for i, vcsEntry := range vcsEntryList.SearchResults {
+		matchEntryString := string(vcsEntry.Match)
+		matchEntryLines := strings.Split(matchEntryString, "\n")
+
+		sanitizedMatchEntryLines := make([]*pbtypes.HTML, len(matchEntryLines))
+		for j, line := range matchEntryLines {
+			sanitizedMatchEntryLines[j] = htmlutil.SanitizeForPB(line)
+		}
+
+		results[i] = payloads.TextSearchResult{
+			File:      vcsEntry.File,
+			StartLine: vcsEntry.StartLine,
+			EndLine:   vcsEntry.EndLine,
+			Lines:     sanitizedMatchEntryLines,
+		}
+	}
+
+	return e.Encode(&struct {
+		Total   int32
+		Results []payloads.TextSearchResult
+	}{
+		Total:   vcsEntryList.Total,
 		Results: results,
 	})
 }

@@ -16,6 +16,7 @@ module.exports = {
 	DiscussionSnippetEntries: 4,
 
 	TokenSearchResultsPerPage: 50,
+	TextSearchResultsPerPage: 10,
 
 	Actions: keyMirror({
 		// CodeFile Actions
@@ -103,8 +104,11 @@ module.exports = {
 
 		// Search Actions
 		SEARCH_SUBMIT: null,
+		SEARCH_SELECT_TYPE: null,
 		SEARCH_TOKENS_SUBMIT: null,
 		SEARCH_TOKENS_RECEIVED_RESULTS: null,
+		SEARCH_TEXT_SUBMIT: null,
+		SEARCH_TEXT_RECEIVED_RESULTS: null,
 	}),
 
 	ChangesetStatus: keyMirror({
@@ -118,6 +122,11 @@ module.exports = {
 		NEW_DISCUSSION: null,
 		VIEW_DISCUSSION: null,
 		LIST_DISCUSSION: null,
+	}),
+
+	SearchType: keyMirror({
+		TOKEN: null,
+		TEXT: null,
 	}),
 
 	Features: window._featureToggles,

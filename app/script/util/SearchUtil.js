@@ -11,4 +11,14 @@ module.exports = {
 			Page: page,
 		}).then((data) => { return data; });
 	},
+
+	fetchTextResults(query, repoURI, page) {
+		var perPage = globals.TextSearchResultsPerPage;
+		var url = `/ui/${repoURI}/.search/text`;
+		return $.get(url, {
+			q: query,
+			PerPage: perPage,
+			Page: page,
+		}).then((data) => { return data; });
+	},
 };

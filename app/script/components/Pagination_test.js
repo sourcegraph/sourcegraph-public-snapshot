@@ -77,4 +77,27 @@ describe("components/Pagination", () => {
 		expect(props.onPageChange.callCount).to.be(1);
 		expect(props.onPageChange.firstCall.args[0]).to.be(newPage);
 	});
+
+	it("has its current page set with the active class", () => {
+		var props = {
+			currentPage: 5,
+			totalPages: 100,
+			pageRange: 10,
+			onPageChange: () => {},
+		};
+		var activeClass = "active";
+
+		var component = sandbox.renderComponent(<Pagination {...props} />);
+		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
+
+		for (var i=0; i < pageListItems.length; i++) {
+			var pageListItem = ReactDOM.findDOMNode(pageListItems[i]);
+
+			if (pageListItem.textContent === props.currentPage.toString()) {
+				expect(pageListItem.classList.contains(activeClass)).to.be(true);
+			} else {
+				expect(pageListItem.classList.contains(activeClass)).to.be(false);
+			}
+		}
+	});
 });

@@ -195,6 +195,24 @@ div.search-result-type {
 	.summary {
 		color: $gray-mid;
 	}
+
+	.nav {
+		a {
+			cursor: pointer;
+		}
+		li {
+			@include disable-user-select;
+			.badge {
+				font-size: $font-size-base;
+				background-color: $dark-blue;
+			}
+		}
+		li.active {
+			.badge {
+				color: $white;
+			}
+		}
+	}
 }
 
 .token-search-result {
@@ -212,6 +230,50 @@ div.search-result-type {
 	p {
 		color: $gray-mid;
 		padding-top: 4px;
+	}
+}
+
+.text-search-result {
+	header {
+		margin-top: 24px;
+		padding: $padding-large-vertical $padding-small-horizontal;
+		background-color: $light-blue;
+		border: 1px solid darken($light-blue, 6.5%);
+		border-bottom: none;
+		border-top-left-radius: 4px;
+		border-top-right-radius: 4px;
+	}
+
+	.line-numbered-code {
+		border: 1px solid $border-gray;
+		border-top: none;
+		$result-section-padding: 6px;
+
+		tr {
+			&:first-child {
+				td {
+					padding-top: $result-section-padding;
+				}
+			}
+			&:last-child {
+				td {
+					padding-bottom: $result-section-padding;
+				}
+			}
+		}
+
+		.line-number {
+			cursor: pointer;
+		}
+
+		.file-range-link {
+			width: 70px;
+			text-align: right;
+			padding-right: $padding-small-horizontal;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
 	}
 }
 

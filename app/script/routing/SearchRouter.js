@@ -12,6 +12,9 @@ var searchViewIsActive = false;
 // make this more robust.
 
 module.exports.searchRepo = (query, repo) => {
+	// TODO(renfred) Some other things that would be useful to encode in the URL
+	// as query params are the current page and type of search results the user
+	// is viewing. Once we have a new, standard router we can add these more easily.
 	history.pushState({
 		searchRepo: {query: query, repo: repo},
 	}, "", `/${repo.URI}/.search?q=${query}`);

@@ -1,11 +1,12 @@
 var React = require("react");
 
 var globals = require("../globals");
+var routing = require("../routing/router");
 var Pagination = require("./Pagination");
-var TokenSearchResult = require("./TokenSearchResult");
+var TextSearchResult = require("../components/TextSearchResult");
 var SearchActions = require("../actions/SearchActions");
 
-var TokenSearchResultsView = React.createClass({
+var TextSearchResultsView = React.createClass({
 	getInitialState() {
 		return {currentPage: 1};
 	},
@@ -20,18 +21,33 @@ var TokenSearchResultsView = React.createClass({
 
 	onPageChange(page) {
 		this.setState({currentPage: page});
-		SearchActions.searchRepoTokens(this.props.query, this.props.repo, page);
+		SearchActions.searchRepoText(this.props.query, this.props.repo, page);
 	},
 
 	render() {
 		if (!this.props.results) return null;
 
 		if (this.props.results.length === 0) {
-			return <i>No token results found for "{this.props.query}"</i>;
+			return <i>No text results found for "{this.props.query}"</i>;
 		}
 
+		var currentFile, header;
 		var results = this.props.results.map((result) => {
-			return <TokenSearchResult key={result.URL} result={result} />;
+			if (currentFile !== result.File) {
+				// TODO(renfred) link to user-specified rev instead of default branch.
+				var fileURL = routing.fileURL(this.props.repo.URI, this.props.repo.DefaultBranch, result.File);
+				header = <header><a href={fileURL}>{result.File}</a></header>;
+			} else {
+				header = null;
+			}
+			currentFile = result.File;
+
+			return (
+				<div className="text-search-result" key={`${result.File}-${result.StartLine}`}>
+					{header}
+					<TextSearchResult result={result} repo={this.props.repo} />
+				</div>
+			);
 		});
 
 		var s = this.props.results.length === 1 ? "" : "s";
@@ -39,13 +55,13 @@ var TokenSearchResultsView = React.createClass({
 		if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 
 		return (
-			<div className="token-search-results">
+			<div className="text-search-results">
 				<i className="summary">{summary}</i>
 				{results}
 				<div className="search-pagination">
 					<Pagination
 						currentPage={this.state.currentPage}
-						totalPages={Math.ceil(this.props.total/globals.TokenSearchResultsPerPage)}
+						totalPages={Math.ceil(this.props.total/globals.TextSearchResultsPerPage)}
 						pageRange={10}
 						onPageChange={this.onPageChange} />
 				</div>
@@ -54,4 +70,4 @@ var TokenSearchResultsView = React.createClass({
 	},
 });
 
-module.exports = TokenSearchResultsView;
+module.exports = TextSearchResultsView;
