@@ -51,7 +51,7 @@ var Flags struct {
 
 	CustomFeedbackForm template.HTML `long:"app.custom-feedback-form" description:"custom feedback form to display (HTML)" env:"CUSTOM_FEEDBACK_FORM"`
 
-	CheckForUpdates time.Duration `long:"app.check-for-updates" description:"rate at which to check for updates and display a notification (not download/install) (0 to disable)" default:"5m"`
+	CheckForUpdates time.Duration `long:"app.check-for-updates" description:"rate at which to check for updates and display a notification (not download/install) (0 to disable)" default:"30m"`
 
 	Blog bool `long:"app.blog" description:"Enable the Sourcegraph blog, must also set $SG_TUMBLR_API_KEY"`
 
