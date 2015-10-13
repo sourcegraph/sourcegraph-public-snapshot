@@ -201,6 +201,7 @@ div.search-result-type {
 			cursor: pointer;
 		}
 		li {
+			@include disable-user-select;
 			.badge {
 				font-size: $font-size-base;
 				background-color: $dark-blue;
