@@ -65,18 +65,21 @@ var Pagination = React.createClass({
 			pageList.push(<li key="next-indicator" className="disabled"><a>…</a></li>);
 		}
 
+		var isFirstPage = this.props.currentPage === 1;
+		var isLastPage = this.props.currentPage === this.props.totalPages;
+
 		return (
 			<ul className="pagination">
-				<li key="first" className={this.props.currentPage === 1 ? "disabled" : null}>
+				<li key="first" className={isFirstPage ? "disabled" : null}>
 					<a title={"Page 1"}
-						onClick={this._onPageChange.bind(this, 1)}>
+						onClick={isFirstPage ? null : this._onPageChange.bind(this, 1)}>
 						<span aria-hidden="true">&laquo;</span>
 					</a>
 				</li>
 				{pageList}
-				<li key="last" className={this.props.currentPage === this.props.totalPages ? "disabled" : null}>
+				<li key="last" className={isLastPage ? "disabled" : null}>
 					<a title={`Page ${this.props.totalPages}`}
-						onClick={this._onPageChange.bind(this, this.props.totalPages)}>
+						onClick={isLastPage ? null : this._onPageChange.bind(this, this.props.totalPages)}>
 						<span aria-hidden="true">&raquo;</span>
 					</a>
 				</li>
