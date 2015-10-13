@@ -83,6 +83,8 @@ func TestPrepBuildDir_httpGitRepo_lg(t *testing.T) {
 }
 
 func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
+	t.Parallel()
+
 	// Use StatusUnauthorized because we test invalid auth, valid auth and then invalid auth again.
 	// Using StatusForbidden would cause the successful auth cases to fail after invalid auth was provided.
 	// I'm not seeing issues with curl prompting for login (the original reason StatusForbidden was introduced) on my setup;
@@ -125,14 +127,16 @@ func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
 	}
 	sgx.CheckCommitIDResolution("git", cloneDir, commitID)
 
-	// TODO(shurcool): This is commented out because it fails. It's a check from before, recently removed.
-	//                 Need to look into if this is expected behavior (if so, fix it so test case passes)
-	//                 or if it's fine that recently-succeeded auth is seemingly cached (hence not providing auth
-	//                 causes it to succeed after being prepped with correct auth).
-	/*// No credentials should fail (after prepping with correct auth).
+	// No credentials should fail (after prepping with correct auth).
+	if err := os.Setenv("GIT_ASKPASS", "/bin/echo"); err != nil {
+		t.Fatal(err)
+	}
 	if err := sgx.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
 		t.Fatal("succeeded without auth after prepping with correct auth")
-	}*/
+	}
+	if err := os.Unsetenv("GIT_ASKPASS"); err != nil {
+		t.Fatal(err)
+	}
 
 	// Bad credentials should fail even after prepping with correct auth.
 	if err := sgx.PrepBuildDir("git", gitURL, "baduser", "badpw", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
