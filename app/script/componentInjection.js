@@ -20,7 +20,7 @@ var AlertView = require("./components/AlertView");
 // Application-specific JS
 //
 // TODO: Bundle this with the applications.
-var Changes = require("./apps/changes/componentInjection.js");
+require("./apps/changes/componentInjection.js");
 
 // TODO use some common method for all components
 document.addEventListener("DOMContentLoaded", () => {
