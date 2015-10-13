@@ -4,7 +4,6 @@ var ReactDOM = require("react-dom");
 
 var globals = require("./globals");
 var CodeFileView = require("./components/CodeFileView");
-var CodeReview = require("./components/CodeReview");
 var CloseChangesetButton = require("./components/CloseChangesetButton");
 var CompareView = require("./components/CompareView");
 var DeltaDefsContainer = require("./components/DeltaDefsContainer");
@@ -17,6 +16,11 @@ var SearchBar = require("./components/SearchBar");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
+
+// Application-specific JS
+//
+// TODO: Bundle this with the applications.
+var Changes = require("./apps/changes/componentInjection.js");
 
 // TODO use some common method for all components
 document.addEventListener("DOMContentLoaded", () => {
@@ -47,14 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			<CodeFileView
 				source={el[0].dataset.source}
 				data={window.preloadedCodeViewFile||null} />,
-			el[0]
-		);
-	}
-
-	el = $("#CodeReviewView");
-	if (el.length > 0) {
-		ReactDOM.render(
-			<CodeReview data={window.preloadedReviewData||null} />,
 			el[0]
 		);
 	}
