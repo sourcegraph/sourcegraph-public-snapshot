@@ -31,7 +31,6 @@ $fa-font-path: "/assets/font/font-awesome";
 @import "_code_file";
 @import "_code_discussions";
 @import "_commits";
-@import "_code_review";
 @import "_debug";
 @import "_delta";
 @import "_delta_impact";
@@ -83,3 +82,4 @@ $fa-font-path: "/assets/font/font-awesome";
 //
 // TODO(sqs): Bundle this with the applications.
 @import "_app_docs";
+@import "_app_changes";
