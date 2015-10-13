@@ -4,8 +4,8 @@ var CurrentUser = require("../CurrentUser");
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
 
 var CodeLine = require("./CodeLineView");
-var CodeReviewComment = require("./CodeReviewComment");
-var ReviewCollection = require("../stores/collections/ReviewCollection");
+var CodeReviewComment = require("../apps/changes/components/CodeReviewComment");
+var ReviewCollection = require("../apps/changes/stores/collections/ReviewCollection");
 
 var HunkView = React.createClass({
 

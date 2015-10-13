@@ -1,8 +1,8 @@
 var React = require("react");
 var Backbone = require("backbone");
-var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
+var ModelPropWatcherMixin = require("../../../components/mixins/ModelPropWatcherMixin");
 var moment = require("moment");
-var MarkdownView = require("./MarkdownView");
+var MarkdownView = require("../../../components/MarkdownView");
 var CodeReviewActions = require("../actions/CodeReviewActions");
 
 var CodeReviewTimelineReview = React.createClass({

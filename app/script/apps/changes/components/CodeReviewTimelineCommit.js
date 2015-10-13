@@ -1,9 +1,9 @@
 var React = require("react");
-var CommitModel = require("../stores/models/CommitModel");
-var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
+var CommitModel = require("../../../stores/models/CommitModel");
+var ModelPropWatcherMixin = require("../../../components/mixins/ModelPropWatcherMixin");
 var moment = require("moment");
-var router = require("../routing/router");
-var MarkdownView = require("./MarkdownView");
+var router = require("../../../routing/router");
+var MarkdownView = require("../../../components/MarkdownView");
 
 var CodeReviewTimelineCommit = React.createClass({
 	propTypes: {

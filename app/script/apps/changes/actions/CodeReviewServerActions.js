@@ -1,6 +1,6 @@
-var globals = require("../globals");
-var notify = require("../components/notify");
-var AppDispatcher = require("../dispatchers/AppDispatcher");
+var globals = require("../../../globals");
+var notify = require("../../../components/notify");
+var AppDispatcher = require("../../../dispatchers/AppDispatcher");
 
 /**
  * @description Action called by server after receiving differential

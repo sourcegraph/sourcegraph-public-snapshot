@@ -1,8 +1,8 @@
 var React = require("react");
 var Draggable = require("react-draggable");
 var classNames = require("classnames");
-var ExamplesView = require("./ExamplesView");
-var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
+var ExamplesView = require("../../../components/ExamplesView");
+var ModelPropWatcherMixin = require("../../../components/mixins/ModelPropWatcherMixin");
 
 var CodeReviewPopup = React.createClass({
 

@@ -1,7 +1,7 @@
 var React = require("react");
 
-var RepoBuildIndicator = require("./RepoBuildIndicator");
-var CurrentUser = require("../CurrentUser");
+var RepoBuildIndicator = require("../../../components/RepoBuildIndicator");
+var CurrentUser = require("../../../CurrentUser");
 var $ = require("jquery");
 
 var CodeReviewHeader = React.createClass({

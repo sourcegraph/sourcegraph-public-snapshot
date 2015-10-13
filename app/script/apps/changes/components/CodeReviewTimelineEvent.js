@@ -1,6 +1,6 @@
 var React = require("react");
 var Backbone = require("backbone");
-var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
+var ModelPropWatcherMixin = require("../../../components/mixins/ModelPropWatcherMixin");
 var moment = require("moment");
 
 var message = {

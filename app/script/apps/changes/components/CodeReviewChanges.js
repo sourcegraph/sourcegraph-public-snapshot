@@ -3,9 +3,9 @@ var $ = require("jquery");
 
 var CodeReviewActions = require("../actions/CodeReviewActions");
 
-var FileDiff = require("../components/FileDiffView");
-var DiffFileList = require("./DiffFileList");
-var TokenPopover = require("./TokenPopoverView");
+var FileDiff = require("../../../components/FileDiffView");
+var DiffFileList = require("../../../components/DiffFileList");
+var TokenPopover = require("../../../components/TokenPopoverView");
 var CodeReviewPopup = require("./CodeReviewPopup");
 
 /**

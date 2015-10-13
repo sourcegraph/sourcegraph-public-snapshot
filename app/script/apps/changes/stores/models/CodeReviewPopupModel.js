@@ -1,5 +1,5 @@
 var Backbone = require("backbone");
-var ExamplesModel = require("./ExamplesModel");
+var ExamplesModel = require("../../../../stores/models/ExamplesModel");
 
 /**
  * @description Manages the state of the popup displayed on top of the CompareView.

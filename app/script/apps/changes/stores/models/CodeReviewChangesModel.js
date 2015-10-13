@@ -1,7 +1,7 @@
 var Backbone = require("backbone");
 
-var FileDiffModel = require("./FileDiffModel");
-var TokenPopoverModel = require("./TokenPopoverModel");
+var FileDiffModel = require("../../../../stores/models/FileDiffModel");
+var TokenPopoverModel = require("../../../../stores/models/TokenPopoverModel");
 var CodeReviewPopupModel = require("./CodeReviewPopupModel");
 
 /**

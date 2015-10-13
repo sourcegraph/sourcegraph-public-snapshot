@@ -1,6 +1,6 @@
 var Backbone = require("backbone");
-var CommentCollection = require("../collections/CommentCollection");
-var CurrentUser = require("../../CurrentUser");
+var CommentCollection = require("../../../../stores/collections/CommentCollection");
+var CurrentUser = require("../../../../CurrentUser");
 
 var ReviewCollection = Backbone.Collection.extend({
 

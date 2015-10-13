@@ -1,6 +1,6 @@
 var React = require("react");
 var Backbone = require("backbone");
-var MarkdownTextarea = require("./MarkdownTextarea");
+var MarkdownTextarea = require("../../../components/MarkdownTextarea");
 
 /**
  * @description This component holds the view that contains the review submission

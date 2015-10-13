@@ -1,9 +1,9 @@
 var Backbone = require("backbone");
-var notify = require("../components/notify");
-var FluxStore = require("./FluxStore");
-var AppDispatcher = require("../dispatchers/AppDispatcher");
-var CodeReviewChangesModel = require("../stores/models/CodeReviewChangesModel");
-var CommitCollection = require("./collections/CommitCollection");
+var notify = require("../../../components/notify");
+var FluxStore = require("../../../stores/FluxStore");
+var AppDispatcher = require("../../../dispatchers/AppDispatcher");
+var CodeReviewChangesModel = require("./models/CodeReviewChangesModel");
+var CommitCollection = require("../../../stores/collections/CommitCollection");
 var ReviewCollection = require("./collections/ReviewCollection");
 
 var CodeReviewStore = FluxStore({

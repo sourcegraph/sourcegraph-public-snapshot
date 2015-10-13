@@ -1,11 +1,11 @@
 var React = require("react");
 var ReactDOM = require("react-dom");
-var CurrentUser = require("../CurrentUser");
+var CurrentUser = require("../../../CurrentUser");
 var moment = require("moment");
 var $ = require("jquery");
-var CommentModel = require("../stores/models/CommentModel");
-var MarkdownTextarea = require("./MarkdownTextarea");
-var MarkdownView = require("./MarkdownView");
+var CommentModel = require("../../../stores/models/CommentModel");
+var MarkdownTextarea = require("../../../components/MarkdownTextarea");
+var MarkdownView = require("../../../components/MarkdownView");
 
 var CodeReviewComment = React.createClass({
 

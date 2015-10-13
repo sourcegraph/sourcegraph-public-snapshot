@@ -1,10 +1,10 @@
-var globals = require("../globals");
-var AppDispatcher = require("../dispatchers/AppDispatcher");
+var globals = require("../../../globals");
+var AppDispatcher = require("../../../dispatchers/AppDispatcher");
 var CodeReviewStore = require("../stores/CodeReviewStore");
-var CodeUtil = require("../util/CodeUtil");
+var CodeUtil = require("../../../util/CodeUtil");
 var CodeReviewServerActions = require("./CodeReviewServerActions");
-var router = require("../routing/router");
-var CurrentUser = require("../CurrentUser");
+var router = require("../../../routing/router");
+var CurrentUser = require("../../../CurrentUser");
 
 /**
  * @description Action creator discarded when the page loads with pre-loaded data attached

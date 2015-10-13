@@ -1,6 +1,6 @@
 var React = require("react");
 var ReactDOM = require("react-dom");
-var globals = require("../globals");
+var globals = require("../../../globals");
 var $ = require("jquery");
 
 /**

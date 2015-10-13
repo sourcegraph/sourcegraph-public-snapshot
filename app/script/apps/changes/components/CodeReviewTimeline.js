@@ -5,7 +5,7 @@ var moment = require("moment");
 var TimelineCommit = require("./CodeReviewTimelineCommit");
 var TimelineReview = require("./CodeReviewTimelineReview");
 var TimelineEvent = require("./CodeReviewTimelineEvent");
-var MarkdownView = require("./MarkdownView");
+var MarkdownView = require("../../../components/MarkdownView");
 
 /**
  * @description CodeReviewTimeline holds the Timeline on the first tab of the

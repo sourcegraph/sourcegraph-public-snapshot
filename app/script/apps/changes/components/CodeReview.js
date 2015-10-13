@@ -1,6 +1,6 @@
 var React = require("react");
-var router = require("../routing/router");
-var CurrentUser = require("../CurrentUser");
+var router = require("../../../routing/router");
+var CurrentUser = require("../../../CurrentUser");
 var $ = require("jquery");
 
 var CodeReviewStore = require("../stores/CodeReviewStore");
