@@ -2,7 +2,7 @@ MAKEFLAGS+=--no-print-directory
 
 .PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smtest src test clone-private libvfsgen
 
-PRIVATE_HASH := c4238160c8cf1d22f3446b13b8ed5c9dfdee686b
+PRIVATE_HASH := f17a73ecda4d2c7fe1bc5c9fe4555b84ce88d932
 
 ifndef GOBIN
 GOBIN := $(shell echo $$GOPATH | cut -d':' -f1 )/bin
