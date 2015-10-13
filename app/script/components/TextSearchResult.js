@@ -18,6 +18,10 @@ var TextSearchResult = React.createClass({
 		);
 
 		var lines = result.Lines.map((line, i) => {
+			// Sometimes there will be a blank line before EOF that is not counted as part of the line
+			// range. Do not display these lines.
+			if (i + result.StartLine > result.EndLine) return null;
+
 			var lineNumber = result.StartLine + i;
 
 			var fileRangeLink = null;
