@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strconv"
 	"testing"
@@ -169,6 +170,54 @@ func TestExchangeRequest_JSONResponse(t *testing.T) {
 	scope := tok.Extra("scope")
 	if scope != "user" {
 		t.Errorf("Unexpected value for scope: %v", scope)
+	}
+	expiresIn := tok.Extra("expires_in")
+	if expiresIn != float64(86400) {
+		t.Errorf("Unexpected non-numeric value for expires_in: %v", expiresIn)
+	}
+}
+
+func TestExtraValueRetrieval(t *testing.T) {
+	values := url.Values{}
+
+	kvmap := map[string]string{
+		"scope": "user", "token_type": "bearer", "expires_in": "86400.92",
+		"server_time": "1443571905.5606415", "referer_ip": "10.0.0.1",
+		"etag": "\"afZYj912P4alikMz_P11982\"", "request_id": "86400",
+		"untrimmed": "  untrimmed  ",
+	}
+
+	for key, value := range kvmap {
+		values.Set(key, value)
+	}
+
+	tok := Token{
+		raw: values,
+	}
+
+	scope := tok.Extra("scope")
+	if scope != "user" {
+		t.Errorf("Unexpected scope %v wanted \"user\"", scope)
+	}
+	serverTime := tok.Extra("server_time")
+	if serverTime != 1443571905.5606415 {
+		t.Errorf("Unexpected non-float64 value for server_time: %v", serverTime)
+	}
+	refererIp := tok.Extra("referer_ip")
+	if refererIp != "10.0.0.1" {
+		t.Errorf("Unexpected non-string value for referer_ip: %v", refererIp)
+	}
+	expires_in := tok.Extra("expires_in")
+	if expires_in != 86400.92 {
+		t.Errorf("Unexpected value for expires_in, wanted 86400 got %v", expires_in)
+	}
+	requestId := tok.Extra("request_id")
+	if requestId != int64(86400) {
+		t.Errorf("Unexpected non-int64 value for request_id: %v", requestId)
+	}
+	untrimmed := tok.Extra("untrimmed")
+	if untrimmed != "  untrimmed  " {
+		t.Errorf("Unexpected value for untrimmed, got %q expected \"  untrimmed \"", untrimmed)
 	}
 }
 

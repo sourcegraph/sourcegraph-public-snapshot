@@ -2,7 +2,7 @@ package sourcegraph
 
 import (
 	"google.golang.org/grpc"
-	"sourcegraph.com/sqs/grpccache"
+	"sourcegraph.com/sourcegraph/grpccache"
 )
 
 // A Client communicates with the Sourcegraph API. All communication

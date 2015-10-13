@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/oauth"
 )
 
 type contextKey int
@@ -99,6 +100,8 @@ var NewClientFromContext = func(ctx context.Context) *Client {
 			creds = credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
 		}
 		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
 	}
 
 	// Use contextCredentials instead of directly using the cred
@@ -135,11 +138,11 @@ var RemovePooledGRPCConn = func(ctx context.Context) {
 
 type contextCredentials struct{}
 
-func (contextCredentials) GetRequestMetadata(ctx context.Context) (map[string]string, error) {
+func (contextCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	m := clientMetadataFromContext(ctx)
 
 	if cred := CredentialsFromContext(ctx); cred != nil {
-		credMD, err := (credentials.TokenSource{TokenSource: cred}).GetRequestMetadata(ctx)
+		credMD, err := (oauth.TokenSource{TokenSource: cred}).GetRequestMetadata(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -153,4 +156,8 @@ func (contextCredentials) GetRequestMetadata(ctx context.Context) (map[string]st
 		}
 	}
 	return m, nil
+}
+
+func (contextCredentials) RequireTransportSecurity() bool {
+	return false
 }

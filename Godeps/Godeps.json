@@ -520,7 +520,15 @@
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
-			"Rev": "b5adcc2dcdf009d0391547edc6ecbaff889f5bb9"
+			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/google",
+			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/jwt",
+			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
 		},
 		{
 			"ImportPath": "golang.org/x/text/transform",
@@ -618,6 +626,10 @@
 			"Rev": "e70a5777eb6faea64984b5a075164356400e09b3"
 		},
 		{
+			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
+			"Rev": "7e56f1b1ed2f149ed095c3db4d416bef5a4b9062"
+		},
+		{
 			"ImportPath": "sourcegraph.com/sourcegraph/makex",
 			"Rev": "c8cc99912b772f144ad2902ba210478fd9ac4169"
 		},
@@ -690,10 +702,6 @@
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/vcsclient",
 			"Rev": "57f0e652c3f8a6533b7918df2e9f03e657c8c087"
-		},
-		{
-			"ImportPath": "sourcegraph.com/sqs/grpccache",
-			"Rev": "0ab69d52c9386aae07fcf23305ca730edd97103c"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",

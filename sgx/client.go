@@ -10,7 +10,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sqs/grpccache"
+	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
