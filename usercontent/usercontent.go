@@ -17,7 +17,7 @@ var Store rwvfs.FileSystem
 func LocalStore() (rwvfs.FileSystem, error) {
 	dir := filepath.Join(os.Getenv("SGPATH"), "usercontent")
 	err := os.Mkdir(dir, 0755)
-	if err != nil {
+	if err != nil && !os.IsExist(err) {
 		return nil, fmt.Errorf("creating directory %q failed: %v", dir, err)
 	}
 	return rwvfs.OS(dir), nil
