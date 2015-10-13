@@ -26,8 +26,8 @@ var Pagination = React.createClass({
 		var firstPageOffset, lastPageOffset;
 		// Using the current page as a midpoint, show half of the max page links to the
 		// left and right of the current page.
-		var leftPageCount = Math.ceil(this.props.pageRange/2);
-		var rightPageCount = this.props.pageRange - leftPageCount;
+		var rightPageCount = Math.floor((this.props.pageRange - 1)/2);
+		var leftPageCount = this.props.pageRange - rightPageCount;
 		// Bound the first page offset to be at least 1.
 		if (this.props.currentPage <= leftPageCount) {
 			firstPageOffset = 1;

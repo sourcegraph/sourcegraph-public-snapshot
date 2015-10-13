@@ -61,7 +61,7 @@ var TextSearchResultsView = React.createClass({
 					<Pagination
 						currentPage={this.state.currentPage}
 						totalPages={Math.ceil(this.props.total/globals.TextSearchResultsPerPage)}
-						pageRange={11}
+						pageRange={10}
 						onPageChange={this.onPageChange} />
 				</div>
 			</div>

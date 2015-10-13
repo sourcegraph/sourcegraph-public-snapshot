@@ -3,6 +3,7 @@ var expect = require("expect.js");
 var sinon = require("sinon");
 
 var React = require("react/addons");
+var ReactDOM = require("react-dom");
 var TestUtils = React.addons.TestUtils;
 
 var Pagination = require("./Pagination");
@@ -25,7 +26,7 @@ describe("components/Pagination", () => {
 		for (var i=0; i < props.totalPages; i++) {
 			pageLink = pageLinks[i];
 			expect(pageLink).to.be.ok();
-			expect(React.findDOMNode(pageLink).textContent).to.be((i+1).toString());
+			expect(ReactDOM.findDOMNode(pageLink).textContent).to.be((i+1).toString());
 		}
 	});
 
@@ -55,7 +56,7 @@ describe("components/Pagination", () => {
 		var pageLinks = TestUtils.scryRenderedDOMComponentsWithClass(component, "num-page-link");
 		var lastPageLink = pageLinks[pageLinks.length-1];
 
-		expect(React.findDOMNode(lastPageLink).textContent).to.be(props.totalPages.toString());
+		expect(ReactDOM.findDOMNode(lastPageLink).textContent).to.be(props.totalPages.toString());
 	});
 
 	it("calls the onPageChange callback when a new page is selected", () => {
@@ -75,5 +76,28 @@ describe("components/Pagination", () => {
 
 		expect(props.onPageChange.callCount).to.be(1);
 		expect(props.onPageChange.firstCall.args[0]).to.be(newPage);
+	});
+
+	it("has its current page set with the active class", () => {
+		var props = {
+			currentPage: 5,
+			totalPages: 100,
+			pageRange: 10,
+			onPageChange: () => {},
+		};
+		var activeClass = "active";
+
+		var component = sandbox.renderComponent(<Pagination {...props} />);
+		var pageListItems = TestUtils.scryRenderedDOMComponentsWithTag(component, "li");
+
+		for (var i=0; i < pageListItems.length; i++) {
+			var pageListItem = ReactDOM.findDOMNode(pageListItems[i]);
+
+			if (pageListItem.textContent === props.currentPage.toString()) {
+				expect(pageListItem.classList.contains(activeClass)).to.be(true);
+			} else {
+				expect(pageListItem.classList.contains(activeClass)).to.be(false);
+			}
+		}
 	});
 });
