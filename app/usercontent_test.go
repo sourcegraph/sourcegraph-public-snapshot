@@ -27,7 +27,7 @@ func TestUserContent(t *testing.T) {
 	{
 		uic, _ := httptestutil.NewTest(ui.NewHandler(nil, false))
 
-		req, err := http.NewRequest("POST", ui_router.RelURLTo(ui_router.UserContentUpload).String(), strings.NewReader(content))
+		req, err := http.NewRequest("POST", ui_router.Rel.URLTo(ui_router.UserContentUpload).String(), strings.NewReader(content))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,7 +46,7 @@ func TestUserContent(t *testing.T) {
 			t.Fatal(err)
 		}
 		if upload.Error != "" {
-			t.Errorf("%s %s response: %s", req.Method, ui_router.RelURLTo(ui_router.UserContentUpload).String(), upload.Error)
+			t.Errorf("%s %s response: %s", req.Method, ui_router.Rel.URLTo(ui_router.UserContentUpload).String(), upload.Error)
 		}
 
 		name = upload.Name
