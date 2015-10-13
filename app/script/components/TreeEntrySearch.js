@@ -165,7 +165,7 @@ var TreeEntrySearch = React.createClass({
 
 	_performSearch() {
 		if (this.fuzzySet === null) {
-			return // file set is not loaded yet.
+			return; // file set is not loaded yet.
 		}
 		var term = $(".tree-search-input input").val();
 		if (this.searchTimeout === null && term !== "") {
