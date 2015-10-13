@@ -30,3 +30,17 @@ func TestReset(t *testing.T) {
 		t.Errorf("reset didn't clear all fields: %+v", tr)
 	}
 }
+
+// TestResetLog checks whether all the fields are zeroed after reset.
+func TestResetLog(t *testing.T) {
+	el := NewEventLog("foo", "bar")
+	el.Printf("message")
+	el.Errorf("error")
+	el.Finish()
+
+	el.(*eventLog).reset()
+
+	if !reflect.DeepEqual(el, new(eventLog)) {
+		t.Errorf("reset didn't clear all fields: %+v", el)
+	}
+}

@@ -500,19 +500,23 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
+			"Rev": "d8f3c68ddd4bb686ca3bd70e49bbc64b80c78144"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",
-			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
+			"Rev": "d8f3c68ddd4bb686ca3bd70e49bbc64b80c78144"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http2",
+			"Rev": "d8f3c68ddd4bb686ca3bd70e49bbc64b80c78144"
 		},
 		{
 			"ImportPath": "golang.org/x/net/internal/timeseries",
-			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
+			"Rev": "d8f3c68ddd4bb686ca3bd70e49bbc64b80c78144"
 		},
 		{
 			"ImportPath": "golang.org/x/net/trace",
-			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
+			"Rev": "d8f3c68ddd4bb686ca3bd70e49bbc64b80c78144"
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
@@ -548,7 +552,7 @@
 		},
 		{
 			"ImportPath": "google.golang.org/grpc",
-			"Rev": "91c8b79535eb6045d70ec671d302213f88a3ab95"
+			"Rev": "f7d1653e300d6ad9f019bce7a5f5ab3b4821f637"
 		},
 		{
 			"ImportPath": "gopkg.in/check.v1",
