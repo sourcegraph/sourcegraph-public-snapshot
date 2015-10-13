@@ -4,6 +4,7 @@ package router
 import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
+	app_router "src.sourcegraph.com/sourcegraph/app/router"
 )
 
 const (
@@ -29,6 +30,8 @@ const (
 	SearchTokens = "search.tokens"
 
 	AppdashUploadPageLoad = "appdash.upload-page-load"
+
+	UserContentUpload = "usercontent.upload"
 )
 
 func New(base *mux.Router, isTest bool) *mux.Router {
@@ -135,5 +138,12 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Methods(m("POST")...).
 		Name(AppdashUploadPageLoad)
 
+	base.Path("/.usercontent").
+		Methods(m("POST")...).
+		Name(UserContentUpload)
+
 	return base
 }
+
+// Rel is a relative url router, used for tests.
+var Rel = app_router.Router{Router: *New(nil, false)}

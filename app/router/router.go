@@ -97,6 +97,8 @@ const (
 	DefPopover  = "def.popover"
 	DefShare    = "def.share"
 
+	UserContent = "usercontent"
+
 	// Platform routes
 	RepoAppFrame = "repo.appframe"
 )
@@ -147,6 +149,8 @@ func New(base *mux.Router) *Router {
 	base.Path("/login/oauth/receive").Methods("GET").Name(OAuth2ClientReceive)
 
 	base.Path("/sitemap-index.xml").Methods("GET").Name(SitemapIndex)
+
+	base.Path("/usercontent/{Name}").Methods("GET").Name(UserContent)
 
 	// User routes begin with tilde (~).
 	userPath := `/~` + routevar.User

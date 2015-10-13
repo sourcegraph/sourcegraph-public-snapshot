@@ -35,6 +35,8 @@ var Flags struct {
 
 	DisableCloneURL bool `long:"app.disable-clone-url" description:"if set, disable display of the git clone URL"`
 
+	DisableUserContent bool `long:"app.disable-user-content" description:"if set, disable ability to upload user content (e.g., pasting images into textareas)"`
+
 	EnableGitHubRepoShortURIAliases bool `long:"app.enable-github-repo-short-uri-aliases" description:"if set, redirect 'user/repo' URLs (with no 'github.com/') to '/github.com/user/repo'"`
 
 	EnableGitHubStyleUserPaths bool `long:"app.enable-github-style-user-paths" description:"redirect GitHub paths like '/user' to valid ones like '/~user' (disables single-path repos)"`

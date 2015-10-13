@@ -39,6 +39,50 @@ var MarkdownTextarea = React.createClass({
 		});
 	},
 
+	// TODO(dmitri): Create/find a good way to propogate backend CLI flag value (appconf.Flags.DisableUserContent)
+	//               to this frontend component and disable _pasteHandler if that flag is true. For now, it will just
+	//               create a harmless error in console when you try to paste when user content is disabled.
+	_pasteHandler(event) {
+		// Get the file from clipboard event.
+		var items = event.clipboardData.items;
+		if (items.length === 0) {
+			return;
+		}
+		var item = items[0];
+		if (item.kind !== "file") {
+			return;
+		}
+		if (item.type !== "image/png") {
+			return;
+		}
+		var file = item.getAsFile();
+
+		// Upload the file.
+		$.ajax({
+			url: "/ui/.usercontent",
+			method: "POST",
+			contentType: "image/png",
+			accepts: "json",
+			data: file,
+			processData: false,
+			success: (upload) => {
+				console.log(upload);
+
+				if (upload.Error !== undefined) {
+					console.log(upload.Error);
+					return;
+				}
+
+				// Insert the file into textarea.
+				var url = `/usercontent/${upload.Name}`;
+				this.insertText(`![Image](${url})`);
+			},
+			error: (upload, error) => {
+				console.log(error);
+			},
+		});
+	},
+
 	/**
 	 * @description Gets or sets the value of the textarea.
 	 * @param {string=} str - (Optional) If provided, this value will be set in
@@ -51,6 +95,21 @@ var MarkdownTextarea = React.createClass({
 			return txt.val(str);
 		}
 		return txt.val();
+	},
+
+	/**
+	 * @description Inserts a string into the textarea.
+	 * @param {string} inserted - Value to insert into the text area.
+	 * @returns {void}
+	 */
+	insertText(inserted) {
+		var txt = $(ReactDOM.findDOMNode(this)).find(".raw-body");
+		var value = txt.val();
+		var start = txt[0].selectionStart;
+		var end = txt[0].selectionEnd;
+		txt.val(value.substring(0, start) + inserted + value.substring(end));
+		txt[0].selectionStart = start + inserted.length;
+		txt[0].selectionEnd = start + inserted.length;
 	},
 
 	render() {
@@ -73,7 +132,7 @@ var MarkdownTextarea = React.createClass({
 
 				<div className={cx}>
 					<div className="tab-edit">
-						<textarea className="raw-body" placeholder={this.props.placeholder} defaultValue={this.props.defaultValue} />
+						<textarea className="raw-body" placeholder={this.props.placeholder} defaultValue={this.props.defaultValue} onPaste={this._pasteHandler} />
 					</div>
 					<div className="tab-preview">
 						<MarkdownView content={this.state.bodyMarkdown} />

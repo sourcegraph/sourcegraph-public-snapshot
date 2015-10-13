@@ -303,6 +303,10 @@
 			"Rev": "8cec3a854e68dba10faabbe31c089abf4a3e57a6"
 		},
 		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Rev": "08f0718b61e95ddba0ade3346725fe0e4bf28ca6"
+		},
+		{
 			"ImportPath": "github.com/shurcooL/httpfs/filter",
 			"Rev": "30ae5985d3492b97a894a8543df78df5514618ab"
 		},
@@ -567,12 +571,12 @@
 			"Rev": "96c060f6a6b7e0d6f75fddd10efeaca3e5d1bcb0"
 		},
 		{
-			"ImportPath": "gopkg.in/inconshreveable/go-update.v0",
-			"Rev": "d8b0b1d421aa1cbf392c05869f8abbc669bb7066"
-		},
-		{
 			"ImportPath": "gopkg.in/gcfg.v1",
 			"Rev": "bf6a13274e638b65158eced37fe57b04c5b1838e"
+		},
+		{
+			"ImportPath": "gopkg.in/inconshreveable/go-update.v0",
+			"Rev": "d8b0b1d421aa1cbf392c05869f8abbc669bb7066"
 		},
 		{
 			"ImportPath": "gopkg.in/inconshreveable/log15.v2",

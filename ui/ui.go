@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -76,6 +77,10 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 	r.Get(ui_router.SearchTokens).Handler(p.handler(serveTokenSearch))
 
 	r.Get(ui_router.AppdashUploadPageLoad).Handler(p.handler(serveAppdashUploadPageLoad))
+
+	if !appconf.Flags.DisableUserContent {
+		r.Get(ui_router.UserContentUpload).Handler(p.handler(serveUserContentUpload))
+	}
 
 	return handlerutil.WithMiddleware(r, mw...)
 }
