@@ -59,6 +59,7 @@ func marshalArgsInGroup(group *flags.Group, prefix string) ([]string, error) {
 		}
 		args = append(args, groupArgs...)
 	}
+
 	return args, nil
 }
 

@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"sourcegraph.com/sourcegraph/srclib/util"
 )
@@ -26,13 +25,6 @@ var (
 	CommandName = "srclib"
 )
 
-// PathEntries returns first colon-separated entries in Path
-// (SRCLIBPATH). It is guaranteed to have at least one non-empty
-// element.
-func PathEntries() []string {
-	return strings.Split(Path, ":")
-}
-
 func init() {
 	if Path == "" {
 		homeDir := util.CurrentUserHomeDir()
@@ -46,7 +38,7 @@ func init() {
 	}
 
 	if CacheDir == "" {
-		dirs := strings.SplitN(Path, ":", 2)
+		dirs := filepath.SplitList(Path)
 		CacheDir = filepath.Join(dirs[0], ".cache")
 	}
 }

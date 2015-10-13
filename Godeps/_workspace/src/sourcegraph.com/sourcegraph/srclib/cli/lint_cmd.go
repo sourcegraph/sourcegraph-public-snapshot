@@ -102,10 +102,10 @@ func (c *LintCmd) Execute(args []string) error {
 						// Infer source unit name from file path (the
 						// path components after .srclib-cache until
 						// the basename).
-						pcs := strings.Split(absPath, string(os.PathSeparator))
+						pcs := strings.Split(absPath, string(filepath.Separator))
 						for i, pc := range pcs {
 							if pc == buildstore.BuildDataDirName && len(pcs) > i+2 {
-								unitName = filepath.Clean(strings.Join(pcs[i+2:len(pcs)-1], "/"))
+								unitName = filepath.Join(pcs[i+2 : len(pcs)-1]...)
 								break
 							}
 						}
@@ -114,7 +114,7 @@ func (c *LintCmd) Execute(args []string) error {
 					var commitID string
 					if !c.NoCheckFiles {
 						// Infer commit ID from file path (the path component after .srclib-cache).
-						pcs := strings.Split(absPath, string(os.PathSeparator))
+						pcs := strings.Split(absPath, string(filepath.Separator))
 						for i, pc := range pcs {
 							if pc == buildstore.BuildDataDirName && len(pcs) > i+1 {
 								commitID = pcs[i+1]

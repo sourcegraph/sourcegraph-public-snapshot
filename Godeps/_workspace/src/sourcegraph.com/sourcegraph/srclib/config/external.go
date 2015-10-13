@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
@@ -30,7 +29,7 @@ func SrclibPathConfig() (*External, error) {
 	var x External
 
 	// Try reading from .srclibconfig.
-	dir := strings.SplitN(srclib.Path, ":", 2)[0]
+	dir := filepath.SplitList(srclib.Path)[0]
 	configFile := filepath.Join(dir, srclibconfigFile)
 	f, err := os.Open(configFile)
 	if os.IsNotExist(err) {

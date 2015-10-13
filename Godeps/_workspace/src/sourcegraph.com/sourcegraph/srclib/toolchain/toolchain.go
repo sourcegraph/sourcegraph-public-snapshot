@@ -24,7 +24,7 @@ func Dir(toolchainPath string) (string, error) {
 
 	dir, err := lookupToolchain(toolchainPath)
 	if os.IsNotExist(err) {
-		return filepath.Join(srclib.PathEntries()[0], toolchainPath), nil
+		return filepath.Join(filepath.SplitList(srclib.Path)[0], toolchainPath), nil
 	}
 	if err != nil {
 		err = &os.PathError{Op: "toolchain.Dir", Path: toolchainPath, Err: err}
@@ -185,7 +185,7 @@ func newDockerToolchain(path, dir, dockerfile, hostVolumeDir string) (*dockerToo
 	return &dockerToolchain{
 		dir:           dir,
 		dockerfile:    dockerfile,
-		imageName:     strings.Replace(path, "/", "-", -1),
+		imageName:     strings.Replace(path, string(filepath.Separator), "-", -1),
 		docker:        dc,
 		hostVolumeDir: hostVolumeDir,
 	}, nil
