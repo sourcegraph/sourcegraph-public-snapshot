@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/docker/distribution/uuid"
+	"github.com/satori/go.uuid"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/usercontent"
 )
@@ -26,7 +26,7 @@ func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	name := uuid.Generate().String() + ".png"
+	name := uuid.NewV4().String() + ".png"
 	err = writeFile(usercontent.Store, name, body)
 	if err != nil {
 		return err
