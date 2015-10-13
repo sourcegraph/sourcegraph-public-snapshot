@@ -31,6 +31,7 @@ var Services = svc.Services{
 	MirrorRepos:         MirrorRepos,
 	MirroredRepoSSHKeys: MirroredRepoSSHKeys,
 	MultiRepoImporter:   Graph,
+	Notify:              Notify,
 	Orgs:                Orgs,
 	People:              People,
 	RegisteredClients:   RegisteredClients,
