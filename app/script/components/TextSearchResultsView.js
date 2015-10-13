@@ -50,7 +50,8 @@ var TextSearchResultsView = React.createClass({
 			);
 		});
 
-		var summary = `${this.props.total} results for "${this.props.query}"`;
+		var s = this.props.results.length === 1 ? "" : "s";
+		var summary = `${this.props.total} result${s} for "${this.props.query}"`;
 		if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 
 		return (
