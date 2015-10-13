@@ -2,8 +2,9 @@ var sandbox = require("../testSandbox");
 var expect = require("expect.js");
 var sinon = require("sinon");
 
-var React = require("react/addons");
-var TestUtils = React.addons.TestUtils;
+var React = require("react");
+var ReactDOM = require("react-dom");
+var TestUtils = require("react-addons-test-utils");
 
 var Pagination = require("./Pagination");
 
@@ -25,7 +26,7 @@ describe("components/Pagination", () => {
 		for (var i=0; i < props.totalPages; i++) {
 			pageLink = pageLinks[i];
 			expect(pageLink).to.be.ok();
-			expect(React.findDOMNode(pageLink).textContent).to.be((i+1).toString());
+			expect(ReactDOM.findDOMNode(pageLink).textContent).to.be((i+1).toString());
 		}
 	});
 
@@ -55,7 +56,7 @@ describe("components/Pagination", () => {
 		var pageLinks = TestUtils.scryRenderedDOMComponentsWithClass(component, "num-page-link");
 		var lastPageLink = pageLinks[pageLinks.length-1];
 
-		expect(React.findDOMNode(lastPageLink).textContent).to.be(props.totalPages.toString());
+		expect(ReactDOM.findDOMNode(lastPageLink).textContent).to.be(props.totalPages.toString());
 	});
 
 	it("calls the onPageChange callback when a new page is selected", () => {
