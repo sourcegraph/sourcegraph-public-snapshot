@@ -86,7 +86,7 @@ module.exports = {
 		return `${module.exports.repoURL(repo, rev)}/.tree/${path}`;
 	},
 
-	fileSnippetURL(repo, rev, path, startline, endline) {
+	fileRangeURL(repo, rev, path, startline, endline) {
 		path = (path ? path : "");
 		return `${module.exports.repoURL(repo, rev)}/.tree/${path}#startline=${startline}&endline=${endline}`;
 	},

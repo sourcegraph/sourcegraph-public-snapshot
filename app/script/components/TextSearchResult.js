@@ -5,7 +5,7 @@ var routing = require("../routing/router");
 var TextSearchResult = React.createClass({
 	_goToLine(lineNumber) {
 		// TODO(renfred) link to user-specified rev instead of default branch.
-		var lineURL = routing.fileSnippetURL(
+		var lineURL = routing.gURL(
 			this.props.repo.URI, this.props.repo.DefaultBranch, this.props.result.File, lineNumber, lineNumber
 		);
 		window.location.href = lineURL;
@@ -13,16 +13,16 @@ var TextSearchResult = React.createClass({
 
 	render() {
 		var result = this.props.result;
-		var snippetURL = routing.fileSnippetURL(
+		var gURL = routing.fileRangeURL(
 			this.props.repo.URI, this.props.repo.DefaultBranch, result.File, result.StartLine, result.EndLine
 		);
 
 		var lines = result.Lines.map((line, i) => {
 			var lineNumber = result.StartLine + i;
 
-			var snippetLink = null;
+			var fileRangeLink = null;
 			if (i === 0) {
-				snippetLink = <td className="snippet-link"><a href={snippetURL}>{result.StartLine}-{result.EndLine}</a></td>;
+				fileRangeLink = <td className="file-range-link"><a href={gURL}>{result.StartLine}-{result.EndLine}</a></td>;
 			}
 
 			return (
@@ -30,7 +30,7 @@ var TextSearchResult = React.createClass({
 					<td className="line-number" onClick={this._goToLine.bind(this, lineNumber)}>{lineNumber}</td>
 					{/* This HTML should be sanitized in ui/search.go */}
 					<td className="line-content" dangerouslySetInnerHTML={line}></td>
-					{snippetLink}
+					{fileRangeLink}
 				</tr>
 			);
 		});
