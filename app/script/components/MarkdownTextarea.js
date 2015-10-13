@@ -50,9 +50,11 @@ var MarkdownTextarea = React.createClass({
 		}
 		var item = items[0];
 		if (item.kind !== "file") {
+			console.log(`rejecting file upload because "${item.kind}" is not a currently supported item.kind`);
 			return;
 		}
 		if (item.type !== "image/png") {
+			console.log(`rejecting file upload because "${item.type}" is not a currently supported item.type`);
 			return;
 		}
 		var file = item.getAsFile();
@@ -66,8 +68,6 @@ var MarkdownTextarea = React.createClass({
 			data: file,
 			processData: false,
 			success: (upload) => {
-				console.log(upload);
-
 				if (upload.Error !== undefined) {
 					console.log(upload.Error);
 					return;
