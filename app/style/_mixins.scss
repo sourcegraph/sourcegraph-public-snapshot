@@ -105,7 +105,7 @@
 	font-size: $font-size-base;
 	line-height: $line-height-base;
 }
-	
+
 @mixin disable-user-select() {
 	-webkit-user-select: none;
 	-moz-user-select: none;
