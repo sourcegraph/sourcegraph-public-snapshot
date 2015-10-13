@@ -14,7 +14,8 @@ import (
 )
 
 // ActionContext represents an action. Action* fields are what happened,
-// Object* fields are what the action was done on.
+// Object* fields are what the action was done on. For more context on what
+// each field is, please see action_test.go
 type ActionContext struct {
 	Person     *sourcegraph.Person
 	Recipients []*sourcegraph.Person
@@ -33,6 +34,11 @@ type ActionContext struct {
 
 // Message is a generic way to notify users about an event happening
 func Action(nctx ActionContext) {
+	sendSlackMessage(nctx)
+	sendEmailMessage(nctx)
+}
+
+func sendSlackMessage(nctx ActionContext) {
 	if nctx.SlackOpts.Msg == "" {
 		msg, err := generateSlackMessage(nctx)
 		if err != nil {
@@ -43,7 +49,9 @@ func Action(nctx ActionContext) {
 
 	}
 	slack.PostMessage(nctx.SlackOpts)
+}
 
+func sendEmailMessage(nctx ActionContext) {
 	msg, err := generateHTMLFragment(nctx)
 	if err != nil {
 		log15.Error("Error generating email message for action", "ActionContext", nctx)
@@ -83,7 +91,7 @@ func generateSlackMessage(nctx ActionContext) (string, error) {
 }
 
 func generateHTMLFragment(nctx ActionContext) (string, error) {
-	tmpl := html.Must(html.New("slack-action").Parse(
+	tmpl := html.Must(html.New("html-action").Parse(
 		`<b>{{.Person.PersonSpec.Login}}</b> {{.ActionType}} <a href="{{.ObjectURL}}">{{.ObjectRepo}} {{.ObjectType}} #{{.ObjectID}}</a>: {{.ObjectTitle}}`))
 	var buf bytes.Buffer
 	err := tmpl.Execute(&buf, nctx)
