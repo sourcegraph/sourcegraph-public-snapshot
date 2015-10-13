@@ -28,6 +28,8 @@ type Flags struct {
 	DisableUserProfiles bool `long:"auth.disable-user-profiles" description:"do not show user profile pages"`
 
 	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login. CAUTION: use only for testing."`
+
+	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations. CAUTION: use only for testing."`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
@@ -49,6 +51,8 @@ func (f Flags) HasLogin() bool { return f.HasUserAccounts() }
 func (f Flags) HasSignup() bool { return f.IsLocal() }
 
 func (f Flags) HasUserProfiles() bool { return !f.DisableUserProfiles }
+
+func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.HasUserAccounts() }
 
 // ActiveFlags are the flag values passed from the command line, if
 // we're running as a CLI.

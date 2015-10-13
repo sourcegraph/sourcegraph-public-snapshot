@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 )
 
@@ -22,7 +23,13 @@ func TestMirroredRepoSSHKeys_lg(t *testing.T) {
 		t.Skip()
 	}
 
-	a, ctx := testserver.NewServer()
+	a, ctx := testserver.NewUnstartedServer()
+	a.Config.ServeFlags = append(a.Config.ServeFlags,
+		&authutil.Flags{DisableAccessControl: true},
+	)
+	if err := a.Start(); err != nil {
+		t.Fatal(err)
+	}
 	defer a.Close()
 
 	repo, err := a.Client.Repos.Create(ctx, &sourcegraph.ReposCreateOp{

@@ -22,8 +22,8 @@ import (
 // If the cmdline flag auth.restrict-write-access is set, this method
 // will check if the authenticated user has admin privileges.
 func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
-	if !authutil.ActiveFlags.HasUserAccounts() {
-		// no user accounts on the server, so everyone has write access.
+	if !authutil.ActiveFlags.HasAccessControl() {
+		// Access controls are disabled on the server, so everyone has write access.
 		return nil
 	}
 
@@ -59,16 +59,31 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
 		return VerifyUserHasAdminAccess(ctx, method)
 	}
 
-	// all authenticated users have write access
-	// TODO: call RegisteredClients.GetUserPermissions and check for write access.
-	// Making such a call to root server for every write operation will be quite slow, so
-	// cache the user permissions on the client (i.e. local instance).
+	// If auth source is local, we currently do not differentiate between
+	// read and write access. The supported access levels for a user are:
+	// unauthenticated, authenticated and admin. It is recommended for
+	// instances with local auth to use the `auth.restrict-write-access`
+	// flag to restrict write access to admin users.
+	if authutil.ActiveFlags.IsLocal() {
+		return nil
+	}
+
+	// Get UserPermissions info for this user from the root server.
+	perms, err := getUserPermissionsFromRoot(ctx)
+	if err != nil {
+		return err
+	}
+
+	if !perms.Write && !perms.Admin {
+		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
+	}
+
 	return nil
 }
 
 func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
-	if !authutil.ActiveFlags.HasUserAccounts() {
-		// no user accounts on the server, so everyone has admin access.
+	if !authutil.ActiveFlags.HasAccessControl() {
+		// Access controls are disabled on the server, so everyone has admin access.
 		return nil
 	}
 
@@ -76,14 +91,14 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 	actor := auth.ActorFromContext(ctx)
 
 	if authutil.ActiveFlags.IsLocal() {
-		// check local auth server for user's admin privileges.
+		// Check local auth server for user's admin privileges.
 		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID)})
 		if err != nil {
 			return grpc.Errorf(codes.Internal, "admin operation (%s) denied: could not complete permissions check for user %v: %v", method, actor.UID, err)
 		}
 		isAdmin = user.Admin
 	} else {
-		// get UserPermissions info for this user from the root server.
+		// Get UserPermissions info for this user from the root server.
 		if perms, err := getUserPermissionsFromRoot(ctx); err != nil {
 			return err
 		} else {
@@ -97,8 +112,8 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 	return nil
 }
 
-func getUserPermissionsFromRoot(ctx context.Context) (*sourcegraph.UserPermissions, error) {
-	// TODO: cache UserPermissions to avoid making a call to root server for every
+var getUserPermissionsFromRoot = func(ctx context.Context) (*sourcegraph.UserPermissions, error) {
+	// TODO: Cache UserPermissions to avoid making a call to root server for every
 	// write/admin operation.
 	rootGRPCURL, err := fed.Config.RootGRPCEndpoint()
 	if err != nil {
