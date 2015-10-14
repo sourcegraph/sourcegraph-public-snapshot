@@ -28,7 +28,7 @@ var TextSearchResultsView = React.createClass({
 		if (!this.props.results) return null;
 
 		if (this.props.results.length === 0) {
-			return <i>No text results found for "{this.props.query}"</i>;
+			return <p className="summary">No text results found for "{this.props.query}"</p>;
 		}
 
 		var currentFile, header;
@@ -51,12 +51,12 @@ var TextSearchResultsView = React.createClass({
 		});
 
 		var s = this.props.results.length === 1 ? "" : "s";
-		var summary = `${this.props.total} result${s} for "${this.props.query}"`;
+		var summary = `${this.props.total} text result${s} for "${this.props.query}"`;
 		if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 
 		return (
 			<div className="text-search-results">
-				<i className="summary">{summary}</i>
+				<p className="summary">{summary}</p>
 				{results}
 				<div className="search-pagination">
 					<Pagination

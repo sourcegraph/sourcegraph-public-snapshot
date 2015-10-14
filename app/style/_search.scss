@@ -191,12 +191,17 @@ div.search-result-type {
 }
 
 .search-results {
-	padding-top: $line-height-computed;
 	.summary {
 		color: $gray-mid;
+		font-style: italic;
 	}
 
 	.nav {
+		padding-top: $line-height-computed;
+		padding-bottom: $line-height-computed;
+		margin-bottom: 12px;
+		border-bottom: 1px solid #d7ebfb;
+
 		a {
 			cursor: pointer;
 		}
@@ -230,6 +235,12 @@ div.search-result-type {
 	p {
 		color: $gray-mid;
 		padding-top: 4px;
+	}
+	&:nth-of-type(1) {
+		hr {
+			display: none;
+		}
+		margin-top: $line-height-computed * 2;
 	}
 }
 

@@ -98,7 +98,6 @@ var SearchResultsView = React.createClass({
 							</a>
 						</li>
 					</ul>
-					<hr/>
 					{currentResultsView}
 				</div>
 			</div>
