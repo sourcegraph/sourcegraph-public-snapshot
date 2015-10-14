@@ -27,6 +27,7 @@ type Client struct {
 	RepoStatuses        RepoStatusesClient
 	RepoTree            RepoTreeClient
 	Repos               ReposClient
+	Storage             StorageClient
 	Changesets          ChangesetsClient
 	Search              SearchClient
 	Units               UnitsClient
@@ -65,6 +66,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.RepoStatuses = &CachedRepoStatusesClient{NewRepoStatusesClient(conn), Cache}
 	c.RepoTree = &CachedRepoTreeClient{NewRepoTreeClient(conn), Cache}
 	c.Repos = &CachedReposClient{NewReposClient(conn), Cache}
+	c.Storage = &CachedStorageClient{NewStorageClient(conn), Cache}
 	c.Changesets = &CachedChangesetsClient{NewChangesetsClient(conn), Cache}
 	c.Search = &CachedSearchClient{NewSearchClient(conn), Cache}
 	c.Units = &CachedUnitsClient{NewUnitsClient(conn), Cache}

@@ -241,6 +241,96 @@ func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposLi
 
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)
 
+type StorageClient struct {
+	Create_    func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	Remove_    func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	RemoveAll_ func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	Read_      func(ctx context.Context, in *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
+	Write_     func(ctx context.Context, in *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
+	Stat_      func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageStat, error)
+	ReadDir_   func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error)
+	Close_     func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+}
+
+func (s *StorageClient) Create(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
+	return s.Create_(ctx, in)
+}
+
+func (s *StorageClient) Remove(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
+	return s.Remove_(ctx, in)
+}
+
+func (s *StorageClient) RemoveAll(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
+	return s.RemoveAll_(ctx, in)
+}
+
+func (s *StorageClient) Read(ctx context.Context, in *sourcegraph.StorageReadOp, opts ...grpc.CallOption) (*sourcegraph.StorageRead, error) {
+	return s.Read_(ctx, in)
+}
+
+func (s *StorageClient) Write(ctx context.Context, in *sourcegraph.StorageWriteOp, opts ...grpc.CallOption) (*sourcegraph.StorageWrite, error) {
+	return s.Write_(ctx, in)
+}
+
+func (s *StorageClient) Stat(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageStat, error) {
+	return s.Stat_(ctx, in)
+}
+
+func (s *StorageClient) ReadDir(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageReadDir, error) {
+	return s.ReadDir_(ctx, in)
+}
+
+func (s *StorageClient) Close(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
+	return s.Close_(ctx, in)
+}
+
+var _ sourcegraph.StorageClient = (*StorageClient)(nil)
+
+type StorageServer struct {
+	Create_    func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	Remove_    func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	RemoveAll_ func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	Read_      func(v0 context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
+	Write_     func(v0 context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
+	Stat_      func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error)
+	ReadDir_   func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error)
+	Close_     func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+}
+
+func (s *StorageServer) Create(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return s.Create_(v0, v1)
+}
+
+func (s *StorageServer) Remove(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return s.Remove_(v0, v1)
+}
+
+func (s *StorageServer) RemoveAll(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return s.RemoveAll_(v0, v1)
+}
+
+func (s *StorageServer) Read(v0 context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
+	return s.Read_(v0, v1)
+}
+
+func (s *StorageServer) Write(v0 context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
+	return s.Write_(v0, v1)
+}
+
+func (s *StorageServer) Stat(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
+	return s.Stat_(v0, v1)
+}
+
+func (s *StorageServer) ReadDir(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
+	return s.ReadDir_(v0, v1)
+}
+
+func (s *StorageServer) Close(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return s.Close_(v0, v1)
+}
+
+var _ sourcegraph.StorageServer = (*StorageServer)(nil)
+
 type ChangesetsClient struct {
 	Create_       func(ctx context.Context, in *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error)
 	Get_          func(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error)

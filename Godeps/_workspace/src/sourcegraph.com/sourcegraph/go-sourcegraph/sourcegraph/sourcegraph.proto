@@ -588,6 +588,210 @@ service Repos {
 	rpc ListCommitters(ReposListCommittersOp) returns (CommitterList);
 }
 
+// StorageError represents an error when interacting with the Storage service.
+message StorageError {
+	// Code represents the type of error for programatic handling.
+	enum Code {
+		// EOF is the error returned by Read when no more input is available.
+		// Functions should return EOF only to signal a graceful end of input. If
+		// the EOF occurs unexpectedly in a structured data stream, the appropriate
+		// error is either UNEXPECTED_EOF or some other error message giving more
+		// detail.
+		EOF = 0;
+
+		// NOT_EXIST is the error used when attempting to read/write to an object
+		// that does not exist.
+		NOT_EXIST = 1;
+
+		// PERMISSION is the error used when permission to access the given file is
+		// not granted to you.
+		PERMISSION = 2;
+	}
+
+	// code is the error code. If no error code is specified then programatic
+	// handling of the error is not advised. The user should be informed of the
+	// error message instead.
+	Code code = 1;
+
+	// message is the human-readable error message.
+	string message = 2;
+}
+
+// StorageName is a storage object's name.
+message StorageName {
+	// app_name is the name of the application whose data you are trying to
+	// read/write, applications may read and write to eachother's data assuming
+	// the admin has not restricted such access.
+	string app_name = 1 [(gogoproto.nullable) = false];
+
+	// If specified storage is considered local to the given repository. Otherwise
+	// it is considered "global" (i.e. shared across all repositories).
+	RepoSpec repo = 2;
+
+	// name is the name of the file.
+	string name = 3 [(gogoproto.nullable) = false];
+}
+
+// StorageReadOp is the parameters for reading from a file.
+message StorageReadOp {
+	StorageName name = 1 [(gogoproto.nullable) = false];
+
+	// offset is the offset in bytes in which to perform the read operation from
+	// the start or end of the file, depending on offset_end. If no offset is
+	// specified, read operations always occur at the start of the file (they do
+	// not retain state).
+	int64 offset = 3 [(gogoproto.nullable) = false];
+
+	// offset_end causes the offset to act relative to the end of the file, if
+	// set (i.e. offset == -100 would mean to read starting 100 bytes from the end
+	// of the file).
+	bool offset_end = 4 [(gogoproto.nullable) = false];
+
+	// count is the number of bytes desired to be read. There is no guarantee that
+	// this many will be read, however. Instead you should check the size of the
+	// data returned.
+	int64 count = 5 [(gogoproto.nullable) = false];
+}
+
+// StorageRead is the result from reading a file.
+message StorageRead {
+	// error is the error that occurred during reading, if any. In the case of a
+	// EOF error, it may be accompanied by data (i.e. EOF and some data).
+	StorageError error = 1 [(gogoproto.nullable) = false];
+
+	// data is the data that was read from the file. There is no guarantee that
+	// the requested number of bytes to read will actually be read, so if you
+	// desire more than what is returned here then you should perform a read
+	// again.
+	bytes data = 2 [(gogoproto.nullable) = false];
+}
+
+// StorageWriteOp is the parameters for writing to a file.
+message StorageWriteOp {
+	StorageName name = 1 [(gogoproto.nullable) = false];
+
+	// offset is the offset in bytes in which to perform the write operation from
+	// the start or end of the file, depending on offset_end.
+	int64 offset = 3 [(gogoproto.nullable) = false];
+
+	// offset_end causes the offset to act relative to the end of the file, if
+	// set (i.e. offset == -100 would mean to write starting 100 bytes from the
+	// end of the file).
+	bool offset_end = 4 [(gogoproto.nullable) = false];
+
+	// data is the data to be written. There is no guarantee all of the data will
+	// be written, however. Instead you should check the number of bytes written
+	// by looking at the StorageWrite.wrote field and attempt writing whatever
+	// bytes were not during that write operation.
+	bytes data = 2 [(gogoproto.nullable) = false];
+}
+
+// StorageWrite is the result from writing to a file.
+message StorageWrite {
+	// error is the error that occurred during writing, if any.
+	StorageError error = 1;
+
+	// wrote is the number of bytes written to the file. If the number of bytes
+	// written (as reported by this field) is not the same number of bytes you
+	// tried to write, then you should attempt subsequent writes to finish writing
+	// the data assuming there was no error.
+	int64 wrote = 2 [(gogoproto.nullable) = false];
+}
+
+// StorageFileInfo lists information about a file.
+message StorageFileInfo {
+	// name is the base name of the file.
+	string name = 1 [(gogoproto.nullable) = false];
+
+	// size is the length in bytes of the file, or zero.
+	int64 size = 2 [(gogoproto.nullable) = false];
+
+	// mod_time is the file modification time.
+	pbtypes.Timestamp mod_time = 3 [(gogoproto.nullable) = false];
+
+	// is_dir tells if the file is a directory.
+	bool is_dir = 4 [(gogoproto.nullable) = false];;
+}
+
+// StorageStat is the result from statting a file.
+message StorageStat {
+	// error is the error that occurred during reading, if any.
+	StorageError error = 1;
+
+	// info is the information for the file.
+	StorageFileInfo info = 2 [(gogoproto.nullable) = false];
+}
+
+// StorageReadDir is the result from reading a directories contents.
+message StorageReadDir {
+	// error is the error that occurred during reading, if any.
+	StorageError error = 1;
+
+	// info is the information for each file in the directory.
+	repeated StorageFileInfo info = 2 [(gogoproto.nullable) = false];
+}
+
+// Storage provides applications with storage mechanisms. It provides a
+// filesystem-alike API for creating/deleting/reading/writing files.
+service Storage {
+	// Create creates a new file with the given name.
+	rpc Create(StorageName) returns (StorageError) {
+		option (google.api.http) = {
+			post: "/storage/create"
+		};
+	}
+
+	// Remove deletes the named file or directory.
+	rpc Remove(StorageName) returns (StorageError) {
+		option (google.api.http) = {
+			post: "/storage/remove"
+		};
+	}
+
+	// RemoveAll deletes the named file or directory recursively.
+	rpc RemoveAll(StorageName) returns (StorageError) {
+		option (google.api.http) = {
+			post: "/storage/removeall"
+		};
+	}
+
+	// Read reads from an existing file.
+	rpc Read(StorageReadOp) returns (StorageRead) {
+		option (google.api.http) = {
+			get: "/storage/read"
+		};
+	}
+
+	// Write writes to an existing file.
+	rpc Write(StorageWriteOp) returns (StorageWrite) {
+		option (google.api.http) = {
+			post: "/storage/write"
+		};
+	}
+
+	// Stat stats an existing file.
+	rpc Stat(StorageName) returns (StorageStat) {
+		option (google.api.http) = {
+			get: "/storage/stat"
+		};
+	}
+
+	// ReadDir reads a directories contents.
+	rpc ReadDir(StorageName) returns (StorageReadDir) {
+		option (google.api.http) = {
+			get: "/storage/readdir"
+		};
+	}
+
+	// Close closes the named file or directory. You should always call Close once
+	// finished performing actions on a file.
+	rpc Close(StorageName) returns (StorageError) {
+		option (google.api.http) = {
+			post: "/storage/close"
+		};
+	}
+}
+
 service Changesets {
 	// Create creates a new Changeset and returns it, populating
 	// its fields, such as ID and CreatedAt.

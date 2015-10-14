@@ -3565,6 +3565,309 @@ func (s *CachedSearchClient) Suggest(ctx context.Context, in *RawQuery, opts ...
 	return result, nil
 }
 
+type CachedStorageServer struct{ StorageServer }
+
+func (s *CachedStorageServer) Create(ctx context.Context, in *StorageName) (*StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Remove(ctx context.Context, in *StorageName) (*StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Remove(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) RemoveAll(ctx context.Context, in *StorageName) (*StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.RemoveAll(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Read(ctx context.Context, in *StorageReadOp) (*StorageRead, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Read(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Write(ctx context.Context, in *StorageWriteOp) (*StorageWrite, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Write(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Stat(ctx context.Context, in *StorageName) (*StorageStat, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Stat(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) ReadDir(ctx context.Context, in *StorageName) (*StorageReadDir, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.ReadDir(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Close(ctx context.Context, in *StorageName) (*StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Close(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedStorageClient struct {
+	StorageClient
+	Cache *grpccache.Cache
+}
+
+func (s *CachedStorageClient) Create(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
+	if s.Cache != nil {
+		var cachedResult StorageError
+		cached, err := s.Cache.Get(ctx, "Storage.Create", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Create(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Create", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Remove(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
+	if s.Cache != nil {
+		var cachedResult StorageError
+		cached, err := s.Cache.Get(ctx, "Storage.Remove", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Remove(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Remove", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) RemoveAll(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
+	if s.Cache != nil {
+		var cachedResult StorageError
+		cached, err := s.Cache.Get(ctx, "Storage.RemoveAll", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.RemoveAll(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.RemoveAll", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Read(ctx context.Context, in *StorageReadOp, opts ...grpc.CallOption) (*StorageRead, error) {
+	if s.Cache != nil {
+		var cachedResult StorageRead
+		cached, err := s.Cache.Get(ctx, "Storage.Read", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Read(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Read", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Write(ctx context.Context, in *StorageWriteOp, opts ...grpc.CallOption) (*StorageWrite, error) {
+	if s.Cache != nil {
+		var cachedResult StorageWrite
+		cached, err := s.Cache.Get(ctx, "Storage.Write", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Write(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Write", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Stat(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageStat, error) {
+	if s.Cache != nil {
+		var cachedResult StorageStat
+		cached, err := s.Cache.Get(ctx, "Storage.Stat", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Stat(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Stat", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) ReadDir(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageReadDir, error) {
+	if s.Cache != nil {
+		var cachedResult StorageReadDir
+		cached, err := s.Cache.Get(ctx, "Storage.ReadDir", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.ReadDir(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.ReadDir", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Close(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
+	if s.Cache != nil {
+		var cachedResult StorageError
+		cached, err := s.Cache.Get(ctx, "Storage.Close", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Close(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Close", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 type CachedUnitsServer struct{ UnitsServer }
 
 func (s *CachedUnitsServer) Get(ctx context.Context, in *UnitSpec) (*unit.RepoSourceUnit, error) {
