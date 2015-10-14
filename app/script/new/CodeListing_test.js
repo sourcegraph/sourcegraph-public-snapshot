@@ -1,4 +1,4 @@
-import sandbox from "../testSandbox";
+import renderAndExpect from "./renderAndExpect";
 
 import React from "react";
 
@@ -7,7 +7,7 @@ import CodeLineView from "./CodeLineView";
 
 describe("CodeListing", () => {
 	it("should render lines", () => {
-		sandbox.renderAndExpect(<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}]} />).to.eql(
+		renderAndExpect(<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}]} />).to.eql(
 			<div className="code-view-react">
 				<table className="line-numbered-code">
 					<tbody>

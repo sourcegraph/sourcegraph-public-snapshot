@@ -1,4 +1,3 @@
-import sandbox from "../testSandbox";
 import expect from "expect.js";
 
 import Dispatcher from "./Dispatcher";

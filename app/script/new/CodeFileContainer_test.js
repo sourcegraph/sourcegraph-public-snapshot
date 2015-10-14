@@ -1,4 +1,4 @@
-import sandbox from "../testSandbox";
+import renderAndExpect from "./renderAndExpect";
 import expect from "expect.js";
 
 import React from "react";
@@ -12,13 +12,13 @@ describe("CodeFileContainer", () => {
 	it("should handle unavailable file", () => {
 		Dispatcher.dispatch(new CodeActions.FileFetched("aRepo", "aRev", "aTree", undefined));
 		expect(Dispatcher.catchDispatched(() => {
-			sandbox.renderAndExpect(<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />).to.eql(null);
+			renderAndExpect(<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />).to.eql(null);
 		})).to.eql([new CodeActions.WantFile("aRepo", "aRev", "aTree")]);
 	});
 
 	it("should handle available file", () => {
 		Dispatcher.dispatch(new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
-		sandbox.renderAndExpect(<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />).to.eql(
+		renderAndExpect(<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />).to.eql(
 			<CodeListing lines={["someLine"]} />
 		);
 	});
