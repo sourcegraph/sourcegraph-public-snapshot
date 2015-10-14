@@ -47,6 +47,7 @@ var TokenSearchResultsView = React.createClass({
 						currentPage={this.state.currentPage}
 						totalPages={Math.ceil(this.props.total/globals.TokenSearchResultsPerPage)}
 						pageRange={10}
+						loading={this.props.loading}
 						onPageChange={this.onPageChange} />
 				</div>
 			</div>

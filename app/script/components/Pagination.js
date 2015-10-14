@@ -15,6 +15,9 @@ var Pagination = React.createClass({
 
 		// totalPages is the total number of pages in the pagination list.
 		totalPages: React.PropTypes.number.isRequired,
+
+		// loading is the loading status of the content for the current page.
+		loading: React.PropTypes.bool,
 	},
 
 	_onPageChange(page) {
@@ -52,12 +55,21 @@ var Pagination = React.createClass({
 		if (pageOffsets[0] > 1) {
 			pageList.push(<li key="previous-indicator" className="disabled"><a>…</a></li>);
 		}
+
 		for (var i=pageOffsets[0]; i<=pageOffsets[1]; i++) {
+			var pageLinkHTML;
+			// If the current page is still loading, display a spnning indicator.
+			if (i === this.props.currentPage && this.props.loading) {
+				pageLinkHTML = <i className="fa fa-circle-o-notch fa-spin"></i>;
+			} else {
+				pageLinkHTML = i;
+			}
+
 			pageList.push(
 				<li key={i} className={i===this.props.currentPage ? "active" : ""}>
 					<a className="num-page-link"
 						title={`Page ${i}`}
-						onClick={this._onPageChange.bind(this, i)}>{i}</a>
+						onClick={this._onPageChange.bind(this, i)}>{pageLinkHTML}</a>
 				</li>
 			);
 		}

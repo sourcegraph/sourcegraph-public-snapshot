@@ -63,6 +63,7 @@ var TextSearchResultsView = React.createClass({
 						currentPage={this.state.currentPage}
 						totalPages={Math.ceil(this.props.total/globals.TextSearchResultsPerPage)}
 						pageRange={10}
+						loading={this.props.loading}
 						onPageChange={this.onPageChange} />
 				</div>
 			</div>
