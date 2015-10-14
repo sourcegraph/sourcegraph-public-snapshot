@@ -1,39 +1,44 @@
-var React = require("react");
-var URI = require("urijs");
+import React from "react";
+import URI from "urijs";
 
-var CodeFileController = require("./CodeFileController");
+import CodeFileController from "./CodeFileController";
 
 // All data from window.location gets processed here and is then passed down
 // to sub-components via props. Every time window.location changes, this
 // component gets re-rendered. Sub-components should never access
 // window.location by themselves.
-var CodeFileRouter = React.createClass({
+class CodeFileRouter extends React.Component {
+	constructor(props, context) {
+		super(props, context);
+		this._locationChanged = this._locationChanged.bind(this);
+	}
+
 	componentDidMount() {
 		window.addEventListener("popstate", this._locationChanged);
-	},
+	}
 
 	componentWillUnmount() {
 		window.removeEventListener("popstate", this._locationChanged);
-	},
+	}
 
 	_locationChanged() {
 		this.forceUpdate(); // this is necessary because the component uses external state (window.location)
-	},
+	}
 
 	render() {
-		var uri = URI.parse(window.location.href);
-		var pathParts = uri.path.substr(1).split("/.");
+		let uri = URI.parse(window.location.href);
+		let pathParts = uri.path.substr(1).split("/.");
 
-		var keys = [];
-		var vars = URI.parseQuery(uri.query);
+		let keys = [];
+		let vars = URI.parseQuery(uri.query);
 
-		var repoParts = pathParts[0].split("@");
+		let repoParts = pathParts[0].split("@");
 		vars["repo"] = repoParts[0];
 		vars["rev"] = repoParts[1];
 
 		pathParts.slice(1).forEach((part) => {
-			var p = part.indexOf("/");
-			var key = part.substr(0, p);
+			let p = part.indexOf("/");
+			let key = part.substr(0, p);
 			keys.push(key);
 			vars[key] = part.substr(p + 1);
 		});
@@ -59,7 +64,7 @@ var CodeFileRouter = React.createClass({
 				startline={vars["startline"] && parseInt(vars["startline"], 10)}
 				endline={vars["endline"] && parseInt(vars["endline"], 10)} />
 		);
-	},
-});
+	}
+}
 
-module.exports = CodeFileRouter;
+export default CodeFileRouter;

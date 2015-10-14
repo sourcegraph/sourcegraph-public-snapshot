@@ -1,12 +1,8 @@
-var React = require("react");
+import React from "react";
 
-var CodeLineView = require("./CodeLineView");
+import CodeLineView from "./CodeLineView";
 
-var CodeListing = React.createClass({
-	propTypes: {
-		lines: React.PropTypes.array,
-	},
-
+class CodeListing extends React.Component {
 	render() {
 		// TODO tiled rendering for better performance on huge files
 		return (
@@ -18,7 +14,11 @@ var CodeListing = React.createClass({
 				</table>
 			</div>
 		);
-	},
-});
+	}
+}
 
-module.exports = CodeListing;
+CodeListing.propTypes = {
+	lines: React.PropTypes.array,
+};
+
+export default CodeListing;

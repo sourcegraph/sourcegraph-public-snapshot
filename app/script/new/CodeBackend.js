@@ -1,15 +1,16 @@
-var CodeActions = require("./CodeActions");
-var CodeStore = require("./CodeStore");
-var Dispatcher = require("./Dispatcher");
+import * as CodeActions from "./CodeActions";
+import CodeStore from "./CodeStore";
+import Dispatcher from "./Dispatcher";
+import defaultXhr from "xhr";
 
 // TODO preloading
-var CodeBackend = {
-	xhr: require("xhr"),
+const CodeBackend = {
+	xhr: defaultXhr,
 
 	handle(action) {
 		switch (action.constructor) {
 		case CodeActions.WantFile:
-			var file = CodeStore.files.get(action.repo, action.rev, action.tree);
+			let file = CodeStore.files.get(action.repo, action.rev, action.tree);
 			if (file === undefined) {
 				CodeBackend.xhr({
 					uri: `/ui/${action.repo}@${action.rev}/.tree/${action.tree}`,
@@ -26,4 +27,4 @@ var CodeBackend = {
 
 Dispatcher.register(CodeBackend.handle);
 
-module.exports = CodeBackend;
+export default CodeBackend;

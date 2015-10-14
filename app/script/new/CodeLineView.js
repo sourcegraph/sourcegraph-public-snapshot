@@ -1,11 +1,6 @@
-var React = require("react");
+import React from "react";
 
-var CodeLineView = React.createClass({
-	propTypes: {
-		lineNumber: React.PropTypes.number,
-		tokens: React.PropTypes.array,
-	},
-
+class CodeLineView extends React.Component {
 	render() {
 		return (
 			<tr className="line">
@@ -15,7 +10,12 @@ var CodeLineView = React.createClass({
 				</td>
 			</tr>
 		);
-	},
-});
+	}
+}
 
-module.exports = CodeLineView;
+CodeLineView.propTypes = {
+	lineNumber: React.PropTypes.number,
+	tokens: React.PropTypes.array,
+};
+
+export default CodeLineView;

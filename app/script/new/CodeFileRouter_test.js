@@ -1,9 +1,9 @@
-var sandbox = require("../testSandbox");
+import sandbox from "../testSandbox";
 
-var React = require("react");
+import React from "react";
 
-var CodeFileRouter = require("./CodeFileRouter");
-var CodeFileController = require("./CodeFileController");
+import CodeFileRouter from "./CodeFileRouter";
+import CodeFileController from "./CodeFileController";
 
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {

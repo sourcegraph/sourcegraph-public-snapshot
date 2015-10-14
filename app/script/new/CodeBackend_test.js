@@ -1,8 +1,8 @@
-var sandbox = require("../testSandbox");
-var expect = require("expect.js");
+import sandbox from "../testSandbox";
+import expect from "expect.js";
 
-var CodeBackend = require("./CodeBackend");
-var CodeActions = require("./CodeActions");
+import CodeBackend from "./CodeBackend";
+import * as CodeActions from "./CodeActions";
 
 describe("CodeBackend", () => {
 	it("should handle WantFile", () => {

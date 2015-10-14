@@ -1,1 +1,3 @@
-module.exports = new (require("flux")).Dispatcher();
+import flux from "flux";
+
+export default new flux.Dispatcher();

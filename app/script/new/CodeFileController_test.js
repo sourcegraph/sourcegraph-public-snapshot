@@ -1,12 +1,12 @@
-var sandbox = require("../testSandbox");
-var expect = require("expect.js");
+import sandbox from "../testSandbox";
+import expect from "expect.js";
 
-var React = require("react");
+import React from "react";
 
-var CodeFileController = require("./CodeFileController");
-var CodeListing = require("./CodeListing");
-var CodeActions = require("./CodeActions");
-var CodeStore = require("./CodeStore");
+import CodeFileController from "./CodeFileController";
+import CodeListing from "./CodeListing";
+import * as CodeActions from "./CodeActions";
+import CodeStore from "./CodeStore";
 
 describe("CodeFileController", () => {
 	it("should handle unavailable file", () => {

@@ -1,0 +1,10 @@
+{
+  "ecmaFeatures": {
+		"blockBindings": true,
+		"classes": true,
+		"modules": true
+  },
+	"rules": {
+		"no-var": 2,
+	}
+}

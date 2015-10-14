@@ -1,11 +1,11 @@
-var Dispatcher = require("./Dispatcher");
-var CodeActions = require("./CodeActions");
+import Dispatcher from "./Dispatcher";
+import * as CodeActions from "./CodeActions";
 
 function keyFor(repo, rev, tree) {
 	return `${repo}#${rev}#${tree}`;
 }
 
-var CodeStore = {
+let CodeStore = {
 	files: {
 		content: {},
 		get(repo, rev, tree) {
@@ -19,7 +19,7 @@ var CodeStore = {
 	},
 
 	removeListener(listener) {
-		var i = CodeStore.listeners.indexOf(listener);
+		let i = CodeStore.listeners.indexOf(listener);
 		CodeStore.listeners.splice(i, 1);
 	},
 
@@ -38,4 +38,4 @@ function fireListeners() {
 
 Dispatcher.register(CodeStore.handle);
 
-module.exports = CodeStore;
+export default CodeStore;

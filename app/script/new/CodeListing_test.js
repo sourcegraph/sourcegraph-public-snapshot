@@ -1,9 +1,9 @@
-var sandbox = require("../testSandbox");
+import sandbox from "../testSandbox";
 
-var React = require("react");
+import React from "react";
 
-var CodeListing = require("./CodeListing");
-var CodeLineView = require("./CodeLineView");
+import CodeListing from "./CodeListing";
+import CodeLineView from "./CodeLineView";
 
 describe("CodeListing", () => {
 	it("should render lines", () => {

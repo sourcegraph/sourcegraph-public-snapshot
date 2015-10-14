@@ -1,8 +1,8 @@
-var sandbox = require("../testSandbox");
+import sandbox from "../testSandbox";
 
-var React = require("react");
+import React from "react";
 
-var CodeLineView = require("./CodeLineView");
+import CodeLineView from "./CodeLineView";
 
 describe("CodeLineView", () => {
 	it("should render tokens", () => {

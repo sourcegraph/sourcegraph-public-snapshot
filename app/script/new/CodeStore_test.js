@@ -1,7 +1,7 @@
-var expect = require("expect.js");
+import expect from "expect.js";
 
-var CodeStore = require("./CodeStore");
-var CodeActions = require("./CodeActions");
+import CodeStore from "./CodeStore";
+import * as CodeActions from "./CodeActions";
 
 describe("CodeStore", () => {
 	it("should handle FileFetched", () => {
