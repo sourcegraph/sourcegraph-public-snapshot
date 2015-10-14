@@ -1,0 +1,19 @@
+syntax = "proto3";
+package testpb;
+
+message TestOp {
+	int32 a = 2;
+	repeated T b = 3;
+}
+
+message T {
+	bool a = 1;
+}
+
+message TestResult {
+	int32 x = 1;
+}
+
+service Test {
+	rpc TestMethod(TestOp) returns (TestResult);
+}
