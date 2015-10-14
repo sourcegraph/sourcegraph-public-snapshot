@@ -1,4 +1,5 @@
 import React from "react";
+import {Container} from "flux/utils";
 
 import Dispatcher from "./Dispatcher";
 import * as CodeActions from "./CodeActions";
@@ -7,31 +8,18 @@ import CodeListing from "./CodeListing";
 import "./CodeBackend";
 
 class CodeFileController extends React.Component {
-	constructor(props, context) {
-		super(props, context);
-		this._onStoreChange = this._onStoreChange.bind(this);
-
-		this.state = {
-			files: CodeStore.files,
-		};
-	}
-
 	componentWillMount() {
 		Dispatcher.dispatch(new CodeActions.WantFile(this.props.repo, this.props.rev, this.props.tree));
 	}
 
-	componentDidMount() {
-		CodeStore.addListener(this._onStoreChange);
+	static getStores() {
+		return [CodeStore];
 	}
 
-	componentWillUnmount() {
-		CodeStore.removeListener(this._onStoreChange);
-	}
-
-	_onStoreChange() {
-		this.setState({
+	static calculateState(prevState) {
+		return {
 			files: CodeStore.files,
-		});
+		};
 	}
 
 	render() {
@@ -58,4 +46,4 @@ CodeFileController.propTypes = {
 	example: React.PropTypes.number,
 };
 
-export default CodeFileController;
+export default Container.create(CodeFileController, {pure: false});

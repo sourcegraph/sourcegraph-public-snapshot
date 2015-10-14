@@ -23,15 +23,7 @@ sandbox.renderAndExpect = function(instance) {
 	return expect(renderer.getRenderOutput());
 };
 
-var Dispatcher = require("./new/Dispatcher");
-sandbox.dispatched = [];
-Dispatcher.dispatch = function(action) {
-	sandbox.dispatched.push(action);
-};
-
 afterEach(function() {
-	sandbox.dispatched = [];
-
 	sandbox.reactContainers.forEach(ReactDOM.unmountComponentAtNode);
 	sandbox.reactContainers = [];
 

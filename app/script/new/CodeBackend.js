@@ -7,7 +7,7 @@ import defaultXhr from "xhr";
 const CodeBackend = {
 	xhr: defaultXhr,
 
-	handle(action) {
+	__onDispatch(action) {
 		switch (action.constructor) {
 		case CodeActions.WantFile:
 			let file = CodeStore.files.get(action.repo, action.rev, action.tree);
@@ -25,6 +25,6 @@ const CodeBackend = {
 	},
 };
 
-Dispatcher.register(CodeBackend.handle);
+Dispatcher.register(CodeBackend.__onDispatch);
 
 export default CodeBackend;

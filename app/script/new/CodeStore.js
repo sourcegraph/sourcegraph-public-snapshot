@@ -1,3 +1,5 @@
+import {Store} from "flux/utils";
+
 import Dispatcher from "./Dispatcher";
 import * as CodeActions from "./CodeActions";
 
@@ -5,37 +7,24 @@ function keyFor(repo, rev, tree) {
 	return `${repo}#${rev}#${tree}`;
 }
 
-let CodeStore = {
-	files: {
-		content: {},
-		get(repo, rev, tree) {
-			return this.content[keyFor(repo, rev, tree)];
-		},
-	},
-	listeners: [],
+export class CodeStoreClass extends Store {
+	constructor(dispatcher) {
+		super(dispatcher);
+		this.files = {
+			content: {},
+			get(repo, rev, tree) {
+				return this.content[keyFor(repo, rev, tree)];
+			},
+		};
+	}
 
-	addListener(listener) {
-		CodeStore.listeners.push(listener);
-	},
-
-	removeListener(listener) {
-		let i = CodeStore.listeners.indexOf(listener);
-		CodeStore.listeners.splice(i, 1);
-	},
-
-	handle(action) {
+	__onDispatch(action) {
 		switch (action.constructor) {
 		case CodeActions.FileFetched:
-			CodeStore.files.content[keyFor(action.repo, action.rev, action.tree)] = action.file;
-			fireListeners();
+			this.files.content[keyFor(action.repo, action.rev, action.tree)] = action.file;
+			this.__emitChange();
 		}
-	},
-};
-
-function fireListeners() {
-	CodeStore.listeners.forEach(l => l());
+	}
 }
 
-Dispatcher.register(CodeStore.handle);
-
-export default CodeStore;
+export default new CodeStoreClass(Dispatcher);

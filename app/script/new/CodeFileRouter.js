@@ -10,15 +10,14 @@ import CodeFileController from "./CodeFileController";
 class CodeFileRouter extends React.Component {
 	constructor(props, context) {
 		super(props, context);
-		this._locationChanged = this._locationChanged.bind(this);
 	}
 
 	componentDidMount() {
-		window.addEventListener("popstate", this._locationChanged);
+		window.addEventListener("popstate", this._locationChanged.bind(this));
 	}
 
 	componentWillUnmount() {
-		window.removeEventListener("popstate", this._locationChanged);
+		window.removeEventListener("popstate", this._locationChanged.bind(this));
 	}
 
 	_locationChanged() {
