@@ -17,8 +17,8 @@ describe("RepoBuildIndicator", () => {
 			CommitID: "CommID123",
 			Attempt: 1,
 			expect: {
-				cls: "danger",
-				txt: "build failed",
+				cls: "warning",
+				txt: "failed",
 				icon: "fa-exclamation-circle",
 			},
 		},
@@ -29,7 +29,7 @@ describe("RepoBuildIndicator", () => {
 			CommitID: "CSmmID123",
 			expect: {
 				cls: "success",
-				txt: "built",
+				txt: "indexed",
 				icon: "fa-check",
 			},
 		},
@@ -48,7 +48,7 @@ describe("RepoBuildIndicator", () => {
 			CommitID: "CQmmID123",
 			Attempt: 1,
 			expect: {
-				cls: "warning",
+				cls: "info",
 				txt: "queued",
 				icon: "fa-clock-o",
 			},
@@ -85,12 +85,26 @@ describe("RepoBuildIndicator", () => {
 		});
 
 		var component = sandbox.renderComponent(
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" Buildable="true" />
+		);
+
+		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
+		var $node = $(ReactDOM.findDOMNode(tag));
+		expect($node.attr("title")).to.contain("Click to index");
+	});
+
+	it("should not display build link when indicator is not buildable", () => {
+		sandbox.stub(client, "builds", function() {
+			return $.Deferred().resolve([]).promise();
+		});
+
+		var component = sandbox.renderComponent(
 			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
 		);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var $node = $(ReactDOM.findDOMNode(tag));
-		expect($node.attr("title")).to.contain("Not yet built.");
+		expect($node.attr("title")).to.not.be.ok();
 	});
 
 	it("should not display label if label prop is not set", () => {
@@ -98,7 +112,7 @@ describe("RepoBuildIndicator", () => {
 			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
 		);
 		var $el = $(ReactDOM.findDOMNode(component));
-		expect($el.html()).not.to.contain("Build started");
+		expect($el.html()).not.to.contain("Code Intelligence");
 	});
 
 	it("should display label if label prop is set to \"yes\"", () => {
@@ -106,7 +120,7 @@ describe("RepoBuildIndicator", () => {
 			<RepoBuildIndicator LastBuild={renderTests.STARTED} Label="yes" btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
 		);
 		var $el = $(ReactDOM.findDOMNode(component));
-		expect($el.html()).to.contain("Build started");
+		expect($el.html()).to.contain("Code Intelligence");
 	});
 
 	it("should request a new build and change cache when clicked with no build available", () => {
@@ -123,19 +137,19 @@ describe("RepoBuildIndicator", () => {
 		expect(component.state.noCache).to.be(true);
 	});
 
-	it("should render a span with class 'text-danger' on error", () => {
+	it("should render a span with class 'btn-error' on error", () => {
 		sandbox.stub(client, "builds", () => $.Deferred().reject().promise());
 
 		var component = sandbox.renderComponent(
-			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" Label="yes" />
 		);
 		expect(component.state.status).to.be(component.BuildStatus.ERROR);
 
-		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "span");
+		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var $node = $(ReactDOM.findDOMNode(tag));
 
-		expect($node.hasClass("text-danger")).to.be(true);
-		expect($node.text()).to.contain("Error");
+		expect($node.hasClass("btn-error")).to.be(true);
+		expect($node.text()).to.contain("Code Intelligence");
 	});
 
 	it("should not request build status if build is provided in props", () => {

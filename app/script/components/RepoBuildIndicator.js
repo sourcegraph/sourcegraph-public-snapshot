@@ -127,44 +127,44 @@ var RepoBuildIndicator = React.createClass({
 			location.reload();
 		}
 
-		var txt, icon, at, cls, label;
+		var label = "Code Intelligence";
+
+		var txt, icon, at, cls;
 		switch (this.state.status) {
 		case this.BuildStatus.ERROR:
-			return <span className="build-indicator text-danger">Error getting build data.</span>;
+			return (
+				<a key="indicator" className={`build-indicator btn ${this.props.btnSize} btn-error`}>
+					{this.props.Label === "yes" ? `${label} ` : null}<i className="fa fa-exclamation-triangle"></i>
+				</a>
+			);
 
 		case this.BuildStatus.UNKNOWN:
 		case this.BuildStatus.NA:
-			if (this.props.Buildable) {
-				return (
-					<a key="indicator" data-tooltip={this.props.tooltipPosition} title="Click to build." onClick={this.triggerBuild} className={`build-indicator btn ${this.props.btnSize} btn-warning`}>
-						{this.props.label === "yes" ? <span>Not built </span> : null}<i className="fa fa-exclamation-triangle"></i>
-					</a>
-				);
-			}
 			return (
-				<a key="indicator" data-tooltip={this.props.tooltipPosition} title="Not yet built." className={`build-indicator btn ${this.props.btnSize} btn-warning`}>
-					{this.props.label === "yes" ? <span>Not built </span> : null}<i className="fa fa-exclamation-triangle"></i>
+				<a key="indicator"
+					data-tooltip={this.props.tooltipPosition}
+					title={this.props.Buildable ? "Click to index code." : null}
+					onClick={this.props.Buildable ? this.triggerBuild : null}
+					className={`build-indicator btn ${this.props.btnSize} btn-warning`}>
+					{this.props.Label === "yes" ? `${label} ` : null}<i className="fa fa-exclamation-triangle"></i>
 				</a>
 			);
 
 		case this.BuildStatus.FAILURE:
-			label = "Build failed";
-			txt = "build failed";
+			txt = "failed";
 			at = this.state.LastBuild.EndedAt;
-			cls = "danger";
+			cls = "warning";
 			icon = "fa-exclamation-circle";
 			break;
 
 		case this.BuildStatus.BUILT:
-			label = "Build OK";
-			txt = "built";
+			txt = "indexed";
 			at = this.state.LastBuild.EndedAt;
 			cls = "success";
 			icon = "fa-check";
 			break;
 
 		case this.BuildStatus.STARTED:
-			label = "Build started";
 			txt = "started";
 			at = this.state.LastBuild.StartedAt;
 			cls = "info";
@@ -172,10 +172,9 @@ var RepoBuildIndicator = React.createClass({
 			break;
 
 		case this.BuildStatus.QUEUED:
-			label = "Queued";
 			txt = "queued";
 			at = this.state.LastBuild.CreatedAt;
-			cls = "warning";
+			cls = "info";
 			icon = "fa-clock-o";
 			break;
 		}
