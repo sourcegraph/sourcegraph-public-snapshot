@@ -85,14 +85,14 @@ var Pagination = React.createClass({
 				<li key="first" className={isFirstPage ? "disabled" : null}>
 					<a title={"Page 1"}
 						onClick={isFirstPage ? null : this._onPageChange.bind(this, 1)}>
-						<span aria-hidden="true">&laquo;</span>
+						<i className="fa fa-angle-double-left"></i>
 					</a>
 				</li>
 				{pageList}
 				<li key="last" className={isLastPage ? "disabled" : null}>
 					<a title={`Page ${this.props.totalPages}`}
 						onClick={isLastPage ? null : this._onPageChange.bind(this, this.props.totalPages)}>
-						<span aria-hidden="true">&raquo;</span>
+						<i className="fa fa-angle-double-right"></i>
 					</a>
 				</li>
 			</ul>
