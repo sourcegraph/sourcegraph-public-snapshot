@@ -16,7 +16,7 @@ var CodeBackend = {
 					json: {},
 				}, function(err, resp, body) {
 					// TODO handle error
-					Dispatcher.dispatch(new CodeActions.SetFile(action.repo, action.rev, action.tree, body));
+					Dispatcher.dispatch(new CodeActions.FileFetched(action.repo, action.rev, action.tree, body));
 				});
 			}
 			break;

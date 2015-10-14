@@ -5,7 +5,7 @@ module.exports = {
 		this.tree = tree;
 	},
 
-	SetFile(repo, rev, tree, file) {
+	FileFetched(repo, rev, tree, file) {
 		this.repo = repo;
 		this.rev = rev;
 		this.tree = tree;

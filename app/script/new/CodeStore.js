@@ -25,7 +25,7 @@ var CodeStore = {
 
 	handle(action) {
 		switch (action.constructor) {
-		case CodeActions.SetFile:
+		case CodeActions.FileFetched:
 			CodeStore.files.content[keyFor(action.repo, action.rev, action.tree)] = action.file;
 			fireListeners();
 		}
