@@ -7,7 +7,7 @@ import CodeStore from "./CodeStore";
 import CodeListing from "./CodeListing";
 import "./CodeBackend";
 
-class CodeFileController extends React.Component {
+class CodeFileContainer extends React.Component {
 	componentWillMount() {
 		Dispatcher.dispatch(new CodeActions.WantFile(this.props.repo, this.props.rev, this.props.tree));
 	}
@@ -33,7 +33,7 @@ class CodeFileController extends React.Component {
 	}
 }
 
-CodeFileController.propTypes = {
+CodeFileContainer.propTypes = {
 	repo: React.PropTypes.string,
 	rev: React.PropTypes.string,
 	tree: React.PropTypes.string,
@@ -46,4 +46,4 @@ CodeFileController.propTypes = {
 	example: React.PropTypes.number,
 };
 
-export default Container.create(CodeFileController, {pure: false});
+export default Container.create(CodeFileContainer, {pure: false});

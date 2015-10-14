@@ -1,7 +1,7 @@
 import React from "react";
 import URI from "urijs";
 
-import CodeFileController from "./CodeFileController";
+import CodeFileContainer from "./CodeFileContainer";
 
 // All data from window.location gets processed here and is then passed down
 // to sub-components via props. Every time window.location changes, this
@@ -44,7 +44,7 @@ class CodeFileRouter extends React.Component {
 
 		if (vars["def"] !== undefined) {
 			return (
-				<CodeFileController
+				<CodeFileContainer
 					repo={vars["repo"]}
 					rev={vars["rev"]}
 					unitType={keys[0]}
@@ -55,7 +55,7 @@ class CodeFileRouter extends React.Component {
 		}
 
 		return (
-			<CodeFileController
+			<CodeFileContainer
 				repo={vars["repo"]}
 				rev={vars["rev"]}
 				tree={vars["tree"]}
