@@ -1,11 +1,13 @@
-{{define "Head"}}<title>Builds - {{.Repo.URI}} - Sourcegraph</title>
+{{define "Head"}}<title>Code Intelligence - {{.Repo.URI}} - Sourcegraph</title>
 <meta name="robots" content="noindex">
 {{end}}
 
 {{define "RepoBody"}}
-<h1>Builds</h1>
+<h1>Code Intelligence</h1>
 
-<p>To trigger a build for a specific commit, click the checkmark box next to the commit in the file browser or commits list.</p>
+<p>Each time you push code to Sourcegraph a job is created to analyze your code.</p>
+<p>The sequence of jobs which have been run (or are queued to run) are shown below. Click <b>details</b> to re-index code at a particular commit.</p>
+<br>
 
 <table class="table">
 	<thead>

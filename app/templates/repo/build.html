@@ -1,10 +1,10 @@
-{{define "Head"}}<title>Build #{{.Build.Attempt}} - {{.Repo.URI}}@{{.Build.CommitID}} - Sourcegraph</title>
+{{define "Head"}}<title>Job #{{.Build.Attempt}} - {{.Repo.URI}}@{{.Build.CommitID}} - Sourcegraph</title>
 <meta name="robots" content="noindex">
 {{end}}
 
 {{define "RepoBody"}}
 <nav class="page-actions">
-	<a class="btn btn-default btn-sm" href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">&laquo; View all builds</a>
+	<a class="btn btn-default btn-sm" href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">&laquo; View all Code Intelligence jobs</a>
 	<a class="btn btn-default btn-sm" href="{{urlToRepoBuildSubroute "repo.build.log" .Repo.URI .Build.CommitID .Build.Attempt}}" target="_blank"><i class="fa fa-file-text"></i>&nbsp; Download logs</a>
 	<form action="{{urlToRepoSubroute "repo.builds.create" .Repo.URI}}" method="post" class="form-inline">
 		<input type="hidden" name="CommitID" value="{{.Build.CommitID}}">
@@ -15,7 +15,7 @@
 		<input type="hidden" name="Force" value="true">
 		<button
 		{{if not .Commit}}disabled{{end}}
-		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Rebuild</button>
+		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Re-index code</button>
 		{{if not .Commit}}
 		<span class="help-sm-fade">Disabled because the commit could not be retrieved</span>
 		{{end}}
