@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"net/url"
 	"os"
 
 	"code.google.com/p/rog-go/parallel"
@@ -10,10 +9,8 @@ import (
 	"sync"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 
 	"google.golang.org/grpc"
@@ -35,9 +32,6 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 
 	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{ListOptions: listOpts})
 	if err != nil {
-		if grpc.Code(err) == codes.Unauthenticated {
-			return serveWelcomeInterstitial(w, r)
-		}
 		return err
 	}
 	var template string
@@ -83,25 +77,5 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		Repos:  repos.Repos,
 		SGPath: os.Getenv("SGPATH"),
 		Users:  users,
-	})
-}
-
-func serveWelcomeInterstitial(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
-
-	conf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-	u, err := url.Parse(conf.FederationRootURL)
-	if err != nil {
-		return err
-	}
-	return tmpl.Exec(r, w, "home/welcome.html", http.StatusOK, nil, &struct {
-		RootHostname string
-		tmpl.Common
-	}{
-		RootHostname: u.Host,
 	})
 }

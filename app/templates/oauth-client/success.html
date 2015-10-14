@@ -1,0 +1,18 @@
+{{define "Head"}}<title>Authentication Successful</title>
+{{end}}
+
+{{define "Body"}}
+<div class="row">
+	<div class="col-md-offset-3 col-md-6">
+		<br>
+		<div class="well oauth-provider">
+			<h1>Success!</h1>
+			<p>You can now start using this Sourcegraph instance.</p>
+			<p>
+				<a href="javascript:void(0)" data-url="{{.ReturnTo}}" id="return-oauth" class="btn btn-success btn-lg">Redirecting...</a>
+			</p>
+			<div class="clearfix"></div>
+		</div>
+	</div>
+</div>
+{{end}}

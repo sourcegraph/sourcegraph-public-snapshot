@@ -17,11 +17,11 @@ func init() {
 	}
 }
 
-// RedirectToOAuth2Authorize is a workaround to avoid an import
-// cycle. It points to oauth2client.RedirectToOAuth2Authorize. It is
+// RedirectToOAuth2Initiate is a workaround to avoid an import
+// cycle. It points to oauth2client.ServeOAuth2Initiate. It is
 // defined as a variable here and set at init time in package
 // oauth2client.
-var RedirectToOAuth2Authorize func(http.ResponseWriter, *http.Request) error
+var RedirectToOAuth2Initiate func(http.ResponseWriter, *http.Request) error
 
 // RedirectToLogIn issues an HTTP redirect to begin the login
 // process. It redirects to either the OAuth2 authorization flow or
@@ -29,7 +29,7 @@ var RedirectToOAuth2Authorize func(http.ResponseWriter, *http.Request) error
 func RedirectToLogIn(w http.ResponseWriter, r *http.Request) error {
 	switch authutil.ActiveFlags.Source {
 	case "oauth", "oauth2":
-		return RedirectToOAuth2Authorize(w, r)
+		return RedirectToOAuth2Initiate(w, r)
 	case "local":
 		u := router.Rel.URLTo(router.LogIn)
 		returnTo, err := returnto.BestGuess(r)

@@ -171,7 +171,7 @@ func testOAuthAuthorizeProcess(t *testing.T, oasFunc func(*testserver.Server), o
 	b := surf.NewBrowser()
 
 	// Initiate login on C.
-	u := router.Rel.URLTo(router.LogIn)
+	u := router.Rel.URLTo(router.OAuth2ClientInitiate)
 	returnto.SetOnURL(u, "/")
 	loginURL := conf.AppURL(ctxOC).ResolveReference(u)
 	if err := b.Open(loginURL.String()); err != nil {
@@ -203,7 +203,7 @@ func testOAuthRegisterClientProcess(t *testing.T, oasFunc func(*testserver.Serve
 	if confC.AllowAnonymousReaders {
 		// If anonymous access is permitted, we must go to C's login
 		// page to trigger login.
-		u := router.Rel.URLTo(router.LogIn)
+		u := router.Rel.URLTo(router.OAuth2ClientInitiate)
 		returnto.SetOnURL(u, "/")
 		initialURL = conf.AppURL(ctxOC).ResolveReference(u)
 	} else {
@@ -273,8 +273,12 @@ func testOAuthLogin(t *testing.T, b *browser.Browser, oas *testserver.Server, ct
 
 	{
 		// Click welcome interstitial if it shows up.
-		err := b.Click("#continue-oauth")
-		if err != nil && err.Error() != "Element not found matching expr '#continue-oauth'." {
+		// Note: the continue-oauth element triggers a javascript function
+		// to open a popup. Since JS triggers and opening multiple windows
+		// are not yet supported by the 'surf' testing package, we follow
+		// the link in the same window.
+		err := FollowDataUrl(ctxOC, b, "#continue-oauth")
+		if err != nil && err.Error() != "element #continue-oauth not found" {
 			printAppStatus(t, b)
 			t.Fatal(err)
 		}
@@ -328,6 +332,14 @@ func testOAuthAuthorize(t *testing.T, b *browser.Browser, oas *testserver.Server
 		if err := checkAppError(b); err != nil {
 			t.Fatal(err)
 		}
+
+		// Click redirect button. Note: This would be automatically triggered by
+		// javascript in production. Javascript triggers are not yet supported by
+		// the surf browser testing package.
+		if err := FollowDataUrl(ctxOC, b, "#return-oauth"); err != nil {
+			t.Fatal(err)
+		}
+
 		if got, want := CurrentUserFromDOM(b), "alice"; got != want {
 			t.Errorf("got current user == %q, want %q", got, want)
 		}
@@ -352,4 +364,20 @@ func printAppStatus(t *testing.T, b *browser.Browser) {
 func CurrentUserFromDOM(b *browser.Browser) string {
 	login, _ := b.Find("head").Attr("data-current-user-login")
 	return login
+}
+
+// FollowDataUrl finds the data-url attr of the element 'id' and opens that url
+// in the browser.
+func FollowDataUrl(ctx context.Context, b *browser.Browser, id string) error {
+	dataUrlStr, found := b.Find(id).Attr("data-url")
+	if !found {
+		return fmt.Errorf("element %s not found", id)
+	}
+
+	dataUrl, err := url.Parse(dataUrlStr)
+	if err != nil {
+		return err
+	}
+
+	return b.Open(conf.AppURL(ctx).ResolveReference(dataUrl).String())
 }

@@ -132,13 +132,15 @@ func commonTemplates() error {
 
 		{"home/new.html"},
 		{"home/dashboard.html"},
-		{"home/welcome.html"},
 
 		{"search/form.html"},
 		{"search/results.html", "search/results.inc.html"},
 
 		{"builds/builds.html", "builds/build.inc.html"},
 		{"error/error.html", "error/common.html"},
+
+		{"oauth-client/initiate.html"},
+		{"oauth-client/success.html"},
 		{"oauth-provider/authorize.html"},
 		{"oauth-provider/auth_required.html"},
 		{"client-registration/register-client.html"},

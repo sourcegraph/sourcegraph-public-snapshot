@@ -53,7 +53,7 @@ func TestLogIn_OAuthRedirect(t *testing.T) {
 	}
 
 	for _, method := range []string{"GET", "POST"} {
-		u := router.Rel.URLTo(router.LogIn)
+		u := router.Rel.URLTo(router.OAuth2ClientInitiate)
 		returnto.SetOnURL(u, "/foo")
 		req, _ := http.NewRequest(method, u.String(), nil)
 		resp, err := c.DoNoFollowRedirects(req)

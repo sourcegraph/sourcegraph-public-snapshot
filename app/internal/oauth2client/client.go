@@ -20,6 +20,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
@@ -33,13 +34,36 @@ import (
 // implementation. It doesn't do any verification, only redirection!
 
 func init() {
+	internal.Handlers[router.OAuth2ClientInitiate] = redirectToOAuth2Authorize
 	internal.Handlers[router.OAuth2ClientReceive] = serveOAuth2ClientReceive
 }
 
-// RedirectToOAuth2Authorize generates the OAuth2 authorize URL
+// ServeOAuth2Initiate serves the welcome screen for oauth2 which will open
+// a popup to complete oauth on the root server.
+func ServeOauth2Initiate(w http.ResponseWriter, r *http.Request) error {
+	cl := handlerutil.APIClient(r)
+	ctx := httpctx.FromRequest(r)
+
+	conf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	u, err := url.Parse(conf.FederationRootURL)
+	if err != nil {
+		return err
+	}
+	return tmpl.Exec(r, w, "oauth-client/initiate.html", http.StatusOK, nil, &struct {
+		RootHostname string
+		tmpl.Common
+	}{
+		RootHostname: u.Host,
+	})
+}
+
+// redirectToOAuth2Authorize generates the OAuth2 authorize URL
 // (including a nonce state value, also stored in a cookie) and
 // redirects the client to that URL.
-func RedirectToOAuth2Authorize(w http.ResponseWriter, r *http.Request) error {
+func redirectToOAuth2Authorize(w http.ResponseWriter, r *http.Request) error {
 	returnTo, err := returnto.BestGuess(r)
 	if err != nil {
 		return err
@@ -60,7 +84,7 @@ func RedirectToOAuth2Authorize(w http.ResponseWriter, r *http.Request) error {
 }
 
 func init() {
-	authutil.RedirectToOAuth2Authorize = RedirectToOAuth2Authorize
+	authutil.RedirectToOAuth2Initiate = ServeOauth2Initiate
 }
 
 // oauthAuthorizeClientState holds the state that the OAuth2 client
@@ -227,8 +251,12 @@ func serveOAuth2ClientReceive(w http.ResponseWriter, r *http.Request) (err error
 	if returnTo == "" {
 		returnTo = router.Rel.URLToUser(user.Login).String()
 	}
-	http.Redirect(w, r, returnTo, http.StatusSeeOther)
-	return nil
+	return tmpl.Exec(r, w, "oauth-client/success.html", http.StatusOK, nil, &struct {
+		tmpl.Common
+		ReturnTo string
+	}{
+		ReturnTo: returnTo,
+	})
 }
 
 func withJWKS(r *http.Request, u *url.URL) (*url.URL, error) {

@@ -1,7 +1,9 @@
 package oauth2client
 
 import (
+	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/go-querystring/query"
@@ -81,7 +83,7 @@ func TestOAuth2ClientReceive(t *testing.T) {
 		t.Fatalf("DoNoFollowRedirects: %s", err)
 	}
 
-	if want := http.StatusSeeOther; resp.StatusCode != want {
+	if want := http.StatusOK; resp.StatusCode != want {
 		t.Errorf("got status %d, want %d", resp.StatusCode, want)
 	}
 
@@ -101,9 +103,21 @@ func TestOAuth2ClientReceive(t *testing.T) {
 		t.Errorf("got nonce %q, want empty", nonce)
 	}
 
-	// Check redirected to returnTo URL.
-	if got, want := resp.Header.Get("location"), "/foo"; got != want {
-		t.Errorf("got Location %q, want %q", got, want)
+	defer resp.Body.Close()
+
+	// Check response is the oauth-success page.
+	respData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("ioutil.ReadAll: %s", err)
+	}
+
+	respStr := string(respData)
+	if !strings.Contains(respStr, `id="return-oauth"`) {
+		t.Errorf("response does not contain return-oauth anchor tag")
+	}
+
+	if !strings.Contains(respStr, `data-url="/foo"`) {
+		t.Errorf("response does not contain correct redirect url")
 	}
 }
 

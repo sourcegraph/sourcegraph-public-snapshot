@@ -9,7 +9,7 @@
 			<h1>Welcome to Sourcegraph!</h1>
 			<p>To start using this Sourcegraph server, you must log in via <strong>{{.RootHostname}}</strong>. You can create an account if you do not already have one.</p>
 			<p>
-				<a href="{{urlToWithReturnTo "log-in" .ReturnTo}}" id="continue-oauth" class="btn btn-success btn-lg"><i class="octicon octicon-key"></i> Sign in</a>
+				<a href="javascript:void(0)" data-url="{{urlToWithReturnTo "oauth-client.initiate" .ReturnTo}}" id="continue-oauth" class="btn btn-success btn-lg"><i class="octicon octicon-key"></i> Sign in</a>
 			</p>
 			<div class="clearfix"></div>
 		</div>

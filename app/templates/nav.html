@@ -59,11 +59,13 @@
 						</a>
 					</li>
 					{{end}}
+					{{if not (isOAuthInitPage .TemplateName)}}
 					<li class="sign-in">
 						<a class="sign-in" href="{{urlToWithReturnTo "log-in" .ReturnTo}}">
 							Sign in
 						</a>
 					</li>
+					{{end}}
 				{{end}}
 				{{end}}
 			</ul>

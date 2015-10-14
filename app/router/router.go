@@ -90,7 +90,8 @@ const (
 	OAuth2ServerAuthorize = "oauth-provider.authorize"
 	OAuth2ServerToken     = "oauth-provider.token"
 
-	OAuth2ClientReceive = "oauth-client.receive"
+	OAuth2ClientInitiate = "oauth-client.initiate"
+	OAuth2ClientReceive  = "oauth-client.receive"
 
 	Def         = "def"
 	DefExamples = "def.examples"
@@ -146,6 +147,7 @@ func New(base *mux.Router) *Router {
 	base.Path("/login/oauth/authorize").Methods("GET").Name(OAuth2ServerAuthorize)
 	base.Path("/login/oauth/token").Methods("POST").Name(OAuth2ServerToken)
 
+	base.Path("/login/oauth/initiate").Methods("GET", "POST").Name(OAuth2ClientInitiate)
 	base.Path("/login/oauth/receive").Methods("GET").Name(OAuth2ClientReceive)
 
 	base.Path("/sitemap-index.xml").Methods("GET").Name(SitemapIndex)
