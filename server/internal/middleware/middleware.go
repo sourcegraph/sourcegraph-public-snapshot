@@ -119,6 +119,10 @@ func Wrap(s svc.Services, c *auth.Config) svc.Services {
 		s.Search = wrappedSearch{s.Search, c}
 	}
 
+	if s.Storage != nil {
+		s.Storage = wrappedStorage{s.Storage, c}
+	}
+
 	if s.Units != nil {
 		s.Units = wrappedUnits{s.Units, c}
 	}
@@ -2467,6 +2471,163 @@ func (s wrappedSearch) Suggest(ctx context.Context, param *sourcegraph.RawQuery)
 	var target sourcegraph.SearchServer = s.u
 
 	res, err = target.Suggest(ctx, param)
+	return
+
+}
+
+type wrappedStorage struct {
+	u sourcegraph.StorageServer
+	c *auth.Config
+}
+
+func (s wrappedStorage) Create(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "Create", param)
+	defer func() {
+		trace.After(ctx, "Storage", "Create", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.Create")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.Create(ctx, param)
+	return
+
+}
+
+func (s wrappedStorage) Remove(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "Remove", param)
+	defer func() {
+		trace.After(ctx, "Storage", "Remove", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.Remove")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.Remove(ctx, param)
+	return
+
+}
+
+func (s wrappedStorage) RemoveAll(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "RemoveAll", param)
+	defer func() {
+		trace.After(ctx, "Storage", "RemoveAll", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.RemoveAll")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.RemoveAll(ctx, param)
+	return
+
+}
+
+func (s wrappedStorage) Read(ctx context.Context, param *sourcegraph.StorageReadOp) (res *sourcegraph.StorageRead, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "Read", param)
+	defer func() {
+		trace.After(ctx, "Storage", "Read", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.Read")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.Read(ctx, param)
+	return
+
+}
+
+func (s wrappedStorage) Write(ctx context.Context, param *sourcegraph.StorageWriteOp) (res *sourcegraph.StorageWrite, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "Write", param)
+	defer func() {
+		trace.After(ctx, "Storage", "Write", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.Write")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.Write(ctx, param)
+	return
+
+}
+
+func (s wrappedStorage) Stat(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageStat, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "Stat", param)
+	defer func() {
+		trace.After(ctx, "Storage", "Stat", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.Stat")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.Stat(ctx, param)
+	return
+
+}
+
+func (s wrappedStorage) ReadDir(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageReadDir, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "ReadDir", param)
+	defer func() {
+		trace.After(ctx, "Storage", "ReadDir", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.ReadDir")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.ReadDir(ctx, param)
+	return
+
+}
+
+func (s wrappedStorage) Close(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "Close", param)
+	defer func() {
+		trace.After(ctx, "Storage", "Close", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.Close")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.Close(ctx, param)
 	return
 
 }

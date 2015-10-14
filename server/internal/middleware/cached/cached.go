@@ -99,6 +99,10 @@ func Wrap(s svc.Services) svc.Services {
 		s.Search = &sourcegraph.CachedSearchServer{s.Search}
 	}
 
+	if s.Storage != nil {
+		s.Storage = &sourcegraph.CachedStorageServer{s.Storage}
+	}
+
 	if s.Units != nil {
 		s.Units = &sourcegraph.CachedUnitsServer{s.Units}
 	}

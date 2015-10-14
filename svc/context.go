@@ -44,6 +44,7 @@ const (
 	_RepoTreeKey            contextKey = iota
 	_ReposKey               contextKey = iota
 	_SearchKey              contextKey = iota
+	_StorageKey             contextKey = iota
 	_UnitsKey               contextKey = iota
 	_UserKeysKey            contextKey = iota
 	_UsersKey               contextKey = iota
@@ -73,6 +74,7 @@ type Services struct {
 	RepoTree            sourcegraph.RepoTreeServer
 	Repos               sourcegraph.ReposServer
 	Search              sourcegraph.SearchServer
+	Storage             sourcegraph.StorageServer
 	Units               sourcegraph.UnitsServer
 	UserKeys            sourcegraph.UserKeysServer
 	Users               sourcegraph.UsersServer
@@ -167,6 +169,10 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Search != nil {
 		sourcegraph.RegisterSearchServer(s, svcs.Search)
+	}
+
+	if svcs.Storage != nil {
+		sourcegraph.RegisterStorageServer(s, svcs.Storage)
 	}
 
 	if svcs.Units != nil {
@@ -272,6 +278,10 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Search != nil {
 		ctx = WithSearch(ctx, s.Search)
+	}
+
+	if s.Storage != nil {
+		ctx = WithStorage(ctx, s.Storage)
 	}
 
 	if s.Units != nil {
@@ -789,6 +799,29 @@ func Search(ctx context.Context) sourcegraph.SearchServer {
 // SearchOrNil returns the context's Search service if present, or else nil.
 func SearchOrNil(ctx context.Context) sourcegraph.SearchServer {
 	s, ok := ctx.Value(_SearchKey).(sourcegraph.SearchServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithStorage returns a copy of parent that uses the given Storage service.
+func WithStorage(ctx context.Context, s sourcegraph.StorageServer) context.Context {
+	return context.WithValue(ctx, _StorageKey, s)
+}
+
+// Storage gets the context's Storage service. If the service is not present, it panics.
+func Storage(ctx context.Context) sourcegraph.StorageServer {
+	s, ok := ctx.Value(_StorageKey).(sourcegraph.StorageServer)
+	if !ok || s == nil {
+		panic("no Storage set in context")
+	}
+	return s
+}
+
+// StorageOrNil returns the context's Storage service if present, or else nil.
+func StorageOrNil(ctx context.Context) sourcegraph.StorageServer {
+	s, ok := ctx.Value(_StorageKey).(sourcegraph.StorageServer)
 	if ok {
 		return s
 	}

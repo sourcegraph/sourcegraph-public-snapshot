@@ -42,6 +42,7 @@ var Services = svc.Services{
 	RepoTree:            remoteRepoTree{},
 	Repos:               remoteRepos{},
 	Search:              remoteSearch{},
+	Storage:             remoteStorage{},
 	Units:               remoteUnits{},
 	UserKeys:            remoteUserKeys{},
 	Users:               remoteUsers{},
@@ -457,6 +458,40 @@ func (s remoteSearch) Complete(ctx context.Context, v1 *sourcegraph.RawQuery) (*
 
 func (s remoteSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error) {
 	return sourcegraph.NewClientFromContext(ctx).Search.Suggest(ctx, v1)
+}
+
+type remoteStorage struct{ sourcegraph.StorageServer }
+
+func (s remoteStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Create(ctx, v1)
+}
+
+func (s remoteStorage) Remove(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Remove(ctx, v1)
+}
+
+func (s remoteStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.RemoveAll(ctx, v1)
+}
+
+func (s remoteStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Read(ctx, v1)
+}
+
+func (s remoteStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Write(ctx, v1)
+}
+
+func (s remoteStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Stat(ctx, v1)
+}
+
+func (s remoteStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.ReadDir(ctx, v1)
+}
+
+func (s remoteStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Close(ctx, v1)
 }
 
 type remoteUnits struct{ sourcegraph.UnitsServer }
