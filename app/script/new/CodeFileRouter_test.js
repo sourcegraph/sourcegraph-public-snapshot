@@ -1,4 +1,4 @@
-import renderAndExpect from "./renderAndExpect";
+import shallowRender from "./shallowRender";
 
 import React from "react";
 
@@ -8,7 +8,9 @@ import CodeFileContainer from "./CodeFileContainer";
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {
 		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go"}};
-		renderAndExpect(<CodeFileRouter />).to.eql(
+		shallowRender(
+			<CodeFileRouter />
+		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
 				rev="master"
@@ -21,7 +23,9 @@ describe("CodeFileRouter", () => {
 
 	it("should handle selection URLs", () => {
 		global.window = {location: {href: "https://sourcegraph.com/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53"}};
-		renderAndExpect(<CodeFileRouter />).to.eql(
+		shallowRender(
+			<CodeFileRouter />
+		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
 				rev="master"
@@ -34,7 +38,9 @@ describe("CodeFileRouter", () => {
 
 	it("should handle token URLs", () => {
 		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go/.token/42"}};
-		renderAndExpect(<CodeFileRouter />).to.eql(
+		shallowRender(
+			<CodeFileRouter />
+		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
 				rev="master"
@@ -47,7 +53,9 @@ describe("CodeFileRouter", () => {
 
 	it("should handle definition URLs", () => {
 		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"}};
-		renderAndExpect(<CodeFileRouter />).to.eql(
+		shallowRender(
+			<CodeFileRouter />
+		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
 				rev="master"
@@ -60,7 +68,9 @@ describe("CodeFileRouter", () => {
 
 	it("should handle example URLs", () => {
 		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router/.examples/4"}};
-		renderAndExpect(<CodeFileRouter />).to.eql(
+		shallowRender(
+			<CodeFileRouter />
+		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
 				rev="master"

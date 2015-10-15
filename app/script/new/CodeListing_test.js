@@ -1,4 +1,4 @@
-import renderAndExpect from "./renderAndExpect";
+import shallowRender from "./shallowRender";
 
 import React from "react";
 
@@ -7,7 +7,9 @@ import CodeLineView from "./CodeLineView";
 
 describe("CodeListing", () => {
 	it("should render lines", () => {
-		renderAndExpect(<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}]} />).to.eql(
+		shallowRender(
+			<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}]} />
+		).compare(
 			<div className="code-view-react">
 				<table className="line-numbered-code">
 					<tbody>

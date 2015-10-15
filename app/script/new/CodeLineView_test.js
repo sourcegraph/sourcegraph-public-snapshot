@@ -1,4 +1,4 @@
-import renderAndExpect from "./renderAndExpect";
+import shallowRender from "./shallowRender";
 
 import React from "react";
 
@@ -6,7 +6,9 @@ import CodeLineView from "./CodeLineView";
 
 describe("CodeLineView", () => {
 	it("should render tokens", () => {
-		renderAndExpect(<CodeLineView lineNumber={42} tokens={[{Label: "foo", Class: "a"}, {Label: "bar"}, {Label: "baz", Class: "c"}]} />).to.eql(
+		shallowRender(
+			<CodeLineView lineNumber={42} tokens={[{Label: "foo", Class: "a"}, {Label: "bar"}, {Label: "baz", Class: "c"}]} />
+		).compare(
 			<tr className="line">
 				<td className="line-number" data-line={42}></td>
 				<td className="line-content">
