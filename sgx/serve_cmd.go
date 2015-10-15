@@ -525,7 +525,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	go c.graphUplink(clientCtx)
 
 	// Send heartbeat pings to federation root to monitor connection status
-	go c.fedRootHeartbeat(clientCtx)
+	// go c.fedRootHeartbeat(clientCtx)
 
 	if fed.Config.IsRoot {
 		// Listen for events and flush them to elasticsearch
