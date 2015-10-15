@@ -12,7 +12,6 @@ import (
 
 var (
 	SrcEnvWhitelist = []string{
-		"SG_APICLIENT_REMOTE_CACHE",
 		"SG_API_DEFAULT_CACHE_MAX_AGE",
 		"SG_APP_RAVEN_DSN",
 		"SG_BUILD_LOG_DIR",
@@ -41,7 +40,6 @@ var (
 		"SG_NUM_WORKERS",
 		"SG_PREFIX",
 		"SG_RAVEN_DSN",
-		"SG_REPO_TREE_SEARCH",
 		"SG_REQUIRE_SECRETS",
 		"SG_RESULT",
 		"SG_SEND_NOTIFS",

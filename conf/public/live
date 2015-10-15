@@ -31,7 +31,6 @@ export SG_ENABLE_GITHUB_CLONE_PROXY=t
 
 export SG_REQUIRE_SECRETS=t
 
-export SG_REPO_TREE_SEARCH=t
 
 
 
