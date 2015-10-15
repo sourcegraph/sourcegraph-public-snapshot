@@ -3,6 +3,14 @@
 
 {{define "Body"}}
 <br/>
+{{if eq .AppURL.String "http://src.sourcegraph.com"}}
+<div class="row">
+	<div class="col-md-12">
+		<h5>New to Sourcegraph? <a href="https://src.sourcegraph.com/sourcegraph/.docs/getting-started/">Getting started</a> is easy!</h5>
+	</div>
+</div>
+<br>
+{{end}}
 <div class="row dashboard">
 	<div class="col-md-{{if .Users}}6{{else}}12{{end}}">
 		<h3>Repositories <button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button></h3>
