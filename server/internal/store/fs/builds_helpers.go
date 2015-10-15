@@ -15,8 +15,9 @@ import (
 
 // createBuildFile returns a file descriptor pointing to an empty file that stores information
 // about the build that was passed. If Attempt == 0, it will create the consequential attempt
-// based on the number of files in the directory +1. If Attempt > 0 it will create or truncate
-// that file. The caller is responsible for handling locking mechanisms for synchronized access.
+// based on the number of files in the directory +1 (excluding "tasks"). If Attempt > 0 it
+// will create or truncate that file. The caller is responsible for handling locking mechanisms
+// for synchronized access.
 func createBuildFile(ctx context.Context, b *sourcegraph.Build) (io.WriteCloser, error) {
 	fs := buildStoreVFS(ctx)
 	dir := filepath.Join(b.Repo, b.CommitID)
@@ -29,7 +30,13 @@ func createBuildFile(ctx context.Context, b *sourcegraph.Build) (io.WriteCloser,
 		if err != nil {
 			return nil, err
 		}
-		b.Attempt = uint32(len(fis) + 1)
+		bfis := 0
+		for _, fi := range fis {
+			if fi.Name() != "tasks" {
+				bfis = bfis + 1
+			}
+		}
+		b.Attempt = uint32(bfis + 1)
 	}
 	fn := filepath.Join(dir, strconv.FormatUint(uint64(b.Attempt), 10))
 	return fs.Create(fn)
