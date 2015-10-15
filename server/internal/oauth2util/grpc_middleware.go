@@ -29,12 +29,12 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	}
 
-	authStr, ok := md["authorization"]
-	if !ok {
+	authMD, ok := md["authorization"]
+	if !ok || len(authMD) == 0 {
 		return ctx, nil
 	}
 
-	parts := strings.SplitN(authStr, " ", 2)
+	parts := strings.SplitN(authMD[0], " ", 2)
 	if len(parts) != 2 {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid authorization metadata")
 	}

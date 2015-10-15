@@ -159,11 +159,11 @@ func parseMultiFileDiffs(ctx context.Context, delta *sourcegraph.Delta, fdiffs [
 		parseRenames(fd)
 		pre, post := getPrePostImage(fd.Extended)
 		fds[i] = &sourcegraph.FileDiff{
-			FileDiff:  *fd,
-			Hunks:     make([]*sourcegraph.Hunk, len(fd.Hunks)),
-			Stats:     fd.Stat(),
-			PreImage:  pre,
-			PostImage: post,
+			FileDiff:      *fd,
+			FileDiffHunks: make([]*sourcegraph.Hunk, len(fd.Hunks)),
+			Stats:         fd.Stat(),
+			PreImage:      pre,
+			PostImage:     post,
 		}
 		for j, h := range fd.Hunks {
 			hunk := &sourcegraph.Hunk{Hunk: *h}
@@ -174,7 +174,7 @@ func parseMultiFileDiffs(ctx context.Context, delta *sourcegraph.Delta, fdiffs [
 				tokenizeHunkBody(fds[i], hunk)
 				linkBaseAndHead(ctx, delta, fds[i], hunk)
 			}
-			fds[i].Hunks[j] = hunk
+			fds[i].FileDiffHunks[j] = hunk
 		}
 	}
 	files := &sourcegraph.DeltaFiles{
@@ -337,7 +337,7 @@ func formatFileDiffs(ctx context.Context, ds sourcegraph.DeltaSpec, diffs []*sou
 	for _, f := range diffs {
 		baseFile := sourcegraph.TreeEntrySpec{RepoRev: ds.Base, Path: f.OrigName}
 		headFile := sourcegraph.TreeEntrySpec{RepoRev: ds.Head, Path: f.NewName}
-		for _, hunk_ := range f.Hunks {
+		for _, hunk_ := range f.FileDiffHunks {
 			hunk := hunk_
 			par.Do(func() error {
 				return formatFileDiffHunk(ctx, baseFile, headFile, hunk)

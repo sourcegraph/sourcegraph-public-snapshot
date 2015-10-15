@@ -153,14 +153,18 @@ func serveOAuth2ServerToken(w http.ResponseWriter, r *http.Request) error {
 
 	switch opt.GrantType {
 	case "authorization_code":
-		tokReq.AuthorizationCode = &sourcegraph.AuthorizationCode{
-			Code:        opt.Code,
-			RedirectURI: opt.RedirectURI,
+		tokReq.AuthorizationGrant = &sourcegraph.AccessTokenRequest_AuthorizationCode{
+			AuthorizationCode: &sourcegraph.AuthorizationCode{
+				Code:        opt.Code,
+				RedirectURI: opt.RedirectURI,
+			},
 		}
 
 	case "urn:ietf:params:oauth:grant-type:jwt-bearer":
-		tokReq.BearerJWT = &sourcegraph.BearerJWT{
-			Assertion: opt.Assertion,
+		tokReq.AuthorizationGrant = &sourcegraph.AccessTokenRequest_BearerJWT{
+			BearerJWT: &sourcegraph.BearerJWT{
+				Assertion: opt.Assertion,
+			},
 		}
 	}
 

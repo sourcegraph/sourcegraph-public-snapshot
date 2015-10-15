@@ -93,7 +93,9 @@ func serveLoginSubmit(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
-		ResourceOwnerPassword: &form.LoginCredentials,
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+			ResourceOwnerPassword: &form.LoginCredentials,
+		},
 	})
 	if err != nil {
 		switch errcode.GRPC(err) {

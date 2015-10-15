@@ -71,16 +71,15 @@ func (s *auth) GetAuthorizationCode(ctx context.Context, op *sourcegraph.Authori
 }
 
 func (s *auth) GetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
-	switch {
-	case op.AuthorizationCode != nil:
-		return s.exchangeCodeForAccessToken(ctx, op.AuthorizationCode)
-	case op.ResourceOwnerPassword != nil:
-		return s.authenticateLogin(ctx, op.ResourceOwnerPassword)
-	case op.BearerJWT != nil:
-		return s.authenticateBearerJWT(ctx, op.BearerJWT)
+	if authCode := op.GetAuthorizationCode(); authCode != nil {
+		return s.exchangeCodeForAccessToken(ctx, authCode)
+	} else if resOwnerPassword := op.GetResourceOwnerPassword(); resOwnerPassword != nil {
+		return s.authenticateLogin(ctx, resOwnerPassword)
+	} else if bearerJWT := op.GetBearerJWT(); bearerJWT != nil {
+		return s.authenticateBearerJWT(ctx, bearerJWT)
+	} else {
+		return nil, grpc.Errorf(codes.Unauthenticated, "no supported auth credentials provided")
 	}
-
-	return nil, grpc.Errorf(codes.Unauthenticated, "no supported auth credentials provided")
 }
 
 func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph.AuthorizationCode) (*sourcegraph.AccessTokenResponse, error) {
