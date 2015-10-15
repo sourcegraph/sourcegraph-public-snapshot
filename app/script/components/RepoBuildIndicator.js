@@ -133,7 +133,7 @@ var RepoBuildIndicator = React.createClass({
 		switch (this.state.status) {
 		case this.BuildStatus.ERROR:
 			return (
-				<a key="indicator" className={`build-indicator btn ${this.props.btnSize} btn-error`}>
+				<a key="indicator" className={`build-indicator btn ${this.props.btnSize} btn-danger`}>
 					{this.props.Label === "yes" ? `${label} ` : null}<i className="fa fa-exclamation-triangle"></i>
 				</a>
 			);

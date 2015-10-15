@@ -137,7 +137,7 @@ describe("RepoBuildIndicator", () => {
 		expect(component.state.noCache).to.be(true);
 	});
 
-	it("should render a span with class 'btn-error' on error", () => {
+	it("should render a span with class 'btn-danger' on error", () => {
 		sandbox.stub(client, "builds", () => $.Deferred().reject().promise());
 
 		var component = sandbox.renderComponent(
@@ -148,7 +148,7 @@ describe("RepoBuildIndicator", () => {
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var $node = $(ReactDOM.findDOMNode(tag));
 
-		expect($node.hasClass("btn-error")).to.be(true);
+		expect($node.hasClass("btn-danger")).to.be(true);
 		expect($node.text()).to.contain("Code Intelligence");
 	});
 
