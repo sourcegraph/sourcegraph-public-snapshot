@@ -133,11 +133,13 @@
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/io",
-			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+			"Comment": "v0.1-58-g2008751",
+			"Rev": "200875106f3bf0eb01eb297dae30b250a25ffc84"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
-			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+			"Comment": "v0.1-58-g2008751",
+			"Rev": "200875106f3bf0eb01eb297dae30b250a25ffc84"
 		},
 		{
 			"ImportPath": "github.com/golang/glog",

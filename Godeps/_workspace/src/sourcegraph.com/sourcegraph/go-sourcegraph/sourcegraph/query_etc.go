@@ -16,7 +16,7 @@ type jsonTokenError struct {
 func (e TokenError) MarshalJSON() ([]byte, error) {
 	var tok *jsonToken
 	if e.Token != nil {
-		tok = &jsonToken{e.Token.Token()}
+		tok = &jsonToken{e.Token.GetQueryToken()}
 	}
 	return json.Marshal(jsonTokenError{int(e.Index), tok, e.Message})
 }

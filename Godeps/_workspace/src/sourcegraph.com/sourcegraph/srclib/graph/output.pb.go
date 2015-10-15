@@ -5,12 +5,16 @@
 package graph
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto/gogo.pb"
+// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 import ann "sourcegraph.com/sourcegraph/srclib/ann"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 type Output struct {
 	Defs []*Def     `protobuf:"bytes,1,rep,name=defs" json:",omitempty"`
@@ -22,6 +26,3 @@ type Output struct {
 func (m *Output) Reset()         { *m = Output{} }
 func (m *Output) String() string { return proto.CompactTextString(m) }
 func (*Output) ProtoMessage()    {}
-
-func init() {
-}

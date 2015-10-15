@@ -828,7 +828,7 @@ message MirrorReposRefreshVCSOp {
 // VCSCredentials for authentication during communication with VCS remotes.
 message VCSCredentials {
 	// Pass is the password provided to the VCS.
-	string pass = 1 [(gogoproto.nullable) = false];
+	string pass = 1;
 }
 
 // MirrorRepos handles operations related to maintaining mirrors on
@@ -1953,7 +1953,7 @@ message DeltaDefs {
 // information about its hunks.
 message FileDiff {
 	diff.FileDiff file_diff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	repeated Hunk hunks = 2;
+	repeated Hunk file_diff_hunks = 2;
 	// PreImage is the CommitID at which this file was before the change occurred.
 	string pre_image = 3 [(gogoproto.jsontag) = ",omitempty"];
 	// PostImage is the CommitID at which this file was after the change occurred.
