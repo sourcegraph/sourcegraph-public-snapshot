@@ -19,7 +19,7 @@ To set up Sourcegraph on a new [Digital Ocean](https://www.digitalocean.com/) cl
 
 # Next steps
 
-* [Getting started with Sourcegraph for your team]({{< relref "config/appurl-dns.md" >}})
+* [Configure DNS]({{< relref "config/appurl-dns.md" >}})
 
 # Troubleshooting
 
