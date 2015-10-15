@@ -21,12 +21,16 @@ import (
 type NilAnnotator struct {
 	Code       *sourcegraph.SourceCode
 	byteOffset int
+	// pointer to the current line of code
 	line       int
-	lines      int
+	// number of lines of code detected
+	numLines   int
+	// HTML config to use
+	htmlConfig syntaxhighlight.HTMLConfig
 }
 
-// Instantiates new NilAnnotator from a given source code.
-// Annotator will contain list of line spans (start byte - end byte) in the source code
+// Instantiates new NilAnnotator from the given source code.
+// Annotator will contain a list of line spans (start byte to end byte) in the source code
 func NewNilAnnotator(e *vcsclient.FileWithRange) *NilAnnotator {
 	lines := make([]*sourcegraph.SourceCodeLine, 0, bytes.Count(e.Contents, []byte("\n"))+1)
 	last := len(e.Contents) - 1
@@ -50,19 +54,20 @@ func NewNilAnnotator(e *vcsclient.FileWithRange) *NilAnnotator {
 		},
 		byteOffset: int(e.StartByte),
 		line:       0,
-		lines:      len(lines),
+		numLines:   len(lines),
+		htmlConfig:	syntaxhighlight.DefaultHTMLConfig,
 	}
 	return &ann
 }
 
 func (a *NilAnnotator) Annotate(token syntaxhighlight.Token) (*annotate.Annotation, error) {
 	start := int32(token.Offset) + int32(a.byteOffset)
-	for a.line < a.lines {
+	for a.line < a.numLines {
 		line := a.Code.Lines[a.line]
 		if line.StartByte <= start && line.EndByte >= start {
 			chunks := strings.Split(token.Text, "\n")
 			for index, chunk := range chunks {
-				if a.line+index >= a.lines {
+				if a.line+index >= a.numLines {
 					break
 				}
 				l := int32(len(chunk))
@@ -70,7 +75,7 @@ func (a *NilAnnotator) Annotate(token syntaxhighlight.Token) (*annotate.Annotati
 					&sourcegraph.SourceCodeToken{
 						StartByte: int32(start),
 						EndByte:   int32(start) + l,
-						Class:     syntaxhighlight.DefaultHTMLConfig.GetTokenClass(token),
+						Class:     a.htmlConfig.GetTokenClass(token),
 						Label:     chunk,
 					})
 				start += l
