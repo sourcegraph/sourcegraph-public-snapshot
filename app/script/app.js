@@ -59,3 +59,5 @@ require("./syntax-highlight");
 require("./TwitterButton");
 
 require("../style/web.scss");
+
+require("./new/actionLogger");
