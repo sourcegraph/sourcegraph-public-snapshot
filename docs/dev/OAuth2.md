@@ -161,14 +161,14 @@ on an entirely separate machine (which is what we want to mimic).
 
 ```bash
 # the mothership
-SGPATH=/tmp/mothership make serve-dev SRCFLAGS='--grpc-endpoint http://demo-mothership:13100' SERVEFLAGS='--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13000 --addr=:13001 --grpc-addr=:13100 --app-url http://demo-mothership:13000 --appdash.disable-server'
+SGPATH=/tmp/mothership make serve-mothership-dev
 ```
 
 Now run the standalone instance (make sure the demo mothership is
 still running):
 
 ```
-HTTP_DISCOVERY_INSECURE=t make serve-dev SERVEFLAGS='--auth.source=oauth --fed.root-url=http://demo-mothership:13000'
+HTTP_DISCOVERY_INSECURE=t make serve-dev SERVEFLAGS='--fed.root-url=http://demo-mothership:13000'
 ```
 
 Go to http://localhost:3000 to view your standalone instance. Click

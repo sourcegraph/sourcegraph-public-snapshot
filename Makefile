@@ -63,6 +63,10 @@ serve-dev: serve-dep
 	@# specify any Godeps-vendored pkg in -p to work around the issue where stale vendored pkgs are not rebuilt (see https://github.com/tools/godep/issues/45#issuecomment-73411554)
 	DEBUG=t SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) $(GODEP) rego -tags="$(GOTAGS)" -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload $(SERVEFLAGS) # -n 0
 
+serve-mothership-dev:
+	@echo See docs/dev/OAuth2.md Demo configuration
+	$(MAKE) serve-dev SRCFLAGS="--grpc-endpoint http://demo-mothership:13100 $(SRCFLAGS)" SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13000 --addr=:13001 --grpc-addr=:13100 --app-url http://demo-mothership:13000 --appdash.disable-server $(SERVEFLAGS)"
+
 serve-beyang-dev:
 	$(MAKE) serve-dev SERVEFLAGS="--auth.source=none --app.disable-dir-defs --local.clcache 10s --num-workers 0 $(SERVEFLAGS)"
 
