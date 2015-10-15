@@ -14,3 +14,9 @@ export class FileFetched {
 		this.file = file;
 	}
 }
+
+export class HighlightDef {
+	constructor(def) {
+		this.def = def;
+	}
+}

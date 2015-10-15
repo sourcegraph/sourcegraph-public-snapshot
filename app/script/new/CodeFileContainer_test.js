@@ -5,12 +5,13 @@ import React from "react";
 
 import CodeFileContainer from "./CodeFileContainer";
 import CodeListing from "./CodeListing";
+import CodeStore from "./CodeStore";
 import * as CodeActions from "./CodeActions";
 import Dispatcher from "./Dispatcher";
 
 describe("CodeFileContainer", () => {
 	it("should handle unavailable file", () => {
-		Dispatcher.dispatch(new CodeActions.FileFetched("aRepo", "aRev", "aTree", undefined));
+		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", undefined));
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(
 				<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />
@@ -21,11 +22,12 @@ describe("CodeFileContainer", () => {
 	});
 
 	it("should handle available file", () => {
-		Dispatcher.dispatch(new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
+		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
+		Dispatcher.directDispatch(CodeStore, new CodeActions.HighlightDef("someDef"));
 		shallowRender(
 			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />
 		).compare(
-			<CodeListing lines={["someLine"]} />
+			<CodeListing lines={["someLine"]} highlightedDef="someDef" />
 		);
 	});
 });

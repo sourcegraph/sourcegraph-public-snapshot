@@ -19,6 +19,7 @@ class CodeFileContainer extends React.Component {
 	static calculateState(prevState) {
 		return {
 			files: CodeStore.files,
+			highlightedDef: CodeStore.highlightedDef,
 		};
 	}
 
@@ -28,7 +29,7 @@ class CodeFileContainer extends React.Component {
 			return null;
 		}
 		return (
-			<CodeListing lines={file.Entry.SourceCode.Lines} />
+			<CodeListing lines={file.Entry.SourceCode.Lines} highlightedDef={this.state.highlightedDef} />
 		);
 	}
 }

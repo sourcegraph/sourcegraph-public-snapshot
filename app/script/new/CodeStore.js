@@ -16,6 +16,7 @@ export class CodeStoreClass extends Store {
 				return this.content[keyFor(repo, rev, tree)];
 			},
 		};
+		this.highlightedDef = null;
 	}
 
 	__onDispatch(action) {
@@ -23,6 +24,13 @@ export class CodeStoreClass extends Store {
 		case CodeActions.FileFetched:
 			this.files.content[keyFor(action.repo, action.rev, action.tree)] = action.file;
 			this.__emitChange();
+			break;
+
+		case CodeActions.HighlightDef:
+			this.highlightedDef = action.def;
+			this.__emitChange();
+			break;
+
 		}
 	}
 }
