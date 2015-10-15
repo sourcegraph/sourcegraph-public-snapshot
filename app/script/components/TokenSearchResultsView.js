@@ -27,7 +27,7 @@ var TokenSearchResultsView = React.createClass({
 		if (!this.props.results) return null;
 
 		if (this.props.results.length === 0) {
-			return <i>No token results found for "{this.props.query}"</i>;
+			return <p className="summary">No token results found for "{this.props.query}"</p>;
 		}
 
 		var results = this.props.results.map((result) => {
@@ -35,18 +35,19 @@ var TokenSearchResultsView = React.createClass({
 		});
 
 		var s = this.props.results.length === 1 ? "" : "s";
-		var summary = `${this.props.total} result${s} for "${this.props.query}"`;
+		var summary = `${this.props.total} definition result${s} for "${this.props.query}"`;
 		if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 
 		return (
 			<div className="token-search-results">
-				<i className="summary">{summary}</i>
+				<p className="summary">{summary}</p>
 				{results}
 				<div className="search-pagination">
 					<Pagination
 						currentPage={this.state.currentPage}
 						totalPages={Math.ceil(this.props.total/globals.TokenSearchResultsPerPage)}
 						pageRange={10}
+						loading={this.props.loading}
 						onPageChange={this.onPageChange} />
 				</div>
 			</div>

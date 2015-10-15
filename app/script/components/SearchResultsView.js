@@ -89,7 +89,7 @@ var SearchResultsView = React.createClass({
 					<ul className="nav nav-pills">
 						<li className={this.state.currentSearchType === globals.SearchType.TOKEN ? "active" : null}>
 							<a onClick={this._selectSearchType.bind(this, globals.SearchType.TOKEN)}>
-								<i className="fa fa-asterisk"></i> Tokens <span className="badge">{tokenSearchStatusBadge}</span>
+								<i className="fa fa-asterisk"></i> Definitions <span className="badge">{tokenSearchStatusBadge}</span>
 							</a>
 						</li>
 						<li className={this.state.currentSearchType === globals.SearchType.TEXT ? "active" : null}>
@@ -98,7 +98,6 @@ var SearchResultsView = React.createClass({
 							</a>
 						</li>
 					</ul>
-					<hr/>
 					{currentResultsView}
 				</div>
 			</div>
