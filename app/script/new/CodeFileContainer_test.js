@@ -23,11 +23,11 @@ describe("CodeFileContainer", () => {
 
 	it("should handle available file", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
-		Dispatcher.directDispatch(CodeStore, new CodeActions.HighlightDef("someDef"));
+		Dispatcher.directDispatch(CodeStore, new CodeActions.HighlightDef("otherDef"));
 		shallowRender(
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
 		).compare(
-			<CodeListing lines={["someLine"]} highlightedDef="someDef" />
+			<CodeListing lines={["someLine"]} selectedDef="someDef" highlightedDef="otherDef" />
 		);
 	});
 });

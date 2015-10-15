@@ -1,9 +1,12 @@
 import shallowRender from "./shallowRender";
+import expect from "expect.js";
 
 import React from "react";
 
+import Dispatcher from "./Dispatcher";
 import CodeFileRouter from "./CodeFileRouter";
 import CodeFileContainer from "./CodeFileContainer";
+import * as CodeActions from "./CodeActions";
 
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {
@@ -15,14 +18,14 @@ describe("CodeFileRouter", () => {
 				repo="github.com/gorilla/mux"
 				rev="master"
 				tree="mux.go"
-				startline={undefined}
-				endline={undefined}
-				token={undefined} />
+				startLine={undefined}
+				endLine={undefined}
+				selectedDef={undefined} />
 		);
 	});
 
-	it("should handle selection URLs", () => {
-		global.window = {location: {href: "https://sourcegraph.com/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53"}};
+	it("should handle line selection URLs", () => {
+		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53"}};
 		shallowRender(
 			<CodeFileRouter />
 		).compare(
@@ -30,14 +33,14 @@ describe("CodeFileRouter", () => {
 				repo="github.com/gorilla/mux"
 				rev="master"
 				tree="mux.go"
-				startline={40}
-				endline={53}
-				token={undefined} />
+				startLine={40}
+				endLine={53}
+				selectedDef={undefined} />
 		);
 	});
 
-	it("should handle token URLs", () => {
-		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go/.token/42"}};
+	it("should handle definition selection URLs", () => {
+		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someDef"}};
 		shallowRender(
 			<CodeFileRouter />
 		).compare(
@@ -45,9 +48,9 @@ describe("CodeFileRouter", () => {
 				repo="github.com/gorilla/mux"
 				rev="master"
 				tree="mux.go"
-				startline={undefined}
-				endline={undefined}
-				token={42} />
+				startLine={undefined}
+				endLine={undefined}
+				selectedDef={"someDef"} />
 		);
 	});
 
@@ -79,5 +82,14 @@ describe("CodeFileRouter", () => {
 				def="Router"
 				example={4} />
 		);
+	});
+
+	it("should handle SelectDef", () => {
+		let r = new CodeFileRouter();
+		r._navigate = function(path, query) {
+			expect(path).to.be(null);
+			expect(query).to.eql({seldef: "someURL"});
+		};
+		Dispatcher.directDispatch(r, new CodeActions.SelectDef("someURL"));
 	});
 });

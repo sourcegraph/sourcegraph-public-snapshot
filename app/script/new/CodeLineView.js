@@ -16,6 +16,12 @@ class CodeLineView extends React.Component {
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
+		if (this.props.selectedDef !== null && nextState.ownURLs[this.props.selectedDef]) {
+			return true;
+		}
+		if (nextProps.selectedDef !== null && nextState.ownURLs[nextProps.selectedDef]) {
+			return true;
+		}
 		if (this.props.highlightedDef !== null && nextState.ownURLs[this.props.highlightedDef]) {
 			return true;
 		}
@@ -49,8 +55,13 @@ class CodeLineView extends React.Component {
 						if (token.IsDef) {
 							cls += " def";
 						}
-						if (token.URL[0] === this.props.highlightedDef) {
+						switch (token.URL[0]) {
+						case this.props.selectedDef:
+							cls += " highlight-primary";
+							break;
+						case this.props.highlightedDef:
 							cls += " highlight-secondary";
+							break;
 						}
 						return (
 							<a
@@ -61,6 +72,10 @@ class CodeLineView extends React.Component {
 								}}
 								onMouseOut={() => {
 									Dispatcher.dispatch(new CodeActions.HighlightDef(null));
+								}}
+								onClick={(event) => {
+									event.preventDefault();
+									Dispatcher.dispatch(new CodeActions.SelectDef(token.URL[0]));
 								}}
 								key={i}>
 								{token.Label}
@@ -76,6 +91,7 @@ class CodeLineView extends React.Component {
 CodeLineView.propTypes = {
 	lineNumber: React.PropTypes.number,
 	tokens: React.PropTypes.array,
+	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 };
 

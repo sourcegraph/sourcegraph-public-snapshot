@@ -8,7 +8,7 @@ import * as CodeActions from "./CodeActions";
 import CodeLineView from "./CodeLineView";
 
 describe("CodeLineView", () => {
-	// TODO test highlightedDef as soon as https://github.com/facebook/react/issues/4461 is resolved
+	// TODO test selectedDef and highlightedDef as soon as https://github.com/facebook/react/issues/4461 is resolved
 	it("should render tokens", () => {
 		shallowRender(
 			<CodeLineView lineNumber={42} tokens={[
@@ -30,6 +30,14 @@ describe("CodeLineView", () => {
 				</td>
 			</tr>
 		);
+	});
+
+	it("should select definition on click", () => {
+		let defaultPrevented = false;
+		expect(Dispatcher.catchDispatched(() => {
+			shallowRender(<CodeLineView tokens={[{URL: ["someURL"]}]} />).querySelector("a").props.onClick({preventDefault() { defaultPrevented = true; }});
+		})).to.eql([new CodeActions.SelectDef("someURL")]);
+		expect(defaultPrevented).to.be(true);
 	});
 
 	it("should highlight definition on mouse-over", () => {

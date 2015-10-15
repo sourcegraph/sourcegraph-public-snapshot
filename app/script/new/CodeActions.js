@@ -15,6 +15,12 @@ export class FileFetched {
 	}
 }
 
+export class SelectDef {
+	constructor(def) {
+		this.def = def;
+	}
+}
+
 export class HighlightDef {
 	constructor(def) {
 		this.def = def;

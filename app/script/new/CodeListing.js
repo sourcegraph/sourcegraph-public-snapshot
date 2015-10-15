@@ -12,7 +12,12 @@ class CodeListing extends React.Component {
 				<table className="line-numbered-code">
 					<tbody>
 						{this.props.lines.map((lineData, i) =>
-							<CodeLineView lineNumber={i + 1} tokens={lineData.Tokens || emptyArray} highlightedDef={this.props.highlightedDef} key={i} />
+							<CodeLineView
+								lineNumber={i + 1}
+								tokens={lineData.Tokens || emptyArray}
+								selectedDef={this.props.selectedDef}
+								highlightedDef={this.props.highlightedDef}
+								key={i} />
 						)}
 					</tbody>
 				</table>
@@ -23,6 +28,7 @@ class CodeListing extends React.Component {
 
 CodeListing.propTypes = {
 	lines: React.PropTypes.array,
+	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 };
 

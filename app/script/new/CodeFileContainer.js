@@ -29,7 +29,10 @@ class CodeFileContainer extends React.Component {
 			return null;
 		}
 		return (
-			<CodeListing lines={file.Entry.SourceCode.Lines} highlightedDef={this.state.highlightedDef} />
+			<CodeListing
+				lines={file.Entry.SourceCode.Lines}
+				selectedDef={this.props.selectedDef}
+				highlightedDef={this.state.highlightedDef} />
 		);
 	}
 }
@@ -38,9 +41,9 @@ CodeFileContainer.propTypes = {
 	repo: React.PropTypes.string,
 	rev: React.PropTypes.string,
 	tree: React.PropTypes.string,
-	startline: React.PropTypes.number,
-	endline: React.PropTypes.number,
-	token: React.PropTypes.number,
+	startLine: React.PropTypes.number,
+	endLine: React.PropTypes.number,
+	selectedDef: React.PropTypes.string,
 	unitType: React.PropTypes.string,
 	unit: React.PropTypes.string,
 	def: React.PropTypes.string,
