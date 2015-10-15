@@ -77,9 +77,9 @@ var CodeFileToolbarView = React.createClass({
 				Code from {this.props.buildInfo.CommitsBehind} commits behind <a href={latestFileURL}>head</a> is shown
 			</i>);
 		} else if (this.props.numRefs) {
-			buildInfo = <i className="build-info">{this.props.numRefs} linked</i>;
+			buildInfo = <i className="build-info">{this.props.numRefs} symbols indexed</i>;
 		} else {
-			buildInfo = <i className="build-info">No links</i>;
+			buildInfo = <i className="build-info">No symbols indexed</i>;
 		}
 
 		return (
