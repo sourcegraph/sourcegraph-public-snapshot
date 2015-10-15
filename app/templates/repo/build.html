@@ -76,12 +76,12 @@
 {{if .Build.Failure}}
 <div class="alert alert-danger">
 {{if .DisableExternalLinks}}
-	<strong>Build failed.</strong> Check the logs for more information about why
-	this build failed. Frequent causes are compile errors, dependency fetching
+	<strong>Code indexing failed.</strong> Check the logs for more information about why
+	this failed. Frequent causes are compile errors, dependency fetching
 	dependency fetching errors, or limitations in srclib (the underlying code
 	analysis engine).
 {{else}}
-	<strong>Build failed.</strong> Please see the <a href="https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/">troubleshooting guide</a> or <a href="mailto:support@sourcegraph.com">contact us</a> for help.
+	<strong>Code indexing failed.</strong> Please see the <a href="https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/">troubleshooting guide</a> or <a href="mailto:support@sourcegraph.com">contact us</a> for help.
 {{end}}
 </div>
 {{end}}
@@ -112,6 +112,6 @@
 	{{end}}
 </table>
 {{else if not .Build.Failure}}
-<div class="alert alert-warning">This build has no tasks created yet. Refresh this page later to see progress.</div>
+<div class="alert alert-warning">This indexing job has no tasks created yet. Refresh this page later to see progress.</div>
 {{end}}
 {{end}}
