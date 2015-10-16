@@ -14,7 +14,9 @@ class ElementWrapper {
 	// querySelector returns the first child matching the CSS selector.
 	querySelector(selector) {
 		// TODO implement more selectors
-		if (this.element.type === selector) {
+		if (selector.charAt(0) === "." && this.element.props && this.element.props.className && this.element.props.className.split(" ").indexOf(selector.substr(1)) !== -1) {
+			return this;
+		} else if (this.element.type === selector) {
 			return this;
 		}
 		let children = this.element.props && this.element.props.children;
@@ -49,25 +51,27 @@ class ElementWrapper {
 			return;
 		}
 		Object.keys(expected.props).forEach((key) => {
-			if (key === "children") { return; }
+			if (key === "children" || key === "zIndex") { return; }
 			expect(this.element.props[key]).to.eql(expected.props[key]);
 		});
 
-		if (expected.props.children === undefined) {
-			expect(this.element.props.children).to.be(undefined);
-			return;
-		}
-		if (expected.props.children.constructor !== Array) {
-			expect(this.element.props.children.constructor).to.not.be(Array);
-			new ElementWrapper(this.element.props.children).compare(expected.props.children);
-			return;
-		}
-		expect(this.element.props.children.constructor).to.be(Array);
-		expect(this.element.props.children.length).to.be(expected.props.children.length);
-		for (let i = 0; i < this.element.props.children.length; i++) {
-			new ElementWrapper(this.element.props.children[i]).compare(expected.props.children[i]);
+		let thisChildren = toChildArray(this.element.props.children);
+		let expectedChildren = toChildArray(expected.props.children);
+		expect(thisChildren.length).to.be(expectedChildren.length);
+		for (let i = 0; i < thisChildren.length; i++) {
+			new ElementWrapper(thisChildren[i]).compare(expectedChildren[i]);
 		}
 	}
+}
+
+function toChildArray(children) {
+	if (!children) {
+		return [];
+	}
+	if (children.constructor !== Array) {
+		return [children];
+	}
+	return children.filter((e) => Boolean(e));
 }
 
 // Shallow render the given component. Does not use the DOM.

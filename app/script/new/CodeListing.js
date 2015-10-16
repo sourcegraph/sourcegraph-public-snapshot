@@ -5,6 +5,12 @@ import CodeLineView from "./CodeLineView";
 const emptyArray = [];
 
 class CodeListing extends React.Component {
+	shouldComponentUpdate(nextProps, nextState) {
+		return nextProps.lines !== this.props.lines ||
+			nextProps.selectedDef !== this.props.selectedDef ||
+			nextProps.highlightedDef !== this.props.highlightedDef;
+	}
+
 	render() {
 		// TODO tiled rendering for better performance on huge files
 		return (

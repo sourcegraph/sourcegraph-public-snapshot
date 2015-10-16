@@ -16,7 +16,10 @@ const CodeBackend = {
 					uri: `/ui/${action.repo}@${action.rev}/.tree/${action.tree}`,
 					json: {},
 				}, function(err, resp, body) {
-					// TODO handle error
+					if (err) {
+						console.error(err);
+						return;
+					}
 					Dispatcher.dispatch(new CodeActions.FileFetched(action.repo, action.rev, action.tree, body));
 				});
 			}

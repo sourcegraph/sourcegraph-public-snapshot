@@ -7,7 +7,7 @@ function keyFor(repo, rev, tree) {
 	return `${repo}#${rev}#${tree}`;
 }
 
-export class CodeStoreClass extends Store {
+export class CodeStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
 		this.files = {
@@ -35,4 +35,4 @@ export class CodeStoreClass extends Store {
 	}
 }
 
-export default new CodeStoreClass(Dispatcher);
+export default new CodeStore(Dispatcher);

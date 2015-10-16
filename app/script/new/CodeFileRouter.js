@@ -4,6 +4,7 @@ import URI from "urijs";
 import Dispatcher from "./Dispatcher";
 import CodeFileContainer from "./CodeFileContainer";
 import * as CodeActions from "./CodeActions";
+import * as DefActions from "./DefActions";
 
 // All data from window.location gets processed here and is then passed down
 // to sub-components via props. Every time window.location changes, this
@@ -43,7 +44,12 @@ class CodeFileRouter extends React.Component {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case CodeActions.SelectDef:
-			this._navigate(null, {seldef: action.def});
+			this._navigate(null, {seldef: action.def || undefined}); // null becomes undefined
+			break;
+
+		case DefActions.GoToDef:
+			console.warn("GoToDef: not yet implemented");
+			break;
 		}
 	}
 
