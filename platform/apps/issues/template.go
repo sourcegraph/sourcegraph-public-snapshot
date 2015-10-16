@@ -1,0 +1,79 @@
+package issues
+
+import (
+	"bytes"
+	"html/template"
+	"io/ioutil"
+	"log"
+
+	netctx "golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/issues/assets"
+	"src.sourcegraph.com/issues/markdown"
+	"src.sourcegraph.com/sourcegraph/platform/putil"
+)
+
+var fmap = map[string]interface{}{
+	"render": render,
+}
+
+func render(ctx netctx.Context, e Event) template.HTML {
+	t := parseReply("reply.html")
+	wr := new(bytes.Buffer)
+
+	sg := sourcegraph.NewClientFromContext(ctx)
+	author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: e.AuthorUID})
+	if err != nil {
+		return template.HTML("unknown author")
+	}
+
+	err = t.Execute(wr, struct {
+		Author  string
+		Body    template.HTML
+		UID     int
+		Creator bool
+	}{
+		Author:  author.Name,
+		Body:    markdown.Parse(e.Body),
+		UID:     e.UID,
+		Creator: putil.UserFromContext(ctx).UID == e.AuthorUID,
+	})
+	if err != nil {
+		log.Println(err)
+		return template.HTML("")
+	}
+	b, err := ioutil.ReadAll(wr)
+	if err != nil {
+		log.Println(err)
+		return template.HTML("")
+	}
+	return template.HTML(string(b))
+}
+
+func parse(tmpl string) *template.Template {
+	a, err := assets.Asset("assets/" + tmpl)
+	if err != nil {
+		panic(err)
+	}
+	t := template.New(tmpl)
+	t = t.Funcs(fmap)
+	t, err = t.Parse(string(a))
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+// Hack to avoid initialization cycles.
+func parseReply(tmpl string) *template.Template {
+	a, err := assets.Asset("assets/" + tmpl)
+	if err != nil {
+		panic(err)
+	}
+	t := template.New(tmpl)
+	t, err = t.Parse(string(a))
+	if err != nil {
+		panic(err)
+	}
+	return t
+}

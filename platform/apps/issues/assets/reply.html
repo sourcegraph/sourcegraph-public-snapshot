@@ -1,0 +1,12 @@
+<div class="panel panel-default">
+    <div class="panel-heading">
+        {{.Author}}
+        <a name="{{.UID}}" href="#{{.UID}}">
+            <i class="fa fa-link"></i>
+        </a>
+        {{if .Creator}}
+        <i class="fa fa-pencil pull-right edit" style="cursor: pointer;"></i>
+        {{end}}
+    </div>
+    <div id="reply{{.UID}}" class="panel-body reply">{{.Body}}</div>
+</div>
