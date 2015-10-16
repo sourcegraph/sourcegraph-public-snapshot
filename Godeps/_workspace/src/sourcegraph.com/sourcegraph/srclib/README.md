@@ -18,7 +18,7 @@ APIs and formats, it is difficult to reuse your plugin for other languages or
 editors.
 
 We call this the **M-by-N problem**: given *M* editors and *N* languages, we
-need to write (on the order of) *M*&times;*N* plugins to get good tooling in 
+need to write (on the order of) *M*&times;*N* plugins to get good tooling in
 every case. That number gets large quickly, and it's why we suffer from poor
 developer tools.
 
@@ -29,7 +29,7 @@ srclib solves this problem in 2 ways by:
   srclib language analyzer benefit users in any editor, and improvements in a
   srclib editor plugin benefit everyone who uses that editor on any language.
 
-* Providing high-quality language analyzers and editor plugins that implement
+* Providing high-quality language analyzers that implement
   this standard. These were open-sourced from the code that powers
   [Sourcegraph.com](https://sourcegraph.com).
 
@@ -42,6 +42,8 @@ Currently, srclib supports:
 * **Integrations:** [emacs-sourcegraph-mode](https://srclib.org/plugins/emacs/),
   [Sublime Text](https://srclib.org/plugins/sublimetext/), and
   [Sourcegraph.com](https://sourcegraph.com)
+
+  NOTE: *editor plugins are temporarily incompatible with srclib `master`; to use editor plugins, please [use an old srclib binary](https://srclib.org/plugins/compatiblebinaries/)*
 
 * **Features:** jump-to-definition, find usages, type inference, documentation
   generation, and dependency resolution
@@ -56,9 +58,6 @@ what you're building to get started.
 
 See [*Getting started*](https://srclib.org/gettingstarted/) for installation
 instructions.
-
-Once you install srclib's `srclib` tool and language support toolchains, you'll use
-srclib by installing an editor plugin in your editor of choice. [See all editor plugins.](https://srclib.org/gettingstarted/)
 
 # Misc.
 
@@ -82,3 +81,9 @@ official binaries via these instructions:
 ## License
 Sourcegraph is licensed under the [MIT License](https://tldrlegal.com/license/mit-license).
 More information in the LICENSE file.
+
+
+## Contributing
+
+**If you want to start hacking on srclib or write your own srclib toolchain, [join the srclib Slack](http://slackin.srclib.org) and then access it on [srclib.slack.com](https://srclib.slack.com).**
+Don't forget to introduce yourself on the #General channel. We are more than happy to meet new contributors and to help people to get started.

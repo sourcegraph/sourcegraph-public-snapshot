@@ -451,7 +451,7 @@ run this command again.`)
 		return err
 	}
 
-	srclibpathDir := filepath.Join(strings.Split(srclib.Path, ":")[0], toolchain) // toolchain dir under SRCLIBPATH
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
 	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
 		return err
 	}
@@ -472,7 +472,7 @@ run this command again.`)
 func installRubyToolchain() error {
 	const toolchain = "sourcegraph.com/sourcegraph/srclib-ruby"
 
-	srclibpathDir := filepath.Join(strings.Split(srclib.Path, ":")[0], toolchain) // toolchain dir under SRCLIBPATH
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
 
 	if _, err := exec.LookPath("ruby"); isExecErrNotFound(err) {
 		return errors.New("no `ruby` in PATH (do you have Ruby installed properly?)")
@@ -497,7 +497,7 @@ func installRubyToolchain() error {
 func installJavaScriptToolchain() error {
 	const toolchain = "sourcegraph.com/sourcegraph/srclib-javascript"
 
-	srclibpathDir := filepath.Join(strings.Split(srclib.Path, ":")[0], toolchain) // toolchain dir under SRCLIBPATH
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
 
 	if _, err := exec.LookPath("node"); isExecErrNotFound(err) {
 		return errors.New("no `node` in PATH (do you have Node.js installed properly?)")
@@ -529,7 +529,7 @@ func installPythonToolchain() error {
 		}
 	}
 
-	srclibpathDir := filepath.Join(strings.Split(srclib.Path, ":")[0], toolchain) // toolchain dir under SRCLIBPATH
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
 	log.Println("Downloading or updating Python toolchain in", srclibpathDir)
 	if err := execSrcCmd("toolchain", "get", "-u", toolchain); err != nil {
 		return err
@@ -638,9 +638,9 @@ func symlinkToGopath(toolchain string) error {
 		return fmt.Errorf("GOPATH not set")
 	}
 
-	srcDir := filepath.Join(strings.Split(gopath, ":")[0], "src")
+	srcDir := filepath.Join(filepath.SplitList(gopath)[0], "src")
 	gopathDir := filepath.Join(srcDir, toolchain)
-	srclibpathDir := filepath.Join(strings.Split(srclib.Path, ":")[0], toolchain)
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain)
 
 	if fi, err := os.Lstat(gopathDir); os.IsNotExist(err) {
 		log.Printf("mkdir -p %s", filepath.Dir(gopathDir))

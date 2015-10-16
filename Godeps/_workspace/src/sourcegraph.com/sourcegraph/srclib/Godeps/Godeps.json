@@ -1,0 +1,140 @@
+{
+	"ImportPath": "sourcegraph.com/sourcegraph/srclib",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/rog-go/parallel",
+			"Comment": "null-250",
+			"Rev": "e7ca3a2567b8ad482fef7b1aa1a258aa00c82772"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/binary",
+			"Rev": "21c37b530bec7c512af0208bfb15f34400301682"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/unsafeslice",
+			"Rev": "a2ace32dbd4787714f87adb14a8aa369142efac5"
+		},
+		{
+			"ImportPath": "github.com/aybabtme/color",
+			"Rev": "0db0bdb3cc7ff8ddff622052366e17f0d506b0ef"
+		},
+		{
+			"ImportPath": "github.com/bradfitz/http2",
+			"Rev": "f8202bc903bda493ebba4aa54922d78430c2c42f"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Rev": "4bf6d2fbdef2be37a2c72851a4fd87b7f1e3e79c"
+		},
+		{
+			"ImportPath": "github.com/gogo/protobuf/proto",
+			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+		},
+		{
+			"ImportPath": "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
+			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+		},
+		{
+			"ImportPath": "github.com/gogo/protobuf/test",
+			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "efd7476481382c195beb33acd8ec2f1527167fb4"
+		},
+		{
+			"ImportPath": "github.com/inconshreveable/go-update",
+			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
+		},
+		{
+			"ImportPath": "github.com/kardianos/osext",
+			"Rev": "6e7f843663477789fac7c02def0d0909e969b4e5"
+		},
+		{
+			"ImportPath": "github.com/kr/binarydist",
+			"Rev": "9955b0ab8708602d411341e55fffd7e0700f86bd"
+		},
+		{
+			"ImportPath": "github.com/kr/fs",
+			"Rev": "2788f0dbd16903de03cb8186e5c7d97b69ad387b"
+		},
+		{
+			"ImportPath": "github.com/peterh/liner",
+			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
+		},
+		{
+			"ImportPath": "github.com/russross/blackfriday",
+			"Comment": "v1.3",
+			"Rev": "8cec3a854e68dba10faabbe31c089abf4a3e57a6"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/sanitized_anchor_name",
+			"Rev": "244f5ac324cb97e1987ef901a0081a77bfd8e845"
+		},
+		{
+			"ImportPath": "github.com/smartystreets/mafsa",
+			"Rev": "ab6b5abc58c9d82560b127e23bfd3e39a25e8f05"
+		},
+		{
+			"ImportPath": "github.com/sqs/fileset",
+			"Rev": "4317e899aa9438ba7603a6e322389571cb3ffdff"
+		},
+		{
+			"ImportPath": "github.com/sqs/go-selfupdate/selfupdate",
+			"Rev": "385c6ca8b9c42d78e7e0aacfb690cf28107a8306"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "b846920a172af75fe52c1400ae6094307be83b8a"
+		},
+		{
+			"ImportPath": "golang.org/x/net/internal/timeseries",
+			"Rev": "b846920a172af75fe52c1400ae6094307be83b8a"
+		},
+		{
+			"ImportPath": "golang.org/x/net/trace",
+			"Rev": "b846920a172af75fe52c1400ae6094307be83b8a"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2",
+			"Rev": "b5adcc2dcdf009d0391547edc6ecbaff889f5bb9"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/godoc/vfs",
+			"Rev": "b7f0150d16f143e2d871156fa142dd6fa372ffdf"
+		},
+		{
+			"ImportPath": "google.golang.org/cloud/compute/metadata",
+			"Rev": "08d53874e89b5a4786b0d1fbe7957443d82b2299"
+		},
+		{
+			"ImportPath": "google.golang.org/cloud/internal",
+			"Rev": "08d53874e89b5a4786b0d1fbe7957443d82b2299"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc",
+			"Rev": "91c8b79535eb6045d70ec671d302213f88a3ab95"
+		},
+		{
+			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
+			"Comment": "v1-295-gac1de6d",
+			"Rev": "ac1de6df8e99179055302900918093c0443d3f7a"
+		},
+		{
+			"ImportPath": "sourcegraph.com/sourcegraph/makex",
+			"Rev": "c8cc99912b772f144ad2902ba210478fd9ac4169"
+		},
+		{
+			"ImportPath": "sourcegraph.com/sourcegraph/rwvfs",
+			"Rev": "530b5049ed637054f4a17cb28b5d9c7f05ba2608"
+		},
+		{
+			"ImportPath": "sourcegraph.com/sqs/pbtypes",
+			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
+		}
+	]
+}

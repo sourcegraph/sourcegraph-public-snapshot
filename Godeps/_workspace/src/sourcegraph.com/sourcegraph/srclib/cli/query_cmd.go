@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -43,7 +44,7 @@ type QueryCmd struct {
 
 var queryCmd QueryCmd
 
-var historyFile = "/tmp/.srclibq_history"
+var historyFile = filepath.Join(os.TempDir(), ".srclibq_history")
 
 var activeContext commandContext
 

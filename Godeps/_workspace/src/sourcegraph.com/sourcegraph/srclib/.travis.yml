@@ -1,5 +1,5 @@
 language: go
-go: 1.4
+go: 1.5
 python: 2.7
 jdk: oraclejdk8
 
@@ -19,9 +19,12 @@ before_install:
   - rvm reload
   - rvm install ruby-2.2.2
   - rvm use 2.2.2
+  - go get github.com/tools/godep
 
 install:
-  - go get -d -v ./... && go build -v ./...
+  - go get -d -v ./...
+  - godep restore ./...
+  - go build -v ./...
   - go install ./cmd/srclib
 
 script:

@@ -32,7 +32,8 @@ func Add(dir, toolchainPath string, opt *AddOpt) error {
 		return err
 	}
 
-	targetDir := filepath.Join(srclib.PathEntries()[0], toolchainPath)
+	srclibpathEntry := filepath.SplitList(srclib.Path)[0]
+	targetDir := filepath.Join(srclibpathEntry, toolchainPath)
 
 	if err := os.MkdirAll(filepath.Dir(targetDir), 0700); err != nil {
 		return err

@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 
 	"strings"
+
+	"sort"
 
 	"sourcegraph.com/sourcegraph/makex"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
@@ -107,6 +110,7 @@ func CreateMakefile(buildDataDir string, buildStore buildstore.RepoBuildStore, v
 		if err != nil {
 			return nil, fmt.Errorf("rule maker %s: %s", name, err)
 		}
+		sort.Sort(ruleSort{rules})
 		if opt.Verbose {
 			log.Printf("%v: Created %d rule(s)", name, len(rules))
 		}
@@ -156,9 +160,9 @@ func CreateMakefile(buildDataDir string, buildStore buildstore.RepoBuildStore, v
 					// if it is, we simply swap the revision in the file name with the
 					// previous valid revision. If it isn't, we prefix p with
 					// "../[previous-revision]".
-					p := strings.Split(rule.Target(), "/")
+					p := strings.Split(rule.Target(), string(filepath.Separator))
 					if len(p) > 2 &&
-						strings.Join(p[0:2], "/") == buildDataDir &&
+						filepath.Join(p[0:2]...) == buildDataDir &&
 						len(p[1]) == 40 { // HACK: Mercurial and Git both use 40-char hashes.
 						// p is prefixed by "data-dir/vcs-commit-id"
 						p[1] = prevCommitID
@@ -167,7 +171,7 @@ func CreateMakefile(buildDataDir string, buildStore buildstore.RepoBuildStore, v
 					}
 
 					rules[i] = &cachedRule{
-						cachedPath: strings.Join(p, "/"),
+						cachedPath: filepath.Join(p...),
 						target:     rule.Target(),
 						unit:       u,
 						prereqs:    rule.Prereqs(),

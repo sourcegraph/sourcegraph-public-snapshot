@@ -19,7 +19,7 @@ func (c *Tree) validate() error {
 			if filepath.IsAbs(p) {
 				return ErrInvalidFilePath
 			}
-			if p == ".." || strings.HasPrefix(p, "../") {
+			if p == ".." || strings.HasPrefix(p, ".."+string(filepath.Separator)) {
 				return ErrInvalidFilePath
 			}
 		}

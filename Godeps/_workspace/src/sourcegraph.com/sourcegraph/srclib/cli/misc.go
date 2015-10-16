@@ -29,7 +29,7 @@ func (d Directory) Complete(match string) []flags.Completion {
 	var dirs []flags.Completion
 	for _, name := range names {
 		if fi, err := os.Stat(name); err == nil && fi.Mode().IsDir() {
-			dirs = append(dirs, flags.Completion{Item: name + "/"})
+			dirs = append(dirs, flags.Completion{Item: name + string(filepath.Separator)})
 		}
 	}
 	return dirs
@@ -49,5 +49,5 @@ func (d Directory) String() string {
 	if file == "." || file == ".." {
 		return dir + file
 	}
-	return dir + file + string(os.PathSeparator)
+	return dir + file + string(filepath.Separator)
 }

@@ -157,5 +157,5 @@ func pathHasAnyPrefix(path string, prefixes []string) bool {
 func pathHasPrefix(path, prefix string) bool {
 	path = filepath.Clean(path)
 	prefix = filepath.Clean(prefix)
-	return prefix == "." || path == prefix || strings.HasPrefix(path, prefix+"/")
+	return prefix == "." || path == prefix || strings.HasPrefix(path, prefix+string(filepath.Separator))
 }

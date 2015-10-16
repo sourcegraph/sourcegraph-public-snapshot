@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -48,10 +48,10 @@ func TryMakeURI(cloneURL string) (string, error) {
 		return "", fmt.Errorf("determining URI from repo clone URL failed: missing host from URL (%q)", cloneURL)
 	}
 
-	path := strings.TrimSuffix(url.Path, ".git")
-	path = filepath.Clean(path)
-	path = strings.TrimSuffix(path, "/")
-	return strings.ToLower(url.Host) + path, nil
+	uri := strings.TrimSuffix(url.Path, ".git")
+	uri = path.Clean(uri)
+	uri = strings.TrimSuffix(uri, "/")
+	return strings.ToLower(url.Host) + uri, nil
 }
 
 // URIEqual returns true if a and b are equal, based on a case insensitive

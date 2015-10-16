@@ -145,7 +145,7 @@ func prepareCommandContext(file string) (commandContext, error) {
 	if file == "" {
 		return commandContext{}, errors.New("prepareCommandContext: file cannot be empty")
 	}
-	if file == "." || file[len(file)-1] == os.PathSeparator {
+	if file == "." || file[len(file)-1] == filepath.Separator {
 		isDir = true
 	}
 	file, err = filepath.Abs(file)
@@ -156,7 +156,7 @@ func prepareCommandContext(file string) (commandContext, error) {
 	// the path separator to it to presrve filepath.Dir's
 	// semantics.
 	if isDir {
-		file += string(os.PathSeparator)
+		file += string(filepath.Separator)
 	}
 
 	repo, err := OpenRepo(filepath.Dir(file))
@@ -379,15 +379,11 @@ as the JSON representation of the following struct.
 
 The Def and Example structs are defined as follows in the Sourcegraph API.
 
-[[.code "src/api_cmds.go" "APIDescribeCmdOutputQuickHack"]]
+[[.code "cli/api_cmds.go" "APIDescribeCmdOutputQuickHack"]]
 
-[[.code "https://raw.githubusercontent.com/sourcegraph/go-sourcegraph/6937daba84bf2d0f919191fd74e5193171b4f5d5/sourcegraph/defs.go" 105 113]]
+[[.code "https://raw.githubusercontent.com/sourcegraph/srclib/bf4ec15991ed05161dad3694f8729d48c5124844/graph/def.pb.go" 73 122]]
 
-[[.code "graph/def.pb.go" "Def "]]
-
-[[.code "https://raw.githubusercontent.com/sourcegraph/go-sourcegraph/6937daba84bf2d0f919191fd74e5193171b4f5d5/sourcegraph/defs.go" 236 252]]
-
-[[.code "graph/ref.pb.go" "Ref"]]
+[[.code "https://raw.githubusercontent.com/sourcegraph/srclib/bf4ec15991ed05161dad3694f8729d48c5124844/graph/ref.pb.go" 14 44]]
 
 END APIDescribeCmdOutput OMIT */
 // START APIDescribeCmdOutputQuickHack OMIT
