@@ -1,5 +1,7 @@
 import flux from "flux";
 
+import testOnly from "./testOnly";
+
 class Dispatcher extends flux.Dispatcher {
 	dispatch(payload) {
 		if (this._catch) {
@@ -10,6 +12,8 @@ class Dispatcher extends flux.Dispatcher {
 	}
 
 	catchDispatched(f) {
+		testOnly();
+
 		this._dispatched = [];
 		this._catch = true;
 		try {
@@ -21,6 +25,8 @@ class Dispatcher extends flux.Dispatcher {
 	}
 
 	directDispatch(store, payload) {
+		testOnly();
+
 		this._startDispatching(payload);
 		try {
 			store.__onDispatch(payload);
