@@ -46,7 +46,8 @@ var SearchResultsView = React.createClass({
 						{...sharedProps}
 						loading={this.state.tokenSearchLoading}
 						total={this.state.tokenSearch.Total}
-						results={this.state.tokenSearch.Results} />
+						results={this.state.tokenSearch.Results}
+						buildInfo={this.state.tokenSearch.BuildInfo} />
 				);
 			}
 			break;
