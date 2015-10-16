@@ -6,10 +6,12 @@ class ElementWrapper {
 		this.element = element;
 	}
 
+	// props returns the properties of the element.
 	get props() {
 		return this.element.props;
 	}
 
+	// querySelector returns the first child matching the CSS selector.
 	querySelector(selector) {
 		// TODO implement more selectors
 		if (this.element.type === selector) {
@@ -31,6 +33,8 @@ class ElementWrapper {
 		return null;
 	}
 
+	// compare compares this element with expected and raise error on mismatch.
+	// Properties which are in the element but not in the expectation are skipped.
 	compare(expected) {
 		if (expected === null || expected.constructor === String) {
 			expect(this.element).to.be(expected);
@@ -66,6 +70,7 @@ class ElementWrapper {
 	}
 }
 
+// Shallow render the given component. Does not use the DOM.
 export default function(instance, expected) {
 	let renderer = TestUtils.createRenderer();
 	renderer.render(instance);

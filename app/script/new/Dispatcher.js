@@ -11,6 +11,8 @@ class Dispatcher extends flux.Dispatcher {
 		super.dispatch(payload);
 	}
 
+	// catchDispatched returns the actions dispatched during the execution of f.
+	// Actions are not passed to the listeners. Use only in tests.
 	catchDispatched(f) {
 		testOnly();
 
@@ -24,6 +26,8 @@ class Dispatcher extends flux.Dispatcher {
 		return this._dispatched;
 	}
 
+	// directDispatch dispatches an action to a single store. Not affected by
+	// catchDispatched. Use only in tests.
 	directDispatch(store, payload) {
 		testOnly();
 
