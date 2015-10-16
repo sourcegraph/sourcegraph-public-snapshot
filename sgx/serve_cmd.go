@@ -34,6 +34,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
@@ -867,7 +868,7 @@ func (c *ServeCmd) graphUplink(ctx context.Context) {
 // seconds to verify that the gRPC connection is alive. If the connection
 // is unsuccessful then it will reboot the connection.
 func (c *ServeCmd) fedRootHeartbeat(ctx context.Context) {
-	if c.GraphUplinkPeriod == 0 || fed.Config.IsRoot {
+	if (c.GraphUplinkPeriod == 0 && authutil.ActiveFlags.Source != "oauth") || fed.Config.IsRoot {
 		return
 	}
 

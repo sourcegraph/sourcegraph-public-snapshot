@@ -21,7 +21,7 @@ type Flags struct {
 
 	RootGRPCURLStr string `long:"fed.root-grpc-url" description:"gRPC Endpoint URL of the root Sourcegraph server (used for fetching remote repo data)" default:""`
 
-	IsRoot bool `long:"fed.is-root" description:"configures this server to be a root server (if set, --fed.root-url setting is discarded)"`
+	IsRoot bool `long:"fed.is-root" description:"configures this server to be a root server (if set, --fed.root-url setting is discarded)" default:"true"`
 }
 
 // Config is the currently active federation config (as set by the CLI
