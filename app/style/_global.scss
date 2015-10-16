@@ -69,3 +69,11 @@ textarea.code {
 	-ms-user-select: none;
 	user-select: none;
 }
+
+.alert-info {
+	a {
+		// Blue links are difficult to see on a blue background.
+		// Make links stand out more by underlining.
+		text-decoration: underline;
+	}
+}

@@ -2,7 +2,6 @@ package ui
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -51,22 +50,16 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	var buildInfoMessage string
 	buildInfo, err := apiclient.Builds.GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: opt.RepoRev})
-	if err != nil {
-		buildInfoMessage = fmt.Sprintf("No build found for %q.", opt.RepoRev.URI)
-	} else if buildInfo.Exact == nil {
-		buildInfoMessage = fmt.Sprintf("Showing definition results from %d commits behind the latest build.", buildInfo.CommitsBehind)
-	}
 
 	return e.Encode(&struct {
 		Total     int32
 		Results   []payloads.TokenSearchResult
-		BuildInfo string
+		BuildInfo *sourcegraph.RepoBuildInfo
 	}{
 		Total:     defList.Total,
 		Results:   results,
-		BuildInfo: buildInfoMessage,
+		BuildInfo: buildInfo,
 	})
 }
 

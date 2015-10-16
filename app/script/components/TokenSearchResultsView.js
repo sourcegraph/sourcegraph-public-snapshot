@@ -30,20 +30,28 @@ var TokenSearchResultsView = React.createClass({
 			return <TokenSearchResult key={result.URL} result={result} />;
 		});
 
-		var summary;
+		var summary, s;
 		if (this.props.results.length === 0) {
 			summary = `No definition results found for "${this.props.query}"`;
 		} else {
-			var s = this.props.results.length === 1 ? "" : "s";
+			s = this.props.results.length === 1 ? "" : "s";
 			summary = `${this.props.total} definition result${s} for "${this.props.query}"`;
 			if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 		}
 
 		var buildInfo;
-		if (this.props.buildInfo) {
+		if (!this.props.buildInfo) {
+			var buildHelpHref = "https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/";
 			buildInfo = (
-				<div className="alert alert-info" role="alert">
-					<i className="fa fa-warning"></i> {this.props.buildInfo}
+				<div className="alert alert-info">
+					<i className="fa fa-warning"></i>	No Code Intelligence data for {this.props.repo.URI}. <a href={buildHelpHref}>See troubleshooting guide</a>.
+				</div>
+			);
+		} else if (!this.props.buildInfo.Exact) {
+			s = this.props.buildInfo.CommitsBehind === 1 ? "" : "s";
+			buildInfo = (
+				<div className="alert alert-info">
+					<i className="fa fa-warning"></i> Showing definition results from {this.props.buildInfo.CommitsBehind} commit{s} behind latest. Newer results are shown when available.
 				</div>
 			);
 		}
