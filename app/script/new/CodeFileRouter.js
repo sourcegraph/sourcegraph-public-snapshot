@@ -3,7 +3,6 @@ import URI from "urijs";
 
 import Dispatcher from "./Dispatcher";
 import CodeFileContainer from "./CodeFileContainer";
-import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
 
 // All data from window.location gets processed here and is then passed down
@@ -43,7 +42,7 @@ class CodeFileRouter extends React.Component {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case CodeActions.SelectDef:
+		case DefActions.SelectDef:
 			this._navigate(null, {seldef: action.def || undefined}); // null becomes undefined
 			break;
 

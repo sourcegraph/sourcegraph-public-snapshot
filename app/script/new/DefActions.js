@@ -11,6 +11,18 @@ export class DefFetched {
 	}
 }
 
+export class SelectDef {
+	constructor(def) {
+		this.def = def;
+	}
+}
+
+export class HighlightDef {
+	constructor(def) {
+		this.def = def;
+	}
+}
+
 export class GoToDef {
 	constructor(url) {
 		this.url = url;

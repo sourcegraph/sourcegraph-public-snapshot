@@ -1,7 +1,7 @@
 import React from "react";
 
 import Dispatcher from "./Dispatcher";
-import * as CodeActions from "./CodeActions";
+import * as DefActions from "./DefActions";
 
 // TODO support for tokens with more than one URL
 class CodeLineView extends React.Component {
@@ -68,14 +68,14 @@ class CodeLineView extends React.Component {
 								className={cls}
 								href={token.URL[0]}
 								onMouseOver={() => {
-									Dispatcher.dispatch(new CodeActions.HighlightDef(token.URL[0]));
+									Dispatcher.dispatch(new DefActions.HighlightDef(token.URL[0]));
 								}}
 								onMouseOut={() => {
-									Dispatcher.dispatch(new CodeActions.HighlightDef(null));
+									Dispatcher.dispatch(new DefActions.HighlightDef(null));
 								}}
 								onClick={(event) => {
 									event.preventDefault();
-									Dispatcher.dispatch(new CodeActions.SelectDef(token.URL[0]));
+									Dispatcher.dispatch(new DefActions.SelectDef(token.URL[0]));
 								}}
 								key={i}>
 								{token.Label}

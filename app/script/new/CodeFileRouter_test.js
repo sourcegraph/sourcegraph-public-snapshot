@@ -6,7 +6,7 @@ import React from "react";
 import Dispatcher from "./Dispatcher";
 import CodeFileRouter from "./CodeFileRouter";
 import CodeFileContainer from "./CodeFileContainer";
-import * as CodeActions from "./CodeActions";
+import * as DefActions from "./DefActions";
 
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {
@@ -84,12 +84,12 @@ describe("CodeFileRouter", () => {
 		);
 	});
 
-	it("should handle SelectDef", () => {
+	it("should handle DefActions.SelectDef", () => {
 		let r = new CodeFileRouter();
 		r._navigate = function(path, query) {
 			expect(path).to.be(null);
 			expect(query).to.eql({seldef: "someURL"});
 		};
-		Dispatcher.directDispatch(r, new CodeActions.SelectDef("someURL"));
+		Dispatcher.directDispatch(r, new DefActions.SelectDef("someURL"));
 	});
 });

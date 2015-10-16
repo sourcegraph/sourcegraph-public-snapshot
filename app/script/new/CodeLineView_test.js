@@ -4,7 +4,7 @@ import expect from "expect.js";
 import React from "react";
 
 import Dispatcher from "./Dispatcher";
-import * as CodeActions from "./CodeActions";
+import * as DefActions from "./DefActions";
 import CodeLineView from "./CodeLineView";
 
 describe("CodeLineView", () => {
@@ -36,19 +36,19 @@ describe("CodeLineView", () => {
 		let defaultPrevented = false;
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(<CodeLineView tokens={[{URL: ["someURL"]}]} />).querySelector("a").props.onClick({preventDefault() { defaultPrevented = true; }});
-		})).to.eql([new CodeActions.SelectDef("someURL")]);
+		})).to.eql([new DefActions.SelectDef("someURL")]);
 		expect(defaultPrevented).to.be(true);
 	});
 
 	it("should highlight definition on mouse-over", () => {
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(<CodeLineView tokens={[{URL: ["someURL"]}]} />).querySelector("a").props.onMouseOver();
-		})).to.eql([new CodeActions.HighlightDef("someURL")]);
+		})).to.eql([new DefActions.HighlightDef("someURL")]);
 	});
 
 	it("should remove definition highlight on mouse-out", () => {
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(<CodeLineView tokens={[{URL: ["someURL"]}]} />).querySelector("a").props.onMouseOut();
-		})).to.eql([new CodeActions.HighlightDef(null)]);
+		})).to.eql([new DefActions.HighlightDef(null)]);
 	});
 });

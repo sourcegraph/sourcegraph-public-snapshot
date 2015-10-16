@@ -16,6 +16,12 @@ export class DefStore extends Store {
 			this.defs[action.url] = action.def;
 			this.__emitChange();
 			break;
+
+		case DefActions.HighlightDef:
+			this.highlightedDef = action.def;
+			this.__emitChange();
+			break;
+
 		}
 	}
 }

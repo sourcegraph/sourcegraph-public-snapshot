@@ -35,7 +35,7 @@ class CodeFileContainer extends React.Component {
 		return {
 			files: CodeStore.files,
 			defs: DefStore.defs,
-			highlightedDef: CodeStore.highlightedDef,
+			highlightedDef: DefStore.highlightedDef,
 		};
 	}
 

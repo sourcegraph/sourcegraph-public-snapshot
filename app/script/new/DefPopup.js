@@ -2,7 +2,6 @@ import React from "react";
 import Draggable from "react-draggable";
 
 import Dispatcher from "./Dispatcher";
-import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
 
 class DefPopup extends React.Component {
@@ -22,7 +21,7 @@ class DefPopup extends React.Component {
 								Dispatcher.dispatch(new DefActions.GoToDef(def.URL));
 							}}>Go to definition</a>
 							<a className="close top-action" onClick={() => {
-								Dispatcher.dispatch(new CodeActions.SelectDef(null));
+								Dispatcher.dispatch(new DefActions.SelectDef(null));
 							}}>×</a>
 						</header>
 						<section className="docHTML">

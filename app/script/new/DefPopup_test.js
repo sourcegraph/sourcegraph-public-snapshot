@@ -5,7 +5,6 @@ import React from "react";
 import Draggable from "react-draggable";
 
 import Dispatcher from "./Dispatcher";
-import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
 import DefPopup from "./DefPopup";
 
@@ -36,7 +35,7 @@ describe("DefPopup", () => {
 	it("should unselect definition on close", () => {
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(<DefPopup def={{}} />).querySelector(".close").props.onClick();
-		})).to.eql([new CodeActions.SelectDef(null)]);
+		})).to.eql([new DefActions.SelectDef(null)]);
 	});
 
 	it("should go to definition on button click", () => {
