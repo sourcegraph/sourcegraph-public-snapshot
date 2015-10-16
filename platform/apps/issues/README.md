@@ -12,12 +12,12 @@ Import this package for side effects in the Sourcegraph main repository in the p
 During development, frontend assets are accessed from disk directly. Run:
 
 ```
-cd $GOPATH/src/src.sourcegraph.com/issues
+cd $GOPATH/src/src.sourcegraph.com/sourcegraph/platform/apps/
 go build -tags=dev
 ```
 
 For production, run the following to generate assets that will be compiled into the Sourcegraph binary:
 ```
-go generate src.sourcegraph.com/issues/...
-go build src.sourcegraph.com/issues
+go generate src.sourcegraph.com/sourcegraph/platform/apps/issues/...
+go build src.sourcegraph.com/sourcegraph/platform/apps/issues
 ```

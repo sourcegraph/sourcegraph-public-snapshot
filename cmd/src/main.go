@@ -23,10 +23,10 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
 
 	// Platform applications
-	_ "sourcegraph.com/sourcegraph/issues"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/changesets"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
+	_ "src.sourcegraph.com/sourcegraph/platform/apps/issues"
 )
 
 func main() {
