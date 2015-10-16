@@ -267,7 +267,7 @@ func (s *registeredClients) SetUserPermissions(ctx context.Context, userPerms *s
 
 func (s *registeredClients) ListUserPermissions(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
 	if client.ID == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "RegisteredClients.ListUserPermissions: caller must specify valid clientID")
+		return &sourcegraph.UserPermissionsList{}, nil
 	}
 
 	userPermsStore, err := userPermissionsOrError(ctx)

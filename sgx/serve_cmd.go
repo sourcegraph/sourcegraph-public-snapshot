@@ -867,7 +867,7 @@ func (c *ServeCmd) graphUplink(ctx context.Context) {
 // seconds to verify that the gRPC connection is alive. If the connection
 // is unsuccessful then it will reboot the connection.
 func (c *ServeCmd) fedRootHeartbeat(ctx context.Context) {
-	if fed.Config.IsRoot {
+	if c.GraphUplinkPeriod == 0 || fed.Config.IsRoot {
 		return
 	}
 
