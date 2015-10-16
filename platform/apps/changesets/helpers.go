@@ -1,0 +1,156 @@
+package changesets
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+
+	"golang.org/x/net/context"
+
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+
+	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/platform"
+	"src.sourcegraph.com/sourcegraph/platform/pctx"
+	"src.sourcegraph.com/sourcegraph/platform/putil"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/mdutil"
+)
+
+// GetRepoAndRevCommon retrieves common information about the repository, its
+// revision and build status.
+func GetRepoAndRevCommon(r *http.Request) (rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, err error) {
+	ctx := putil.Context(r)
+	sg := sourcegraph.NewClientFromContext(ctx)
+
+	rc = new(handlerutil.RepoCommon)
+	rrs, ok := pctx.RepoRevSpec(ctx)
+	if !ok {
+		return nil, nil, errors.New("no repo found in context")
+	}
+	origSpec := rrs.RepoSpec
+	rc.Repo, err = sg.Repos.Get(ctx, &origSpec)
+	if err != nil {
+		return nil, nil, err
+	}
+	spec := rc.Repo.RepoSpec()
+	if origSpec.URI != "" && origSpec.URI != spec.URI {
+		return nil, nil, &handlerutil.URLMovedError{spec.URI}
+	}
+	rc.RepoConfig, err = sg.Repos.GetConfig(ctx, &spec)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	commit, err := sg.Repos.GetCommit(ctx, &rrs)
+	if err != nil {
+		return nil, nil, err
+	}
+	rrs.CommitID = string(commit.ID)
+	if rrs.Rev == "" {
+		rrs.Rev = rc.Repo.DefaultBranch
+	}
+	vc = &handlerutil.RepoRevCommon{RepoRevSpec: rrs}
+	vc.RepoCommit, err = handlerutil.AugmentCommit(r, spec.URI, commit)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return
+}
+
+// writeJSON writes JSON to the given http.ResponseWriter.
+func writeJSON(w http.ResponseWriter, v interface{}) error {
+	w.Header().Set(platform.HTTPHeaderVerbatim, "true")
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(v)
+}
+
+// notifyCreation creates a slack notification that a changeset was created. It
+// also notifies users mentioned in the description of the changeset.
+func notifyCreation(ctx context.Context, user *sourcegraph.User, uri string, cs *sourcegraph.Changeset) {
+	// Notification
+	notif.Action(notif.ActionContext{
+		Person:        user.Person(),
+		ActionType:    "created",
+		ObjectURL:     urlToChangeset(ctx, cs.ID),
+		ObjectRepo:    uri,
+		ObjectID:      cs.ID,
+		ObjectTitle:   cs.Title,
+		ActionContent: cs.Description,
+	})
+
+	// Notify mentioned people.
+	ppl, err := mdutil.Mentions(ctx, []byte(cs.Description))
+	if err != nil {
+		return
+	}
+	for _, p := range ppl {
+		msg := fmt.Sprintf(
+			"*%s* mentioned @%s in <%s|%s changeset #%d>: %s\n\n%s",
+			user.Login, p.Login,
+			urlToChangeset(ctx, cs.ID),
+			uri, cs.ID, cs.Title, cs.Description,
+		)
+		notif.Mention(p, notif.MentionContext{
+			Mentioner:    user.Login,
+			MentionerURL: urlToUser(user.Login),
+			Where:        fmt.Sprintf("in a changeset %s/%d", uri, cs.ID),
+			WhereURL:     urlToChangeset(ctx, cs.ID),
+			SlackMsg:     msg,
+		})
+	}
+}
+
+// notifyReview creates a slack notification that a changeset was reviewed. It
+// also notifies any users potentially mentioned in the review.
+func notifyReview(ctx context.Context, user *sourcegraph.User, uri string, cs *sourcegraph.Changeset, op *sourcegraph.ChangesetCreateReviewOp) {
+	msg := bytes.NewBufferString(op.Review.Body)
+	for _, c := range op.Review.Comments {
+		msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
+	}
+	notif.Action(notif.ActionContext{
+		Person: user.Person(),
+		Recipients: []*sourcegraph.Person{
+			&sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: cs.Author.Login}},
+		},
+		ActionType:    "reviewed",
+		ObjectURL:     urlToChangeset(ctx, cs.ID),
+		ObjectRepo:    uri,
+		ObjectType:    "changeset",
+		ObjectID:      cs.ID,
+		ObjectTitle:   cs.Title,
+		ActionContent: msg.String(),
+	})
+
+	// Notify mentioned people.
+	ppl, err := mdutil.Mentions(ctx, []byte(op.Review.Body))
+	if err != nil {
+		return
+	}
+	for _, c := range op.Review.Comments {
+		ppll, err := mdutil.Mentions(ctx, []byte(c.Body))
+		if err != nil {
+			return
+		}
+		ppl = append(ppl, ppll...)
+	}
+
+	for _, p := range ppl {
+		msg := fmt.Sprintf(
+			"*%s* mentioned @%s in a review on <%s|changeset #%d>",
+			user.Login, p.Login,
+			urlToChangeset(ctx, cs.ID),
+			op.ChangesetID,
+		)
+		notif.Mention(p, notif.MentionContext{
+			Mentioner:    user.Login,
+			MentionerURL: urlToUser(user.Login),
+			Where:        fmt.Sprintf("in review %s/%d", op.Repo.URI, op.ChangesetID),
+			WhereURL:     urlToChangeset(ctx, cs.ID),
+			SlackMsg:     msg,
+		})
+	}
+}
