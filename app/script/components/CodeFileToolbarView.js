@@ -1,7 +1,6 @@
 var React = require("react");
 var RepoRevSwitcher = require("./RepoRevSwitcher");
 var RepoBuildIndicator = require("./RepoBuildIndicator");
-var router = require("../routing/router");
 var classNames = require("classnames");
 
 var CodeFileToolbarView = React.createClass({
@@ -70,18 +69,6 @@ var CodeFileToolbarView = React.createClass({
 			embedLink += `?StartLine=${snippet.start}&EndLine=${snippet.end}`;
 		}
 
-		var buildInfo = null;
-		if (this.props.buildInfo && this.props.buildInfo.CommitsBehind) {
-			var latestFileURL = router.fileURL(this.props.file.RepoRev.URI, this.props.latestCommit.ID, this.props.file.Path);
-			buildInfo = (<i className="build-info">
-				Code from {this.props.buildInfo.CommitsBehind} commits behind <a href={latestFileURL}>head</a> is shown
-			</i>);
-		} else if (this.props.numRefs) {
-			buildInfo = <i className="build-info">{this.props.numRefs} linked</i>;
-		} else {
-			buildInfo = <i className="build-info">No links</i>;
-		}
-
 		return (
 			<div className="code-file-toolbar">
 				<div className="file">
@@ -92,8 +79,6 @@ var CodeFileToolbarView = React.createClass({
 						Rev={rev.CommitID}
 						btnSize="btn-xs"
 						tooltipPosition="bottom" />
-
-					{buildInfo}
 				</div>
 
 				<div className="actions">

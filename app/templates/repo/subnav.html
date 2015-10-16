@@ -55,8 +55,8 @@
 
 				{{if or (repoPerms .Repo.Permissions).Admin (repoEnabled .RepoConfig)}}
 				<li class="{{if eq .CurrentRoute "repo.builds"}}active {{end}}navbar-right">
-										<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}" title="Builds" data-placement="bottom">
-												<i class="octicon octicon-database"></i><span class="txt">Builds</span>
+										<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}" title="Semantic code analysis and related features." data-placement="bottom">
+												<i class="octicon octicon-pulse"></i><span class="txt">Code Intelligence</span>
 					</a>
 				</li>
 				{{end}}
