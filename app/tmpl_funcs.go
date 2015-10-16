@@ -237,11 +237,10 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 
-	"repoEnabledFrames":          repoEnabledFrames,
-	"repoEnabledFrameChangesets": repoEnabledFrameChangesets,
-	"showSearchForm":             showSearchForm,
-	"fileSearchDisabled":         func() bool { return appconf.Flags.DisableSearch },
-	"disableCloneURL":            func() bool { return appconf.Flags.DisableCloneURL },
+	"repoEnabledFrames":  repoEnabledFrames,
+	"showSearchForm":     showSearchForm,
+	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
+	"disableCloneURL":    func() bool { return appconf.Flags.DisableCloneURL },
 
 	// Returns whether or not any srclib toolchains are installed.
 	"haveToolchain": func() bool {

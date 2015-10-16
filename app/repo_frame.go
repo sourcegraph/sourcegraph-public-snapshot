@@ -41,26 +41,6 @@ func repoEnabledFrames(repo *sourcegraph.Repo) map[string]platform.RepoFrame {
 	return platform.Frames(repo)
 }
 
-// TODO: Remove this once Changeset is a proper app, then repoEnabledFrames will cover this special case.
-func repoEnabledFrameChangesets(repo *sourcegraph.Repo) bool {
-	if appconf.Flags.DisableApps {
-		return false
-	}
-
-	// If the repo's canonical location is on another server, disallow all apps for now.
-	// TODO: There may still be some apps that can be enabled for non-canonical repos, provide a way for that to happen.
-	if repo.Mirror {
-		return false
-	}
-
-	// Non-git apps are not currently supported
-	if repo.VCS != "git" {
-		return false
-	}
-
-	return true
-}
-
 func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
 	if err != nil {
