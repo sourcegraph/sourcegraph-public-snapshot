@@ -24,7 +24,7 @@ import (
 
 	// Platform applications
 	_ "sourcegraph.com/sourcegraph/issues"
-	_ "src.sourcegraph.com/apps/changesets"
+	_ "src.sourcegraph.com/sourcegraph/platform/apps/changesets"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
 )

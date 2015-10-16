@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/apps/changesets/assets"
+	"src.sourcegraph.com/sourcegraph/platform/apps/changesets/assets"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
