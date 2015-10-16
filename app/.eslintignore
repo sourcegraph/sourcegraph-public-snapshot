@@ -1,0 +1,3 @@
+bower_components/jquery.hotkeys/**/*.js
+bower_components/google-code-prettify/**/*.js
+bower_components/jquery-pjax/**/*.js
