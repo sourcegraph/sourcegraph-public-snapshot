@@ -1,6 +1,7 @@
 package oauth2util
 
 import (
+	"log"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -92,10 +93,13 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 			return nil, err
 		}
 		actor = &auth.Actor{UID: int(authInfo.UID), Domain: authInfo.Domain, ClientID: authInfo.ClientID}
+		log.Printf("federated actor: %v", actor)
 	}
 
 	// Make future calls use this access token.
 	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tokStr}))
+
+	log.Printf("actor: %v", actor)
 
 	// Set actor in context.
 	if actor != nil {

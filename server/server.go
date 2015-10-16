@@ -32,7 +32,7 @@ func NewServer(svcs svc.Services, opts ...grpc.ServerOption) *grpc.Server {
 func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 	authConfig := &auth.Config{
 		AllowAnonymousReaders: authutil.ActiveFlags.AllowAnonymousReaders,
-		DebugLog:              false, /* TODO(sqs:cleanup) globalOpt.Verbose*/
+		DebugLog:              true, /* TODO(sqs:cleanup) globalOpt.Verbose*/
 	}
 
 	// Construct the inner services. The inner services are the
