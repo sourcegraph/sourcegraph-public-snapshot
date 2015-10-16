@@ -1,7 +1,6 @@
 var React = require("react");
 var RepoRevSwitcher = require("./RepoRevSwitcher");
 var RepoBuildIndicator = require("./RepoBuildIndicator");
-var router = require("../routing/router");
 var classNames = require("classnames");
 
 var CodeFileToolbarView = React.createClass({
