@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"runtime"
+	"strings"
 
 	"github.com/howeyc/gopass"
 	"golang.org/x/oauth2"
@@ -13,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/env"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
@@ -61,7 +64,7 @@ func readUserAuth() (userAuth, error) {
 	if Credentials.AuthFile == "/dev/null" {
 		return userAuth{}, nil
 	}
-	f, err := os.Open(os.ExpandEnv(Credentials.AuthFile))
+	f, err := os.Open(userAuthFileName())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -77,7 +80,7 @@ func readUserAuth() (userAuth, error) {
 
 // writeUserAuth writes ua to the userAuthFile.
 func writeUserAuth(a userAuth) error {
-	f, err := os.Create(os.ExpandEnv(Credentials.AuthFile))
+	f, err := os.Create(userAuthFileName())
 	if err != nil {
 		return err
 	}
@@ -91,6 +94,16 @@ func writeUserAuth(a userAuth) error {
 	}
 	_, err = f.Write(b)
 	return err
+}
+
+// Resolves user auth file name platform-independent way
+func userAuthFileName() string {
+	ret := Credentials.AuthFile
+	if runtime.GOOS == "windows" {
+		// on Windows there is no HOME
+		ret = strings.Replace(ret, "$HOME", env.CurrentUserHomeDir(), -1)
+	}
+	return os.ExpandEnv(ret)
 }
 
 func init() {
@@ -241,7 +254,7 @@ func (c *loginCmd) Execute(args []string) error {
 	if err := writeUserAuth(a); err != nil {
 		return err
 	}
-	log.Printf("# Credentials saved to %s.", os.ExpandEnv(Credentials.AuthFile))
+	log.Printf("# Credentials saved to %s.", userAuthFileName())
 	log.Printf("# Default endpoint set to %s.", endpointURL)
 	return nil
 }

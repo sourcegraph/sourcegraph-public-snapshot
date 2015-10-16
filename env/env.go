@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
+	"runtime"
 )
 
 var (
@@ -92,12 +94,31 @@ func GetWhitelistedEnvironment() []string {
 	return vars
 }
 
+// CurrentUserHomeDir tries to get the current user's home directory in a
+// cross-platform manner.
+func CurrentUserHomeDir() string {
+	user, err := user.Current()
+	if err == nil && user.HomeDir != "" {
+		return user.HomeDir
+	}
+
+	// from http://stackoverflow.com/questions/7922270/obtain-users-home-directory
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
+}
+
 func init() {
 	defaultEnvs := []struct {
 		Key     string
 		Default string
 	}{
-		{"SGPATH", filepath.Join(os.Getenv("HOME"), ".sourcegraph")},
+		{"SGPATH", filepath.Join(CurrentUserHomeDir(), ".sourcegraph")},
 		{"GIT_TERMINAL_PROMPT", "0"},
 	}
 	for _, defaultEnv := range defaultEnvs {
