@@ -47,7 +47,7 @@
   },
   "scripts": {
     "start": "./node_modules/.bin/webpack-dev-server --devtool inline-source-map",
-    "build": "NODE_ENV=production ./node_modules/.bin/webpack",
+    "build": "bash ./node_modules/.bin/build-webpack",
     "test": "find script -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel/register",
     "dep": "npm rebuild node-sass"
   }
