@@ -1519,16 +1519,16 @@ service Accounts {
 }
 
 message PasswordResetToken {
-  // token is the hard to guess token that allows a user to set a new password.
-  string token = 1;
+	// token is the hard to guess token that allows a user to set a new password.
+	string token = 1;
 }
 
 message NewPassword {
-  // password is the new password for the user who requested the password reset
-  // token.
-  string password = 1;
+	// password is the new password for the user who requested the password reset
+	// token.
+	string password = 1;
 
-  PasswordResetToken token = 2;
+	PasswordResetToken token = 2;
 }
 
 message NewAccount {
@@ -1538,8 +1538,8 @@ message NewAccount {
 	// Email is the primary email address for the new user account.
 	string email = 2;
 
-  // Password is the password for the new user account.
-  string password = 3;
+	// Password is the password for the new user account.
+	string password = 3;
 }
 
 // UsersService communicates with the users-related endpoints in the Sourcegraph
@@ -2034,7 +2034,7 @@ message DeltaListFilesOptions {
 	// contained in the diff, returning 3 versions for each hunk: Head
 	// revision, Base revision and Hunk body. For more information,
 	// see sourcegraph.Hunk.
-    bool tokenized = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool tokenized = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// MaxSize stores the maximum number of bytes that will be accepted for tokenizing
 	// the diff. If the size of the diff exceeds this value, the returned structure
@@ -2777,9 +2777,9 @@ message ServerConfig {
 	// IDKey is the server's identity key (ID key).
 	string id_key = 7 [(gogoproto.customname) = "IDKey"];
 
-    // AllowAnonymousReaders is whether anonymous (unauthenticated)
-    // users may perform "read" operations, such as viewing
-    // repositories.
+	// AllowAnonymousReaders is whether anonymous (unauthenticated)
+	// users may perform "read" operations, such as viewing
+	// repositories.
 	bool allow_anonymous_readers = 9;
 }
 
@@ -2993,7 +2993,7 @@ message UserEvent {
 }
 
 message UserEventList {
-	repeated UserEvent events = 1; 
+	repeated UserEvent events = 1;
 }
 
 // GraphUplink interfaces with the metric collectors.
