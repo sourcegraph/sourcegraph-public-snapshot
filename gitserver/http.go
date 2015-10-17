@@ -90,8 +90,6 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
-const bufSize = 15000 // bytes
-
 func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
