@@ -165,6 +165,8 @@ type ServeCmd struct {
 	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)"`
 	conf.ExternalEndpointsOpts
 
+	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
+
 	NoWorker          bool          `long:"no-worker" description:"do not start background worker"`
 	TestUI            bool          `long:"test-ui" description:"starts the UI test server which causes all UI endpoints to return mock data"`
 	GraphUplinkPeriod time.Duration `long:"graphuplink" default:"10m" description:"how often to communicate back to the mothership; if 0, then no periodic communication occurs"`
@@ -407,8 +409,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(mux.NewRouter())))
 
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
-	if v, _ := strconv.ParseBool(os.Getenv("SG_FORCE_HTTPS")); v {
-		mw = append(mw, forceHTTPSMiddleware)
+	if c.RedirectToHTTPS {
+		mw = append(mw, redirectToHTTPSMiddleware)
 	}
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_HSTS")); v {
 		mw = append(mw, strictTransportSecurityMiddleware)
@@ -674,7 +676,7 @@ func (c *ServeCmd) checkReachability() {
 	}
 }
 
-func forceHTTPSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func redirectToHTTPSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	isHTTPS := r.TLS != nil || r.Header.Get("x-forwarded-proto") == "https"
 	if !isHTTPS {
 		url := *r.URL
