@@ -6,10 +6,16 @@ var SearchResultsStore = {
 		query: null,
 		repo: null,
 		currentSearchType: globals.SearchType.TOKEN,
-		textSearch: null,
-		textSearchLoading: false,
-		tokenSearch: null,
-		tokenSearchLoading: false,
+		textSearch: {
+			data: null,
+			loading: false,
+			error: null,
+		},
+		tokenSearch: {
+			data: null,
+			loading: false,
+			error: null,
+		},
 	},
 
 	onChange: new Event("SearchResultsStoreChange"),
@@ -19,25 +25,33 @@ var SearchResultsStore = {
 		case globals.Actions.SEARCH_SUBMIT:
 			SearchResultsStore.state.query = payload.action.query;
 			SearchResultsStore.state.repo = payload.action.repo;
-			SearchResultsStore.state.tokenSearch = null;
-			SearchResultsStore.state.textSearch = null;
+			SearchResultsStore.state.tokenSearch.data = null;
+			SearchResultsStore.state.textSearch.data = null;
 			break;
 		case globals.Actions.SEARCH_SELECT_TYPE:
 			SearchResultsStore.state.currentSearchType = payload.action.searchType;
 			break;
 		case globals.Actions.SEARCH_TOKENS_SUBMIT:
-			SearchResultsStore.state.tokenSearchLoading = true;
+			SearchResultsStore.state.tokenSearch.loading = true;
 			break;
 		case globals.Actions.SEARCH_TOKENS_RECEIVED_RESULTS:
-			SearchResultsStore.state.tokenSearchLoading = false;
-			SearchResultsStore.state.tokenSearch = payload.action.data;
+			SearchResultsStore.state.tokenSearch.loading = false;
+			SearchResultsStore.state.tokenSearch.data = payload.action.data;
+			break;
+		case globals.Actions.SEARCH_TOKENS_FAILURE:
+			SearchResultsStore.state.tokenSearch.loading = false;
+			SearchResultsStore.state.tokenSearch.error = payload.action.data;
 			break;
 		case globals.Actions.SEARCH_TEXT_SUBMIT:
-			SearchResultsStore.state.textSearchLoading = true;
+			SearchResultsStore.state.textSearch.loading = true;
 			break;
 		case globals.Actions.SEARCH_TEXT_RECEIVED_RESULTS:
-			SearchResultsStore.state.textSearchLoading = false;
-			SearchResultsStore.state.textSearch = payload.action.data;
+			SearchResultsStore.state.textSearch.loading = false;
+			SearchResultsStore.state.textSearch.data = payload.action.data;
+			break;
+		case globals.Actions.SEARCH_TEXT_FAILURE:
+			SearchResultsStore.state.textSearch.loading = false;
+			SearchResultsStore.state.textSearch.error = payload.action.data;
 			break;
 		}
 		window.dispatchEvent(SearchResultsStore.onChange);

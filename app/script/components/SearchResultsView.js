@@ -32,6 +32,32 @@ var SearchResultsView = React.createClass({
 		SearchActions.selectSearchType(searchType);
 	},
 
+	_statusBadge(search) {
+		var loadingIcon = <i className="fa fa-circle-o-notch fa-spin"></i>;
+		if (search.loading) {
+			return loadingIcon;
+		} else if (search.data) {
+			return search.data.Total;
+		}
+		return 0;
+	},
+
+	_errorMessage(error, searchType) {
+		var message;
+		switch (error.statusText) {
+		case "timeout":
+			message = "This search took took too long to process.";
+			break;
+		default:
+			message = `There was an error returning ${searchType} search results.`;
+		}
+		return (
+			<div className="alert alert-warning">
+				<i className="fa fa-warning"></i>	{message}
+			</div>
+		);
+	},
+
 	_getCurrentSearchView() {
 		var sharedProps = {
 			query: this.state.query,
@@ -40,25 +66,33 @@ var SearchResultsView = React.createClass({
 
 		switch (this.state.currentSearchType) {
 		case globals.SearchType.TOKEN:
-			if (this.state.tokenSearch) {
+			var tokenSearch = this.state.tokenSearch;
+			if (tokenSearch.error) {
+				return this._errorMessage(tokenSearch.error, "definition");
+			}
+			if (tokenSearch.data) {
 				return (
 					<TokenSearchResultsView
 						{...sharedProps}
-						loading={this.state.tokenSearchLoading}
-						total={this.state.tokenSearch.Total}
-						results={this.state.tokenSearch.Results}
-						buildInfo={this.state.tokenSearch.BuildInfo} />
+						loading={tokenSearch.loading}
+						total={tokenSearch.data.Total}
+						results={tokenSearch.data.Results}
+						buildInfo={tokenSearch.data.BuildInfo} />
 				);
 			}
 			break;
 		case globals.SearchType.TEXT:
-			if (this.state.textSearch) {
+			var textSearch = this.state.textSearch;
+			if (textSearch.error) {
+				return this._errorMessage(textSearch.error, "text");
+			}
+			if (textSearch.data) {
 				return (
 					<TextSearchResultsView
 						{...sharedProps}
-						loading={this.state.textSearchLoading}
-						total={this.state.textSearch.Total}
-						results={this.state.textSearch.Results} />
+						loading={textSearch.loading}
+						total={textSearch.data.Total}
+						results={textSearch.data.Results} />
 				);
 			}
 			break;
@@ -70,19 +104,8 @@ var SearchResultsView = React.createClass({
 	render() {
 		var currentResultsView = this._getCurrentSearchView();
 
-		var loadingIcon = <i className="fa fa-circle-o-notch fa-spin"></i>;
-		var tokenSearchStatusBadge = null;
-		if (this.state.tokenSearchLoading) {
-			tokenSearchStatusBadge = loadingIcon;
-		} else if (this.state.tokenSearch) {
-			tokenSearchStatusBadge = this.state.tokenSearch.Total;
-		}
-		var textSearchStatusBadge = null;
-		if (this.state.textSearchLoading) {
-			textSearchStatusBadge = loadingIcon;
-		} else if (this.state.textSearch) {
-			textSearchStatusBadge = this.state.textSearch.Total;
-		}
+		var tokenSearchStatusBadge = this._statusBadge(this.state.tokenSearch);
+		var textSearchStatusBadge = this._statusBadge(this.state.textSearch);
 
 		return (
 			<div className="search-results row">

@@ -107,8 +107,10 @@ module.exports = {
 		SEARCH_SELECT_TYPE: null,
 		SEARCH_TOKENS_SUBMIT: null,
 		SEARCH_TOKENS_RECEIVED_RESULTS: null,
+		SEARCH_TOKENS_FAILURE: null,
 		SEARCH_TEXT_SUBMIT: null,
 		SEARCH_TEXT_RECEIVED_RESULTS: null,
+		SEARCH_TEXT_FAILURE: null,
 	}),
 
 	ChangesetStatus: keyMirror({
