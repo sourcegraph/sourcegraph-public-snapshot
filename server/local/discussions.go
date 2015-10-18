@@ -38,10 +38,11 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 	{
 		// Send Slack notification.
 		actor := notif.PersonFromContext(ctx)
+		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.DefKey.Repo), in.ID))
 		notif.Action(notif.ActionContext{
 			Person:      actor,
 			ActionType:  "created",
-			ObjectURL:   appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
+			ObjectURL:   permalink,
 			ObjectRepo:  in.DefKey.Repo,
 			ObjectType:  "discussion",
 			ObjectID:    in.ID,
@@ -57,14 +58,14 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 			msg := fmt.Sprintf(
 				"*%s* mentioned @%s in <%s|%s discussion #%d>: %s\n\n",
 				actor.Login, p.Login,
-				appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
+				permalink,
 				in.DefKey.Repo, in.ID, in.Title,
 			)
 			notif.Mention(p, notif.MentionContext{
 				Mentioner:    actor.Login,
 				MentionerURL: appURL(ctx, app_router.Rel.URLToUser(actor.Login)),
 				Where:        fmt.Sprintf("in a discussion %s/%d", in.DefKey, in.ID),
-				WhereURL:     appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
+				WhereURL:     permalink,
 				SlackMsg:     msg,
 			})
 		}
@@ -116,11 +117,12 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		if discussion.Author.UID != actor.UID {
 			recipients = append(recipients, notif.Person(ctx, sourcegraph.NewClientFromContext(ctx), &discussion.Author))
 		}
+		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.Comment.DefKey.Repo), discussion.ID))
 		notif.Action(notif.ActionContext{
 			Person:      actor,
 			Recipients:  recipients,
 			ActionType:  "commented on",
-			ObjectURL:   appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
+			ObjectURL:   permalink,
 			ObjectRepo:  in.Comment.DefKey.Repo,
 			ObjectType:  "discussion",
 			ObjectID:    discussion.ID,
@@ -136,14 +138,14 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 			msg := fmt.Sprintf(
 				"*%s* mentioned @%s in a comment on <%s|%s discussion #%d>: %s\n\n",
 				actor.Login, p.Login,
-				appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
+				permalink,
 				in.Comment.DefKey.Repo, discussion.ID, discussion.Title,
 			)
 			notif.Mention(p, notif.MentionContext{
 				Mentioner:    actor.Login,
 				MentionerURL: appURL(ctx, app_router.Rel.URLToUser(actor.Login)),
 				Where:        fmt.Sprintf("in a comment of discussion %s/%d", in.Comment.DefKey, discussion.ID),
-				WhereURL:     appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
+				WhereURL:     permalink,
 				SlackMsg:     msg,
 			})
 		}
