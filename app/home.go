@@ -45,41 +45,35 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	var template string
 	var (
 		users   []string
 		usersMu sync.Mutex
 	)
-	if len(repos.Repos) > 0 {
-		userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
-		if err != nil && grpc.Code(err) != codes.PermissionDenied {
+	userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
+	if err != nil && grpc.Code(err) != codes.PermissionDenied {
+		return err
+	}
+	if err == nil { // current user is admin of the instance
+		par := parallel.NewRun(10)
+		for _, perms_ := range userPerms.UserPermissions {
+			perms := perms_
+			par.Do(func() error {
+				user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
+				if err != nil {
+					return err
+				}
+				usersMu.Lock()
+				users = append(users, user.Login)
+				usersMu.Unlock()
+				return nil
+			})
+		}
+		if err := par.Wait(); err != nil {
 			return err
 		}
-		if err == nil { // current user is admin of the instance
-			par := parallel.NewRun(10)
-			for _, perms_ := range userPerms.UserPermissions {
-				perms := perms_
-				par.Do(func() error {
-					user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
-					if err != nil {
-						return err
-					}
-					usersMu.Lock()
-					users = append(users, user.Login)
-					usersMu.Unlock()
-					return nil
-				})
-			}
-			if err := par.Wait(); err != nil {
-				return err
-			}
-		}
-		template = "home/dashboard.html"
-	} else {
-		template = "home/new.html"
 	}
 
-	return tmpl.Exec(r, w, template, http.StatusOK, nil, &struct {
+	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, &struct {
 		Repos  []*sourcegraph.Repo
 		SGPath string
 		Users  []string

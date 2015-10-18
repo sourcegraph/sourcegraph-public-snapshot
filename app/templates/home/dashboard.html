@@ -13,8 +13,12 @@
 {{end}}
 <div class="row dashboard">
 	<div class="col-md-{{if .Users}}6{{else}}12{{end}}">
-		<h3>Repositories <button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button></h3>
-		<div class="collapse" id="addRepo">
+		<h3>Repositories
+			{{if .Repos}}
+				<button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button>
+			{{end}}
+		</h3>
+		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
 			<div class="well">
 				<p>
 					<strong>Create a repository</strong> with the
