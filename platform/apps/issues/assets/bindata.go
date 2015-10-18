@@ -87,7 +87,7 @@ func assetsBindataGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1443162336, 0)}
+	info := bindataFileInfo{name: "assets/bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1445130401, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -107,7 +107,7 @@ func assetsIssueHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/issue.html", size: 704, mode: os.FileMode(436), modTime: time.Unix(1443156724, 0)}
+	info := bindataFileInfo{name: "assets/issue.html", size: 704, mode: os.FileMode(436), modTime: time.Unix(1445129023, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -127,7 +127,7 @@ func assetsMainHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/main.html", size: 931, mode: os.FileMode(436), modTime: time.Unix(1443156724, 0)}
+	info := bindataFileInfo{name: "assets/main.html", size: 931, mode: os.FileMode(436), modTime: time.Unix(1445129023, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -147,7 +147,7 @@ func assetsReplyHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/reply.html", size: 388, mode: os.FileMode(436), modTime: time.Unix(1442798926, 0)}
+	info := bindataFileInfo{name: "assets/reply.html", size: 388, mode: os.FileMode(436), modTime: time.Unix(1445129023, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -167,7 +167,7 @@ func assetsReplyJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/reply.js", size: 1251, mode: os.FileMode(436), modTime: time.Unix(1443162326, 0)}
+	info := bindataFileInfo{name: "assets/reply.js", size: 1251, mode: os.FileMode(436), modTime: time.Unix(1445129023, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
