@@ -1,6 +1,7 @@
 package changesets
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/util/tempedit"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 
@@ -127,7 +129,7 @@ type changesetCreateCmd struct {
 	Repo  string `short:"r" long:"repo" description:"repository URI" required:"yes"`
 	Base  string `long:"base" description:"base branch"`
 	Head  string `long:"head" description:"head branch"`
-	Title string `short:"t" long:"title" description:"title" required:"yes"`
+	Title string `short:"t" long:"title" description:"title"`
 }
 
 func (c *changesetCreateCmd) Execute(args []string) error {
@@ -188,11 +190,17 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
+	title, description, err := newChangesetInEditor(c.Title)
+	if err != nil {
+		return err
+	}
+
 	changeset, err := sg.Changesets.Create(cliCtx, &sourcegraph.ChangesetCreateOp{
 		Repo: sourcegraph.RepoSpec{URI: c.Repo},
 		Changeset: &sourcegraph.Changeset{
-			Title:  c.Title,
-			Author: user.Spec(),
+			Title:       title,
+			Description: description,
+			Author:      user.Spec(),
 			DeltaSpec: &sourcegraph.DeltaSpec{
 				Base: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Base},
 				Head: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Head},
@@ -203,12 +211,50 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
-	url, err := url.Parse(conf.AppURL)
+	baseURL, err := url.Parse(conf.AppURL)
 	if err != nil {
 		return err
 	}
-	log.Printf("%s/%s/.changes/%d\n", url, repo.URI, changeset.ID)
+	relURL, err := urlToRepoChangeset(repo.URI, changeset.ID)
+	if err != nil {
+		return err
+	}
+	log.Println(baseURL.ResolveReference(&url.URL{Path: relURL.Path[1:]}))
 	return nil
+}
+
+func newChangesetInEditor(origTitle string) (title, description string, err error) {
+	contents := origTitle + `
+# Please enter the changeset title (in the first line) and description
+# (in the subsequent lines). Lines starting with '#' will be ignored,
+# and an empty message aborts the changeset.
+`
+
+	txt, err := tempedit.Edit([]byte(contents))
+	if err != nil {
+		return "", "", err
+	}
+
+	lines := bytes.Split(txt, []byte("\n"))
+	hasTitle := false
+	for _, line := range lines {
+		if bytes.HasPrefix(line, []byte("#")) {
+			continue
+		}
+		if !hasTitle {
+			title = string(bytes.TrimSpace(line))
+			hasTitle = true
+			continue
+		}
+		description += string(line) + "\n"
+	}
+	description = strings.TrimSpace(description)
+
+	if title == "" {
+		return "", "", errors.New("aborting changeset due to empty title")
+	}
+
+	return
 }
 
 type changesetUpdateCmdCommon struct {
@@ -225,9 +271,9 @@ type changesetUpdateCmd struct {
 
 func (c *changesetUpdateCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	cl := sourcegraph.NewClientFromContext(cliCtx)
+	sg := sourcegraph.NewClientFromContext(cliCtx)
 
-	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
 		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
 		ID:    c.Args.ID,
 		Title: c.Title,
@@ -244,9 +290,9 @@ type changesetCloseCmd struct{ changesetUpdateCmdCommon }
 
 func (c *changesetCloseCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	cl := sourcegraph.NewClientFromContext(cliCtx)
+	sg := sourcegraph.NewClientFromContext(cliCtx)
 
-	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
 		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
 		ID:    c.Args.ID,
 		Close: true,
