@@ -4,6 +4,8 @@ import (
 	"net/mail"
 	"regexp"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
@@ -23,10 +25,10 @@ func Mentions(ctx context.Context, md []byte) ([]*sourcegraph.Person, error) {
 		return []*sourcegraph.Person{}, nil
 	}
 	ppl := make([]*sourcegraph.Person, 0, len(indexes))
-	pplsvc := sourcegraph.NewClientFromContext(ctx).People
+	cl := sourcegraph.NewClientFromContext(ctx)
 	for _, idx := range indexes {
 		m := md[idx[0]+1 : idx[1]]
-		p, err := findPerson(ctx, pplsvc, m)
+		p, err := findPerson(ctx, cl, m)
 		if err != nil {
 			if grpc.Code(err) == codes.NotFound {
 				continue
@@ -40,7 +42,7 @@ func Mentions(ctx context.Context, md []byte) ([]*sourcegraph.Person, error) {
 
 // findPerson attempts to resolve the passed mention as an existing person or as
 // a valid email.
-func findPerson(ctx context.Context, ppl sourcegraph.PeopleClient, mention []byte) (*sourcegraph.Person, error) {
+func findPerson(ctx context.Context, cl *sourcegraph.Client, mention []byte) (*sourcegraph.Person, error) {
 	m := string(mention)
 	// is this an email address?
 	if _, err := mail.ParseAddress(m); err == nil {
@@ -49,9 +51,29 @@ func findPerson(ctx context.Context, ppl sourcegraph.PeopleClient, mention []byt
 		}, nil
 	}
 	// is this a person?
-	p, err := ppl.Get(ctx, &sourcegraph.PersonSpec{Login: m})
+	p, err := cl.People.Get(ctx, &sourcegraph.PersonSpec{Login: m})
 	if err != nil {
 		return nil, err
+	}
+	// We want the mail for the person if we can get it
+	if p.Email == "" {
+		// TODO This information could potentially be populated
+		// directly by the People service. For now we are manually
+		// populating to get Mentions working
+		emails, err := cl.Users.ListEmails(ctx, &sourcegraph.UserSpec{UID: p.UID})
+		if err != nil {
+			log15.Warn("Failed to fetch emails for user", "UID", p.UID)
+		} else {
+			for _, emailAddr := range emails.EmailAddrs {
+				if emailAddr.Blacklisted {
+					continue
+				}
+				p.Email = emailAddr.Email
+				if emailAddr.Primary {
+					break
+				}
+			}
+		}
 	}
 	return p, nil
 }
