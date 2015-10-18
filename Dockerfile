@@ -39,7 +39,7 @@ ENV GOPATH=/usr/local
 RUN go get github.com/shurcooL/vfsgen github.com/gogo/protobuf/protoc-gen-gogo sourcegraph.com/sourcegraph/prototools/cmd/protoc-gen-dump sourcegraph.com/sourcegraph/gopathexec github.com/sqs/go-selfupdate # OPTIMIZATION
 COPY . /usr/local/src/src.sourcegraph.com/sourcegraph
 WORKDIR /usr/local/src/src.sourcegraph.com/sourcegraph
-RUN make dist PACKAGEFLAGS="--os linux --skip-devdoc --ignore-dirty --ignore-branch"
+RUN make dist PACKAGEFLAGS="--os linux --skip-protoc --ignore-dirty --ignore-branch"
 
 # Build .deb package for src
 RUN make -C package linux/bin/src
