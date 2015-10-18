@@ -63,6 +63,18 @@ func printFailure(format string, a ...interface{}) {
 	log.Printf(red("▶ ")+format, a...)
 }
 
+// overrideEnv copies all of the current environment variables to cmd,
+// except for the named variable. If present, it overwrites its value
+// with the provided value; otherwise it sets to the provided value.
+func overrideEnv(cmd *exec.Cmd, name, value string) {
+	for _, s := range os.Environ() {
+		if !strings.HasPrefix(s, name+"=") {
+			cmd.Env = append(cmd.Env, s)
+		}
+	}
+	cmd.Env = append(cmd.Env, name+"="+value)
+}
+
 func green(s string) string {
 	return "\x1b[32m" + s + "\x1b[0m"
 }

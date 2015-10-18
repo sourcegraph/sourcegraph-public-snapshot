@@ -59,7 +59,14 @@ func (c *PackageCmd) Execute(args []string) error {
 		}
 	}
 
-	if err := execCmd(exec.Command("go", "generate", "./app/assets", "./app/templates", "./devdoc/...", "./platform/...")); err != nil {
+	gopath := strings.Join([]string{
+		filepath.Join(os.Getenv("PWD"), "Godeps", "_workspace"),
+		os.Getenv("GOPATH"),
+	}, string(filepath.ListSeparator))
+
+	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates", "./devdoc/...", "./platform/...")
+	overrideEnv(genCmd, "GOPATH", gopath)
+	if err := execCmd(genCmd); err != nil {
 		return err
 	}
 
@@ -67,11 +74,6 @@ func (c *PackageCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	gopath := strings.Join([]string{
-		filepath.Join(os.Getenv("PWD"), "Godeps", "_workspace"),
-		os.Getenv("GOPATH"),
-	}, string(filepath.ListSeparator))
 
 	bins := []string{}
 	par := parallel.NewRun(2)
