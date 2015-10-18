@@ -30,13 +30,13 @@ type Actor struct {
 	// access to.
 	Scope []string `json:",omitempty"`
 
-	// SiteAdmin is whether this actor is a site admin. Site admins
-	// can list all builds.
+	// SiteAdmin is whether this actor is a site admin. NOTE: It is
+	// not implemented.
 	//
 	// TODO(sqs): derive this from (sourcegraph.User).Admin or
 	// something like that. Currently this is never set to true (which
 	// is fine for now).
-	SiteAdmin bool `json:",omitempty"`
+	SiteAdmin_UNIMPLEMENTED bool `json:",omitempty"`
 }
 
 func (a Actor) String() string {
