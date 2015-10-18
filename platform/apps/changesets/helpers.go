@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
+	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
@@ -153,4 +155,12 @@ func notifyReview(ctx context.Context, user *sourcegraph.User, uri string, cs *s
 			SlackMsg:     msg,
 		})
 	}
+}
+
+func urlToRepoChangeset(repo string, changeset int64) (*url.URL, error) {
+	subURL, err := router.Get(routeView).URL("ID", fmt.Sprint(changeset))
+	if err != nil {
+		return nil, err
+	}
+	return approuter.Rel.URLToOrError(approuter.RepoAppFrame, "Repo", repo, "App", appID, "AppPath", subURL.Path)
 }

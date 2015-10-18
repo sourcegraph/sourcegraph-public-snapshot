@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/util/tempedit"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 
@@ -194,7 +195,7 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
-	changeset, err := cl.Changesets.Create(cliCtx, &sourcegraph.ChangesetCreateOp{
+	changeset, err := sg.Changesets.Create(cliCtx, &sourcegraph.ChangesetCreateOp{
 		Repo: sourcegraph.RepoSpec{URI: c.Repo},
 		Changeset: &sourcegraph.Changeset{
 			Title:       title,
@@ -210,59 +211,15 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
-	url, err := url.Parse(conf.AppURL)
+	baseURL, err := url.Parse(conf.AppURL)
 	if err != nil {
 		return err
 	}
-	log.Printf("%s/%s/.changes/%d\n", url, repo.URI, changeset.ID)
-	return nil
-}
-
-type changesetUpdateCmdCommon struct {
-	Repo string `short:"r" long:"repo" description:"repository URI" required:"yes"`
-	Args struct {
-		ID int64 `name:"ID" description:"changeset ID"`
-	} `positional-args:"yes" required:"yes" count:"1"`
-}
-
-type changesetUpdateCmd struct {
-	changesetUpdateCmdCommon
-	Title string `short:"t" long:"title" description:"new changeset title" required:"yes"`
-}
-
-func (c *changesetUpdateCmd) Execute(args []string) error {
-	cliCtx := putil.CLIContext()
-	cl := sourcegraph.NewClientFromContext(cliCtx)
-
-	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
-		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
-		ID:    c.Args.ID,
-		Title: c.Title,
-	})
+	relURL, err := urlToRepoChangeset(repo.URI, changeset.ID)
 	if err != nil {
 		return err
 	}
-
-	log.Printf("# updated changeset %s #%d", c.Repo, ev.After.ID)
-	return nil
-}
-
-type changesetCloseCmd struct{ changesetUpdateCmdCommon }
-
-func (c *changesetCloseCmd) Execute(args []string) error {
-	cliCtx := putil.CLIContext()
-	cl := sourcegraph.NewClientFromContext(cliCtx)
-
-	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
-		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
-		ID:    c.Args.ID,
-		Close: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	log.Printf("# closed changeset %s #%d", c.Repo, ev.After.ID)
+	log.Println(baseURL.ResolveReference(&url.URL{Path: relURL.Path[1:]}))
 	return nil
 }
 
@@ -273,7 +230,7 @@ func newChangesetInEditor(origTitle string) (title, description string, err erro
 # and an empty message aborts the changeset.
 `
 
-	txt, err := openTempFileInEditor([]byte(contents))
+	txt, err := tempedit.Edit([]byte(contents))
 	if err != nil {
 		return "", "", err
 	}
@@ -313,9 +270,10 @@ type changesetUpdateCmd struct {
 }
 
 func (c *changesetUpdateCmd) Execute(args []string) error {
-	cl := Client()
+	cliCtx := putil.CLIContext()
+	sg := sourcegraph.NewClientFromContext(cliCtx)
 
-	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
 		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
 		ID:    c.Args.ID,
 		Title: c.Title,
@@ -331,9 +289,10 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 type changesetCloseCmd struct{ changesetUpdateCmdCommon }
 
 func (c *changesetCloseCmd) Execute(args []string) error {
-	cl := Client()
+	cliCtx := putil.CLIContext()
+	sg := sourcegraph.NewClientFromContext(cliCtx)
 
-	ev, err := cl.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
 		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
 		ID:    c.Args.ID,
 		Close: true,

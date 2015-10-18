@@ -13,20 +13,26 @@ var (
 	schemaDecoder = schema.NewDecoder()
 )
 
+const (
+	appID = "changes"
+
+	routeView = "changesets.view"
+)
+
 func init() {
 	router.StrictSlash(true)
 	schemaDecoder.IgnoreUnknownKeys(true)
 
 	router.Path("/").Methods("GET").Handler(handlerWithError(serveList))
 	router.Path("/create").Methods("POST").Handler(handlerWithError(serveCreate))
-	router.Path(`/{ID:\d+}`).Methods("GET").Handler(handlerWithError(serveChangeset))
+	router.Path(`/{ID:\d+}`).Methods("GET").Handler(handlerWithError(serveChangeset)).Name(routeView)
 	router.Path(`/{ID:\d+}/files`).Methods("GET").Handler(handlerWithError(serveChangeset))
 	router.Path(`/{ID:\d+}/files/{Filter:.+}`).Methods("GET").Handler(handlerWithError(serveChangeset))
 	router.Path(`/{ID:\d+}/update`).Methods("POST").Handler(handlerWithError(serveUpdate))
 	router.Path(`/{ID:\d+}/submit-review`).Methods("POST").Handler(handlerWithError(serveSubmitReview))
 
 	platform.RegisterFrame(platform.RepoFrame{
-		ID:      "changes",
+		ID:      appID,
 		Title:   "Changes",
 		Icon:    "git-pull-request",
 		Handler: router,
