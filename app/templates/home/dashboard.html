@@ -17,8 +17,10 @@
 		<div class="collapse" id="addRepo">
 			<div class="well">
 				<p>
-					<strong>Create a repository</strong> with the <a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank"><code><strong>src</strong></code> CLI tool</a>:
-					</p>
+					<strong>Create a repository</strong> with the
+					{{if not .DisableExternalLinks}}<a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank">{{end}}
+						<code><strong>src</strong></code> CLI tool{{if not .DisableExternalLinks}}</a>{{end}}:
+				</p>
 				<pre>src --endpoint={{.AppURL}} repo create <em>NAME</em></pre>
 			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
 				<p>
@@ -42,10 +44,14 @@
 		<div class="collapse" id="addUser">
 			<div class="well">
 				<p>
-					<strong>Grant access</strong> to users with the <a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank"><code><strong>src</strong></code> CLI tool</a>:
+					<strong>Grant access</strong> to users with the
+					{{if not .DisableExternalLinks}}<a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank">{{end}}
+						<code><strong>src</strong></code> CLI tool{{if not .DisableExternalLinks}}</a>{{end}}:
 				</p>
 				<pre>src --endpoint={{.AppURL}} access grant <em>USER</em></pre>
-				<p>where <code><em>USER</em></code> is any username on <a href="{{.RootURL}}" target="_blank">{{.RootURL.Host}}</a>.
+				{{if .RootURL.String}}
+					<p>where <code><em>USER</em></code> is any username on <a href="{{.RootURL}}" target="_blank">{{.RootURL.Host}}</a>.
+				{{end}}
 			</div>
 		</div>
 		<div class="list-group">
