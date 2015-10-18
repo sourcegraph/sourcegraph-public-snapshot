@@ -52,7 +52,7 @@ dependencies:
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"
 
-    - if [ ! -d ~/protobuf ]; then wget https://github.com/google/protobuf/archive/v3.0.0-alpha-3.tar.gz && tar zxf v3.0.0-alpha-3.tar.gz && cd protobuf-3.0.0-alpha-3 && ./autogen.sh && ./configure && make -j2 install DESTDIR=$PWD/build/ && mv ./build/usr/local $HOME/protobuf; fi
+    - if [ ! -d ~/protobuf ]; then $REPO/dev/install_protobuf.sh $PWD/build/ && mv ./build/usr/local $HOME/protobuf; fi
     - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
     - if [ ! -d ~/daemonize ]; then mkdir ~/daemonize; package/linux/scripts/install_daemonize.sh ~/daemonize/; fi
 

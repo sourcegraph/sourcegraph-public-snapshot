@@ -9,9 +9,6 @@ RUN apt-get update -qq \
             npm \
     && ln -rs /usr/bin/nodejs /usr/bin/node
 
-# Install Protobuf v3.0.0-alpha-3, see .travis.yml for information on rebuilding.
-RUN curl -O https://s3-us-west-2.amazonaws.com/public-dev/protobuf-bin-v3.0.0-alpha-3.tar.gz
-RUN tar zxf protobuf-bin-v3.0.0-alpha-3.tar.gz -C /
 
 # Install Go
 RUN curl -Ls https://storage.googleapis.com/golang/go1.4.2.linux-amd64.tar.gz | tar -C /usr/local -xz
@@ -28,6 +25,10 @@ RUN mkdir -p $SGPATH/repos/github.com/gorilla/mux \
 ADD . /sg/src/src.sourcegraph.com/sourcegraph
 WORKDIR /sg/src/src.sourcegraph.com/sourcegraph
 RUN make dist PACKAGEFLAGS="--os linux" && mv release/snapshot/linux-amd64 $GOBIN/src
+# Install the protobuf compiler (required for building the binary)
+COPY dev/install_protobuf.sh /tmp/install_protobuf.sh
+RUN apt-get install -qy unzip autoconf libtool
+RUN /tmp/install_protobuf.sh /usr/local
 
 # Trust GitHub's SSH host key (for ssh cloning of repos during builds)
 RUN install -Dm 600 package/etc/known_hosts /root/.ssh/known_hosts \
