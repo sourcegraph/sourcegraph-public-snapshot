@@ -29,10 +29,6 @@ ADD . /sg/src/src.sourcegraph.com/sourcegraph
 WORKDIR /sg/src/src.sourcegraph.com/sourcegraph
 RUN make dist PACKAGEFLAGS="--os linux" && mv release/snapshot/linux-amd64 $GOBIN/src
 
-# Trust our internal CA
-RUN cp conf/ca.cert.pem /usr/local/share/ca-certificates/sourcegraph-ca.cert.crt \
-    && update-ca-certificates
-
 # Trust GitHub's SSH host key (for ssh cloning of repos during builds)
 RUN install -Dm 600 package/etc/known_hosts /root/.ssh/known_hosts \
     && chmod 700 /root/.ssh
