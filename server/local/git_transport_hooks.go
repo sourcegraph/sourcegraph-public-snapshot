@@ -68,8 +68,10 @@ func linearizePushHook(fn func(context.Context, *gitpb.ReceivePackOp, []githttp.
 	// is this high for safety.
 	ch := make(chan args, 30)
 	go func() {
-		a := <-ch
-		fn(a.ctx, a.op, a.events)
+		for {
+			a := <-ch
+			fn(a.ctx, a.op, a.events)
+		}
 	}()
 	return func(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
 		ch <- args{ctx, op, events}
@@ -79,7 +81,7 @@ func linearizePushHook(fn func(context.Context, *gitpb.ReceivePackOp, []githttp.
 func slackContributionsHook(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
 	userStr, err := getUserDisplayName(ctx)
 	if err != nil {
-		log.Printf("pushPushHook: error getting user: %s", err)
+		log.Printf("postPushHook: error getting user: %s", err)
 		return
 	}
 
