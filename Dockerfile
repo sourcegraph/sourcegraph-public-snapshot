@@ -57,7 +57,7 @@ RUN rm -rf /usr/local/src/src.sourcegraph.com
 USER sourcegraph
 ENV GOPATH=$HOME
 RUN src srclib toolchain install go
-#RUN src srclib toolchain install java # OPTIMIZATION
+RUN src srclib toolchain install java
 
 VOLUME ["/etc/sourcegraph", "/home/sourcegraph/.sourcegraph"]
 
