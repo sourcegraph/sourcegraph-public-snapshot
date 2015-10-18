@@ -85,12 +85,12 @@ deployment:
           pwd: $REPO
 
       # Push to gcloud docker registery
-      - cp $REPO/release/$(cat ~/VERSION)/linux-amd64 $REPO/docker/src
+      - cp $REPO/release/$(cat ~/VERSION)/linux-amd64 $REPO/deploy/sourcegraph.com/src
       - echo $GCLOUD_SERVICE_ACCOUNT | base64 --decode > gcloud-service-account.json
       - gcloud auth activate-service-account --key-file gcloud-service-account.json
       - gcloud config set project sourcegraph-dev
       - docker build -t us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 .:
-          pwd: $REPO/docker
+          pwd: $REPO/deploy/sourcegraph.com
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
