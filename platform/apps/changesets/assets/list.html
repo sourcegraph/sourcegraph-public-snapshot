@@ -1,0 +1,58 @@
+<div class="changeset-list">
+	<ul class="changeset-tabs nav nav-tabs">
+		<li class="{{if .Op.Open}}active{{end}}">
+			<a href="{{$.BaseURI}}"><span class="octicon octicon-git-pull-request"></span>Open</a>
+		</li>
+		<li class="{{if .Op.Closed}}active{{end}}">
+			<a href="{{$.BaseURI}}?closed=true"><span class="octicon octicon-x"></span>Closed</a>
+		</li>
+	</ul>
+
+	<a class="btn btn-sgblue compare-review" href="{{urlToCompare $.Ctx}}">
+		<span class="octicon octicon-git-compare"></span> Create a new changeset
+	</a>
+
+	{{$repo := .Repo.URI}}
+
+	<div class="changeset-list-tab-content">
+		{{if eq (len .List) 0}}
+			<div class="changeset-empty-list">No {{if .Op.Closed}}closed{{else}}open{{end}} changesets.</div>
+		{{else}}
+			<table>
+				<tbody>
+					{{range .List}}
+						<tr>
+							<td class="table-cell-id">
+								<div class="changeset-id">
+									<a href="{{urlToChangeset $.Ctx .ID}}">#{{.ID}}</a>
+								</div>
+							</td>
+							<td class="table-cell-title">
+								<div class="changeset-title">
+									<a href="{{urlToChangeset $.Ctx .ID}}">{{.Title}}</a>
+								</div>
+								<div class="changeset-spec">
+									to merge {{.DeltaSpec.Head.Rev}} into {{.DeltaSpec.Base.Rev}}
+								</div>
+								<div class="changeset-author">
+									by <a class="author-name" href="{{urlToUser .Author.Login}}">
+										{{if .Author}}{{.Author.Login}}{{end}}
+									</a>
+								</div>
+							</td>
+							<td class="table-cell-time">
+								<div class="changeset-time">
+									{{if .ClosedAt}}
+										{{if .Merged}}merged{{else}}closed{{end}} {{timeAgo .ClosedAt}}
+									{{else}}
+										opened {{timeAgo .CreatedAt}}
+									{{end}}
+								</div>
+							</td>
+						</tr>
+					{{end}}
+				</tbody>
+			</table>
+		{{end}}
+	</div>
+</div>

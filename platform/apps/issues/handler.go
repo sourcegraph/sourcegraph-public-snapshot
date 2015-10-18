@@ -9,10 +9,10 @@ import (
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/issues/assets"
 
 	"github.com/sourcegraph/mux"
 	netctx "golang.org/x/net/context"
+	"src.sourcegraph.com/sourcegraph/platform/apps/issues/assets"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 )

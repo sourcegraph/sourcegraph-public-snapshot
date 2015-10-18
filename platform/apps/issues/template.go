@@ -8,8 +8,8 @@ import (
 
 	netctx "golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/issues/assets"
-	"sourcegraph.com/sourcegraph/issues/markdown"
+	"src.sourcegraph.com/sourcegraph/platform/apps/issues/assets"
+	"src.sourcegraph.com/sourcegraph/platform/apps/issues/markdown"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 )
 

@@ -629,10 +629,6 @@
 			"Rev": "e70a5777eb6faea64984b5a075164356400e09b3"
 		},
 		{
-			"ImportPath": "sourcegraph.com/sourcegraph/issues",
-			"Rev": "75fc1b93c897c28a667d0c2b8e62c6b523a13a50"
-		},
-		{
 			"ImportPath": "sourcegraph.com/sourcegraph/makex",
 			"Rev": "c8cc99912b772f144ad2902ba210478fd9ac4169"
 		},
