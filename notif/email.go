@@ -76,6 +76,8 @@ func SendMandrillTemplateBlocking(template string, name string, email string, me
 	return mandrill.MessageSendTemplate(template, nil, gochimp.Message{
 		To:          []gochimp.Recipient{{Email: email, Name: name}},
 		MergeVars:   []gochimp.MergeVars{{Recipient: email, Vars: mergeVars}},
+		FromEmail:   "noreply@sourcegraph.com",
+		FromName:    "Sourcegraph",
 		TrackOpens:  true,
 		TrackClicks: true,
 	}, false)
