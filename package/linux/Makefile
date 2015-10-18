@@ -5,7 +5,7 @@ DIST=dist
 # Debian needs a version which starts with a digit
 METADATA_VERSION=$(subst snapshot,0.1,${VERSION})
 
-.PHONY: all install install-sysvinit install-upstart package baseimage-debs
+.PHONY: all install install-sysvinit install-upstart package
 
 all: ${DIST}/src-${VERSION}.rpm ${DIST}/src-${VERSION}.deb
 
@@ -63,6 +63,3 @@ package:
 		--depends git \
 		-C pkg \
 		.
-
-baseimage-debs:
-	cd baseimage-debs && make node_exporter
