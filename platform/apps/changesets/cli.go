@@ -1,6 +1,7 @@
 package changesets
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -127,7 +128,7 @@ type changesetCreateCmd struct {
 	Repo  string `short:"r" long:"repo" description:"repository URI" required:"yes"`
 	Base  string `long:"base" description:"base branch"`
 	Head  string `long:"head" description:"head branch"`
-	Title string `short:"t" long:"title" description:"title" required:"yes"`
+	Title string `short:"t" long:"title" description:"title"`
 }
 
 func (c *changesetCreateCmd) Execute(args []string) error {
@@ -188,11 +189,17 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
-	changeset, err := sg.Changesets.Create(cliCtx, &sourcegraph.ChangesetCreateOp{
+	title, description, err := newChangesetInEditor(c.Title)
+	if err != nil {
+		return err
+	}
+
+	changeset, err := cl.Changesets.Create(cliCtx, &sourcegraph.ChangesetCreateOp{
 		Repo: sourcegraph.RepoSpec{URI: c.Repo},
 		Changeset: &sourcegraph.Changeset{
-			Title:  c.Title,
-			Author: user.Spec(),
+			Title:       title,
+			Description: description,
+			Author:      user.Spec(),
 			DeltaSpec: &sourcegraph.DeltaSpec{
 				Base: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Base},
 				Head: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Head},
@@ -257,4 +264,38 @@ func (c *changesetCloseCmd) Execute(args []string) error {
 
 	log.Printf("# closed changeset %s #%d", c.Repo, ev.After.ID)
 	return nil
+}
+
+func newChangesetInEditor(origTitle string) (title, description string, err error) {
+	contents := origTitle + `
+# Please enter the changeset title (in the first line) and description
+# (in the subsequent lines). Lines starting with '#' will be ignored,
+# and an empty message aborts the changeset.
+`
+
+	txt, err := openTempFileInEditor([]byte(contents))
+	if err != nil {
+		return "", "", err
+	}
+
+	lines := bytes.Split(txt, []byte("\n"))
+	hasTitle := false
+	for _, line := range lines {
+		if bytes.HasPrefix(line, []byte("#")) {
+			continue
+		}
+		if !hasTitle {
+			title = string(bytes.TrimSpace(line))
+			hasTitle = true
+			continue
+		}
+		description += string(line) + "\n"
+	}
+	description = strings.TrimSpace(description)
+
+	if title == "" {
+		return "", "", errors.New("aborting changeset due to empty title")
+	}
+
+	return
 }
