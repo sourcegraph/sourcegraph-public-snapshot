@@ -15,13 +15,16 @@
 	<div class="col-md-{{if .Users}}6{{else}}12{{end}}">
 		<h3>Repositories <button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addRepo">
-			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
-				<div>
-					<p><b>Have private repositories on GitHub? <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">Import them.</a></b></p>
-				</div>
-			{{end}}
 			<div class="well">
-				<code>src --endpoint={{.AppURL}} repo create my/repo</code>
+				<p>
+					<strong>Create a repository</strong> with the <a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank"><code><strong>src</strong></code> CLI tool</a>:
+					</p>
+				<pre>src --endpoint={{.AppURL}} repo create <em>NAME</em></pre>
+			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
+				<p>
+					Or <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">import private repositories from GitHub</a>.
+				</p>
+			{{end}}
 			</div>
 		</div>
 		<div class="list-group repos">
@@ -38,7 +41,11 @@
 		<h3>Users <button class="btn btn-default" data-toggle="collapse" data-target="#addUser"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addUser">
 			<div class="well">
-				<code>src --endpoint={{.AppURL}} access grant USERNAME</code>
+				<p>
+					<strong>Grant access</strong> to users with the <a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank"><code><strong>src</strong></code> CLI tool</a>:
+				</p>
+				<pre>src --endpoint={{.AppURL}} access grant <em>USER</em></pre>
+				<p>where <code><em>USER</em></code> is any username on <a href="{{.RootURL}}" target="_blank">{{.RootURL.Host}}</a>.
 			</div>
 		</div>
 		<div class="list-group">

@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"net/url"
 	"os"
 
 	"code.google.com/p/rog-go/parallel"
@@ -9,6 +10,7 @@ import (
 	"sync"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -20,6 +22,15 @@ import (
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	cl := sourcegraph.NewClientFromContext(ctx)
+
+	conf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	rootURL, err := url.Parse(conf.FederationRootURL)
+	if err != nil {
+		return err
+	}
 
 	var listOpts sourcegraph.ListOptions
 	if err := schemautil.Decode(&listOpts, r.URL.Query()); err != nil {
@@ -72,10 +83,15 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		Repos  []*sourcegraph.Repo
 		SGPath string
 		Users  []string
+
+		RootURL *url.URL
+
 		tmpl.Common
 	}{
 		Repos:  repos.Repos,
 		SGPath: os.Getenv("SGPATH"),
 		Users:  users,
+
+		RootURL: rootURL,
 	})
 }
