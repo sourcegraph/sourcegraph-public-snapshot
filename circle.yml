@@ -105,3 +105,11 @@ deployment:
           pwd: $REPO/package/linux
       - sgtool -v release --skip-package --skip-dist-package --s3-dir continuous $(cat ~/VERSION):
           pwd: $REPO
+
+      # Push to Docker registry
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - docker build -t sourcegraph/sourcegraph:$CIRCLE_SHA1 .:
+          pwd: $REPO
+      - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
+      - docker tag sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
+      - docker push sourcegraph/sourcegraph:latest
