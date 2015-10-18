@@ -2,6 +2,7 @@ package issues
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -211,7 +212,12 @@ func passThrough(w http.ResponseWriter) {
 
 func serveAssets(w http.ResponseWriter, r *http.Request) error {
 	passThrough(w)
-	b, err := assets.Asset(r.URL.Path[1:])
+	f, err := assets.Assets.Open("/" + mux.Vars(r)["assetFile"])
+	if err != nil {
+		return err
+	}
+	b, err := ioutil.ReadAll(f)
+	f.Close()
 	if err != nil {
 		return err
 	}
@@ -243,7 +249,7 @@ func init() {
 	post.Handle("/{issueNum:[0-9]+}", handler(serveIssueReplyCreate))
 
 	router.Handle("/", handler(serveMainPage))
-	router.Handle("/assets/{.*}.js", handler(serveAssets))
+	router.Handle("/assets/{assetFile:.*}", handler(serveAssets))
 	router.Handle("/{issueNum:[0-9]+}", handler(serveIssue))
 	router.Handle("/{issueNum:[0-9]+}/{replyNum:[0-9]+}/raw", handler(serveRawReply))
 }

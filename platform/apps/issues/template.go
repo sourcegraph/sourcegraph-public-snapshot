@@ -51,13 +51,18 @@ func render(ctx netctx.Context, e Event) template.HTML {
 }
 
 func parse(tmpl string) *template.Template {
-	a, err := assets.Asset("assets/" + tmpl)
+	f, err := assets.Assets.Open("/" + tmpl)
+	if err != nil {
+		panic(err)
+	}
+	b, err := ioutil.ReadAll(f)
+	f.Close()
 	if err != nil {
 		panic(err)
 	}
 	t := template.New(tmpl)
 	t = t.Funcs(fmap)
-	t, err = t.Parse(string(a))
+	t, err = t.Parse(string(b))
 	if err != nil {
 		panic(err)
 	}
@@ -66,12 +71,17 @@ func parse(tmpl string) *template.Template {
 
 // Hack to avoid initialization cycles.
 func parseReply(tmpl string) *template.Template {
-	a, err := assets.Asset("assets/" + tmpl)
+	f, err := assets.Assets.Open("/" + tmpl)
+	if err != nil {
+		panic(err)
+	}
+	b, err := ioutil.ReadAll(f)
+	f.Close()
 	if err != nil {
 		panic(err)
 	}
 	t := template.New(tmpl)
-	t, err = t.Parse(string(a))
+	t, err = t.Parse(string(b))
 	if err != nil {
 		panic(err)
 	}

@@ -3,6 +3,7 @@ package changesets
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"text/template"
@@ -39,7 +40,12 @@ var funcMap = template.FuncMap{
 // executeTemplate executes the template name with the given data and writes it
 // to w.
 func executeTemplate(w http.ResponseWriter, r *http.Request, name string, data interface{}) error {
-	b, err := assets.Asset(name)
+	f, err := assets.Assets.Open("/" + name)
+	if err != nil {
+		return err
+	}
+	b, err := ioutil.ReadAll(f)
+	f.Close()
 	if err != nil {
 		return err
 	}
