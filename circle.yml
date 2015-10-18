@@ -11,6 +11,9 @@ machine:
     PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
     LD_LIBRARY_PATH: $HOME/protobuf/lib
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
+
+    # Don't block on `git diff` invocations of `less`.
+    GIT_PAGER: 
   node:
     version: 4.1.0
 
