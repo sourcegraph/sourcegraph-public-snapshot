@@ -38,9 +38,9 @@ func init() {
 	internal.Handlers[router.OAuth2ClientReceive] = serveOAuth2ClientReceive
 }
 
-// ServeOAuth2Initiate serves the welcome screen for oauth2 which will open
-// a popup to complete oauth on the root server.
-func ServeOauth2Initiate(w http.ResponseWriter, r *http.Request) error {
+// ServeOAuth2Initiate serves the welcome screen for OAuth2, which
+// will open a popup to complete OAuth2 on the root server.
+func ServeOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
@@ -84,7 +84,7 @@ func redirectToOAuth2Authorize(w http.ResponseWriter, r *http.Request) error {
 }
 
 func init() {
-	authutil.RedirectToOAuth2Initiate = ServeOauth2Initiate
+	authutil.RedirectToOAuth2Initiate = ServeOAuth2Initiate
 }
 
 // oauthAuthorizeClientState holds the state that the OAuth2 client
