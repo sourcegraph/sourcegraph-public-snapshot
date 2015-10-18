@@ -84,7 +84,7 @@ deployment:
       - make dist PACKAGEFLAGS=$(cat ~/VERSION):
           pwd: $REPO
 
-      # Push to gcloud docker registery
+      # Push to gcloud docker registry
       - cp $REPO/release/$(cat ~/VERSION)/linux-amd64 $REPO/deploy/sourcegraph.com/src
       - echo $GCLOUD_SERVICE_ACCOUNT | base64 --decode > gcloud-service-account.json
       - gcloud auth activate-service-account --key-file gcloud-service-account.json
