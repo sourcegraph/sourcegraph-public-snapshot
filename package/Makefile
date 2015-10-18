@@ -2,13 +2,10 @@ VERSION=snapshot
 LINUX_BIN=../release/${VERSION}/linux-amd64
 DIST_DIR:=$(shell pwd)/dist
 
-.PHONY: package clean test test_centos test_ubuntu package_dep baseimage_packages
+.PHONY: package clean test test_centos test_ubuntu package_dep 
 
 package: linux/bin/src package_dep
 	docker run -t --rm=true -v ${DIST_DIR}:/release/dist sourcegraph/pkg VERSION=${VERSION}
-
-baseimage_packages: package_dep
-	docker run -t --rm=true -v ${DIST_DIR}:/release/dist sourcegraph/pkg baseimage-debs
 
 package_dep:
 	docker build -t sourcegraph/pkg -f linux/Dockerfile linux
