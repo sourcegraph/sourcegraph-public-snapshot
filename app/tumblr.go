@@ -13,7 +13,6 @@ import (
 
 	"github.com/gorilla/schema"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/sourcegraph/httpcache"
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -138,15 +137,6 @@ type PostsOpts struct {
 	ListOptions
 }
 
-func tumblrHTTPClient() *http.Client {
-	return &http.Client{
-		Transport: &httpcache.Transport{
-			Cache:               &httputil.LocalAndRemoteCache,
-			MarkCachedResponses: true,
-		},
-	}
-}
-
 func (t *Tumblr) Posts(opt PostsOpts) (*PostsResponse, error) {
 	query := make(url.Values)
 	if opt.PerPage != 0 {
@@ -165,7 +155,7 @@ func (t *Tumblr) Posts(opt PostsOpts) (*PostsResponse, error) {
 	} else {
 		u = fmt.Sprintf("%s/v2/blog/%s/posts?%s", TumblrHost, t.Blog, url.Values(query).Encode())
 	}
-	resp, err := tumblrHTTPClient().Get(u)
+	resp, err := httputil.CachingClient.Get(u)
 	if err != nil {
 		return nil, err
 	}
