@@ -3,7 +3,7 @@ VERSION=snapshot
 INIT_FLAVOUR=sysvinit
 DIST=dist
 # Debian needs a version which starts with a digit
-METADATA_VERSION=$(subst snapshot,0.1,${VERSION})
+METADATA_VERSION=$(subst snapshot,0.0-snapshot,${VERSION})
 
 .PHONY: all install install-sysvinit install-upstart package
 

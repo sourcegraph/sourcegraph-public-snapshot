@@ -9,7 +9,8 @@
 Godeps/_workspace/pkg
 package/baseimage
 package/dist
-package/linux
+package/linux/bin
 package/release
 release/
+docs/
 Dockerfile
