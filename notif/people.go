@@ -3,6 +3,8 @@ package notif
 import (
 	"fmt"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
@@ -20,12 +22,16 @@ func Person(ctx context.Context, cl *sourcegraph.Client, u *sourcegraph.UserSpec
 	if p.Login == "" && cl.Users != nil {
 		user, err := cl.Users.Get(ctx, u)
 		if err != nil {
+			log15.Warn("notif.Person", "ignoring", err)
+		} else {
 			p.Login = user.Login
 		}
 	}
 	if p.FullName == "" && cl.People != nil {
 		person, err := cl.People.Get(ctx, &p.PersonSpec)
 		if err != nil {
+			log15.Warn("notif.Person", "ignoring", err)
+		} else {
 			p = person
 		}
 	}
