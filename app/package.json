@@ -24,6 +24,7 @@
     "keymirror": "0.1.1",
     "lintspaces": "0.3.2",
     "lintspaces-cli": "0.1.0",
+    "madge": "0.5.2",
     "mocha": "2.3.2",
     "raw-loader": "0.5.1",
     "react-addons-test-utils": "0.14.0",
