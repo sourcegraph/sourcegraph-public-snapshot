@@ -13,12 +13,12 @@ development environment. Here is what you need:
 - [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 
-If you are new to Go, you should also [set up your `GOPATH` and project workspace.]
+If you are new to Go, you should also [set up your `GOPATH` which contains all your projects.]
 (https://golang.org/doc/code.html)
 
 ## Get the code
 
-[Create an account](https://sourcegraph.com/join?return-to=) on sourcegraph.com.
+[Create an account](https://sourcegraph.com/join) on sourcegraph.com.
 
 Then, clone the `sourcegraph` repository into `$GOPATH/src/src.sourcegraph.com/sourcegraph`.
 When prompted for your git credentials, use your sourcegraph.com login.
@@ -56,13 +56,13 @@ To run all tests:
 make test
 ```
 
-To run some tests:
+To run tests within a directory (and recrusively its subdirectories):
 
 ```
 godep go test ./app/...
 ```
 
-To run a specific test:
+To run a specific package's tests:
 
 ```
 godep go test ./util/textutil
