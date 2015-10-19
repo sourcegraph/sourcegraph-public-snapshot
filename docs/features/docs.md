@@ -10,9 +10,9 @@ served inside Sourcegraph directly from the repository source code.
 If you're reading this, you're watching it in action!
 
 To create a static site for your repository, simply
-[follow these instructions](https://src.sourcegraph.com/sourcegraph/.tree/platform/apps/docs).
+[follow these instructions](https://src.sourcegraph.com/sourcegraph/.tree/platform/apps/docs/README.md).
 
-## GoDocs
+## godoc
 
 In addition embedding a static site engine, Sourcegraph can also run `godoc` on your
 Go source. To enable `godoc`, simply set the `--lang` option on any Go repository as follows:
