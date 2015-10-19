@@ -56,3 +56,10 @@
 		{{end}}
 	</div>
 </div>
+
+<div class="pagination-controls">
+	<ul class="pagination">
+		<li class="{{if not .PrevPageURL}}disabled{{end}}"><a href="{{.PrevPageURL}}">◀</a></li>
+		<li class="{{if not .NextPageURL}}disabled{{end}}"><a href="{{.NextPageURL}}">▶</a></li>
+	</ul>
+</div>

@@ -33,28 +33,59 @@ func serveList(w http.ResponseWriter, r *http.Request) error {
 	}
 	var q struct {
 		Closed bool `schema:"closed"`
+		Page   int  `schema:"page"`
 	}
 	schemaDecoder.Decode(&q, r.URL.Query())
+	if q.Page == 0 {
+		q.Page = 1
+	}
 
 	op := &sourcegraph.ChangesetListOp{
 		Repo:   repo.URI,
 		Closed: q.Closed,
 		Open:   !q.Closed,
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 10,
+			Page:    int32(q.Page),
+		},
 	}
 	list, err := sg.Changesets.List(ctx, op)
 	if err != nil {
 		return err
 	}
-	sort.Sort(changesetsByDate(list.Changesets))
+
+	// TODO(slimsag): This is hacky. Our storage backend should tell us if we have
+	// more, and should also offer different ordering modes (e.g. by-date,
+	// by-author, etc).
+	nextPageURL := ""
+	prevPageURL := ""
+
+	if op.ListOptions.Page > 1 {
+		query := r.URL.Query()
+		query.Set("page", strconv.FormatInt(int64(op.ListOptions.Page-1), 10))
+		prevPageURL = "?" + query.Encode()
+	}
+
+	op.ListOptions.Page++
+	nextList, err := sg.Changesets.List(ctx, op)
+	if err == nil && len(nextList.Changesets) > 0 {
+		query := r.URL.Query()
+		query.Set("page", strconv.FormatInt(int64(op.ListOptions.Page), 10))
+		nextPageURL = "?" + query.Encode()
+	}
+
 	return executeTemplate(w, r, "list.html", &struct {
 		tmplCommon
-		Repo sourcegraph.RepoRevSpec
-		Op   *sourcegraph.ChangesetListOp
-		List []*sourcegraph.Changeset
+		Repo                     sourcegraph.RepoRevSpec
+		Op                       *sourcegraph.ChangesetListOp
+		List                     []*sourcegraph.Changeset
+		NextPageURL, PrevPageURL string
 	}{
-		Op:   op,
-		Repo: repo,
-		List: list.Changesets,
+		Op:          op,
+		Repo:        repo,
+		List:        list.Changesets,
+		NextPageURL: nextPageURL,
+		PrevPageURL: prevPageURL,
 	})
 }
 
@@ -197,15 +228,3 @@ func (b byDate) Less(i, j int) bool {
 }
 
 func (b byDate) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
-
-type changesetsByDate []*sourcegraph.Changeset
-
-func (cs changesetsByDate) Len() int { return len(cs) }
-
-func (cs changesetsByDate) Less(i, j int) bool {
-	return cs[i].CreatedAt.Time().After(cs[j].CreatedAt.Time())
-}
-
-func (cs changesetsByDate) Swap(i, j int) {
-	cs[i], cs[j] = cs[j], cs[i]
-}
