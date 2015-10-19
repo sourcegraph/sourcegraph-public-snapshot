@@ -1,5 +1,6 @@
 import expect from "expect.js";
 import TestUtils from "react-addons-test-utils";
+import mockTimeout from "./mockTimeout";
 
 class ElementWrapper {
 	constructor(element) {
@@ -77,6 +78,8 @@ function toChildArray(children) {
 // Shallow render the given component. Does not use the DOM.
 export default function(instance, expected) {
 	let renderer = TestUtils.createRenderer();
-	renderer.render(instance);
+	mockTimeout(() => {
+		renderer.render(instance);
+	});
 	return new ElementWrapper(renderer.getRenderOutput());
 }

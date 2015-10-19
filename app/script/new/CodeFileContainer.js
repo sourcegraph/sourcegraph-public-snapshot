@@ -13,18 +13,20 @@ import "./DefBackend";
 
 class CodeFileContainer extends React.Component {
 	componentWillMount() {
-		this._requestData(this.props);
+		this._requestData();
 	}
 
 	componentWillReceiveProps(nextProps) {
-		this._requestData(nextProps);
+		this._requestData();
 	}
 
-	_requestData(props) {
-		Dispatcher.dispatch(new CodeActions.WantFile(props.repo, props.rev, props.tree));
-		if (props.selectedDef) {
-			Dispatcher.dispatch(new DefActions.WantDef(props.selectedDef));
-		}
+	_requestData() {
+		setTimeout(() => {
+			Dispatcher.dispatch(new CodeActions.WantFile(this.props.repo, this.props.rev, this.props.tree));
+			if (this.props.selectedDef) {
+				Dispatcher.dispatch(new DefActions.WantDef(this.props.selectedDef));
+			}
+		}, 0);
 	}
 
 	static getStores() {
@@ -44,7 +46,7 @@ class CodeFileContainer extends React.Component {
 		if (!file) {
 			return null;
 		}
-		let def = this.props.selectedDef && this.state.defs[this.props.selectedDef];
+		let def = this.props.selectedDef && this.state.defs.get(this.props.selectedDef);
 		return (
 			<div>
 				<CodeListing

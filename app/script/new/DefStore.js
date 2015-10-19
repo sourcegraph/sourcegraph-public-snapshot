@@ -6,14 +6,19 @@ import * as DefActions from "./DefActions";
 export class DefStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
-		this.defs = {};
+		this.defs = {
+			content: {},
+			get(url) {
+				return this.content[url];
+			},
+		};
 		this.highlightedDef = null;
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DefActions.DefFetched:
-			this.defs[action.url] = action.def;
+			this.defs.content[action.url] = action.def;
 			this.__emitChange();
 			break;
 

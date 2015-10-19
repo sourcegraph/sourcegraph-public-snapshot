@@ -10,7 +10,7 @@ const DefBackend = {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DefActions.WantDef:
-			let def = DefStore.defs[action.url];
+			let def = DefStore.defs.get(action.url);
 			if (def === undefined) {
 				DefBackend.xhr({
 					uri: `/ui${action.url}`,

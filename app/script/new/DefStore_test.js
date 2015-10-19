@@ -7,7 +7,7 @@ import * as DefActions from "./DefActions";
 describe("DefStore", () => {
 	it("should handle DefFetched", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("/someURL", "someData"));
-		expect(DefStore.defs["/someURL"]).to.be("someData");
+		expect(DefStore.defs.get("/someURL")).to.be("someData");
 	});
 
 	it("should handle HighlightDef", () => {
