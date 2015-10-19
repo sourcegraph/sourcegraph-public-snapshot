@@ -1,0 +1,14 @@
+{{define "Head"}}<title>Error - Sourcegraph</title>
+{{end}}
+
+{{define "Body"}}
+<div class="row">
+	<div class="col-md-offset-3 col-md-6">
+		<br>
+		<div class="alert alert-danger oauth-provider">
+			{{template "OAuth2Error" $}}
+			<div class="clearfix"></div>
+		</div>
+	</div>
+</div>
+{{end}}

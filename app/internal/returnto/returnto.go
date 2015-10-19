@@ -97,7 +97,7 @@ func BestGuess(r *http.Request) (string, error) {
 // returnTo. It modifies url.
 //
 // If returnTo itself has a "return-to" query param, it is removed.
-func SetOnURL(url *url.URL, returnTo string) {
+func SetOnURL(u *url.URL, returnTo string) {
 	if returnToURL, err := url.Parse(returnTo); err == nil {
 		// remove existing ?return-to querystring param
 		q := returnToURL.Query()
@@ -106,7 +106,7 @@ func SetOnURL(url *url.URL, returnTo string) {
 		returnTo = returnToURL.String()
 	}
 
-	q := url.Query()
+	q := u.Query()
 	q.Set(ParamName, returnTo)
-	url.RawQuery = q.Encode()
+	u.RawQuery = q.Encode()
 }

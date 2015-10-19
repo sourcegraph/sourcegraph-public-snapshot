@@ -9,9 +9,11 @@ import (
 	"net/url"
 	"time"
 
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
@@ -25,6 +27,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -38,9 +42,11 @@ func init() {
 	internal.Handlers[router.OAuth2ClientReceive] = serveOAuth2ClientReceive
 }
 
-// ServeOAuth2Initiate serves the welcome screen for OAuth2, which
-// will open a popup to complete OAuth2 on the root server.
-func ServeOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
+var renderedErrorPage = errors.New("checkOAuth2Config already rendered an error page") // sentinel error value
+
+// checkOAuth2Config shecks for some common problems that will cause
+// OAuth2 authorization to fail.
+func checkOAuth2Config(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
@@ -48,15 +54,112 @@ func ServeOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	u, err := url.Parse(conf.FederationRootURL)
+	rootURL, err := url.Parse(conf.FederationRootURL)
 	if err != nil {
 		return err
 	}
+
+	// Check that the server's AppURL scheme/host/port matches
+	// those of URL in the person's browser.
+	expected, err := url.Parse(conf.AppURL)
+	if err != nil {
+		return err
+	}
+	expected.Path = ""
+	actual := &url.URL{Host: r.Host}
+	if isHTTPS := r.TLS != nil || r.Header.Get("x-forwarded-proto") == "https"; isHTTPS {
+		actual.Scheme = "https"
+	} else {
+		actual.Scheme = "http"
+	}
+	if *expected != *actual {
+		log15.Warn("App URL & request URL scheme/host mismatch", "expected", expected.String(), "actual", actual.String(), "referrer", r.Referer())
+		err := tmpl.Exec(r, w, "oauth-client/app_url_mismatch.error.html", http.StatusConflict, nil, &struct {
+			RootHostname     string
+			Expected, Actual string
+			tmpl.Common
+		}{
+			RootHostname: rootURL.Host,
+			Expected:     expected.String(),
+			Actual:       actual.String(),
+		})
+		if err != nil {
+			return err
+		}
+		return renderedErrorPage
+	}
+
+	// Check that server's AppURL conforms to a registered OAuth2
+	// redirect URI.
+	regClient, err := getRegisteredClientForServer(ctx)
+	if err != nil && grpc.Code(err) != codes.NotFound {
+		return err
+	} else if err == nil {
+		oauth2Conf, err := oauth2client.Config(ctx)
+		if err != nil {
+			return err
+		}
+		if err := oauth2util.AllowRedirectURI(regClient.RedirectURIs, oauth2Conf.RedirectURL); err != nil {
+			log15.Warn("App URL & OAuth2 redirect URI mismatch", "registered", regClient.RedirectURIs, "actual", oauth2Conf.RedirectURL)
+			err := tmpl.Exec(r, w, "oauth-client/redirect_uri_mismatch.error.html", http.StatusInternalServerError, nil, &struct {
+				RootHostname string
+				RedirectURL  string
+				tmpl.Common
+			}{
+				RootHostname: rootURL.Host,
+				RedirectURL:  oauth2Conf.RedirectURL,
+			})
+			if err != nil {
+				return err
+			}
+			return renderedErrorPage
+		}
+	}
+
+	return nil
+}
+
+// getRegisteredClientForServer gets the mothership's registered
+// client entry for this server.
+var getRegisteredClientForServer = func(ctx context.Context) (*sourcegraph.RegisteredClient, error) {
+	info, err := discover.Site(ctx, fed.Config.RootURL().Host)
+	if err != nil {
+		return nil, err
+	}
+	ctx2, err := info.NewContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cl2 := sourcegraph.NewClientFromContext(ctx2)
+	return cl2.RegisteredClients.GetCurrent(ctx2, &pbtypes.Void{})
+}
+
+// ServeOAuth2Initiate serves the welcome screen for OAuth2, which
+// will open a popup to complete OAuth2 on the root server.
+func ServeOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
+	cl := handlerutil.APIClient(r)
+	ctx := httpctx.FromRequest(r)
+
+	if err := checkOAuth2Config(w, r); err == renderedErrorPage {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	conf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	rootURL, err := url.Parse(conf.FederationRootURL)
+	if err != nil {
+		return err
+	}
+
 	return tmpl.Exec(r, w, "oauth-client/initiate.html", http.StatusOK, nil, &struct {
 		RootHostname string
 		tmpl.Common
 	}{
-		RootHostname: u.Host,
+		RootHostname: rootURL.Host,
 	})
 }
 
@@ -64,6 +167,12 @@ func ServeOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 // (including a nonce state value, also stored in a cookie) and
 // redirects the client to that URL.
 func redirectToOAuth2Authorize(w http.ResponseWriter, r *http.Request) error {
+	if err := checkOAuth2Config(w, r); err == renderedErrorPage {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
 	returnTo, err := returnto.BestGuess(r)
 	if err != nil {
 		return err
