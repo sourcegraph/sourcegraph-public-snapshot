@@ -40,6 +40,7 @@ Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 
 .tmp/*.jar
 
+/app/artifacts
 /app/node_modules/node-sass/vendor
 /app/.sass-cache
 
