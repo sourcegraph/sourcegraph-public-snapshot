@@ -1,6 +1,6 @@
 import flux from "flux";
 
-import testOnly from "./testOnly";
+import testOnly from "./util/testOnly";
 
 class Dispatcher extends flux.Dispatcher {
 	dispatch(payload) {

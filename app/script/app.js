@@ -60,4 +60,4 @@ require("./TwitterButton");
 
 require("../style/web.scss");
 
-require("./new/actionLogger");
+require("./new/util/actionLogger");

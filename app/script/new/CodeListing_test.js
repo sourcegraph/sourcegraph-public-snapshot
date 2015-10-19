@@ -1,4 +1,4 @@
-import shallowRender from "./shallowRender";
+import shallowRender from "./util/shallowRender";
 
 import React from "react";
 
