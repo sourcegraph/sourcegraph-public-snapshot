@@ -1,7 +1,7 @@
 var $ = require("jquery");
 var globals = require("../globals");
 
-var SEARCH_TIMEOUT = 30 * 1000; // In milliseconds
+var SEARCH_TIMEOUT = 15 * 1000; // In milliseconds
 
 module.exports = {
 	fetchTokenResults(query, repoURI, page) {
