@@ -30,6 +30,10 @@
 			"Rev": "b05ba080e2aba78d8b03ae1fe01d7c1b7fecc734"
 		},
 		{
+			"ImportPath": "github.com/alexsaveliev/go-colorable-wrapper",
+			"Rev": "32a2486bdc0de89379a23673af82bd61f5c7c5cd"
+		},
+		{
 			"ImportPath": "github.com/BurntSushi/toml",
 			"Comment": "v0.1.0-21-g056c9bc",
 			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
@@ -613,15 +617,15 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/routevar",
-			"Rev": "6970f379c5bfe4b346e141049a8c5165ba8f8c03"
+			"Rev": "19e6a76dd4777f0196fc459f9f18a7f13b1a8a1a"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph",
-			"Rev": "6970f379c5bfe4b346e141049a8c5165ba8f8c03"
+			"Rev": "19e6a76dd4777f0196fc459f9f18a7f13b1a8a1a"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/spec",
-			"Rev": "6970f379c5bfe4b346e141049a8c5165ba8f8c03"
+			"Rev": "19e6a76dd4777f0196fc459f9f18a7f13b1a8a1a"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
@@ -653,8 +657,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-177-gea17d32",
-			"Rev": "ea17d32d23f7f545ec2d045db529d015fc44b4ae"
+			"Comment": "v0.5-c-178-gf111455",
+			"Rev": "f1114550dea9e7104c513b9c1310c3782c9bd469"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
