@@ -312,11 +312,11 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/filter",
-			"Rev": "30ae5985d3492b97a894a8543df78df5514618ab"
+			"Rev": "6294156d8d749033f1ca9dcc662e902116990d2d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/vfsutil",
-			"Rev": "30ae5985d3492b97a894a8543df78df5514618ab"
+			"Rev": "6294156d8d749033f1ca9dcc662e902116990d2d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/sanitized_anchor_name",
