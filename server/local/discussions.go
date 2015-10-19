@@ -112,8 +112,13 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		if err != nil {
 			return nil, err
 		}
+		var recipients []*sourcegraph.Person
+		if discussion.Author.UID != actor.UID {
+			recipients = append(recipients, notif.Person(ctx, sourcegraph.NewClientFromContext(ctx), &discussion.Author))
+		}
 		notif.Action(notif.ActionContext{
 			Person:      actor,
+			Recipients:  recipients,
 			ActionType:  "commented on",
 			ObjectURL:   appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
 			ObjectRepo:  in.Comment.DefKey.Repo,
