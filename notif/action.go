@@ -30,13 +30,14 @@ type ActionContext struct {
 	ObjectURL     string
 }
 
-// Message is a generic way to notify users about an event happening
+// Action is a generic way to notify users about an event happening. It just
+// calls each Action* function
 func Action(nctx ActionContext) {
-	sendSlackMessage(nctx)
-	sendEmailMessage(nctx)
+	ActionSlackMessage(nctx)
+	ActionEmailMessage(nctx)
 }
 
-func sendSlackMessage(nctx ActionContext) {
+func ActionSlackMessage(nctx ActionContext) {
 	msg, err := generateSlackMessage(nctx)
 	if err != nil {
 		log15.Error("Error generating slack message for action", "ActionContext", nctx)
@@ -45,7 +46,8 @@ func sendSlackMessage(nctx ActionContext) {
 	slack.PostMessage(slack.PostOpts{Msg: msg})
 }
 
-func sendEmailMessage(nctx ActionContext) {
+// ActionEmailMessage generates and sends an email
+func ActionEmailMessage(nctx ActionContext) {
 	msg, err := generateHTMLFragment(nctx)
 	if err != nil {
 		log15.Error("Error generating email message for action", "ActionContext", nctx)
