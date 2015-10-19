@@ -12,14 +12,14 @@ export class DefFetched {
 }
 
 export class SelectDef {
-	constructor(def) {
-		this.def = def;
+	constructor(url) {
+		this.url = url;
 	}
 }
 
 export class HighlightDef {
-	constructor(def) {
-		this.def = def;
+	constructor(url) {
+		this.url = url;
 	}
 }
 

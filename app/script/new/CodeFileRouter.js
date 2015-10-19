@@ -43,7 +43,7 @@ class CodeFileRouter extends React.Component {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DefActions.SelectDef:
-			this._navigate(null, {seldef: action.def || undefined}); // null becomes undefined
+			this._navigate(null, {seldef: action.url || undefined}); // null becomes undefined
 			break;
 
 		case DefActions.GoToDef:

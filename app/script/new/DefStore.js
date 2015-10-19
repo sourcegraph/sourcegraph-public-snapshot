@@ -18,7 +18,7 @@ export class DefStore extends Store {
 			break;
 
 		case DefActions.HighlightDef:
-			this.highlightedDef = action.def;
+			this.highlightedDef = action.url;
 			this.__emitChange();
 			break;
 
