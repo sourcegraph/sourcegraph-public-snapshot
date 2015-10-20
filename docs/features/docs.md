@@ -9,7 +9,7 @@ served inside Sourcegraph directly from the repository source code.
 
 If you're reading this, you're watching it in action!
 
-To create a static site for your repository, simply
+To create a static site for your repository,
 [follow these instructions](https://src.sourcegraph.com/sourcegraph/.tree/platform/apps/docs/README.md).
 
 ## godoc
@@ -21,5 +21,6 @@ Go source. To enable `godoc`, simply set the `--lang` option on any Go repositor
 src repo update my/repo --lang Go
 ```
 
-Then navigate your browser to `http://<your-sourcegraph-server>/my/repo/.godoc` to
-browse through generated package, function, and type documentation.
+Then open the repository's page in your browser and use the "godoc"
+navigation bar link to see godoc-generated package, function, and type
+documentation.
