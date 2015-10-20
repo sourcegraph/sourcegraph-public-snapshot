@@ -70,6 +70,9 @@ func (s *userKeys) LookupUser(_ context.Context, key sourcegraph.SSHPublicKey) (
 			return nil, err
 		}
 
+		// SECURITY,TODO: Consider using crypto/subtle for byte equality here? Is it needed here?
+		//                Is it sufficient (ioutil.ReadFile above is not constant time, nor is number of files in dir,
+		//                and maybe not sha1 calculation in hashDirForKey).
 		if bytes.Equal(b, key.Key) {
 			uid, err := strconv.ParseInt(fi.Name(), 10, 32)
 			if err != nil {
