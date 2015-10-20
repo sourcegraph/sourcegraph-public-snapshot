@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"log"
 	"os"
@@ -111,7 +112,7 @@ func (s *Authorizations) MarkExchanged(ctx context.Context, code *sourcegraph.Au
 	// Find the code.
 	var dbCode *authCode
 	for _, c := range codes {
-		if c.Code == code.Code && c.RedirectURI == code.RedirectURI && c.ClientID == clientID && !c.expired() {
+		if subtle.ConstantTimeCompare([]byte(c.Code), []byte(code.Code)) == 1 && c.RedirectURI == code.RedirectURI && c.ClientID == clientID && !c.expired() {
 			dbCode = c
 			break
 		}

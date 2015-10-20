@@ -1,6 +1,7 @@
 package local
 
 import (
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"math"
@@ -196,7 +197,7 @@ func (s *auth) authenticateBearerJWT(ctx context.Context, rawTok *sourcegraph.Be
 	// https://tools.ietf.org/html/draft-ietf-oauth-jwt-bearer-12#section-3.
 	aud, _ := tok.Claims["aud"].(string)
 	tokURL := conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.OAuth2ServerToken))
-	if aud != tokURL.String() {
+	if subtle.ConstantTimeCompare([]byte(aud), []byte(tokURL.String())) != 1 {
 		return nil, grpc.Errorf(codes.PermissionDenied, "bearer JWT aud claim mismatch (JWT %q, server %q)", aud, tokURL)
 	}
 
