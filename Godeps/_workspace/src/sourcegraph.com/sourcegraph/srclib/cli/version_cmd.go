@@ -1,8 +1,9 @@
 package cli
 
 import (
-	"fmt"
 	"log"
+
+	"github.com/alexsaveliev/go-colorable-wrapper"
 )
 
 // Version of srclib.
@@ -25,6 +26,6 @@ func init() {
 type versionCmd struct{}
 
 func (v *versionCmd) Execute(_ []string) error {
-	fmt.Println(Version)
+	colorable.Println(Version)
 	return nil
 }

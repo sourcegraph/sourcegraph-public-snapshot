@@ -52,11 +52,11 @@ type GraphUnitRule struct {
 }
 
 func (r *GraphUnitRule) Target() string {
-	return filepath.Join(r.dataDir, plan.SourceUnitDataFilename(&graph.Output{}, r.Unit))
+	return filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename(&graph.Output{}, r.Unit)))
 }
 
 func (r *GraphUnitRule) Prereqs() []string {
-	ps := []string{filepath.Join(r.dataDir, plan.SourceUnitDataFilename(unit.SourceUnit{}, r.Unit))}
+	ps := []string{filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename(unit.SourceUnit{}, r.Unit)))}
 	ps = append(ps, r.Unit.Files...)
 	return ps
 }

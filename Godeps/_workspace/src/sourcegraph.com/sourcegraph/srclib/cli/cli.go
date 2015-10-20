@@ -3,6 +3,8 @@ package cli
 import (
 	"log"
 
+	"github.com/alexsaveliev/go-colorable-wrapper"
+
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/srclib"
 )
@@ -22,6 +24,7 @@ func init() {
 func Main() error {
 	log.SetFlags(0)
 	log.SetPrefix("")
+	log.SetOutput(colorable.Stderr)
 
 	_, err := CLI.Parse()
 	return err

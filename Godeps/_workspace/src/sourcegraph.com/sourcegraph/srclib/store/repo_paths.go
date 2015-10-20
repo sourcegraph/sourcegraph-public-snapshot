@@ -1,6 +1,7 @@
 package store
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/kr/fs"
@@ -40,7 +41,7 @@ type defaultRepoPaths struct{}
 
 // RepoToPath implements RepoPaths.
 func (defaultRepoPaths) RepoToPath(repo string) []string {
-	p := strings.Split(repo, "/")
+	p := strings.Split(filepath.ToSlash(repo), "/")
 	p = append(p, SrclibStoreDir)
 	return p
 }
@@ -62,9 +63,7 @@ func (defaultRepoPaths) ListRepoPaths(vfs rwvfs.WalkableFileSystem, after string
 		if w.Path() >= after && fi.Mode().IsDir() {
 			if fi.Name() == SrclibStoreDir {
 				w.SkipDir()
-				// NOTE: This assumes that the vfs's path
-				// separator is "/", which is not true in general.
-				paths = append(paths, strings.Split(w.Path(), "/"))
+				paths = append(paths, strings.Split(filepath.ToSlash(w.Path()), "/"))
 				if max != 0 && len(paths) >= max {
 					break
 				}

@@ -1,3 +1,18 @@
+ifndef GOBIN
+	ifeq ($(OS),Windows_NT)
+		GOBIN := $(shell cmd /C "echo %GOPATH%| cut -d';' -f1")
+		GOBIN := $(subst \,/,$(GOBIN))/bin
+	else
+        GOBIN := $(shell echo $$GOPATH | cut -d':' -f1 )/bin
+	endif
+endif
+
+ifeq ($(OS),Windows_NT)
+	EXE := srclib.exe
+else
+	EXE := srclib
+endif
+
 MAKEFLAGS+=--no-print-directory
 
 .PHONY: default install srclib release upload-release check-release install-all-toolchains test-all-toolchains
@@ -6,9 +21,9 @@ default: install
 
 install: srclib
 
-srclib: ${GOBIN}/srclib
+srclib: ${GOBIN}/${EXE}
 
-${GOBIN}/srclib: $(shell find . -type f -and -name '*.go')
+${GOBIN}/${EXE}: $(shell /usr/bin/find . -type f -and -name '*.go')
 	go install ./cmd/srclib
 
 release: upload-release check-release

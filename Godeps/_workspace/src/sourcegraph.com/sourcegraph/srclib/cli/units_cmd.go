@@ -1,11 +1,12 @@
 package cli
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
 
 	"strings"
+
+	"github.com/alexsaveliev/go-colorable-wrapper"
 
 	"sourcegraph.com/sourcegraph/srclib/config"
 	"sourcegraph.com/sourcegraph/srclib/scan"
@@ -138,7 +139,7 @@ func (c *UnitsCmd) Execute(args []string) error {
 		PrintJSON(cfg.SourceUnits, "")
 	} else {
 		for _, u := range cfg.SourceUnits {
-			fmt.Printf("%-50s  %s\n", u.Name, u.Type)
+			colorable.Printf("%-50s  %s\n", u.Name, u.Type)
 		}
 	}
 

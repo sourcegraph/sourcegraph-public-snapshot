@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alexsaveliev/go-colorable-wrapper"
 	"github.com/kr/fs"
+
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
@@ -480,7 +482,7 @@ OuterLoop:
 				log.Printf("Error opening source file to show surrounding source: %s.", err)
 			}
 		}
-		fmt.Println(`{}`)
+		colorable.Println(`{}`)
 		return nil
 	}
 
@@ -515,7 +517,7 @@ OuterLoop:
 		}
 		if resp.Def != nil {
 			// If Def is in the current Repo, transform that path to be an absolute path
-			resp.Def.File = filepath.Join(context.repo.RootDir, resp.Def.File)
+			resp.Def.File = filepath.ToSlash(filepath.Join(context.repo.RootDir, resp.Def.File))
 		}
 		if resp.Def == nil && GlobalOpt.Verbose {
 			log.Printf("No definition found with path %q in unit %q type %q.", ref.DefPath, ref.DefUnit, ref.DefUnitType)

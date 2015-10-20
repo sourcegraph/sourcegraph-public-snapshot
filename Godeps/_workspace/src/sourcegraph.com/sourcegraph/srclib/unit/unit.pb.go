@@ -27,12 +27,12 @@ var _ = proto.Marshal
 // (either in cross-source-unit analysis, such as cross-reference
 // resolution, or in after-the-fact DB/API queries).
 type RepoSourceUnit struct {
-	Repo     string `protobuf:"bytes,1,opt,name=repo,proto3" json:",omitempty"`
-	CommitID string `protobuf:"bytes,2,opt,name=commit_id,proto3" json:",omitempty"`
-	UnitType string `protobuf:"bytes,3,opt,name=unit_type,proto3" json:",omitempty"`
-	Unit     string `protobuf:"bytes,4,opt,name=unit,proto3" json:",omitempty"`
+	Repo     string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
+	CommitID string `protobuf:"bytes,2,opt,name=commit_id,proto3" json:"commit_id,omitempty"`
+	UnitType string `protobuf:"bytes,3,opt,name=unit_type,proto3" json:"unit_type,omitempty"`
+	Unit     string `protobuf:"bytes,4,opt,name=unit,proto3" json:"unit,omitempty"`
 	// Data is the JSON of the underlying SourceUnit.
-	Data []byte `protobuf:"bytes,5,opt,name=data,proto3" json:",omitempty"`
+	Data []byte `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (m *RepoSourceUnit) Reset()         { *m = RepoSourceUnit{} }

@@ -1,4 +1,4 @@
-# srclib [![Build Status](https://travis-ci.org/sourcegraph/srclib.png?branch=master)](https://travis-ci.org/sourcegraph/srclib)
+# srclib [![Build Status](https://travis-ci.org/sourcegraph/srclib.png?branch=master)](https://travis-ci.org/sourcegraph/srclib) 
 
 *Note: srclib is alpha.
 [Post an issue](https://github.com/sourcegraph/srclib/issues) if you have any

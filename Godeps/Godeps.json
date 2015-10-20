@@ -16,6 +16,11 @@
 			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
 		},
 		{
+			"ImportPath": "code.google.com/p/go.crypto/ssh/terminal",
+			"Comment": "null-236",
+			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
+		},
+		{
 			"ImportPath": "code.google.com/p/rog-go/parallel",
 			"Comment": "null-250",
 			"Rev": "e7ca3a2567b8ad482fef7b1aa1a258aa00c82772"
@@ -48,16 +53,16 @@
 			"Rev": "a2ace32dbd4787714f87adb14a8aa369142efac5"
 		},
 		{
+			"ImportPath": "github.com/alexsaveliev/go-colorable-wrapper",
+			"Rev": "32a2486bdc0de89379a23673af82bd61f5c7c5cd"
+		},
+		{
 			"ImportPath": "github.com/andybalholm/cascadia",
 			"Rev": "54abbbf07a45a3ef346ebe903e0715d9a3c19352"
 		},
 		{
 			"ImportPath": "github.com/araddon/gou",
 			"Rev": "0c2ab7394d785afff14c983fedce4be70ccc431f"
-		},
-		{
-			"ImportPath": "github.com/aybabtme/color",
-			"Rev": "0db0bdb3cc7ff8ddff622052366e17f0d506b0ef"
 		},
 		{
 			"ImportPath": "github.com/beorn7/perks/quantile",
@@ -235,10 +240,6 @@
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
 			"Rev": "d67e0b7d1797975196499f79bcc322c08b9f218b"
-		},
-		{
-			"ImportPath": "github.com/mattn/go-isatty",
-			"Rev": "7fcbc72f853b92b5720db4a6b8482be612daef24"
 		},
 		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
@@ -658,8 +659,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-167-g366f46b",
-			"Rev": "366f46b1857d2e34a762f682866244f8e318946d"
+			"Comment": "v0.5-c-177-gea17d32",
+			"Rev": "ea17d32d23f7f545ec2d045db529d015fc44b4ae"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",

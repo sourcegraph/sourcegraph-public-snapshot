@@ -137,12 +137,13 @@ func (c *ConfigCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer func(f io.WriteCloser) {
+			if err := f.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}(f)
 		if err := json.NewEncoder(f).Encode(u); err != nil {
 			return err
-		}
-		if err := f.Close(); err != nil {
-			log.Fatal(err)
 		}
 	}
 
@@ -237,11 +238,6 @@ WORKDIR /src
 		dir, err := filepath.Abs(dir)
 		if err != nil {
 			return err
-		}
-
-		// HACK: make the files writable by the docker user
-		if err := exec.Command("chmod", "-R", "777", dir).Run(); err != nil {
-			return fmt.Errorf("chmod -R 777 dir failed: %s", err)
 		}
 
 		for _, cmdStr := range cmds {
