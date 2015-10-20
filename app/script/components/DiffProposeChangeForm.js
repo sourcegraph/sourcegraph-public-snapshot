@@ -32,8 +32,10 @@ var ProposeChangeForm = React.createClass({
 				<MarkdownTextarea ref="description" placeholder="Enter a description..." />
 				<div className="actions">
 					{this.props.changesetLoading ? <span>Loading...</span> : null}
-					<a className="btn btn-success pull-right" onClick={this._createChangeset}>Submit</a>
-					<a className="btn pull-right" onClick={this.props.onCancel}>Cancel</a>
+					<div className="pull-right">
+						<a className="btn btn-success" onClick={this._createChangeset} tabIndex="0">Submit</a>
+						<a className="btn" onClick={this.props.onCancel} tabIndex="0">Cancel</a>
+					</div>
 				</div>
 			</div>
 		);
