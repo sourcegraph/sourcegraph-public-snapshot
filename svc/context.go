@@ -45,6 +45,7 @@ const (
 	_ReposKey               contextKey = iota
 	_SearchKey              contextKey = iota
 	_UnitsKey               contextKey = iota
+	_UserKeysKey            contextKey = iota
 	_UsersKey               contextKey = iota
 )
 
@@ -73,6 +74,7 @@ type Services struct {
 	Repos               sourcegraph.ReposServer
 	Search              sourcegraph.SearchServer
 	Units               sourcegraph.UnitsServer
+	UserKeys            sourcegraph.UserKeysServer
 	Users               sourcegraph.UsersServer
 }
 
@@ -169,6 +171,10 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Units != nil {
 		sourcegraph.RegisterUnitsServer(s, svcs.Units)
+	}
+
+	if svcs.UserKeys != nil {
+		sourcegraph.RegisterUserKeysServer(s, svcs.UserKeys)
 	}
 
 	if svcs.Users != nil {
@@ -270,6 +276,10 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Units != nil {
 		ctx = WithUnits(ctx, s.Units)
+	}
+
+	if s.UserKeys != nil {
+		ctx = WithUserKeys(ctx, s.UserKeys)
 	}
 
 	if s.Users != nil {
@@ -802,6 +812,29 @@ func Units(ctx context.Context) sourcegraph.UnitsServer {
 // UnitsOrNil returns the context's Units service if present, or else nil.
 func UnitsOrNil(ctx context.Context) sourcegraph.UnitsServer {
 	s, ok := ctx.Value(_UnitsKey).(sourcegraph.UnitsServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithUserKeys returns a copy of parent that uses the given UserKeys service.
+func WithUserKeys(ctx context.Context, s sourcegraph.UserKeysServer) context.Context {
+	return context.WithValue(ctx, _UserKeysKey, s)
+}
+
+// UserKeys gets the context's UserKeys service. If the service is not present, it panics.
+func UserKeys(ctx context.Context) sourcegraph.UserKeysServer {
+	s, ok := ctx.Value(_UserKeysKey).(sourcegraph.UserKeysServer)
+	if !ok || s == nil {
+		panic("no UserKeys set in context")
+	}
+	return s
+}
+
+// UserKeysOrNil returns the context's UserKeys service if present, or else nil.
+func UserKeysOrNil(ctx context.Context) sourcegraph.UserKeysServer {
+	s, ok := ctx.Value(_UserKeysKey).(sourcegraph.UserKeysServer)
 	if ok {
 		return s
 	}

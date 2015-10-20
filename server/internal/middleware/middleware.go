@@ -123,6 +123,10 @@ func Wrap(s svc.Services, c *auth.Config) svc.Services {
 		s.Units = wrappedUnits{s.Units, c}
 	}
 
+	if s.UserKeys != nil {
+		s.UserKeys = wrappedUserKeys{s.UserKeys, c}
+	}
+
 	if s.Users != nil {
 		s.Users = wrappedUsers{s.Users, c}
 	}
@@ -2516,6 +2520,68 @@ func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptio
 	var target sourcegraph.UnitsServer = s.u
 
 	res, err = target.List(ctx, param)
+	return
+
+}
+
+type wrappedUserKeys struct {
+	u sourcegraph.UserKeysServer
+	c *auth.Config
+}
+
+func (s wrappedUserKeys) AddKey(ctx context.Context, param *sourcegraph.SSHPublicKey) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "UserKeys", "AddKey", param)
+	defer func() {
+		trace.After(ctx, "UserKeys", "AddKey", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "UserKeys.AddKey")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.UserKeysServer = s.u
+
+	res, err = target.AddKey(ctx, param)
+	return
+
+}
+
+func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHPublicKey) (res *sourcegraph.UserSpec, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "UserKeys", "LookupUser", param)
+	defer func() {
+		trace.After(ctx, "UserKeys", "LookupUser", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "UserKeys.LookupUser")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.UserKeysServer = s.u
+
+	res, err = target.LookupUser(ctx, param)
+	return
+
+}
+
+func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "UserKeys", "DeleteKey", param)
+	defer func() {
+		trace.After(ctx, "UserKeys", "DeleteKey", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "UserKeys.DeleteKey")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.UserKeysServer = s.u
+
+	res, err = target.DeleteKey(ctx, param)
 	return
 
 }

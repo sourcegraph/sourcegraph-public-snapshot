@@ -43,6 +43,7 @@ var Services = svc.Services{
 	Repos:               remoteRepos{},
 	Search:              remoteSearch{},
 	Units:               remoteUnits{},
+	UserKeys:            remoteUserKeys{},
 	Users:               remoteUsers{},
 }
 
@@ -466,6 +467,20 @@ func (s remoteUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.R
 
 func (s remoteUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
 	return sourcegraph.NewClientFromContext(ctx).Units.List(ctx, v1)
+}
+
+type remoteUserKeys struct{ sourcegraph.UserKeysServer }
+
+func (s remoteUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.AddKey(ctx, v1)
+}
+
+func (s remoteUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.LookupUser(ctx, v1)
+}
+
+func (s remoteUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.DeleteKey(ctx, v1)
 }
 
 type remoteUsers struct{ sourcegraph.UsersServer }
