@@ -150,7 +150,7 @@ var Default = &Config{
 			// RedirectURL is not known at init time, so it's not set here.
 		},
 	},
-	Cache: &httputil.LocalAndRemoteCache,
+	Cache: httputil.Cache,
 }
 
 func NewTestClientServer() (client *github.Client, config *Config, mux *http.ServeMux) {

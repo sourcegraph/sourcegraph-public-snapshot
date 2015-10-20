@@ -267,14 +267,6 @@
 			"Rev": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587"
 		},
 		{
-			"ImportPath": "github.com/petar/GoLLRB/llrb",
-			"Rev": "53be0d36a84c2a886ca057d34b6aa4468df9ccb4"
-		},
-		{
-			"ImportPath": "github.com/peterbourgon/diskv",
-			"Rev": "72aa5da9f7d1125b480b83c6dc5ad09a1f04508c"
-		},
-		{
 			"ImportPath": "github.com/peterh/liner",
 			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
 		},
@@ -358,10 +350,6 @@
 		{
 			"ImportPath": "github.com/sourcegraph/httpcache",
 			"Rev": "0a093449159a63ea40c2c2644fe3f27e28250f10"
-		},
-		{
-			"ImportPath": "github.com/sourcegraph/loggedcache",
-			"Rev": "25233685938cd7fea9168c9e97cd9e317685d71f"
 		},
 		{
 			"ImportPath": "github.com/sourcegraph/mux",
@@ -634,10 +622,6 @@
 			"Rev": "c8cc99912b772f144ad2902ba210478fd9ac4169"
 		},
 		{
-			"ImportPath": "sourcegraph.com/sourcegraph/multicache",
-			"Rev": "733107cc54338f90685aed69935c18fcfb33e558"
-		},
-		{
 			"ImportPath": "sourcegraph.com/sourcegraph/prototools/tmpl",
 			"Rev": "94dbe95219e0e11be5ae0d144fe066fd4b7bfa78"
 		},
@@ -648,10 +632,6 @@
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/rwvfs",
 			"Rev": "530b5049ed637054f4a17cb28b5d9c7f05ba2608"
-		},
-		{
-			"ImportPath": "sourcegraph.com/sourcegraph/s3cache",
-			"Rev": "9c96e55f4e25063f2908f7ef3fa1803d79d4f7eb"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/s3vfs",

@@ -22,8 +22,6 @@ export APPDASH_PORT=7701
 export SG_SYSLOG_HOST=logs.papertrailapp.com:50140
 export SG_LOG_URL_FOR_TAG='https://papertrailapp.com/groups/591393/events?q=program:%s'
 
-export SG_S3_HTTP_CACHE_BUCKET=https://s3-us-west-2.amazonaws.com/sourcegraph-apiproxy
-
 export SG_STRICT_HOSTNAME=t
 export SG_FORCE_HTTPS=t
 export SG_ENABLE_HSTS=t
