@@ -39,11 +39,6 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 }
 
 func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
-	// TODO: Consider not requiring write access for lookup?
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "UserKeys.LookupUser"); err != nil {
-		return nil, err
-	}
-
 	store := store.UserKeysFromContextOrNil(ctx)
 	if store == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "UserKeys"}
