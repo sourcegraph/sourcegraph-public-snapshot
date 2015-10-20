@@ -10,10 +10,10 @@ Currently, repo federation is achieved by wrapping the server side gRPC endpoint
 
 If the repo path is available locally, the request is routed to the local Repos store. Otherwise, the first component of the repo path is assumed to be the remote host name and a discovery is initiated on that host to identify its gRPC endpoint. The request is then routed to that remote gRPC endpoint.
 
-`github.com` repos are special-cased: If the first repo path component is `github.com` and the repo is not available in the local repo store, the request is routed through the Sourcegraph root instance (`sourcegraph.com`). This allows local installations of Sourcegraph to seamlessly access all open-source code (build data, defs, refs, etc) without having to build external repositories locally. 
+`github.com` repos are special-cased: If the first repo path component is `github.com` and the repo is not available in the local repo store, the request is routed through the Sourcegraph root instance (`sourcegraph.com`). This allows local installations of Sourcegraph to seamlessly access all open-source code (build data, defs, refs, etc) without having to build external repositories locally.
 
 
-# Testing locally 
+# Testing locally
 
 Local testing of repo federation requires running two Sourcegraph instances, one as the federation root, and the other as a registered client of the root. You can follow the instructions in `OAuth2.md` (under 'Demo configuration') to set up the two instances and register the local instance as a client of the root instance (i.e. the mothership).
 
