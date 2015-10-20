@@ -2,9 +2,12 @@ package sgx
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 
+	"golang.org/x/crypto/ssh"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
@@ -21,7 +24,7 @@ func init() {
 
 	createC, err := usersGroup.AddCommand("create",
 		"create a user account",
-		"The `sgx users create` command creates a new user account.",
+		"Create a new user account.",
 		&usersCreateCmd{},
 	)
 	if err != nil {
@@ -31,7 +34,7 @@ func init() {
 
 	listC, err := usersGroup.AddCommand("list",
 		"list users",
-		"The `sgx user list` command lists users.",
+		"List users.",
 		&usersListCmd{},
 	)
 	if err != nil {
@@ -41,8 +44,25 @@ func init() {
 
 	_, err = usersGroup.AddCommand("get",
 		"get a user",
-		"The `sgx user get` command shows a user's information.",
+		"Show a user's information.",
 		&usersGetCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = usersGroup.AddCommand("add-key",
+		"add an ssh public key",
+		"Add an ssh public key for a user.",
+		&usersAddKeyCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = usersGroup.AddCommand("delete-key",
+		"delete the ssh public key",
+		"Delete the ssh public key for a user.",
+		&usersDeleteKeyCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -132,5 +152,69 @@ func (c *usersGetCmd) Execute(args []string) error {
 		fmt.Println(email)
 	}
 
+	return nil
+}
+
+type usersAddKeyCmd struct {
+	Args struct {
+		PublicKeyPath string `name:"PublicKeyPath" description:"path to ssh public key"`
+	} `positional-args:"yes" required:"yes"`
+}
+
+func (c *usersAddKeyCmd) Execute(args []string) error {
+	cl := Client()
+
+	// Get the SSH public key.
+	keyBytes, err := ioutil.ReadFile(c.Args.PublicKeyPath)
+	if err != nil {
+		return fmt.Errorf("failed to read public SSH key: %v", err)
+	}
+	key, _, _, _, err := ssh.ParseAuthorizedKey(keyBytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse public SSH key: %v\n\nAre you sure you provided a public SSH key?", err)
+	}
+
+	// Get user info for output message.
+	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return fmt.Errorf("Error verifying auth credentials: %s.", err)
+	}
+	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: authInfo.UID})
+	if err != nil {
+		return fmt.Errorf("Error getting user with UID %d: %s.", authInfo.UID, err)
+	}
+
+	// Add key.
+	_, err = cl.UserKeys.AddKey(cliCtx, &sourcegraph.SSHPublicKey{Key: key.Marshal()})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("# Added ssh public key %v for user %q", c.Args.PublicKeyPath, user.Login)
+	return nil
+}
+
+type usersDeleteKeyCmd struct{}
+
+func (c *usersDeleteKeyCmd) Execute(args []string) error {
+	cl := Client()
+
+	// Get user info for output message.
+	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return fmt.Errorf("Error verifying auth credentials: %s.", err)
+	}
+	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: authInfo.UID})
+	if err != nil {
+		return fmt.Errorf("Error getting user with UID %d: %s.", authInfo.UID, err)
+	}
+
+	// Delete key.
+	_, err = cl.UserKeys.DeleteKey(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("# Deleted ssh public key for user %q\n", user.Login)
 	return nil
 }
