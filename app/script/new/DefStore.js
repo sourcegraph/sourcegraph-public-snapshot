@@ -19,15 +19,17 @@ export class DefStore extends Store {
 		switch (action.constructor) {
 		case DefActions.DefFetched:
 			this.defs.content[action.url] = action.def;
-			this.__emitChange();
 			break;
 
 		case DefActions.HighlightDef:
 			this.highlightedDef = action.url;
-			this.__emitChange();
 			break;
 
+		default:
+			return; // don't emit change
 		}
+
+		this.__emitChange();
 	}
 }
 

@@ -22,10 +22,13 @@ export class CodeStore extends Store {
 		switch (action.constructor) {
 		case CodeActions.FileFetched:
 			this.files.content[keyFor(action.repo, action.rev, action.tree)] = action.file;
-			this.__emitChange();
 			break;
 
+		default:
+			return; // don't emit change
 		}
+
+		this.__emitChange();
 	}
 }
 
