@@ -104,7 +104,7 @@ module.exports.receivedPopupFailed = function() {
 module.exports.receivedExample = function(data) {
 	AppDispatcher.handleServerAction({
 		type: globals.Actions.CR_RECEIVED_EXAMPLE,
-		data: data.data,
+		data: data.example,
 		page: data.page,
 	});
 };
