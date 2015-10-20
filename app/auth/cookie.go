@@ -73,10 +73,11 @@ func NewSessionCookie(s Session) (*http.Cookie, error) {
 		return nil, err
 	}
 	return &http.Cookie{
-		Name:    SessionCookieName,
-		Value:   base64.StdEncoding.EncodeToString(encoded),
-		Path:    "/",
-		Expires: time.Now().Add(time.Hour * 24 * 365 * 2),
+		Name:     SessionCookieName,
+		Value:    base64.StdEncoding.EncodeToString(encoded),
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Now().Add(time.Hour * 24 * 365 * 2),
 	}, nil
 }
 
