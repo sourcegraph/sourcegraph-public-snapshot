@@ -17,6 +17,12 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 	if opt == nil {
 		opt = &sourcegraph.DefListExamplesOptions{}
 	}
+	if opt.PerPage > 1000 {
+		opt.PerPage = 1000
+	}
+	if opt.PerPage > 10 && (opt.Formatted || opt.TokenizedSource) {
+		opt.PerPage = 10
+	}
 
 	refs, err := svc.Defs(ctx).ListRefs(ctx, &sourcegraph.DefsListRefsOp{
 		Def: defSpec,
