@@ -35,8 +35,8 @@ var DiscussionCreateForm = React.createClass({
 					<input type="text" ref="titleText" className="title" placeholder="Title" />
 					<MarkdownTextarea ref="bodyText" className="body" placeholder="Description" />
 					<div className="buttons pull-right">
-						<a ref="createBtn" className="btn btn-sgblue" onClick={this._create} tabIndex="0">Create</a>
-						<a ref="cancelBtn" className="btn btn-default" onClick={this.props.onCancel} tabIndex="0">Cancel</a>
+						<button ref="createBtn" className="btn btn-sgblue" onClick={this._create} tabIndex="0">Create</button>
+						<button ref="cancelBtn" className="btn btn-default" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
 					</div>
 				</div>
 			</div>

@@ -110,8 +110,8 @@ var CodeReviewComment = React.createClass({
 				<div className="inline-comment">
 					<MarkdownTextarea ref="draftEdit" placeholder="Leave a comment..." />
 					<div className="actions">
-						<a className="btn btn-success btn-small" onClick={this._onSubmit} tabIndex="0">Save draft</a>
-						<a className="btn btn-small" onClick={this.props.onCancel} tabIndex="0">Cancel</a>
+						<button className="btn btn-success btn-small" onClick={this._onSubmit} tabIndex="0">Save draft</button>
+						<button className="btn btn-small" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
 					</div>
 				</div>
 			);

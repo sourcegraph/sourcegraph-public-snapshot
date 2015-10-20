@@ -33,8 +33,8 @@ var ProposeChangeForm = React.createClass({
 				<div className="actions">
 					{this.props.changesetLoading ? <span>Loading...</span> : null}
 					<div className="pull-right">
-						<a className="btn btn-success" onClick={this._createChangeset} tabIndex="0">Submit</a>
-						<a className="btn" onClick={this.props.onCancel} tabIndex="0">Cancel</a>
+						<button className="btn btn-success" onClick={this._createChangeset} tabIndex="0">Submit</button>
+						<button className="btn" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
 					</div>
 				</div>
 			</div>
