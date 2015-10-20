@@ -50,7 +50,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		usersMu sync.Mutex
 	)
 	userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
-	if err != nil && grpc.Code(err) != codes.PermissionDenied {
+	if err != nil && grpc.Code(err) != codes.PermissionDenied && grpc.Code(err) != codes.Unauthenticated {
 		return err
 	}
 	if err == nil { // current user is admin of the instance
