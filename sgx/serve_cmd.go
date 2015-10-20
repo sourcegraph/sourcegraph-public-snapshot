@@ -536,12 +536,13 @@ func (c *ServeCmd) Execute(args []string) error {
 		metricutil.StartEventLogger(clientCtx, 4096, 256, 10*time.Minute)
 	}
 	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
-		Type:    "notif",
-		Service: "serve_cmd",
-		Method:  "start",
-		Result:  "success",
+		Type:     "notif",
+		ClientID: idKey.ID,
+		Service:  "serve_cmd",
+		Method:   "start",
+		Result:   "success",
 	})
-	metricutil.LogConfig(clientCtx, c.safeConfigFlags())
+	metricutil.LogConfig(clientCtx, idKey.ID, c.safeConfigFlags())
 
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
