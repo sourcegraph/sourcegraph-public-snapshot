@@ -95,6 +95,8 @@ const (
 
 	UserContent = "usercontent"
 
+	Markdown = "markdown"
+
 	// Platform routes
 	RepoAppFrame = "repo.appframe"
 )
@@ -148,6 +150,8 @@ func New(base *mux.Router) *Router {
 	base.Path("/sitemap-index.xml").Methods("GET").Name(SitemapIndex)
 
 	base.Path("/usercontent/{Name}").Methods("GET").Name(UserContent)
+
+	base.Path("/.markdown").Methods("POST").Name(Markdown)
 
 	// User routes begin with tilde (~).
 	userPath := `/~` + routevar.User
