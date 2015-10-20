@@ -127,7 +127,6 @@ func commonTemplates() error {
 		{"liveblog/index.html", "liveblog/layout.html", "liveblog/common.inc.html"},
 		{"liveblog/post.html", "liveblog/layout.html", "liveblog/common.inc.html"},
 
-		{"home/new.html"},
 		{"home/dashboard.html"},
 
 		{"search/form.html"},
