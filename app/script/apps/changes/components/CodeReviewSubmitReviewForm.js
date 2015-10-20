@@ -54,8 +54,8 @@ var CodeReviewSubmitReviewForm = React.createClass({
 								<MarkdownTextarea ref="formBody" placeholder="Enter a description..." />
 								<div className="actions">
 									<i className="pull-left">Includes {this.props.drafts.length} inline comments.</i>
-									<a className="btn btn-success" onClick={this._submit}>Submit</a>
-									<a className="btn" onClick={this.props.onCancel}>Cancel</a>
+									<a className="btn btn-success" onClick={this._submit} tabIndex="0">Submit</a>
+									<a className="btn" onClick={this.props.onCancel} tabIndex="0">Cancel</a>
 								</div>
 							</td>
 						</tr>
