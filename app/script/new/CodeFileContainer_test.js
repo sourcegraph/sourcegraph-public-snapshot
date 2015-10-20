@@ -14,7 +14,7 @@ import Dispatcher from "./Dispatcher";
 
 describe("CodeFileContainer", () => {
 	it("should handle unavailable file", () => {
-		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", undefined));
+		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", null));
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(
 				<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />
@@ -27,7 +27,7 @@ describe("CodeFileContainer", () => {
 	it("should handle available file and unavailable definition", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", undefined));
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", null));
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(
 				<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />

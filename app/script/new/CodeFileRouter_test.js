@@ -18,9 +18,10 @@ describe("CodeFileRouter", () => {
 				repo="github.com/gorilla/mux"
 				rev="master"
 				tree="mux.go"
-				startLine={undefined}
-				endLine={undefined}
-				selectedDef={undefined} />
+				startLine={null}
+				endLine={null}
+				selectedDef={null}
+				def={null} />
 		);
 	});
 
@@ -35,7 +36,8 @@ describe("CodeFileRouter", () => {
 				tree="mux.go"
 				startLine={40}
 				endLine={53}
-				selectedDef={undefined} />
+				selectedDef={null}
+				def={null} />
 		);
 	});
 
@@ -48,9 +50,10 @@ describe("CodeFileRouter", () => {
 				repo="github.com/gorilla/mux"
 				rev="master"
 				tree="mux.go"
-				startLine={undefined}
-				endLine={undefined}
-				selectedDef={"someDef"} />
+				startLine={null}
+				endLine={null}
+				selectedDef={"someDef"}
+				def={null} />
 		);
 	});
 
@@ -65,7 +68,7 @@ describe("CodeFileRouter", () => {
 				unitType="GoPackage"
 				unit="github.com/gorilla/mux"
 				def="Router"
-				example={undefined} />
+				example={null} />
 		);
 	});
 

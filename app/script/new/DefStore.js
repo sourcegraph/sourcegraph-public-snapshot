@@ -9,7 +9,7 @@ export class DefStore extends Store {
 		this.defs = {
 			content: {},
 			get(url) {
-				return this.content[url];
+				return this.content[url] || null;
 			},
 		};
 		this.highlightedDef = null;

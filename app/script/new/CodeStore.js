@@ -13,7 +13,7 @@ export class CodeStore extends Store {
 		this.files = {
 			content: {},
 			get(repo, rev, tree) {
-				return this.content[keyFor(repo, rev, tree)];
+				return this.content[keyFor(repo, rev, tree)] || null;
 			},
 		};
 	}

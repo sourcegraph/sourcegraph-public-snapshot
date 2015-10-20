@@ -43,7 +43,8 @@ class CodeFileRouter extends React.Component {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DefActions.SelectDef:
-			this._navigate(null, {seldef: action.url || undefined}); // null becomes undefined
+			// null becomes undefined
+			this._navigate(null, {seldef: action.url || undefined}); // eslint-disable-line no-undefined
 			break;
 
 		case DefActions.GoToDef:
@@ -70,7 +71,7 @@ class CodeFileRouter extends React.Component {
 			vars[key] = part.substr(p + 1);
 		});
 
-		if (vars["def"] !== undefined) {
+		if (vars["def"]) {
 			return (
 				<CodeFileContainer
 					repo={vars["repo"]}
@@ -78,7 +79,7 @@ class CodeFileRouter extends React.Component {
 					unitType={keys[0]}
 					unit={vars[keys[0]]}
 					def={vars["def"]}
-					example={vars["examples"] && parseInt(vars["examples"], 10)} />
+					example={vars["examples"] ? parseInt(vars["examples"], 10) : null} />
 			);
 		}
 
@@ -87,9 +88,10 @@ class CodeFileRouter extends React.Component {
 				repo={vars["repo"]}
 				rev={vars["rev"]}
 				tree={vars["tree"]}
-				startLine={vars["startline"] && parseInt(vars["startline"], 10)}
-				endLine={vars["endline"] && parseInt(vars["endline"], 10)}
-				selectedDef={vars["seldef"]} />
+				startLine={vars["startline"] ? parseInt(vars["startline"], 10) : null}
+				endLine={vars["endline"] ? parseInt(vars["endline"], 10) : null}
+				selectedDef={vars["seldef"] || null}
+				def={null} />
 		);
 	}
 }

@@ -6,5 +6,6 @@
   },
 	"rules": {
 		"no-var": 2,
+    "no-undefined": 2
 	}
 }

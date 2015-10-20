@@ -22,7 +22,7 @@ describe("CodeLineView", () => {
 			<tr className="line">
 				<td className="line-number" data-line={42}></td>
 				<td className="line-content">
-					<span className={undefined} key={0}>foo</span>
+					<span className={""} key={0}>foo</span>
 					<span className={"b"} key={1}>bar</span>
 					<span className={"c"} key={2}>baz</span>
 					<a href="someURL" className={"d ref"} key={3}>ref</a>

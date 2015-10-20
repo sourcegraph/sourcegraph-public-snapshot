@@ -21,7 +21,7 @@ class ElementWrapper {
 			return this;
 		}
 		let children = this.element.props && this.element.props.children;
-		if (children === undefined) {
+		if (!children) {
 			return null;
 		}
 		if (children.constructor !== Array) {
@@ -47,8 +47,8 @@ class ElementWrapper {
 		expect(this.element.constructor).to.be(expected.constructor);
 		expect(this.element.type).to.be(expected.type);
 
-		if (expected.props === undefined) {
-			expect(this.element.props).to.be(undefined);
+		if (!expected["props"]) {
+			expect(this.element["props"]).to.eql(false);
 			return;
 		}
 		Object.keys(expected.props).forEach((key) => {

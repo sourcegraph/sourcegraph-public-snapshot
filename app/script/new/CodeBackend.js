@@ -11,7 +11,7 @@ const CodeBackend = {
 		switch (action.constructor) {
 		case CodeActions.WantFile:
 			let file = CodeStore.files.get(action.repo, action.rev, action.tree);
-			if (file === undefined) {
+			if (file === null) {
 				CodeBackend.xhr({
 					uri: `/ui/${action.repo}@${action.rev}/.tree/${action.tree}`,
 					json: {},

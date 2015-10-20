@@ -34,7 +34,7 @@ class CodeLineView extends React.Component {
 	_updateOwnURLs(tokens) {
 		let ownURLs = {};
 		tokens.forEach((token) => {
-			if (token.URL !== undefined) {
+			if (token["URL"]) {
 				ownURLs[token.URL[0]] = true;
 			}
 		});
@@ -47,11 +47,11 @@ class CodeLineView extends React.Component {
 				<td className="line-number" data-line={this.props.lineNumber}></td>
 				<td className="line-content">
 					{this.props.tokens.map((token, i) => {
-						if (token.URL === undefined) {
-							return <span className={token.Class} key={i}>{token.Label}</span>;
+						if (!token["URL"]) {
+							return <span className={token.Class || ""} key={i}>{token.Label}</span>;
 						}
 
-						let cls = `${token.Class} ref`;
+						let cls = `${token.Class || ""} ref`;
 						if (token.IsDef) {
 							cls += " def";
 						}

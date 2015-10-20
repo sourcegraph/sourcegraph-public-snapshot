@@ -11,7 +11,7 @@ const DefBackend = {
 		switch (action.constructor) {
 		case DefActions.WantDef:
 			let def = DefStore.defs.get(action.url);
-			if (def === undefined) {
+			if (def === null) {
 				DefBackend.xhr({
 					uri: `/ui${action.url}`,
 					headers: {
