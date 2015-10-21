@@ -26,6 +26,9 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Enforcing Unix-style path to src command because this variable may be
+	// used in Makefiles
+	Path = filepath.ToSlash(Path)
 
 	// Detect if we are a test binary by looking at our extension. If we are
 	// then we do not specify the absolute path to the binary, instead we leave
