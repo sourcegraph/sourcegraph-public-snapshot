@@ -217,7 +217,7 @@ func TestRepository_Commits(t *testing.T) {
 	mux.HandleFunc(urlPath(t, RouteRepoCommits, repo, nil), func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		testMethod(t, r, "GET")
-		testFormValues(t, r, values{"Head": "abcd", "Base": "wxyz", "N": "2", "Skip": "3"})
+		testFormValues(t, r, values{"Head": "abcd", "Base": "wxyz", "N": "2", "Skip": "3", "Path": "", "NoTotal": "false"})
 
 		w.Header().Set(TotalCommitsHeader, "123")
 		writeJSON(w, want)
