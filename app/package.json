@@ -26,6 +26,7 @@
     "lintspaces-cli": "0.1.0",
     "madge": "0.5.2",
     "mocha": "2.3.2",
+    "mocha-loader": "^0.7.1",
     "raw-loader": "0.5.1",
     "react-addons-test-utils": "0.14.0",
     "sass-loader": "2.0.1",

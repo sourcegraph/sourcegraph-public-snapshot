@@ -4,8 +4,6 @@ var glob = require("glob");
 require("sass-loader"); // bail on load error
 require("lintspaces-loader");
 
-var allGoTemplates = glob.sync("./templates/**/*.html");
-
 var plugins = [
 	new webpack.DefinePlugin({
 		"process.env": {
@@ -34,7 +32,8 @@ module.exports = {
 		bundle: "./script/app.js",
 		sourcebox: "./script/sourcebox.js",
 		analytics: "./script/analytics.js",
-		_goTemplates: allGoTemplates,
+		_goTemplates: glob.sync("./templates/**/*.html"),
+		test: glob.sync("./script/new/**/*_test.js"),
 	},
 	output: {
 		path: __dirname+"/assets",
@@ -61,6 +60,7 @@ module.exports = {
 			// Add Go templates as 'raw' so that we reload the browser whenever they change.
 			{test: /\.html$/, loader: "file"},
 
+			{test: /_test\.js$/, exclude: /node_modules/, loader: "mocha"},
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader"},
 
 			{test: /\.(eot|ttf|woff)$/, loader: "file?name=fonts/[name].[ext]"},
