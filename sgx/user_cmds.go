@@ -6,8 +6,11 @@ import (
 	"log"
 
 	"golang.org/x/crypto/ssh"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
@@ -179,21 +182,22 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 	// Get the SSH public key.
 	keyBytes, err := ioutil.ReadFile(c.Args.PublicKeyPath)
 	if err != nil {
-		return fmt.Errorf("failed to read public SSH key: %v", err)
+		return fmt.Errorf("failed to read SSH public key: %v", err)
 	}
 	key, _, _, _, err := ssh.ParseAuthorizedKey(keyBytes)
 	if err != nil {
-		return fmt.Errorf("failed to parse public SSH key: %v\n\nAre you sure you provided a public SSH key?", err)
+		return fmt.Errorf("failed to parse SSH public key: %v\n\nAre you sure you provided a SSH public key?", err)
 	}
 
 	// Get user info for output message.
-	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
-	if err != nil {
-		return fmt.Errorf("Error verifying auth credentials: %s.", err)
+	// TODO: auth.ActorFromContext doesn't work (unlike cl.Auth.Identify) for mothership at this time; resolve if needed/possible.
+	uid := int32(auth.ActorFromContext(cliCtx).UID)
+	if uid == 0 {
+		return grpc.Errorf(codes.Unauthenticated, "no user found in context")
 	}
-	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: authInfo.UID})
+	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: uid})
 	if err != nil {
-		return fmt.Errorf("Error getting user with UID %d: %s.", authInfo.UID, err)
+		return fmt.Errorf("Error getting user with UID %d: %s.", uid, err)
 	}
 
 	// Add key.
@@ -212,13 +216,14 @@ func (c *userKeysDeleteCmd) Execute(args []string) error {
 	cl := Client()
 
 	// Get user info for output message.
-	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
-	if err != nil {
-		return fmt.Errorf("Error verifying auth credentials: %s.", err)
+	// TODO: auth.ActorFromContext doesn't work (unlike cl.Auth.Identify) for mothership at this time; resolve if needed/possible.
+	uid := int32(auth.ActorFromContext(cliCtx).UID)
+	if uid == 0 {
+		return grpc.Errorf(codes.Unauthenticated, "no user found in context")
 	}
-	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: authInfo.UID})
+	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: uid})
 	if err != nil {
-		return fmt.Errorf("Error getting user with UID %d: %s.", authInfo.UID, err)
+		return fmt.Errorf("Error getting user with UID %d: %s.", uid, err)
 	}
 
 	// Delete key.

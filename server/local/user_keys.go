@@ -27,17 +27,16 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 
 	actor := authpkg.ActorFromContext(ctx)
 
-	// TODO: Do I need to error check that key is not nil?
-	//       Why is it a pointer anyway, can't we get grpc to generate it as a value?
 	err := store.AddKey(ctx, int32(actor.UID), *key)
 	if err != nil {
 		return nil, err
 	}
 
-	noCache(ctx) // TODO: What should the cache be?
+	noCache(ctx)
 	return &pbtypes.Void{}, nil
 }
 
+// LookupUser looks up user by key. The returned UserSpec will only have UID field set.
 func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
 	store := store.UserKeysFromContextOrNil(ctx)
 	if store == nil {
@@ -49,7 +48,7 @@ func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey
 		return nil, err
 	}
 
-	noCache(ctx) // TODO: What should the cache be?
+	mediumCache(ctx) // TODO: But if a user deletes a key, it'll not have effect for 300 seconds.
 	return userSpec, nil
 }
 

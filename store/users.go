@@ -38,7 +38,10 @@ type Directory interface {
 // and looking up a user by their key.
 type UserKeys interface {
 	AddKey(_ context.Context, uid int32, key sourcegraph.SSHPublicKey) error
+
+	// LookupUser looks up user by key. The returned UserSpec will only have UID field set.
 	LookupUser(_ context.Context, key sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
+
 	DeleteKey(_ context.Context, uid int32) error
 }
 
