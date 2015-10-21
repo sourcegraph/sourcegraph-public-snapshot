@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -103,7 +104,7 @@ func userAuthFileName() string {
 		// on Windows there is no HOME
 		ret = strings.Replace(ret, "$HOME", env.CurrentUserHomeDir(), -1)
 	}
-	return os.ExpandEnv(ret)
+	return filepath.FromSlash(os.ExpandEnv(ret))
 }
 
 func init() {
