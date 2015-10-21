@@ -61,7 +61,7 @@ var CodeReview = React.createClass({
 			return;
 		}
 		// TODO(gbbr): Do an action here
-		CodeReviewStore.set({submittingReview: true});
+		CodeReviewStore.set({reviewFormVisible: true});
 	},
 
 	/**
@@ -72,7 +72,7 @@ var CodeReview = React.createClass({
 	 */
 	_submitReviewHide(e) {
 		// TODO(gbbr): Do an action here
-		CodeReviewStore.set({submittingReview: false});
+		CodeReviewStore.set({reviewFormVisible: false});
 	},
 
 	/**
@@ -133,7 +133,8 @@ var CodeReview = React.createClass({
 						) : null}
 
 						<SubmitForm
-							visible={this.state.submittingReview}
+							visible={this.state.reviewFormVisible}
+							submitDisabled={this.state.submittingReview}
 							drafts={this.state.reviews.drafts}
 							onShow={this._submitReviewShow}
 							onSubmit={this._submitReview}

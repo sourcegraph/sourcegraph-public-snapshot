@@ -100,6 +100,7 @@ module.exports = {
 		CR_SUBMIT_REVIEW: null,
 		CR_RECEIVED_CHANGED_STATUS: null,
 		CR_SUBMIT_REVIEW_SUCCESS: null,
+		CR_SUBMIT_REVIEW_FAIL: null,
 		CR_SHOW_COMMENT: null,
 
 		// Search Actions

@@ -139,6 +139,10 @@ module.exports.submitReviewSuccess = function(data) {
  */
 module.exports.submitReviewFail = function(err) {
 	notify.error("failed to submit review");
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_SUBMIT_REVIEW_FAIL,
+		data: err,
+	});
 };
 
 module.exports.statusUpdated = function(data) {
