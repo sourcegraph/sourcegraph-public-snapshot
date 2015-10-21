@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -111,11 +110,11 @@ func (s *userKeys) hashDirForKey(key sourcegraph.SSHPublicKey) string {
 }
 
 func publicKeyToHash(key []byte) string {
-	const salt = "<replace this with some Sourcegraph-specific unique salt>"
-
 	h := sha1.New()
-	io.WriteString(h, salt)
-	h.Write(key)
+	_, err := h.Write(key)
+	if err != nil {
+		panic(err) // This is expected to never happen.
+	}
 	sum := h.Sum(nil)
 	return base64.RawURLEncoding.EncodeToString(sum)
 }

@@ -48,7 +48,7 @@ func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey
 		return nil, err
 	}
 
-	mediumCache(ctx) // TODO: But if a user deletes a key, it'll not have effect for 300 seconds.
+	mediumCache(ctx) // Note, after a user deletes or changes their key, it'll not have effect for duration of cache.
 	return userSpec, nil
 }
 
@@ -69,6 +69,6 @@ func (s *userKeys) DeleteKey(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Voi
 		return nil, err
 	}
 
-	noCache(ctx) // TODO: What should the cache be?
+	noCache(ctx)
 	return &pbtypes.Void{}, nil
 }
