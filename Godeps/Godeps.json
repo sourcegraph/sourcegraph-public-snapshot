@@ -172,7 +172,7 @@
 		},
 		{
 			"ImportPath": "github.com/howeyc/gopass",
-			"Rev": "e8c0d21f59eb7f01086a39e47e05568acc9bb736"
+			"Rev": "10b54de414cc9693221d5ff2ae14fd2fbf1b0ac1"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/mousetrap",
