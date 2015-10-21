@@ -969,6 +969,30 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 	return committers, nil
 }
 
+func (r *Repository) ListFiles(at vcs.CommitID) ([]string, error) {
+	if err := checkSpecArgSafety(string(at)); err != nil {
+		return nil, err
+	}
+
+	r.editLock.RLock()
+	defer r.editLock.RUnlock()
+
+	if at == "" {
+		at = "HEAD"
+	}
+	cmd := exec.Command("git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", string(at))
+	cmd.Dir = r.Dir
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("exec `git ls-tree --full-tree -r -z --name-only %v` failed: %v", at, err)
+	}
+	if len(out) == 0 {
+		return []string{}, nil
+	}
+	out = bytes.TrimSuffix(out, []byte("\x00"))
+	return strings.Split(string(out), "\x00"), nil
+}
+
 func (r *Repository) FileSystem(at vcs.CommitID) (vfs.FileSystem, error) {
 	if err := checkSpecArgSafety(string(at)); err != nil {
 		return nil, err

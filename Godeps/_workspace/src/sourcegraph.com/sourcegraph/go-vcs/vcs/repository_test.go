@@ -1421,6 +1421,67 @@ func TestRepository_FileSystem(t *testing.T) {
 	}
 }
 
+func TestRepository_FileLister(t *testing.T) {
+	t.Parallel()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit --allow-empty -m commit0 --author='a <a@a.com>'",
+		"echo -n > file0",
+		"git add file0",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit -m commit1 --author='a <a@a.com>'",
+		"mkdir dir1",
+		"echo -n > dir1/file1",
+		"git add dir1/file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit -m commit2 --author='a <a@a.com>'",
+		"echo -n > file2",
+		"echo -n > file3",
+		"mkdir -p dirA/dirB/dirC",
+		"echo -n > dirA/dirB/dirC/fileZ",
+		"git add file2 file3 file0 dirA/dirB/dirC/fileZ",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit -m commit3 --author='a <a@a.com>'",
+	}
+	tests := map[string]struct {
+		repo interface {
+			ListFiles(vcs.CommitID) ([]string, error)
+		}
+		commit    vcs.CommitID
+		wantFiles []string
+	}{
+		"git cmd Commit 0": {
+			repo:      makeGitRepositoryCmd(t, gitCommands...),
+			commit:    "master@{3}",
+			wantFiles: []string{},
+		},
+		"git cmd Commit 1": {
+			repo:      makeGitRepositoryCmd(t, gitCommands...),
+			commit:    "master@{2}",
+			wantFiles: []string{"file0"},
+		},
+		"git cmd Commit 2": {
+			repo:      makeGitRepositoryCmd(t, gitCommands...),
+			commit:    "master@{1}",
+			wantFiles: []string{"dir1/file1", "file0"},
+		},
+		"git cmd Commit 3": {
+			repo:      makeGitRepositoryCmd(t, gitCommands...),
+			commit:    "master",
+			wantFiles: []string{"dir1/file1", "dirA/dirB/dirC/fileZ", "file0", "file2", "file3"},
+		},
+	}
+
+	for label, test := range tests {
+		files, err := test.repo.ListFiles(test.commit)
+		if err != nil {
+			t.Errorf("%s: ListFiles: %v", label, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(files, test.wantFiles) {
+			t.Errorf("%s: got files == %v, want %v", label, asJSON(files), asJSON(test.wantFiles))
+		}
+	}
+}
+
 func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
 
