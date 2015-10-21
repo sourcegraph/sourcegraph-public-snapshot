@@ -72,13 +72,13 @@ module.exports.failedReceiveExpansion = function() {
 
 /**
  * @description Action creator discarded when an example is received as a server response.
- * @param {Object} msg - Example data. Contains keys 'data' and 'page'.
+ * @param {Object} msg - Example data. Contains keys 'example' and 'page'.
  * @returns {void}
  */
 module.exports.receivedExample = function(msg) {
 	AppDispatcher.handleServerAction({
 		type: globals.Actions.DIFF_RECEIVED_EXAMPLE,
-		data: msg.data,
+		data: msg.example,
 		page: msg.page,
 	});
 };
