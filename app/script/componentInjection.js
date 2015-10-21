@@ -18,6 +18,7 @@ var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
 var CodeFileRouter = require("./new/CodeFileRouter");
+var LocationAdaptor = require("./new/LocationAdaptor");
 
 // Application-specific JS
 //
@@ -51,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (el.length > 0) {
 		if (URI.parseQuery(window.location.search)["new"] === "true") { // temporary switch
 			ReactDOM.render(
-				<CodeFileRouter />,
+				<LocationAdaptor component={CodeFileRouter} />,
 				el[0]
 			);
 		} else {

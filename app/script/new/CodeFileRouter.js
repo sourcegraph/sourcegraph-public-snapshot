@@ -16,28 +16,21 @@ class CodeFileRouter extends React.Component {
 
 	componentDidMount() {
 		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
-		window.addEventListener("popstate", this._locationChanged.bind(this));
 	}
 
 	componentWillUnmount() {
-		window.removeEventListener("popstate", this._locationChanged.bind(this));
 		Dispatcher.unregister(this.dispatcherToken);
 	}
 
-	_locationChanged() {
-		this.forceUpdate(); // this is necessary because the component uses external state (window.location)
-	}
-
 	_navigate(path, query) {
-		let uri = URI.parse(window.location.href);
+		let uri = URI.parse(this.props.location);
 		if (path) {
 			uri.path = path;
 		}
 		if (query) {
 			uri.query = URI.buildQuery(Object.assign(URI.parseQuery(uri.query), query));
 		}
-		window.history.pushState(null, "", URI.build(uri));
-		window.dispatchEvent(new window.Event("popstate"));
+		this.props.navigate(URI.build(uri));
 	}
 
 	__onDispatch(action) {
@@ -54,7 +47,7 @@ class CodeFileRouter extends React.Component {
 	}
 
 	render() {
-		let uri = URI.parse(window.location.href);
+		let uri = URI.parse(this.props.location);
 		let pathParts = uri.path.substr(1).split("/.");
 
 		let keys = [];
@@ -95,5 +88,10 @@ class CodeFileRouter extends React.Component {
 		);
 	}
 }
+
+CodeFileRouter.propTypes = {
+	location: React.PropTypes.string,
+	navigate: React.PropTypes.func,
+};
 
 export default CodeFileRouter;

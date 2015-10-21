@@ -10,9 +10,8 @@ import * as DefActions from "./DefActions";
 
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {
-		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go"}};
 		shallowRender(
-			<CodeFileRouter />
+			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go" />
 		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
@@ -26,9 +25,8 @@ describe("CodeFileRouter", () => {
 	});
 
 	it("should handle line selection URLs", () => {
-		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53"}};
 		shallowRender(
-			<CodeFileRouter />
+			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53" />
 		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
@@ -42,9 +40,8 @@ describe("CodeFileRouter", () => {
 	});
 
 	it("should handle definition selection URLs", () => {
-		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someDef"}};
 		shallowRender(
-			<CodeFileRouter />
+			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someDef" />
 		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
@@ -58,9 +55,8 @@ describe("CodeFileRouter", () => {
 	});
 
 	it("should handle definition URLs", () => {
-		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"}};
 		shallowRender(
-			<CodeFileRouter />
+			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router" />
 		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
@@ -73,9 +69,8 @@ describe("CodeFileRouter", () => {
 	});
 
 	it("should handle example URLs", () => {
-		global.window = {location: {href: "http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router/.examples/4"}};
 		shallowRender(
-			<CodeFileRouter />
+			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router/.examples/4" />
 		).compare(
 			<CodeFileContainer
 				repo="github.com/gorilla/mux"
@@ -88,11 +83,9 @@ describe("CodeFileRouter", () => {
 	});
 
 	it("should handle DefActions.SelectDef", () => {
-		let r = new CodeFileRouter();
-		r._navigate = function(path, query) {
-			expect(path).to.be(null);
-			expect(query).to.eql({seldef: "someURL"});
-		};
+		let uri = "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go";
+		let r = new CodeFileRouter({location: uri, navigate(newURI) { uri = newURI; }});
 		Dispatcher.directDispatch(r, new DefActions.SelectDef("someURL"));
+		expect(uri).to.be("http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someURL");
 	});
 });
