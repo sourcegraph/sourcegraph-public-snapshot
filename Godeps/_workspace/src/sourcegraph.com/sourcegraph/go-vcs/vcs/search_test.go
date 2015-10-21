@@ -2,11 +2,14 @@ package vcs_test
 
 import (
 	"bufio"
-	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs/internal"
 )
 
 func TestRepository_Search_LongLine(t *testing.T) {
@@ -36,8 +39,18 @@ func TestRepository_Search_LongLine(t *testing.T) {
 		},
 	}
 
+	// alexsaveliev "echo .... > f1" does not work on Windows, let's create test file different way
+	tmp, err := ioutil.TempFile("", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmp.Name())
+	if err := internal.WriteFileWithPermissions(tmp.Name(), longline, 0666); err != nil {
+		t.Fatal(err)
+	}
+
 	gitCommands := []string{
-		fmt.Sprintf("echo %s > f1", string(longline)),
+		"cp " + filepath.ToSlash(tmp.Name()) + " f1",
 		"git add f1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit f1 -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}

@@ -10,6 +10,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store/phtable"
+	"sourcegraph.com/sourcegraph/srclib/util"
 )
 
 // NOTE(sqs): There is a lot of duplication here with unitFilesIndex.
@@ -149,7 +150,7 @@ func (v filesToDefOfs) add(file string, ofs int64, perFile int) {
 		return
 	}
 	v[file] = append(v[file], ofs)
-	for _, dir := range ancestorDirsExceptRoot(file) {
+	for _, dir := range util.AncestorDirs(file, false) {
 		if len(v[dir]) < perFile {
 			v[dir] = append(v[dir], ofs)
 		}

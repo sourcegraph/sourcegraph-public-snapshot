@@ -37,7 +37,7 @@ type indexCache struct {
 var defaultIndexCache *indexCache = &indexCache{
 	indexes: map[indexCacheKey]*list.Element{},
 	lru:     list.New(),
-	maxLen:  50,
+	maxLen:  15,
 }
 
 // cacheGet attempts to fetch an instance of a loaded Index from an in-memory

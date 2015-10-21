@@ -3,6 +3,7 @@ package flagutil
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-flags"
@@ -27,6 +28,10 @@ func marshalArgsInGroup(group *flags.Group, prefix string) ([]string, error) {
 		// handle flags with both short and long (just get the long)
 		if i := strings.Index(flagStr, ", --"); i != -1 {
 			flagStr = flagStr[i+2:]
+		} else if runtime.GOOS == "windows" {
+			if i := strings.Index(flagStr, ", /"); i != -1 {
+				flagStr = flagStr[i+2:]
+			}
 		}
 
 		switch v := opt.Value().(type) {

@@ -179,7 +179,7 @@ func (c *URefsRepoCmd) genDefsFile(ut *unit.SourceUnit, filename string) (defs [
 				CommitID: ut.CommitID,
 				UnitType: ut.Type,
 				Unit:     ut.Name,
-				Path:     filepath.Join(filename, fmt.Sprintf("method_%d", i)),
+				Path:     filepath.ToSlash(filepath.Join(filename, fmt.Sprintf("method_%d", i))),
 			},
 			Name:     defName,
 			Exported: true,

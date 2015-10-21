@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/alexsaveliev/go-colorable-wrapper"
+
 	"golang.org/x/tools/godoc/vfs"
 
 	"sourcegraph.com/sourcegraph/srclib"
@@ -96,7 +98,7 @@ func PrintJSON(v interface{}, prefix string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(data))
+	colorable.Println(string(data))
 }
 
 func OpenInputFiles(extraArgs []string) map[string]io.ReadCloser {

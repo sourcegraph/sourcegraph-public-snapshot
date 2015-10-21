@@ -1,32 +1,46 @@
 package ssh
 
 import (
-	"io/ioutil"
 	"os"
+	"runtime"
+	"strings"
 	"testing"
 
 	"golang.org/x/crypto/ssh"
+
+	"sourcegraph.com/sourcegraph/go-vcs/vcs/internal"
 )
 
 func TestServer(t *testing.T) {
-	shellScript := `#!/bin/sh
+	var shellScript string
+
+	if runtime.GOOS == "windows" {
+		shellScript = `@echo off
+	set flag=%1
+	set flag=%flag:"=%
+	set args=%2
+	set args=%args:"=%
+	echo %flag% %args%
+`
+	} else {
+		shellScript = `#!/bin/sh
 echo $*
 exit
 `
-	shell, err := ioutil.TempFile("", "govcs-ssh-shell")
+	}
+
+	shell, err := internal.ScriptFile("govcs-ssh-shell")
 	if err != nil {
 		t.Fatal(err)
 	}
-	shell.WriteString(shellScript)
-	if err := shell.Chmod(0700); err != nil {
-		t.Fatal(err)
-	}
-	if err := shell.Close(); err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(shell.Name())
+	defer os.Remove(shell)
 
-	s, err := NewServer(shell.Name(), "/tmp", PrivateKey(SamplePrivKey))
+	err = internal.WriteFileWithPermissions(shell, []byte(shellScript), 0700)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := NewServer(shell, os.TempDir(), PrivateKey(SamplePrivKey))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +71,7 @@ exit
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := string(out), "-c git-upload-pack 'foo'\n"; got != want {
+	if got, want := strings.TrimSpace(string(out)), "-c git-upload-pack 'foo'"; got != want {
 		t.Errorf("got ssh session output %q, want %q", got, want)
 	}
 }

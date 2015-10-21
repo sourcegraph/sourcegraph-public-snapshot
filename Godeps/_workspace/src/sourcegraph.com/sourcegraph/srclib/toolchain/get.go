@@ -21,7 +21,7 @@ func CloneOrUpdate(path string, update bool) (*Info, error) {
 	}
 
 	if fi, err := os.Stat(dir); os.IsNotExist(err) {
-		cloneURL := "https://" + path + ".git"
+		cloneURL := "https://" + filepath.ToSlash(path) + ".git"
 		cmd := exec.Command("git", "clone", cloneURL, dir)
 		cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
 		if err := cmd.Run(); err != nil {

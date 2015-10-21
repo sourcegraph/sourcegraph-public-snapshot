@@ -2,7 +2,7 @@ package routevar
 
 import (
 	"net/http"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"github.com/sourcegraph/mux"
@@ -14,7 +14,7 @@ var TreeEntryPath = `{Path:(?:/.*)*}`
 // FixTreeEntryVars is a mux.PostMatchFunc that cleans and normalizes
 // the path to a tree entry.
 func FixTreeEntryVars(req *http.Request, match *mux.RouteMatch, r *mux.Route) {
-	path := filepath.Clean(strings.TrimPrefix(match.Vars["Path"], "/"))
+	path := path.Clean(strings.TrimPrefix(match.Vars["Path"], "/"))
 	if path == "" || path == "." {
 		match.Vars["Path"] = "."
 	} else {

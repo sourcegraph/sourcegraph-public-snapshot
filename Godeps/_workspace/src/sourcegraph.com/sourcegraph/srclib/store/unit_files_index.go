@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/srclib/store/phtable"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sourcegraph/srclib/util"
 )
 
 // NOTE(sqs): There is a lot of duplication here with defFilesIndex.
@@ -130,7 +131,7 @@ type filesToUnits map[string][]unit.ID2
 func (v filesToUnits) add(file string, u unit.ID2) {
 	file = path.Clean(file)
 	v[file] = append(v[file], u)
-	for _, dir := range ancestorDirsExceptRoot(file) {
+	for _, dir := range util.AncestorDirs(file, false) {
 		v.addIfNotExists(dir, u)
 	}
 }
@@ -144,25 +145,6 @@ func (v filesToUnits) addIfNotExists(dir string, u unit.ID2) {
 		}
 	}
 	v[dir] = append(v[dir], u)
-}
-
-// ancestorDirsExceptRoot returns a list of p's ancestor directories
-// excluding the root ("." or "/").
-func ancestorDirsExceptRoot(p string) []string {
-	if p == "" {
-		return nil
-	}
-	if len(p) == 1 && (p[0] == '.' || p[0] == '/') {
-		return nil
-	}
-
-	var dirs []string
-	for i, c := range p {
-		if c == '/' {
-			dirs = append(dirs, p[:i])
-		}
-	}
-	return dirs
 }
 
 // Write implements persistedIndex.

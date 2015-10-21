@@ -19,8 +19,8 @@
 			"Rev": "a2ace32dbd4787714f87adb14a8aa369142efac5"
 		},
 		{
-			"ImportPath": "github.com/aybabtme/color",
-			"Rev": "0db0bdb3cc7ff8ddff622052366e17f0d506b0ef"
+			"ImportPath": "github.com/alexsaveliev/go-colorable-wrapper",
+			"Rev": "32a2486bdc0de89379a23673af82bd61f5c7c5cd"
 		},
 		{
 			"ImportPath": "github.com/bradfitz/http2",
@@ -47,10 +47,6 @@
 			"Rev": "efd7476481382c195beb33acd8ec2f1527167fb4"
 		},
 		{
-			"ImportPath": "github.com/inconshreveable/go-update",
-			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
-		},
-		{
 			"ImportPath": "github.com/kardianos/osext",
 			"Rev": "6e7f843663477789fac7c02def0d0909e969b4e5"
 		},
@@ -61,6 +57,14 @@
 		{
 			"ImportPath": "github.com/kr/fs",
 			"Rev": "2788f0dbd16903de03cb8186e5c7d97b69ad387b"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-colorable",
+			"Rev": "40e4aedc8fabf8c23e040057540867186712faa5"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Rev": "7fcbc72f853b92b5720db4a6b8482be612daef24"
 		},
 		{
 			"ImportPath": "github.com/peterh/liner",
@@ -118,6 +122,10 @@
 		{
 			"ImportPath": "google.golang.org/grpc",
 			"Rev": "91c8b79535eb6045d70ec671d302213f88a3ab95"
+		},
+		{			
+			"ImportPath": "github.com/inconshreveable/go-update",
+			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",

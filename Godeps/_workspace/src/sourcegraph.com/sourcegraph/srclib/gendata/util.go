@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/srclib/dep"
@@ -97,7 +98,10 @@ func resetSource() error {
 	if err := removeGlob("u_*"); err != nil {
 		return err
 	}
-	if err := os.RemoveAll(".git"); err != nil {
+	if runtime.GOOS == "windows" {
+		clearReadOnly(".git")
+	}
+	if err := os.RemoveAll(".git"); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	if err := exec.Command("git", "init").Run(); err != nil {
@@ -113,6 +117,37 @@ func removeGlob(glob string) error {
 	}
 	for _, match := range matches {
 		if err := os.RemoveAll(match); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Tries to remove READONLY mark from file (recursive)
+// On Windows, os.Remove does not work if file was marked as READONLY (for example, git does it)
+func clearReadOnly(path string) error {
+	fi, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	if !fi.IsDir() {
+		return os.Chmod(path, 0666)
+	}
+
+	fd, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	names, _ := fd.Readdirnames(-1)
+	for _, name := range names {
+		err = clearReadOnly(filepath.Join(path, name))
+		if err != nil {
 			return err
 		}
 	}

@@ -50,11 +50,11 @@ type ResolveDepsRule struct {
 }
 
 func (r *ResolveDepsRule) Target() string {
-	return filepath.Join(r.dataDir, plan.SourceUnitDataFilename([]*ResolvedDep{}, r.Unit))
+	return filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename([]*ResolvedDep{}, r.Unit)))
 }
 
 func (r *ResolveDepsRule) Prereqs() []string {
-	return []string{filepath.Join(r.dataDir, plan.SourceUnitDataFilename(unit.SourceUnit{}, r.Unit))}
+	return []string{filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename(unit.SourceUnit{}, r.Unit)))}
 }
 
 func (r *ResolveDepsRule) Recipes() []string {

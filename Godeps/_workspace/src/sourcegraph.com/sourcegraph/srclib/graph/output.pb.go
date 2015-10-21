@@ -13,10 +13,10 @@ import ann "sourcegraph.com/sourcegraph/srclib/ann"
 var _ = proto.Marshal
 
 type Output struct {
-	Defs []*Def     `protobuf:"bytes,1,rep,name=defs" json:",omitempty"`
-	Refs []*Ref     `protobuf:"bytes,2,rep,name=refs" json:",omitempty"`
-	Docs []*Doc     `protobuf:"bytes,3,rep,name=docs" json:",omitempty"`
-	Anns []*ann.Ann `protobuf:"bytes,4,rep,name=anns" json:",omitempty"`
+	Defs []*Def     `protobuf:"bytes,1,rep,name=defs" json:"Defs,omitempty"`
+	Refs []*Ref     `protobuf:"bytes,2,rep,name=refs" json:"Refs,omitempty"`
+	Docs []*Doc     `protobuf:"bytes,3,rep,name=docs" json:"Docs,omitempty"`
+	Anns []*ann.Ann `protobuf:"bytes,4,rep,name=anns" json:"Anns,omitempty"`
 }
 
 func (m *Output) Reset()         { *m = Output{} }

@@ -175,13 +175,3 @@ type Tags []*Tag
 func (p Tags) Len() int           { return len(p) }
 func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
 func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-// A FileLister is a repository that can perform actions related to
-// listing the entire file tree.
-type FileLister interface {
-	// ListFiles returns list of all file names in the repo at the
-	// given commit. Returned file paths are forward slash separated
-	// and are relative to the base directory of the repository.
-	// Eg. returned paths have the form "path/to/file.txt"
-	ListFiles(CommitID) ([]string, error)
-}

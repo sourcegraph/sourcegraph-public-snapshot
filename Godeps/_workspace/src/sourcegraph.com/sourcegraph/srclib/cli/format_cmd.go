@@ -2,8 +2,9 @@ package cli
 
 import (
 	"bytes"
-	"fmt"
 	"log"
+
+	"github.com/alexsaveliev/go-colorable-wrapper"
 
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
 )
@@ -59,6 +60,6 @@ func (c *FmtCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(out)
+	colorable.Println(out)
 	return nil
 }

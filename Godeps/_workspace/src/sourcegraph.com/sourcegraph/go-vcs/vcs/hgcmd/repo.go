@@ -67,6 +67,10 @@ type Repository struct {
 	Dir string
 }
 
+func (r *Repository) RepoDir() string {
+	return r.Dir
+}
+
 func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	cmd := exec.Command("hg", "identify", "--debug", "-i", "--rev="+spec)
 	cmd.Dir = r.Dir

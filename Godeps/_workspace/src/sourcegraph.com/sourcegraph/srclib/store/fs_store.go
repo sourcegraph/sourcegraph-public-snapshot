@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -360,7 +361,7 @@ func (s *fsTreeStore) unitFilenames() ([]string, error) {
 		}
 		fi := w.Stat()
 		if fi.Mode().IsRegular() && strings.HasSuffix(fi.Name(), unitFileSuffix) {
-			files = append(files, w.Path())
+			files = append(files, filepath.ToSlash(w.Path()))
 		}
 	}
 	return files, nil

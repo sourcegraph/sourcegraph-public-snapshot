@@ -650,7 +650,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/rwvfs",
-			"Rev": "530b5049ed637054f4a17cb28b5d9c7f05ba2608"
+			"Rev": "08d8bb227da7544d3d7ab7e40225e72d5505c6f3"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/s3cache",
@@ -662,8 +662,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-167-g366f46b",
-			"Rev": "366f46b1857d2e34a762f682866244f8e318946d"
+			"Rev": "ea17d32d23f7f545ec2d045db529d015fc44b4ae"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",

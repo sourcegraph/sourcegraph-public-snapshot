@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/grapher"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 
+	"github.com/alexsaveliev/go-colorable-wrapper"
 	"github.com/kr/fs"
 )
 
@@ -66,7 +67,7 @@ func (c *LintCmd) Execute(args []string) error {
 		for {
 			select {
 			case issue := <-issuec:
-				fmt.Println(issue)
+				colorable.Println(issue)
 			case <-quitc:
 				return
 			}
@@ -105,7 +106,7 @@ func (c *LintCmd) Execute(args []string) error {
 						pcs := strings.Split(absPath, string(filepath.Separator))
 						for i, pc := range pcs {
 							if pc == buildstore.BuildDataDirName && len(pcs) > i+2 {
-								unitName = filepath.Join(pcs[i+2 : len(pcs)-1]...)
+								unitName = filepath.ToSlash(filepath.Join(pcs[i+2 : len(pcs)-1]...))
 								break
 							}
 						}
@@ -153,7 +154,7 @@ func (c *LintCmd) Execute(args []string) error {
 							issuec <- issue
 						}
 						if err != nil {
-							log.Fatalf(redbg("ERR")+" %s: %s", path, err)
+							log.Fatalf(colorable.Redbg("ERR")+" %s: %s", path, err)
 						}
 					}(w.Path())
 				}

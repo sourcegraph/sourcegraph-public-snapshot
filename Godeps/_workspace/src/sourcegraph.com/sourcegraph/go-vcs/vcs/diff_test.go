@@ -2,6 +2,7 @@ package vcs_test
 
 import (
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -97,6 +98,9 @@ func TestRepository_Diff(t *testing.T) {
 		// wantDiff field doc for more info.
 		test.wantDiff.Raw = strings.Replace(test.wantDiff.Raw, "%(baseCommitID)", string(baseCommitID), -1)
 		test.wantDiff.Raw = strings.Replace(test.wantDiff.Raw, "%(headCommitID)", string(headCommitID), -1)
+		if runtime.GOOS == "windows" {
+			test.wantDiff.Raw = strings.Replace(test.wantDiff.Raw, "/dev/null", `\dev\null`, -1)
+		}
 
 		if !reflect.DeepEqual(diff, test.wantDiff) {
 			t.Errorf("%s: diff != wantDiff\n\ndiff ==========\n%s\n\nwantDiff ==========\n%s", label, asJSON(diff), asJSON(test.wantDiff))
@@ -204,6 +208,9 @@ func TestRepository_Diff_rename(t *testing.T) {
 		// wantDiff field doc for more info.
 		test.wantDiff.Raw = strings.Replace(test.wantDiff.Raw, "%(baseCommitID)", string(baseCommitID), -1)
 		test.wantDiff.Raw = strings.Replace(test.wantDiff.Raw, "%(headCommitID)", string(headCommitID), -1)
+		if runtime.GOOS == "windows" {
+			test.wantDiff.Raw = strings.Replace(test.wantDiff.Raw, "/dev/null", `\dev\null`, -1)
+		}
 
 		if !reflect.DeepEqual(diff, test.wantDiff) {
 			t.Errorf("%s: diff != wantDiff\n\ndiff ==========\n%s\n\nwantDiff ==========\n%s", label, asJSON(diff), asJSON(test.wantDiff))
