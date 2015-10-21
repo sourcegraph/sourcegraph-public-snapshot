@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+'use strict';
+
+require(require('path').resolve(__dirname, '../lib/csso.js'));

@@ -1,0 +1,10 @@
+['block', 
+  ['comment', 'test'], 
+  ['declaration', 
+    ['property', 
+      ['ident', 'p']], 
+    ['value', 
+      ['ident', 'v'], 
+      ['comment', 'test']]], 
+  ['decldelim'], 
+  ['comment', 'test']]

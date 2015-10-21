@@ -1,0 +1,2 @@
+['property', 
+  ['ident', 'color']]

@@ -1,0 +1,9 @@
+a, :b, :c {
+    color: red
+}
+a, :b {
+    color: green
+}
+:c, a, :b {
+    color: blue
+}

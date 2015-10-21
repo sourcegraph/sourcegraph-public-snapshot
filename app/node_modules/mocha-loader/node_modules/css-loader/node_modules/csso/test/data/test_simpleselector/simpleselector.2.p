@@ -1,0 +1,2 @@
+['simpleselector', 
+  ['shash', 'test']]

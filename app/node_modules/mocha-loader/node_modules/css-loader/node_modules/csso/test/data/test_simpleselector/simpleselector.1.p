@@ -1,0 +1,3 @@
+['simpleselector', 
+  ['clazz', 
+    ['ident', 'test']]]

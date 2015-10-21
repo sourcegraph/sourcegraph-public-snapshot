@@ -1,0 +1,7 @@
+.a { p: v }
+@test x y {
+    .a {
+        /*test*/
+    }
+}
+.b { p: v }

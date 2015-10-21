@@ -1,0 +1,6 @@
+x::first-letter, y:after {
+    color: red
+}
+x::first-letter, y:before {
+    color: red
+}
