@@ -41,17 +41,17 @@ var _ = proto.Marshal
 // the time specified by the CommitID.
 type DefKey struct {
 	// Repo is the VCS repository that defines this definition.
-	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"Repo,omitempty"`
+	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:",omitempty"`
 	// CommitID is the ID of the VCS commit that this definition was defined in. The
 	// CommitID is always a full commit ID (40 hexadecimal characters for git
 	// and hg), never a branch or tag name.
-	CommitID string `protobuf:"bytes,2,opt,name=commit_id,proto3" json:"CommitID,omitempty"`
+	CommitID string `protobuf:"bytes,2,opt,name=commit_id,proto3" json:",omitempty"`
 	// UnitType is the type name of the source unit (obtained from unit.Type(u))
 	// that this definition was defined in.
-	UnitType string `protobuf:"bytes,3,opt,name=unit_type,proto3" json:"UnitType,omitempty"`
+	UnitType string `protobuf:"bytes,3,opt,name=unit_type,proto3" json:",omitempty"`
 	// Unit is the name of the source unit (obtained from u.Name()) that this
 	// definition was defined in.
-	Unit string `protobuf:"bytes,4,opt,name=unit,proto3" json:"Unit,omitempty"`
+	Unit string `protobuf:"bytes,4,opt,name=unit,proto3" json:",omitempty"`
 	// Path is a unique identifier for the def, relative to the source unit.
 	// It should remain stable across commits as long as the def is the
 	// "same" def. Its Elasticsearch mapping is defined separately (because
@@ -63,7 +63,7 @@ type DefKey struct {
 	// the Path, but this may not always be the case. I.e., don't rely on Path
 	// to find parents or children or any other structural propreties of the
 	// def hierarchy). See Def.TreePath instead.
-	Path string `protobuf:"bytes,5,opt,name=path,proto3" json:"Path"`
+	Path string `protobuf:"bytes,5,opt,name=path,proto3" `
 }
 
 func (m *DefKey) Reset()         { *m = DefKey{} }
@@ -77,35 +77,35 @@ type Def struct {
 	// DefKeys).
 	DefKey `protobuf:"bytes,1,opt,name=key,embedded=key" json:""`
 	// Name of the definition. This need not be unique.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"Name"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" `
 	// Kind is the kind of thing this definition is. This is
 	// language-specific. Possible values include "type", "func",
 	// "var", etc.
-	Kind     string `protobuf:"bytes,3,opt,name=kind,proto3" json:"Kind,omitempty"`
-	File     string `protobuf:"bytes,4,opt,name=file,proto3" json:"File"`
-	DefStart uint32 `protobuf:"varint,5,opt,name=start,proto3" json:"DefStart"`
-	DefEnd   uint32 `protobuf:"varint,6,opt,name=end,proto3" json:"DefEnd"`
+	Kind     string `protobuf:"bytes,3,opt,name=kind,proto3" json:",omitempty"`
+	File     string `protobuf:"bytes,4,opt,name=file,proto3" `
+	DefStart uint32 `protobuf:"varint,5,opt,name=start,proto3" `
+	DefEnd   uint32 `protobuf:"varint,6,opt,name=end,proto3" `
 	// Exported is whether this def is part of a source unit's
 	// public API. For example, in Java a "public" field is
 	// Exported.
-	Exported bool `protobuf:"varint,7,opt,name=exported,proto3" json:"Exported,omitempty"`
+	Exported bool `protobuf:"varint,7,opt,name=exported,proto3" json:",omitempty"`
 	// Local is whether this def is local to a function or some
 	// other inner scope. Local defs do *not* have module,
 	// package, or file scope. For example, in Java a function's
 	// args are Local, but fields with "private" scope are not
 	// Local.
-	Local bool `protobuf:"varint,8,opt,name=local,proto3" json:"Local,omitempty"`
+	Local bool `protobuf:"varint,8,opt,name=local,proto3" json:",omitempty"`
 	// Test is whether this def is defined in test code (as opposed to main
 	// code). For example, definitions in Go *_test.go files have Test = true.
-	Test bool `protobuf:"varint,9,opt,name=test,proto3" json:"Test,omitempty"`
+	Test bool `protobuf:"varint,9,opt,name=test,proto3" json:",omitempty"`
 	// Data contains additional language- and toolchain-specific information
 	// about the def. Data is used to construct function signatures,
 	// import/require statements, language-specific type descriptions, etc.
-	Data sourcegraph_com_sqs_pbtypes.RawMessage `protobuf:"bytes,10,opt,name=data,proto3,customtype=sourcegraph.com/sqs/pbtypes.RawMessage" json:"Data,omitempty"`
+	Data sourcegraph_com_sqs_pbtypes.RawMessage `protobuf:"bytes,10,opt,name=data,proto3,customtype=sourcegraph.com/sqs/pbtypes.RawMessage" json:",omitempty"`
 	// Docs are docstrings for this Def. This field is not set in the
 	// Defs produced by graphers; they should emit docs in the
 	// separate Docs field on the graph.Output struct.
-	Docs []*DefDoc `protobuf:"bytes,11,rep,name=docs" json:"Docs,omitempty"`
+	Docs []*DefDoc `protobuf:"bytes,11,rep,name=docs" json:",omitempty"`
 	// TreePath is a structurally significant path descriptor for a def. For
 	// many languages, it may be identical or similar to DefKey.Path.
 	// However, it has the following constraints, which allow it to define a
@@ -118,7 +118,7 @@ type Def struct {
 	// Any prefix of a tree-path that terminates in a def name must be a valid
 	// tree-path for some def.
 	// The following regex captures the children of a tree-path X: X(/-[^/]*)*(/[^/-][^/]*)
-	TreePath string `protobuf:"bytes,17,opt,name=tree_path,proto3" json:"TreePath,omitempty"`
+	TreePath string `protobuf:"bytes,17,opt,name=tree_path,proto3" json:",omitempty"`
 }
 
 func (m *Def) Reset()         { *m = Def{} }
@@ -130,9 +130,9 @@ type DefDoc struct {
 	// Format is the the MIME-type that the documentation is stored
 	// in. Valid formats include 'text/html', 'text/plain',
 	// 'text/x-markdown', text/x-rst'.
-	Format string `protobuf:"bytes,1,opt,name=format,proto3" json:"Format"`
+	Format string `protobuf:"bytes,1,opt,name=format,proto3" `
 	// Data is the actual documentation text.
-	Data string `protobuf:"bytes,2,opt,name=data,proto3" json:"Data"`
+	Data string `protobuf:"bytes,2,opt,name=data,proto3" `
 }
 
 func (m *DefDoc) Reset()         { *m = DefDoc{} }
@@ -141,12 +141,12 @@ func (*DefDoc) ProtoMessage()    {}
 
 // DefFormatStrings contains the various def format strings.
 type DefFormatStrings struct {
-	Name                 QualFormatStrings `protobuf:"bytes,1,opt,name=name" json:"name"`
-	Type                 QualFormatStrings `protobuf:"bytes,2,opt,name=type" json:"type"`
-	NameAndTypeSeparator string            `protobuf:"bytes,3,opt,name=name_and_type_separator,proto3" json:"name_and_type_separator,omitempty"`
-	Language             string            `protobuf:"bytes,4,opt,name=language,proto3" json:"language,omitempty"`
-	DefKeyword           string            `protobuf:"bytes,5,opt,name=def_keyword,proto3" json:"def_keyword,omitempty"`
-	Kind                 string            `protobuf:"bytes,6,opt,name=kind,proto3" json:"kind,omitempty"`
+	Name                 QualFormatStrings `protobuf:"bytes,1,opt,name=name" `
+	Type                 QualFormatStrings `protobuf:"bytes,2,opt,name=type" `
+	NameAndTypeSeparator string            `protobuf:"bytes,3,opt,name=name_and_type_separator,proto3" json:",omitempty"`
+	Language             string            `protobuf:"bytes,4,opt,name=language,proto3" json:",omitempty"`
+	DefKeyword           string            `protobuf:"bytes,5,opt,name=def_keyword,proto3" json:",omitempty"`
+	Kind                 string            `protobuf:"bytes,6,opt,name=kind,proto3" json:",omitempty"`
 }
 
 func (m *DefFormatStrings) Reset()         { *m = DefFormatStrings{} }
@@ -156,11 +156,11 @@ func (*DefFormatStrings) ProtoMessage()    {}
 // QualFormatStrings holds the formatted string for each Qualification for a def
 // (for either Name or Type).
 type QualFormatStrings struct {
-	Unqualified             string `protobuf:"bytes,1,opt,name=unqualified,proto3" json:"unqualified,omitempty"`
-	ScopeQualified          string `protobuf:"bytes,2,opt,name=scope_qualified,proto3" json:"scope_qualified,omitempty"`
-	DepQualified            string `protobuf:"bytes,3,opt,name=dep_qualified,proto3" json:"dep_qualified,omitempty"`
-	RepositoryWideQualified string `protobuf:"bytes,4,opt,name=repository_wide_qualified,proto3" json:"repository_wide_qualified,omitempty"`
-	LanguageWideQualified   string `protobuf:"bytes,5,opt,name=language_wide_qualified,proto3" json:"language_wide_qualified,omitempty"`
+	Unqualified             string `protobuf:"bytes,1,opt,name=unqualified,proto3" json:",omitempty"`
+	ScopeQualified          string `protobuf:"bytes,2,opt,name=scope_qualified,proto3" json:",omitempty"`
+	DepQualified            string `protobuf:"bytes,3,opt,name=dep_qualified,proto3" json:",omitempty"`
+	RepositoryWideQualified string `protobuf:"bytes,4,opt,name=repository_wide_qualified,proto3" json:",omitempty"`
+	LanguageWideQualified   string `protobuf:"bytes,5,opt,name=language_wide_qualified,proto3" json:",omitempty"`
 }
 
 func (m *QualFormatStrings) Reset()         { *m = QualFormatStrings{} }
