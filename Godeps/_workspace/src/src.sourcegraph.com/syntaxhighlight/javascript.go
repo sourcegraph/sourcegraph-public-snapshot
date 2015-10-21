@@ -23,60 +23,6 @@ func jsDivision(source []byte) []int {
 	return nil
 }
 
-// Matches JS string literals ("...")
-func jsDoubleQuoteString(source []byte) []int {
-	state := 0
-	for i, c := range source {
-		switch state {
-		case 0:
-			if c == '"' {
-				state = 1
-			} else {
-				return nil
-			}
-			break
-		case 1:
-			if c == '\\' {
-				state = 2
-			} else if c == '"' {
-				return []int{0, i + 1}
-			}
-			break
-		case 2:
-			state = 1
-			break
-		}
-	}
-	return nil
-}
-
-// Matches JS string literals ('...')
-func jsSingleQuoteString(source []byte) []int {
-	state := 0
-	for i, c := range source {
-		switch state {
-		case 0:
-			if c == '\'' {
-				state = 1
-			} else {
-				return nil
-			}
-			break
-		case 1:
-			if c == '\\' {
-				state = 2
-			} else if c == '\'' {
-				return []int{0, i + 1}
-			}
-			break
-		case 2:
-			state = 1
-			break
-		}
-	}
-	return nil
-}
-
 func init() {
 	NewRegexpLexer(
 		[]string{`.js`},
@@ -84,7 +30,7 @@ func init() {
 		map[string][]RegexpRule{
 			`commentsandwhitespace`: {
 				MS.Token(`<!--`, Comment),
-				MS.MatcherToken(SingleLineCommentMatcher, Comment_Single),
+				MS.MatcherToken(SingleLineCommentMatcher("//"), Comment_Single),
 				MS.MatcherToken(MultiLineCommentMatcher, Comment_Multiline),
 			},
 			`slashstartsregex`: {
@@ -95,7 +41,7 @@ func init() {
 				Default(`#pop`),
 			},
 			`root`: {
-				MS.Token(`\A#! ?/.*?\n`, Comment), // shebang lines are recognized by node.js
+				MS.MatcherToken(SingleLineCommentMatcher("#"), Comment),
 				MS.MatcherToken(jsDivision, Operator),
 				MS.Lookahead(`(?:/[^\s]|<!--)`, `slashstartsregex`),
 				Include(`commentsandwhitespace`),
@@ -123,8 +69,8 @@ func init() {
 				MS.Token(`[0-9][0-9]*\.[0-9]+([eE][0-9]+)?[fd]?`, Number_Float),
 				MS.Token(`0x[0-9a-fA-F]+`, Number_Hex),
 				MS.Token(`[0-9]+`, Number_Integer),
-				MS.MatcherToken(jsDoubleQuoteString, String_Double),
-				MS.MatcherToken(jsSingleQuoteString, String_Single),
+				MS.MatcherToken(StringMatcher('"'), String_Double),
+				MS.MatcherToken(StringMatcher('\''), String_Single),
 			},
 		})
 }

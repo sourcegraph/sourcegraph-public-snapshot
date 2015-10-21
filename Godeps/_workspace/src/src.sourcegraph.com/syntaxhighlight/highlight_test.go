@@ -31,6 +31,24 @@ func TestLexers(t *testing.T) {
 	}
 }
 
+func TestUnknownFormat(t *testing.T) {
+
+	source := "do bats eat cats"
+	collector := &syntaxhighlight.TokenCollectorAnnotator{}
+	syntaxhighlight.Annotate([]byte(source), ``, ``, collector)
+	if collector.Tokens == nil || len(collector.Tokens) != 1 {
+		t.Fatalf("Expected one tokens, got %v", collector.Tokens)
+	}
+	if collector.Tokens[0].Text != source {
+		t.Fatalf("Expected token source to be '%s', got '%s'", source, collector.Tokens[0].Text)
+	}
+
+	if collector.Tokens[0].Offset != 0 {
+		t.Fatalf("Expected token source offset to be 0, got %d", collector.Tokens[0].Offset)
+	}
+}
+
+
 // compares tokens definitions from JSON file, the HTML-formatted tokens
 func processFile(name string, t *testing.T) {
 	source, err := ioutil.ReadFile(filepath.Join("testdata/case", name))

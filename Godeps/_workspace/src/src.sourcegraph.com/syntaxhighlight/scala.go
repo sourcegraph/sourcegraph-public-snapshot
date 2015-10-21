@@ -150,7 +150,7 @@ func init() {
 			`root`: {
 				// method names
 				MS.MatcherToken(Words(`class`, `trait`, `object`), Keyword, `class`),
-				MS.MatcherToken(SingleLineCommentMatcher, Comment_Single),
+				MS.MatcherToken(SingleLineCommentMatcher("//"), Comment_Single),
 				MS.MatcherToken(MultiLineCommentMatcher, Comment_Multiline),
 				MS.Token(fmt.Sprintf(`@%s`, idrest), Name_Decorator),
 				MS.MatcherToken(Words(`import`, `package`), Keyword, `import`),
@@ -163,7 +163,7 @@ func init() {
 				MS.Token(`(true|false|null)\b`, Keyword_Constant),
 				MS.MatcherToken(Words(`type`), Keyword, `type`),
 				MS.Token("\\\"\\\"\\\".*?\\\"\\\"\\\"(\\?!\\\")", String),
-				MS.Token(`"(\\\\|\\"|[^"])*"`, String),
+				MS.MatcherToken(StringMatcher('"'), String),
 				MS.MatcherToken(JavaCharMatcher, String_Char),
 				MS.Token(`[fs]"""`, String, `interptriplestring`), // interpolated strings
 				MS.Token(`[fs]"`, String, `interpstring`),         // interpolated strings

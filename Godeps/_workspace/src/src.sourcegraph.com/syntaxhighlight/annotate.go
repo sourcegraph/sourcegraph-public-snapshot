@@ -30,12 +30,18 @@ func Annotate(src []byte, fileName string, mimeType string, annotator Annotator)
 	} else {
 		lexer = NewLexerByMimeType(mimeType)
 	}
-	if lexer == nil {
-		return []*annotate.Annotation{}, nil
-	}
 	err := annotator.Init()
 	if err != nil {
 		return nil, err
+	}
+	if lexer == nil {
+		// The whole file is one large token
+		a, err := annotator.Annotate(NewToken(src, Whitespace, 0))
+		if err != nil {
+			return nil, err
+		}
+		annotations = append(annotations, a)
+		return annotations, nil
 	}
 	lexer.Init(src)
 	pos := 0

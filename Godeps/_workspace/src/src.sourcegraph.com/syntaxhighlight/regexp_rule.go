@@ -102,6 +102,8 @@ func (self FlagsRuleMaker) makeRegexp(pattern string) Matcher {
 }
 
 var (
+	// Predefined rule maker (no flags)
+	F = FlagsRuleMaker{``}
 	// Predefined rule maker (multiline, case-insensitive, dotall)
 	MSI = FlagsRuleMaker{`msi`}
 	// Predefined rule maker (multiline, dotall)
@@ -206,6 +208,15 @@ func WordsWithBoundary(boundary bool, words ...string) Matcher {
 		}
 		return nil
 	}
+}
+
+// Combines given Unicode classes into RE (\p{A}\p{B}...\p{Z}
+func UnicodeClasses(classes ...string) string {
+	ret := ``
+	for _, class := range classes {
+		ret += `\p{` + class + `}`
+	}
+	return ret
 }
 
 // Returns true if source at a given offset denotes a word boundary.
