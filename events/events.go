@@ -1,11 +1,12 @@
 package events
 
 import (
-	"code.google.com/p/rog-go/parallel"
 	"errors"
 	"log"
 	"reflect"
 	"sync"
+
+	"code.google.com/p/rog-go/parallel"
 )
 
 const maxParallelCallbacks = 8
