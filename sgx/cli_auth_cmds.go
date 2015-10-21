@@ -85,7 +85,7 @@ func writeUserAuth(a userAuth) error {
 		return err
 	}
 	defer f.Close()
-	if err := f.Chmod(0600); err != nil {
+	if err := os.Chmod(f.Name(), 0600); err != nil {
 		return err
 	}
 	b, err := json.MarshalIndent(a, "", "  ")
