@@ -5,6 +5,7 @@ import (
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -56,18 +57,19 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		return nil, err
 	}
 
-	data, events, err := t.ReceivePack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding})
+	data, gitEvents, err := t.ReceivePack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding})
 	if err != nil {
 		return nil, err
 	}
-	events = collapseDuplicateEvents(events)
-	for _, fn := range postPushHooks {
-		// This technically can block, but only when we have a large
-		// backlog of hooks to process (buffered channel). Blocking in
-		// that case is intentional to apply back pressure even though
-		// it degrades client performance.
-		fn(ctx, op, events)
-	}
+	gitEvents = collapseDuplicateEvents(gitEvents)
+	events.Publish(events.Event{
+		EventID: GitPushEvent,
+		Payload: GitHookPayload{
+			Ctx:    ctx,
+			Op:     op,
+			Events: gitEvents,
+		},
+	})
 	return &gitpb.Packet{Data: data}, nil
 }
 

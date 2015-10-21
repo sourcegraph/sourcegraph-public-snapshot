@@ -1,11 +1,9 @@
 package local
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/AaronO/go-git-http"
@@ -15,70 +13,28 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/ext/slack"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/textutil"
 )
 
+const GitPushEvent events.EventID = "git.push"
+
 func init() {
-	AddGitPostPushHook("slack.contributions", slackContributionsHook)
-	AddGitPostPushHook("build", buildHook)
+	events.Subscribe(GitPushEvent, slackContributionsHook)
+	events.Subscribe(GitPushEvent, buildHook)
 }
 
-// postPushHooks holds a collection of functions that will be called as git
-// post-push hooks. Hooks are identified by their string key.
-var postPushHooks = make(map[string]func(context.Context, *gitpb.ReceivePackOp, []githttp.Event))
-
-// errHookExists is returned when the user tries to add a hook with an
-// ID that already exists. The `os.IsExist` function can be used to check
-// for this error.
-var errHookExists = errors.New("ID already exists")
-
-// AddGitPostPushHook adds a new git post-push hook with the given ID. The
-// hook receives the context, pack operation information and git events. We
-// guarantee that a hook will never run concurrently with itself. However, it
-// does not block the git push and will run concurrently with other hooks. As
-// such hooks should not block for a long time, and must handle the repo state
-// being different to the advertised events.
-func AddGitPostPushHook(ID string, fn func(context.Context, *gitpb.ReceivePackOp, []githttp.Event)) error {
-	if _, ok := postPushHooks[ID]; ok {
-		return &os.PathError{
-			Op:   "AddPostPushHook",
-			Path: ID,
-			Err:  errHookExists,
-		}
-	}
-	postPushHooks[ID] = linearizePushHook(fn)
-	return nil
+type GitHookPayload struct {
+	Ctx    context.Context
+	Op     *gitpb.ReceivePackOp
+	Events []githttp.Event
 }
 
-// RemoveGitPostPushHook removes the git hook with the given ID.
-func RemoveGitPostPushHook(ID string) { delete(postPushHooks, ID) }
-
-// linearizePushHook wraps a push hook to ensure that the commit hook is never
-// run concurrently and is run in FIFO order.
-func linearizePushHook(fn func(context.Context, *gitpb.ReceivePackOp, []githttp.Event)) func(context.Context, *gitpb.ReceivePackOp, []githttp.Event) {
-	type args struct {
-		ctx    context.Context
-		op     *gitpb.ReceivePackOp
-		events []githttp.Event
-	}
-	// I don't expect the queue to ever be larger than single digits, it
-	// is this high for safety.
-	ch := make(chan args, 30)
-	go func() {
-		for {
-			a := <-ch
-			fn(a.ctx, a.op, a.events)
-		}
-	}()
-	return func(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
-		ch <- args{ctx, op, events}
-	}
-}
-
-func slackContributionsHook(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
+func slackContributionsHook(payload GitHookPayload) {
+	ctx, op, events := payload.Ctx, payload.Op, payload.Events
 	userStr, err := getUserDisplayName(ctx)
 	if err != nil {
 		log.Printf("postPushHook: error getting user: %s", err)
@@ -194,7 +150,8 @@ func appURL(ctx context.Context, path *url.URL) string {
 	return conf.AppURL(ctx).ResolveReference(path).String()
 }
 
-func buildHook(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
+func buildHook(payload GitHookPayload) {
+	ctx, op, events := payload.Ctx, payload.Op, payload.Events
 	for _, e := range events {
 		if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
 			_, err := svc.Builds(ctx).Create(ctx, &sourcegraph.BuildsCreateOp{

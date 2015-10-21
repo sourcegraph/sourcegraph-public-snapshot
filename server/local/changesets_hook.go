@@ -10,14 +10,15 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func init() {
-	AddGitPostPushHook("changesets.hook", func(ctx context.Context, op *gitpb.ReceivePackOp, events []githttp.Event) {
+	events.Subscribe(GitPushEvent, func(payload GitHookPayload) {
+		ctx, op, gitEvents := payload.Ctx, payload.Op, payload.Events
 		hook := newChangesetHook(ctx, op.Repo.URI)
-		for _, e := range events {
+		for _, e := range gitEvents {
 			if couldAffectChangesets(e) {
 				hook.processEvent(e)
 			}
