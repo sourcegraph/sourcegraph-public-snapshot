@@ -26,14 +26,15 @@ describe("CodeFileContainer", () => {
 
 	it("should handle available file and unavailable definition", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
-		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", null));
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(
 				<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
 			).compare(
 				<div>
-					<CodeListing lines={["someLine"]} selectedDef="someDef" highlightedDef="otherDef" />
+					<div className="code-view-react">
+						<CodeListing lines={["someLine"]} selectedDef="someDef" />
+					</div>
 				</div>
 			);
 		})).to.eql([new CodeActions.WantFile("aRepo", "aRev", "aTree"), new DefActions.WantDef("someDef")]);
@@ -41,14 +42,18 @@ describe("CodeFileContainer", () => {
 
 	it("should handle available file and available definition", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
+		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {test: "defData"}));
+		Dispatcher.directDispatch(DefStore, new DefActions.ExampleFetched("foo", {test: "exampleData"}));
 		expect(Dispatcher.catchDispatched(() => {
 			shallowRender(
 				<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
 			).compare(
 				<div>
-					<CodeListing lines={["someLine"]} selectedDef="someDef" />
-					<DefPopup def={{test: "defData"}} />
+					<div className="code-view-react">
+						<CodeListing lines={["someLine"]} selectedDef="someDef" highlightedDef="otherDef" />
+					</div>
+					<DefPopup def={{test: "defData"}} examples={DefStore.examples} highlightedDef="otherDef" />
 				</div>
 			);
 		})).to.eql([new CodeActions.WantFile("aRepo", "aRev", "aTree"), new DefActions.WantDef("someDef")]);

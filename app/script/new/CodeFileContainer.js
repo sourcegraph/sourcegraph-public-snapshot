@@ -37,6 +37,7 @@ class CodeFileContainer extends React.Component {
 		return {
 			files: CodeStore.files,
 			defs: DefStore.defs,
+			examples: DefStore.examples,
 			highlightedDef: DefStore.highlightedDef,
 		};
 	}
@@ -49,11 +50,19 @@ class CodeFileContainer extends React.Component {
 		let def = this.props.selectedDef && this.state.defs.get(this.props.selectedDef);
 		return (
 			<div>
-				<CodeListing
-					lines={file.Entry.SourceCode.Lines}
-					selectedDef={this.props.selectedDef}
-					highlightedDef={this.state.highlightedDef} />
-				{def && <DefPopup def={def} />}
+				<div className="code-view-react">
+					<CodeListing
+						lines={file.Entry.SourceCode.Lines}
+						lineNumbers={true}
+						selectedDef={this.props.selectedDef}
+						highlightedDef={this.state.highlightedDef} />
+				</div>
+				{def &&
+					<DefPopup
+						def={def}
+						examples={this.state.examples}
+						highlightedDef={this.state.highlightedDef} />
+				}
 			</div>
 		);
 	}

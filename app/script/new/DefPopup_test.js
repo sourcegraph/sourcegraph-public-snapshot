@@ -7,11 +7,12 @@ import Draggable from "react-draggable";
 import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import DefPopup from "./DefPopup";
+import ExampleView from "./ExampleView";
 
 describe("DefPopup", () => {
 	it("should render definition data", () => {
 		shallowRender(
-			<DefPopup def={{URL: "someURL", QualifiedName: "someName", Data: {DocHTML: "someDoc"}}} />
+			<DefPopup def={{URL: "someURL", QualifiedName: "someName", Data: {DocHTML: "someDoc"}}} examples={{test: "examples"}} highlightedDef="otherURL" />
 		).compare(
 			<Draggable handle="header.toolbar">
 				<div className="token-details">
@@ -20,12 +21,15 @@ describe("DefPopup", () => {
 							<a className="btn btn-toolbar btn-default go-to-def" href="someURL">Go to definition</a>
 							<a className="close top-action">×</a>
 						</header>
+
 						<section className="docHTML">
 							<div className="header">
 								<h1 className="qualified-name" dangerouslySetInnerHTML="someName" />
 							</div>
 							<section className="doc" dangerouslySetInnerHTML="someDoc" />
 						</section>
+
+						<ExampleView defURL="someURL" examples={{test: "examples"}} highlightedDef="otherURL" />
 					</div>
 				</div>
 			</Draggable>

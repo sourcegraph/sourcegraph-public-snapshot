@@ -28,3 +28,25 @@ export class GoToDef {
 		this.url = url;
 	}
 }
+
+export class WantExample {
+	constructor(defURL, index) {
+		this.defURL = defURL;
+		this.index = index;
+	}
+}
+
+export class ExampleFetched {
+	constructor(defURL, index, example) {
+		this.defURL = defURL;
+		this.index = index;
+		this.example = example;
+	}
+}
+
+export class NoExampleAvailable {
+	constructor(defURL, index) {
+		this.defURL = defURL;
+		this.index = index;
+	}
+}

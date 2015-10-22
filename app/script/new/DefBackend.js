@@ -31,6 +31,27 @@ const DefBackend = {
 				});
 			}
 			break;
+
+		case DefActions.WantExample:
+			let example = DefStore.examples.get(action.defURL, action.index);
+			if (example === null) {
+				DefBackend.xhr({
+					uri: `/ui${action.defURL}/.examples?TokenizedSource=true&PerPage=1&Page=${action.index}`,
+					json: {},
+				}, function(err, resp, body) {
+					if (err) {
+						console.error(err);
+						return;
+					}
+					if (body === null) {
+						Dispatcher.dispatch(new DefActions.NoExampleAvailable(action.defURL, action.index));
+						return;
+					}
+					Dispatcher.dispatch(new DefActions.ExampleFetched(action.defURL, action.index, body[0]));
+				});
+			}
+			break;
+
 		}
 	},
 };

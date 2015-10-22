@@ -20,13 +20,7 @@ class ElementWrapper {
 		} else if (this.element.type === selector) {
 			return this;
 		}
-		let children = this.element.props && this.element.props.children;
-		if (!children) {
-			return null;
-		}
-		if (children.constructor !== Array) {
-			return new ElementWrapper(children).querySelector(selector);
-		}
+		let children = toChildArray(this.element.props && this.element.props.children);
 		for (let i = 0; i < children.length; i++) {
 			let res = new ElementWrapper(children[i]).querySelector(selector);
 			if (res !== null) {
@@ -47,8 +41,8 @@ class ElementWrapper {
 		expect(this.element.constructor).to.be(expected.constructor);
 		expect(this.element.type).to.be(expected.type);
 
-		if (!expected["props"]) {
-			expect(this.element["props"]).to.eql(false);
+		if (!expected.props) {
+			expect(this.element.props).to.eql(false);
 			return;
 		}
 		Object.keys(expected.props).forEach((key) => {
@@ -56,8 +50,8 @@ class ElementWrapper {
 			expect(this.element.props[key]).to.eql(expected.props[key]);
 		});
 
-		let thisChildren = toChildArray(this.element.props.children);
-		let expectedChildren = toChildArray(expected.props.children);
+		let thisChildren = mergeText(toChildArray(this.element.props.children));
+		let expectedChildren = mergeText(toChildArray(expected.props.children));
 		expect(thisChildren.length).to.be(expectedChildren.length);
 		for (let i = 0; i < thisChildren.length; i++) {
 			new ElementWrapper(thisChildren[i]).compare(expectedChildren[i]);
@@ -72,7 +66,23 @@ function toChildArray(children) {
 	if (children.constructor !== Array) {
 		return [children];
 	}
-	return children.filter((e) => Boolean(e));
+	return children.reduce((a, e) => a.concat(toChildArray(e)), []);
+}
+
+function mergeText(elements) {
+	let merged = [];
+	elements.forEach((e) => {
+		if (e.constructor === Number) {
+			e = String(e);
+		}
+		let i = merged.length - 1;
+		if (e.constructor === String && i !== -1 && merged[i].constructor === String) {
+			merged[i] += e;
+			return;
+		}
+		merged.push(e);
+	});
+	return merged;
 }
 
 // Shallow render the given component. Does not use the DOM.

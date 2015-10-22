@@ -16,6 +16,9 @@ class CodeLineView extends React.Component {
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
+		if (this.props.tokens !== nextProps.tokens) {
+			return true;
+		}
 		if (this.props.selectedDef !== null && nextState.ownURLs[this.props.selectedDef]) {
 			return true;
 		}
@@ -44,7 +47,7 @@ class CodeLineView extends React.Component {
 	render() {
 		return (
 			<tr className="line">
-				<td className="line-number" data-line={this.props.lineNumber}></td>
+				{this.props.lineNumber && <td className="line-number" data-line={this.props.lineNumber}></td>}
 				<td className="line-content">
 					{this.props.tokens.map((token, i) => {
 						if (!token["URL"]) {
@@ -82,6 +85,7 @@ class CodeLineView extends React.Component {
 							</a>
 						);
 					})}
+					{this.props.tokens.length === 0 && <span>&nbsp;</span>}
 				</td>
 			</tr>
 		);
