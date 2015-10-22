@@ -92,7 +92,6 @@ module.exports = {
 
 	devServer: {
 		headers: {"Access-Control-Allow-Origin": "*"},
-		devtool: "inline-source-map",
 		noInfo: true,
 	},
 };

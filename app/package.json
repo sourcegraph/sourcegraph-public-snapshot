@@ -50,7 +50,7 @@
     "xhr": "2.1.0"
   },
   "scripts": {
-    "start": "./node_modules/.bin/webpack-dev-server --devtool inline-source-map",
+    "start": "./node_modules/.bin/webpack-dev-server --devtool cheap-module-source-map",
     "build": "NODE_ENV=production ./node_modules/.bin/webpack",
     "test": "find script -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel/register",
     "dep": "npm rebuild node-sass",
