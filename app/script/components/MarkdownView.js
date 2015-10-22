@@ -14,7 +14,10 @@ var MarkdownView = React.createClass({
 	},
 
 	getInitialState() {
-		// TODO(slimsag): this is not idiomatic React usage patterns.
+		return {html: null};
+	},
+
+	componentDidMount() {
 		$.ajax({
 			method: "POST",
 			url: "/.markdown",
@@ -25,8 +28,6 @@ var MarkdownView = React.createClass({
 		}).done(function(data) {
 			this.setState({html: data});
 		}.bind(this));
-
-		return {html: null};
 	},
 
 	render() {
