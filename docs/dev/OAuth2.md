@@ -54,7 +54,7 @@ communicate with the gRPC server. Because these clients currently
 always run in the same process as the gRPC server, they are guaranteed
 to have access to the server's ID key.
 
-As mentioned in [Security.md](./Security.md), the Web app, HTTP API,
+As mentioned in [Security.md]({{< relref "dev/Security.md" >}}), the Web app, HTTP API,
 and worker are mere API clients of the server and may only access the
 server's resources through the public gRPC API. The use of shared
 secret access tokens allows the server to restrict certain operations,

@@ -18,7 +18,7 @@ Sourcegraph's core security principles are:
   the server's resources through the public gRPC API. If the gRPC
   service denies permission to perform an action, these API clients
   have no way to circumvent that. As described in
-  [OAuth2.md](./OAuth2.md), these clients are authenticated with the
+  [OAuth2.md]({{< relref "dev/OAuth2.md" >}}), these clients are authenticated with the
   server using a shared secret, but the important part is that they
   have no out-of-band access to the server's resources.
 
@@ -102,7 +102,7 @@ actor can be:
 * both client- and user-authenticated.
 
 Here, "client" refers to an OAuth2 client (see
-[OAuth2.md](./OAuth2.md) for more info).
+[OAuth2.md]({{< relref "dev/OAuth2.md" >}}) for more info).
 
 Depending on the level of authentication, the following information is
 available about the current actor:
