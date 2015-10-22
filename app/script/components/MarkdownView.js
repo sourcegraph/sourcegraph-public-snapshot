@@ -32,7 +32,7 @@ var MarkdownView = React.createClass({
 
 	render() {
 		if (this.state.html) {
-			return <div className="markdown-view" dangerouslySetInnerHTML={{__html: this.state.html}} />;
+			return <div className="markdown-view" dangerouslySetInnerHTML={this.state.html} />;
 		}
 		return <div></div>;
 	},

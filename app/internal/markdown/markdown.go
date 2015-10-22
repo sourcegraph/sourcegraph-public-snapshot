@@ -1,14 +1,17 @@
 package markdown
 
 import (
-	"bytes"
-	"io"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
+
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/doc"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {
@@ -24,14 +27,22 @@ func serveMarkdown(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	rendered, err := doc.ToHTML(doc.Markdown, data)
+	apiclient := handlerutil.APIClient(r)
+	ctx := httpctx.FromRequest(r)
+
+	// Use Markdown service to render the markdown.
+	resp, err := apiclient.Markdown.Render(ctx, &sourcegraph.MarkdownRenderOp{
+		Markdown: data,
+		Opt: sourcegraph.MarkdownOpt{
+			EnableCheckboxes: true,
+		},
+	})
 	if err != nil {
 		return err
 	}
 
-	_, err = io.Copy(w, bytes.NewReader(rendered))
-	if err != nil {
-		return err
-	}
-	return nil
+	// Serialize for rendering.
+	html := &pbtypes.HTML{HTML: string(resp.Rendered)}
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(html)
 }
