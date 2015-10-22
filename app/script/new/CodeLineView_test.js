@@ -8,7 +8,6 @@ import * as DefActions from "./DefActions";
 import CodeLineView from "./CodeLineView";
 
 describe("CodeLineView", () => {
-	// TODO test selectedDef and highlightedDef as soon as https://github.com/facebook/react/issues/4461 is resolved
 	it("should render tokens", () => {
 		shallowRender(
 			<CodeLineView lineNumber={42} tokens={[
@@ -17,7 +16,7 @@ describe("CodeLineView", () => {
 				{Label: "baz", Class: "c"},
 				{Label: "ref", Class: "d", URL: ["someURL"]},
 				{Label: "def", Class: "e", URL: ["otherURL"], IsDef: true},
-			]} />
+			]} selectedDef="someURL" highlightedDef="otherURL" />
 		).compare(
 			<tr className="line">
 				<td className="line-number" data-line={42}></td>
@@ -25,8 +24,8 @@ describe("CodeLineView", () => {
 					<span className={""} key={0}>foo</span>
 					<span className={"b"} key={1}>bar</span>
 					<span className={"c"} key={2}>baz</span>
-					<a href="someURL" className={"d ref"} key={3}>ref</a>
-					<a href="otherURL" className={"e ref def"} key={4}>def</a>
+					<a href="someURL" className={"d ref highlight-primary"} key={3}>ref</a>
+					<a href="otherURL" className={"e ref def highlight-secondary"} key={4}>def</a>
 				</td>
 			</tr>
 		);
