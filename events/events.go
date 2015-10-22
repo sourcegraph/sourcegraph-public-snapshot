@@ -1,11 +1,14 @@
 package events
 
 import (
+	"code.google.com/p/rog-go/parallel"
 	"errors"
 	"log"
 	"reflect"
 	"sync"
 )
+
+const maxParallelCallbacks = 8
 
 type EventID string
 
@@ -16,6 +19,7 @@ type Event struct {
 
 type eventServer struct {
 	*sync.Mutex
+	parallel  *parallel.Run
 	callbacks map[EventID][]interface{}
 }
 
@@ -31,8 +35,12 @@ func (s *eventServer) dispatch(e Event) {
 			log.Printf("warning: event dispatcher type mismatch for callback type '%s', payload type '%s'", cv.Type(), pv.Type())
 			continue
 		}
+
 		args := []reflect.Value{pv}
-		go cv.Call(args)
+		go s.parallel.Do(func() error {
+			cv.Call(args)
+			return nil
+		})
 	}
 }
 
@@ -63,6 +71,7 @@ func (s *eventServer) subscribe(id EventID, callback interface{}) error {
 func newEventServer() *eventServer {
 	return &eventServer{
 		Mutex:     &sync.Mutex{},
+		parallel:  parallel.NewRun(maxParallelCallbacks),
 		callbacks: make(map[EventID][]interface{}),
 	}
 }
