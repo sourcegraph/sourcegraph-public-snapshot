@@ -18,13 +18,25 @@ var MarkdownView = React.createClass({
 	},
 
 	componentDidMount() {
+		// Render the markdown content.
+		this._renderMarkdown(this.props);
+	},
+
+	componentWillReceiveProps(nextProps) {
+		// Component will get new properties, so re-render the Markdown content.
+		this._renderMarkdown(nextProps);
+	},
+
+	// _renderMarkdown performs an AJAX request to render the Markdown content to
+	// sanitized HTML on the server.
+	_renderMarkdown(props) {
 		$.ajax({
 			method: "POST",
 			url: "/.markdown",
 			headers: {
 				"X-CSRF-Token": globals.CsrfToken,
 			},
-			data: this.props.content,
+			data: props.content,
 		}).done(function(data) {
 			this.setState({html: data});
 		}.bind(this));
