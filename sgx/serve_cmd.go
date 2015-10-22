@@ -19,10 +19,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/bradfitz/http2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
+	"golang.org/x/net/http2"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

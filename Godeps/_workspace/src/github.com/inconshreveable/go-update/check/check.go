@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"runtime"
 
+	"github.com/inconshreveable/go-update"
 	"github.com/kardianos/osext"
-	"gopkg.in/inconshreveable/go-update.v0"
 )
 
 type Initiative string
@@ -113,13 +113,7 @@ func (p *Params) CheckForUpdate(url string, up *update.Update) (*Result, error) 
 		return nil, err
 	}
 
-	client := up.HTTPClient
-
-	if client == nil {
-		client = &http.Client{}
-	}
-
-	resp, err := client.Post(url, "application/json", bytes.NewReader(body))
+	resp, err := http.Post(url, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}

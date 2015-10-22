@@ -30,10 +30,6 @@
 			"Rev": "b05ba080e2aba78d8b03ae1fe01d7c1b7fecc734"
 		},
 		{
-			"ImportPath": "github.com/alexsaveliev/go-colorable-wrapper",
-			"Rev": "32a2486bdc0de89379a23673af82bd61f5c7c5cd"
-		},
-		{
 			"ImportPath": "github.com/BurntSushi/toml",
 			"Comment": "v0.1.0-21-g056c9bc",
 			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
@@ -77,10 +73,6 @@
 			"Rev": "d0e59c22a56e8dadfed24f74f452cea5a52722d2"
 		},
 		{
-			"ImportPath": "github.com/bradfitz/http2",
-			"Rev": "f8202bc903bda493ebba4aa54922d78430c2c42f"
-		},
-		{
 			"ImportPath": "github.com/cpuguy83/go-md2man/md2man",
 			"Comment": "v1.0.4",
 			"Rev": "71acacd42f85e5e82f70a55327789582a5200a90"
@@ -105,6 +97,10 @@
 		{
 			"ImportPath": "github.com/eknkc/amber",
 			"Rev": "ee5a5b8364bb73899fdd529d23af6ad9230f8a06"
+		},
+		{
+			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
+			"Rev": "bea323321994103859d60197d229f1a94699dde3"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-shlex",
@@ -184,6 +180,10 @@
 		{
 			"ImportPath": "github.com/howeyc/gopass",
 			"Rev": "e8c0d21f59eb7f01086a39e47e05568acc9bb736"
+		},
+		{
+			"ImportPath": "github.com/inconshreveable/go-update",
+			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/mousetrap",
@@ -580,10 +580,6 @@
 		{
 			"ImportPath": "gopkg.in/gcfg.v1",
 			"Rev": "bf6a13274e638b65158eced37fe57b04c5b1838e"
-		},
-		{
-			"ImportPath": "gopkg.in/inconshreveable/go-update.v0",
-			"Rev": "d8b0b1d421aa1cbf392c05869f8abbc669bb7066"
 		},
 		{
 			"ImportPath": "gopkg.in/inconshreveable/log15.v2",
