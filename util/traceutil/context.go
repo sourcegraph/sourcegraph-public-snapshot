@@ -62,8 +62,8 @@ func MiddlewareGRPC(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	}
 
-	if s, ok := md[parentSpanMDKey]; ok {
-		parentSpan, err := appdash.ParseSpanID(s)
+	if s, ok := md[parentSpanMDKey]; ok && len(s) > 0 {
+		parentSpan, err := appdash.ParseSpanID(s[0])
 		if err != nil {
 			return nil, err
 		}

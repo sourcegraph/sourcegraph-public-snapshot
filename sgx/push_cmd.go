@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/grpccache"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
-	"sourcegraph.com/sqs/grpccache"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"

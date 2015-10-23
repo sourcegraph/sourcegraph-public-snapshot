@@ -4,6 +4,7 @@ import (
 	"crypto/subtle"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"time"
 
@@ -71,16 +72,18 @@ func (s *auth) GetAuthorizationCode(ctx context.Context, op *sourcegraph.Authori
 }
 
 func (s *auth) GetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
-	switch {
-	case op.AuthorizationCode != nil:
-		return s.exchangeCodeForAccessToken(ctx, op.AuthorizationCode)
-	case op.ResourceOwnerPassword != nil:
-		return s.authenticateLogin(ctx, op.ResourceOwnerPassword)
-	case op.BearerJWT != nil:
-		return s.authenticateBearerJWT(ctx, op.BearerJWT)
+	if authCode := op.GetAuthorizationCode(); authCode != nil {
+		log.Printf("access token for auth code")
+		return s.exchangeCodeForAccessToken(ctx, authCode)
+	} else if resOwnerPassword := op.GetResourceOwnerPassword(); resOwnerPassword != nil {
+		log.Printf("access token for credentials")
+		return s.authenticateLogin(ctx, resOwnerPassword)
+	} else if bearerJWT := op.GetBearerJWT(); bearerJWT != nil {
+		log.Printf("access token for bearer jwt")
+		return s.authenticateBearerJWT(ctx, bearerJWT)
+	} else {
+		return nil, grpc.Errorf(codes.Unauthenticated, "no supported auth credentials provided")
 	}
-
-	return nil, grpc.Errorf(codes.Unauthenticated, "no supported auth credentials provided")
 }
 
 func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph.AuthorizationCode) (*sourcegraph.AccessTokenResponse, error) {
@@ -116,6 +119,8 @@ func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("access token granted: %v", tok)
 
 	return accessTokenToTokenResponse(tok), nil
 }

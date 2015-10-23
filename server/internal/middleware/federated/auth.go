@@ -12,7 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
 )
 
 func CustomAuthGetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRequest, s sourcegraph.AuthServer) (*sourcegraph.AccessTokenResponse, error) {
@@ -72,7 +71,6 @@ func CustomAuthIdentify(ctx context.Context, op *pbtypes.Void, s sourcegraph.Aut
 		if err != nil {
 			return nil, err
 		}
-		ctx = svc.WithServices(ctx, remote.Services)
 
 		authInfo, err := svc.Auth(ctx).Identify(ctx, op)
 		if authInfo != nil {

@@ -25,8 +25,10 @@ func PasswordMiddleware(w http.ResponseWriter, r *http.Request, next http.Handle
 
 		// Request access token based on username and password.
 		tok, err := handlerutil.APIClient(r).Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
-			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
-			TokenURL:              oauth2client.TokenURL(),
+			AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+				ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
+			},
+			TokenURL: oauth2client.TokenURL(),
 		})
 		if err != nil {
 			log.Printf("PasswordMiddleware: error getting resource owner password access token for user %q: %s.", username, err)

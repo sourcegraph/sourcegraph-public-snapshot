@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sqs/grpccache"
+	"sourcegraph.com/sourcegraph/grpccache"
 )
 
 // These build helpers will need to be moved to another package so

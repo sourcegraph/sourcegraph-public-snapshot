@@ -78,11 +78,16 @@ func TestSignUp_submit(t *testing.T) {
 	}
 	var calledAuthGetAccessToken bool
 	mock.Auth.GetAccessToken_ = func(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
-		if op.ResourceOwnerPassword.Login != frm.Login {
-			t.Errorf("got login == %q, want %q", op.ResourceOwnerPassword.Login, frm.Login)
-		}
-		if op.ResourceOwnerPassword.Password != frm.Password {
-			t.Errorf("got password == %q, want %q", op.ResourceOwnerPassword.Password, frm.Password)
+		resOwnerPassword := op.GetResourceOwnerPassword()
+		if resOwnerPassword == nil {
+			t.Errorf("got empty ResourceOwnerPassword")
+		} else {
+			if resOwnerPassword.Login != frm.Login {
+				t.Errorf("got login == %q, want %q", resOwnerPassword.Login, frm.Login)
+			}
+			if resOwnerPassword.Password != frm.Password {
+				t.Errorf("got password == %q, want %q", resOwnerPassword.Password, frm.Password)
+			}
 		}
 		calledAuthGetAccessToken = true
 		return &sourcegraph.AccessTokenResponse{AccessToken: "k"}, nil

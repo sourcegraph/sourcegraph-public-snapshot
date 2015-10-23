@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // GRPCMiddleware reads the OAuth2 access token from the gRPC call's
@@ -29,12 +30,12 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	}
 
-	authStr, ok := md["authorization"]
-	if !ok {
+	authMD, ok := md["authorization"]
+	if !ok || len(authMD) == 0 {
 		return ctx, nil
 	}
 
-	parts := strings.SplitN(authStr, " ", 2)
+	parts := strings.SplitN(authMD[0], " ", 2)
 	if len(parts) != 2 {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid authorization metadata")
 	}
@@ -83,11 +84,13 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		if err != nil {
 			return nil, err
 		}
-		ctx2, err := info.NewContext(ctx)
+		ctx2, err := info.NewContext(context.Background())
 		if err != nil {
 			return nil, err
 		}
-		authInfo, err := sourcegraph.NewClientFromContext(ctx2).Auth.Identify(ctx2, &pbtypes.Void{})
+		ctx2 = metadata.NewContext(ctx2, md)
+
+		authInfo, err := svc.Auth(ctx2).Identify(ctx2, &pbtypes.Void{})
 		if err != nil {
 			return nil, err
 		}

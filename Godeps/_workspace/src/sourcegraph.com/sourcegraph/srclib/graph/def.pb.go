@@ -17,17 +17,25 @@ It has these top-level messages:
 	DefDoc
 	DefFormatStrings
 	QualFormatStrings
+	Doc
+	Output
+	Ref
+	RefDefKey
 */
 package graph
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto/gogo.pb"
+// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 
 import sourcegraph_com_sqs_pbtypes "sourcegraph.com/sqs/pbtypes"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // DefKey specifies a definition, either concretely or abstractly. A concrete
 // definition key has a non-empty CommitID and refers to a definition defined in a
@@ -166,6 +174,3 @@ type QualFormatStrings struct {
 func (m *QualFormatStrings) Reset()         { *m = QualFormatStrings{} }
 func (m *QualFormatStrings) String() string { return proto.CompactTextString(m) }
 func (*QualFormatStrings) ProtoMessage()    {}
-
-func init() {
-}

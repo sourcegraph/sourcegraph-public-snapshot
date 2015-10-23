@@ -19,10 +19,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/bradfitz/http2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
+	"golang.org/x/net/http2"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,7 +34,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
@@ -524,9 +523,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
 
-	// Send heartbeat pings to federation root to monitor connection status
-	go c.fedRootHeartbeat(clientCtx)
-
 	if fed.Config.IsRoot {
 		// Listen for events and flush them to elasticsearch
 		metricutil.StartEventForwarder(clientCtx)
@@ -862,45 +858,6 @@ func (c *ServeCmd) graphUplink(ctx context.Context) {
 		_, err := cl.GraphUplink.Push(ctx, &snapshot)
 		if err != nil {
 			log15.Error("GraphUplink push failed", "error", err)
-		}
-	}
-
-}
-
-// fedRootHeartbeat sends heartbeat pings to the federation root every 15
-// seconds to verify that the gRPC connection is alive. If the connection
-// is unsuccessful then it will reboot the connection.
-func (c *ServeCmd) fedRootHeartbeat(ctx context.Context) {
-	if (c.GraphUplinkPeriod == 0 && authutil.ActiveFlags.Source != "oauth") || fed.Config.IsRoot {
-		return
-	}
-
-	var mothership *url.URL
-	var cl *sourcegraph.Client
-	var err error
-
-	for {
-		time.Sleep(30 * time.Second)
-		if mothership == nil {
-			mothership, err = fed.Config.RootGRPCEndpoint()
-			if err != nil {
-				log15.Error("FedRootHeartbeat could not identify the mothership", "error", err)
-				// Try again later.
-				continue
-			}
-			ctx = sourcegraph.WithGRPCEndpoint(ctx, mothership)
-		}
-		if cl == nil {
-			cl = sourcegraph.NewClientFromContext(ctx)
-		}
-		_, err := cl.Meta.Status(ctx, &pbtypes.Void{})
-		if err != nil {
-			log15.Error("FedRootHeartbeat failed, rebooting gRPC connection", "mothership", mothership, "error", err)
-			// Remove the grpc.ClientConnection for the fed root target from the connection pool.
-			sourcegraph.RemovePooledGRPCConn(ctx)
-			// Dial a new grpc.ClientConnection to the fed root instance. Subsequent clients
-			// will use this connection from the pool.
-			cl = sourcegraph.NewClientFromContext(ctx)
 		}
 	}
 

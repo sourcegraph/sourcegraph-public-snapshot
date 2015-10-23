@@ -14,13 +14,17 @@ It has these top-level messages:
 package ann
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto/gogo.pb"
+// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 
 import sourcegraph_com_sqs_pbtypes "sourcegraph.com/sqs/pbtypes"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // An Ann is a source code annotation.
 //
@@ -58,6 +62,3 @@ type Ann struct {
 func (m *Ann) Reset()         { *m = Ann{} }
 func (m *Ann) String() string { return proto.CompactTextString(m) }
 func (*Ann) ProtoMessage()    {}
-
-func init() {
-}

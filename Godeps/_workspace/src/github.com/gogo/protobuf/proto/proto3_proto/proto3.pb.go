@@ -16,10 +16,14 @@ It has these top-level messages:
 package proto3_proto
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
+import math "math"
 import testdata "github.com/gogo/protobuf/proto/testdata"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 type Message_Humour int32
 

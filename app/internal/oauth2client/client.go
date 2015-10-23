@@ -318,9 +318,11 @@ func serveOAuth2ClientReceive(w http.ResponseWriter, r *http.Request) (err error
 
 	atok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
 		TokenURL: conf.Endpoint.TokenURL,
-		AuthorizationCode: &sourcegraph.AuthorizationCode{
-			Code:        opt.Code,
-			RedirectURI: origRedirectURI.String(),
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_AuthorizationCode{
+			AuthorizationCode: &sourcegraph.AuthorizationCode{
+				Code:        opt.Code,
+				RedirectURI: origRedirectURI.String(),
+			},
 		},
 	})
 	if err != nil {

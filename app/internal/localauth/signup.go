@@ -116,7 +116,9 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 
 	// Get the newly created user's API key to authenticate future requests.
 	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
-		ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: form.Login, Password: form.Password},
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: form.Login, Password: form.Password},
+		},
 	})
 	if err != nil {
 		return err

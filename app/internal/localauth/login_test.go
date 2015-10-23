@@ -71,7 +71,7 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 
 	var calledAuthGetAccessToken, calledAuthIdentify, calledUsersGet bool
 	mock.Auth.GetAccessToken_ = func(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
-		if !reflect.DeepEqual(*op.ResourceOwnerPassword, frm) {
+		if !reflect.DeepEqual(*op.GetResourceOwnerPassword(), frm) {
 			t.Errorf("got form == %+v, want %+v", op, frm)
 		}
 		calledAuthGetAccessToken = true

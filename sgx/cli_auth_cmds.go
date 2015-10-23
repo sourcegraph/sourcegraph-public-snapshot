@@ -194,7 +194,9 @@ func (c *loginCmd) Execute(args []string) error {
 	// below (where using gRPC makes it much simpler, since we don't
 	// have to mimic a browser's cookies and CSRF tokens).
 	rootTok, err := rootCl.Auth.GetAccessToken(rootCtx, &sourcegraph.AccessTokenRequest{
-		ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("authenticating to root: %s", err)
@@ -225,8 +227,10 @@ func (c *loginCmd) Execute(args []string) error {
 
 		// Exchange the auth code (from the root) for an access token.
 		tok, err := cl.Auth.GetAccessToken(unauthedCtx, &sourcegraph.AccessTokenRequest{
-			AuthorizationCode: code,
-			TokenURL:          tokenURL.String(),
+			AuthorizationGrant: &sourcegraph.AccessTokenRequest_AuthorizationCode{
+				AuthorizationCode: code,
+			},
+			TokenURL: tokenURL.String(),
 		})
 		if err != nil {
 			return fmt.Errorf("exchanging auth code for access token: %s", err)

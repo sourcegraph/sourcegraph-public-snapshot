@@ -41,7 +41,7 @@ func pooledGRPCDial(target string, opts ...grpc.DialOption) (*grpc.ClientConn, e
 	if conns == nil {
 		conns = map[string]*grpc.ClientConn{}
 	}
-	if conn := conns[target]; conn != nil {
+	if conn := conns[target]; conn != nil && conn.State() != grpc.Shutdown {
 		connsMu.Unlock()
 		return conn, nil
 	}
