@@ -32,8 +32,10 @@
 	}
 	.commit-id {
 		font-size: $font-size-small;
+		padding-top: 5px;
 	}
 	p.author {
+		clear: right;
 		margin: 0;
 		span.date {
 			color: $gray-mid;
