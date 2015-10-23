@@ -99,10 +99,6 @@
 			"Rev": "ee5a5b8364bb73899fdd529d23af6ad9230f8a06"
 		},
 		{
-			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
-			"Rev": "bea323321994103859d60197d229f1a94699dde3"
-		},
-		{
 			"ImportPath": "github.com/flynn/go-shlex",
 			"Rev": "362b626337a53744d1f571d5d70d66294c82d429"
 		},
@@ -180,10 +176,6 @@
 		{
 			"ImportPath": "github.com/howeyc/gopass",
 			"Rev": "e8c0d21f59eb7f01086a39e47e05568acc9bb736"
-		},
-		{
-			"ImportPath": "github.com/inconshreveable/go-update",
-			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/mousetrap",
@@ -529,14 +521,6 @@
 			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
 		},
 		{
-			"ImportPath": "golang.org/x/oauth2/google",
-			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
-		},
-		{
-			"ImportPath": "golang.org/x/oauth2/jwt",
-			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
-		},
-		{
 			"ImportPath": "golang.org/x/text/transform",
 			"Rev": "3eb7007b740b66a77f3c85f2660a0240b284115a"
 		},
@@ -580,6 +564,10 @@
 		{
 			"ImportPath": "gopkg.in/gcfg.v1",
 			"Rev": "bf6a13274e638b65158eced37fe57b04c5b1838e"
+		},
+		{
+			"ImportPath": "gopkg.in/inconshreveable/go-update.v0",
+			"Rev": "d8b0b1d421aa1cbf392c05869f8abbc669bb7066"
 		},
 		{
 			"ImportPath": "gopkg.in/inconshreveable/log15.v2",
