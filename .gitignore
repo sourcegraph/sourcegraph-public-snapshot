@@ -53,3 +53,8 @@ eb-bundle.zip
 
 /provision/kubernetes/gen
 /deploy/sourcegraph.com/src
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
