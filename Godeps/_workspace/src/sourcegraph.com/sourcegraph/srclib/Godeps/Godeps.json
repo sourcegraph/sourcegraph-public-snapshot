@@ -130,10 +130,6 @@
 			"ImportPath": "github.com/inconshreveable/go-update",
 			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
 		},
-		{			
-			"ImportPath": "github.com/inconshreveable/go-update",
-			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
-		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
 			"Comment": "v1-295-gac1de6d",

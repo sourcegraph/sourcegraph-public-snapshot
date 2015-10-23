@@ -179,27 +179,22 @@ func (t *PBToken) UnmarshalJSON(b []byte) error {
 func (t *PBToken) GetQueryToken() Token {
 	if term := t.GetTerm(); term != "" {
 		return Term(term)
-	}
-	if anyToken := t.GetAnyToken(); anyToken != "" {
+	} else if anyToken := t.GetAnyToken(); anyToken != "" {
 		return AnyToken(anyToken)
-	}
-	if repoToken := t.GetRepoToken(); repoToken != nil {
+	} else if repoToken := t.GetRepoToken(); repoToken != nil {
 		return *repoToken
-	}
-	if revToken := t.GetRevToken(); revToken != nil {
+	} else if revToken := t.GetRevToken(); revToken != nil {
 		return *revToken
-	}
-	if fileToken := t.GetFileToken(); fileToken != nil {
+	} else if fileToken := t.GetFileToken(); fileToken != nil {
 		return *fileToken
-	}
-	if userToken := t.GetUserToken(); userToken != nil {
+	} else if userToken := t.GetUserToken(); userToken != nil {
 		return *userToken
-	}
-	if unitToken := t.GetUnitToken(); unitToken != nil {
+	} else if unitToken := t.GetUnitToken(); unitToken != nil {
 		return *unitToken
+	} else {
+		// empty
+		return Term("")
 	}
-	// empty
-	return Term("")
 }
 
 func PBTokenWrap(t Token) PBToken {

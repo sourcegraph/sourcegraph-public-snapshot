@@ -601,15 +601,15 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/routevar",
-			"Rev": "19e6a76dd4777f0196fc459f9f18a7f13b1a8a1a"
+			"Rev": "9dedabd33a801c62726c3a7e603669efd5876a4d"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph",
-			"Rev": "19e6a76dd4777f0196fc459f9f18a7f13b1a8a1a"
+			"Rev": "9dedabd33a801c62726c3a7e603669efd5876a4d"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/spec",
-			"Rev": "19e6a76dd4777f0196fc459f9f18a7f13b1a8a1a"
+			"Rev": "9dedabd33a801c62726c3a7e603669efd5876a4d"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
@@ -641,8 +641,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-178-gf111455",
-			"Rev": "f1114550dea9e7104c513b9c1310c3782c9bd469"
+			"Comment": "v0.5-c-180-gd51e025",
+			"Rev": "d51e025b229cf7c626f59b38095678e8b9e9c70d"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
