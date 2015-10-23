@@ -87,8 +87,8 @@
 		},
 		{
 			"ImportPath": "github.com/dgrijalva/jwt-go",
-			"Comment": "v2.2.0-2-g47b263f",
-			"Rev": "47b263f020574c14765ecc3ea88f0e9447046632"
+			"Comment": "v2.3.0-7-gacc5a5f",
+			"Rev": "acc5a5f31e3493f1992315fd85aa49226372b810"
 		},
 		{
 			"ImportPath": "github.com/dustin/go-humanize",
