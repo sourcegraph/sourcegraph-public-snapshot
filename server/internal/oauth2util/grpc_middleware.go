@@ -36,7 +36,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 	}
 
 	// This is for backwards compatibility with client instances that are running older versions
-	// of sourcegraph (<= v0.7.22).
+	// of sourcegraph (< v0.7.22).
 	// TODO: remove this hack once clients upgrade to binaries having the new grpc-go API.
 	authToken := authMD[len(authMD)-1]
 
