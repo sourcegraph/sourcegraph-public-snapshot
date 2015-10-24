@@ -35,7 +35,12 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	}
 
-	parts := strings.SplitN(authMD[0], " ", 2)
+	// This is for backwards compatibility with client instances that are running older versions
+	// of sourcegraph (<= v0.7.22).
+	// TODO: remove this hack once clients upgrade to binaries having the new grpc-go API.
+	authToken := authMD[len(authMD)-1]
+
+	parts := strings.SplitN(authToken, " ", 2)
 	if len(parts) != 2 {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid authorization metadata")
 	}
