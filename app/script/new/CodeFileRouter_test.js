@@ -1,84 +1,46 @@
-import shallowRender from "./util/shallowRender";
+import autotest from "./util/autotest";
 import expect from "expect.js";
 
 import React from "react";
 
 import Dispatcher from "./Dispatcher";
 import CodeFileRouter from "./CodeFileRouter";
-import CodeFileContainer from "./CodeFileContainer";
 import * as DefActions from "./DefActions";
+
+import testdataFile from "./testdata/CodeFileRouter-file.json";
+import testdataLineSelection from "./testdata/CodeFileRouter-lineSelection.json";
+import testdataDefSelection from "./testdata/CodeFileRouter-defSelection.json";
+import testdataDefinition from "./testdata/CodeFileRouter-definition.json";
+import testdataExample from "./testdata/CodeFileRouter-example.json";
 
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {
-		shallowRender(
+		autotest(testdataFile, `${__dirname}/testdata/CodeFileRouter-file.json`,
 			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go" />
-		).compare(
-			<CodeFileContainer
-				repo="github.com/gorilla/mux"
-				rev="master"
-				tree="mux.go"
-				startLine={null}
-				endLine={null}
-				selectedDef={null}
-				def={null} />
 		);
 	});
 
 	it("should handle line selection URLs", () => {
-		shallowRender(
+		autotest(testdataLineSelection, `${__dirname}/testdata/CodeFileRouter-lineSelection.json`,
 			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53" />
-		).compare(
-			<CodeFileContainer
-				repo="github.com/gorilla/mux"
-				rev="master"
-				tree="mux.go"
-				startLine={40}
-				endLine={53}
-				selectedDef={null}
-				def={null} />
 		);
 	});
 
 	it("should handle definition selection URLs", () => {
-		shallowRender(
+		autotest(testdataDefSelection, `${__dirname}/testdata/CodeFileRouter-defSelection.json`,
 			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someDef" />
-		).compare(
-			<CodeFileContainer
-				repo="github.com/gorilla/mux"
-				rev="master"
-				tree="mux.go"
-				startLine={null}
-				endLine={null}
-				selectedDef={"someDef"}
-				def={null} />
 		);
 	});
 
 	it("should handle definition URLs", () => {
-		shallowRender(
+		autotest(testdataDefinition, `${__dirname}/testdata/CodeFileRouter-definition.json`,
 			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router" />
-		).compare(
-			<CodeFileContainer
-				repo="github.com/gorilla/mux"
-				rev="master"
-				unitType="GoPackage"
-				unit="github.com/gorilla/mux"
-				def="Router"
-				example={null} />
 		);
 	});
 
 	it("should handle example URLs", () => {
-		shallowRender(
+		autotest(testdataExample, `${__dirname}/testdata/CodeFileRouter-example.json`,
 			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router/.examples/4" />
-		).compare(
-			<CodeFileContainer
-				repo="github.com/gorilla/mux"
-				rev="master"
-				unitType="GoPackage"
-				unit="github.com/gorilla/mux"
-				def="Router"
-				example={4} />
 		);
 	});
 

@@ -74,7 +74,6 @@
 		"no-throw-literal": 2,
 		"no-trailing-spaces": [1, {"skipBlankLines": false}],
 		"no-undef": 2,
-		"no-undef-init": 2,
 		"no-unexpected-multiline": 2,
 		"no-unneeded-ternary": 2,
 		"no-unreachable": 1,

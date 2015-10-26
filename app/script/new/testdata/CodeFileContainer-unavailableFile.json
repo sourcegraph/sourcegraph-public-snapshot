@@ -1,0 +1,10 @@
+{
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "aTree"
+		}
+	]
+}

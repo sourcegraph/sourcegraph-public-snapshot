@@ -1,0 +1,11 @@
+{
+	"renderOutput": {
+		"type": "FluxContainerClass",
+		"props": {
+			"repo": "github.com/gorilla/mux",
+			"rev": "master",
+			"tree": "mux.go",
+			"selectedDef": "someDef"
+		}
+	}
+}

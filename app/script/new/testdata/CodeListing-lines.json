@@ -1,0 +1,51 @@
+{
+	"renderOutput": {
+		"type": "table",
+		"props": {
+			"className": "line-numbered-code",
+			"children": [
+				{
+					"type": "tbody",
+					"props": {
+						"children": [
+							{
+								"type": "CodeLineView",
+								"key": "0",
+								"props": {
+									"lineNumber": 1,
+									"tokens": [
+										"foo"
+									],
+									"selectedDef": "someDef",
+									"highlightedDef": "otherDef"
+								}
+							},
+							{
+								"type": "CodeLineView",
+								"key": "1",
+								"props": {
+									"lineNumber": 2,
+									"tokens": [],
+									"selectedDef": "someDef",
+									"highlightedDef": "otherDef"
+								}
+							},
+							{
+								"type": "CodeLineView",
+								"key": "2",
+								"props": {
+									"lineNumber": 3,
+									"tokens": [
+										"bar"
+									],
+									"selectedDef": "someDef",
+									"highlightedDef": "otherDef"
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

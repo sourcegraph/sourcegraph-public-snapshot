@@ -56,5 +56,9 @@
     "test": "find script -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel/register",
     "dep": "npm rebuild node-sass",
     "graph": "mkdir -p artifacts/; ./node_modules/.bin/babel -l react -d artifacts/script-compiled/new/ script/new/; ./node_modules/.bin/madge artifacts/script-compiled/new/ -f es6 -i artifacts/app-graph.png -x 'node_modules|_test|util|Dispatcher|Actions'; rm -r artifacts/script-compiled/"
+  },
+  "browser": {
+    "fs": false,
+    "child_process": false
   }
 }

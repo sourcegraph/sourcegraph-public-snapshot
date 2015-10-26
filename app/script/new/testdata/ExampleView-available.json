@@ -1,0 +1,123 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "example",
+			"children": [
+				{
+					"type": "header",
+					"props": {
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "pull-right",
+									"children": [
+										"someRepo"
+									]
+								}
+							},
+							{
+								"type": "nav",
+								"props": {
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"className": "fa fa-chevron-circle-left btnNav disabled"
+											}
+										},
+										{
+											"type": "a",
+											"props": {
+												"className": "fa fa-chevron-circle-right btnNav ",
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "WantExample",
+															"defURL": "/someURL",
+															"index": 1
+														}
+													]
+												}
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "a",
+								"props": {
+									"children": [
+										"foo.go:3-7"
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "body",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"style": {
+										"opacity": 1
+									},
+									"children": [
+										{
+											"type": "CodeListing",
+											"props": {
+												"lines": [
+													{
+														"test": "aLine"
+													}
+												],
+												"selectedDef": "/someURL",
+												"highlightedDef": "/otherURL"
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "footer",
+					"props": {
+						"children": [
+							{
+								"type": "a",
+								"props": {
+									"target": "_blank",
+									"href": "/someURL/.examples",
+									"className": "pull-right",
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"className": "fa fa-eye"
+											}
+										},
+										" View all"
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantExample",
+			"defURL": "/someURL",
+			"index": 0
+		}
+	]
+}

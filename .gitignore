@@ -52,6 +52,7 @@ Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 /app/assets/test.js
 /app/assets/*.html
 /app/assets/*.map
+*.json.actual
 
 eb-bundle.zip
 
