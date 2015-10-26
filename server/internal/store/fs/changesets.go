@@ -403,22 +403,28 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		if !fi.IsDir() {
 			continue
 		}
+
 		// skip non-numeric folders
 		if _, err := strconv.Atoi(fi.Name()); err != nil {
 			continue
 		}
 		paths = append(paths, filepath.Join(fi.Name(), changesetMetadataFile))
 	}
+
+	// Concurrently read each metadata file from the VFS.
 	readCh, done := vfsutil.ConcurrentRead(fs, paths)
 	defer done.Done()
 	for readRet := range readCh {
 		if readRet.Error != nil {
 			return nil, readRet.Error
 		}
+
+		// Unmarshal the changeset metadata.
 		var cs sourcegraph.Changeset
 		if err := json.Unmarshal(readRet.Bytes, &cs); err != nil {
 			return nil, err
 		}
+
 		if op.Open && cs.ClosedAt == nil || op.Closed && cs.ClosedAt != nil {
 			// check if the request was only for changesets with a specific
 			// branch for head or base.
