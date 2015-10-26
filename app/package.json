@@ -21,6 +21,7 @@
     "fuse.js": "1.2.2",
     "glob": "5.0.14",
     "jsdom": "6.5.1",
+    "json-loader": "0.5.3",
     "keymirror": "0.1.1",
     "lintspaces": "0.3.2",
     "lintspaces-cli": "0.1.0",

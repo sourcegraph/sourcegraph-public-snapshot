@@ -62,6 +62,7 @@ module.exports = {
 
 			{test: /_test\.js$/, exclude: /node_modules/, loader: "mocha"},
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader"},
+			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 
 			{test: /\.(eot|ttf|woff)$/, loader: "file?name=fonts/[name].[ext]"},
 			{test: /\.(png|svg)$/, loader: "url?limit=10000&name=images/[name]-[hash].[ext]&size=6"},
