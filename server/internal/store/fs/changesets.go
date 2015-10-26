@@ -431,19 +431,20 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 			continue
 		}
 
-		// check if the request was only for changesets with a specific
-		// branch for head or base.
-		if (op.Head == "" || op.Head == cs.DeltaSpec.Head.Rev) &&
-			(op.Base == "" || op.Base == cs.DeltaSpec.Base.Rev) {
-			if skip > 0 {
-				skip--
-				continue
-			}
-			if len(list.Changesets) == limit {
-				break
-			}
-			list.Changesets = append(list.Changesets, &cs)
+		// If we're only interested in a changeset with a specific branch for head
+		// or base, check that now or simply continue.
+		if (op.Head != "" && op.Head != cs.DeltaSpec.Head.Rev) || (op.Base != "" && op.Base != cs.DeltaSpec.Base.Rev) {
+			continue
 		}
+
+		if skip > 0 {
+			skip--
+			continue
+		}
+		if len(list.Changesets) == limit {
+			break
+		}
+		list.Changesets = append(list.Changesets, &cs)
 	}
 	return &list, nil
 }
