@@ -68,7 +68,7 @@ serve-mothership-dev:
 	$(MAKE) serve-dev SRCFLAGS="--grpc-endpoint http://demo-mothership:13100 $(SRCFLAGS)" SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13000 --addr=:13001 --grpc-addr=:13100 --app-url http://demo-mothership:13000 --appdash.disable-server $(SERVEFLAGS)"
 
 serve-beyang-dev:
-	$(MAKE) serve-dev SERVEFLAGS="--auth.source=none --app.disable-dir-defs --local.clcache 10s --num-workers 0 $(SERVEFLAGS)"
+	$(MAKE) serve-dev SERVEFLAGS="--app.disable-apps --app.disable-dir-defs --app.disable-external-links --app.disable-repo-tree-search --app.disable-search --app.header-footer-links 0 --app.motd '' --app.no-auto-build --auth.source=none --fed.is-root --graphuplink 0 --local.clcache 10s --local.clcachesize 2000 --num-workers 0 $(SERVEFLAGS)"
 
 serve-test-ui: serve-dep
 	@echo Starting UI test server\; will recompile and restart when source files change
