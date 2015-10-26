@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -395,8 +396,6 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		return nil, err
 	}
 
-	skip := op.Offset()
-	limit := op.Limit()
 	var paths []string
 	for _, fi := range fis {
 		// skip files
@@ -436,16 +435,35 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		if (op.Head != "" && op.Head != cs.DeltaSpec.Head.Rev) || (op.Base != "" && op.Base != cs.DeltaSpec.Base.Rev) {
 			continue
 		}
-
-		if skip > 0 {
-			skip--
-			continue
-		}
-		if len(list.Changesets) == limit {
-			break
-		}
 		list.Changesets = append(list.Changesets, &cs)
 	}
+
+	// Sort in reverse by ID (i.e. largest ID first, because changesets with
+	// larger IDs were created most recently).
+	//
+	// TODO(slimsag): allow client to choose the sorting order, add sort-by
+	// options to frontend.
+	sort.Sort(sort.Reverse(byChangesetID(list.Changesets)))
+
+	// Determine start index.
+	start := op.Offset()
+	if start < 0 {
+		start = 0
+	} else if start > len(list.Changesets) {
+		start = len(list.Changesets)
+	}
+
+	// Determine end index.
+	end := op.Offset() + op.Limit()
+	if end < 0 {
+		end = 0
+	}
+	if end > len(list.Changesets) {
+		end = len(list.Changesets)
+	}
+
+	// Cut the list.
+	list.Changesets = list.Changesets[start:end]
 	return &list, nil
 }
 
@@ -456,4 +474,12 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 		return nil, err
 	}
 	return &list, nil
+}
+
+type byChangesetID []*sourcegraph.Changeset
+
+func (v byChangesetID) Len() int      { return len(v) }
+func (v byChangesetID) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v byChangesetID) Less(i, j int) bool {
+	return v[i].ID < v[j].ID
 }

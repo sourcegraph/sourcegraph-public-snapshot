@@ -55,8 +55,7 @@ func serveList(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// TODO(slimsag): This is hacky. Our storage backend should tell us if we have
-	// more, and should also offer different ordering modes (e.g. by-date,
-	// by-author, etc).
+	// more.
 	nextPageURL := ""
 	prevPageURL := ""
 
