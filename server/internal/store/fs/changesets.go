@@ -425,20 +425,24 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 			return nil, err
 		}
 
-		if op.Open && cs.ClosedAt == nil || op.Closed && cs.ClosedAt != nil {
-			// check if the request was only for changesets with a specific
-			// branch for head or base.
-			if (op.Head == "" || op.Head == cs.DeltaSpec.Head.Rev) &&
-				(op.Base == "" || op.Base == cs.DeltaSpec.Base.Rev) {
-				if skip > 0 {
-					skip--
-					continue
-				}
-				if len(list.Changesets) == limit {
-					break
-				}
-				list.Changesets = append(list.Changesets, &cs)
+		// If we're only interested in open changesets and this one is closed (or
+		// vice-versa), then we simply continue.
+		if op.Open && cs.ClosedAt != nil || op.Closed && cs.ClosedAt == nil {
+			continue
+		}
+
+		// check if the request was only for changesets with a specific
+		// branch for head or base.
+		if (op.Head == "" || op.Head == cs.DeltaSpec.Head.Rev) &&
+			(op.Base == "" || op.Base == cs.DeltaSpec.Base.Rev) {
+			if skip > 0 {
+				skip--
+				continue
 			}
+			if len(list.Changesets) == limit {
+				break
+			}
+			list.Changesets = append(list.Changesets, &cs)
 		}
 	}
 	return &list, nil
