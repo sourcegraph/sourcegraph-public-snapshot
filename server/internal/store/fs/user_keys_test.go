@@ -79,7 +79,9 @@ func TestUserKeys(t *testing.T) {
 
 	// Check that deleted user's key is no longer present.
 	_, err = s.LookupUser(ctx, sourcegraph.SSHPublicKey{keys[deletedUID]})
-	if err == nil {
+	if err != nil {
+		// Ok.
+	} else {
 		t.Errorf("expected error, this user's key should be deleted by now")
 	}
 
@@ -91,6 +93,14 @@ func TestUserKeys(t *testing.T) {
 	err = s.DeleteKey(ctx, 3)
 	if err != nil {
 		t.Error(err)
+	}
+
+	// Deleting the key of a user that doesn't have a key should error.
+	err = s.DeleteKey(ctx, 1)
+	if err != nil {
+		// Ok.
+	} else {
+		t.Error("expected an error because key doesn't exist")
 	}
 
 	// Make sure empty folders are cleaned up.
