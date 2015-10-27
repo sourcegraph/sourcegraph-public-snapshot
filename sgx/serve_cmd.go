@@ -36,16 +36,17 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/gitserver/sshgit"
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
-	"src.sourcegraph.com/sourcegraph/notif/githooks"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -556,11 +557,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Refresh commit list periodically
 	go c.repoStatusCommitLogCacheRefresher()
 
-	// gitHookCtx, err := c.authenticateScopedContext(cliCtx, idKey, "internal:notifs")
-	// if err != nil {
-	// 	log.Fatal("Could not initialize gitHookCtx: %v", err)
-	// } else {
-	githooks.Listener.Init(cliCtx)
+	// Start event listeners
+	c.initializeEventListeners(cliCtx, idKey, appURL)
 
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
@@ -659,8 +657,8 @@ func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
 //
 // This should be used for authenticating platform apps that will run in-process with
 // the server, but which should have limited access to gRPC operations.
-func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scope string) (context.Context, error) {
-	src := sharedsecret.ShortTokenSource(k, scope)
+func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []string) (context.Context, error) {
+	src := sharedsecret.TokenSource(k, scopes...)
 	tok, err := src.Token()
 	if err != nil {
 		return nil, err
@@ -683,6 +681,25 @@ func (ts updateGlobalTokenSource) Token() (*oauth2.Token, error) {
 	}
 	return tok, err
 }
+
+// initializeEventListeners creates special scoped contexts and passes them to
+// event listeners.
+func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL) {
+	ctx := conf.WithAppURL(parent, appURL)
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{ClientID: k.ID})
+	// Mask out the server's private key from the context passed to the listener
+	ctx = idkey.NewContext(ctx, nil)
+
+	for _, l := range events.Listeners {
+		listenerCtx, err := c.authenticateScopedContext(ctx, k, l.Scopes())
+		if err != nil {
+			log.Fatal("Could not initialize listener context: %v", err)
+		} else {
+			l.Start(listenerCtx)
+		}
+	}
+}
+
 
 // checkReachability attempts to contact the gRPC server on both the
 // internally and externally published URL. It calls log.Fatal if the

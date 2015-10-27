@@ -2,7 +2,6 @@ package githooks
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/AaronO/go-git-http"
@@ -32,12 +31,11 @@ type Payload struct {
 type gitHookListener struct {
 	Ctx context.Context
 
-	SlackHook      func(Payload)
-	BuildHook      func(Payload)
-	ChangesetsHook func(Payload)
+	SlackHook func(Payload)
+	BuildHook func(Payload)
 }
 
-func (g *gitHookListener) Init(ctx context.Context) {
+func (g *gitHookListener) Start(ctx context.Context) {
 	g.Ctx = ctx
 
 	g.SlackHook = func(p Payload) {
@@ -46,30 +44,28 @@ func (g *gitHookListener) Init(ctx context.Context) {
 	g.BuildHook = func(p Payload) {
 		buildHook(g, p)
 	}
-	// TODO(pararth): add back changesets_hook
-	// g.ChangesetsHook = func(p Payload) {
-	// 	if p.Event.Error == nil && p.Event.Branch != "" {
-	// 		changesetsHook(g, p)
-	// 	}
-	// }
 
 	events.Subscribe(GitPushEvent, g.SlackHook)
 	events.Subscribe(GitCreateEvent, g.SlackHook)
 	events.Subscribe(GitDeleteEvent, g.SlackHook)
 
 	events.Subscribe(GitPushEvent, g.BuildHook)
-
-	// events.Subscribe(GitPushEvent, g.ChangesetHook)
 }
 
-var Listener *gitHookListener = &gitHookListener{}
+func (g *gitHookListener) Scopes() []string {
+	return []string{"app:notifs"}
+}
+
+func init() {
+	events.Listeners = append(events.Listeners, &gitHookListener{})
+}
 
 func slackContributionsHook(gitListener *gitHookListener, payload Payload) {
 	ctx := gitListener.Ctx
 	cl := sourcegraph.NewClientFromContext(ctx)
 	userStr, err := getUserDisplayName(cl, ctx, payload.CtxActor)
 	if err != nil {
-		log.Printf("postPushHook: error getting user: %s", err)
+		log15.Warn("postPushHook: error getting user", "error", err)
 		return
 	}
 
@@ -77,7 +73,7 @@ func slackContributionsHook(gitListener *gitHookListener, payload Payload) {
 	event := payload.Event
 	branchURL, err := router.Rel.URLToRepoRev(repo.URI, event.Branch)
 	if err != nil {
-		log.Printf("postPushHook: error resolving branch URL for repo %s and branch %s: %v", repo.URI, event.Branch, err)
+		log15.Warn("postPushHook: error resolving branch URL", "repo", repo.URI, "branch", event.Branch, "error", err)
 		return
 	}
 
@@ -114,7 +110,7 @@ func slackContributionsHook(gitListener *gitHookListener, payload Payload) {
 		},
 	})
 	if err != nil {
-		log.Printf("warning: error fetching push commits for post-push hook: %s.", err)
+		log15.Warn("error fetching push commits for post-push hook", "error", err)
 		commits = &sourcegraph.CommitList{}
 	}
 

@@ -145,8 +145,7 @@ func WithClientContext(parent context.Context) context.Context {
 	return ctx
 }
 
-// WithClientContext returns a copy of parent with client endpoint and
-// auth information added.
+// WithClientContextUnauthed returns a copy of parent with client endpoint added.
 func WithClientContextUnauthed(parent context.Context) context.Context {
 	ctx, err := Endpoints.WithEndpoints(parent)
 	if err != nil {
