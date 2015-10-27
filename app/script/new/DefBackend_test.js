@@ -33,7 +33,7 @@ describe("DefBackend", () => {
 	describe("should handle WantExample", () => {
 		it("with result available", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/ui/someURL/.examples?TokenizedSource=true&PerPage=1&Page=42");
+				expect(options.uri).to.be("/ui/someURL/.examples?TokenizedSource=true&PerPage=1&Page=43");
 				callback(null, null, [{test: "exampleData"}]);
 			};
 			expect(Dispatcher.catchDispatched(() => {
@@ -43,7 +43,7 @@ describe("DefBackend", () => {
 
 		it("with no result available", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/ui/someURL/.examples?TokenizedSource=true&PerPage=1&Page=42");
+				expect(options.uri).to.be("/ui/someURL/.examples?TokenizedSource=true&PerPage=1&Page=43");
 				callback(null, null, null);
 			};
 			expect(Dispatcher.catchDispatched(() => {
