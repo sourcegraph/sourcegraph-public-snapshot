@@ -111,11 +111,6 @@ func (s *userKeys) hashDirForKey(key sourcegraph.SSHPublicKey) string {
 }
 
 func publicKeyToHash(key []byte) string {
-	h := sha1.New()
-	_, err := h.Write(key)
-	if err != nil {
-		panic(err) // This is expected to never happen.
-	}
-	sum := h.Sum(nil)
-	return base64.RawURLEncoding.EncodeToString(sum)
+	sum := sha1.Sum(key)
+	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
