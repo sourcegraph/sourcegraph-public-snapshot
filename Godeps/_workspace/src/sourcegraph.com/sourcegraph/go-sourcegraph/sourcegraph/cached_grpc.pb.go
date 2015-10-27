@@ -3646,6 +3646,124 @@ func (s *CachedUnitsClient) List(ctx context.Context, in *UnitListOptions, opts 
 	return result, nil
 }
 
+type CachedUserKeysServer struct{ UserKeysServer }
+
+func (s *CachedUserKeysServer) AddKey(ctx context.Context, in *SSHPublicKey) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.AddKey(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUserKeysServer) LookupUser(ctx context.Context, in *SSHPublicKey) (*UserSpec, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.LookupUser(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUserKeysServer) DeleteKey(ctx context.Context, in *pbtypes.Void) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.DeleteKey(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedUserKeysClient struct {
+	UserKeysClient
+	Cache *grpccache.Cache
+}
+
+func (s *CachedUserKeysClient) AddKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "UserKeys.AddKey", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.AddKey(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.AddKey", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedUserKeysClient) LookupUser(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*UserSpec, error) {
+	if s.Cache != nil {
+		var cachedResult UserSpec
+		cached, err := s.Cache.Get(ctx, "UserKeys.LookupUser", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.LookupUser(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.LookupUser", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedUserKeysClient) DeleteKey(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "UserKeys.DeleteKey", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.DeleteKey(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.DeleteKey", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 type CachedUsersServer struct{ UsersServer }
 
 func (s *CachedUsersServer) Get(ctx context.Context, in *UserSpec) (*User, error) {

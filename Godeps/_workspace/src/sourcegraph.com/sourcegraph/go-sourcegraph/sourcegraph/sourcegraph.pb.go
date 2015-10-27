@@ -110,6 +110,7 @@ It has these top-level messages:
 	PasswordResetToken
 	NewPassword
 	NewAccount
+	SSHPublicKey
 	AuthorizationCodeRequest
 	AuthorizationCode
 	LoginCredentials
@@ -1731,6 +1732,16 @@ type NewAccount struct {
 func (m *NewAccount) Reset()         { *m = NewAccount{} }
 func (m *NewAccount) String() string { return proto.CompactTextString(m) }
 func (*NewAccount) ProtoMessage()    {}
+
+// SSHPublicKey that users to authenticate with for SSH git access.
+type SSHPublicKey struct {
+	// Key is the serialized key data in SSH wire format, with the name prefix.
+	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:",omitempty"`
+}
+
+func (m *SSHPublicKey) Reset()         { *m = SSHPublicKey{} }
+func (m *SSHPublicKey) String() string { return proto.CompactTextString(m) }
+func (*SSHPublicKey) ProtoMessage()    {}
 
 // AuthorizationCodeRequest: see
 // https://tools.ietf.org/html/rfc6749#section-4.1.1.
@@ -5561,6 +5572,123 @@ var _Users_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _Users_List_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for UserKeys service
+
+type UserKeysClient interface {
+	// AddKey adds an SSH public key for the user, enabling them to use git over SSH.
+	AddKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// LookupUser looks up a user based on the given public key.
+	LookupUser(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*UserSpec, error)
+	// DeleteKey deletes the user's SSH public key.
+	DeleteKey(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+}
+
+type userKeysClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewUserKeysClient(cc *grpc.ClientConn) UserKeysClient {
+	return &userKeysClient{cc}
+}
+
+func (c *userKeysClient) AddKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/AddKey", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userKeysClient) LookupUser(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*UserSpec, error) {
+	out := new(UserSpec)
+	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/LookupUser", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userKeysClient) DeleteKey(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/DeleteKey", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for UserKeys service
+
+type UserKeysServer interface {
+	// AddKey adds an SSH public key for the user, enabling them to use git over SSH.
+	AddKey(context.Context, *SSHPublicKey) (*pbtypes1.Void, error)
+	// LookupUser looks up a user based on the given public key.
+	LookupUser(context.Context, *SSHPublicKey) (*UserSpec, error)
+	// DeleteKey deletes the user's SSH public key.
+	DeleteKey(context.Context, *pbtypes1.Void) (*pbtypes1.Void, error)
+}
+
+func RegisterUserKeysServer(s *grpc.Server, srv UserKeysServer) {
+	s.RegisterService(&_UserKeys_serviceDesc, srv)
+}
+
+func _UserKeys_AddKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SSHPublicKey)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(UserKeysServer).AddKey(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _UserKeys_LookupUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SSHPublicKey)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(UserKeysServer).LookupUser(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _UserKeys_DeleteKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(pbtypes1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(UserKeysServer).DeleteKey(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _UserKeys_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "sourcegraph.UserKeys",
+	HandlerType: (*UserKeysServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AddKey",
+			Handler:    _UserKeys_AddKey_Handler,
+		},
+		{
+			MethodName: "LookupUser",
+			Handler:    _UserKeys_LookupUser_Handler,
+		},
+		{
+			MethodName: "DeleteKey",
+			Handler:    _UserKeys_DeleteKey_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

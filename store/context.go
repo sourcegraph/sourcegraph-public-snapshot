@@ -40,6 +40,7 @@ type Stores struct {
 	RepoStatuses                    RepoStatuses
 	RepoVCS                         RepoVCS
 	Repos                           Repos
+	UserKeys                        UserKeys
 	UserPermissions                 UserPermissions
 	Users                           Users
 }
@@ -69,6 +70,7 @@ const (
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
+	_UserKeysKey
 	_UserPermissionsKey
 	_UsersKey
 )
@@ -140,6 +142,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Repos != nil {
 		ctx = WithRepos(ctx, s.Repos)
+	}
+	if s.UserKeys != nil {
+		ctx = WithUserKeys(ctx, s.UserKeys)
 	}
 	if s.UserPermissions != nil {
 		ctx = WithUserPermissions(ctx, s.UserPermissions)
@@ -650,6 +655,29 @@ func ReposFromContext(ctx context.Context) Repos {
 // ReposFromContextOrNil returns the context's Repos store if present, or else nil.
 func ReposFromContextOrNil(ctx context.Context) Repos {
 	s, ok := ctx.Value(_ReposKey).(Repos)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithUserKeys returns a copy of parent with the given UserKeys store.
+func WithUserKeys(parent context.Context, s UserKeys) context.Context {
+	return context.WithValue(parent, _UserKeysKey, s)
+}
+
+// UserKeysFromContext gets the context's UserKeys store. If the store is not present, it panics.
+func UserKeysFromContext(ctx context.Context) UserKeys {
+	s, ok := ctx.Value(_UserKeysKey).(UserKeys)
+	if !ok || s == nil {
+		panic("no UserKeys set in context")
+	}
+	return s
+}
+
+// UserKeysFromContextOrNil returns the context's UserKeys store if present, or else nil.
+func UserKeysFromContextOrNil(ctx context.Context) UserKeys {
+	s, ok := ctx.Value(_UserKeysKey).(UserKeys)
 	if ok {
 		return s
 	}

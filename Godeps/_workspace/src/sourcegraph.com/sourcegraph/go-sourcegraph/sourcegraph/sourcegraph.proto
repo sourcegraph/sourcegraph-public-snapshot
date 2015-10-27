@@ -1567,6 +1567,18 @@ service Users {
 	};
 }
 
+// UserKeys manages SSH public keys per user.
+service UserKeys {
+	// AddKey adds an SSH public key for the user, enabling them to use git over SSH.
+	rpc AddKey(SSHPublicKey) returns (pbtypes.Void);
+
+	// LookupUser looks up a user based on the given public key.
+	rpc LookupUser(SSHPublicKey) returns (UserSpec);
+
+	// DeleteKey deletes the user's SSH public key.
+	rpc DeleteKey(pbtypes.Void) returns (pbtypes.Void);
+}
+
 // Auth manages authentication and authorization (via OAuth2).
 service Auth {
 	// GetAuthorizationCodeGrant gets an OAuth2 authorization code
@@ -1597,6 +1609,12 @@ service Auth {
 			get: "/auth/identify"
 		};
 	};
+}
+
+// SSHPublicKey that users to authenticate with for SSH git access.
+message SSHPublicKey {
+	// Key is the serialized key data in SSH wire format, with the name prefix.
+	bytes key = 1;
 }
 
 // AuthorizationCodeRequest: see

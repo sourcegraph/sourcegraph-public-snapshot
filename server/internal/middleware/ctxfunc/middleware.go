@@ -56,6 +56,7 @@ func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
 		Repos:               wrappedRepos{ctxFunc, errFunc},
 		Search:              wrappedSearch{ctxFunc, errFunc},
 		Units:               wrappedUnits{ctxFunc, errFunc},
+		UserKeys:            wrappedUserKeys{ctxFunc, errFunc},
 		Users:               wrappedUsers{ctxFunc, errFunc},
 	}
 	return s
@@ -1559,6 +1560,53 @@ func (s wrappedUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions)
 		return nil, grpc.Errorf(codes.Unimplemented, "Units")
 	}
 	rv, err := svc.List(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+type wrappedUserKeys struct {
+	ctxFunc ContextFunc
+	errFunc ErrorFunc
+}
+
+func (s wrappedUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.UserKeysOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+	rv, err := svc.AddKey(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.UserKeysOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+	rv, err := svc.LookupUser(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.UserKeysOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+	rv, err := svc.DeleteKey(ctx, v1)
 	return rv, s.errFunc(err)
 }
 

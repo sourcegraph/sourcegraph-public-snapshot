@@ -31,6 +31,7 @@ type Client struct {
 	Search              SearchClient
 	Units               UnitsClient
 	Users               UsersClient
+	UserKeys            UserKeysClient
 
 	// gRPC client connection used to communicate with the Sourcegraph
 	// API.
@@ -68,6 +69,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Search = &CachedSearchClient{NewSearchClient(conn), Cache}
 	c.Units = &CachedUnitsClient{NewUnitsClient(conn), Cache}
 	c.Users = &CachedUsersClient{NewUsersClient(conn), Cache}
+	c.UserKeys = &CachedUserKeysClient{NewUserKeysClient(conn), Cache}
 
 	return c
 }
