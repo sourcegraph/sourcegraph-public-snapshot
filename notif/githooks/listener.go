@@ -28,40 +28,32 @@ type Payload struct {
 	Event           githttp.Event
 }
 
-type gitHookListener struct {
-	Ctx context.Context
-
-	SlackHook func(Payload)
-	BuildHook func(Payload)
-}
-
-func (g *gitHookListener) Start(ctx context.Context) {
-	g.Ctx = ctx
-
-	g.SlackHook = func(p Payload) {
-		slackContributionsHook(g, p)
-	}
-	g.BuildHook = func(p Payload) {
-		buildHook(g, p)
-	}
-
-	events.Subscribe(GitPushEvent, g.SlackHook)
-	events.Subscribe(GitCreateEvent, g.SlackHook)
-	events.Subscribe(GitDeleteEvent, g.SlackHook)
-
-	events.Subscribe(GitPushEvent, g.BuildHook)
-}
-
-func (g *gitHookListener) Scopes() []string {
-	return []string{"app:notifs"}
-}
-
 func init() {
 	events.Listeners = append(events.Listeners, &gitHookListener{})
 }
 
-func slackContributionsHook(gitListener *gitHookListener, payload Payload) {
-	ctx := gitListener.Ctx
+type gitHookListener struct{}
+
+func (g *gitHookListener) Scopes() []string {
+	return []string{"app:githooks"}
+}
+
+func (g *gitHookListener) Start(ctx context.Context) {
+	slackCallback := func(p Payload) {
+		slackContributionsHook(ctx, p)
+	}
+	buildCallback := func(p Payload) {
+		buildHook(ctx, p)
+	}
+
+	events.Subscribe(GitPushEvent, slackCallback)
+	events.Subscribe(GitCreateEvent, slackCallback)
+	events.Subscribe(GitDeleteEvent, slackCallback)
+
+	events.Subscribe(GitPushEvent, buildCallback)
+}
+
+func slackContributionsHook(ctx context.Context, payload Payload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 	userStr, err := getUserDisplayName(cl, ctx, payload.CtxActor)
 	if err != nil {
@@ -142,8 +134,7 @@ func slackContributionsHook(gitListener *gitHookListener, payload Payload) {
 	slack.PostMessage(slack.PostOpts{Msg: msg})
 }
 
-func buildHook(gitListener *gitHookListener, payload Payload) {
-	ctx := gitListener.Ctx
+func buildHook(ctx context.Context, payload Payload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 	repo := payload.Repo
 	event := payload.Event
