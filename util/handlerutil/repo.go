@@ -324,7 +324,13 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 	if err != nil {
 		return dc, bc, rc, vc, err
 	}
-	bc, err = GetRepoBuildCommon(r, rc, vc, nil)
+	bc, err = GetRepoBuildCommon(r, rc, vc, &GetRepoBuildCommonOpt{
+		// If the user didn't specify a revision for the definition, then we use
+		// inexact matching for the build data. This means we can use the build data
+		// from e.g. just a few commits behind HEAD if HEAD hasn't been built yet or
+		// had a build failure.
+		Inexact: len(v["Rev"]) == 0,
+	})
 	if err != nil {
 		return dc, bc, rc, vc, err
 	}
