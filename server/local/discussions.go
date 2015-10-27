@@ -2,6 +2,7 @@ package local
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 
 	"google.golang.org/grpc"
@@ -12,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -188,4 +190,8 @@ func (d *discussionDateSort) Less(i, j int) bool {
 
 func (d *discussionDateSort) Swap(i, j int) {
 	d.ds[i], d.ds[j] = d.ds[j], d.ds[i]
+}
+
+func appURL(ctx context.Context, path *url.URL) string {
+	return conf.AppURL(ctx).ResolveReference(path).String()
 }

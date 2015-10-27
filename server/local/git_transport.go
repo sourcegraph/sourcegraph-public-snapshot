@@ -5,12 +5,18 @@ import (
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/notif/githooks"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
+
+// githttp.Event objects have the EmptyCommitID value in the Last (or Commit)
+// field to signify that a branch was created (or deleted).
+const EmptyCommitID = "0000000000000000000000000000000000000000"
 
 var GitTransport gitpb.GitTransportServer = &gitTransport{}
 
@@ -62,14 +68,33 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		return nil, err
 	}
 	gitEvents = collapseDuplicateEvents(gitEvents)
-	events.Publish(events.Event{
-		EventID: GitPushEvent,
-		Payload: GitHookPayload{
-			Ctx:    ctx,
-			Op:     op,
-			Events: gitEvents,
-		},
-	})
+	payload := githooks.Payload{
+		CtxActor:        authpkg.ActorFromContext(ctx),
+		Repo:            op.Repo,
+		ContentEncoding: op.ContentEncoding,
+	}
+	for _, e := range gitEvents {
+		payload.Event = e
+		if e.Last == EmptyCommitID {
+			payload.Type = githooks.GitCreateEvent
+			events.Publish(events.Event{
+				EventID: githooks.GitPushEvent,
+				Payload: payload,
+			})
+		} else if e.Commit == EmptyCommitID {
+			payload.Type = githooks.GitDeleteEvent
+			events.Publish(events.Event{
+				EventID: githooks.GitDeleteEvent,
+				Payload: payload,
+			})
+		} else {
+			payload.Type = githooks.GitPushEvent
+			events.Publish(events.Event{
+				EventID: githooks.GitPushEvent,
+				Payload: payload,
+			})
+		}
+	}
 	return &gitpb.Packet{Data: data}, nil
 }
 

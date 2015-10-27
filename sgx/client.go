@@ -137,11 +137,18 @@ func WithClientContext(parent context.Context) context.Context {
 	if cli.CLI.Active != nil && cli.CLI.Active.Name == "serve" {
 		Credentials.AuthFile = ""
 	}
-	ctx, err := Credentials.WithCredentials(parent)
+	ctx := WithClientContextUnauthed(parent)
+	ctx, err := Credentials.WithCredentials(ctx)
 	if err != nil {
 		log.Fatalf("Error constructing API client credentials: %s.", err)
 	}
-	ctx, err = Endpoints.WithEndpoints(ctx)
+	return ctx
+}
+
+// WithClientContext returns a copy of parent with client endpoint and
+// auth information added.
+func WithClientContextUnauthed(parent context.Context) context.Context {
+	ctx, err := Endpoints.WithEndpoints(parent)
 	if err != nil {
 		log.Fatalf("Error constructing API client endpoints: %s.", err)
 	}

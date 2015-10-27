@@ -45,6 +45,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/gitserver/sshgit"
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/notif/githooks"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -555,6 +556,12 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Refresh commit list periodically
 	go c.repoStatusCommitLogCacheRefresher()
 
+	// gitHookCtx, err := c.authenticateScopedContext(cliCtx, idKey, "internal:notifs")
+	// if err != nil {
+	// 	log.Fatal("Could not initialize gitHookCtx: %v", err)
+	// } else {
+	githooks.Listener.Init(cliCtx)
+
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
 	statsInterval := c.GraphUplinkPeriod
@@ -644,6 +651,23 @@ func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
 
 	cliCtx = sourcegraph.WithCredentials(cliCtx, oauth2.ReuseTokenSource(tok, src))
 	return nil
+}
+
+// authenticateScopedContext adds a token with the specified scope to the given
+// context. This context can only make gRPC calls that are permitted for the given
+// scope. See the accesscontrol package for information about different scopes.
+//
+// This should be used for authenticating platform apps that will run in-process with
+// the server, but which should have limited access to gRPC operations.
+func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scope string) (context.Context, error) {
+	src := sharedsecret.ShortTokenSource(k, scope)
+	tok, err := src.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx = sourcegraph.WithCredentials(ctx, oauth2.ReuseTokenSource(tok, src))
+	return ctx, nil
 }
 
 // updateGlobalTokenSource updates Credentials.AccessToken with the
