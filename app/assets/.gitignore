@@ -4,6 +4,7 @@ bundle.js
 bundle.css
 sourcebox.js
 sourcebox.css
+test.js
 
 *.html
 _goTemplates.js.map
