@@ -37,12 +37,12 @@ type Directory interface {
 // UserKeys defines the interface for updating a user's ssh public key,
 // and looking up a user by their key.
 type UserKeys interface {
-	AddKey(_ context.Context, uid int32, key sourcegraph.SSHPublicKey) error
+	AddKey(ctx context.Context, uid int32, key sourcegraph.SSHPublicKey) error
 
 	// LookupUser looks up user by key. The returned UserSpec will only have UID field set.
-	LookupUser(_ context.Context, key sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
+	LookupUser(ctx context.Context, key sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
 
-	DeleteKey(_ context.Context, uid int32) error
+	DeleteKey(ctx context.Context, uid int32) error
 }
 
 // ExternalAuthTokens manages per-user authentication tokens used to
