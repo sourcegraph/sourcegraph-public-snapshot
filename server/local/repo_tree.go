@@ -58,12 +58,14 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 			// invalid. Check if the rev/branch was deleted:
 			unresolvedRev := entrySpec.RepoRev
 			unresolvedRev.CommitID = ""
-			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); err != nil {
+			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); err == vcs.ErrRevisionNotFound {
 				// Rev no longer exists, so fallback to the CommitID instead. This is a
 				// last-ditch effort to ensure tokenized source displays well in diffs
 				// that are very old / have had one or more of their revs/branches
 				// deleted.
 				entrySpec.RepoRev.Rev = ""
+			} else {
+				return nil, err
 			}
 		}
 
