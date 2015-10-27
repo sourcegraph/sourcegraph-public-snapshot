@@ -43,6 +43,15 @@ Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 /app/artifacts
 /app/node_modules/node-sass/vendor
 /app/.sass-cache
+/app/assets/_goTemplates.js
+/app/assets/analytics.js
+/app/assets/bundle.js
+/app/assets/bundle.css
+/app/assets/sourcebox.js
+/app/assets/sourcebox.css
+/app/assets/test.js
+/app/assets/*.html
+/app/assets/*.map
 
 eb-bundle.zip
 
@@ -58,4 +67,3 @@ eb-bundle.zip
 # Sublime
 *.sublime-project
 *.sublime-workspace
-
