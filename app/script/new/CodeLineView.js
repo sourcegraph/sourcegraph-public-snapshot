@@ -4,7 +4,7 @@ import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 
 // TODO support for tokens with more than one URL
-class CodeLineView extends React.Component {
+export default class CodeLineView extends React.Component {
 	componentWillMount() {
 		this._updateOwnURLs(this.props.tokens);
 	}
@@ -98,5 +98,3 @@ CodeLineView.propTypes = {
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 };
-
-export default CodeLineView;

@@ -9,7 +9,7 @@ import * as DefActions from "./DefActions";
 // to sub-components via props. Every time window.location changes, this
 // component gets re-rendered. Sub-components should never access
 // window.location by themselves.
-class CodeFileRouter extends React.Component {
+export default class CodeFileRouter extends React.Component {
 	constructor(props, context) {
 		super(props, context);
 	}
@@ -93,5 +93,3 @@ CodeFileRouter.propTypes = {
 	location: React.PropTypes.string,
 	navigate: React.PropTypes.func,
 };
-
-export default CodeFileRouter;

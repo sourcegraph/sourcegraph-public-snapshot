@@ -4,7 +4,7 @@ import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import CodeListing from "./CodeListing";
 
-class ExampleView extends React.Component {
+export default class ExampleView extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
@@ -119,5 +119,3 @@ ExampleView.propTypes = {
 	examples: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
 };
-
-export default ExampleView;

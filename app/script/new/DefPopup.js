@@ -5,7 +5,7 @@ import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
 
-class DefPopup extends React.Component {
+export default class DefPopup extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -59,5 +59,3 @@ DefPopup.propTypes = {
 	examples: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
 };
-
-export default DefPopup;

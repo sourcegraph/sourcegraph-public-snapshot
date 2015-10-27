@@ -5,7 +5,7 @@ import CodeLineView from "./CodeLineView";
 const tilingFactor = 500;
 const emptyArray = [];
 
-class CodeListing extends React.Component {
+export default class CodeListing extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -99,5 +99,3 @@ CodeListing.propTypes = {
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 };
-
-export default CodeListing;
