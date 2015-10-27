@@ -1,6 +1,7 @@
 {
 	"renderOutput": {
 		"type": "table",
+		"ref": "table",
 		"props": {
 			"className": "line-numbered-code",
 			"children": [
