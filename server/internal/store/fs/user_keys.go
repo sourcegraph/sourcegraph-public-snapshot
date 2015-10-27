@@ -3,13 +3,14 @@ package fs
 import (
 	"bytes"
 	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"src.sourcegraph.com/sourcegraph/vendored/encoding/base64" // TODO: Replace with "encoding/base64" in Go 1.5.
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
