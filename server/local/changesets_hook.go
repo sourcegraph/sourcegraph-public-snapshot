@@ -1,12 +1,12 @@
 package local
 
 import (
-	"log"
 	"os"
 	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -50,7 +50,7 @@ type changesetHook struct {
 func newChangesetHook(ctx context.Context, repoURI string) changesetHook {
 	repo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoURI)
 	if err != nil {
-		log.Printf("error in postPushHook, cannot open repo '%s': %v", repoURI, err)
+		log15.Warn("changesetHook: cannot open repo", "repo", repoURI, "error", err)
 	}
 	return changesetHook{
 		ctx:        ctx,
@@ -71,7 +71,7 @@ func (h changesetHook) processEvent(p githooks.Payload) {
 		Head: e.Branch,
 	})
 	if err != nil && !os.IsNotExist(err) {
-		log.Printf("error in postPushHook, cannot list changesets for head: %v", err)
+		log15.Warn("changesetHook: cannot list changesets for head", "error", err)
 	}
 	h.updateHavingHead(havingHead.Changesets, p)
 
@@ -82,7 +82,7 @@ func (h changesetHook) processEvent(p githooks.Payload) {
 		Base: e.Branch,
 	})
 	if err != nil && !os.IsNotExist(err) {
-		log.Printf("error in postPushHook, cannot list changesets for base: %v", err)
+		log15.Warn("changesetHook: cannot list changesets for base", "error", err)
 	}
 	h.updateHavingBase(havingBase.Changesets, p)
 }
@@ -104,7 +104,7 @@ func (h changesetHook) updateHavingHead(list []*sourcegraph.Changeset, p githook
 			case githooks.GitDeleteEvent: // branch deleted
 				base, err := h.repo.ResolveBranch(cs.DeltaSpec.Base.Rev)
 				if err != nil {
-					log.Printf("error in postPushHook, cannot resolve base branch '%s': %v", cs.DeltaSpec.Base.Rev, err)
+					log15.Warn("changesetHook: cannot resolve base branch", "base", cs.DeltaSpec.Base.Rev, "error", err)
 				}
 				h.update(&store.ChangesetUpdateOp{
 					Op: &sourcegraph.ChangesetUpdateOp{
@@ -167,7 +167,7 @@ func (h changesetHook) updateHavingBase(changesets []*sourcegraph.Changeset, p g
 			case isMerged(cs.DeltaSpec.Head.Rev): // contained merge
 				head, err := h.repo.ResolveBranch(cs.DeltaSpec.Head.Rev)
 				if err != nil {
-					log.Printf("error in postPushHook, cannot resolve rev '%s': %v", cs.DeltaSpec.Head.Rev, err)
+					log15.Warn("changesetHook: cannot resolve rev", "rev", cs.DeltaSpec.Head.Rev, "error", err)
 				}
 				h.update(&store.ChangesetUpdateOp{
 					Op: &sourcegraph.ChangesetUpdateOp{
@@ -193,7 +193,7 @@ func (h changesetHook) mergedInto(branch string) branchMap {
 	bm := make(branchMap)
 	branches, err := h.repo.Branches(vcs.BranchesOptions{MergedInto: branch})
 	if err != nil {
-		log.Printf("error in postPushHook, cannot retrieve branches: %v", err)
+		log15.Warn("changesetHook: cannot retrieve branches", "error", err)
 	}
 	for _, b := range branches {
 		if b.Name != branch {
@@ -213,7 +213,7 @@ var updateChangeset = func(cs store.Changesets, ctx context.Context, op *store.C
 	}
 	if _, err := cs.Update(ctx, op); err != nil {
 		if !strings.Contains(err.Error(), "working directory clean") {
-			log.Printf("error in postPushHook, cannot update changeset ref: %v", err)
+			log15.Warn("changesetHook: cannot update changeset ref", "error", err)
 		}
 	}
 }
