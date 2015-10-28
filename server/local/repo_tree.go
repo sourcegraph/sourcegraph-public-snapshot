@@ -66,7 +66,7 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 				// that are very old / have had one or more of their revs/branches
 				// deleted.
 				entrySpec.RepoRev.Rev = ""
-			} else {
+			} else if err != nil {
 				return nil, err
 			}
 		}
