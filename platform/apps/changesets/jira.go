@@ -17,6 +17,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 )
 
+const sgIconURL = "https://sourcegraph.com/images/favicon.png"
+const acceptIconURL = ""
+
 type jiraIcon struct {
 	URL   string `json:"url16x16"`
 	Title string `json:"title"`
@@ -101,7 +104,7 @@ func postJIRARemoteLink(issue string, linkURL string, title string, resolved boo
 	var statusIcon *jiraIcon
 	if resolved {
 		statusIcon = &jiraIcon{
-			URL:   "http://www.openwebgraphics.com/resources/data/47/accept.png",
+			URL:   acceptIconURL,
 			Title: "Closed",
 		}
 	}
@@ -120,7 +123,7 @@ func postJIRARemoteLink(issue string, linkURL string, title string, resolved boo
 			URL:   linkURL,
 			Title: title,
 			Icon: &jiraIcon{
-				URL:   "https://sourcegraph.com/images/favicon.png",
+				URL:   sgIconURL,
 				Title: "Sourcegraph",
 			},
 			Status: &jiraStatus{

@@ -162,7 +162,6 @@ var CodeReview = React.createClass({
 							onCancel={this._submitReviewHide} />
 					</div>
 
-
 					<div className="right-panel">
 						<ControlPanel
 							changeset={this.state.Changeset}
