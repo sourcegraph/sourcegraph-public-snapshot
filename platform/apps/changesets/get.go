@@ -2,6 +2,7 @@ package changesets
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -190,6 +191,22 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 			}
 		}
 	}
+	// Generate JIRA issue links
+	var jiraIssues map[string]string
+	if flags.JiraURL != "" {
+		jiraIssues = make(map[string]string)
+		ids := make([]string, 0)
+		for _, commit := range commitList.Commits {
+			ids = append(ids, parseJIRAIssues(commit.Message)...)
+		}
+		if cs.Description != "" {
+			ids = append(ids, parseJIRAIssues(cs.Description)...)
+		}
+		for _, id := range ids {
+			jiraIssues[id] = fmt.Sprintf("http://%s/browse/%s", flags.JiraURL, id)
+		}
+	}
+
 	return executeTemplate(w, r, "changeset.html", &struct {
 		tmplCommon
 		handlerutil.RepoCommon
@@ -198,11 +215,13 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 
 		FileFilter       string
 		ReviewGuidelines pbtypes.HTML
+		JiraIssues       map[string]string
 	}{
 		RepoCommon:       *rc,
 		RepoRevCommon:    *vc,
 		FileFilter:       filter,
 		ReviewGuidelines: guide,
+		JiraIssues:       jiraIssues,
 
 		Changeset: payloads.Changeset{
 			Changeset: cs,

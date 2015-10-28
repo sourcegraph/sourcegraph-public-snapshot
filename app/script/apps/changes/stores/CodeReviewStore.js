@@ -97,6 +97,7 @@ var CodeReviewStore = FluxStore({
 			BaseTip: d.BaseTip,
 			FileFilter: d.FileFilter,
 			ReviewGuidelines: d.ReviewGuidelines,
+			JiraIssues: d.JiraIssues,
 			loading: false,
 			reviews: reviews,
 			events: events,

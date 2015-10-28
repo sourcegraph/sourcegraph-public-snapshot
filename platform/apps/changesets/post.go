@@ -49,6 +49,9 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	if flags.JiraURL != "" {
+		jiraOnChangesetUpdate(ctx, cs)
+	}
 	notifyCreation(ctx, user, uri, cs)
 	return nil
 }
@@ -84,6 +87,18 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	if flags.JiraURL != "" {
+		cs, err := sg.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{
+			Repo: sourcegraph.RepoSpec{URI: uri},
+			ID:   id,
+		})
+		if err != nil {
+			return err
+		}
+		jiraOnChangesetUpdate(ctx, cs)
+	}
+
 	return writeJSON(w, result)
 }
 
