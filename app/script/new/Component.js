@@ -36,7 +36,7 @@ export default class Component extends React.Component {
 		this.updateState(newState, props);
 		if (this.requestData) {
 			let prevState = Object.assign({}, this.state);
-			setTimeout(() => {
+			setTimeout(() => { // call requestData asynchronously, because it creates an action and this function might be called while processing another action
 				this.requestData(prevState, newState);
 			}, 0);
 		}

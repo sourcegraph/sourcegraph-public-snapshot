@@ -7,6 +7,7 @@ import CodeListing from "./CodeListing";
 
 export default class ExampleView extends Component {
 	updateState(state, props) {
+		// reset examples if showing a different definition
 		if (state.defURL !== props.defURL) {
 			state.defURL = props.defURL;
 			state.selectedIndex = 0;
@@ -14,11 +15,13 @@ export default class ExampleView extends Component {
 			state.displayedExample = null;
 		}
 
+		// fix selected index if not enough examples
 		state.count = props.examples.getCount(props.defURL);
 		if (state.selectedIndex >= state.count) {
 			state.selectedIndex = state.count - 1;
 		}
 
+		// update displayed example if example was fetched
 		let example = props.examples.get(props.defURL, state.selectedIndex);
 		if (example !== null) {
 			state.displayedIndex = state.selectedIndex;
