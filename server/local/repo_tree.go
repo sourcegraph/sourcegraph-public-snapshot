@@ -56,6 +56,8 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 			// The repo rev appears resolved already -- but it might have been
 			// deleted, thus making any URLs we would emit for Rev instead of CommitID
 			// invalid. Check if the rev/branch was deleted:
+			//
+			// TODO(slimsag): write a test exactly for this case.
 			unresolvedRev := entrySpec.RepoRev
 			unresolvedRev.CommitID = ""
 			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); err == vcs.ErrRevisionNotFound {
