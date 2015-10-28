@@ -1,7 +1,6 @@
-// Copyright 2014 The Go Authors.
-// See https://code.google.com/p/go/source/browse/CONTRIBUTORS
-// Licensed under the same terms as Go itself:
-// https://code.google.com/p/go/source/browse/LICENSE
+// Copyright 2014 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 // +build h2demo
 
@@ -20,7 +19,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os/exec"
 	"path"
 	"regexp"
 	"runtime"
@@ -35,10 +33,13 @@ import (
 )
 
 var (
-	openFirefox = flag.Bool("openff", false, "Open Firefox")
-	addr        = flag.String("addr", "localhost:4430", "TLS address to listen on")
-	httpAddr    = flag.String("httpaddr", "", "If non-empty, address to listen for regular HTTP on")
-	prod        = flag.Bool("prod", false, "Whether to configure itself to be the production http2.golang.org server.")
+	prod = flag.Bool("prod", false, "Whether to configure itself to be the production http2.golang.org server.")
+
+	httpsAddr = flag.String("https_addr", "localhost:4430", "TLS address to listen on ('host:port' or ':port'). Required.")
+	httpAddr  = flag.String("http_addr", "", "Plain HTTP address to listen on ('host:port', or ':port'). Empty means no HTTP.")
+
+	hostHTTP  = flag.String("http_host", "", "Optional host or host:port to use for http:// links to this service. By default, this is implied from -http_addr.")
+	hostHTTPS = flag.String("https_host", "", "Optional host or host:port to use for http:// links to this service. By default, this is implied from -https_addr.")
 )
 
 func homeOldHTTP(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +199,7 @@ func registerHandlers() {
 				tiles.ServeHTTP(w, r)
 				return
 			}
-			http.Redirect(w, r, "https://http2.golang.org/", http.StatusFound)
+			http.Redirect(w, r, "https://"+httpsHost()+"/", http.StatusFound)
 			return
 		}
 		if r.ProtoMajor == 1 {
@@ -319,10 +320,10 @@ function showtimes() {
 }
 
 func httpsHost() string {
-	if *prod {
-		return "http2.golang.org"
+	if *hostHTTPS != "" {
+		return *hostHTTPS
 	}
-	if v := *addr; strings.HasPrefix(v, ":") {
+	if v := *httpsAddr; strings.HasPrefix(v, ":") {
 		return "localhost" + v
 	} else {
 		return v
@@ -330,8 +331,8 @@ func httpsHost() string {
 }
 
 func httpHost() string {
-	if *prod {
-		return "http2.golang.org"
+	if *hostHTTP != "" {
+		return *hostHTTP
 	}
 	if v := *httpAddr; strings.HasPrefix(v, ":") {
 		return "localhost" + v
@@ -407,29 +408,29 @@ func main() {
 	var srv http.Server
 	flag.BoolVar(&http2.VerboseLogs, "verbose", false, "Verbose HTTP/2 debugging.")
 	flag.Parse()
-	srv.Addr = *addr
+	srv.Addr = *httpsAddr
 
 	registerHandlers()
 
 	if *prod {
-		*httpAddr = "http2.golang.org"
+		*hostHTTP = "http2.golang.org"
+		*hostHTTPS = "http2.golang.org"
 		log.Fatal(serveProd())
 	}
 
-	url := "https://" + *addr + "/"
+	url := "https://" + httpsHost() + "/"
 	log.Printf("Listening on " + url)
 	http2.ConfigureServer(&srv, &http2.Server{})
 
 	if *httpAddr != "" {
-		go func() { log.Fatal(http.ListenAndServe(*httpAddr, nil)) }()
+		go func() {
+			log.Printf("Listening on http://" + httpHost() + "/ (for unencrypted HTTP/1)")
+			log.Fatal(http.ListenAndServe(*httpAddr, nil))
+		}()
 	}
 
 	go func() {
 		log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))
 	}()
-	if *openFirefox && runtime.GOOS == "darwin" {
-		time.Sleep(250 * time.Millisecond)
-		exec.Command("open", "-b", "org.mozilla.nightly", "https://localhost:4430/").Run()
-	}
 	select {}
 }

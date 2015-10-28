@@ -1,7 +1,6 @@
-// Copyright 2014 The Go Authors.
-// See https://code.google.com/p/go/source/browse/CONTRIBUTORS
-// Licensed under the same terms as Go itself:
-// https://code.google.com/p/go/source/browse/LICENSE
+// Copyright 2014 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 // Package hpack implements HPACK, a compression format for
 // efficiently representing HTTP header fields in the context of HTTP/2.
@@ -65,12 +64,16 @@ type Decoder struct {
 	emit   func(f HeaderField)
 
 	emitEnabled bool // whether calls to emit are enabled
+	maxStrLen   int  // 0 means unlimited
 
 	// buf is the unparsed buffer. It's only written to
 	// saveBuf if it was truncated in the middle of a header
 	// block. Because it's usually not owned, we can only
 	// process it under Write.
-	buf     []byte // usually not owned
+	buf []byte // not owned; only valid during Write
+
+	// saveBuf is previous data passed to Write which we weren't able
+	// to fully parse before. Unlike buf, we own this data.
 	saveBuf bytes.Buffer
 }
 
@@ -85,6 +88,18 @@ func NewDecoder(maxDynamicTableSize uint32, emitFunc func(f HeaderField)) *Decod
 	d.dynTab.allowedMaxSize = maxDynamicTableSize
 	d.dynTab.setMaxSize(maxDynamicTableSize)
 	return d
+}
+
+// ErrStringLength is returned by Decoder.Write when the max string length
+// (as configured by Decoder.SetMaxStringLength) would be violated.
+var ErrStringLength = errors.New("hpack: string too long")
+
+// SetMaxStringLength sets the maximum size of a HeaderField name or
+// value string. If a string exceeds this length (even after any
+// decompression), Write will return ErrStringLength.
+// A value of 0 means unlimited and is the default from NewDecoder.
+func (d *Decoder) SetMaxStringLength(n int) {
+	d.maxStrLen = n
 }
 
 // SetEmitEnabled controls whether the emitFunc provided to NewDecoder
@@ -266,11 +281,20 @@ func (d *Decoder) Write(p []byte) (n int, err error) {
 
 	for len(d.buf) > 0 {
 		err = d.parseHeaderFieldRepr()
-		if err != nil {
-			if err == errNeedMore {
-				err = nil
-				d.saveBuf.Write(d.buf)
+		if err == errNeedMore {
+			// Extra paranoia, making sure saveBuf won't
+			// get too large.  All the varint and string
+			// reading code earlier should already catch
+			// overlong things and return ErrStringLength,
+			// but keep this as a last resort.
+			const varIntOverhead = 8 // conservative
+			if d.maxStrLen != 0 && int64(len(d.buf)) > 2*(int64(d.maxStrLen)+varIntOverhead) {
+				return 0, ErrStringLength
 			}
+			d.saveBuf.Write(d.buf)
+			return len(p), nil
+		}
+		if err != nil {
 			break
 		}
 	}
@@ -341,9 +365,8 @@ func (d *Decoder) parseFieldIndexed() error {
 	if !ok {
 		return DecodingError{InvalidIndexError(idx)}
 	}
-	d.callEmit(HeaderField{Name: hf.Name, Value: hf.Value})
 	d.buf = buf
-	return nil
+	return d.callEmit(HeaderField{Name: hf.Name, Value: hf.Value})
 }
 
 // (same invariants and behavior as parseHeaderFieldRepr)
@@ -363,12 +386,12 @@ func (d *Decoder) parseFieldLiteral(n uint8, it indexType) error {
 		}
 		hf.Name = ihf.Name
 	} else {
-		hf.Name, buf, err = readString(buf, wantStr)
+		hf.Name, buf, err = d.readString(buf, wantStr)
 		if err != nil {
 			return err
 		}
 	}
-	hf.Value, buf, err = readString(buf, wantStr)
+	hf.Value, buf, err = d.readString(buf, wantStr)
 	if err != nil {
 		return err
 	}
@@ -377,14 +400,19 @@ func (d *Decoder) parseFieldLiteral(n uint8, it indexType) error {
 		d.dynTab.add(hf)
 	}
 	hf.Sensitive = it.sensitive()
-	d.callEmit(hf)
-	return nil
+	return d.callEmit(hf)
 }
 
-func (d *Decoder) callEmit(hf HeaderField) {
+func (d *Decoder) callEmit(hf HeaderField) error {
+	if d.maxStrLen != 0 {
+		if len(hf.Name) > d.maxStrLen || len(hf.Value) > d.maxStrLen {
+			return ErrStringLength
+		}
+	}
 	if d.emitEnabled {
 		d.emit(hf)
 	}
+	return nil
 }
 
 // (same invariants and behavior as parseHeaderFieldRepr)
@@ -453,7 +481,7 @@ func readVarInt(n byte, p []byte) (i uint64, remain []byte, err error) {
 // strings past the MAX_HEADER_LIST_SIZE are ignored, but the server
 // is returning an error anyway, and because they're not indexed, the error
 // won't affect the decoding state.
-func readString(p []byte, wantStr bool) (s string, remain []byte, err error) {
+func (d *Decoder) readString(p []byte, wantStr bool) (s string, remain []byte, err error) {
 	if len(p) == 0 {
 		return "", p, errNeedMore
 	}
@@ -461,6 +489,9 @@ func readString(p []byte, wantStr bool) (s string, remain []byte, err error) {
 	strLen, p, err := readVarInt(7, p)
 	if err != nil {
 		return "", p, err
+	}
+	if d.maxStrLen != 0 && strLen > uint64(d.maxStrLen) {
+		return "", nil, ErrStringLength
 	}
 	if uint64(len(p)) < strLen {
 		return "", p, errNeedMore
@@ -473,12 +504,15 @@ func readString(p []byte, wantStr bool) (s string, remain []byte, err error) {
 	}
 
 	if wantStr {
-		// TODO: optimize this garbage:
-		var buf bytes.Buffer
-		if _, err := HuffmanDecode(&buf, p[:strLen]); err != nil {
+		buf := bufPool.Get().(*bytes.Buffer)
+		buf.Reset() // don't trust others
+		defer bufPool.Put(buf)
+		if err := huffmanDecode(buf, d.maxStrLen, p[:strLen]); err != nil {
+			buf.Reset()
 			return "", nil, err
 		}
 		s = buf.String()
+		buf.Reset() // be nice to GC
 	}
 	return s, p[strLen:], nil
 }

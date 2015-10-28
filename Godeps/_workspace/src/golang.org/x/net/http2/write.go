@@ -1,9 +1,6 @@
 // Copyright 2014 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-// See https://code.google.com/p/go/source/browse/CONTRIBUTORS
-// Licensed under the same terms as Go itself:
-// https://code.google.com/p/go/source/browse/LICENSE
 
 package http2
 
@@ -44,6 +41,11 @@ func endsStream(w writeFramer) bool {
 		return v.endStream
 	case *writeResHeaders:
 		return v.endStream
+	case nil:
+		// This can only happen if the caller reuses w after it's
+		// been intentionally nil'ed out to prevent use. Keep this
+		// here to catch future refactoring breaking it.
+		panic("endsStream called on nil writeFramer")
 	}
 	return false
 }
