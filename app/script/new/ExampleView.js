@@ -43,7 +43,7 @@ export default class ExampleView extends Component {
 			if (newIndex < 0 || newIndex >= this.state.count) {
 				return;
 			}
-			this.patchState({selectedIndex: newIndex});
+			this.setState({selectedIndex: newIndex});
 		};
 	}
 

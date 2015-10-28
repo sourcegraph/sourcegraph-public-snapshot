@@ -28,7 +28,7 @@ export default class Component extends React.Component {
 		return false;
 	}
 
-	patchState(patch) {
+	setState(patch) {
 		this._doUpdateState(Object.assign({}, this.state, patch), this.props);
 	}
 
@@ -40,7 +40,7 @@ export default class Component extends React.Component {
 				this.requestData(prevState, newState);
 			}, 0);
 		}
-		this.setState(newState);
+		super.setState(newState);
 	}
 
 	updateState(state, props) {
