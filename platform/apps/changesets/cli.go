@@ -20,7 +20,10 @@ import (
 )
 
 type serveFlags struct {
-	ReviewGuidelines string `long:"review-guidelines" description:"loads the given file as review guidelines and displays it on the changesets page (Markdown supported)."`
+	ReviewGuidelines string `long:"changesets.review-guidelines" description:"loads the given file as review guidelines and displays it on the changesets page (Markdown supported)."`
+	JiraURL          string `long:"jira.url" description:"domain that hosts a JIRA instance."`
+	JiraCredentials  string `long:"jira.credentials" description:"HTTP basic auth credentials in the form \"user:password\" for the specified JIRA instance."`
+	JiraTLS          bool   `long:"jira.tls" description:"if set to true, all outgoing JIRA requests will use HTTPS."`
 }
 
 var flags serveFlags
