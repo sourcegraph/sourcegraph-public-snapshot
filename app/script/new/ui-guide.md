@@ -15,7 +15,7 @@ We implement actions via ES6 classes. The class identifies the action type, not 
 ### Backends
 In addition to dispatcher, stores, components and actions, our architecture has another building block: Backends. They register with the dispatcher, just like stores, but they don't contain state.
 
-All communication with the server API has to be done in a backend. Components don't talk to the backend directly, but instead create `Want*` actions that the backend responds to. When data was fetched from the server, the backend creates a `Fetched*` action to pass data to a store which persists it in its state and makes it available to the components. A `Want*` action may even be created if the data is already available. The backend then decides if it will not do anything and just keep the data which is currently in the store or if it will do another request to the server to update the data.
+All communication with the server API has to be done in a backend. Components don't talk to the backend directly, but instead create `Want*` actions that the backend responds to. When data was fetched from the server, the backend creates a `*Fetched` action to pass data to a store which persists it in its state and makes it available to the components. A `Want*` action may even be created if the data is already available. The backend then decides if it will not do anything and just keep the data which is currently in the store or if it will do another request to the server to update the data.
 
 ### Containers
 Containers, also called controller-views, connect stores and components. The container is the only React component that listens to store changes. On change, it fetches the new data from the stores and passes it down to child components via properties.
@@ -26,7 +26,7 @@ When displaying a component with data from the server, the following happens:
 2. The component renders with the currently available data, initially none
 3. The component creates a `Want*` action
 4. The backend responds to that action by doing a request to the server
-5. When the data arrives from the server, the backend creates a `Fetched*` action
+5. When the data arrives from the server, the backend creates a `*Fetched` action
 6. The store takes the data from that action and merges it into its state
 7. The container gets notified that the store changed, fetches the new data from the store and passes it down to child components
 8. The component renders again, this time the data is available
@@ -42,3 +42,4 @@ Testing
 * Add tests for all actions.
 * The `autotest` tool is very helpful for testing React components.
 * Don't use `sinon` or other methods to override behavior of code "from the outside". Instead use proper encapsulation and some helper API for testing.
+* Tests do not have to use correct types for mock data if the tested code does not care about the type, e.g. if it just passes the data through.
