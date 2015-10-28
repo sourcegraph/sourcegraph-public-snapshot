@@ -43,3 +43,10 @@ Testing
 * The `autotest` tool is very helpful for testing React components.
 * Don't use `sinon` or other methods to override behavior of code "from the outside". Instead use proper encapsulation and some helper API for testing.
 * Tests do not have to use correct types for mock data if the tested code does not care about the type, e.g. if it just passes the data through.
+
+The `Component` base class
+--------------------------
+* Implement `updateState(state, props)` to merge new `props` into `state` and update `state` according to UI logic
+* Implement `requestData(prevState, nextState)` to create `Want*` actions.
+* Do not access `this.props` at all.
+* The component gets rendered if the state changes (shallow comparison).
