@@ -202,8 +202,12 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		if cs.Description != "" {
 			ids = append(ids, parseJIRAIssues(cs.Description)...)
 		}
+		protocol := "http"
+		if flags.JiraTLS {
+			protocol = "https"
+		}
 		for _, id := range ids {
-			jiraIssues[id] = fmt.Sprintf("http://%s/browse/%s", flags.JiraURL, id)
+			jiraIssues[id] = fmt.Sprintf("%s://%s/browse/%s", protocol, flags.JiraURL, id)
 		}
 	}
 

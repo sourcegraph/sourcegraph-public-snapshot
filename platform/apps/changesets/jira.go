@@ -106,7 +106,11 @@ func postJIRARemoteLink(issue string, linkURL string, title string, resolved boo
 		}
 	}
 
-	url := fmt.Sprintf("http://%s@%s/rest/api/2/issue/%s/remotelink", auth, domain, issue)
+	protocol := "http"
+	if flags.JiraTLS {
+		protocol = "https"
+	}
+	url := fmt.Sprintf("%s://%s@%s/rest/api/2/issue/%s/remotelink", protocol, auth, domain, issue)
 	payload := struct {
 		GlobalID       string `json:"globalId"`
 		jiraRemoteLink `json:"object"`
