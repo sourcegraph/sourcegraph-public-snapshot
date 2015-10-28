@@ -25,6 +25,7 @@ class CodeFileContainer extends React.Component {
 			Dispatcher.dispatch(new CodeActions.WantFile(this.props.repo, this.props.rev, this.props.tree));
 			if (this.props.selectedDef) {
 				Dispatcher.dispatch(new DefActions.WantDef(this.props.selectedDef));
+				Dispatcher.dispatch(new DefActions.WantDiscussions(this.props.selectedDef));
 			}
 		}, 0);
 	}
@@ -39,6 +40,7 @@ class CodeFileContainer extends React.Component {
 			defs: DefStore.defs,
 			examples: DefStore.examples,
 			highlightedDef: DefStore.highlightedDef,
+			discussions: DefStore.discussions,
 		};
 	}
 
@@ -61,7 +63,8 @@ class CodeFileContainer extends React.Component {
 					<DefPopup
 						def={def}
 						examples={this.state.examples}
-						highlightedDef={this.state.highlightedDef} />
+						highlightedDef={this.state.highlightedDef}
+						discussions={this.state.discussions.get(this.props.selectedDef)} />
 				}
 			</div>
 		);

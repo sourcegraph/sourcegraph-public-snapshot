@@ -50,3 +50,16 @@ export class NoExampleAvailable {
 		this.index = index;
 	}
 }
+
+export class WantDiscussions {
+	constructor(defURL) {
+		this.defURL = defURL;
+	}
+}
+
+export class DiscussionsFetched {
+	constructor(defURL, discussions) {
+		this.defURL = defURL;
+		this.discussions = discussions;
+	}
+}

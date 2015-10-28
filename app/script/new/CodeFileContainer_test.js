@@ -34,6 +34,7 @@ describe("CodeFileContainer", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {test: "defData"}));
 		Dispatcher.directDispatch(DefStore, new DefActions.ExampleFetched("foo", {test: "exampleData"}));
+		Dispatcher.directDispatch(DefStore, new DefActions.DiscussionsFetched("someDef", [{test: "discussionData"}]));
 		autotest(testdataAvailableDefinition, `${__dirname}/testdata/CodeFileContainer-availableDefinition.json`,
 			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
 		);

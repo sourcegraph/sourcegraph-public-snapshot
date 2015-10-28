@@ -52,6 +52,22 @@ const DefBackend = {
 			}
 			break;
 
+		case DefActions.WantDiscussions:
+			let discussions = DefStore.discussions.get(action.defURL);
+			if (discussions === null) {
+				DefBackend.xhr({
+					uri: `/ui${action.defURL}/.discussions?order=Top`,
+					json: {},
+				}, function(err, resp, body) {
+					if (err) {
+						console.error(err);
+						return;
+					}
+					Dispatcher.dispatch(new DefActions.DiscussionsFetched(action.defURL, body.Discussions || []));
+				});
+			}
+			break;
+
 		}
 	},
 };

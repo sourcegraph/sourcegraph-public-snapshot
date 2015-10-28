@@ -96,6 +96,18 @@
 												},
 												"highlightedDef": "otherURL"
 											}
+										},
+										{
+											"type": "DiscussionsView",
+											"props": {
+												"defURL": "someURL",
+												"discussions": [
+													"discussion1",
+													"discussion2",
+													"discussion3",
+													"discussion4"
+												]
+											}
 										}
 									]
 								}

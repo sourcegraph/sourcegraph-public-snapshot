@@ -33,7 +33,12 @@
 							"counts": {},
 							"generation": 1
 						},
-						"highlightedDef": "otherDef"
+						"highlightedDef": "otherDef",
+						"discussions": [
+							{
+								"test": "discussionData"
+							}
+						]
 					}
 				}
 			]
@@ -49,6 +54,10 @@
 		{
 			"$constructor": "WantDef",
 			"url": "someDef"
+		},
+		{
+			"$constructor": "WantDiscussions",
+			"defURL": "someDef"
 		}
 	]
 }

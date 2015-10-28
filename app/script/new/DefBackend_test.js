@@ -51,4 +51,16 @@ describe("DefBackend", () => {
 			})).to.eql([new DefActions.NoExampleAvailable("/someURL", 42)]);
 		});
 	});
+
+	describe("should handle WantDiscussions", () => {
+		it("with result available", () => {
+			DefBackend.xhr = function(options, callback) {
+				expect(options.uri).to.be("/ui/someURL/.discussions?order=Top");
+				callback(null, null, {Discussions: ["exampleData"]});
+			};
+			expect(Dispatcher.catchDispatched(() => {
+				Dispatcher.directDispatch(DefBackend, new DefActions.WantDiscussions("/someURL", 42));
+			})).to.eql([new DefActions.DiscussionsFetched("/someURL", ["exampleData"])]);
+		});
+	});
 });

@@ -4,6 +4,7 @@ import Draggable from "react-draggable";
 import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
+import DiscussionsView from "./DiscussionsView";
 
 export default class DefPopup extends React.Component {
 	constructor(props) {
@@ -20,6 +21,7 @@ export default class DefPopup extends React.Component {
 	shouldComponentUpdate(nextProps, nextState) {
 		return nextProps.def !== this.props.def ||
 			nextProps.highlightedDef !== this.props.highlightedDef ||
+			nextProps.discussions !== this.props.discussions ||
 			nextState.examplesGeneration !== this.state.examplesGeneration;
 	}
 
@@ -47,6 +49,8 @@ export default class DefPopup extends React.Component {
 						</section>
 
 						<ExampleView defURL={def.URL} examples={this.props.examples} highlightedDef={this.props.highlightedDef} />
+
+						{this.props.discussions && <DiscussionsView defURL={def.URL} discussions={this.props.discussions.slice(0, 4)} />}
 					</div>
 				</div>
 			</Draggable>
@@ -58,4 +62,5 @@ DefPopup.propTypes = {
 	def: React.PropTypes.object,
 	examples: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
+	discussions: React.PropTypes.array,
 };
