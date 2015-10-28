@@ -5,43 +5,40 @@ import * as DefActions from "./DefActions";
 
 // TODO support for tokens with more than one URL
 export default class CodeLineView extends React.Component {
-	componentWillMount() {
-		this._updateOwnURLs(this.props.tokens);
+	constructor(props) {
+		super(props);
+		this.state = {};
+		this.state = this._calculateState(props);
 	}
 
 	componentWillReceiveProps(nextProps) {
-		if (nextProps.tokens !== this.props.tokens) {
-			this._updateOwnURLs(nextProps.tokens);
-		}
+		this.setState(this._calculateState(nextProps));
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
-		if (this.props.tokens !== nextProps.tokens) {
-			return true;
-		}
-		if (this.props.selectedDef !== null && nextState.ownURLs[this.props.selectedDef]) {
-			return true;
-		}
-		if (nextProps.selectedDef !== null && nextState.ownURLs[nextProps.selectedDef]) {
-			return true;
-		}
-		if (this.props.highlightedDef !== null && nextState.ownURLs[this.props.highlightedDef]) {
-			return true;
-		}
-		if (nextProps.highlightedDef !== null && nextState.ownURLs[nextProps.highlightedDef]) {
-			return true;
-		}
-		return false;
+		return nextState.tokens !== this.state.tokens ||
+			nextState.selectedDef !== this.state.selectedDef ||
+			nextState.highlightedDef !== this.state.highlightedDef;
 	}
 
-	_updateOwnURLs(tokens) {
-		let ownURLs = {};
-		tokens.forEach((token) => {
-			if (token["URL"]) {
-				ownURLs[token.URL[0]] = true;
-			}
-		});
-		this.setState({ownURLs: ownURLs});
+	_calculateState(props) {
+		let ownURLs = this.state.ownURLs;
+		if (this.state.tokens !== props.tokens) {
+			ownURLs = {};
+			props.tokens.forEach((token) => {
+				if (token["URL"]) {
+					ownURLs[token.URL[0]] = true;
+				}
+			});
+		}
+
+		// filter selectedDef and highlightedDef to improve performance
+		return {
+			tokens: props.tokens,
+			ownURLs: ownURLs,
+			selectedDef: ownURLs[props.selectedDef] ? props.selectedDef : null,
+			highlightedDef: ownURLs[props.highlightedDef] ? props.highlightedDef : null,
+		};
 	}
 
 	render() {
