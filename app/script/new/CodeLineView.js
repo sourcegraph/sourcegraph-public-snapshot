@@ -6,12 +6,6 @@ import * as DefActions from "./DefActions";
 
 // TODO support for tokens with more than one URL
 export default class CodeLineView extends Component {
-	shouldComponentUpdate(nextProps, nextState) {
-		return nextState.tokens !== this.state.tokens ||
-			nextState.selectedDef !== this.state.selectedDef ||
-			nextState.highlightedDef !== this.state.highlightedDef;
-	}
-
 	updateState(state, props) {
 		if (state.tokens !== props.tokens) {
 			state.tokens = props.tokens;

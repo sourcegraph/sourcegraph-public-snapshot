@@ -6,13 +6,6 @@ import * as DefActions from "./DefActions";
 import CodeListing from "./CodeListing";
 
 export default class ExampleView extends Component {
-	shouldComponentUpdate(nextProps, nextState) {
-		return nextState.highlightedDef !== this.state.highlightedDef ||
-			nextState.selectedIndex !== this.state.selectedIndex ||
-			nextState.displayedIndex !== this.state.displayedIndex ||
-			nextState.displayedExample !== this.state.displayedExample;
-	}
-
 	updateState(state, props) {
 		if (state.defURL !== props.defURL) {
 			state.defURL = props.defURL;
