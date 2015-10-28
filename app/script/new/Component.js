@@ -4,17 +4,14 @@ export default class Component extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
-		this.updateState(this.state, props);
 	}
 
 	componentWillMount() {
-		this._asyncRequestData();
+		this._doUpdateState(Object.assign({}, this.state), this.props);
 	}
 
 	componentWillReceiveProps(nextProps) {
-		let newState = Object.assign({}, this.state);
-		this.updateState(newState, nextProps);
-		this.setState(newState, () => { this._asyncRequestData(); });
+		this._doUpdateState(Object.assign({}, this.state), nextProps);
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
@@ -32,22 +29,21 @@ export default class Component extends React.Component {
 	}
 
 	patchState(patch) {
-		let newState = Object.assign({}, this.state, patch);
-		this.updateState(newState, this.props);
-		this.setState(newState, () => { this._asyncRequestData(); });
+		this._doUpdateState(Object.assign({}, this.state, patch), this.props);
 	}
 
-	_asyncRequestData() {
-		setTimeout(() => {
-			this.requestData();
-		}, 0);
+	_doUpdateState(newState, props) {
+		this.updateState(newState, props);
+		if (this.requestData) {
+			let prevState = Object.assign({}, this.state);
+			setTimeout(() => {
+				this.requestData(prevState, newState);
+			}, 0);
+		}
+		this.setState(newState);
 	}
 
 	updateState(state, props) {
-		// override
-	}
-
-	requestData() {
 		// override
 	}
 }

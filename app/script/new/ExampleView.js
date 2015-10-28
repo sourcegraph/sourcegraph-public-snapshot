@@ -28,8 +28,10 @@ export default class ExampleView extends Component {
 		state.highlightedDef = props.highlightedDef;
 	}
 
-	requestData(props) {
-		Dispatcher.dispatch(new DefActions.WantExample(this.state.defURL, this.state.selectedIndex));
+	requestData(prevState, nextState) {
+		if (prevState.defURL !== nextState.defURL || prevState.selectedIndex !== nextState.selectedIndex) {
+			Dispatcher.dispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex));
+		}
 	}
 
 	_changeExample(delta) {
