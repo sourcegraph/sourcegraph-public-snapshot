@@ -199,6 +199,11 @@ func verifyScopeHasAccess(ctx context.Context, scopes []string, method string) b
 			if strings.HasPrefix(method, "Builds.") {
 				return true
 			}
+
+		case strings.HasPrefix(scope, "app:"):
+			// all apps have default write access.
+			// TODO: configure app-specific permissions.
+			return true
 		}
 	}
 	return false
