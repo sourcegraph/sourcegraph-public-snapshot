@@ -8,11 +8,13 @@ export default class CodeLineView extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
-		this.state = this._calculateState(props);
+		this._updateState(this.state, props);
 	}
 
 	componentWillReceiveProps(nextProps) {
-		this.setState(this._calculateState(nextProps));
+		let newState = Object.assign({}, this.state);
+		this._updateState(newState, nextProps);
+		this.setState(newState);
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
@@ -21,24 +23,20 @@ export default class CodeLineView extends React.Component {
 			nextState.highlightedDef !== this.state.highlightedDef;
 	}
 
-	_calculateState(props) {
-		let ownURLs = this.state.ownURLs;
-		if (this.state.tokens !== props.tokens) {
-			ownURLs = {};
-			props.tokens.forEach((token) => {
+	_updateState(state, props) {
+		if (state.tokens !== props.tokens) {
+			state.tokens = props.tokens;
+			state.ownURLs = {};
+			state.tokens.forEach((token) => {
 				if (token["URL"]) {
-					ownURLs[token.URL[0]] = true;
+					state.ownURLs[token.URL[0]] = true;
 				}
 			});
 		}
 
 		// filter selectedDef and highlightedDef to improve performance
-		return {
-			tokens: props.tokens,
-			ownURLs: ownURLs,
-			selectedDef: ownURLs[props.selectedDef] ? props.selectedDef : null,
-			highlightedDef: ownURLs[props.highlightedDef] ? props.highlightedDef : null,
-		};
+		state.selectedDef = state.ownURLs[props.selectedDef] ? props.selectedDef : null;
+		state.highlightedDef = state.ownURLs[props.highlightedDef] ? props.highlightedDef : null;
 	}
 
 	render() {

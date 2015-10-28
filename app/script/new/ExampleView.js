@@ -8,7 +8,7 @@ export default class ExampleView extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
-		this.state = this._calculateState(props);
+		this._updateState(this.state, props);
 	}
 
 	componentWillMount() {
@@ -16,7 +16,9 @@ export default class ExampleView extends React.Component {
 	}
 
 	componentWillReceiveProps(nextProps) {
-		this.setState(this._calculateState(nextProps));
+		let newState = Object.assign({}, this.state);
+		this._updateState(newState, nextProps);
+		this.setState(newState, () => { this._requestData(); });
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
@@ -26,35 +28,32 @@ export default class ExampleView extends React.Component {
 			nextState.displayedExample !== this.state.displayedExample;
 	}
 
-	_calculateState(props) {
-		let selectedIndex = this.state.selectedIndex;
-		let displayedIndex = this.state.displayedIndex;
-		let displayedExample = this.state.displayedExample;
+	_patchState(patch) {
+		let newState = Object.assign({}, this.state, patch);
+		this._updateState(newState, this.props);
+		this.setState(newState, () => { this._requestData(); });
+	}
 
-		if (this.state.defURL !== props.defURL) {
-			selectedIndex = 0;
-			displayedIndex = -1;
-			displayedExample = null;
+	_updateState(state, props) {
+		if (state.defURL !== props.defURL) {
+			state.defURL = props.defURL;
+			state.selectedIndex = 0;
+			state.displayedIndex = -1;
+			state.displayedExample = null;
 		}
 
 		let count = props.examples.getCount(props.defURL);
-		if (selectedIndex >= count) {
-			selectedIndex = count - 1;
+		if (state.selectedIndex >= count) {
+			state.selectedIndex = count - 1;
 		}
 
-		let example = props.examples.get(props.defURL, selectedIndex);
+		let example = props.examples.get(props.defURL, state.selectedIndex);
 		if (example !== null) {
-			displayedIndex = selectedIndex;
-			displayedExample = example;
+			state.displayedIndex = state.selectedIndex;
+			state.displayedExample = example;
 		}
 
-		return {
-			defURL: props.defURL,
-			highlightedDef: props.highlightedDef,
-			selectedIndex: selectedIndex,
-			displayedIndex: displayedIndex,
-			displayedExample: displayedExample,
-		};
+		state.highlightedDef = props.highlightedDef;
 	}
 
 	_requestData(props) {
@@ -69,10 +68,7 @@ export default class ExampleView extends React.Component {
 			if (newIndex < 0 || newIndex >= this.props.examples.getCount(this.props.defURL)) {
 				return;
 			}
-			this.setState({selectedIndex: newIndex}, () => {
-				this.setState(this._calculateState(this.props));
-				this._requestData();
-			});
+			this._patchState({selectedIndex: newIndex});
 		};
 	}
 
