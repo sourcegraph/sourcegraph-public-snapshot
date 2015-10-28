@@ -8,7 +8,7 @@ ENV PATH /srclib/bin:$PATH
 
 ADD . /srclib/src/sourcegraph.com/sourcegraph/srclib/
 RUN go get -v sourcegraph.com/sourcegraph/srclib/...
-RUN go install sourcegraph.com/sourcegraph/srclib/cmd/src
+RUN go install sourcegraph.com/sourcegraph/srclib/cmd/srclib
 RUN go get -v sourcegraph.com/sourcegraph/srclib-go
 RUN cd /srclib/src/sourcegraph.com/sourcegraph && git clone https://sourcegraph.com/sourcegraph/srclib-javascript
 

@@ -132,8 +132,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
-			"Comment": "v1-295-gac1de6d",
-			"Rev": "ac1de6df8e99179055302900918093c0443d3f7a"
+			"Rev": "7c86b1bed79b1dd42ee6650b6789776c40f78e12"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/makex",

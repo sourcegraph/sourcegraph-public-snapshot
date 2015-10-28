@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/plan"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sourcegraph/srclib/util"
 )
 
 const depresolveOp = "depresolve"
@@ -59,7 +60,7 @@ func (r *ResolveDepsRule) Prereqs() []string {
 
 func (r *ResolveDepsRule) Recipes() []string {
 	return []string{
-		fmt.Sprintf("%s tool %s %q %q < $^ 1> $@", srclib.CommandName, r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd),
+		fmt.Sprintf("%s tool %s %q %q < $^ 1> $@", util.SafeCommandName(srclib.CommandName), r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd),
 	}
 }
 
