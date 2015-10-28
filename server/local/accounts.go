@@ -37,6 +37,10 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
 	}
 
+	if newAcct.Password == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "empty password")
+	}
+
 	usersStore := store.UsersFromContextOrNil(ctx)
 	if usersStore == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "users"}
