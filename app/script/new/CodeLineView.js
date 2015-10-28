@@ -20,14 +20,16 @@ export default class CodeLineView extends Component {
 		// filter selectedDef and highlightedDef to improve performance
 		state.selectedDef = state.ownURLs[props.selectedDef] ? props.selectedDef : null;
 		state.highlightedDef = state.ownURLs[props.highlightedDef] ? props.highlightedDef : null;
+
+		state.lineNumber = props.lineNumber;
 	}
 
 	render() {
 		return (
 			<tr className="line">
-				{this.props.lineNumber && <td className="line-number" data-line={this.props.lineNumber}></td>}
+				{this.state.lineNumber && <td className="line-number" data-line={this.state.lineNumber}></td>}
 				<td className="line-content">
-					{this.props.tokens.map((token, i) => {
+					{this.state.tokens.map((token, i) => {
 						if (!token["URL"]) {
 							return <span className={token.Class || ""} key={i}>{token.Label}</span>;
 						}
@@ -37,10 +39,10 @@ export default class CodeLineView extends Component {
 							cls += " def";
 						}
 						switch (token.URL[0]) {
-						case this.props.selectedDef:
+						case this.state.selectedDef:
 							cls += " highlight-primary";
 							break;
-						case this.props.highlightedDef:
+						case this.state.highlightedDef:
 							cls += " highlight-secondary";
 							break;
 						}
@@ -63,7 +65,7 @@ export default class CodeLineView extends Component {
 							</a>
 						);
 					})}
-					{this.props.tokens.length === 0 && <span>&nbsp;</span>}
+					{this.state.tokens.length === 0 && <span>&nbsp;</span>}
 				</td>
 			</tr>
 		);

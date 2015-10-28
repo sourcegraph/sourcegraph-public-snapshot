@@ -14,9 +14,9 @@ export default class ExampleView extends Component {
 			state.displayedExample = null;
 		}
 
-		let count = props.examples.getCount(props.defURL);
-		if (state.selectedIndex >= count) {
-			state.selectedIndex = count - 1;
+		state.count = props.examples.getCount(props.defURL);
+		if (state.selectedIndex >= state.count) {
+			state.selectedIndex = state.count - 1;
 		}
 
 		let example = props.examples.get(props.defURL, state.selectedIndex);
@@ -29,13 +29,13 @@ export default class ExampleView extends Component {
 	}
 
 	requestData(props) {
-		Dispatcher.dispatch(new DefActions.WantExample(this.props.defURL, this.state.selectedIndex));
+		Dispatcher.dispatch(new DefActions.WantExample(this.state.defURL, this.state.selectedIndex));
 	}
 
 	_changeExample(delta) {
 		return () => {
 			let newIndex = this.state.selectedIndex + delta;
-			if (newIndex < 0 || newIndex >= this.props.examples.getCount(this.props.defURL)) {
+			if (newIndex < 0 || newIndex >= this.state.count) {
 				return;
 			}
 			this.patchState({selectedIndex: newIndex});
@@ -51,7 +51,7 @@ export default class ExampleView extends Component {
 					<div className="pull-right">{example && example.Repo}</div>
 					<nav>
 						<a className={`fa fa-chevron-circle-left btnNav ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}></a>
-						<a className={`fa fa-chevron-circle-right btnNav ${this.state.selectedIndex === this.props.examples.getCount(this.props.defURL) - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}></a>
+						<a className={`fa fa-chevron-circle-right btnNav ${this.state.selectedIndex === this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}></a>
 					</nav>
 					{example && <a>{example.File}:{example.StartLine}-{example.EndLine}</a>}
 					{loading && <i className="fa fa-spinner fa-spin"></i>}
