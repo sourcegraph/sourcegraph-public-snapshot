@@ -8,55 +8,53 @@ export default class ExampleView extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
+		this.state = this._calculateState(props);
 	}
 
 	componentWillMount() {
-		this._resetExamples();
+		this._requestData();
 	}
 
 	componentWillReceiveProps(nextProps) {
-		this._updateState(nextProps);
-		if (nextProps.defURL !== this.props.defURL) {
-			this._resetExamples();
-		}
+		this.setState(this._calculateState(nextProps));
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
-		return nextProps.highlightedDef !== this.props.highlightedDef ||
+		return nextState.highlightedDef !== this.state.highlightedDef ||
 			nextState.selectedIndex !== this.state.selectedIndex ||
 			nextState.displayedIndex !== this.state.displayedIndex ||
 			nextState.displayedExample !== this.state.displayedExample;
 	}
 
-	_resetExamples() {
-		this.setState({
-			selectedIndex: 0,
-			displayedIndex: -1,
-			displayedExample: null,
-		}, () => {
-			this._requestData();
-			this._updateState(this.props);
-		});
-	}
+	_calculateState(props) {
+		let selectedIndex = this.state.selectedIndex;
+		let displayedIndex = this.state.displayedIndex;
+		let displayedExample = this.state.displayedExample;
 
-	_updateState(props) {
-		let count = props.examples.getCount(this.props.defURL);
-		if (this.state.selectedIndex >= count) {
-			this.setState({
-				selectedIndex: count - 1,
-			}, () => {
-				this._updateState(props);
-			});
-			return;
+		if (this.state.defURL !== props.defURL) {
+			selectedIndex = 0;
+			displayedIndex = -1;
+			displayedExample = null;
 		}
 
-		let example = props.examples.get(props.defURL, this.state.selectedIndex);
+		let count = props.examples.getCount(props.defURL);
+		if (selectedIndex >= count) {
+			selectedIndex = count - 1;
+		}
+
+		let example = props.examples.get(props.defURL, selectedIndex);
 		if (example !== null) {
-			this.setState({
-				displayedIndex: this.state.selectedIndex,
-				displayedExample: example,
-			});
+			displayedIndex = selectedIndex;
+			displayedExample = example;
 		}
+
+		return {
+			defURL: props.defURL,
+			highlightedDef: props.highlightedDef,
+			selectedIndex: selectedIndex,
+			displayedIndex: displayedIndex,
+			displayedExample: displayedExample,
+		};
 	}
 
 	_requestData(props) {
@@ -72,7 +70,7 @@ export default class ExampleView extends React.Component {
 				return;
 			}
 			this.setState({selectedIndex: newIndex}, () => {
-				this._updateState(this.props);
+				this.setState(this._calculateState(this.props));
 				this._requestData();
 			});
 		};
@@ -98,14 +96,14 @@ export default class ExampleView extends React.Component {
 						<div style={{opacity: loading ? 0.5 : 1}}>
 							<CodeListing
 								lines={example.SourceCode.Lines}
-								selectedDef={this.props.defURL}
-								highlightedDef={this.props.highlightedDef} />
+								selectedDef={this.state.defURL}
+								highlightedDef={this.state.highlightedDef} />
 						</div>
 					}
 				</div>
 
 				<footer>
-					<a target="_blank" href={`${this.props.defURL}/.examples`} className="pull-right">
+					<a target="_blank" href={`${this.state.defURL}/.examples`} className="pull-right">
 						<i className="fa fa-eye" /> View all
 					</a>
 				</footer>
