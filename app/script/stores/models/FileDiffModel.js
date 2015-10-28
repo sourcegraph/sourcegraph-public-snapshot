@@ -99,7 +99,7 @@ var FileDiffModel = Backbone.Model.extend({
 			PreImage: fileDiff.PreImage,
 			PostImage: fileDiff.PostImage,
 			Hunks: new Backbone.Collection(
-				(fileDiff.Hunks || []).map((hunk, i) => {
+				(fileDiff.FileDiffHunks || []).map((hunk, i) => {
 					hunk.parent = this;
 					return new HunkModel(hunk, {parse: true});
 				})
