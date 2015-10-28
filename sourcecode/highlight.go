@@ -7,20 +7,22 @@ import (
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 
 	"github.com/sourcegraph/annotate"
-
-	"src.sourcegraph.com/syntaxhighlight"
+	"github.com/sourcegraph/syntaxhighlight"
 )
 
-func SyntaxHighlight(fileName string, src []byte) ([]*annotate.Annotation, error) {
-	htmlAnn := syntaxhighlight.NewHTMLAnnotator(syntaxhighlight.DefaultHTMLConfig)
-	return runAnnotator(htmlAnn, fileName, src)
+func SyntaxHighlight(src []byte) ([]*annotate.Annotation, error) {
+	htmlAnn := syntaxhighlight.HTMLAnnotator(syntaxhighlight.DefaultHTMLConfig)
+	return runAnnotator(htmlAnn, src)
 }
 
 // Tokenize takes a file entry and returns its contents as a tokenized structure.
 func Tokenize(e *vcsclient.FileWithRange) *sourcegraph.SourceCode {
 	nilAnn := NewNilAnnotator(e)
 	// TODO(sqs!): error check?
-	runAnnotator(nilAnn, e.Name, e.Contents)
+	runAnnotator(nilAnn, e.Contents)
+	if len(nilAnn.Code.Lines) > 0 {
+		nilAnn.Code.Lines[len(nilAnn.Code.Lines)-1].EndByte = int32(e.EndByte)
+	}
 	return nilAnn.Code
 }
 
@@ -40,8 +42,8 @@ func TokenizePlain(e *vcsclient.FileWithRange) *sourcegraph.SourceCode {
 	return &code
 }
 
-func runAnnotator(annotator syntaxhighlight.Annotator, fileName string, src []byte) ([]*annotate.Annotation, error) {
-	anns, err := syntaxhighlight.Annotate(src, fileName, ``, annotator)
+func runAnnotator(annotator syntaxhighlight.Annotator, src []byte) ([]*annotate.Annotation, error) {
+	anns, err := syntaxhighlight.Annotate(src, annotator)
 	if err != nil {
 		return nil, err
 	}

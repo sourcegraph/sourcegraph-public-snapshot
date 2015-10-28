@@ -94,7 +94,7 @@ func Format(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *vcs
 	res.TooManyRefs = res.NumRefs > maxRefs
 
 	// Syntax highlighting.
-	hlAnns, err := SyntaxHighlight(entry.Name, entry.Contents)
+	hlAnns, err := SyntaxHighlight(entry.Contents)
 	if err != nil {
 		return nil, err
 	}
