@@ -22,6 +22,7 @@ import (
 func cacheController(f http.Handler, cc string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", cc)
+		f.ServeHTTP(w, r)
 	})
 }
 
@@ -58,7 +59,7 @@ func New(r *Router) *App {
 	}
 	staticPath := path.Join(u.Path, "static/")
 	staticHandler := http.StripPrefix(staticPath, http.FileServer(assets.Data))
-	r.r.Get(StaticRoute).Handler(cacheController(staticHandler, "max-age=300, public"))
+	a.r.Get(StaticRoute).Handler(cacheController(staticHandler, "max-age=300, public"))
 
 	// Try to initialize the doc generator, if we can't then we serve without
 	// API docs (e.g. if it's not a release binary).
