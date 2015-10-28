@@ -37,6 +37,16 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
 	}
 
+	usersStore := store.UsersFromContextOrNil(ctx)
+	if usersStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "users"}
+	}
+
+	_, err := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: newAcct.Email})
+	if err == nil {
+		return nil, grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", newAcct.Email)
+	}
+
 	now := pbtypes.NewTimestamp(time.Now())
 	newUser := &sourcegraph.User{
 		Login:        newAcct.Login,

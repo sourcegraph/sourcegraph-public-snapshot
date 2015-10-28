@@ -3,6 +3,7 @@ package localauth
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
@@ -104,7 +105,11 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 		case codes.InvalidArgument:
 			form.AddFieldError("Login", formErrorInvalidUsername)
 		case codes.AlreadyExists:
-			form.AddFieldError("Login", formErrorUsernameAlreadyTaken)
+			if strings.Contains(err.Error(), "primary email already associated with a user") {
+				form.AddFieldError("Email", formErrorEmailAlreadyTaken)
+			} else {
+				form.AddFieldError("Login", formErrorUsernameAlreadyTaken)
+			}
 
 		default:
 			return err
@@ -146,6 +151,7 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 
 const (
 	formErrorUsernameAlreadyTaken = "This username is already taken. Try another."
+	formErrorEmailAlreadyTaken    = "A user already exists with this email."
 )
 
 func checkSignupEnabled() error {
