@@ -1,26 +1,11 @@
 import React from "react";
 
+import Component from "./Component";
 import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import CodeListing from "./CodeListing";
 
-export default class ExampleView extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {};
-		this._updateState(this.state, props);
-	}
-
-	componentWillMount() {
-		this._requestData();
-	}
-
-	componentWillReceiveProps(nextProps) {
-		let newState = Object.assign({}, this.state);
-		this._updateState(newState, nextProps);
-		this.setState(newState, () => { this._requestData(); });
-	}
-
+export default class ExampleView extends Component {
 	shouldComponentUpdate(nextProps, nextState) {
 		return nextState.highlightedDef !== this.state.highlightedDef ||
 			nextState.selectedIndex !== this.state.selectedIndex ||
@@ -28,13 +13,7 @@ export default class ExampleView extends React.Component {
 			nextState.displayedExample !== this.state.displayedExample;
 	}
 
-	_patchState(patch) {
-		let newState = Object.assign({}, this.state, patch);
-		this._updateState(newState, this.props);
-		this.setState(newState, () => { this._requestData(); });
-	}
-
-	_updateState(state, props) {
+	updateState(state, props) {
 		if (state.defURL !== props.defURL) {
 			state.defURL = props.defURL;
 			state.selectedIndex = 0;
@@ -56,10 +35,8 @@ export default class ExampleView extends React.Component {
 		state.highlightedDef = props.highlightedDef;
 	}
 
-	_requestData(props) {
-		setTimeout(() => {
-			Dispatcher.dispatch(new DefActions.WantExample(this.props.defURL, this.state.selectedIndex));
-		}, 0);
+	requestData(props) {
+		Dispatcher.dispatch(new DefActions.WantExample(this.props.defURL, this.state.selectedIndex));
 	}
 
 	_changeExample(delta) {
@@ -68,7 +45,7 @@ export default class ExampleView extends React.Component {
 			if (newIndex < 0 || newIndex >= this.props.examples.getCount(this.props.defURL)) {
 				return;
 			}
-			this._patchState({selectedIndex: newIndex});
+			this.patchState({selectedIndex: newIndex});
 		};
 	}
 

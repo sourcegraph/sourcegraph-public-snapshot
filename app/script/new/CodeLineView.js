@@ -1,29 +1,18 @@
 import React from "react";
 
+import Component from "./Component";
 import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 
 // TODO support for tokens with more than one URL
-export default class CodeLineView extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {};
-		this._updateState(this.state, props);
-	}
-
-	componentWillReceiveProps(nextProps) {
-		let newState = Object.assign({}, this.state);
-		this._updateState(newState, nextProps);
-		this.setState(newState);
-	}
-
+export default class CodeLineView extends Component {
 	shouldComponentUpdate(nextProps, nextState) {
 		return nextState.tokens !== this.state.tokens ||
 			nextState.selectedDef !== this.state.selectedDef ||
 			nextState.highlightedDef !== this.state.highlightedDef;
 	}
 
-	_updateState(state, props) {
+	updateState(state, props) {
 		if (state.tokens !== props.tokens) {
 			state.tokens = props.tokens;
 			state.ownURLs = {};
