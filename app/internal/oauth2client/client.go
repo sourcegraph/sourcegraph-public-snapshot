@@ -140,6 +140,12 @@ func ServeOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
+	u := handlerutil.UserFromContext(ctx)
+	if u != nil && u.UID != 0 {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return nil
+	}
+
 	if err := checkOAuth2Config(w, r); err == renderedErrorPage {
 		return nil
 	} else if err != nil {

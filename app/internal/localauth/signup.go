@@ -16,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -50,7 +49,8 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	ctx := httpctx.FromRequest(r)
-	if auth.IsAuthenticated(ctx) {
+	u := handlerutil.UserFromContext(ctx)
+	if u != nil && u.UID != 0 {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return nil
 	}
