@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/notif"
-	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
