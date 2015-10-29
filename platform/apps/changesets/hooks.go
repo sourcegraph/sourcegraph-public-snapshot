@@ -12,6 +12,7 @@ import (
 
 func init() {
 	events.RegisterListener(&changesetHookListener{})
+	events.Listeners = append(events.Listeners, &changesetHookListener{})
 }
 
 type changesetHookListener struct{}
