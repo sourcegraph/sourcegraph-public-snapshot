@@ -81,9 +81,19 @@ function toChildArray(children) {
 		return [];
 	}
 	if (children.constructor !== Array) {
-		return [children];
+		return [removeDiv(children)];
 	}
-	return children.reduce((a, e) => a.concat(toChildArray(e)), []);
+	return children
+		.map(removeDiv)
+		.map(toChildArray)
+		.reduce((a, e) => a.concat(e), []);
+}
+
+function removeDiv(e) {
+	if (e && e.type === "div" && Object.keys(e.props).length === 1 && e.props.children) {
+		return e.props.children;
+	}
+	return e;
 }
 
 function mergeText(elements) {

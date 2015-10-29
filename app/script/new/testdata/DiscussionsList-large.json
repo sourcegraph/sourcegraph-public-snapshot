@@ -10,110 +10,105 @@
 					"props": {
 						"className": "discussion",
 						"children": [
-							{
-								"type": "div",
-								"props": {
-									"children": [
-										{
-											"type": "header",
-											"props": {
-												"children": [
-													{
-														"type": "h1",
-														"props": {
-															"children": [
-																{
-																	"type": "div",
-																	"props": {
-																		"className": "contents",
-																		"children": [
-																			{
-																				"type": "a",
-																				"props": {
-																					"children": [
-																						"foo"
-																					]
-																				}
-																			},
-																			" ",
-																			{
-																				"type": "span",
-																				"props": {
-																					"className": "id",
-																					"children": [
-																						"#42"
-																					]
-																				}
-																			}
-																		]
+							[
+								{
+									"type": "header",
+									"props": {
+										"children": [
+											{
+												"type": "h1",
+												"props": {
+													"children": [
+														{
+															"type": "div",
+															"props": {
+																"className": "contents",
+																"children": [
+																	{
+																		"type": "a",
+																		"props": {
+																			"children": [
+																				"foo"
+																			]
+																		}
+																	},
+																	" ",
+																	{
+																		"type": "span",
+																		"props": {
+																			"className": "id",
+																			"children": [
+																				"#42"
+																			]
+																		}
 																	}
-																}
-															]
+																]
+															}
 														}
-													},
-													{
-														"type": "div",
-														"props": {
-															"className": "stats",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "octicon octicon-comment-discussion"
+													]
+												}
+											},
+											{
+												"type": "div",
+												"props": {
+													"className": "stats",
+													"children": [
+														{
+															"type": "span",
+															"props": {
+																"className": "octicon octicon-comment-discussion"
+															}
+														},
+														" 3"
+													]
+												}
+											},
+											{
+												"type": "div",
+												"props": {
+													"className": "subtitle",
+													"children": [
+														{
+															"type": "span",
+															"props": {
+																"className": "author",
+																"children": [
+																	{
+																		"type": "a",
+																		"props": {
+																			"children": [
+																				"@me"
+																			]
+																		}
 																	}
-																},
-																" 3"
-															]
+																]
+															}
+														},
+														{
+															"type": "span",
+															"props": {
+																"className": "date",
+																"children": [
+																	" a few seconds ago"
+																]
+															}
 														}
-													},
-													{
-														"type": "div",
-														"props": {
-															"className": "subtitle",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "author",
-																		"children": [
-																			{
-																				"type": "a",
-																				"props": {
-																					"children": [
-																						"@me"
-																					]
-																				}
-																			}
-																		]
-																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "date",
-																		"children": [
-																			" a few seconds ago"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
+													]
+												}
 											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"className": "body",
-												"children": [
-													"bar"
-												]
-											}
-										}
-									]
+										]
+									}
+								},
+								{
+									"type": "p",
+									"props": {
+										"className": "body",
+										"children": [
+											"bar"
+										]
+									}
 								}
-							}
+							]
 						]
 					}
 				}

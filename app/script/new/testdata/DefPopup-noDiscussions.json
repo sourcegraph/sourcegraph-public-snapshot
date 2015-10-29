@@ -58,73 +58,66 @@
 											}
 										},
 										{
-											"type": "div",
+											"type": "section",
 											"props": {
+												"className": "docHTML",
 												"children": [
 													{
-														"type": "section",
+														"type": "div",
 														"props": {
-															"className": "docHTML",
+															"className": "header",
 															"children": [
 																{
-																	"type": "div",
+																	"type": "h1",
 																	"props": {
-																		"className": "header",
-																		"children": [
-																			{
-																				"type": "h1",
-																				"props": {
-																					"className": "qualified-name",
-																					"dangerouslySetInnerHTML": "someName"
-																				}
-																			}
-																		]
-																	}
-																},
-																{
-																	"type": "section",
-																	"props": {
-																		"className": "doc",
-																		"dangerouslySetInnerHTML": "someDoc"
+																		"className": "qualified-name",
+																		"dangerouslySetInnerHTML": "someName"
 																	}
 																}
 															]
 														}
 													},
 													{
-														"type": "ExampleView",
+														"type": "section",
 														"props": {
-															"defURL": "someURL",
-															"examples": {
-																"test": "examples"
-															}
+															"className": "doc",
+															"dangerouslySetInnerHTML": "someDoc"
 														}
-													},
+													}
+												]
+											}
+										},
+										{
+											"type": "ExampleView",
+											"props": {
+												"defURL": "someURL",
+												"examples": {
+													"test": "examples"
+												}
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "code-discussions",
+												"children": [
 													{
 														"type": "div",
 														"props": {
-															"className": "code-discussions",
+															"className": "no-discussions",
 															"children": [
 																{
-																	"type": "div",
+																	"type": "a",
+																	"ref": "createBtn",
 																	"props": {
-																		"className": "no-discussions",
 																		"children": [
 																			{
-																				"type": "a",
-																				"ref": "createBtn",
+																				"type": "i",
 																				"props": {
-																					"children": [
-																						{
-																							"type": "i",
-																							"props": {
-																								"className": "octicon octicon-plus"
-																							}
-																						},
-																						" Start a code discussion"
-																					]
+																					"className": "octicon octicon-plus"
 																				}
-																			}
+																			},
+																			" Start a code discussion"
 																		]
 																	}
 																}

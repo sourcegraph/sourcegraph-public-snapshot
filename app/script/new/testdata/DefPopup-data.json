@@ -58,105 +58,98 @@
 											}
 										},
 										{
-											"type": "div",
+											"type": "section",
 											"props": {
+												"className": "docHTML",
 												"children": [
 													{
-														"type": "section",
+														"type": "div",
 														"props": {
-															"className": "docHTML",
+															"className": "header",
 															"children": [
 																{
-																	"type": "div",
+																	"type": "h1",
 																	"props": {
-																		"className": "header",
-																		"children": [
-																			{
-																				"type": "h1",
-																				"props": {
-																					"className": "qualified-name",
-																					"dangerouslySetInnerHTML": "someName"
-																				}
-																			}
-																		]
-																	}
-																},
-																{
-																	"type": "section",
-																	"props": {
-																		"className": "doc",
-																		"dangerouslySetInnerHTML": "someDoc"
+																		"className": "qualified-name",
+																		"dangerouslySetInnerHTML": "someName"
 																	}
 																}
 															]
 														}
 													},
 													{
-														"type": "ExampleView",
+														"type": "section",
 														"props": {
-															"defURL": "someURL",
-															"examples": {
-																"test": "examples"
-															},
-															"highlightedDef": "otherURL"
+															"className": "doc",
+															"dangerouslySetInnerHTML": "someDoc"
 														}
-													},
+													}
+												]
+											}
+										},
+										{
+											"type": "ExampleView",
+											"props": {
+												"defURL": "someURL",
+												"examples": {
+													"test": "examples"
+												},
+												"highlightedDef": "otherURL"
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "code-discussions",
+												"children": [
 													{
 														"type": "div",
 														"props": {
-															"className": "code-discussions",
+															"className": "contents",
 															"children": [
 																{
-																	"type": "div",
+																	"type": "DiscussionsList",
 																	"props": {
-																		"className": "contents",
+																		"discussions": [
+																			"discussion1",
+																			"discussion2",
+																			"discussion3",
+																			"discussion4"
+																		],
+																		"small": true
+																	}
+																},
+																{
+																	"type": "footer",
+																	"props": {
 																		"children": [
 																			{
-																				"type": "DiscussionsList",
-																				"props": {
-																					"discussions": [
-																						"discussion1",
-																						"discussion2",
-																						"discussion3",
-																						"discussion4"
-																					],
-																					"small": true
-																				}
-																			},
-																			{
-																				"type": "footer",
+																				"type": "a",
+																				"ref": "listBtn",
 																				"props": {
 																					"children": [
 																						{
-																							"type": "a",
-																							"ref": "listBtn",
+																							"type": "i",
 																							"props": {
-																								"children": [
-																									{
-																										"type": "i",
-																										"props": {
-																											"className": "fa fa-eye"
-																										}
-																									},
-																									" View all"
-																								]
+																								"className": "fa fa-eye"
 																							}
 																						},
+																						" View all"
+																					]
+																				}
+																			},
+																			{
+																				"type": "a",
+																				"ref": "createBtn",
+																				"props": {
+																					"children": [
 																						{
-																							"type": "a",
-																							"ref": "createBtn",
+																							"type": "i",
 																							"props": {
-																								"children": [
-																									{
-																										"type": "i",
-																										"props": {
-																											"className": "fa fa-comment"
-																										}
-																									},
-																									" New"
-																								]
+																								"className": "fa fa-comment"
 																							}
-																						}
+																						},
+																						" New"
 																					]
 																				}
 																			}

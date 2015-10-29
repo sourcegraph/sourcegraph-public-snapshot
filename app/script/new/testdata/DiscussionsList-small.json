@@ -10,46 +10,41 @@
 					"props": {
 						"className": "discussion",
 						"children": [
-							{
-								"type": "div",
-								"props": {
-									"children": [
-										{
-											"type": "a",
-											"props": {
-												"className": "title truncate",
-												"children": [
-													"foo"
-												]
-											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"className": "stats",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "octicon octicon-comment-discussion"
-														}
-													},
-													" 3"
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"className": "body truncate",
-												"children": [
-													"bar"
-												]
-											}
-										}
-									]
+							[
+								{
+									"type": "a",
+									"props": {
+										"className": "title truncate",
+										"children": [
+											"foo"
+										]
+									}
+								},
+								{
+									"type": "div",
+									"props": {
+										"className": "stats",
+										"children": [
+											{
+												"type": "span",
+												"props": {
+													"className": "octicon octicon-comment-discussion"
+												}
+											},
+											" 3"
+										]
+									}
+								},
+								{
+									"type": "p",
+									"props": {
+										"className": "body truncate",
+										"children": [
+											"bar"
+										]
+									}
 								}
-							}
+							]
 						]
 					}
 				}
