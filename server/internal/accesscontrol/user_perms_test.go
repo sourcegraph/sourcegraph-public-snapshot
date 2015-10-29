@@ -10,8 +10,7 @@ import (
 )
 
 func TestVerifyAccess(t *testing.T) {
-	getUserPermissionsFromRoot = func(ctx context.Context) (*sourcegraph.UserPermissions, error) {
-		actor := auth.ActorFromContext(ctx)
+	getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*sourcegraph.UserPermissions, error) {
 		if actor.UID == 1 {
 			return &sourcegraph.UserPermissions{
 				UID:      int32(actor.UID),

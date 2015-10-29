@@ -292,12 +292,24 @@ func (s *registeredClients) ListUserPermissions(ctx context.Context, client *sou
 }
 
 func (s *registeredClients) checkCtxUserIsAdmin(ctx context.Context, clientID string) (bool, error) {
+	actor := authpkg.ActorFromContext(ctx)
+	if !actor.IsAuthenticated() && actor.ClientID == clientID {
+		// If ctx is not authenticated with a user, check if actor has a special scope
+		// that grants admin access on that client.
+		for _, scope := range actor.Scope {
+			// internal server commands have default admin access.
+			if scope == "internal:cli" {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
 	userPermsStore, err := userPermissionsOrError(ctx)
 	if err != nil {
 		return false, err
 	}
 	return userPermsStore.Verify(ctx, &sourcegraph.UserPermissions{
-		UID:      int32(authpkg.ActorFromContext(ctx).UID),
+		UID:      int32(actor.UID),
 		ClientID: clientID,
 		Admin:    true,
 	})

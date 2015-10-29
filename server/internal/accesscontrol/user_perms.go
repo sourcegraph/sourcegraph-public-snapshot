@@ -22,12 +22,31 @@ import (
 // If the cmdline flag auth.restrict-write-access is set, this method
 // will check if the authenticated user has admin privileges.
 func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
+	if authutil.ActiveFlags.RestrictWriteAccess {
+		return VerifyUserHasAdminAccess(ctx, method)
+	}
+
+	return VerifyActorHasWriteAccess(ctx, auth.ActorFromContext(ctx), method)
+}
+
+// VerifyUserHasWriteAccess checks if the user in the current context
+// is authorized to make admin requests to this server.
+func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
+	return VerifyActorHasAdminAccess(ctx, auth.ActorFromContext(ctx), method)
+}
+
+// VerifyActorHasWriteAccess checks if the given actor is authorized to make
+// write requests to this server.
+// Note that this function allows the caller to retrieve any user's access levels.
+// This is meant for trusted server code living outside the scope of gRPC requests
+// to verify user permissions, for example the SSH Git server. For all other cases,
+// VerifyUserHasWriteAccess should be used to authorize a user for gRPC operations.
+func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil
 	}
 
-	actor := auth.ActorFromContext(ctx)
 	if !actor.IsAuthenticated() {
 		// Check if the actor is authorized with an access token
 		// having a scope. This token is set in package sgx on server
@@ -55,10 +74,6 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
 	}
 
-	if authutil.ActiveFlags.RestrictWriteAccess {
-		return VerifyUserHasAdminAccess(ctx, method)
-	}
-
 	// If auth source is local, we currently do not differentiate between
 	// read and write access. The supported access levels for a user are:
 	// unauthenticated, authenticated and admin. It is recommended for
@@ -69,7 +84,7 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
 	}
 
 	// Get UserPermissions info for this user from the root server.
-	perms, err := getUserPermissionsFromRoot(ctx)
+	perms, err := getUserPermissionsFromRoot(ctx, actor)
 	if err != nil {
 		return err
 	}
@@ -81,15 +96,19 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
 	return nil
 }
 
-func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
+// VerifyActorHasAdminAccess checks if the given actor is authorized to make
+// admin requests to this server.
+// Note that this function allows the caller to retrieve any user's access levels.
+// This is meant for trusted server code living outside the scope of gRPC requests
+// to verify user permissions, for example the SSH Git server. For all other cases,
+// VerifyUserHasAdminAccess should be used to authorize a user for gRPC operations.
+func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has admin access.
 		return nil
 	}
 
 	var isAdmin bool
-	actor := auth.ActorFromContext(ctx)
-
 	if authutil.ActiveFlags.IsLocal() {
 		// Check local auth server for user's admin privileges.
 		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID)})
@@ -99,7 +118,7 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 		isAdmin = user.Admin
 	} else {
 		// Get UserPermissions info for this user from the root server.
-		if perms, err := getUserPermissionsFromRoot(ctx); err != nil {
+		if perms, err := getUserPermissionsFromRoot(ctx, actor); err != nil {
 			return err
 		} else {
 			isAdmin = perms.Admin
@@ -112,14 +131,13 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 	return nil
 }
 
-var getUserPermissionsFromRoot = func(ctx context.Context) (*sourcegraph.UserPermissions, error) {
+var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*sourcegraph.UserPermissions, error) {
 	// TODO: Cache UserPermissions to avoid making a call to root server for every
 	// write/admin operation.
 	rootGRPCURL, err := fed.Config.RootGRPCEndpoint()
 	if err != nil {
 		return nil, err
 	}
-	actor := auth.ActorFromContext(ctx)
 	ctx = sourcegraph.WithGRPCEndpoint(ctx, rootGRPCURL)
 	ctx = svc.WithServices(ctx, remote.Services)
 	rootCl := sourcegraph.NewClientFromContext(ctx)
