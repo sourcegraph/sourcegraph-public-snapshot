@@ -3,7 +3,7 @@ package sourcegraph
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
+	"path"
 	"reflect"
 	"strings"
 )
@@ -51,7 +51,7 @@ func (t UnitToken) Token() string {
 	return s
 }
 
-func (t FileToken) Token() string { return "/" + filepath.Clean(t.Path) }
+func (t FileToken) Token() string { return "/" + path.Clean(t.Path) }
 
 func (t UserToken) Token() string { return "@" + t.Login }
 
