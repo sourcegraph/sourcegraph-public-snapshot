@@ -1,6 +1,6 @@
 import React from "react";
 
-export default class CodeFileRouter extends React.Component {
+export default class LocationAdaptor extends React.Component {
 	componentDidMount() {
 		window.addEventListener("popstate", this._locationChanged.bind(this));
 	}
