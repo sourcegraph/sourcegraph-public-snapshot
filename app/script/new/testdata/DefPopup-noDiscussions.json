@@ -97,8 +97,7 @@
 															"defURL": "someURL",
 															"examples": {
 																"test": "examples"
-															},
-															"highlightedDef": "otherURL"
+															}
 														}
 													},
 													{
@@ -109,54 +108,20 @@
 																{
 																	"type": "div",
 																	"props": {
-																		"className": "contents",
+																		"className": "no-discussions",
 																		"children": [
 																			{
-																				"type": "DiscussionsList",
-																				"props": {
-																					"discussions": [
-																						"discussion1",
-																						"discussion2",
-																						"discussion3",
-																						"discussion4"
-																					],
-																					"small": true
-																				}
-																			},
-																			{
-																				"type": "footer",
+																				"type": "a",
+																				"ref": "createBtn",
 																				"props": {
 																					"children": [
 																						{
-																							"type": "a",
-																							"ref": "listBtn",
+																							"type": "i",
 																							"props": {
-																								"children": [
-																									{
-																										"type": "i",
-																										"props": {
-																											"className": "fa fa-eye"
-																										}
-																									},
-																									" View all"
-																								]
+																								"className": "octicon octicon-plus"
 																							}
 																						},
-																						{
-																							"type": "a",
-																							"ref": "createBtn",
-																							"props": {
-																								"children": [
-																									{
-																										"type": "i",
-																										"props": {
-																											"className": "fa fa-comment"
-																										}
-																									},
-																									" New"
-																								]
-																							}
-																						}
+																						" Start a code discussion"
 																					]
 																				}
 																			}
