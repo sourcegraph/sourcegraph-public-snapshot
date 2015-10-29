@@ -186,7 +186,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		})
 		run.Do(func() (err error) {
 			opt := sourcegraph.RepoTreeGetOptions{GetFileOptions: vcsclient.GetFileOptions{
-				RecurseSingleSubfolder: true,
+				RecurseSingleSubfolderLimit: 200,
 			}}
 			tree, err = apiclient.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})
 			if err == nil {

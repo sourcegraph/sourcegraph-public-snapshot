@@ -47,7 +47,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		TokenizedSource: !doc.IsFormattableDocFile(mux.Vars(r)["Path"]),
 
 		GetFileOptions: vcsclient.GetFileOptions{
-			RecurseSingleSubfolder: true,
+			RecurseSingleSubfolderLimit: 200,
 		},
 	}
 	tc, rc, vc, bc, err := handlerutil.GetTreeEntryCommon(r, &opt)

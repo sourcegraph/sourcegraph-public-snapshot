@@ -82,9 +82,10 @@ type GetFileOptions struct {
 	// return the full file tree of the host repository, recursing into all
 	// sub-directories.
 	Recursive bool `protobuf:"varint,5,opt,name=recursive,proto3" json:",omitempty" url:",omitempty"`
-	// RecurseSingleSubfolder only applies if the returned entry is a directory.
-	// It will recursively find and include all sub-directories with a single sub-directory.
-	RecurseSingleSubfolder bool `protobuf:"varint,6,opt,name=recurse_single_subfolder,proto3" json:",omitempty" url:",omitempty"`
+	// RecurseSingleSubfolderLimit only applies if the returned entry is a directory.
+	// If nonzero, it will recursively find and include all singleton sub-directory chains,
+	// up to a limit of RecurseSingleSubfolderLimit.
+	RecurseSingleSubfolderLimit int32 `protobuf:"varint,6,opt,name=recurse_single_subfolder_limit,proto3" json:",omitempty" url:",omitempty"`
 }
 
 func (m *GetFileOptions) Reset()         { *m = GetFileOptions{} }

@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"runtime"
+	"sync"
 
 	"sort"
 
@@ -162,7 +164,7 @@ func GetFileWithOptions(fs vfs.FileSystem, path string, opt GetFileOptions) (*Fi
 	fwr := FileWithRange{TreeEntry: e}
 
 	if fi.Mode().IsDir() {
-		ee, err := readDir(fs, path, opt.RecurseSingleSubfolder, true)
+		ee, err := readDir(fs, path, int(opt.RecurseSingleSubfolderLimit), true)
 		if err != nil {
 			return nil, err
 		}
@@ -198,26 +200,47 @@ func GetFileWithOptions(fs vfs.FileSystem, path string, opt GetFileOptions) (*Fi
 }
 
 // readDir uses the passed vfs.FileSystem to read from starting at the base path.
-// If recurseSingleSubfolder is true, it will descend and include sub-folders
-// with a single sub-folder inside. first should always be set to true, other values are used internally.
-func readDir(fs vfs.FileSystem, base string, recurseSingleSubfolder bool, first bool) ([]*TreeEntry, error) {
+// If recurseSingleSubfolderLimit is non-zero, it will descend and include
+// sub-folders with a single sub-folder inside. It will only inspect up to
+// recurseSingleSubfolderLimit sub-folders. first should always be set to
+// true, other values are used internally.
+func readDir(fs vfs.FileSystem, base string, recurseSingleSubfolderLimit int, first bool) ([]*TreeEntry, error) {
 	entries, err := fs.ReadDir(base)
 	if err != nil {
 		return nil, err
 	}
-	if recurseSingleSubfolder && !first && !singleSubDir(entries) {
+	if recurseSingleSubfolderLimit > 0 && !first && !singleSubDir(entries) {
 		return nil, nil
 	}
-	te := make([]*TreeEntry, len(entries))
+	var (
+		wg         sync.WaitGroup
+		recurseErr error
+		dirCount   = 0
+		sem        = make(chan bool, runtime.GOMAXPROCS(0))
+		te         = make([]*TreeEntry, len(entries))
+	)
 	for i, fi := range entries {
 		te[i] = newTreeEntry(fi)
-		if fi.Mode().IsDir() && recurseSingleSubfolder {
-			ee, err := readDir(fs, path.Join(base, fi.Name()), recurseSingleSubfolder, false)
-			if err != nil {
-				return nil, err
-			}
-			te[i].Entries = ee
+		if fi.Mode().IsDir() && dirCount < recurseSingleSubfolderLimit {
+			dirCount++
+			i, name := i, fi.Name()
+			wg.Add(1)
+			sem <- true
+			go func() {
+				defer wg.Done()
+				defer func() { <-sem }()
+				ee, err := readDir(fs, path.Join(base, name), recurseSingleSubfolderLimit, false)
+				if err != nil {
+					recurseErr = err
+					return
+				}
+				te[i].Entries = ee
+			}()
 		}
+	}
+	wg.Wait()
+	if recurseErr != nil {
+		return nil, recurseErr
 	}
 	return te, nil
 }
