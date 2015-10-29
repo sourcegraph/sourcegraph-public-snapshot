@@ -1,15 +1,21 @@
 import React from "react";
 
-export default class DiscussionsView extends React.Component {
+import Component from "./Component";
+
+export default class DiscussionsView extends Component {
+	updateState(state, props) {
+		state.discussions = props.discussions;
+	}
+
 	render() {
 		return (
 			<div className="code-discussions">
-				{this.props.discussions.length === 0 ? (
+				{this.state.discussions.length === 0 ? (
 					<div className="no-discussions"><a ref="createBtn"><i className="octicon octicon-plus" /> Start a code discussion</a></div>
 				) : (
 					<div className="contents">
 						<ul className="list">
-							{this.props.discussions.map((d) =>
+							{this.state.discussions.map((d) =>
 								<li className="discussion" key={`snippet-d-${d.ID}`}>
 									<a className="title truncate">{d.Title}</a>
 									<div className="stats">
@@ -31,6 +37,5 @@ export default class DiscussionsView extends React.Component {
 }
 
 DiscussionsView.propTypes = {
-	defURL: React.PropTypes.string,
 	discussions: React.PropTypes.array,
 };

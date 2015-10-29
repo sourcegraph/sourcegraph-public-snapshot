@@ -1,32 +1,23 @@
 import React from "react";
 import Draggable from "react-draggable";
 
+import Component from "./Component";
 import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
 import DiscussionsView from "./DiscussionsView";
 
-export default class DefPopup extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			examplesGeneration: -1,
-		};
-	}
-
-	componentWillReceiveProps(nextProps) {
-		this.setState({examplesGeneration: nextProps.examples.generation});
-	}
-
-	shouldComponentUpdate(nextProps, nextState) {
-		return nextProps.def !== this.props.def ||
-			nextProps.highlightedDef !== this.props.highlightedDef ||
-			nextProps.discussions !== this.props.discussions ||
-			nextState.examplesGeneration !== this.state.examplesGeneration;
+export default class DefPopup extends Component {
+	updateState(state, props) {
+		state.def = props.def;
+		state.examples = props.examples;
+		state.examplesGeneration = props.examples.generation;
+		state.highlightedDef = props.highlightedDef;
+		state.discussions = props.discussions;
 	}
 
 	render() {
-		let def = this.props.def;
+		let def = this.state.def;
 		return (
 			<Draggable handle="header.toolbar">
 				<div className="token-details">
@@ -48,9 +39,9 @@ export default class DefPopup extends React.Component {
 							<section className="doc" dangerouslySetInnerHTML={def.Data && def.Data.DocHTML} />
 						</section>
 
-						<ExampleView defURL={def.URL} examples={this.props.examples} highlightedDef={this.props.highlightedDef} />
+						<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
 
-						{this.props.discussions && <DiscussionsView defURL={def.URL} discussions={this.props.discussions.slice(0, 4)} />}
+						{this.state.discussions && <DiscussionsView discussions={this.state.discussions.slice(0, 4)} />}
 					</div>
 				</div>
 			</Draggable>

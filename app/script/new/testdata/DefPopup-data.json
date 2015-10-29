@@ -100,7 +100,6 @@
 										{
 											"type": "DiscussionsView",
 											"props": {
-												"defURL": "someURL",
 												"discussions": [
 													"discussion1",
 													"discussion2",

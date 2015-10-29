@@ -1,6 +1,6 @@
 import React from "react";
-import {Container} from "flux/utils";
 
+import Container from "./Container";
 import Dispatcher from "./Dispatcher";
 import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
@@ -11,52 +11,50 @@ import DefPopup from "./DefPopup";
 import "./CodeBackend";
 import "./DefBackend";
 
-class CodeFileContainer extends React.Component {
-	componentWillMount() {
-		this._requestData();
-	}
-
-	componentWillReceiveProps(nextProps) {
-		this._requestData();
-	}
-
-	_requestData() {
-		setTimeout(() => {
-			Dispatcher.dispatch(new CodeActions.WantFile(this.props.repo, this.props.rev, this.props.tree));
-			if (this.props.selectedDef) {
-				Dispatcher.dispatch(new DefActions.WantDef(this.props.selectedDef));
-				Dispatcher.dispatch(new DefActions.WantDiscussions(this.props.selectedDef));
-			}
-		}, 0);
-	}
-
-	static getStores() {
+export default class CodeFileContainer extends Container {
+	stores() {
 		return [CodeStore, DefStore];
 	}
 
-	static calculateState(prevState) {
-		return {
-			files: CodeStore.files,
-			defs: DefStore.defs,
-			examples: DefStore.examples,
-			highlightedDef: DefStore.highlightedDef,
-			discussions: DefStore.discussions,
-		};
+	updateState(state, props) {
+		state.repo = props.repo;
+		state.rev = props.rev;
+		state.tree = props.tree;
+		state.selectedDef = props.selectedDef;
+
+		state.file = CodeStore.files.get(state.repo, state.rev, state.tree);
+
+		state.defs = DefStore.defs;
+		state.defsGeneration = DefStore.defs.generation;
+		state.examples = DefStore.examples;
+		state.examplesGeneration = DefStore.examples.generation;
+		state.highlightedDef = DefStore.highlightedDef;
+		state.discussions = DefStore.discussions;
+		state.discussionsGeneration = DefStore.examples.discussions;
+	}
+
+	requestData(prevState, nextState) {
+		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree) {
+			Dispatcher.dispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
+		}
+		if (nextState.selectedDef && prevState.selectedDef !== nextState.selectedDef) {
+			Dispatcher.dispatch(new DefActions.WantDef(nextState.selectedDef));
+			Dispatcher.dispatch(new DefActions.WantDiscussions(nextState.selectedDef));
+		}
 	}
 
 	render() {
-		let file = this.state.files.get(this.props.repo, this.props.rev, this.props.tree);
-		if (!file) {
+		if (!this.state.file) {
 			return null;
 		}
-		let def = this.props.selectedDef && this.state.defs.get(this.props.selectedDef);
+		let def = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
 		return (
 			<div>
 				<div className="code-view-react">
 					<CodeListing
-						lines={file.Entry.SourceCode.Lines}
+						lines={this.state.file.Entry.SourceCode.Lines}
 						lineNumbers={true}
-						selectedDef={this.props.selectedDef}
+						selectedDef={this.state.selectedDef}
 						highlightedDef={this.state.highlightedDef} />
 				</div>
 				{def &&
@@ -64,7 +62,7 @@ class CodeFileContainer extends React.Component {
 						def={def}
 						examples={this.state.examples}
 						highlightedDef={this.state.highlightedDef}
-						discussions={this.state.discussions.get(this.props.selectedDef)} />
+						discussions={this.state.discussions.get(this.state.selectedDef)} />
 				}
 			</div>
 		);
@@ -83,5 +81,3 @@ CodeFileContainer.propTypes = {
 	def: React.PropTypes.string,
 	example: React.PropTypes.number,
 };
-
-export default Container.create(CodeFileContainer, {pure: false});

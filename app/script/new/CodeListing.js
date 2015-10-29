@@ -1,11 +1,12 @@
 import React from "react";
 
+import Component from "./Component";
 import CodeLineView from "./CodeLineView";
 
 const tilingFactor = 500;
 const emptyArray = [];
 
-export default class CodeListing extends React.Component {
+export default class CodeListing extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -20,22 +21,21 @@ export default class CodeListing extends React.Component {
 		window.addEventListener("scroll", this._updateVisibleLines);
 	}
 
-	shouldComponentUpdate(nextProps, nextState) {
-		return nextProps.lines !== this.props.lines ||
-			nextProps.selectedDef !== this.props.selectedDef ||
-			nextProps.highlightedDef !== this.props.highlightedDef ||
-			nextState.firstVisibleLine !== this.state.firstVisibleLine ||
-			nextState.visibleLinesCount !== this.state.visibleLinesCount;
-	}
-
 	componentWillUnmount() {
 		window.removeEventListener("scroll", this._updateVisibleLines);
 	}
 
+	updateState(state, props) {
+		state.lines = props.lines;
+		state.lineNumbers = props.lineNumbers;
+		state.selectedDef = props.selectedDef;
+		state.highlightedDef = props.highlightedDef;
+	}
+
 	_updateVisibleLines() {
 		let rect = this.refs.table.getBoundingClientRect();
-		let firstVisibleLine = Math.max(0, Math.floor(this.props.lines.length / rect.height * -rect.top / tilingFactor - 1) * tilingFactor);
-		let visibleLinesCount = Math.ceil(this.props.lines.length / rect.height * window.innerHeight / tilingFactor + 2) * tilingFactor;
+		let firstVisibleLine = Math.max(0, Math.floor(this.state.lines.length / rect.height * -rect.top / tilingFactor - 1) * tilingFactor);
+		let visibleLinesCount = Math.ceil(this.state.lines.length / rect.height * window.innerHeight / tilingFactor + 2) * tilingFactor;
 		if (this.state.firstVisibleLine !== firstVisibleLine || this.state.visibleLinesCount !== visibleLinesCount) {
 			this.setState({
 				firstVisibleLine: firstVisibleLine,
@@ -49,7 +49,7 @@ export default class CodeListing extends React.Component {
 		let visibleLinesEnd = visibleLinesStart + this.state.visibleLinesCount;
 
 		let offscreenCodeAbove = "";
-		this.props.lines.slice(0, visibleLinesStart).forEach((lineData) => {
+		this.state.lines.slice(0, visibleLinesStart).forEach((lineData) => {
 			(lineData.Tokens || []).forEach((token) => {
 				offscreenCodeAbove += token.Label || "";
 			});
@@ -57,7 +57,7 @@ export default class CodeListing extends React.Component {
 		});
 
 		let offscreenCodeBelow = "";
-		this.props.lines.slice(visibleLinesEnd).forEach((lineData) => {
+		this.state.lines.slice(visibleLinesEnd).forEach((lineData) => {
 			(lineData.Tokens || []).forEach((token) => {
 				offscreenCodeBelow += token.Label || "";
 			});
@@ -73,12 +73,12 @@ export default class CodeListing extends React.Component {
 							<td className="line-content">{offscreenCodeAbove}</td>
 						</tr>
 					}
-					{this.props.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) =>
+					{this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) =>
 						<CodeLineView
-							lineNumber={this.props.lineNumbers ? 1 + visibleLinesStart + i : null}
+							lineNumber={this.state.lineNumbers ? 1 + visibleLinesStart + i : null}
 							tokens={lineData.Tokens || emptyArray}
-							selectedDef={this.props.selectedDef}
-							highlightedDef={this.props.highlightedDef}
+							selectedDef={this.state.selectedDef}
+							highlightedDef={this.state.highlightedDef}
 							key={visibleLinesStart + i} />
 					)}
 					{offscreenCodeBelow !== "" &&

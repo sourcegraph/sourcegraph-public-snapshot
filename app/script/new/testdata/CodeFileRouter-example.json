@@ -1,6 +1,6 @@
 {
 	"renderOutput": {
-		"type": "FluxContainerClass",
+		"type": "CodeFileContainer",
 		"props": {
 			"repo": "github.com/gorilla/mux",
 			"rev": "master",

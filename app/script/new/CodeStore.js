@@ -12,6 +12,7 @@ export class CodeStore extends Store {
 		super(dispatcher);
 		this.files = {
 			content: {},
+			generation: 0,
 			get(repo, rev, tree) {
 				return this.content[keyFor(repo, rev, tree)] || null;
 			},
@@ -22,6 +23,7 @@ export class CodeStore extends Store {
 		switch (action.constructor) {
 		case CodeActions.FileFetched:
 			this.files.content[keyFor(action.repo, action.rev, action.tree)] = action.file;
+			this.files.generation++;
 			break;
 
 		default:

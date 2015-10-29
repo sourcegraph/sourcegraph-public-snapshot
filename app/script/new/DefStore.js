@@ -12,6 +12,7 @@ export class DefStore extends Store {
 		super(dispatcher);
 		this.defs = {
 			content: {},
+			generation: 0,
 			get(url) {
 				return this.content[url] || null;
 			},
@@ -41,6 +42,7 @@ export class DefStore extends Store {
 		switch (action.constructor) {
 		case DefActions.DefFetched:
 			this.defs.content[action.url] = action.def;
+			this.defs.generation++;
 			break;
 
 		case DefActions.HighlightDef:
