@@ -25,6 +25,7 @@ func (g *changesetHookListener) Start(ctx context.Context) {
 		if !couldAffectChangesets(p) {
 			return
 		}
+		e := p.Event
 		cl := sourcegraph.NewClientFromContext(ctx)
 		_, err := cl.Changesets.UpdateAffected(ctx, &sourcegraph.ChangesetUpdateAffectedOp{
 			Repo:   p.Repo,
@@ -49,7 +50,7 @@ func couldAffectChangesets(p githooks.Payload) bool {
 		return false
 	}
 	if !(p.Type == githooks.GitPushEvent || p.Type == githooks.GitDeleteEvent) {
-		return false	
+		return false
 	}
 	return true
 }
