@@ -14,18 +14,18 @@ import (
 
 // File represents a single file in the storage system.
 type File interface {
+	fmt.Stringer
+	io.Reader
+	io.Writer
+	io.Seeker
+	io.Closer
+
 	// Name returns the name of the file as presented to Open.
 	Name() string
 
 	// Truncate changes the size of the file. It does not change the I/O offset.
 	// TODO(slimsag): implement Truncate
 	//Truncate(size int64) error
-
-	fmt.Stringer
-	io.Reader
-	io.Writer
-	io.Seeker
-	io.Closer
 }
 
 // FileSystem represents the storage system.
