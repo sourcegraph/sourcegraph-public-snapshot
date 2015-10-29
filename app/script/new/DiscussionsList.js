@@ -40,7 +40,7 @@ export default class DiscussionsList extends Component {
 										<span className="date"> {moment(d.CreatedAt).fromNow()}</span>
 									</div>
 								</header>
-								<p className="body">{d.Description.slice(0, 250)+(d.Description.length > 250 ? "..." : "")}</p>
+								<p className="body">{d.Description && d.Description.slice(0, 250)+(d.Description.length > 250 ? "..." : "")}</p>
 							</div>
 						)}
 					</li>

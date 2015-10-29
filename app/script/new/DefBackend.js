@@ -68,6 +68,24 @@ const DefBackend = {
 			}
 			break;
 
+		case DefActions.CreateDiscussion:
+			DefBackend.xhr({
+				uri: `/ui${action.defURL}/.discussions/create`,
+				method: "POST",
+				json: {
+					Title: action.title,
+					Description: action.description,
+				},
+			}, function(err, resp, body) {
+				if (err) {
+					console.error(err);
+					return;
+				}
+				Dispatcher.dispatch(new DefActions.DiscussionsFetched(action.defURL, [body].concat(DefStore.discussions.get(action.defURL))));
+				action.callback(body);
+			});
+			break;
+
 		}
 	},
 };

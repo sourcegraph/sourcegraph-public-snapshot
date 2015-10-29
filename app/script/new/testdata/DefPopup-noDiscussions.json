@@ -71,7 +71,9 @@
 																	"type": "h1",
 																	"props": {
 																		"className": "qualified-name",
-																		"dangerouslySetInnerHTML": "someName"
+																		"dangerouslySetInnerHTML": {
+																			"__html": "someName"
+																		}
 																	}
 																}
 															]

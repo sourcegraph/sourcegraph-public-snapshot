@@ -22,7 +22,7 @@ export default function(expected, filename, component) {
 			dispatched: dispatched.length > 0 ? dispatched : noJSON,
 		},
 		(k, v) => {
-			if (k.charAt(0) === "_" || v === null || v === undefined) { // eslint-disable-line no-undefined
+			if ((k.charAt(0) === "_" && k !== "__html") || v === null || v === undefined) { // eslint-disable-line no-undefined
 				return noJSON;
 			}
 			if (k === "children") {

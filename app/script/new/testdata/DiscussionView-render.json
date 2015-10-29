@@ -93,7 +93,9 @@
 																	"type": "b",
 																	"props": {
 																		"className": "backtick",
-																		"dangerouslySetInnerHTML": {}
+																		"dangerouslySetInnerHTML": {
+																			"__html": "someName"
+																		}
 																	}
 																}
 															]

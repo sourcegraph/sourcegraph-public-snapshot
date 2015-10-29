@@ -7,6 +7,7 @@ import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
 import DiscussionsList from "./DiscussionsList";
 import DiscussionView from "./DiscussionView";
+import MarkdownTextarea from "../components/MarkdownTextarea"; // FIXME
 
 export default class DefPopup extends Component {
 	constructor(props) {
@@ -14,6 +15,8 @@ export default class DefPopup extends Component {
 		this.state = {
 			viewAllDiscussions: false,
 			viewDiscussion: null,
+			newDiscussion: false,
+			creatingDiscussion: false,
 		};
 	}
 
@@ -23,6 +26,15 @@ export default class DefPopup extends Component {
 		state.examplesGeneration = props.examples.generation;
 		state.highlightedDef = props.highlightedDef;
 		state.discussions = props.discussions;
+	}
+
+	_createDiscussion() {
+		this.setState({creatingDiscussion: true});
+		let title = this.refs.titleText.value;
+		let body = this.refs.bodyText.value();
+		Dispatcher.dispatch(new DefActions.CreateDiscussion(this.state.def.URL, title, body, (d) => {
+			this.setState({creatingDiscussion: false, viewDiscussion: d});
+		}));
 	}
 
 	_renderBody() {
@@ -40,7 +52,7 @@ export default class DefPopup extends Component {
 						</div>
 					</div>
 					<footer>
-						<a ref="createBtn"><i className="fa fa-comment" /> New</a>
+						<a ref="createBtn" onClick={() => { this.setState({viewAllDiscussions: false, newDiscussion: true}); }}><i className="fa fa-comment" /> New</a>
 					</footer>
 				</div>
 			);
@@ -53,8 +65,25 @@ export default class DefPopup extends Component {
 					<footer>
 						<a ref="listBtn" onClick={() => { this.setState({viewAllDiscussions: true, viewDiscussion: null}); }}><i className="fa fa-eye" /> View all</a>
 						<a href="#add-discussion-comment"><i className="fa fa-plus" /> Reply</a>
-						<a ref="createBtn"><i className="fa fa-comment" /> New</a>
+						<a ref="createBtn" onClick={() => { this.setState({viewDiscussion: null, newDiscussion: true}); }}><i className="fa fa-comment" /> New</a>
 					</footer>
+				</div>
+			);
+		}
+
+		if (this.state.newDiscussion) {
+			return (
+				<div className="discussion-create">
+					<div className="form">
+						<h1>Create a discussion</h1>
+						<p>You are starting a new discussion on <b className="backtick" dangerouslySetInnerHTML={def.QualifiedName} />.</p>
+						<input type="text" ref="titleText" className="title" placeholder="Title" />
+						<MarkdownTextarea ref="bodyText" className="body" placeholder="Description" />
+						<div className="buttons pull-right">
+							<button ref="createBtn" className={`btn btn-sgblue ${this.state.creatingDiscussion ? "disabled" : ""}`} onClick={!this.state.creatingDiscussion && (() => { this._createDiscussion(); })}>Create</button>
+							<button ref="cancelBtn" className={`btn btn-default ${this.state.creatingDiscussion ? "disabled" : ""}`} onClick={!this.state.creatingDiscussion && (() => { this.setState({newDiscussion: false}); })}>Cancel</button>
+						</div>
+					</div>
 				</div>
 			);
 		}
@@ -82,7 +111,7 @@ export default class DefPopup extends Component {
 									small={true} />
 								<footer>
 									<a ref="listBtn" onClick={() => { this.setState({viewAllDiscussions: true}); }}><i className="fa fa-eye" /> View all</a>
-									<a ref="createBtn"><i className="fa fa-comment" /> New</a>
+									<a ref="createBtn" onClick={() => { this.setState({newDiscussion: true}); }}><i className="fa fa-comment" /> New</a>
 								</footer>
 							</div>
 						)}
@@ -99,9 +128,9 @@ export default class DefPopup extends Component {
 				<div className="token-details">
 					<div className="body">
 						<header className="toolbar">
-							{(this.state.viewAllDiscussions || this.state.viewDiscussion) &&
-								<a key="back-to-main" className="btn btn-toolbar btn-default" onClick={() => { this.setState({viewAllDiscussions: false, viewDiscussion: null}); }}>
-									<span className="octicon octicon-arrow-left" /> Back to token
+							{(this.state.viewAllDiscussions || this.state.viewDiscussion || this.state.newDiscussion) &&
+								<a key="back-to-main" className="btn btn-toolbar btn-default" onClick={() => { this.setState({viewAllDiscussions: false, viewDiscussion: null, newDiscussion: false}); }}>
+									<span className="octicon octicon-arrow-left" /> Back
 								</a>
 							}
 

@@ -63,3 +63,12 @@ export class DiscussionsFetched {
 		this.discussions = discussions;
 	}
 }
+
+export class CreateDiscussion {
+	constructor(defURL, title, description, callback) {
+		this.defURL = defURL;
+		this.title = title;
+		this.description = description;
+		this.callback = callback;
+	}
+}
