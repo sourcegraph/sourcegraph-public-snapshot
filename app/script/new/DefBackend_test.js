@@ -56,25 +56,25 @@ describe("DefBackend", () => {
 	describe("should handle WantDiscussions", () => {
 		DefBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be("/ui/someURL/.discussions?order=Date");
-			callback(null, null, {Discussions: [{ID: 42}]});
+			callback(null, null, {Discussions: [{ID: 42, Comments: []}]});
 		};
 		expect(Dispatcher.catchDispatched(() => {
 			Dispatcher.directDispatch(DefBackend, new DefActions.WantDiscussions("/someURL", 42));
-		})).to.eql([new DefActions.DiscussionsFetched("/someURL", [{ID: 42}])]);
+		})).to.eql([new DefActions.DiscussionsFetched("/someURL", [{ID: 42, Comments: []}])]);
 	});
 
 	describe("should handle CreateDiscussion", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.DiscussionsFetched("/someURL", [{ID: 42}]));
+		Dispatcher.directDispatch(DefStore, new DefActions.DiscussionsFetched("/someURL", [{ID: 42, Comments: []}]));
 		DefBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be("/ui/someURL/.discussions/create");
 			expect(options.method).to.be("POST");
 			expect(options.json).to.eql({Title: "someTitle", Description: "someDescription"});
-			callback(null, null, {ID: 43});
+			callback(null, null, {ID: 43, Comments: []});
 		};
 		expect(Dispatcher.catchDispatched(() => {
 			let callbackDiscussion;
 			Dispatcher.directDispatch(DefBackend, new DefActions.CreateDiscussion("/someURL", "someTitle", "someDescription", function(d) { callbackDiscussion = d; }));
-			expect(callbackDiscussion).to.eql({ID: 43});
-		})).to.eql([new DefActions.DiscussionsFetched("/someURL", [{ID: 43}, {ID: 42}])]);
+			expect(callbackDiscussion).to.eql({ID: 43, Comments: []});
+		})).to.eql([new DefActions.DiscussionsFetched("/someURL", [{ID: 43, Comments: []}, {ID: 42, Comments: []}])]);
 	});
 });

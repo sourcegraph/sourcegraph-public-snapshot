@@ -63,7 +63,7 @@ const DefBackend = {
 						console.error(err);
 						return;
 					}
-					Dispatcher.dispatch(new DefActions.DiscussionsFetched(action.defURL, body.Discussions || []));
+					Dispatcher.dispatch(new DefActions.DiscussionsFetched(action.defURL, body.Discussions ? body.Discussions.map(normalizeDiscussion) : []));
 				});
 			}
 			break;
@@ -81,7 +81,7 @@ const DefBackend = {
 					console.error(err);
 					return;
 				}
-				Dispatcher.dispatch(new DefActions.DiscussionsFetched(action.defURL, [body].concat(DefStore.discussions.get(action.defURL))));
+				Dispatcher.dispatch(new DefActions.DiscussionsFetched(action.defURL, [normalizeDiscussion(body)].concat(DefStore.discussions.get(action.defURL))));
 				action.callback(body);
 			});
 			break;
@@ -89,6 +89,11 @@ const DefBackend = {
 		}
 	},
 };
+
+function normalizeDiscussion(d) {
+	d.Comments = d.Comments || []; // TODO fix this in backend
+	return d;
+}
 
 Dispatcher.register(DefBackend.__onDispatch);
 

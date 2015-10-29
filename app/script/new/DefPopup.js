@@ -89,7 +89,7 @@ export default class DefPopup extends Component {
 		}
 
 		let topDiscussions = this.state.discussions && this.state.discussions.slice().sort((a, b) => {
-			let d = (b.Comments ? b.Comments.length : 0) - (a.Comments ? a.Comments.length : 0);
+			let d = b.Comments.length - a.Comments.length;
 			if (d !== 0) {
 				return d;
 			}

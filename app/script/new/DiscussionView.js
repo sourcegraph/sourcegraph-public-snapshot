@@ -23,7 +23,7 @@ export default class DiscussionView extends Component {
 							</div>
 						</h1>
 						<div className="stats">
-							<span className="octicon octicon-comment-discussion" /> {d.Comments ? d.Comments.length : 0}
+							<span className="octicon octicon-comment-discussion" /> {d.Comments.length}
 						</div>
 						<div className="subtitle">
 							<span className="author"><a>@{d.Author.Login}</a></span>

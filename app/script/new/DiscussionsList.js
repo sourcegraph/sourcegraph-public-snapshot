@@ -20,7 +20,7 @@ export default class DiscussionsList extends Component {
 							<div>
 								<a className="title truncate">{d.Title}</a>
 								<div className="stats">
-									<span className="octicon octicon-comment-discussion" /> {d.Comments ? d.Comments.length : 0}
+									<span className="octicon octicon-comment-discussion" /> {d.Comments.length}
 								</div>
 								<p className="body truncate">{d.Description}</p>
 							</div>
@@ -33,7 +33,7 @@ export default class DiscussionsList extends Component {
 										</div>
 									</h1>
 									<div className="stats">
-										<span className="octicon octicon-comment-discussion" /> {d.Comments ? d.Comments.length : 0}
+										<span className="octicon octicon-comment-discussion" /> {d.Comments.length}
 									</div>
 									<div className="subtitle">
 										<span className="author"><a>@{d.Author.Login}</a></span>
