@@ -115,15 +115,15 @@ func newHTTP2Server(conn net.Conn, maxStreams uint32, authInfo credentials.AuthI
 	}
 	var buf bytes.Buffer
 	t := &http2Server{
-		conn:          conn,
-		authInfo:      authInfo,
-		framer:        framer,
-		hBuf:          &buf,
-		hEnc:          hpack.NewEncoder(&buf),
-		maxStreams:    maxStreams,
-		controlBuf:    newRecvBuffer(),
-		fc:            &inFlow{limit: initialConnWindowSize},
-		sendQuotaPool: newQuotaPool(defaultWindowSize),
+		conn:            conn,
+		authInfo:        authInfo,
+		framer:          framer,
+		hBuf:            &buf,
+		hEnc:            hpack.NewEncoder(&buf),
+		maxStreams:      maxStreams,
+		controlBuf:      newRecvBuffer(),
+		fc:              &inFlow{limit: initialConnWindowSize},
+		sendQuotaPool:   newQuotaPool(defaultWindowSize),
 		state:           reachable,
 		writableChan:    make(chan int, 1),
 		shutdownChan:    make(chan struct{}),
@@ -456,17 +456,24 @@ func (t *http2Server) WriteHeader(s *Stream, md metadata.MD) error {
 // TODO(zhaoq): Now it indicates the end of entire stream. Revisit if early
 // OK is adopted.
 func (t *http2Server) WriteStatus(s *Stream, statusCode codes.Code, statusDesc string) error {
-	s.mu.RLock()
+	var headersSent bool
+	s.mu.Lock()
 	if s.state == streamDone {
-		s.mu.RUnlock()
+		s.mu.Unlock()
 		return nil
 	}
-	s.mu.RUnlock()
+	if s.headerOk {
+		headersSent = true
+	}
+	s.mu.Unlock()
 	if _, err := wait(s.ctx, t.shutdownChan, t.writableChan); err != nil {
 		return err
 	}
 	t.hBuf.Reset()
-	t.hEnc.WriteField(hpack.HeaderField{Name: ":status", Value: "200"})
+	if !headersSent {
+		t.hEnc.WriteField(hpack.HeaderField{Name: ":status", Value: "200"})
+		t.hEnc.WriteField(hpack.HeaderField{Name: "content-type", Value: "application/grpc"})
+	}
 	t.hEnc.WriteField(
 		hpack.HeaderField{
 			Name:  "grpc-status",

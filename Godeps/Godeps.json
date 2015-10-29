@@ -554,7 +554,7 @@
 		},
 		{
 			"ImportPath": "google.golang.org/grpc",
-			"Rev": "f7d1653e300d6ad9f019bce7a5f5ab3b4821f637"
+			"Rev": "bba8442c8e3ba568a05e60fe7d99c3dcf88e64d7"
 		},
 		{
 			"ImportPath": "gopkg.in/check.v1",
