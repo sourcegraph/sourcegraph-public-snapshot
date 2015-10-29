@@ -55,7 +55,7 @@ describe("DefBackend", () => {
 
 	describe("should handle WantDiscussions", () => {
 		DefBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be("/ui/someURL/.discussions?order=Top");
+			expect(options.uri).to.be("/ui/someURL/.discussions?order=Date");
 			callback(null, null, {Discussions: [{ID: 42}]});
 		};
 		expect(Dispatcher.catchDispatched(() => {

@@ -56,7 +56,7 @@ const DefBackend = {
 			let discussions = DefStore.discussions.get(action.defURL);
 			if (discussions === null) {
 				DefBackend.xhr({
-					uri: `/ui${action.defURL}/.discussions?order=Top`,
+					uri: `/ui${action.defURL}/.discussions?order=Date`,
 					json: {},
 				}, function(err, resp, body) {
 					if (err) {

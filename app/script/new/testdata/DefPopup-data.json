@@ -113,10 +113,26 @@
 																	"type": "DiscussionsList",
 																	"props": {
 																		"discussions": [
-																			"discussion1",
-																			"discussion2",
-																			"discussion3",
-																			"discussion4"
+																			{
+																				"ID": 2,
+																				"Comments": [
+																					{
+																						"ID": 0
+																					}
+																				]
+																			},
+																			{
+																				"ID": 4,
+																				"Comments": []
+																			},
+																			{
+																				"ID": 3,
+																				"Comments": []
+																			},
+																			{
+																				"ID": 1,
+																				"Comments": []
+																			}
 																		],
 																		"small": true
 																	}

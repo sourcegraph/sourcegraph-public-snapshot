@@ -13,7 +13,13 @@ describe("DefPopup", () => {
 			<DefPopup
 				def={{URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
 				examples={{test: "examples"}}
-				discussions={["discussion1", "discussion2", "discussion3", "discussion4", "discussion5"]}
+				discussions={[
+					{ID: 0, Comments: []},
+					{ID: 1, Comments: []},
+					{ID: 2, Comments: [{ID: 0}]},
+					{ID: 3, Comments: []},
+					{ID: 4, Comments: []},
+				]}
 				highlightedDef="otherURL" />
 		);
 	});

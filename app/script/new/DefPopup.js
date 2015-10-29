@@ -88,6 +88,14 @@ export default class DefPopup extends Component {
 			);
 		}
 
+		let topDiscussions = this.state.discussions && this.state.discussions.slice().sort((a, b) => {
+			let d = (b.Comments ? b.Comments.length : 0) - (a.Comments ? a.Comments.length : 0);
+			if (d !== 0) {
+				return d;
+			}
+			return b.ID - a.ID;
+		}).slice(0, 4);
+
 		return (
 			<div>
 				<section className="docHTML">
@@ -106,7 +114,7 @@ export default class DefPopup extends Component {
 						) : (
 							<div className="contents">
 								<DiscussionsList
-									discussions={this.state.discussions.slice(0, 4)}
+									discussions={topDiscussions}
 									onViewDiscussion={(d) => { this.setState({viewDiscussion: d}); }}
 									small={true} />
 								<footer>
