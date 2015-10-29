@@ -622,14 +622,14 @@ message StorageName {
 	// app_name is the name of the application whose data you are trying to
 	// read/write, applications may read and write to eachother's data assuming
 	// the admin has not restricted such access.
-	string app_name = 1 [(gogoproto.nullable) = false];
+	string app_name = 1;
 
 	// If specified storage is considered local to the given repository. Otherwise
 	// it is considered "global" (i.e. shared across all repositories).
 	RepoSpec repo = 2;
 
 	// name is the name of the file.
-	string name = 3 [(gogoproto.nullable) = false];
+	string name = 3;
 }
 
 // StorageReadOp is the parameters for reading from a file.
@@ -640,17 +640,17 @@ message StorageReadOp {
 	// the start or end of the file, depending on offset_end. If no offset is
 	// specified, read operations always occur at the start of the file (they do
 	// not retain state).
-	int64 offset = 3 [(gogoproto.nullable) = false];
+	int64 offset = 2;
 
 	// offset_end causes the offset to act relative to the end of the file, if
 	// set (i.e. offset == -100 would mean to read starting 100 bytes from the end
 	// of the file).
-	bool offset_end = 4 [(gogoproto.nullable) = false];
+	bool offset_end = 3;
 
 	// count is the number of bytes desired to be read. There is no guarantee that
 	// this many will be read, however. Instead you should check the size of the
 	// data returned.
-	int64 count = 5 [(gogoproto.nullable) = false];
+	int64 count = 4;
 }
 
 // StorageRead is the result from reading a file.
@@ -663,7 +663,7 @@ message StorageRead {
 	// the requested number of bytes to read will actually be read, so if you
 	// desire more than what is returned here then you should perform a read
 	// again.
-	bytes data = 2 [(gogoproto.nullable) = false];
+	bytes data = 2;
 }
 
 // StorageWriteOp is the parameters for writing to a file.
@@ -672,18 +672,18 @@ message StorageWriteOp {
 
 	// offset is the offset in bytes in which to perform the write operation from
 	// the start or end of the file, depending on offset_end.
-	int64 offset = 3 [(gogoproto.nullable) = false];
+	int64 offset = 2;
 
 	// offset_end causes the offset to act relative to the end of the file, if
 	// set (i.e. offset == -100 would mean to write starting 100 bytes from the
 	// end of the file).
-	bool offset_end = 4 [(gogoproto.nullable) = false];
+	bool offset_end = 3;
 
 	// data is the data to be written. There is no guarantee all of the data will
 	// be written, however. Instead you should check the number of bytes written
 	// by looking at the StorageWrite.wrote field and attempt writing whatever
 	// bytes were not during that write operation.
-	bytes data = 2 [(gogoproto.nullable) = false];
+	bytes data = 4;
 }
 
 // StorageWrite is the result from writing to a file.
@@ -695,22 +695,22 @@ message StorageWrite {
 	// written (as reported by this field) is not the same number of bytes you
 	// tried to write, then you should attempt subsequent writes to finish writing
 	// the data assuming there was no error.
-	int64 wrote = 2 [(gogoproto.nullable) = false];
+	int64 wrote = 2;
 }
 
 // StorageFileInfo lists information about a file.
 message StorageFileInfo {
 	// name is the base name of the file.
-	string name = 1 [(gogoproto.nullable) = false];
+	string name = 1;
 
 	// size is the length in bytes of the file, or zero.
-	int64 size = 2 [(gogoproto.nullable) = false];
+	int64 size = 2;
 
 	// mod_time is the file modification time.
 	pbtypes.Timestamp mod_time = 3 [(gogoproto.nullable) = false];
 
 	// is_dir tells if the file is a directory.
-	bool is_dir = 4 [(gogoproto.nullable) = false];;
+	bool is_dir = 4;
 }
 
 // StorageStat is the result from statting a file.
