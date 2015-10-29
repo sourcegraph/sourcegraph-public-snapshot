@@ -78,7 +78,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		if e.Last == EmptyCommitID {
 			payload.Type = githooks.GitCreateEvent
 			events.Publish(events.Event{
-				EventID: githooks.GitPushEvent,
+				EventID: githooks.GitCreateEvent,
 				Payload: payload,
 			})
 		} else if e.Commit == EmptyCommitID {
@@ -87,7 +87,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 				EventID: githooks.GitDeleteEvent,
 				Payload: payload,
 			})
-		} else {
+		} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
 			payload.Type = githooks.GitPushEvent
 			events.Publish(events.Event{
 				EventID: githooks.GitPushEvent,

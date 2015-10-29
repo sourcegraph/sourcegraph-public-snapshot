@@ -1,15 +1,12 @@
 package local
 
 import (
-	"errors"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 
 	"golang.org/x/net/context"
 
-	"github.com/AaronO/go-git-http"
 	ppretty "github.com/kr/pretty"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
@@ -17,88 +14,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// TestChangesetHook_couldAffectChangesets tests if a list of events is correctly
-// filtered by couldAffectChangesets.
-func TestChangesetHook_couldAffectChangesets(t *testing.T) {
-	for _, tc := range []struct {
-		in  githttp.Event
-		out bool
-	}{
-		{
-			// contains an error
-			githttp.Event{
-				Error:  errors.New("some error"),
-				Branch: "branch",
-				Type:   githttp.PUSH,
-				Last:   strings.Repeat("X", 40),
-				Commit: strings.Repeat("Y", 40),
-			}, false,
-		}, {
-			// is not a PUSH operation
-			githttp.Event{
-				Error:  nil,
-				Branch: "branch",
-				Type:   githttp.FETCH,
-				Last:   strings.Repeat("X", 40),
-				Commit: strings.Repeat("Y", 40),
-			}, false,
-		}, {
-			// is not a PUSH operation
-			githttp.Event{
-				Error:  nil,
-				Branch: "branch",
-				Type:   githttp.TAG,
-				Last:   strings.Repeat("X", 40),
-				Commit: strings.Repeat("Y", 40),
-			}, false,
-		}, {
-			// is a new branch
-			githttp.Event{
-				Error:  nil,
-				Branch: "branch",
-				Type:   githttp.PUSH,
-				Last:   strings.Repeat("0", 40),
-				Commit: strings.Repeat("Y", 40),
-			}, false,
-		}, {
-			// invalid commit value
-			githttp.Event{
-				Error:  nil,
-				Branch: "branch",
-				Type:   githttp.PUSH,
-				Last:   strings.Repeat("X", 40),
-				Commit: "HEAD",
-			}, false,
-		}, {
-			// push commit
-			githttp.Event{
-				Error:  nil,
-				Branch: "branch",
-				Type:   githttp.PUSH,
-				Last:   strings.Repeat("X", 40),
-				Commit: strings.Repeat("Y", 40),
-			}, true,
-		}, {
-			// push branch deletion
-			githttp.Event{
-				Error:  nil,
-				Branch: "branch",
-				Type:   githttp.PUSH,
-				Last:   strings.Repeat("X", 40),
-				Commit: strings.Repeat("0", 40),
-			}, true,
-		},
-	} {
-		if out := couldAffectChangesets(tc.in); out != tc.out {
-			t.Errorf("Expected %v for %v, got %v", tc.out, tc.in, out)
-		}
-	}
-}
-
-// TestChangesetHook_processEvent tests that for a certain chain of events
+// TestChangesets_getAffected tests that for a certain chain of events
 // the correct update operations are performed.
-func TestChangesetHook_processEvent(t *testing.T) {
-	tt := newChangesetHookTester(t)
+func TestChangesets_getAffected(t *testing.T) {
+	tt := newChangesetUpdateTester(t)
 
 	tt.withRepo(sourcegraph.RepoSpec{URI: "repo/path"})
 	tt.withChangesets(
@@ -107,28 +26,28 @@ func TestChangesetHook_processEvent(t *testing.T) {
 	)
 	tt.withMergedInto("master", "feature")
 
-	tt.run([]githttp.Event{
+	tt.run([]sourcegraph.ChangesetUpdateAffectedOp{
 		{
 			// (1) pushing 'master' contains merge of 'feature'
-			Type:   githttp.PUSH,
+			Repo:   sourcegraph.RepoSpec{URI: "repo/path"},
 			Branch: "master",
 			Last:   fakeCommit("old(master)"),
 			Commit: fakeCommit("new(master+feature)"),
 		}, {
 			// (2) push deleted branch 'master'
-			Type:   githttp.PUSH,
+			Repo:   sourcegraph.RepoSpec{URI: "repo/path"},
 			Branch: "master",
 			Last:   fakeCommit("old(master)"),
 			Commit: fakeCommit("DELETED"),
 		}, {
 			// (3) push updated branch 'feature'
-			Type:   githttp.PUSH,
+			Repo:   sourcegraph.RepoSpec{URI: "repo/path"},
 			Branch: "feature",
 			Last:   fakeCommit("old(feature)"),
 			Commit: fakeCommit("new(feature)"),
 		}, {
 			// (4) push deleted branch 'feature'
-			Type:   githttp.PUSH,
+			Repo:   sourcegraph.RepoSpec{URI: "repo/path"},
 			Branch: "feature",
 			Last:   fakeCommit("old(feature)"),
 			Commit: fakeCommit("DELETED"),
@@ -190,8 +109,8 @@ func TestChangesetHook_processEvent(t *testing.T) {
 	})
 }
 
-// changesetHookTester is a utility that aids with testing this hook.
-type changesetHookTester struct {
+// changesetUpdateTester is a utility that aids with testing this hook.
+type changesetUpdateTester struct {
 	t    *testing.T
 	ctx  context.Context
 	mock *mocks
@@ -216,9 +135,9 @@ type testRepoConfig struct {
 // appear in.
 type branchChangesets map[string][]*sourcegraph.Changeset
 
-func newChangesetHookTester(t *testing.T) changesetHookTester {
+func newChangesetUpdateTester(t *testing.T) changesetUpdateTester {
 	ctx, mock := testContext()
-	tester := changesetHookTester{
+	tester := changesetUpdateTester{
 		t:    t,
 		ctx:  ctx,
 		mock: mock,
@@ -228,12 +147,12 @@ func newChangesetHookTester(t *testing.T) changesetHookTester {
 }
 
 // withRepo sets repository for the context of the test.
-func (tt *changesetHookTester) withRepo(spec sourcegraph.RepoSpec) {
+func (tt *changesetUpdateTester) withRepo(spec sourcegraph.RepoSpec) {
 	tt.repo.spec = spec
 }
 
 // withMergedInto makes the next push into base contain the merge of head.
-func (tt *changesetHookTester) withMergedInto(base, head string) {
+func (tt *changesetUpdateTester) withMergedInto(base, head string) {
 	m := tt.repo.mergedInto
 	if m[base] == nil {
 		m[base] = []string{base}
@@ -254,7 +173,7 @@ type changesetIndex struct {
 }
 
 // withChangesets sets mock behavior of the Changesets store.
-func (tt *changesetHookTester) withChangesets(changesets ...*sourcegraph.Changeset) {
+func (tt *changesetUpdateTester) withChangesets(changesets ...*sourcegraph.Changeset) {
 	tt.changesets = changesetIndex{make(branchChangesets), make(branchChangesets)}
 	base, head := tt.changesets.byBase, tt.changesets.byHead
 	for _, cs := range changesets {
@@ -272,27 +191,25 @@ func (tt *changesetHookTester) withChangesets(changesets ...*sourcegraph.Changes
 
 // run runs a set of events and stores all update operations that occurred
 // into a buffer.
-func (tt *changesetHookTester) run(events []githttp.Event) {
+func (tt *changesetUpdateTester) run(ops []sourcegraph.ChangesetUpdateAffectedOp) {
+	var c changesets
 	tt.configRepoStore()
 	tt.configChangesetStore()
 
-	var m sync.Mutex // protects tt.out
 	tt.out = make([]*store.ChangesetUpdateOp, 0)
-	updateChangeset = func(_ store.Changesets, _ context.Context, op *store.ChangesetUpdateOp) {
-		m.Lock()
-		defer m.Unlock()
-		tt.out = append(tt.out, op)
-	}
-
-	hook := newChangesetHook(tt.ctx, tt.repo.spec.URI)
-	for _, e := range events {
-		hook.processEvent(e)
+	for _, op := range ops {
+		out, err := c.getAffected(tt.ctx, &op)
+		if err != nil {
+			tt.t.Fatal(err)
+		} else {
+			tt.out = append(tt.out, out...)
+		}
 	}
 }
 
 // expect verifies that the given update operations have occurred. The order of
 // operations need not (and will not) match due to concurrent execution.
-func (tt *changesetHookTester) expect(ops []*store.ChangesetUpdateOp) {
+func (tt *changesetUpdateTester) expect(ops []*store.ChangesetUpdateOp) {
 	if len(ops) != len(tt.out) {
 		tt.t.Errorf("got %d ops, expected %d ops", len(tt.out), len(ops))
 	}
@@ -309,7 +226,7 @@ outer:
 	}
 }
 
-func (tt *changesetHookTester) configRepoStore() {
+func (tt *changesetUpdateTester) configRepoStore() {
 	tt.mock.stores.RepoVCS.MockOpen(tt.t, tt.repo.spec.URI, vcstesting.MockRepository{
 		Branches_: func(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			branches := tt.repo.mergedInto[opt.MergedInto]
@@ -325,7 +242,7 @@ func (tt *changesetHookTester) configRepoStore() {
 	})
 }
 
-func (tt *changesetHookTester) configChangesetStore() {
+func (tt *changesetUpdateTester) configChangesetStore() {
 	tt.mock.stores.Changesets.List_ = func(_ context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
 		switch {
 		case op.Base != "":
@@ -351,7 +268,7 @@ func fakeCommit(b string) string {
 }
 
 // cs creates a minimal changeset.
-func (tt *changesetHookTester) cs(id int64, base, head string) *sourcegraph.Changeset {
+func (tt *changesetUpdateTester) cs(id int64, base, head string) *sourcegraph.Changeset {
 	return &sourcegraph.Changeset{
 		ID: id,
 		DeltaSpec: &sourcegraph.DeltaSpec{
