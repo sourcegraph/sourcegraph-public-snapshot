@@ -18,6 +18,12 @@ func (f *file) Name() string {
 	return f.name.Name
 }
 
+// Truncate implements the File interface.
+func (f *file) Truncate(size int64) error {
+	// TODO(slimsag): implement Truncate
+	panic("Truncate is not implement via gRPC Storage API")
+}
+
 // String implements the fmt.Stringer interface.
 func (f *file) String() string {
 	return fmt.Sprintf("File(%q, FileSystem=%v)", f.name.Name, f.fs)

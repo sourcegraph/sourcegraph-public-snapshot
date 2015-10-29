@@ -24,8 +24,7 @@ type File interface {
 	Name() string
 
 	// Truncate changes the size of the file. It does not change the I/O offset.
-	// TODO(slimsag): implement Truncate
-	//Truncate(size int64) error
+	Truncate(size int64) error
 }
 
 // FileSystem represents the storage system.
