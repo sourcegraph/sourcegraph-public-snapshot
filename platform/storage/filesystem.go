@@ -8,6 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
+// fileSystem implements the FileSystem interface on top of the gRPC API.
 type fileSystem struct {
 	ctx     context.Context
 	client  *sourcegraph.Client
@@ -15,6 +16,8 @@ type fileSystem struct {
 	repo    *sourcegraph.RepoSpec
 }
 
+// storageName is a utility function which returns a new StorageName given it's
+// name. The AppName and Repo fields are handled for you.
 func (fs *fileSystem) storageName(name string) *sourcegraph.StorageName {
 	return &sourcegraph.StorageName{
 		AppName: fs.appName,
@@ -23,10 +26,12 @@ func (fs *fileSystem) storageName(name string) *sourcegraph.StorageName {
 	}
 }
 
+// String implements the fmt.Stringer interface.
 func (fs *fileSystem) String() string {
 	return fmt.Sprintf("FileSystem(AppName=%q, Repo=%q)", fs.appName, fs.repo.URI)
 }
 
+// Create implements the FileSystem interface.
 func (fs *fileSystem) Create(name string) (File, error) {
 	storageName := fs.storageName(name)
 	ioErr, grpcErr := fs.client.Storage.Create(fs.ctx, storageName)
@@ -42,6 +47,7 @@ func (fs *fileSystem) Create(name string) (File, error) {
 	}, nil
 }
 
+// Remove implements the FileSystem interface.
 func (fs *fileSystem) Remove(name string) error {
 	ioErr, grpcErr := fs.client.Storage.Remove(fs.ctx, fs.storageName(name))
 	if grpcErr != nil {
@@ -50,6 +56,7 @@ func (fs *fileSystem) Remove(name string) error {
 	return storageError(ioErr)
 }
 
+// RemoveAll implements the FileSystem interface.
 func (fs *fileSystem) RemoveAll(name string) error {
 	ioErr, grpcErr := fs.client.Storage.RemoveAll(fs.ctx, fs.storageName(name))
 	if grpcErr != nil {
@@ -58,6 +65,7 @@ func (fs *fileSystem) RemoveAll(name string) error {
 	return storageError(ioErr)
 }
 
+// Open implements the FileSystem interface.
 func (fs *fileSystem) Open(name string) (File, error) {
 	_, err := fs.Lstat(name)
 	if err != nil {
@@ -69,6 +77,7 @@ func (fs *fileSystem) Open(name string) (File, error) {
 	}, nil
 }
 
+// Lstat implements the FileSystem interface.
 func (fs *fileSystem) Lstat(path string) (os.FileInfo, error) {
 	resp, grpcErr := fs.client.Storage.Stat(fs.ctx, fs.storageName(path))
 	if grpcErr != nil {
@@ -80,6 +89,7 @@ func (fs *fileSystem) Lstat(path string) (os.FileInfo, error) {
 	return fileInfo{resp.Info}, nil
 }
 
+// ReadDir implements the FileSystem interface.
 func (fs *fileSystem) ReadDir(path string) ([]os.FileInfo, error) {
 	resp, grpcErr := fs.client.Storage.ReadDir(fs.ctx, fs.storageName(path))
 	if grpcErr != nil {

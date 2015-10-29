@@ -57,6 +57,8 @@ func Namespace(ctx context.Context, appName string, repo *sourcegraph.RepoSpec) 
 	}
 }
 
+// storageError converts a gRPC StorageError type into it's equivilent Go error
+// type. If the err parameter is nil, a nil error is returned.
 func storageError(err *sourcegraph.StorageError) error {
 	if err == nil {
 		return nil
@@ -73,6 +75,8 @@ func storageError(err *sourcegraph.StorageError) error {
 	}
 }
 
+// fileInfo wraps a gRPC StorageFileInfo type and provides a os.FileInfo
+// implementation.
 type fileInfo struct {
 	i sourcegraph.StorageFileInfo
 }
