@@ -6,12 +6,14 @@ import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
 import DiscussionsList from "./DiscussionsList";
+import DiscussionView from "./DiscussionView";
 
 export default class DefPopup extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			viewAllDiscussions: false,
+			viewDiscussion: null,
 		};
 	}
 
@@ -32,10 +34,25 @@ export default class DefPopup extends Component {
 					<div className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 					<div className="container">
 						<div className="padded-form">
-							<DiscussionsList discussions={this.state.discussions} />
+							<DiscussionsList
+								discussions={this.state.discussions}
+								onViewDiscussion={(d) => { this.setState({viewAllDiscussions: false, viewDiscussion: d}); }} />
 						</div>
 					</div>
 					<footer>
+						<a ref="createBtn"><i className="fa fa-comment" /> New</a>
+					</footer>
+				</div>
+			);
+		}
+
+		if (this.state.viewDiscussion) {
+			return (
+				<div className="discussion-thread discussions">
+					<DiscussionView discussion={this.state.viewDiscussion} defQualifiedName={def.QualifiedName} />
+					<footer>
+						<a ref="listBtn" onClick={() => { this.setState({viewAllDiscussions: true, viewDiscussion: null}); }}><i className="fa fa-eye" /> View all</a>
+						<a href="#add-discussion-comment"><i className="fa fa-plus" /> Reply</a>
 						<a ref="createBtn"><i className="fa fa-comment" /> New</a>
 					</footer>
 				</div>
@@ -59,7 +76,10 @@ export default class DefPopup extends Component {
 							<div className="no-discussions"><a ref="createBtn"><i className="octicon octicon-plus" /> Start a code discussion</a></div>
 						) : (
 							<div className="contents">
-								<DiscussionsList discussions={this.state.discussions.slice(0, 4)} small={true} />
+								<DiscussionsList
+									discussions={this.state.discussions.slice(0, 4)}
+									onViewDiscussion={(d) => { this.setState({viewDiscussion: d}); }}
+									small={true} />
 								<footer>
 									<a ref="listBtn" onClick={() => { this.setState({viewAllDiscussions: true}); }}><i className="fa fa-eye" /> View all</a>
 									<a ref="createBtn"><i className="fa fa-comment" /> New</a>
@@ -79,8 +99,8 @@ export default class DefPopup extends Component {
 				<div className="token-details">
 					<div className="body">
 						<header className="toolbar">
-							{this.state.viewAllDiscussions &&
-								<a key="back-to-main" className="btn btn-toolbar btn-default" onClick={() => { this.setState({viewAllDiscussions: false}); }}>
+							{(this.state.viewAllDiscussions || this.state.viewDiscussion) &&
+								<a key="back-to-main" className="btn btn-toolbar btn-default" onClick={() => { this.setState({viewAllDiscussions: false, viewDiscussion: null}); }}>
 									<span className="octicon octicon-arrow-left" /> Back to token
 								</a>
 							}

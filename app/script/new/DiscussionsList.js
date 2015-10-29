@@ -7,6 +7,7 @@ import Component from "./Component";
 export default class DiscussionsList extends Component {
 	updateState(state, props) {
 		state.discussions = props.discussions;
+		state.onViewDiscussion = props.onViewDiscussion;
 		state.small = props.small;
 	}
 
@@ -14,7 +15,7 @@ export default class DiscussionsList extends Component {
 		return (
 			<ul className="list">
 				{this.state.discussions.map((d) =>
-					<li className="discussion" key={d.ID}>
+					<li className="discussion" onClick={() => { this.state.onViewDiscussion(d); }} key={d.ID}>
 						{this.state.small ? (
 							<div>
 								<a className="title truncate">{d.Title}</a>
@@ -51,5 +52,6 @@ export default class DiscussionsList extends Component {
 
 DiscussionsList.propTypes = {
 	discussions: React.PropTypes.array,
+	onViewDiscussion: React.PropTypes.func,
 	small: React.PropTypes.bool,
 };
