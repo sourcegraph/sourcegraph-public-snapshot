@@ -18,7 +18,7 @@ import (
 )
 
 const sgIconURL = "https://sourcegraph.com/images/favicon.png"
-const acceptIconURL = ""
+const acceptIconURL = "http://www.openwebgraphics.com/resources/data/47/accept.png"
 
 type jiraIcon struct {
 	URL   string `json:"url16x16"`
@@ -83,7 +83,7 @@ func jiraOnChangesetUpdate(ctx context.Context, cs *sourcegraph.Changeset) {
 
 // parseJIRAIssues parses any IDs corresponding to a JIRA issue out of a string.
 func parseJIRAIssues(body string) []string {
-	re := regexp.MustCompile("JIRA-Issues:(.*)")
+	re := regexp.MustCompile("JIRA Issues:(.*)")
 	issuesLine := re.FindStringSubmatch(body)
 	if len(issuesLine) < 1 {
 		return nil
