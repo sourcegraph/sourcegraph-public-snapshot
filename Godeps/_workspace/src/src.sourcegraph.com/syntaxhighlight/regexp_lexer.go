@@ -1,9 +1,5 @@
 package syntaxhighlight
 
-import (
-	"strconv"
-)
-
 // Lexer that uses mostly RE to produce tokens
 type RegexpLexer struct {
 	// map of rules to produce tokens in form state => []rule
@@ -139,7 +135,6 @@ func processState(unprocessed map[string][]RegexpRule, processed map[string][]Re
 // rule may define zero or more transitions to be applied, such as
 // - #pop - pops stack
 // - #push - pushed head stack item on the top of stack
-// - <N> (number) - leave only N items in stack
 // - <state> - put state to stack
 func updateStack(stack []string, rule RegexpRule) []string {
 	for _, state := range rule.states {
@@ -147,8 +142,6 @@ func updateStack(stack []string, rule RegexpRule) []string {
 			stack = stack[:len(stack)-1]
 		} else if state == `#push` {
 			stack = append(stack, stack[len(stack)-1])
-		} else if i, err := strconv.Atoi(state); err == nil {
-			stack = stack[:i]
 		} else {
 			stack = append(stack, state)
 		}

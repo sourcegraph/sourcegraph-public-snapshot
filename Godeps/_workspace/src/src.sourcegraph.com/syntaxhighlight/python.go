@@ -108,7 +108,10 @@ func init() {
 				MS.Consume("\\\n", true),
 				MS.MatcherToken(Words(`in`, `is`, `and`, `or`, `not`), Operator_Word),
 				MS.MatcherToken(
-					Words(`!=`, `==`, `<<`, `>>`, `-`, `~`, `+`, `/`, `*`, `%`, `=`, `<`, `>`, `&`, `^`, `|`, `.`),
+					Words(`!=`, `==`, `<<`, `>>`, `-`, `~`, `+`, `/`, `*`, `%`, `&`, `^`, `|`, `.`),
+					Operator),
+				MS.MatcherToken(
+					Words(`=`, `<`, `>`),
 					Operator),
 				Include(`keywords`),
 				MS.MatcherToken(Words(`def`), Keyword, `funcname`),
@@ -124,9 +127,10 @@ func init() {
 				MS.MatcherToken(Words(
 					`assert`, `break`, `continue`, `del`, `elif`, `else`, `except`,
 					`exec`, `finally`, `for`, `global`, `if`, `lambda`, `pass`,
-					`print`, `raise`, `return`, `try`, `while`, `yield`,
-					`yield from`, `as`, `with`),
+					`print`, `raise`, `return`, `try`, `while`,
+					`yield from`, `with`),
 					Keyword),
+				MS.MatcherToken(Words(`yield`, `as`), Keyword),
 			},
 			`builtins`: {
 				MS.MatcherToken(Words(
@@ -135,12 +139,14 @@ func init() {
 					`cmp`, `coerce`, `compile`, `complex`, `delattr`, `dict`, `dir`, `divmod`,
 					`enumerate`, `eval`, `execfile`, `exit`, `file`, `filter`, `float`,
 					`frozenset`, `getattr`, `globals`, `hasattr`, `hash`, `hex`, `id`,
-					`input`, `int`, `intern`, `isinstance`, `issubclass`, `iter`, `len`,
+					`input`, `intern`, `isinstance`, `issubclass`, `iter`, `len`,
 					`list`, `locals`, `long`, `map`, `max`, `min`, `next`, `object`,
 					`oct`, `open`, `ord`, `pow`, `property`, `range`, `raw_input`, `reduce`,
-					`reload`, `repr`, `reversed`, `round`, `set`, `setattr`, `slice`,
+					`reload`, `repr`, `reversed`, `round`, `setattr`, `slice`,
 					`sorted`, `staticmethod`, `str`, `sum`, `super`, `tuple`, `type`,
 					`unichr`, `unicode`, `vars`, `xrange`, `zip`), Name_Builtin),
+				MS.MatcherToken(Words(
+					`int`, `set`), Name_Builtin),
 				MS.MatcherToken(Words(`self`, `None`, `Ellipsis`, `NotImplemented`, `False`, `True`), Name_Builtin_Pseudo),
 				MS.MatcherToken(Words(
 					`ArithmeticError`, `AssertionError`, `AttributeError`,
@@ -148,7 +154,7 @@ func init() {
 					`Exception`, `FloatingPointError`, `FutureWarning`, `GeneratorExit`,
 					`IOError`, `ImportError`, `ImportWarning`, `IndentationError`,
 					`IndexError`, `KeyError`, `KeyboardInterrupt`, `LookupError`,
-					`MemoryError`, `NameError`, `NotImplemented`, `NotImplementedError`,
+					`MemoryError`, `NameError`, `NotImplementedError`,
 					`OSError`, `OverflowError`, `OverflowWarning`, `PendingDeprecationWarning`,
 					`ReferenceError`, `RuntimeError`, `RuntimeWarning`, `StandardError`,
 					`StopIteration`, `SyntaxError`, `SyntaxWarning`, `SystemError`,

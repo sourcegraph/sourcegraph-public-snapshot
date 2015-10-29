@@ -1,7 +1,6 @@
 package syntaxhighlight
 
 import (
-	"bytes"
 	"reflect"
 	"regexp"
 	"strings"
@@ -196,15 +195,16 @@ func Words(words ...string) Matcher {
 // - boundary - identifies if word should be followed by word boundary
 // - words - dictionary
 func WordsWithBoundary(boundary bool, words ...string) Matcher {
-	tokens := make([][]byte, 0, len(words))
+	t := newTrie()
 	for _, w := range words {
-		tokens = append(tokens, []byte(w))
+		t.insert(w)
 	}
 	return func(source []byte) []int {
-		for _, token := range tokens {
-			if bytes.HasPrefix(source, token) && (!boundary || isEndOfWord(source, len(token))) {
-				return []int{0, len(token)}
-			}
+		ret := t.lookup(source, func(len int) bool {
+			return !boundary || isEndOfWord(source, len)
+		})
+		if ret > 0 {
+			return []int{0, ret}
 		}
 		return nil
 	}
