@@ -12,10 +12,14 @@ To mention a JIRA issue within a commit message or changeset description, create
 
 ## GitHub
 
-Sourcegraph can import private GitHub repositories, enabling a limited set of Sourcegraph features on the externally hosted repository. To set this up, navigate to `APP_URL/~USERNAME/.settings/integrations`, and follow the instructions to create and add a GitHub personal access token to your Sourcegraph. This will fetch the list of private repositories. Enable a repository to mirror the upstream GitHub repository on Sourcegraph.
+Sourcegraph can import private GitHub repositories, enabling a limited set of Sourcegraph features on the externally hosted repository. To set this up, navigate to `http://src.mycompany.com/~USERNAME/.settings/integrations` and follow the instructions to create and add a GitHub personal access token to your Sourcegraph. This will fetch the list of private repositories. Enable a repository to mirror the upstream GitHub repository on Sourcegraph.
+
+To mirror public GitHub repositories, run this command:
+
+`src repo create -m --clone-url https://github.com/mycompany/project project`
 
 ### GitHub Enterprise
 
 To import repositories from a GitHub Enterprise instance, set the commandline flag `--github.host` to your GitHub instance's domain name, eg `--github.host=ghe.mycompany.org`. Now you can follow the steps above to import private repositories from the GitHub Enterprise instance. To import both public and private repositories from the GitHub Enterprise instance, set the command line flag `--github.import-public`.
 
-Note that your GitHub Enterprise instance must have TLS enabled.
+Your GitHub Enterprise instance must have TLS enabled. You can't simultaneously import repos from github.com and GitHub Enterprise.
