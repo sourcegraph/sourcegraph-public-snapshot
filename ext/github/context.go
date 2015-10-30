@@ -46,6 +46,7 @@ func NewContextWithUnauthedClient(ctx context.Context) context.Context {
 func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 	a := auth.ActorFromContext(ctx)
 	var c *github.Client
+
 	if a.IsAuthenticated() {
 		if s := store.ExternalAuthTokensFromContextOrNil(ctx); s != nil {
 			host := strings.TrimPrefix(githubutil.Default.BaseURL.Host, "api.") // api.github.com -> github.com
