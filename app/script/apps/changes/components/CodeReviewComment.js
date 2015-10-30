@@ -134,8 +134,8 @@ var CodeReviewComment = React.createClass({
 					<div className="comment-edit-wrapper">
 						<MarkdownTextarea ref="commentEdit" defaultValue={this.state.Body} />
 						<div className="actions">
-							<a className="btn btn-success btn-small" onClick={this._onEdit}>Save</a>
-							<a className="btn btn-small btn-small" onClick={this._onEditCancel}>Cancel</a>
+							<button className="btn btn-success" onClick={this._onEdit} tabIndex="0">Save</button>
+							<button className="btn" onClick={this._onEditCancel} tabIndex="0">Cancel</button>
 						</div>
 					</div>
 				) : (
