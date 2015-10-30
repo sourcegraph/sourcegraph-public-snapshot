@@ -13,7 +13,7 @@ type fileSystem struct {
 	ctx     context.Context
 	client  *sourcegraph.Client
 	appName string
-	repo    *sourcegraph.RepoSpec
+	repo    string
 }
 
 // storageName is a utility function which returns a new StorageName given it's
@@ -28,7 +28,7 @@ func (fs *fileSystem) storageName(name string) *sourcegraph.StorageName {
 
 // String implements the fmt.Stringer interface.
 func (fs *fileSystem) String() string {
-	return fmt.Sprintf("FileSystem(AppName=%q, Repo=%q)", fs.appName, fs.repo.URI)
+	return fmt.Sprintf("FileSystem(AppName=%q, Repo=%q)", fs.appName, fs.repo)
 }
 
 // Create implements the FileSystem interface.

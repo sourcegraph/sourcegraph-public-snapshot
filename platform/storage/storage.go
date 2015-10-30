@@ -45,9 +45,10 @@ type FileSystem interface {
 // read/write, applications may read and write to eachother's data assuming the
 // admin has not restricted such access.
 //
-// If the RepoSpec is nil, storage is considered "global" (i.e. shared across
-// all repositories, instead of local to the specified one).
-func Namespace(ctx context.Context, appName string, repo *sourcegraph.RepoSpec) FileSystem {
+// If the repo is a valid repo URI, storage is considered "local" to that
+// repository. Otherwise, storage is considered "global" (i.e. shared across
+// all repositories).
+func Namespace(ctx context.Context, appName string, repo string) FileSystem {
 	return &fileSystem{
 		ctx:     ctx,
 		client:  sourcegraph.NewClientFromContext(ctx),

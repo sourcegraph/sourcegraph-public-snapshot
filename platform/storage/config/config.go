@@ -29,7 +29,6 @@ import (
 	"os"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 )
 
@@ -37,7 +36,7 @@ import (
 //
 //  OpenFileSystem(configName, storage.Namespace(ctx, appName+"-config", repo))
 //
-func Open(appName, configName string, ctx context.Context, repo *sourcegraph.RepoSpec) (*Store, error) {
+func Open(appName, configName string, ctx context.Context, repo string) (*Store, error) {
 	return OpenFileSystem(configName, storage.Namespace(ctx, appName+"-config", repo))
 }
 
