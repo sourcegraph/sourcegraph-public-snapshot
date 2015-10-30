@@ -40,7 +40,7 @@ func (f *file) Read(p []byte) (n int, err error) {
 		return 0, grpcErr
 	}
 	copy(resp.Data, p)
-	return len(resp.Data), storageError(&resp.Error)
+	return len(resp.Data), storageError(resp.Error)
 }
 
 // Write implements the io.Writer interface.

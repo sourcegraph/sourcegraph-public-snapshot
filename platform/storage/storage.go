@@ -81,7 +81,7 @@ type fileInfo struct {
 }
 
 func (fi fileInfo) Name() string     { return fi.i.Name }
-func (fi fileInfo) Size() int64      { return fi.i.Size }
+func (fi fileInfo) Size() int64      { return fi.i.Size_ }
 func (fi fileInfo) IsDir() bool      { return fi.i.IsDir }
 func (fi fileInfo) Sys() interface{} { return nil }
 
