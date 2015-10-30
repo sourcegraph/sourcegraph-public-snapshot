@@ -37,7 +37,7 @@ import (
 //
 //  OpenFileSystem(configName, storage.Namespace(ctx, appName+"-config", repo))
 //
-func Open(appName, configName string, ctx context.Context, repo *sourcegraph.RepoSpec) *Store {
+func Open(appName, configName string, ctx context.Context, repo *sourcegraph.RepoSpec) (*Store, error) {
 	return OpenFileSystem(configName, storage.Namespace(ctx, appName+"-config", repo))
 }
 
@@ -51,11 +51,18 @@ func OpenFileSystem(configName string, fs storage.FileSystem) (*Store, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Store{fs: fs, f: f}, nil
+		return &Store{
+			fs:   fs,
+			f:    f,
+			Data: make(map[string]interface{}),
+		}, nil
 	} else if err != nil {
 		return nil, err
 	}
-	return &Store{fs: fs, f: f}, nil
+
+	// Unmarshal the config.
+	s := &Store{fs: fs, f: f}
+	return s, json.NewDecoder(f).Decode(&s.Data)
 }
 
 // Store represents a storage for keys and values.
@@ -64,7 +71,7 @@ type Store struct {
 	fs storage.FileSystem
 
 	// Data is the dataset which is JSON-encoded.
-	Data map[interface{}]interface{}
+	Data map[string]interface{}
 }
 
 // Close closes the store, saving all of it's contents.
@@ -72,7 +79,8 @@ func (s *Store) Close() error {
 	// Recreate the file.
 	//
 	// TODO(slimsag): once we implement File.Truncate, we can avoid this.
-	if err := s.f.Close(); err != nil {
+	var err error
+	if err = s.f.Close(); err != nil {
 		return err
 	}
 	s.f, err = s.fs.Create(s.f.Name())
