@@ -30,7 +30,7 @@ export default class CodeFileContainer extends Container {
 		state.examplesGeneration = DefStore.examples.generation;
 		state.highlightedDef = DefStore.highlightedDef;
 		state.discussions = DefStore.discussions;
-		state.discussionsGeneration = DefStore.examples.discussions;
+		state.discussionsGeneration = DefStore.discussions.generation;
 	}
 
 	requestData(prevState, nextState) {
