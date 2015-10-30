@@ -690,7 +690,7 @@ func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDK
 	// Mask out the server's private key from the context passed to the listener
 	ctx = idkey.NewContext(ctx, nil)
 
-	for _, l := range events.Listeners {
+	for _, l := range events.GetRegisteredListeners() {
 		listenerCtx, err := c.authenticateScopedContext(ctx, k, l.Scopes())
 		if err != nil {
 			log.Fatal("Could not initialize listener context: %v", err)
@@ -699,7 +699,6 @@ func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDK
 		}
 	}
 }
-
 
 // checkReachability attempts to contact the gRPC server on both the
 // internally and externally published URL. It calls log.Fatal if the

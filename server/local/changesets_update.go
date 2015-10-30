@@ -11,7 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 
-	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 

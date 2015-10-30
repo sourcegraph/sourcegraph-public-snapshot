@@ -29,7 +29,7 @@ type Payload struct {
 }
 
 func init() {
-	events.Listeners = append(events.Listeners, &gitHookListener{})
+	events.RegisterListener(&gitHookListener{})
 }
 
 type gitHookListener struct{}
