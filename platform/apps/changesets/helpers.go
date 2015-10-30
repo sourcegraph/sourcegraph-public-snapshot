@@ -77,6 +77,7 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 
 // notifyCreation creates a slack notification that a changeset was created. It
 // also notifies users mentioned in the description of the changeset.
+// TODO: Refactor this into the notif app as a subscriber to changeset events.
 func notifyCreation(ctx context.Context, user *sourcegraph.User, uri string, cs *sourcegraph.Changeset) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 

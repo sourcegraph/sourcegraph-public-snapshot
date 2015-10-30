@@ -2,6 +2,8 @@ package auth
 
 import (
 	"golang.org/x/net/context"
+
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 )
 
@@ -18,6 +20,15 @@ const (
 func ActorFromContext(ctx context.Context) Actor {
 	a, _ := ctx.Value(actorKey).(Actor)
 	return a
+}
+
+func UserSpecFromContext(ctx context.Context) sourcegraph.UserSpec {
+	a, _ := ctx.Value(actorKey).(Actor)
+	return sourcegraph.UserSpec{
+		UID:    int32(a.UID),
+		Login:  a.Login,
+		Domain: a.Domain,
+	}
 }
 
 // LoginFromContext returns the login of the currently authenticated

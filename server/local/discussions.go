@@ -13,7 +13,9 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -61,6 +63,23 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 			ObjectType:  "discussion",
 			ObjectID:    in.ID,
 			ObjectTitle: in.Title,
+		})
+	}
+
+	{
+		events.Publish(events.Event{
+			EventID: notif.DiscussionCreateEvent,
+			Payload: notif.Payload{
+				Type:        notif.DiscussionCreateEvent,
+				UserSpec:    authpkg.UserSpecFromContext(ctx),
+				ActionType:  "created",
+				ObjectID:    in.ID,
+				ObjectRepo:  in.DefKey.Repo,
+				ObjectTitle: in.Title,
+				ObjectType:  "discussion",
+				ObjectURL:   appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
+				Object:      in,
+			},
 		})
 	}
 
@@ -141,6 +160,22 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 			ObjectType:  "discussion",
 			ObjectID:    discussion.ID,
 			ObjectTitle: discussion.Title,
+		})
+	}
+
+	{
+		events.Publish(events.Event{
+			EventID: notif.DiscussionCommentEvent,
+			Payload: notif.Payload{
+				Type:       notif.DiscussionCommentEvent,
+				UserSpec:   authpkg.UserSpecFromContext(ctx),
+				ActionType: "commented on",
+				ObjectID:   in.DiscussionID,
+				ObjectRepo: in.Comment.DefKey.Repo,
+				ObjectType: "discussion",
+				ObjectURL:  appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
+				Object:     in.Comment,
+			},
 		})
 	}
 

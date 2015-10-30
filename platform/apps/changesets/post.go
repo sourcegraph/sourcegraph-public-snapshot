@@ -8,6 +8,8 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -53,6 +55,22 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
 	notifyCreation(ctx, user, uri, cs)
+	{
+		events.Publish(events.Event{
+			EventID: notif.ChangesetCreateEvent,
+			Payload: notif.Payload{
+				Type:        notif.ChangesetCreateEvent,
+				UserSpec:    user.Spec(),
+				ActionType:  "created",
+				ObjectID:    cs.ID,
+				ObjectRepo:  uri,
+				ObjectTitle: cs.Title,
+				ObjectType:  "changeset",
+				ObjectURL:   urlToChangeset(ctx, cs.ID),
+				Object:      cs,
+			},
+		})
+	}
 	return nil
 }
 
@@ -105,6 +123,22 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
 
+	{
+		events.Publish(events.Event{
+			EventID: notif.ChangesetUpdateEvent,
+			Payload: notif.Payload{
+				Type:        notif.ChangesetUpdateEvent,
+				UserSpec:    user.Spec(),
+				ActionType:  "updated",
+				ObjectID:    op.ID,
+				ObjectRepo:  uri,
+				ObjectTitle: op.Title,
+				ObjectType:  "changeset",
+				ObjectURL:   urlToChangeset(ctx, op.ID),
+				Object:      op,
+			},
+		})
+	}
 	return writeJSON(w, result)
 }
 
@@ -152,6 +186,22 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	notifyReview(ctx, user, uri, cs, op)
+	{
+		events.Publish(events.Event{
+			EventID: notif.ChangesetReviewEvent,
+			Payload: notif.Payload{
+				Type:        notif.ChangesetReviewEvent,
+				UserSpec:    user.Spec(),
+				ActionType:  "reviewed",
+				ObjectID:    cs.ID,
+				ObjectRepo:  uri,
+				ObjectTitle: cs.Title,
+				ObjectType:  "changeset",
+				ObjectURL:   urlToChangeset(ctx, cs.ID),
+				Object:      op,
+			},
+		})
+	}
 	return nil
 }
 
