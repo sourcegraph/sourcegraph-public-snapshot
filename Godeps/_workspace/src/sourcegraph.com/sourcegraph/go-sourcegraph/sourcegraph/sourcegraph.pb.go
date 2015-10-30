@@ -875,7 +875,7 @@ type StorageName struct {
 	AppName string `protobuf:"bytes,1,opt,name=app_name,proto3" json:",omitempty"`
 	// If specified storage is considered local to the given repository. Otherwise
 	// it is considered "global" (i.e. shared across all repositories).
-	Repo *RepoSpec `protobuf:"bytes,2,opt,name=repo" json:",omitempty"`
+	Repo string `protobuf:"bytes,2,opt,name=repo,proto3" json:",omitempty"`
 	// name is the name of the file.
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:",omitempty"`
 }

@@ -631,7 +631,7 @@ message StorageName {
 
 	// If specified storage is considered local to the given repository. Otherwise
 	// it is considered "global" (i.e. shared across all repositories).
-	RepoSpec repo = 2;
+	string repo = 2;
 
 	// name is the name of the file.
 	string name = 3;
