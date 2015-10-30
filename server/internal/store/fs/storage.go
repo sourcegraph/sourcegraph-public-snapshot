@@ -294,15 +294,40 @@ func isAlphaNumeric(s string) bool {
 }
 
 // storageNamePath converts a storage name into a sanitized path safe for perfoming
-// FS actions on.
+// FS actions on. The directory has a structure like e.g.:
+//
+//  $SGPATH/appdata/repo/<RepoURI>/<AppName>/...
+//  $SGPATH/appdata/global/<AppName>/...
+//
+// For example:
+//
+//  $SGPATH/appdata/repo/github.com/gorilla/mux/config/config.json
+//  $SGPATH/appdata/repo/github.com/gorilla/mux/issues/53
+//  $SGPATH/appdata/global/files/cat.jpeg
+//
 func storageNamePath(ctx context.Context, name *sourcegraph.StorageName) (string, error) {
 	// First, turn this path into a os-specific filepath.
-	fp := strings.Replace(name.Name, "/", string(os.PathSeparator), -1)
+	userPath := strings.Replace(name.Name, "/", string(os.PathSeparator), -1)
 
 	// Second, clean the path of any relative ("../") elements.
-	fp = filepath.Clean("/" + name.Name)
-	if len(fp) > 0 {
-		fp = fp[1:]
+	userPath = filepath.Clean("/" + userPath)
+	if len(userPath) > 0 {
+		userPath = userPath[1:]
+	}
+
+	// Clean the repo URI of any potential relative path elements.
+	//
+	// TODO(slimsag): proper repo URI validation? What about e.g. a string with
+	// just spaces?
+	name.Repo = filepath.Clean("/" + name.Repo)
+	if len(name.Repo) > 0 {
+		name.Repo = name.Repo[1:]
+	}
+
+	// Determine the location, global or local to a repo.
+	location := "global"
+	if name.Repo != "" {
+		location = filepath.Join("repo", name.Repo)
 	}
 
 	// Prefix the application namespace onto the path. This lets us avoid
@@ -315,7 +340,7 @@ func storageNamePath(ctx context.Context, name *sourcegraph.StorageName) (string
 	if !isAlphaNumeric(name.AppName) {
 		return "", errors.New("app name must be alphanumeric with only underscores and dashes)")
 	}
-	return filepath.Join(appStorageDir(ctx), name.AppName, fp), nil
+	return filepath.Join(appStorageDir(ctx), location, name.AppName, userPath), nil
 }
 
 // error translates an IO error into it's correct type for transmission back to

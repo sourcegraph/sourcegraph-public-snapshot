@@ -111,7 +111,7 @@ type Flags struct {
 	BuildStoreDir string `long:"fs.build-store-dir" description:"root dir (or HTTP VFS base URL) containing builds" default:"$SGPATH/buildstore"`
 	DBDir         string `long:"fs.db-dir" description:"root dir containing user/account/etc. data" default:"$SGPATH/db"`
 	RepoStatusDir string `long:"fs.repo-status-dir" description:"root dir containing repo statuses" default:"$SGPATH/statuses"`
-	AppStorageDir string `long:"fs.app-storage-dir" description:"root dir containing app storage" default:"$SGPATH/app"`
+	AppStorageDir string `long:"fs.app-storage-dir" description:"root dir containing app storage" default:"$SGPATH/appdata"`
 }
 
 var ActiveFlags Flags
