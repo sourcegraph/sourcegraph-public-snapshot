@@ -47,7 +47,43 @@ Testing
 
 The `Component` base class
 --------------------------
-* Implement `updateState(state, props)` to merge new `props` into `state` and update `state` according to UI logic
+
+    Data Flow Diagram
+    =================
+
+      Parent Component      Events
+            |                 |
+    +-------|-----------------|-----------------------------+
+    |       |                 |                             |
+    |       v                 v                  Component  |
+    |                                                       |
+    |   Properties    Call to setState()                    |
+    |       |                 |                             |
+    |       |                 |                             |
+    |       |                 |                             |
+    |       |                 v                             |
+    |       |                                               |
+    |       +--------> reconcileState()                     |
+    |                         |                             |
+    |                         | ---------> requestData()    |
+    |                         |                 |           |
+    |                         v                 |           |
+    |                                           |           |
+    |                       State               |           |
+    |                         |                 |           |
+    |                         |                 |           |
+    |                         |                 |           |
+    |                         v                 |           |
+    |                                           |           |
+    |                      render()             |           |
+    |                         |                 |           |
+    +-------------------------|-----------------|-----------+
+                              |                 |
+                              v                 v
+
+                        Render Output      Want* Actions
+
+* Implement `reconcileState(state, props)` to merge new `props` into `state` and update `state` according to UI logic
 * Implement `requestData(prevState, nextState)` to create `Want*` actions.
 * Do not access `this.props` at all.
 * The component gets rendered if the state changes (shallow comparison).
