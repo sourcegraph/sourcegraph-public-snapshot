@@ -592,20 +592,25 @@ service Repos {
 message StorageError {
 	// Code represents the type of error for programatic handling.
 	enum Code {
+		// NONE is the error code used when programatic handling of the error is not
+		// advised. It can be assumed that the operation failed, and that a human
+		// readable message is also provided.
+		NONE = 0;
+
 		// EOF is the error returned by Read when no more input is available.
 		// Functions should return EOF only to signal a graceful end of input. If
 		// the EOF occurs unexpectedly in a structured data stream, the appropriate
 		// error is either UNEXPECTED_EOF or some other error message giving more
 		// detail.
-		EOF = 0;
+		EOF = 1;
 
 		// NOT_EXIST is the error used when attempting to read/write to an object
 		// that does not exist.
-		NOT_EXIST = 1;
+		NOT_EXIST = 2;
 
 		// PERMISSION is the error used when permission to access the given file is
 		// not granted to you.
-		PERMISSION = 2;
+		PERMISSION = 3;
 	}
 
 	// code is the error code. If no error code is specified then programatic
@@ -741,7 +746,7 @@ service Storage {
 		};
 	}
 
-	// Remove deletes the named file or directory.
+	// Remove deletes the named file.
 	rpc Remove(StorageName) returns (StorageError) {
 		option (google.api.http) = {
 			post: "/storage/remove"

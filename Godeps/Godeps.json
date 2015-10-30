@@ -605,15 +605,15 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/routevar",
-			"Rev": "1a83e2d09cdd822e8a865c6a1195d36aef85a7a8"
+			"Rev": "da404013d8df88b146230641584b1ba37036f934"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph",
-			"Rev": "1a83e2d09cdd822e8a865c6a1195d36aef85a7a8"
+			"Rev": "da404013d8df88b146230641584b1ba37036f934"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/spec",
-			"Rev": "1a83e2d09cdd822e8a865c6a1195d36aef85a7a8"
+			"Rev": "da404013d8df88b146230641584b1ba37036f934"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
