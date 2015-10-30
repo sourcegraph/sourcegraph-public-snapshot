@@ -40,6 +40,7 @@ type Stores struct {
 	RepoStatuses                    RepoStatuses
 	RepoVCS                         RepoVCS
 	Repos                           Repos
+	Storage                         Storage
 	UserKeys                        UserKeys
 	UserPermissions                 UserPermissions
 	Users                           Users
@@ -70,6 +71,7 @@ const (
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
+	_StorageKey
 	_UserKeysKey
 	_UserPermissionsKey
 	_UsersKey
@@ -142,6 +144,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Repos != nil {
 		ctx = WithRepos(ctx, s.Repos)
+	}
+	if s.Storage != nil {
+		ctx = WithStorage(ctx, s.Storage)
 	}
 	if s.UserKeys != nil {
 		ctx = WithUserKeys(ctx, s.UserKeys)
@@ -655,6 +660,29 @@ func ReposFromContext(ctx context.Context) Repos {
 // ReposFromContextOrNil returns the context's Repos store if present, or else nil.
 func ReposFromContextOrNil(ctx context.Context) Repos {
 	s, ok := ctx.Value(_ReposKey).(Repos)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithStorage returns a copy of parent with the given Storage store.
+func WithStorage(parent context.Context, s Storage) context.Context {
+	return context.WithValue(parent, _StorageKey, s)
+}
+
+// StorageFromContext gets the context's Storage store. If the store is not present, it panics.
+func StorageFromContext(ctx context.Context) Storage {
+	s, ok := ctx.Value(_StorageKey).(Storage)
+	if !ok || s == nil {
+		panic("no Storage set in context")
+	}
+	return s
+}
+
+// StorageFromContextOrNil returns the context's Storage store if present, or else nil.
+func StorageFromContextOrNil(ctx context.Context) Storage {
+	s, ok := ctx.Value(_StorageKey).(Storage)
 	if ok {
 		return s
 	}
