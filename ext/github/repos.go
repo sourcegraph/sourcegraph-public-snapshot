@@ -208,9 +208,7 @@ func (s *Repos) ListPrivate(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	if githubcli.Config.IsGitHubEnterprise() {
 		client.BaseURL = githubcli.Config.APIBaseURL()
 		client.UploadURL = githubcli.Config.UploadURL()
-		if githubcli.Config.MirrorPublic {
-			repoType = ""
-		}
+		repoType = "" // import both public and private repos from GHE.
 	}
 
 	var repos []*sourcegraph.Repo

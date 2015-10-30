@@ -20,6 +20,13 @@ To mirror public GitHub repositories, run this command:
 
 ### GitHub Enterprise
 
-To import repositories from a GitHub Enterprise instance, set the commandline flag `--github.host` to your GitHub instance's domain name, eg `--github.host=ghe.mycompany.org`. Now you can follow the steps above to import private repositories from the GitHub Enterprise instance. To import both public and private repositories from the GitHub Enterprise instance, set the command line flag `--github.import-public`.
+To import repositories from a GitHub Enterprise instance, set the commandline flag `--github.host` to your GitHub instance's domain name, eg `--github.host=ghe.mycompany.org`. For Ubuntu Linux or cloud installations, add the following lines to the config file `/etc/sourcegraph/config.ini`:
+
+```
+[serve.GitHub]
+GitHubHost = ghe.mycompany.org
+```
+
+Restart the server with `sudo restart src`. Now you can follow the steps from the previous section to import repositories from the GitHub Enterprise instance.
 
 Your GitHub Enterprise instance must have TLS enabled. You can't simultaneously import repos from github.com and GitHub Enterprise.

@@ -12,8 +12,6 @@ type GitHubFlags struct {
 	// from. This can point to a GitHub Enterprise instance.
 	// NOTE: SSL must be enabled on the GHE instance for mirroring to work.
 	GitHubHost string `long:"github.host" description:"hostname of the GitHub (Enterprise) instance to mirror repos from." default:"github.com"`
-
-	MirrorPublic bool `long:"github.mirror-public" description:"allow mirroring public repos from the GitHub instance. Only valid when a GitHub Enterprise instance is configured."`
 }
 
 // IsGitHubEnterprise returns true if a GitHub Enterprise instance was
