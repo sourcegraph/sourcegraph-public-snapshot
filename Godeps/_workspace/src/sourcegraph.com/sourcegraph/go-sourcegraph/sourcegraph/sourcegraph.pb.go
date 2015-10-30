@@ -910,7 +910,7 @@ func (*StorageReadOp) ProtoMessage()    {}
 type StorageRead struct {
 	// error is the error that occurred during reading, if any. In the case of a
 	// EOF error, it may be accompanied by data (i.e. EOF and some data).
-	Error StorageError `protobuf:"bytes,1,opt,name=error" json:"error"`
+	Error *StorageError `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
 	// data is the data that was read from the file. There is no guarantee that
 	// the requested number of bytes to read will actually be read, so if you
 	// desire more than what is returned here then you should perform a read
