@@ -38,7 +38,7 @@ func (fs *fileSystem) Create(name string) (File, error) {
 	if grpcErr != nil {
 		return nil, grpcErr
 	}
-	if ioErr != nil {
+	if isStorageError(ioErr) {
 		return nil, storageError(ioErr)
 	}
 	return &file{
@@ -83,7 +83,7 @@ func (fs *fileSystem) Lstat(path string) (os.FileInfo, error) {
 	if grpcErr != nil {
 		return nil, grpcErr
 	}
-	if resp.Error != nil {
+	if isStorageError(resp.Error) {
 		return nil, storageError(resp.Error)
 	}
 	return fileInfo{resp.Info}, nil
@@ -95,7 +95,7 @@ func (fs *fileSystem) ReadDir(path string) ([]os.FileInfo, error) {
 	if grpcErr != nil {
 		return nil, grpcErr
 	}
-	if resp.Error != nil {
+	if isStorageError(resp.Error) {
 		return nil, storageError(resp.Error)
 	}
 	var infos []os.FileInfo

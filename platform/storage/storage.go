@@ -56,10 +56,15 @@ func Namespace(ctx context.Context, appName string, repo *sourcegraph.RepoSpec) 
 	}
 }
 
+// isStorageError tells if the error is non-nil and non-zero.
+func isStorageError(err *sourcegraph.StorageError) bool {
+	return err != nil && *err != (sourcegraph.StorageError{})
+}
+
 // storageError converts a gRPC StorageError type into it's equivilent Go error
 // type. If the err parameter is nil, a nil error is returned.
 func storageError(err *sourcegraph.StorageError) error {
-	if err == nil {
+	if !isStorageError(err) {
 		return nil
 	}
 	switch err.Code {

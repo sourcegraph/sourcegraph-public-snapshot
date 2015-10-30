@@ -39,7 +39,8 @@ func (f *file) Read(p []byte) (n int, err error) {
 	if grpcErr != nil {
 		return 0, grpcErr
 	}
-	copy(resp.Data, p)
+	f.offset += int64(len(resp.Data))
+	copy(p, resp.Data)
 	return len(resp.Data), storageError(resp.Error)
 }
 
@@ -53,6 +54,7 @@ func (f *file) Write(p []byte) (n int, err error) {
 	if grpcErr != nil {
 		return 0, grpcErr
 	}
+	f.offset += resp.Wrote
 	return int(resp.Wrote), storageError(resp.Error)
 }
 
