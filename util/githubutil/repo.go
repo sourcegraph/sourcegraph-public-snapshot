@@ -14,12 +14,14 @@ func SplitGitHubRepoURI(uri string) (owner, repo string, err error) {
 	uri = strings.Replace(uri, "sourcegraph.com/", "github.com/", 1)
 
 	gitHubHost := githubcli.Config.Host() + "/"
-
-	if !strings.HasPrefix(uri, gitHubHost) {
+	if strings.HasPrefix(uri, "github.com/") {
+		uri = strings.TrimPrefix(uri, "github.com/")
+	} else if strings.HasPrefix(uri, gitHubHost) {
+		uri = strings.TrimPrefix(uri, gitHubHost)
+	} else {
 		return "", "", fmt.Errorf("not a GitHub repository URI: %q", uri)
 	}
 
-	uri = strings.TrimPrefix(uri, gitHubHost)
 	parts := strings.Split(uri, "/")
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("invalid GitHub repository owner/repo string: %q", uri)

@@ -51,6 +51,9 @@ func TestDiscoverRepoLocalGHE_found(t *testing.T) {
 
 	fed.Config.IsRoot = true
 	githubcli.Config.GitHubHost = "myghe.com"
+	defer func() {
+		githubcli.Config.GitHubHost = "github.com"
+	}()
 
 	info, err := discover.Repo(context.Background(), "myghe.com/o/r")
 	if err != nil {
