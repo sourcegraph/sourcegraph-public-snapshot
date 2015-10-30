@@ -8,6 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/server/local"
@@ -58,7 +59,7 @@ func lookupRepo(ctx context.Context, repo *string) (context.Context, discover.In
 		// stuff in the Graph Federation doc on the Google Drive.
 		//
 		// TODO(sqs!): also doesn't work with github repos. hacky.
-		if !strings.HasPrefix(*repo, "github.com") {
+		if !strings.HasPrefix(*repo, githubcli.Config.Host()) {
 			*repo = (*repo)[strings.Index(*repo, "/")+1:]
 		}
 
