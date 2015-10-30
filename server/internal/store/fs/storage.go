@@ -25,6 +25,13 @@ type Storage struct {
 	openFiles map[string]*os.File
 }
 
+// NewStorage returns a new and initialized app storage store.
+func NewStorage() *Storage {
+	return &Storage{
+		openFiles: make(map[string]*os.File),
+	}
+}
+
 // Create creates a new file with the given name.
 func (s *Storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	// Parse the path and grab the lock.
@@ -39,7 +46,7 @@ func (s *Storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*so
 	s.ensureNotOpen(path)
 
 	// Directory may not exist, so create it.
-	if err := os.MkdirAll(path, 0600); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return storageError(err), nil
 	}
 
@@ -49,7 +56,7 @@ func (s *Storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*so
 		return storageError(err), nil
 	}
 	s.openFiles[path] = f
-	return nil, nil
+	return &sourcegraph.StorageError{}, nil
 }
 
 // Remove deletes the named file or directory.
@@ -69,7 +76,7 @@ func (s *Storage) Remove(ctx context.Context, opt *sourcegraph.StorageName) (*so
 	if err := os.Remove(path); err != nil {
 		return storageError(err), nil
 	}
-	return nil, nil
+	return &sourcegraph.StorageError{}, nil
 }
 
 // RemoveAll deletes the named file or directory recursively.
@@ -89,7 +96,7 @@ func (s *Storage) RemoveAll(ctx context.Context, opt *sourcegraph.StorageName) (
 	if err := os.RemoveAll(path); err != nil {
 		return storageError(err), nil
 	}
-	return nil, nil
+	return &sourcegraph.StorageError{}, nil
 }
 
 // Read reads from an existing file.
@@ -153,7 +160,10 @@ func (s *Storage) Write(ctx context.Context, opt *sourcegraph.StorageWriteOp) (*
 	}
 
 	// Write to the file.
-	bytesWrote, err := f.Write(opt.Data[:maxWrite])
+	if len(opt.Data) > maxWrite {
+		opt.Data = opt.Data[:maxWrite]
+	}
+	bytesWrote, err := f.Write(opt.Data)
 	if err != nil {
 		return &sourcegraph.StorageWrite{Error: storageError(err)}, nil
 	}
@@ -231,7 +241,7 @@ func (s *Storage) Close(ctx context.Context, opt *sourcegraph.StorageName) (*sou
 	if err := f.Close(); err != nil {
 		return storageError(err), nil
 	}
-	return nil, nil
+	return &sourcegraph.StorageError{}, nil
 }
 
 // seekTo seeks to the correct offset within the given file.
@@ -255,12 +265,20 @@ func (s *Storage) ensureNotOpen(path string) {
 	}
 }
 
-// ensureOpen ensures that the given filepath is open. If it is not, then a
-// error is returned for the user.
+// ensureOpen ensures that the given filepath is open. If it is not, then the
+// file is opened.
 func (s *Storage) ensureOpen(path string) *sourcegraph.StorageError {
-	if _, ok := s.openFiles[path]; !ok {
-		return &sourcegraph.StorageError{Message: "file is not open"}
+	// Check if the file is already open.
+	if _, ok := s.openFiles[path]; ok {
+		return nil
 	}
+
+	// Not open yet, so open it now.
+	f, err := os.Open(path)
+	if err != nil {
+		return storageError(err)
+	}
+	s.openFiles[path] = f
 	return nil
 }
 
@@ -303,6 +321,12 @@ func storageNamePath(ctx context.Context, name *sourcegraph.StorageName) (string
 // error translates an IO error into it's correct type for transmission back to
 // the client.
 func storageError(err error) *sourcegraph.StorageError {
+	if err == nil {
+		return nil
+	}
+	// TODO(slimsag): sanitize error strings to remove absolute paths to app
+	// storage dir. By exposing them, we expose information about the host which
+	// is not good practice. This particular case isn't very important, though.
 	var code sourcegraph.StorageError_Code
 	if err == io.EOF {
 		code = sourcegraph.StorageError_EOF

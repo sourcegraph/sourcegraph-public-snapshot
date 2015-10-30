@@ -30,7 +30,7 @@ var Stores = store.Stores{
 	Users:             &Users{},
 	UserKeys:          NewUserKeys(),
 	Changesets:        &Changesets{},
-	Storage:           &Storage{},
+	Storage:           NewStorage(),
 }
 
 func init() {
