@@ -43,9 +43,9 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 func repoFromGitHub(ghrepo *github.Repository) *sourcegraph.Repo {
-	githubHost := githubcli.Config.Host()
+	gitHubHost := githubcli.Config.Host()
 	repo := sourcegraph.Repo{
-		URI:         githubHost + "/" + *ghrepo.FullName,
+		URI:         gitHubHost + "/" + *ghrepo.FullName,
 		Permissions: convertGitHubRepoPerms(ghrepo),
 		Mirror:      true,
 	}
@@ -58,8 +58,8 @@ func repoFromGitHub(ghrepo *github.Repository) *sourcegraph.Repo {
 	// "git@github.com:owner/repo.git", but we want
 	// "ssh://git@github.com/owner/repo.git."
 	if ghrepo.SSHURL != nil {
-		origHostStr := "git@" + githubHost + ":"
-		newHostStr := "ssh://git@" + githubHost + "/"
+		origHostStr := "git@" + gitHubHost + ":"
+		newHostStr := "ssh://git@" + gitHubHost + "/"
 		repo.SSHCloneURL = strings.Replace(*ghrepo.SSHURL, origHostStr, newHostStr, 1)
 	}
 
@@ -191,6 +191,8 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	return repos, nil
 }
 
+// TODO: rename or consolidate this method, since it can be used to list private
+// as well as public repos.
 func (s *Repos) ListPrivate(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	tokenStore := &ext.AccessTokens{}
 	token, err := tokenStore.Get(ctx, githubcli.Config.Host())
@@ -202,18 +204,18 @@ func (s *Repos) ListPrivate(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
 	client := github.NewClient(tc)
-	importType := "private"
+	repoType := "private"
 	if githubcli.Config.IsGitHubEnterprise() {
 		client.BaseURL = githubcli.Config.APIBaseURL()
 		client.UploadURL = githubcli.Config.UploadURL()
 		if githubcli.Config.MirrorPublic {
-			importType = ""
+			repoType = ""
 		}
 	}
 
 	var repos []*sourcegraph.Repo
 	repoOpts := &github.RepositoryListOptions{
-		Type: importType,
+		Type: repoType,
 		ListOptions: github.ListOptions{
 			PerPage: 100, // 100 is the max page size for GitHub's API
 		},

@@ -16,20 +16,26 @@ type GitHubFlags struct {
 	MirrorPublic bool `long:"github.mirror-public" description:"allow mirroring public repos from the GitHub instance. Only valid when a GitHub Enterprise instance is configured."`
 }
 
-// IsGHE returns true if a GitHub Enterprise instance was
+// IsGitHubEnterprise returns true if a GitHub Enterprise instance was
 // configured on the CLI.
 func (g *GitHubFlags) IsGitHubEnterprise() bool {
 	return g.GitHubHost != "github.com"
 }
 
+// Host returns the host name of the configured remote GitHub instance.
+// eg "github.com" or "ghe.mycompany.com"
 func (g *GitHubFlags) Host() string {
 	return g.GitHubHost
 }
 
+// URL returns the base URL of the configured remote GitHub instance.
+// eg "https://github.com" or "https://ghe.mycompany.com"
 func (g *GitHubFlags) URL() string {
 	return "https://" + g.GitHubHost
 }
 
+// APIBaseURL returns the API endpoint URL of the configured GitHub Enterprise instance.
+// eg "https://ghe.mycompany.com/api/v3"
 func (g *GitHubFlags) APIBaseURL() *url.URL {
 	u, err := url.Parse("https://" + g.GitHubHost + "/api/v3/")
 	if err != nil {
@@ -38,6 +44,8 @@ func (g *GitHubFlags) APIBaseURL() *url.URL {
 	return u
 }
 
+// UploadURL returns the upload endpoint URL of the configured GitHub Enterprise instance.
+// eg or "https://ghe.mycompany.com/uploads
 func (g *GitHubFlags) UploadURL() *url.URL {
 	u, err := url.Parse("https://" + g.GitHubHost + "/uploads")
 	if err != nil {
