@@ -36,7 +36,7 @@ import (
 //
 //  OpenFileSystem(configName, storage.Namespace(ctx, appName+"-config", repo))
 //
-func Open(appName, configName string, ctx context.Context, repo string) (*Store, error) {
+func Open(ctx context.Context, appName, configName, repo string) (*Store, error) {
 	return OpenFileSystem(configName, storage.Namespace(ctx, appName+"-config", repo))
 }
 
