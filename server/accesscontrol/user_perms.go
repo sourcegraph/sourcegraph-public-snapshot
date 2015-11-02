@@ -22,10 +22,6 @@ import (
 // If the cmdline flag auth.restrict-write-access is set, this method
 // will check if the authenticated user has admin privileges.
 func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
-	if authutil.ActiveFlags.RestrictWriteAccess {
-		return VerifyUserHasAdminAccess(ctx, method)
-	}
-
 	return VerifyActorHasWriteAccess(ctx, auth.ActorFromContext(ctx), method)
 }
 
@@ -42,34 +38,18 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 // to verify user permissions, for example the SSH Git server. For all other cases,
 // VerifyUserHasWriteAccess should be used to authorize a user for gRPC operations.
 func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method string) error {
+	if authutil.ActiveFlags.RestrictWriteAccess {
+		return VerifyActorHasAdminAccess(ctx, actor, method)
+	}
+
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil
 	}
 
 	if !actor.IsAuthenticated() {
-		// Check if the actor is authorized with an access token
-		// having a scope. This token is set in package sgx on server
-		// startup, and is only available to client commands spawned
-		// in the server process.
-		//
-		// !!!!!!!!!!!!!!!!!!!! DANGER(security) !!!!!!!!!!!!!!!!!!!!!!
-		// This does not check that the token is properly signed, since
-		// that is done in server/internal/oauth2util/grpc_middleware.go
-		// when parsing the request metadata and adding the actor to the
-		// context. To avoid additional latency from expensive public key
-		// operations, that check is not repeated here, but be careful
-		// about refactoring that check.
-		for _, scope := range actor.Scope {
-			// internal server commands have default write access.
-			if scope == "internal:cli" {
-				return nil
-			}
-
-			// workers have write access on the Builds server.
-			if scope == "worker:build" && strings.HasPrefix(method, "Builds.") {
-				return nil
-			}
+		if verifyScopeHasAccess(ctx, actor.Scope, method) {
+			return nil
 		}
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
 	}
@@ -110,6 +90,12 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 
 	var isAdmin bool
 	if authutil.ActiveFlags.IsLocal() {
+		if !actor.IsAuthenticated() {
+			if verifyScopeHasAccess(ctx, actor.Scope, method) {
+				return nil
+			}
+			return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
+		}
 		// Check local auth server for user's admin privileges.
 		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID)})
 		if err != nil {
@@ -149,4 +135,33 @@ var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*s
 		return nil, err
 	}
 	return userPermissions, nil
+}
+
+// Check if the actor is authorized with an access token
+// having a valid scope. This token is set in package sgx on server
+// startup, and is only available to client commands spawned
+// in the server process.
+//
+// !!!!!!!!!!!!!!!!!!!! DANGER(security) !!!!!!!!!!!!!!!!!!!!!!
+// This does not check that the token is properly signed, since
+// that is done in server/internal/oauth2util/grpc_middleware.go
+// when parsing the request metadata and adding the actor to the
+// context. To avoid additional latency from expensive public key
+// operations, that check is not repeated here, but be careful
+// about refactoring that check.
+func verifyScopeHasAccess(ctx context.Context, scopes []string, method string) bool {
+	for _, scope := range scopes {
+		switch {
+		case scope == "internal:cli":
+			// internal server commands have default write access.
+			return true
+
+		case scope == "worker:build":
+			// workers have write access on the Builds server.
+			if strings.HasPrefix(method, "Builds.") {
+				return true
+			}
+		}
+	}
+	return false
 }
