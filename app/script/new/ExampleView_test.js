@@ -10,7 +10,10 @@ import testdataAvailable from "./testdata/ExampleView-available.json";
 describe("ExampleView", () => {
 	it("should initially render empty and want example", () => {
 		autotest(testdataInitial, `${__dirname}/testdata/ExampleView-initial.json`,
-			<ExampleView defURL="/someURL" examples={{get(defURL, index) { return null; }, getCount(defURL) { return 10; }}} />
+			<ExampleView
+				defURL="/someURL"
+				examples={{get(defURL, index) { return null; }, getCount(defURL) { return 10; }}}
+				highlightedDef={null} />
 		);
 	});
 

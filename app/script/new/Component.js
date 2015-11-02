@@ -33,7 +33,9 @@ export default class Component extends React.Component {
 	}
 
 	_updateState(newState, props) {
+		this._checkForUndefined(props, "Property");
 		this.reconcileState(newState, props);
+		this._checkForUndefined(newState, "State");
 		if (this.requestData) {
 			let prevState = Object.assign({}, this.state);
 			setTimeout(() => { // call requestData asynchronously, because it creates an action and this function might be called while processing another action
@@ -41,6 +43,16 @@ export default class Component extends React.Component {
 			}, 0);
 		}
 		super.setState(newState);
+	}
+
+	_checkForUndefined(obj, type) {
+		if (process.env.NODE_ENV === "production") { return; }
+		let keys = Object.keys(obj);
+		for (let i = 0; i < keys.length; i++) {
+			if (obj[keys[i]] === undefined) { // eslint-disable-line no-undefined
+				throw new Error(`Invariant Violation: ${type} '${keys[i]}' of ${this.constructor.name} has value 'undefined'.`);
+			}
+		}
 	}
 
 	reconcileState(state, props) {

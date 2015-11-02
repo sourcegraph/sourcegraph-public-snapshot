@@ -8,7 +8,7 @@ export default class DiscussionsList extends Component {
 	reconcileState(state, props) {
 		state.discussions = props.discussions;
 		state.onViewDiscussion = props.onViewDiscussion;
-		state.small = props.small;
+		state.small = Boolean(props.small);
 	}
 
 	render() {

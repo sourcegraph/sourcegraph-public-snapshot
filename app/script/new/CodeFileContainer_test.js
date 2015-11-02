@@ -17,7 +17,7 @@ describe("CodeFileContainer", () => {
 	it("should handle unavailable file", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", null));
 		autotest(testdataUnavailableFile, `${__dirname}/testdata/CodeFileContainer-unavailableFile.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef={null} />
 		);
 	});
 

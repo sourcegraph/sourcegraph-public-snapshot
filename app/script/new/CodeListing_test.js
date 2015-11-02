@@ -16,7 +16,7 @@ describe("CodeListing", () => {
 
 	it("should not render line numbers by default", () => {
 		autotest(testdataNoLineNumbers, `${__dirname}/testdata/CodeListing-noLineNumbers.json`,
-			<CodeListing lines={[{}]} />
+			<CodeListing lines={[{}]} selectedDef={null} highlightedDef={null} />
 		);
 	});
 });

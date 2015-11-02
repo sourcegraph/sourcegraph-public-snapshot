@@ -12,7 +12,7 @@ describe("DefPopup", () => {
 		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
 			<DefPopup
 				def={{URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
-				examples={{test: "examples"}}
+				examples={{test: "examples", generation: 42}}
 				discussions={[
 					{ID: 0, Comments: []},
 					{ID: 1, Comments: []},
@@ -28,8 +28,9 @@ describe("DefPopup", () => {
 		autotest(testdataNoDiscussions, `${__dirname}/testdata/DefPopup-noDiscussions.json`,
 			<DefPopup
 				def={{URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
-				examples={{test: "examples"}}
-				discussions={[]} />
+				examples={{test: "examples", generation: 42}}
+				discussions={[]}
+				highlightedDef={null} />
 		);
 	});
 });

@@ -22,7 +22,7 @@ export default class CodeLineView extends Component {
 		state.selectedDef = state.ownURLs[props.selectedDef] ? props.selectedDef : null;
 		state.highlightedDef = state.ownURLs[props.highlightedDef] ? props.highlightedDef : null;
 
-		state.lineNumber = props.lineNumber;
+		state.lineNumber = props.lineNumber || null;
 	}
 
 	render() {

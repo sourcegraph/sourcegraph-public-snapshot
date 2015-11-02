@@ -27,7 +27,7 @@ export default class CodeListing extends Component {
 
 	reconcileState(state, props) {
 		state.lines = props.lines;
-		state.lineNumbers = props.lineNumbers;
+		state.lineNumbers = Boolean(props.lineNumbers);
 		state.selectedDef = props.selectedDef;
 		state.highlightedDef = props.highlightedDef;
 	}

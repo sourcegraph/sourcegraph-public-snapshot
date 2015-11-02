@@ -94,7 +94,8 @@
 											"props": {
 												"defURL": "someURL",
 												"examples": {
-													"test": "examples"
+													"test": "examples",
+													"generation": 42
 												}
 											}
 										},
