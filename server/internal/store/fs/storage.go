@@ -356,7 +356,7 @@ func storageError(err error) *sourcegraph.StorageError {
 	if err == io.EOF {
 		code = sourcegraph.StorageError_EOF
 	} else if os.IsNotExist(err) {
-		code = sourcegraph.StorageError_NOT_EXIST
+		code = sourcegraph.StorageError_NotExist
 	}
 	return &sourcegraph.StorageError{
 		Code:    code,
