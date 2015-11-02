@@ -13,7 +13,7 @@ describe("DiscussionView", () => {
 				discussion={{ID: 42, Title: "foo", Description: "bar", Author: {Login: "me"}, Comments: [
 					{ID: 1, Author: {Login: "you"}, Body: "comment"},
 				]}}
-				defQualifiedName={{__html: "someName"}} />
+				def={{QualifiedName: {__html: "someName"}}} />
 		);
 	});
 });

@@ -189,10 +189,8 @@
 										},
 										{
 											"type": "a",
-											"ref": "commentBtn",
 											"props": {
-												"id": "add-discussion-comment",
-												"className": "btn btn-sgblue pull-right",
+												"className": "btn btn-sgblue pull-right ",
 												"children": [
 													"Comment"
 												]

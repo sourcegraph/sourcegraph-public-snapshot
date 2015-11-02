@@ -72,3 +72,12 @@ export class CreateDiscussion {
 		this.callback = callback;
 	}
 }
+
+export class CreateDiscussionComment {
+	constructor(defURL, discussionID, body, callback) {
+		this.defURL = defURL;
+		this.discussionID = discussionID;
+		this.body = body;
+		this.callback = callback;
+	}
+}

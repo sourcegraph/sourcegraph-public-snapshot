@@ -61,7 +61,7 @@ export default class DefPopup extends Component {
 		if (this.state.viewDiscussion) {
 			return (
 				<div className="discussion-thread discussions">
-					<DiscussionView discussion={this.state.viewDiscussion} defQualifiedName={def.QualifiedName} />
+					<DiscussionView discussion={this.state.viewDiscussion} def={def} />
 					<footer>
 						<a ref="listBtn" onClick={() => { this.setState({viewAllDiscussions: true, viewDiscussion: null}); }}><i className="fa fa-eye" /> View all</a>
 						<a href="#add-discussion-comment"><i className="fa fa-plus" /> Reply</a>

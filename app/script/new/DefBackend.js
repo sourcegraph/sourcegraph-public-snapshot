@@ -86,6 +86,26 @@ const DefBackend = {
 			});
 			break;
 
+		case DefActions.CreateDiscussionComment:
+			DefBackend.xhr({
+				uri: `/ui${action.defURL}/.discussions/${action.discussionID}/.comment`,
+				method: "POST",
+				json: {
+					Body: action.body,
+				},
+			}, function(err, resp, body) {
+				if (err) {
+					console.error(err);
+					return;
+				}
+				let list = DefStore.discussions.get(action.defURL).map((d) =>
+					d.ID === action.discussionID ? Object.assign(d, {Comments: d.Comments.concat([body])}) : d
+				);
+				Dispatcher.dispatch(new DefActions.DiscussionsFetched(action.defURL, list));
+				action.callback();
+			});
+			break;
+
 		}
 	},
 };

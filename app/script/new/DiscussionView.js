@@ -4,11 +4,30 @@ import moment from "moment";
 import Component from "./Component";
 import MarkdownView from "../components/MarkdownView"; // FIXME
 import MarkdownTextarea from "../components/MarkdownTextarea"; // FIXME
+import Dispatcher from "./Dispatcher";
+import * as DefActions from "./DefActions";
 
 export default class DiscussionView extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			creatingComment: false,
+		};
+	}
+
 	reconcileState(state, props) {
 		state.discussion = props.discussion;
-		state.defQualifiedName = props.defQualifiedName;
+		state.def = props.def;
+	}
+
+	_createComment() {
+		if (!this.refs.commentTextarea) { return; } // FIXME workaround for tests
+		this.setState({creatingComment: true});
+		let body = this.refs.commentTextarea.value();
+		Dispatcher.dispatch(new DefActions.CreateDiscussionComment(this.state.def.URL, this.state.discussion.ID, body, () => {
+			this.refs.commentTextarea.value("");
+			this.setState({creatingComment: false});
+		}));
 	}
 
 	render() {
@@ -28,7 +47,7 @@ export default class DiscussionView extends Component {
 						<div className="subtitle">
 							<span className="author"><a>@{d.Author.Login}</a></span>
 							<span className="date"> {moment(d.CreatedAt).fromNow()}</span>
-							<span className="subject"> on <b className="backtick" dangerouslySetInnerHTML={this.state.defQualifiedName} /></span>
+							<span className="subject"> on <b className="backtick" dangerouslySetInnerHTML={this.state.def.QualifiedName} /></span>
 						</div>
 					</header>
 					{d.Description ? <main className="body">{d.Description}</main> : null}
@@ -46,7 +65,7 @@ export default class DiscussionView extends Component {
 				<div className="add-comment">
 					<div className="padder pull-left">
 						<MarkdownTextarea className="thread-comment-add" ref="commentTextarea" />
-						<a ref="commentBtn" id="add-discussion-comment" className="btn btn-sgblue pull-right">Comment</a>
+						<a className={`btn btn-sgblue pull-right ${this.state.creatingComment ? "disabled" : ""}`} onClick={!this.state.creatingComment && (() => { this._createComment(); })}>Comment</a>
 					</div>
 				</div>
 			</div>
@@ -56,5 +75,5 @@ export default class DiscussionView extends Component {
 
 DiscussionView.propTypes = {
 	discussion: React.PropTypes.object,
-	defQualifiedName: React.PropTypes.object,
+	def: React.PropTypes.object,
 };
