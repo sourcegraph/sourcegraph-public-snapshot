@@ -16,8 +16,7 @@ export default class DiscussionView extends Component {
 	}
 
 	reconcileState(state, props) {
-		state.discussion = props.discussion;
-		state.def = props.def;
+		Object.assign(state, props);
 	}
 
 	_createComment() {

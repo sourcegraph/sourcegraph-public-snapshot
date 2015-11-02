@@ -6,8 +6,7 @@ import Component from "./Component";
 // TODO merge small and large layouts
 export default class DiscussionsList extends Component {
 	reconcileState(state, props) {
-		state.discussions = props.discussions;
-		state.onViewDiscussion = props.onViewDiscussion;
+		Object.assign(state, props);
 		state.small = Boolean(props.small);
 	}
 

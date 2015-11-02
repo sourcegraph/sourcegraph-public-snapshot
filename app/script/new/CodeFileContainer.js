@@ -17,10 +17,7 @@ export default class CodeFileContainer extends Container {
 	}
 
 	reconcileState(state, props) {
-		state.repo = props.repo;
-		state.rev = props.rev;
-		state.tree = props.tree;
-		state.selectedDef = props.selectedDef;
+		Object.assign(state, props);
 
 		state.file = CodeStore.files.get(state.repo, state.rev, state.tree);
 

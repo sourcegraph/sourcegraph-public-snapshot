@@ -21,11 +21,8 @@ export default class DefPopup extends Component {
 	}
 
 	reconcileState(state, props) {
-		state.def = props.def;
-		state.examples = props.examples;
+		Object.assign(state, props);
 		state.examplesGeneration = props.examples.generation;
-		state.highlightedDef = props.highlightedDef;
-		state.discussions = props.discussions;
 	}
 
 	_createDiscussion() {

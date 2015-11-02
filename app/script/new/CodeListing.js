@@ -26,10 +26,8 @@ export default class CodeListing extends Component {
 	}
 
 	reconcileState(state, props) {
-		state.lines = props.lines;
+		Object.assign(state, props);
 		state.lineNumbers = Boolean(props.lineNumbers);
-		state.selectedDef = props.selectedDef;
-		state.highlightedDef = props.highlightedDef;
 	}
 
 	_updateVisibleLines() {
