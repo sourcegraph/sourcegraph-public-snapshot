@@ -6,7 +6,7 @@ import * as DefActions from "./DefActions";
 import CodeListing from "./CodeListing";
 
 export default class ExampleView extends Component {
-	updateState(state, props) {
+	reconcileState(state, props) {
 		// reset examples if showing a different definition
 		if (state.defURL !== props.defURL) {
 			state.defURL = props.defURL;

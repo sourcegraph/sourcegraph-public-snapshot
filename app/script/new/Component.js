@@ -7,11 +7,11 @@ export default class Component extends React.Component {
 	}
 
 	componentWillMount() {
-		this._doUpdateState(Object.assign({}, this.state), this.props);
+		this._updateState(Object.assign({}, this.state), this.props);
 	}
 
 	componentWillReceiveProps(nextProps) {
-		this._doUpdateState(Object.assign({}, this.state), nextProps);
+		this._updateState(Object.assign({}, this.state), nextProps);
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
@@ -29,11 +29,11 @@ export default class Component extends React.Component {
 	}
 
 	setState(patch) {
-		this._doUpdateState(Object.assign({}, this.state, patch), this.props);
+		this._updateState(Object.assign({}, this.state, patch), this.props);
 	}
 
-	_doUpdateState(newState, props) {
-		this.updateState(newState, props);
+	_updateState(newState, props) {
+		this.reconcileState(newState, props);
 		if (this.requestData) {
 			let prevState = Object.assign({}, this.state);
 			setTimeout(() => { // call requestData asynchronously, because it creates an action and this function might be called while processing another action
@@ -43,7 +43,7 @@ export default class Component extends React.Component {
 		super.setState(newState);
 	}
 
-	updateState(state, props) {
+	reconcileState(state, props) {
 		// override
 	}
 }

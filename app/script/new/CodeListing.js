@@ -25,7 +25,7 @@ export default class CodeListing extends Component {
 		window.removeEventListener("scroll", this._updateVisibleLines);
 	}
 
-	updateState(state, props) {
+	reconcileState(state, props) {
 		state.lines = props.lines;
 		state.lineNumbers = props.lineNumbers;
 		state.selectedDef = props.selectedDef;

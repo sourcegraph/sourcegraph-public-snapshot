@@ -20,7 +20,7 @@ export default class DefPopup extends Component {
 		};
 	}
 
-	updateState(state, props) {
+	reconcileState(state, props) {
 		state.def = props.def;
 		state.examples = props.examples;
 		state.examplesGeneration = props.examples.generation;

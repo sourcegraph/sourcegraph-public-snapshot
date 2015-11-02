@@ -6,7 +6,7 @@ import MarkdownView from "../components/MarkdownView"; // FIXME
 import MarkdownTextarea from "../components/MarkdownTextarea"; // FIXME
 
 export default class DiscussionView extends Component {
-	updateState(state, props) {
+	reconcileState(state, props) {
 		state.discussion = props.discussion;
 		state.defQualifiedName = props.defQualifiedName;
 	}

@@ -16,7 +16,7 @@ export default class CodeFileContainer extends Container {
 		return [CodeStore, DefStore];
 	}
 
-	updateState(state, props) {
+	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev;
 		state.tree = props.tree;
