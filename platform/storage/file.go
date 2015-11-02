@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
@@ -62,11 +63,11 @@ func (f *file) Write(p []byte) (n int, err error) {
 // Seek implements the io.Seeker interface.
 func (f *file) Seek(offset int64, whence int) (int64, error) {
 	switch whence {
-	case 0:
+	case os.SEEK_SET:
 		f.offset = offset
-	case 1:
+	case os.SEEK_CUR:
 		f.offset += offset
-	case 2:
+	case os.SEEK_END:
 		fi, err := f.fs.Lstat(f.name.Name)
 		if err != nil {
 			return 0, err
