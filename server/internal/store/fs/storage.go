@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	maxReadSize = 32 * 1024 * 1024 // 32MB
+	maxReadSize = 32 * 1024 * 1024 // 32 MB
 	maxWrite    = maxReadSize
 )
 
