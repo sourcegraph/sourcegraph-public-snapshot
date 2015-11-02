@@ -77,8 +77,8 @@ func (fs *fileSystem) Open(name string) (File, error) {
 	}, nil
 }
 
-// Lstat implements the FileSystem interface.
-func (fs *fileSystem) Lstat(path string) (os.FileInfo, error) {
+// Stat implements the FileSystem interface.
+func (fs *fileSystem) Stat(path string) (os.FileInfo, error) {
 	resp, grpcErr := fs.client.Storage.Stat(fs.ctx, fs.storageName(path))
 	if grpcErr != nil {
 		return nil, grpcErr

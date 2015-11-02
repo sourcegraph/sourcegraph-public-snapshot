@@ -34,7 +34,7 @@ type FileSystem interface {
 	Remove(name string) error
 	RemoveAll(name string) error
 	Open(name string) (File, error)
-	Lstat(path string) (os.FileInfo, error)
+	Stat(path string) (os.FileInfo, error)
 	ReadDir(path string) ([]os.FileInfo, error)
 }
 
