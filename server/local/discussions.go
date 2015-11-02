@@ -15,9 +15,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
-// TODO(keegan) temporary override to make discussions more discoverable
-var slackChannel = "#dev-bot-discussions"
-
 var Discussions sourcegraph.DiscussionsServer = &discussions{}
 
 type discussions struct{}
