@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -60,9 +61,6 @@ func (f *file) Write(p []byte) (n int, err error) {
 
 // Seek implements the io.Seeker interface.
 func (f *file) Seek(offset int64, whence int) (int64, error) {
-	if offset < 0 {
-		panic("File.Seek: cannot seek to a negative offset")
-	}
 	switch whence {
 	case 0:
 		f.offset = offset
@@ -76,6 +74,9 @@ func (f *file) Seek(offset int64, whence int) (int64, error) {
 		f.offset = fi.Size() - offset
 	default:
 		panic("File.Seek: invalid whence value")
+	}
+	if f.offset < 0 {
+		return nil, errors.New("seek to negative offset")
 	}
 	return f.offset, nil
 }
