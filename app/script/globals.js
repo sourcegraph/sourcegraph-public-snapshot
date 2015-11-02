@@ -132,7 +132,7 @@ module.exports = {
 		TEXT: null,
 	}),
 
-	Features: window._featureToggles,
+	Features: typeof window !== "undefined" && window._featureToggles,
 
-	CsrfToken: window._csrfToken,
+	CsrfToken: typeof window !== "undefined" && window._csrfToken,
 };
