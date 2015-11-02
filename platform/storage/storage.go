@@ -93,7 +93,7 @@ func (fi fileInfo) Sys() interface{} { return nil }
 
 func (fi fileInfo) Mode() os.FileMode {
 	if fi.i.IsDir {
-		return os.ModeDir
+		return os.ModeDir | os.ModePerm
 	}
 	return os.ModePerm
 }
