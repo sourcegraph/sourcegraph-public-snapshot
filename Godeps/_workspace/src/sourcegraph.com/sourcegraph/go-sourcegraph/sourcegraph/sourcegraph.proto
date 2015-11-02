@@ -592,10 +592,10 @@ service Repos {
 message StorageError {
 	// Code represents the type of error for programatic handling.
 	enum Code {
-		// NONE is the error code used when programatic handling of the error is not
+		// None is the error code used when programatic handling of the error is not
 		// advised. It can be assumed that the operation failed, and that a human
 		// readable message is also provided.
-		NONE = 0;
+		None = 0;
 
 		// EOF is the error returned by Read when no more input is available.
 		// Functions should return EOF only to signal a graceful end of input. If
@@ -604,13 +604,13 @@ message StorageError {
 		// detail.
 		EOF = 1;
 
-		// NOT_EXIST is the error used when attempting to read/write to an object
+		// NotExist is the error used when attempting to read/write to an object
 		// that does not exist.
-		NOT_EXIST = 2;
+		NotExist = 2;
 
-		// PERMISSION is the error used when permission to access the given file is
+		// Permission is the error used when permission to access the given file is
 		// not granted to you.
-		PERMISSION = 3;
+		Permission = 3;
 	}
 
 	// code is the error code. If no error code is specified then programatic
@@ -624,8 +624,8 @@ message StorageError {
 
 // StorageName is a storage object's name.
 message StorageName {
-	// app_name is the name of the application whose data you are trying to
-	// read/write, applications may read and write to eachother's data assuming
+	// AppName is the name of the application whose data you are trying to
+	// read/write, applications may read and write to eachothers data assuming
 	// the admin has not restricted such access.
 	string app_name = 1;
 
@@ -642,9 +642,8 @@ message StorageReadOp {
 	StorageName name = 1 [(gogoproto.nullable) = false];
 
 	// offset is the offset in bytes in which to perform the read operation from
-	// the start or end of the file, depending on offset_end. If no offset is
-	// specified, read operations always occur at the start of the file (they do
-	// not retain state).
+	// the start or end of the file, depending on offset_end. You must retain the
+	// offset state yourself.
 	int64 offset = 2;
 
 	// offset_end causes the offset to act relative to the end of the file, if
