@@ -28,9 +28,6 @@ type ActionContext struct {
 	ObjectTitle   string
 	ObjectType    string
 	ObjectURL     string
-
-	// SlackOpts specifies what to post to Slack. If empty it will be generated
-	SlackOpts slack.PostOpts
 }
 
 // Message is a generic way to notify users about an event happening
@@ -40,16 +37,12 @@ func Action(nctx ActionContext) {
 }
 
 func sendSlackMessage(nctx ActionContext) {
-	if nctx.SlackOpts.Msg == "" {
-		msg, err := generateSlackMessage(nctx)
-		if err != nil {
-			log15.Error("Error generating slack message for action", "ActionContext", nctx)
-			return
-		}
-		nctx.SlackOpts.Msg = msg
-
+	msg, err := generateSlackMessage(nctx)
+	if err != nil {
+		log15.Error("Error generating slack message for action", "ActionContext", nctx)
+		return
 	}
-	slack.PostMessage(nctx.SlackOpts)
+	slack.PostMessage(slack.PostOpts{Msg: msg})
 }
 
 func sendEmailMessage(nctx ActionContext) {
