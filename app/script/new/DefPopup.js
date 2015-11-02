@@ -110,7 +110,7 @@ export default class DefPopup extends Component {
 				{this.state.discussions &&
 					<div className="code-discussions">
 						{this.state.discussions.length === 0 ? (
-							<div className="no-discussions"><a ref="createBtn"><i className="octicon octicon-plus" /> Start a code discussion</a></div>
+							<div className="no-discussions"><a ref="createBtn" onClick={() => { this.setState({newDiscussion: true}); }}><i className="octicon octicon-plus" /> Start a code discussion</a></div>
 						) : (
 							<div className="contents">
 								<DiscussionsList
