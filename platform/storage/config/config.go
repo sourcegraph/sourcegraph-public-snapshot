@@ -44,7 +44,7 @@ func Open(ctx context.Context, appName, configName, repo string) (*Store, error)
 // "myconfig.json") creating it if needed on the given filesystem.
 func OpenFileSystem(configName string, fs storage.FileSystem) (*Store, error) {
 	f, err := fs.Open(configName)
-	if err == os.ErrNotExist {
+	if os.IsNotExist(err) {
 		// Create the config file then.
 		f, err := fs.Create(configName)
 		if err != nil {
