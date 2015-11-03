@@ -22,7 +22,6 @@ type File interface {
 // FileSystem represents the storage system.
 type FileSystem interface {
 	Create(name string) (File, error)
-	Remove(name string) error
 	RemoveAll(name string) error
 	Open(name string) (File, error)
 	Stat(path string) (os.FileInfo, error)
