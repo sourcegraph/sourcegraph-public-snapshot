@@ -502,9 +502,18 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 
 		// Handle auto-migration of data (create the index).
 		if buildIndex {
+			// Exit our read lock and acquire write lock.
+			s.fsLock.RUnlock()
+			s.fsLock.Lock()
+
+			// Update the index.
 			if err := s.updateIndex(ctx, sourcegraph.Repo{URI: op.Repo}, cs.ID, cs.ClosedAt == nil); err != nil {
 				log.Println("changeset data migration failure:", err)
 			}
+
+			// Exit our write lock and reacquire read lock.
+			s.fsLock.Unlock()
+			s.fsLock.RLock()
 		}
 
 		// If we're only interested in a changeset with a specific branch for head
