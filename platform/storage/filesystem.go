@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"src.sourcegraph.com/vfs"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-// fileSystem implements the FileSystem interface on top of the gRPC API.
+// fileSystem implements the vfs.FileSystem interface on top of the gRPC API.
 type fileSystem struct {
 	ctx     context.Context
 	client  *sourcegraph.Client
@@ -31,8 +33,8 @@ func (fs *fileSystem) String() string {
 	return fmt.Sprintf("FileSystem(AppName=%q, Repo=%q)", fs.appName, fs.repo)
 }
 
-// Create implements the FileSystem interface.
-func (fs *fileSystem) Create(name string) (File, error) {
+// Create implements the vfs.FileSystem interface.
+func (fs *fileSystem) Create(name string) (vfs.File, error) {
 	storageName := fs.storageName(name)
 	ioErr, grpcErr := fs.client.Storage.Create(fs.ctx, storageName)
 	if grpcErr != nil {
@@ -47,7 +49,7 @@ func (fs *fileSystem) Create(name string) (File, error) {
 	}, nil
 }
 
-// Remove implements the FileSystem interface.
+// Remove implements the vfs.FileSystem interface.
 func (fs *fileSystem) Remove(name string) error {
 	ioErr, grpcErr := fs.client.Storage.Remove(fs.ctx, fs.storageName(name))
 	if grpcErr != nil {
@@ -56,7 +58,7 @@ func (fs *fileSystem) Remove(name string) error {
 	return storageError(ioErr)
 }
 
-// RemoveAll implements the FileSystem interface.
+// RemoveAll implements the vfs.FileSystem interface.
 func (fs *fileSystem) RemoveAll(name string) error {
 	ioErr, grpcErr := fs.client.Storage.RemoveAll(fs.ctx, fs.storageName(name))
 	if grpcErr != nil {
@@ -65,8 +67,8 @@ func (fs *fileSystem) RemoveAll(name string) error {
 	return storageError(ioErr)
 }
 
-// Open implements the FileSystem interface.
-func (fs *fileSystem) Open(name string) (File, error) {
+// Open implements the vfs.FileSystem interface.
+func (fs *fileSystem) Open(name string) (vfs.File, error) {
 	_, err := fs.Lstat(name)
 	if err != nil {
 		return nil, err
@@ -77,7 +79,7 @@ func (fs *fileSystem) Open(name string) (File, error) {
 	}, nil
 }
 
-// Stat implements the FileSystem interface.
+// Stat implements the vfs.FileSystem interface.
 func (fs *fileSystem) Stat(path string) (os.FileInfo, error) {
 	resp, grpcErr := fs.client.Storage.Stat(fs.ctx, fs.storageName(path))
 	if grpcErr != nil {
@@ -89,7 +91,7 @@ func (fs *fileSystem) Stat(path string) (os.FileInfo, error) {
 	return fileInfo{resp.Info}, nil
 }
 
-// ReadDir implements the FileSystem interface.
+// ReadDir implements the vfs.FileSystem interface.
 func (fs *fileSystem) ReadDir(path string) ([]os.FileInfo, error) {
 	resp, grpcErr := fs.client.Storage.ReadDir(fs.ctx, fs.storageName(path))
 	if grpcErr != nil {

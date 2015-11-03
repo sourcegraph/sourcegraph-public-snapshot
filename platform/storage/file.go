@@ -8,19 +8,19 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-// file implements the File interface on top of the gRPC API.
+// file implements the vfs.File interface on top of the gRPC API.
 type file struct {
 	fs     *fileSystem
 	name   *sourcegraph.StorageName
 	offset int64
 }
 
-// Name implements the File interface.
+// Name implements the vfs.File interface.
 func (f *file) Name() string {
 	return f.name.Name
 }
 
-// Truncate implements the File interface.
+// Truncate implements the vfs.File interface.
 func (f *file) Truncate(size int64) error {
 	// TODO(slimsag): implement Truncate
 	panic("Truncate is not implement via gRPC Storage API")

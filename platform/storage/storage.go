@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"time"
@@ -10,33 +9,8 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/vfs"
 )
-
-// File represents a single file in the storage system.
-type File interface {
-	fmt.Stringer
-	io.Reader
-	io.Writer
-	io.Seeker
-	io.Closer
-
-	// Name returns the name of the file as presented to Open.
-	Name() string
-
-	// Truncate changes the size of the file. It does not change the I/O offset.
-	Truncate(size int64) error
-}
-
-// FileSystem represents the storage system.
-type FileSystem interface {
-	fmt.Stringer
-	Create(name string) (File, error)
-	Remove(name string) error
-	RemoveAll(name string) error
-	Open(name string) (File, error)
-	Stat(path string) (os.FileInfo, error)
-	ReadDir(path string) ([]os.FileInfo, error)
-}
 
 // Namespace returns a storage system for the given namespace. The returned
 // filesystem cannot read/write outside of the namespace provided here.
@@ -48,7 +22,7 @@ type FileSystem interface {
 // If the repo is a valid repo URI, storage is considered "local" to that
 // repository. Otherwise, storage is considered "global" (i.e. shared across
 // all repositories).
-func Namespace(ctx context.Context, appName string, repo string) FileSystem {
+func Namespace(ctx context.Context, appName string, repo string) vfs.FileSystem {
 	return &fileSystem{
 		ctx:     ctx,
 		client:  sourcegraph.NewClientFromContext(ctx),
