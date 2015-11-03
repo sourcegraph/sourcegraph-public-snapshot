@@ -65,10 +65,15 @@ func Person(ctx context.Context, cl *sourcegraph.Client, u *sourcegraph.UserSpec
 // PersonFromContext is a wrapper around Person using a UserSpec of the
 // current Authed Actor.
 func PersonFromContext(ctx context.Context) *sourcegraph.Person {
+	return Person(ctx, sourcegraph.NewClientFromContext(ctx), UserFromContext(ctx))
+}
+
+// UserFromContext will create a UserSpec based on the current Authed Actor
+func UserFromContext(ctx context.Context) *sourcegraph.UserSpec {
 	actor := authpkg.ActorFromContext(ctx)
-	return Person(ctx, sourcegraph.NewClientFromContext(ctx), &sourcegraph.UserSpec{
+	return &sourcegraph.UserSpec{
 		UID:    int32(actor.UID),
 		Domain: actor.Domain,
 		Login:  actor.Login,
-	})
+	}
 }

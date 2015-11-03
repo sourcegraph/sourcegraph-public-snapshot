@@ -73,12 +73,16 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 // notifyCreation creates a slack notification that a changeset was created. It
 // also notifies users mentioned in the description of the changeset.
 func notifyCreation(ctx context.Context, user *sourcegraph.User, uri string, cs *sourcegraph.Changeset) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+
 	// Notification
-	notif.Action(notif.ActionContext{
-		Person:        user.Person(),
+	actor := user.Spec()
+	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+		Actor:         &actor,
 		ActionType:    "created",
 		ObjectURL:     urlToChangeset(ctx, cs.ID),
 		ObjectRepo:    uri,
+		ObjectType:    "changeset",
 		ObjectID:      cs.ID,
 		ObjectTitle:   cs.Title,
 		ActionContent: cs.Description,
@@ -109,15 +113,15 @@ func notifyCreation(ctx context.Context, user *sourcegraph.User, uri string, cs 
 // notifyReview creates a slack notification that a changeset was reviewed. It
 // also notifies any users potentially mentioned in the review.
 func notifyReview(ctx context.Context, user *sourcegraph.User, uri string, cs *sourcegraph.Changeset, op *sourcegraph.ChangesetCreateReviewOp) {
+	cl := sourcegraph.NewClientFromContext(ctx)
 	msg := bytes.NewBufferString(op.Review.Body)
 	for _, c := range op.Review.Comments {
 		msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
 	}
-	notif.Action(notif.ActionContext{
-		Person: user.Person(),
-		Recipients: []*sourcegraph.Person{
-			&sourcegraph.Person{PersonSpec: sourcegraph.PersonSpec{Login: cs.Author.Login}},
-		},
+	actor := user.Spec()
+	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+		Actor:         &actor,
+		Recipients:    []*sourcegraph.UserSpec{&cs.Author},
 		ActionType:    "reviewed",
 		ObjectURL:     urlToChangeset(ctx, cs.ID),
 		ObjectRepo:    uri,

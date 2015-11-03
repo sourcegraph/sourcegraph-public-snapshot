@@ -34,10 +34,11 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 
 	{
 		// Send Slack notification.
+		cl := sourcegraph.NewClientFromContext(ctx)
 		actor := notif.PersonFromContext(ctx)
 		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.DefKey.Repo), in.ID))
-		notif.Action(notif.ActionContext{
-			Person:      actor,
+		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+			Actor:       notif.UserFromContext(ctx),
 			ActionType:  "created",
 			ObjectURL:   permalink,
 			ObjectRepo:  in.DefKey.Repo,
@@ -106,17 +107,18 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 	{
 		// Send Slack notification.
 		actor := notif.PersonFromContext(ctx)
+		cl := sourcegraph.NewClientFromContext(ctx)
 		discussion, err := s.Get(ctx, &sourcegraph.DiscussionSpec{Repo: sourcegraph.RepoSpec{URI: in.Comment.DefKey.Repo}, ID: in.DiscussionID})
 		if err != nil {
 			return nil, err
 		}
-		var recipients []*sourcegraph.Person
+		var recipients []*sourcegraph.UserSpec
 		if discussion.Author.UID != actor.UID {
-			recipients = append(recipients, notif.Person(ctx, sourcegraph.NewClientFromContext(ctx), &discussion.Author))
+			recipients = append(recipients, &discussion.Author)
 		}
 		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.Comment.DefKey.Repo), discussion.ID))
-		notif.Action(notif.ActionContext{
-			Person:      actor,
+		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+			Actor:       notif.UserFromContext(ctx),
 			Recipients:  recipients,
 			ActionType:  "commented on",
 			ObjectURL:   permalink,
