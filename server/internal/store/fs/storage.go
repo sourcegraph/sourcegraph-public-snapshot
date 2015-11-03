@@ -130,11 +130,9 @@ func (s *Storage) Read(ctx context.Context, opt *sourcegraph.StorageReadOp) (*so
 
 	// Read from the file.
 	bytesRead, err := f.Read(buf)
-	if err != nil {
-		return &sourcegraph.StorageRead{Error: storageError(err)}, nil
-	}
 	return &sourcegraph.StorageRead{
-		Data: buf[:bytesRead],
+		Error: storageError(err),
+		Data:  buf[:bytesRead],
 	}, nil
 }
 
@@ -164,10 +162,10 @@ func (s *Storage) Write(ctx context.Context, opt *sourcegraph.StorageWriteOp) (*
 		opt.Data = opt.Data[:maxWrite]
 	}
 	bytesWrote, err := f.Write(opt.Data)
-	if err != nil {
-		return &sourcegraph.StorageWrite{Error: storageError(err)}, nil
-	}
-	return &sourcegraph.StorageWrite{Wrote: int64(bytesWrote)}, nil
+	return &sourcegraph.StorageWrite{
+		Wrote: int64(bytesWrote),
+		Error: storageError(err),
+	}, nil
 }
 
 // Stat stats an existing file.
