@@ -61,7 +61,7 @@ serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
 	@echo
 	@# specify any Godeps-vendored pkg in -p to work around the issue where stale vendored pkgs are not rebuilt (see https://github.com/tools/godep/issues/45#issuecomment-73411554)
-	DEBUG=t SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) $(GODEP) rego -tags="$(GOTAGS)" -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload $(SERVEFLAGS) # -n 0
+	DEBUG=t SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) $(GODEP) rego -race -tags="$(GOTAGS)" -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload $(SERVEFLAGS) # -n 0
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
@@ -79,7 +79,7 @@ serve-test-ui: serve-dep
 	@echo ==========================================================
 	@echo
 	@# specify any Godeps-vendored pkg in -p to work around the issue where stale vendored pkgs are not rebuilt (see https://github.com/tools/godep/issues/45#issuecomment-73411554)
-	DEBUG=t SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) $(GODEP) rego -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src serve --reload $(SERVEFLAGS) --test-ui -n 0
+	DEBUG=t SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) $(GODEP) rego -race -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src serve --reload $(SERVEFLAGS) --test-ui -n 0
 
 PROMETHEUS_STORAGE ?= $(shell eval `src config` && echo $${SGPATH}/prometheus)
 serve-metrics-dev:
