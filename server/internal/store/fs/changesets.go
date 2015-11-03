@@ -3,6 +3,8 @@ package fs
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -27,6 +29,9 @@ const (
 	changesetMetadataFile = "changeset.json"
 	changesetReviewsFile  = "reviews.json"
 	changesetEventsFile   = "events.json"
+
+	changesetIndexOpenDir   = "index/open"
+	changesetIndexClosedDir = "index/closed"
 )
 
 type Changesets struct {
@@ -57,6 +62,10 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 			return err
 		}
 	}
+
+	// Update the index with the changeset's current state.
+	s.updateIndex(ctx, sourcegraph.Repo{URI: repoPath}, cs.ID, true)
+
 	ts := pbtypes.NewTimestamp(time.Now())
 	cs.CreatedAt = &ts
 	id := strconv.FormatInt(cs.ID, 10)
@@ -288,6 +297,9 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		after.Merged = true
 	}
 
+	// Update the index with the changeset's current state.
+	s.updateIndex(ctx, sourcegraph.Repo{URI: op.Repo.URI}, op.ID, after.ClosedAt == nil)
+
 	if opt.Head != "" {
 		// We need to track the tip of this branch so that we can access its
 		// data even after a potential deletion or merge.
@@ -396,6 +408,25 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		return nil, err
 	}
 
+	var buildIndex bool // auto-migration
+
+	var open, closed map[int64]struct{}
+	if op.Open {
+		open, err = s.indexList(ctx, sourcegraph.Repo{URI: op.Repo}, changesetIndexOpenDir)
+		if open == nil {
+			buildIndex = true
+		}
+	}
+	if op.Closed {
+		closed, err = s.indexList(ctx, sourcegraph.Repo{URI: op.Repo}, changesetIndexClosedDir)
+		if closed == nil {
+			buildIndex = true
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	var paths []string
 	for _, fi := range fis {
 		// skip files
@@ -404,8 +435,23 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		}
 
 		// skip non-numeric folders
-		if _, err := strconv.Atoi(fi.Name()); err != nil {
+		id, err := strconv.ParseInt(fi.Name(), 10, 64)
+		if err != nil {
 			continue
+		}
+
+		// If requesting only open changests, check the index.
+		if op.Open && !buildIndex {
+			if _, ok := open[id]; !ok {
+				continue
+			}
+		}
+
+		// If requesting only closed changesets, check the index.
+		if op.Closed && !buildIndex {
+			if _, ok := closed[id]; !ok {
+				continue
+			}
 		}
 		paths = append(paths, filepath.Join(fi.Name(), changesetMetadataFile))
 	}
@@ -424,6 +470,14 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 			return nil, err
 		}
 
+		// Handle auto-migration of data (create the index).
+		if buildIndex {
+			fmt.Println("buildIndex open", cs.ID, cs.ClosedAt == nil)
+			if err := s.updateIndex(ctx, sourcegraph.Repo{URI: op.Repo}, cs.ID, cs.ClosedAt == nil); err != nil {
+				log.Println("changeset data migration failure:", err)
+			}
+		}
+
 		// If we're only interested in open changesets and this one is closed (or
 		// vice-versa), then we simply continue.
 		if op.Open && cs.ClosedAt != nil || op.Closed && cs.ClosedAt == nil {
@@ -436,6 +490,12 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 			continue
 		}
 		list.Changesets = append(list.Changesets, &cs)
+
+		// If we're not migrating data, abort early once we have gotten enough
+		// changesets.
+		if !buildIndex && len(list.Changesets) >= op.Limit() {
+			break
+		}
 	}
 
 	// Sort in reverse by ID (i.e. largest ID first, because changesets with
@@ -474,6 +534,141 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 		return nil, err
 	}
 	return &list, nil
+}
+
+// updateIndex updates the index with the given changeset state (whether or not
+// it is opened or closed).
+//
+// Callers must guard by holding the s.fsLock lock.
+func (s *Changesets) updateIndex(ctx context.Context, repo sourcegraph.Repo, cid int64, open bool) error {
+	var adds, removes []string
+	if open {
+		// Changeset opened.
+		adds = append(adds, changesetIndexOpenDir)
+		removes = append(removes, changesetIndexClosedDir)
+	} else {
+		// Changeset closed.
+		adds = append(adds, changesetIndexClosedDir)
+		removes = append(removes, changesetIndexOpenDir)
+	}
+
+	// Perform additions.
+	for _, indexDir := range adds {
+		if err := s.indexAdd(ctx, repo, cid, indexDir); err != nil {
+			return err
+		}
+	}
+
+	// Perform removals.
+	for _, indexDir := range removes {
+		if err := s.indexRemove(ctx, repo, cid, indexDir); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// indexAdd adds the given changeset ID to the index directory if it does not
+// already exist.
+//
+// Callers must guard by holding the s.fsLock lock.
+func (s *Changesets) indexAdd(ctx context.Context, repo sourcegraph.Repo, cid int64, indexDir string) error {
+	// If the file exists nothing needs to be done.
+	if _, err := s.indexStatName(ctx, repo, cid, indexDir); err == nil {
+		return nil
+	}
+
+	// Commit a addition to the repo.
+	rs, err := NewRepoStage(absolutePathForRepo(ctx, repo.URI), reviewRef)
+	if err != nil {
+		return err
+	}
+	defer rs.Free()
+	sid := strconv.FormatInt(cid, 10)
+	if err := rs.Add(filepath.Join(indexDir, sid), []byte{}); err != nil {
+		return err
+	}
+	RefAuthor.Date, RefCommitter.Date = pbtypes.NewTimestamp(time.Now()), pbtypes.NewTimestamp(time.Now())
+	return rs.Commit(RefAuthor, RefCommitter, fmt.Sprintf("add %v/%v", indexDir, sid))
+}
+
+// indexRemove removes the given changeset ID from the index directory if it
+// exists.
+//
+// Callers must guard by holding the s.fsLock lock.
+func (s *Changesets) indexRemove(ctx context.Context, repo sourcegraph.Repo, cid int64, indexDir string) error {
+	// If the file does not exist nothing needs to be done.
+	if _, err := s.indexStatName(ctx, repo, cid, indexDir); os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	// Commit a removal to the repo.
+	rs, err := NewRepoStage(absolutePathForRepo(ctx, repo.URI), reviewRef)
+	if err != nil {
+		return err
+	}
+	defer rs.Free()
+	sid := strconv.FormatInt(cid, 10)
+	if err := rs.RemoveAll(filepath.Join(indexDir, sid)); err != nil {
+		return err
+	}
+	RefAuthor.Date, RefCommitter.Date = pbtypes.NewTimestamp(time.Now()), pbtypes.NewTimestamp(time.Now())
+	return rs.Commit(RefAuthor, RefCommitter, fmt.Sprintf("remove %v/%v", indexDir, sid))
+}
+
+// indexList returns a list of changeset IDs found in the given index directory.
+//
+// Callers must guard by holding the s.fsLock lock.
+func (s *Changesets) indexList(ctx context.Context, repo sourcegraph.Repo, indexDir string) (map[int64]struct{}, error) {
+	vcsRepo, err := vcs.Open("git", absolutePathForRepo(ctx, repo.URI))
+	if err != nil {
+		return nil, err
+	}
+	reviewRef, err := s.getReviewRefTip(vcsRepo)
+	if err != nil {
+		return nil, err
+	}
+	fs, err := vcsRepo.FileSystem(reviewRef)
+	if err != nil {
+		return nil, err
+	}
+	infos, err := fs.ReadDir(indexDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	ids := make(map[int64]struct{})
+	for _, fi := range infos {
+		id, err := strconv.ParseInt(fi.Name(), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		ids[id] = struct{}{}
+	}
+	return ids, nil
+}
+
+// indexStat stats the changeset ID in the given index directory.
+//
+// Callers must guard by holding the s.fsLock lock.
+func (s *Changesets) indexStatName(ctx context.Context, repo sourcegraph.Repo, cid int64, indexDir string) (os.FileInfo, error) {
+	vcsRepo, err := vcs.Open("git", absolutePathForRepo(ctx, repo.URI))
+	if err != nil {
+		return nil, err
+	}
+	reviewRef, err := s.getReviewRefTip(vcsRepo)
+	if err != nil {
+		return nil, err
+	}
+	fs, err := vcsRepo.FileSystem(reviewRef)
+	if err != nil {
+		return nil, err
+	}
+	return fs.Stat(filepath.Join(indexDir, strconv.FormatInt(cid, 10)))
 }
 
 type byChangesetID []*sourcegraph.Changeset
