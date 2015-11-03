@@ -14,8 +14,6 @@ export SG_SEND_NOTIFS=true
 
 export ROBOTS_TXT_ALLOW=true
 
-export SG_APICLIENT_REMOTE_CACHE=true
-
 export APPDASH_URL=https://appdash.sgdev.org
 export APPDASH_PORT=7701
 
