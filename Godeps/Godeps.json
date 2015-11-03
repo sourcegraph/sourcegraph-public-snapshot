@@ -583,6 +583,10 @@
 			"Rev": "7ad95dd0798a40da1ccdff6dff35fd177b5edf40"
 		},
 		{
+			"ImportPath": "src.sourcegraph.com/vfs",
+			"Rev": "0d24e73dc70dab73f49a4413f4de057e94c921c6"
+		},
+		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash",
 			"Rev": "13a1ac0619266dbc53e56fa60ed8fe0795ee6390"
 		},
