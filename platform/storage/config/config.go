@@ -52,8 +52,8 @@ func OpenFileSystem(configName string, fs vfs.FileSystem) (*Store, error) {
 			return nil, err
 		}
 		return &Store{
-			fs:   fs,
 			f:    f,
+			fs:   fs,
 			Data: make(map[string]interface{}),
 		}, nil
 	} else if err != nil {
