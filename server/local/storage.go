@@ -18,8 +18,9 @@ func (s *storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*so
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Create"); err != nil {
 		return nil, err
 	}
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).Create(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).Create(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
 
 // Remove deletes the named file or directory.
@@ -27,8 +28,9 @@ func (s *storage) Remove(ctx context.Context, opt *sourcegraph.StorageName) (*so
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Remove"); err != nil {
 		return nil, err
 	}
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).Remove(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).Remove(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
 
 // RemoveAll deletes the named file or directory recursively.
@@ -36,14 +38,16 @@ func (s *storage) RemoveAll(ctx context.Context, opt *sourcegraph.StorageName) (
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.RemoveAll"); err != nil {
 		return nil, err
 	}
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).RemoveAll(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).RemoveAll(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
 
 // Read reads from an existing file.
 func (s *storage) Read(ctx context.Context, opt *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).Read(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).Read(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
 
 // Write writes to an existing file.
@@ -51,20 +55,23 @@ func (s *storage) Write(ctx context.Context, opt *sourcegraph.StorageWriteOp) (*
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Write"); err != nil {
 		return nil, err
 	}
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).Write(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).Write(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
 
 // Stat stats an existing file.
 func (s *storage) Stat(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).Stat(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).Stat(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
 
 // ReadDir reads a directories contents.
 func (s *storage) ReadDir(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).ReadDir(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).ReadDir(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
 
 // Close closes the named file or directory. You should always call Close once
@@ -73,6 +80,7 @@ func (s *storage) Close(ctx context.Context, opt *sourcegraph.StorageName) (*sou
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Close"); err != nil {
 		return nil, err
 	}
-	defer noCache(ctx)
-	return store.StorageFromContext(ctx).Close(ctx, opt)
+	v1, v2 := store.StorageFromContext(ctx).Close(ctx, opt)
+	noCache(ctx)
+	return v1, v2
 }
