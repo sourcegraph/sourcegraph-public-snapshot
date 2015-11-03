@@ -1550,20 +1550,6 @@ func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName)
 	return rv, s.errFunc(err)
 }
 
-func (s wrappedStorage) Remove(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	var err error
-	ctx, err = s.ctxFunc(ctx)
-	if err != nil {
-		return nil, s.errFunc(err)
-	}
-	svc := svc.StorageOrNil(ctx)
-	if svc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
-	}
-	rv, err := svc.Remove(ctx, v1)
-	return rv, s.errFunc(err)
-}
-
 func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)

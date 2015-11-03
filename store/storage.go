@@ -9,9 +9,6 @@ type Storage interface {
 	// Create creates a new file with the given name.
 	Create(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 
-	// Remove deletes the named file or directory.
-	Remove(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
-
 	// RemoveAll deletes the named file or directory recursively.
 	RemoveAll(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 

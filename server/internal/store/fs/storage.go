@@ -59,26 +59,6 @@ func (s *Storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*so
 	return &sourcegraph.StorageError{}, nil
 }
 
-// Remove deletes the named file or directory.
-func (s *Storage) Remove(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	// Parse the path and grab the lock.
-	path, err := storageNamePath(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-	s.Lock()
-	defer s.Unlock()
-
-	// Ensure the file is not already open.
-	s.ensureNotOpen(path)
-
-	// Remove the file.
-	if err := os.Remove(path); err != nil {
-		return storageError(err), nil
-	}
-	return &sourcegraph.StorageError{}, nil
-}
-
 // RemoveAll deletes the named file or directory recursively.
 func (s *Storage) RemoveAll(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	// Parse the path and grab the lock.

@@ -466,10 +466,6 @@ func (s remoteStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) 
 	return sourcegraph.NewClientFromContext(ctx).Storage.Create(ctx, v1)
 }
 
-func (s remoteStorage) Remove(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.Remove(ctx, v1)
-}
-
 func (s remoteStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	return sourcegraph.NewClientFromContext(ctx).Storage.RemoveAll(ctx, v1)
 }

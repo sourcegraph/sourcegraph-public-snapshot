@@ -10,7 +10,6 @@ import (
 
 type Storage struct {
 	Create_    func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
-	Remove_    func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 	RemoveAll_ func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 	Read_      func(ctx context.Context, opt *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
 	Write_     func(ctx context.Context, opt *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
@@ -21,10 +20,6 @@ type Storage struct {
 
 func (s *Storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	return s.Create_(ctx, opt)
-}
-
-func (s *Storage) Remove(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return s.Remove_(ctx, opt)
 }
 
 func (s *Storage) RemoveAll(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {

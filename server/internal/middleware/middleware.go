@@ -2499,25 +2499,6 @@ func (s wrappedStorage) Create(ctx context.Context, param *sourcegraph.StorageNa
 
 }
 
-func (s wrappedStorage) Remove(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Remove", param)
-	defer func() {
-		trace.After(ctx, "Storage", "Remove", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Storage.Remove")
-	if err != nil {
-		return
-	}
-
-	var target sourcegraph.StorageServer = s.u
-
-	res, err = target.Remove(ctx, param)
-	return
-
-}
-
 func (s wrappedStorage) RemoveAll(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Storage", "RemoveAll", param)

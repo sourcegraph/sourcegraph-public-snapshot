@@ -49,15 +49,6 @@ func (fs *fileSystem) Create(name string) (vfs.File, error) {
 	}, nil
 }
 
-// Remove implements the vfs.FileSystem interface.
-func (fs *fileSystem) Remove(name string) error {
-	ioErr, grpcErr := fs.client.Storage.Remove(fs.ctx, fs.storageName(name))
-	if grpcErr != nil {
-		return grpcErr
-	}
-	return storageError(ioErr)
-}
-
 // RemoveAll implements the vfs.FileSystem interface.
 func (fs *fileSystem) RemoveAll(name string) error {
 	ioErr, grpcErr := fs.client.Storage.RemoveAll(fs.ctx, fs.storageName(name))

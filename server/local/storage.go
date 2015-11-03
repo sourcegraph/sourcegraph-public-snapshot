@@ -23,16 +23,6 @@ func (s *storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*so
 	return v1, v2
 }
 
-// Remove deletes the named file or directory.
-func (s *storage) Remove(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Remove"); err != nil {
-		return nil, err
-	}
-	v1, v2 := store.StorageFromContext(ctx).Remove(ctx, opt)
-	noCache(ctx)
-	return v1, v2
-}
-
 // RemoveAll deletes the named file or directory recursively.
 func (s *storage) RemoveAll(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.RemoveAll"); err != nil {
