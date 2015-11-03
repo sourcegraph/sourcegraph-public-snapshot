@@ -55,22 +55,14 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
 	notifyCreation(ctx, user, uri, cs)
-	{
-		events.Publish(events.Event{
-			EventID: notif.ChangesetCreateEvent,
-			Payload: notif.Payload{
-				Type:        notif.ChangesetCreateEvent,
-				UserSpec:    user.Spec(),
-				ActionType:  "created",
-				ObjectID:    cs.ID,
-				ObjectRepo:  uri,
-				ObjectTitle: cs.Title,
-				ObjectType:  "changeset",
-				ObjectURL:   urlToChangeset(ctx, cs.ID),
-				Object:      cs,
-			},
-		})
-	}
+	events.Publish(notif.ChangesetCreateEvent, notif.ChangesetPayload{
+		UserSpec:  user.Spec(),
+		ID:        cs.ID,
+		Repo:      uri,
+		Title:     cs.Title,
+		URL:       urlToChangeset(ctx, cs.ID),
+		Changeset: cs,
+	})
 	return nil
 }
 
@@ -123,22 +115,14 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
 
-	{
-		events.Publish(events.Event{
-			EventID: notif.ChangesetUpdateEvent,
-			Payload: notif.Payload{
-				Type:        notif.ChangesetUpdateEvent,
-				UserSpec:    user.Spec(),
-				ActionType:  "updated",
-				ObjectID:    op.ID,
-				ObjectRepo:  uri,
-				ObjectTitle: op.Title,
-				ObjectType:  "changeset",
-				ObjectURL:   urlToChangeset(ctx, op.ID),
-				Object:      op,
-			},
-		})
-	}
+	events.Publish(notif.ChangesetUpdateEvent, notif.ChangesetPayload{
+		UserSpec: user.Spec(),
+		ID:       op.ID,
+		Repo:     uri,
+		Title:    op.Title,
+		URL:      urlToChangeset(ctx, op.ID),
+		Update:   &op,
+	})
 	return writeJSON(w, result)
 }
 
@@ -186,22 +170,14 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	notifyReview(ctx, user, uri, cs, op)
-	{
-		events.Publish(events.Event{
-			EventID: notif.ChangesetReviewEvent,
-			Payload: notif.Payload{
-				Type:        notif.ChangesetReviewEvent,
-				UserSpec:    user.Spec(),
-				ActionType:  "reviewed",
-				ObjectID:    cs.ID,
-				ObjectRepo:  uri,
-				ObjectTitle: cs.Title,
-				ObjectType:  "changeset",
-				ObjectURL:   urlToChangeset(ctx, cs.ID),
-				Object:      op,
-			},
-		})
-	}
+	events.Publish(notif.ChangesetReviewEvent, notif.ChangesetPayload{
+		UserSpec: user.Spec(),
+		ID:       cs.ID,
+		Repo:     uri,
+		Title:    cs.Title,
+		URL:      urlToChangeset(ctx, cs.ID),
+		Review:   review,
+	})
 	return nil
 }
 

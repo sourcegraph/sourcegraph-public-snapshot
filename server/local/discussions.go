@@ -66,22 +66,14 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 		})
 	}
 
-	{
-		events.Publish(events.Event{
-			EventID: notif.DiscussionCreateEvent,
-			Payload: notif.Payload{
-				Type:        notif.DiscussionCreateEvent,
-				UserSpec:    authpkg.UserSpecFromContext(ctx),
-				ActionType:  "created",
-				ObjectID:    in.ID,
-				ObjectRepo:  in.DefKey.Repo,
-				ObjectTitle: in.Title,
-				ObjectType:  "discussion",
-				ObjectURL:   appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
-				Object:      in,
-			},
-		})
-	}
+	events.Publish(notif.DiscussionCreateEvent, notif.DiscussionPayload{
+		UserSpec:   authpkg.UserSpecFromContext(ctx),
+		ID:         in.ID,
+		Repo:       in.DefKey.Repo,
+		Title:      in.Title,
+		URL:        appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
+		Discussion: in,
+	})
 
 	return in, nil
 }
@@ -163,21 +155,13 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		})
 	}
 
-	{
-		events.Publish(events.Event{
-			EventID: notif.DiscussionCommentEvent,
-			Payload: notif.Payload{
-				Type:       notif.DiscussionCommentEvent,
-				UserSpec:   authpkg.UserSpecFromContext(ctx),
-				ActionType: "commented on",
-				ObjectID:   in.DiscussionID,
-				ObjectRepo: in.Comment.DefKey.Repo,
-				ObjectType: "discussion",
-				ObjectURL:  appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
-				Object:     in.Comment,
-			},
-		})
-	}
+	events.Publish(notif.DiscussionCommentEvent, notif.DiscussionPayload{
+		UserSpec: authpkg.UserSpecFromContext(ctx),
+		ID:       in.DiscussionID,
+		Repo:     in.Comment.DefKey.Repo,
+		URL:      appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
+		Comment:  in.Comment,
+	})
 
 	return in.Comment, nil
 }

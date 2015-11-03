@@ -10,18 +10,26 @@ const ChangesetUpdateEvent events.EventID = "changeset.update"
 const ChangesetReviewEvent events.EventID = "changeset.review"
 const ChangesetCloseEvent events.EventID = "changeset.close"
 
+type ChangesetPayload struct {
+	UserSpec  sourcegraph.UserSpec
+	ID        int64
+	Repo      string
+	Title     string
+	URL       string
+	Changeset *sourcegraph.Changeset
+	Review    *sourcegraph.ChangesetReview
+	Update    *sourcegraph.ChangesetUpdateOp
+}
+
 const DiscussionCreateEvent events.EventID = "discussion.create"
 const DiscussionCommentEvent events.EventID = "discussion.comment"
 
-type Payload struct {
-	Type          events.EventID
-	UserSpec      sourcegraph.UserSpec
-	ActionContent string
-	ActionType    string
-	ObjectID      int64
-	ObjectRepo    string
-	ObjectTitle   string
-	ObjectType    string
-	ObjectURL     string
-	Object        interface{}
+type DiscussionPayload struct {
+	UserSpec   sourcegraph.UserSpec
+	ID         int64
+	Repo       string
+	Title      string
+	URL        string
+	Discussion *sourcegraph.Discussion
+	Comment    *sourcegraph.DiscussionComment
 }

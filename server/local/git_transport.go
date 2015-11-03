@@ -7,8 +7,8 @@ import (
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/events/githooks"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
-	"src.sourcegraph.com/sourcegraph/notif/githooks"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -76,23 +76,11 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 	for _, e := range gitEvents {
 		payload.Event = e
 		if e.Last == EmptyCommitID {
-			payload.Type = githooks.GitCreateEvent
-			events.Publish(events.Event{
-				EventID: githooks.GitCreateEvent,
-				Payload: payload,
-			})
+			events.Publish(githooks.GitCreateEvent, payload)
 		} else if e.Commit == EmptyCommitID {
-			payload.Type = githooks.GitDeleteEvent
-			events.Publish(events.Event{
-				EventID: githooks.GitDeleteEvent,
-				Payload: payload,
-			})
+			events.Publish(githooks.GitDeleteEvent, payload)
 		} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
-			payload.Type = githooks.GitPushEvent
-			events.Publish(events.Event{
-				EventID: githooks.GitPushEvent,
-				Payload: payload,
-			})
+			events.Publish(githooks.GitPushEvent, payload)
 		}
 	}
 	return &gitpb.Packet{Data: data}, nil

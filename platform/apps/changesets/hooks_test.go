@@ -7,20 +7,22 @@ import (
 
 	"github.com/AaronO/go-git-http"
 
-	"src.sourcegraph.com/sourcegraph/notif/githooks"
+	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/events/githooks"
 )
 
 // TestChangesetHook_couldAffectChangesets tests if a list of events is correctly
 // filtered by couldAffectChangesets.
 func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 	for _, tc := range []struct {
+		id  events.EventID
 		in  githooks.Payload
 		out bool
 	}{
 		{
 			// contains an error
+			githooks.GitPushEvent,
 			githooks.Payload{
-				Type: githooks.GitPushEvent,
 				Event: githttp.Event{
 					Error:  errors.New("some error"),
 					Branch: "branch",
@@ -31,8 +33,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, false,
 		}, {
 			// is a new branch
+			githooks.GitCreateEvent,
 			githooks.Payload{
-				Type: githooks.GitCreateEvent,
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",
@@ -43,8 +45,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, false,
 		}, {
 			// invalid commit value
+			githooks.GitPushEvent,
 			githooks.Payload{
-				Type: githooks.GitPushEvent,
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",
@@ -55,8 +57,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, false,
 		}, {
 			// push commit
+			githooks.GitPushEvent,
 			githooks.Payload{
-				Type: githooks.GitPushEvent,
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",
@@ -67,8 +69,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, true,
 		}, {
 			// push branch deletion
+			githooks.GitDeleteEvent,
 			githooks.Payload{
-				Type: githooks.GitDeleteEvent,
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",
@@ -79,7 +81,7 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, true,
 		},
 	} {
-		if out := couldAffectChangesets(tc.in); out != tc.out {
+		if out := couldAffectChangesets(tc.id, tc.in); out != tc.out {
 			t.Errorf("Expected %v for %v, got %v", tc.out, tc.in, out)
 		}
 	}

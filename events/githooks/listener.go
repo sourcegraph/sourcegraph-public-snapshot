@@ -21,7 +21,6 @@ const GitCreateEvent events.EventID = "git.create"
 const GitDeleteEvent events.EventID = "git.delete"
 
 type Payload struct {
-	Type            events.EventID
 	CtxActor        authpkg.Actor
 	Repo            sourcegraph.RepoSpec
 	ContentEncoding string
@@ -39,11 +38,11 @@ func (g *gitHookListener) Scopes() []string {
 }
 
 func (g *gitHookListener) Start(ctx context.Context) {
-	slackCallback := func(p Payload) {
-		slackContributionsHook(ctx, p)
+	slackCallback := func(id events.EventID, p Payload) {
+		slackContributionsHook(ctx, id, p)
 	}
-	buildCallback := func(p Payload) {
-		buildHook(ctx, p)
+	buildCallback := func(id events.EventID, p Payload) {
+		buildHook(ctx, id, p)
 	}
 
 	events.Subscribe(GitPushEvent, slackCallback)
@@ -53,7 +52,7 @@ func (g *gitHookListener) Start(ctx context.Context) {
 	events.Subscribe(GitPushEvent, buildCallback)
 }
 
-func slackContributionsHook(ctx context.Context, payload Payload) {
+func slackContributionsHook(ctx context.Context, id events.EventID, payload Payload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 	userStr, err := getUserDisplayName(cl, ctx, payload.CtxActor)
 	if err != nil {
@@ -71,7 +70,7 @@ func slackContributionsHook(ctx context.Context, payload Payload) {
 
 	absBranchURL := conf.AppURL(ctx).ResolveReference(branchURL).String()
 
-	if payload.Type == GitCreateEvent {
+	if id == GitCreateEvent {
 		msg := fmt.Sprintf("*%s* created the branch <%s|*%s*>",
 			userStr,
 			absBranchURL,
@@ -81,7 +80,7 @@ func slackContributionsHook(ctx context.Context, payload Payload) {
 		return
 	}
 
-	if payload.Type == GitDeleteEvent {
+	if id == GitDeleteEvent {
 		msg := fmt.Sprintf("*%s* deleted the branch <%s|*%s*>",
 			userStr,
 			absBranchURL,
@@ -134,7 +133,7 @@ func slackContributionsHook(ctx context.Context, payload Payload) {
 	slack.PostMessage(slack.PostOpts{Msg: msg})
 }
 
-func buildHook(ctx context.Context, payload Payload) {
+func buildHook(ctx context.Context, id events.EventID, payload Payload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 	repo := payload.Repo
 	event := payload.Event

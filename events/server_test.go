@@ -1,14 +1,14 @@
 package events
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestEventsSubscribe(t *testing.T) {
 	var miltonWoofEvent EventID = "milton.woof"
 
 	s := newEventServer()
-	s.subscribe(miltonWoofEvent, func(payload struct{}) {})
+	if err := s.subscribe(miltonWoofEvent, func(id EventID, payload struct{}) {}); err != nil {
+		t.Fatal(err)
+	}
 
 	if len(s.callbacks) != 1 {
 		t.Errorf("Failed to subscribe to event")
@@ -20,14 +20,13 @@ func TestEventsDispatch(t *testing.T) {
 
 	called := make(chan int)
 	defer close(called)
-	callback := func(payload struct{}) { called <- 1 }
+	callback := func(id EventID, payload struct{}) { called <- 1 }
 
 	s := newEventServer()
-	s.subscribe(miltonWoofEvent, callback)
-	s.publish(Event{
-		EventID: miltonWoofEvent,
-		Payload: struct{}{},
-	})
+	if err := s.subscribe(miltonWoofEvent, callback); err != nil {
+		t.Fatal(err)
+	}
+	s.publish(miltonWoofEvent, struct{}{})
 
 	// If this recieve results in a deadlock error, the callback is not being
 	// executed as expected.
@@ -40,14 +39,13 @@ func TestEventsPublishPayload(t *testing.T) {
 
 	receivePayload := make(chan int)
 	defer close(receivePayload)
-	callback := func(payload int) { receivePayload <- payload }
+	callback := func(id EventID, payload int) { receivePayload <- payload }
 
 	s := newEventServer()
-	s.subscribe(miltonWoofEvent, callback)
-	s.publish(Event{
-		EventID: miltonWoofEvent,
-		Payload: expectedPayload,
-	})
+	if err := s.subscribe(miltonWoofEvent, callback); err != nil {
+		t.Fatal(err)
+	}
+	s.publish(miltonWoofEvent, expectedPayload)
 
 	if received := <-receivePayload; received != expectedPayload {
 		t.Errorf("Expected payload value %d got %d", expectedPayload, received)

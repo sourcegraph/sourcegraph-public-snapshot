@@ -7,8 +7,8 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/events/githooks"
 	"src.sourcegraph.com/sourcegraph/notif"
-	"src.sourcegraph.com/sourcegraph/notif/githooks"
 )
 
 func init() {
@@ -22,8 +22,8 @@ func (g *changesetHookListener) Scopes() []string {
 }
 
 func (g *changesetHookListener) Start(ctx context.Context) {
-	callback := func(p githooks.Payload) {
-		if !couldAffectChangesets(p) {
+	callback := func(id events.EventID, p githooks.Payload) {
+		if !couldAffectChangesets(id, p) {
 			return
 		}
 		e := p.Event
@@ -46,29 +46,18 @@ func (g *changesetHookListener) Start(ctx context.Context) {
 
 		for _, e := range changesetEvents.Events {
 			op := e.Op
-			payload := notif.Payload{
-				UserSpec:    userSpec,
-				ObjectID:    op.ID,
-				ObjectRepo:  op.Repo.URI,
-				ObjectTitle: op.Title,
-				ObjectType:  "changeset",
-				ObjectURL:   urlToChangeset(ctx, op.ID),
-				Object:      op,
+			payload := notif.ChangesetPayload{
+				UserSpec: userSpec,
+				ID:       op.ID,
+				Repo:     op.Repo.URI,
+				Title:    op.Title,
+				URL:      urlToChangeset(ctx, op.ID),
+				Update:   op,
 			}
 			if op.Close {
-				payload.Type = notif.ChangesetCloseEvent
-				payload.ActionType = "closed"
-				events.Publish(events.Event{
-					EventID: notif.ChangesetCloseEvent,
-					Payload: payload,
-				})
+				events.Publish(notif.ChangesetCloseEvent, payload)
 			} else {
-				payload.Type = notif.ChangesetUpdateEvent
-				payload.ActionType = "updated"
-				events.Publish(events.Event{
-					EventID: notif.ChangesetUpdateEvent,
-					Payload: payload,
-				})
+				events.Publish(notif.ChangesetUpdateEvent, payload)
 			}
 		}
 	}
@@ -79,12 +68,12 @@ func (g *changesetHookListener) Start(ctx context.Context) {
 
 // couldAffectChangesets returns true if the event was error-free
 // and is a GitPushEvent or GitDeleteEvent.
-func couldAffectChangesets(p githooks.Payload) bool {
-	e := p.Event
-	if e.Error != nil || e.Branch == "" || !commitsValid(e.Commit, e.Last) {
+func couldAffectChangesets(id events.EventID, p githooks.Payload) bool {
+	if !(id == githooks.GitPushEvent || id == githooks.GitDeleteEvent) {
 		return false
 	}
-	if !(p.Type == githooks.GitPushEvent || p.Type == githooks.GitDeleteEvent) {
+	e := p.Event
+	if e.Error != nil || e.Branch == "" || !commitsValid(e.Commit, e.Last) {
 		return false
 	}
 	return true
