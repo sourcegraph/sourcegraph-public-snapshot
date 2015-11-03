@@ -244,9 +244,9 @@ func (s *Storage) Close(ctx context.Context, opt *sourcegraph.StorageName) (*sou
 
 // seekTo seeks to the correct offset within the given file.
 func (s *Storage) seekTo(f *os.File, offset int64, offsetEnd bool) *sourcegraph.StorageError {
-	whence := 0
+	whence := os.SEEK_SET
 	if offsetEnd {
-		whence = 2
+		whence = os.SEEK_END
 	}
 	_, err := f.Seek(offset, whence)
 	return storageError(err)
