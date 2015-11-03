@@ -77,7 +77,7 @@ func (f *file) Seek(offset int64, whence int) (int64, error) {
 		panic("File.Seek: invalid whence value")
 	}
 	if f.offset < 0 {
-		return nil, errors.New("seek to negative offset")
+		return 0, errors.New("seek to negative offset")
 	}
 	return f.offset, nil
 }

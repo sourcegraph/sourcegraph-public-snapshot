@@ -45,9 +45,9 @@ func storageError(err *sourcegraph.StorageError) error {
 	switch err.Code {
 	case sourcegraph.StorageError_EOF:
 		return io.EOF
-	case sourcegraph.StorageError_NOT_EXIST:
+	case sourcegraph.StorageError_NotExist:
 		return os.ErrNotExist
-	case sourcegraph.StorageError_PERMISSION:
+	case sourcegraph.StorageError_Permission:
 		return os.ErrPermission
 	default:
 		return errors.New(err.Message)
