@@ -30,6 +30,7 @@ import (
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
+	"src.sourcegraph.com/vfs"
 )
 
 // Open is short-hand for:
@@ -42,7 +43,7 @@ func Open(ctx context.Context, appName, configName, repo string) (*Store, error)
 
 // OpenFileSystem opens a configuration store with the given filename (e.g.
 // "myconfig.json") creating it if needed on the given filesystem.
-func OpenFileSystem(configName string, fs storage.FileSystem) (*Store, error) {
+func OpenFileSystem(configName string, fs vfs.FileSystem) (*Store, error) {
 	f, err := fs.Open(configName)
 	defer f.Close()
 	if os.IsNotExist(err) {
@@ -67,8 +68,8 @@ func OpenFileSystem(configName string, fs storage.FileSystem) (*Store, error) {
 
 // Store represents a storage for keys and values.
 type Store struct {
-	f  storage.File
-	fs storage.FileSystem
+	f  vfs.File
+	fs vfs.FileSystem
 
 	// Data is the dataset which is JSON-encoded.
 	Data map[string]interface{}
