@@ -51,6 +51,8 @@ export default class CodeFileContainer extends Container {
 					<CodeListing
 						lines={this.state.file.Entry.SourceCode.Lines}
 						lineNumbers={true}
+						startLine={this.state.startLine}
+						endLine={this.state.endLine}
 						selectedDef={this.state.selectedDef}
 						highlightedDef={this.state.highlightedDef} />
 				</div>

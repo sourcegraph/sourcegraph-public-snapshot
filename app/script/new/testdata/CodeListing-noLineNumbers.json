@@ -13,7 +13,8 @@
 								"type": "CodeLineView",
 								"key": "0",
 								"props": {
-									"tokens": []
+									"tokens": [],
+									"selected": false
 								}
 							}
 						]

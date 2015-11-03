@@ -17,6 +17,7 @@
 									"tokens": [
 										"foo"
 									],
+									"selected": true,
 									"selectedDef": "someDef",
 									"highlightedDef": "otherDef"
 								}
@@ -27,6 +28,7 @@
 								"props": {
 									"lineNumber": 2,
 									"tokens": [],
+									"selected": true,
 									"selectedDef": "someDef",
 									"highlightedDef": "otherDef"
 								}
@@ -39,6 +41,18 @@
 									"tokens": [
 										"bar"
 									],
+									"selected": false,
+									"selectedDef": "someDef",
+									"highlightedDef": "otherDef"
+								}
+							},
+							{
+								"type": "CodeLineView",
+								"key": "3",
+								"props": {
+									"lineNumber": 4,
+									"tokens": [],
+									"selected": false,
 									"selectedDef": "someDef",
 									"highlightedDef": "otherDef"
 								}

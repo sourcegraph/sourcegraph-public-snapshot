@@ -14,3 +14,15 @@ export class FileFetched {
 		this.file = file;
 	}
 }
+
+export class SelectLine {
+	constructor(line) {
+		this.line = line;
+	}
+}
+
+export class SelectRange {
+	constructor(line) {
+		this.line = line;
+	}
+}

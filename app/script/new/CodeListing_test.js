@@ -10,7 +10,7 @@ import testdataNoLineNumbers from "./testdata/CodeListing-noLineNumbers.json";
 describe("CodeListing", () => {
 	it("should render lines", () => {
 		autotest(testdataLines, `${__dirname}/testdata/CodeListing-lines.json`,
-			<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}]} lineNumbers={true} selectedDef="someDef" highlightedDef="otherDef" />
+			<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}, {}]} lineNumbers={true} startLine={1} endLine={2} selectedDef="someDef" highlightedDef="otherDef" />
 		);
 	});
 

@@ -7,6 +7,7 @@ import CodeLineView from "./CodeLineView";
 import testdataTokens from "./testdata/CodeLineView-tokens.json";
 import testdataEmpty from "./testdata/CodeLineView-empty.json";
 import testdataLineNumber from "./testdata/CodeLineView-lineNumber.json";
+import testdataLineSelection from "./testdata/CodeLineView-selection.json";
 
 describe("CodeLineView", () => {
 	it("should render tokens", () => {
@@ -30,6 +31,12 @@ describe("CodeLineView", () => {
 	it("should render line number", () => {
 		autotest(testdataLineNumber, `${__dirname}/testdata/CodeLineView-lineNumber.json`,
 			<CodeLineView lineNumber={42} tokens={[{Label: "foo"}]} />
+		);
+	});
+
+	it("should render selection", () => {
+		autotest(testdataLineSelection, `${__dirname}/testdata/CodeLineView-selection.json`,
+			<CodeLineView tokens={[{Label: "foo"}]} selected={true} />
 		);
 	});
 });

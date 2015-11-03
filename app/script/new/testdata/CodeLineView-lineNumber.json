@@ -2,13 +2,21 @@
 	"renderOutput": {
 		"type": "tr",
 		"props": {
-			"className": "line",
+			"className": "line ",
 			"children": [
 				{
 					"type": "td",
 					"props": {
 						"className": "line-number",
-						"data-line": 42
+						"data-line": 42,
+						"onClick": {
+							"dispatched": [
+								{
+									"$constructor": "SelectLine",
+									"line": 42
+								}
+							]
+						}
 					}
 				},
 				{

@@ -2,9 +2,11 @@ import autotest from "./util/autotest";
 import expect from "expect.js";
 
 import React from "react";
+import TestUtils from "react-addons-test-utils";
 
 import Dispatcher from "./Dispatcher";
 import CodeFileRouter from "./CodeFileRouter";
+import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
 
 import testdataFile from "./testdata/CodeFileRouter-file.json";
@@ -45,9 +47,51 @@ describe("CodeFileRouter", () => {
 	});
 
 	it("should handle DefActions.SelectDef", () => {
-		let uri = "http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go";
-		let r = new CodeFileRouter({location: uri, navigate(newURI) { uri = newURI; }});
-		Dispatcher.directDispatch(r, new DefActions.SelectDef("someURL"));
-		expect(uri).to.be("http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someURL");
+		testAction(
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go",
+			new DefActions.SelectDef("someURL"),
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someURL"
+		);
+	});
+
+	it("should handle CodeActions.SelectLine", () => {
+		testAction(
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go",
+			new CodeActions.SelectLine(42),
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
+		);
+
+		testAction(
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=60",
+			new CodeActions.SelectLine(42),
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
+		);
+	});
+
+	it("should handle CodeActions.SelectRange", () => {
+		testAction(
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go",
+			new CodeActions.SelectRange(42),
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
+		);
+
+		testAction(
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=20",
+			new CodeActions.SelectRange(42),
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=42"
+		);
+
+		testAction(
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=50&endline=50",
+			new CodeActions.SelectRange(42),
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=50"
+		);
 	});
 });
+
+function testAction(uri, action, expectedURI) {
+	let renderer = TestUtils.createRenderer();
+	renderer.render(<CodeFileRouter location={uri} navigate={(newURI) => { uri = newURI; }} />);
+	Dispatcher.directDispatch(renderer._instance._instance, action);
+	expect(uri).to.be(expectedURI);
+}

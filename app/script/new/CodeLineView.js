@@ -2,6 +2,7 @@ import React from "react";
 
 import Component from "./Component";
 import Dispatcher from "./Dispatcher";
+import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
 
 // TODO support for tokens with more than one URL
@@ -23,12 +24,23 @@ export default class CodeLineView extends Component {
 		state.highlightedDef = state.ownURLs[props.highlightedDef] ? props.highlightedDef : null;
 
 		state.lineNumber = props.lineNumber || null;
+		state.selected = Boolean(props.selected);
 	}
 
 	render() {
 		return (
-			<tr className="line">
-				{this.state.lineNumber && <td className="line-number" data-line={this.state.lineNumber}></td>}
+			<tr className={`line ${this.state.selected ? "main-byte-range" : ""}`}>
+				{this.state.lineNumber &&
+					<td className="line-number"
+						data-line={this.state.lineNumber}
+						onClick={(event) => {
+							if (event.shiftKey) {
+								Dispatcher.dispatch(new CodeActions.SelectRange(this.state.lineNumber));
+								return;
+							}
+							Dispatcher.dispatch(new CodeActions.SelectLine(this.state.lineNumber));
+						}}>
+					</td>}
 				<td className="line-content">
 					{this.state.tokens.map((token, i) => {
 						if (!token["URL"]) {
@@ -76,6 +88,7 @@ export default class CodeLineView extends Component {
 CodeLineView.propTypes = {
 	lineNumber: React.PropTypes.number,
 	tokens: React.PropTypes.array,
+	selected: React.PropTypes.bool,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 };

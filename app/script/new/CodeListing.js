@@ -75,6 +75,7 @@ export default class CodeListing extends Component {
 						<CodeLineView
 							lineNumber={this.state.lineNumbers ? 1 + visibleLinesStart + i : null}
 							tokens={lineData.Tokens || emptyArray}
+							selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
 							selectedDef={this.state.selectedDef}
 							highlightedDef={this.state.highlightedDef}
 							key={visibleLinesStart + i} />
@@ -94,6 +95,8 @@ export default class CodeListing extends Component {
 CodeListing.propTypes = {
 	lines: React.PropTypes.array,
 	lineNumbers: React.PropTypes.bool,
+	startLine: React.PropTypes.number,
+	endLine: React.PropTypes.number,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 };
