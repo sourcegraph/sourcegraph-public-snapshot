@@ -83,3 +83,8 @@ func SendMandrillTemplateBlocking(template, name, email, subject string, mergeVa
 		TrackClicks: true,
 	}, false)
 }
+
+// EmailIsConfigured returns true if the instance has an email configuration
+func EmailIsConfigured() bool {
+	return mandrillEnabled
+}
