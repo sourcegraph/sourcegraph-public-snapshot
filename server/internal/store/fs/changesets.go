@@ -467,7 +467,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 	// now, we special case it by iterating over each path element, which is
 	// slower.
 	headBaseSearch := op.Head != "" || op.Base != ""
-	if !headBaseSearch {
+	if !buildIndex && !headBaseSearch {
 		start := op.Offset()
 		if start < 0 {
 			start = 0
