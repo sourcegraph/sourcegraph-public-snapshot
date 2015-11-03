@@ -243,7 +243,6 @@ var _ sourcegraph.ReposServer = (*ReposServer)(nil)
 
 type StorageClient struct {
 	Create_    func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
-	Remove_    func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 	RemoveAll_ func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 	Read_      func(ctx context.Context, in *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
 	Write_     func(ctx context.Context, in *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
@@ -254,10 +253,6 @@ type StorageClient struct {
 
 func (s *StorageClient) Create(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
 	return s.Create_(ctx, in)
-}
-
-func (s *StorageClient) Remove(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
-	return s.Remove_(ctx, in)
 }
 
 func (s *StorageClient) RemoveAll(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
@@ -288,7 +283,6 @@ var _ sourcegraph.StorageClient = (*StorageClient)(nil)
 
 type StorageServer struct {
 	Create_    func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
-	Remove_    func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 	RemoveAll_ func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
 	Read_      func(v0 context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
 	Write_     func(v0 context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
@@ -299,10 +293,6 @@ type StorageServer struct {
 
 func (s *StorageServer) Create(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	return s.Create_(v0, v1)
-}
-
-func (s *StorageServer) Remove(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return s.Remove_(v0, v1)
 }
 
 func (s *StorageServer) RemoveAll(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {

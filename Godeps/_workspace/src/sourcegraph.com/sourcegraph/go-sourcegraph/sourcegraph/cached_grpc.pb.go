@@ -3578,17 +3578,6 @@ func (s *CachedStorageServer) Create(ctx context.Context, in *StorageName) (*Sto
 	return result, err
 }
 
-func (s *CachedStorageServer) Remove(ctx context.Context, in *StorageName) (*StorageError, error) {
-	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
-	result, err := s.StorageServer.Remove(ctx, in)
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-	return result, err
-}
-
 func (s *CachedStorageServer) RemoveAll(ctx context.Context, in *StorageName) (*StorageError, error) {
 	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
 	result, err := s.StorageServer.RemoveAll(ctx, in)
@@ -3680,32 +3669,6 @@ func (s *CachedStorageClient) Create(ctx context.Context, in *StorageName, opts 
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Storage.Create", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func (s *CachedStorageClient) Remove(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
-	if s.Cache != nil {
-		var cachedResult StorageError
-		cached, err := s.Cache.Get(ctx, "Storage.Remove", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.StorageClient.Remove(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Storage.Remove", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}
