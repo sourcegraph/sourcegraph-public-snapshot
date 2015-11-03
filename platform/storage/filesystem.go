@@ -69,7 +69,7 @@ func (fs *fileSystem) RemoveAll(name string) error {
 
 // Open implements the vfs.FileSystem interface.
 func (fs *fileSystem) Open(name string) (vfs.File, error) {
-	_, err := fs.Lstat(name)
+	_, err := fs.Stat(name)
 	if err != nil {
 		return nil, err
 	}

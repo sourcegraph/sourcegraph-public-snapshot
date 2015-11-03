@@ -68,7 +68,7 @@ func (f *file) Seek(offset int64, whence int) (int64, error) {
 	case os.SEEK_CUR:
 		f.offset += offset
 	case os.SEEK_END:
-		fi, err := f.fs.Lstat(f.name.Name)
+		fi, err := f.fs.Stat(f.name.Name)
 		if err != nil {
 			return 0, err
 		}
