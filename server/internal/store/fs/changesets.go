@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -456,7 +457,36 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		paths = append(paths, filepath.Join(fi.Name(), changesetMetadataFile))
 	}
 
+	// Sort the filepaths by ID in reverse, i.e. descending order. We use
+	// descending order as higher IDs were created most recently.
+	//
+	// TODO(slimsag): let the user choose the sorting order.
+	sort.Sort(sort.Reverse(byChangesetID(paths)))
+
+	// TODO(slimsag): we currently do not index by Head/Base like we should. For
+	// now, we special case it by iterating over each path element, which is
+	// slower.
+	headBaseSearch := op.Head != "" || op.Base != ""
+	if !headBaseSearch {
+		start := op.Offset()
+		if start < 0 {
+			start = 0
+		}
+		if start > len(paths) {
+			start = len(paths)
+		}
+		end := start + op.Limit()
+		if end < 0 {
+			end = 0
+		}
+		if end > len(paths) {
+			end = len(paths)
+		}
+		paths = paths[start:end]
+	}
+
 	// Concurrently read each metadata file from the VFS.
+	skip := op.Offset()
 	readCh, done := vfsutil.ConcurrentRead(fs, paths)
 	defer done.Done()
 	for readRet := range readCh {
@@ -472,16 +502,9 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 
 		// Handle auto-migration of data (create the index).
 		if buildIndex {
-			fmt.Println("buildIndex open", cs.ID, cs.ClosedAt == nil)
 			if err := s.updateIndex(ctx, sourcegraph.Repo{URI: op.Repo}, cs.ID, cs.ClosedAt == nil); err != nil {
 				log.Println("changeset data migration failure:", err)
 			}
-		}
-
-		// If we're only interested in open changesets and this one is closed (or
-		// vice-versa), then we simply continue.
-		if op.Open && cs.ClosedAt != nil || op.Closed && cs.ClosedAt == nil {
-			continue
 		}
 
 		// If we're only interested in a changeset with a specific branch for head
@@ -489,41 +512,21 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		if (op.Head != "" && op.Head != cs.DeltaSpec.Head.Rev) || (op.Base != "" && op.Base != cs.DeltaSpec.Base.Rev) {
 			continue
 		}
+
+		// Handle offset.
+		if !buildIndex && headBaseSearch && skip > 0 {
+			skip--
+			continue
+		}
+
 		list.Changesets = append(list.Changesets, &cs)
 
 		// If we're not migrating data, abort early once we have gotten enough
 		// changesets.
-		if !buildIndex && len(list.Changesets) >= op.Limit() {
+		if !buildIndex && headBaseSearch && len(list.Changesets) >= op.Limit() {
 			break
 		}
 	}
-
-	// Sort in reverse by ID (i.e. largest ID first, because changesets with
-	// larger IDs were created most recently).
-	//
-	// TODO(slimsag): allow client to choose the sorting order, add sort-by
-	// options to frontend.
-	sort.Sort(sort.Reverse(byChangesetID(list.Changesets)))
-
-	// Determine start index.
-	start := op.Offset()
-	if start < 0 {
-		start = 0
-	} else if start > len(list.Changesets) {
-		start = len(list.Changesets)
-	}
-
-	// Determine end index.
-	end := op.Offset() + op.Limit()
-	if end < 0 {
-		end = 0
-	}
-	if end > len(list.Changesets) {
-		end = len(list.Changesets)
-	}
-
-	// Cut the list.
-	list.Changesets = list.Changesets[start:end]
 	return &list, nil
 }
 
@@ -671,10 +674,18 @@ func (s *Changesets) indexStatName(ctx context.Context, repo sourcegraph.Repo, c
 	return fs.Stat(filepath.Join(indexDir, strconv.FormatInt(cid, 10)))
 }
 
-type byChangesetID []*sourcegraph.Changeset
+type byChangesetID []string
 
 func (v byChangesetID) Len() int      { return len(v) }
 func (v byChangesetID) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
 func (v byChangesetID) Less(i, j int) bool {
-	return v[i].ID < v[j].ID
+	return v.id(v[i]) < v.id(v[j])
+}
+func (v byChangesetID) id(path string) int64 {
+	split := strings.Split(path, string(os.PathSeparator))
+	id, err := strconv.ParseInt(split[len(split)-2], 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
