@@ -739,7 +739,8 @@ message StorageReadDir {
 // Storage provides applications with storage mechanisms. It provides a
 // filesystem-alike API for creating/deleting/reading/writing files.
 service Storage {
-	// Create creates a new file with the given name.
+	// Create creates a new file with the given name. Once you are finished with
+	// the file you must call Close.
 	rpc Create(StorageName) returns (StorageError) {
 		option (google.api.http) = {
 			post: "/storage/create"
@@ -753,14 +754,16 @@ service Storage {
 		};
 	}
 
-	// Read reads from an existing file.
+	// Read reads from an existing file. The file is implicitly opened by Read
+	// and a call to Close must be made once you are finished with it.
 	rpc Read(StorageReadOp) returns (StorageRead) {
 		option (google.api.http) = {
 			get: "/storage/read"
 		};
 	}
 
-	// Write writes to an existing file.
+	// Write writes to an existing file. The file is implicitly opened by Write
+	// and a call to Close must be made once you are finished with it.
 	rpc Write(StorageWriteOp) returns (StorageWrite) {
 		option (google.api.http) = {
 			post: "/storage/write"
@@ -781,7 +784,7 @@ service Storage {
 		};
 	}
 
-	// Close closes the named file or directory. You should always call Close once
+	// Close closes the named file or directory. You must always call Close once
 	// finished performing actions on a file.
 	rpc Close(StorageName) returns (StorageError) {
 		option (google.api.http) = {

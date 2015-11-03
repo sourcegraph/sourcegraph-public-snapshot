@@ -4376,19 +4376,22 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 // Client API for Storage service
 
 type StorageClient interface {
-	// Create creates a new file with the given name.
+	// Create creates a new file with the given name. Once you are finished with
+	// the file you must call Close.
 	Create(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error)
 	// RemoveAll deletes the named file or directory recursively.
 	RemoveAll(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error)
-	// Read reads from an existing file.
+	// Read reads from an existing file. The file is implicitly opened by Read
+	// and a call to Close must be made once you are finished with it.
 	Read(ctx context.Context, in *StorageReadOp, opts ...grpc.CallOption) (*StorageRead, error)
-	// Write writes to an existing file.
+	// Write writes to an existing file. The file is implicitly opened by Write
+	// and a call to Close must be made once you are finished with it.
 	Write(ctx context.Context, in *StorageWriteOp, opts ...grpc.CallOption) (*StorageWrite, error)
 	// Stat stats an existing file.
 	Stat(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageStat, error)
 	// ReadDir reads a directories contents.
 	ReadDir(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageReadDir, error)
-	// Close closes the named file or directory. You should always call Close once
+	// Close closes the named file or directory. You must always call Close once
 	// finished performing actions on a file.
 	Close(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error)
 }
@@ -4467,19 +4470,22 @@ func (c *storageClient) Close(ctx context.Context, in *StorageName, opts ...grpc
 // Server API for Storage service
 
 type StorageServer interface {
-	// Create creates a new file with the given name.
+	// Create creates a new file with the given name. Once you are finished with
+	// the file you must call Close.
 	Create(context.Context, *StorageName) (*StorageError, error)
 	// RemoveAll deletes the named file or directory recursively.
 	RemoveAll(context.Context, *StorageName) (*StorageError, error)
-	// Read reads from an existing file.
+	// Read reads from an existing file. The file is implicitly opened by Read
+	// and a call to Close must be made once you are finished with it.
 	Read(context.Context, *StorageReadOp) (*StorageRead, error)
-	// Write writes to an existing file.
+	// Write writes to an existing file. The file is implicitly opened by Write
+	// and a call to Close must be made once you are finished with it.
 	Write(context.Context, *StorageWriteOp) (*StorageWrite, error)
 	// Stat stats an existing file.
 	Stat(context.Context, *StorageName) (*StorageStat, error)
 	// ReadDir reads a directories contents.
 	ReadDir(context.Context, *StorageName) (*StorageReadDir, error)
-	// Close closes the named file or directory. You should always call Close once
+	// Close closes the named file or directory. You must always call Close once
 	// finished performing actions on a file.
 	Close(context.Context, *StorageName) (*StorageError, error)
 }
