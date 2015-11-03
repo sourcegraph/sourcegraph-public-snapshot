@@ -20,11 +20,11 @@ type eventServer struct {
 }
 
 // publish asynchronously executes each of the callbacks that are subscribed to a given event's ID.
-func (s *eventServer) publish(id EventID, p interface{}) {
+func (s *eventServer) publish(id EventID, payload interface{}) {
 	s.Lock()
 	defer s.Unlock()
 
-	pv := reflect.ValueOf(p)
+	pv := reflect.ValueOf(payload)
 	idv := reflect.ValueOf(id)
 
 	for _, callback := range s.callbacks[id] {
@@ -44,11 +44,11 @@ func (s *eventServer) publish(id EventID, p interface{}) {
 	}
 }
 
-func (s *eventServer) subscribe(id EventID, c interface{}) error {
+func (s *eventServer) subscribe(id EventID, callback interface{}) error {
 	s.Lock()
 	defer s.Unlock()
 
-	t := reflect.TypeOf(c)
+	t := reflect.TypeOf(callback)
 	if t.Kind() != reflect.Func {
 		return errors.New("event callback must be a func")
 	}
@@ -63,7 +63,7 @@ func (s *eventServer) subscribe(id EventID, c interface{}) error {
 		s.callbacks[id] = make([]interface{}, 0)
 	}
 
-	s.callbacks[id] = append(s.callbacks[id], c)
+	s.callbacks[id] = append(s.callbacks[id], callback)
 	return nil
 }
 
@@ -86,14 +86,14 @@ func init() {
 }
 
 // Publish globally broadcasts the payload of an event to all of its subscribers.
-func Publish(id EventID, p interface{}) {
-	server.publish(id, p)
+func Publish(id EventID, payload interface{}) {
+	server.publish(id, payload)
 }
 
 // Subscribe stores a supplied callback that will be dispatched each time a
 // given EventID is published. The callback must be a func taking two arguments:
 // an EventID argument, and an argument of any type that corresponds to an event's
 // payload.
-func Subscribe(id EventID, c interface{}) error {
-	return server.subscribe(id, c)
+func Subscribe(id EventID, callback interface{}) error {
+	return server.subscribe(id, callback)
 }
