@@ -137,6 +137,22 @@ func (rs *RepoStage) Add(path string, contents []byte) error {
 	return nil
 }
 
+// RemoveAll removes an existing file or directory from the index (in the
+// staging repository).
+func (rs *RepoStage) RemoveAll(path string) error {
+	if strings.HasPrefix(path, "-") {
+		return fmt.Errorf("attempted to add invalid (unsafe) file %q", path)
+	}
+
+	// Remove from index.
+	cmd := exec.Command("git", "rm", "-rf", path)
+	cmd.Dir = rs.stagingDir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
+	}
+	return nil
+}
+
 // Commit commits the staged files into the specified ref. It also
 // pushes from the staging repo to the original repo, so that the
 // commit is available to future readers.
