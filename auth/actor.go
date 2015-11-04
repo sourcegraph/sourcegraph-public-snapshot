@@ -5,6 +5,7 @@ import "fmt"
 // Actor represents an agent that accesses resources. It can represent
 // an anonymous user or a logged-in user.
 type Actor struct {
+	// TODO: Make UID an int32.
 	UID int `json:",omitempty"`
 
 	// Domain is the Sourcegraph server hostname that owns the user
@@ -56,6 +57,3 @@ func (a Actor) IsAuthenticated() bool {
 func (a Actor) IsUser() bool {
 	return a.UID != 0
 }
-
-// TODOs:
-// 1. make UID an int32
