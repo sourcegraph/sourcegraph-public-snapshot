@@ -1,4 +1,99 @@
 {
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "code-file-toolbar",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "file",
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"className": "fa fa-spinner fa-spin"
+											}
+										},
+										{
+											"type": "a",
+											"key": "base",
+											"props": {
+												"href": "/aRepo@aRev/.tree",
+												"children": [
+													"aRepo"
+												]
+											}
+										},
+										{
+											"type": "span",
+											"key": "0",
+											"props": {
+												"children": [
+													" / ",
+													{
+														"type": "a",
+														"props": {
+															"href": "/aRepo@aRev/.tree/somePath",
+															"children": [
+																"somePath"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "actions",
+									"children": [
+										{
+											"type": "",
+											"props": {
+												"repoSpec": "aRepo",
+												"rev": "aRev",
+												"path": "somePath",
+												"alignRight": true
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "DefPopup",
+					"props": {
+						"def": {
+							"File": {
+								"Path": "somePath"
+							}
+						},
+						"examples": {
+							"content": {},
+							"counts": {},
+							"generation": 1
+						},
+						"highlightedDef": "otherDef",
+						"discussions": [
+							{
+								"test": "discussionData"
+							}
+						]
+					}
+				}
+			]
+		}
+	},
 	"dispatched": [
 		{
 			"$constructor": "WantFile",

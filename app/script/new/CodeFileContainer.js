@@ -8,6 +8,8 @@ import CodeStore from "./CodeStore";
 import DefStore from "./DefStore";
 import CodeListing from "./CodeListing";
 import DefPopup from "./DefPopup";
+import RepoBuildIndicator from "../components/RepoBuildIndicator"; // FIXME
+import RepoRevSwitcher from "../components/RepoRevSwitcher"; // FIXME
 import "./CodeBackend";
 import "./DefBackend";
 
@@ -61,21 +63,54 @@ export default class CodeFileContainer extends Container {
 	}
 
 	render() {
-		if (!this.state.file) {
+		if (!this.state.tree) {
 			return null;
 		}
+
+		// TODO replace with proper shared component
+		let basePath = `/${this.state.repo}@${this.state.rev}/.tree`;
+		let repoSegs = this.state.repo.split("/");
+		let breadcrumb = [<a key="base" href={basePath}>{repoSegs[repoSegs.length-1]}</a>];
+		this.state.tree.split("/").forEach((seg, i) => {
+			basePath += `/${seg}`;
+			breadcrumb.push(<span key={i}> / <a href={basePath}>{seg}</a></span>);
+		});
+
 		let def = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
 		return (
 			<div>
-				<div className="code-view-react">
-					<CodeListing
-						lines={this.state.file.Entry.SourceCode.Lines}
-						lineNumbers={true}
-						startLine={this.state.startLine}
-						endLine={this.state.endLine}
-						selectedDef={this.state.selectedDef}
-						highlightedDef={this.state.highlightedDef} />
+				<div className="code-file-toolbar">
+					<div className="file">
+						<i className={this.state.file ? "fa fa-file" : "fa fa-spinner fa-spin"} />{breadcrumb}
+
+						{this.state.file &&
+							<RepoBuildIndicator
+								RepoURI={this.state.repo}
+								Rev={this.state.file.EntrySpec.RepoRev.CommitID}
+								btnSize="btn-xs"
+								tooltipPosition="bottom" />
+						}
+					</div>
+
+					<div className="actions">
+						<RepoRevSwitcher repoSpec={this.state.repo}
+							rev={this.state.rev}
+							path={this.state.tree}
+							alignRight={true} />
+					</div>
 				</div>
+
+				{this.state.file &&
+					<div className="code-view-react">
+						<CodeListing
+							lines={this.state.file.Entry.SourceCode.Lines}
+							lineNumbers={true}
+							startLine={this.state.startLine}
+							endLine={this.state.endLine}
+							selectedDef={this.state.selectedDef}
+							highlightedDef={this.state.highlightedDef} />
+					</div>
+				}
 				{def &&
 					<DefPopup
 						def={def}

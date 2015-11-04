@@ -1,4 +1,78 @@
 {
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "code-file-toolbar",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "file",
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"className": "fa fa-spinner fa-spin"
+											}
+										},
+										{
+											"type": "a",
+											"key": "base",
+											"props": {
+												"href": "/aRepo@aRev/.tree",
+												"children": [
+													"aRepo"
+												]
+											}
+										},
+										{
+											"type": "span",
+											"key": "0",
+											"props": {
+												"children": [
+													" / ",
+													{
+														"type": "a",
+														"props": {
+															"href": "/aRepo@aRev/.tree/aTree",
+															"children": [
+																"aTree"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "actions",
+									"children": [
+										{
+											"type": "",
+											"props": {
+												"repoSpec": "aRepo",
+												"rev": "aRev",
+												"path": "aTree",
+												"alignRight": true
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
 	"dispatched": [
 		{
 			"$constructor": "WantFile",

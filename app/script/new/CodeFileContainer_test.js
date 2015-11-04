@@ -15,6 +15,11 @@ import testdataAvailableDefinition from "./testdata/CodeFileContainer-availableD
 import testdataFileFromDef from "./testdata/CodeFileContainer-fileFromDef.json";
 
 describe("CodeFileContainer", () => {
+	let exampleFile = {
+		Entry: {SourceCode: {Lines: ["someLine"]}},
+		EntrySpec: {RepoRev: {CommitID: "123abc"}},
+	};
+
 	it("should handle unavailable file", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", null));
 		autotest(testdataUnavailableFile, `${__dirname}/testdata/CodeFileContainer-unavailableFile.json`,
@@ -23,7 +28,7 @@ describe("CodeFileContainer", () => {
 	});
 
 	it("should handle available file and unavailable definition", () => {
-		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
+		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", null));
 		autotest(testdataUnavailableDefinition, `${__dirname}/testdata/CodeFileContainer-unavailableDefinition.json`,
 			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
@@ -31,7 +36,7 @@ describe("CodeFileContainer", () => {
 	});
 
 	it("should handle available file and available definition", () => {
-		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", {Entry: {SourceCode: {Lines: ["someLine"]}}}));
+		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {test: "defData"}));
 		Dispatcher.directDispatch(DefStore, new DefActions.ExampleFetched("foo", {test: "exampleData"}));
