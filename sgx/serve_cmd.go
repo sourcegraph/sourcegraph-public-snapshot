@@ -543,7 +543,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		err = (&sshgit.Server{}).ListenAndStart(c.SSHAddr, privateSigner, cliCtx, idKey.ID)
+		err = (&sshgit.Server{}).ListenAndStart(cliCtx, c.SSHAddr, privateSigner, idKey.ID)
 		if err != nil {
 			return err
 		}

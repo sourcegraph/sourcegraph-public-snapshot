@@ -10,7 +10,9 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
+	"time"
 
 	"github.com/flynn/go-shlex"
 	"golang.org/x/crypto/ssh"
@@ -18,6 +20,11 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
+)
+
+const (
+	// gitTransactionTimeout controls a hard deadline on the time to perform a single git transaction.
+	gitTransactionTimeout = 3 * time.Minute
 )
 
 // Server is SSH git server.
@@ -31,7 +38,7 @@ type Server struct {
 }
 
 // ListenAndStart listens on the TCP network address addr and starts the server.
-func (s *Server) ListenAndStart(addr string, privateSigner ssh.Signer, ctx context.Context, clientID string) error {
+func (s *Server) ListenAndStart(ctx context.Context, addr string, privateSigner ssh.Signer, clientID string) error {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
@@ -79,6 +86,7 @@ func (s *Server) run() {
 			log.Printf("failed to accept incoming connection: %v\n", err)
 			continue
 		}
+		tcpConn.SetDeadline(time.Now().Add(gitTransactionTimeout))
 		go s.handleConn(tcpConn)
 	}
 }
@@ -138,6 +146,9 @@ func (s *Server) handleChannel(sshConn *ssh.ServerConn, newChan ssh.NewChannel) 
 }
 
 func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ssh.Request) error {
+	if len(req.Payload) < 4 {
+		return fmt.Errorf("invalid git transport protocol payload (less than 4 bytes): %q", req.Payload)
+	}
 	command := string(req.Payload[4:]) // E.g., "git-upload-pack '/user/repo'".
 	args, err := shlex.Split(command)  // E.g., []string{"git-upload-pack", "/user/repo"}.
 	if err != nil || len(args) != 2 {
@@ -145,24 +156,28 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	}
 	op := args[0]   // E.g., "git-upload-pack".
 	repo := args[1] // E.g., "/user/repo".
+	repo = path.Clean(repo)
 	if path.IsAbs(repo) {
 		repo = repo[1:] // Normalize "/user/repo" to "user/repo".
 	}
+	if repo == ".." || strings.HasPrefix(repo, "../") {
+		return fmt.Errorf("specified repo %q lies outside of root", repo)
+	}
+	userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
+	uid := uidFromSSHConn(sshConn)
 
 	// Check if user has sufficient permissions for git write/read access to this repo.
 	switch op {
 	case "git-upload-pack":
-		userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
-		uid := uidFromSSHConn(sshConn)
-
+		// git-upload-pack uploads packs back to client. It happens when the client does
+		// git fetch or similar. Check for read access.
 		if err := accesscontrol.VerifyActorHasReadAccess(s.ctx, auth.Actor{UID: int(uid), ClientID: s.clientID}, "sshgit.git-receive-pack"); err != nil {
 			fmt.Fprintf(ch.Stderr(), "User %q doesn't have read permissions.\n\n", userLogin)
 			return fmt.Errorf("user %q doesn't have read permissions: %v", userLogin, err)
 		}
 	case "git-receive-pack":
-		userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
-		uid := uidFromSSHConn(sshConn)
-
+		// git-receive-pack receives packs and applies them to the repository. It happens when the client does
+		// git push or similar. Check for write access.
 		if err := accesscontrol.VerifyActorHasWriteAccess(s.ctx, auth.Actor{UID: int(uid), ClientID: s.clientID}, "sshgit.git-receive-pack"); err != nil {
 			fmt.Fprintf(ch.Stderr(), "User %q doesn't have write permissions.\n\n", userLogin)
 			return fmt.Errorf("user %q doesn't have write permissions: %v", userLogin, err)
@@ -181,7 +196,7 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	if err != nil {
 		return fmt.Errorf("could not start command: %v", err)
 	}
-	err = cmd.Wait()
+	err = waitTimeout(cmd, gitTransactionTimeout)
 	if err != nil {
 		log.Printf("failed to exit cmd: %v\n", err)
 	}
@@ -191,6 +206,23 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		return fmt.Errorf("ch.SendRequest: %v", err)
 	}
 	return nil
+}
+
+// waitTimeout waits up to timeout for cmd to finish.
+// If it doesn't finish in time, the process will be terminated.
+func waitTimeout(cmd *exec.Cmd, timeout time.Duration) error {
+	finished := make(chan struct{})
+	go func() {
+		select {
+		case <-time.After(timeout):
+			cmd.Process.Kill()
+		case <-finished:
+			// All okay.
+		}
+	}()
+	err := cmd.Wait()
+	close(finished)
+	return err
 }
 
 type exitStatusMsg struct {
