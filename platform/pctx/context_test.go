@@ -3,9 +3,13 @@ package pctx
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
 )
 
 // Test_repoFrameBaseURI tests that RepoFrameBaseURI returns the correct URL
@@ -34,11 +38,16 @@ func Test_repoFrameBaseURI(t *testing.T) {
 		expPrefix: "/github.com/gorilla/mux/.issues@branch===aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}}
 
+	appURL, err := url.Parse("https://src.foo.com")
+	if err != nil {
+		panic(err)
+	}
+	ctx := conf.WithAppURL(context.Background(), appURL)
 	rtr := router.New(nil)
 	for _, test := range tests {
 		var prefix string
 		rtr.Get(router.RepoAppFrame).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			p, err := repoFrameBaseURI(r)
+			p, err := repoFrameBaseURI(ctx, r)
 			if err != nil {
 				t.Errorf("unexpected error computing repo frame base URL: %s", err)
 				return
@@ -50,7 +59,9 @@ func Test_repoFrameBaseURI(t *testing.T) {
 		rw := httptest.NewRecorder()
 		rtr.ServeHTTP(rw, req)
 
-		if prefix != test.expPrefix {
+		expPrefix := appURL
+		expPrefix.Path = test.expPrefix
+		if prefix != expPrefix.String() {
 			t.Errorf("expected prefix %s, got %s", test.expPrefix, prefix)
 		}
 	}

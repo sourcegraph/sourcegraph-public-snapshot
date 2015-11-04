@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
 )
 
 type contextKey int
@@ -47,7 +48,7 @@ func WithRepoFrameInfo(ctx context.Context, r *http.Request) (context.Context, e
 	if err != nil {
 		return nil, err
 	}
-	baseURI, err := repoFrameBaseURI(r)
+	baseURI, err := repoFrameBaseURI(ctx, r)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func WithRepoFrameInfo(ctx context.Context, r *http.Request) (context.Context, e
 
 // repoFrameBaseURI computes the root URI of an application repository frame.
 // Repository frames often will contain their own URL subrouters.
-func repoFrameBaseURI(r *http.Request) (string, error) {
+func repoFrameBaseURI(ctx context.Context, r *http.Request) (string, error) {
 	vars := mux.Vars(r)
 
 	urlVars := []string{
@@ -78,5 +79,5 @@ func repoFrameBaseURI(r *http.Request) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not produce base URL for app request url %s: %s", r.URL, err)
 	}
-	return baseURI.Path, nil
+	return conf.AppURL(ctx).ResolveReference(baseURI).String(), nil
 }
