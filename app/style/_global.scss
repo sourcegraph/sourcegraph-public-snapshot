@@ -77,3 +77,7 @@ textarea.code {
 		text-decoration: underline;
 	}
 }
+
+blockquote {
+	margin-bottom: ($line-height-computed / 2);
+}
