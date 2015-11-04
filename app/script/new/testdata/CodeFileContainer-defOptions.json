@@ -1,0 +1,177 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "code-file-toolbar",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "file",
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"className": "fa fa-file"
+											}
+										},
+										{
+											"type": "a",
+											"key": "base",
+											"props": {
+												"href": "/aRepo@aRev/.tree",
+												"children": [
+													"aRepo"
+												]
+											}
+										},
+										{
+											"type": "span",
+											"key": "0",
+											"props": {
+												"children": [
+													" / ",
+													{
+														"type": "a",
+														"props": {
+															"href": "/aRepo@aRev/.tree/aTree",
+															"children": [
+																"aTree"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "",
+											"props": {
+												"RepoURI": "aRepo",
+												"Rev": "123abc",
+												"btnSize": "btn-xs",
+												"tooltipPosition": "bottom",
+												"Buildable": false
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "actions",
+									"children": [
+										{
+											"type": "",
+											"props": {
+												"repoSpec": "aRepo",
+												"rev": "aRev",
+												"path": "aTree",
+												"alignRight": true
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "code-view-react",
+						"children": [
+							{
+								"type": "CodeListing",
+								"props": {
+									"lines": [
+										"someLine"
+									],
+									"lineNumbers": true,
+									"highlightedDef": "otherDef"
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "context-menu",
+						"style": {
+							"left": 10,
+							"top": 20
+						},
+						"children": [
+							{
+								"type": "ul",
+								"props": {
+									"children": [
+										{
+											"type": "li",
+											"key": "0",
+											"props": {
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "SelectDef",
+															"url": "firstDef"
+														}
+													]
+												},
+												"children": [
+													"..."
+												]
+											}
+										},
+										{
+											"type": "li",
+											"key": "1",
+											"props": {
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "SelectDef",
+															"url": "secondDef"
+														}
+													]
+												},
+												"children": [
+													"..."
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "aTree"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "otherDef"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "firstDef"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "secondDef"
+		}
+	]
+}

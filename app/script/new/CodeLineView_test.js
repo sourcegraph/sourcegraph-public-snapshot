@@ -17,8 +17,8 @@ describe("CodeLineView", () => {
 				{Label: "bar", Class: "b"},
 				{Label: "baz", Class: "c"},
 				{Label: "ref", Class: "d", URL: ["someURL"]},
-				{Label: "def", Class: "e", URL: ["otherURL"], IsDef: true},
-			]} selectedDef="someURL" highlightedDef="otherURL" />
+				{Label: "def", Class: "e", URL: ["firstURL", "secondURL"], IsDef: true},
+			]} selectedDef="someURL" highlightedDef="secondURL" />
 		);
 	});
 

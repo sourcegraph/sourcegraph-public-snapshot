@@ -34,4 +34,11 @@ describe("DefStore", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.DiscussionsFetched("/someURL", "someData"));
 		expect(DefStore.discussions.get("/someURL")).to.be("someData");
 	});
+
+	it("should handle SelectMultipleDefs", () => {
+		Dispatcher.directDispatch(DefStore, new DefActions.SelectMultipleDefs(["/someURL", "/otherURL"], 10, 20));
+		expect(DefStore.defOptionsURLs).to.eql(["/someURL", "/otherURL"]);
+		expect(DefStore.defOptionsLeft).to.be(10);
+		expect(DefStore.defOptionsTop).to.be(20);
+	});
 });

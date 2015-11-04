@@ -13,6 +13,7 @@ import testdataUnavailableFile from "./testdata/CodeFileContainer-unavailableFil
 import testdataUnavailableDefinition from "./testdata/CodeFileContainer-unavailableDefinition.json";
 import testdataAvailableDefinition from "./testdata/CodeFileContainer-availableDefinition.json";
 import testdataFileFromDef from "./testdata/CodeFileContainer-fileFromDef.json";
+import testdataDefOptions from "./testdata/CodeFileContainer-defOptions.json";
 
 describe("CodeFileContainer", () => {
 	let exampleFile = {
@@ -51,6 +52,14 @@ describe("CodeFileContainer", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {File: {Path: "somePath"}}));
 		autotest(testdataFileFromDef, `${__dirname}/testdata/CodeFileContainer-fileFromDef.json`,
 			<CodeFileContainer repo="aRepo" rev="aRev" def="someDef" />
+		);
+	});
+
+	it("should render def options menu", () => {
+		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
+		Dispatcher.directDispatch(DefStore, new DefActions.SelectMultipleDefs(["firstDef", "secondDef"], 10, 20));
+		autotest(testdataDefOptions, `${__dirname}/testdata/CodeFileContainer-defOptions.json`,
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef={null} />
 		);
 	});
 });

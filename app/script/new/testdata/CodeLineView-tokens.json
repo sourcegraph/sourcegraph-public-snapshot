@@ -79,12 +79,12 @@
 								"key": "4",
 								"props": {
 									"className": "e ref def highlight-secondary",
-									"href": "otherURL",
+									"href": "firstURL",
 									"onMouseOver": {
 										"dispatched": [
 											{
 												"$constructor": "HighlightDef",
-												"url": "otherURL"
+												"url": "firstURL"
 											}
 										]
 									},
@@ -99,8 +99,11 @@
 										"defaultPrevented": true,
 										"dispatched": [
 											{
-												"$constructor": "SelectDef",
-												"url": "otherURL"
+												"$constructor": "SelectMultipleDefs",
+												"urls": [
+													"firstURL",
+													"secondURL"
+												]
 											}
 										]
 									},

@@ -13,8 +13,10 @@ export default class CodeLineView extends Component {
 			state.tokens = props.tokens;
 			state.ownURLs = {};
 			state.tokens.forEach((token) => {
-				if (token["URL"]) {
-					state.ownURLs[token.URL[0]] = true;
+				if (token.URL) {
+					token.URL.forEach((url) => {
+						state.ownURLs[url] = true;
+					});
 				}
 			});
 		}
@@ -51,13 +53,17 @@ export default class CodeLineView extends Component {
 						if (token.IsDef) {
 							cls += " def";
 						}
-						switch (token.URL[0]) {
-						case this.state.selectedDef:
+						let selected = false;
+						let highlighted = false;
+						token.URL.forEach((url) => {
+							selected = selected || url === this.state.selectedDef;
+							highlighted = highlighted || url === this.state.highlightedDef;
+						});
+						if (selected) {
 							cls += " highlight-primary";
-							break;
-						case this.state.highlightedDef:
+						}
+						if (!selected && highlighted) {
 							cls += " highlight-secondary";
-							break;
 						}
 						return (
 							<a
@@ -71,6 +77,11 @@ export default class CodeLineView extends Component {
 								}}
 								onClick={(event) => {
 									event.preventDefault();
+									if (token.URL.length > 1) {
+										let action = new DefActions.SelectMultipleDefs(token.URL, event.clientX, event.clientY);
+										setTimeout(() => { Dispatcher.dispatch(action); }, 0); // dispatch asynchronously so the menu is not immediately closed by click handler on document
+										return;
+									}
 									Dispatcher.dispatch(new DefActions.SelectDef(token.URL[0]));
 								}}
 								key={i}>

@@ -36,6 +36,10 @@ export class DefStore extends Store {
 				return this.content[defURL] || null;
 			},
 		};
+
+		this.defOptionsURLs = null;
+		this.defOptionsLeft = 0;
+		this.defOptionsTop = 0;
 	}
 
 	__onDispatch(action) {
@@ -62,6 +66,12 @@ export class DefStore extends Store {
 		case DefActions.DiscussionsFetched:
 			this.discussions.content[action.defURL] = action.discussions;
 			this.discussions.generation++;
+			break;
+
+		case DefActions.SelectMultipleDefs:
+			this.defOptionsURLs = action.urls;
+			this.defOptionsLeft = action.left;
+			this.defOptionsTop = action.top;
 			break;
 
 		default:

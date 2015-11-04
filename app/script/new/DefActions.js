@@ -17,6 +17,14 @@ export class SelectDef {
 	}
 }
 
+export class SelectMultipleDefs {
+	constructor(urls, left, top) {
+		this.urls = urls;
+		this.left = left;
+		this.top = top;
+	}
+}
+
 export class HighlightDef {
 	constructor(url) {
 		this.url = url;

@@ -26,6 +26,21 @@ function lineFromByte(file, byte) {
 }
 
 export default class CodeFileContainer extends Container {
+	constructor(props) {
+		super(props);
+		this._hideOptionsMenu = this._hideOptionsMenu.bind(this);
+	}
+
+	componentDidMount() {
+		super.componentDidMount();
+		document.addEventListener("click", this._hideOptionsMenu);
+	}
+
+	componentWillUnmount() {
+		super.componentWillUnmount();
+		document.removeEventListener("click", this._hideOptionsMenu);
+	}
+
 	stores() {
 		return [CodeStore, DefStore];
 	}
@@ -51,6 +66,10 @@ export default class CodeFileContainer extends Container {
 		state.highlightedDef = DefStore.highlightedDef;
 		state.discussions = DefStore.discussions;
 		state.discussionsGeneration = DefStore.discussions.generation;
+
+		state.defOptionsURLs = DefStore.defOptionsURLs;
+		state.defOptionsLeft = DefStore.defOptionsLeft;
+		state.defOptionsTop = DefStore.defOptionsTop;
 	}
 
 	requestData(prevState, nextState) {
@@ -63,6 +82,17 @@ export default class CodeFileContainer extends Container {
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			Dispatcher.dispatch(new DefActions.WantDef(nextState.highlightedDef));
+		}
+		if (nextState.defOptionsURLs && prevState.defOptionsURLs !== nextState.defOptionsURLs) {
+			nextState.defOptionsURLs.forEach((url) => {
+				Dispatcher.dispatch(new DefActions.WantDef(url));
+			});
+		}
+	}
+
+	_hideOptionsMenu() {
+		if (this.state.defOptionsURLs) {
+			Dispatcher.dispatch(new DefActions.SelectMultipleDefs(null, 0, 0));
 		}
 	}
 
@@ -116,6 +146,7 @@ export default class CodeFileContainer extends Container {
 							highlightedDef={this.state.highlightedDef} />
 					</div>
 				}
+
 				{selectedDefData &&
 					<DefPopup
 						def={selectedDefData}
@@ -123,7 +154,29 @@ export default class CodeFileContainer extends Container {
 						highlightedDef={this.state.highlightedDef}
 						discussions={this.state.discussions.get(this.state.selectedDef)} />
 				}
-				{highlightedDefData && <DefTooltip def={highlightedDefData} />}
+
+				{highlightedDefData && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
+
+				{this.state.defOptionsURLs &&
+					<div className="context-menu"
+						style={{
+							left: this.state.defOptionsLeft,
+							top: this.state.defOptionsTop,
+						}}>
+						<ul>
+							{this.state.defOptionsURLs.map((url, i) => {
+								let data = this.state.defs.get(url);
+								return (
+									<li key={i} onClick={() => {
+										Dispatcher.dispatch(new DefActions.SelectDef(url));
+									}}>
+										{data ? <span dangerouslySetInnerHTML={data.QualifiedName} /> : "..."}
+									</li>
+								);
+							})}
+						</ul>
+					</div>
+				}
 			</div>
 		);
 	}
