@@ -144,6 +144,10 @@ func (s remoteChangesets) Update(ctx context.Context, v1 *sourcegraph.ChangesetU
 	return sourcegraph.NewClientFromContext(ctx).Changesets.Update(ctx, v1)
 }
 
+func (s remoteChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Changesets.Merge(ctx, v1)
+}
+
 func (s remoteChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
 	return sourcegraph.NewClientFromContext(ctx).Changesets.CreateReview(ctx, v1)
 }

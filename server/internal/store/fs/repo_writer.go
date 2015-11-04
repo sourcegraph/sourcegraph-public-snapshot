@@ -55,21 +55,26 @@ type RepoStage struct {
 //
 // When done, you MUST call the RepoStage's Free to remove the temp
 // dir it creates.
-func NewRepoStage(repoPath, refName string) (*RepoStage, error) {
+func NewRepoStage(repoPath, refName string) (rs *RepoStage, err error) {
+	if err := checkGitArgSafety(repoPath); err != nil {
+		return nil, err
+	}
+
 	stagingDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		// On error, clean up the abandoned staging dir.
+		if err != nil {
+			os.RemoveAll(stagingDir)
+		}
+	}()
 
 	cmd := exec.Command("git", "init", "--quiet")
 	cmd.Dir = stagingDir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
-	}
-
-	// Sanitize arg.
-	if strings.HasPrefix(repoPath, "-") {
-		return nil, fmt.Errorf("invalid (unsafe) repo dir %q", repoPath)
 	}
 
 	// Only try to pull if the repo already has the refs/src/review ref
@@ -112,6 +117,10 @@ func repoHasRef(repoDir, refName string) (bool, error) {
 // to exist in the repository and will be created automatically. The
 // contents of the file will match the passed argument.
 func (rs *RepoStage) Add(path string, contents []byte) error {
+	if err := checkGitArgSafety(path); err != nil {
+		return err
+	}
+
 	fullPath := filepath.Join(rs.stagingDir, path)
 
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0700); err != nil {
@@ -121,10 +130,6 @@ func (rs *RepoStage) Add(path string, contents []byte) error {
 	// (Over)write file.
 	if err := ioutil.WriteFile(fullPath, contents, 0600); err != nil {
 		return err
-	}
-
-	if strings.HasPrefix(path, "-") {
-		return fmt.Errorf("attempted to add invalid (unsafe) file %q", path)
 	}
 
 	// Add to index.
@@ -188,6 +193,59 @@ func (rs *RepoStage) Commit(author, committer vcs.Signature, message string) err
 	return nil
 }
 
+func (rs *RepoStage) Merge(head, base, message string, squash bool) error {
+	if err := checkGitArgSafety(head); err != nil {
+		return err
+	}
+	if err := checkGitArgSafety(base); err != nil {
+		return err
+	}
+
+	// Checkout the base branch.
+	cmd := exec.Command("git", "checkout", base)
+	cmd.Dir = rs.stagingDir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return execError(cmd.Args, err, out)
+	}
+
+	// Pull the head branch of the changeset into the base.
+	if err != nil {
+		return err
+	}
+	args := []string{"pull", "--no-commit"}
+	if squash {
+		args = append(args, "--squash")
+	} else {
+		args = append(args, "--no-ff")
+	}
+	args = append(args, rs.repoDir, head)
+	cmd = exec.Command("git", args...)
+	cmd.Dir = rs.stagingDir
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return execError(cmd.Args, err, out)
+	}
+
+	// Commit merged changes.
+	cmd = exec.Command("git", "commit", "--message="+message)
+	cmd.Dir = rs.stagingDir
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return execError(cmd.Args, err, out)
+	}
+
+	// Push merged changes.
+	cmd = exec.Command("git", "push", rs.repoDir, base)
+	cmd.Dir = rs.stagingDir
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return execError(cmd.Args, err, out)
+	}
+
+	return nil
+}
+
 // Free frees up the resources used by the allocated repository and index.
 func (rs *RepoStage) Free() error {
 	return os.RemoveAll(rs.stagingDir)
@@ -200,4 +258,18 @@ func updateRef(repoPath, ref, val string) error {
 		return fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
 	}
 	return nil
+}
+
+// checkGitArgSafety returns a non-nil error if a user-supplied arg beigins
+// with a "-", which could cause it to be interpreted as a git command line
+// argument.
+func checkGitArgSafety(arg string) error {
+	if strings.HasPrefix(arg, "-") {
+		return fmt.Errorf("invalid git arg \"%s\" (begins with '-')", arg)
+	}
+	return nil
+}
+
+func execError(args []string, err error, out []byte) error {
+	return fmt.Errorf("exec %v: %s (output follows)\n\n%s", args, err, out)
 }

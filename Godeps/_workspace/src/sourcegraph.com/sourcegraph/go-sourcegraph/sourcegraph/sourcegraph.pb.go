@@ -62,6 +62,7 @@ It has these top-level messages:
 	ChangesetListReviewsOp
 	ChangesetSpec
 	ChangesetUpdateOp
+	ChangesetMergeOp
 	DiscussionSpec
 	DiscussionListOp
 	DiscussionCommentCreateOp
@@ -1197,6 +1198,24 @@ type ChangesetUpdateOp struct {
 func (m *ChangesetUpdateOp) Reset()         { *m = ChangesetUpdateOp{} }
 func (m *ChangesetUpdateOp) String() string { return proto.CompactTextString(m) }
 func (*ChangesetUpdateOp) ProtoMessage()    {}
+
+type ChangesetMergeOp struct {
+	// Repo holds the RepoSpec where the Changeset to be merged is located.
+	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
+	// ID holds the ID of the changeset that is to be merged.
+	ID int64 `protobuf:"varint,2,opt,name=id,proto3" json:",omitempty"`
+	// Message is a text template used to generate a message for the commit of
+	// the resulting merge operation. Any of the fields from the changeset are
+	// available to use in the template.
+	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:",omitempty"`
+	// Squash, if true, will squash the commits of the head branch into a
+	// single commit prior to merging.
+	Squash bool `protobuf:"varint,4,opt,name=squash,proto3" json:",omitempty"`
+}
+
+func (m *ChangesetMergeOp) Reset()         { *m = ChangesetMergeOp{} }
+func (m *ChangesetMergeOp) String() string { return proto.CompactTextString(m) }
+func (*ChangesetMergeOp) ProtoMessage()    {}
 
 type DiscussionSpec struct {
 	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
@@ -4627,6 +4646,9 @@ type ChangesetsClient interface {
 	// UpdateChangeset updates a changeset's fields and returns the
 	// update event. If no update occurred, it returns nil.
 	Update(ctx context.Context, in *ChangesetUpdateOp, opts ...grpc.CallOption) (*ChangesetEvent, error)
+	// Merge merges the head branch of a changeset into its base branch and
+	// pushes the resulting merged base.
+	Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
 	CreateReview(ctx context.Context, in *ChangesetCreateReviewOp, opts ...grpc.CallOption) (*ChangesetReview, error)
@@ -4680,6 +4702,15 @@ func (c *changesetsClient) Update(ctx context.Context, in *ChangesetUpdateOp, op
 	return out, nil
 }
 
+func (c *changesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.Changesets/Merge", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *changesetsClient) CreateReview(ctx context.Context, in *ChangesetCreateReviewOp, opts ...grpc.CallOption) (*ChangesetReview, error) {
 	out := new(ChangesetReview)
 	err := grpc.Invoke(ctx, "/sourcegraph.Changesets/CreateReview", in, out, c.cc, opts...)
@@ -4720,6 +4751,9 @@ type ChangesetsServer interface {
 	// UpdateChangeset updates a changeset's fields and returns the
 	// update event. If no update occurred, it returns nil.
 	Update(context.Context, *ChangesetUpdateOp) (*ChangesetEvent, error)
+	// Merge merges the head branch of a changeset into its base branch and
+	// pushes the resulting merged base.
+	Merge(context.Context, *ChangesetMergeOp) (*pbtypes1.Void, error)
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
 	CreateReview(context.Context, *ChangesetCreateReviewOp) (*ChangesetReview, error)
@@ -4781,6 +4815,18 @@ func _Changesets_Update_Handler(srv interface{}, ctx context.Context, dec func(i
 	return out, nil
 }
 
+func _Changesets_Merge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ChangesetMergeOp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChangesetsServer).Merge(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func _Changesets_CreateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(ChangesetCreateReviewOp)
 	if err := dec(in); err != nil {
@@ -4836,6 +4882,10 @@ var _Changesets_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Update",
 			Handler:    _Changesets_Update_Handler,
+		},
+		{
+			MethodName: "Merge",
+			Handler:    _Changesets_Merge_Handler,
 		},
 		{
 			MethodName: "CreateReview",
