@@ -808,6 +808,10 @@ service Changesets {
 	// update event. If no update occurred, it returns nil.
 	rpc Update(ChangesetUpdateOp) returns (ChangesetEvent);
 
+	// Merge merges the head branch of a changeset into its base branch and
+	// pushes the resulting merged base.
+	rpc Merge(ChangesetMergeOp) returns (pbtypes.Void);
+
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
 	rpc CreateReview(ChangesetCreateReviewOp) returns (ChangesetReview);
@@ -984,6 +988,23 @@ message ChangesetUpdateOp {
 
 	// Author is the user that initiated this event.
 	UserSpec Author = 8 [(gogoproto.nullable) = false];
+}
+
+message ChangesetMergeOp {
+	// Repo holds the RepoSpec where the Changeset to be merged is located.
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// ID holds the ID of the changeset that is to be merged.
+	int64 id = 2 [(gogoproto.customname) = "ID"];
+
+	// Message is a text template used to generate a message for the commit of
+	// the resulting merge operation. Any of the fields from the changeset are
+	// available to use in the template.
+	string message = 3;
+
+	// Squash, if true, will squash the commits of the head branch into a
+	// single commit prior to merging.
+	bool squash = 4;
 }
 
 message DiscussionSpec {

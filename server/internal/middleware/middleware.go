@@ -763,6 +763,25 @@ func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.Change
 
 }
 
+func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.ChangesetMergeOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Changesets", "Merge", param)
+	defer func() {
+		trace.After(ctx, "Changesets", "Merge", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Changesets.Merge")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.ChangesetsServer = s.u
+
+	res, err = target.Merge(ctx, param)
+	return
+
+}
+
 func (s wrappedChangesets) CreateReview(ctx context.Context, param *sourcegraph.ChangesetCreateReviewOp) (res *sourcegraph.ChangesetReview, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Changesets", "CreateReview", param)

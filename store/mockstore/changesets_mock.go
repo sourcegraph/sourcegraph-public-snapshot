@@ -15,6 +15,7 @@ type Changesets struct {
 	CreateReview_ func(ctx context.Context, repo string, changesetID int64, newReview *sourcegraph.ChangesetReview) (*sourcegraph.ChangesetReview, error)
 	ListReviews_  func(ctx context.Context, repo string, changesetID int64) (*sourcegraph.ChangesetReviewList, error)
 	Update_       func(ctx context.Context, op *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
+	Merge_        func(ctx context.Context, op *sourcegraph.ChangesetMergeOp) error
 	ListEvents_   func(ctx context.Context, spec *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
 }
 
@@ -40,6 +41,10 @@ func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID i
 
 func (s *Changesets) Update(ctx context.Context, op *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	return s.Update_(ctx, op)
+}
+
+func (s *Changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp) error {
+	return s.Merge_(ctx, op)
 }
 
 func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
