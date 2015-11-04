@@ -111,7 +111,7 @@ var CodeReviewComment = React.createClass({
 					<MarkdownTextarea ref="draftEdit" placeholder="Leave a comment..." autoFocus="true" />
 					<div className="actions">
 						<button className="btn btn-success btn-small" onClick={this._onSubmit} tabIndex="0">Save draft</button>
-						<button className="btn btn-small" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
+						<button className="btn btn-cancel btn-small" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
 					</div>
 				</div>
 			);
@@ -135,7 +135,7 @@ var CodeReviewComment = React.createClass({
 						<MarkdownTextarea ref="commentEdit" defaultValue={this.state.Body} autoFocus="true" />
 						<div className="actions">
 							<button className="btn btn-success" onClick={this._onEdit} tabIndex="0">Save</button>
-							<button className="btn" onClick={this._onEditCancel} tabIndex="0">Cancel</button>
+							<button className="btn btn-cancel" onClick={this._onEditCancel} tabIndex="0">Cancel</button>
 						</div>
 					</div>
 				) : (

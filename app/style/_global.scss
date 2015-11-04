@@ -81,3 +81,13 @@ textarea.code {
 blockquote {
 	margin-bottom: ($line-height-computed / 2);
 }
+
+.btn-cancel {
+	@include button-variant($btn-default-color, $gray-lightest, darken($gray-lightest, 8));
+}
+
+.actions {
+	.btn:nth-child(n+2) {
+		margin-left: 5px;
+	}
+}

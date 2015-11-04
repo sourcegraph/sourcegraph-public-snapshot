@@ -66,7 +66,7 @@ var CodeReviewSubmitReviewForm = React.createClass({
 								<div className="actions">
 									<i className="pull-left">Includes {this.props.drafts.length} inline comments.</i>
 									<button className={buttonStyle} onClick={onClick} tabIndex="0">Submit</button>
-									<button className="btn" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
+									<button className="btn btn-cancel" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
 								</div>
 							</td>
 						</tr>
