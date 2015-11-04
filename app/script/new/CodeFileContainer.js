@@ -72,7 +72,7 @@ export default class CodeFileContainer extends Container {
 		state.defOptionsTop = DefStore.defOptionsTop;
 	}
 
-	requestData(prevState, nextState) {
+	onStateTransition(prevState, nextState) {
 		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
 			Dispatcher.asyncDispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
 		}

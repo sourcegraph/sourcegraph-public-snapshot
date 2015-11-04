@@ -36,8 +36,8 @@ export default class Component extends React.Component {
 		this._checkForUndefined(props, "Property");
 		this.reconcileState(newState, props);
 		this._checkForUndefined(newState, "State");
-		if (this.requestData) {
-			this.requestData(this.state, newState);
+		if (this.onStateTransition) {
+			this.onStateTransition(this.state, newState);
 		}
 		super.setState(newState);
 	}
