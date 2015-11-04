@@ -70,8 +70,9 @@ var shortHelpMessage = `Usage:
 Starts an HTTP server serving the app and API.
 
 [serve command options]
-          --addr=                                HTTP/2 (and HTTPS if TLS is enabled) address to listen on (:3001)
-          --http-addr=                           regular HTTP/1 address to listen on (:3000)
+          --http-addr=                           regular HTTP/1 address to listen on, if not blank (:3000)
+          --addr=                                HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank (:3001)
+          --ssh-addr=                            SSH address to listen on, if not blank (:3002)
           --grpc-addr=                           gRPC address to listen on (:3100)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
@@ -159,9 +160,9 @@ type ServeCmdPrivate struct {
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
-	HTTPAddr string `long:"http-addr" default:":3000" description:"regular HTTP/1 address to listen on"`
-	Addr     string `long:"addr" default:":3001" description:"HTTP/2 (and HTTPS if TLS is enabled) address to listen on" required:"yes"`
-	SSHAddr  string `long:"ssh-addr" default:":3002" description:"SSH address to listen on"`
+	HTTPAddr string `long:"http-addr" default:":3000" description:"regular HTTP/1 address to listen on, if not blank"`
+	Addr     string `long:"addr" default:":3001" description:"HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank" required:"yes"`
+	SSHAddr  string `long:"ssh-addr" default:":3002" description:"SSH address to listen on, if not blank"`
 	GRPCAddr string `long:"grpc-addr" default:":3100" description:"gRPC address to listen on"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
@@ -537,13 +538,15 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Start SSH git server.
-	privateSigner, err := ssh.NewSignerFromKey(idKey.Private())
-	if err != nil {
-		return err
-	}
-	err = (&sshgit.Server{}).ListenAndStart(c.SSHAddr, privateSigner, cliCtx, idKey.ID)
-	if err != nil {
-		return err
+	if c.SSHAddr != "" {
+		privateSigner, err := ssh.NewSignerFromKey(idKey.Private())
+		if err != nil {
+			return err
+		}
+		err = (&sshgit.Server{}).ListenAndStart(c.SSHAddr, privateSigner, cliCtx, idKey.ID)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Start background repo updater worker.
