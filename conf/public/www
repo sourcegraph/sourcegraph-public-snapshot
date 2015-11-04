@@ -1,4 +1,0 @@
-. $(dirname "${BASH_SOURCE[0]}")/live
-
-# TODO re-enable this when we cut-over
-export SG_STRICT_HOSTNAME=f
