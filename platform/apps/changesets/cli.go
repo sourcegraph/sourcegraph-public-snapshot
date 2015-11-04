@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"google.golang.org/grpc"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 
@@ -69,6 +70,15 @@ func init() {
 		"update a changeset",
 		"The `sgx changeset update` command updates a changeset.",
 		&changesetUpdateCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = changesetsGroup.AddCommand("merge",
+		"merge a changeset",
+		"The `sgx changeset merge` command merges a changeset into its base branch on the remote.",
+		&changesetMergeCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -286,6 +296,31 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 	}
 
 	log.Printf("# updated changeset %s #%d", c.Repo, ev.After.ID)
+	return nil
+}
+
+type changesetMergeCmd struct {
+	Repo   string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+	Squash bool   `long:"squash" description:"squash multiple commits on head into a single merge commit"`
+	Args   struct {
+		ID int64 `name:"ID" description:"changeset ID"`
+	} `positional-args:"yes" required:"yes" count:"1"`
+}
+
+func (c *changesetMergeCmd) Execute(args []string) error {
+	cliCtx := putil.CLIContext()
+	sg := sourcegraph.NewClientFromContext(cliCtx)
+
+	_, err := sg.Changesets.Merge(cliCtx, &sourcegraph.ChangesetMergeOp{
+		Repo:   sourcegraph.RepoSpec{URI: c.Repo},
+		ID:     c.Args.ID,
+		Squash: c.Squash,
+	})
+	if err != nil {
+		return errors.New(grpc.ErrorDesc(err))
+	}
+
+	log.Printf("# merged changeset %s #%d", c.Repo, c.Args.ID)
 	return nil
 }
 

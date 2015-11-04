@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"golang.org/x/net/context"
@@ -22,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/vfsutil"
 )
 
@@ -33,6 +36,8 @@ const (
 
 	changesetIndexOpenDir   = "index/open"
 	changesetIndexClosedDir = "index/closed"
+
+	defaultCommitMessageTmpl = "{{.Title}}\n\nMerge changeset #{{.ID}}\n\n{{.Description}}"
 )
 
 type Changesets struct {
@@ -366,6 +371,63 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		return nil, err
 	}
 	return evt, nil
+}
+
+func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeOp) error {
+	cs, _ := s.Get(ctx, opt.Repo.URI, opt.ID)
+	base, head := cs.DeltaSpec.Base.Rev, cs.DeltaSpec.Head.Rev
+	if cs.Merged {
+		return fmt.Errorf("changeset #%d already merged", cs.ID)
+	}
+	if cs.ClosedAt != nil {
+		return fmt.Errorf("changeset #%d already closed", cs.ID)
+	}
+
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{
+		URI: opt.Repo.URI,
+	})
+	if err != nil {
+		return err
+	}
+
+	var msgTmpl string
+	if opt.Message != "" {
+		msgTmpl = opt.Message
+	} else {
+		msgTmpl = defaultCommitMessageTmpl
+	}
+	msg, err := mergeCommitMessage(cs, msgTmpl)
+	if err != nil {
+		return err
+	}
+
+	dir := absolutePathForRepo(ctx, repo.URI)
+	rs, err := NewRepoStage(dir, base)
+	if err != nil {
+		return err
+	}
+	defer rs.Free()
+
+	if err := rs.Merge(head, base, msg, opt.Squash); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func mergeCommitMessage(cs *sourcegraph.Changeset, msgTmpl string) (string, error) {
+	t, err := template.New("commit message").Parse(msgTmpl)
+	if err != nil {
+		return "", err
+	}
+
+	var b bytes.Buffer
+	err = t.Execute(&b, cs)
+	if err != nil {
+		return "", err
+	}
+
+	return b.String(), nil
 }
 
 // shouldRegisterEvent returns true if the passed update operation will cause an event
