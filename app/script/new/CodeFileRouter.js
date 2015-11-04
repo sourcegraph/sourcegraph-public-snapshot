@@ -4,6 +4,7 @@ import URI from "urijs";
 import Component from "./Component";
 import Dispatcher from "./Dispatcher";
 import CodeFileContainer from "./CodeFileContainer";
+import DefStore from "./DefStore";
 import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
 
@@ -43,9 +44,7 @@ export default class CodeFileRouter extends Component {
 		state.endLine = vars["endline"] ? parseInt(vars["endline"], 10) : null;
 		state.selectedDef = vars["seldef"] || null;
 
-		state.def = vars["def"] || null;
-		state.unitType = state.def && keys[0];
-		state.unit = state.def && vars[keys[0]];
+		state.def = vars["def"] ? `/${state.repo}@${state.rev}/.${keys[0]}/${vars[keys[0]]}/.def/${vars["def"]}` : null;
 		state.example = vars["examples"] ? parseInt(vars["examples"], 10) : null;
 	}
 
@@ -63,14 +62,14 @@ export default class CodeFileRouter extends Component {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case CodeActions.SelectLine:
-			this._navigate(null, {
+			this._navigate(this._filePath(), {
 				startline: action.line,
 				endline: action.line,
 			});
 			break;
 
 		case CodeActions.SelectRange:
-			this._navigate(null, {
+			this._navigate(this._filePath(), {
 				startline: Math.min(this.state.startLine || action.line, action.line),
 				endline: Math.max(this.state.endLine || action.line, action.line),
 			});
@@ -78,13 +77,18 @@ export default class CodeFileRouter extends Component {
 
 		case DefActions.SelectDef:
 			// null becomes undefined
-			this._navigate(null, {seldef: action.url || undefined}); // eslint-disable-line no-undefined
+			this._navigate(this._filePath(), {seldef: action.url || undefined}); // eslint-disable-line no-undefined
 			break;
 
 		case DefActions.GoToDef:
-			console.warn("GoToDef: not yet implemented");
+			this._navigate(action.url, {startline: undefined, endline: undefined, seldef: undefined}); // eslint-disable-line no-undefined
 			break;
 		}
+	}
+
+	_filePath() {
+		let tree = this.state.tree || DefStore.defs.get(this.state.def).File.Path;
+		return `/${this.state.repo}@${this.state.rev}/.tree/${tree}`;
 	}
 
 	render() {
@@ -93,8 +97,6 @@ export default class CodeFileRouter extends Component {
 				<CodeFileContainer
 					repo={this.state.repo}
 					rev={this.state.rev}
-					unitType={this.state.unitType}
-					unit={this.state.unit}
 					def={this.state.def}
 					example={this.state.example} />
 			);

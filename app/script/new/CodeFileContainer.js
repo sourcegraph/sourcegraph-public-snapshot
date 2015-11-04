@@ -11,6 +11,17 @@ import DefPopup from "./DefPopup";
 import "./CodeBackend";
 import "./DefBackend";
 
+function lineFromByte(file, byte) {
+	if (!file || !byte) { return null; }
+	let lines = file.Entry.SourceCode.Lines;
+	for (let i = 0; i < lines.length; i++) {
+		if (lines[i].StartByte <= byte && byte <= lines[i].EndByte) {
+			return i + 1;
+		}
+	}
+	return null;
+}
+
 export default class CodeFileContainer extends Container {
 	stores() {
 		return [CodeStore, DefStore];
@@ -19,7 +30,16 @@ export default class CodeFileContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 
-		state.file = CodeStore.files.get(state.repo, state.rev, state.tree);
+		// get filename from definition data
+		let defData = props.def && DefStore.defs.get(props.def);
+		state.tree = props.def ? (defData && defData.File.Path) : props.tree;
+		state.selectedDef = props.def || props.selectedDef; // triggers WantDef for props.def
+
+		// fetch file content
+		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
+
+		state.startLine = props.def ? lineFromByte(state.file, defData && defData.ByteStartPosition) : (props.startLine || null);
+		state.endLine = props.def ? lineFromByte(state.file, defData && defData.ByteEndPosition) : (props.endLine || null);
 
 		state.defs = DefStore.defs;
 		state.defsGeneration = DefStore.defs.generation;
@@ -31,7 +51,7 @@ export default class CodeFileContainer extends Container {
 	}
 
 	requestData(prevState, nextState) {
-		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree) {
+		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
 			Dispatcher.dispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
 		}
 		if (nextState.selectedDef && prevState.selectedDef !== nextState.selectedDef) {
@@ -72,11 +92,9 @@ CodeFileContainer.propTypes = {
 	repo: React.PropTypes.string,
 	rev: React.PropTypes.string,
 	tree: React.PropTypes.string,
+	def: React.PropTypes.string,
 	startLine: React.PropTypes.number,
 	endLine: React.PropTypes.number,
 	selectedDef: React.PropTypes.string,
-	unitType: React.PropTypes.string,
-	unit: React.PropTypes.string,
-	def: React.PropTypes.string,
 	example: React.PropTypes.number,
 };

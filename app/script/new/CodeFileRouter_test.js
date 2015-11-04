@@ -87,6 +87,14 @@ describe("CodeFileRouter", () => {
 			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=50"
 		);
 	});
+
+	it("should handle DefActions.GoToDef", () => {
+		testAction(
+			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42&seldef=someURL",
+			new DefActions.GoToDef("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"),
+			"http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
+		);
+	});
 });
 
 function testAction(uri, action, expectedURI) {

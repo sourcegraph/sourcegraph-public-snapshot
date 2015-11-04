@@ -1,0 +1,18 @@
+{
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "somePath"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "someDef"
+		},
+		{
+			"$constructor": "WantDiscussions",
+			"defURL": "someDef"
+		}
+	]
+}

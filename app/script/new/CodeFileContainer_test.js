@@ -12,6 +12,7 @@ import Dispatcher from "./Dispatcher";
 import testdataUnavailableFile from "./testdata/CodeFileContainer-unavailableFile.json";
 import testdataUnavailableDefinition from "./testdata/CodeFileContainer-unavailableDefinition.json";
 import testdataAvailableDefinition from "./testdata/CodeFileContainer-availableDefinition.json";
+import testdataFileFromDef from "./testdata/CodeFileContainer-fileFromDef.json";
 
 describe("CodeFileContainer", () => {
 	it("should handle unavailable file", () => {
@@ -37,6 +38,13 @@ describe("CodeFileContainer", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.DiscussionsFetched("someDef", [{test: "discussionData"}]));
 		autotest(testdataAvailableDefinition, `${__dirname}/testdata/CodeFileContainer-availableDefinition.json`,
 			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
+		);
+	});
+
+	it("should get filename from definition", () => {
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {File: {Path: "somePath"}}));
+		autotest(testdataFileFromDef, `${__dirname}/testdata/CodeFileContainer-fileFromDef.json`,
+			<CodeFileContainer repo="aRepo" rev="aRev" def="someDef" />
 		);
 	});
 });

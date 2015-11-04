@@ -4,9 +4,7 @@
 		"props": {
 			"repo": "github.com/gorilla/mux",
 			"rev": "master",
-			"unitType": "GoPackage",
-			"unit": "github.com/gorilla/mux",
-			"def": "Router",
+			"def": "/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router",
 			"example": 4
 		}
 	}
