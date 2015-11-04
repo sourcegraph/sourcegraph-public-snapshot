@@ -28,6 +28,8 @@ describe("DefStore", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.NoExampleAvailable("/someURL", 42));
 		Dispatcher.directDispatch(DefStore, new DefActions.NoExampleAvailable("/someURL", 100));
 		expect(DefStore.examples.getCount("/someURL")).to.be(42);
+		Dispatcher.directDispatch(DefStore, new DefActions.NoExampleAvailable("/someURL", 0));
+		expect(DefStore.examples.getCount("/someURL")).to.be(0);
 	});
 
 	it("should handle DiscussionsFetched", () => {

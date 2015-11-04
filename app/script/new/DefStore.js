@@ -26,7 +26,7 @@ export class DefStore extends Store {
 				return this.content[exampleKeyFor(defURL, index)] || null;
 			},
 			getCount(defURL) {
-				return this.counts[defURL] || 1000; // high initial value until count is known
+				return this.counts.hasOwnProperty(defURL) ? this.counts[defURL] : 1000; // high initial value until count is known
 			},
 		};
 		this.discussions = {
