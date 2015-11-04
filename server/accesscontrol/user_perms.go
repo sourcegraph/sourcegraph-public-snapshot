@@ -17,6 +17,7 @@ import (
 
 // VerifyUserHasWriteAccess checks if the user in the current context
 // is authorized to make write requests to this server.
+//
 // This method always returns nil when the user has write access,
 // and returns a non-nil error when access cannot be granted.
 // If the cmdline flag auth.restrict-write-access is set, this method
@@ -31,8 +32,36 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 	return VerifyActorHasAdminAccess(ctx, auth.ActorFromContext(ctx), method)
 }
 
+// VerifyActorHasReadAccess checks if the given actor is authorized to make
+// read requests to this server.
+//
+// Note that this function allows the caller to retrieve any user's access levels.
+// This is meant for trusted server code living outside the scope of gRPC requests
+// to verify user permissions, for example the SSH Git server. For all other cases,
+// VerifyUserHasWriteAccess or VerifyUserHasAdminAccess should be used to authorize a user for gRPC operations.
+func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method string) error {
+	if !authutil.ActiveFlags.HasAccessControl() {
+		// Access controls are disabled on the server, so everyone has read access.
+		return nil
+	}
+
+	if authutil.ActiveFlags.AllowAnonymousReaders {
+		return nil
+	}
+
+	if !actor.IsAuthenticated() {
+		if len(actor.Scope) > 0 {
+			return nil
+		}
+		return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: no authenticated user in current context", method)
+	}
+
+	return nil
+}
+
 // VerifyActorHasWriteAccess checks if the given actor is authorized to make
 // write requests to this server.
+//
 // Note that this function allows the caller to retrieve any user's access levels.
 // This is meant for trusted server code living outside the scope of gRPC requests
 // to verify user permissions, for example the SSH Git server. For all other cases,
@@ -85,6 +114,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method str
 
 // VerifyActorHasAdminAccess checks if the given actor is authorized to make
 // admin requests to this server.
+//
 // Note that this function allows the caller to retrieve any user's access levels.
 // This is meant for trusted server code living outside the scope of gRPC requests
 // to verify user permissions, for example the SSH Git server. For all other cases,
