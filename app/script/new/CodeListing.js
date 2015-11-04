@@ -19,6 +19,9 @@ export default class CodeListing extends Component {
 	componentDidMount() {
 		this._updateVisibleLines();
 		window.addEventListener("scroll", this._updateVisibleLines);
+		if (this.state.startLine) {
+			this._scrollTo(this.state.startLine);
+		}
 	}
 
 	componentWillUnmount() {
@@ -40,6 +43,18 @@ export default class CodeListing extends Component {
 				visibleLinesCount: visibleLinesCount,
 			});
 		}
+	}
+
+	onStateTransition(prevState, nextState) {
+		if (nextState.startLine && nextState.selectedDef && prevState.startLine !== nextState.startLine) {
+			this._scrollTo(nextState.startLine);
+		}
+	}
+
+	_scrollTo(line) {
+		if (!this.refs.table) { return; }
+		let rect = this.refs.table.getBoundingClientRect();
+		window.scrollTo(0, rect.height / this.state.lines.length * (line - 1) - 100);
 	}
 
 	render() {
