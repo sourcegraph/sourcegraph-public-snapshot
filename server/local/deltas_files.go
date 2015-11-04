@@ -154,6 +154,7 @@ func parseMultiFileDiffs(ctx context.Context, delta *sourcegraph.Delta, fdiffs [
 			overSized = true
 		}
 	}
+	par := parallel.NewRun(runtime.GOMAXPROCS(0))
 	fds := make([]*sourcegraph.FileDiff, len(fdiffs))
 	for i, fd := range fdiffs {
 		parseRenames(fd)
@@ -167,15 +168,19 @@ func parseMultiFileDiffs(ctx context.Context, delta *sourcegraph.Delta, fdiffs [
 		}
 		for j, h := range fd.Hunks {
 			hunk := &sourcegraph.Hunk{Hunk: *h}
-			// TODO(gbbr): Make use of concurrency here to improve speed.
-			// This is a bottle-neck and any improvement here will be
-			// highly noticeable. Currently causes 2 file reads per hunk.
-			if opt.Tokenized && !overSized {
-				tokenizeHunkBody(fds[i], hunk)
-				linkBaseAndHead(ctx, delta, fds[i], hunk)
-			}
+			hunkFileDiff := fds[i]
 			fds[i].FileDiffHunks[j] = hunk
+			if opt.Tokenized && !overSized {
+				par.Do(func() error {
+					tokenizeHunkBody(hunkFileDiff, hunk)
+					linkBaseAndHead(ctx, delta, hunkFileDiff, hunk)
+					return nil
+				})
+			}
 		}
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
 	}
 	files := &sourcegraph.DeltaFiles{
 		FileDiffs:     fds,
