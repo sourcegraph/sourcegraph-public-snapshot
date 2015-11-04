@@ -99,7 +99,7 @@ export default class DefPopup extends Component {
 					<div className="header">
 						<h1 className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 					</div>
-					<section className="doc" dangerouslySetInnerHTML={def.Data && def.Data.DocHTML} />
+					<section className="doc" dangerouslySetInnerHTML={def.Data.DocHTML} />
 				</section>
 
 				<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />

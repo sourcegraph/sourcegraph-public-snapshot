@@ -8,6 +8,7 @@ import CodeStore from "./CodeStore";
 import DefStore from "./DefStore";
 import CodeListing from "./CodeListing";
 import DefPopup from "./DefPopup";
+import DefTooltip from "./DefTooltip";
 import RepoBuildIndicator from "../components/RepoBuildIndicator"; // FIXME
 import RepoRevSwitcher from "../components/RepoRevSwitcher"; // FIXME
 import "./CodeBackend";
@@ -60,6 +61,9 @@ export default class CodeFileContainer extends Container {
 			Dispatcher.dispatch(new DefActions.WantDef(nextState.selectedDef));
 			Dispatcher.dispatch(new DefActions.WantDiscussions(nextState.selectedDef));
 		}
+		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
+			Dispatcher.dispatch(new DefActions.WantDef(nextState.highlightedDef));
+		}
 	}
 
 	render() {
@@ -76,7 +80,8 @@ export default class CodeFileContainer extends Container {
 			breadcrumb.push(<span key={i}> / <a href={basePath}>{seg}</a></span>);
 		});
 
-		let def = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
+		let selectedDefData = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
+		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
 		return (
 			<div>
 				<div className="code-file-toolbar">
@@ -111,13 +116,14 @@ export default class CodeFileContainer extends Container {
 							highlightedDef={this.state.highlightedDef} />
 					</div>
 				}
-				{def &&
+				{selectedDefData &&
 					<DefPopup
-						def={def}
+						def={selectedDefData}
 						examples={this.state.examples}
 						highlightedDef={this.state.highlightedDef}
 						discussions={this.state.discussions.get(this.state.selectedDef)} />
 				}
+				{highlightedDefData && <DefTooltip def={highlightedDefData} />}
 			</div>
 		);
 	}

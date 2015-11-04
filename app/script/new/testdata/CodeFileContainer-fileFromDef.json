@@ -90,6 +90,14 @@
 							}
 						]
 					}
+				},
+				{
+					"type": "DefTooltip",
+					"props": {
+						"def": {
+							"test": "otherDefData"
+						}
+					}
 				}
 			]
 		}
@@ -108,6 +116,10 @@
 		{
 			"$constructor": "WantDiscussions",
 			"defURL": "someDef"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "otherDef"
 		}
 	]
 }

@@ -1,0 +1,63 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "token-popover",
+			"style": {},
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "popover-data",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "title",
+									"children": [
+										{
+											"type": "tt",
+											"props": {
+												"dangerouslySetInnerHTML": {
+													"__html": "someName"
+												}
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "content",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "doc",
+												"style": {
+													"maxHeight": 100,
+													"overflowY": "scroll"
+												},
+												"dangerouslySetInnerHTML": "someDoc"
+											}
+										},
+										{
+											"type": "span",
+											"props": {
+												"className": "repo",
+												"children": [
+													"someRepo"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}
