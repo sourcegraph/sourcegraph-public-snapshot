@@ -183,7 +183,8 @@
 											"props": {
 												"className": "thread-comment-add",
 												"placeholder": "",
-												"defaultValue": ""
+												"defaultValue": "",
+												"autoFocus": "false"
 											}
 										},
 										{
