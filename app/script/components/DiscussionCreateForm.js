@@ -32,7 +32,7 @@ var DiscussionCreateForm = React.createClass({
 				<div className="form">
 					<h1>Create a discussion</h1>
 					<p>You are starting a new discussion on <b className="backtick" dangerouslySetInnerHTML={this.props.defName} />.</p>
-					<input type="text" ref="titleText" className="title" placeholder="Title" />
+					<input type="text" ref="titleText" className="title" placeholder="Title" autoFocus="true" />
 					<MarkdownTextarea ref="bodyText" className="body" placeholder="Description" />
 					<div className="buttons pull-right">
 						<button ref="createBtn" className="btn btn-sgblue" onClick={this._create} tabIndex="0">Create</button>

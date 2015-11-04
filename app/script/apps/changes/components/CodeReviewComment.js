@@ -108,7 +108,7 @@ var CodeReviewComment = React.createClass({
 		if (this.props.draftForm) {
 			return (
 				<div className="inline-comment">
-					<MarkdownTextarea ref="draftEdit" placeholder="Leave a comment..." />
+					<MarkdownTextarea ref="draftEdit" placeholder="Leave a comment..." autoFocus="true" />
 					<div className="actions">
 						<button className="btn btn-success btn-small" onClick={this._onSubmit} tabIndex="0">Save draft</button>
 						<button className="btn btn-small" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
@@ -132,7 +132,7 @@ var CodeReviewComment = React.createClass({
 
 				{this.state.editingComment ? (
 					<div className="comment-edit-wrapper">
-						<MarkdownTextarea ref="commentEdit" defaultValue={this.state.Body} />
+						<MarkdownTextarea ref="commentEdit" defaultValue={this.state.Body} autoFocus="true" />
 						<div className="actions">
 							<button className="btn btn-success" onClick={this._onEdit} tabIndex="0">Save</button>
 							<button className="btn" onClick={this._onEditCancel} tabIndex="0">Cancel</button>

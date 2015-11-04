@@ -96,8 +96,8 @@ var DiscussionView = React.createClass({
 					</div>
 					<div className="add-comment">
 						<div className="padder pull-left">
-							<MarkdownTextarea className="thread-comment-add" ref="commentTextarea" />
-							<a ref="commentBtn" id="add-discussion-comment" onClick={this._onComment} className="btn btn-sgblue pull-right">Comment</a>
+							<MarkdownTextarea className="thread-comment-add" ref="commentTextarea" autoFocus="true" />
+							<button ref="commentBtn" id="add-discussion-comment" onClick={this._onComment} className="btn btn-sgblue pull-right">Comment</button>
 						</div>
 					</div>
 				</div>

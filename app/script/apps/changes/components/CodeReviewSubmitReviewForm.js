@@ -62,7 +62,7 @@ var CodeReviewSubmitReviewForm = React.createClass({
 					{this.props.visible ? (
 						<tr className="changeset-review-submit-form">
 							<td colSpan={2}>
-								<MarkdownTextarea ref="formBody" placeholder="Enter a description..." />
+								<MarkdownTextarea ref="formBody" placeholder="Enter a description..." autoFocus="true" />
 								<div className="actions">
 									<i className="pull-left">Includes {this.props.drafts.length} inline comments.</i>
 									<button className={buttonStyle} onClick={onClick} tabIndex="0">Submit</button>
