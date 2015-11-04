@@ -78,8 +78,7 @@ export default class CodeLineView extends Component {
 								onClick={(event) => {
 									event.preventDefault();
 									if (token.URL.length > 1) {
-										let action = new DefActions.SelectMultipleDefs(token.URL, event.clientX, event.clientY);
-										setTimeout(() => { Dispatcher.dispatch(action); }, 0); // dispatch asynchronously so the menu is not immediately closed by click handler on document
+										Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs(token.URL, event.clientX, event.clientY)); // dispatch asynchronously so the menu is not immediately closed by click handler on document
 										return;
 									}
 									Dispatcher.dispatch(new DefActions.SelectDef(token.URL[0]));

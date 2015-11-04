@@ -74,18 +74,18 @@ export default class CodeFileContainer extends Container {
 
 	requestData(prevState, nextState) {
 		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
-			Dispatcher.dispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
+			Dispatcher.asyncDispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
 		}
 		if (nextState.selectedDef && prevState.selectedDef !== nextState.selectedDef) {
-			Dispatcher.dispatch(new DefActions.WantDef(nextState.selectedDef));
-			Dispatcher.dispatch(new DefActions.WantDiscussions(nextState.selectedDef));
+			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.selectedDef));
+			Dispatcher.asyncDispatch(new DefActions.WantDiscussions(nextState.selectedDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			Dispatcher.dispatch(new DefActions.WantDef(nextState.highlightedDef));
+			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
 		}
 		if (nextState.defOptionsURLs && prevState.defOptionsURLs !== nextState.defOptionsURLs) {
 			nextState.defOptionsURLs.forEach((url) => {
-				Dispatcher.dispatch(new DefActions.WantDef(url));
+				Dispatcher.asyncDispatch(new DefActions.WantDef(url));
 			});
 		}
 	}

@@ -33,7 +33,7 @@ export default class ExampleView extends Component {
 
 	requestData(prevState, nextState) {
 		if (prevState.defURL !== nextState.defURL || prevState.selectedIndex !== nextState.selectedIndex) {
-			Dispatcher.dispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex));
+			Dispatcher.asyncDispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex));
 		}
 	}
 

@@ -37,10 +37,7 @@ export default class Component extends React.Component {
 		this.reconcileState(newState, props);
 		this._checkForUndefined(newState, "State");
 		if (this.requestData) {
-			let prevState = Object.assign({}, this.state);
-			setTimeout(() => { // call requestData asynchronously, because it creates an action and this function might be called while processing another action
-				this.requestData(prevState, newState);
-			}, 0);
+			this.requestData(this.state, newState);
 		}
 		super.setState(newState);
 	}

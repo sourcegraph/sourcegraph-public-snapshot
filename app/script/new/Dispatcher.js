@@ -11,6 +11,12 @@ class Dispatcher extends flux.Dispatcher {
 		super.dispatch(payload);
 	}
 
+	asyncDispatch(payload) {
+		setTimeout(() => {
+			this.dispatch(payload);
+		}, 0);
+	}
+
 	// catchDispatched returns the actions dispatched during the execution of f.
 	// Actions are not passed to the listeners. Use only in tests.
 	catchDispatched(f) {
