@@ -29,7 +29,7 @@ export default class CodeFileRouter extends Component {
 		let pathParts = state.uri.path.substr(1).split("/.");
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0];
-		state.rev = repoParts[1];
+		state.rev = repoParts[1] || "master";
 
 		let keys = [];
 		let vars = URI.parseQuery(state.uri.query);
