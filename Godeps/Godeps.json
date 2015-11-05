@@ -122,6 +122,11 @@
 			"Rev": "3fd636ed242c26c0f55bc9ee1fe47e1d6d2d77f7"
 		},
 		{
+			"ImportPath": "github.com/go-ldap/ldap",
+			"Comment": "v2.1-4-g71555ef",
+			"Rev": "71555ef0e2f6f27e05878527b32030134d4f8774"
+		},
+		{
 			"ImportPath": "github.com/gogo/protobuf/io",
 			"Comment": "v0.1-58-g2008751",
 			"Rev": "200875106f3bf0eb01eb297dae30b250a25ffc84"
@@ -545,6 +550,11 @@
 		{
 			"ImportPath": "google.golang.org/grpc",
 			"Rev": "bba8442c8e3ba568a05e60fe7d99c3dcf88e64d7"
+		},
+		{
+			"ImportPath": "gopkg.in/asn1-ber.v1",
+			"Comment": "v1.1",
+			"Rev": "4e86f4367175e39f69d9358a5f17b4dda270378d"
 		},
 		{
 			"ImportPath": "gopkg.in/check.v1",
