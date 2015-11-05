@@ -99,7 +99,9 @@ export default class DefPopup extends Component {
 					<div className="header">
 						<h1 className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 					</div>
-					<section className="doc" dangerouslySetInnerHTML={def.Data.DocHTML} />
+					<section className="doc">
+						{def.Found ? <span dangerouslySetInnerHTML={def.Data.DocHTML} /> : <span>Definition of <span dangerouslySetInnerHTML={def.QualifiedName} /> is not available.</span>}
+					</section>
 				</section>
 
 				<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
@@ -139,10 +141,12 @@ export default class DefPopup extends Component {
 								</a>
 							}
 
-							<a className="btn btn-toolbar btn-default go-to-def" href={def.URL} onClick={(event) => {
-								event.preventDefault();
-								Dispatcher.dispatch(new DefActions.GoToDef(def.URL));
-							}}>Go to definition</a>
+							{def.Found &&
+								<a className="btn btn-toolbar btn-default go-to-def" href={def.URL} onClick={(event) => {
+									event.preventDefault();
+									Dispatcher.dispatch(new DefActions.GoToDef(def.URL));
+								}}>Go to definition</a>
+							}
 
 							<a className="close top-action" onClick={() => {
 								Dispatcher.dispatch(new DefActions.SelectDef(null));

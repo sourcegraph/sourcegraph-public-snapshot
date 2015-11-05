@@ -23,10 +23,6 @@ const DefBackend = {
 						console.error(err);
 						return;
 					}
-					if (!body.Found) {
-						console.warn("def not found");
-						return;
-					}
 					Dispatcher.dispatch(new DefActions.DefFetched(action.url, body));
 				});
 			}
@@ -43,7 +39,7 @@ const DefBackend = {
 						console.error(err);
 						return;
 					}
-					if (body === null) {
+					if (body === null || body.Error) {
 						Dispatcher.dispatch(new DefActions.NoExampleAvailable(action.defURL, action.index));
 						return;
 					}

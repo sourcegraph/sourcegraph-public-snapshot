@@ -83,7 +83,14 @@
 														"type": "section",
 														"props": {
 															"className": "doc",
-															"dangerouslySetInnerHTML": "someDoc"
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"dangerouslySetInnerHTML": "someDoc"
+																	}
+																}
+															]
 														}
 													}
 												]

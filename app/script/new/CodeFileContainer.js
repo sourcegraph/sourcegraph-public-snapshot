@@ -155,7 +155,7 @@ export default class CodeFileContainer extends Container {
 						discussions={this.state.discussions.get(this.state.selectedDef)} />
 				}
 
-				{highlightedDefData && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
+				{highlightedDefData && highlightedDefData.Found && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
 
 				{this.state.defOptionsURLs &&
 					<div className="context-menu"

@@ -6,12 +6,13 @@ import DefPopup from "./DefPopup";
 
 import testdataData from "./testdata/DefPopup-data.json";
 import testdataNoDiscussions from "./testdata/DefPopup-noDiscussions.json";
+import testdataNotAvailable from "./testdata/DefPopup-notAvailable.json";
 
 describe("DefPopup", () => {
 	it("should render definition data", () => {
 		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
 			<DefPopup
-				def={{URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
+				def={{Found: true, URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
 				examples={{test: "examples", generation: 42}}
 				discussions={[
 					{ID: 0, Comments: []},
@@ -24,10 +25,20 @@ describe("DefPopup", () => {
 		);
 	});
 
+	it("should render 'not available'", () => {
+		autotest(testdataNotAvailable, `${__dirname}/testdata/DefPopup-notAvailable.json`,
+			<DefPopup
+				def={{Found: false, URL: "someURL", QualifiedName: {__html: "someName"}}}
+				examples={{test: "examples", generation: 42}}
+				discussions={[]}
+				highlightedDef={null} />
+		);
+	});
+
 	it("should render no discussions", () => {
 		autotest(testdataNoDiscussions, `${__dirname}/testdata/DefPopup-noDiscussions.json`,
 			<DefPopup
-				def={{URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
+				def={{Found: true, URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
 				examples={{test: "examples", generation: 42}}
 				discussions={[]}
 				highlightedDef={null} />

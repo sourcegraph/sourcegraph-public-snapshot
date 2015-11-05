@@ -103,6 +103,7 @@
 					"type": "DefPopup",
 					"props": {
 						"def": {
+							"Found": true,
 							"test": "defData"
 						},
 						"examples": {
@@ -122,6 +123,7 @@
 					"type": "DefTooltip",
 					"props": {
 						"def": {
+							"Found": true,
 							"test": "otherDefData"
 						}
 					}
