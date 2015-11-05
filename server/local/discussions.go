@@ -33,12 +33,24 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 	}
 
 	{
-		// Send Slack notification.
-		cl := sourcegraph.NewClientFromContext(ctx)
-		actor := notif.PersonFromContext(ctx)
+		// Build list of recipients
+		ppl, err := mdutil.Mentions(ctx, []byte(in.Description))
+		if err != nil {
+			return nil, err
+		}
+		var recipients []*sourcegraph.UserSpec
+		for _, p := range ppl {
+			if p.UID != 0 {
+				recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
+			}
+		}
+
+		// Send notification.
 		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.DefKey.Repo), in.ID))
+		cl := sourcegraph.NewClientFromContext(ctx)
 		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
 			Actor:       notif.UserFromContext(ctx),
+			Recipients:  recipients,
 			ActionType:  "created",
 			ObjectURL:   permalink,
 			ObjectRepo:  in.DefKey.Repo,
@@ -46,27 +58,6 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 			ObjectID:    in.ID,
 			ObjectTitle: in.Title,
 		})
-
-		// Notify mentioned people.
-		ppl, err := mdutil.Mentions(ctx, []byte(in.Description))
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range ppl {
-			msg := fmt.Sprintf(
-				"*%s* mentioned @%s in <%s|%s discussion #%d>: %s\n\n",
-				actor.Login, p.Login,
-				permalink,
-				in.DefKey.Repo, in.ID, in.Title,
-			)
-			notif.Mention(p, notif.MentionContext{
-				Mentioner:    actor.Login,
-				MentionerURL: appURL(ctx, app_router.Rel.URLToUser(actor.Login)),
-				Where:        fmt.Sprintf("in a discussion %s/%d", in.DefKey, in.ID),
-				WhereURL:     permalink,
-				SlackMsg:     msg,
-			})
-		}
 	}
 
 	return in, nil
@@ -105,9 +96,9 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 	}
 
 	{
-		// Send Slack notification.
-		actor := notif.PersonFromContext(ctx)
+		// Build list of recipients
 		cl := sourcegraph.NewClientFromContext(ctx)
+		actor := notif.UserFromContext(ctx)
 		discussion, err := s.Get(ctx, &sourcegraph.DiscussionSpec{Repo: sourcegraph.RepoSpec{URI: in.Comment.DefKey.Repo}, ID: in.DiscussionID})
 		if err != nil {
 			return nil, err
@@ -116,9 +107,20 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		if discussion.Author.UID != actor.UID {
 			recipients = append(recipients, &discussion.Author)
 		}
+		ppl, err := mdutil.Mentions(ctx, []byte(in.Comment.Body))
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range ppl {
+			if p.UID != 0 && p.UID != discussion.Author.UID && p.UID != actor.UID {
+				recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
+			}
+		}
+
+		// Send notification
 		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.Comment.DefKey.Repo), discussion.ID))
 		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-			Actor:       notif.UserFromContext(ctx),
+			Actor:       actor,
 			Recipients:  recipients,
 			ActionType:  "commented on",
 			ObjectURL:   permalink,
@@ -127,27 +129,6 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 			ObjectID:    discussion.ID,
 			ObjectTitle: discussion.Title,
 		})
-
-		// Notify mentioned people.
-		ppl, err := mdutil.Mentions(ctx, []byte(in.Comment.Body))
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range ppl {
-			msg := fmt.Sprintf(
-				"*%s* mentioned @%s in a comment on <%s|%s discussion #%d>: %s\n\n",
-				actor.Login, p.Login,
-				permalink,
-				in.Comment.DefKey.Repo, discussion.ID, discussion.Title,
-			)
-			notif.Mention(p, notif.MentionContext{
-				Mentioner:    actor.Login,
-				MentionerURL: appURL(ctx, app_router.Rel.URLToUser(actor.Login)),
-				Where:        fmt.Sprintf("in a comment of discussion %s/%d", in.Comment.DefKey, discussion.ID),
-				WhereURL:     permalink,
-				SlackMsg:     msg,
-			})
-		}
 	}
 
 	return in.Comment, nil

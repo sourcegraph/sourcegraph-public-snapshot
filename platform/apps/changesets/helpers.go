@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
@@ -75,10 +74,23 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 func notifyCreation(ctx context.Context, user *sourcegraph.User, uri string, cs *sourcegraph.Changeset) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
-	// Notification
+	// Build list of recipients
+	ppl, err := mdutil.Mentions(ctx, []byte(cs.Description))
+	if err != nil {
+		return
+	}
+	var recipients []*sourcegraph.UserSpec
+	for _, p := range ppl {
+		if p.UID != 0 {
+			recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
+		}
+	}
+
+	// Send notification
 	actor := user.Spec()
 	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
 		Actor:         &actor,
+		Recipients:    recipients,
 		ActionType:    "created",
 		ObjectURL:     urlToChangeset(ctx, cs.ID),
 		ObjectRepo:    uri,
@@ -87,33 +99,33 @@ func notifyCreation(ctx context.Context, user *sourcegraph.User, uri string, cs 
 		ObjectTitle:   cs.Title,
 		ActionContent: cs.Description,
 	})
-
-	// Notify mentioned people.
-	ppl, err := mdutil.Mentions(ctx, []byte(cs.Description))
-	if err != nil {
-		return
-	}
-	for _, p := range ppl {
-		msg := fmt.Sprintf(
-			"*%s* mentioned @%s in <%s|%s changeset #%d>: %s\n\n%s",
-			user.Login, p.Login,
-			urlToChangeset(ctx, cs.ID),
-			uri, cs.ID, cs.Title, cs.Description,
-		)
-		notif.Mention(p, notif.MentionContext{
-			Mentioner:    user.Login,
-			MentionerURL: urlToUser(user.Login),
-			Where:        fmt.Sprintf("in a changeset %s/%d", uri, cs.ID),
-			WhereURL:     urlToChangeset(ctx, cs.ID),
-			SlackMsg:     msg,
-		})
-	}
 }
 
 // notifyReview creates a slack notification that a changeset was reviewed. It
 // also notifies any users potentially mentioned in the review.
 func notifyReview(ctx context.Context, user *sourcegraph.User, uri string, cs *sourcegraph.Changeset, op *sourcegraph.ChangesetCreateReviewOp) {
 	cl := sourcegraph.NewClientFromContext(ctx)
+
+	// Build list of recipients
+	ppl, err := mdutil.Mentions(ctx, []byte(op.Review.Body))
+	if err != nil {
+		return
+	}
+	for _, c := range op.Review.Comments {
+		ppll, err := mdutil.Mentions(ctx, []byte(c.Body))
+		if err != nil {
+			return
+		}
+		ppl = append(ppl, ppll...)
+	}
+	var recipients []*sourcegraph.UserSpec = []*sourcegraph.UserSpec{&cs.Author}
+	for _, p := range ppl {
+		if p.UID != 0 && p.UID != cs.Author.UID {
+			recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
+		}
+	}
+
+	// Send notification
 	msg := bytes.NewBufferString(op.Review.Body)
 	for _, c := range op.Review.Comments {
 		msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
@@ -130,35 +142,6 @@ func notifyReview(ctx context.Context, user *sourcegraph.User, uri string, cs *s
 		ObjectTitle:   cs.Title,
 		ActionContent: msg.String(),
 	})
-
-	// Notify mentioned people.
-	ppl, err := mdutil.Mentions(ctx, []byte(op.Review.Body))
-	if err != nil {
-		return
-	}
-	for _, c := range op.Review.Comments {
-		ppll, err := mdutil.Mentions(ctx, []byte(c.Body))
-		if err != nil {
-			return
-		}
-		ppl = append(ppl, ppll...)
-	}
-
-	for _, p := range ppl {
-		msg := fmt.Sprintf(
-			"*%s* mentioned @%s in a review on <%s|changeset #%d>",
-			user.Login, p.Login,
-			urlToChangeset(ctx, cs.ID),
-			op.ChangesetID,
-		)
-		notif.Mention(p, notif.MentionContext{
-			Mentioner:    user.Login,
-			MentionerURL: urlToUser(user.Login),
-			Where:        fmt.Sprintf("in review %s/%d", op.Repo.URI, op.ChangesetID),
-			WhereURL:     urlToChangeset(ctx, cs.ID),
-			SlackMsg:     msg,
-		})
-	}
 }
 
 func urlToRepoChangeset(repo string, changeset int64) (*url.URL, error) {
