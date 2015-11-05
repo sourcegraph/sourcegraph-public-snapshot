@@ -73,6 +73,18 @@
 												"path": "aTree",
 												"alignRight": true
 											}
+										},
+										{
+											"type": "a",
+											"props": {
+												"className": "share top-action btn btn-default btn-xs",
+												"href": "/aRepo@aRev/.tree/aTree/.share",
+												"data-tooltip": true,
+												"title": "Select text to specify a line range",
+												"children": [
+													"Embed"
+												]
+											}
 										}
 									]
 								}

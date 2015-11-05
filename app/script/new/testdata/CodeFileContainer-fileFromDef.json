@@ -63,6 +63,18 @@
 												"path": "somePath",
 												"alignRight": true
 											}
+										},
+										{
+											"type": "a",
+											"props": {
+												"className": "share top-action btn btn-default btn-xs",
+												"href": "/aRepo@aRev/.tree/somePath/.share",
+												"data-tooltip": true,
+												"title": "Select text to specify a line range",
+												"children": [
+													"Embed"
+												]
+											}
 										}
 									]
 								}

@@ -110,6 +110,12 @@ export default class CodeFileContainer extends Container {
 			breadcrumb.push(<span key={i}> / <a href={basePath}>{seg}</a></span>);
 		});
 
+
+		let embedLink = `/${this.state.repo}@${this.state.rev}/.tree/${this.state.tree}/.share`;
+		if (this.state.startLine && this.state.endLine) {
+			embedLink += `?StartLine=${this.state.startLine}&EndLine=${this.state.endLine}`;
+		}
+
 		let selectedDefData = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
 		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
 		return (
@@ -132,6 +138,10 @@ export default class CodeFileContainer extends Container {
 							rev={this.state.rev}
 							path={this.state.tree}
 							alignRight={true} />
+
+						<a className="share top-action btn btn-default btn-xs"
+							href={embedLink}
+							data-tooltip={true} title="Select text to specify a line range">Embed</a>
 					</div>
 				</div>
 
