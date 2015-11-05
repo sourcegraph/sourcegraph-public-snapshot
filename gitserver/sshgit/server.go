@@ -24,7 +24,7 @@ import (
 
 const (
 	// gitTransactionTimeout controls a hard deadline on the time to perform a single git transaction.
-	gitTransactionTimeout = 3 * time.Minute
+	gitTransactionTimeout = 30 * time.Minute
 )
 
 // Server is SSH git server.
@@ -33,8 +33,8 @@ type Server struct {
 	ctx      context.Context
 	clientID string
 
-	config   *ssh.ServerConfig
-	reposDir string // Path to repository storage directory.
+	config    *ssh.ServerConfig
+	reposRoot string // Path to repository storage directory.
 }
 
 // ListenAndStart listens on the TCP network address addr and starts the server.
@@ -73,7 +73,7 @@ func (s *Server) ListenAndStart(ctx context.Context, addr string, privateSigner 
 	}
 	s.config.AddHostKey(privateSigner)
 
-	s.reposDir = filepath.Join(os.Getenv("SGPATH"), "repos")
+	s.reposRoot = filepath.Join(os.Getenv("SGPATH"), "repos")
 
 	go s.run()
 	return nil
@@ -92,6 +92,9 @@ func (s *Server) run() {
 }
 
 func (s *Server) handleConn(tcpConn net.Conn) {
+	sshConns.Inc()
+	defer sshConns.Dec()
+
 	defer tcpConn.Close()
 	sshConn, chans, reqs, err := ssh.NewServerConn(tcpConn, s.config)
 	if err != nil {
@@ -160,7 +163,9 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	if path.IsAbs(repo) {
 		repo = repo[1:] // Normalize "/user/repo" to "user/repo".
 	}
-	if repo == ".." || strings.HasPrefix(repo, "../") {
+	repoDir := filepath.Join(s.reposRoot, filepath.FromSlash(repo))
+	if repo == "" || !strings.HasPrefix(repoDir, s.reposRoot) {
+		fmt.Fprintf(ch.Stderr(), "Specified repo %q lies outside of root.\n\n", repo)
 		return fmt.Errorf("specified repo %q lies outside of root", repo)
 	}
 	userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
@@ -188,7 +193,7 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 
 	// Execute the git operation.
 	cmd := exec.Command("git", op[4:], ".")
-	cmd.Dir = filepath.Join(s.reposDir, filepath.FromSlash(repo))
+	cmd.Dir = repoDir
 	cmd.Stdout = ch
 	cmd.Stderr = ch
 	cmd.Stdin = ch
