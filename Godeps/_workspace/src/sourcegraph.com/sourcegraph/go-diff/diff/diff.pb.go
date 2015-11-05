@@ -31,17 +31,17 @@ var _ = proto.Marshal
 //   +++ newname	2009-10-11 15:12:30.000000000 -0700
 type FileDiff struct {
 	// the original name of the file
-	OrigName string `protobuf:"bytes,1,opt,name=orig_name,proto3" json:"orig_name,omitempty"`
+	OrigName string `protobuf:"bytes,1,opt,name=orig_name,proto3" json:",omitempty"`
 	// the original timestamp (nil if not present)
-	OrigTime *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=orig_time" json:"orig_time,omitempty"`
+	OrigTime *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=orig_time" json:",omitempty"`
 	// the new name of the file (often same as OrigName)
-	NewName string `protobuf:"bytes,3,opt,name=new_name,proto3" json:"new_name,omitempty"`
+	NewName string `protobuf:"bytes,3,opt,name=new_name,proto3" json:",omitempty"`
 	// the new timestamp (nil if not present)
-	NewTime *pbtypes.Timestamp `protobuf:"bytes,4,opt,name=new_time" json:"new_time,omitempty"`
+	NewTime *pbtypes.Timestamp `protobuf:"bytes,4,opt,name=new_time" json:",omitempty"`
 	// extended header lines (e.g., git's "new mode <mode>", "rename from <path>", etc.)
-	Extended []string `protobuf:"bytes,5,rep,name=extended" json:"extended,omitempty"`
+	Extended []string `protobuf:"bytes,5,rep,name=extended" json:",omitempty"`
 	// hunks that were changed from orig to new
-	Hunks []*Hunk `protobuf:"bytes,6,rep,name=hunks" json:"hunks,omitempty"`
+	Hunks []*Hunk `protobuf:"bytes,6,rep,name=hunks" json:",omitempty"`
 }
 
 func (m *FileDiff) Reset()         { *m = FileDiff{} }
@@ -73,24 +73,24 @@ func (m *FileDiff) GetHunks() []*Hunk {
 // unified diff.
 type Hunk struct {
 	// starting line number in original file
-	OrigStartLine int32 `protobuf:"varint,1,opt,name=orig_start_line,proto3" json:"orig_start_line,omitempty"`
+	OrigStartLine int32 `protobuf:"varint,1,opt,name=orig_start_line,proto3" json:",omitempty"`
 	// number of lines the hunk applies to in the original file
-	OrigLines int32 `protobuf:"varint,2,opt,name=orig_lines,proto3" json:"orig_lines,omitempty"`
+	OrigLines int32 `protobuf:"varint,2,opt,name=orig_lines,proto3" json:",omitempty"`
 	// if > 0, then the original file had a 'No newline at end of file' mark at this offset
-	OrigNoNewlineAt int32 `protobuf:"varint,3,opt,name=orig_no_newline_at,proto3" json:"orig_no_newline_at,omitempty"`
+	OrigNoNewlineAt int32 `protobuf:"varint,3,opt,name=orig_no_newline_at,proto3" json:",omitempty"`
 	// starting line number in new file
-	NewStartLine int32 `protobuf:"varint,4,opt,name=new_start_line,proto3" json:"new_start_line,omitempty"`
+	NewStartLine int32 `protobuf:"varint,4,opt,name=new_start_line,proto3" json:",omitempty"`
 	// number of lines the hunk applies to in the new file
-	NewLines int32 `protobuf:"varint,5,opt,name=new_lines,proto3" json:"new_lines,omitempty"`
+	NewLines int32 `protobuf:"varint,5,opt,name=new_lines,proto3" json:",omitempty"`
 	// optional section heading
-	Section string `protobuf:"bytes,6,opt,name=section,proto3" json:"section,omitempty"`
+	Section string `protobuf:"bytes,6,opt,name=section,proto3" json:",omitempty"`
 	// 0-indexed line offset in unified file diff (including section headers); this is
 	// only set when Hunks are read from entire file diff (i.e., when ReadAllHunks is
 	// called) This accounts for hunk headers, too, so the StartPosition of the first
 	// hunk will be 1.
-	StartPosition int32 `protobuf:"varint,7,opt,name=start_position,proto3" json:"start_position,omitempty"`
+	StartPosition int32 `protobuf:"varint,7,opt,name=start_position,proto3" json:",omitempty"`
 	// hunk body (lines prefixed with '-', '+', or ' ')
-	Body []byte `protobuf:"bytes,8,opt,name=body,proto3" json:"body,omitempty"`
+	Body []byte `protobuf:"bytes,8,opt,name=body,proto3" json:",omitempty"`
 }
 
 func (m *Hunk) Reset()         { *m = Hunk{} }
