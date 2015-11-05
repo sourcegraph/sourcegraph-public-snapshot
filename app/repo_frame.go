@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 
 	"strings"
 
@@ -80,9 +79,7 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	rr := httptest.NewRecorder()
 
 	stripPrefix := pctx.BaseURI(framectx)
-	if u, err := url.Parse(stripPrefix); err == nil {
-		stripPrefix = u.Path
-	} else {
+	if err != nil {
 		return err
 	}
 
