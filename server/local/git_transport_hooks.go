@@ -37,7 +37,7 @@ var errHookExists = errors.New("ID already exists")
 
 // AddGitPostPushHook adds a new git post-push hook with the given ID. The
 // hook receives the context, pack operation information and git events. We
-// gaurentee that a hook will never run concurrently with itself. However, it
+// guarantee that a hook will never run concurrently with itself. However, it
 // does not block the git push and will run concurrently with other hooks. As
 // such hooks should not block for a long time, and must handle the repo state
 // being different to the advertised events.
