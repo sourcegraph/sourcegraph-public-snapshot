@@ -31,12 +31,6 @@ export class HighlightDef {
 	}
 }
 
-export class GoToDef {
-	constructor(url) {
-		this.url = url;
-	}
-}
-
 export class WantExample {
 	constructor(defURL, index) {
 		this.defURL = defURL;

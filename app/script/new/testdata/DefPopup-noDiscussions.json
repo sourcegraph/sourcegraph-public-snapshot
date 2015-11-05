@@ -28,8 +28,8 @@
 																"defaultPrevented": true,
 																"dispatched": [
 																	{
-																		"$constructor": "GoToDef",
-																		"url": "someURL"
+																		"$constructor": "GoTo",
+																		"url": "[target.href]"
 																	}
 																]
 															},

@@ -48,6 +48,9 @@ export default function(expected, filename, component) {
 								preventDefault() {
 									defaultPrevented = true;
 								},
+								target: {
+									href: "[target.href]",
+								},
 							});
 						});
 					});

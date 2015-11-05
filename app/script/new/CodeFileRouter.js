@@ -7,6 +7,7 @@ import CodeFileContainer from "./CodeFileContainer";
 import DefStore from "./DefStore";
 import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
+import {GoTo} from "./util/hotLink";
 
 // All data from window.location gets processed here and is then passed down
 // to sub-components via props. Every time window.location changes, this
@@ -80,8 +81,8 @@ export default class CodeFileRouter extends Component {
 			this._navigate(this._filePath(), {seldef: action.url || undefined}); // eslint-disable-line no-undefined
 			break;
 
-		case DefActions.GoToDef:
-			this._navigate(action.url, {startline: undefined, endline: undefined, seldef: undefined}); // eslint-disable-line no-undefined
+		case GoTo:
+			this.state.navigate(URI(action.url).absoluteTo(this.state.uri).href());
 			break;
 		}
 	}

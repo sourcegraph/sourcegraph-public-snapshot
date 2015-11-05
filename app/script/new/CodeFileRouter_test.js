@@ -8,6 +8,7 @@ import Dispatcher from "./Dispatcher";
 import CodeFileRouter from "./CodeFileRouter";
 import * as CodeActions from "./CodeActions";
 import * as DefActions from "./DefActions";
+import {GoTo} from "./util/hotLink";
 
 import testdataFile from "./testdata/CodeFileRouter-file.json";
 import testdataLineSelection from "./testdata/CodeFileRouter-lineSelection.json";
@@ -88,10 +89,10 @@ describe("CodeFileRouter", () => {
 		);
 	});
 
-	it("should handle DefActions.GoToDef", () => {
+	it("should handle GoTo", () => {
 		testAction(
 			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42&seldef=someURL",
-			new DefActions.GoToDef("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"),
+			new GoTo("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"),
 			"http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
 		);
 	});

@@ -8,6 +8,7 @@ import ExampleView from "./ExampleView";
 import DiscussionsList from "./DiscussionsList";
 import DiscussionView from "./DiscussionView";
 import MarkdownTextarea from "../components/MarkdownTextarea"; // FIXME
+import hotLink from "./util/hotLink";
 
 export default class DefPopup extends Component {
 	constructor(props) {
@@ -142,10 +143,7 @@ export default class DefPopup extends Component {
 							}
 
 							{def.Found &&
-								<a className="btn btn-toolbar btn-default go-to-def" href={def.URL} onClick={(event) => {
-									event.preventDefault();
-									Dispatcher.dispatch(new DefActions.GoToDef(def.URL));
-								}}>Go to definition</a>
+								<a className="btn btn-toolbar btn-default go-to-def" href={def.URL} onClick={hotLink}>Go to definition</a>
 							}
 
 							<a className="close top-action" onClick={() => {
