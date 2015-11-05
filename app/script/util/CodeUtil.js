@@ -99,52 +99,6 @@ module.exports = {
 	},
 
 	/**
-	 * @description Fetches a list of multiple definitions in one go.
-	 * @param {Array<string>} urls - List of DefKey's to return definitions for.
-	 * @returns {Array<DefCommon>} - List of defs.
-	 */
-	fetchDefinitionList(urls) {
-		if (defListXhr) defListXhr.abort();
-
-		var fromCache = [];
-		var fromServer = urls.filter(url => {
-			if (popupCache.hasOwnProperty(url)) {
-				fromCache.push(popupCache[url]);
-				return false;
-			}
-			return true;
-		});
-
-		if (fromServer.length === 0) {
-			return $.Deferred().resolve(fromCache);
-		}
-
-		var onDone = data => {
-			if (!Array.isArray(data.Defs)) {
-				return $.Deferred().reject({Error: "Invalid response"});
-			}
-			data.Defs.forEach(def => {
-				if (!popupCache.hasOwnProperty(def.URL)) {
-					popupCache[def.URL] = def;
-				}
-			});
-			return $.Deferred().resolve(fromCache.concat(data.Defs));
-		};
-
-		var onError = (data, status) => {
-			if (status !== "abort") {
-				return $.Deferred().reject();
-			}
-		};
-
-		defListXhr = $.ajax({
-			url: `/ui/.defs?key=${fromServer.map(encodeURIComponent).join("&key=")}`,
-		});
-
-		return defListXhr.then(onDone, onError).always(() => { defListXhr = null; });
-	},
-
-	/**
 	 * @description Fetches the definition object / popup data for the definition at the
 	 * given URL.
 	 * @param {string} url - Definition URL.

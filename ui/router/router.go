@@ -13,7 +13,6 @@ const (
 	RepoFileFinder = "repo.file.finder"
 
 	Definition  = "def"
-	DefList     = "def.list"
 	DefPopover  = "def.popover"
 	DefExamples = "def.examples"
 
@@ -51,10 +50,6 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 	}
 
 	base.StrictSlash(true)
-
-	base.Path("/.defs").
-		Methods(m("GET")...).
-		Name(DefList)
 
 	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
 
