@@ -352,10 +352,6 @@
 			"Rev": "5d2a42ccab8dc0079484263b326b9a3191d5bee8"
 		},
 		{
-			"ImportPath": "github.com/sourcegraph/syntaxhighlight",
-			"Rev": "637a8b8b94eca8bb8cd559b950cc4f42629ec137"
-		},
-		{
 			"ImportPath": "github.com/spf13/afero",
 			"Rev": "6ced24dbe1566cf2b7793528f2ca24370669d2c6"
 		},
@@ -698,6 +694,10 @@
 		{
 			"ImportPath": "src.sourcegraph.com/vfs",
 			"Rev": "c6e89b6ce18cc3c12453c27e6c8ab4c4622b19f6"
+		},
+		{
+			"ImportPath": "src.sourcegraph.com/syntaxhighlight",
+			"Rev": "56d7e2fb8dc326f3108a90034315eebc85396769"
 		}
 	]
 }
