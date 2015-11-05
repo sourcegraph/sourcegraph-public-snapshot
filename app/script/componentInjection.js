@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		el.each((_, e) => ReactDOM.render(<MarkdownView {...e.dataset} />, e));
 	}
 
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]")).map((el2) => {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]"), []).map((el2) => {
 		ReactDOM.render(
 			<RepoBuildIndicator
 				btnSize="btn-xs"
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			el2
 		);
 	});
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]")).map((el2) => {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]"), []).map((el2) => {
 		ReactDOM.render(
 			<RepoBuildIndicator
 				btnSize="btn-md"
@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	});
 
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildStatus]")).map(function(el2) {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildStatus]"), []).map(function(el2) {
 		ReactDOM.render(<RepoBuildStatus Repo={{URI: el2.dataset.repo}} Rev={el2.dataset.rev}/>, el2);
 	});
 
@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryDefs]"))
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryDefs]"), [])
 	.forEach(function(e) {
 		ReactDOM.render(
 			<TreeEntryDefs

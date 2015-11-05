@@ -60,12 +60,12 @@ module.exports = function(body) {
 			});
 		}
 
-		Reflect.apply(initializeSuper, this);
+		Reflect.apply(initializeSuper, this, []);
 	};
 
 	body.destroy = function() {
 		this.dispatcher.unregister(this.dispatchToken);
-		Reflect.apply(destroySuper, this);
+		Reflect.apply(destroySuper, this, []);
 	};
 
 	return new (Backbone.Model.extend(body))();
