@@ -8,7 +8,6 @@ var CodeLineView = require("./CodeLineView");
 var CodeTokenView = require("./CodeTokenView");
 var CodeLineModel = require("../stores/models/CodeLineModel");
 var CodeTokenModel = require("../stores/models/CodeTokenModel");
-var CodeFileActions = require("../actions/CodeFileActions");
 var globals = require("../globals");
 
 describe("components/CodeLineView", () => {
@@ -109,14 +108,5 @@ describe("components/CodeLineView", () => {
 
 		expect($(tok).hasClass("main-byte-range")).not.to.be(true);
 		expect($(tok).hasClass("line")).to.be(true);
-	});
-
-	it("should trigger CodeFileActions.selectLines when line number is clicked", () => {
-		var model = new CodeLineModel();
-		var component = sandbox.renderComponent(<table><tbody><CodeLineView model={model} /></tbody></table>);
-
-		sandbox.spy(CodeFileActions, "selectLines");
-		TestUtils.Simulate.click(component.querySelector(".line-number"));
-		expect(CodeFileActions.selectLines.callCount).to.be(1);
 	});
 });

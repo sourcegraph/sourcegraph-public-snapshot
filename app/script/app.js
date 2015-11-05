@@ -19,26 +19,18 @@ require("./auth");
 require("./appdash");
 require("./globals");
 
-// Actions
-require("./actions/CodeFileActions");
-
 // Dispatchers
 require("./dispatchers/AppDispatcher");
 
 // Stores
-require("./stores/CodeFileStore");
 require("./stores/models/CodeModel");
 require("./stores/models/CodeLineModel");
 require("./stores/models/CodeTokenModel");
 require("./stores/collections/CodeLineCollection");
 require("./stores/collections/CodeTokenCollection");
-require("./stores/TokenPopupStore");
 
 // Views
 require("./componentInjection");
-
-// Routing
-require("./routing/CodeFileRouter");
 
 require("./search/SearchBar");
 

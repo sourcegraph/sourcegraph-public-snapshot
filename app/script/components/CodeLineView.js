@@ -4,7 +4,6 @@ var globals = require("../globals");
 var $ = require("jquery");
 var classNames = require("classnames");
 
-var CodeFileActions = require("../actions/CodeFileActions");
 var CodeToken = require("./CodeTokenView");
 var CodeLineModel = require("../stores/models/CodeLineModel");
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
@@ -55,16 +54,6 @@ var CodeLineView = React.createClass({
 		if (this.isMounted()) this.props.model.__node = $(ReactDOM.findDOMNode(this));
 	},
 
-	/**
-	 * @description Triggered when the line number is clicked on a line.
-	 * @param {Event} e - Event
-	 * @returns {void}
-	 * @private
-	 */
-	_clickLine(e) {
-		CodeFileActions.selectLines(this.state.number, e.shiftKey);
-	},
-
 	_onCommentClick(e) {
 		if (typeof this.props.onComment === "function") {
 			this.props.onComment(this.props.model, e);
@@ -82,7 +71,7 @@ var CodeLineView = React.createClass({
 		return (
 			<tr className={classes} data-start={this.state.start} data-end={this.state.end} style={this.props.style}>
 				{this.props.lineNumbers !== false ? (
-					<td className="line-number" data-line={this.state.number} onClick={this._clickLine}></td>
+					<td className="line-number" data-line={this.state.number}></td>
 				) : null}
 
 				{typeof this.state.lineNumberBase !== "undefined" ? (
