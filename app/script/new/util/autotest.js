@@ -51,6 +51,12 @@ export default function(expected, filename, component) {
 								target: {
 									href: "[target.href]",
 								},
+								view: {
+									scrollX: 11,
+									scrollY: 22,
+								},
+								clientX: 10,
+								clientY: 20,
 							});
 						});
 					});

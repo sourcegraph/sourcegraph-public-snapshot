@@ -81,7 +81,7 @@ export default class CodeLineView extends Component {
 									}
 									event.preventDefault();
 									if (token.URL.length > 1) {
-										Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs(token.URL, event.clientX, event.clientY)); // dispatch asynchronously so the menu is not immediately closed by click handler on document
+										Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs(token.URL, event.view.scrollX + event.clientX, event.view.scrollY + event.clientY)); // dispatch asynchronously so the menu is not immediately closed by click handler on document
 										return;
 									}
 									Dispatcher.dispatch(new DefActions.SelectDef(token.URL[0]));

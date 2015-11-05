@@ -103,7 +103,9 @@
 												"urls": [
 													"firstURL",
 													"secondURL"
-												]
+												],
+												"left": 21,
+												"top": 42
 											}
 										]
 									},
