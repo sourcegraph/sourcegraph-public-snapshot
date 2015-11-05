@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package world.human;
-
-message Options {
-	bool HasHair = 1;
-}

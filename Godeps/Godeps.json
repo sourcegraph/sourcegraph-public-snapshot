@@ -104,7 +104,6 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Comment": "0.2.1-178-g4bf6d2f",
 			"Rev": "4bf6d2fbdef2be37a2c72851a4fd87b7f1e3e79c"
 		},
 		{
@@ -583,10 +582,6 @@
 			"Rev": "7ad95dd0798a40da1ccdff6dff35fd177b5edf40"
 		},
 		{
-			"ImportPath": "src.sourcegraph.com/vfs",
-			"Rev": "c6e89b6ce18cc3c12453c27e6c8ab4c4622b19f6"
-		},
-		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash",
 			"Rev": "13a1ac0619266dbc53e56fa60ed8fe0795ee6390"
 		},
@@ -704,6 +699,10 @@
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",
 			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
+		},
+		{
+			"ImportPath": "src.sourcegraph.com/vfs",
+			"Rev": "c6e89b6ce18cc3c12453c27e6c8ab4c4622b19f6"
 		}
 	]
 }

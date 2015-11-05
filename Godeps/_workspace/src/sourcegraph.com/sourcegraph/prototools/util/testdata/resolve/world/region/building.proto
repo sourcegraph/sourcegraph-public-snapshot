@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package world.building;
-
-message Options {
-	bool HasRoof = 1;
-}
