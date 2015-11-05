@@ -16,11 +16,6 @@
 			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
 		},
 		{
-			"ImportPath": "code.google.com/p/go.crypto/ssh/terminal",
-			"Comment": "null-236",
-			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
-		},
-		{
 			"ImportPath": "code.google.com/p/rog-go/parallel",
 			"Comment": "null-250",
 			"Rev": "e7ca3a2567b8ad482fef7b1aa1a258aa00c82772"
@@ -174,7 +169,7 @@
 		},
 		{
 			"ImportPath": "github.com/howeyc/gopass",
-			"Rev": "e8c0d21f59eb7f01086a39e47e05568acc9bb736"
+			"Rev": "10b54de414cc9693221d5ff2ae14fd2fbf1b0ac1"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/mousetrap",

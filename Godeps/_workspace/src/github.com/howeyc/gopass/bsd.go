@@ -1,4 +1,4 @@
-// +build freebsd openbsd netbsd
+// +build openbsd netbsd
 
 package gopass
 
