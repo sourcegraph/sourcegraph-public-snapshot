@@ -21,7 +21,7 @@ type Flags struct {
 
 	RestrictWriteAccess bool `long:"auth.restrict-write-access" description:"only allow admin users to perform write operations (create/delete repo, push to repo, etc.)" default:"false"`
 
-	Source string `long:"auth.source" description:"source of authentication to use (none|local|oauth)" default:"oauth"`
+	Source string `long:"auth.source" description:"source of authentication to use (none|local|oauth|ldap)" default:"oauth"`
 
 	OAuth2AuthServer bool `long:"auth.oauth2-auth-server" description:"enable OAuth2 authentication server (allow users to authenticate via this server)"`
 
@@ -35,6 +35,11 @@ type Flags struct {
 // IsLocal returns true if users are stored and authenticated locally.
 func (f Flags) IsLocal() bool {
 	return f.Source == "local"
+}
+
+// IsLDAP returns true if users are authenticated via the configured LDAP server.
+func (f Flags) IsLDAP() bool {
+	return f.Source == "ldap"
 }
 
 // HasUserAccounts returns a boolean value indicating whether user

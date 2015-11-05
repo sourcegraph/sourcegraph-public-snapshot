@@ -34,7 +34,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/app"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -503,6 +505,14 @@ func (c *ServeCmd) Execute(args []string) error {
 				log.Fatal("Worker exited with error:", err)
 			}
 		}()
+	}
+
+	if authutil.ActiveFlags.IsLDAP() {
+		if user, err := ldap.VerifyLogin("hackers", "dogood"); err != nil {
+			log.Fatalf("ldap auth failed: %v", err)
+		} else {
+			log.Printf("ldap auth successful: %v", user)
+		}
 	}
 
 	// Start background repo updater worker.
