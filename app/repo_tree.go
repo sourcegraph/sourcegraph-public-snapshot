@@ -156,7 +156,7 @@ func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, star
 	if appURL != nil {
 		curPath = appURL.String()
 	}
-	curPath += router.Rel.URLToRepoTreeEntry(repo, rev, "").Path + "/"
+	curPath += router.Rel.URLToRepoTreeEntry(repo, rev, "").Path
 
 	var links []*BreadcrumbLink
 
@@ -181,9 +181,9 @@ func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, star
 				link.Text += fmt.Sprintf("-%d", endLine)
 			}
 
-			link.URL += fmt.Sprintf("#startline=%d&endline=%d", startLine, endLine)
+			link.URL += fmt.Sprintf("?startline=%d&endline=%d", startLine, endLine)
 			if defURL != nil {
-				link.URL += fmt.Sprintf("&def=%s", defURL)
+				link.URL += fmt.Sprintf("&seldef=%s", defURL)
 			}
 		}
 
