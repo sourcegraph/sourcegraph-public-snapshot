@@ -34,15 +34,9 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 
 	{
 		// Build list of recipients
-		ppl, err := mdutil.Mentions(ctx, []byte(in.Description))
+		recipients, err := mdutil.Mentions(ctx, []byte(in.Description))
 		if err != nil {
 			return nil, err
-		}
-		var recipients []*sourcegraph.UserSpec
-		for _, p := range ppl {
-			if p.UID != 0 {
-				recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
-			}
 		}
 
 		// Send notification.
@@ -111,11 +105,7 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		if err != nil {
 			return nil, err
 		}
-		for _, p := range ppl {
-			if p.UID != 0 && p.UID != discussion.Author.UID && p.UID != actor.UID {
-				recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
-			}
-		}
+		recipients = append(recipients, ppl...)
 
 		// Send notification
 		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.Comment.DefKey.Repo), discussion.ID))

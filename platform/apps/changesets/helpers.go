@@ -75,15 +75,9 @@ func notifyCreation(ctx context.Context, user *sourcegraph.User, uri string, cs 
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	// Build list of recipients
-	ppl, err := mdutil.Mentions(ctx, []byte(cs.Description))
+	recipients, err := mdutil.Mentions(ctx, []byte(cs.Description))
 	if err != nil {
 		return
-	}
-	var recipients []*sourcegraph.UserSpec
-	for _, p := range ppl {
-		if p.UID != 0 {
-			recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
-		}
 	}
 
 	// Send notification
@@ -107,23 +101,18 @@ func notifyReview(ctx context.Context, user *sourcegraph.User, uri string, cs *s
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	// Build list of recipients
-	ppl, err := mdutil.Mentions(ctx, []byte(op.Review.Body))
+	recipients, err := mdutil.Mentions(ctx, []byte(op.Review.Body))
 	if err != nil {
 		return
 	}
 	for _, c := range op.Review.Comments {
-		ppll, err := mdutil.Mentions(ctx, []byte(c.Body))
+		mentions, err := mdutil.Mentions(ctx, []byte(c.Body))
 		if err != nil {
 			return
 		}
-		ppl = append(ppl, ppll...)
+		recipients = append(recipients, mentions...)
 	}
-	var recipients []*sourcegraph.UserSpec = []*sourcegraph.UserSpec{&cs.Author}
-	for _, p := range ppl {
-		if p.UID != 0 && p.UID != cs.Author.UID {
-			recipients = append(recipients, &sourcegraph.UserSpec{UID: p.UID, Login: p.Login})
-		}
-	}
+	recipients = append(recipients, &cs.Author)
 
 	// Send notification
 	msg := bytes.NewBufferString(op.Review.Body)

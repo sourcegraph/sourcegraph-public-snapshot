@@ -19,12 +19,12 @@ import (
 func TestMentions(t *testing.T) {
 	sourcegraph.NewClientFromContext = func(ctx context.Context) *sourcegraph.Client {
 		return &sourcegraph.Client{
-			People: &mock.PeopleClient{
-				Get_: func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.Person, error) {
-					p, ok := map[string]*sourcegraph.Person{
-						"gbbr":      person("gbbr@doma.in"),
-						"guy":       person("guy@doma.in"),
-						"mIxEdCaSe": person("mix@doma.in"),
+			Users: &mock.UsersClient{
+				Get_: func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+					p, ok := map[string]*sourcegraph.User{
+						"gbbr":      &sourcegraph.User{Login: "gbbr@doma.in"},
+						"guy":       &sourcegraph.User{Login: "guy@doma.in"},
+						"mIxEdCaSe": &sourcegraph.User{Login: "mix@doma.in"},
 					}[v1.Login]
 					if !ok {
 						return nil, grpc.Errorf(codes.NotFound, "user not found")
@@ -37,14 +37,11 @@ func TestMentions(t *testing.T) {
 	pfmt := pretty.Formatter
 	for _, tt := range []struct {
 		in  string
-		out []*sourcegraph.Person
+		out []*sourcegraph.UserSpec
 	}{
 		{
 			in:  "Hey @gbbr, can you take a look? /cc @guy @inexistent",
 			out: ppl("gbbr@doma.in", "guy@doma.in"),
-		}, {
-			in:  "Let's invite @some_guy@some.domain to this, @gbbr ok?",
-			out: ppl("some_guy@some.domain", "gbbr@doma.in"),
 		}, {
 			in:  "I don't know @any of @these @people except @guy",
 			out: ppl("guy@doma.in"),
@@ -66,19 +63,17 @@ func TestMentions(t *testing.T) {
 	}
 }
 
-// ppl quickly returns a slice of `sourcegraph.Person` having the given
-// emails.
-func ppl(emails ...string) []*sourcegraph.Person {
-	all := make([]*sourcegraph.Person, len(emails))
-	for i, e := range emails {
+// ppl quickly returns a slice of `sourcegraph.UserSpec` having the given
+// logins.
+func ppl(logins ...string) []*sourcegraph.UserSpec {
+	all := make([]*sourcegraph.UserSpec, len(logins))
+	for i, e := range logins {
 		all[i] = person(e)
 	}
 	return all
 }
 
 // person returns a person having the given email.
-func person(email string) *sourcegraph.Person {
-	return &sourcegraph.Person{
-		PersonSpec: sourcegraph.PersonSpec{Email: email},
-	}
+func person(login string) *sourcegraph.UserSpec {
+	return &sourcegraph.UserSpec{Login: login}
 }
