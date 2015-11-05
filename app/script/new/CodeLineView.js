@@ -76,6 +76,9 @@ export default class CodeLineView extends Component {
 									Dispatcher.dispatch(new DefActions.HighlightDef(null));
 								}}
 								onClick={(event) => {
+									if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+										return;
+									}
 									event.preventDefault();
 									if (token.URL.length > 1) {
 										Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs(token.URL, event.clientX, event.clientY)); // dispatch asynchronously so the menu is not immediately closed by click handler on document
