@@ -58,7 +58,13 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 
 // serveUpdate updates a changeset based on the data received in the request's
 // body. The data is in JSON form and is decoded against `sourcegraph.ChangesetUpdateOp`.
-func serveUpdate(w http.ResponseWriter, r *http.Request) error {
+func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
+	defer func() {
+		if err != nil {
+			err = writeJSON(w, err)
+		}
+	}()
+
 	ctx := putil.Context(r)
 	repo, ok := pctx.RepoRevSpec(ctx)
 	if !ok {
@@ -147,4 +153,49 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 	}
 	notifyReview(ctx, user, uri, cs, op)
 	return nil
+}
+
+// serverMerge initiates a merge from the changeset's head branch to its base
+// branch.
+func serveMerge(w http.ResponseWriter, r *http.Request) (err error) {
+	defer func() {
+		if err != nil {
+			err = writeJSON(w, err)
+		}
+	}()
+
+	ctx := putil.Context(r)
+	repo, ok := pctx.RepoRevSpec(ctx)
+	if !ok {
+		return errors.New("no repo found in context")
+	}
+	uri := repo.URI
+	id, err := strconv.ParseInt(mux.Vars(r)["ID"], 10, 64)
+	if err != nil {
+		return err
+	}
+
+	var op sourcegraph.ChangesetMergeOp
+	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
+		return err
+	}
+	op.ID = id
+	op.Repo = sourcegraph.RepoSpec{URI: uri}
+
+	sg := sourcegraph.NewClientFromContext(ctx)
+	_, err = sg.Changesets.Merge(ctx, &op)
+	if err != nil {
+		return err
+	}
+
+	csSpec := &sourcegraph.ChangesetSpec{
+		Repo: sourcegraph.RepoSpec{URI: uri},
+		ID:   id,
+	}
+	cs, err := sg.Changesets.Get(ctx, csSpec)
+	if err != nil {
+		return err
+	}
+
+	return writeJSON(w, cs)
 }

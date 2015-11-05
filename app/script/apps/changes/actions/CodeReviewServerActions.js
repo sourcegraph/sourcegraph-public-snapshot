@@ -152,6 +152,27 @@ module.exports.statusUpdated = function(data) {
 	});
 };
 
+module.exports.mergeSuccess = function(data) {
+	notify.success("Changeset merged");
+	console.log(data);
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_MERGE_SUCCESS,
+		data: data,
+	});
+};
+
+module.exports.mergeFailed = function(err) {
+	// TODO(renfred) display merge conflict errors in a cleaner way.
+	var msg = err.responseJSON.Error;
+	msg = msg.replace(/exec \[git pull[^]+?(?=CONFLICT)/g, "Merge conflict error:\n");
+	notify.warning(msg, null);
+
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_MERGE_FAIL,
+		data: err,
+	});
+};
+
 /**
  * @description Action called by server if the request for updating
  * a review's status fails.

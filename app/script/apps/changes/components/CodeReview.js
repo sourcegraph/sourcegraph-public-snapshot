@@ -122,15 +122,6 @@ var CodeReview = React.createClass({
 
 				<div className="changeset-tab-content changeset-timeline">
 					<div className="left-panel">
-						{/*
-							TODO(gbbr): Obtain base tip when commit n/a
-
-							{this.state.Changeset.DeltaSpec.Base.CommitID !== this.state.Delta.BaseCommit.ID ? (
-								<span className="warning">
-									<i className="fa fa-icon fa-warning merge-base-warning" />{" Does not merge cleanly (merge-base is "+this.state.Delta.BaseCommit.ID.substring(0, 7)+")"}
-								</span>
-							) : null}
-					    */}
 
 						<Timeline
 							commits={this.state.commits}
@@ -165,7 +156,9 @@ var CodeReview = React.createClass({
 					<div className="right-panel">
 						<ControlPanel
 							changeset={this.state.Changeset}
-							onStatusChange={CodeReviewActions.changeChangesetStatus} />
+							onStatusChange={CodeReviewActions.changeChangesetStatus}
+							merging={this.state.merging}
+							onMerge={CodeReviewActions.mergeChangeset} />
 						{jiraIssues}
 					</div>
 				</div>

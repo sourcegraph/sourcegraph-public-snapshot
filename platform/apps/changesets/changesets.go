@@ -30,6 +30,7 @@ func init() {
 	router.Path(`/{ID:\d+}/files/{Filter:.+}`).Methods("GET").Handler(handlerWithError(serveChangeset))
 	router.Path(`/{ID:\d+}/update`).Methods("POST").Handler(handlerWithError(serveUpdate))
 	router.Path(`/{ID:\d+}/submit-review`).Methods("POST").Handler(handlerWithError(serveSubmitReview))
+	router.Path(`/{ID:\d+}/merge`).Methods("POST").Handler(handlerWithError(serveMerge))
 
 	platform.RegisterFrame(platform.RepoFrame{
 		ID:      appID,

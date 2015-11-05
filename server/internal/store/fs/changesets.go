@@ -377,10 +377,10 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	cs, _ := s.Get(ctx, opt.Repo.URI, opt.ID)
 	base, head := cs.DeltaSpec.Base.Rev, cs.DeltaSpec.Head.Rev
 	if cs.Merged {
-		return fmt.Errorf("changeset #%d already merged", cs.ID)
+		return grpc.Errorf(codes.FailedPrecondition, "changeset #%d already merged", cs.ID)
 	}
 	if cs.ClosedAt != nil {
-		return fmt.Errorf("changeset #%d already closed", cs.ID)
+		return grpc.Errorf(codes.FailedPrecondition, "changeset #%d already closed", cs.ID)
 	}
 
 	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{

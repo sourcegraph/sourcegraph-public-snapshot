@@ -121,9 +121,9 @@ h1.changeset-title {
 
 		&.status-merged {
 			&.selected, &:hover {
-				background-color: #6e5494;
-				border-color: darken(#6e5494, 15%);
-				color: #fff;
+				background-color: $sg-blue-color;
+				border-color: darken($sg-blue-color, 10);
+				color: $white;
 			}
 		}
 
@@ -202,15 +202,27 @@ h1.changeset-title {
 		}
 
 		.changeset-control-panel {
-			margin-bottom: $line-height-computed;
-
 			.panel-label {
 				display: block;
 				margin: 0 0 5px 3px;
+				font-weight: bold;
 			}
 
 			.status-options {
 				width: 150px;
+			}
+
+			.status-form, .merge-form {
+				margin-bottom: $line-height-computed;
+			}
+
+			.merge-form {
+				label, button {
+					display: block;
+				}
+				label {
+					font-weight: normal;
+				}
 			}
 		}
 
