@@ -112,6 +112,9 @@ ${GOBIN}/go-selfupdate:
 ${GOBIN}/gen-mocks:
 	go get sourcegraph.com/sourcegraph/gen-mocks
 
+${GOBIN}/go-template-lint:
+	go get sourcegraph.com/sourcegraph/go-template-lint
+
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 	$(GODEP) go install ./sgtool
 
@@ -123,7 +126,7 @@ dist: dist-dep app-dep
 generate: generate-dep
 	./dev/go-generate-all
 
-generate-dep: ${GOBIN}/gen-mocks
+generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint
 
 db-reset: src
 	src pgsql reset
@@ -164,7 +167,7 @@ compile-test:
 check: generate-dep
 	cd app && ./node_modules/.bin/eslint --max-warnings=0 script
 	cd app && ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
-	GOBIN=Godeps/_workspace/bin $(GODEP) go install sourcegraph.com/sourcegraph/go-template-lint && Godeps/_workspace/bin/go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
+	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines
 	bash dev/check-go-generate-all
 	bash dev/todo-security
