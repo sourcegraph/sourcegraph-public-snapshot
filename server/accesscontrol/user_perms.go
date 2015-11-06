@@ -88,14 +88,15 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 		return nil
 	}
 
+	if !actor.IsAuthenticated() {
+		if verifyScopeHasAccess(ctx, actor.Scope, method) {
+			return nil
+		}
+		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
+	}
+
 	var isAdmin bool
 	if authutil.ActiveFlags.IsLocal() {
-		if !actor.IsAuthenticated() {
-			if verifyScopeHasAccess(ctx, actor.Scope, method) {
-				return nil
-			}
-			return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
-		}
 		// Check local auth server for user's admin privileges.
 		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID)})
 		if err != nil {
