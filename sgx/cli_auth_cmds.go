@@ -142,12 +142,9 @@ func (c *loginCmd) Execute(args []string) error {
 	// Server).
 	///
 	var rootURL *url.URL
-	// TODO(sqs): can remove second expression below
-	// (`conf.FederationRootURL == ""`) when sourcegraph.com is
-	// updated to include this commit (since then it will set the
-	// IsFederationRoot bool value).
-	isFedRoot := conf.IsFederationRoot || conf.FederationRootURL == ""
-	if isFedRoot {
+
+	isLocalAuth := conf.IsFederationRoot || conf.AuthSource == "local" || conf.AuthSource == "ldap"
+	if isLocalAuth {
 		rootURL = endpointURL
 	} else {
 		var err error
@@ -162,7 +159,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 	tokenURL = rootURL.ResolveReference(tokenURL)
 
-	if isFedRoot {
+	if isLocalAuth {
 		fmt.Printf("Enter credentials for %s\n", rootURL)
 	} else {
 		fmt.Printf("Enter credentials for %s to log into %s\n", rootURL, endpointURL)
@@ -203,7 +200,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	var accessTok string
-	if isFedRoot {
+	if isLocalAuth {
 		accessTok = rootTok.AccessToken
 	} else {
 		// Now, use the root access token to issue an auth code that
