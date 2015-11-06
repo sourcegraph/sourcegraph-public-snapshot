@@ -60,7 +60,7 @@ export default class ExampleView extends Component {
 					</nav>
 					{example && <a>{example.File}:{example.StartLine}-{example.EndLine}</a>}
 					{loading && <i className="fa fa-spinner fa-spin"></i>}
-					{this.state.count === 0 && "No example available"}
+					{this.state.count === 0 && "No examples available"}
 				</header>
 
 				<div className="body">
