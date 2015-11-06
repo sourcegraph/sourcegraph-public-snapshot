@@ -81,6 +81,10 @@ func (s remoteAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegrap
 	return sourcegraph.NewClientFromContext(ctx).Auth.Identify(ctx, v1)
 }
 
+func (s remoteAuth) GetPermissions(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
+	return sourcegraph.NewClientFromContext(ctx).Auth.GetPermissions(ctx, v1)
+}
+
 type remoteBuilds struct{ sourcegraph.BuildsServer }
 
 func (s remoteBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
@@ -533,6 +537,10 @@ type remoteUsers struct{ sourcegraph.UsersServer }
 
 func (s remoteUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	return sourcegraph.NewClientFromContext(ctx).Users.Get(ctx, v1)
+}
+
+func (s remoteUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	return sourcegraph.NewClientFromContext(ctx).Users.GetWithEmail(ctx, v1)
 }
 
 func (s remoteUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {

@@ -252,6 +252,20 @@ func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegra
 	return rv, s.errFunc(err)
 }
 
+func (s wrappedAuth) GetPermissions(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.AuthOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
+	}
+	rv, err := svc.GetPermissions(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
 type wrappedBuilds struct {
 	ctxFunc ContextFunc
 	errFunc ErrorFunc
@@ -1778,6 +1792,20 @@ func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourc
 		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 	rv, err := svc.Get(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.UsersOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Users")
+	}
+	rv, err := svc.GetWithEmail(ctx, v1)
 	return rv, s.errFunc(err)
 }
 

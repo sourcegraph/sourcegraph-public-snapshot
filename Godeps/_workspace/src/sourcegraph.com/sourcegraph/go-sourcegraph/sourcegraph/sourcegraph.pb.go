@@ -1941,6 +1941,8 @@ type NewAccount struct {
 	Email string `protobuf:"bytes,2,opt,name=email,proto3" json:",omitempty"`
 	// Password is the password for the new user account.
 	Password string `protobuf:"bytes,3,opt,name=password,proto3" json:",omitempty"`
+	// UID is the desired UID for the new user account.
+	UID int32 `protobuf:"varint,4,opt,name=uid,proto3" json:",omitempty"`
 }
 
 func (m *NewAccount) Reset()         { *m = NewAccount{} }
@@ -3528,6 +3530,9 @@ type ServerConfig struct {
 	// users may perform "read" operations, such as viewing
 	// repositories.
 	AllowAnonymousReaders bool `protobuf:"varint,9,opt,name=allow_anonymous_readers,proto3" json:",omitempty"`
+	// AuthSource is which mode of authentication is set up on the
+	// server (local|oauth|ldap).
+	AuthSource string `protobuf:"bytes,10,opt,name=auth_source,proto3" json:",omitempty"`
 }
 
 func (m *ServerConfig) Reset()         { *m = ServerConfig{} }
@@ -5994,6 +5999,8 @@ var _Accounts_serviceDesc = grpc.ServiceDesc{
 type UsersClient interface {
 	// Get fetches a user.
 	Get(ctx context.Context, in *UserSpec, opts ...grpc.CallOption) (*User, error)
+	// GetWithEmail fetches a user by their primary email.
+	GetWithEmail(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*User, error)
 	// ListEmails returns a list of a user's email addresses.
 	ListEmails(ctx context.Context, in *UserSpec, opts ...grpc.CallOption) (*EmailAddrList, error)
 	// List users.
@@ -6011,6 +6018,15 @@ func NewUsersClient(cc *grpc.ClientConn) UsersClient {
 func (c *usersClient) Get(ctx context.Context, in *UserSpec, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := grpc.Invoke(ctx, "/sourcegraph.Users/Get", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersClient) GetWithEmail(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*User, error) {
+	out := new(User)
+	err := grpc.Invoke(ctx, "/sourcegraph.Users/GetWithEmail", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -6040,6 +6056,8 @@ func (c *usersClient) List(ctx context.Context, in *UsersListOptions, opts ...gr
 type UsersServer interface {
 	// Get fetches a user.
 	Get(context.Context, *UserSpec) (*User, error)
+	// GetWithEmail fetches a user by their primary email.
+	GetWithEmail(context.Context, *EmailAddr) (*User, error)
 	// ListEmails returns a list of a user's email addresses.
 	ListEmails(context.Context, *UserSpec) (*EmailAddrList, error)
 	// List users.
@@ -6056,6 +6074,18 @@ func _Users_Get_Handler(srv interface{}, ctx context.Context, dec func(interface
 		return nil, err
 	}
 	out, err := srv.(UsersServer).Get(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Users_GetWithEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(EmailAddr)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(UsersServer).GetWithEmail(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -6093,6 +6123,10 @@ var _Users_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Get",
 			Handler:    _Users_Get_Handler,
+		},
+		{
+			MethodName: "GetWithEmail",
+			Handler:    _Users_GetWithEmail_Handler,
 		},
 		{
 			MethodName: "ListEmails",
@@ -6248,6 +6282,9 @@ type AuthClient interface {
 	// Identify describes the currently authenticated user and/or
 	// client (if any). It is akin to "whoami".
 	Identify(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AuthInfo, error)
+	// GetPermissions returns the currently authenticated user's
+	// authorization levels on the client.
+	GetPermissions(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*UserPermissions, error)
 }
 
 type authClient struct {
@@ -6285,6 +6322,15 @@ func (c *authClient) Identify(ctx context.Context, in *pbtypes1.Void, opts ...gr
 	return out, nil
 }
 
+func (c *authClient) GetPermissions(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*UserPermissions, error) {
+	out := new(UserPermissions)
+	err := grpc.Invoke(ctx, "/sourcegraph.Auth/GetPermissions", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Auth service
 
 type AuthServer interface {
@@ -6310,6 +6356,9 @@ type AuthServer interface {
 	// Identify describes the currently authenticated user and/or
 	// client (if any). It is akin to "whoami".
 	Identify(context.Context, *pbtypes1.Void) (*AuthInfo, error)
+	// GetPermissions returns the currently authenticated user's
+	// authorization levels on the client.
+	GetPermissions(context.Context, *pbtypes1.Void) (*UserPermissions, error)
 }
 
 func RegisterAuthServer(s *grpc.Server, srv AuthServer) {
@@ -6352,6 +6401,18 @@ func _Auth_Identify_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return out, nil
 }
 
+func _Auth_GetPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(pbtypes1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AuthServer).GetPermissions(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Auth_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Auth",
 	HandlerType: (*AuthServer)(nil),
@@ -6367,6 +6428,10 @@ var _Auth_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Identify",
 			Handler:    _Auth_Identify_Handler,
+		},
+		{
+			MethodName: "GetPermissions",
+			Handler:    _Auth_GetPermissions_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

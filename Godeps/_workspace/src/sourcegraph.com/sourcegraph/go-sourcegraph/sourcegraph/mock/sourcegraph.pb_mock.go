@@ -762,13 +762,18 @@ func (s *AccountsServer) Update(v0 context.Context, v1 *sourcegraph.User) (*pbty
 var _ sourcegraph.AccountsServer = (*AccountsServer)(nil)
 
 type UsersClient struct {
-	Get_        func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error)
-	ListEmails_ func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
-	List_       func(ctx context.Context, in *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
+	Get_          func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error)
+	GetWithEmail_ func(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.User, error)
+	ListEmails_   func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
+	List_         func(ctx context.Context, in *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
 }
 
 func (s *UsersClient) Get(ctx context.Context, in *sourcegraph.UserSpec, opts ...grpc.CallOption) (*sourcegraph.User, error) {
 	return s.Get_(ctx, in)
+}
+
+func (s *UsersClient) GetWithEmail(ctx context.Context, in *sourcegraph.EmailAddr, opts ...grpc.CallOption) (*sourcegraph.User, error) {
+	return s.GetWithEmail_(ctx, in)
 }
 
 func (s *UsersClient) ListEmails(ctx context.Context, in *sourcegraph.UserSpec, opts ...grpc.CallOption) (*sourcegraph.EmailAddrList, error) {
@@ -782,13 +787,18 @@ func (s *UsersClient) List(ctx context.Context, in *sourcegraph.UsersListOptions
 var _ sourcegraph.UsersClient = (*UsersClient)(nil)
 
 type UsersServer struct {
-	Get_        func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error)
-	ListEmails_ func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
-	List_       func(v0 context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
+	Get_          func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error)
+	GetWithEmail_ func(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error)
+	ListEmails_   func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error)
+	List_         func(v0 context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error)
 }
 
 func (s *UsersServer) Get(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	return s.Get_(v0, v1)
+}
+
+func (s *UsersServer) GetWithEmail(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	return s.GetWithEmail_(v0, v1)
 }
 
 func (s *UsersServer) ListEmails(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
@@ -845,6 +855,7 @@ type AuthClient struct {
 	GetAuthorizationCode_ func(ctx context.Context, in *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error)
 	GetAccessToken_       func(ctx context.Context, in *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
 	Identify_             func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error)
+	GetPermissions_       func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserPermissions, error)
 }
 
 func (s *AuthClient) GetAuthorizationCode(ctx context.Context, in *sourcegraph.AuthorizationCodeRequest, opts ...grpc.CallOption) (*sourcegraph.AuthorizationCode, error) {
@@ -859,12 +870,17 @@ func (s *AuthClient) Identify(ctx context.Context, in *pbtypes.Void, opts ...grp
 	return s.Identify_(ctx, in)
 }
 
+func (s *AuthClient) GetPermissions(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.UserPermissions, error) {
+	return s.GetPermissions_(ctx, in)
+}
+
 var _ sourcegraph.AuthClient = (*AuthClient)(nil)
 
 type AuthServer struct {
 	GetAuthorizationCode_ func(v0 context.Context, v1 *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error)
 	GetAccessToken_       func(v0 context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
 	Identify_             func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error)
+	GetPermissions_       func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error)
 }
 
 func (s *AuthServer) GetAuthorizationCode(v0 context.Context, v1 *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
@@ -877,6 +893,10 @@ func (s *AuthServer) GetAccessToken(v0 context.Context, v1 *sourcegraph.AccessTo
 
 func (s *AuthServer) Identify(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 	return s.Identify_(v0, v1)
+}
+
+func (s *AuthServer) GetPermissions(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
+	return s.GetPermissions_(v0, v1)
 }
 
 var _ sourcegraph.AuthServer = (*AuthServer)(nil)

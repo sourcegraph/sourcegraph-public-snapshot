@@ -1766,6 +1766,9 @@ message NewAccount {
 
 	// Password is the password for the new user account.
 	string password = 3;
+
+	// UID is the desired UID for the new user account.
+	int32 uid = 4 [(gogoproto.customname) = "UID"];
 }
 
 // UsersService communicates with the users-related endpoints in the Sourcegraph
@@ -1775,6 +1778,13 @@ service Users {
 	rpc Get(UserSpec) returns (User) {
 		option (google.api.http) = {
 			get: "/users"
+		};
+	};
+
+	// GetWithEmail fetches a user by their primary email.
+	rpc GetWithEmail(EmailAddr) returns (User) {
+		option (google.api.http) = {
+			get: "/users/by_email"
 		};
 	};
 
@@ -1833,6 +1843,14 @@ service Auth {
 	rpc Identify(pbtypes.Void) returns (AuthInfo) {
 		option (google.api.http) = {
 			get: "/auth/identify"
+		};
+	};
+
+	// GetPermissions returns the currently authenticated user's
+	// authorization levels on the client.
+	rpc GetPermissions(pbtypes.Void) returns (UserPermissions) {
+		option (google.api.http) = {
+			get: "/auth/verify"
 		};
 	};
 }
@@ -3025,6 +3043,10 @@ message ServerConfig {
 	// users may perform "read" operations, such as viewing
 	// repositories.
 	bool allow_anonymous_readers = 9;
+
+	// AuthSource is which mode of authentication is set up on the
+	// server (local|oauth|ldap).
+	string auth_source = 10;
 }
 
 // A RegisteredClient is a registered API client.

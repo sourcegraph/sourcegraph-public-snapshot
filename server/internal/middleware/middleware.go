@@ -384,6 +384,25 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 
 }
 
+func (s wrappedAuth) GetPermissions(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserPermissions, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Auth", "GetPermissions", param)
+	defer func() {
+		trace.After(ctx, "Auth", "GetPermissions", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Auth.GetPermissions")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.AuthServer = s.u
+
+	res, err = target.GetPermissions(ctx, param)
+	return
+
+}
+
 type wrappedBuilds struct {
 	u sourcegraph.BuildsServer
 	c *auth.Config
@@ -2812,6 +2831,25 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 	}
 
 	res, err = federated.CustomUsersGet(ctx, param, s.u)
+	return
+
+}
+
+func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.EmailAddr) (res *sourcegraph.User, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Users", "GetWithEmail", param)
+	defer func() {
+		trace.After(ctx, "Users", "GetWithEmail", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Users.GetWithEmail")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.UsersServer = s.u
+
+	res, err = target.GetWithEmail(ctx, param)
 	return
 
 }
