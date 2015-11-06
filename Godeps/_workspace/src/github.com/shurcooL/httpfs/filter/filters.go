@@ -2,7 +2,7 @@ package filter
 
 import (
 	"os"
-	"path/filepath"
+	pathpkg "path"
 )
 
 // FilesWithExtensions returns a filter that ignores files (but not directories) that
@@ -17,7 +17,7 @@ func FilesWithExtensions(exts ...string) Func {
 			return false
 		}
 		for _, ext := range exts {
-			if filepath.Ext(path) == ext {
+			if pathpkg.Ext(path) == ext {
 				return true
 			}
 		}

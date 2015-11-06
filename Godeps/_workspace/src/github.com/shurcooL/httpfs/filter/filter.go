@@ -10,9 +10,12 @@ import (
 	"time"
 )
 
-// Func is a filtering function which is provided two arguments, the os.FileInfo
-// of the considered file, and its full absolute path. For example, if the considered file is
-// named "a" and it's inside a directory "dir", then the value of path will be "/dir/a".
+// Func is a filtering function which is provided two arguments,
+// its '/'-separated rooted absolute path (i.e., it always begins with "/"),
+// and the os.FileInfo of the considered file.
+//
+// For example, if the considered file is named "a" and it's inside a directory "dir",
+// then the value of path will be "/dir/a".
 type Func func(path string, fi os.FileInfo) bool
 
 // New creates a filesystem that contains everything in source, except files for which

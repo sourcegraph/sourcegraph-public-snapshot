@@ -1,0 +1,29 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		{{template "issue" .}}
+	</body>
+</html>
+
+{{define "issue"}}
+	<h1>{{.Issue.Title}} <span class="gray">#{{.Issue.ID}}</span></h1>
+	<div id="issue-state-badge" style="margin-bottom: 20px;">
+		{{template "issue-badge" (print .Issue.State)}}
+		<span>{{template "user" .Issue.User}} opened this issue {{template "time" .Issue.CreatedAt}}</span>
+	</div>
+	{{range .Items}}
+		{{template "issue-item" .}}
+	{{end}}
+	<div id="new-item-marker"></div>
+	{{template "new-comment" .}}
+{{end}}
+
+{{define "issue-item"}}
+	{{if eq .TemplateName "comment"}}
+		{{template "comment" .IssueItem}}
+	{{else if eq .TemplateName "event"}}
+		{{template "event" .IssueItem}}
+	{{end}}
+{{end}}

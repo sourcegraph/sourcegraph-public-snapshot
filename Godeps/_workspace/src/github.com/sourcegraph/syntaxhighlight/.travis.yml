@@ -1,0 +1,11 @@
+language: go
+go:
+  - 1.4
+install:
+  - go get golang.org/x/tools/cmd/vet
+  - go get -t -v ./...
+script:
+  - diff -u <(echo -n) <(gofmt -d ./)
+  - go tool vet -composites=false ./*.go
+  - go tool vet -composites=false ./cmd/
+  - go test -v -race -bench=. -benchmem ./...

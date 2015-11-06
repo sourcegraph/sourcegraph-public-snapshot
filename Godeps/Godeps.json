@@ -153,6 +153,10 @@
 			"Rev": "efd7476481382c195beb33acd8ec2f1527167fb4"
 		},
 		{
+			"ImportPath": "github.com/google/go-github/github",
+			"Rev": "6eb49d4ba5175412dcbb29b0031ebf02ab85a48d"
+		},
+		{
 			"ImportPath": "github.com/google/go-querystring/query",
 			"Rev": "ec0a78e0f4db229b7897be36596a8944230b857a"
 		},
@@ -301,12 +305,77 @@
 			"Rev": "08f0718b61e95ddba0ade3346725fe0e4bf28ca6"
 		},
 		{
+			"ImportPath": "github.com/sergi/go-diff/diffmatchpatch",
+			"Rev": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/github_flavored_markdown",
+			"Rev": "b3921bea4a899100a4fd522dd940b819af56e437"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go-goon",
+			"Comment": "experiment-with-bypass_alt-16-gadb0068",
+			"Rev": "adb0068563cf869f1b4b7c57b83a293064b45145"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gists/gist5258650",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gists/gist5639599",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gists/gist5707298",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gists/gist6418290",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gists/gist6418462",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gists/gist6433744",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gists/gist6445065",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/go/gzip_file_server",
+			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/highlight_diff",
+			"Rev": "8f0db662adc4a5ba63b4ca15bf66ab08123f7161"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/highlight_go",
+			"Rev": "562bf7c1e73e56cf3c10c2506b1e29fccc63d1c9"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/htmlg",
+			"Rev": "dbbd8098613c3706dfe5ecdf8eeec907f01ee273"
+		},
+		{
 			"ImportPath": "github.com/shurcooL/httpfs/filter",
-			"Rev": "6294156d8d749033f1ca9dcc662e902116990d2d"
+			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/httpfs/html/vfstemplate",
+			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/httpfs/path/vfspath",
+			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/vfsutil",
-			"Rev": "6294156d8d749033f1ca9dcc662e902116990d2d"
+			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/sanitized_anchor_name",
@@ -355,6 +424,10 @@
 		{
 			"ImportPath": "github.com/sourcegraph/sitemap",
 			"Rev": "5d2a42ccab8dc0079484263b326b9a3191d5bee8"
+		},
+		{
+			"ImportPath": "github.com/sourcegraph/syntaxhighlight",
+			"Rev": "637a8b8b94eca8bb8cd559b950cc4f42629ec137"
 		},
 		{
 			"ImportPath": "github.com/spf13/afero",
@@ -700,6 +773,10 @@
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",
 			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
+		},
+		{
+			"ImportPath": "src.sourcegraph.com/apps/issues",
+			"Rev": "a1cdc851419a51f0af48584e97e16134f5fd653a"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",

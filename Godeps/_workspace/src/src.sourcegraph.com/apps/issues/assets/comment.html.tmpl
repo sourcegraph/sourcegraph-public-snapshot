@@ -1,0 +1,43 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		<div style="background-color: lightgray;">content</div>
+		{{template "comment" .Comment}}
+		<div style="background-color: lightgray;">content</div>
+		<pre>{{dump .Comment}}</pre>
+	</body>
+</html>
+
+{{define "comment"}}
+<div style="display: flex;" class="list-entry">
+	<div>
+		<a href="{{.User.HTMLURL}}" target="_blank">
+			<img class="comment-avatar" width="48" height="48" src="{{.User.AvatarURL}}">
+		</a>
+	</div>
+	<div class="list-entry-border" style="flex-grow: 1;">
+		<div class="list-entry-header">
+			<span class="content">{{template "user" .User}} commented {{template "time" .CreatedAt}}</span>
+			<span class="right-icon"><a href="javascript:TODO();"><span class="octicon octicon-pencil"></span></a></span>
+			<span class="right-icon"><a href="javascript:TODO();"><span class="octicon octicon-x"></span></a></span>
+		</div>
+		<div class="list-entry-body">
+			<div class="markdown-body">
+				{{with .Body}}
+					{{. | gfm}}
+				{{else}}
+					<i class="gray">No description.</i>
+				{{end}}
+			</div>
+		</div>
+	</div>
+</div>
+{{end}}
+
+{{define "user"}}
+<a class="black" href="{{.HTMLURL}}" target="_blank"><strong>{{.Login}}</strong></a>
+{{end}}
+
+{{define "time"}}<abbr title="{{.Format "Jan _2, 2006, 3:04 PM MST"}}">{{reltime .}}</abbr>{{end}}
