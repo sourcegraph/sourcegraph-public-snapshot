@@ -55,6 +55,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	newUser := &sourcegraph.User{
 		Login:        newAcct.Login,
 		RegisteredAt: &now,
+		UID:          newAcct.UID,
 	}
 
 	created, err := accountsStore.Create(ctx, newUser)

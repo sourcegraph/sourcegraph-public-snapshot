@@ -19,10 +19,14 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
 var Auth sourcegraph.AuthServer = &auth{}
@@ -50,8 +54,11 @@ func (s *auth) GetAuthorizationCode(ctx context.Context, op *sourcegraph.Authori
 		return nil, grpc.Errorf(codes.PermissionDenied, "user %d attempted to create auth code for user %d", uid, op.UID)
 	}
 
-	if err := verifyLoginPermissionForUser(ctx, op); err != nil {
+	ctx2 := authpkg.WithActor(ctx, authpkg.Actor{UID: int(op.UID), ClientID: op.ClientID})
+	if userPerms, err := s.GetPermissions(ctx2, &pbtypes.Void{}); err != nil {
 		return nil, err
+	} else if !(userPerms.Read || userPerms.Write || userPerms.Admin) {
+		return nil, grpc.Errorf(codes.PermissionDenied, "user %d is not allowed to log into this server", op.UID)
 	}
 
 	// RedirectURI is OPTIONAL
@@ -127,16 +134,41 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 
 	user, err := usersStore.Get(ctx, sourcegraph.UserSpec{Login: cred.Login})
 	if err != nil {
-		return nil, err
+		if !(store.IsUserNotFound(err) && authutil.ActiveFlags.IsLDAP()) {
+			return nil, err
+		}
 	}
 
-	passwordStore := store.PasswordFromContextOrNil(ctx)
-	if passwordStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Passwords")
-	}
+	if authutil.ActiveFlags.IsLDAP() {
+		ldapuser, err := ldap.VerifyLogin(cred.Login, cred.Password)
+		if err != nil {
+			return nil, grpc.Errorf(codes.PermissionDenied, "LDAP auth failed: %v", err)
+		}
 
-	if passwordStore.CheckUIDPassword(ctx, user.UID, cred.Password) != nil {
-		return nil, grpc.Errorf(codes.PermissionDenied, "bad password for user %q", cred.Login)
+		if user == nil {
+			user, err = linkLDAPUserAccount(ctx, ldapuser)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// TODO(pararth): make federated user permissions work for LDAP instances.
+		// Verify login permissions via federation root.
+		// ctx2 := authpkg.WithActor(ctx, authpkg.Actor{UID: int(user.UID), ClientID: idkey.FromContext(ctx).ID})
+		// if userPerms, err := svc.Auth(ctx2).GetPermissions(ctx2, &pbtypes.Void{}); err != nil {
+		// 	return nil, err
+		// } else if !(userPerms.Read || userPerms.Write || userPerms.Admin) {
+		// 	return nil, grpc.Errorf(codes.PermissionDenied, "User %v (UID %v) is not allowed to log in", ldapuser.Username, user.UID)
+		// }
+	} else {
+		passwordStore := store.PasswordFromContextOrNil(ctx)
+		if passwordStore == nil {
+			return nil, grpc.Errorf(codes.Unimplemented, "no Passwords")
+		}
+
+		if passwordStore.CheckUIDPassword(ctx, user.UID, cred.Password) != nil {
+			return nil, grpc.Errorf(codes.PermissionDenied, "bad password for user %q", cred.Login)
+		}
 	}
 
 	a := authpkg.ActorFromContext(ctx)
@@ -246,49 +278,156 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 	}, nil
 }
 
-func verifyLoginPermissionForUser(ctx context.Context, op *sourcegraph.AuthorizationCodeRequest) error {
+func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
+	a := authpkg.ActorFromContext(ctx)
+	if a.UID == 0 || a.ClientID == "" {
+		return nil, grpc.Errorf(codes.Unauthenticated, "no authenticated actor or client in context")
+	}
+
+	userPerms := &sourcegraph.UserPermissions{UID: int32(a.UID), ClientID: a.ClientID}
+
 	// set this flag for testing only; never to be set in production on root server.
 	if authutil.ActiveFlags.AllowAllLogins {
-		return nil
+		userPerms.Read = true
+		userPerms.Write = true
+		return userPerms, nil
+	}
+
+	if a.ClientID == idkey.FromContext(ctx).ID {
+		// Fetch permissions for a user account local to this server.
+		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(a.UID)})
+		if err != nil && grpc.Code(err) == codes.NotFound {
+			return userPerms, nil
+		} else if err != nil {
+			return nil, err
+		}
+		userPerms.Read = true
+		userPerms.Write = true
+		userPerms.Admin = user.Admin
+		return userPerms, nil
 	}
 
 	// check user's access permissions for the client.
 	userPermsOpt := &sourcegraph.UserPermissionsOptions{
-		UID:        op.UID,
-		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: op.ClientID},
+		UID:        int32(a.UID),
+		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: a.ClientID},
 	}
 
-	if userPerms, err := svc.RegisteredClients(ctx).GetUserPermissions(ctx, userPermsOpt); err != nil {
+	var err error
+	userPerms, err = svc.RegisteredClients(ctx).GetUserPermissions(ctx, userPermsOpt)
+	if err != nil {
 		// ignore NotImplementedError as the UserPermissionsStore is not implemented
 		if _, ok := err.(*sourcegraph.NotImplementedError); !ok {
-			return err
+			return nil, err
 		}
-	} else if !(userPerms.Read || userPerms.Write || userPerms.Admin) {
+	}
+
+	if !(userPerms.Read || userPerms.Write || userPerms.Admin) {
 		// check if the client allows all logins.
-		client, err := svc.RegisteredClients(ctx).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: op.ClientID})
+		client, err := svc.RegisteredClients(ctx).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: a.ClientID})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if client.Meta != nil && client.Meta["allow-logins"] == "all" {
 			// activate this user on the client.
-			newUserPerms := &sourcegraph.UserPermissions{
-				UID:      op.UID,
-				ClientID: op.ClientID,
-				Read:     true,
+			userPerms.Read = true
+			if client.Meta["default-access"] == "write" {
+				userPerms.Write = true
 			}
 			// WARN(security): using the non-strict setPermissionsForUser method which doesn't
 			// enforce perms checks on the user setting the permissions since the current user
 			// is not an admin on the client. Be careful about modifying this code as it can
 			// lead to security vulnerabilities.
-			if _, err := setPermissionsForUser(ctx, newUserPerms); err != nil {
+			if _, err := setPermissionsForUser(ctx, userPerms); err != nil {
 				// ignore NotImplementedError as the UserPermissionsStore is not implemented
 				if _, ok := err.(*sourcegraph.NotImplementedError); !ok {
-					return err
+					return nil, err
 				}
 			}
-		} else {
-			return grpc.Errorf(codes.PermissionDenied, "user %d is not allowed to log into this server", op.UID)
 		}
 	}
-	return nil
+	return userPerms, nil
+}
+
+// linkLDAPUserAccount links the local LDAP account with an account on the root
+// server, such that the UID will be shared on both accounts.
+// If an account exists on the root that shares an email address with the LDAP
+// user, that account will be linked. Otherwise, a new account will be generated
+// on the root server. The new account will have a random password, which can
+// be reset via the forgot password link on the root server.
+func linkLDAPUserAccount(ctx context.Context, ldapuser *ldap.LDAPUser) (*sourcegraph.User, error) {
+	if len(ldapuser.Emails) == 0 {
+		return nil, grpc.Errorf(codes.FailedPrecondition, "LDAP accounts must have an associated email address to access Sourcegraph")
+	}
+	info, err := discover.Site(ctx, fed.Config.RootURL().Host)
+	if err != nil {
+		return nil, err
+	}
+	ctx2, err := info.NewContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cl2 := sourcegraph.NewClientFromContext(ctx2)
+
+	var federatedUser *sourcegraph.User
+	var commonEmail string
+
+	// First check if a federated user with common a email exists
+	for _, e := range ldapuser.Emails {
+		federatedUser, err = cl2.Users.GetWithEmail(ctx2, &sourcegraph.EmailAddr{Email: e})
+		if err != nil && grpc.Code(err) == codes.NotFound {
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+		commonEmail = e
+		// TODO: send email to `commonEmail` address saying that an LDAP
+		// account was linked to their sourcegraph.com account.
+		break
+	}
+
+	// Append a random suffix to avoid name collisions on root server
+	federatedLogin := ldapuser.Username + "_" + randstring.NewLen(6)
+	federatedPassword := randstring.NewLen(20)
+
+	if federatedUser == nil {
+		// Federated user does not exist, so create a new user on root
+		// Use any of the LDAP user's emails as the primary email.
+		commonEmail = ldapuser.Emails[0]
+		federatedUserSpec, err := cl2.Accounts.Create(ctx, &sourcegraph.NewAccount{
+			// Use a non-colliding username.
+			Login: federatedLogin,
+			// Use the common email address as the primary email.
+			Email: commonEmail,
+			// Set a random password. The user can request password reset.
+			Password: federatedPassword,
+		})
+		if err != nil {
+			return nil, err
+		}
+		// Save the UID for linking with local user account.
+		federatedUser = &sourcegraph.User{UID: federatedUserSpec.UID}
+		// TODO: send email to `commonEmail` address saying that a sourcegraph.com
+		// account was created for them and linked with their LDAP account.
+	}
+
+	// Now link local LDAP account with existing federated user
+	userSpec, err := svc.Accounts(ctx).Create(ctx, &sourcegraph.NewAccount{
+		// Use the LDAP username.
+		Login: ldapuser.Username,
+		// Use the common email address as the primary email.
+		Email: commonEmail,
+		// Share the UID to link the accounts.
+		UID: federatedUser.UID,
+		// Password in local store is irrelevant since auth will be done via LDAP.
+		Password: federatedPassword,
+	})
+	if userSpec.UID != federatedUser.UID {
+		return nil, grpc.Errorf(codes.Internal, "linked account UIDs do not match")
+	}
+	return &sourcegraph.User{
+		UID:    userSpec.UID,
+		Login:  userSpec.Login,
+		Domain: userSpec.Domain,
+	}, err
 }

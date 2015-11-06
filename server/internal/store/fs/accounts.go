@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -18,7 +19,7 @@ func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User
 }
 
 func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
-	if newUser.UID != 0 {
+	if newUser.UID != 0 && !authutil.ActiveFlags.IsLDAP() {
 		return nil, errors.New("uid already set")
 	}
 	if newUser.Login == "" {
@@ -30,14 +31,16 @@ func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 		return nil, err
 	}
 
-	// Verify login uniqueness.
+	// Verify login and UID uniqueness.
 	for _, user := range users {
-		if user.Login == newUser.Login {
-			return nil, &store.AccountAlreadyExistsError{Login: newUser.Login}
+		if user.Login == newUser.Login || user.UID == newUser.UID {
+			return nil, &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
 		}
 	}
 
-	newUser.UID = int32(len(users) + 1)
+	if newUser.UID == 0 {
+		newUser.UID = int32(len(users) + 1)
+	}
 	users = append(users, &userDBEntry{User: *newUser})
 
 	if err := writeUserDB(ctx, users); err != nil {

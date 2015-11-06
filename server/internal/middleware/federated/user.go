@@ -35,6 +35,10 @@ func CustomUsersGet(ctx context.Context, v1 *sourcegraph.UserSpec, s sourcegraph
 		return githubWrap(s.Get(ctx, v1))
 	}
 
+	if authutil.ActiveFlags.IsLDAP() {
+		return s.Get(ctx, v1)
+	}
+
 	if !fed.Config.IsRoot && v1.Domain == "" {
 		v1.Domain = fed.Config.RootURL().Host
 	}

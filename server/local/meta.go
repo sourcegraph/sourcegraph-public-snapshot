@@ -42,7 +42,8 @@ func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 		GRPCEndpoint:          xe.GRPCEndpoint,
 		HTTPEndpoint:          xe.HTTPEndpoint,
 		AllowAnonymousReaders: authutil.ActiveFlags.AllowAnonymousReaders,
-		IDKey: idkey.FromContext(ctx).ID,
+		IDKey:      idkey.FromContext(ctx).ID,
+		AuthSource: authutil.ActiveFlags.Source,
 	}
 
 	c.IsFederationRoot = fed.Config.IsRoot

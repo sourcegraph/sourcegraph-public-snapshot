@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
@@ -23,7 +24,7 @@ func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User
 }
 
 func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
-	if newUser.UID != 0 {
+	if newUser.UID != 0 && !authutil.ActiveFlags.IsLDAP() {
 		return nil, errors.New("uid already set")
 	}
 	if newUser.Login == "" {
@@ -34,7 +35,7 @@ func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 	u.fromUser(newUser)
 	if err := dbh(ctx).Insert(&u); err != nil {
 		if strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_login"`) {
-			return nil, &store.AccountAlreadyExistsError{Login: newUser.Login}
+			return nil, &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
 		}
 		return nil, err
 	}

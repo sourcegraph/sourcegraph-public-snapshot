@@ -82,7 +82,7 @@ func RepoContext(ctx context.Context, repo *string) (context.Context, error) {
 }
 
 func lookupUser(ctx context.Context, user sourcegraph.UserSpec) (context.Context, discover.Info, error) {
-	if authutil.ActiveFlags.IsLocal() {
+	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
 		return nil, nil, nil
 	}
 	if user.Domain == "" {

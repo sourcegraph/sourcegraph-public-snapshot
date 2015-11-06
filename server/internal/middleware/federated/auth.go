@@ -42,18 +42,14 @@ func CustomAuthGetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRe
 		// with this client's credentials. The access token will be
 		// signed by the remote server but its ClientID will be this
 		// client's ID.
-		atok, err := svc.Auth(ctx).GetAccessToken(ctx, op)
-		if err != nil {
-			return nil, err
-		}
-		return atok, nil
+		return svc.Auth(ctx).GetAccessToken(ctx, op)
 	}
 
 	return s.GetAccessToken(ctx, op)
 }
 
 func CustomAuthIdentify(ctx context.Context, op *pbtypes.Void, s sourcegraph.AuthServer) (*sourcegraph.AuthInfo, error) {
-	if authutil.ActiveFlags.IsLocal() {
+	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
 		return s.Identify(ctx, op)
 	}
 
@@ -79,6 +75,31 @@ func CustomAuthIdentify(ctx context.Context, op *pbtypes.Void, s sourcegraph.Aut
 		return authInfo, err
 	}
 	return s.Identify(ctx, op)
+}
+
+func CustomAuthGetPermissions(ctx context.Context, op *pbtypes.Void, s sourcegraph.AuthServer) (*sourcegraph.UserPermissions, error) {
+	if authutil.ActiveFlags.IsLocal() {
+		return s.GetPermissions(ctx, op)
+	}
+
+	isCurrentDomain, domain, err := isCurrentDomain(ctx, oauth2client.TokenURL())
+	if err != nil {
+		return nil, err
+	}
+	if !isCurrentDomain {
+		info, err := discover.Site(ctx, domain)
+		if err != nil {
+			return nil, err
+		}
+
+		ctx, err = info.NewContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return svc.Auth(ctx).GetPermissions(ctx, op)
+	}
+	return s.GetPermissions(ctx, op)
 }
 
 // isCurrentDomain returns a boolean indicating whether the URL's host

@@ -25,6 +25,16 @@ func (s *users) Get(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegra
 	return store.Get(ctx, *user)
 }
 
+func (s *users) GetWithEmail(ctx context.Context, emailAddr *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	store := store.UsersFromContextOrNil(ctx)
+	if store == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "Users"}
+	}
+
+	shortCache(ctx)
+	return store.GetWithEmail(ctx, *emailAddr)
+}
+
 func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
 	store := store.UsersFromContextOrNil(ctx)
 	if store == nil {

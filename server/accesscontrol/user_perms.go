@@ -63,6 +63,13 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method str
 		return nil
 	}
 
+	// If auth source is ldap, we currently do not differentiate between
+	// read and write access. The supported access levels for a user are:
+	// unauthenticated, authenticated and admin.
+	if authutil.ActiveFlags.IsLDAP() {
+		return nil
+	}
+
 	// Get UserPermissions info for this user from the root server.
 	perms, err := getUserPermissionsFromRoot(ctx, actor)
 	if err != nil {
@@ -96,7 +103,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 	}
 
 	var isAdmin bool
-	if authutil.ActiveFlags.IsLocal() {
+	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
 		// Check local auth server for user's admin privileges.
 		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID)})
 		if err != nil {
