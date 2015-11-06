@@ -46,7 +46,6 @@ export default class CodeFileRouter extends Component {
 		state.selectedDef = vars["seldef"] || null;
 
 		state.def = vars["def"] ? `/${state.repo}@${state.rev}/.${keys[0]}/${vars[keys[0]]}/.def/${vars["def"]}` : null;
-		state.example = vars["examples"] ? parseInt(vars["examples"], 10) : null;
 	}
 
 	_navigate(path, query) {
@@ -98,8 +97,7 @@ export default class CodeFileRouter extends Component {
 				<CodeFileContainer
 					repo={this.state.repo}
 					rev={this.state.rev}
-					def={this.state.def}
-					example={this.state.example} />
+					def={this.state.def} />
 			);
 		}
 
