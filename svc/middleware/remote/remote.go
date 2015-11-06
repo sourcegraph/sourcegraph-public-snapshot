@@ -34,6 +34,7 @@ var Services = svc.Services{
 	Meta:                remoteMeta{},
 	MirrorRepos:         remoteMirrorRepos{},
 	MirroredRepoSSHKeys: remoteMirroredRepoSSHKeys{},
+	Notify:              remoteNotify{},
 	Orgs:                remoteOrgs{},
 	People:              remotePeople{},
 	RegisteredClients:   remoteRegisteredClients{},
@@ -42,7 +43,9 @@ var Services = svc.Services{
 	RepoTree:            remoteRepoTree{},
 	Repos:               remoteRepos{},
 	Search:              remoteSearch{},
+	Storage:             remoteStorage{},
 	Units:               remoteUnits{},
+	UserKeys:            remoteUserKeys{},
 	Users:               remoteUsers{},
 }
 
@@ -140,6 +143,10 @@ func (s remoteChangesets) List(ctx context.Context, v1 *sourcegraph.ChangesetLis
 
 func (s remoteChangesets) Update(ctx context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	return sourcegraph.NewClientFromContext(ctx).Changesets.Update(ctx, v1)
+}
+
+func (s remoteChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Changesets.Merge(ctx, v1)
 }
 
 func (s remoteChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
@@ -274,6 +281,16 @@ func (s remoteMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.Repo
 
 func (s remoteMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	return sourcegraph.NewClientFromContext(ctx).MirroredRepoSSHKeys.Delete(ctx, v1)
+}
+
+type remoteNotify struct{ sourcegraph.NotifyServer }
+
+func (s remoteNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Notify.GenericEvent(ctx, v1)
+}
+
+func (s remoteNotify) Mention(ctx context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Notify.Mention(ctx, v1)
 }
 
 type remoteOrgs struct{ sourcegraph.OrgsServer }
@@ -458,6 +475,36 @@ func (s remoteSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*s
 	return sourcegraph.NewClientFromContext(ctx).Search.Suggest(ctx, v1)
 }
 
+type remoteStorage struct{ sourcegraph.StorageServer }
+
+func (s remoteStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Create(ctx, v1)
+}
+
+func (s remoteStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.RemoveAll(ctx, v1)
+}
+
+func (s remoteStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Read(ctx, v1)
+}
+
+func (s remoteStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Write(ctx, v1)
+}
+
+func (s remoteStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Stat(ctx, v1)
+}
+
+func (s remoteStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.ReadDir(ctx, v1)
+}
+
+func (s remoteStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Close(ctx, v1)
+}
+
 type remoteUnits struct{ sourcegraph.UnitsServer }
 
 func (s remoteUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
@@ -466,6 +513,20 @@ func (s remoteUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.R
 
 func (s remoteUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
 	return sourcegraph.NewClientFromContext(ctx).Units.List(ctx, v1)
+}
+
+type remoteUserKeys struct{ sourcegraph.UserKeysServer }
+
+func (s remoteUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.AddKey(ctx, v1)
+}
+
+func (s remoteUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.LookupUser(ctx, v1)
+}
+
+func (s remoteUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.DeleteKey(ctx, v1)
 }
 
 type remoteUsers struct{ sourcegraph.UsersServer }

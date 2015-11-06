@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/sourcegraph/annotate"
-	"github.com/sourcegraph/syntaxhighlight"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+
+	"github.com/sourcegraph/annotate"
+
+	"src.sourcegraph.com/syntaxhighlight"
 )
 
 // NilAnnotator is a special kind of annotator that always returns nil, but stores
@@ -17,88 +19,91 @@ import (
 // structure, as opposed to an annotated string, allowing full control over rendering and
 // displaying it.
 type NilAnnotator struct {
-	Config     syntaxhighlight.HTMLConfig
 	Code       *sourcegraph.SourceCode
 	byteOffset int
+	// pointer to the current line of code
+	line       int
+	// number of lines of code detected
+	numLines   int
+	// HTML config to use
+	htmlConfig syntaxhighlight.HTMLConfig
 }
 
+// Instantiates new NilAnnotator from the given source code.
+// Annotator will contain a list of line spans (start byte to end byte) in the source code
 func NewNilAnnotator(e *vcsclient.FileWithRange) *NilAnnotator {
+	lines := make([]*sourcegraph.SourceCodeLine, 0, bytes.Count(e.Contents, []byte("\n"))+1)
+	last := len(e.Contents) - 1
+
+	offset := 0
+	index := bytes.IndexByte(e.Contents, '\n')
+	for index >= 0 {
+		lines = append(lines, newSourceLine(offset, offset+index, e.StartByte))
+		offset += index + 1
+		if offset == last+1 {
+			break
+		}
+		index = bytes.IndexByte(e.Contents[offset:], '\n')
+	}
+	if offset <= last {
+		lines = append(lines, newSourceLine(offset, last, e.StartByte))
+	}
 	ann := NilAnnotator{
-		Config: syntaxhighlight.DefaultHTMLConfig,
 		Code: &sourcegraph.SourceCode{
-			Lines: make([]*sourcegraph.SourceCodeLine, 0, bytes.Count(e.Contents, []byte("\n"))),
+			Lines: lines,
 		},
 		byteOffset: int(e.StartByte),
+		line:       0,
+		numLines:   len(lines),
+		htmlConfig:	syntaxhighlight.DefaultHTMLConfig,
 	}
-	ann.addLine(ann.byteOffset)
 	return &ann
 }
 
-func (a *NilAnnotator) addToken(t *sourcegraph.SourceCodeToken) {
-	line := a.Code.Lines[len(a.Code.Lines)-1]
-	if line.Tokens == nil {
-		line.Tokens = make([]*sourcegraph.SourceCodeToken, 0, 1)
-	}
-	// If this token and the previous one are both strings, merge them.
-	if n := len(line.Tokens); t.Class == a.Config.Whitespace && n > 0 {
-		if line.Tokens[n-1].Class == a.Config.Whitespace {
-			line.Tokens[n-1].Label += t.Label
-			return
+func (a *NilAnnotator) Annotate(token syntaxhighlight.Token) (*annotate.Annotation, error) {
+	start := int32(token.Offset) + int32(a.byteOffset)
+	for a.line < a.numLines {
+		line := a.Code.Lines[a.line]
+		if line.StartByte <= start && line.EndByte >= start {
+			chunks := strings.Split(token.Text, "\n")
+			for index, chunk := range chunks {
+				if a.line+index >= a.numLines {
+					break
+				}
+				l := int32(len(chunk))
+				a.addToken(a.Code.Lines[a.line+index],
+					&sourcegraph.SourceCodeToken{
+						StartByte: int32(start),
+						EndByte:   int32(start) + l,
+						Class:     a.htmlConfig.GetTokenClass(token),
+						Label:     chunk,
+					})
+				start += l
+			}
+			a.line += len(chunks) - 1
+			return nil, nil
 		}
+		a.line++
 	}
-	line.Tokens = append(line.Tokens, t)
-}
-
-func (a *NilAnnotator) addLine(startByte int) {
-	a.Code.Lines = append(a.Code.Lines, &sourcegraph.SourceCodeLine{StartByte: int32(startByte)})
-	if len(a.Code.Lines) > 1 {
-		lastLine := a.Code.Lines[len(a.Code.Lines)-2]
-		lastLine.EndByte = int32(startByte) - 1
-	}
-}
-
-func (a *NilAnnotator) addMultilineToken(startByte int, unsafeHTML string, class string) {
-	lines := strings.Split(unsafeHTML, "\n")
-	for n, unsafeHTML := range lines {
-		if len(unsafeHTML) > 0 {
-			a.addToken(&sourcegraph.SourceCodeToken{
-				StartByte: int32(startByte),
-				EndByte:   int32(startByte + len(unsafeHTML)),
-				Class:     class,
-				Label:     unsafeHTML,
-			})
-			startByte += len(unsafeHTML)
-		}
-		if n < len(lines)-1 {
-			a.addLine(startByte)
-		}
-	}
-}
-
-func (a *NilAnnotator) Annotate(start int, kind syntaxhighlight.Kind, tokText string) (*annotate.Annotation, error) {
-	class := ((syntaxhighlight.HTMLConfig)(a.Config)).Class(kind)
-	start += a.byteOffset
-
-	switch {
-	// New line
-	case tokText == "\n":
-		a.addLine(start + 1)
-
-	// Multiline token (ie. block comments, string literals)
-	case strings.Contains(tokText, "\n"):
-		// Here we pass the unescaped string so we can calculate line lenghts correctly.
-		// This method is expected to take responsibility of escaping any token text.
-		a.addMultilineToken(start+1, tokText, class)
-
-	// Token
-	default:
-		a.addToken(&sourcegraph.SourceCodeToken{
-			StartByte: int32(start),
-			EndByte:   int32(start + len(tokText)),
-			Class:     class,
-			Label:     tokText,
-		})
-	}
-
 	return nil, nil
+}
+
+func (a *NilAnnotator) Init() error {
+	return nil
+}
+
+func (a *NilAnnotator) Done() error {
+	return nil
+}
+
+func (a *NilAnnotator) addToken(line *sourcegraph.SourceCodeLine, t *sourcegraph.SourceCodeToken) {
+	if (*line).Tokens == nil {
+		(*line).Tokens = make([]*sourcegraph.SourceCodeToken, 0, 1)
+	}
+	(*line).Tokens = append((*line).Tokens, t)
+}
+
+func newSourceLine(start int, end int, base int64) *sourcegraph.SourceCodeLine {
+	ret := sourcegraph.SourceCodeLine{StartByte: int32(start) + int32(base), EndByte: int32(end) + int32(base)}
+	return &ret
 }

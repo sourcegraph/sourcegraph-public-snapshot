@@ -1,33 +1,72 @@
-# Development README (WIP)
+# Development README
 
 The best way to become familiar with the Sourcegraph repository is by
 reading the code at https://src.sourcegraph.com/sourcegraph.
 
+## Environment
 
-## Code standards
+First, before you can develop Sourcegraph you will need to set up a
+development environment. Here is what you need:
 
-The Sourcegraph repository enforces some code standards via `make
-test`, which is also run in CI.
+- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Go](https://golang.org/doc/install) (v1.5.0 or higher)
+- [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
+- [make](https://www.gnu.org/software/make/)
 
-Useful reading:
+If you are new to Go, you should also [set up your `GOPATH` which contains all your projects.]
+(https://golang.org/doc/code.html)
 
-* [Go "style guide"](https://github.com/golang/go/wiki/CodeReviewComments):
-  we generally adhere to these guidelines. Many of them are caught by
-  `gofmt`, `golint`, and `go vet` (all of which you should set up to
-  run automatically in your editor). Others should be raised during
-  code review.
+## Get the code
 
-## Quickstart
+[Create an account](https://sourcegraph.com/join) on sourcegraph.com.
 
-Make sure you have `node` / `npm` installed. In your terminal run:
+Then, clone the `sourcegraph` repository into `$GOPATH/src/src.sourcegraph.com/sourcegraph`.
+When prompted for your git credentials, use your sourcegraph.com login.
 
 ```
+git clone https://src.sourcegraph.com/sourcegraph $GOPATH/src/src.sourcegraph.com/sourcegraph
+```
+
+## Build
+
+Make sure your `$GOPATH` is set and your `$PATH` includes `$GOPATH/bin`:
+
+```
+echo $GOPATH # should print something
+echo $PATH # should include $GOPATH/bin
+```
+
+Then in your terminal run:
+
+```
+cd $GOPATH/src/src.sourcegraph.com/sourcegraph
+make dep
 make serve-dev
 ```
 
 This will continuously compile your code and live reload your locally running
 instance of Sourcegraph. Navigate your browser to http://localhost:3000 to
 see if everything worked.
+
+## Test
+
+To run all tests:
+
+```
+make test
+```
+
+To run tests within a directory (and recrusively its subdirectories):
+
+```
+godep go test ./app/...
+```
+
+To run a specific package's tests:
+
+```
+godep go test ./util/textutil
+```
 
 ## godep
 
@@ -49,8 +88,6 @@ godep go test ./app/...
 # first compile the latest "src" for them to invoke):
 godep go install ./cmd/src && godep go test -tags 'buildtest exectest' ./sgx
 ```
-
-When in doubt, use `make test` (it always runs all tests).
 
 Also, keep in mind that after you update dependencies, you must re-run
 codegen (see the Codegen section for more info). Here's a one-liner
@@ -74,14 +111,14 @@ issues with those. However, `godep go <install|test>` is quite
 simple--it just runs `GOPATH=$PWD/Godeps/_workspace:$GOPATH go
 <install|test>` (no other magic occurs).
 
-
 ## Codegen
 
 The Sourcegraph repository relies on code generation triggered by `go
 generate`. Code generation is used for a variety of tasks:
 
 * generating code for mocking interfaces
-* hackily updating protobuf-generated code to make its JSON representation CamelCase not `snake_case` (this is a tech debt TODO to obviate)
+* hackily updating protobuf-generated code to make its JSON representation CamelCase not `snake_case`
+(this is a tech debt TODO to obviate)
 * generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
 * pack app templates and assets into binaries
 
@@ -118,18 +155,15 @@ responsible (or ask).
 Finally, `go-sourcegraph` also uses many codegen tools. See its
 README.md for instructions on how to install them.
 
+## Code standards
 
-## Building with Docker
+The Sourcegraph repository enforces some code standards via `make
+test`, which is also run in CI.
 
-If [Docker](https://docs.docker.com/) is installed, you can build and
-run Sourcegraph by running:
+Useful reading:
 
-```
-docker build -t src .
-docker run -p 3000:3000 -p 3100:3100 src
-```
-
-Then open http://localhost:3000 to access Sourcegraph.
-
-NOTE: Ubuntu users may need to add themselves to the docker group
-(`sudo usermod -a -G docker $USER`) and restart after installing docker.
+* [Go "style guide"](https://github.com/golang/go/wiki/CodeReviewComments):
+  we generally adhere to these guidelines. Many of them are caught by
+  `gofmt`, `golint`, and `go vet` (all of which you should set up to
+  run automatically in your editor). Others should be raised during
+  code review.

@@ -18,7 +18,7 @@ import (
 // be federated in a custom fashion.
 //
 // If you add/remove a custom func, method must also add/remove it
-// from the list in gen_federated.go's methodHasCustomImpl to prevent
+// from the list in ../gen_middleware.go's methodHasCustomFederation to prevent
 // `go generate` from writing the non-custom method (which will cause
 // a "Xxx redeclared in this block" compile error).
 

@@ -27,9 +27,12 @@ func checkForUpdates() {
 			log.Printf("During checking for updates: %s\n", err)
 		}
 
-		// Grab the mutex and update the latest version string.
+		// Grab the mutex and set the available update version string (only if the
+		// current version is not the latest version).
 		availableUpdate.Lock()
-		availableUpdate.Version = u.Info.Version
+		if u.CurrentVersion != u.Info.Version {
+			availableUpdate.Version = u.Info.Version
+		}
 		availableUpdate.Unlock()
 
 		// Wait a good duration before checking again.

@@ -8,9 +8,11 @@ import (
 
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
@@ -41,8 +43,9 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 func repoFromGitHub(ghrepo *github.Repository) *sourcegraph.Repo {
+	gitHubHost := githubcli.Config.Host()
 	repo := sourcegraph.Repo{
-		URI:         "github.com/" + *ghrepo.FullName,
+		URI:         gitHubHost + "/" + *ghrepo.FullName,
 		Permissions: convertGitHubRepoPerms(ghrepo),
 		Mirror:      true,
 	}
@@ -55,7 +58,9 @@ func repoFromGitHub(ghrepo *github.Repository) *sourcegraph.Repo {
 	// "git@github.com:owner/repo.git", but we want
 	// "ssh://git@github.com/owner/repo.git."
 	if ghrepo.SSHURL != nil {
-		repo.SSHCloneURL = strings.Replace(*ghrepo.SSHURL, "git@github.com:", "ssh://git@github.com/", 1)
+		origHostStr := "git@" + gitHubHost + ":"
+		newHostStr := "ssh://git@" + gitHubHost + "/"
+		repo.SSHCloneURL = strings.Replace(*ghrepo.SSHURL, origHostStr, newHostStr, 1)
 	}
 
 	repo.Name = *ghrepo.Name
@@ -149,6 +154,7 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		ghRepos []github.Repository
 		err     error
 	)
+	githubHost := githubcli.Config.Host()
 	if opt.Owner != "" {
 		ghRepos, _, err = client(ctx).repos.List(opt.Owner, &github.RepositoryListOptions{
 			Sort:        opt.Sort,
@@ -156,7 +162,7 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 			ListOptions: listOpt,
 		})
 	} else if opt.Query != "" {
-		repoQuery := strings.TrimSpace(strings.TrimPrefix(opt.Query, "github.com/"))
+		repoQuery := strings.TrimSpace(strings.TrimPrefix(opt.Query, githubHost+"/"))
 		parts := strings.Split(repoQuery, "/")
 		if len(parts) == 2 && parts[1] == "" {
 			repoQuery = "user:" + parts[0]
@@ -185,18 +191,29 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	return repos, nil
 }
 
+// TODO: rename or consolidate this method, since it can be used to list private
+// as well as public repos.
 func (s *Repos) ListPrivate(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	tokenStore := &ext.AccessTokens{}
-	token, err := tokenStore.Get(ctx, ext.GitHubService)
+	token, err := tokenStore.Get(ctx, githubcli.Config.Host())
 	if err != nil {
 		return nil, err
 	}
 
-	client := githubutil.Default.AuthedClient(token)
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(oauth2.NoContext, ts)
+
+	client := github.NewClient(tc)
+	repoType := "private"
+	if githubcli.Config.IsGitHubEnterprise() {
+		client.BaseURL = githubcli.Config.APIBaseURL()
+		client.UploadURL = githubcli.Config.UploadURL()
+		repoType = "" // import both public and private repos from GHE.
+	}
 
 	var repos []*sourcegraph.Repo
 	repoOpts := &github.RepositoryListOptions{
-		Type: "private",
+		Type: repoType,
 		ListOptions: github.ListOptions{
 			PerPage: 100, // 100 is the max page size for GitHub's API
 		},

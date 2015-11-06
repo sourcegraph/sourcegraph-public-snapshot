@@ -1,0 +1,8 @@
+a, :b {
+    margin-top: 1px;
+    margin-right: 1px;
+}
+a, :b {
+    margin-bottom: 1px;
+    margin-left: 1px;
+}

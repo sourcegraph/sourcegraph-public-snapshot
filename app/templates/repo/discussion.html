@@ -46,7 +46,7 @@
 						<input type="hidden" name="discussion_id" value="{{.ID}}">
 						<input type="hidden" name="def_key" value="{{json .DefKey}}">
 						<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-						<textarea name="body" placeholder="Type to comment..."></textarea>
+						<textarea name="body" placeholder="Type to comment..." autofocus></textarea>
 						<input id="add-discussion-comment" type="submit" class="btn btn-sgblue pull-right"></input>
 					</div>
 				</form>

@@ -1,4 +1,4 @@
-// Package usercontent contains a store for user uploaded content.
+// Package usercontent contains a store for user-uploaded content.
 package usercontent
 
 import (

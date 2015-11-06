@@ -8,9 +8,9 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/oauth"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sqs/grpccache"
+	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
@@ -90,7 +90,7 @@ func init() {
 			key := sourcegraph.GRPCEndpoint(ctx).String() + ":"
 
 			if cred := sourcegraph.CredentialsFromContext(ctx); cred != nil {
-				md, err := (credentials.TokenSource{TokenSource: cred}).GetRequestMetadata(ctx)
+				md, err := (oauth.TokenSource{TokenSource: cred}).GetRequestMetadata(ctx)
 				if err != nil {
 					log.Printf("Determining cache key with token auth failed: %s. Caching will not be performed.", err)
 					// Use a random string to prevent caching.

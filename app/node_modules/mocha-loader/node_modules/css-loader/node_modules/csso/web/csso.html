@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>CSS optimizer</title>
+    <link rel="stylesheet" href="csso.css" type="text/css">
+</head>
+<body>
+    <script src="csso.web.js"></script>
+
+    <div class="stat">
+        Src length: <span id="slength">0</span>, dst length: <span id="dlength">0</span>, compression: <span id="result">0</span>%.
+    </div>
+    <textarea class="csstxt" id="csssrc"></textarea>
+    <span class="first">
+        <input type="button" value="minimize" id="minimize" />
+    </span>
+    <textarea class="csstxt" id="cssdst"></textarea>
+
+    <script>
+        var csssrc = document.getElementById('csssrc'),
+            cssdst = document.getElementById('cssdst'),
+            slength = document.getElementById('slength'),
+            dlength = document.getElementById('dlength'),
+            result = document.getElementById('result');
+
+        function updateStat() {
+            slength.innerHTML = csssrc.value.length;
+            dlength.innerHTML = cssdst.value.length;
+            result.innerHTML = (100 * cssdst.value.length / csssrc.value.length).toFixed(2);
+        }
+
+        document.getElementById('minimize').onclick = function() {
+            var compressor = new CSSOCompressor(),
+                translator = new CSSOTranslator();
+            cssdst.value = translator.translate(cleanInfo(compressor.compress(srcToCSSP(csssrc.value, 'stylesheet', true))));
+            updateStat();
+        };
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "example",
+			"children": [
+				{
+					"type": "header",
+					"props": {
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "pull-right"
+								}
+							},
+							{
+								"type": "nav",
+								"props": {
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"className": "fa fa-chevron-circle-left btnNav disabled"
+											}
+										},
+										{
+											"type": "a",
+											"props": {
+												"className": "fa fa-chevron-circle-right btnNav ",
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "WantExample",
+															"defURL": "/someURL",
+															"index": 1
+														}
+													]
+												}
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "i",
+								"props": {
+									"className": "fa fa-spinner fa-spin"
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "body"
+					}
+				},
+				{
+					"type": "footer",
+					"props": {
+						"children": [
+							{
+								"type": "a",
+								"props": {
+									"target": "_blank",
+									"href": "/someURL/.examples",
+									"className": "pull-right",
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"className": "fa fa-eye"
+											}
+										},
+										" View all"
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantExample",
+			"defURL": "/someURL",
+			"index": 0
+		}
+	]
+}

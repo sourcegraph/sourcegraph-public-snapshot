@@ -9,7 +9,6 @@ global.navigator = {
 var ReactDOM = require("react-dom");
 
 var sandbox = sinon.sandbox.create();
-
 sandbox.reactContainers = [];
 sandbox.renderComponent = function(instance, container) {
 	container = container || global.document.createElement("div");

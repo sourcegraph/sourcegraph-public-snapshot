@@ -27,6 +27,9 @@ AppURL = https://example.com:8443
 HTTPEndpoint = https://example.com:8443/api/
 GRPCEndpoint = https://example.com:3100
 
+; Redirect "http://..." requests to "https://...".
+RedirectToHTTPS = true
+
 [Client API endpoint]
 ; Set this to the internally accessible gRPC endpoint.
 GRPCEndpoint = https://example.com:3100

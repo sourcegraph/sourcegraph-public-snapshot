@@ -28,7 +28,9 @@ var Stores = store.Stores{
 	RepoVCS:           &RepoVCS{},
 	Repos:             &Repos{},
 	Users:             &Users{},
+	UserKeys:          NewUserKeys(),
 	Changesets:        &Changesets{},
+	Storage:           NewStorage(),
 }
 
 func init() {
@@ -98,6 +100,7 @@ func init() {
 			ctx = WithBuildStoreVFS(ctx, buildStoreVFS)
 			ctx = WithDBVFS(ctx, dbVFS)
 			ctx = WithRepoStatusVFS(ctx, repoStatusVFS)
+			ctx = WithAppStorageDir(ctx, ActiveFlags.AppStorageDir)
 			return ctx, nil
 		})
 	})
@@ -108,6 +111,7 @@ type Flags struct {
 	BuildStoreDir string `long:"fs.build-store-dir" description:"root dir (or HTTP VFS base URL) containing builds" default:"$SGPATH/buildstore"`
 	DBDir         string `long:"fs.db-dir" description:"root dir containing user/account/etc. data" default:"$SGPATH/db"`
 	RepoStatusDir string `long:"fs.repo-status-dir" description:"root dir containing repo statuses" default:"$SGPATH/statuses"`
+	AppStorageDir string `long:"fs.app-storage-dir" description:"root dir containing app storage" default:"$SGPATH/appdata"`
 }
 
 var ActiveFlags Flags
@@ -117,4 +121,5 @@ func (f *Flags) Expand() {
 	f.BuildStoreDir = os.ExpandEnv(f.BuildStoreDir)
 	f.DBDir = os.ExpandEnv(f.DBDir)
 	f.RepoStatusDir = os.ExpandEnv(f.RepoStatusDir)
+	f.AppStorageDir = os.ExpandEnv(f.AppStorageDir)
 }

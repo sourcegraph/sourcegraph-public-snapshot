@@ -1,0 +1,63 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "code-view-react",
+						"children": [
+							{
+								"type": "CodeListing",
+								"props": {
+									"lines": [
+										"someLine"
+									],
+									"lineNumbers": true,
+									"selectedDef": "someDef",
+									"highlightedDef": "otherDef"
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "DefPopup",
+					"props": {
+						"def": {
+							"test": "defData"
+						},
+						"examples": {
+							"content": {},
+							"counts": {},
+							"generation": 1
+						},
+						"highlightedDef": "otherDef",
+						"discussions": [
+							{
+								"test": "discussionData"
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "aTree"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "someDef"
+		},
+		{
+			"$constructor": "WantDiscussions",
+			"defURL": "someDef"
+		}
+	]
+}

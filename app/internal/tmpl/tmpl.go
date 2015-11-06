@@ -127,7 +127,6 @@ func commonTemplates() error {
 		{"liveblog/index.html", "liveblog/layout.html", "liveblog/common.inc.html"},
 		{"liveblog/post.html", "liveblog/layout.html", "liveblog/common.inc.html"},
 
-		{"home/new.html"},
 		{"home/dashboard.html"},
 
 		{"search/form.html"},
@@ -137,6 +136,8 @@ func commonTemplates() error {
 		{"error/error.html", "error/common.html"},
 
 		{"oauth-client/initiate.html"},
+		{"oauth-client/app_url_mismatch.error.html", "oauth-client/error.inc.html"},
+		{"oauth-client/redirect_uri_mismatch.error.html", "oauth-client/error.inc.html"},
 		{"oauth-client/success.html"},
 		{"oauth-provider/authorize.html"},
 		{"oauth-provider/auth_required.html"},

@@ -52,7 +52,7 @@ func methodHasCustomFederation(x gen.Service, method string) bool {
 		return method == "RefreshVCS"
 	case "Users":
 		switch method {
-		case "Get", "CheckWhitelist", "AddToWhitelist":
+		case "Get":
 			return true
 		default:
 			return false

@@ -8,10 +8,15 @@
 // Rule Definition
 // ------------------------------------------------------------------------------
 
+function isCallbackPropName(propName) {
+  return /^on[A-Z]/.test(propName);
+}
+
 module.exports = function(context) {
 
   var configuration = context.options[0] || {};
   var ignoreCase = configuration.ignoreCase || false;
+  var callbacksLast = configuration.callbacksLast || false;
 
   return {
     JSXOpeningElement: function(node) {
@@ -20,15 +25,29 @@ module.exports = function(context) {
           return attrs[idx + 1];
         }
 
-        var lastPropName = memo.name.name;
-        var currenPropName = decl.name.name;
+        var previousPropName = memo.name.name;
+        var currentPropName = decl.name.name;
+        var previousIsCallback = isCallbackPropName(previousPropName);
+        var currentIsCallback = isCallbackPropName(currentPropName);
 
         if (ignoreCase) {
-          lastPropName = lastPropName.toLowerCase();
-          currenPropName = currenPropName.toLowerCase();
+          previousPropName = previousPropName.toLowerCase();
+          currentPropName = currentPropName.toLowerCase();
         }
 
-        if (currenPropName < lastPropName) {
+        if (callbacksLast) {
+          if (!previousIsCallback && currentIsCallback) {
+            // Entering the callback prop section
+            return decl;
+          }
+          if (previousIsCallback && !currentIsCallback) {
+            // Encountered a non-callback prop after a callback prop
+            context.report(memo, 'Callbacks must be listed after all other props');
+            return memo;
+          }
+        }
+
+        if (currentPropName < previousPropName) {
           context.report(decl, 'Props should be sorted alphabetically');
           return memo;
         }
@@ -42,6 +61,11 @@ module.exports = function(context) {
 module.exports.schema = [{
   type: 'object',
   properties: {
+    // Whether callbacks (prefixed with "on") should be listed at the very end,
+    // after all other props.
+    callbacksLast: {
+      type: 'boolean'
+    },
     ignoreCase: {
       type: 'boolean'
     }

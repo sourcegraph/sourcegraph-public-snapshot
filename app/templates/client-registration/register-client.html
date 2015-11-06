@@ -1,4 +1,4 @@
-{{define "Head"}}<title>Register Client - Sourcegraph</title>
+{{define "Head"}}<title>Register - Sourcegraph</title>
 {{end}}
 
 {{define "Body"}}
@@ -6,14 +6,18 @@
 	<div class="col-md-6 col-md-push-3">
 		<form id="register-client" method="post">
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-			<h2>Register your Sourcegraph instance</h2>
+			<h2>Register your Sourcegraph server</h2>
 			<p>
-				Let's name your instance and connect it to your user account via OAuth.
+				Let's name your Sourcegraph server and connect it to your user account via OAuth2.
 			</p>
 			<div class="form-group">
-				<label for="ClientName">Company:</label>
-				<input type="text" class="form-control" name="ClientName" id="ClientName" placeholder="Nondescript Inc." autofocus>
+				<label for="ClientName">Name your Sourcegraph server:</label>
+				<input type="text" class="form-control" name="ClientName" id="ClientName" placeholder="My Company" required autofocus>
 			</div>
+			<p class="notice help-block">
+				We collect usage information to make Sourcegraph better. By clicking on "Continue" below, you agree to our <a href="https://sourcegraph.com/privacy">privacy policy</a> and <a href="https://sourcegraph.com/terms">terms</a>.
+			</p>
+
 			<button class="btn btn-md btn-primary pull-right" type="submit">Continue</button>
 		</form>
 	</div>

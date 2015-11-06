@@ -10,7 +10,7 @@ If you just want to build and package the binaries (and not publish a new releas
 
 To deploy Sourcegraph to https://src.sourcegraph.com, install the sgtool command (`godep go install ./sgtool`).
 
-Run `aws s3 ls s3://sourcegraph-release/src/ | ./provision/src_version.py inc_patch` to get a new version number for your Sourcegraph release (that command figures out the current latest version, and increments the patch value by one).
+Run `aws s3 ls s3://sourcegraph-release/src/ | ./dev/src_version.py inc_patch` to get a new version number for your Sourcegraph release (that command figures out the current latest version, and increments the patch value by one).
 
 Then run:
 

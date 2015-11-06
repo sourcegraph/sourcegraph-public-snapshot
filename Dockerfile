@@ -1,49 +1,70 @@
-FROM ubuntu:15.04
+FROM ubuntu:14.04
+MAINTAINER Sourcegraph Team <support@sourcegraph.com>
 
-RUN apt-get update -qq \
-    && apt-get install -qy \
+RUN apt-get update -q \
+    && apt-get install -qy --no-install-recommends \
             curl \
             git \
             make \
-            nodejs \
-            npm \
-    && ln -rs /usr/bin/nodejs /usr/bin/node
+			wget \
+			ca-certificates
 
-# Install Protobuf v3.0.0-alpha-3, see .travis.yml for information on rebuilding.
-RUN curl -O https://s3-us-west-2.amazonaws.com/public-dev/protobuf-bin-v3.0.0-alpha-3.tar.gz
-RUN tar zxf protobuf-bin-v3.0.0-alpha-3.tar.gz -C /
+RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
+RUN apt-get install -y nodejs
 
 # Install Go
-RUN curl -Ls https://storage.googleapis.com/golang/go1.4.2.linux-amd64.tar.gz | tar -C /usr/local -xz
-ENV PATH=/usr/local/go/bin:/usr/local/protobuf/bin:$PATH \
-    GOBIN=/usr/local/bin \
-    SGPATH=/var/lib/sourcegraph \
-    GOPATH=/sg
+RUN curl -Ls https://storage.googleapis.com/golang/go1.4.3.linux-amd64.tar.gz | tar -C /usr/local -xz
+ENV PATH=$PATH:/usr/local/go/bin
 
-# Add an example repo
-RUN mkdir -p $SGPATH/repos/github.com/gorilla/mux \
-    && git clone https://github.com/gorilla/mux $SGPATH/repos/github.com/gorilla/mux
-
-# Install src
-ADD . /sg/src/src.sourcegraph.com/sourcegraph
-WORKDIR /sg/src/src.sourcegraph.com/sourcegraph
-RUN make dist PACKAGEFLAGS="--os linux" && mv release/snapshot/linux-amd64 $GOBIN/src
-
-# Trust our internal CA
-RUN cp conf/ca.cert.pem /usr/local/share/ca-certificates/sourcegraph-ca.cert.crt \
-    && update-ca-certificates
+## Install the protobuf compiler (required for building the binary)
+##
+## NOTE: Disabled because it takes a long time and is usually only
+## needed/wanted on Sourcegraph.com.
+# COPY dev/install_protobuf.sh /tmp/install_protobuf.sh
+# RUN apt-get install -qy unzip autoconf libtool
+# RUN /tmp/install_protobuf.sh /
 
 # Trust GitHub's SSH host key (for ssh cloning of repos during builds)
-RUN install -Dm 600 package/etc/known_hosts /root/.ssh/known_hosts \
+COPY package/etc/known_hosts /tmp/known_hosts
+RUN install -Dm 600 /tmp/known_hosts /root/.ssh/known_hosts \
     && chmod 700 /root/.ssh
+
+# Deps for building .deb
+RUN apt-get install -yq ruby-dev gcc && gem install fpm
+COPY package/linux/scripts/install_daemonize.sh /tmp/install_daemonize.sh
+RUN bash /tmp/install_daemonize.sh /usr/local/bin
+
+# Install src
+ENV GOPATH=/usr/local
+RUN go get github.com/shurcooL/vfsgen github.com/gogo/protobuf/protoc-gen-gogo sourcegraph.com/sourcegraph/prototools/cmd/protoc-gen-dump sourcegraph.com/sourcegraph/gopathexec github.com/sqs/go-selfupdate # OPTIMIZATION
+COPY . /usr/local/src/src.sourcegraph.com/sourcegraph
+WORKDIR /usr/local/src/src.sourcegraph.com/sourcegraph
+RUN make dist PACKAGEFLAGS="--os linux --skip-protoc --ignore-dirty --ignore-branch"
+
+# Build .deb package for src
+RUN make -C package linux/bin/src
+RUN make -C package/linux dist/src-snapshot.deb
+RUN dpkg -i package/linux/dist/0.0-snapshot/src.deb
+
+# Copy config so we can create the config files on the host if we are
+# host-mounting the config dir.
+RUN cp -R /etc/sourcegraph /etc/sourcegraph.default
 
 # Remove source dir (to avoid accidental source dependencies)
 WORKDIR /
-RUN rm -rf /sg
+RUN rm -rf /usr/local/src/src.sourcegraph.com
 
-# srclib - Previous version broken, so only installing go for now
-RUN /usr/local/bin/src srclib toolchain install go
+USER sourcegraph
+ENV GOPATH=$HOME
+RUN src srclib toolchain install go
+RUN src srclib toolchain install java
+
+VOLUME ["/etc/sourcegraph", "/home/sourcegraph/.sourcegraph"]
 
 EXPOSE 3000 3001 3100
-CMD ["-v", "serve", "--http-addr=:3000", "--grpc-addr=:3100", "--addr=:3001"]
-ENTRYPOINT ["/usr/local/bin/src"]
+
+# Invoke src in a similar way to how the .deb would invoke it as a
+# system service (but avoid the complexity of Docker+upstart/systemd
+# by invoking src directly).
+USER root
+CMD chown -R sourcegraph:sourcegraph /etc/sourcegraph /home/sourcegraph/.sourcegraph && cp --no-clobber /etc/sourcegraph.default/* /etc/sourcegraph && su sourcegraph -c "source /etc/sourcegraph/config.env && src --config /etc/sourcegraph/config.ini serve"

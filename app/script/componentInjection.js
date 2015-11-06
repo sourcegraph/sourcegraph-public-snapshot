@@ -1,6 +1,7 @@
 var $ = require("jquery");
 var React = require("react");
 var ReactDOM = require("react-dom");
+var URI = require("urijs");
 
 var globals = require("./globals");
 var CodeFileView = require("./components/CodeFileView");
@@ -16,6 +17,8 @@ var SearchBar = require("./components/SearchBar");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
+var CodeFileRouter = require("./new/CodeFileRouter");
+var LocationAdaptor = require("./new/LocationAdaptor");
 
 // Application-specific JS
 //
@@ -47,12 +50,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	el = $("#CodeFileView");
 	if (el.length > 0) {
-		ReactDOM.render(
-			<CodeFileView
-				source={el[0].dataset.source}
-				data={window.preloadedCodeViewFile||null} />,
-			el[0]
-		);
+		if (URI.parseQuery(window.location.search)["new"] === "true") { // temporary switch
+			ReactDOM.render(
+				<LocationAdaptor component={CodeFileRouter} />,
+				el[0]
+			);
+		} else {
+			ReactDOM.render(
+				<CodeFileView
+					source={el[0].dataset.source}
+					data={window.preloadedCodeViewFile||null} />,
+				el[0]
+			);
+		}
 	}
 
 	el = $(".react-close-changeset-button");
@@ -97,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		el.each((_, e) => ReactDOM.render(<MarkdownView {...e.dataset} />, e));
 	}
 
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]")).map((el2) => {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]"), []).map((el2) => {
 		ReactDOM.render(
 			<RepoBuildIndicator
 				btnSize="btn-xs"
@@ -109,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			el2
 		);
 	});
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]")).map((el2) => {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]"), []).map((el2) => {
 		ReactDOM.render(
 			<RepoBuildIndicator
 				btnSize="btn-md"
@@ -122,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	});
 
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildStatus]")).map(function(el2) {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildStatus]"), []).map(function(el2) {
 		ReactDOM.render(<RepoBuildStatus Repo={{URI: el2.dataset.repo}} Rev={el2.dataset.rev}/>, el2);
 	});
 
@@ -137,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryDefs]"))
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryDefs]"), [])
 	.forEach(function(e) {
 		ReactDOM.render(
 			<TreeEntryDefs

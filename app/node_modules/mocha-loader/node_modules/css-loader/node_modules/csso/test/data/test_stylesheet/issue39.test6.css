@@ -1,0 +1,10 @@
+:test {
+    color: red
+}
+a {
+    color: green
+}
+:test {
+    color: blue;
+    border: none
+}

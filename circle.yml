@@ -11,6 +11,9 @@ machine:
     PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
     LD_LIBRARY_PATH: $HOME/protobuf/lib
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
+
+    # Don't block on `git diff` invocations of `less`.
+    GIT_PAGER:
   node:
     version: 4.1.0
 
@@ -49,7 +52,7 @@ dependencies:
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"
 
-    - if [ ! -d ~/protobuf ]; then wget https://github.com/google/protobuf/archive/v3.0.0-alpha-3.tar.gz && tar zxf v3.0.0-alpha-3.tar.gz && cd protobuf-3.0.0-alpha-3 && ./autogen.sh && ./configure && make -j2 install DESTDIR=$PWD/build/ && mv ./build/usr/local $HOME/protobuf; fi
+    - if [ ! -d ~/protobuf ]; then $REPO/dev/install_protobuf.sh $PWD/build/ && mv ./build/usr/local $HOME/protobuf; fi
     - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
     - if [ ! -d ~/daemonize ]; then mkdir ~/daemonize; package/linux/scripts/install_daemonize.sh ~/daemonize/; fi
 
@@ -69,6 +72,10 @@ test:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit
     - go-junit-report < $HOME/mdtest.out > $CIRCLE_TEST_REPORTS/junit/mdtest.xml
 
+    - npm run graph:
+        pwd: $REPO/app
+    - cp $REPO/app/artifacts/* $CIRCLE_ARTIFACTS
+
 deployment:
   registry:
     branch: master
@@ -81,13 +88,13 @@ deployment:
       - make dist PACKAGEFLAGS=$(cat ~/VERSION):
           pwd: $REPO
 
-      # Push to gcloud docker registery
-      - cp $REPO/release/$(cat ~/VERSION)/linux-amd64 $REPO/docker/src
+      # Push to gcloud docker registry
+      - cp $REPO/release/$(cat ~/VERSION)/linux-amd64 $REPO/deploy/sourcegraph.com/src
       - echo $GCLOUD_SERVICE_ACCOUNT | base64 --decode > gcloud-service-account.json
       - gcloud auth activate-service-account --key-file gcloud-service-account.json
       - gcloud config set project sourcegraph-dev
       - docker build -t us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 .:
-          pwd: $REPO/docker
+          pwd: $REPO/deploy/sourcegraph.com
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
@@ -102,3 +109,11 @@ deployment:
           pwd: $REPO/package/linux
       - sgtool -v release --skip-package --skip-dist-package --s3-dir continuous $(cat ~/VERSION):
           pwd: $REPO
+
+      # Push to Docker registry
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - docker build -t sourcegraph/sourcegraph:$CIRCLE_SHA1 .:
+          pwd: $REPO
+      - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
+      - docker tag sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
+      - docker push sourcegraph/sourcegraph:latest

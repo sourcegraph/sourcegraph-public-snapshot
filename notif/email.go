@@ -50,33 +50,41 @@ func SendAdminEmail(title string, body string) error {
 }
 
 // SendMandrillTemplate sends an email template through mandrill.
-func SendMandrillTemplate(template, name, email string, mergeVars []gochimp.Var) {
+func SendMandrillTemplate(template, name, email, subject string, mergeVars []gochimp.Var) {
 	if !mandrillEnabled {
-		log15.Info("skipped sending email because MANDRILL_KEY is empty", "template", template, "name", name, "email", email)
+		log15.Info("skipped sending email because MANDRILL_KEY is empty", "template", template, "name", name, "email", email, "subject", subject)
 		return
 	}
 	go func() {
-		responses, err := SendMandrillTemplateBlocking(template, name, email, mergeVars)
+		responses, err := SendMandrillTemplateBlocking(template, name, email, subject, mergeVars)
 		if err != nil {
-			log15.Error("Failed to send email through Mandrill", "template", template, "name", name, "email", email)
+			log15.Error("Failed to send email through Mandrill", "template", template, "name", name, "email", email, "subject", subject)
 		} else if len(responses) != 1 {
-			log15.Error("Unexpected responses from Mandrill", "template", template, "name", name, "email", email, "responses", responses)
+			log15.Error("Unexpected responses from Mandrill", "template", template, "name", name, "email", email, "subject", subject, "responses", responses)
 		} else if responses[0].RejectedReason != "" {
-			log15.Error("Email rejected by Mandrill", "template", template, "name", name, "email", email, "response", responses[0])
+			log15.Error("Email rejected by Mandrill", "template", template, "name", name, "email", email, "subject", subject, "response", responses[0])
 		}
 	}()
 }
 
 // SendMandrillTemplateBlocking sends an email template through mandrill, but
 // blocks until we have a response from Mandrill
-func SendMandrillTemplateBlocking(template string, name string, email string, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
+func SendMandrillTemplateBlocking(template, name, email, subject string, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
 	if !mandrillEnabled {
 		return nil, fmt.Errorf("skipped sending email because MANDRILL_KEY is empty:\nname: %s, email: %s", name, email)
 	}
 	return mandrill.MessageSendTemplate(template, nil, gochimp.Message{
 		To:          []gochimp.Recipient{{Email: email, Name: name}},
 		MergeVars:   []gochimp.MergeVars{{Recipient: email, Vars: mergeVars}},
+		FromEmail:   "noreply@sourcegraph.com",
+		FromName:    "Sourcegraph",
+		Subject:     subject,
 		TrackOpens:  true,
 		TrackClicks: true,
 	}, false)
+}
+
+// EmailIsConfigured returns true if the instance has an email configuration
+func EmailIsConfigured() bool {
+	return mandrillEnabled
 }

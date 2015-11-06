@@ -1,0 +1,18 @@
+.a {
+    _margin-top: 1;
+    _margin: 2;
+    margin-top: 3;
+    margin: 4;
+}
+.b {
+    *margin-top: 5;
+    *margin: 6;
+    margin-top: 7;
+    margin: 8;
+}
+.c {
+    //margin-top: 9;
+    //margin: 10;
+    margin-top: 11;
+    margin: 12;
+}

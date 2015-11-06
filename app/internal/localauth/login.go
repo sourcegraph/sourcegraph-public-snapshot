@@ -17,7 +17,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -51,7 +50,8 @@ func serveLogIn(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	ctx := httpctx.FromRequest(r)
-	if auth.IsAuthenticated(ctx) {
+	u := handlerutil.UserFromContext(ctx)
+	if u != nil && u.UID != 0 {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return nil
 	}
@@ -93,7 +93,9 @@ func serveLoginSubmit(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
-		ResourceOwnerPassword: &form.LoginCredentials,
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+			ResourceOwnerPassword: &form.LoginCredentials,
+		},
 	})
 	if err != nil {
 		switch errcode.GRPC(err) {

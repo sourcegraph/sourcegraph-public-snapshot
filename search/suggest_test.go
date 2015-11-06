@@ -118,31 +118,26 @@ func TestSuggest(t *testing.T) {
 
 func stripTokenObjects(tokens []sourcegraph.PBToken) {
 	for i, pbtok := range tokens {
-		switch tok := pbtok.Token().(type) {
+		switch tok := pbtok.GetQueryToken().(type) {
 		case sourcegraph.RepoToken:
 			tok.Repo = nil
-			pbtok.RepoToken = &tok
-			tokens[i] = pbtok
+			tokens[i].Token = &sourcegraph.PBToken_RepoToken{RepoToken: &tok}
 		case sourcegraph.UnitToken:
 			tok.Unit = nil
-			pbtok.UnitToken = &tok
-			tokens[i] = pbtok
+			tokens[i].Token = &sourcegraph.PBToken_UnitToken{UnitToken: &tok}
 		case sourcegraph.RevToken:
 			tok.Commit = nil
-			pbtok.RevToken = &tok
-			tokens[i] = pbtok
+			tokens[i].Token = &sourcegraph.PBToken_RevToken{RevToken: &tok}
 		case sourcegraph.FileToken:
 			tok.Entry = nil
-			pbtok.FileToken = &tok
-			tokens[i] = pbtok
+			tokens[i].Token = &sourcegraph.PBToken_FileToken{FileToken: &tok}
 		case sourcegraph.UserToken:
 			tok.User = nil
-			pbtok.UserToken = &tok
-			tokens[i] = pbtok
+			tokens[i].Token = &sourcegraph.PBToken_UserToken{UserToken: &tok}
 		case sourcegraph.Term:
 		case sourcegraph.AnyToken:
 		default:
-			panic(fmt.Sprintf("unrecognized token type %T", pbtok.Token()))
+			panic(fmt.Sprintf("unrecognized token type %T", pbtok.GetQueryToken()))
 		}
 	}
 }

@@ -1,0 +1,43 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "code-view-react",
+						"children": [
+							{
+								"type": "CodeListing",
+								"props": {
+									"lines": [
+										"someLine"
+									],
+									"lineNumbers": true,
+									"selectedDef": "someDef"
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "aTree"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "someDef"
+		},
+		{
+			"$constructor": "WantDiscussions",
+			"defURL": "someDef"
+		}
+	]
+}

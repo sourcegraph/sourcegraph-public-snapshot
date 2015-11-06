@@ -2,59 +2,11 @@
 
 {{define "Body"}}
 <div class="error-page">
-	{{if eq .StatusCode 403}}
-		<!-- Custom 403 error handling -->
-		<h1 class="text-center"><i class="fa fa-ban"></i> Access Denied</h1>
-		<hr />
-		<div class="text-center">
-			<h5>Whoops -- looks like you don't have access to this!</h5>
-			<a href="#" class="btn btn-info" data-toggle="collapse" data-target="#request-access"><i class="fa fa-unlock"></i> Request Access</a>
-		</div>
-
-		<!-- Expansions section for instructions on requesting permission -->
-		<!-- TODO: replace these instructions with an automatic email to the admin -->
-		<br><br>
-		<div class="row">
-			<div class="col-md-6 col-md-offset-3">
-				<div id="request-access" class="panel panel-default collapse">
-					<div class="panel-body">
-						<p>Please contact your Sourcegraph administrator:</p>
-						<ol>
-							{{if (not .DisableExternalLinks)}}
-								<li>Tell them to <a href="https://src.sourcegraph.com/sourcegraph/.docs/management/access-control/">grant you access</a>.</li>
-							{{else}}
-								<li>Tell them to grant you access.</li>
-							{{end}}
-							<li>They will need to know your Sourcegraph username{{with .CurrentUser}} is <strong>"{{.Login}}"</strong>{{end}}</li>
-						</ol>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Error debug area for debug/admin users only -->
-		{{if and (.Err) (.Debug) (not .DisableExternalLinks)}}
-			<div class="row">
-				<div class="col-md-8 col-md-offset-2">
-						<hr/>
-						<div class="error-message">
-							{{.Err}}
-							<div class="actions">
-								<a class="btn btn-default" href="https://github.com/sourcegraph/sourcegraph.com/issues">Open issue</a>
-								<a class="btn btn-default" href="mailto:support@sourcegraph.com">Contact us</a>
-							</div>
-						</div>
-				</div>
-			</div>
-		{{end}}
-
-	{{else}}
-		<h1>
-			<span class="status-code">{{.StatusCode}} </span>
-			<span class="status-message">{{.Status}}</span>
-		</h1>
-		{{template "ErrorCommon" $}}
-	{{end}}
+	<h1>
+		<span class="status-code">{{.StatusCode}} </span>
+		<span class="status-message">{{.Status}}</span>
+	</h1>
+	{{template "ErrorCommon" $}}
 </div>
 {{end}}
 

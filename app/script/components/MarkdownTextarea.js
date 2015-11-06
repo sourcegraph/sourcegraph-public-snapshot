@@ -12,12 +12,14 @@ var MarkdownTextarea = React.createClass({
 	propTypes: {
 		placeholder: React.PropTypes.string,
 		defaultValue: React.PropTypes.string,
+		autoFocus: React.PropTypes.bool,
 	},
 
 	getDefaultProps() {
 		return {
 			placeholder: "",
 			defaultValue: "",
+			autoFocus: "false",
 		};
 	},
 
@@ -132,7 +134,7 @@ var MarkdownTextarea = React.createClass({
 
 				<div className={cx}>
 					<div className="tab-edit">
-						<textarea className="raw-body" placeholder={this.props.placeholder} defaultValue={this.props.defaultValue} onPaste={this._pasteHandler} />
+						<textarea className="raw-body" placeholder={this.props.placeholder} defaultValue={this.props.defaultValue} onPaste={this._pasteHandler} autoFocus={this.props.autoFocus === "true" ? "true" : null} />
 					</div>
 					<div className="tab-preview">
 						<MarkdownView content={this.state.bodyMarkdown} />

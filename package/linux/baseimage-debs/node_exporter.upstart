@@ -1,9 +1,0 @@
-#!upstart
-description "node_exporter"
-
-start on filesystem and net-device-up IFACE!=lo
-
-exec node_exporter
-
-respawn
-respawn limit 1000 5

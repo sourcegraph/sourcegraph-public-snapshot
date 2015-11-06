@@ -3,6 +3,7 @@ package localauth
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
@@ -15,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -49,7 +49,8 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	ctx := httpctx.FromRequest(r)
-	if auth.IsAuthenticated(ctx) {
+	u := handlerutil.UserFromContext(ctx)
+	if u != nil && u.UID != 0 {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return nil
 	}
@@ -104,7 +105,11 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 		case codes.InvalidArgument:
 			form.AddFieldError("Login", formErrorInvalidUsername)
 		case codes.AlreadyExists:
-			form.AddFieldError("Login", formErrorUsernameAlreadyTaken)
+			if strings.Contains(err.Error(), "primary email already associated with a user") {
+				form.AddFieldError("Email", formErrorEmailAlreadyTaken)
+			} else {
+				form.AddFieldError("Login", formErrorUsernameAlreadyTaken)
+			}
 
 		default:
 			return err
@@ -116,7 +121,9 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 
 	// Get the newly created user's API key to authenticate future requests.
 	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
-		ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: form.Login, Password: form.Password},
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: form.Login, Password: form.Password},
+		},
 	})
 	if err != nil {
 		return err
@@ -144,6 +151,7 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 
 const (
 	formErrorUsernameAlreadyTaken = "This username is already taken. Try another."
+	formErrorEmailAlreadyTaken    = "A user already exists with this email."
 )
 
 func checkSignupEnabled() error {

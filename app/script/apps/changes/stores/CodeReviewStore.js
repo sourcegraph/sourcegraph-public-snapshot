@@ -32,6 +32,13 @@ var CodeReviewStore = FluxStore({
 		 * will be open.
 		 * @type {bool}
 		 */
+		reviewFormVisible: false,
+
+		/**
+		 * @description Whether or not a review is currently being submitted (i.e.
+		 * the request is in-flight).
+		 * @type {bool}
+		 */
 		submittingReview: false,
 	},
 
@@ -55,6 +62,7 @@ var CodeReviewStore = FluxStore({
 		CR_DELETE_DRAFT: "_onDeleteDraft",
 		CR_SUBMIT_REVIEW: "_onSubmitReview",
 		CR_SUBMIT_REVIEW_SUCCESS: "_onSubmitReviewSuccess",
+		CR_SUBMIT_REVIEW_FAIL: "_onSubmitReviewFail",
 		CR_SHOW_COMMENT: "_onShowComment",
 	},
 
@@ -89,6 +97,7 @@ var CodeReviewStore = FluxStore({
 			BaseTip: d.BaseTip,
 			FileFilter: d.FileFilter,
 			ReviewGuidelines: d.ReviewGuidelines,
+			JiraIssues: d.JiraIssues,
 			loading: false,
 			reviews: reviews,
 			events: events,
@@ -266,7 +275,7 @@ var CodeReviewStore = FluxStore({
 	 * @private
 	 */
 	_onSubmitReview(action) {
-		// noop
+		this.set("submittingReview", true);
 	},
 
 	/**
@@ -279,6 +288,18 @@ var CodeReviewStore = FluxStore({
 	_onSubmitReviewSuccess(action) {
 		this.get("reviews").clearDrafts();
 		this.get("reviews").add(action.data);
+		this.set("reviewFormVisible", false);
+		this.set("submittingReview", false);
+	},
+
+	/**
+	 * @description Triggered when the review has failed to be submitted to the
+	 * server.
+	 * @param {Object} action - The action's payload.
+	 * @returns {void}
+	 * @private
+	 */
+	_onSubmitReviewFail(action) {
 		this.set("submittingReview", false);
 	},
 

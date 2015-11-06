@@ -27,6 +27,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil/reqtimer"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+
+	_ "src.sourcegraph.com/sourcegraph/app/internal/markdown"
 )
 
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided

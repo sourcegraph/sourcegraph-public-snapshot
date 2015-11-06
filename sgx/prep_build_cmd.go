@@ -47,7 +47,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		// Get repo settings and (if it exists) private key.
 		repoSpec := repo.RepoSpec()
 		key, err := cl.MirroredRepoSSHKeys.Get(cliCtx, &repoSpec)
-		if err != nil && grpc.Code(err) != codes.NotFound {
+		if err != nil && grpc.Code(err) != codes.NotFound  && grpc.Code(err) != codes.Unimplemented {
 			return err
 		} else if key != nil {
 			remoteOpt.SSH = &vcs.SSHConfig{PrivateKey: key.PEM}
@@ -90,19 +90,14 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		}
 
 		if repo.Private && repo.Mirror {
-			switch host := util.RepoURIHost(repo.URI); host {
-			case "github.com":
-				tokenStore := ext.AccessTokens{}
-				token, err := tokenStore.Get(cliCtx, ext.GitHubService)
-				if err != nil {
-					return fmt.Errorf("unable to fetch access token: %v", err)
-				}
-
-				username = "token"
-				password = token
-			default:
-				return fmt.Errorf("no credentials available for host: %q", host)
+			host := util.RepoURIHost(repo.URI)
+			tokenStore := ext.AccessTokens{}
+			token, err := tokenStore.Get(cliCtx, host)
+			if err != nil {
+				return fmt.Errorf("unable to fetch credentials for host %q: %v", host, err)
 			}
+			username = "token"
+			password = token
 		}
 	}
 

@@ -61,7 +61,7 @@ var CodeReview = React.createClass({
 			return;
 		}
 		// TODO(gbbr): Do an action here
-		CodeReviewStore.set({submittingReview: true});
+		CodeReviewStore.set({reviewFormVisible: true});
 	},
 
 	/**
@@ -72,7 +72,7 @@ var CodeReview = React.createClass({
 	 */
 	_submitReviewHide(e) {
 		// TODO(gbbr): Do an action here
-		CodeReviewStore.set({submittingReview: false});
+		CodeReviewStore.set({reviewFormVisible: false});
 	},
 
 	/**
@@ -90,6 +90,27 @@ var CodeReview = React.createClass({
 		if (typeof this.state.Changeset === "undefined") return null;
 		var url = `${router.changesetURL(this.state.Changeset.DeltaSpec.Base.URI, this.state.Changeset.ID)}/files`;
 		var showingGuidelines = this.state.guidelinesVisible;
+
+		// TODO(renfred) Move this into its own component/app.
+		var jiraIssues = null;
+		if (this.state.JiraIssues && Object.keys(this.state.JiraIssues).length > 0) {
+			var issueList = Object.keys(this.state.JiraIssues).map((id) => {
+				return (
+					<li>
+						<a href={this.state.JiraIssues[id]}>{id}</a>
+					</li>
+				);
+			});
+
+			jiraIssues = (
+				<div className="well jira-issues">
+					<p>JIRA Issues</p>
+					<ul>
+						{issueList}
+					</ul>
+				</div>
+			);
+		}
 
 		return (
 			<div className="code-review-inner">
@@ -133,7 +154,8 @@ var CodeReview = React.createClass({
 						) : null}
 
 						<SubmitForm
-							visible={this.state.submittingReview}
+							visible={this.state.reviewFormVisible}
+							submitDisabled={this.state.submittingReview}
 							drafts={this.state.reviews.drafts}
 							onShow={this._submitReviewShow}
 							onSubmit={this._submitReview}
@@ -144,6 +166,7 @@ var CodeReview = React.createClass({
 						<ControlPanel
 							changeset={this.state.Changeset}
 							onStatusChange={CodeReviewActions.changeChangesetStatus} />
+						{jiraIssues}
 					</div>
 				</div>
 

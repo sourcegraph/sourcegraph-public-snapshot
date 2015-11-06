@@ -191,7 +191,7 @@ var TokenPopupView = React.createClass({
 	 * @private
 	 */
 	_renderConditional() {
-		var args = Reflect.apply(Array.prototype.slice, arguments);
+		var args = Reflect.apply(Array.prototype.slice, arguments, []);
 		if (args.length%2 !== 0) {
 			console.error("_renderConditional method received odd number of args.");
 			return null;

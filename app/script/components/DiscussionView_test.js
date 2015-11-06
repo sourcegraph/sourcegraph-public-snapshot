@@ -44,7 +44,6 @@ describe("components/DiscussionView", () => {
 		var $comment = $root.find("ul.thread-comments li").first();
 
 		expect($comment.find(".signature").text()).to.be("@shurcooL replied a few seconds ago");
-		expect($comment.find(".markdown-view").text()).to.be("comment_body\n");
 	});
 
 	it("should render a discussion without comments and description correctly", () => {

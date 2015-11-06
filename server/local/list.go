@@ -31,6 +31,7 @@ var Services = svc.Services{
 	MirrorRepos:         MirrorRepos,
 	MirroredRepoSSHKeys: MirroredRepoSSHKeys,
 	MultiRepoImporter:   Graph,
+	Notify:              Notify,
 	Orgs:                Orgs,
 	People:              People,
 	RegisteredClients:   RegisteredClients,
@@ -39,6 +40,8 @@ var Services = svc.Services{
 	RepoTree:            RepoTree,
 	Repos:               Repos,
 	Search:              Search,
+	Storage:             Storage,
 	Units:               Units,
+	UserKeys:            UserKeys,
 	Users:               Users,
 }

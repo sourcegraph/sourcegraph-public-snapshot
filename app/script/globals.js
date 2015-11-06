@@ -100,6 +100,7 @@ module.exports = {
 		CR_SUBMIT_REVIEW: null,
 		CR_RECEIVED_CHANGED_STATUS: null,
 		CR_SUBMIT_REVIEW_SUCCESS: null,
+		CR_SUBMIT_REVIEW_FAIL: null,
 		CR_SHOW_COMMENT: null,
 
 		// Search Actions
@@ -107,8 +108,10 @@ module.exports = {
 		SEARCH_SELECT_TYPE: null,
 		SEARCH_TOKENS_SUBMIT: null,
 		SEARCH_TOKENS_RECEIVED_RESULTS: null,
+		SEARCH_TOKENS_FAILURE: null,
 		SEARCH_TEXT_SUBMIT: null,
 		SEARCH_TEXT_RECEIVED_RESULTS: null,
+		SEARCH_TEXT_FAILURE: null,
 	}),
 
 	ChangesetStatus: keyMirror({
@@ -129,7 +132,7 @@ module.exports = {
 		TEXT: null,
 	}),
 
-	Features: window._featureToggles,
+	Features: typeof window !== "undefined" && window._featureToggles,
 
-	CsrfToken: window._csrfToken,
+	CsrfToken: typeof window !== "undefined" && window._csrfToken,
 };

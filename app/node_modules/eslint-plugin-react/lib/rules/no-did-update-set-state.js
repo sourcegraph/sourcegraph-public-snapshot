@@ -26,7 +26,10 @@ module.exports = function(context) {
       }
       var ancestors = context.getAncestors(callee);
       for (var i = 0, j = ancestors.length; i < j; i++) {
-        if (ancestors[i].type !== 'Property' || ancestors[i].key.name !== 'componentDidUpdate') {
+        if (
+          (ancestors[i].type !== 'Property' && ancestors[i].type !== 'MethodDefinition') ||
+          ancestors[i].key.name !== 'componentDidUpdate'
+        ) {
           continue;
         }
         context.report(callee, 'Do not use setState in componentDidUpdate');

@@ -1,0 +1,13 @@
+{
+	"renderOutput": {
+		"type": "CodeFileContainer",
+		"props": {
+			"repo": "github.com/gorilla/mux",
+			"rev": "master",
+			"unitType": "GoPackage",
+			"unit": "github.com/gorilla/mux",
+			"def": "Router",
+			"example": 4
+		}
+	}
+}

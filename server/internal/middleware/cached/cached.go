@@ -67,6 +67,10 @@ func Wrap(s svc.Services) svc.Services {
 		s.MirroredRepoSSHKeys = &sourcegraph.CachedMirroredRepoSSHKeysServer{s.MirroredRepoSSHKeys}
 	}
 
+	if s.Notify != nil {
+		s.Notify = &sourcegraph.CachedNotifyServer{s.Notify}
+	}
+
 	if s.Orgs != nil {
 		s.Orgs = &sourcegraph.CachedOrgsServer{s.Orgs}
 	}
@@ -99,8 +103,16 @@ func Wrap(s svc.Services) svc.Services {
 		s.Search = &sourcegraph.CachedSearchServer{s.Search}
 	}
 
+	if s.Storage != nil {
+		s.Storage = &sourcegraph.CachedStorageServer{s.Storage}
+	}
+
 	if s.Units != nil {
 		s.Units = &sourcegraph.CachedUnitsServer{s.Units}
+	}
+
+	if s.UserKeys != nil {
+		s.UserKeys = &sourcegraph.CachedUserKeysServer{s.UserKeys}
 	}
 
 	if s.Users != nil {

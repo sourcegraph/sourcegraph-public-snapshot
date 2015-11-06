@@ -54,6 +54,10 @@ type Changesets interface {
 	// head and branch may be updated.
 	Update(ctx context.Context, op *ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
 
+	// Merge merges the head branch of the changeset into its base branch and
+	// pushes the resulting merged base.
+	Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp) error
+
 	// ListChangesetEvents lists the events in a changeset
 	ListEvents(ctx context.Context, spec *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
 }

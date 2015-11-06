@@ -241,11 +241,92 @@ func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposLi
 
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)
 
+type StorageClient struct {
+	Create_    func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	RemoveAll_ func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	Read_      func(ctx context.Context, in *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
+	Write_     func(ctx context.Context, in *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
+	Stat_      func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageStat, error)
+	ReadDir_   func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error)
+	Close_     func(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+}
+
+func (s *StorageClient) Create(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
+	return s.Create_(ctx, in)
+}
+
+func (s *StorageClient) RemoveAll(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
+	return s.RemoveAll_(ctx, in)
+}
+
+func (s *StorageClient) Read(ctx context.Context, in *sourcegraph.StorageReadOp, opts ...grpc.CallOption) (*sourcegraph.StorageRead, error) {
+	return s.Read_(ctx, in)
+}
+
+func (s *StorageClient) Write(ctx context.Context, in *sourcegraph.StorageWriteOp, opts ...grpc.CallOption) (*sourcegraph.StorageWrite, error) {
+	return s.Write_(ctx, in)
+}
+
+func (s *StorageClient) Stat(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageStat, error) {
+	return s.Stat_(ctx, in)
+}
+
+func (s *StorageClient) ReadDir(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageReadDir, error) {
+	return s.ReadDir_(ctx, in)
+}
+
+func (s *StorageClient) Close(ctx context.Context, in *sourcegraph.StorageName, opts ...grpc.CallOption) (*sourcegraph.StorageError, error) {
+	return s.Close_(ctx, in)
+}
+
+var _ sourcegraph.StorageClient = (*StorageClient)(nil)
+
+type StorageServer struct {
+	Create_    func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	RemoveAll_ func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	Read_      func(v0 context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
+	Write_     func(v0 context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
+	Stat_      func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error)
+	ReadDir_   func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error)
+	Close_     func(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+}
+
+func (s *StorageServer) Create(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return s.Create_(v0, v1)
+}
+
+func (s *StorageServer) RemoveAll(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return s.RemoveAll_(v0, v1)
+}
+
+func (s *StorageServer) Read(v0 context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
+	return s.Read_(v0, v1)
+}
+
+func (s *StorageServer) Write(v0 context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
+	return s.Write_(v0, v1)
+}
+
+func (s *StorageServer) Stat(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
+	return s.Stat_(v0, v1)
+}
+
+func (s *StorageServer) ReadDir(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
+	return s.ReadDir_(v0, v1)
+}
+
+func (s *StorageServer) Close(v0 context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	return s.Close_(v0, v1)
+}
+
+var _ sourcegraph.StorageServer = (*StorageServer)(nil)
+
 type ChangesetsClient struct {
 	Create_       func(ctx context.Context, in *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error)
 	Get_          func(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error)
 	List_         func(ctx context.Context, in *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
 	Update_       func(ctx context.Context, in *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
+	Merge_        func(ctx context.Context, in *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error)
 	CreateReview_ func(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
 	ListReviews_  func(ctx context.Context, in *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
 	ListEvents_   func(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
@@ -267,6 +348,10 @@ func (s *ChangesetsClient) Update(ctx context.Context, in *sourcegraph.Changeset
 	return s.Update_(ctx, in)
 }
 
+func (s *ChangesetsClient) Merge(ctx context.Context, in *sourcegraph.ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.Merge_(ctx, in)
+}
+
 func (s *ChangesetsClient) CreateReview(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetReview, error) {
 	return s.CreateReview_(ctx, in)
 }
@@ -286,6 +371,7 @@ type ChangesetsServer struct {
 	Get_          func(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error)
 	List_         func(v0 context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
 	Update_       func(v0 context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
+	Merge_        func(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error)
 	CreateReview_ func(v0 context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
 	ListReviews_  func(v0 context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
 	ListEvents_   func(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
@@ -305,6 +391,10 @@ func (s *ChangesetsServer) List(v0 context.Context, v1 *sourcegraph.ChangesetLis
 
 func (s *ChangesetsServer) Update(v0 context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	return s.Update_(v0, v1)
+}
+
+func (s *ChangesetsServer) Merge(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+	return s.Merge_(v0, v1)
 }
 
 func (s *ChangesetsServer) CreateReview(v0 context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
@@ -710,6 +800,46 @@ func (s *UsersServer) List(v0 context.Context, v1 *sourcegraph.UsersListOptions)
 }
 
 var _ sourcegraph.UsersServer = (*UsersServer)(nil)
+
+type UserKeysClient struct {
+	AddKey_     func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
+	LookupUser_ func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
+	DeleteKey_  func(ctx context.Context, in *pbtypes.Void) (*pbtypes.Void, error)
+}
+
+func (s *UserKeysClient) AddKey(ctx context.Context, in *sourcegraph.SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.AddKey_(ctx, in)
+}
+
+func (s *UserKeysClient) LookupUser(ctx context.Context, in *sourcegraph.SSHPublicKey, opts ...grpc.CallOption) (*sourcegraph.UserSpec, error) {
+	return s.LookupUser_(ctx, in)
+}
+
+func (s *UserKeysClient) DeleteKey(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.DeleteKey_(ctx, in)
+}
+
+var _ sourcegraph.UserKeysClient = (*UserKeysClient)(nil)
+
+type UserKeysServer struct {
+	AddKey_     func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
+	LookupUser_ func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
+	DeleteKey_  func(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error)
+}
+
+func (s *UserKeysServer) AddKey(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
+	return s.AddKey_(v0, v1)
+}
+
+func (s *UserKeysServer) LookupUser(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
+	return s.LookupUser_(v0, v1)
+}
+
+func (s *UserKeysServer) DeleteKey(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	return s.DeleteKey_(v0, v1)
+}
+
+var _ sourcegraph.UserKeysServer = (*UserKeysServer)(nil)
 
 type AuthClient struct {
 	GetAuthorizationCode_ func(ctx context.Context, in *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error)
@@ -1200,3 +1330,33 @@ func (s *GraphUplinkServer) PushEvents(v0 context.Context, v1 *sourcegraph.UserE
 }
 
 var _ sourcegraph.GraphUplinkServer = (*GraphUplinkServer)(nil)
+
+type NotifyClient struct {
+	GenericEvent_ func(ctx context.Context, in *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
+	Mention_      func(ctx context.Context, in *sourcegraph.NotifyMention) (*pbtypes.Void, error)
+}
+
+func (s *NotifyClient) GenericEvent(ctx context.Context, in *sourcegraph.NotifyGenericEvent, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.GenericEvent_(ctx, in)
+}
+
+func (s *NotifyClient) Mention(ctx context.Context, in *sourcegraph.NotifyMention, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.Mention_(ctx, in)
+}
+
+var _ sourcegraph.NotifyClient = (*NotifyClient)(nil)
+
+type NotifyServer struct {
+	GenericEvent_ func(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
+	Mention_      func(v0 context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error)
+}
+
+func (s *NotifyServer) GenericEvent(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
+	return s.GenericEvent_(v0, v1)
+}
+
+func (s *NotifyServer) Mention(v0 context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
+	return s.Mention_(v0, v1)
+}
+
+var _ sourcegraph.NotifyServer = (*NotifyServer)(nil)

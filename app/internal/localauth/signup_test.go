@@ -78,11 +78,16 @@ func TestSignUp_submit(t *testing.T) {
 	}
 	var calledAuthGetAccessToken bool
 	mock.Auth.GetAccessToken_ = func(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
-		if op.ResourceOwnerPassword.Login != frm.Login {
-			t.Errorf("got login == %q, want %q", op.ResourceOwnerPassword.Login, frm.Login)
-		}
-		if op.ResourceOwnerPassword.Password != frm.Password {
-			t.Errorf("got password == %q, want %q", op.ResourceOwnerPassword.Password, frm.Password)
+		resOwnerPassword := op.GetResourceOwnerPassword()
+		if resOwnerPassword == nil {
+			t.Errorf("got empty ResourceOwnerPassword")
+		} else {
+			if resOwnerPassword.Login != frm.Login {
+				t.Errorf("got login == %q, want %q", resOwnerPassword.Login, frm.Login)
+			}
+			if resOwnerPassword.Password != frm.Password {
+				t.Errorf("got password == %q, want %q", resOwnerPassword.Password, frm.Password)
+			}
 		}
 		calledAuthGetAccessToken = true
 		return &sourcegraph.AccessTokenResponse{AccessToken: "k"}, nil
@@ -158,6 +163,54 @@ func TestSignUp_loginAlreadyExists(t *testing.T) {
 		t.Error(err)
 	}
 	if !strings.Contains(string(body), formErrorUsernameAlreadyTaken) {
+		t.Error("form error not found")
+	}
+
+	if !calledAccountsCreate {
+		t.Error("!calledAccountsCreate")
+	}
+}
+
+func TestSignUp_emailAlreadyExists(t *testing.T) {
+	authutil.ActiveFlags.Source = "local"
+	defer func() {
+		authutil.ActiveFlags = authutil.Flags{}
+	}()
+
+	c, mock := apptest.New()
+
+	frm := sourcegraph.NewAccount{Login: "u", Email: "a@a.com", Password: "password"}
+	data, err := query.Values(frm)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var calledAccountsCreate bool
+	mock.Accounts.Create_ = func(ctx context.Context, op *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
+		calledAccountsCreate = true
+		return nil, grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", op.Email)
+	}
+
+	resp, err := c.PostFormNoFollowRedirects(router.Rel.URLTo(router.SignUp).String(), data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that signup form is re-rendered.
+	if want := http.StatusOK; resp.StatusCode != want {
+		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
+	}
+
+	// Check that user session cookie is NOT set.
+	if _, err := appauth.ReadSessionCookieFromResponse(resp); err != appauth.ErrNoSession {
+		t.Fatalf("got err %v, want ErrNoSession", err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	if !strings.Contains(string(body), formErrorEmailAlreadyTaken) {
 		t.Error("form error not found")
 	}
 

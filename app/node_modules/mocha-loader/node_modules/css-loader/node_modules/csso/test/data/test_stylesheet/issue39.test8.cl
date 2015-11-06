@@ -1,0 +1,1 @@
+a{color:red}a,x::test{color:green}

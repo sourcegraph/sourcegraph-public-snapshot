@@ -12,19 +12,22 @@
     "css-loader": "0.15.6",
     "eslint": "1.5.0",
     "eslint-loader": "1.0.0",
-    "eslint-plugin-react": "3.4.2",
+    "eslint-plugin-react": "3.6.3",
     "expect.js": "0.3.1",
     "extract-text-webpack-plugin": "0.8.2",
     "file-loader": "0.8.4",
-    "flux": "2.0.3",
+    "flux": "2.1.1",
     "font-awesome": "4.3.0",
     "fuse.js": "1.2.2",
     "glob": "5.0.14",
     "jsdom": "6.5.1",
+    "json-loader": "0.5.3",
     "keymirror": "0.1.1",
     "lintspaces": "0.3.2",
     "lintspaces-cli": "0.1.0",
+    "madge": "0.5.2",
     "mocha": "2.3.2",
+    "mocha-loader": "^0.7.1",
     "raw-loader": "0.5.1",
     "react-addons-test-utils": "0.14.0",
     "sass-loader": "2.0.1",
@@ -43,12 +46,19 @@
     "react": "0.14.0",
     "react-cookie": "0.2.5",
     "react-dom": "0.14.0",
-    "react-draggable": "0.8.1"
+    "react-draggable": "0.8.1",
+    "urijs": "1.16.1",
+    "xhr": "2.1.0"
   },
   "scripts": {
-    "start": "./node_modules/.bin/webpack-dev-server --devtool inline-source-map",
+    "start": "./node_modules/.bin/webpack-dev-server --devtool cheap-module-source-map",
     "build": "bash ./node_modules/.bin/build-webpack",
     "test": "find script -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel/register",
-    "dep": "npm rebuild node-sass"
+    "dep": "npm rebuild node-sass",
+    "graph": "mkdir -p artifacts/; ./node_modules/.bin/babel -l react -d artifacts/script-compiled/new/ script/new/; ./node_modules/.bin/madge artifacts/script-compiled/new/ -f es6 -i artifacts/app-graph.png -x 'node_modules|_test|util|Dispatcher|Actions'; rm -r artifacts/script-compiled/"
+  },
+  "browser": {
+    "fs": false,
+    "child_process": false
   }
 }

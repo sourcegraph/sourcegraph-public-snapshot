@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/server/local"
@@ -21,23 +22,31 @@ func init() {
 }
 
 // discoverRepo implements the discovery process for a repo that might
-// be hosted on GitHub. If it is not hosted on GitHub, a
-// discover.NotFoundError is returned.
-//
-// TODO(sqs): add support for GitHub Enterprise by actually fetching
-// and inspecting the page.
+// be hosted on GitHub. If it is not hosted on GitHub or on a GitHub Enterprise
+// instance, a discover.NotFoundError is returned.
 func discoverRepo(ctx context.Context, repo string) (discover.Info, error) {
 	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
 		return &discoveryInfo{host: "github.com"}, nil
+	}
+	if githubcli.Config.IsGitHubEnterprise() {
+		gitHubHost := githubcli.Config.Host()
+		if strings.HasPrefix(strings.ToLower(repo), gitHubHost+"/") {
+			return &discoveryInfo{host: gitHubHost}, nil
+		}
 	}
 	return nil, &discover.NotFoundError{Type: "repo", Input: repo}
 }
 
 type discoveryInfo struct {
-	host string // GitHub hostname (always "github.com" for now)
+	host string // GitHub hostname
 }
 
 func (i *discoveryInfo) NewContext(ctx context.Context) (context.Context, error) {
+	if i.host != "github.com" && githubcli.Config.IsGitHubEnterprise() {
+		log15.Debug("Serving GitHub Enterprise repo request locally")
+		ctx = store.WithRepos(ctx, &Repos{})
+		return svc.WithServices(ctx, local.Services), nil
+	}
 	if !fed.Config.IsRoot {
 		rootGRPCEndpoint, err := fed.Config.RootGRPCEndpoint()
 		if err != nil {

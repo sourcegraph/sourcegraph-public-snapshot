@@ -5,12 +5,17 @@ import (
 	"net/url"
 	"testing"
 
+	"golang.org/x/net/context"
+
+	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed"
 
 	// Register the login handler.
@@ -31,29 +36,32 @@ func TestLogIn_OAuthRedirect(t *testing.T) {
 		fed.Config.RootURLStr = origFedRoot
 	}()
 
+	origGetRegisteredClientForServer := getRegisteredClientForServer
+	defer func() {
+		getRegisteredClientForServer = origGetRegisteredClientForServer
+	}()
+
 	c, mock := apptest.New()
 
 	mock.Ctx = oauth2client.WithClientID(mock.Ctx, "a")
 
 	var jwks []byte
-	{
-		// TODO(sqs!): remove the need for this by making it so the
-		// client only needs the JWKS, not the full id private key.
-		idkey.Bits = 512
-		k, err := idkey.Generate()
-		if err != nil {
-			t.Fatal(err)
-		}
-		mock.Ctx = idkey.NewContext(mock.Ctx, k)
-
-		jwks, err = k.MarshalJWKSPublicKey()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
+	mock.Ctx, jwks = generateJWKS(t, mock.Ctx)
 
 	for _, method := range []string{"GET", "POST"} {
-		u := router.Rel.URLTo(router.OAuth2ClientInitiate)
+		var calledMetaConfig, calledGetRegisteredClientForServer bool
+		mock.Meta.Config_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
+			calledMetaConfig = true
+			return &sourcegraph.ServerConfig{AppURL: conf.AppURL(ctx).String()}, nil
+		}
+		getRegisteredClientForServer = func(ctx context.Context) (*sourcegraph.RegisteredClient, error) {
+			calledGetRegisteredClientForServer = true
+			return &sourcegraph.RegisteredClient{RedirectURIs: []string{"http://example.com"}}, nil
+		}
+
+		// Use the correct request host to ensure we don't trigger the
+		// "detect app URL mismatch" check.
+		u := conf.AppURL(mock.Ctx).ResolveReference(router.Rel.URLTo(router.OAuth2ClientInitiate))
 		returnto.SetOnURL(u, "/foo")
 		req, _ := http.NewRequest(method, u.String(), nil)
 		resp, err := c.DoNoFollowRedirects(req)
@@ -63,6 +71,7 @@ func TestLogIn_OAuthRedirect(t *testing.T) {
 
 		if want := http.StatusSeeOther; resp.StatusCode != want {
 			t.Errorf("%s: got status %d, want %d", method, resp.StatusCode, want)
+			continue
 		}
 
 		// Check that a nonce is set in the session to combat CSRF.
@@ -80,5 +89,32 @@ func TestLogIn_OAuthRedirect(t *testing.T) {
 		if got := resp.Header.Get("location"); got != want {
 			t.Errorf("%s: got Location %q, want %q", method, got, want)
 		}
+
+		if !calledMetaConfig {
+			t.Error("!calledMetaConfig")
+		}
+		if !calledGetRegisteredClientForServer {
+			t.Error("!calledGetRegisteredClientForServer")
+		}
 	}
+}
+
+func generateJWKS(t *testing.T, ctx context.Context) (context.Context, []byte) {
+	var jwks []byte
+
+	// TODO(sqs!): remove the need for this by making it so the
+	// client only needs the JWKS, not the full id private key.
+	idkey.Bits = 512
+	k, err := idkey.Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx = idkey.NewContext(ctx, k)
+
+	jwks, err = k.MarshalJWKSPublicKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return ctx, jwks
 }

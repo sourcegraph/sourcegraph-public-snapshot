@@ -1,0 +1,35 @@
+{
+	"renderOutput": {
+		"type": "tr",
+		"props": {
+			"className": "line",
+			"children": [
+				{
+					"type": "td",
+					"props": {
+						"className": "line-number",
+						"data-line": 42
+					}
+				},
+				{
+					"type": "td",
+					"props": {
+						"className": "line-content",
+						"children": [
+							{
+								"type": "span",
+								"key": "0",
+								"props": {
+									"className": "",
+									"children": [
+										"foo"
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

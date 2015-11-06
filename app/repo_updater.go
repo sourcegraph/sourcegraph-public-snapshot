@@ -73,22 +73,17 @@ func (ru *repoUpdater) run(ctx context.Context) {
 		}
 		// For private repos, supply auth.
 		if repo.Private {
-			switch host := util.RepoURIHost(repo.URI); host {
-			case "github.com":
-				tokenStore := ext.AccessTokens{}
-				token, err := tokenStore.Get(ctx, ext.GitHubService)
-				if err != nil {
-					log15.Warn("repoUpdater: tokenStore.Get:", err)
-					continue
-				}
-
-				// Setting credentials will perform this operation locally (non-federated).
-				op.Credentials = &sourcegraph.VCSCredentials{
-					Pass: token,
-				}
-			default:
-				log15.Warn("repoUpdater: no credentials available for host:", host)
+			host := util.RepoURIHost(repo.URI)
+			tokenStore := ext.AccessTokens{}
+			token, err := tokenStore.Get(ctx, host)
+			if err != nil {
+				log15.Warn("repoUpdater: could not fetch credentials", "host", host, "error", err)
 				continue
+			}
+
+			// Setting credentials will perform this operation locally (non-federated).
+			op.Credentials = &sourcegraph.VCSCredentials{
+				Pass: token,
 			}
 		}
 

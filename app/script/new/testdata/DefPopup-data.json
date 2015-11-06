@@ -1,0 +1,201 @@
+{
+	"renderOutput": {
+		"type": "",
+		"props": {
+			"handle": "header.toolbar",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "token-details",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "body",
+									"children": [
+										{
+											"type": "header",
+											"props": {
+												"className": "toolbar",
+												"children": [
+													{
+														"type": "a",
+														"props": {
+															"className": "btn btn-toolbar btn-default go-to-def",
+															"href": "someURL",
+															"onClick": {
+																"defaultPrevented": true,
+																"dispatched": [
+																	{
+																		"$constructor": "GoToDef",
+																		"url": "someURL"
+																	}
+																]
+															},
+															"children": [
+																"Go to definition"
+															]
+														}
+													},
+													{
+														"type": "a",
+														"props": {
+															"className": "close top-action",
+															"onClick": {
+																"dispatched": [
+																	{
+																		"$constructor": "SelectDef"
+																	}
+																]
+															},
+															"children": [
+																"×"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "section",
+											"props": {
+												"className": "docHTML",
+												"children": [
+													{
+														"type": "div",
+														"props": {
+															"className": "header",
+															"children": [
+																{
+																	"type": "h1",
+																	"props": {
+																		"className": "qualified-name",
+																		"dangerouslySetInnerHTML": {
+																			"__html": "someName"
+																		}
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "section",
+														"props": {
+															"className": "doc",
+															"dangerouslySetInnerHTML": "someDoc"
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "ExampleView",
+											"props": {
+												"defURL": "someURL",
+												"examples": {
+													"test": "examples"
+												},
+												"highlightedDef": "otherURL"
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "code-discussions",
+												"children": [
+													{
+														"type": "div",
+														"props": {
+															"className": "contents",
+															"children": [
+																{
+																	"type": "DiscussionsList",
+																	"props": {
+																		"discussions": [
+																			{
+																				"ID": 2,
+																				"Comments": [
+																					{
+																						"ID": 0
+																					}
+																				]
+																			},
+																			{
+																				"ID": 4,
+																				"Comments": []
+																			},
+																			{
+																				"ID": 3,
+																				"Comments": []
+																			},
+																			{
+																				"ID": 1,
+																				"Comments": []
+																			}
+																		],
+																		"small": true
+																	}
+																},
+																{
+																	"type": "footer",
+																	"props": {
+																		"children": [
+																			{
+																				"type": "a",
+																				"ref": "listBtn",
+																				"props": {
+																					"children": [
+																						{
+																							"type": "i",
+																							"props": {
+																								"className": "fa fa-eye"
+																							}
+																						},
+																						" View all"
+																					]
+																				}
+																			},
+																			{
+																				"type": "a",
+																				"ref": "createBtn",
+																				"props": {
+																					"children": [
+																						{
+																							"type": "i",
+																							"props": {
+																								"className": "fa fa-comment"
+																							}
+																						},
+																						" New"
+																					]
+																				}
+																			}
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			],
+			"axis": "both",
+			"bounds": false,
+			"moveOnStartChange": false,
+			"start": {
+				"x": 0,
+				"y": 0
+			},
+			"zIndex": null,
+			"enableUserSelectHack": true
+		}
+	}
+}

@@ -157,12 +157,6 @@ do_install() {
 		# OS X
 		set -x # echo on
 
-		# Install git if it's not already installed.
-		if ! have_git; then
-			set +x; echo "Installing git..."; set -x
-			sudo brew install git
-		fi
-
 		# OS X needs /usr/local/bin to be created because on default installations
 		# it is not already (mostly of the time it is created by homebrew, but we
 		# don't want to require that).

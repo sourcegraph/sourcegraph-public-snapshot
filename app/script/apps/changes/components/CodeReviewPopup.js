@@ -45,6 +45,15 @@ var CodeReviewPopup = React.createClass({
 			"closed": this.state.closed,
 		});
 
+		// In this case, there was an error fetching the definition. This could be
+		// due to a variety of different reasons. Avoid causing an exception below
+		// which would break all future CodeReviewPopups.
+		if (this.state.File && !this.state.File.RepoRev.CommitID) {
+			console.error("CodeReviewPopup error: File.RepoRev.CommitID ==", this.state.File.RepoRev.CommitID);
+			console.error("CodeReviewPopup note: File ==", this.state.File);
+			return null;
+		}
+
 		var doc = this._getDoc();
 
 		return (

@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/plan"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sourcegraph/srclib/util"
 )
 
 const graphOp = "graph"
@@ -62,8 +63,9 @@ func (r *GraphUnitRule) Prereqs() []string {
 }
 
 func (r *GraphUnitRule) Recipes() []string {
+	safeCommand := util.SafeCommandName(srclib.CommandName)
 	return []string{
-		fmt.Sprintf("%s tool %s %q %q < $< | %s internal normalize-graph-data --unit-type %q --dir . 1> $@", srclib.CommandName, r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd, srclib.CommandName, r.Unit.Type),
+		fmt.Sprintf("%s tool %s %q %q < $< | %s internal normalize-graph-data --unit-type %q --dir . 1> $@", safeCommand, r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd, safeCommand, r.Unit.Type),
 	}
 }
 

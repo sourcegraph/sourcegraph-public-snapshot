@@ -66,25 +66,25 @@ func writeAccessTokenFile(ctx context.Context, tokens serviceTokens) error {
 	return err
 }
 
-func (s *AccessTokens) Set(ctx context.Context, name, token string) error {
+func (s *AccessTokens) Set(ctx context.Context, host, token string) error {
 	tokens, err := readAccessTokenFile(ctx)
 	if err != nil {
 		return err
 	}
 
-	tokens[name] = token
+	tokens[host] = token
 	return writeAccessTokenFile(ctx, tokens)
 }
 
-func (s *AccessTokens) Get(ctx context.Context, name string) (string, error) {
+func (s *AccessTokens) Get(ctx context.Context, host string) (string, error) {
 	tokens, err := readAccessTokenFile(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	token, present := tokens[name]
+	token, present := tokens[host]
 	if !present {
-		return "", TokenNotFoundError{msg: fmt.Sprintf("no token found for %s", name)}
+		return "", TokenNotFoundError{msg: fmt.Sprintf("no token found for %s", host)}
 	}
 	return token, nil
 }

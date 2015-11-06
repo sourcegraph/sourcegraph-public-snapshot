@@ -1,6 +1,8 @@
 package notif
 
 import (
+	"fmt"
+
 	"github.com/mattbaird/gochimp"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ext/slack"
@@ -32,7 +34,8 @@ func Mention(p *sourcegraph.Person, nctx MentionContext) {
 		slack.PostMessage(slack.PostOpts{Msg: nctx.SlackMsg})
 	}
 	if p.Email != "" {
-		SendMandrillTemplate("mentions-generic", p.FullName, p.Email,
+		subject := fmt.Sprintf("[Mention] %s mentioned you", p.Login)
+		SendMandrillTemplate("mentions-generic", p.FullName, p.Email, subject,
 			[]gochimp.Var{
 				gochimp.Var{Name: "WHOM", Content: nctx.Mentioner},
 				gochimp.Var{Name: "WHOMLINK", Content: nctx.MentionerURL},

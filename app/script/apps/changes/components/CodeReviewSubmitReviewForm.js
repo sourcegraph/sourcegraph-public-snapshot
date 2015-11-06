@@ -14,6 +14,10 @@ var CodeReviewSubmitReviewForm = React.createClass({
 		// function is called.
 		visible: React.PropTypes.bool.isRequired,
 
+		// submitDisabled indicates whether or not the submit button on the form is
+		// disabled.
+		submitDisabled: React.PropTypes.bool.isRequired,
+
 		// drafts is a backbone collection of inline comments that need
 		// to be submitted along with this review. This property is used
 		// to display how many drafts will be submitted with this review.
@@ -45,17 +49,24 @@ var CodeReviewSubmitReviewForm = React.createClass({
 	},
 
 	render() {
+		var buttonStyle = "btn btn-success";
+		var onClick = this._submit;
+		if (this.props.submitDisabled) {
+			buttonStyle += " disabled";
+			onClick = null;
+		}
+
 		return (
 			<table className="changeset-timeline-block changeset-submit-review">
 				<tbody>
 					{this.props.visible ? (
 						<tr className="changeset-review-submit-form">
 							<td colSpan={2}>
-								<MarkdownTextarea ref="formBody" placeholder="Enter a description..." />
+								<MarkdownTextarea ref="formBody" placeholder="Enter a description..." autoFocus="true" />
 								<div className="actions">
 									<i className="pull-left">Includes {this.props.drafts.length} inline comments.</i>
-									<a className="btn btn-success" onClick={this._submit}>Submit</a>
-									<a className="btn" onClick={this.props.onCancel}>Cancel</a>
+									<button className={buttonStyle} onClick={onClick} tabIndex="0">Submit</button>
+									<button className="btn btn-cancel" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
 								</div>
 							</td>
 						</tr>

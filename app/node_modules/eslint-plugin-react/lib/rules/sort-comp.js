@@ -85,7 +85,6 @@ module.exports = function(context) {
   function mustBeValidated(component) {
     return (
       component &&
-      component.isReactComponent &&
       !component.hasDisplayName
     );
   }
@@ -346,9 +345,17 @@ module.exports = function(context) {
   }
 
   return {
+
+    ClassDeclaration: function(node) {
+      componentList.set(context, node);
+    },
+
+    ObjectExpression: function(node) {
+      componentList.set(context, node);
+    },
+
     'Program:exit': function() {
       var list = componentList.getList();
-
       for (var component in list) {
         if (!list.hasOwnProperty(component) || !mustBeValidated(list[component])) {
           continue;
@@ -358,15 +365,6 @@ module.exports = function(context) {
       }
 
       reportErrors();
-    },
-
-    ReturnStatement: function(node) {
-      if (!componentUtil.isReactComponent(context, node)) {
-        return;
-      }
-      componentList.set(context, node, {
-        isReactComponent: true
-      });
     }
   };
 

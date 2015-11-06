@@ -8,7 +8,7 @@
 <div class="panel panel-default panel-main person-settings person-settings-integration github">
 	<div class="panel-heading"><i class="fa fa-github"></i> GitHub</div>
 	<div class="panel-body">
-		<p>To use Sourcegraph with your private repositories on GitHub, <a href="https://github.com/settings/tokens">create a GitHub personal access token</a> with <b>repo</b> scope.</p>
+		<p>To use Sourcegraph with your private repositories on GitHub, <a href="{{.URL}}/settings/tokens">create a GitHub personal access token</a> with <b>repo</b> scope.</p>
 		<form class="form-inline access-token-form" action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "github"}}" method="POST">
 			<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
 			<div class="form-group">
@@ -18,7 +18,7 @@
 					{{else if (and .PrivateRemoteRepos .TokenIsValid)}}
 						<i class="fa fa-circle success"></i> You have a valid access token.
 					{{else if .TokenIsValid}}
-					<i class="fa fa-circle warning"></i> No private GitHub repositories found. Make sure your <a href="https://github.com/settings/tokens">personal access token</a> has the <b>repo</b> scope enabled, and your account has access to private repositories.
+					<i class="fa fa-circle warning"></i> No private GitHub repositories found. Make sure your <a href="{{.URL}}/settings/tokens">personal access token</a> has the <b>repo</b> scope enabled, and your account has access to private repositories.
 					{{else}}
 						<i class="fa fa-circle danger"></i> Invalid access token.
 					{{end}}
@@ -31,11 +31,12 @@
 			<div class="repo-list">
 				<h3>Available Private GitHub Repositories</h3>
 				<table class="table repo-list">
+					{{$host := .Host}}
 					{{range $repo := .PrivateRemoteRepos}}
 						<tr>
 							{{if $repo.ExistsLocally}}
 								<td>
-									<a href="{{urlToRepo $repo.URI}}">{{trimPrefix $repo.URI "github.com/"}}</a>
+									<a href="{{urlToRepo $repo.URI}}">{{trimPrefix $repo.URI $host}}</a>
 									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
 								</td>
 								<td>
@@ -43,7 +44,7 @@
 								</td>
 							{{else}}
 								<td>
-									{{trimPrefix $repo.URI "github.com/"}}
+									{{trimPrefix $repo.URI $host}}
 									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
 								</td>
 								<td>

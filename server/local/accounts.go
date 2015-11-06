@@ -37,6 +37,20 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
 	}
 
+	if newAcct.Password == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "empty password")
+	}
+
+	usersStore := store.UsersFromContextOrNil(ctx)
+	if usersStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "users"}
+	}
+
+	_, err := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: newAcct.Email})
+	if err == nil {
+		return nil, grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", newAcct.Email)
+	}
+
 	now := pbtypes.NewTimestamp(time.Now())
 	newUser := &sourcegraph.User{
 		Login:        newAcct.Login,
@@ -141,7 +155,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.
 	v := url.Values{}
 	v.Set("token", token.Token)
 	u.RawQuery = v.Encode()
-	_, err = sendEmail("forgot-password", user.Name, email.Email,
+	_, err = sendEmail("forgot-password", user.Name, email.Email, "Password Reset Requested",
 		[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: u.String()}})
 	if err != nil {
 		return nil, fmt.Errorf("Error sending email: %s", err)

@@ -168,7 +168,7 @@ func (s *search) Complete(ctx context.Context, q *sourcegraph.RawQuery) (*source
 	var scope []sourcegraph.Token
 	for i, tok := range rawTokens {
 		if st.IsActive(i) {
-			activeTok = tok.Token()
+			activeTok = tok.GetQueryToken()
 
 			// Set all preceding resolved tokens as the scope.
 			scope = sourcegraph.PBTokens(comps.ResolvedTokens[:i])
