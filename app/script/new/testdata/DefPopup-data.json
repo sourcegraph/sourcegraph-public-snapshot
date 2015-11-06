@@ -29,7 +29,7 @@
 																"dispatched": [
 																	{
 																		"$constructor": "GoTo",
-																		"url": "[target.href]"
+																		"url": "[currentTarget.href]"
 																	}
 																]
 															},

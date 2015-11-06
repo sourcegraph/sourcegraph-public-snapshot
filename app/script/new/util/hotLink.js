@@ -11,5 +11,5 @@ export default function(event) {
 		return;
 	}
 	event.preventDefault();
-	Dispatcher.dispatch(new GoTo(event.target.href));
+	Dispatcher.dispatch(new GoTo(event.currentTarget.href));
 }
