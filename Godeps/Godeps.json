@@ -702,12 +702,12 @@
 			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
 		},
 		{
-			"ImportPath": "src.sourcegraph.com/vfs",
-			"Rev": "c6e89b6ce18cc3c12453c27e6c8ab4c4622b19f6"
-		},
-		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",
 			"Rev": "56d7e2fb8dc326f3108a90034315eebc85396769"
+		},
+		{
+			"ImportPath": "src.sourcegraph.com/vfs",
+			"Rev": "c6e89b6ce18cc3c12453c27e6c8ab4c4622b19f6"
 		}
 	]
 }

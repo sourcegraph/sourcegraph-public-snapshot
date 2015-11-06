@@ -508,10 +508,10 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	if authutil.ActiveFlags.IsLDAP() {
-		if user, err := ldap.VerifyLogin("hackers", "dogood"); err != nil {
-			log.Fatalf("ldap auth failed: %v", err)
+		if err := ldap.VerifyConfig(); err != nil {
+			log.Fatalf("Could not connect to LDAP server: %v", err)
 		} else {
-			log.Printf("ldap auth successful: %v", user)
+			log15.Info("Connection to LDAP server successful")
 		}
 	}
 

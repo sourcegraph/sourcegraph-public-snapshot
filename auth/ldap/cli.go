@@ -10,6 +10,8 @@ type Flags struct {
 
 	Port int `long:"ldap.port" description:"port on LDAP server to connect to" default:"389"`
 
+	TLS bool `long:"ldap.tls" description:"connect to LDAP server using TLS"`
+
 	SearchUser string `long:"ldap.search-user" description:"The LDAP user that performs user lookups. (eg. cn=sourcegraph_ldap,ou=People,dc=mycompany,dc=com)"`
 
 	SearchPassword string `long:"ldap.search-password" description:"The password for the search user."`

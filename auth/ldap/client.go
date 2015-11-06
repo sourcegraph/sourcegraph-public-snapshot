@@ -1,6 +1,7 @@
 package ldap
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 
@@ -14,25 +15,39 @@ type LDAPUser struct {
 	ProfileNames []string
 }
 
+func connectLDAP() (l *ldaplib.Conn, err error) {
+	addr := fmt.Sprintf("%s:%d", Config.Host, Config.Port)
+	if Config.TLS {
+		l, err = ldaplib.DialTLS("tcp", addr, &tls.Config{InsecureSkipVerify: true})
+	} else {
+		l, err = ldaplib.Dial("tcp", addr)
+	}
+	return
+}
+
 func VerifyConfig() error {
-	return nil
+	bindusername := Config.SearchUser
+	bindpassword := Config.SearchPassword
+
+	l, err := connectLDAP()
+	if err != nil {
+		return err
+	}
+	defer l.Close()
+
+	// Verify that bind works for search user
+	return l.Bind(bindusername, bindpassword)
 }
 
 func VerifyLogin(username, password string) (*LDAPUser, error) {
 	bindusername := Config.SearchUser
 	bindpassword := Config.SearchPassword
 
-	l, err := ldaplib.Dial("tcp", fmt.Sprintf("%s:%d", Config.Host, Config.Port))
+	l, err := connectLDAP()
 	if err != nil {
 		return nil, err
 	}
 	defer l.Close()
-
-	// Reconnect with TLS
-	// err = l.StartTLS(&tls.Config{InsecureSkipVerify: true})
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 
 	// First bind with a read only user
 	err = l.Bind(bindusername, bindpassword)
