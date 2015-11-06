@@ -92,8 +92,13 @@ func IsUserNotFound(err error) bool {
 // with the requested login.
 type AccountAlreadyExistsError struct {
 	Login string // the requested login
+	UID   int32  // the requested UID
 }
 
 func (e *AccountAlreadyExistsError) Error() string {
-	return fmt.Sprintf("account %q already exists", e.Login)
+	var uidStr string
+	if e.UID != 0 {
+		uidStr = fmt.Sprintf("(UID %v) ", e.UID)
+	}
+	return fmt.Sprintf("account %q %salready exists", e.Login, uidStr)
 }
