@@ -154,7 +154,6 @@ module.exports.statusUpdated = function(data) {
 
 module.exports.mergeSuccess = function(data) {
 	notify.success("Changeset merged");
-	console.log(data);
 	AppDispatcher.handleServerAction({
 		type: globals.Actions.CR_MERGE_SUCCESS,
 		data: data,

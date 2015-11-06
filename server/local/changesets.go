@@ -3,7 +3,6 @@ package local
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -85,7 +84,7 @@ func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 	return store.ChangesetsFromContext(ctx).Update(ctx, &store.ChangesetUpdateOp{Op: op})
 }
 
-func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Merge"); err != nil {
 		return nil, err
 	}
@@ -95,17 +94,17 @@ func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp
 		return nil, err
 	}
 
-	// Manually close a merged changeset since post-push hooks won't work when
-	// pushing from the file system.
-	//
-	// TODO fix this using new events architecture.
-	svc.Changesets(ctx).Update(ctx, &sourcegraph.ChangesetUpdateOp{
+	event, err := svc.Changesets(ctx).Update(ctx, &sourcegraph.ChangesetUpdateOp{
 		Repo:   op.Repo,
 		ID:     op.ID,
 		Close:  true,
 		Merged: true,
 	})
-	return &pbtypes.Void{}, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }
 
 func (s *changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {

@@ -321,7 +321,8 @@ var CodeReviewStore = FluxStore({
 	},
 
 	_onMergeSuccess(action) {
-		this.set("Changeset", action.data);
+		this.get("events").add(action.data, {silent: true});
+		this.set("Changeset", action.data.After);
 		this.set("merging", false);
 	},
 

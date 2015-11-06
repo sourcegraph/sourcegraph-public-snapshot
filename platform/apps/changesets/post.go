@@ -183,19 +183,10 @@ func serveMerge(w http.ResponseWriter, r *http.Request) (err error) {
 	op.Repo = sourcegraph.RepoSpec{URI: uri}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	_, err = sg.Changesets.Merge(ctx, &op)
+	event, err := sg.Changesets.Merge(ctx, &op)
 	if err != nil {
 		return err
 	}
 
-	csSpec := &sourcegraph.ChangesetSpec{
-		Repo: sourcegraph.RepoSpec{URI: uri},
-		ID:   id,
-	}
-	cs, err := sg.Changesets.Get(ctx, csSpec)
-	if err != nil {
-		return err
-	}
-
-	return writeJSON(w, cs)
+	return writeJSON(w, event)
 }
