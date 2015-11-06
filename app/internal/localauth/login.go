@@ -45,7 +45,7 @@ func serveLogIn(w http.ResponseWriter, r *http.Request) error {
 	if err := checkLoginEnabled(); err != nil {
 		return err
 	}
-	if !authutil.ActiveFlags.IsLocal() {
+	if !(authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP()) {
 		return appauthutil.RedirectToLogIn(w, r)
 	}
 

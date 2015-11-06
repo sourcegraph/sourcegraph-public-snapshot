@@ -30,7 +30,7 @@ func RedirectToLogIn(w http.ResponseWriter, r *http.Request) error {
 	switch authutil.ActiveFlags.Source {
 	case "oauth", "oauth2":
 		return RedirectToOAuth2Initiate(w, r)
-	case "local":
+	case "local", "ldap":
 		u := router.Rel.URLTo(router.LogIn)
 		returnTo, err := returnto.BestGuess(r)
 		if err != nil {
