@@ -1,0 +1,35 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		{{template "new-issue" .}}
+	</body>
+</html>
+
+{{define "new-issue"}}
+<div style="display: flex; margin-top: 20px;" class="list-entry">
+	<div>
+		<a href="{{.CurrentUser.HTMLURL}}" target="_blank" tabindex=-1>
+			<img class="comment-avatar" width="48" height="48" src="{{.CurrentUser.AvatarURL}}">
+		</a>
+	</div>
+	<div class="list-entry-border" style="flex-grow: 1;">
+		<div class="list-entry-header tabs-title">
+			<div><input id="title-editor" type="text" placeholder="Title" autofocus></div>
+			<div style="display: flex;">
+				<span style="flex-grow: 1; font-size: 14px;">
+					<a id="write-tab-link" class="black tab-link active" tabindex=-1 href="javascript:SwitchWriteTab();">Write</a>
+					<a id="preview-tab-link" class="black tab-link" tabindex=-1 href="javascript:MarkdownPreview();">Preview</a>
+				</span>
+				<span class="gray"><span style="margin-right: 6px;" class="octicon octicon-markdown"></span>Markdown supported</span>
+			</div>
+		</div>
+		<div class="list-entry-body">
+			<textarea id="comment-editor" style="min-height: 200px;" placeholder="Leave a comment"></textarea>
+			<div id="comment-preview" class="markdown-body" style="padding: 10px; min-height: 200px; display: none;"></div>
+			<div style="text-align: right; margin-top: 10px;"><button id="create-issue-button" class="btn btn-success btn-small" disabled="disabled" onclick="CreateNewIssue();">Create new issue</button></div>
+		</div>
+	</div>
+</div>
+{{end}}

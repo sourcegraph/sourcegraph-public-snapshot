@@ -1,0 +1,19 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		{{/* TODO: Make this work with some mock values. */}}
+		{{template "issues-nav" .}}
+	</body>
+</html>
+
+{{define "issues-nav"}}
+{{/*<div class="list-entry-header">
+	<span><span style="margin-right: 4px;" class="octicon octicon-issue-opened"></span>{{.OpenCount}} Open</span>
+	<span style="margin-left: 8px;"><span  style="margin-right: 4px;" class="octicon octicon-check"></span>{{.ClosedCount}} Closed</span>
+</div>*/}}
+<div class="list-entry-header">
+	<nav>{{.Tabs}}</nav>
+</div>
+{{end}}

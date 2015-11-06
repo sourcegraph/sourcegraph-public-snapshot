@@ -1,12 +1,21 @@
 package issues
 
-import "src.sourcegraph.com/sourcegraph/platform"
+import (
+	issuesnext "src.sourcegraph.com/apps/issues"
+	"src.sourcegraph.com/sourcegraph/conf/feature"
+	"src.sourcegraph.com/sourcegraph/platform"
+)
 
 func init() {
-	platform.RegisterFrame(platform.RepoFrame{
-		ID:      "issues",
-		Title:   "Issues",
-		Icon:    "issue-opened",
-		Handler: Handler{},
-	})
+	switch feature.Features.IssuesNext {
+	case true:
+		issuesnext.Init()
+	case false:
+		platform.RegisterFrame(platform.RepoFrame{
+			ID:      "issues",
+			Title:   "Issues",
+			Icon:    "issue-opened",
+			Handler: Handler{},
+		})
+	}
 }

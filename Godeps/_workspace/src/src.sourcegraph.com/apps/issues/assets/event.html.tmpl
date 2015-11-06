@@ -1,0 +1,21 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		<div style="background-color: lightgray;">content</div>
+		{{template "event" .Event}}
+		<div style="background-color: lightgray;">content</div>
+		<pre>{{dump .Event}}</pre>
+	</body>
+</html>
+
+{{define "event"}}
+<div class="list-entry event event-{{.Type}}">
+	<span class="octicon {{(event .).Octicon}} event-icon"></span>
+	<div class="event-header">
+		<img class="inline-avatar" width="16" height="16" src="{{.Actor.AvatarURL}}">
+		{{template "user" .Actor}} {{(event .).Text}} {{template "time" .CreatedAt}}
+	</div>
+</div>
+{{end}}

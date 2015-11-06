@@ -1,0 +1,34 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		<div style="background-color: lightgray;">content</div>
+		{{template "new-comment" .}}
+		<div style="background-color: lightgray;">content</div>
+	</body>
+</html>
+
+{{define "new-comment"}}
+<div style="display: flex;" class="list-entry">
+	<div>
+		<a href="{{.CurrentUser.HTMLURL}}" target="_blank" tabindex=-1>
+			<img class="comment-avatar" width="48" height="48" src="{{.CurrentUser.AvatarURL}}">
+		</a>
+	</div>
+	<div class="list-entry-border" style="flex-grow: 1;">
+		<div class="list-entry-header tabs" style="display: flex;">
+			<span style="flex-grow: 1; font-size: 14px;">
+				<a id="write-tab-link" class="black tab-link active" tabindex=-1 href="javascript:SwitchWriteTab();">Write</a>
+				<a id="preview-tab-link" class="black tab-link" tabindex=-1 href="javascript:MarkdownPreview();">Preview</a>
+			</span>
+			<span class="gray"><span style="margin-right: 6px;" class="octicon octicon-markdown"></span>Markdown supported</span>
+		</div>
+		<div class="list-entry-body">
+			<textarea id="comment-editor" placeholder="Leave a comment" tabindex=1></textarea>
+			<div id="comment-preview" class="markdown-body" style="padding: 10px; min-height: 120px; border-bottom: 1px solid #eee; display: none;"></div>
+			<div style="text-align: right; margin-top: 10px;">{{template "toggle-button" (print .Issue.State)}}<button class="btn btn-success btn-small" onclick="PostComment();" tabindex=2>Comment</button></div>
+		</div>
+	</div>
+</div>
+{{end}}
