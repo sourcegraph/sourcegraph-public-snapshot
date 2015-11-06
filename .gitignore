@@ -57,6 +57,7 @@ Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 eb-bundle.zip
 
 *_vfsdata.go
+!/Godeps/**/*_vfsdata.go
 
 /release/
 
