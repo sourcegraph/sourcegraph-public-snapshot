@@ -99,7 +99,7 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "4bf6d2fbdef2be37a2c72851a4fd87b7f1e3e79c"
+			"Rev": "4ebe9fc43840fefb355b61300580e34130d99f6e"
 		},
 		{
 			"ImportPath": "github.com/gengo/grpc-gateway/internal",
@@ -590,8 +590,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
-			"Comment": "v1-297-gd1037be",
-			"Rev": "d1037bebce4e2ddb6d7396910b5a86ee6e4dc973"
+			"Comment": "v1-299-g7c86b1b",
+			"Rev": "7c86b1bed79b1dd42ee6650b6789776c40f78e12"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/routevar",
@@ -607,7 +607,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
-			"Rev": "e70a5777eb6faea64984b5a075164356400e09b3"
+			"Rev": "b630356529fbb3e090b19ec4424009c4e2a1c932"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
@@ -627,7 +627,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/rwvfs",
-			"Rev": "530b5049ed637054f4a17cb28b5d9c7f05ba2608"
+			"Rev": "08d8bb227da7544d3d7ab7e40225e72d5505c6f3"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/s3vfs",
@@ -635,8 +635,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-188-gce3eebf",
-			"Rev": "ce3eebf93cf767a539022ae9b9a0325ebe649780"
+			"Comment": "v0.5-c-192-g830cae9",
+			"Rev": "830cae976b9a7f8b5b09f0380e938fcdef1b61b4"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -681,11 +681,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/git",
-			"Rev": "57f0e652c3f8a6533b7918df2e9f03e657c8c087"
+			"Rev": "e0362be9d89e905bb193d36f21f186d576fe5d84"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/vcsclient",
-			"Rev": "57f0e652c3f8a6533b7918df2e9f03e657c8c087"
+			"Rev": "e0362be9d89e905bb193d36f21f186d576fe5d84"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",

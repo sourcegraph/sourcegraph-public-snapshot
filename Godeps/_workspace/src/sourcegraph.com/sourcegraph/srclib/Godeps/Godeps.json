@@ -28,7 +28,7 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "4bf6d2fbdef2be37a2c72851a4fd87b7f1e3e79c"
+			"Rev": "4ebe9fc43840fefb355b61300580e34130d99f6e"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
