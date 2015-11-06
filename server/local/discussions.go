@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"sort"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -27,7 +30,12 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 	}
 	defer noCache(ctx)
 
-	err := store.DiscussionsFromContext(ctx).Create(ctx, in)
+	discussionsStore := store.DiscussionsFromContextOrNil(ctx)
+	if discussionsStore == nil {
+		return nil, grpc.Errorf(codes.Unavailable, "no discussions store in context")
+	}
+
+	err := discussionsStore.Create(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +66,19 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 }
 
 func (s *discussions) Get(ctx context.Context, in *sourcegraph.DiscussionSpec) (*sourcegraph.Discussion, error) {
-	return store.DiscussionsFromContext(ctx).Get(ctx, in.Repo, in.ID)
+	discussionsStore := store.DiscussionsFromContextOrNil(ctx)
+	if discussionsStore == nil {
+		return nil, grpc.Errorf(codes.Unavailable, "no discussions store in context")
+	}
+	return discussionsStore.Get(ctx, in.Repo, in.ID)
 }
 
 func (s *discussions) List(ctx context.Context, in *sourcegraph.DiscussionListOp) (*sourcegraph.DiscussionList, error) {
-	list, err := store.DiscussionsFromContext(ctx).List(ctx, in)
+	discussionsStore := store.DiscussionsFromContextOrNil(ctx)
+	if discussionsStore == nil {
+		return nil, grpc.Errorf(codes.Unavailable, "no discussions store in context")
+	}
+	list, err := discussionsStore.List(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +100,12 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 	}
 	defer noCache(ctx)
 
-	err := store.DiscussionsFromContext(ctx).CreateComment(ctx, in.DiscussionID, in.Comment)
+	discussionsStore := store.DiscussionsFromContextOrNil(ctx)
+	if discussionsStore == nil {
+		return nil, grpc.Errorf(codes.Unavailable, "no discussions store in context")
+	}
+
+	err := discussionsStore.CreateComment(ctx, in.DiscussionID, in.Comment)
 	if err != nil {
 		return nil, err
 	}
