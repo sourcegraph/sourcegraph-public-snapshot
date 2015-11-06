@@ -21,8 +21,10 @@ type Worker struct {
 	Buffer   []*sourcegraph.UserEvent
 	Position int
 
-	Channel chan *sourcegraph.UserEvent
-	RootCtx context.Context
+	Channel       chan *sourcegraph.UserEvent
+	Ctx           context.Context
+	RootCtx       context.Context
+	RootAvailable bool
 }
 
 func (w *Worker) Work() {
@@ -45,20 +47,49 @@ func (w *Worker) Work() {
 	}
 }
 
+// LocateRootInstance discovers the root instance's gRPC endpoint.
+func (w *Worker) LocateRootInstance() error {
+	if fed.Config.IsRoot {
+		return fmt.Errorf("cannot locate root as a root instance")
+	}
+	mothership, err := fed.Config.RootGRPCEndpoint()
+	if err != nil {
+		return err
+	}
+	w.RootCtx = sourcegraph.WithGRPCEndpoint(w.Ctx, mothership)
+	w.RootAvailable = true
+	return nil
+}
+
+// Flush pushes the local event buffer upstream from client instances
+// or forwards to EventForwarder from root instances.
+// If Flush fails, the event buffer is not modified. Repeatedly failing
+// to flush events will fill the local buffer and eventually newer events
+// will start getting discarded.
 func (w *Worker) Flush() {
 	if w.Position == 0 {
 		return
 	}
 	eventList := &sourcegraph.UserEventList{Events: w.Buffer[:w.Position]}
 	if fed.Config.IsRoot {
-		ForwardEvents(w.RootCtx, eventList)
+		ForwardEvents(w.Ctx, eventList)
 	} else {
+		if !w.RootAvailable {
+			if err := w.LocateRootInstance(); err != nil {
+				log15.Error("EventLogger flush failed to locate root instance", "error", err)
+				return
+			}
+		}
 		cl := sourcegraph.NewClientFromContext(w.RootCtx)
 		_, err := cl.GraphUplink.PushEvents(w.RootCtx, eventList)
 		if err != nil {
 			log15.Error("GraphUplink.PushEvents failed", "error", err)
+			// Force the connection to root to be re-established on the next flush.
+			w.RootAvailable = false
+			return
 		}
 	}
+	// Flush successful
 	w.Position = 0
 }
 
@@ -141,16 +172,6 @@ var ActiveLogger *Logger
 // maximum number of buffered events after which the worker will flush the buffer upstream to
 // the federation root via graph uplink.
 func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
-	rootCtx := ctx
-	if !fed.Config.IsRoot {
-		mothership, err := fed.Config.RootGRPCEndpoint()
-		if err != nil {
-			log15.Error("EventLogger could not identify the mothership", "error", err)
-			return
-		}
-		rootCtx = sourcegraph.WithGRPCEndpoint(ctx, mothership)
-	}
-
 	ActiveLogger = &Logger{
 		Channel: make(chan *sourcegraph.UserEvent, channelCapacity),
 	}
@@ -158,12 +179,12 @@ func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int
 	ActiveLogger.Worker = &Worker{
 		Buffer:  make([]*sourcegraph.UserEvent, workerBufferSize),
 		Channel: ActiveLogger.Channel,
-		RootCtx: rootCtx,
+		Ctx:     ctx,
 	}
 
 	go ActiveLogger.Worker.Work()
 
-	go ActiveLogger.Uploader(rootCtx, flushInterval)
+	go ActiveLogger.Uploader(ctx, flushInterval)
 
 	log15.Debug("EventLogger initialized")
 }
@@ -174,6 +195,10 @@ func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
 	if ActiveLogger != nil {
 		if event.UID == 0 {
 			event.UID = int32(authpkg.ActorFromContext(ctx).UID)
+		}
+
+		if event.ClientID == "" {
+			event.ClientID = authpkg.ActorFromContext(ctx).ClientID
 		}
 
 		if event.CreatedAt == nil {
@@ -199,20 +224,22 @@ func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
 //      installation.
 //
 // The flag data must be sanitized of secrets before passing in to this function.
-func LogConfig(ctx context.Context, flagsSafe string) {
+func LogConfig(ctx context.Context, clientID, flagsSafe string) {
 	if ActiveLogger != nil {
 		LogEvent(ctx, &sourcegraph.UserEvent{
-			Type:    "notif",
-			Service: "config",
-			Method:  "buildvars",
-			Message: fmt.Sprintf("%+v", buildvar.All),
+			Type:     "notif",
+			ClientID: clientID,
+			Service:  "config",
+			Method:   "buildvars",
+			Message:  fmt.Sprintf("%+v", buildvar.All),
 		})
 
 		LogEvent(ctx, &sourcegraph.UserEvent{
-			Type:    "notif",
-			Service: "config",
-			Method:  "flags",
-			Message: flagsSafe,
+			Type:     "notif",
+			ClientID: clientID,
+			Service:  "config",
+			Method:   "flags",
+			Message:  flagsSafe,
 		})
 
 		env := env.GetWhitelistedEnvironment()
@@ -220,10 +247,11 @@ func LogConfig(ctx context.Context, flagsSafe string) {
 		env = append(env, "GOARCH="+runtime.GOARCH)
 
 		LogEvent(ctx, &sourcegraph.UserEvent{
-			Type:    "notif",
-			Service: "config",
-			Method:  "env",
-			Message: fmt.Sprintf("%+v", env),
+			Type:     "notif",
+			ClientID: clientID,
+			Service:  "config",
+			Method:   "env",
+			Message:  fmt.Sprintf("%+v", env),
 		})
 	}
 }

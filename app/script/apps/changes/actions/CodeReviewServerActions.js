@@ -104,7 +104,7 @@ module.exports.receivedPopupFailed = function() {
 module.exports.receivedExample = function(data) {
 	AppDispatcher.handleServerAction({
 		type: globals.Actions.CR_RECEIVED_EXAMPLE,
-		data: data.data,
+		data: data.example,
 		page: data.page,
 	});
 };
@@ -139,6 +139,10 @@ module.exports.submitReviewSuccess = function(data) {
  */
 module.exports.submitReviewFail = function(err) {
 	notify.error("failed to submit review");
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_SUBMIT_REVIEW_FAIL,
+		data: err,
+	});
 };
 
 module.exports.statusUpdated = function(data) {

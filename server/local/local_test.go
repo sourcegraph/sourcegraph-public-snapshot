@@ -30,6 +30,7 @@ type mockServers struct {
 	Auth         mock.AuthServer
 	Builds       mock.BuildsServer
 	Changesets   mock.ChangesetsServer
+	Storage      mock.StorageServer
 	Defs         mock.DefsServer
 	Deltas       mock.DeltasServer
 	GitTransport gitmock.GitTransportServer

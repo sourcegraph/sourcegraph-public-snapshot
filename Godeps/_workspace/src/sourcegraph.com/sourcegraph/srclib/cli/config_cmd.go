@@ -240,6 +240,15 @@ WORKDIR /src
 			return err
 		}
 
+		// HACK: make the files writable by the docker user
+		//
+		// It is suspected that this is needed due to some older docker versions. We
+		// should investigate why it is needed for building e.g. the github.com/golang/go
+		// repository and remove this hack when possible.
+		if err := exec.Command("chmod", "-R", "777", dir).Run(); err != nil {
+			return fmt.Errorf("chmod -R 777 dir failed: %s", err)
+		}
+
 		for _, cmdStr := range cmds {
 			cmd := exec.Command("docker", "run", "-v", dir+":/src", "--rm", "--entrypoint=/bin/bash", containerName)
 			cmd.Args = append(cmd.Args, "-c", cmdStr)

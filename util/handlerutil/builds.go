@@ -27,6 +27,11 @@ type GetRepoBuildCommonOpt struct {
 	// revision must be built" interstitial for revisions that lack a
 	// successful build.
 	AllowUnbuilt bool
+
+	// Inexact is whether or not to force inexact latest-built-commits. I.e.
+	// whether or not GetRepoBuildCommon will return "the last successfully built
+	// commit" (true) instead of "exactly the last commit, no exceptions" (false).
+	Inexact bool
 }
 
 // AllowBrowsingUnbuiltRepo is whether GetRepoBuildCommon should apply
@@ -54,6 +59,9 @@ func GetRepoBuildCommon(r *http.Request, rc *RepoCommon, vc *RepoRevCommon, opts
 	isAbsoluteCommitID := len(vc.RepoRevSpec.Rev) == 40
 	isDefaultBranch := vc.RepoRevSpec.Rev == rc.Repo.DefaultBranch
 	isExact := !appconf.Flags.ShowLatestBuiltCommit || isAbsoluteCommitID || !isDefaultBranch
+	if opts.Inexact {
+		isExact = false
+	}
 
 	bc.RepoBuildInfo, err = apiclient.Builds.GetRepoBuildInfo(httpctx.FromRequest(r), &sourcegraph.BuildsGetRepoBuildInfoOp{
 		Repo: vc.RepoRevSpec,

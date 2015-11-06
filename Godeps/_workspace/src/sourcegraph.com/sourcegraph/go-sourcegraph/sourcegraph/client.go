@@ -2,7 +2,7 @@ package sourcegraph
 
 import (
 	"google.golang.org/grpc"
-	"sourcegraph.com/sqs/grpccache"
+	"sourcegraph.com/sourcegraph/grpccache"
 )
 
 // A Client communicates with the Sourcegraph API. All communication
@@ -20,6 +20,7 @@ type Client struct {
 	Meta                MetaClient
 	MirrorRepos         MirrorReposClient
 	MirroredRepoSSHKeys MirroredRepoSSHKeysClient
+	Notify              NotifyClient
 	Orgs                OrgsClient
 	People              PeopleClient
 	RegisteredClients   RegisteredClientsClient
@@ -27,10 +28,12 @@ type Client struct {
 	RepoStatuses        RepoStatusesClient
 	RepoTree            RepoTreeClient
 	Repos               ReposClient
+	Storage             StorageClient
 	Changesets          ChangesetsClient
 	Search              SearchClient
 	Units               UnitsClient
 	Users               UsersClient
+	UserKeys            UserKeysClient
 
 	// gRPC client connection used to communicate with the Sourcegraph
 	// API.
@@ -57,6 +60,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Meta = &CachedMetaClient{NewMetaClient(conn), Cache}
 	c.MirrorRepos = &CachedMirrorReposClient{NewMirrorReposClient(conn), Cache}
 	c.MirroredRepoSSHKeys = &CachedMirroredRepoSSHKeysClient{NewMirroredRepoSSHKeysClient(conn), Cache}
+	c.Notify = &CachedNotifyClient{NewNotifyClient(conn), Cache}
 	c.Orgs = &CachedOrgsClient{NewOrgsClient(conn), Cache}
 	c.People = &CachedPeopleClient{NewPeopleClient(conn), Cache}
 	c.RegisteredClients = &CachedRegisteredClientsClient{NewRegisteredClientsClient(conn), Cache}
@@ -64,10 +68,12 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.RepoStatuses = &CachedRepoStatusesClient{NewRepoStatusesClient(conn), Cache}
 	c.RepoTree = &CachedRepoTreeClient{NewRepoTreeClient(conn), Cache}
 	c.Repos = &CachedReposClient{NewReposClient(conn), Cache}
+	c.Storage = &CachedStorageClient{NewStorageClient(conn), Cache}
 	c.Changesets = &CachedChangesetsClient{NewChangesetsClient(conn), Cache}
 	c.Search = &CachedSearchClient{NewSearchClient(conn), Cache}
 	c.Units = &CachedUnitsClient{NewUnitsClient(conn), Cache}
 	c.Users = &CachedUsersClient{NewUsersClient(conn), Cache}
+	c.UserKeys = &CachedUserKeysClient{NewUserKeysClient(conn), Cache}
 
 	return c
 }

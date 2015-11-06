@@ -1,0 +1,1 @@
+@font-face{font-family:'ptsans';src:url('i-font_face_ptsans.woff'),url('i-font_face_ptsans.ttf')}.i-font_face_ptsans{font-family:'ptsans'}

@@ -77,6 +77,24 @@ func (s *Directory) GetUserByEmail(ctx context.Context, email string) (*sourcegr
 
 var _ store.Directory = (*Directory)(nil)
 
+type UserKeys struct {
+	AddKey_     func(ctx context.Context, uid int32, key sourcegraph.SSHPublicKey) error
+	LookupUser_ func(ctx context.Context, key sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
+	DeleteKey_  func(ctx context.Context, uid int32) error
+}
+
+func (s *UserKeys) AddKey(ctx context.Context, uid int32, key sourcegraph.SSHPublicKey) error {
+	return s.AddKey_(ctx, uid, key)
+}
+
+func (s *UserKeys) LookupUser(ctx context.Context, key sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
+	return s.LookupUser_(ctx, key)
+}
+
+func (s *UserKeys) DeleteKey(ctx context.Context, uid int32) error { return s.DeleteKey_(ctx, uid) }
+
+var _ store.UserKeys = (*UserKeys)(nil)
+
 type ExternalAuthTokens struct {
 	GetUserToken_ func(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error)
 	SetUserToken_ func(ctx context.Context, tok *auth.ExternalAuthToken) error

@@ -1,0 +1,1 @@
+@media (min-width:768px) and (max-width:991px){html{color:#000}}@media screen and (min-width:768px){html{color:red}}@media all and (min-width:50px) and (max-width:100px){html{color:green}}@media screen{html{color:gray}}

@@ -1,8 +1,0 @@
-default: sample1/x0 sample1/x1 sample1/y0
-
-sample1/x0: sample1/y0 sample1/y1 sample1/x1
-sample1/x1: sample1/y0 sample1/y1
-
-sample1/y0: sample1/y1
-	echo hello bar > sample1/y0
-

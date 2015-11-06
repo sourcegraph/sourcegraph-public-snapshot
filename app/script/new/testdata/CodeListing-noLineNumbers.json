@@ -1,0 +1,25 @@
+{
+	"renderOutput": {
+		"type": "table",
+		"ref": "table",
+		"props": {
+			"className": "line-numbered-code",
+			"children": [
+				{
+					"type": "tbody",
+					"props": {
+						"children": [
+							{
+								"type": "CodeLineView",
+								"key": "0",
+								"props": {
+									"tokens": []
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

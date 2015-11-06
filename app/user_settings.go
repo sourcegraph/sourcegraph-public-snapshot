@@ -17,6 +17,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/ext/github"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -36,6 +37,8 @@ type privateRemoteRepo struct {
 }
 
 type gitHubIntegrationData struct {
+	URL                string
+	Host               string
 	PrivateRemoteRepos []*privateRemoteRepo
 	TokenIsPresent     bool
 	TokenIsValid       bool
@@ -138,7 +141,10 @@ func userSettingsMeRedirect(w http.ResponseWriter, r *http.Request, u *sourcegra
 }
 
 func userGitHubIntegrationData(ctx context.Context, apiclient *sourcegraph.Client) (*gitHubIntegrationData, error) {
-	gd := &gitHubIntegrationData{}
+	gd := &gitHubIntegrationData{
+		URL:  githubcli.Config.URL(),
+		Host: githubcli.Config.Host() + "/",
+	}
 	ghRepos := &github.Repos{}
 	// TODO(perf) Cache this response or perform the fetch after page load to avoid
 	// having to wait for an http round trip to github.com.
@@ -315,7 +321,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 	case "github":
 		token := r.PostFormValue("Token")
 		tokenStore := ext.AccessTokens{}
-		err := tokenStore.Set(ctx, ext.GitHubService, token)
+		err := tokenStore.Set(ctx, githubcli.Config.Host(), token)
 		if err != nil {
 			return err
 		}
@@ -337,19 +343,15 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 
 		var credentials *sourcegraph.VCSCredentials
 
-		switch host := util.RepoURIHost(repoURI); host {
-		case "github.com":
-			tokenStore := ext.AccessTokens{}
-			token, err := tokenStore.Get(ctx, ext.GitHubService)
-			if err != nil {
-				return err
-			}
+		host := util.RepoURIHost(repoURI)
+		tokenStore := ext.AccessTokens{}
+		token, err := tokenStore.Get(ctx, host)
+		if err != nil {
+			return fmt.Errorf("could not fetch credentials for host %q: %v", host, err)
+		}
 
-			credentials = &sourcegraph.VCSCredentials{
-				Pass: token,
-			}
-		default:
-			return fmt.Errorf("no credentials available for host: %q", host)
+		credentials = &sourcegraph.VCSCredentials{
+			Pass: token,
 		}
 
 		// Perform the following operations locally (non-federated) because it's a private repo and credentials are set.

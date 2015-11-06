@@ -1,0 +1,12 @@
+{
+	"renderOutput": {
+		"type": "CodeFileContainer",
+		"props": {
+			"repo": "github.com/gorilla/mux",
+			"rev": "master",
+			"tree": "mux.go",
+			"startLine": 40,
+			"endLine": 53
+		}
+	}
+}

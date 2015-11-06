@@ -1,0 +1,118 @@
+{
+	"renderOutput": {
+		"type": "tr",
+		"props": {
+			"className": "line",
+			"children": [
+				{
+					"type": "td",
+					"props": {
+						"className": "line-content",
+						"children": [
+							{
+								"type": "span",
+								"key": "0",
+								"props": {
+									"className": "",
+									"children": [
+										"foo"
+									]
+								}
+							},
+							{
+								"type": "span",
+								"key": "1",
+								"props": {
+									"className": "b",
+									"children": [
+										"bar"
+									]
+								}
+							},
+							{
+								"type": "span",
+								"key": "2",
+								"props": {
+									"className": "c",
+									"children": [
+										"baz"
+									]
+								}
+							},
+							{
+								"type": "a",
+								"key": "3",
+								"props": {
+									"className": "d ref highlight-primary",
+									"href": "someURL",
+									"onMouseOver": {
+										"dispatched": [
+											{
+												"$constructor": "HighlightDef",
+												"url": "someURL"
+											}
+										]
+									},
+									"onMouseOut": {
+										"dispatched": [
+											{
+												"$constructor": "HighlightDef"
+											}
+										]
+									},
+									"onClick": {
+										"defaultPrevented": true,
+										"dispatched": [
+											{
+												"$constructor": "SelectDef",
+												"url": "someURL"
+											}
+										]
+									},
+									"children": [
+										"ref"
+									]
+								}
+							},
+							{
+								"type": "a",
+								"key": "4",
+								"props": {
+									"className": "e ref def highlight-secondary",
+									"href": "otherURL",
+									"onMouseOver": {
+										"dispatched": [
+											{
+												"$constructor": "HighlightDef",
+												"url": "otherURL"
+											}
+										]
+									},
+									"onMouseOut": {
+										"dispatched": [
+											{
+												"$constructor": "HighlightDef"
+											}
+										]
+									},
+									"onClick": {
+										"defaultPrevented": true,
+										"dispatched": [
+											{
+												"$constructor": "SelectDef",
+												"url": "otherURL"
+											}
+										]
+									},
+									"children": [
+										"def"
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

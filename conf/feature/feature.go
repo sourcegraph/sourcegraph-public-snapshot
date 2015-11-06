@@ -16,6 +16,7 @@ var Features = struct {
 	SearchNext  bool
 }{
 	Discussions: true,
+	SearchNext:  true,
 }
 
 func init() {

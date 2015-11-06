@@ -1,6 +1,7 @@
 package local
 
 import (
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"math"
@@ -70,16 +71,15 @@ func (s *auth) GetAuthorizationCode(ctx context.Context, op *sourcegraph.Authori
 }
 
 func (s *auth) GetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
-	switch {
-	case op.AuthorizationCode != nil:
-		return s.exchangeCodeForAccessToken(ctx, op.AuthorizationCode)
-	case op.ResourceOwnerPassword != nil:
-		return s.authenticateLogin(ctx, op.ResourceOwnerPassword)
-	case op.BearerJWT != nil:
-		return s.authenticateBearerJWT(ctx, op.BearerJWT)
+	if authCode := op.GetAuthorizationCode(); authCode != nil {
+		return s.exchangeCodeForAccessToken(ctx, authCode)
+	} else if resOwnerPassword := op.GetResourceOwnerPassword(); resOwnerPassword != nil {
+		return s.authenticateLogin(ctx, resOwnerPassword)
+	} else if bearerJWT := op.GetBearerJWT(); bearerJWT != nil {
+		return s.authenticateBearerJWT(ctx, bearerJWT)
+	} else {
+		return nil, grpc.Errorf(codes.Unauthenticated, "no supported auth credentials provided")
 	}
-
-	return nil, grpc.Errorf(codes.Unauthenticated, "no supported auth credentials provided")
 }
 
 func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph.AuthorizationCode) (*sourcegraph.AccessTokenResponse, error) {
@@ -196,7 +196,7 @@ func (s *auth) authenticateBearerJWT(ctx context.Context, rawTok *sourcegraph.Be
 	// https://tools.ietf.org/html/draft-ietf-oauth-jwt-bearer-12#section-3.
 	aud, _ := tok.Claims["aud"].(string)
 	tokURL := conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.OAuth2ServerToken))
-	if aud != tokURL.String() {
+	if subtle.ConstantTimeCompare([]byte(aud), []byte(tokURL.String())) != 1 {
 		return nil, grpc.Errorf(codes.PermissionDenied, "bearer JWT aud claim mismatch (JWT %q, server %q)", aud, tokURL)
 	}
 

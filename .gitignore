@@ -40,8 +40,19 @@ Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 
 .tmp/*.jar
 
+/app/artifacts
 /app/node_modules/node-sass/vendor
 /app/.sass-cache
+/app/assets/_goTemplates.js
+/app/assets/analytics.js
+/app/assets/bundle.js
+/app/assets/bundle.css
+/app/assets/sourcebox.js
+/app/assets/sourcebox.css
+/app/assets/test.js
+/app/assets/*.html
+/app/assets/*.map
+*.json.actual
 
 eb-bundle.zip
 
@@ -52,4 +63,8 @@ eb-bundle.zip
 /conf/private
 
 /provision/kubernetes/gen
-/docker/src
+/deploy/sourcegraph.com/src
+
+# Sublime
+*.sublime-project
+*.sublime-workspace

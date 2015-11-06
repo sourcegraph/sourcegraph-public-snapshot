@@ -69,3 +69,25 @@ textarea.code {
 	-ms-user-select: none;
 	user-select: none;
 }
+
+.alert-info {
+	a {
+		// Blue links are difficult to see on a blue background.
+		// Make links stand out more by underlining.
+		text-decoration: underline;
+	}
+}
+
+blockquote {
+	margin-bottom: ($line-height-computed / 2);
+}
+
+.btn-cancel {
+	@include button-variant($btn-default-color, $gray-lightest, darken($gray-lightest, 8));
+}
+
+.actions {
+	.btn:nth-child(n+2) {
+		margin-left: 5px;
+	}
+}

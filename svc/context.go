@@ -36,6 +36,7 @@ const (
 	_MetaKey                contextKey = iota
 	_MirrorReposKey         contextKey = iota
 	_MirroredRepoSSHKeysKey contextKey = iota
+	_NotifyKey              contextKey = iota
 	_OrgsKey                contextKey = iota
 	_PeopleKey              contextKey = iota
 	_RegisteredClientsKey   contextKey = iota
@@ -44,7 +45,9 @@ const (
 	_RepoTreeKey            contextKey = iota
 	_ReposKey               contextKey = iota
 	_SearchKey              contextKey = iota
+	_StorageKey             contextKey = iota
 	_UnitsKey               contextKey = iota
+	_UserKeysKey            contextKey = iota
 	_UsersKey               contextKey = iota
 )
 
@@ -64,6 +67,7 @@ type Services struct {
 	Meta                sourcegraph.MetaServer
 	MirrorRepos         sourcegraph.MirrorReposServer
 	MirroredRepoSSHKeys sourcegraph.MirroredRepoSSHKeysServer
+	Notify              sourcegraph.NotifyServer
 	Orgs                sourcegraph.OrgsServer
 	People              sourcegraph.PeopleServer
 	RegisteredClients   sourcegraph.RegisteredClientsServer
@@ -72,7 +76,9 @@ type Services struct {
 	RepoTree            sourcegraph.RepoTreeServer
 	Repos               sourcegraph.ReposServer
 	Search              sourcegraph.SearchServer
+	Storage             sourcegraph.StorageServer
 	Units               sourcegraph.UnitsServer
+	UserKeys            sourcegraph.UserKeysServer
 	Users               sourcegraph.UsersServer
 }
 
@@ -135,6 +141,10 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 		sourcegraph.RegisterMirroredRepoSSHKeysServer(s, svcs.MirroredRepoSSHKeys)
 	}
 
+	if svcs.Notify != nil {
+		sourcegraph.RegisterNotifyServer(s, svcs.Notify)
+	}
+
 	if svcs.Orgs != nil {
 		sourcegraph.RegisterOrgsServer(s, svcs.Orgs)
 	}
@@ -167,8 +177,16 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 		sourcegraph.RegisterSearchServer(s, svcs.Search)
 	}
 
+	if svcs.Storage != nil {
+		sourcegraph.RegisterStorageServer(s, svcs.Storage)
+	}
+
 	if svcs.Units != nil {
 		sourcegraph.RegisterUnitsServer(s, svcs.Units)
+	}
+
+	if svcs.UserKeys != nil {
+		sourcegraph.RegisterUserKeysServer(s, svcs.UserKeys)
 	}
 
 	if svcs.Users != nil {
@@ -236,6 +254,10 @@ func WithServices(ctx context.Context, s Services) context.Context {
 		ctx = WithMirroredRepoSSHKeys(ctx, s.MirroredRepoSSHKeys)
 	}
 
+	if s.Notify != nil {
+		ctx = WithNotify(ctx, s.Notify)
+	}
+
 	if s.Orgs != nil {
 		ctx = WithOrgs(ctx, s.Orgs)
 	}
@@ -268,8 +290,16 @@ func WithServices(ctx context.Context, s Services) context.Context {
 		ctx = WithSearch(ctx, s.Search)
 	}
 
+	if s.Storage != nil {
+		ctx = WithStorage(ctx, s.Storage)
+	}
+
 	if s.Units != nil {
 		ctx = WithUnits(ctx, s.Units)
+	}
+
+	if s.UserKeys != nil {
+		ctx = WithUserKeys(ctx, s.UserKeys)
 	}
 
 	if s.Users != nil {
@@ -601,6 +631,29 @@ func MirroredRepoSSHKeysOrNil(ctx context.Context) sourcegraph.MirroredRepoSSHKe
 	return nil
 }
 
+// WithNotify returns a copy of parent that uses the given Notify service.
+func WithNotify(ctx context.Context, s sourcegraph.NotifyServer) context.Context {
+	return context.WithValue(ctx, _NotifyKey, s)
+}
+
+// Notify gets the context's Notify service. If the service is not present, it panics.
+func Notify(ctx context.Context) sourcegraph.NotifyServer {
+	s, ok := ctx.Value(_NotifyKey).(sourcegraph.NotifyServer)
+	if !ok || s == nil {
+		panic("no Notify set in context")
+	}
+	return s
+}
+
+// NotifyOrNil returns the context's Notify service if present, or else nil.
+func NotifyOrNil(ctx context.Context) sourcegraph.NotifyServer {
+	s, ok := ctx.Value(_NotifyKey).(sourcegraph.NotifyServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
 // WithOrgs returns a copy of parent that uses the given Orgs service.
 func WithOrgs(ctx context.Context, s sourcegraph.OrgsServer) context.Context {
 	return context.WithValue(ctx, _OrgsKey, s)
@@ -785,6 +838,29 @@ func SearchOrNil(ctx context.Context) sourcegraph.SearchServer {
 	return nil
 }
 
+// WithStorage returns a copy of parent that uses the given Storage service.
+func WithStorage(ctx context.Context, s sourcegraph.StorageServer) context.Context {
+	return context.WithValue(ctx, _StorageKey, s)
+}
+
+// Storage gets the context's Storage service. If the service is not present, it panics.
+func Storage(ctx context.Context) sourcegraph.StorageServer {
+	s, ok := ctx.Value(_StorageKey).(sourcegraph.StorageServer)
+	if !ok || s == nil {
+		panic("no Storage set in context")
+	}
+	return s
+}
+
+// StorageOrNil returns the context's Storage service if present, or else nil.
+func StorageOrNil(ctx context.Context) sourcegraph.StorageServer {
+	s, ok := ctx.Value(_StorageKey).(sourcegraph.StorageServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
 // WithUnits returns a copy of parent that uses the given Units service.
 func WithUnits(ctx context.Context, s sourcegraph.UnitsServer) context.Context {
 	return context.WithValue(ctx, _UnitsKey, s)
@@ -802,6 +878,29 @@ func Units(ctx context.Context) sourcegraph.UnitsServer {
 // UnitsOrNil returns the context's Units service if present, or else nil.
 func UnitsOrNil(ctx context.Context) sourcegraph.UnitsServer {
 	s, ok := ctx.Value(_UnitsKey).(sourcegraph.UnitsServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithUserKeys returns a copy of parent that uses the given UserKeys service.
+func WithUserKeys(ctx context.Context, s sourcegraph.UserKeysServer) context.Context {
+	return context.WithValue(ctx, _UserKeysKey, s)
+}
+
+// UserKeys gets the context's UserKeys service. If the service is not present, it panics.
+func UserKeys(ctx context.Context) sourcegraph.UserKeysServer {
+	s, ok := ctx.Value(_UserKeysKey).(sourcegraph.UserKeysServer)
+	if !ok || s == nil {
+		panic("no UserKeys set in context")
+	}
+	return s
+}
+
+// UserKeysOrNil returns the context's UserKeys service if present, or else nil.
+func UserKeysOrNil(ctx context.Context) sourcegraph.UserKeysServer {
+	s, ok := ctx.Value(_UserKeysKey).(sourcegraph.UserKeysServer)
 	if ok {
 		return s
 	}

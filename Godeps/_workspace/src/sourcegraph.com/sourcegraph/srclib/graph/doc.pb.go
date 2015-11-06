@@ -5,11 +5,15 @@
 package graph
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto/gogo.pb"
+// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // Doc is documentation on a Def.
 type Doc struct {
@@ -18,20 +22,17 @@ type Doc struct {
 	// Format is the the MIME-type that the documentation is stored
 	// in. Valid formats include 'text/html', 'text/plain',
 	// 'text/x-markdown', text/x-rst'.
-	Format string `protobuf:"bytes,2,opt,name=format,proto3" `
+	Format string `protobuf:"bytes,2,opt,name=format,proto3" json:"Format"`
 	// Data is the actual documentation text.
-	Data string `protobuf:"bytes,3,opt,name=data,proto3" `
+	Data string `protobuf:"bytes,3,opt,name=data,proto3" json:"Data"`
 	// File is the filename where this Doc exists.
-	File string `protobuf:"bytes,4,opt,name=file,proto3" json:",omitempty"`
+	File string `protobuf:"bytes,4,opt,name=file,proto3" json:"File,omitempty"`
 	// Start is the byte offset of this Doc's first byte in File.
-	Start uint32 `protobuf:"varint,5,opt,name=start,proto3" json:",omitempty"`
+	Start uint32 `protobuf:"varint,5,opt,name=start,proto3" json:"Start,omitempty"`
 	// End is the byte offset of this Doc's last byte in File.
-	End uint32 `protobuf:"varint,6,opt,name=end,proto3" json:",omitempty"`
+	End uint32 `protobuf:"varint,6,opt,name=end,proto3" json:"End,omitempty"`
 }
 
 func (m *Doc) Reset()         { *m = Doc{} }
 func (m *Doc) String() string { return proto.CompactTextString(m) }
 func (*Doc) ProtoMessage()    {}
-
-func init() {
-}

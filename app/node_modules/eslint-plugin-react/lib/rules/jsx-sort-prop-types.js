@@ -10,6 +10,7 @@
 module.exports = function(context) {
 
   var configuration = context.options[0] || {};
+  var callbacksLast = configuration.callbacksLast || false;
   var ignoreCase = configuration.ignoreCase || false;
 
   /**
@@ -39,6 +40,10 @@ module.exports = function(context) {
     return node.key.type === 'Identifier' ? node.key.name : node.key.value;
   }
 
+  function isCallbackPropName(propName) {
+    return /^on[A-Z]/.test(propName);
+  }
+
   /**
    * Checks if propTypes declarations are sorted
    * @param {Array} declarations The array of AST nodes being checked.
@@ -47,14 +52,28 @@ module.exports = function(context) {
   function checkSorted(declarations) {
     declarations.reduce(function(prev, curr) {
       var prevPropName = getKey(prev);
-      var currenPropName = getKey(curr);
+      var currentPropName = getKey(curr);
+      var previousIsCallback = isCallbackPropName(prevPropName);
+      var currentIsCallback = isCallbackPropName(currentPropName);
 
       if (ignoreCase) {
         prevPropName = prevPropName.toLowerCase();
-        currenPropName = currenPropName.toLowerCase();
+        currentPropName = currentPropName.toLowerCase();
       }
 
-      if (currenPropName < prevPropName) {
+      if (callbacksLast) {
+        if (!previousIsCallback && currentIsCallback) {
+          // Entering the callback prop section
+          return curr;
+        }
+        if (previousIsCallback && !currentIsCallback) {
+          // Encountered a non-callback prop after a callback prop
+          context.report(prev, 'Callback prop types must be listed after all other prop types');
+          return prev;
+        }
+      }
+
+      if (currentPropName < prevPropName) {
         context.report(curr, 'Prop types declarations should be sorted alphabetically');
         return prev;
       }
@@ -100,6 +119,9 @@ module.exports = function(context) {
 module.exports.schema = [{
   type: 'object',
   properties: {
+    callbacksLast: {
+      type: 'boolean'
+    },
     ignoreCase: {
       type: 'boolean'
     }

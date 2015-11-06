@@ -69,6 +69,11 @@ func (c *Config) Authenticate(ctx context.Context, label string) (err error) {
 	switch label {
 	case "Auth.GetAccessToken", "Accounts.Create", "Auth.Identify", "Meta.Config", "Accounts.RequestPasswordReset", "Accounts.ResetPassword", "RegisteredClients.GetCurrent":
 		return nil
+	case "GraphUplink.Push", "GraphUplink.PushEvents":
+		// This is for backwards compatibility with client instances that are running older versions
+		// of sourcegraph (< v0.7.22).
+		// TODO: remove this hack once clients upgrade to binaries having the new grpc-go API.
+		return nil
 	}
 
 	if c.AllowAnonymousReaders || !authutil.ActiveFlags.HasUserAccounts() {

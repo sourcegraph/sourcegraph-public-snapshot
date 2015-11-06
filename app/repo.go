@@ -23,6 +23,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -62,7 +63,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	// For private repos, supply auth.
 	if rc.Repo.Private {
 		tokenStore := ext.AccessTokens{}
-		token, err := tokenStore.Get(ctx, ext.GitHubService)
+		token, err := tokenStore.Get(ctx, util.RepoURIHost(rc.Repo.URI))
 		if err != nil {
 			return err
 		}

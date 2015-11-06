@@ -40,7 +40,7 @@ func TestRequestPasswordReset(t *testing.T) {
 	ctx, mock := testContext()
 	ctx = conf.WithAppURL(ctx, &url.URL{})
 	var called bool
-	sendEmail = func(template string, name string, email string, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
+	sendEmail = func(template string, name string, email string, subject string, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
 		called = true
 		if want := "user@example.com"; want != email {
 			t.Errorf("email address was %s, wanted %s", email, want)

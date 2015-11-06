@@ -17,8 +17,10 @@ It has these top-level messages:
 package gitpb
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto/gogo.pb"
+// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 import sourcegraph "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 import (
@@ -27,11 +29,9 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
-
-// Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 type InfoRefsOp struct {
 	Repo    sourcegraph.RepoSpec `protobuf:"bytes,1,opt,name=repo" json:"repo"`
@@ -70,8 +70,9 @@ func (m *Packet) Reset()         { *m = Packet{} }
 func (m *Packet) String() string { return proto.CompactTextString(m) }
 func (*Packet) ProtoMessage()    {}
 
-func init() {
-}
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
 
 // Client API for GitTransport service
 
@@ -128,9 +129,9 @@ func RegisterGitTransportServer(s *grpc.Server, srv GitTransportServer) {
 	s.RegisterService(&_GitTransport_serviceDesc, srv)
 }
 
-func _GitTransport_InfoRefs_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _GitTransport_InfoRefs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(InfoRefsOp)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(GitTransportServer).InfoRefs(ctx, in)
@@ -140,9 +141,9 @@ func _GitTransport_InfoRefs_Handler(srv interface{}, ctx context.Context, codec 
 	return out, nil
 }
 
-func _GitTransport_ReceivePack_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _GitTransport_ReceivePack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(ReceivePackOp)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(GitTransportServer).ReceivePack(ctx, in)
@@ -152,9 +153,9 @@ func _GitTransport_ReceivePack_Handler(srv interface{}, ctx context.Context, cod
 	return out, nil
 }
 
-func _GitTransport_UploadPack_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _GitTransport_UploadPack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(UploadPackOp)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(GitTransportServer).UploadPack(ctx, in)

@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"net/url"
 	"os"
 
 	"code.google.com/p/rog-go/parallel"
@@ -9,6 +10,7 @@ import (
 	"sync"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -20,6 +22,15 @@ import (
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	cl := sourcegraph.NewClientFromContext(ctx)
+
+	conf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	rootURL, err := url.Parse(conf.FederationRootURL)
+	if err != nil {
+		return err
+	}
 
 	var listOpts sourcegraph.ListOptions
 	if err := schemautil.Decode(&listOpts, r.URL.Query()); err != nil {
@@ -34,48 +45,47 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	var template string
 	var (
 		users   []string
 		usersMu sync.Mutex
 	)
-	if len(repos.Repos) > 0 {
-		userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
-		if err != nil && grpc.Code(err) != codes.PermissionDenied {
+	userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
+	if err != nil && grpc.Code(err) != codes.PermissionDenied && grpc.Code(err) != codes.Unauthenticated {
+		return err
+	}
+	if err == nil { // current user is admin of the instance
+		par := parallel.NewRun(10)
+		for _, perms_ := range userPerms.UserPermissions {
+			perms := perms_
+			par.Do(func() error {
+				user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
+				if err != nil {
+					return err
+				}
+				usersMu.Lock()
+				users = append(users, user.Login)
+				usersMu.Unlock()
+				return nil
+			})
+		}
+		if err := par.Wait(); err != nil {
 			return err
 		}
-		if err == nil { // current user is admin of the instance
-			par := parallel.NewRun(10)
-			for _, perms_ := range userPerms.UserPermissions {
-				perms := perms_
-				par.Do(func() error {
-					user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
-					if err != nil {
-						return err
-					}
-					usersMu.Lock()
-					users = append(users, user.Login)
-					usersMu.Unlock()
-					return nil
-				})
-			}
-			if err := par.Wait(); err != nil {
-				return err
-			}
-		}
-		template = "home/dashboard.html"
-	} else {
-		template = "home/new.html"
 	}
 
-	return tmpl.Exec(r, w, template, http.StatusOK, nil, &struct {
+	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, &struct {
 		Repos  []*sourcegraph.Repo
 		SGPath string
 		Users  []string
+
+		RootURL *url.URL
+
 		tmpl.Common
 	}{
 		Repos:  repos.Repos,
 		SGPath: os.Getenv("SGPATH"),
 		Users:  users,
+
+		RootURL: rootURL,
 	})
 }

@@ -2,7 +2,7 @@ MAKEFLAGS+=--no-print-directory
 
 .PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smtest src test clone-private libvfsgen
 
-PRIVATE_HASH := f17a73ecda4d2c7fe1bc5c9fe4555b84ce88d932
+PRIVATE_HASH := 20c37cc8476be36e51e6fc4c7fd2e261c9a41de7
 
 SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
 
@@ -68,7 +68,7 @@ serve-mothership-dev:
 	$(MAKE) serve-dev SRCFLAGS="--grpc-endpoint http://demo-mothership:13100 $(SRCFLAGS)" SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13000 --addr=:13001 --grpc-addr=:13100 --app-url http://demo-mothership:13000 --appdash.disable-server $(SERVEFLAGS)"
 
 serve-beyang-dev:
-	$(MAKE) serve-dev SERVEFLAGS="--auth.source=none --app.disable-dir-defs --local.clcache 10s --num-workers 0 $(SERVEFLAGS)"
+	$(MAKE) serve-dev SERVEFLAGS="--app.disable-apps --app.disable-dir-defs --app.disable-external-links --app.disable-repo-tree-search --app.disable-search --app.header-footer-links 0 --app.motd '' --app.no-auto-build --auth.source=none --fed.is-root --graphuplink 0 --local.clcache 10s --local.clcachesize 2000 --num-workers 0 $(SERVEFLAGS)"
 
 serve-test-ui: serve-dep
 	@echo Starting UI test server\; will recompile and restart when source files change
@@ -90,7 +90,7 @@ serve-metrics-dev:
 
 serve-dep:
 	go get sourcegraph.com/sqs/rego
-	@[ $(SGXOS) = "windows" ] || [ `ulimit -n` -ge 5000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 16384\n\nOn OS X you may need to first run\n\n  sudo launchctl limit maxfiles 16384\n" 1>&2; exit 1)
+	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 5000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 16384\n\nOn OS X you may need to first run\n\n  sudo launchctl limit maxfiles 16384\n" 1>&2; exit 1)
 	@[ $(SG_USE_WEBPACK_DEV_SERVER) = t ] && curl -Ss -o /dev/null http://localhost:8080 || (cd app && npm start &)
 
 
@@ -112,6 +112,9 @@ ${GOBIN}/go-selfupdate:
 ${GOBIN}/gen-mocks:
 	go get sourcegraph.com/sourcegraph/gen-mocks
 
+${GOBIN}/go-template-lint:
+	go get sourcegraph.com/sourcegraph/go-template-lint
+
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 	$(GODEP) go install ./sgtool
 
@@ -123,7 +126,7 @@ dist: dist-dep app-dep
 generate: generate-dep
 	./dev/go-generate-all
 
-generate-dep: ${GOBIN}/gen-mocks
+generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint
 
 db-reset: src
 	src pgsql reset
@@ -162,9 +165,9 @@ compile-test:
 
 
 check: generate-dep
-	cd app && ./node_modules/.bin/eslint script
-	cd app && ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
-	GOBIN=Godeps/_workspace/bin $(GODEP) go install sourcegraph.com/sourcegraph/go-template-lint && Godeps/_workspace/bin/go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
+	cd app && ./node_modules/.bin/eslint$(NODE_MODULE_EXE) --max-warnings=0 script
+	cd app && ./node_modules/.bin/lintspaces$(NODE_MODULE_EXE) -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
+	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines
 	bash dev/check-go-generate-all
 	bash dev/todo-security

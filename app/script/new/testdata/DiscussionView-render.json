@@ -1,0 +1,210 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "container",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "padded-form",
+						"children": [
+							{
+								"type": "header",
+								"props": {
+									"children": [
+										{
+											"type": "h1",
+											"props": {
+												"children": [
+													{
+														"type": "div",
+														"props": {
+															"className": "contents",
+															"children": [
+																"foo",
+																{
+																	"type": "a",
+																	"props": {
+																		"className": "id",
+																		"children": [
+																			" #42"
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "stats",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "octicon octicon-comment-discussion"
+														}
+													},
+													" 1"
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "subtitle",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "author",
+															"children": [
+																{
+																	"type": "a",
+																	"props": {
+																		"children": [
+																			"@me"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "span",
+														"props": {
+															"className": "date",
+															"children": [
+																" a few seconds ago"
+															]
+														}
+													},
+													{
+														"type": "span",
+														"props": {
+															"className": "subject",
+															"children": [
+																" on ",
+																{
+																	"type": "b",
+																	"props": {
+																		"className": "backtick",
+																		"dangerouslySetInnerHTML": {
+																			"__html": "someName"
+																		}
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "main",
+								"props": {
+									"className": "body",
+									"children": [
+										"bar"
+									]
+								}
+							},
+							{
+								"type": "ul",
+								"props": {
+									"className": "thread-comments",
+									"children": [
+										{
+											"type": "li",
+											"key": "1",
+											"props": {
+												"className": "thread-comment",
+												"children": [
+													{
+														"type": "div",
+														"props": {
+															"className": "signature",
+															"children": [
+																{
+																	"type": "a",
+																	"props": {
+																		"children": [
+																			"@you"
+																		]
+																	}
+																},
+																" replied ",
+																{
+																	"type": "i",
+																	"props": {
+																		"children": [
+																			"a few seconds ago"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "",
+														"props": {
+															"content": "comment"
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "add-comment",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "padder pull-left",
+									"children": [
+										{
+											"type": "",
+											"ref": "commentTextarea",
+											"props": {
+												"className": "thread-comment-add",
+												"placeholder": "",
+												"defaultValue": "",
+												"autoFocus": "false"
+											}
+										},
+										{
+											"type": "a",
+											"ref": "commentBtn",
+											"props": {
+												"id": "add-discussion-comment",
+												"className": "btn btn-sgblue pull-right",
+												"children": [
+													"Comment"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

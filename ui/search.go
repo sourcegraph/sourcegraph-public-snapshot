@@ -50,12 +50,16 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
+	buildInfo, err := apiclient.Builds.GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: opt.RepoRev})
+
 	return e.Encode(&struct {
-		Total   int32
-		Results []payloads.TokenSearchResult
+		Total     int32
+		Results   []payloads.TokenSearchResult
+		BuildInfo *sourcegraph.RepoBuildInfo
 	}{
-		Total:   defList.Total,
-		Results: results,
+		Total:     defList.Total,
+		Results:   results,
+		BuildInfo: buildInfo,
 	})
 }
 

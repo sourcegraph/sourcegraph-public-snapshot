@@ -19,7 +19,7 @@ func TestRepoBuild(t *testing.T) {
 
 	calledGet := mockRepoGet(mock, "my/repo")
 	calledGetConfig := mockEnabledRepoConfig(mock)
-	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
+	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, fakeCommitID)
 	calledBuildsGet := mock.Builds.MockGet_Return(t,
 		&sourcegraph.Build{Attempt: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
 	)

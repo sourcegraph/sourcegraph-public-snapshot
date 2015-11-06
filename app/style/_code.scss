@@ -62,7 +62,7 @@ pre code, .line-numbered-code td {
 		border: solid 1px transparent;
 		display: inline-block;
 
-		&:hover, &.highlight, &.highlight-primary, &.highlight-mainbox-primary {
+		&.highlight, &.highlight-primary, &.highlight-mainbox-primary {
 			.x {
 				background-color: $highlight-ref-bg !important;
 			}
@@ -95,9 +95,6 @@ pre code, .line-numbered-code td {
 			background-color: rgba(78, 155, 212, 0.3);
 			padding: 2px 2px 1px 2px;
 		}
-
-				/* color: #89bdff; // from sunburst theme */
-				color: #333; // from default theme
 	}
 
 	span.match {

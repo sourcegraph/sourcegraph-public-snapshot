@@ -1,0 +1,7 @@
+a, x:test {
+    property: value0
+}
+
+a, b, x:test {
+    property: value1
+}

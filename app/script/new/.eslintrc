@@ -1,0 +1,13 @@
+{
+	"ecmaFeatures": {
+		"blockBindings": true,
+		"classes": true,
+		"modules": true,
+	},
+	"rules": {
+		"no-undefined": 2,
+		"no-var": 2,
+		"react/prefer-es6-class": 2,
+		"react/prop-types": 2,
+	}
+}

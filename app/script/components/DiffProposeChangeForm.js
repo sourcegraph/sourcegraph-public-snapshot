@@ -28,12 +28,14 @@ var ProposeChangeForm = React.createClass({
 	render() {
 		return (
 			<div className="changeset-propose-form">
-				<input type="text" className="title" placeholder="Title" />
+				<input type="text" className="title" placeholder="Title" autoFocus="true" />
 				<MarkdownTextarea ref="description" placeholder="Enter a description..." />
 				<div className="actions">
 					{this.props.changesetLoading ? <span>Loading...</span> : null}
-					<a className="btn btn-success pull-right" onClick={this._createChangeset}>Submit</a>
-					<a className="btn pull-right" onClick={this.props.onCancel}>Cancel</a>
+					<div className="pull-right">
+						<button className="btn btn-success" onClick={this._createChangeset} tabIndex="0">Submit</button>
+						<button className="btn btn-cancel" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
+					</div>
 				</div>
 			</div>
 		);

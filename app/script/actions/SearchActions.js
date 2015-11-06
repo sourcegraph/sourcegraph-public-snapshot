@@ -23,7 +23,7 @@ module.exports.searchRepoTokens = (query, repo, page) => {
 	AppDispatcher.dispatchAsync(SearchUtil.fetchTokenResults(query, repo.URI, page), {
 		started: globals.Actions.SEARCH_TOKENS_SUBMIT,
 		success: globals.Actions.SEARCH_TOKENS_RECEIVED_RESULTS,
-		failure: null,
+		failure: globals.Actions.SEARCH_TOKENS_FAILURE,
 	});
 };
 
@@ -31,6 +31,6 @@ module.exports.searchRepoText = (query, repo, page) => {
 	AppDispatcher.dispatchAsync(SearchUtil.fetchTextResults(query, repo.URI, page), {
 		started: globals.Actions.SEARCH_TEXT_SUBMIT,
 		success: globals.Actions.SEARCH_TEXT_RECEIVED_RESULTS,
-		failure: null,
+		failure: globals.Actions.SEARCH_TEXT_FAILURE,
 	});
 };

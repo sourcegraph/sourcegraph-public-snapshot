@@ -47,6 +47,7 @@ func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
 		Meta:                wrappedMeta{ctxFunc, errFunc},
 		MirrorRepos:         wrappedMirrorRepos{ctxFunc, errFunc},
 		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{ctxFunc, errFunc},
+		Notify:              wrappedNotify{ctxFunc, errFunc},
 		Orgs:                wrappedOrgs{ctxFunc, errFunc},
 		People:              wrappedPeople{ctxFunc, errFunc},
 		RegisteredClients:   wrappedRegisteredClients{ctxFunc, errFunc},
@@ -55,7 +56,9 @@ func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
 		RepoTree:            wrappedRepoTree{ctxFunc, errFunc},
 		Repos:               wrappedRepos{ctxFunc, errFunc},
 		Search:              wrappedSearch{ctxFunc, errFunc},
+		Storage:             wrappedStorage{ctxFunc, errFunc},
 		Units:               wrappedUnits{ctxFunc, errFunc},
+		UserKeys:            wrappedUserKeys{ctxFunc, errFunc},
 		Users:               wrappedUsers{ctxFunc, errFunc},
 	}
 	return s
@@ -466,6 +469,20 @@ func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.Changeset
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.Update(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.ChangesetsOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
+	}
+	rv, err := svc.Merge(ctx, v1)
 	return rv, s.errFunc(err)
 }
 
@@ -912,6 +929,39 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 	rv, err := svc.Delete(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+type wrappedNotify struct {
+	ctxFunc ContextFunc
+	errFunc ErrorFunc
+}
+
+func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.NotifyOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
+	}
+	rv, err := svc.GenericEvent(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedNotify) Mention(ctx context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.NotifyOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
+	}
+	rv, err := svc.Mention(ctx, v1)
 	return rv, s.errFunc(err)
 }
 
@@ -1529,6 +1579,109 @@ func (s wrappedSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*
 	return rv, s.errFunc(err)
 }
 
+type wrappedStorage struct {
+	ctxFunc ContextFunc
+	errFunc ErrorFunc
+}
+
+func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.StorageOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
+	}
+	rv, err := svc.Create(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.StorageOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
+	}
+	rv, err := svc.RemoveAll(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.StorageOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
+	}
+	rv, err := svc.Read(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.StorageOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
+	}
+	rv, err := svc.Write(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.StorageOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
+	}
+	rv, err := svc.Stat(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.StorageOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
+	}
+	rv, err := svc.ReadDir(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.StorageOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
+	}
+	rv, err := svc.Close(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
 type wrappedUnits struct {
 	ctxFunc ContextFunc
 	errFunc ErrorFunc
@@ -1559,6 +1712,53 @@ func (s wrappedUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions)
 		return nil, grpc.Errorf(codes.Unimplemented, "Units")
 	}
 	rv, err := svc.List(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+type wrappedUserKeys struct {
+	ctxFunc ContextFunc
+	errFunc ErrorFunc
+}
+
+func (s wrappedUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.UserKeysOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+	rv, err := svc.AddKey(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.UserKeysOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+	rv, err := svc.LookupUser(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
+func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.UserKeysOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+	rv, err := svc.DeleteKey(ctx, v1)
 	return rv, s.errFunc(err)
 }
 

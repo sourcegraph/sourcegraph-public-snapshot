@@ -1,0 +1,17 @@
+.empty {}
+.a, .a {
+    padding: 1px;
+    color: red;
+    color: red
+}
+.b {
+    color: red;
+    margin-top: 1px;
+    padding: 2px
+}
+.b {
+    margin: 2px
+}
+.c {
+    margin: 2px
+}

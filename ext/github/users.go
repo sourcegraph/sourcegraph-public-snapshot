@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -39,7 +40,7 @@ func userFromGitHub(ghuser *github.User) *sourcegraph.User {
 	var u sourcegraph.User
 	u.UID = int32(*ghuser.ID)
 	u.Login = *ghuser.Login
-	u.Domain = "github.com" // TODO(sqs!): replace with GH Enterprise if in use
+	u.Domain = githubcli.Config.Host()
 	if ghuser.Name != nil {
 		u.Name = *ghuser.Name
 	}

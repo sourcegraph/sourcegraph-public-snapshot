@@ -6,6 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -31,6 +32,39 @@ func TestDiscoverRepoLocal_found(t *testing.T) {
 	}
 
 	if want := "GitHub (github.com)"; info.String() != want {
+		t.Errorf("got info %q, want %q", info, want)
+	}
+
+	reposSvc := svc.Repos(ctx)
+	if typ, want := reflect.TypeOf(reposSvc).String(), "*local.repos"; typ != want {
+		t.Errorf("got Repos store type %q, want %q", typ, want)
+	}
+}
+
+func TestDiscoverRepoLocalGHE_found(t *testing.T) {
+	origRootFlag := fed.Config.IsRoot
+	origRootGRPCURL := fed.Config.RootGRPCURLStr
+	defer func() {
+		fed.Config.IsRoot = origRootFlag
+		fed.Config.RootGRPCURLStr = origRootGRPCURL
+	}()
+
+	fed.Config.IsRoot = true
+	githubcli.Config.GitHubHost = "myghe.com"
+	defer func() {
+		githubcli.Config.GitHubHost = "github.com"
+	}()
+
+	info, err := discover.Repo(context.Background(), "myghe.com/o/r")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, err := info.NewContext(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := "GitHub (myghe.com)"; info.String() != want {
 		t.Errorf("got info %q, want %q", info, want)
 	}
 

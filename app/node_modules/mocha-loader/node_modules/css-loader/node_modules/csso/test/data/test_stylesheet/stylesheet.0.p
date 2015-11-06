@@ -1,0 +1,11 @@
+['stylesheet', 
+  ['ruleset', 
+    ['selector', 
+      ['simpleselector', 
+        ['ident', 's']]], 
+    ['block', 
+      ['declaration', 
+        ['property', 
+          ['ident', 'p']], 
+        ['value', 
+          ['ident', 'v']]]]]]

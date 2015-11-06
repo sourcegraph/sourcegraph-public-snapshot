@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sourcegraph/srclib/unit"
-	"sourcegraph.com/sqs/grpccache"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -754,6 +754,17 @@ func (s *CachedChangesetsServer) Update(ctx context.Context, in *ChangesetUpdate
 	return result, err
 }
 
+func (s *CachedChangesetsServer) Merge(ctx context.Context, in *ChangesetMergeOp) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.Merge(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
 func (s *CachedChangesetsServer) CreateReview(ctx context.Context, in *ChangesetCreateReviewOp) (*ChangesetReview, error) {
 	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
 	result, err := s.ChangesetsServer.CreateReview(ctx, in)
@@ -890,6 +901,32 @@ func (s *CachedChangesetsClient) Update(ctx context.Context, in *ChangesetUpdate
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Changesets.Update", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedChangesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "Changesets.Merge", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.ChangesetsClient.Merge(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Changesets.Merge", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}
@@ -1986,6 +2023,87 @@ func (s *CachedMirroredRepoSSHKeysClient) Delete(ctx context.Context, in *RepoSp
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "MirroredRepoSSHKeys.Delete", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+type CachedNotifyServer struct{ NotifyServer }
+
+func (s *CachedNotifyServer) GenericEvent(ctx context.Context, in *NotifyGenericEvent) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.NotifyServer.GenericEvent(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedNotifyServer) Mention(ctx context.Context, in *NotifyMention) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.NotifyServer.Mention(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedNotifyClient struct {
+	NotifyClient
+	Cache *grpccache.Cache
+}
+
+func (s *CachedNotifyClient) GenericEvent(ctx context.Context, in *NotifyGenericEvent, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "Notify.GenericEvent", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.NotifyClient.GenericEvent(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Notify.GenericEvent", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedNotifyClient) Mention(ctx context.Context, in *NotifyMention, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "Notify.Mention", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.NotifyClient.Mention(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Notify.Mention", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}
@@ -3565,6 +3683,272 @@ func (s *CachedSearchClient) Suggest(ctx context.Context, in *RawQuery, opts ...
 	return result, nil
 }
 
+type CachedStorageServer struct{ StorageServer }
+
+func (s *CachedStorageServer) Create(ctx context.Context, in *StorageName) (*StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) RemoveAll(ctx context.Context, in *StorageName) (*StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.RemoveAll(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Read(ctx context.Context, in *StorageReadOp) (*StorageRead, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Read(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Write(ctx context.Context, in *StorageWriteOp) (*StorageWrite, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Write(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Stat(ctx context.Context, in *StorageName) (*StorageStat, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Stat(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) ReadDir(ctx context.Context, in *StorageName) (*StorageReadDir, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.ReadDir(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Close(ctx context.Context, in *StorageName) (*StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Close(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedStorageClient struct {
+	StorageClient
+	Cache *grpccache.Cache
+}
+
+func (s *CachedStorageClient) Create(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
+	if s.Cache != nil {
+		var cachedResult StorageError
+		cached, err := s.Cache.Get(ctx, "Storage.Create", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Create(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Create", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) RemoveAll(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
+	if s.Cache != nil {
+		var cachedResult StorageError
+		cached, err := s.Cache.Get(ctx, "Storage.RemoveAll", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.RemoveAll(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.RemoveAll", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Read(ctx context.Context, in *StorageReadOp, opts ...grpc.CallOption) (*StorageRead, error) {
+	if s.Cache != nil {
+		var cachedResult StorageRead
+		cached, err := s.Cache.Get(ctx, "Storage.Read", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Read(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Read", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Write(ctx context.Context, in *StorageWriteOp, opts ...grpc.CallOption) (*StorageWrite, error) {
+	if s.Cache != nil {
+		var cachedResult StorageWrite
+		cached, err := s.Cache.Get(ctx, "Storage.Write", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Write(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Write", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Stat(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageStat, error) {
+	if s.Cache != nil {
+		var cachedResult StorageStat
+		cached, err := s.Cache.Get(ctx, "Storage.Stat", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Stat(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Stat", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) ReadDir(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageReadDir, error) {
+	if s.Cache != nil {
+		var cachedResult StorageReadDir
+		cached, err := s.Cache.Get(ctx, "Storage.ReadDir", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.ReadDir(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.ReadDir", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedStorageClient) Close(ctx context.Context, in *StorageName, opts ...grpc.CallOption) (*StorageError, error) {
+	if s.Cache != nil {
+		var cachedResult StorageError
+		cached, err := s.Cache.Get(ctx, "Storage.Close", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.StorageClient.Close(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Storage.Close", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 type CachedUnitsServer struct{ UnitsServer }
 
 func (s *CachedUnitsServer) Get(ctx context.Context, in *UnitSpec) (*unit.RepoSourceUnit, error) {
@@ -3640,6 +4024,124 @@ func (s *CachedUnitsClient) List(ctx context.Context, in *UnitListOptions, opts 
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Units.List", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+type CachedUserKeysServer struct{ UserKeysServer }
+
+func (s *CachedUserKeysServer) AddKey(ctx context.Context, in *SSHPublicKey) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.AddKey(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUserKeysServer) LookupUser(ctx context.Context, in *SSHPublicKey) (*UserSpec, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.LookupUser(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUserKeysServer) DeleteKey(ctx context.Context, in *pbtypes.Void) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.DeleteKey(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedUserKeysClient struct {
+	UserKeysClient
+	Cache *grpccache.Cache
+}
+
+func (s *CachedUserKeysClient) AddKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "UserKeys.AddKey", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.AddKey(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.AddKey", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedUserKeysClient) LookupUser(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*UserSpec, error) {
+	if s.Cache != nil {
+		var cachedResult UserSpec
+		cached, err := s.Cache.Get(ctx, "UserKeys.LookupUser", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.LookupUser(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.LookupUser", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedUserKeysClient) DeleteKey(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "UserKeys.DeleteKey", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.DeleteKey(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.DeleteKey", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

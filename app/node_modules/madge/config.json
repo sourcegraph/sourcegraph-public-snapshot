@@ -1,0 +1,13 @@
+{
+    "format": "amd",
+    "image": "/tmp/dependency_map.png",
+    "fontFace": "Arial",
+    "fontSize": "14px",
+    "imageColors": {
+        "noDependencies" : "#0000ff",
+        "dependencies" : "#00ff00",
+        "circular" : "#bada55",
+        "edge" : "#666666",
+        "bgcolor": "#ffffff"
+    }
+}

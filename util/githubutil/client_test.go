@@ -27,7 +27,7 @@ func TestGitHubClient_noCacheLeak(t *testing.T) {
 	defer s.Close()
 	baseURL, _ := url.Parse(s.URL)
 
-	ghconf := &Config{Cache: &httputil.LocalAndRemoteCache}
+	ghconf := &Config{Cache: httputil.Cache}
 
 	ghA := ghconf.AuthedClient("token-for-a")
 	ghB := ghconf.AuthedClient("token-for-b")

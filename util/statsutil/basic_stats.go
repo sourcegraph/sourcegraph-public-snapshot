@@ -89,12 +89,6 @@ func updateNumReposAndCommitters(cl *sourcegraph.Client, ctx context.Context) {
 }
 
 func updateNumBuilds(cl *sourcegraph.Client, ctx context.Context) {
-	if fed.Config.IsRoot {
-		// don't compute build stats on the mothership.
-		// TODO(pararth): measure ComputeBuildStats performance on
-		// sourcegraph.com and decide whether to turn this on for prod.
-		return
-	}
 	numBuilds, err := ComputeBuildStats(cl, ctx)
 	if err != nil {
 		log15.Warn("ComputeUsageStats: could not compute number of builds", "error", err)

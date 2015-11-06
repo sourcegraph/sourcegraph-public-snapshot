@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sqs/grpccache"
+	"sourcegraph.com/sourcegraph/grpccache"
 )
 
 const (

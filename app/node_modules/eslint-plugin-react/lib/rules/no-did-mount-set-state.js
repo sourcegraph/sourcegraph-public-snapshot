@@ -34,7 +34,7 @@ module.exports = function(context) {
           depth++;
         }
         if (
-          ancestors[i].type !== 'Property' ||
+          (ancestors[i].type !== 'Property' && ancestors[i].type !== 'MethodDefinition') ||
           ancestors[i].key.name !== 'componentDidMount' ||
           (mode === 'allow-in-func' && depth > 1)
         ) {

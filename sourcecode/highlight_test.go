@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/kr/pretty"
-	"github.com/sourcegraph/syntaxhighlight"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+
+	"src.sourcegraph.com/syntaxhighlight"
 )
 
 // codeEquals tests the equality between the given SourceCode entry and an
@@ -33,24 +34,24 @@ func TestCodeEquals(t *testing.T) {
 		{
 			code: &sourcegraph.SourceCode{
 				Lines: []*sourcegraph.SourceCodeLine{
-					&sourcegraph.SourceCodeLine{
+					{
 						Tokens: []*sourcegraph.SourceCodeToken{
-							&sourcegraph.SourceCodeToken{Label: "a"},
-							&sourcegraph.SourceCodeToken{Label: "b"},
-							&sourcegraph.SourceCodeToken{Label: "c"},
-							&sourcegraph.SourceCodeToken{Label: "d"},
-							&sourcegraph.SourceCodeToken{Label: "e"},
+							{Label: "a"},
+							{Label: "b"},
+							{Label: "c"},
+							{Label: "d"},
+							{Label: "e"},
 						},
 					},
-					&sourcegraph.SourceCodeLine{},
-					&sourcegraph.SourceCodeLine{
+					{},
+					{
 						Tokens: []*sourcegraph.SourceCodeToken{
-							&sourcegraph.SourceCodeToken{Label: "c"},
+							{Label: "c"},
 						},
 					},
 				},
 			},
-			want: [][]string{[]string{"a", "b", "c", "d", "e"}, []string{}, []string{"c"}},
+			want: [][]string{{"a", "b", "c", "d", "e"}, {}, {"c"}},
 		},
 	} {
 		if !codeEquals(tt.code, tt.want) {
@@ -74,25 +75,25 @@ func TestNilAnnotator_multiLineTokens(t *testing.T) {
 		{
 			src: "/* I am\na multiline\ncomment\n*/",
 			want: [][]string{
-				[]string{"/* I am"},
-				[]string{"a multiline"},
-				[]string{"comment"},
-				[]string{"*/"},
+				{"/* I am"},
+				{"a multiline"},
+				{"comment"},
+				{"*/"},
 			},
 		},
 		{
 			src: "a := `I am\na multiline\nstring literal\n`",
 			want: [][]string{
-				[]string{"a", " ", ":", "=", " ", "`I am"},
-				[]string{"a multiline"},
-				[]string{"string literal"},
-				[]string{"`"},
+				{"a", " ", ":=", " ", "`I am"},
+				{"a multiline"},
+				{"string literal"},
+				{"`"},
 			},
 		},
 	} {
 		e := newFileWithRange([]byte(tt.src))
 		ann := NewNilAnnotator(e)
-		_, err := syntaxhighlight.Annotate(e.Contents, ann)
+		_, err := syntaxhighlight.Annotate(e.Contents, ``, `text\x-gosrc`, ann)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -124,7 +125,7 @@ func TestTokenize_startAndEndBytes(t *testing.T) {
 			wantStartByte: 0,
 		},
 	} {
-		tt.wantEndByte = tt.wantStartByte + int64(len(tt.src))
+		tt.wantEndByte = tt.wantStartByte + int64(len(tt.src)-1)
 		e := newFileWithRange([]byte(tt.src))
 		e.FileRange.StartByte, e.FileRange.EndByte = tt.wantStartByte, tt.wantEndByte
 

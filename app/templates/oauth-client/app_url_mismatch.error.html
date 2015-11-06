@@ -1,0 +1,9 @@
+{{define "OAuth2Error"}}
+<strong>Wrong application URL</strong>
+
+<p>You are accessing this site at {{.Actual}}, but it was configured to be at <a href="{{.Expected}}">{{.Expected}}</a>. Try accessing it at that URL.</p>
+
+<hr>
+
+<p><em>Server administrators: see the <a href="https://src.sourcegraph.com/sourcegraph/.docs/config/appurl-dns/" target="_blank">AppURL</a> docs.</em></p>
+{{end}}

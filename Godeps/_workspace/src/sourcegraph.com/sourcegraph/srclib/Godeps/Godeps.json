@@ -28,23 +28,26 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "4bf6d2fbdef2be37a2c72851a4fd87b7f1e3e79c"
+			"Rev": "4ebe9fc43840fefb355b61300580e34130d99f6e"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
-			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+			"Comment": "v0.1-58-g2008751",
+			"Rev": "200875106f3bf0eb01eb297dae30b250a25ffc84"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
-			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+			"Comment": "v0.1-58-g2008751",
+			"Rev": "200875106f3bf0eb01eb297dae30b250a25ffc84"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/test",
-			"Rev": "4d9351c7a8a1bee7c5b0d86e40a15c55be0ee930"
+			"Comment": "v0.1-58-g2008751",
+			"Rev": "200875106f3bf0eb01eb297dae30b250a25ffc84"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",
-			"Rev": "efd7476481382c195beb33acd8ec2f1527167fb4"
+			"Rev": "3d2510a4dd961caffa2ae781669c628d82db700a"
 		},
 		{
 			"ImportPath": "github.com/kardianos/osext",
@@ -105,7 +108,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
-			"Rev": "b5adcc2dcdf009d0391547edc6ecbaff889f5bb9"
+			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/godoc/vfs",
@@ -121,16 +124,15 @@
 		},
 		{
 			"ImportPath": "google.golang.org/grpc",
-			"Rev": "91c8b79535eb6045d70ec671d302213f88a3ab95"
+			"Rev": "f7d1653e300d6ad9f019bce7a5f5ab3b4821f637"
 		},
-		{			
+		{
 			"ImportPath": "github.com/inconshreveable/go-update",
 			"Rev": "68f5725818189545231c1fd8694793d45f2fc529"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
-			"Comment": "v1-295-gac1de6d",
-			"Rev": "ac1de6df8e99179055302900918093c0443d3f7a"
+			"Rev": "7c86b1bed79b1dd42ee6650b6789776c40f78e12"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/makex",

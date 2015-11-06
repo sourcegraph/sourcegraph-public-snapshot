@@ -11,6 +11,7 @@
 		<span class="sep">&</span>
 		<cite>{{template "PersonLink" .CommitterPerson}}</cite> <span class="date">committed {{template "TimeAgo" .Committer.Date}}</span>
 		{{end}}
+		<a href="{{urlToRepoCommit .RepoURI .ID}}" title="{{.ID}}"><tt class="commit-id pull-right">{{truncateCommitID .ID}}</tt></a>
 	</p>
 </div>
 {{end}}

@@ -22,6 +22,15 @@ module.exports = function(context) {
   // --------------------------------------------------------------------------
 
   return {
+
+    ClassDeclaration: function(node) {
+      componentList.set(context, node);
+    },
+
+    ObjectExpression: function(node) {
+      componentList.set(context, node);
+    },
+
     'Program:exit': function() {
       if (componentList.count() <= 1) {
         return;
@@ -36,13 +45,6 @@ module.exports = function(context) {
         }
         context.report(list[component].node, MULTI_COMP_MESSAGE);
       }
-    },
-
-    ReturnStatement: function(node) {
-      if (!componentUtil.isReactComponent(context, node)) {
-        return;
-      }
-      componentList.set(context, node);
     }
   };
 };

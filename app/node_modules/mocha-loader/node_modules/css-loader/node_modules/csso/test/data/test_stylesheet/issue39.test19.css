@@ -1,0 +1,6 @@
+a:test, x:before {
+    color: red
+}
+a:test, y:after {
+    color: red
+}

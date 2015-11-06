@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
-	"src.sourcegraph.com/sourcegraph/server/internal/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 

@@ -14,15 +14,11 @@ export SG_SEND_NOTIFS=true
 
 export ROBOTS_TXT_ALLOW=true
 
-export SG_APICLIENT_REMOTE_CACHE=true
-
 export APPDASH_URL=https://appdash.sgdev.org
 export APPDASH_PORT=7701
 
 export SG_SYSLOG_HOST=logs.papertrailapp.com:50140
 export SG_LOG_URL_FOR_TAG='https://papertrailapp.com/groups/591393/events?q=program:%s'
-
-export SG_S3_HTTP_CACHE_BUCKET=https://s3-us-west-2.amazonaws.com/sourcegraph-apiproxy
 
 export SG_STRICT_HOSTNAME=t
 export SG_FORCE_HTTPS=t
@@ -33,7 +29,6 @@ export SG_ENABLE_GITHUB_CLONE_PROXY=t
 
 export SG_REQUIRE_SECRETS=t
 
-export SG_REPO_TREE_SEARCH=t
 
 
 

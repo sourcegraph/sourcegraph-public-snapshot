@@ -29,6 +29,7 @@ type PackageCmd struct {
 	OS string `long:"os" description:"operating system targets to cross-compile for" default:"linux darwin"`
 
 	SkipWebpack  bool `long:"skip-webpack" description:"skip webpack (JS/SCSS preparation, concatenation, minification, etc.)"`
+	SkipProtoc   bool `long:"skip-protoc" description:"skip devdoc protobuf dump generation (which requires protoc)"`
 	IgnoreDirty  bool `long:"ignore-dirty" description:"ignore dirty working directory"`
 	IgnoreBranch bool `long:"ignore-branch" description:"ignore non-master branch"`
 
@@ -59,7 +60,17 @@ func (c *PackageCmd) Execute(args []string) error {
 		}
 	}
 
-	if err := execCmd(exec.Command("go", "generate", "./app/assets", "./app/templates", "./devdoc/...")); err != nil {
+	gopath := strings.Join([]string{
+		filepath.Join(os.Getenv("PWD"), "Godeps", "_workspace"),
+		os.Getenv("GOPATH"),
+	}, string(filepath.ListSeparator))
+
+	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates", "./platform/...", "./devdoc/...")
+	overrideEnv(genCmd, "GOPATH", gopath)
+	if c.SkipProtoc {
+		genCmd.Env = append(genCmd.Env, "SKIP_PROTOC=t")
+	}
+	if err := execCmd(genCmd); err != nil {
 		return err
 	}
 
@@ -67,11 +78,6 @@ func (c *PackageCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	gopath := strings.Join([]string{
-		filepath.Join(os.Getenv("PWD"), "Godeps", "_workspace"),
-		os.Getenv("GOPATH"),
-	}, string(filepath.ListSeparator))
 
 	bins := []string{}
 	par := parallel.NewRun(2)
