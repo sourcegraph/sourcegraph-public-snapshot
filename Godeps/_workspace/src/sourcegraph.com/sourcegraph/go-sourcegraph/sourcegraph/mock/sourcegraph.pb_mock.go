@@ -1353,30 +1353,20 @@ var _ sourcegraph.GraphUplinkServer = (*GraphUplinkServer)(nil)
 
 type NotifyClient struct {
 	GenericEvent_ func(ctx context.Context, in *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
-	Mention_      func(ctx context.Context, in *sourcegraph.NotifyMention) (*pbtypes.Void, error)
 }
 
 func (s *NotifyClient) GenericEvent(ctx context.Context, in *sourcegraph.NotifyGenericEvent, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.GenericEvent_(ctx, in)
 }
 
-func (s *NotifyClient) Mention(ctx context.Context, in *sourcegraph.NotifyMention, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.Mention_(ctx, in)
-}
-
 var _ sourcegraph.NotifyClient = (*NotifyClient)(nil)
 
 type NotifyServer struct {
 	GenericEvent_ func(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
-	Mention_      func(v0 context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error)
 }
 
 func (s *NotifyServer) GenericEvent(v0 context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
 	return s.GenericEvent_(v0, v1)
-}
-
-func (s *NotifyServer) Mention(v0 context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
-	return s.Mention_(v0, v1)
 }
 
 var _ sourcegraph.NotifyServer = (*NotifyServer)(nil)

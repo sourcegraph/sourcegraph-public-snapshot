@@ -227,7 +227,6 @@ It has these top-level messages:
 	UserEvent
 	UserEventList
 	NotifyGenericEvent
-	NotifyMention
 */
 package sourcegraph
 
@@ -3730,21 +3729,6 @@ type NotifyGenericEvent struct {
 func (m *NotifyGenericEvent) Reset()         { *m = NotifyGenericEvent{} }
 func (m *NotifyGenericEvent) String() string { return proto.CompactTextString(m) }
 func (*NotifyGenericEvent) ProtoMessage()    {}
-
-type NotifyMention struct {
-	// Actor is the User who did the mention
-	Actor *UserSpec `protobuf:"bytes,1,opt,name=actor" json:",omitempty"`
-	// Mentioned is a list of users mentioned, which need to be notified
-	Mentioned []*UserSpec `protobuf:"bytes,2,rep,name=mentioned" json:",omitempty"`
-	// Where is a text representing where a user was mentioned.
-	Where string `protobuf:"bytes,3,opt,name=where,proto3" json:",omitempty"`
-	// WhereURL is the URL that leads to the place where the mention occurred.
-	WhereURL string `protobuf:"bytes,4,opt,name=where_url,proto3" json:",omitempty"`
-}
-
-func (m *NotifyMention) Reset()         { *m = NotifyMention{} }
-func (m *NotifyMention) String() string { return proto.CompactTextString(m) }
-func (*NotifyMention) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("sourcegraph.DiscussionListOrder", DiscussionListOrder_name, DiscussionListOrder_value)
@@ -7774,8 +7758,6 @@ var _GraphUplink_serviceDesc = grpc.ServiceDesc{
 type NotifyClient interface {
 	// GenericEvent will notify recipients of an event which happened
 	GenericEvent(ctx context.Context, in *NotifyGenericEvent, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// Mention will notify users when they are mentioned
-	Mention(ctx context.Context, in *NotifyMention, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
 
 type notifyClient struct {
@@ -7795,22 +7777,11 @@ func (c *notifyClient) GenericEvent(ctx context.Context, in *NotifyGenericEvent,
 	return out, nil
 }
 
-func (c *notifyClient) Mention(ctx context.Context, in *NotifyMention, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.Notify/Mention", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Server API for Notify service
 
 type NotifyServer interface {
 	// GenericEvent will notify recipients of an event which happened
 	GenericEvent(context.Context, *NotifyGenericEvent) (*pbtypes1.Void, error)
-	// Mention will notify users when they are mentioned
-	Mention(context.Context, *NotifyMention) (*pbtypes1.Void, error)
 }
 
 func RegisterNotifyServer(s *grpc.Server, srv NotifyServer) {
@@ -7829,18 +7800,6 @@ func _Notify_GenericEvent_Handler(srv interface{}, ctx context.Context, dec func
 	return out, nil
 }
 
-func _Notify_Mention_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(NotifyMention)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(NotifyServer).Mention(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 var _Notify_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Notify",
 	HandlerType: (*NotifyServer)(nil),
@@ -7848,10 +7807,6 @@ var _Notify_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenericEvent",
 			Handler:    _Notify_GenericEvent_Handler,
-		},
-		{
-			MethodName: "Mention",
-			Handler:    _Notify_Mention_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

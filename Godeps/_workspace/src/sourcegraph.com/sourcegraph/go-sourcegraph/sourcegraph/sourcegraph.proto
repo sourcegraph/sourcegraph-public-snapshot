@@ -3303,26 +3303,8 @@ message NotifyGenericEvent {
 	string object_url = 9 [(gogoproto.customname) = "ObjectURL"];
 }
 
-
-message NotifyMention {
-	// Actor is the User who did the mention
-	UserSpec actor = 1;
-
-	// Mentioned is a list of users mentioned, which need to be notified
-	repeated UserSpec mentioned = 2;
-
-	// Where is a text representing where a user was mentioned.
-	string where = 3;
-
-	// WhereURL is the URL that leads to the place where the mention occurred.
-	string where_url = 4 [(gogoproto.customname) = "WhereURL"];
-}
-
 // Notify service
 service Notify {
 	// GenericEvent will notify recipients of an event which happened
 	rpc GenericEvent(NotifyGenericEvent) returns (pbtypes.Void);
-
-	// Mention will notify users when they are mentioned
-	rpc Mention(NotifyMention) returns (pbtypes.Void);
 }

@@ -293,10 +293,6 @@ func (s remoteNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGe
 	return sourcegraph.NewClientFromContext(ctx).Notify.GenericEvent(ctx, v1)
 }
 
-func (s remoteNotify) Mention(ctx context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
-	return sourcegraph.NewClientFromContext(ctx).Notify.Mention(ctx, v1)
-}
-
 type remoteOrgs struct{ sourcegraph.OrgsServer }
 
 func (s remoteOrgs) Get(ctx context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {

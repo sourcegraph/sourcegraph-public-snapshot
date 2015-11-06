@@ -1526,25 +1526,6 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 
 }
 
-func (s wrappedNotify) Mention(ctx context.Context, param *sourcegraph.NotifyMention) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Notify", "Mention", param)
-	defer func() {
-		trace.After(ctx, "Notify", "Mention", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Notify.Mention")
-	if err != nil {
-		return
-	}
-
-	var target sourcegraph.NotifyServer = s.u
-
-	res, err = target.Mention(ctx, param)
-	return
-
-}
-
 type wrappedOrgs struct {
 	u sourcegraph.OrgsServer
 	c *auth.Config

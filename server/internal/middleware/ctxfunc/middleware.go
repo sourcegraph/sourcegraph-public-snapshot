@@ -965,20 +965,6 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyG
 	return rv, s.errFunc(err)
 }
 
-func (s wrappedNotify) Mention(ctx context.Context, v1 *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
-	var err error
-	ctx, err = s.ctxFunc(ctx)
-	if err != nil {
-		return nil, s.errFunc(err)
-	}
-	svc := svc.NotifyOrNil(ctx)
-	if svc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
-	}
-	rv, err := svc.Mention(ctx, v1)
-	return rv, s.errFunc(err)
-}
-
 type wrappedOrgs struct {
 	ctxFunc ContextFunc
 	errFunc ErrorFunc

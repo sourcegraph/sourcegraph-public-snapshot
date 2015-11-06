@@ -2079,17 +2079,6 @@ func (s *CachedNotifyServer) GenericEvent(ctx context.Context, in *NotifyGeneric
 	return result, err
 }
 
-func (s *CachedNotifyServer) Mention(ctx context.Context, in *NotifyMention) (*pbtypes.Void, error) {
-	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
-	result, err := s.NotifyServer.Mention(ctx, in)
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-	return result, err
-}
-
 type CachedNotifyClient struct {
 	NotifyClient
 	Cache *grpccache.Cache
@@ -2115,32 +2104,6 @@ func (s *CachedNotifyClient) GenericEvent(ctx context.Context, in *NotifyGeneric
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Notify.GenericEvent", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func (s *CachedNotifyClient) Mention(ctx context.Context, in *NotifyMention, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	if s.Cache != nil {
-		var cachedResult pbtypes.Void
-		cached, err := s.Cache.Get(ctx, "Notify.Mention", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.NotifyClient.Mention(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Notify.Mention", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

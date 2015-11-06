@@ -1,8 +1,6 @@
 package local
 
 import (
-	"fmt"
-
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/notif"
 
@@ -59,10 +57,6 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 	}
 
 	return &pbtypes.Void{}, nil
-}
-
-func (s *notify) Mention(ctx context.Context, m *sourcegraph.NotifyMention) (*pbtypes.Void, error) {
-	return nil, fmt.Errorf("not implemented")
 }
 
 func (s *notify) getPeople(ctx context.Context, users ...*sourcegraph.UserSpec) []*sourcegraph.Person {
