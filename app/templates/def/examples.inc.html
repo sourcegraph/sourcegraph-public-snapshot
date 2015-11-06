@@ -2,20 +2,21 @@
 <div>
 	{{if len .Examples}}
 		<ol class="examples list-unstyled" id="examples">
-			{{ $defURL := urlToDefAtRev .Def.DefKey .File.RepoRev.Rev }}
+			{{ $rev := .File.RepoRev.Rev }}
+			{{ $defURL := urlToDefAtRev .Def.DefKey $rev }}
 			{{range .Examples}}
 				<li>
 					{{if not .Error}}
 						<div class="example">
 							<header>
 								<div class="pull-right">{{template "RepoLink" (repoLink .Repo)}}</div>
-								{{template "Breadcrumb" (snippetToBreadcrumb .Repo .CommitID .File (toInt .StartLine) (toInt .EndLine) $defURL)}}
+								{{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File (toInt .StartLine) (toInt .EndLine) $defURL)}}
 							</header>
 							<pre class="code theme-default"><code>{{sanitizeFormattedCode .SrcHTML}}</code></pre>
 						</div>
 						<br>
 					{{else}}
-						<div class="alert alert-warning">An error occurred while showing an example from {{template "Breadcrumb" (snippetToBreadcrumb .Repo .CommitID .File .StartLine .EndLine $defURL)}}.</div>
+						<div class="alert alert-warning">An error occurred while showing an example from {{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File .StartLine .EndLine $defURL)}}.</div>
 					{{end}}
 				</li>
 			{{end}}
