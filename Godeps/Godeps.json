@@ -48,6 +48,10 @@
 			"Rev": "a2ace32dbd4787714f87adb14a8aa369142efac5"
 		},
 		{
+			"ImportPath": "github.com/alexsaveliev/go-colorable-wrapper",
+			"Rev": "32a2486bdc0de89379a23673af82bd61f5c7c5cd"
+		},
+		{
 			"ImportPath": "github.com/andybalholm/cascadia",
 			"Rev": "54abbbf07a45a3ef346ebe903e0715d9a3c19352"
 		},
