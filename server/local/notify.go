@@ -20,6 +20,10 @@ var _ sourcegraph.NotifyServer = (*notify)(nil)
 func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
 	defer noCache(ctx)
 
+	// Dedup recipients. We do this here as a convenience to users of the
+	// API
+	e.Recipients = dedupUsers(e.Recipients)
+
 	if err := s.verifyCanNotify(ctx, e.Actor, e.Recipients); err != nil {
 		return nil, err
 	}
@@ -96,4 +100,16 @@ func (s *notify) shouldSendSlack() bool {
 	// configured for other notifications. We don't want to send slack
 	// notifications for private instances to our own slack channel
 	return !fed.Config.IsRoot
+}
+
+func dedupUsers(users []*sourcegraph.UserSpec) []*sourcegraph.UserSpec {
+	seen := map[int32]struct{}{}
+	var dedup []*sourcegraph.UserSpec
+	for _, u := range users {
+		if _, ok := seen[u.UID]; !ok {
+			dedup = append(dedup, u)
+			seen[u.UID] = struct{}{}
+		}
+	}
+	return dedup
 }
