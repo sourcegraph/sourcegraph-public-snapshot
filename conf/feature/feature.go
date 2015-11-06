@@ -14,6 +14,7 @@ import (
 var Features = struct {
 	Discussions bool
 	SearchNext  bool
+	IssuesNext  bool
 }{
 	Discussions: true,
 	SearchNext:  true,
