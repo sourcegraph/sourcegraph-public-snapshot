@@ -20,7 +20,7 @@ type Flags struct {
 
 	DomainBase string `long:"ldap.domain-base" description:"The point in the LDAP tree where users are searched from. (eg. ou=People,dc=mycompany,dc=com)"`
 
-	Filter string `long:"ldap.filter" description:"Filter the search query (eg. objectClass=users)"`
+	Filter string `long:"ldap.filter" description:"Filter the search query. This will be ANDed with the user id term, ie. (&(Filter)(uid=myname))"`
 
 	UserIDField string `long:"ldap.user-id" description:"The LDAP field mapped to user ID" default:"uid"`
 

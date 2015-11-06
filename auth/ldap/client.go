@@ -55,11 +55,11 @@ func VerifyLogin(username, password string) (*LDAPUser, error) {
 		return nil, err
 	}
 
-	var filterTemplate string
+	queryTemplate := fmt.Sprintf("%s=%s", Config.UserIDField, username)
 	if Config.Filter != "" {
-		filterTemplate = fmt.Sprintf("&(%s)", Config.Filter)
+		queryTemplate = fmt.Sprintf("(&(%s)(%s))", Config.Filter, queryTemplate)
 	}
-	queryTemplate := fmt.Sprintf("(%s&(%s=%s))", filterTemplate, Config.UserIDField, username)
+	
 
 	attributes := []string{"dn"}
 	if Config.EmailField != "" {

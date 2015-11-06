@@ -46,7 +46,7 @@ Currently, LDAP authenticated Sourcegraph instances have limited support for con
 
 1. Admin users: Configure a user as admin by first logging in to your Sourcegraph via the web interface with your LDAP credentials, and then modifying the users file `$SGPATH/db/users.json` on the Sourcegraph server, to add a `Admin = true` field in your user entry.
 
-2. Use the Filter field (described above) to restrict access to subset of LDAP users.
+2. Use the Filter field (described above) to restrict access to subset of LDAP users. The string specified in the Filter will be ANDed with the search term. For instance, with `Filter = ou=devs` the search query will be `(&(ou=devs)(uid=username))`. If the Filter is malformed, the LDAP search requests will not succeed and users will not be able to log in to Sourcegraph.
 
 3. By default, users who can sign in with their LDAP credentials to your Sourcegraph will have read+write access. To restrict write access to only those users that you specified as admins, add the following flag in the config file and restart the server:
 
