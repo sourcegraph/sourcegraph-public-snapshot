@@ -28,17 +28,20 @@ function lineFromByte(file, byte) {
 export default class CodeFileContainer extends Container {
 	constructor(props) {
 		super(props);
-		this._hideOptionsMenu = this._hideOptionsMenu.bind(this);
+		this._onClick = this._onClick.bind(this);
+		this._onKeyDown = this._onKeyDown.bind(this);
 	}
 
 	componentDidMount() {
 		super.componentDidMount();
-		document.addEventListener("click", this._hideOptionsMenu);
+		document.addEventListener("click", this._onClick);
+		document.addEventListener("keydown", this._onKeyDown);
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
-		document.removeEventListener("click", this._hideOptionsMenu);
+		document.removeEventListener("click", this._onClick);
+		document.removeEventListener("keydown", this._onKeyDown);
 	}
 
 	stores() {
@@ -90,9 +93,15 @@ export default class CodeFileContainer extends Container {
 		}
 	}
 
-	_hideOptionsMenu() {
+	_onClick() {
 		if (this.state.defOptionsURLs) {
 			Dispatcher.dispatch(new DefActions.SelectMultipleDefs(null, 0, 0));
+		}
+	}
+
+	_onKeyDown(event) {
+		if (event.keyCode === 27) {
+			Dispatcher.dispatch(new DefActions.SelectDef(null));
 		}
 	}
 
