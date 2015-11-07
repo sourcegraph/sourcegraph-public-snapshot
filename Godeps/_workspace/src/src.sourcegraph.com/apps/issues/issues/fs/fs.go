@@ -388,12 +388,17 @@ func nextID(dir string) (uint64, error) {
 }
 
 // TODO.
-func (service) CurrentUser() issues.User {
-	return issues.User{
-		Login:     "shurcooL",
-		AvatarURL: "https://avatars.githubusercontent.com/u/1924134?v=3&s=96",
-		HTMLURL:   "https://github.com/shurcooL",
+func (service) CurrentUser(ctx context.Context) (issues.User, error) {
+	sg := sourcegraph.NewClientFromContext(ctx)
+	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: putil.UserFromContext(ctx).UID})
+	if err != nil {
+		return issues.User{}, err
 	}
+	return issues.User{
+		Login:     user.Login,
+		AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
+		HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
+	}, nil
 }
 
 var (

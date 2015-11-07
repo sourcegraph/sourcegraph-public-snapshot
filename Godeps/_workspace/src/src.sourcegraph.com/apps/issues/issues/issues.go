@@ -28,7 +28,7 @@ type Service interface {
 	Edit(ctx context.Context, repo RepoSpec, id uint64, ir IssueRequest) (Issue, error)
 
 	// TODO: This doesn't belong here, does it?
-	CurrentUser() User
+	CurrentUser(ctx context.Context) (User, error)
 }
 
 // Issue represents an issue on a repository.

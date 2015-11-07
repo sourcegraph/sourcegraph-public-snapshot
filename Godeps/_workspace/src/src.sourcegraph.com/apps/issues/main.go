@@ -146,8 +146,8 @@ func (s state) Items() (interface{}, error) {
 var is issues.Service
 
 // Apparently needed for "new-comment" component, etc.
-func (state) CurrentUser() issues.User {
-	return is.CurrentUser()
+func (s state) CurrentUser() (issues.User, error) {
+	return is.CurrentUser(s.ctx)
 }
 
 func mainHandler(w http.ResponseWriter, req *http.Request) {
@@ -296,8 +296,14 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// TODO: Move to right place?
+	user, err := is.CurrentUser(ctx)
+	if err != nil {
+		log.Println("is.CurrentUser:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	issueEvent := issues.Event{
-		Actor:     is.CurrentUser(),
+		Actor:     user,
 		CreatedAt: time.Now(),
 	}
 	switch {
