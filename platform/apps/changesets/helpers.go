@@ -15,7 +15,6 @@ import (
 
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
