@@ -150,9 +150,14 @@ func (contextCredentials) GetRequestMetadata(ctx context.Context, uri ...string)
 		if m == nil {
 			m = credMD
 		} else {
-			for k, v := range credMD {
-				m[k] = v
+			cpy := make(map[string]string)
+			for k, v := range m {
+				cpy[k] = v
 			}
+			for k, v := range credMD {
+				cpy[k] = v
+			}
+			m = cpy
 		}
 	}
 	return m, nil
