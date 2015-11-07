@@ -473,12 +473,21 @@ func (s *Server) Start() error {
 		return fmt.Errorf("starting server: %s", err)
 	}
 
-	go s.ServerCmd.Wait()
+	cmdFinished := make(chan bool, 1)
+	go func() {
+		s.ServerCmd.Wait()
+		cmdFinished <- true
+	}()
 
 	// Wait for server to be ready.
 	for start, maxWait := time.Now(), *waitServerStart; ; {
-		if ps := s.ServerCmd.ProcessState; ps != nil && ps.Exited() {
-			return fmt.Errorf("server PID %d (%s) exited unexpectedly: %v", s.ServerCmd.Process.Pid, s.Config.Serve.AppURL, ps.Sys())
+		select {
+		case <-cmdFinished:
+			if ps := s.ServerCmd.ProcessState; ps != nil && ps.Exited() {
+				return fmt.Errorf("server PID %d (%s) exited unexpectedly: %v", s.ServerCmd.Process.Pid, s.Config.Serve.AppURL, ps.Sys())
+			}
+		default:
+			// busy wait
 		}
 		if time.Since(start) > maxWait {
 			return fmt.Errorf("timeout waiting for test server at %s to start (%s)", s.Config.Serve.AppURL, maxWait)
