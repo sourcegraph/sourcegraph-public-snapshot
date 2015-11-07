@@ -85,3 +85,14 @@ func red(s string) string {
 func fade(s string) string {
 	return "\x1b[30;1m" + s + "\x1b[0m"
 }
+
+// requireCmds returns an error if any of the dependencies are unavailable.
+// A dependency is a binary name that must be found in PATH.
+func requireCmds(cmds ...string) error {
+	for _, cmd := range cmds {
+		if _, err := exec.LookPath(cmd); err != nil {
+			return fmt.Errorf("missing dependency %q: %v", cmd, err)
+		}
+	}
+	return nil
+}

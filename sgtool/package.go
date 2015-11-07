@@ -41,6 +41,11 @@ type PackageCmd struct {
 var packageCmd PackageCmd
 
 func (c *PackageCmd) Execute(args []string) error {
+	// Check for dependencies before starting.
+	if err := requireCmds("npm", "go"); err != nil {
+		return err
+	}
+
 	if c.Args.Version == "" {
 		c.Args.Version = "snapshot"
 	}

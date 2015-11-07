@@ -36,6 +36,11 @@ type ReleaseCmd struct {
 var releaseCmd ReleaseCmd
 
 func (c *ReleaseCmd) Execute(args []string) error {
+	// Check for dependencies before starting.
+	if err := requireCmds("make", "go-selfupdate", "cp", "aws"); err != nil {
+		return err
+	}
+
 	if !c.SkipPackage {
 		if err := c.PackageCmd.Execute(nil); err != nil {
 			return err

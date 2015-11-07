@@ -25,6 +25,11 @@ type DeployCmd struct {
 var deployCmd DeployCmd
 
 func (c *DeployCmd) Execute(args []string) error {
+	// Check for dependencies before starting.
+	if err := requireCmds("make"); err != nil {
+		return err
+	}
+
 	if c.Args.Version == "" {
 		c.Args.Version = "snapshot"
 	}
