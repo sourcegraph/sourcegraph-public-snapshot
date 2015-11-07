@@ -1,11 +1,19 @@
-package githooks
+package notif
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/AaronO/go-git-http"
+
+	"golang.org/x/net/context"
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/util/textutil"
 )
 
 func init() {
@@ -19,10 +27,10 @@ func (g *gitHookListener) Scopes() []string {
 }
 
 func (g *gitHookListener) Start(ctx context.Context) {
-	notifyCallback := func(id events.EventID, p notif.GitPayload) {
+	notifyCallback := func(id events.EventID, p GitPayload) {
 		notifyGitEvent(ctx, id, p)
 	}
-	buildCallback := func(id events.EventID, p notif.GitPayload) {
+	buildCallback := func(id events.EventID, p GitPayload) {
 		buildHook(ctx, id, p)
 	}
 
@@ -33,12 +41,8 @@ func (g *gitHookListener) Start(ctx context.Context) {
 	events.Subscribe(GitPushEvent, buildCallback)
 }
 
-func notifyGitEvent(ctx context.Context, id events.EventID, payload notif.GitPayload) {
+func notifyGitEvent(ctx context.Context, id events.EventID, payload GitPayload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		log15.Warn("postPushHook: error getting user", "error", err)
-		return
-	}
 
 	repo := payload.Repo
 	event := payload.Event
@@ -52,20 +56,20 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload notif.GitPay
 
 	if id == GitCreateEvent {
 		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-			Actor:       payload.Actor,
-			ActionType:  "created the branch",
-			ObjectURL:   absBranchURL,
-			ObjectRepo:  repo.URI+"@"+event.Branch,
+			Actor:      &payload.Actor,
+			ActionType: "created the branch",
+			ObjectURL:  absBranchURL,
+			ObjectRepo: repo.URI + "@" + event.Branch,
 		})
 		return
 	}
 
 	if id == GitDeleteEvent {
 		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-			Actor:       payload.Actor,
-			ActionType:  "deleted the branch",
-			ObjectURL:   absBranchURL,
-			ObjectRepo:  repo.URI+"@"+event.Branch,
+			Actor:      &payload.Actor,
+			ActionType: "deleted the branch",
+			ObjectURL:  absBranchURL,
+			ObjectRepo: repo.URI + "@" + event.Branch,
 		})
 		return
 	}
@@ -105,15 +109,15 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload notif.GitPay
 	}
 
 	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-		Actor:       payload.Actor,
-		ActionType:  fmt.Sprintf("pushed *%d %s* to", len(commits.Commits), commitsNoun),
-		ObjectURL:   absBranchURL,
-		ObjectRepo:  repo.URI+"@"+event.Branch,
+		Actor:         &payload.Actor,
+		ActionType:    fmt.Sprintf("pushed *%d %s* to", len(commits.Commits), commitsNoun),
+		ObjectURL:     absBranchURL,
+		ObjectRepo:    repo.URI + "@" + event.Branch,
 		ActionContent: strings.Join(commitMessages, "\n"),
 	})
 }
 
-func buildHook(ctx context.Context, id events.EventID, payload notif.GitPayload) {
+func buildHook(ctx context.Context, id events.EventID, payload GitPayload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 	repo := payload.Repo
 	event := payload.Event

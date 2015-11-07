@@ -1,11 +1,12 @@
-package discussionhooks
+package notif
 
 import (
-	"github.com/AaronO/go-git-http"
+	"golang.org/x/net/context"
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
 func init() {
@@ -19,15 +20,15 @@ func (g *discussionListener) Scopes() []string {
 }
 
 func (g *discussionListener) Start(ctx context.Context) {
-	notifyCallback := func(id events.EventID, p notif.DiscussionPayload) {
+	notifyCallback := func(id events.EventID, p DiscussionPayload) {
 		notifyDiscussionEvent(ctx, id, p)
 	}
 
-	events.Subscribe(notif.DiscussionCreateEvent, notifyCallback)
-	events.Subscribe(notif.DiscussionCommentEvent, notifyCallback)
+	events.Subscribe(DiscussionCreateEvent, notifyCallback)
+	events.Subscribe(DiscussionCommentEvent, notifyCallback)
 }
 
-func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload notif.DiscussionPayload) {
+func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload DiscussionPayload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	if payload.Discussion == nil {
@@ -39,14 +40,15 @@ func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload notif
 	var err error
 
 	switch id {
-	case notif.DiscussionCreateEvent:
+	case DiscussionCreateEvent:
 		recipients, err = mdutil.Mentions(ctx, []byte(payload.Discussion.Description))
 		if err != nil {
-			return nil, err
+			log15.Warn("DiscussionHook: ignoring event", "event", id, "error", err)
+			return
 		}
 		actionType = "created"
 
-	case notif.DiscussionCommentEvent:
+	case DiscussionCommentEvent:
 		if payload.Comment == nil {
 			return
 		}
@@ -55,7 +57,8 @@ func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload notif
 		}
 		ppl, err := mdutil.Mentions(ctx, []byte(payload.Comment.Body))
 		if err != nil {
-			return nil, err
+			log15.Warn("DiscussionHook: ignoring event", "event", id, "error", err)
+			return
 		}
 		recipients = append(recipients, ppl...)
 		actionType = "commented on"
@@ -63,7 +66,7 @@ func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload notif
 
 	// Send notification
 	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-		Actor:       payload.Actor,
+		Actor:       &payload.Actor,
 		Recipients:  recipients,
 		ActionType:  actionType,
 		ObjectURL:   payload.URL,
