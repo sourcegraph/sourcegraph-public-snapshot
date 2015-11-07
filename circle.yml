@@ -65,7 +65,7 @@ test:
         pwd: $REPO/app
     - make check:
         pwd: $REPO
-    - set -o pipefail; make mdtest TESTFLAGS="-test.v -test.timeout 1m" | tee $HOME/mdtest.out:
+    - set -o pipefail; make mdtest TESTFLAGS="-test.v -test.timeout 2m" | tee $HOME/mdtest.out:
         pwd: $REPO
   post:
     - go get github.com/jstemmer/go-junit-report
