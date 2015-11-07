@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"sync"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -19,6 +20,7 @@ type Flags struct {
 	// graph data lookups, etc.
 	RootURLStr string `long:"fed.root-url" description:"base URL of the root Sourcegraph server (used for OAuth2 user auth, open-source repo data, etc.)" default:"https://sourcegraph.com"`
 
+	sync.Mutex            // Protects RootGRPCURLStr
 	RootGRPCURLStr string `long:"fed.root-grpc-url" description:"gRPC Endpoint URL of the root Sourcegraph server (used for fetching remote repo data)" default:""`
 
 	IsRoot bool `long:"fed.is-root" description:"configures this server to be a root server (if set, --fed.root-url setting is discarded)"`
@@ -53,6 +55,8 @@ func (f *Flags) RootGRPCEndpoint() (*url.URL, error) {
 		return nil, nil
 	}
 
+	f.Lock()
+	defer f.Unlock()
 	if f.RootGRPCURLStr == "" {
 		var err error
 		f.RootGRPCURLStr, err = discoverFedRootGRPCUrl(f.RootURLStr)
