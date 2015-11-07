@@ -791,7 +791,7 @@ func (s *CachedChangesetsServer) Update(ctx context.Context, in *ChangesetUpdate
 	return result, err
 }
 
-func (s *CachedChangesetsServer) Merge(ctx context.Context, in *ChangesetMergeOp) (*pbtypes.Void, error) {
+func (s *CachedChangesetsServer) Merge(ctx context.Context, in *ChangesetMergeOp) (*ChangesetEvent, error) {
 	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
 	result, err := s.ChangesetsServer.Merge(ctx, in)
 	if !cc.IsZero() {
@@ -944,9 +944,9 @@ func (s *CachedChangesetsClient) Update(ctx context.Context, in *ChangesetUpdate
 	return result, nil
 }
 
-func (s *CachedChangesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+func (s *CachedChangesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*ChangesetEvent, error) {
 	if s.Cache != nil {
-		var cachedResult pbtypes.Void
+		var cachedResult ChangesetEvent
 		cached, err := s.Cache.Get(ctx, "Changesets.Merge", in, &cachedResult)
 		if err != nil {
 			return nil, err

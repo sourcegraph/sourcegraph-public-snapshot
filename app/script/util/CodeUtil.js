@@ -70,7 +70,7 @@ module.exports = {
 		return $.ajax({
 			method: "POST",
 			headers: {
-				"X-CSRF-Token": globals.CsrfToken,
+				"X-Csrf-Token": globals.CsrfToken,
 			},
 			url: createUrl,
 			data: JSON.stringify(changeSet),
@@ -216,7 +216,7 @@ module.exports = {
 			url: url,
 			method: "POST",
 			headers: {
-				"X-CSRF-Token": globals.CsrfToken,
+				"X-Csrf-Token": globals.CsrfToken,
 			},
 			data: JSON.stringify({
 				Body: body,
@@ -246,9 +246,27 @@ module.exports = {
 			url: url,
 			method: "POST",
 			headers: {
-				"X-CSRF-Token": globals.CsrfToken,
+				"X-Csrf-Token": globals.CsrfToken,
 			},
 			data: JSON.stringify(status),
+		}).then(data => {
+			if (data.hasOwnProperty("Error")) {
+				return $.Deferred().reject(data.Error);
+			}
+			return data;
+		});
+	},
+
+	mergeChangeset(repo, changesetId, options) {
+		var url = `${router.changesetURL(repo, changesetId)}/merge`;
+
+		return $.ajax({
+			url: url,
+			method: "POST",
+			headers: {
+				"X-Csrf-Token": globals.CsrfToken,
+			},
+			data: JSON.stringify(options),
 		}).then(data => {
 			if (data.hasOwnProperty("Error")) {
 				return $.Deferred().reject(data.Error);

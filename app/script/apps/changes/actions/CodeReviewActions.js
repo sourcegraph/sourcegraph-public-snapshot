@@ -272,6 +272,22 @@ module.exports.changeChangesetStatus = function(status, evt) {
 		);
 };
 
+module.exports.mergeChangeset = function(opt, evt) {
+	var id = CodeReviewStore.get("Changeset").ID,
+		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;
+
+	AppDispatcher.handleViewAction({
+		type: globals.Actions.CR_MERGE,
+	});
+
+	CodeUtil
+		.mergeChangeset(repo, id, opt)
+		.then(
+			CodeReviewServerActions.mergeSuccess,
+			CodeReviewServerActions.mergeFailed
+		);
+};
+
 /**
  * @description Dispatches the action that the user requested the closing of the
  * popup

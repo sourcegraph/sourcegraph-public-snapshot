@@ -9,10 +9,12 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
@@ -66,6 +68,10 @@ func GetRepoAndRevCommon(r *http.Request) (rc *handlerutil.RepoCommon, vc *handl
 func writeJSON(w http.ResponseWriter, v interface{}) error {
 	w.Header().Set(platform.HTTPHeaderVerbatim, "true")
 	w.Header().Set("Content-Type", "application/json")
+	if err, ok := v.(error); ok {
+		w.WriteHeader(errcode.HTTP(err))
+		v = struct{ Error string }{Error: grpc.ErrorDesc(err)}
+	}
 	return json.NewEncoder(w).Encode(v)
 }
 

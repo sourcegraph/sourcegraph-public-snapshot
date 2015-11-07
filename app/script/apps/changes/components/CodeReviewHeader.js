@@ -109,6 +109,15 @@ var CodeReviewHeader = React.createClass({
 	},
 
 	render() {
+		var changesetStatus = null;
+		if (!this.props.changeset.ClosedAt && !this.props.changeset.Merged) {
+			changesetStatus =	<span className="changeset-status status-open selected"><span className="octicon octicon-git-pull-request"></span> OPEN</span>;
+		} else if (this.props.changeset.ClosedAt && !this.props.changeset.Merged) {
+			changesetStatus = <span className="changeset-status status-closed selected"><span className="octicon octicon-x"></span> CLOSED</span>;
+		} else {
+			changesetStatus = <span className="changeset-status status-merged selected"><span className="octicon octicon-git-merge"></span> MERGED</span>;
+		}
+
 		return (
 			<div>
 				{this.state.editing ? (
@@ -130,12 +139,7 @@ var CodeReviewHeader = React.createClass({
 				)}
 
 				<div className="changeset-subtitle">
-					{!this.props.changeset.ClosedAt && !this.props.changeset.Merged ? (
-						<span className="changeset-status status-open selected"><span className="octicon octicon-git-pull-request"></span> OPEN</span>
-					) : null}
-					{this.props.changeset.ClosedAt && !this.props.changeset.Merged ? (
-						<span className="changeset-status status-closed selected"><span className="octicon octicon-x"></span> CLOSED</span>
-					) : null}
+					{changesetStatus}
 					<b>{this.props.changeset.Author.Login}</b> wants to merge {this.props.commits.models.length} commits from
 					<div className="branch">
 						{this.props.changeset.DeltaSpec.Head.Rev}

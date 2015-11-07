@@ -786,7 +786,7 @@ func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.Change
 
 }
 
-func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.ChangesetMergeOp) (res *pbtypes.Void, err error) {
+func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.ChangesetMergeOp) (res *sourcegraph.ChangesetEvent, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Changesets", "Merge", param)
 	defer func() {

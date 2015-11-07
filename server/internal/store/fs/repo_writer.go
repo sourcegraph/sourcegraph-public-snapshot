@@ -201,18 +201,7 @@ func (rs *RepoStage) Merge(head, base, message string, squash bool) error {
 		return err
 	}
 
-	// Checkout the base branch.
-	cmd := exec.Command("git", "checkout", base)
-	cmd.Dir = rs.stagingDir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return execError(cmd.Args, err, out)
-	}
-
 	// Pull the head branch of the changeset into the base.
-	if err != nil {
-		return err
-	}
 	args := []string{"pull", "--no-commit"}
 	if squash {
 		args = append(args, "--squash")
@@ -220,9 +209,9 @@ func (rs *RepoStage) Merge(head, base, message string, squash bool) error {
 		args = append(args, "--no-ff")
 	}
 	args = append(args, rs.repoDir, head)
-	cmd = exec.Command("git", args...)
+	cmd := exec.Command("git", args...)
 	cmd.Dir = rs.stagingDir
-	out, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return execError(cmd.Args, err, out)
 	}

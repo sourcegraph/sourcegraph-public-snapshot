@@ -1,4 +1,5 @@
 var $ = require("jquery");
+var escapeHTML = require("../escapeHTML");
 
 var defaultTimeout = 3000;
 
@@ -15,6 +16,9 @@ function displayNotification(cls, message, timeout) {
 		error: "fa-exclamation-triangle",
 		info: "fa-info-circle",
 	}[cls];
+
+	message = escapeHTML(message);
+	message = message.split("\n").join("<br/>"); // Preserve line breaks.
 
 	var $el = $(
 		`<div class="alert-notify ${cls}">
@@ -38,7 +42,7 @@ function displayNotification(cls, message, timeout) {
 		.find("a.close")
 		.on("click", remove);
 
-	setTimeout(remove, timeout || defaultTimeout);
+	if (timeout !== null) setTimeout(remove, timeout || defaultTimeout);
 }
 
 function findOffset($el) {

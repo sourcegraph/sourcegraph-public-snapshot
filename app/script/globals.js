@@ -102,6 +102,9 @@ module.exports = {
 		CR_SUBMIT_REVIEW_SUCCESS: null,
 		CR_SUBMIT_REVIEW_FAIL: null,
 		CR_SHOW_COMMENT: null,
+		CR_MERGE: null,
+		CR_MERGE_SUCCESS: null,
+		CR_MERGE_FAIL: null,
 
 		// Search Actions
 		SEARCH_SUBMIT: null,

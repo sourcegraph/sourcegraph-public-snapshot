@@ -486,7 +486,7 @@ func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.Changeset
 	return rv, s.errFunc(err)
 }
 
-func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {

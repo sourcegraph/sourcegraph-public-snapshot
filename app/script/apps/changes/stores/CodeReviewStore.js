@@ -40,6 +40,12 @@ var CodeReviewStore = FluxStore({
 		 * @type {bool}
 		 */
 		submittingReview: false,
+
+		/**
+		 * @description Whether or not a review is currently being merged.
+		 * @type {bool}
+		 */
+		merging: false,
 	},
 
 	dispatcher: AppDispatcher,
@@ -64,6 +70,9 @@ var CodeReviewStore = FluxStore({
 		CR_SUBMIT_REVIEW_SUCCESS: "_onSubmitReviewSuccess",
 		CR_SUBMIT_REVIEW_FAIL: "_onSubmitReviewFail",
 		CR_SHOW_COMMENT: "_onShowComment",
+		CR_MERGE: "_onMerge",
+		CR_MERGE_SUCCESS: "_onMergeSuccess",
+		CR_MERGE_FAIL: "_onMergeFail",
 	},
 
 	/**
@@ -305,6 +314,20 @@ var CodeReviewStore = FluxStore({
 
 	_onShowComment(action) {
 		this.trigger("scrollTop", action.comment.getAbsolutePosition().top);
+	},
+
+	_onMerge(action) {
+		this.set("merging", true);
+	},
+
+	_onMergeSuccess(action) {
+		this.get("events").add(action.data, {silent: true});
+		this.set("Changeset", action.data.After);
+		this.set("merging", false);
+	},
+
+	_onMergeFail(action) {
+		this.set("merging", false);
 	},
 });
 
