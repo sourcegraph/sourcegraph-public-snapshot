@@ -326,7 +326,7 @@ type ChangesetsClient struct {
 	Get_          func(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error)
 	List_         func(ctx context.Context, in *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
 	Update_       func(ctx context.Context, in *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
-	Merge_        func(ctx context.Context, in *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error)
+	Merge_        func(ctx context.Context, in *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error)
 	CreateReview_ func(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
 	ListReviews_  func(ctx context.Context, in *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
 	ListEvents_   func(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
@@ -348,7 +348,7 @@ func (s *ChangesetsClient) Update(ctx context.Context, in *sourcegraph.Changeset
 	return s.Update_(ctx, in)
 }
 
-func (s *ChangesetsClient) Merge(ctx context.Context, in *sourcegraph.ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+func (s *ChangesetsClient) Merge(ctx context.Context, in *sourcegraph.ChangesetMergeOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetEvent, error) {
 	return s.Merge_(ctx, in)
 }
 
@@ -371,7 +371,7 @@ type ChangesetsServer struct {
 	Get_          func(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error)
 	List_         func(v0 context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
 	Update_       func(v0 context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
-	Merge_        func(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error)
+	Merge_        func(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error)
 	CreateReview_ func(v0 context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
 	ListReviews_  func(v0 context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
 	ListEvents_   func(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
@@ -393,7 +393,7 @@ func (s *ChangesetsServer) Update(v0 context.Context, v1 *sourcegraph.ChangesetU
 	return s.Update_(v0, v1)
 }
 
-func (s *ChangesetsServer) Merge(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+func (s *ChangesetsServer) Merge(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
 	return s.Merge_(v0, v1)
 }
 

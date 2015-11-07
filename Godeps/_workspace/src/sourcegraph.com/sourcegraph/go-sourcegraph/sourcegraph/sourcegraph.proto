@@ -809,8 +809,9 @@ service Changesets {
 	rpc Update(ChangesetUpdateOp) returns (ChangesetEvent);
 
 	// Merge merges the head branch of a changeset into its base branch and
-	// pushes the resulting merged base.
-	rpc Merge(ChangesetMergeOp) returns (pbtypes.Void);
+	// pushes the resulting merged base. It returns the resulting update event.
+	// If no merge occurred, it returns nil.
+	rpc Merge(ChangesetMergeOp) returns (ChangesetEvent);
 
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.

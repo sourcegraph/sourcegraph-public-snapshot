@@ -4680,8 +4680,9 @@ type ChangesetsClient interface {
 	// update event. If no update occurred, it returns nil.
 	Update(ctx context.Context, in *ChangesetUpdateOp, opts ...grpc.CallOption) (*ChangesetEvent, error)
 	// Merge merges the head branch of a changeset into its base branch and
-	// pushes the resulting merged base.
-	Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// pushes the resulting merged base. It returns the resulting update event.
+	// If no merge occurred, it returns nil.
+	Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*ChangesetEvent, error)
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
 	CreateReview(ctx context.Context, in *ChangesetCreateReviewOp, opts ...grpc.CallOption) (*ChangesetReview, error)
@@ -4735,8 +4736,8 @@ func (c *changesetsClient) Update(ctx context.Context, in *ChangesetUpdateOp, op
 	return out, nil
 }
 
-func (c *changesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
+func (c *changesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*ChangesetEvent, error) {
+	out := new(ChangesetEvent)
 	err := grpc.Invoke(ctx, "/sourcegraph.Changesets/Merge", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -4785,8 +4786,9 @@ type ChangesetsServer interface {
 	// update event. If no update occurred, it returns nil.
 	Update(context.Context, *ChangesetUpdateOp) (*ChangesetEvent, error)
 	// Merge merges the head branch of a changeset into its base branch and
-	// pushes the resulting merged base.
-	Merge(context.Context, *ChangesetMergeOp) (*pbtypes1.Void, error)
+	// pushes the resulting merged base. It returns the resulting update event.
+	// If no merge occurred, it returns nil.
+	Merge(context.Context, *ChangesetMergeOp) (*ChangesetEvent, error)
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
 	CreateReview(context.Context, *ChangesetCreateReviewOp) (*ChangesetReview, error)

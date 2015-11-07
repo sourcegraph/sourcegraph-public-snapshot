@@ -149,7 +149,7 @@ func (s remoteChangesets) Update(ctx context.Context, v1 *sourcegraph.ChangesetU
 	return sourcegraph.NewClientFromContext(ctx).Changesets.Update(ctx, v1)
 }
 
-func (s remoteChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*pbtypes.Void, error) {
+func (s remoteChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
 	return sourcegraph.NewClientFromContext(ctx).Changesets.Merge(ctx, v1)
 }
 
