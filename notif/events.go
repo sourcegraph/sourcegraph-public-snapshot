@@ -1,31 +1,27 @@
 package notif
 
 import (
+	"github.com/AaronO/go-git-http"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/events"
 )
 
-const ChangesetCreateEvent events.EventID = "changeset.create"
-const ChangesetUpdateEvent events.EventID = "changeset.update"
-const ChangesetReviewEvent events.EventID = "changeset.review"
-const ChangesetCloseEvent events.EventID = "changeset.close"
+const GitPushEvent events.EventID = "git.push"
+const GitCreateEvent events.EventID = "git.create"
+const GitDeleteEvent events.EventID = "git.delete"
 
-type ChangesetPayload struct {
-	UserSpec  sourcegraph.UserSpec
-	ID        int64
-	Repo      string
-	Title     string
-	URL       string
-	Changeset *sourcegraph.Changeset
-	Review    *sourcegraph.ChangesetReview
-	Update    *sourcegraph.ChangesetUpdateOp
+type GitPayload struct {
+	Actor           sourcegraph.UserSpec
+	Repo            sourcegraph.RepoSpec
+	ContentEncoding string
+	Event           githttp.Event
 }
 
 const DiscussionCreateEvent events.EventID = "discussion.create"
 const DiscussionCommentEvent events.EventID = "discussion.comment"
 
 type DiscussionPayload struct {
-	UserSpec   sourcegraph.UserSpec
+	Actor      sourcegraph.UserSpec
 	ID         int64
 	Repo       string
 	Title      string

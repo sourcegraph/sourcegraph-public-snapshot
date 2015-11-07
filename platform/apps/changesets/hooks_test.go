@@ -8,7 +8,7 @@ import (
 	"github.com/AaronO/go-git-http"
 
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/events/githooks"
+	"src.sourcegraph.com/sourcegraph/notif"
 )
 
 // TestChangesetHook_couldAffectChangesets tests if a list of events is correctly
@@ -16,13 +16,13 @@ import (
 func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 	for _, tc := range []struct {
 		id  events.EventID
-		in  githooks.Payload
+		in  notif.GitPayload
 		out bool
 	}{
 		{
 			// contains an error
-			githooks.GitPushEvent,
-			githooks.Payload{
+			notif.GitPushEvent,
+			notif.GitPayload{
 				Event: githttp.Event{
 					Error:  errors.New("some error"),
 					Branch: "branch",
@@ -33,8 +33,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, false,
 		}, {
 			// is a new branch
-			githooks.GitCreateEvent,
-			githooks.Payload{
+			notif.GitCreateEvent,
+			notif.GitPayload{
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",
@@ -45,8 +45,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, false,
 		}, {
 			// invalid commit value
-			githooks.GitPushEvent,
-			githooks.Payload{
+			notif.GitPushEvent,
+			notif.GitPayload{
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",
@@ -57,8 +57,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, false,
 		}, {
 			// push commit
-			githooks.GitPushEvent,
-			githooks.Payload{
+			notif.GitPushEvent,
+			notif.GitPayload{
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",
@@ -69,8 +69,8 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, true,
 		}, {
 			// push branch deletion
-			githooks.GitDeleteEvent,
-			githooks.Payload{
+			notif.GitDeleteEvent,
+			notif.GitPayload{
 				Event: githttp.Event{
 					Error:  nil,
 					Branch: "branch",

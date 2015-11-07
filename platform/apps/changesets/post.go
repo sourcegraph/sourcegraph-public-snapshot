@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/platform/apps/changesets/notif"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -54,9 +54,8 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 	if flags.JiraURL != "" {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
-	notifyCreation(ctx, user, uri, cs)
 	events.Publish(notif.ChangesetCreateEvent, notif.ChangesetPayload{
-		UserSpec:  user.Spec(),
+		Actor:     user.Spec(),
 		ID:        cs.ID,
 		Repo:      uri,
 		Title:     cs.Title,
@@ -104,24 +103,25 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 		return err
 	}
 
+	cs, err := sg.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{
+		Repo: sourcegraph.RepoSpec{URI: uri},
+		ID:   id,
+	})
+	if err != nil {
+		return err
+	}
 	if flags.JiraURL != "" {
-		cs, err := sg.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{
-			Repo: sourcegraph.RepoSpec{URI: uri},
-			ID:   id,
-		})
-		if err != nil {
-			return err
-		}
 		jiraOnChangesetUpdate(ctx, cs)
 	}
 
 	events.Publish(notif.ChangesetUpdateEvent, notif.ChangesetPayload{
-		UserSpec: user.Spec(),
-		ID:       op.ID,
-		Repo:     uri,
-		Title:    op.Title,
-		URL:      urlToChangeset(ctx, op.ID),
-		Update:   &op,
+		Actor:     user.Spec(),
+		ID:        op.ID,
+		Repo:      uri,
+		Title:     op.Title,
+		URL:       urlToChangeset(ctx, op.ID),
+		Changeset: cs,
+		Update:    &op,
 	})
 	return writeJSON(w, result)
 }
@@ -169,14 +169,15 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	notifyReview(ctx, user, uri, cs, op)
+
 	events.Publish(notif.ChangesetReviewEvent, notif.ChangesetPayload{
-		UserSpec: user.Spec(),
-		ID:       cs.ID,
-		Repo:     uri,
-		Title:    cs.Title,
-		URL:      urlToChangeset(ctx, cs.ID),
-		Review:   review,
+		Actor:     user.Spec(),
+		ID:        cs.ID,
+		Repo:      uri,
+		Title:     cs.Title,
+		URL:       urlToChangeset(ctx, cs.ID),
+		Changeset: cs,
+		Review:    review,
 	})
 	return nil
 }

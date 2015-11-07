@@ -82,7 +82,7 @@ func ActionEmailMessage(nctx ActionContext) {
 
 func generateSlackMessage(nctx ActionContext) (string, error) {
 	tmpl := template.Must(template.New("slack-action").Parse(
-		"*{{.Person.PersonSpec.Login}}* {{.ActionType}} <{{.ObjectURL}}|{{.ObjectRepo}} {{.ObjectType}} #{{.ObjectID}}>: {{.ObjectTitle}}{{if .Recipients}} /cc{{end}}{{range .Recipients}} @{{.PersonSpec.Login}}{{end}}{{if .ActionContent}}\n\n{{.ActionContent}}{{end}}"))
+		"*{{.Person.PersonSpec.Login}}* {{.ActionType}} <{{.ObjectURL}}|{{.ObjectRepo}}{{if .ObjectType}} {{.ObjectType}}{{end}}{{if .ObjectID}} #{{.ObjectID}}{{end}}>{{if .ObjectTitle}}: {{.ObjectTitle}}{{end}}{{if .Recipients}} /cc{{end}}{{range .Recipients}} @{{.PersonSpec.Login}}{{end}}{{if .ActionContent}}\n\n{{.ActionContent}}{{end}}"))
 	var buf bytes.Buffer
 	err := tmpl.Execute(&buf, nctx)
 	if err != nil {

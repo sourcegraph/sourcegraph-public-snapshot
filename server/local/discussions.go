@@ -19,7 +19,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
 var Discussions sourcegraph.DiscussionsServer = &discussions{}
@@ -44,34 +43,12 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 		return nil, err
 	}
 
-	{
-		// Build list of recipients
-		recipients, err := mdutil.Mentions(ctx, []byte(in.Description))
-		if err != nil {
-			return nil, err
-		}
-
-		// Send notification.
-		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.DefKey.Repo), in.ID))
-		cl := sourcegraph.NewClientFromContext(ctx)
-		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-			Actor:       notif.UserFromContext(ctx),
-			Recipients:  recipients,
-			ActionType:  "created",
-			ObjectURL:   permalink,
-			ObjectRepo:  in.DefKey.Repo,
-			ObjectType:  "discussion",
-			ObjectID:    in.ID,
-			ObjectTitle: in.Title,
-		})
-	}
-
 	events.Publish(notif.DiscussionCreateEvent, notif.DiscussionPayload{
-		UserSpec:   authpkg.UserSpecFromContext(ctx),
+		Actor:      authpkg.UserSpecFromContext(ctx),
 		ID:         in.ID,
 		Repo:       in.DefKey.Repo,
 		Title:      in.Title,
-		URL:        appURL(ctx, app_router.Rel.URLToDef(in.DefKey)),
+		URL:        appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.DefKey.Repo), in.ID)),
 		Discussion: in,
 	})
 
@@ -123,44 +100,19 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		return nil, err
 	}
 
-	{
-		// Build list of recipients
-		cl := sourcegraph.NewClientFromContext(ctx)
-		actor := notif.UserFromContext(ctx)
-		discussion, err := s.Get(ctx, &sourcegraph.DiscussionSpec{Repo: sourcegraph.RepoSpec{URI: in.Comment.DefKey.Repo}, ID: in.DiscussionID})
-		if err != nil {
-			return nil, err
-		}
-		var recipients []*sourcegraph.UserSpec
-		if discussion.Author.UID != actor.UID {
-			recipients = append(recipients, &discussion.Author)
-		}
-		ppl, err := mdutil.Mentions(ctx, []byte(in.Comment.Body))
-		if err != nil {
-			return nil, err
-		}
-		recipients = append(recipients, ppl...)
-
-		// Send notification
-		permalink := appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.Comment.DefKey.Repo), discussion.ID))
-		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-			Actor:       actor,
-			Recipients:  recipients,
-			ActionType:  "commented on",
-			ObjectURL:   permalink,
-			ObjectRepo:  in.Comment.DefKey.Repo,
-			ObjectType:  "discussion",
-			ObjectID:    discussion.ID,
-			ObjectTitle: discussion.Title,
-		})
+	discussion, err := s.Get(ctx, &sourcegraph.DiscussionSpec{Repo: sourcegraph.RepoSpec{URI: in.Comment.DefKey.Repo}, ID: in.DiscussionID})
+	if err != nil {
+		return nil, err
 	}
 
 	events.Publish(notif.DiscussionCommentEvent, notif.DiscussionPayload{
-		UserSpec: authpkg.UserSpecFromContext(ctx),
-		ID:       in.DiscussionID,
-		Repo:     in.Comment.DefKey.Repo,
-		URL:      appURL(ctx, app_router.Rel.URLToDef(in.Comment.DefKey)),
-		Comment:  in.Comment,
+		Actor:      authpkg.UserSpecFromContext(ctx),
+		ID:         in.DiscussionID,
+		Repo:       in.Comment.DefKey.Repo,
+		URL:        appURL(ctx, app_router.Rel.URLToRepoDiscussion(string(in.Comment.DefKey.Repo), discussion.ID)),
+		Discussion: discussion,
+		Comment:    in.Comment,
+		Title:      discussion.Title,
 	})
 
 	return in.Comment, nil

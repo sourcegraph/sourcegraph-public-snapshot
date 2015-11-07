@@ -7,8 +7,8 @@ import (
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/events/githooks"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -68,19 +68,19 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		return nil, err
 	}
 	gitEvents = collapseDuplicateEvents(gitEvents)
-	payload := githooks.Payload{
-		CtxActor:        authpkg.ActorFromContext(ctx),
+	payload := notif.GitPayload{
+		Actor:           authpkg.UserSpecFromContext(ctx),
 		Repo:            op.Repo,
 		ContentEncoding: op.ContentEncoding,
 	}
 	for _, e := range gitEvents {
 		payload.Event = e
 		if e.Last == EmptyCommitID {
-			events.Publish(githooks.GitCreateEvent, payload)
+			events.Publish(notif.GitCreateEvent, payload)
 		} else if e.Commit == EmptyCommitID {
-			events.Publish(githooks.GitDeleteEvent, payload)
+			events.Publish(notif.GitDeleteEvent, payload)
 		} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
-			events.Publish(githooks.GitPushEvent, payload)
+			events.Publish(notif.GitPushEvent, payload)
 		}
 	}
 	return &gitpb.Packet{Data: data}, nil
