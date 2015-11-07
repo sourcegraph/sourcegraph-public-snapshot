@@ -36,7 +36,7 @@ func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAdd
 
 func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
 	if user.UID == 0 {
-		panic("UID == 0")
+		return nil, &store.UserNotFoundError{UID: 0}
 	}
 
 	var emailAddrRows []*userEmailAddrRow
@@ -54,7 +54,7 @@ func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*s
 
 func (s *Accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
 	if user.UID == 0 {
-		panic("UID == 0")
+		return &store.UserNotFoundError{UID: 0}
 	}
 
 	return dbutil.Transact(dbh(ctx), func(tx modl.SqlExecutor) error {
