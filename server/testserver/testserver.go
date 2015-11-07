@@ -226,9 +226,6 @@ func (s *Server) Close() {
 	if err := s.basePortListener.Close(); err != nil {
 		log.Fatal(err)
 	}
-	if ps := s.ServerCmd.ProcessState; ps != nil && ps.Exited() {
-		log.Fatalf("Test server %d exited: %s.", s.ServerCmd.Process.Pid, s.ServerCmd.ProcessState.Sys())
-	}
 	if err := s.ServerCmd.Process.Signal(os.Interrupt); err != nil {
 		log.Fatal(err)
 	}
