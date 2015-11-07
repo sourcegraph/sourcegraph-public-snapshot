@@ -82,14 +82,6 @@ blockquote {
 	margin-bottom: ($line-height-computed / 2);
 }
 
-.btn-secondary {
-	@include button-variant($white, $sg-blue-color, darken($sg-blue-color, 10));
-}
-
-.btn-cancel {
-	@include button-variant($btn-default-color, $gray-lightest, darken($gray-lightest, 8));
-}
-
 .actions {
 	.btn:nth-child(n+2) {
 		margin-left: 5px;

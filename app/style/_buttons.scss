@@ -1,26 +1,32 @@
 .btn-sgblue {
-	padding: 4px 10px;
 	border-radius: 3px;
-	margin-right: 2px;
 	color: #FFF;
-	border: 1px solid darken($sg-blue-color, 10%);
-	background: linear-gradient(lighten($sg-blue-color, 8%), $sg-blue-color);
+	border: 1px solid darken($sg-blue-color, 8%);
+	background: linear-gradient(lighten($sg-blue-color, 5%), $sg-blue-color);
 	background-repeat: repeat-x;
 	font-size: 13px;
 
 	&:hover {
-		border: 1px solid darken($sg-blue-color, 15%);
+		border: 1px solid darken($sg-blue-color, 10%);
 		background: linear-gradient($sg-blue-color, darken($sg-blue-color, 8%));
 		color: #fff;
 	}
 }
 
+.btn-secondary {
+	@include button-variant($white, $sg-blue-color, darken($sg-blue-color, 10%));
+}
+
+.btn-cancel {
+	@include button-variant($btn-default-color, $gray-lightest, darken($gray-lightest, 8%));
+}
+
 .btn.btn-default {
+	$btn-default-color: #fcfcfc;
 	padding: 3px 10px 3px 10px;
-	height: 25px;
 	margin-left: 5px;
-	background-color: #eee;
-	background-image: linear-gradient(#fcfcfc, #eee);
+	background-color: $btn-default-color;
+	background-image: linear-gradient($btn-default-color, darken($btn-default-color, 3%));
 	background-repeat: repeat-x;
 	border: 1px solid #d5d5d5;
 	border-radius: 3px;
