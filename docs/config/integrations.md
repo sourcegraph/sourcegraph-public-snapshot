@@ -30,3 +30,13 @@ GitHubHost = ghe.mycompany.org
 Restart the server with `sudo restart src`. Now you can follow the steps from the previous section to import repositories from the GitHub Enterprise instance.
 
 Your GitHub Enterprise instance must have TLS enabled. You can't simultaneously import repos from github.com and GitHub Enterprise.
+
+## Slack
+
+You can configure your Sourcegraph to send notifications to Slack, by setting these flags in the `/etc/sourcegraph/config.ini` file and restarting the server (`sudo restart src`):
+
+```
+[serve.Slack]
+WebhookURL = https://hooks.slack.com/services/XXXXXX/YYYYY
+DefaultChannel = dev-bot
+```

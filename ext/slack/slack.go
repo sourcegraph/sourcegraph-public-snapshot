@@ -6,24 +6,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
+	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )
-
-var (
-	// WebhookURL is the URL to the Slack webhook endpoint for posting
-	// Slack notifications. If empty, Slack notifications are
-	// disabled.
-	WebhookURL = os.Getenv("SG_SLACK_WEBHOOK_URL")
-
-	defaultChannel  = "#dev-bot"
-	defaultUsername = "Sourcegraph"
-)
-
-// Enabled is a boolean indicating whether PostMessage should actually
-// post a message. If false, it is a no-op.
-func Enabled() bool { return WebhookURL != "" }
 
 // PostOpts rerepsents options for posting a message to slack.
 type PostOpts struct {
@@ -39,21 +25,25 @@ type PostOpts struct {
 // PostMessage posts a message to the Slack channel. If an error
 // occurs, it is logged and PostMessage returns (without panicking).
 func PostMessage(opt PostOpts) {
-	if !Enabled() {
+	webHookURL := Config.GetWebhookURLIfConfigured()
+	if webHookURL == "" {
 		log.Printf("Ignored Slack message: %q.", opt.Msg)
 		return
 	}
 
 	if opt.IconEmoji == "" && opt.IconURL == "" {
-		opt.IconURL = "https://sourcegraph.com/static/img/favicon.png"
+		opt.IconURL = Config.DefaultIcon
 	}
-
 	if opt.Channel == "" {
-		opt.Channel = defaultChannel
+		opt.Channel = Config.DefaultChannel
+	}
+	if !strings.HasPrefix(opt.Channel, "#") {
+		opt.Channel = "#" + opt.Channel
 	}
 	if opt.Username == "" {
-		opt.Username = defaultUsername
+		opt.Username = Config.DefaultUsername
 	}
+	opt.DisableLinkNames = opt.DisableLinkNames || Config.DisableLinkNames
 
 	type attachmentField struct {
 		Title string `json:"title"`
@@ -91,7 +81,7 @@ func PostMessage(opt PostOpts) {
 		if err != nil {
 			return err
 		}
-		resp, err := http.Post(WebhookURL, "application/json", bytes.NewReader(b))
+		resp, err := http.Post(webHookURL, "application/json", bytes.NewReader(b))
 		if err != nil {
 			return err
 		}

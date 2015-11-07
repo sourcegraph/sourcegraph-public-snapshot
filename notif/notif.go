@@ -10,7 +10,8 @@ import "src.sourcegraph.com/sourcegraph/ext/slack"
 // MustBeDisabled panics if sending notifications is enabled.
 // Use it in tests to ensure that they do not send live notifications.
 func MustBeDisabled() {
-	if !AwsEmailEnabled && !mandrillEnabled && !slack.Enabled() {
+	slackEnabled := (slack.Config.GetWebhookURLIfConfigured() != "")
+	if !AwsEmailEnabled && !mandrillEnabled && !slackEnabled {
 		return
 	}
 	m := "notif.MustBeDisabled: the following notifications are enabled:\n"
@@ -20,7 +21,7 @@ func MustBeDisabled() {
 	if mandrillEnabled {
 		m += "mandrillEnabled\n"
 	}
-	if slack.Enabled() {
+	if slackEnabled {
 		m += "SlackEnabled\n"
 	}
 	panic(m)
