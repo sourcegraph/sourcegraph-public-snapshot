@@ -401,6 +401,24 @@ func (c *ServeCmd) Execute(args []string) error {
 		return ctx
 	}
 
+	if fed.Config.IsRoot {
+		// Listen for events and flush them to elasticsearch
+		metricutil.StartEventForwarder(clientCtx)
+		metricutil.StartEventLogger(clientCtx, 4096, 1024, 5*time.Minute)
+	} else if c.GraphUplinkPeriod != 0 {
+		// Listen for events and periodically push them upstream
+		metricutil.StartEventLogger(clientCtx, 4096, 256, 10*time.Minute)
+	}
+
+	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
+		Type:     "notif",
+		ClientID: idKey.ID,
+		Service:  "serve_cmd",
+		Method:   "start",
+		Result:   "success",
+	})
+	metricutil.LogConfig(clientCtx, idKey.ID, c.safeConfigFlags())
+
 	sm := http.NewServeMux()
 	for _, f := range cli.ServeMuxFuncs {
 		f(sm)
@@ -532,23 +550,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
-
-	if fed.Config.IsRoot {
-		// Listen for events and flush them to elasticsearch
-		metricutil.StartEventForwarder(clientCtx)
-		metricutil.StartEventLogger(clientCtx, 4096, 1024, 5*time.Minute)
-	} else if c.GraphUplinkPeriod != 0 {
-		// Listen for events and periodically push them upstream
-		metricutil.StartEventLogger(clientCtx, 4096, 256, 10*time.Minute)
-	}
-	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
-		Type:     "notif",
-		ClientID: idKey.ID,
-		Service:  "serve_cmd",
-		Method:   "start",
-		Result:   "success",
-	})
-	metricutil.LogConfig(clientCtx, idKey.ID, c.safeConfigFlags())
 
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
