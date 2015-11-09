@@ -25,7 +25,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/gitserver"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil/reqtimer"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 
 	_ "src.sourcegraph.com/sourcegraph/app/internal/markdown"
@@ -59,7 +58,6 @@ func NewHandler(r *router.Router) http.Handler {
 	mw := []handlerutil.Middleware{
 		appauth.CookieMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
-		reqtimer.Middleware,
 		handlerutil.UserMiddleware,
 	}
 	mw = append(mw, internal.Middleware...)
