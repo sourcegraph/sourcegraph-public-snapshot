@@ -49,13 +49,13 @@ func (x TreeEntryType) String() string {
 // FileRange is a line and byte range in a file.
 type FileRange struct {
 	// start of line range
-	StartLine int64 `protobuf:"varint,1,opt,name=start_line,proto3" json:"start_line,omitempty" url:",omitempty"`
+	StartLine int64 `protobuf:"varint,1,opt,name=start_line,proto3" json:",omitempty" url:",omitempty"`
 	// end of line range
-	EndLine int64 `protobuf:"varint,2,opt,name=end_line,proto3" json:"end_line,omitempty" url:",omitempty"`
+	EndLine int64 `protobuf:"varint,2,opt,name=end_line,proto3" json:",omitempty" url:",omitempty"`
 	// start of byte range
-	StartByte int64 `protobuf:"varint,3,opt,name=start_byte,proto3" json:"start_byte,omitempty" url:",omitempty"`
+	StartByte int64 `protobuf:"varint,3,opt,name=start_byte,proto3" json:",omitempty" url:",omitempty"`
 	// end of byte range
-	EndByte int64 `protobuf:"varint,4,opt,name=end_byte,proto3" json:"end_byte,omitempty" url:",omitempty"`
+	EndByte int64 `protobuf:"varint,4,opt,name=end_byte,proto3" json:",omitempty" url:",omitempty"`
 }
 
 func (m *FileRange) Reset()         { *m = FileRange{} }
@@ -65,26 +65,26 @@ func (*FileRange) ProtoMessage()    {}
 // GetFileOptions specifies options for GetFileWithOptions.
 type GetFileOptions struct {
 	// line or byte range to fetch (can't set both line *and* byte range)
-	FileRange `protobuf:"bytes,1,opt,name=file_range,embedded=file_range" json:"file_range"`
+	FileRange `protobuf:"bytes,1,opt,name=file_range,embedded=file_range" `
 	// EntireFile is whether the entire file contents should be returned. If true,
 	// Start/EndLine and Start/EndBytes are ignored.
-	EntireFile bool `protobuf:"varint,2,opt,name=entire_file,proto3" json:"entire_file,omitempty" url:",omitempty"`
+	EntireFile bool `protobuf:"varint,2,opt,name=entire_file,proto3" json:",omitempty" url:",omitempty"`
 	// ExpandContextLines is how many lines of additional output context to include (if
 	// Start/EndLine and Start/EndBytes are specified). For example, specifying 2 will
 	// expand the range to include 2 full lines before the beginning and 2 full lines
 	// after the end of the range specified by Start/EndLine and Start/EndBytes.
-	ExpandContextLines int32 `protobuf:"varint,3,opt,name=expand_context_lines,proto3" json:"expand_context_lines,omitempty" url:",omitempty"`
+	ExpandContextLines int32 `protobuf:"varint,3,opt,name=expand_context_lines,proto3" json:",omitempty" url:",omitempty"`
 	// FullLines is whether a range that includes partial lines should be extended to
 	// the nearest line boundaries on both sides. It is only valid if StartByte and
 	// EndByte are specified.
-	FullLines bool `protobuf:"varint,4,opt,name=full_lines,proto3" json:"full_lines,omitempty" url:",omitempty"`
+	FullLines bool `protobuf:"varint,4,opt,name=full_lines,proto3" json:",omitempty" url:",omitempty"`
 	// Recursive only applies if the returned entry is a directory. It will
 	// return the full file tree of the host repository, recursing into all
 	// sub-directories.
-	Recursive bool `protobuf:"varint,5,opt,name=recursive,proto3" json:"recursive,omitempty" url:",omitempty"`
+	Recursive bool `protobuf:"varint,5,opt,name=recursive,proto3" json:",omitempty" url:",omitempty"`
 	// RecurseSingleSubfolder only applies if the returned entry is a directory.
 	// It will recursively find and include all sub-directories with a single sub-directory.
-	RecurseSingleSubfolder bool `protobuf:"varint,6,opt,name=recurse_single_subfolder,proto3" json:"recurse_single_subfolder,omitempty" url:",omitempty"`
+	RecurseSingleSubfolder bool `protobuf:"varint,6,opt,name=recurse_single_subfolder,proto3" json:",omitempty" url:",omitempty"`
 }
 
 func (m *GetFileOptions) Reset()         { *m = GetFileOptions{} }
@@ -92,12 +92,12 @@ func (m *GetFileOptions) String() string { return proto.CompactTextString(m) }
 func (*GetFileOptions) ProtoMessage()    {}
 
 type TreeEntry struct {
-	Name     string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type     TreeEntryType     `protobuf:"varint,2,opt,name=type,proto3,enum=vcsclient.TreeEntryType" json:"type,omitempty"`
-	Size     int64             `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
-	ModTime  pbtypes.Timestamp `protobuf:"bytes,4,opt,name=mod_time" json:"mod_time"`
-	Contents []byte            `protobuf:"bytes,5,opt,name=contents,proto3" json:"contents,omitempty"`
-	Entries  []*TreeEntry      `protobuf:"bytes,6,rep,name=entries" json:"entries,omitempty"`
+	Name     string            `protobuf:"bytes,1,opt,name=name,proto3" json:",omitempty"`
+	Type     TreeEntryType     `protobuf:"varint,2,opt,name=type,proto3,enum=vcsclient.TreeEntryType" json:",omitempty"`
+	Size     int64             `protobuf:"varint,3,opt,name=size,proto3" json:",omitempty"`
+	ModTime  pbtypes.Timestamp `protobuf:"bytes,4,opt,name=mod_time" `
+	Contents []byte            `protobuf:"bytes,5,opt,name=contents,proto3" json:",omitempty"`
+	Entries  []*TreeEntry      `protobuf:"bytes,6,rep,name=entries" json:",omitempty"`
 }
 
 func (m *TreeEntry) Reset()         { *m = TreeEntry{} }
