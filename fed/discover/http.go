@@ -106,7 +106,7 @@ func discoverSiteHTTP(ctx context.Context, scheme, host string) (Info, error) {
 		return nil, &NotFoundError{
 			Type:  "site",
 			Input: host,
-			Err:   fmt.Errorf("JSON document at %s is misssing a GRPCEndpoint value", url),
+			Err:   fmt.Errorf("JSON document at %s is missing a GRPCEndpoint value", url),
 		}
 	}
 	if err := checkURL(conf.GRPCEndpoint); err != nil {
