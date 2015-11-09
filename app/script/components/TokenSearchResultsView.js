@@ -27,7 +27,7 @@ var TokenSearchResultsView = React.createClass({
 		if (!this.props.results) return null;
 
 		var results = this.props.results.map((result) => {
-			return <TokenSearchResult key={result.URL} result={result} />;
+			return <TokenSearchResult key={result.URL} result={result}/>;
 		});
 
 		var summary, s;
