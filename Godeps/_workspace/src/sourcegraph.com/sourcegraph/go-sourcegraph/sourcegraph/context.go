@@ -136,8 +136,11 @@ var RemovePooledGRPCConn = func(ctx context.Context) {
 	removeConnFromPool(grpcEndpoint.Host)
 }
 
+// contextCredentials implements the credentials.Credentials interface.
 type contextCredentials struct{}
 
+// GetRequestMetadata implements the credentials.Credentials interface. As per the
+// interface definition, it may be called by multiple goroutines concurrently.
 func (contextCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	m := clientMetadataFromContext(ctx)
 
@@ -150,6 +153,8 @@ func (contextCredentials) GetRequestMetadata(ctx context.Context, uri ...string)
 		if m == nil {
 			m = credMD
 		} else {
+			// Copy the map to avoid a data race writing to the map returned by
+			// clientMetaDataFromContext.
 			cpy := make(map[string]string)
 			for k, v := range m {
 				cpy[k] = v
@@ -163,6 +168,7 @@ func (contextCredentials) GetRequestMetadata(ctx context.Context, uri ...string)
 	return m, nil
 }
 
+// RequireTransportSecurity implements the credentials.Credentials interface.
 func (contextCredentials) RequireTransportSecurity() bool {
 	return false
 }
