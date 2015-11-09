@@ -38,12 +38,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		el = $("#SearchBar");
-		ReactDOM.render(
-			<SearchBar
-				repo={currentRepo||null}
-				searchOptions={searchOptions||null} />,
-			el[0]
-		);
+		if (el.length > 0 && currentRepo) {
+			ReactDOM.render(
+				<SearchBar
+					repo={currentRepo}
+					searchOptions={searchOptions||null} />,
+				el[0]
+			);
+		}
 	}
 
 	el = $("#CodeFileView");
