@@ -125,7 +125,7 @@ module.exports.expandHunk = function expandHunk(hunk, isDirectionUp, evt) {
 		startLine = endLine - globals.HunkExpandLines < 1 ? 1 : endLine - globals.HunkExpandLines;
 
 		// don't overflow into previous hunk
-		if (hunks.length > 1) {
+		if (index > 0 && hunks.length > 1) {
 			var prevHunk = hunks.at(index - 1);
 			if (prevHunk && prevHunk.get("NewStartLine") + prevHunk.get("NewLines") - 1 >= startLine) {
 				startLine = prevHunk.get("NewStartLine") + prevHunk.get("NewLines");
