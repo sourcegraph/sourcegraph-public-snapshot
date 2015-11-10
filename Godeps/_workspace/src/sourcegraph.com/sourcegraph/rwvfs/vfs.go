@@ -4,6 +4,7 @@ package rwvfs
 import (
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"syscall"
 
@@ -60,6 +61,8 @@ func isMkdirAllOverrider(fs FileSystem) (MkdirAllOverrider, bool) {
 func MkdirAll(fs FileSystem, path string) error {
 	// adapted from os/MkdirAll
 
+	path = filepath.ToSlash(path)
+
 	if fs, ok := isMkdirAllOverrider(fs); ok {
 		return fs.MkdirAll(path)
 	}
@@ -73,12 +76,12 @@ func MkdirAll(fs FileSystem, path string) error {
 	}
 
 	i := len(path)
-	for i > 0 && os.IsPathSeparator(path[i-1]) {
+	for i > 0 && path[i-1] == '/' {
 		i--
 	}
 
 	j := i
-	for j > 0 && !os.IsPathSeparator(path[j-1]) {
+	for j > 0 && path[j-1] != '/' {
 		j--
 	}
 
@@ -106,13 +109,13 @@ func MkdirAll(fs FileSystem, path string) error {
 func Glob(wfs WalkableFileSystem, prefix, pattern string) (matches []string, err error) {
 	walker := fs.WalkFS(filepath.Clean(prefix), wfs)
 	for walker.Step() {
-		path := walker.Path()
-		matched, err := filepath.Match(pattern, path)
+		p := filepath.ToSlash(walker.Path())
+		matched, err := path.Match(pattern, p)
 		if err != nil {
 			return nil, err
 		}
 		if matched {
-			matches = append(matches, path)
+			matches = append(matches, p)
 		}
 	}
 	return
@@ -138,7 +141,7 @@ func Walkable(fs FileSystem) WalkableFileSystem {
 
 type walkableFS struct{ FileSystem }
 
-func (_ walkableFS) Join(elem ...string) string { return filepath.Join(elem...) }
+func (_ walkableFS) Join(elem ...string) string { return path.Join(elem...) }
 
 type walkableLinkFS struct{ walkableFS }
 

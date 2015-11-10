@@ -47,6 +47,10 @@ func Write(t *testing.T, fs rwvfs.FileSystem) {
 	if err != nil {
 		t.Fatalf("%s: ReadAll: %s", label, err)
 	}
+	err = r.Close()
+	if err != nil {
+		t.Fatalf("%s: r.Close: %s", label, err)
+	}
 	if !bytes.Equal(output, input) {
 		t.Errorf("%s: got output %q, want %q", label, output, input)
 	}
@@ -68,6 +72,10 @@ func Write(t *testing.T, fs rwvfs.FileSystem) {
 	output, err = ioutil.ReadAll(r)
 	if err != nil {
 		t.Fatalf("%s: ReadAll: %s", label, err)
+	}
+	err = r.Close()
+	if err != nil {
+		t.Fatalf("%s: r.Close: %s", label, err)
 	}
 	if !bytes.Equal(output, input) {
 		t.Errorf("%s: got output %q, want %q", label, output, input)

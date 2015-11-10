@@ -357,7 +357,7 @@ func dirForRepo(repoURI string) string {
 // the VFS (relative to the VFS root, like "a/b") where the repo is
 // located.
 func repoForDir(dir string) string {
-	return strings.TrimPrefix(path.Clean(dir), "/")
+	return strings.TrimPrefix(filepath.ToSlash(path.Clean(dir)), "/")
 }
 
 // checkGitArg returns an error if arg could be a command-line flag,

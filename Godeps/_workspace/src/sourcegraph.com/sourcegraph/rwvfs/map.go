@@ -74,6 +74,7 @@ func noslash(p string) string {
 // slashdir returns path.Dir(p), but special-cases paths not beginning
 // with a slash to be in the root.
 func slashdir(p string) string {
+	p = filepath.ToSlash(p)
 	d := pathpkg.Dir(p)
 	if d == "." {
 		return "/"
@@ -88,7 +89,7 @@ func slash(p string) string {
 	if p == "." {
 		return "/"
 	}
-	return "/" + strings.TrimPrefix(p, "/")
+	return "/" + strings.TrimPrefix(filepath.ToSlash(p), "/")
 }
 
 type mapFile struct {

@@ -58,7 +58,7 @@ func writeAccessTokenFile(ctx context.Context, tokens serviceTokens) error {
 		return err
 	}
 	defer f.Close()
-	if err := f.Chmod(0600); err != nil {
+	if err := os.Chmod(f.Name(), 0600); err != nil {
 		return err
 	}
 

@@ -180,8 +180,8 @@ func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 // listing the entire file tree.
 type FileLister interface {
 	// ListFiles returns list of all file names in the repo at the
-	// given commit. Returned file paths are forward slash separated
-	// and are relative to the base directory of the repository.
-	// Eg. returned paths have the form "path/to/file.txt"
+	// given commit. Returned file paths are forward slash separated,
+	// relative to the base directory of the repository, and sorted
+	// alphabetically. E.g., returned paths have the form "path/to/file.txt".
 	ListFiles(CommitID) ([]string, error)
 }

@@ -51,7 +51,7 @@ func newVFS(base string) rwvfs.FileSystem {
 	var fs rwvfs.FileSystem
 
 	u, err := url.Parse(base)
-	if err == nil && u.Scheme != "" {
+	if err == nil && (u.Scheme == "http" || u.Scheme == "https") {
 		// base is a URL pointing to an HTTP VFS server.
 		fs = rwvfs.HTTP(u, nil)
 	} else {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	htmpl "html/template"
 	"net/url"
-	"path/filepath"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -187,7 +187,7 @@ var TemplateFunctions = htmpl.FuncMap{
 	"duration":              duration,
 	"isNil":                 isNil,
 	"minTime":               minTime,
-	"pathJoin":              filepath.Join,
+	"pathJoin":              path.Join,
 	"toInt": func(v interface{}) (int, error) {
 		switch v := v.(type) {
 		case int:

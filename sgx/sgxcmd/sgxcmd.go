@@ -16,6 +16,8 @@ const Name = "src"
 // Path is the path at which the binary can be found for execution purposes.
 // There is no guarantee that the binary will be on the system's path, so you
 // must always use this path instead for executing the command.
+// Path uses UNIX-style file separators to ensure it suitable both for running 
+// from system environment and Makefiles/shell scripts
 var Path string
 
 func init() {
@@ -26,6 +28,8 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Enforce Unix-style path, because this variable may be used in Makefiles	
+	Path = filepath.ToSlash(Path)
 
 	// Detect if we are a test binary by looking at our extension. If we are
 	// then we do not specify the absolute path to the binary, instead we leave

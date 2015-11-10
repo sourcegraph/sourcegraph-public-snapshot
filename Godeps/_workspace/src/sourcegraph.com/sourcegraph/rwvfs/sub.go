@@ -47,11 +47,11 @@ type subFetcherOpenerFS struct{ subFS }
 var _ FetcherOpener = subFetcherOpenerFS{}
 
 func (s subFS) resolve(path string) string {
-	return filepath.Join(s.prefix, strings.TrimPrefix(path, "/"))
+	return filepath.ToSlash(filepath.Join(s.prefix, strings.TrimPrefix(filepath.ToSlash(path), "/")))
 }
 
 func (s subFS) stripPrefix(path string) string {
-	return "/" + strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(path, "/"), strings.TrimPrefix(s.prefix, "/")), "/")
+	return "/" + strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(filepath.ToSlash(path), "/"), strings.TrimPrefix(filepath.ToSlash(s.prefix), "/")), "/")
 }
 
 func (s subFS) Lstat(path string) (os.FileInfo, error) {

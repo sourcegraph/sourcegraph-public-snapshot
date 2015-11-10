@@ -300,6 +300,7 @@ func (fs *hgFSNative) getManifest(chgId hg_revlog.FileRevSpec) (m hg_store.Manif
 }
 
 func (fs *hgFSNative) getEntry(path string) (*hg_revlog.Rec, *hg_store.ManifestEnt, error) {
+	path = filepath.ToSlash(path)
 	fileLog, err := fs.st.OpenRevlog(path)
 	if err != nil {
 		return nil, nil, err
