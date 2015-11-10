@@ -55,9 +55,9 @@ func VerifyLogin(username, password string) (*LDAPUser, error) {
 		return nil, err
 	}
 
-	queryTemplate := fmt.Sprintf("%s=%s", Config.UserIDField, username)
+	queryTemplate := fmt.Sprintf("(%s=%s)", Config.UserIDField, username)
 	if Config.Filter != "" {
-		queryTemplate = fmt.Sprintf("(&(%s)(%s))", Config.Filter, queryTemplate)
+		queryTemplate = fmt.Sprintf("(&(%s)%s)", Config.Filter, queryTemplate)
 	}
 	
 
