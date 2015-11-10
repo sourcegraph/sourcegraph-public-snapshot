@@ -11,7 +11,8 @@ import (
 
 func TestVerifyAccess(t *testing.T) {
 	getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*sourcegraph.UserPermissions, error) {
-		if actor.UID == 1 {
+		switch actor.UID {
+		case 1:
 			return &sourcegraph.UserPermissions{
 				UID:      int32(actor.UID),
 				ClientID: actor.ClientID,
@@ -19,20 +20,20 @@ func TestVerifyAccess(t *testing.T) {
 				Write:    true,
 				Admin:    true,
 			}, nil
-		} else if actor.UID == 2 {
+		case 2:
 			return &sourcegraph.UserPermissions{
 				UID:      int32(actor.UID),
 				ClientID: actor.ClientID,
 				Read:     true,
 				Write:    true,
 			}, nil
-		} else if actor.UID == 3 {
+		case 3:
 			return &sourcegraph.UserPermissions{
 				UID:      int32(actor.UID),
 				ClientID: actor.ClientID,
 				Read:     true,
 			}, nil
-		} else {
+		default:
 			return &sourcegraph.UserPermissions{
 				UID:      int32(actor.UID),
 				ClientID: actor.ClientID,

@@ -21,6 +21,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/mux"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"golang.org/x/net/http2"
 	"golang.org/x/oauth2"
@@ -41,6 +42,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/gitserver/sshgit"
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/server"
@@ -68,8 +70,9 @@ var shortHelpMessage = `Usage:
 Starts an HTTP server serving the app and API.
 
 [serve command options]
-          --addr=                                HTTP/2 (and HTTPS if TLS is enabled) address to listen on (:3001)
-          --http-addr=                           regular HTTP/1 address to listen on (:3000)
+          --http-addr=                           regular HTTP/1 address to listen on, if not blank (:3000)
+          --addr=                                HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank (:3001)
+          --ssh-addr=                            SSH address to listen on, if not blank (:3002)
           --grpc-addr=                           gRPC address to listen on (:3100)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
@@ -157,8 +160,9 @@ type ServeCmdPrivate struct {
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
-	Addr     string `long:"addr" default:":3001" description:"HTTP/2 (and HTTPS if TLS is enabled) address to listen on" required:"yes"`
-	HTTPAddr string `long:"http-addr" default:":3000" description:"regular HTTP/1 address to listen on"`
+	HTTPAddr string `long:"http-addr" default:":3000" description:"regular HTTP/1 address to listen on, if not blank"`
+	Addr     string `long:"addr" default:":3001" description:"HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank" required:"yes"`
+	SSHAddr  string `long:"ssh-addr" default:":3002" description:"SSH address to listen on, if not blank"`
 	GRPCAddr string `long:"grpc-addr" default:":3100" description:"gRPC address to listen on"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
@@ -530,6 +534,18 @@ func (c *ServeCmd) Execute(args []string) error {
 			log.Fatalf("Could not connect to LDAP server: %v", err)
 		} else {
 			log15.Info("Connection to LDAP server successful")
+		}
+	}
+
+	// Start SSH git server.
+	if c.SSHAddr != "" {
+		privateSigner, err := ssh.NewSignerFromKey(idKey.Private())
+		if err != nil {
+			return err
+		}
+		err = (&sshgit.Server{}).ListenAndStart(cliCtx, c.SSHAddr, privateSigner, idKey.ID)
+		if err != nil {
+			return err
 		}
 	}
 

@@ -76,6 +76,8 @@ func (c *Config) Authenticate(ctx context.Context, label string) (err error) {
 		return nil
 	}
 
+	// TODO: This can be replaced with a more general implementation in accesscontrol.VerifyActorHasReadAccess.
+	//       It would require factoring out the above label checking as well.
 	if c.AllowAnonymousReaders || !authutil.ActiveFlags.HasUserAccounts() {
 		return nil
 	}
