@@ -31,7 +31,7 @@
 				{{end}}
 
 				{{range (repoEnabledFrames .Repo)}}
-					<li>
+					<li {{if activeRepoApp $.CurrentURI $.Repo.URI .ID}}class="active"{{end}}>
 						<a href="{{urlToRepoApp $.Repo.URI .ID}}">
 							<i class="octicon octicon-{{.Icon}}"></i><span class="txt">{{.Title}}</span>
 						</a>

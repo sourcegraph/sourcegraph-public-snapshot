@@ -260,6 +260,14 @@ var TemplateFunctions = htmpl.FuncMap{
 		return *p
 	},
 
+	"activeRepoApp": func(currentURL *url.URL, repoURI, appID string) (bool, error) {
+		u, err := router.Rel.URLToRepoApp(repoURI, appID)
+		if err != nil {
+			return false, err
+		}
+		return strings.HasPrefix(currentURL.Path, u.Path), nil
+	},
+
 	"publicRavenDSN": func() string { return conf.PublicRavenDSN },
 
 	"urlToAppdashTrace": func(ctx context.Context, trace appdash.ID) *url.URL {
