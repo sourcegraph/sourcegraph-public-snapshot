@@ -44,7 +44,7 @@ header.page-header {
 		min-height: $navbar-height;
 
 		&.repo-subnav {
-			height: $subnav-height;
+			min-height: $subnav-height;
 			width: 100%;
 			float: left;
 
