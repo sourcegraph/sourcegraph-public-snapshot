@@ -68,6 +68,9 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	// prevent shared mutable state (e.g., modifying http.Requests) to
 	// prevent inter-app interference
 	rCopy := *r
+	urlCopy := *r.URL
+	rCopy.URL = &urlCopy
+
 	ctx := httpctx.FromRequest(r)
 
 	framectx, err := pctx.WithRepoFrameInfo(ctx, r)
