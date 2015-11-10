@@ -89,7 +89,7 @@ var HunkModel = Backbone.Model.extend({
 				extraClass: "gray",
 				lineNumberBase: baseStart + i,
 				lineNumberHead: headStart + i,
-				allowComments: false, // disallow commenting on context
+				contextLine: true,
 			});
 		});
 	},

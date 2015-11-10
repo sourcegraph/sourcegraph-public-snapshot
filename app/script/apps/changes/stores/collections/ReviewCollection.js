@@ -132,10 +132,15 @@ var ReviewCollection = Backbone.Collection.extend({
 	getLineComments(line) {
 		var fd = line.get("fileDiff");
 
-		if (this.comments.length === 0 && this.drafts.length === 0 || !fd) return [];
+		if (this.comments.length === 0 && this.drafts.length === 0) return [];
 
 		var filterFn = comment => {
-			var isValid = (fd.get("PostImage") === comment.get("CommitID") && fd.getHeadFilename() === comment.get("Filename")) ||
+			// Context lines do not need validation.
+			if (line.get("contextLine")) {
+				return true;
+			}
+
+			var isValid = fd && (fd.get("PostImage") === comment.get("CommitID") && fd.getHeadFilename() === comment.get("Filename")) ||
 				(fd.get("PreImage") === comment.get("CommitID") && fd.getBaseFilename() === comment.get("Filename"));
 
 			if (isValid) {
