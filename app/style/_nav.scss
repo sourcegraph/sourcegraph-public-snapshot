@@ -37,11 +37,11 @@ header.page-header {
 	margin: 0;
 	padding: 0;
 	border: 0;
-	height: $navbar-height;
+	min-height: $navbar-height;
 
 	> div > nav {
 		margin: 0;
-		height: $navbar-height;
+		min-height: $navbar-height;
 
 		&.repo-subnav {
 			height: $subnav-height;
