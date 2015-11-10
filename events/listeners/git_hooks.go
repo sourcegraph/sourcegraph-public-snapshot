@@ -35,11 +35,11 @@ func (g *gitHookListener) Start(ctx context.Context) {
 	}
 
 	events.Subscribe(events.GitPushEvent, notifyCallback)
-	events.Subscribe(events.GitCreateEvent, notifyCallback)
-	events.Subscribe(events.GitDeleteEvent, notifyCallback)
+	events.Subscribe(events.GitCreateBranchEvent, notifyCallback)
+	events.Subscribe(events.GitDeleteBranchEvent, notifyCallback)
 
 	events.Subscribe(events.GitPushEvent, buildCallback)
-	events.Subscribe(events.GitCreateEvent, buildCallback)
+	events.Subscribe(events.GitCreateBranchEvent, buildCallback)
 }
 
 func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPayload) {
@@ -54,24 +54,24 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 	}
 
 	absBranchURL := conf.AppURL(ctx).ResolveReference(branchURL).String()
-
-	if id == events.GitCreateEvent {
-		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-			Actor:      &payload.Actor,
-			ActionType: "created the branch",
-			ObjectURL:  absBranchURL,
-			ObjectRepo: repo.URI + "@" + event.Branch,
-		})
-		return
+	notifyEvent := sourcegraph.NotifyGenericEvent{
+		Actor:      &payload.Actor,
+		ObjectURL:  absBranchURL,
+		ObjectRepo: repo.URI + "@" + event.Branch,
 	}
 
-	if id == events.GitDeleteEvent {
-		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-			Actor:      &payload.Actor,
-			ActionType: "deleted the branch",
-			ObjectURL:  absBranchURL,
-			ObjectRepo: repo.URI + "@" + event.Branch,
-		})
+	if id != events.GitPushEvent {
+		switch id {
+		case events.GitCreateBranchEvent:
+			notifyEvent.ActionType = "created the branch"
+		case events.GitDeleteBranchEvent:
+			notifyEvent.ActionType = "deleted the branch"
+		default:
+			log15.Warn("postPushHook: unknown event id", "id", id, "repo", repo.URI, "branch", event.Branch)
+			return
+		}
+
+		cl.Notify.GenericEvent(ctx, &notifyEvent)
 		return
 	}
 
@@ -109,13 +109,9 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 		))
 	}
 
-	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
-		Actor:         &payload.Actor,
-		ActionType:    fmt.Sprintf("pushed *%d %s* to", len(commits.Commits), commitsNoun),
-		ObjectURL:     absBranchURL,
-		ObjectRepo:    repo.URI + "@" + event.Branch,
-		ActionContent: strings.Join(commitMessages, "\n"),
-	})
+	notifyEvent.ActionType = fmt.Sprintf("pushed *%d %s* to", len(commits.Commits), commitsNoun)
+	notifyEvent.ActionContent = strings.Join(commitMessages, "\n")
+	cl.Notify.GenericEvent(ctx, &notifyEvent)
 }
 
 func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload) {

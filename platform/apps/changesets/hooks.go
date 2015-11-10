@@ -31,7 +31,7 @@ func (g *changesetListener) Start(ctx context.Context) {
 	}
 
 	events.Subscribe(events.GitPushEvent, gitCallback)
-	events.Subscribe(events.GitDeleteEvent, gitCallback)
+	events.Subscribe(events.GitDeleteBranchEvent, gitCallback)
 
 	notifyCallback := func(id events.EventID, payload events.ChangesetPayload) {
 		notifyChangesetEvent(ctx, id, payload)
@@ -54,6 +54,7 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload ev
 	})
 	if err != nil {
 		log15.Warn("changesetHook: could not update changesets", "error", err)
+		return
 	}
 
 	for _, e := range changesetEvents.Events {
@@ -157,9 +158,9 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 }
 
 // couldAffectChangesets returns true if the event was error-free
-// and is a GitPushEvent or GitDeleteEvent.
+// and is a GitPushEvent or GitDeleteBranchEvent.
 func couldAffectChangesets(id events.EventID, p events.GitPayload) bool {
-	if !(id == events.GitPushEvent || id == events.GitDeleteEvent) {
+	if !(id == events.GitPushEvent || id == events.GitDeleteBranchEvent) {
 		return false
 	}
 	e := p.Event

@@ -32,6 +32,7 @@ func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload event
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	if payload.Discussion == nil {
+		log15.Warn("DiscussionHook: ignoring event", "event", id, "error", "discussion not set in payload")
 		return
 	}
 
@@ -50,6 +51,7 @@ func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload event
 
 	case events.DiscussionCommentEvent:
 		if payload.Comment == nil {
+			log15.Warn("DiscussionHook: ignoring event", "event", id, "error", "comment not set in payload")
 			return
 		}
 		if payload.Discussion.Author.UID != payload.Actor.UID {

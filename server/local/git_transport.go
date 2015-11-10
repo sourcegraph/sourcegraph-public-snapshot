@@ -75,9 +75,9 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 	for _, e := range gitEvents {
 		payload.Event = e
 		if e.Last == EmptyCommitID {
-			events.Publish(events.GitCreateEvent, payload)
+			events.Publish(events.GitCreateBranchEvent, payload)
 		} else if e.Commit == EmptyCommitID {
-			events.Publish(events.GitDeleteEvent, payload)
+			events.Publish(events.GitDeleteBranchEvent, payload)
 		} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
 			events.Publish(events.GitPushEvent, payload)
 		}

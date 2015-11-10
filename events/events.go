@@ -8,8 +8,8 @@ import (
 type EventID string
 
 const GitPushEvent EventID = "git.push"
-const GitCreateEvent EventID = "git.create"
-const GitDeleteEvent EventID = "git.delete"
+const GitCreateBranchEvent EventID = "git.create"
+const GitDeleteBranchEvent EventID = "git.delete"
 
 type GitPayload struct {
 	Actor           sourcegraph.UserSpec

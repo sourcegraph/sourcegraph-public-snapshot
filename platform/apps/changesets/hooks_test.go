@@ -32,7 +32,7 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, false,
 		}, {
 			// is a new branch
-			events.GitCreateEvent,
+			events.GitCreateBranchEvent,
 			events.GitPayload{
 				Event: githttp.Event{
 					Error:  nil,
@@ -68,7 +68,7 @@ func TestChangesetHook_couldAffectChangesets(t *testing.T) {
 			}, true,
 		}, {
 			// push branch deletion
-			events.GitDeleteEvent,
+			events.GitDeleteBranchEvent,
 			events.GitPayload{
 				Event: githttp.Event{
 					Error:  nil,
