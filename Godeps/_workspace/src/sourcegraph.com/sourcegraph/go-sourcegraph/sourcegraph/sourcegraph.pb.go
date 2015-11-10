@@ -63,6 +63,7 @@ It has these top-level messages:
 	ChangesetSpec
 	ChangesetUpdateOp
 	ChangesetMergeOp
+	ChangesetUpdateAffectedOp
 	DiscussionSpec
 	DiscussionListOp
 	DiscussionCommentCreateOp
@@ -1217,6 +1218,21 @@ type ChangesetMergeOp struct {
 func (m *ChangesetMergeOp) Reset()         { *m = ChangesetMergeOp{} }
 func (m *ChangesetMergeOp) String() string { return proto.CompactTextString(m) }
 func (*ChangesetMergeOp) ProtoMessage()    {}
+
+type ChangesetUpdateAffectedOp struct {
+	// Repo holds the RepoSpec which received a commit.
+	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
+	// Branch is the name of the branch which was pushed to.
+	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:",omitempty"`
+	// Last is the SHA1 of the last commit on the branch.
+	Last string `protobuf:"bytes,3,opt,name=last,proto3" json:",omitempty"`
+	// Commit is the SHA1 of the tip of the newly pushed commits on the branch.
+	Commit string `protobuf:"bytes,4,opt,name=commit,proto3" json:",omitempty"`
+}
+
+func (m *ChangesetUpdateAffectedOp) Reset()         { *m = ChangesetUpdateAffectedOp{} }
+func (m *ChangesetUpdateAffectedOp) String() string { return proto.CompactTextString(m) }
+func (*ChangesetUpdateAffectedOp) ProtoMessage()    {}
 
 type DiscussionSpec struct {
 	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
@@ -4676,13 +4692,17 @@ type ChangesetsClient interface {
 	Get(ctx context.Context, in *ChangesetSpec, opts ...grpc.CallOption) (*Changeset, error)
 	// List lists changesets for a repository.
 	List(ctx context.Context, in *ChangesetListOp, opts ...grpc.CallOption) (*ChangesetList, error)
-	// UpdateChangeset updates a changeset's fields and returns the
+	// Update updates a changeset's fields and returns the
 	// update event. If no update occurred, it returns nil.
 	Update(ctx context.Context, in *ChangesetUpdateOp, opts ...grpc.CallOption) (*ChangesetEvent, error)
 	// Merge merges the head branch of a changeset into its base branch and
 	// pushes the resulting merged base. It returns the resulting update event.
 	// If no merge occurred, it returns nil.
 	Merge(ctx context.Context, in *ChangesetMergeOp, opts ...grpc.CallOption) (*ChangesetEvent, error)
+	// UpdateAffected updates all changesets which may be affected
+	// by new commits to a branch and returns the list of update
+	// events for all affected changesets.
+	UpdateAffected(ctx context.Context, in *ChangesetUpdateAffectedOp, opts ...grpc.CallOption) (*ChangesetEventList, error)
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
 	CreateReview(ctx context.Context, in *ChangesetCreateReviewOp, opts ...grpc.CallOption) (*ChangesetReview, error)
@@ -4745,6 +4765,15 @@ func (c *changesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp, opts
 	return out, nil
 }
 
+func (c *changesetsClient) UpdateAffected(ctx context.Context, in *ChangesetUpdateAffectedOp, opts ...grpc.CallOption) (*ChangesetEventList, error) {
+	out := new(ChangesetEventList)
+	err := grpc.Invoke(ctx, "/sourcegraph.Changesets/UpdateAffected", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *changesetsClient) CreateReview(ctx context.Context, in *ChangesetCreateReviewOp, opts ...grpc.CallOption) (*ChangesetReview, error) {
 	out := new(ChangesetReview)
 	err := grpc.Invoke(ctx, "/sourcegraph.Changesets/CreateReview", in, out, c.cc, opts...)
@@ -4782,13 +4811,17 @@ type ChangesetsServer interface {
 	Get(context.Context, *ChangesetSpec) (*Changeset, error)
 	// List lists changesets for a repository.
 	List(context.Context, *ChangesetListOp) (*ChangesetList, error)
-	// UpdateChangeset updates a changeset's fields and returns the
+	// Update updates a changeset's fields and returns the
 	// update event. If no update occurred, it returns nil.
 	Update(context.Context, *ChangesetUpdateOp) (*ChangesetEvent, error)
 	// Merge merges the head branch of a changeset into its base branch and
 	// pushes the resulting merged base. It returns the resulting update event.
 	// If no merge occurred, it returns nil.
 	Merge(context.Context, *ChangesetMergeOp) (*ChangesetEvent, error)
+	// UpdateAffected updates all changesets which may be affected
+	// by new commits to a branch and returns the list of update
+	// events for all affected changesets.
+	UpdateAffected(context.Context, *ChangesetUpdateAffectedOp) (*ChangesetEventList, error)
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
 	CreateReview(context.Context, *ChangesetCreateReviewOp) (*ChangesetReview, error)
@@ -4862,6 +4895,18 @@ func _Changesets_Merge_Handler(srv interface{}, ctx context.Context, dec func(in
 	return out, nil
 }
 
+func _Changesets_UpdateAffected_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ChangesetUpdateAffectedOp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChangesetsServer).UpdateAffected(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func _Changesets_CreateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(ChangesetCreateReviewOp)
 	if err := dec(in); err != nil {
@@ -4921,6 +4966,10 @@ var _Changesets_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Merge",
 			Handler:    _Changesets_Merge_Handler,
+		},
+		{
+			MethodName: "UpdateAffected",
+			Handler:    _Changesets_UpdateAffected_Handler,
 		},
 		{
 			MethodName: "CreateReview",

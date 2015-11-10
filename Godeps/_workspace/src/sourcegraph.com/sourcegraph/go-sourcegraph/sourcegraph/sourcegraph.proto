@@ -804,7 +804,7 @@ service Changesets {
 	// List lists changesets for a repository.
 	rpc List(ChangesetListOp) returns (ChangesetList);
 
-	// UpdateChangeset updates a changeset's fields and returns the
+	// Update updates a changeset's fields and returns the
 	// update event. If no update occurred, it returns nil.
 	rpc Update(ChangesetUpdateOp) returns (ChangesetEvent);
 
@@ -812,6 +812,11 @@ service Changesets {
 	// pushes the resulting merged base. It returns the resulting update event.
 	// If no merge occurred, it returns nil.
 	rpc Merge(ChangesetMergeOp) returns (ChangesetEvent);
+
+	// UpdateAffected updates all changesets which may be affected
+	// by new commits to a branch and returns the list of update
+	// events for all affected changesets.
+	rpc UpdateAffected(ChangesetUpdateAffectedOp) returns (ChangesetEventList);
 
 	// CreateReview creates a new Review and returns it, populating
 	// its fields, such as ID and CreatedAt.
@@ -1006,6 +1011,20 @@ message ChangesetMergeOp {
 	// Squash, if true, will squash the commits of the head branch into a
 	// single commit prior to merging.
 	bool squash = 4;
+}
+
+message ChangesetUpdateAffectedOp {
+	// Repo holds the RepoSpec which received a commit.
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// Branch is the name of the branch which was pushed to.
+	string branch = 2;
+
+	// Last is the SHA1 of the last commit on the branch.
+	string last = 3;
+
+	// Commit is the SHA1 of the tip of the newly pushed commits on the branch.
+	string commit = 4;
 }
 
 message DiscussionSpec {
@@ -1851,7 +1870,7 @@ service Auth {
 	// authorization levels on the client.
 	rpc GetPermissions(pbtypes.Void) returns (UserPermissions) {
 		option (google.api.http) = {
-			get: "/auth/verify"
+			get: "/auth/get_permissions"
 		};
 	};
 }

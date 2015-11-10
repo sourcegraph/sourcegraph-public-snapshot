@@ -802,6 +802,17 @@ func (s *CachedChangesetsServer) Merge(ctx context.Context, in *ChangesetMergeOp
 	return result, err
 }
 
+func (s *CachedChangesetsServer) UpdateAffected(ctx context.Context, in *ChangesetUpdateAffectedOp) (*ChangesetEventList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.UpdateAffected(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
 func (s *CachedChangesetsServer) CreateReview(ctx context.Context, in *ChangesetCreateReviewOp) (*ChangesetReview, error) {
 	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
 	result, err := s.ChangesetsServer.CreateReview(ctx, in)
@@ -964,6 +975,32 @@ func (s *CachedChangesetsClient) Merge(ctx context.Context, in *ChangesetMergeOp
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Changesets.Merge", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedChangesetsClient) UpdateAffected(ctx context.Context, in *ChangesetUpdateAffectedOp, opts ...grpc.CallOption) (*ChangesetEventList, error) {
+	if s.Cache != nil {
+		var cachedResult ChangesetEventList
+		cached, err := s.Cache.Get(ctx, "Changesets.UpdateAffected", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.ChangesetsClient.UpdateAffected(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Changesets.UpdateAffected", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

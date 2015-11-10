@@ -500,6 +500,20 @@ func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetM
 	return rv, s.errFunc(err)
 }
 
+func (s wrappedChangesets) UpdateAffected(ctx context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.ChangesetsOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
+	}
+	rv, err := svc.UpdateAffected(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
 func (s wrappedChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
