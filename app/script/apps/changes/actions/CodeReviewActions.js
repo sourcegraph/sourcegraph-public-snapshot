@@ -115,7 +115,7 @@ module.exports.submitReview = function submitReview(body) {
 module.exports.expandHunk = function expandHunk(hunk, isDirectionUp, evt) {
 	var delta = CodeReviewStore.get("Delta");
 	var fileDiff = hunk.get("Parent");
-	var url = router.fileURL(delta.HeadRepo.URI, delta.Head.Rev, fileDiff.get("NewName"));
+	var url = router.fileURL(delta.HeadRepo.URI, delta.Head.CommitID, fileDiff.get("NewName"));
 	var index = hunk.index();
 	var startLine, endLine;
 	var hunks = fileDiff.get("Hunks");
