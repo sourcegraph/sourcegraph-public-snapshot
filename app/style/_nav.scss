@@ -49,7 +49,16 @@ header.page-header {
 			float: left;
 
 			ul.navbar-nav {
-				margin-top: 4px;
+				@media (min-width: $grid-float-breakpoint) {
+					margin-top: 4px;
+				}
+			}
+		}
+
+		ul.navbar-nav {
+			@media (max-width: $grid-float-breakpoint) {
+				margin-top: 0;
+				margin-bottom: 0;
 			}
 		}
 	}

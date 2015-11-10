@@ -88,11 +88,19 @@
 			border-bottom-color: $active-indicator-color !important;
 			font-weight: bold;
 			&, i { color: darken($active-indicator-color, 10%) !important; }
+			@media (max-width: $grid-float-breakpoint) {
+				border-bottom: 0;
+				background-color: #efefef;
+			}
 		}
 		&:hover {
 
 			> a {
 				border-bottom-color: saturate(lighten($active-indicator-color, 10%), 5%);
+				@media (max-width: $grid-float-breakpoint) {
+					border-bottom: 0;
+					background-color: #efefef;
+				}
 			}
 		}
 
