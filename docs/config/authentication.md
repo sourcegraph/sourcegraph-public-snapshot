@@ -17,6 +17,9 @@ To use LDAP for authentication, the user entries in the directory service must c
 To set up LDAP auth, add the following fields to the config file `/etc/sourcegraph/config.ini`:
 
 ```
+[serve.Authentication]
+Source = ldap
+
 [serve.LDAP]
 # the host name or IP of your LDAP server
 Host = ldap.mycompany.org
