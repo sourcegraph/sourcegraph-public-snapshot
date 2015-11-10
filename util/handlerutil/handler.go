@@ -21,9 +21,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/appdash/httptrace"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
@@ -50,24 +47,13 @@ func init() {
 // 5. Run handler, check error resp
 func Handler(h HandlerWithErrorReturn) http.Handler {
 	mw := []Middleware{logMiddleware}
-	if traceutil.DefaultCollector != nil {
-		mw = append(mw, httptrace.Middleware(traceutil.DefaultCollector, traceMiddlewareConfig))
+	traceMiddleware := traceutil.HTTPMiddleware()
+	if traceMiddleware != nil {
+		mw = append(mw, traceMiddleware)
 	}
 	mw = append(mw, httpwrapper.MakeMiddleware(httpwrapperConfig))
 
 	return WithMiddleware(h, mw...)
-}
-
-var traceMiddlewareConfig = &httptrace.MiddlewareConfig{
-	RouteName: func(r *http.Request) string { return httpctx.RouteName(r) },
-	SetContextSpan: func(r *http.Request, id appdash.SpanID) {
-		traceutil.SetSpanID(r, id)
-
-		ctx := httpctx.FromRequest(r)
-		ctx = traceutil.NewContext(ctx, id)
-		ctx = sourcegraph.WithClientMetadata(ctx, (&traceutil.Span{SpanID: id}).Metadata())
-		httpctx.SetForRequest(r, ctx)
-	},
 }
 
 var httpwrapperConfig = &httpwrapper.ServerConfig{
