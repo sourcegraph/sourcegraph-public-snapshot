@@ -1,4 +1,4 @@
-package notif
+package listeners
 
 import (
 	"golang.org/x/net/context"
@@ -20,15 +20,15 @@ func (g *discussionListener) Scopes() []string {
 }
 
 func (g *discussionListener) Start(ctx context.Context) {
-	notifyCallback := func(id events.EventID, p DiscussionPayload) {
+	notifyCallback := func(id events.EventID, p events.DiscussionPayload) {
 		notifyDiscussionEvent(ctx, id, p)
 	}
 
-	events.Subscribe(DiscussionCreateEvent, notifyCallback)
-	events.Subscribe(DiscussionCommentEvent, notifyCallback)
+	events.Subscribe(events.DiscussionCreateEvent, notifyCallback)
+	events.Subscribe(events.DiscussionCommentEvent, notifyCallback)
 }
 
-func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload DiscussionPayload) {
+func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload events.DiscussionPayload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	if payload.Discussion == nil {
@@ -40,7 +40,7 @@ func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload Discu
 	var err error
 
 	switch id {
-	case DiscussionCreateEvent:
+	case events.DiscussionCreateEvent:
 		recipients, err = mdutil.Mentions(ctx, []byte(payload.Discussion.Description))
 		if err != nil {
 			log15.Warn("DiscussionHook: ignoring event", "event", id, "error", err)
@@ -48,7 +48,7 @@ func notifyDiscussionEvent(ctx context.Context, id events.EventID, payload Discu
 		}
 		actionType = "created"
 
-	case DiscussionCommentEvent:
+	case events.DiscussionCommentEvent:
 		if payload.Comment == nil {
 			return
 		}

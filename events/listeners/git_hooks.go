@@ -1,4 +1,4 @@
-package notif
+package listeners
 
 import (
 	"fmt"
@@ -27,21 +27,22 @@ func (g *gitHookListener) Scopes() []string {
 }
 
 func (g *gitHookListener) Start(ctx context.Context) {
-	notifyCallback := func(id events.EventID, p GitPayload) {
+	notifyCallback := func(id events.EventID, p events.GitPayload) {
 		notifyGitEvent(ctx, id, p)
 	}
-	buildCallback := func(id events.EventID, p GitPayload) {
+	buildCallback := func(id events.EventID, p events.GitPayload) {
 		buildHook(ctx, id, p)
 	}
 
-	events.Subscribe(GitPushEvent, notifyCallback)
-	events.Subscribe(GitCreateEvent, notifyCallback)
-	events.Subscribe(GitDeleteEvent, notifyCallback)
+	events.Subscribe(events.GitPushEvent, notifyCallback)
+	events.Subscribe(events.GitCreateEvent, notifyCallback)
+	events.Subscribe(events.GitDeleteEvent, notifyCallback)
 
-	events.Subscribe(GitPushEvent, buildCallback)
+	events.Subscribe(events.GitPushEvent, buildCallback)
+	events.Subscribe(events.GitCreateEvent, buildCallback)
 }
 
-func notifyGitEvent(ctx context.Context, id events.EventID, payload GitPayload) {
+func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPayload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	repo := payload.Repo
@@ -54,7 +55,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload GitPayload) 
 
 	absBranchURL := conf.AppURL(ctx).ResolveReference(branchURL).String()
 
-	if id == GitCreateEvent {
+	if id == events.GitCreateEvent {
 		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
 			Actor:      &payload.Actor,
 			ActionType: "created the branch",
@@ -64,7 +65,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload GitPayload) 
 		return
 	}
 
-	if id == GitDeleteEvent {
+	if id == events.GitDeleteEvent {
 		cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
 			Actor:      &payload.Actor,
 			ActionType: "deleted the branch",
@@ -117,7 +118,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload GitPayload) 
 	})
 }
 
-func buildHook(ctx context.Context, id events.EventID, payload GitPayload) {
+func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 	repo := payload.Repo
 	event := payload.Event

@@ -16,7 +16,6 @@ import (
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -43,7 +42,7 @@ func (s *discussions) Create(ctx context.Context, in *sourcegraph.Discussion) (*
 		return nil, err
 	}
 
-	events.Publish(notif.DiscussionCreateEvent, notif.DiscussionPayload{
+	events.Publish(events.DiscussionCreateEvent, events.DiscussionPayload{
 		Actor:      authpkg.UserSpecFromContext(ctx),
 		ID:         in.ID,
 		Repo:       in.DefKey.Repo,
@@ -105,7 +104,7 @@ func (s *discussions) CreateComment(ctx context.Context, in *sourcegraph.Discuss
 		return nil, err
 	}
 
-	events.Publish(notif.DiscussionCommentEvent, notif.DiscussionPayload{
+	events.Publish(events.DiscussionCommentEvent, events.DiscussionPayload{
 		Actor:      authpkg.UserSpecFromContext(ctx),
 		ID:         in.DiscussionID,
 		Repo:       in.Comment.DefKey.Repo,

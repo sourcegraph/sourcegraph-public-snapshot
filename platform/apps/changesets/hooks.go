@@ -10,8 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/notif"
-	csnotif "src.sourcegraph.com/sourcegraph/platform/apps/changesets/notif"
 	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
@@ -26,26 +24,26 @@ func (g *changesetListener) Scopes() []string {
 }
 
 func (g *changesetListener) Start(ctx context.Context) {
-	gitCallback := func(id events.EventID, payload notif.GitPayload) {
+	gitCallback := func(id events.EventID, payload events.GitPayload) {
 		if couldAffectChangesets(id, payload) {
 			updateAffectedChangesets(ctx, id, payload)
 		}
 	}
 
-	events.Subscribe(notif.GitPushEvent, gitCallback)
-	events.Subscribe(notif.GitDeleteEvent, gitCallback)
+	events.Subscribe(events.GitPushEvent, gitCallback)
+	events.Subscribe(events.GitDeleteEvent, gitCallback)
 
-	notifyCallback := func(id events.EventID, payload csnotif.ChangesetPayload) {
+	notifyCallback := func(id events.EventID, payload events.ChangesetPayload) {
 		notifyChangesetEvent(ctx, id, payload)
 	}
 
-	events.Subscribe(csnotif.ChangesetCreateEvent, notifyCallback)
-	events.Subscribe(csnotif.ChangesetReviewEvent, notifyCallback)
-	events.Subscribe(csnotif.ChangesetUpdateEvent, notifyCallback)
-	events.Subscribe(csnotif.ChangesetCloseEvent, notifyCallback)
+	events.Subscribe(events.ChangesetCreateEvent, notifyCallback)
+	events.Subscribe(events.ChangesetReviewEvent, notifyCallback)
+	events.Subscribe(events.ChangesetUpdateEvent, notifyCallback)
+	events.Subscribe(events.ChangesetCloseEvent, notifyCallback)
 }
 
-func updateAffectedChangesets(ctx context.Context, id events.EventID, payload notif.GitPayload) {
+func updateAffectedChangesets(ctx context.Context, id events.EventID, payload events.GitPayload) {
 	e := payload.Event
 	cl := sourcegraph.NewClientFromContext(ctx)
 	changesetEvents, err := cl.Changesets.UpdateAffected(ctx, &sourcegraph.ChangesetUpdateAffectedOp{
@@ -60,7 +58,7 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload no
 
 	for _, e := range changesetEvents.Events {
 		op := e.Op
-		cspayload := csnotif.ChangesetPayload{
+		cspayload := events.ChangesetPayload{
 			Actor:  payload.Actor,
 			ID:     op.ID,
 			Repo:   op.Repo.URI,
@@ -69,18 +67,18 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload no
 			Update: op,
 		}
 		if op.Close {
-			events.Publish(csnotif.ChangesetCloseEvent, cspayload)
+			events.Publish(events.ChangesetCloseEvent, cspayload)
 		} else {
-			events.Publish(csnotif.ChangesetUpdateEvent, cspayload)
+			events.Publish(events.ChangesetUpdateEvent, cspayload)
 		}
 	}
 }
 
-func notifyChangesetEvent(ctx context.Context, id events.EventID, payload csnotif.ChangesetPayload) {
+func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events.ChangesetPayload) {
 	switch id {
-	case csnotif.ChangesetCreateEvent:
+	case events.ChangesetCreateEvent:
 		notifyCreation(ctx, payload)
-	case csnotif.ChangesetReviewEvent:
+	case events.ChangesetReviewEvent:
 		notifyReview(ctx, payload)
 	default:
 		// TODO: implement notifications for changeset update and close events
@@ -90,7 +88,7 @@ func notifyChangesetEvent(ctx context.Context, id events.EventID, payload csnoti
 
 // notifyCreation creates a slack notification that a changeset was created. It
 // also notifies users mentioned in the description of the changeset.
-func notifyCreation(ctx context.Context, payload csnotif.ChangesetPayload) {
+func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 	if payload.Changeset == nil {
 		return
 	}
@@ -119,7 +117,7 @@ func notifyCreation(ctx context.Context, payload csnotif.ChangesetPayload) {
 
 // notifyReview creates a slack notification that a changeset was reviewed. It
 // also notifies any users potentially mentioned in the review.
-func notifyReview(ctx context.Context, payload csnotif.ChangesetPayload) {
+func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 	if payload.Changeset == nil || payload.Review == nil {
 		return
 	}
@@ -160,8 +158,8 @@ func notifyReview(ctx context.Context, payload csnotif.ChangesetPayload) {
 
 // couldAffectChangesets returns true if the event was error-free
 // and is a GitPushEvent or GitDeleteEvent.
-func couldAffectChangesets(id events.EventID, p notif.GitPayload) bool {
-	if !(id == notif.GitPushEvent || id == notif.GitDeleteEvent) {
+func couldAffectChangesets(id events.EventID, p events.GitPayload) bool {
+	if !(id == events.GitPushEvent || id == events.GitDeleteEvent) {
 		return false
 	}
 	e := p.Event

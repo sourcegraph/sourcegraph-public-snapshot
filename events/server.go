@@ -9,8 +9,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-type EventID string
-
 const maxParallelCallbacks = 8
 
 type eventServer struct {

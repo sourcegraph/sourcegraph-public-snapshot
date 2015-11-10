@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/platform/apps/changesets/notif"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -54,7 +53,7 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 	if flags.JiraURL != "" {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
-	events.Publish(notif.ChangesetCreateEvent, notif.ChangesetPayload{
+	events.Publish(events.ChangesetCreateEvent, events.ChangesetPayload{
 		Actor:     user.Spec(),
 		ID:        cs.ID,
 		Repo:      uri,
@@ -114,7 +113,7 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
 
-	events.Publish(notif.ChangesetUpdateEvent, notif.ChangesetPayload{
+	events.Publish(events.ChangesetUpdateEvent, events.ChangesetPayload{
 		Actor:     user.Spec(),
 		ID:        op.ID,
 		Repo:      uri,
@@ -170,7 +169,7 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	events.Publish(notif.ChangesetReviewEvent, notif.ChangesetPayload{
+	events.Publish(events.ChangesetReviewEvent, events.ChangesetPayload{
 		Actor:     user.Spec(),
 		ID:        cs.ID,
 		Repo:      uri,

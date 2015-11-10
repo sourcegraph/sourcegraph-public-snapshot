@@ -8,7 +8,6 @@ import (
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
-	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -68,7 +67,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		return nil, err
 	}
 	gitEvents = collapseDuplicateEvents(gitEvents)
-	payload := notif.GitPayload{
+	payload := events.GitPayload{
 		Actor:           authpkg.UserSpecFromContext(ctx),
 		Repo:            op.Repo,
 		ContentEncoding: op.ContentEncoding,
@@ -76,11 +75,11 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 	for _, e := range gitEvents {
 		payload.Event = e
 		if e.Last == EmptyCommitID {
-			events.Publish(notif.GitCreateEvent, payload)
+			events.Publish(events.GitCreateEvent, payload)
 		} else if e.Commit == EmptyCommitID {
-			events.Publish(notif.GitDeleteEvent, payload)
+			events.Publish(events.GitDeleteEvent, payload)
 		} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
-			events.Publish(notif.GitPushEvent, payload)
+			events.Publish(events.GitPushEvent, payload)
 		}
 	}
 	return &gitpb.Packet{Data: data}, nil
