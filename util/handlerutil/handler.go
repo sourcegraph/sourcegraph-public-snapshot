@@ -24,7 +24,6 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
@@ -61,10 +60,6 @@ func Handler(h HandlerWithErrorReturn) http.Handler {
 
 var traceMiddlewareConfig = &httptrace.MiddlewareConfig{
 	RouteName: func(r *http.Request) string { return httpctx.RouteName(r) },
-	CurrentUser: func(r *http.Request) string {
-		a := auth.ActorFromContext(httpctx.FromRequest(r))
-		return strconv.Itoa(a.UID)
-	},
 	SetContextSpan: func(r *http.Request, id appdash.SpanID) {
 		traceutil.SetSpanID(r, id)
 
