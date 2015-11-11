@@ -59,6 +59,8 @@ dependencies:
 test:
   override:
     - godep go install -v src.sourcegraph.com/sourcegraph/...
+    - ./sh/gofmt.sh:
+        pwd: $REPO
     - npm run dep:
         pwd: $REPO/app
     - npm test:
