@@ -88,7 +88,7 @@ func (ru *repoUpdater) run(ctx context.Context) {
 		}
 
 		if _, err := apiclient.MirrorRepos.RefreshVCS(ctx, op); err != nil {
-			log15.Warn("repoUpdater: RefreshVCS:", err)
+			log15.Warn("repoUpdater: RefreshVCS:", "error", err)
 			continue
 		}
 	}

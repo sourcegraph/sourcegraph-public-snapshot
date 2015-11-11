@@ -84,16 +84,16 @@ func (s *Accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 	req := make([]PasswordResetRequest, 0)
 	err := dbh(ctx).Select(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token)
 	if err != nil || len(req) != 1 {
-		log15.Warn("db", "token does not exist in password reset database:", err)
+		log15.Warn("Token does not exist in password reset database", "store", "Accounts", "error", err)
 		return genericErr
 	}
-	log15.Info("db", "reseting password for", req[0].UID)
+	log15.Info("Resetting password", "store", "Accounts", "UID", req[0].UID)
 	if err := (Password{}).SetPassword(ctx, req[0].UID, newPass.Password); err != nil {
 		return fmt.Errorf("Error changing password: %s", err)
 	}
 	_, err = dbh(ctx).Exec(`DELETE FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token)
 	if err != nil {
-		log15.Warn("db", "error deleting token", err)
+		log15.Warn("Error deleting token", "store", "Accounts", "error", err)
 		return nil
 	}
 	return nil
