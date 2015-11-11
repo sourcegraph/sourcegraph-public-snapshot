@@ -57,6 +57,7 @@ func Base(ctx context.Context) func(w http.ResponseWriter, r *http.Request, next
 			ctx2 = ctx
 		}
 		SetForRequest(r, ctx)
+		defer gcontext.Clear(r)
 		next(w, r)
 	}
 }
