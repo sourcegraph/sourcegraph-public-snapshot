@@ -79,12 +79,6 @@ func Middleware(c appdash.Collector, conf *MiddlewareConfig) func(rw http.Respon
 
 		e := NewServerEvent(r)
 		e.ServerRecv = time.Now()
-		if conf.RouteName != nil {
-			e.Route = conf.RouteName(r)
-		}
-		if conf.CurrentUser != nil {
-			e.User = conf.CurrentUser(r)
-		}
 
 		rr := &responseInfoRecorder{ResponseWriter: rw}
 		next(rr, r)
@@ -92,6 +86,12 @@ func Middleware(c appdash.Collector, conf *MiddlewareConfig) func(rw http.Respon
 
 		if !usingProvidedSpanID {
 			e.Request = requestInfo(r)
+		}
+		if conf.RouteName != nil {
+			e.Route = conf.RouteName(r)
+		}
+		if conf.CurrentUser != nil {
+			e.User = conf.CurrentUser(r)
 		}
 		e.Response = responseInfo(rr.partialResponse())
 		e.ServerSend = time.Now()
