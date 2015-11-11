@@ -86,9 +86,18 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	// The canonical URL for app root page does not have a trailing slash, so redirect.
+	if rCopy.URL.Path == stripPrefix+"/" {
+		http.Redirect(w, r, stripPrefix, http.StatusMovedPermanently)
+		return nil
+	}
+
 	// strip prefix
 	if p := strings.TrimPrefix(rCopy.URL.Path, stripPrefix); len(p) < len(r.URL.Path) {
 		rCopy.URL.Path = p
+		if rCopy.URL.Path == "" { // For the app http.Handler, the root path should always be "/".
+			rCopy.URL.Path = "/"
+		}
 	} else {
 		return fmt.Errorf("could not load app: %q was not a prefix of %q", stripPrefix, rCopy.URL.Path)
 	}
