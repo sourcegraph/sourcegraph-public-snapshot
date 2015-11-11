@@ -38,22 +38,9 @@ func init() {
 	})
 }
 
-// Handler is the outermost http.Handler wrapper. A request is is handled by the following handlers in order:
-//
-// 1. Set AuthedUID
-// 2. Logging
-// 3. Appdash
-// 4. Set user object and token
-// 5. Run handler, check error resp
+// Handler is the outermost http.Handler wrapper per route.
 func Handler(h HandlerWithErrorReturn) http.Handler {
-	mw := []Middleware{logMiddleware}
-	traceMiddleware := traceutil.HTTPMiddleware()
-	if traceMiddleware != nil {
-		mw = append(mw, traceMiddleware)
-	}
-	mw = append(mw, httpwrapper.MakeMiddleware(httpwrapperConfig))
-
-	return WithMiddleware(h, mw...)
+	return WithMiddleware(h, logMiddleware, httpwrapper.MakeMiddleware(httpwrapperConfig))
 }
 
 var httpwrapperConfig = &httpwrapper.ServerConfig{

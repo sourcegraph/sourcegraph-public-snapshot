@@ -60,6 +60,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/statsutil"
+	"src.sourcegraph.com/sourcegraph/util/traceutil"
 	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
 	tg_client "src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/client"
 )
@@ -443,6 +444,9 @@ func (c *ServeCmd) Execute(args []string) error {
 	mw = append(mw, secureHeaderMiddleware)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
 		mw = append(mw, ensureHostnameHandler)
+	}
+	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
+		mw = append(mw, traceMiddleware)
 	}
 	if app.UseWebpackDevServer {
 		mw = append(mw, webpackDevServerHandler)
