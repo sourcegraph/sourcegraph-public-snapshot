@@ -31,7 +31,7 @@ func PasteHandler(e dom.Event) {
 	go func() {
 		b := blobToBytes(file)
 
-		resp, err := http.Post("/ui/.usercontent", "image/png", bytes.NewReader(b))
+		resp, err := http.Post("/.ui/.usercontent", "image/png", bytes.NewReader(b))
 		if err != nil {
 			log.Println(err)
 			return
