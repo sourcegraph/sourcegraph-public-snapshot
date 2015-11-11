@@ -1,5 +1,5 @@
 // Here, we create a Bloodhound Engine that pulls suggestions from
-// the ‘/api/search/complete?Text=%s&InsertionPoint=%d’ endpoint.
+// the ‘/.api/search/complete?Text=%s&InsertionPoint=%d’ endpoint.
 //
 // We also do some miscellaneous bookkeeping here: marking token
 // dom notes with errors, and marking tokens with information about where they
@@ -7,7 +7,7 @@
 
 var Bloodhound = require("typeahead.js/dist/typeahead.bundle.js");
 var Tokens = require("./Tokens");
-var QueryURL = "/api/search/complete";
+var QueryURL = "/.api/search/complete";
 
 var identity = function(x) { return x; };
 

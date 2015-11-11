@@ -8,7 +8,7 @@ var $ = require("jquery");
 
 function userOrgs(uid) {
 	return $.ajax({
-		url: `/api/users/$${uid}/orgs`,
+		url: `/.api/users/$${uid}/orgs`,
 	});
 }
 
@@ -16,7 +16,7 @@ exports.userOrgs = userOrgs;
 
 function repos(opts) {
 	return $.ajax({
-		url: "/api/repos",
+		url: "/.api/repos",
 		data: opts,
 	});
 }
@@ -33,7 +33,7 @@ exports.repoFiles = repoFiles;
 
 function searchSuggestions(rawQuery) {
 	return $.ajax({
-		url: "/api/search/suggestions",
+		url: "/.api/search/suggestions",
 		data: rawQuery,
 	});
 }
@@ -42,7 +42,7 @@ exports.searchSuggestions = searchSuggestions;
 
 function builds(repoURI, rev, noCache) {
 	return $.ajax({
-		url: `/api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=${repoURI || ""}&CommitID=${rev || ""}`,
+		url: `/.api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=${repoURI || ""}&CommitID=${rev || ""}`,
 		cache: !noCache,
 	});
 }
@@ -51,7 +51,7 @@ exports.builds = builds;
 
 function createRepoBuild(repoURI, rev) {
 	return $.ajax({
-		url: `/api/repos/${repoURI}@${rev}/.builds`,
+		url: `/.api/repos/${repoURI}@${rev}/.builds`,
 		method: "post",
 		data: JSON.stringify({
 			Import: true,
@@ -74,7 +74,7 @@ function listExamples(defKey, query) {
 exports.listExamples = listExamples;
 
 function createDeltaRoute(routeVars) {
-	return `/api/repos/${routeVars["Repo"]}/.deltas/${routeVars["Rev"]}..${routeVars["DeltaHeadRev"]}`;
+	return `/.api/repos/${routeVars["Repo"]}/.deltas/${routeVars["Rev"]}..${routeVars["DeltaHeadRev"]}`;
 }
 
 function deltaListUnits(routeVars) {
@@ -148,7 +148,7 @@ exports.listAffectedClients = listAffectedClients;
 
 function renderMarkdown(markdown, checkboxes, cb) {
 	return $.ajax({
-		url: "/api/markdown",
+		url: "/.api/markdown",
 		method: "post",
 		data: JSON.stringify({
 			Markdown: markdown,

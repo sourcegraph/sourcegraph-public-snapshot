@@ -29,7 +29,7 @@ var RepoRevSwitcher = React.createClass({
 
 	loadItemsOfType(what) {
 		$.get(
-			`/api/repos/${this.props.repoSpec}/.${what}`
+			`/.api/repos/${this.props.repoSpec}/.${what}`
 		).success(function(resp) {
 			resp = resp || [];
 			var newState = {};

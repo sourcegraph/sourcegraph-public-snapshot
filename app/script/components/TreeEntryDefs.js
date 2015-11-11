@@ -37,7 +37,7 @@ var TreeEntryDefs = React.createClass({
 		}
 
 		$.ajax({
-			url: "/api/.defs",
+			url: "/.api/.defs",
 			data: q,
 			success(d) {
 				cont(d.Defs || []);

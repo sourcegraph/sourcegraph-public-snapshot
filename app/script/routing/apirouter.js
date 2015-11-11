@@ -1,6 +1,6 @@
 module.exports = {
 	repoURL(repo, rev) {
-		return `/api/repos/${repo}${rev ? `@${rev}` : ""}`;
+		return `/.api/repos/${repo}${rev ? `@${rev}` : ""}`;
 	},
 
 	// defURL constructs the URL to the def API endpoint. The def spec
