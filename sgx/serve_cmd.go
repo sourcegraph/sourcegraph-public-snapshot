@@ -35,8 +35,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/app"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
@@ -430,9 +430,15 @@ func (c *ServeCmd) Execute(args []string) error {
 	for _, f := range cli.ServeMuxFuncs {
 		f(sm)
 	}
-	sm.Handle("/.api/", httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())))
-	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(mux.NewRouter().PathPrefix("/.ui/").Subrouter(), c.TestUI), c.TestUI))
-	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(mux.NewRouter())))
+	newRouter := func() *mux.Router {
+		router := mux.NewRouter()
+		// httpctx.Base will clear the context for us
+		router.KeepContext = true
+		return router
+	}
+	sm.Handle("/.api/", httpapi.NewHandler(router.New(newRouter().PathPrefix("/.api/").Subrouter())))
+	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(newRouter().PathPrefix("/.ui/").Subrouter(), c.TestUI), c.TestUI))
+	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(newRouter())))
 
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
 	if c.RedirectToHTTPS {
