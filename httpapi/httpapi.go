@@ -32,7 +32,7 @@ func NewHandler(m *mux.Router) http.Handler {
 		// Set the CSP handler. Determine the report URI by seeing what
 		// path prefix m currently has (if it was just /.csp-report, then
 		// it'd never match, since this handler is usually mounted at
-		// /api/).
+		// /.api/).
 		reportURI, err := m.Path(cspConfig.Policy.ReportURI).URLPath()
 		if err != nil {
 			panic(err.Error())

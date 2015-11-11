@@ -233,7 +233,7 @@ func (c *ServeCmd) configureExternalEndpoints() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.ExternalEndpointsOpts.HTTPEndpoint = u.ResolveReference(&url.URL{Path: "/api/"}).String()
+		c.ExternalEndpointsOpts.HTTPEndpoint = u.ResolveReference(&url.URL{Path: "/.api/"}).String()
 	}
 	if c.ExternalEndpointsOpts.GRPCEndpoint == "" {
 		host, port, err := net.SplitHostPort(c.GRPCAddr)

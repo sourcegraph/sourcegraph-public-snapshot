@@ -12,7 +12,7 @@ import (
 // (and the app, worker, and HTTP API) communicates with itself using
 // the endpoints specified in conf.EndpointOpts.
 type ExternalEndpointsOpts struct {
-	HTTPEndpoint string `long:"external-http-endpoint" description:"externally accessible base URL to HTTP API" default-mask:"default: <AppURL>/api/"`
+	HTTPEndpoint string `long:"external-http-endpoint" description:"externally accessible base URL to HTTP API" default-mask:"default: <AppURL>/.api/"`
 	GRPCEndpoint string `long:"external-grpc-endpoint" description:"externally accessible base URL to gRPC API" default-mask:"default: --grpc-endpoint value"`
 }
 
