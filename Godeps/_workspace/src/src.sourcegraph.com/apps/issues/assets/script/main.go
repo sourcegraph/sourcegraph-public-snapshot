@@ -13,6 +13,7 @@ import (
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/shurcooL/github_flavored_markdown"
+	"github.com/shurcooL/go/gopherjs_http/jsutil"
 	"honnef.co/go/js/dom"
 	"src.sourcegraph.com/apps/issues/common"
 	"src.sourcegraph.com/apps/issues/issues"
@@ -23,11 +24,13 @@ var document = dom.GetWindow().Document().(dom.HTMLDocument)
 var state common.State
 
 func main() {
-	js.Global.Set("MarkdownPreview", MarkdownPreview)
-	js.Global.Set("SwitchWriteTab", SwitchWriteTab)
+	js.Global.Set("MarkdownPreview", jsutil.Wrap(MarkdownPreview))
+	js.Global.Set("SwitchWriteTab", jsutil.Wrap(SwitchWriteTab))
+	js.Global.Set("PasteHandler", jsutil.Wrap(PasteHandler))
 	js.Global.Set("CreateNewIssue", CreateNewIssue)
 	js.Global.Set("ToggleIssueState", ToggleIssueState)
 	js.Global.Set("PostComment", PostComment)
+	js.Global.Set("EditComment", jsutil.Wrap(EditComment))
 
 	stateJSON := js.Global.Get("State").String()
 	fmt.Println(stateJSON)
@@ -42,16 +45,7 @@ func main() {
 }
 
 func setup() {
-	if issueToggleButton := document.GetElementByID("issue-toggle-button"); issueToggleButton != nil {
-		commentEditor := document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement)
-		commentEditor.AddEventListener("input", false, func(_ dom.Event) {
-			if strings.TrimSpace(commentEditor.Value) == "" {
-				issueToggleButton.SetTextContent(issueToggleButton.GetAttribute("data-1-action"))
-			} else {
-				issueToggleButton.SetTextContent(issueToggleButton.GetAttribute("data-2-actions"))
-			}
-		})
-	}
+	setupIssueToggleButton()
 
 	if createIssueButton, ok := document.GetElementByID("create-issue-button").(dom.HTMLElement); ok {
 		titleEditor := document.GetElementByID("title-editor").(*dom.HTMLInputElement)
@@ -65,13 +59,26 @@ func setup() {
 	}
 }
 
+func setupIssueToggleButton() {
+	if issueToggleButton := document.GetElementByID("issue-toggle-button"); issueToggleButton != nil {
+		commentEditor := document.QuerySelector("#new-comment-container .comment-editor").(*dom.HTMLTextAreaElement)
+		commentEditor.AddEventListener("input", false, func(_ dom.Event) {
+			if strings.TrimSpace(commentEditor.Value) == "" {
+				issueToggleButton.SetTextContent(issueToggleButton.GetAttribute("data-1-action"))
+			} else {
+				issueToggleButton.SetTextContent(issueToggleButton.GetAttribute("data-2-actions"))
+			}
+		})
+	}
+}
+
 func CreateNewIssue() {
 	titleEditor := document.GetElementByID("title-editor").(*dom.HTMLInputElement)
-	commentEditor := document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement)
+	commentEditor := document.QuerySelector(".comment-editor").(*dom.HTMLTextAreaElement)
 
-	title := titleEditor.Value
+	title := strings.TrimSpace(titleEditor.Value)
 	body := commentEditor.Value
-	if strings.TrimSpace(title) == "" {
+	if title == "" {
 		log.Println("cannot create issue with empty title")
 		return
 	}
@@ -102,7 +109,7 @@ func CreateNewIssue() {
 func ToggleIssueState(issueState issues.State) {
 	go func() {
 		// Post comment first if there's text entered, and we're closing.
-		if strings.TrimSpace(document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement).Value) != "" &&
+		if strings.TrimSpace(document.QuerySelector("#new-comment-container .comment-editor").(*dom.HTMLTextAreaElement).Value) != "" &&
 			issueState == issues.ClosedState {
 			err := postComment()
 			if err != nil {
@@ -145,6 +152,7 @@ func ToggleIssueState(issueState issues.State) {
 
 			issueToggleButton := document.GetElementByID("issue-toggle-button")
 			issueToggleButton.Underlying().Set("outerHTML", data.Get("issue-toggle-button"))
+			setupIssueToggleButton()
 
 			// Create event.
 			newEvent := document.CreateElement("div").(*dom.HTMLDivElement)
@@ -154,7 +162,7 @@ func ToggleIssueState(issueState issues.State) {
 		}
 
 		// Post comment after if there's text entered, and we're reopening.
-		if strings.TrimSpace(document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement).Value) != "" &&
+		if strings.TrimSpace(document.QuerySelector("#new-comment-container .comment-editor").(*dom.HTMLTextAreaElement).Value) != "" &&
 			issueState == issues.OpenState {
 			err := postComment()
 			if err != nil {
@@ -174,9 +182,9 @@ func PostComment() {
 	}()
 }
 
-// postComment posts the comment.
+// postComment posts the comment to the remote API.
 func postComment() error {
-	commentEditor := document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement)
+	commentEditor := document.QuerySelector("#new-comment-container .comment-editor").(*dom.HTMLTextAreaElement)
 
 	value := commentEditor.Value
 	if strings.TrimSpace(value) == "" {
@@ -193,7 +201,7 @@ func postComment() error {
 		return err
 	}
 
-	fmt.Printf("got reply: %v\n%q\n", resp.Status, string(body))
+	fmt.Printf("got reply: %v\n", resp.Status)
 
 	switch resp.StatusCode {
 	case http.StatusOK:
@@ -208,47 +216,79 @@ func postComment() error {
 		// Reset new-comment component.
 		commentEditor.Value = ""
 		commentEditor.Underlying().Call("dispatchEvent", js.Global.Get("CustomEvent").New("input")) // Trigger "input" event listeners.
-		SwitchWriteTab()
+		switchWriteTab(document.GetElementByID("new-comment-container"), commentEditor)
 
 		return nil
 	default:
-		return fmt.Errorf("did not get acceptable stauts code")
+		return fmt.Errorf("did not get acceptable status code: %v", resp.Status)
 	}
 }
 
-var previewActive = false
+// editComment edits a comment to the remote API.
+func editComment(commentEditor *dom.HTMLTextAreaElement) error {
+	commentID := commentEditor.GetAttribute("data-id")
+	value := commentEditor.Value
+	if strings.TrimSpace(value) == "" {
+		// TODO: Unless ID is 0, etc.
+		return fmt.Errorf("cannot post empty comment")
+	}
 
-func MarkdownPreview() {
-	if previewActive {
+	resp, err := http.PostForm(state.BaseURI+state.ReqPath+"/comment/"+commentID, url.Values{"csrf_token": {state.CSRFToken}, "value": {value}})
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("got reply: %v\n", resp.Status)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("did not get acceptable status code: %v", resp.Status)
+	}
+}
+
+func MarkdownPreview(this dom.HTMLElement) {
+	container := getAncestorByClassName(this, "edit-container")
+
+	if container.QuerySelector(".preview-tab-link").(dom.Element).Class().Contains("active") {
 		return
 	}
 
-	commentEditor := document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement)
-	commentPreview := document.GetElementByID("comment-preview").(*dom.HTMLDivElement)
+	commentEditor := container.QuerySelector(".comment-editor").(*dom.HTMLTextAreaElement)
+	commentPreview := container.QuerySelector(".comment-preview").(*dom.HTMLDivElement)
 
-	in := commentEditor.Value
-	if in == "" {
-		in = "Nothing to preview."
+	if strings.TrimSpace(commentEditor.Value) != "" {
+		commentPreview.SetInnerHTML(string(github_flavored_markdown.Markdown([]byte(commentEditor.Value))))
+	} else {
+		commentPreview.SetInnerHTML(`<i class="gray">Nothing to preview.</i>`)
 	}
-	commentPreview.SetInnerHTML(string(github_flavored_markdown.Markdown([]byte(in))))
 
-	document.GetElementByID("write-tab-link").(dom.Element).Class().Remove("active")
-	document.GetElementByID("preview-tab-link").(dom.Element).Class().Add("active")
+	container.QuerySelector(".write-tab-link").(dom.Element).Class().Remove("active")
+	container.QuerySelector(".preview-tab-link").(dom.Element).Class().Add("active")
 	commentEditor.Style().SetProperty("display", "none", "")
 	commentPreview.Style().SetProperty("display", "block", "")
-	previewActive = true
 }
 
-func SwitchWriteTab() {
-	commentEditor := document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement)
-	commentPreview := document.GetElementByID("comment-preview").(*dom.HTMLDivElement)
+func SwitchWriteTab(this dom.HTMLElement) {
+	container := getAncestorByClassName(this, "edit-container")
+	commentEditor := container.QuerySelector(".comment-editor").(*dom.HTMLTextAreaElement)
+	switchWriteTab(container, commentEditor)
+}
 
-	if previewActive {
-		document.GetElementByID("write-tab-link").(dom.Element).Class().Add("active")
-		document.GetElementByID("preview-tab-link").(dom.Element).Class().Remove("active")
+func switchWriteTab(container dom.Element, commentEditor *dom.HTMLTextAreaElement) {
+	if container.QuerySelector(".preview-tab-link").(dom.Element).Class().Contains("active") {
+		commentPreview := container.QuerySelector(".comment-preview").(*dom.HTMLDivElement)
+
+		container.QuerySelector(".write-tab-link").(dom.Element).Class().Add("active")
+		container.QuerySelector(".preview-tab-link").(dom.Element).Class().Remove("active")
 		commentEditor.Style().SetProperty("display", "block", "")
 		commentPreview.Style().SetProperty("display", "none", "")
-		previewActive = false
 	}
 
 	commentEditor.Focus()

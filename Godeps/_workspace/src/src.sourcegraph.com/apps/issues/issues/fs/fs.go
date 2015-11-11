@@ -2,14 +2,11 @@
 package fs
 
 import (
-	"encoding/json"
-	"html/template"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
-	"github.com/google/go-github/github"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/apps/issues/issues"
@@ -58,6 +55,11 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 			continue
 		}
 
+		// Count comments.
+		comments, err := readDirIDs(filepath.Join(s.dir(repo), dir.Name()))
+		if err != nil {
+			return is, err
+		}
 		user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
 		if err != nil {
 			return is, err
@@ -67,13 +69,10 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 			State: issue.State,
 			Title: issue.Title,
 			Comment: issues.Comment{
-				User: issues.User{
-					Login:     user.Login,
-					AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-					HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-				},
+				User:      sgUser(ctx, user),
 				CreatedAt: issue.CreatedAt,
 			},
+			Replies: len(comments) - 1,
 		})
 	}
 
@@ -126,11 +125,7 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 		State: issue.State,
 		Title: issue.Title,
 		Comment: issues.Comment{
-			User: issues.User{
-				Login:     user.Login,
-				AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-				HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-			},
+			User:      sgUser(ctx, user),
 			CreatedAt: issue.CreatedAt,
 		},
 	}, nil
@@ -158,11 +153,8 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 			return comments, err
 		}
 		comments = append(comments, issues.Comment{
-			User: issues.User{
-				Login:     user.Login,
-				AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-				HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-			},
+			ID:        fi.ID,
+			User:      sgUser(ctx, user),
 			CreatedAt: comment.CreatedAt,
 			Body:      comment.Body,
 		})
@@ -193,11 +185,7 @@ func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64
 			return events, err
 		}
 		events = append(events, issues.Event{
-			Actor: issues.User{
-				Login:     user.Login,
-				AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-				HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-			},
+			Actor:     sgUser(ctx, user),
 			CreatedAt: event.CreatedAt,
 			Type:      event.Type,
 			Rename:    event.Rename,
@@ -233,11 +221,8 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 	}
 
 	return issues.Comment{
-		User: issues.User{
-			Login:     user.Login,
-			AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-			HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-		},
+		ID:        commentID,
+		User:      sgUser(ctx, user),
 		CreatedAt: comment.CreatedAt,
 		Body:      comment.Body,
 	}, nil
@@ -289,11 +274,8 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 		State: issue.State,
 		Title: issue.Title,
 		Comment: issues.Comment{
-			User: issues.User{
-				Login:     user.Login,
-				AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-				HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-			},
+			ID:        0,
+			User:      sgUser(ctx, user),
 			CreatedAt: issue.CreatedAt,
 			Body:      issue.Body,
 		},
@@ -314,11 +296,14 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 		return issues.Issue{}, err
 	}
 
+	// TODO: Doing this here before committing in case it fails; think about factoring this out into a user service that augments...
+	//       Or maybe not once this is used to do authz checks.
 	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
 	if err != nil {
 		return issues.Issue{}, err
 	}
 
+	// Apply edits.
 	if ir.State != nil {
 		issue.State = *ir.State
 	}
@@ -365,13 +350,80 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 		State: issue.State,
 		Title: issue.Title,
 		Comment: issues.Comment{
-			User: issues.User{
-				Login:     user.Login,
-				AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-				HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-			},
+			ID:        0,
+			User:      sgUser(ctx, user),
 			CreatedAt: issue.CreatedAt,
 		},
+	}, nil
+}
+
+func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint64, c issues.Comment) (issues.Comment, error) {
+	if err := c.Validate(); err != nil {
+		return issues.Comment{}, err
+	}
+
+	sg := sourcegraph.NewClientFromContext(ctx)
+
+	if c.ID == 0 {
+		// Get from storage.
+		var issue issue
+		err := jsonDecodeFile(filepath.Join(s.dir(repo), formatUint64(id), "0"), &issue)
+		if err != nil {
+			return issues.Comment{}, err
+		}
+
+		// TODO: Doing this here before committing in case it fails; think about factoring this out into a user service that augments...
+		//       Or maybe not once this is used to do authz checks.
+		user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
+		if err != nil {
+			return issues.Comment{}, err
+		}
+
+		// Apply edits.
+		issue.Body = c.Body
+
+		// Commit to storage.
+		err = jsonEncodeFile(filepath.Join(s.dir(repo), formatUint64(id), "0"), issue)
+		if err != nil {
+			return issues.Comment{}, err
+		}
+
+		return issues.Comment{
+			ID:        0,
+			User:      sgUser(ctx, user),
+			CreatedAt: issue.CreatedAt,
+			Body:      issue.Body,
+		}, nil
+	}
+
+	// Get from storage.
+	var comment comment
+	err := jsonDecodeFile(filepath.Join(s.dir(repo), formatUint64(id), formatUint64(c.ID)), &comment)
+	if err != nil {
+		return issues.Comment{}, err
+	}
+
+	// TODO: Doing this here before committing in case it fails; think about factoring this out into a user service that augments...
+	//       Or maybe not once this is used to do authz checks.
+	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: comment.AuthorUID})
+	if err != nil {
+		return issues.Comment{}, err
+	}
+
+	// Apply edits.
+	comment.Body = c.Body
+
+	// Commit to storage.
+	err = jsonEncodeFile(filepath.Join(s.dir(repo), formatUint64(id), formatUint64(c.ID)), comment)
+	if err != nil {
+		return issues.Comment{}, err
+	}
+
+	return issues.Comment{
+		ID:        c.ID,
+		User:      sgUser(ctx, user),
+		CreatedAt: comment.CreatedAt,
+		Body:      comment.Body,
 	}, nil
 }
 
@@ -394,56 +446,7 @@ func (service) CurrentUser(ctx context.Context) (issues.User, error) {
 	if err != nil {
 		return issues.User{}, err
 	}
-	return issues.User{
-		Login:     user.Login,
-		AvatarURL: avatarURL(user.Login),                            //template.URL(user.AvatarURL),
-		HTMLURL:   template.URL("https://github.com/" + user.Login), // TODO.
-	}, nil
-}
-
-var (
-	gh        = github.NewClient(nil)
-	ghAvatars = make(map[string]template.URL)
-)
-
-// TODO.
-func avatarURL(login string) template.URL {
-	if avatarURL, ok := ghAvatars[login]; ok {
-		return avatarURL
-	}
-
-	user, _, err := gh.Users.Get(login)
-	if err != nil || user.AvatarURL == nil {
-		return ""
-	}
-	ghAvatars[login] = template.URL(*user.AvatarURL + "&s=96")
-	return ghAvatars[login]
-}
-
-func jsonDecodeFile(path string, v interface{}) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	err = json.NewDecoder(f).Decode(v)
-	_ = f.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func jsonEncodeFile(path string, v interface{}) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return err
-	}
-	err = json.NewEncoder(f).Encode(v)
-	_ = f.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+	return sgUser(ctx, user), nil
 }
 
 func formatUint64(n uint64) string { return strconv.FormatUint(n, 10) }

@@ -12,20 +12,7 @@ import (
 	"honnef.co/go/js/dom"
 )
 
-func init() {
-	document.AddEventListener("DOMContentLoaded", false, func(_ dom.Event) { setup2() })
-}
-
-func setup2() {
-	commentEditor, ok := document.GetElementByID("comment-editor").(*dom.HTMLTextAreaElement)
-	if !ok {
-		return
-	}
-
-	commentEditor.AddEventListener("paste", false, pasteHandler)
-}
-
-func pasteHandler(e dom.Event) {
+func PasteHandler(e dom.Event) {
 	ce := e.(*dom.ClipboardEvent)
 
 	items := ce.Get("clipboardData").Get("items")

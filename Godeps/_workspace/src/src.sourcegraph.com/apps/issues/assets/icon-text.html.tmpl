@@ -39,9 +39,9 @@
 {{end}}
 
 {{define "close-button"}}
-<button id="issue-toggle-button" class="btn btn-small" tabindex=3 data-1-action="Close issue" data-2-actions="Comment and close" onclick="ToggleIssueState('closed');">Close issue</button>
+<button id="issue-toggle-button" class="btn btn-small" data-1-action="Close issue" data-2-actions="Comment and close" onclick="ToggleIssueState('closed');" tabindex=1>Close issue</button>
 {{end}}
 
 {{define "reopen-button"}}
-<button id="issue-toggle-button" class="btn btn-small" tabindex=3 data-1-action="Reopen issue" data-2-actions="Reopen and comment" onclick="ToggleIssueState('open');">Reopen issue</button>
+<button id="issue-toggle-button" class="btn btn-small" data-1-action="Reopen issue" data-2-actions="Reopen and comment" onclick="ToggleIssueState('open');" tabindex=1>Reopen issue</button>
 {{end}}

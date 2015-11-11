@@ -3,18 +3,19 @@
 		{{template "scriptless-head" .}}
 	</head>
 	<body>
-		<div style="text-align: right;"><button class="btn btn-success btn-small" onclick="window.location = 'issues/new';">New issue</button></div>
+		<div style="text-align: right;"><button class="btn btn-success btn-small" onclick="window.location = '{{.BaseURI}}/new';">New issue</button></div>
 		{{template "issues" .}}
 	</body>
 </html>
 
 {{/* HACK: This is a temporary experiment. */}}
 {{define "scriptless-head"}}
+	{{.HeadPre}}
 	<link href="{{.BaseURI}}/assets/style.css" rel="stylesheet" type="text/css" />
 {{end}}
 
 {{define "head"}}
-	<link href="{{.BaseURI}}/assets/style.css" rel="stylesheet" type="text/css" />
+	{{template "scriptless-head" .}}
 	<script type="text/javascript">
 		var State = {{.BaseState | jsonfmt}};
 		{{/*var State = {{.BaseState}};*/}}
@@ -34,9 +35,10 @@
 				<span style="margin-right: 6px; color: #bd2c00;" class="octicon octicon-issue-closed"></span>
 			{{end}}
 			<div style="flex-grow: 1;">
-				<div><a class="black" href="issues/{{.ID}}"><strong>{{.Title}}</strong></a></div>
+				<div><a class="black" href="{{$.BaseURI}}/{{.ID}}"><strong>{{.Title}}</strong></a></div>
 				<div class="gray tiny">#{{.ID}} opened {{template "time" .CreatedAt}} by {{.User.Login}}</div>
 			</div>
+			<span title="{{.Replies}} replies" class="tiny {{if .Replies}}gray{{else}}lightgray{{end}}"><span class="octicon octicon-comment"></span> {{.Replies}}</span>
 		</div>
 	</div>
 	{{end}}{{else}}

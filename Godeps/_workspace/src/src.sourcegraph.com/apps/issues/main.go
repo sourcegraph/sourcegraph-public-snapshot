@@ -18,13 +18,70 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/shurcooL/github_flavored_markdown"
 	"github.com/shurcooL/go-goon"
+	"github.com/shurcooL/go/gzip_file_server"
 	"github.com/shurcooL/httpfs/html/vfstemplate"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/apps/issues/common"
 	"src.sourcegraph.com/apps/issues/issues"
-	"src.sourcegraph.com/sourcegraph/platform/pctx"
-	"src.sourcegraph.com/sourcegraph/platform/putil"
 )
+
+type Options struct {
+	Context   func(req *http.Request) context.Context
+	RepoSpec  func(req *http.Request) issues.RepoSpec
+	BaseURI   func(req *http.Request) string
+	CSRFToken func(req *http.Request) string
+	Verbatim  func(w http.ResponseWriter)
+	HeadPre   template.HTML
+
+	// TODO.
+	BaseState func(req *http.Request) BaseState
+}
+
+type handler struct {
+	http.Handler
+
+	Options
+}
+
+// New returns an issues app http.Handler using given service and options.
+func New(service issues.Service, opt Options) http.Handler {
+	err := loadTemplates()
+	if err != nil {
+		log.Fatalln("loadTemplates:", err)
+	}
+
+	// TODO: Move into handler?
+	is = service
+
+	h := http.NewServeMux()
+	h.HandleFunc("/mock/", mockHandler)
+	r := mux.NewRouter()
+	// TODO: Make redirection work.
+	//r.StrictSlash(true) // THINK: Can't use this due to redirect not taking baseURI into account.
+	r.HandleFunc("/", issuesHandler).Methods("GET")
+	r.HandleFunc("/{id:[0-9]+}", issueHandler).Methods("GET")
+	r.HandleFunc("/{id:[0-9]+}/edit", postEditIssueHandler).Methods("POST")
+	r.HandleFunc("/{id:[0-9]+}/comment", postCommentHandler).Methods("POST")
+	r.HandleFunc("/{id:[0-9]+}/comment/{commentID:[0-9]+}", postEditCommentHandler).Methods("POST")
+	r.HandleFunc("/new", createIssueHandler).Methods("GET")
+	r.HandleFunc("/new", postCreateIssueHandler).Methods("POST")
+	h.Handle("/", r)
+	assetsFileServer := gzip_file_server.New(Assets)
+	if opt.Verbatim != nil {
+		assetsFileServer = passThrough{Handler: assetsFileServer, Verbatim: opt.Verbatim}
+	}
+	h.Handle("/assets/", assetsFileServer)
+	h.HandleFunc("/debug", debugHandler)
+
+	globalHandler = &handler{
+		Options: opt,
+		Handler: h,
+	}
+	return globalHandler
+}
+
+// TODO: Refactor to avoid global.
+var globalHandler *handler
 
 var t *template.Template
 
@@ -32,6 +89,10 @@ func loadTemplates() error {
 	var err error
 	t = template.New("").Funcs(template.FuncMap{
 		"dump": func(v interface{}) string { return goon.Sdump(v) },
+		"json": func(v interface{}) (string, error) {
+			b, err := json.Marshal(v)
+			return string(b), err
+		},
 		"jsonfmt": func(v interface{}) (string, error) {
 			b, err := json.MarshalIndent(v, "", "\t")
 			return string(b), err
@@ -54,26 +115,19 @@ type BaseState struct {
 	vars map[string]string
 
 	repoSpec issues.RepoSpec
+	HeadPre  template.HTML
 
 	common.State
 }
 
 func baseState(req *http.Request) BaseState {
-	ctx := putil.Context(req)
-	repoRevSpec, _ := pctx.RepoRevSpec(ctx)
-	return BaseState{
-		ctx:  ctx,
-		req:  req,
-		vars: mux.Vars(req),
-
-		repoSpec: issues.RepoSpec{URI: repoRevSpec.URI},
-
-		State: common.State{
-			BaseURI:   pctx.BaseURI(ctx),
-			ReqPath:   req.URL.Path,
-			CSRFToken: pctx.CSRFToken(ctx),
-		},
-	}
+	b := globalHandler.BaseState(req)
+	b.ctx = globalHandler.Context(req)
+	b.req = req
+	b.vars = mux.Vars(req)
+	b.repoSpec = globalHandler.RepoSpec(req)
+	b.HeadPre = globalHandler.HeadPre
+	return b
 }
 
 func (s state) Tab() (issues.State, error) {
@@ -150,7 +204,7 @@ func (s state) CurrentUser() (issues.User, error) {
 	return is.CurrentUser(s.ctx)
 }
 
-func mainHandler(w http.ResponseWriter, req *http.Request) {
+func mockHandler(w http.ResponseWriter, req *http.Request) {
 	if err := loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -158,10 +212,12 @@ func mainHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	tmpl := path.Base(req.URL.Path)
-	state := state{
-		BaseState: baseState(req),
+	mock := mockState{
+		state: state{
+			BaseState: baseState(req),
+		},
 	}
-	err := t.ExecuteTemplate(w, tmpl+".tmpl", &state)
+	err := t.ExecuteTemplate(w, tmpl+".tmpl", &mock)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -206,15 +262,17 @@ func issueHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func debugHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("X-Sourcegraph-Verbatim", "true")
+	if globalHandler.Verbatim != nil {
+		globalHandler.Verbatim(w)
+	}
 
 	fmt.Println("debugHandler:", req.URL.Path)
 
-	ctx := putil.Context(req)
+	/*ctx := putil.Context(req)
 	if repoRevSpec, ok := pctx.RepoRevSpec(ctx); ok {
 		goon.DumpExpr(issues.RepoSpec{URI: repoRevSpec.URI})
 	}
-	goon.DumpExpr(pctx.RepoRevSpec(ctx))
+	goon.DumpExpr(pctx.RepoRevSpec(ctx))*/
 
 	//io.WriteString(w, req.PostForm.Get("value"))
 }
@@ -238,7 +296,9 @@ func createIssueHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func postCreateIssueHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("X-Sourcegraph-Verbatim", "true")
+	if globalHandler.Verbatim != nil {
+		globalHandler.Verbatim(w)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
@@ -246,9 +306,9 @@ func postCreateIssueHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx := putil.Context(req)
-	baseURI := pctx.BaseURI(ctx)
-	repoRevSpec, _ := pctx.RepoRevSpec(ctx)
+	ctx := globalHandler.Context(req)
+	baseURI := globalHandler.BaseURI(req)
+	repoSpec := globalHandler.RepoSpec(req)
 
 	issue := issues.Issue{
 		Title: req.PostForm.Get("title"),
@@ -257,18 +317,20 @@ func postCreateIssueHandler(w http.ResponseWriter, req *http.Request) {
 		},
 	}
 
-	issue, err := is.Create(ctx, issues.RepoSpec{URI: repoRevSpec.URI}, issue)
+	issue, err := is.Create(ctx, repoSpec, issue)
 	if err != nil {
 		log.Println("is.Create:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintf(w, "%s/issues/%d", baseURI, issue.ID)
+	fmt.Fprintf(w, "%s/%d", baseURI, issue.ID)
 }
 
 func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("X-Sourcegraph-Verbatim", "true")
+	if globalHandler.Verbatim != nil {
+		globalHandler.Verbatim(w)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
@@ -276,19 +338,19 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx := putil.Context(req)
+	ctx := globalHandler.Context(req)
 	vars := mux.Vars(req)
-	repoRevSpec, _ := pctx.RepoRevSpec(ctx)
+	repoSpec := globalHandler.RepoSpec(req)
 
 	var ir issues.IssueRequest
 	err := json.Unmarshal([]byte(req.PostForm.Get("value")), &ir)
 	if err != nil {
-		log.Println("postEditIssueHandler json.Unmarshal:", err)
+		log.Println("postEditIssueHandler: json.Unmarshal:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	issue, err := is.Edit(ctx, issues.RepoSpec{URI: repoRevSpec.URI}, uint64(mustAtoi(vars["id"])), ir)
+	issue, err := is.Edit(ctx, repoSpec, uint64(mustAtoi(vars["id"])), ir)
 	if err != nil {
 		log.Println("is.Edit:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -352,7 +414,9 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func postCommentHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("X-Sourcegraph-Verbatim", "true")
+	if globalHandler.Verbatim != nil {
+		globalHandler.Verbatim(w)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
@@ -360,15 +424,15 @@ func postCommentHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx := putil.Context(req)
+	ctx := globalHandler.Context(req)
 	vars := mux.Vars(req)
-	repoRevSpec, _ := pctx.RepoRevSpec(ctx)
+	repoSpec := globalHandler.RepoSpec(req)
 
 	comment := issues.Comment{
 		Body: req.PostForm.Get("value"),
 	}
 
-	comment, err := is.CreateComment(ctx, issues.RepoSpec{URI: repoRevSpec.URI}, uint64(mustAtoi(vars["id"])), comment)
+	comment, err := is.CreateComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), comment)
 	if err != nil {
 		log.Println("is.CreateComment:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -378,6 +442,34 @@ func postCommentHandler(w http.ResponseWriter, req *http.Request) {
 	err = t.ExecuteTemplate(w, "comment", comment)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func postEditCommentHandler(w http.ResponseWriter, req *http.Request) {
+	if globalHandler.Verbatim != nil {
+		globalHandler.Verbatim(w)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		log.Println("req.ParseForm:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx := globalHandler.Context(req)
+	vars := mux.Vars(req)
+	repoSpec := globalHandler.RepoSpec(req)
+
+	comment := issues.Comment{
+		ID:   uint64(mustAtoi(vars["commentID"])),
+		Body: req.PostForm.Get("value"),
+	}
+
+	_, err := is.EditComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), comment)
+	if err != nil {
+		log.Println("is.EditComment:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

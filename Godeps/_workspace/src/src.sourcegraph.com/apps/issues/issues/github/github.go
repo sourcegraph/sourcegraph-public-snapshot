@@ -2,7 +2,9 @@
 package github
 
 import (
+	"fmt"
 	"html/template"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/net/context"
@@ -22,7 +24,11 @@ type service struct {
 	cl *github.Client
 }
 
-func (s service) List(_ context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) ([]issues.Issue, error) {
+// We use 0 as a special ID for the comment that is the issue description. This comment is edited differently.
+const issueDescriptionCommentID = uint64(0)
+
+func (s service) List(_ context.Context, rs issues.RepoSpec, opt issues.IssueListOptions) ([]issues.Issue, error) {
+	repo := ghRepoSpec(rs)
 	ghOpt := github.IssueListByRepoOptions{}
 	switch opt.State {
 	case issues.OpenState:
@@ -47,20 +53,18 @@ func (s service) List(_ context.Context, repo issues.RepoSpec, opt issues.IssueL
 			State: issues.State(*issue.State),
 			Title: *issue.Title,
 			Comment: issues.Comment{
-				User: issues.User{
-					Login:     *issue.User.Login,
-					AvatarURL: template.URL(*issue.User.AvatarURL),
-					HTMLURL:   template.URL(*issue.User.HTMLURL),
-				},
+				User:      ghUser(issue.User),
 				CreatedAt: *issue.CreatedAt,
 			},
+			Replies: *issue.Comments,
 		})
 	}
 
 	return is, nil
 }
 
-func (s service) Count(_ context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) (uint64, error) {
+func (s service) Count(_ context.Context, rs issues.RepoSpec, opt issues.IssueListOptions) (uint64, error) {
+	repo := ghRepoSpec(rs)
 	var count uint64
 
 	// Count Issues and PRs (since there appears to be no way to count just issues in GitHub API).
@@ -106,7 +110,8 @@ func (s service) Count(_ context.Context, repo issues.RepoSpec, opt issues.Issue
 	return count, nil
 }
 
-func (s service) Get(_ context.Context, repo issues.RepoSpec, id uint64) (issues.Issue, error) {
+func (s service) Get(_ context.Context, rs issues.RepoSpec, id uint64) (issues.Issue, error) {
+	repo := ghRepoSpec(rs)
 	issue, _, err := s.cl.Issues.Get(repo.Owner, repo.Repo, int(id))
 	if err != nil {
 		return issues.Issue{}, err
@@ -117,17 +122,14 @@ func (s service) Get(_ context.Context, repo issues.RepoSpec, id uint64) (issues
 		State: issues.State(*issue.State),
 		Title: *issue.Title,
 		Comment: issues.Comment{
-			User: issues.User{
-				Login:     *issue.User.Login,
-				AvatarURL: template.URL(*issue.User.AvatarURL),
-				HTMLURL:   template.URL(*issue.User.HTMLURL),
-			},
+			User:      ghUser(issue.User),
 			CreatedAt: *issue.CreatedAt,
 		},
 	}, nil
 }
 
-func (s service) ListComments(_ context.Context, repo issues.RepoSpec, id uint64, opt interface{}) ([]issues.Comment, error) {
+func (s service) ListComments(_ context.Context, rs issues.RepoSpec, id uint64, opt interface{}) ([]issues.Comment, error) {
+	repo := ghRepoSpec(rs)
 	var comments []issues.Comment
 
 	issue, _, err := s.cl.Issues.Get(repo.Owner, repo.Repo, int(id))
@@ -135,11 +137,8 @@ func (s service) ListComments(_ context.Context, repo issues.RepoSpec, id uint64
 		return comments, err
 	}
 	comments = append(comments, issues.Comment{
-		User: issues.User{
-			Login:     *issue.User.Login,
-			AvatarURL: template.URL(*issue.User.AvatarURL),
-			HTMLURL:   template.URL(*issue.User.HTMLURL),
-		},
+		ID:        issueDescriptionCommentID,
+		User:      ghUser(issue.User),
 		CreatedAt: *issue.CreatedAt,
 		Body:      *issue.Body,
 	})
@@ -150,11 +149,8 @@ func (s service) ListComments(_ context.Context, repo issues.RepoSpec, id uint64
 	}
 	for _, comment := range ghComments {
 		comments = append(comments, issues.Comment{
-			User: issues.User{
-				Login:     *comment.User.Login,
-				AvatarURL: template.URL(*comment.User.AvatarURL),
-				HTMLURL:   template.URL(*comment.User.HTMLURL),
-			},
+			ID:        uint64(*comment.ID),
+			User:      ghUser(comment.User),
 			CreatedAt: *comment.CreatedAt,
 			Body:      *comment.Body,
 		})
@@ -163,7 +159,8 @@ func (s service) ListComments(_ context.Context, repo issues.RepoSpec, id uint64
 	return comments, nil
 }
 
-func (s service) ListEvents(_ context.Context, repo issues.RepoSpec, id uint64, opt interface{}) ([]issues.Event, error) {
+func (s service) ListEvents(_ context.Context, rs issues.RepoSpec, id uint64, opt interface{}) ([]issues.Event, error) {
+	repo := ghRepoSpec(rs)
 	var events []issues.Event
 
 	ghEvents, _, err := s.cl.Issues.ListIssueEvents(repo.Owner, repo.Repo, int(id), nil) // TODO: Pagination.
@@ -176,11 +173,7 @@ func (s service) ListEvents(_ context.Context, repo issues.RepoSpec, id uint64, 
 			continue
 		}
 		e := issues.Event{
-			Actor: issues.User{
-				Login:     *event.Actor.Login,
-				AvatarURL: template.URL(*event.Actor.AvatarURL),
-				HTMLURL:   template.URL(*event.Actor.HTMLURL),
-			},
+			Actor:     ghUser(event.Actor),
 			CreatedAt: *event.CreatedAt,
 			Type:      et,
 		}
@@ -197,7 +190,8 @@ func (s service) ListEvents(_ context.Context, repo issues.RepoSpec, id uint64, 
 	return events, nil
 }
 
-func (s service) CreateComment(_ context.Context, repo issues.RepoSpec, id uint64, c issues.Comment) (issues.Comment, error) {
+func (s service) CreateComment(_ context.Context, rs issues.RepoSpec, id uint64, c issues.Comment) (issues.Comment, error) {
+	repo := ghRepoSpec(rs)
 	comment, _, err := s.cl.Issues.CreateComment(repo.Owner, repo.Repo, int(id), &github.IssueComment{
 		Body: &c.Body,
 	})
@@ -206,17 +200,15 @@ func (s service) CreateComment(_ context.Context, repo issues.RepoSpec, id uint6
 	}
 
 	return issues.Comment{
-		User: issues.User{
-			Login:     *comment.User.Login,
-			AvatarURL: template.URL(*comment.User.AvatarURL),
-			HTMLURL:   template.URL(*comment.User.HTMLURL),
-		},
+		ID:        uint64(*comment.ID),
+		User:      ghUser(comment.User),
 		CreatedAt: *comment.CreatedAt,
 		Body:      *comment.Body,
 	}, nil
 }
 
-func (s service) Create(_ context.Context, repo issues.RepoSpec, i issues.Issue) (issues.Issue, error) {
+func (s service) Create(_ context.Context, rs issues.RepoSpec, i issues.Issue) (issues.Issue, error) {
+	repo := ghRepoSpec(rs)
 	issue, _, err := s.cl.Issues.Create(repo.Owner, repo.Repo, &github.IssueRequest{
 		Title: &i.Title,
 		Body:  &i.Body,
@@ -230,20 +222,19 @@ func (s service) Create(_ context.Context, repo issues.RepoSpec, i issues.Issue)
 		State: issues.State(*issue.State),
 		Title: *issue.Title,
 		Comment: issues.Comment{
-			User: issues.User{
-				Login:     *issue.User.Login,
-				AvatarURL: template.URL(*issue.User.AvatarURL),
-				HTMLURL:   template.URL(*issue.User.HTMLURL),
-			},
+			ID:        issueDescriptionCommentID,
+			User:      ghUser(issue.User),
 			CreatedAt: *issue.CreatedAt,
 		},
 	}, nil
 }
 
-func (s service) Edit(_ context.Context, repo issues.RepoSpec, id uint64, ir issues.IssueRequest) (issues.Issue, error) {
+func (s service) Edit(_ context.Context, rs issues.RepoSpec, id uint64, ir issues.IssueRequest) (issues.Issue, error) {
+	// TODO: Why Validate here but not Create, etc.? Figure this out. Might only be needed in fs implementation.
 	if err := ir.Validate(); err != nil {
 		return issues.Issue{}, err
 	}
+	repo := ghRepoSpec(rs)
 
 	ghIR := github.IssueRequest{
 		Title: ir.Title,
@@ -263,20 +254,82 @@ func (s service) Edit(_ context.Context, repo issues.RepoSpec, id uint64, ir iss
 		State: issues.State(*issue.State),
 		Title: *issue.Title,
 		Comment: issues.Comment{
-			User: issues.User{
-				Login:     *issue.User.Login,
-				AvatarURL: template.URL(*issue.User.AvatarURL),
-				HTMLURL:   template.URL(*issue.User.HTMLURL),
-			},
+			ID:        issueDescriptionCommentID,
+			User:      ghUser(issue.User),
 			CreatedAt: *issue.CreatedAt,
 		},
 	}, nil
 }
 
-func (service) CurrentUser() issues.User {
+func (s service) EditComment(_ context.Context, rs issues.RepoSpec, id uint64, c issues.Comment) (issues.Comment, error) {
+	// TODO: Why Validate here but not CreateComment, etc.? Figure this out. Might only be needed in fs implementation.
+	if err := c.Validate(); err != nil {
+		return issues.Comment{}, err
+	}
+	repo := ghRepoSpec(rs)
+
+	if c.ID == issueDescriptionCommentID {
+		// Use Issues.Edit() API to edit comment 0 (the issue description).
+		issue, _, err := s.cl.Issues.Edit(repo.Owner, repo.Repo, int(id), &github.IssueRequest{
+			Body: &c.Body,
+		})
+		if err != nil {
+			return issues.Comment{}, err
+		}
+
+		return issues.Comment{
+			ID:        issueDescriptionCommentID,
+			User:      ghUser(issue.User),
+			CreatedAt: *issue.CreatedAt,
+			Body:      *issue.Body,
+		}, nil
+	}
+
+	// GitHub API uses comment ID and doesn't need issue ID. Commit IDs are unique per repo (not per issue).
+	comment, _, err := s.cl.Issues.EditComment(repo.Owner, repo.Repo, int(c.ID), &github.IssueComment{
+		Body: &c.Body,
+	})
+	if err != nil {
+		return issues.Comment{}, err
+	}
+
+	return issues.Comment{
+		ID:        uint64(*comment.ID),
+		User:      ghUser(comment.User),
+		CreatedAt: *comment.CreatedAt,
+		Body:      *comment.Body,
+	}, nil
+}
+
+func (service) CurrentUser(_ context.Context) (issues.User, error) {
+	// TODO: Get current user via GH api (if authed), etc.
 	return issues.User{
 		Login:     "shurcooL",
 		AvatarURL: "https://avatars.githubusercontent.com/u/1924134?v=3",
 		HTMLURL:   "https://github.com/shurcooL",
+	}, nil
+}
+
+type repoSpec struct {
+	Owner string
+	Repo  string
+}
+
+func ghRepoSpec(repo issues.RepoSpec) repoSpec {
+	ownerRepo := strings.Split(repo.URI, "/")
+	if len(ownerRepo) != 2 {
+		panic(fmt.Errorf(`RepoSpec is not of form "owner/repo": %v`, repo))
+	}
+	return repoSpec{
+		Owner: ownerRepo[0],
+		Repo:  ownerRepo[1],
+	}
+}
+
+func ghUser(user *github.User) issues.User {
+	return issues.User{
+		Login:     *user.Login,
+		AvatarURL: template.URL(*user.AvatarURL),
+		HTMLURL:   template.URL(*user.HTMLURL),
 	}
 }

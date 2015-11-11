@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"encoding/json"
 	"os"
 	"sort"
 	"strconv"
@@ -49,4 +50,32 @@ func readDirIDs(path string) ([]fileInfoID, error) {
 	}
 	sort.Sort(byID(fiis))
 	return fiis, nil
+}
+
+// jsonEncodeFile encodes v into file at path, overwriting or creating it.
+func jsonEncodeFile(path string, v interface{}) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	err = json.NewEncoder(f).Encode(v)
+	_ = f.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// jsonDecodeFile decodes contents of file at path into v.
+func jsonDecodeFile(path string, v interface{}) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = json.NewDecoder(f).Decode(v)
+	_ = f.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
