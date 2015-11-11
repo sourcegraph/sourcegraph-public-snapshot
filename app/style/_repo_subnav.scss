@@ -90,7 +90,6 @@
 		}
 
 		&.active > a {
-			pointer-events: none;
 			background-color: inherit;
 			border-bottom-color: $active-indicator-color !important;
 			font-weight: bold;
