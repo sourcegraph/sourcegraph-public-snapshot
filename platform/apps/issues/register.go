@@ -1,7 +1,7 @@
 package issues
 
 import (
-	issuesnext "src.sourcegraph.com/apps/issues"
+	issuesnext "src.sourcegraph.com/apps/issues/sgapp"
 	"src.sourcegraph.com/sourcegraph/conf/feature"
 	"src.sourcegraph.com/sourcegraph/platform"
 )
