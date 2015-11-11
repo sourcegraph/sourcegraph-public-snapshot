@@ -50,11 +50,6 @@ type ClientFlags struct {
 }
 
 func (f *ClientFlags) configure() (func(context.Context) context.Context, error) {
-	// HACK(slimsag): removed due to Go 1.4 bug, restore at return to Go 1.5
-	if f.URL == "https://appdash.sourcegraph.com" {
-		log15.Debug("HACK(slimsag): appdash is disabled")
-		return nil, nil
-	}
 	if f.Disable {
 		log15.Debug("Appdash client is disabled")
 		return nil, nil
