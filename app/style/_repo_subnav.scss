@@ -82,6 +82,13 @@
 			& > a:hover { text-decoration: none !important; }
 			& > a, & > a > i { color: darken($active-indicator-color, 5%); }
 		}
+
+		@media(min-width: $screen-sm-min) and (max-width: $screen-md-min) {
+			&:not(.active) > a > .txt {
+				display: none;
+			}
+		}
+
 		&.active > a {
 			pointer-events: none;
 			background-color: inherit;
