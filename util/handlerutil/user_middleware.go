@@ -33,32 +33,45 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 
 	cred := sourcegraph.CredentialsFromContext(ctx)
 	if cred != nil && UserFromRequest(r) == nil && fetchUserForCredentials(cred) {
-		cl := sourcegraph.NewClientFromContext(ctx)
-
-		// Call to Identify will be authenticated with the
-		// session's access token (because of previous middleware).
-		authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
-		if err != nil {
-			log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
-			appauth.DeleteSessionCookie(w)
-		} else if authInfo.UID != 0 {
-			// Fetch user.
-			user, err := cl.Users.Get(ctx, authInfo.UserSpec())
-			if err == nil {
-				ctx = WithUser(ctx, user)
-			} else if grpc.Code(err) != codes.Unimplemented && grpc.Code(err) != codes.Unauthenticated {
-				log.Printf("warning: fetching user failed: %s (continuing, deleting cookie)", err)
-				appauth.DeleteSessionCookie(w)
-			}
-		} else {
-			// The cookie was probably created by another server; delete it.
-			log.Printf("warning: credentials don't identify a user on this server (continuing, deleting cookie)")
-			appauth.DeleteSessionCookie(w)
+		if user := identifyUser(ctx, w); user != nil {
+			ctx = WithUser(ctx, user)
 		}
 	}
 
 	httpctx.SetForRequest(r, ctx)
 	next(w, r)
+}
+
+func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.User {
+	cl := sourcegraph.NewClientFromContext(ctx)
+
+	// Call to Identify will be authenticated with the
+	// session's access token (because of previous middleware).
+	authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+	if err != nil {
+		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
+		appauth.DeleteSessionCookie(w)
+		return nil
+	}
+
+	if authInfo.UID == 0 {
+		// The cookie was probably created by another server; delete it.
+		log.Printf("warning: credentials don't identify a user on this server (continuing, deleting cookie)")
+		appauth.DeleteSessionCookie(w)
+		return nil
+	}
+
+	// Fetch user.
+	user, err := cl.Users.Get(ctx, authInfo.UserSpec())
+	if err != nil {
+		if grpc.Code(err) != codes.Unimplemented && grpc.Code(err) != codes.Unauthenticated {
+			log.Printf("warning: fetching user failed: %s (continuing, deleting cookie)", err)
+			appauth.DeleteSessionCookie(w)
+		}
+		return nil
+	}
+
+	return user
 }
 
 // fetchUserForCredentials is whether UserMiddleware should try to
