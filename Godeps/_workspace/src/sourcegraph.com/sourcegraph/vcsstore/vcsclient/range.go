@@ -45,6 +45,10 @@ func ComputeFileRange(data []byte, opt GetFileOptions) (*FileRange, *fileset.Fil
 		if fr.EndLine < 0 {
 			return nil, nil, fmt.Errorf("end line %d out of bounds (%d lines total)", fr.EndLine, f.LineCount())
 		}
+		if fr.StartLine > fr.EndLine {
+			return nil, nil, fmt.Errorf("start line (%d) cannot be greater than end line (%d) (%d lines total)", fr.StartLine, fr.EndLine, f.LineCount())
+		}
+
 		if count := int64(f.LineCount()); fr.EndLine > count || fr.EndLine == 0 {
 			fr.EndLine = count
 		}
@@ -55,6 +59,9 @@ func ComputeFileRange(data []byte, opt GetFileOptions) (*FileRange, *fileset.Fil
 		}
 		if fr.EndByte < 0 || fr.EndByte > int64(len(data)) {
 			return nil, nil, fmt.Errorf("end byte %d out of bounds (%d bytes total)", fr.EndByte, len(data))
+		}
+		if fr.StartByte > fr.EndByte {
+			return nil, nil, fmt.Errorf("start byte (%d) cannot be greater than end byte (%d) (%d bytes total)", fr.StartByte, fr.EndByte, len(data))
 		}
 
 		fr.StartLine, fr.EndLine = int64(f.Line(f.Pos(int(fr.StartByte)))), int64(f.Line(f.Pos(int(fr.EndByte))))

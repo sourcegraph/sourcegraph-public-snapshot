@@ -3,7 +3,7 @@ package vcsclient
 import (
 	"net/http"
 	"net/url"
-	pathpkg "path"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-querystring/query"
@@ -76,7 +76,7 @@ func NewRouter(parent *muxpkg.Router) *Router {
 	// cleanTreeVars modifies the Path route var to be a clean filepath. If it
 	// is empty, it is changed to ".".
 	cleanTreeVars := func(req *http.Request, match *muxpkg.RouteMatch, r *muxpkg.Route) {
-		path := pathpkg.Clean(strings.TrimPrefix(match.Vars["Path"], "/"))
+		path := filepath.Clean(strings.TrimPrefix(match.Vars["Path"], "/"))
 		if path == "" || path == "." {
 			match.Vars["Path"] = "."
 		} else {
@@ -88,7 +88,7 @@ func NewRouter(parent *muxpkg.Router) *Router {
 		if path := vars["Path"]; path == "." {
 			vars["Path"] = ""
 		} else {
-			vars["Path"] = "/" + pathpkg.Clean(path)
+			vars["Path"] = "/" + filepath.Clean(path)
 		}
 		return vars
 	}
