@@ -53,6 +53,8 @@ func ActionEmailMessage(nctx ActionContext) {
 		log15.Error("Error generating email message for action", "ActionContext", nctx)
 		return
 	}
+	templateContent := []gochimp.Var{{Name: "MESSAGE", Content: msg}}
+	mergeVars := []gochimp.Var{{Name: "ObjectType", Content: nctx.ObjectType}, {Name: "ObjectURL", Content: nctx.ObjectURL}}
 	subject, err := generateEmailSubject(nctx)
 	if err != nil {
 		log15.Error("Error generating email subject for action", "ActionContext", nctx)
@@ -66,7 +68,7 @@ func ActionEmailMessage(nctx ActionContext) {
 		if name == "" {
 			name = p.PersonSpec.Login
 		}
-		SendMandrillTemplate("message-generic", name, p.PersonSpec.Email, subject, []gochimp.Var{{Name: "MESSAGE", Content: msg}})
+		SendMandrillTemplate("message-generic", name, p.PersonSpec.Email, subject, templateContent, mergeVars)
 	}
 	actorIncluded := false
 	for _, p := range nctx.Recipients {
