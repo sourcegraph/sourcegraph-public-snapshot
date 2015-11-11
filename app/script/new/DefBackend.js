@@ -13,7 +13,7 @@ const DefBackend = {
 			let def = DefStore.defs.get(action.url);
 			if (def === null) {
 				DefBackend.xhr({
-					uri: `/ui${action.url}`,
+					uri: `/.ui${action.url}`,
 					headers: {
 						"X-Definition-Data-Only": "yes",
 					},
@@ -32,7 +32,7 @@ const DefBackend = {
 			let example = DefStore.examples.get(action.defURL, action.index);
 			if (example === null) {
 				DefBackend.xhr({
-					uri: `/ui${action.defURL}/.examples?TokenizedSource=true&PerPage=1&Page=${action.index + 1}`,
+					uri: `/.ui${action.defURL}/.examples?TokenizedSource=true&PerPage=1&Page=${action.index + 1}`,
 					json: {},
 				}, function(err, resp, body) {
 					if (err) {
@@ -52,7 +52,7 @@ const DefBackend = {
 			let discussions = DefStore.discussions.get(action.defURL);
 			if (discussions === null) {
 				DefBackend.xhr({
-					uri: `/ui${action.defURL}/.discussions?order=Date`,
+					uri: `/.ui${action.defURL}/.discussions?order=Date`,
 					json: {},
 				}, function(err, resp, body) {
 					if (err) {
@@ -66,7 +66,7 @@ const DefBackend = {
 
 		case DefActions.CreateDiscussion:
 			DefBackend.xhr({
-				uri: `/ui${action.defURL}/.discussions/create`,
+				uri: `/.ui${action.defURL}/.discussions/create`,
 				method: "POST",
 				json: {
 					Title: action.title,
@@ -84,7 +84,7 @@ const DefBackend = {
 
 		case DefActions.CreateDiscussionComment:
 			DefBackend.xhr({
-				uri: `/ui${action.defURL}/.discussions/${action.discussionID}/.comment`,
+				uri: `/.ui${action.defURL}/.discussions/${action.discussionID}/.comment`,
 				method: "POST",
 				json: {
 					Body: action.body,

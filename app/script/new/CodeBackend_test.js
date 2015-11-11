@@ -7,7 +7,7 @@ import * as CodeActions from "./CodeActions";
 describe("CodeBackend", () => {
 	it("should handle WantFile", () => {
 		CodeBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be("/ui/aRepo@aRev/.tree/aTree");
+			expect(options.uri).to.be("/.ui/aRepo@aRev/.tree/aTree");
 			callback(null, null, "someFile");
 		};
 		expect(Dispatcher.catchDispatched(() => {

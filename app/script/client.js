@@ -25,7 +25,7 @@ exports.repos = repos;
 
 function repoFiles(repo, rev) {
 	return $.ajax({
-		url: `/ui/${router.fileListURL(repo, rev)}`,
+		url: `/.ui/${router.fileListURL(repo, rev)}`,
 	});
 }
 

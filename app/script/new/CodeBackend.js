@@ -13,7 +13,7 @@ const CodeBackend = {
 			let file = CodeStore.files.get(action.repo, action.rev, action.tree);
 			if (file === null) {
 				CodeBackend.xhr({
-					uri: `/ui/${action.repo}@${action.rev}/.tree/${action.tree}`,
+					uri: `/.ui/${action.repo}@${action.rev}/.tree/${action.tree}`,
 					json: {},
 				}, function(err, resp, body) {
 					if (err) {

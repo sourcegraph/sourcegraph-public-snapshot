@@ -63,7 +63,7 @@ var MarkdownTextarea = React.createClass({
 
 		// Upload the file.
 		$.ajax({
-			url: "/ui/.usercontent",
+			url: "/.ui/.usercontent",
 			method: "POST",
 			contentType: "image/png",
 			accepts: "json",

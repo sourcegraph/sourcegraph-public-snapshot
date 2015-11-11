@@ -22,7 +22,7 @@ describe("util/CodeUtil", () => {
 		CodeUtil.fetchPopup("/a/b/c");
 
 		expect($.ajax.callCount).to.be(1);
-		expect($.ajax.firstCall.args[0].url).to.be("/ui/a/b/c");
+		expect($.ajax.firstCall.args[0].url).to.be("/.ui/a/b/c");
 		expect($.ajax.firstCall.args[0].headers.hasOwnProperty("X-Definition-Data-Only")).to.be(true);
 		expect($.ajax.firstCall.args[0].headers["X-Definition-Data-Only"]).to.be("yes");
 	});
@@ -71,7 +71,7 @@ describe("util/CodeUtil", () => {
 		CodeUtil.fetchExample(testUrl, 1);
 
 		expect($.ajax.callCount).to.be(1);
-		expect($.ajax.firstCall.args[0].url).to.contain(`/ui${testUrl}`);
+		expect($.ajax.firstCall.args[0].url).to.contain(`/.ui${testUrl}`);
 		expect($.ajax.firstCall.args[0].dataType).to.be("json");
 		expect($.ajax.firstCall.args[0].data.Page).to.be(1);
 	});
