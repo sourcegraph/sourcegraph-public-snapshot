@@ -1,6 +1,7 @@
 package httpctx
 
 import (
+	"fmt"
 	"net/http"
 
 	"golang.org/x/net/context"
@@ -66,13 +67,25 @@ func Base(ctx context.Context) func(w http.ResponseWriter, r *http.Request, next
 // taken from the manually provided name (using SetRouteName) or the
 // mux router, in that order.
 func RouteName(r *http.Request) string {
+	name, err := RouteNameOrError(r)
+	if err != nil {
+		panic(err)
+	}
+	return name
+}
+
+// RouteNameOrError returns the current route name. If no such name is set, it
+// returns an error. This should only be used in rare cases over RouteName,
+// since the RouteName should always be set. A reasonable use-case is via
+// Middlewares which do not rely on mux.
+func RouteNameOrError(r *http.Request) (string, error) {
 	if name, ok := gcontext.GetOk(r, routeNameKey); ok {
-		return name.(string)
+		return name.(string), nil
 	}
 	if route := mux.CurrentRoute(r); route != nil {
-		return route.GetName()
+		return route.GetName(), nil
 	}
-	panic("no route name set for request " + r.URL.String())
+	return "", fmt.Errorf("no route name set for request %s", r.URL.String())
 }
 
 // SetRouteName sets the route name that RouteName will return for

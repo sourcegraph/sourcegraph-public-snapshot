@@ -14,7 +14,12 @@ func HTTPMiddleware() func(rw http.ResponseWriter, r *http.Request, next http.Ha
 		return nil
 	}
 	config := &httptrace.MiddlewareConfig{
-		RouteName: func(r *http.Request) string { return httpctx.RouteName(r) },
+		RouteName: func(r *http.Request) string {
+			// If we have an error, name is an empty string which
+			// indicates to httptrace to use a fallback value
+			name, _ := httpctx.RouteNameOrError(r)
+			return name
+		},
 		SetContextSpan: func(r *http.Request, id appdash.SpanID) {
 			SetSpanID(r, id)
 
