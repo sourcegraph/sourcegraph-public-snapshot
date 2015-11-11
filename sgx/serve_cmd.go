@@ -429,8 +429,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	for _, f := range cli.ServeMuxFuncs {
 		f(sm)
 	}
-	sm.Handle("/api/", httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/api/").Subrouter())))
-	sm.Handle("/ui/", ui.NewHandler(ui_router.New(mux.NewRouter().PathPrefix("/ui/").Subrouter(), c.TestUI), c.TestUI))
+	sm.Handle("/.api/", httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())))
+	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(mux.NewRouter().PathPrefix("/.ui/").Subrouter(), c.TestUI), c.TestUI))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(mux.NewRouter())))
 
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
