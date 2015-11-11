@@ -4,7 +4,6 @@ machine:
     - postgresql
   environment:
     REPO: ../.go_workspace/src/src.sourcegraph.com/sourcegraph
-    CGO_ENABLED: 0
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
