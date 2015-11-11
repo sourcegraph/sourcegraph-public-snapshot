@@ -91,7 +91,11 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 
 	// The canonical URL for app root page does not have a trailing slash, so redirect.
 	if rCopy.URL.Path == stripPrefix+"/" {
-		http.Redirect(w, r, stripPrefix, http.StatusMovedPermanently)
+		baseURL := stripPrefix
+		if rCopy.URL.RawQuery != "" {
+			baseURL += "?" + rCopy.URL.RawQuery
+		}
+		http.Redirect(w, r, baseURL, http.StatusMovedPermanently)
 		return nil
 	}
 
