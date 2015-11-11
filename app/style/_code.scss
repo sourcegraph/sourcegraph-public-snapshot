@@ -145,6 +145,16 @@ pre code, .line-numbered-code td {
 	.line-content {
 		padding-left: 14px;
 	}
+
+	&.static-code-view {
+		a.ref {
+			&:hover {
+				background: $highlight-ref-bg;
+				border: $highlight-ref-border;
+				-webkit-filter: brightness(0.9) contrast(1.55);
+			}
+		}
+	}
 }
 
 $flash-color: #fc0;
