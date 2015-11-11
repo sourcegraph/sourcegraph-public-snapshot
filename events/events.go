@@ -34,6 +34,7 @@ type DiscussionPayload struct {
 const ChangesetCreateEvent EventID = "changeset.create"
 const ChangesetUpdateEvent EventID = "changeset.update"
 const ChangesetReviewEvent EventID = "changeset.review"
+const ChangesetMergeEvent EventID = "changeset.merge"
 const ChangesetCloseEvent EventID = "changeset.close"
 
 type ChangesetPayload struct {
@@ -45,4 +46,5 @@ type ChangesetPayload struct {
 	Changeset *sourcegraph.Changeset
 	Review    *sourcegraph.ChangesetReview
 	Update    *sourcegraph.ChangesetUpdateOp
+	Merge     *sourcegraph.ChangesetMergeOp
 }

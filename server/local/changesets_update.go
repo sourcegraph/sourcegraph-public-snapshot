@@ -52,7 +52,7 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 	for _, updateOp := range updates {
 		if e, err := changesetsStore.Update(ctx, updateOp); err != nil {
 			log15.Error("Changesets.UpdateAffected: cannot update changeset", "repo", updateOp.Op.Repo, "id", updateOp.Op.ID, "error", err)
-		} else {
+		} else if e != nil {
 			res.Events = append(res.Events, e)
 		}
 	}
@@ -94,7 +94,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 	isBranchDeleted := (op.Commit == EmptyCommitID)
 
 	// Record all changeset updates to be executed.
-	var updates []*store.ChangesetUpdateOp
+	updates := make([]*store.ChangesetUpdateOp, 0)
 
 	// For changesets with affected HEAD:
 	// - If the branch was deleted, close changesets.

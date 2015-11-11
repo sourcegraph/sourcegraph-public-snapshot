@@ -113,15 +113,20 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 		jiraOnChangesetUpdate(ctx, cs)
 	}
 
-	events.Publish(events.ChangesetUpdateEvent, events.ChangesetPayload{
-		Actor:     user.Spec(),
-		ID:        op.ID,
-		Repo:      uri,
-		Title:     op.Title,
-		URL:       urlToChangeset(ctx, op.ID),
-		Changeset: cs,
-		Update:    &op,
-	})
+	payload := events.ChangesetPayload{
+		Actor:  user.Spec(),
+		ID:     op.ID,
+		Repo:   uri,
+		Title:  op.Title,
+		URL:    urlToChangeset(ctx, op.ID),
+		Update: &op,
+	}
+	if op.Close {
+		events.Publish(events.ChangesetCloseEvent, payload)
+	} else {
+		events.Publish(events.ChangesetUpdateEvent, payload)
+	}
+
 	return writeJSON(w, result)
 }
 
@@ -201,6 +206,11 @@ func serveMerge(w http.ResponseWriter, r *http.Request) (err error) {
 		return err
 	}
 
+	user := putil.UserFromRequest(r)
+	if user == nil {
+		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
+	}
+
 	var op sourcegraph.ChangesetMergeOp
 	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
 		return err
@@ -213,6 +223,20 @@ func serveMerge(w http.ResponseWriter, r *http.Request) (err error) {
 	if err != nil {
 		return err
 	}
+
+	cs, err := sg.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{Repo: repo.RepoSpec, ID: id})
+	if err != nil {
+		return err
+	}
+
+	events.Publish(events.ChangesetMergeEvent, events.ChangesetPayload{
+		Actor: user.Spec(),
+		ID:    op.ID,
+		Repo:  uri,
+		Title: cs.Title,
+		URL:   urlToChangeset(ctx, op.ID),
+		Merge: &op,
+	})
 
 	return writeJSON(w, event)
 }

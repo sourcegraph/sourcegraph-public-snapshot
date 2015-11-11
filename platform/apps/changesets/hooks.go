@@ -41,6 +41,7 @@ func (g *changesetListener) Start(ctx context.Context) {
 	events.Subscribe(events.ChangesetReviewEvent, notifyCallback)
 	events.Subscribe(events.ChangesetUpdateEvent, notifyCallback)
 	events.Subscribe(events.ChangesetCloseEvent, notifyCallback)
+	events.Subscribe(events.ChangesetMergeEvent, notifyCallback)
 }
 
 func updateAffectedChangesets(ctx context.Context, id events.EventID, payload events.GitPayload) {
@@ -64,10 +65,11 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload ev
 			ID:     op.ID,
 			Repo:   op.Repo.URI,
 			Title:  op.Title,
-			URL:    urlToChangeset(ctx, op.ID),
 			Update: op,
 		}
-		if op.Close {
+		if op.Merged {
+			events.Publish(events.ChangesetMergeEvent, cspayload)
+		} else if op.Close {
 			events.Publish(events.ChangesetCloseEvent, cspayload)
 		} else {
 			events.Publish(events.ChangesetUpdateEvent, cspayload)
@@ -76,13 +78,22 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload ev
 }
 
 func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events.ChangesetPayload) {
+	if payload.URL == "" {
+		changesetURL, err := urlToRepoChangeset(payload.Repo, payload.ID)
+		if err == nil {
+			payload.URL = changesetURL.String()
+		}
+	}
+
 	switch id {
 	case events.ChangesetCreateEvent:
 		notifyCreation(ctx, payload)
 	case events.ChangesetReviewEvent:
 		notifyReview(ctx, payload)
+	case events.ChangesetUpdateEvent, events.ChangesetCloseEvent, events.ChangesetMergeEvent:
+		notifyUpdate(ctx, id, payload)
 	default:
-		// TODO: implement notifications for changeset update and close events
+		log15.Warn("changesetListener: unknown event id", "id", id)
 		return
 	}
 }
@@ -91,6 +102,7 @@ func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events
 // also notifies users mentioned in the description of the changeset.
 func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 	if payload.Changeset == nil {
+		log15.Warn("changesetListener: no changeset in context", "payload", payload)
 		return
 	}
 
@@ -99,6 +111,7 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 	// Build list of recipients
 	recipients, err := mdutil.Mentions(ctx, []byte(payload.Changeset.Description))
 	if err != nil {
+		log15.Warn("changesetListener: error parsing mentions from changeset description", "error", err)
 		return
 	}
 
@@ -120,6 +133,7 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 // also notifies any users potentially mentioned in the review.
 func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 	if payload.Changeset == nil || payload.Review == nil {
+		log15.Warn("changesetListener: no changeset or review in context", "payload", payload)
 		return
 	}
 
@@ -128,11 +142,13 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 	// Build list of recipients
 	recipients, err := mdutil.Mentions(ctx, []byte(payload.Review.Body))
 	if err != nil {
+		log15.Warn("changesetListener: error parsing mentions from changeset description", "error", err)
 		return
 	}
 	for _, c := range payload.Review.Comments {
 		mentions, err := mdutil.Mentions(ctx, []byte(c.Body))
 		if err != nil {
+			log15.Warn("changesetListener: error parsing mentions from changeset review", "error", err)
 			return
 		}
 		recipients = append(recipients, mentions...)
@@ -154,6 +170,35 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 		ObjectID:      payload.ID,
 		ObjectTitle:   payload.Title,
 		ActionContent: msg.String(),
+	})
+}
+
+// notifyUpdate creates a slack notification that a changeset was updated, closed or merged.
+func notifyUpdate(ctx context.Context, id events.EventID, payload events.ChangesetPayload) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+
+	var actionType string
+	switch id {
+	case events.ChangesetUpdateEvent:
+		actionType = "updated"
+	case events.ChangesetCloseEvent:
+		actionType = "closed"
+	case events.ChangesetMergeEvent:
+		actionType = "merged"
+	default:
+		log15.Warn("changesetListener: unknown event id", "id", id)
+		return
+	}
+
+	// Send notification
+	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+		Actor:       &payload.Actor,
+		ActionType:  actionType,
+		ObjectURL:   payload.URL,
+		ObjectRepo:  payload.Repo,
+		ObjectType:  "changeset",
+		ObjectID:    payload.ID,
+		ObjectTitle: payload.Title,
 	})
 }
 
