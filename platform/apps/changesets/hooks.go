@@ -180,7 +180,8 @@ func notifyUpdate(ctx context.Context, id events.EventID, payload events.Changes
 	var actionType string
 	switch id {
 	case events.ChangesetUpdateEvent:
-		actionType = "updated"
+		// don't send notifications about changeset updates
+		return
 	case events.ChangesetCloseEvent:
 		actionType = "closed"
 	case events.ChangesetMergeEvent:
