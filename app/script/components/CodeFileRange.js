@@ -30,7 +30,7 @@ var CodeFileRange = React.createClass({
 			return (
 				<tr className="line" key={i}>
 					<td className="line-number" onClick={this._goToLine.bind(this, lineNumber)}>{lineNumber}</td>
-					{/* This HTML should be sanitized in ui/search.go */}
+					{/* This HTML should be sanitized by the server. */}
 					<td className="line-content" dangerouslySetInnerHTML={line}></td>
 					{fileRangeLink}
 				</tr>
