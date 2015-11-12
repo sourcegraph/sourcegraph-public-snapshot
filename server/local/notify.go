@@ -60,10 +60,9 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 }
 
 func (s *notify) getPeople(ctx context.Context, users ...*sourcegraph.UserSpec) []*sourcegraph.Person {
-	cl := sourcegraph.NewClientFromContext(ctx)
 	people := make([]*sourcegraph.Person, len(users))
 	for i, u := range users {
-		people[i] = notif.Person(ctx, cl, u)
+		people[i] = notif.Person(ctx, u)
 	}
 	return people
 }

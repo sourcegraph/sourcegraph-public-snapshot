@@ -422,7 +422,7 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		Date:  pbtypes.NewTimestamp(time.Now()),
 	}
 
-	csCreator := notif.Person(ctx, sourcegraph.NewClientFromContext(ctx), &cs.Author)
+	csCreator := notif.Person(ctx, &cs.Author)
 	if err != nil {
 		return err
 	}
