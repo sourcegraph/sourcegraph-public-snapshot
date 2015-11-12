@@ -104,7 +104,7 @@ func generateJWKS(t *testing.T, ctx context.Context) (context.Context, []byte) {
 
 	// TODO(sqs!): remove the need for this by making it so the
 	// client only needs the JWKS, not the full id private key.
-	idkey.Bits = 512
+	idkey.SetTestEnvironment()
 	k, err := idkey.Generate()
 	if err != nil {
 		t.Fatal(err)

@@ -423,7 +423,7 @@ func NewUnstartedServer() (*Server, context.Context) {
 	s.Ctx = conf.WithAppURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key
-	idkey.Bits = 512 // small for testing
+	idkey.SetTestEnvironment()
 	idKey, err := idkey.Generate()
 	if err != nil {
 		log.Fatal(err)
