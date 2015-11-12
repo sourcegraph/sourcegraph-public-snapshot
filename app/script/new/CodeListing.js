@@ -2,6 +2,7 @@ import React from "react";
 
 import Component from "./Component";
 import CodeLineView from "./CodeLineView";
+import IssuesCreateForm from "./IssuesCreateForm";
 
 const tilingFactor = 500;
 const emptyArray = [];
@@ -12,6 +13,7 @@ export default class CodeListing extends Component {
 		this.state = {
 			firstVisibleLine: 0,
 			visibleLinesCount: tilingFactor * 3,
+			creatingIssue: false,
 		};
 		this._updateVisibleLines = this._updateVisibleLines.bind(this);
 	}
@@ -49,6 +51,9 @@ export default class CodeListing extends Component {
 		if (nextState.startLine && nextState.selectedDef && prevState.startLine !== nextState.startLine) {
 			this._scrollTo(nextState.startLine);
 		}
+		if (prevState.endLine !== nextState.endLine) {
+			nextState.creatingIssue = false;
+		}
 	}
 
 	_scrollTo(line) {
@@ -77,6 +82,29 @@ export default class CodeListing extends Component {
 			offscreenCodeBelow += "\n";
 		});
 
+		let lines = this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) => {
+			let lineNumber = 1 + visibleLinesStart + i;
+			return (
+				<CodeLineView
+					lineNumber={this.state.lineNumbers ? lineNumber : null}
+					tokens={lineData.Tokens || emptyArray}
+					selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
+					selectedDef={this.state.selectedDef}
+					highlightedDef={this.state.highlightedDef}
+					showLineButton={this.state.lineNumbers && lineNumber === this.state.endLine}
+					onLineButtonClick={() => { this.setState({creatingIssue: true}); }}
+					key={visibleLinesStart + i} />
+			);
+		});
+
+		if (this.state.creatingIssue) {
+			let form = (
+				<IssuesCreateForm
+					key={`form-${this.state.endLine}`} />
+			);
+			lines.splice(this.state.endLine, 0, form);
+		}
+
 		return (
 			<table className="line-numbered-code" ref="table">
 				<tbody>
@@ -86,19 +114,7 @@ export default class CodeListing extends Component {
 							<td className="line-content">{offscreenCodeAbove}</td>
 						</tr>
 					}
-					{this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) => {
-						let lineNumber = 1 + visibleLinesStart + i;
-						return (
-							<CodeLineView
-								lineNumber={this.state.lineNumbers ? lineNumber : null}
-								tokens={lineData.Tokens || emptyArray}
-								selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
-								selectedDef={this.state.selectedDef}
-								highlightedDef={this.state.highlightedDef}
-								showLineButton={this.state.lineNumbers && lineNumber === this.state.endLine}
-								key={visibleLinesStart + i} />
-						);
-					})}
+					{lines}
 					{offscreenCodeBelow !== "" &&
 						<tr className="line">
 							<td className="line-number"></td>

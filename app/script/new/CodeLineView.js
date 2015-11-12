@@ -27,7 +27,8 @@ export default class CodeLineView extends Component {
 
 		state.lineNumber = props.lineNumber || null;
 		state.selected = Boolean(props.selected);
-		state.showLineButton = Boolean(props.showLineButton);
+		state.showLineButton = Boolean(props.showLineButton && props.onLineButtonClick);
+		state.onLineButtonClick = props.onLineButtonClick || null;
 	}
 
 	render() {
@@ -44,7 +45,10 @@ export default class CodeLineView extends Component {
 							Dispatcher.dispatch(new CodeActions.SelectLine(this.state.lineNumber));
 						}}>
 						{this.state.showLineButton &&
-							<a className="btn-inline">
+							<a className="btn-inline" onClick={(event) => {
+								this.state.onLineButtonClick();
+								event.stopPropagation();
+							}}>
 								<span className="octicon octicon-plus"></span>
 							</a>
 						}
@@ -110,4 +114,6 @@ CodeLineView.propTypes = {
 	selected: React.PropTypes.bool,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
+	showLineButton: React.PropTypes.bool,
+	onLineButtonClick: React.PropTypes.func,
 };
