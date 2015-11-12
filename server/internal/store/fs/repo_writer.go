@@ -20,7 +20,7 @@ type refResolver interface {
 
 var (
 	RefAuthor = vcs.Signature{
-		Name:  "Sourcegraph Code Review",
+		Name:  "Sourcegraph",
 		Email: "noreply@sourcegraph.com",
 	}
 	RefCommitter = RefAuthor
@@ -193,11 +193,11 @@ func (rs *RepoStage) Commit(author, committer vcs.Signature, message string) err
 	return nil
 }
 
-func (rs *RepoStage) Merge(head, base, message string, squash bool) error {
+// Pull pulls the specified head branch into the current branch. The resulting
+// changes will only be staged, so you must call RepoStage.Commit if you want
+// to commit merged changes.
+func (rs *RepoStage) Pull(head string, squash bool) error {
 	if err := checkGitArgSafety(head); err != nil {
-		return err
-	}
-	if err := checkGitArgSafety(base); err != nil {
 		return err
 	}
 
@@ -211,23 +211,13 @@ func (rs *RepoStage) Merge(head, base, message string, squash bool) error {
 	args = append(args, rs.repoDir, head)
 	cmd := exec.Command("git", args...)
 	cmd.Dir = rs.stagingDir
+	// Git requires you to configure a name and email to use "git pull", even if
+	// you aren't committing anything.
+	cmd.Env = append(os.Environ(),
+		"GIT_COMMITTER_NAME="+RefCommitter.Name,
+		"GIT_COMMITTER_EMAIL="+RefCommitter.Email,
+	)
 	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return execError(cmd.Args, err, out)
-	}
-
-	// Commit merged changes.
-	cmd = exec.Command("git", "commit", "--message="+message)
-	cmd.Dir = rs.stagingDir
-	out, err = cmd.CombinedOutput()
-	if err != nil {
-		return execError(cmd.Args, err, out)
-	}
-
-	// Push merged changes.
-	cmd = exec.Command("git", "push", rs.repoDir, base)
-	cmd.Dir = rs.stagingDir
-	out, err = cmd.CombinedOutput()
 	if err != nil {
 		return execError(cmd.Args, err, out)
 	}
