@@ -157,6 +157,9 @@ export default class CodeFileContainer extends Container {
 				{this.state.file &&
 					<div className="code-view-react">
 						<CodeListing
+							repo={this.state.repo}
+							rev={this.state.file.EntrySpec.RepoRev.CommitID}
+							path={this.state.tree}
 							lines={this.state.file.Entry.SourceCode.Lines}
 							lineNumbers={true}
 							startLine={this.state.startLine}

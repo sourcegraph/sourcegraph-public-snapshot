@@ -28,7 +28,7 @@ var ProposeChangeForm = React.createClass({
 	render() {
 		return (
 			<div className="changeset-propose-form">
-				<input type="text" className="title" placeholder="Title" autoFocus="true" />
+				<input type="text" className="title" placeholder="Title" autoFocus={true} />
 				<MarkdownTextarea ref="description" placeholder="Enter a description..." />
 				<div className="actions">
 					{this.props.changesetLoading ? <span>Loading...</span> : null}

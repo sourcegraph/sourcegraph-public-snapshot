@@ -165,12 +165,39 @@ pre code, .line-numbered-code td {
 		}
 	}
 
-	tr:hover .line-number {
-		color: $gray-mid;
-	}
-
 	.line-content {
 		padding-left: 14px;
+	}
+
+	.inline-content {
+		@include base-font;
+		padding: 10px;
+
+		.inline-form {
+			width: 450px;
+
+			.markdown-textarea, & > input, & > textarea {
+				margin-bottom: $line-height-computed / 2;
+			}
+
+			input, textarea {
+				width: 100%;
+				border: solid 1px #eee;
+				padding: 6px;
+				background-color: #fafafa;
+				&:focus {
+					background-color: $white;
+				}
+			}
+
+			textarea {
+				height: 80px;
+			}
+		}
+	}
+
+	tr:hover .line-number {
+		color: $gray-mid;
 	}
 
 	&.static-code-view {
@@ -180,6 +207,12 @@ pre code, .line-numbered-code td {
 				border: $highlight-ref-border;
 				-webkit-filter: brightness(0.9) contrast(1.55);
 			}
+		}
+	}
+
+	&.fade-unselected-lines {
+		.line:not(.main-byte-range) .line-content {
+			opacity: 0.45;
 		}
 	}
 }

@@ -486,9 +486,6 @@ h1.changeset-title {
 		}
 
 		.inline-comment {
-			@include base-font;
-			padding: 10px;
-
 			&.draft-form {
 				border: 1px solid #eee;
 				border-width: 1px 0;

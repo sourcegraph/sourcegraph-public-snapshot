@@ -2,7 +2,9 @@ import React from "react";
 
 import Component from "./Component";
 import CodeLineView from "./CodeLineView";
-import IssuesCreateForm from "./IssuesCreateForm";
+import IssueForm from "./IssueForm";
+
+import classNames from "classnames";
 
 const tilingFactor = 500;
 const emptyArray = [];
@@ -91,7 +93,7 @@ export default class CodeListing extends Component {
 					selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
-					showLineButton={this.state.lineNumbers && lineNumber === this.state.endLine}
+					lineButton={this.state.lineNumbers && lineNumber === this.state.endLine}
 					onLineButtonClick={() => { this.setState({creatingIssue: true}); }}
 					key={visibleLinesStart + i} />
 			);
@@ -99,14 +101,29 @@ export default class CodeListing extends Component {
 
 		if (this.state.creatingIssue) {
 			let form = (
-				<IssuesCreateForm
-					key={`form-${this.state.endLine}`} />
+				<tr key={`form-${this.state.endLine}`}>
+					<td className="line-number"></td>
+					<td>
+						<IssueForm
+							repo={this.state.repo}
+							rev={this.state.rev}
+							path={this.state.path}
+							startLine={this.state.startLine}
+							endLine={this.state.endLine}
+							onCancel={() => { this.setState({creatingIssue: false}); }} />
+					</td>
+				</tr>
 			);
 			lines.splice(this.state.endLine, 0, form);
 		}
 
+		let listingClasses = classNames({
+			"line-numbered-code": true,
+			"fade-unselected-lines": this.state.creatingIssue,
+		});
+
 		return (
-			<table className="line-numbered-code" ref="table">
+			<table className={listingClasses} ref="table">
 				<tbody>
 					{offscreenCodeAbove !== "" &&
 						<tr className="line">
@@ -134,4 +151,7 @@ CodeListing.propTypes = {
 	endLine: React.PropTypes.number,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
+	repo: React.PropTypes.string,
+	rev: React.PropTypes.string,
+	path: React.PropTypes.string,
 };
