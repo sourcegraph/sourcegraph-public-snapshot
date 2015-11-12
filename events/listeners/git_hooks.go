@@ -58,6 +58,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 		Actor:      &payload.Actor,
 		ObjectURL:  absBranchURL,
 		ObjectRepo: repo.URI + "@" + event.Branch,
+		NoEmail:    true,
 	}
 
 	if id != events.GitPushEvent {

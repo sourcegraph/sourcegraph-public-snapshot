@@ -28,6 +28,11 @@ type ActionContext struct {
 	ObjectTitle   string
 	ObjectType    string
 	ObjectURL     string
+
+	// Override the default template for Slack message.
+	SlackMsg string
+	// Override the default template for email body.
+	EmailHTML string
 }
 
 // Action is a generic way to notify users about an event happening. It just
@@ -37,6 +42,9 @@ func Action(nctx ActionContext) {
 	ActionEmailMessage(nctx)
 }
 
+// ActionSlackMessage generates and sends a Slack message.
+// If the ActionContext.SlackMsg field is set, it is used as is
+// instead of generating the message from the default template.
 func ActionSlackMessage(nctx ActionContext) {
 	msg, err := generateSlackMessage(nctx)
 	if err != nil {
@@ -46,7 +54,9 @@ func ActionSlackMessage(nctx ActionContext) {
 	slack.PostMessage(slack.PostOpts{Msg: msg})
 }
 
-// ActionEmailMessage generates and sends an email
+// ActionEmailMessage generates and sends an email.
+// If the ActionContext.EmailHTML field is set, it is used as is
+// instead of generating the email body from the default template.
 func ActionEmailMessage(nctx ActionContext) {
 	msg, err := generateHTMLFragment(nctx)
 	if err != nil {
@@ -70,19 +80,15 @@ func ActionEmailMessage(nctx ActionContext) {
 		}
 		SendMandrillTemplate("message-generic", name, p.PersonSpec.Email, subject, templateContent, mergeVars)
 	}
-	actorIncluded := false
 	for _, p := range nctx.Recipients {
 		sendEmail(p)
-		if p.PersonSpec.UID == nctx.Person.PersonSpec.UID {
-			actorIncluded = true
-		}
-	}
-	if !actorIncluded {
-		sendEmail(nctx.Person)
 	}
 }
 
 func generateSlackMessage(nctx ActionContext) (string, error) {
+	if nctx.SlackMsg != "" {
+		return nctx.SlackMsg, nil
+	}
 	tmpl := template.Must(template.New("slack-action").Parse(
 		"*{{.Person.PersonSpec.Login}}* {{.ActionType}} <{{.ObjectURL}}|{{.ObjectRepo}}{{if .ObjectType}} {{.ObjectType}}{{end}}{{if .ObjectID}} #{{.ObjectID}}{{end}}>{{if .ObjectTitle}}: {{.ObjectTitle}}{{end}}{{if .Recipients}} /cc{{end}}{{range .Recipients}} @{{.PersonSpec.Login}}{{end}}{{if .ActionContent}}\n\n{{.ActionContent}}{{end}}"))
 	var buf bytes.Buffer
@@ -94,6 +100,9 @@ func generateSlackMessage(nctx ActionContext) (string, error) {
 }
 
 func generateHTMLFragment(nctx ActionContext) (string, error) {
+	if nctx.EmailHTML != "" {
+		return nctx.EmailHTML, nil
+	}
 	tmpl := html.Must(html.New("html-action").Parse(
 		`<b>{{.Person.PersonSpec.Login}}</b> {{.ActionType}} <a href="{{.ObjectURL}}">{{.ObjectRepo}} {{.ObjectType}} #{{.ObjectID}}</a>: {{.ObjectTitle}}`))
 	var buf bytes.Buffer

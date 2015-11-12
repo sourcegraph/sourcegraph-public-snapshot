@@ -39,21 +39,27 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 		ObjectType:    e.ObjectType,
 		ObjectTitle:   e.ObjectTitle,
 		ObjectURL:     e.ObjectURL,
+		SlackMsg:      e.SlackMsg,
+		EmailHTML:     e.EmailHTML,
 	}
 
-	if s.shouldSendSlack() {
+	if !e.NoSlack {
 		notif.ActionSlackMessage(nctx)
 	}
 
-	if s.shouldFederateEmail() {
-		// Forward request to mothership since we are not setup to send email
-		notify, err := s.mothershipNotifyClient(ctx)
-		if err != nil {
-			return nil, err
+	if !e.NoEmail {
+		if s.shouldFederateEmail() {
+			// Forward request to mothership since we are not setup to send email
+			notify, err := s.mothershipNotifyClient(ctx)
+			if err != nil {
+				return nil, err
+			}
+			// Don't send a Slack message from the mothership
+			e.NoSlack = true
+			return notify.GenericEvent(ctx, e)
+		} else {
+			notif.ActionEmailMessage(nctx)
 		}
-		return notify.GenericEvent(ctx, e)
-	} else {
-		notif.ActionEmailMessage(nctx)
 	}
 
 	return &pbtypes.Void{}, nil
@@ -85,14 +91,6 @@ func (s *notify) shouldFederateEmail() bool {
 	// If we are configured to send email or we are the mothership then
 	// our instance should send the email, rather than federating out
 	return !(notif.EmailIsConfigured() || fed.Config.IsRoot)
-}
-
-func (s *notify) shouldSendSlack() bool {
-	// TODO(keegan) This is a temporary hack since we currently don't have
-	// any slack notifications setup for our fedroot, but do have slack
-	// configured for other notifications. We don't want to send slack
-	// notifications for private instances to our own slack channel
-	return !fed.Config.IsRoot
 }
 
 func dedupUsers(users []*sourcegraph.UserSpec) []*sourcegraph.UserSpec {

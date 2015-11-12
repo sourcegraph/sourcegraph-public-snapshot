@@ -94,6 +94,28 @@ func TestGenerateMessage(t *testing.T) {
 			`<b>renfredxh</b> created <a href="https://src.sourcegraph.com/lib/annotate/.changesets/2">lib/annotate changeset #2</a>: Hello`,
 			"[Changeset Created] lib/annotate #2: Hello",
 		},
+		{
+			// Test custom Slack message and email body.
+			ActionContext{
+				Person: &sourcegraph.Person{
+					PersonSpec: sourcegraph.PersonSpec{
+						Login: "pararthshah",
+					},
+				},
+				ActionType:    "updated",
+				ActionContent: "Hi",
+				ObjectRepo:    "metrics",
+				ObjectType:    "dashboard",
+				ObjectID:      2,
+				ObjectTitle:   "Hello",
+				ObjectURL:     "https://src.sourcegraph.com/metrics/.dashboard/2",
+				SlackMsg:      "*pararthshah* updated metrics with a new <https://src.sourcegraph.com/metrics/.dashboard/2|dashboard>",
+				EmailHTML:     `<b>pararthshah</b> updated metrics with a new <a href="https://src.sourcegraph.com/metrics/.dashboard/2">dashboard</a>`,
+			},
+			"*pararthshah* updated metrics with a new <https://src.sourcegraph.com/metrics/.dashboard/2|dashboard>",
+			`<b>pararthshah</b> updated metrics with a new <a href="https://src.sourcegraph.com/metrics/.dashboard/2">dashboard</a>`,
+			"[Dashboard Updated] metrics #2: Hello",
+		},
 	}
 	for _, c := range cases {
 		msg, err := generateSlackMessage(c.ActionContext)
