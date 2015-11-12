@@ -28,7 +28,7 @@
 				{{if authFlags.HasUserAccounts}}
 				{{if .CurrentUser}}
 					<li class="current-user name{{if not authFlags.HasUserProfiles}} disabled{{end}}">
-						<a {{if authFlags.HasUserProfiles}}href="{{urlToUser .CurrentUser.Login}}"{{end}} class="user">
+						<a {{if authFlags.HasUserProfiles}}href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}"{{end}} class="user">
 							{{if .CurrentUser.AvatarURL}}
 								<img src="{{.CurrentUser.AvatarURL}}" class="navbar-avatar nav-avatar avatar">
 							{{end}}
