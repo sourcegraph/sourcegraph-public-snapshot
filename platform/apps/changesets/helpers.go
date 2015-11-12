@@ -72,6 +72,7 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 	return json.NewEncoder(w).Encode(v)
 }
 
+// urlToRepoChangeset returns the relative URL of the changeset with given id.
 func urlToRepoChangeset(repo string, changeset int64) (*url.URL, error) {
 	subURL, err := router.Get(routeView).URL("ID", fmt.Sprint(changeset))
 	if err != nil {

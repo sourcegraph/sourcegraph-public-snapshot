@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
@@ -81,7 +82,7 @@ func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events
 	if payload.URL == "" {
 		changesetURL, err := urlToRepoChangeset(payload.Repo, payload.ID)
 		if err == nil {
-			payload.URL = changesetURL.String()
+			payload.URL = conf.AppURL(ctx).ResolveReference(changesetURL).String()
 		}
 	}
 
