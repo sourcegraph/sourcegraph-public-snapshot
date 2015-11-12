@@ -49,9 +49,6 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	s.fsLock.Lock()
 	defer s.fsLock.Unlock()
 
-	// We only need a commit ID on base after the changeset is closed, or
-	// head is deleted/merged.
-	cs.DeltaSpec.Base.CommitID = ""
 	dir := absolutePathForRepo(ctx, repoPath)
 	repo, err := vcs.Open("git", dir)
 	if err != nil {

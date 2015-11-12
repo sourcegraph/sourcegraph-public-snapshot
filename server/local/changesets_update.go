@@ -117,14 +117,8 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 			Head: op.Commit,
 		}
 		if isBranchDeleted {
-			base, err := repoVCS.ResolveBranch(cs.DeltaSpec.Base.Rev)
-			if err != nil {
-				log15.Error("Changesets.UpdateAffected: cannot resolve base branch", "rev", cs.DeltaSpec.Base.Rev, "error", err)
-				continue
-			}
 			updateOp.Op.Close = true
 			updateOp.Head = op.Last
-			updateOp.Base = string(base)
 		}
 		updates = append(updates, &updateOp)
 	}
