@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials/oauth"
+	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -77,13 +78,14 @@ func init() {
 			// Separate caches based on the authorization level, to
 			// avoid cross-user/client leakage.
 			//
-			// The authorization metadata can be in EITHER (a) the
-			// ctx's metadata (if the client was created by the remote
-			// services in a federated request) or (b) in the client
-			// credentials (if the client was created normally). But
-			// the auth data from (b) is what'll actually be used--(a)
-			// is just a remnant from the original server handler. So,
-			// use (b). NOTE: This is important code. If we don't get
+			// The authorization metadata can be in EITHER:
+			//  (a) the client credentials, if the client was created
+			//      normally. This is tried first.
+			//  (b) the ctx's metadata, if the client was created by the
+			//      remote services in a federated request. This is tried
+			//      second in order to properly cache federated requests.
+			//
+			// NOTE: This is important code. If we don't get
 			// the right auth data, we could leak sensitive data
 			// across authentication boundaries.
 
@@ -97,6 +99,11 @@ func init() {
 					return "err#" + randstring.NewLen(64)
 				}
 				key += md["authorization"]
+			} else if md, ok := metadata.FromContext(ctx); ok {
+				// if ctx metadata contains auth token, use it in the cache key
+				if authMD, ok := md["authorization"]; ok && len(authMD) > 0 {
+					key += authMD[len(authMD)-1]
+				}
 			}
 
 			s := sha256.Sum256([]byte(key))
