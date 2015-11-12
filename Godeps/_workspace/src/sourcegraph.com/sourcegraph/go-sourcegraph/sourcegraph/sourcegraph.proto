@@ -3321,6 +3321,18 @@ message NotifyGenericEvent {
 
 	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.changesets/71"
 	string object_url = 9 [(gogoproto.customname) = "ObjectURL"];
+
+	// SlackMsg, if present, will override the Slack message for this event.
+	string slack_msg = 10;
+
+	// EmailHTML, if present, will override the notification email body for this event.
+	string email_html = 11 [(gogoproto.customname) = "EmailHTML"];
+
+	// NoSlack turns off the Slack notification for this event.
+	bool no_slack = 12;
+
+	// NoEmail turns off the email notification for this event.
+	bool no_email = 13;
 }
 
 // Notify service

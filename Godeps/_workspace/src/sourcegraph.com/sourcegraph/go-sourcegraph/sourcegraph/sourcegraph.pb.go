@@ -3740,6 +3740,14 @@ type NotifyGenericEvent struct {
 	ObjectTitle string `protobuf:"bytes,8,opt,name=object_title,proto3" json:",omitempty"`
 	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.changesets/71"
 	ObjectURL string `protobuf:"bytes,9,opt,name=object_url,proto3" json:",omitempty"`
+	// SlackMsg, if present, will override the Slack message for this event.
+	SlackMsg string `protobuf:"bytes,10,opt,name=slack_msg,proto3" json:",omitempty"`
+	// EmailHTML, if present, will override the notification email body for this event.
+	EmailHTML string `protobuf:"bytes,11,opt,name=email_html,proto3" json:",omitempty"`
+	// NoSlack turns off the Slack notification for this event.
+	NoSlack bool `protobuf:"varint,12,opt,name=no_slack,proto3" json:",omitempty"`
+	// NoEmail turns off the email notification for this event.
+	NoEmail bool `protobuf:"varint,13,opt,name=no_email,proto3" json:",omitempty"`
 }
 
 func (m *NotifyGenericEvent) Reset()         { *m = NotifyGenericEvent{} }
