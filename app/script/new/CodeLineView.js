@@ -27,6 +27,7 @@ export default class CodeLineView extends Component {
 
 		state.lineNumber = props.lineNumber || null;
 		state.selected = Boolean(props.selected);
+		state.showLineButton = Boolean(props.showLineButton);
 	}
 
 	render() {
@@ -42,6 +43,11 @@ export default class CodeLineView extends Component {
 							}
 							Dispatcher.dispatch(new CodeActions.SelectLine(this.state.lineNumber));
 						}}>
+						{this.state.showLineButton &&
+							<a className="btn-inline">
+								<span className="octicon octicon-plus"></span>
+							</a>
+						}
 					</td>}
 				<td className="line-content">
 					{this.state.tokens.map((token, i) => {

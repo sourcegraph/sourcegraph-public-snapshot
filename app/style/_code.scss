@@ -115,10 +115,12 @@ pre code, .line-numbered-code td {
 	border-collapse: separate;
 
 	.line-number {
+		position: relative;
 		width: 50px;
 		text-align: right;
 		vertical-align: top;
 		overflow: hidden;
+		overflow: visible;
 		// match code
 		font-family: $font-family-monospace;
 		font-size: $code-font-size;
@@ -136,6 +138,31 @@ pre code, .line-numbered-code td {
 		-ms-user-select: none;
 		user-select: none;
 		&:before { content: attr(data-line); }
+
+
+		.btn-inline {
+			width: 16px;
+			height: 16px;
+			position: absolute;
+			right: -9px;
+			top: 1px;
+			border-radius: 3px;
+			color: #fff;
+			text-align: center;
+			display: inline-block;
+			cursor: pointer;
+			background-color: $sg-blue-color;
+			box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+
+			&:hover {
+				background-color: darken($sg-blue-color, 10%);
+				opacity: 1;
+			}
+
+			span {
+				font-size: 14px;
+			}
+		}
 	}
 
 	tr:hover .line-number {

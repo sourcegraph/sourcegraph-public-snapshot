@@ -86,15 +86,19 @@ export default class CodeListing extends Component {
 							<td className="line-content">{offscreenCodeAbove}</td>
 						</tr>
 					}
-					{this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) =>
-						<CodeLineView
-							lineNumber={this.state.lineNumbers ? 1 + visibleLinesStart + i : null}
-							tokens={lineData.Tokens || emptyArray}
-							selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
-							selectedDef={this.state.selectedDef}
-							highlightedDef={this.state.highlightedDef}
-							key={visibleLinesStart + i} />
-					)}
+					{this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) => {
+						let lineNumber = 1 + visibleLinesStart + i;
+						return (
+							<CodeLineView
+								lineNumber={this.state.lineNumbers ? lineNumber : null}
+								tokens={lineData.Tokens || emptyArray}
+								selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
+								selectedDef={this.state.selectedDef}
+								highlightedDef={this.state.highlightedDef}
+								showLineButton={this.state.lineNumbers && lineNumber === this.state.endLine}
+								key={visibleLinesStart + i} />
+						);
+					})}
 					{offscreenCodeBelow !== "" &&
 						<tr className="line">
 							<td className="line-number"></td>

@@ -81,7 +81,7 @@ var CodeLineView = React.createClass({
 				{typeof this.state.lineNumberHead !== "undefined" ? (
 					<td className="line-number" data-line={this.state.lineNumberHead}>
 						{this.props.allowComments && this.state.allowComments !== false ? (
-							<a className="btn-inline-comment" onClick={this._onCommentClick}>
+							<a className="btn-inline" onClick={this._onCommentClick}>
 								<span className="octicon octicon-plus"></span>
 							</a>
 						) : null}
