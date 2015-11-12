@@ -25,9 +25,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
-// TODO(public-release) This is a very WIP OAuth provider
-// implementation. It doesn't do any verification, only redirection!
-
 func init() {
 	internal.Handlers[router.OAuth2ServerAuthorize] = serveOAuth2ServerAuthorize
 	internal.Handlers[router.OAuth2ServerToken] = serveOAuth2ServerToken
