@@ -6,11 +6,8 @@ import (
 	"log"
 
 	"golang.org/x/crypto/ssh"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
@@ -190,11 +187,12 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 	}
 
 	// Get user info for output message.
-	// TODO: auth.ActorFromContext doesn't work (unlike cl.Auth.Identify) for mothership at this time; resolve if needed/possible.
-	uid := int32(auth.ActorFromContext(cliCtx).UID)
-	if uid == 0 {
-		return grpc.Errorf(codes.Unauthenticated, "no user found in context")
+	// NOTE: auth.ActorFromContext doesn't work because actor is not set in cliCtx locally.
+	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return fmt.Errorf("Error verifying auth credentials: %s.", err)
 	}
+	uid := authInfo.UID
 	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: uid})
 	if err != nil {
 		return fmt.Errorf("Error getting user with UID %d: %s.", uid, err)
@@ -216,11 +214,12 @@ func (c *userKeysDeleteCmd) Execute(args []string) error {
 	cl := Client()
 
 	// Get user info for output message.
-	// TODO: auth.ActorFromContext doesn't work (unlike cl.Auth.Identify) for mothership at this time; resolve if needed/possible.
-	uid := int32(auth.ActorFromContext(cliCtx).UID)
-	if uid == 0 {
-		return grpc.Errorf(codes.Unauthenticated, "no user found in context")
+	// NOTE: auth.ActorFromContext doesn't work because actor is not set in cliCtx locally.
+	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return fmt.Errorf("Error verifying auth credentials: %s.", err)
 	}
+	uid := authInfo.UID
 	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: uid})
 	if err != nil {
 		return fmt.Errorf("Error getting user with UID %d: %s.", uid, err)
