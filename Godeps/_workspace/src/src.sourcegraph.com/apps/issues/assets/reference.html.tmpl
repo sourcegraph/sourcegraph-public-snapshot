@@ -1,0 +1,29 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		<div style="background-color: lightgray;">content</div>
+		{{template "reference" .Reference}}
+		<div style="background-color: lightgray;">content</div>
+		<pre>{{dump .Reference}}</pre>
+	</body>
+</html>
+
+{{define "reference"}}
+<div style="display: flex;" class="list-entry">
+	<div>
+		<a href="{{.User.HTMLURL}}" target="_blank" tabindex=-1>
+			<img class="comment-avatar" width="48" height="48" src="{{.User.AvatarURL}}">
+		</a>
+	</div>
+	<div class="list-entry-border reference">
+		<div class="list-entry-header">
+			{{/* TODO: Replace manual href construction with a router helper from sourcegraph/app/router. */}}
+			<span class="content">{{template "user" .User}} referenced <a href="/{{.Reference.Repo.URI}}@{{.Reference.CommitID}}/.tree/{{.Reference.Path}}?startline={{.Reference.StartLine}}&endline={{.Reference.EndLine}}">{{.Reference.Path}}</a></span>
+		</div>
+		<div id="IssuesReference"></div>
+	</div>
+</div>
+<script>window.preloadedIssuesReference = {{json .Reference}}</script>
+{{end}}

@@ -776,7 +776,7 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/issues",
-			"Rev": "a04977dccfc93afbb9141efe250b3139d8baca2f"
+			"Rev": "960884d7f473a6739afcbedb868a491ac707a6e9"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",

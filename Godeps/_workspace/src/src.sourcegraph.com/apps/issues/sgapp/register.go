@@ -43,10 +43,14 @@ func Init() {
 		},
 		BaseState: func(req *http.Request) issuesapp.BaseState {
 			ctx := putil.Context(req)
+			reqPath := req.URL.Path
+			if reqPath == "/" {
+				reqPath = ""
+			}
 			return issuesapp.BaseState{
 				State: common.State{
 					BaseURI:   pctx.BaseURI(ctx),
-					ReqPath:   req.URL.Path,
+					ReqPath:   reqPath,
 					CSRFToken: pctx.CSRFToken(ctx),
 				},
 			}

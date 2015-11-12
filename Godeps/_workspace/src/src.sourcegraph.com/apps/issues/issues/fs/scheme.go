@@ -11,6 +11,16 @@ type issue struct {
 	State issues.State
 	Title string
 	comment
+	Reference *reference `json:",omitempty"`
+}
+
+// reference is an on-disk representation of a reference.
+type reference struct {
+	Repo      issues.RepoSpec
+	Path      string
+	CommitID  string
+	StartLine uint32
+	EndLine   uint32
 }
 
 // comment is an on-disk representation of a comment.

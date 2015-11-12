@@ -302,7 +302,7 @@ func postCreateIssueHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -310,11 +310,23 @@ func postCreateIssueHandler(w http.ResponseWriter, req *http.Request) {
 	baseURI := globalHandler.BaseURI(req)
 	repoSpec := globalHandler.RepoSpec(req)
 
+	var reference *issues.Reference
+	if req.PostForm.Get("reference") != "" {
+		reference = new(issues.Reference)
+		err := json.Unmarshal([]byte(req.PostForm.Get("reference")), reference)
+		if err != nil {
+			log.Println("postCreateIssueHandler: json.Unmarshal reference:", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
 	issue := issues.Issue{
 		Title: req.PostForm.Get("title"),
 		Comment: issues.Comment{
 			Body: req.PostForm.Get("body"),
 		},
+		Reference: reference,
 	}
 
 	issue, err := is.Create(ctx, repoSpec, issue)
@@ -334,7 +346,7 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -345,8 +357,8 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 	var ir issues.IssueRequest
 	err := json.Unmarshal([]byte(req.PostForm.Get("value")), &ir)
 	if err != nil {
-		log.Println("postEditIssueHandler: json.Unmarshal:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("postEditIssueHandler: json.Unmarshal value:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -420,7 +432,7 @@ func postCommentHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -454,7 +466,7 @@ func postEditCommentHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

@@ -13,6 +13,7 @@
 		{{template "issue-badge" (print .Issue.State)}}
 		<span>{{template "user" .Issue.User}} opened this issue {{template "time" .Issue.CreatedAt}}</span>
 	</div>
+	{{if .Issue.Reference}}{{template "reference" .Issue}}{{end}}
 	{{range .Items}}
 		{{template "issue-item" .}}
 	{{end}}

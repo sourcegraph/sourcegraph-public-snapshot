@@ -36,6 +36,24 @@ func (s mockState) Event() issues.Event {
 	}
 }
 
+func (s mockState) Reference() issues.Issue {
+	return issues.Issue{
+		Comment: issues.Comment{
+			User:      mockUser,
+			CreatedAt: time.Unix(1443244474, 0).UTC(),
+		},
+		Reference: &issues.Reference{
+			Path:      "api/server/server.go",
+			Repo:      issues.RepoSpec{URI: "docker/docker"},
+			CommitID:  "7a19164c179601898e748f1b45d0c82b949a6433",
+			StartLine: 100,
+			EndLine:   101,
+			Contents: `<span>	</span><span class="kwd">return</span><span> </span><a href="http://localhost:3000/github.com/golang/go/.GoPackage/builtin/.def/nil" class="ref" rel="nofollow"><span class="kwd">nil</span></a>
+<span class="pun">}</span>`,
+		},
+	}
+}
+
 var mockUser = issues.User{
 	Login:     "shurcooL",
 	AvatarURL: "https://avatars.githubusercontent.com/u/1924134?v=3&s=96",
