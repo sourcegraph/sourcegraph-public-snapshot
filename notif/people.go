@@ -12,7 +12,8 @@ import (
 
 // Person will convert a UserSpec into a sourcegraph.Person with a best effort
 // approach.
-func Person(ctx context.Context, cl *sourcegraph.Client, u *sourcegraph.UserSpec) *sourcegraph.Person {
+func Person(ctx context.Context, u *sourcegraph.UserSpec) *sourcegraph.Person {
+	cl := sourcegraph.NewClientFromContext(ctx)
 	p := &sourcegraph.Person{
 		PersonSpec: sourcegraph.PersonSpec{
 			Login: u.Login,
@@ -65,7 +66,7 @@ func Person(ctx context.Context, cl *sourcegraph.Client, u *sourcegraph.UserSpec
 // PersonFromContext is a wrapper around Person using a UserSpec of the
 // current Authed Actor.
 func PersonFromContext(ctx context.Context) *sourcegraph.Person {
-	return Person(ctx, sourcegraph.NewClientFromContext(ctx), UserFromContext(ctx))
+	return Person(ctx, UserFromContext(ctx))
 }
 
 // UserFromContext will create a UserSpec based on the current Authed Actor

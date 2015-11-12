@@ -23,6 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/vfsutil"
@@ -408,7 +409,33 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	}
 	defer rs.Free()
 
-	if err := rs.Merge(head, base, msg, opt.Squash); err != nil {
+	// The author of the resulting merge commit is the user that initially
+	// created this changeset. The committer is the user that initiated the
+	// merge.
+	csMerger := notif.PersonFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	committer := vcs.Signature{
+		Name:  csMerger.FullName,
+		Email: csMerger.Email,
+		Date:  pbtypes.NewTimestamp(time.Now()),
+	}
+
+	csCreator := notif.Person(ctx, &cs.Author)
+	if err != nil {
+		return err
+	}
+	author := vcs.Signature{
+		Name:  csCreator.FullName,
+		Email: csCreator.Email,
+		Date:  *cs.CreatedAt,
+	}
+
+	if err := rs.Pull(head, opt.Squash); err != nil {
+		return err
+	}
+	if err := rs.Commit(author, committer, msg); err != nil {
 		return err
 	}
 
