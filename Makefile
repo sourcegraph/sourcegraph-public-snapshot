@@ -67,21 +67,23 @@ serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
 	$(MAKE) serve-dev SRCFLAGS="--grpc-endpoint http://demo-mothership:13100 $(SRCFLAGS)" SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13000 --addr=:13001 --grpc-addr=:13100 --app-url http://demo-mothership:13000 --appdash.disable-server $(SERVEFLAGS)"
 
+BD_SGPATH = $(HOME)/.sourcegraph
 serve-beyang-dev:
 	$(MAKE) serve-dev SRCFLAGS="-v --grpc-endpoint http://localhost:3100 $(SRCFLAGS)" SERVEFLAGS="\
---graphstore.root='' \
---fs.build-store-dir='' \
+--graphstore.root='$(BD_SGPATH)/repos' \
+--fs.build-store-dir='$(BD_SGPATH)/buildstore' \
 --no-worker \
---app.custom-logo '' \
+--app-url '' \
+--app.custom-logo 'MyLogo' \
 --app.disable-apps \
 --app.disable-dir-defs \
 --app.disable-external-links \
 --app.disable-repo-tree-search \
 --app.disable-search \
---app.header-footer-links 0 \
---app.motd '' \
---app.no-auto-build \
---app-url '' \
+--app.motd 'Message of the day here' \
+--app.no-ui-build \
+--app.show-latest-built-commit \
+--app.check-for-updates 0 \
 --appdash.http-addr ':7800' \
 --appdash.url 'http://localhost:7800' \
 --auth.source none \
