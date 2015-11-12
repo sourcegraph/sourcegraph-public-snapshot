@@ -125,16 +125,15 @@ func prepareDBs(id int, mdb *dbutil2.Handle, drop, create, truncate bool) {
 // the full truncate operation for each invocation.
 func backgroundDBCreator(schema *dbutil2.Schema) {
 	backgroundDBCreatorLock.Lock()
+	defer backgroundDBCreatorLock.Unlock()
 	if backgroundDBCreatorStarted {
 		if backgroundDBCreatorSchema != schema {
 			log.Fatal("Only 1 DB schema may be used at a given time with the background DB creator.")
 		}
-		backgroundDBCreatorLock.Unlock()
 		return
 	}
 	backgroundDBCreatorStarted = true
 	backgroundDBCreatorSchema = schema
-	backgroundDBCreatorLock.Unlock()
 
 	if label == "" {
 		log.Fatal("No label set in package testdb. See the doc comment on label.")
