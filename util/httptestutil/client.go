@@ -22,10 +22,12 @@ func NewTest(h http.Handler) (*Client, *MockClients) {
 	var mocks MockClients
 	mocks.Ctx = context.Background()
 
-	// TODO(sqs): this makes the tests non-parallelizable, which is probably ok.
-	sourcegraph.NewClientFromContext = func(ctx context.Context) *sourcegraph.Client {
+	// TODO(sqs): this makes the tests non-parallelizable, which is not ok
+	// since we have a few instances of tests using NewTest and running in
+	// parallel (eg: OAuth)
+	sourcegraph.MockNewClientFromContext(func(ctx context.Context) *sourcegraph.Client {
 		return mocks.Client()
-	}
+	})
 
 	httpClient := Client{http.Client{Transport: handlerTransport{h, &mocks.Ctx}}}
 
@@ -39,7 +41,7 @@ var (
 // ResetGlobals resets the sourcegraph.NewClientFromContext var to
 // its original value (not the mocks set by NewTest).
 func ResetGlobals() {
-	sourcegraph.NewClientFromContext = origClientFromContext
+	sourcegraph.RestoreNewClientFromContext()
 }
 
 type handlerTransport struct {

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/url"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -83,12 +84,39 @@ func clientMetadataFromContext(ctx context.Context) map[string]string {
 	return cred
 }
 
-var maxDialTimeout = 10 * time.Second
-
 // NewClientFromContext returns a Sourcegraph API client that
 // communicates with the Sourcegraph gRPC endpoint in ctx (i.e.,
 // GRPCEndpoint(ctx)).
-var NewClientFromContext = func(ctx context.Context) *Client {
+func NewClientFromContext(ctx context.Context) *Client {
+	newClientFromContextMu.RLock()
+	f := newClientFromContext
+	newClientFromContextMu.RUnlock()
+	return f(ctx)
+}
+
+// MockNewClientFromContext allows a test to mock out the return value of
+// NewClientFromContext. Note that this is modifying global state, so if your
+// tests run in parallel you may get unexpected results
+func MockNewClientFromContext(f func(ctx context.Context) *Client) {
+	newClientFromContextMu.Lock()
+	newClientFromContext = f
+	newClientFromContextMu.Unlock()
+}
+
+// RestoreNewClientFromContext removes the mock and returns the correct
+// implementation
+func RestoreNewClientFromContext() {
+	newClientFromContextMu.Lock()
+	newClientFromContext = realNewClientFromContext
+	newClientFromContextMu.Unlock()
+}
+
+var (
+	maxDialTimeout         = 10 * time.Second
+	newClientFromContextMu sync.RWMutex
+	newClientFromContext   = realNewClientFromContext
+)
+var realNewClientFromContext = func(ctx context.Context) *Client {
 	opts := []grpc.DialOption{
 		grpc.WithCodec(GRPCCodec),
 	}
