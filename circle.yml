@@ -68,6 +68,8 @@ test:
     - set -o pipefail; make mdtest TESTFLAGS="-test.v -test.timeout 2m" | tee $HOME/mdtest.out:
         pwd: $REPO
   post:
+    - grep '^FAIL' $HOME/mdtest.out || true
+
     - go get github.com/jstemmer/go-junit-report
     - mkdir -p $CIRCLE_TEST_REPORTS/junit
     - go-junit-report < $HOME/mdtest.out > $CIRCLE_TEST_REPORTS/junit/mdtest.xml
