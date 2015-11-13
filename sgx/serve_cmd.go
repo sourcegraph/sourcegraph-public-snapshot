@@ -436,8 +436,14 @@ func (c *ServeCmd) Execute(args []string) error {
 		router.KeepContext = true
 		return router
 	}
-	sm.Handle("/.api/", httpapi.NewHandler(router.New(newRouter().PathPrefix("/.api/").Subrouter())))
-	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(newRouter().PathPrefix("/.ui/").Subrouter(), c.TestUI), c.TestUI))
+	subRouter := func(r *mux.Route) *mux.Router {
+		router := r.Subrouter()
+		// httpctx.Base will clear the context for us
+		router.KeepContext = true
+		return router
+	}
+	sm.Handle("/.api/", httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/")))))
+	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(newRouter())))
 
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
