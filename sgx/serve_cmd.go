@@ -464,9 +464,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if app.UseWebpackDevServer {
 		mw = append(mw, webpackDevServerHandler)
 	}
-	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GO_GET")); v {
-		mw = append(mw, goGetHandler)
-	}
+	mw = append(mw, goGetHandler)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GITHUB_CLONE_PROXY")); v {
 		mw = append(mw, gitCloneHandler)
 	}
@@ -788,20 +786,27 @@ func goGetHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 		return
 	}
 
-	// handle `go get`
-	path := r.URL.Path
-	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	if len(parts) < 2 {
-		http.Error(w, "import paths must have at least 2 URL path components", http.StatusNotFound)
-		return
+	// Escape the repo URI so we don't open ourselves up to XSS. We just assume
+	// that the user requested a valid repo URI, go get handles the rest for us if
+	// they didn't.
+	if !strings.HasPrefix(r.URL.Path, "/") {
+		r.URL.Path = "/"
 	}
-	repo := template.HTMLEscapeString(strings.Join(parts[:2], "/"))
+	repoURI := template.HTMLEscapeString(r.URL.Path)
 
-	// Determine the host (without protocol) prefix.
-	host := conf.AppURL(httpctx.FromRequest(r)).Host
-	host = strings.TrimPrefix(host, "www.") // for when AppURL has a leading www
-	fmt.Fprintf(w, `<html><head><meta name="go-import" content="%s/%s git https://github.com/%s"></head><body>go-get</body></html>`, host, repo, repo)
-	log.Println("go-get", strings.Join(parts, "/"))
+	// Build git repository clone URL.
+	appURL := conf.AppURL(httpctx.FromRequest(r))
+	gitRepo := &url.URL{
+		Scheme: appURL.Scheme,
+		Host:   appURL.Host,
+		Path:   repoURI,
+	}
+
+	// Build the Go package path (e.g. "src.example.com/my/go/pkg").
+	pkgPath := strings.TrimPrefix(appURL.Host, "www.") + repoURI // for when AppURL has a leading www
+
+	fmt.Fprintf(w, `<html><head><meta name="go-import" content="%s git %s"></head><body>go get %s</body></html>`, pkgPath, gitRepo, pkgPath)
+	log.Println("go get", pkgPath)
 }
 
 func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
