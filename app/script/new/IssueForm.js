@@ -1,7 +1,10 @@
 import React from "react";
 
 import Component from "./Component";
+import Dispatcher from "./Dispatcher";
 import MarkdownTextarea from "../components/MarkdownTextarea"; // FIXME
+import * as IssueActions from "./IssueActions";
+import "./IssueBackend";
 
 export default class IssueForm extends Component {
 	constructor(props) {
@@ -13,15 +16,16 @@ export default class IssueForm extends Component {
 	}
 
 	_createIssue() {
-		console.log({
-			repo: this.state.repo,
-			commitID: this.state.commitID,
-			path: this.state.path,
-			startLine: this.state.startLine,
-			endLine: this.state.endLine,
-			title: this.refs.title.value,
-			body: this.refs.body.value(),
-		});
+		Dispatcher.asyncDispatch(new IssueActions.CreateIssue(
+			this.state.repo,
+			this.state.path,
+			this.state.commitID,
+			this.state.startLine,
+			this.state.endLine,
+			this.refs.title.value,
+			this.refs.body.value(),
+			this.state.onSubmit
+		));
 	}
 
 	render() {

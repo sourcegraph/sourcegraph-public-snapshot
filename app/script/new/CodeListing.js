@@ -106,11 +106,12 @@ export default class CodeListing extends Component {
 					<td>
 						<IssueForm
 							repo={this.state.repo}
-							rev={this.state.rev}
 							path={this.state.path}
+							commitID={this.state.rev}
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}
-							onCancel={() => { this.setState({creatingIssue: false}); }} />
+							onCancel={() => { this.setState({creatingIssue: false}); }}
+							onSubmit={() => { this.setState({creatingIssue: false}); }} />
 					</td>
 				</tr>
 			);
