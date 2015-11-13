@@ -182,7 +182,7 @@ pre code, .line-numbered-code td {
 		padding: 10px;
 
 		.inline-form {
-			width: 450px;
+			max-width: 640px;
 
 			.markdown-textarea, & > input, & > textarea {
 				margin-bottom: $line-height-computed / 2;
@@ -220,7 +220,7 @@ pre code, .line-numbered-code td {
 
 	&.fade-unselected-lines {
 		.line:not(.main-byte-range) .line-content {
-			span {
+			span, a {
 				opacity: 0.45;
 			}
 		}
