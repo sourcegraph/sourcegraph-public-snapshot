@@ -107,7 +107,7 @@ export default class CodeListing extends Component {
 
 		if (this.state.creatingIssue) {
 			let form = (
-				<tr key={`form`}>
+				<tr key={"form"}>
 					<td className="line-number"></td>
 					<td>
 						<IssueForm

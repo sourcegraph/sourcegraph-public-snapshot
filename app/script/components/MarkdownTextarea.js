@@ -134,7 +134,7 @@ var MarkdownTextarea = React.createClass({
 
 				<div className={cx}>
 					<div className="tab-edit">
-						<textarea className="raw-body" placeholder={this.props.placeholder} defaultValue={this.props.defaultValue} onPaste={this._pasteHandler} autoFocus={this.props.autoFocus === true ? "true" : null} />
+						<textarea className="raw-body" placeholder={this.props.placeholder} defaultValue={this.props.defaultValue} onPaste={this._pasteHandler} autoFocus={this.props.autoFocus} />
 					</div>
 					<div className="tab-preview">
 						<MarkdownView content={this.state.bodyMarkdown} />
