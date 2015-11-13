@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -310,26 +311,26 @@ func postCreateIssueHandler(w http.ResponseWriter, req *http.Request) {
 	baseURI := globalHandler.BaseURI(req)
 	repoSpec := globalHandler.RepoSpec(req)
 
-	var reference *issues.Reference
-	if req.PostForm.Get("reference") != "" {
-		reference = new(issues.Reference)
-		err := json.Unmarshal([]byte(req.PostForm.Get("reference")), reference)
-		if err != nil {
-			log.Println("postCreateIssueHandler: json.Unmarshal reference:", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	issue := issues.Issue{}
+	err = json.Unmarshal(body, &issue)
+	if issue.Title == "" {
+		http.Error(w, "title required", http.StatusBadRequest)
+		return
+	}
+	if issue.Reference != nil {
+		if issue.Reference.CommitID == "" {
+			http.Error(w, "commit ID required for reference", http.StatusBadRequest)
 			return
 		}
 	}
 
-	issue := issues.Issue{
-		Title: req.PostForm.Get("title"),
-		Comment: issues.Comment{
-			Body: req.PostForm.Get("body"),
-		},
-		Reference: reference,
-	}
-
-	issue, err := is.Create(ctx, repoSpec, issue)
+	issue, err = is.Create(ctx, repoSpec, issue)
 	if err != nil {
 		log.Println("is.Create:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

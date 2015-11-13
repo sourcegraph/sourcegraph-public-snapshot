@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -72,6 +73,22 @@ func setupIssueToggleButton() {
 	}
 }
 
+func postJson(url string, body []byte) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("type", "applicaiton/json")
+	req.Header.Set("X-Csrf-Token", state.CSRFToken)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func CreateNewIssue() {
 	titleEditor := document.GetElementByID("title-editor").(*dom.HTMLInputElement)
 	commentEditor := document.QuerySelector(".comment-editor").(*dom.HTMLTextAreaElement)
@@ -83,8 +100,18 @@ func CreateNewIssue() {
 		return
 	}
 
+	value, err := json.Marshal(issues.Issue{
+		Title: title,
+		Comment: issues.Comment{
+			Body: body,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	go func() {
-		resp, err := http.PostForm("new", url.Values{"csrf_token": {state.CSRFToken}, "title": {title}, "body": {body}})
+		resp, err := postJson("new", value)
 		if err != nil {
 			log.Println(err)
 			return

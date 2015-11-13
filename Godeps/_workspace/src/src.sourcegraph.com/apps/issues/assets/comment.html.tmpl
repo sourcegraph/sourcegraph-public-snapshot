@@ -19,7 +19,7 @@
 				</a>
 			</div>
 			<div class="list-entry-border" style="flex-grow: 1;">
-				<div class="list-entry-header">
+				<div class="list-entry-header" style="display: flex;">
 					<span class="content">{{template "user" .User}} commented {{template "time" .CreatedAt}}</span>
 					<span class="right-icon"><a href="javascript:" onclick="EditComment({{`edit` | json}}, this);"><span class="octicon octicon-pencil"></span></a></span>
 					<span class="right-icon"><a href="javascript:TODO();"><span class="octicon octicon-x"></span></a></span>
