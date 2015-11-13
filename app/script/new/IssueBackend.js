@@ -32,7 +32,7 @@ const IssueBackend = {
 					console.error(err);
 					return;
 				}
-				action.callback();
+				action.callback(body);
 			});
 			break;
 		}

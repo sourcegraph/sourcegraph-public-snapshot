@@ -111,7 +111,10 @@ export default class CodeListing extends Component {
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}
 							onCancel={() => { this.setState({creatingIssue: false}); }}
-							onSubmit={() => { this.setState({creatingIssue: false}); }} />
+							onSubmit={(url) => {
+								this.setState({creatingIssue: false});
+								window.location.href = url;
+							}} />
 					</td>
 				</tr>
 			);
