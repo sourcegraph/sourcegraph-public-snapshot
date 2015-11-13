@@ -31,13 +31,13 @@ export default class IssueForm extends Component {
 	render() {
 		return (
 			<div className="inline-content">
-				<p>Creating an issue on {this.state.path}:{this.state.startLine}-{this.state.endLine}</p>
+				<p><b>Creating an issue on {this.state.path}:{this.state.startLine}-{this.state.endLine}</b></p>
 				<div className="inline-form">
 					<input ref="title" type="text" placeholder="Title" autoFocus="true"/>
 					<MarkdownTextarea ref="body" placeholder="Description"/>
 					<div className="actions">
 						<button className="btn btn-success" tabIndex="0" onClick={() => { this._createIssue(); }}>Create Issue</button>
-						<button className="btn btn-cancel" tabIndex="0" onClick={this.state.onCancel}>Cancel</button>
+						<button className="btn btn-neutral" tabIndex="0" onClick={this.state.onCancel}>Cancel</button>
 					</div>
 				</div>
 			</div>
