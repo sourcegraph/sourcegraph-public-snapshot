@@ -28,18 +28,18 @@ export default class Component extends React.Component {
 		return false;
 	}
 
-	setState(patch) {
-		this._updateState(Object.assign({}, this.state, patch), this.props);
+	setState(patch, callback) {
+		this._updateState(Object.assign({}, this.state, patch), this.props, callback);
 	}
 
-	_updateState(newState, props) {
+	_updateState(newState, props, callback) {
 		this._checkForUndefined(props, "Property");
 		this.reconcileState(newState, props);
 		this._checkForUndefined(newState, "State");
 		if (this.onStateTransition) {
 			this.onStateTransition(this.state, newState);
 		}
-		super.setState(newState);
+		super.setState(newState, callback);
 	}
 
 	_checkForUndefined(obj, type) {
