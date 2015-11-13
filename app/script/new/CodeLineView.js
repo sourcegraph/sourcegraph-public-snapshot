@@ -44,14 +44,14 @@ export default class CodeLineView extends Component {
 							}
 							Dispatcher.dispatch(new CodeActions.SelectLine(this.state.lineNumber));
 						}}>
-						{this.state.lineButton &&
-							<a className="btn-inline" onClick={(event) => {
+						<a className="btn-inline"
+							style={this.state.lineButton ? {display: "inline-block"} : null}
+							onClick={(event) => {
 								this.state.onLineButtonClick();
 								event.stopPropagation();
 							}}>
-								<span className="octicon octicon-plus"></span>
-							</a>
-						}
+							<span className="octicon octicon-plus"></span>
+						</a>
 					</td>}
 				<td className="line-content">
 					{this.state.tokens.map((token, i) => {

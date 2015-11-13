@@ -1,8 +1,10 @@
 import React from "react";
 
 import Component from "./Component";
+import Dispatcher from "./Dispatcher";
 import CodeLineView from "./CodeLineView";
 import IssueForm from "./IssueForm";
+import * as CodeActions from "./CodeActions";
 
 import classNames from "classnames";
 
@@ -53,9 +55,6 @@ export default class CodeListing extends Component {
 		if (nextState.startLine && nextState.selectedDef && prevState.startLine !== nextState.startLine) {
 			this._scrollTo(nextState.startLine);
 		}
-		if (prevState.endLine !== nextState.endLine) {
-			nextState.creatingIssue = false;
-		}
 	}
 
 	_scrollTo(line) {
@@ -86,22 +85,29 @@ export default class CodeListing extends Component {
 
 		let lines = this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) => {
 			let lineNumber = 1 + visibleLinesStart + i;
+			let selected = this.state.startLine <= lineNumber && this.state.endLine >= lineNumber;
 			return (
 				<CodeLineView
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					tokens={lineData.Tokens || emptyArray}
-					selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
+					selected={selected}
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
-					lineButton={this.state.lineNumbers && lineNumber === this.state.endLine}
-					onLineButtonClick={() => { this.setState({creatingIssue: true}); }}
+					lineButton={this.state.lineNumbers && !this.state.creatingIssue && lineNumber === this.state.endLine}
+					onLineButtonClick={() => {
+						this.setState({creatingIssue: true}, () => {
+							if (!selected) {
+								Dispatcher.dispatch(new CodeActions.SelectLine(lineNumber));
+							}
+						});
+					}}
 					key={visibleLinesStart + i} />
 			);
 		});
 
 		if (this.state.creatingIssue) {
 			let form = (
-				<tr key={`form-${this.state.endLine}`}>
+				<tr key={`form`}>
 					<td className="line-number"></td>
 					<td>
 						<IssueForm
