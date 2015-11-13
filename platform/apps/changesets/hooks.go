@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/russross/blackfriday"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -127,6 +128,7 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 		ObjectID:      payload.ID,
 		ObjectTitle:   payload.Title,
 		ActionContent: payload.Changeset.Description,
+		EmailHTML:     string(blackfriday.MarkdownCommon([]byte(payload.Changeset.Description))),
 	})
 }
 
@@ -161,6 +163,7 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 	for _, c := range payload.Review.Comments {
 		msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
 	}
+	actionContent := msg.String()
 	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
 		Actor:         &payload.Actor,
 		Recipients:    recipients,
@@ -170,7 +173,8 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 		ObjectType:    "changeset",
 		ObjectID:      payload.ID,
 		ObjectTitle:   payload.Title,
-		ActionContent: msg.String(),
+		ActionContent: actionContent,
+		EmailHTML:     string(blackfriday.MarkdownCommon([]byte(actionContent))),
 	})
 }
 

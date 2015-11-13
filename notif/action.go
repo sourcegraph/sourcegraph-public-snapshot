@@ -64,7 +64,13 @@ func ActionEmailMessage(nctx ActionContext) {
 		return
 	}
 	templateContent := []gochimp.Var{{Name: "MESSAGE", Content: msg}}
-	mergeVars := []gochimp.Var{{Name: "ObjectType", Content: nctx.ObjectType}, {Name: "ObjectURL", Content: nctx.ObjectURL}}
+	mergeVars := []gochimp.Var{
+		{Name: "ObjectType", Content: nctx.ObjectType},
+		{Name: "ObjectURL", Content: nctx.ObjectURL},
+		{Name: "ActionType", Content: nctx.ActionType},
+		{Name: "Actor", Content: nctx.Person.PersonSpec.Login},
+		{Name: "HasBody", Content: nctx.ActionContent != ""},
+	}
 	subject, err := generateEmailSubject(nctx)
 	if err != nil {
 		log15.Error("Error generating email subject for action", "ActionContext", nctx)
@@ -118,7 +124,7 @@ func generateEmailSubject(nctx ActionContext) (string, error) {
 		"title": func(a string) string { return strings.Title(a) },
 	}
 	tmpl := template.Must(template.New("email-subject").Funcs(funcMap).Parse(
-		`[{{title .ObjectType}} {{title .ActionType}}] {{.ObjectRepo}} #{{.ObjectID}}: {{.ObjectTitle}}`))
+		`[{{.ObjectRepo}}][{{title .ObjectType}} #{{.ObjectID}}] {{.ObjectTitle}}`))
 	var buf bytes.Buffer
 	err := tmpl.Execute(&buf, nctx)
 	if err != nil {

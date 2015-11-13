@@ -29,7 +29,7 @@ func TestGenerateMessage(t *testing.T) {
 			},
 			"*keegancsmith* created <https://src.sourcegraph.com/sourcegraph/.discussion/6|sourcegraph discussion #6>: No rename in VFS",
 			`<b>keegancsmith</b> created <a href="https://src.sourcegraph.com/sourcegraph/.discussion/6">sourcegraph discussion #6</a>: No rename in VFS`,
-			"[Discussion Created] sourcegraph #6: No rename in VFS",
+			"[sourcegraph][Discussion #6] No rename in VFS",
 		},
 		{
 			ActionContext{
@@ -47,7 +47,7 @@ func TestGenerateMessage(t *testing.T) {
 			},
 			"*sqs* commented on <https://src.sourcegraph.com/lib/annotate/.discussion/1|lib/annotate discussion #1>: What is the writeContent param for?",
 			`<b>sqs</b> commented on <a href="https://src.sourcegraph.com/lib/annotate/.discussion/1">lib/annotate discussion #1</a>: What is the writeContent param for?`,
-			"[Discussion Commented On] lib/annotate #1: What is the writeContent param for?",
+			"[lib/annotate][Discussion #1] What is the writeContent param for?",
 		},
 		{
 			ActionContext{
@@ -73,7 +73,7 @@ func TestGenerateMessage(t *testing.T) {
 			},
 			"*keegancsmith* reviewed <https://src.sourcegraph.com/sourcegraph/.changesets/71|sourcegraph changeset #71>: Upgrade React to v0.14 /cc @neelance\n\nShip it",
 			`<b>keegancsmith</b> reviewed <a href="https://src.sourcegraph.com/sourcegraph/.changesets/71">sourcegraph changeset #71</a>: Upgrade React to v0.14`,
-			"[Changeset Reviewed] sourcegraph #71: Upgrade React to v0.14",
+			"[sourcegraph][Changeset #71] Upgrade React to v0.14",
 		},
 		{
 			ActionContext{
@@ -92,7 +92,7 @@ func TestGenerateMessage(t *testing.T) {
 			},
 			"*renfredxh* created <https://src.sourcegraph.com/lib/annotate/.changesets/2|lib/annotate changeset #2>: Hello\n\nHi",
 			`<b>renfredxh</b> created <a href="https://src.sourcegraph.com/lib/annotate/.changesets/2">lib/annotate changeset #2</a>: Hello`,
-			"[Changeset Created] lib/annotate #2: Hello",
+			"[lib/annotate][Changeset #2] Hello",
 		},
 		{
 			// Test custom Slack message and email body.
@@ -114,7 +114,7 @@ func TestGenerateMessage(t *testing.T) {
 			},
 			"*pararthshah* updated metrics with a new <https://src.sourcegraph.com/metrics/.dashboard/2|dashboard>",
 			`<b>pararthshah</b> updated metrics with a new <a href="https://src.sourcegraph.com/metrics/.dashboard/2">dashboard</a>`,
-			"[Dashboard Updated] metrics #2: Hello",
+			"[metrics][Dashboard #2] Hello",
 		},
 	}
 	for _, c := range cases {
