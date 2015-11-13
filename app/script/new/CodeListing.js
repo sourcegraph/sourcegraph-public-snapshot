@@ -1,10 +1,7 @@
 import React from "react";
 
 import Component from "./Component";
-import Dispatcher from "./Dispatcher";
 import CodeLineView from "./CodeLineView";
-import IssueForm from "./IssueForm";
-import * as CodeActions from "./CodeActions";
 
 import classNames from "classnames";
 
@@ -93,43 +90,28 @@ export default class CodeListing extends Component {
 					selected={selected}
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
-					lineButton={this.state.lineNumbers && !this.state.creatingIssue && lineNumber === this.state.endLine}
-					onLineButtonClick={() => {
-						this.setState({creatingIssue: true}, () => {
-							if (!selected) {
-								Dispatcher.dispatch(new CodeActions.SelectLine(lineNumber));
-							}
-						});
-					}}
+					lineButton={this.state.lineNumbers && !this.state.lineSelectionForm && lineNumber === this.state.endLine}
+					onLineButtonClick={() => { this.state.onLineButtonClick(lineNumber, selected); }}
 					key={visibleLinesStart + i} />
 			);
 		});
 
-		if (this.state.creatingIssue) {
+		if (this.state.lineSelectionForm) {
 			let form = (
 				<tr key={"form"}>
 					<td className="line-number"></td>
 					<td>
-						<IssueForm
-							repo={this.state.repo}
-							path={this.state.path}
-							commitID={this.state.rev}
-							startLine={this.state.startLine}
-							endLine={this.state.endLine}
-							onCancel={() => { this.setState({creatingIssue: false}); }}
-							onSubmit={(url) => {
-								this.setState({creatingIssue: false});
-								window.location.href = url;
-							}} />
+						{this.state.lineSelectionForm}
 					</td>
 				</tr>
 			);
+
 			lines.splice(this.state.endLine, 0, form);
 		}
 
 		let listingClasses = classNames({
 			"line-numbered-code": true,
-			"fade-unselected-lines": this.state.creatingIssue,
+			"fade-unselected-lines": this.state.lineSelectionForm,
 		});
 
 		return (
@@ -161,7 +143,5 @@ CodeListing.propTypes = {
 	endLine: React.PropTypes.number,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
-	repo: React.PropTypes.string,
-	rev: React.PropTypes.string,
-	path: React.PropTypes.string,
+	lineSelectionForm: React.PropTypes.element,
 };

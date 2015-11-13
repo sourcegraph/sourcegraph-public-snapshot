@@ -9,6 +9,7 @@ import DefStore from "./DefStore";
 import CodeListing from "./CodeListing";
 import DefPopup from "./DefPopup";
 import DefTooltip from "./DefTooltip";
+import IssueForm from "./IssueForm";
 import RepoBuildIndicator from "../components/RepoBuildIndicator"; // FIXME
 import RepoRevSwitcher from "../components/RepoRevSwitcher"; // FIXME
 import "./CodeBackend";
@@ -28,6 +29,9 @@ function lineFromByte(file, byte) {
 export default class CodeFileContainer extends Container {
 	constructor(props) {
 		super(props);
+		this.state = {
+			creatingIssue: false,
+		};
 		this._onClick = this._onClick.bind(this);
 		this._onKeyDown = this._onKeyDown.bind(this);
 	}
@@ -157,15 +161,32 @@ export default class CodeFileContainer extends Container {
 				{this.state.file &&
 					<div className="code-view-react">
 						<CodeListing
-							repo={this.state.repo}
-							rev={this.state.file.EntrySpec.RepoRev.CommitID}
-							path={this.state.tree}
 							lines={this.state.file.Entry.SourceCode.Lines}
 							lineNumbers={true}
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}
 							selectedDef={this.state.selectedDef}
-							highlightedDef={this.state.highlightedDef} />
+							highlightedDef={this.state.highlightedDef}
+							onLineButtonClick={(lineNumber, selected) => {
+								this.setState({creatingIssue: true}, () => {
+									if (!selected) {
+										Dispatcher.dispatch(new CodeActions.SelectLine(lineNumber));
+									}
+								});
+							}}
+							lineSelectionForm={this.state.creatingIssue ? (
+								<IssueForm
+									repo={this.state.repo}
+									path={this.state.tree}
+									commitID={this.state.rev}
+									startLine={this.state.startLine}
+									endLine={this.state.endLine}
+									onCancel={() => { this.setState({creatingIssue: false}); }}
+									onSubmit={(url) => {
+										this.setState({creatingIssue: false});
+										window.location.href = url;
+									}} />
+							) : null} />
 					</div>
 				}
 
