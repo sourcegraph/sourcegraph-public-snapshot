@@ -80,11 +80,32 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload ev
 }
 
 func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events.ChangesetPayload) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+	if payload.Changeset == nil {
+		cs, err := cl.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{
+			Repo: sourcegraph.RepoSpec{URI: payload.Repo},
+			ID: payload.ID,
+		})
+		if err != nil {
+			log15.Warn("changesetListener: could not fetch changeset", "repo", payload.Repo, "id", payload.ID, "error", err)
+			return
+		}
+		payload.Changeset = cs
+	}
+
 	if payload.URL == "" {
 		changesetURL, err := urlToRepoChangeset(payload.Repo, payload.ID)
 		if err == nil {
 			payload.URL = conf.AppURL(ctx).ResolveReference(changesetURL).String()
 		}
+	}
+
+	if payload.Title == "" {
+		payload.Title = payload.Changeset.Title
+	}
+
+	if flags.JiraURL != "" {
+		jiraOnChangesetUpdate(ctx, payload.Changeset)
 	}
 
 	switch id {
