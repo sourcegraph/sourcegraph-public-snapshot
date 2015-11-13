@@ -46,17 +46,23 @@ func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFu
 	// If we have an error, name is an empty string which
 	// indicates to httptrace to use a fallback value
 	name, _ := httpctx.RouteNameOrError(r)
+	// If the code is zero, the inner Handler never explictly called
+	// WriterHeader. We can assume the response code is 200 in such a case
+	code := rwIntercept.Code
+	if code == 0 {
+		code = 200
+	}
 	duration := time.Now().Sub(start)
 	labels := prometheus.Labels{
 		"route":  name,
 		"method": strings.ToLower(r.Method),
-		"code":   strconv.Itoa(rwIntercept.Code),
+		"code":   strconv.Itoa(code),
 	}
 	requestCount.With(labels).Inc()
 	requestDuration.With(labels).Observe(duration.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-	log15.Debug("HTTP Request", "method", r.Method, "URL", r.URL.String(), "routename", name, "duration", duration, "code", rwIntercept.Code)
+	log15.Debug("HTTP Request", "method", r.Method, "URL", r.URL.String(), "routename", name, "duration", duration, "code", code)
 }
 
 // ResponseWriterStatusIntercept implements the http.ResponseWriter interface
