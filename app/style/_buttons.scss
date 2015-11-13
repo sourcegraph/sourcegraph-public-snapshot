@@ -13,11 +13,11 @@
 	}
 }
 
-.btn-secondary {
+.btn.btn-secondary {
 	@include button-variant($white, $sg-blue-color, darken($sg-blue-color, 10%));
 }
 
-.btn-cancel {
+.btn.btn-neutral {
 	@include button-variant($btn-default-color, $gray-lightest, darken($gray-lightest, 8%));
 }
 

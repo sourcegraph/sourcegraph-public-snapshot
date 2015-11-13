@@ -124,7 +124,7 @@ var CodeReviewHeader = React.createClass({
 					<div className="title-editing">
 						<input type="text" className="input-title" ref="inputTitle" defaultValue={this.props.changeset.Title} />
 						<input type="button" value="Save" className="btn-save btn btn-default" onClick={this._submitEdit} />
-						<input type="button" value="Cancel" className="btn-cancel btn btn-default" onClick={this._cancelEdit} />
+						<input type="button" value="Cancel" className="btn-neutral btn btn-default" onClick={this._cancelEdit} />
 					</div>
 				) : (
 					<h1 className="changeset-title">
