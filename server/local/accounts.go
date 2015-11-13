@@ -157,7 +157,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.
 	v.Set("token", token.Token)
 	u.RawQuery = v.Encode()
 	_, err = sendEmail("forgot-password", user.Name, email.Email, "Password Reset Requested", nil,
-		[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: u.String()}})
+		[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: u.String()}, {Name: "LOGIN", Content: user.Login}})
 	if err != nil {
 		return nil, fmt.Errorf("Error sending email: %s", err)
 	}
