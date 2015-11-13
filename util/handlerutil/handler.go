@@ -5,11 +5,7 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
-	"strings"
 	"sync"
-	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gorilla/schema"
 	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
@@ -17,13 +13,8 @@ import (
 
 	"code.google.com/p/rog-go/parallel"
 
-	"strconv"
-
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
@@ -40,7 +31,7 @@ func init() {
 
 // Handler is the outermost http.Handler wrapper per route.
 func Handler(h HandlerWithErrorReturn) http.Handler {
-	return WithMiddleware(h, logMiddleware, httpwrapper.MakeMiddleware(httpwrapperConfig))
+	return WithMiddleware(h, httpwrapper.MakeMiddleware(httpwrapperConfig))
 }
 
 var httpwrapperConfig = &httpwrapper.ServerConfig{
@@ -54,51 +45,6 @@ var httpwrapperConfig = &httpwrapper.ServerConfig{
 		span.Log(instrument.EventName("appdash_span_id").Payload(spanID))
 		span.AddTraceJoinId("appdash_trace_id", spanID.Trace)
 	},
-}
-
-var metricLabels = []string{"route", "method", "code"}
-var requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "requests_total",
-	Help:      "Total number of HTTP requests made.",
-}, metricLabels)
-var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "request_duration_seconds",
-	Help:      "The HTTP request latencies in seconds.",
-	Buckets:   []float64{1, 5, 10, 60, 300},
-}, metricLabels)
-var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "requests_last_timestamp_unixtime",
-	Help:      "Last time a request finished for a http endpoint.",
-}, metricLabels)
-
-func init() {
-	prometheus.MustRegister(requestCount)
-	prometheus.MustRegister(requestDuration)
-	prometheus.MustRegister(requestHeartbeat)
-}
-
-var logMiddleware = func(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	rwIntercept := &metricutil.ResponseWriterStatusIntercept{ResponseWriter: rw}
-	start := time.Now()
-	next(rwIntercept, r)
-
-	duration := time.Now().Sub(start)
-	labels := prometheus.Labels{
-		"route":  httpctx.RouteName(r),
-		"method": strings.ToLower(r.Method),
-		"code":   strconv.Itoa(rwIntercept.Code),
-	}
-	requestCount.With(labels).Inc()
-	requestDuration.With(labels).Observe(duration.Seconds())
-	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
-
-	log15.Debug("Request", "pkg", "handlerutil", "method", r.Method, "URL", r.URL.String(), "routename", httpctx.RouteName(r), "duration", duration, "code", rwIntercept.Code)
 }
 
 // HandlerWithErrorReturn wraps a http.HandlerFunc-like func that also

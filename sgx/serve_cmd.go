@@ -451,6 +451,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
 		mw = append(mw, ensureHostnameHandler)
 	}
+	mw = append(mw, metricutil.HTTPMiddleware)
 	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
 		mw = append(mw, traceMiddleware)
 	}
