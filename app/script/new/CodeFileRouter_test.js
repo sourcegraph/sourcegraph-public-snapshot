@@ -22,6 +22,12 @@ describe("CodeFileRouter", () => {
 		);
 	});
 
+	it("should handle dotfile URLs", () => {
+		autotest(testdataFile, `${__dirname}/testdata/CodeFileRouter-dotfile.json`,
+			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/.travis.yml" />
+		);
+	});
+
 	it("should handle line selection URLs", () => {
 		autotest(testdataLineSelection, `${__dirname}/testdata/CodeFileRouter-lineSelection.json`,
 			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53" />
