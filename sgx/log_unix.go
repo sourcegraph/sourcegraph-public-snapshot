@@ -3,8 +3,8 @@
 package sgx
 
 import (
-	"os"
 	"log/syslog"
+	"os"
 )
 
 var (

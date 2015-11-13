@@ -9,10 +9,10 @@ import (
 )
 
 type LDAPUser struct {
-	Username string
+	Username          string
 	DistinguishedName string
-	Emails []string
-	ProfileNames []string
+	Emails            []string
+	ProfileNames      []string
 }
 
 func connectLDAP() (l *ldaplib.Conn, err error) {
@@ -59,7 +59,6 @@ func VerifyLogin(username, password string) (*LDAPUser, error) {
 	if Config.Filter != "" {
 		queryTemplate = fmt.Sprintf("(&(%s)%s)", Config.Filter, queryTemplate)
 	}
-	
 
 	attributes := []string{"dn"}
 	if Config.EmailField != "" {

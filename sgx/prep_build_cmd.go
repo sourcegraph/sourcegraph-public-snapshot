@@ -47,7 +47,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		// Get repo settings and (if it exists) private key.
 		repoSpec := repo.RepoSpec()
 		key, err := cl.MirroredRepoSSHKeys.Get(cliCtx, &repoSpec)
-		if err != nil && grpc.Code(err) != codes.NotFound  && grpc.Code(err) != codes.Unimplemented {
+		if err != nil && grpc.Code(err) != codes.NotFound && grpc.Code(err) != codes.Unimplemented {
 			return err
 		} else if key != nil {
 			remoteOpt.SSH = &vcs.SSHConfig{PrivateKey: key.PEM}

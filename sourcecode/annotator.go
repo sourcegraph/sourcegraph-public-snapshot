@@ -22,9 +22,9 @@ type NilAnnotator struct {
 	Code       *sourcegraph.SourceCode
 	byteOffset int
 	// pointer to the current line of code
-	line       int
+	line int
 	// number of lines of code detected
-	numLines   int
+	numLines int
 	// HTML config to use
 	htmlConfig syntaxhighlight.HTMLConfig
 }
@@ -55,7 +55,7 @@ func NewNilAnnotator(e *vcsclient.FileWithRange) *NilAnnotator {
 		byteOffset: int(e.StartByte),
 		line:       0,
 		numLines:   len(lines),
-		htmlConfig:	syntaxhighlight.DefaultHTMLConfig,
+		htmlConfig: syntaxhighlight.DefaultHTMLConfig,
 	}
 	return &ann
 }
