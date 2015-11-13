@@ -124,7 +124,7 @@ func generateEmailSubject(nctx ActionContext) (string, error) {
 		"title": func(a string) string { return strings.Title(a) },
 	}
 	tmpl := template.Must(template.New("email-subject").Funcs(funcMap).Parse(
-		`[{{.ObjectRepo}}][{{title .ObjectType}} #{{title .ObjectID}}] {{.ObjectTitle}}`))
+		`[{{.ObjectRepo}}][{{title .ObjectType}} #{{.ObjectID}}] {{.ObjectTitle}}`))
 	var buf bytes.Buffer
 	err := tmpl.Execute(&buf, nctx)
 	if err != nil {
