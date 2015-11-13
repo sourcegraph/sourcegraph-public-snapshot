@@ -11,6 +11,8 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -22,7 +24,13 @@ func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 
 	defer noCache(ctx)
 
-	return store.ChangesetsFromContext(ctx).Update(ctx, &store.ChangesetUpdateOp{Op: op})
+	event, err := store.ChangesetsFromContext(ctx).Update(ctx, &store.ChangesetUpdateOp{Op: op})
+	if err != nil {
+		return nil, err
+	}
+
+	publishChangesetUpdate(ctx, op)
+	return event, nil
 }
 
 func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
@@ -54,6 +62,7 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 			log15.Error("Changesets.UpdateAffected: cannot update changeset", "repo", updateOp.Op.Repo, "id", updateOp.Op.ID, "error", err)
 		} else if e != nil {
 			res.Events = append(res.Events, e)
+			publishChangesetUpdate(ctx, updateOp.Op)
 		}
 	}
 
@@ -170,4 +179,21 @@ func mergedInto(repoVCS vcs.Repository, branch string) branchMap {
 		}
 	}
 	return bm
+}
+
+func publishChangesetUpdate(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) {
+	payload := events.ChangesetPayload{
+		Actor:  authpkg.UserSpecFromContext(ctx),
+		ID:     op.ID,
+		Repo:   op.Repo.URI,
+		Title:  op.Title,
+		Update: op,
+	}
+	if op.Merged {
+		events.Publish(events.ChangesetMergeEvent, payload)
+	} else if op.Close {
+		events.Publish(events.ChangesetCloseEvent, payload)
+	} else {
+		events.Publish(events.ChangesetUpdateEvent, payload)
+	}
 }

@@ -3,6 +3,8 @@ package local
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -49,6 +51,15 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 	if err := store.ChangesetsFromContext(ctx).Create(ctx, op.Repo.URI, op.Changeset); err != nil {
 		return nil, err
 	}
+
+	events.Publish(events.ChangesetCreateEvent, events.ChangesetPayload{
+		Actor:     authpkg.UserSpecFromContext(ctx),
+		ID:        op.Changeset.ID,
+		Repo:      op.Repo.URI,
+		Title:     op.Changeset.Title,
+		Changeset: op.Changeset,
+	})
+
 	return op.Changeset, nil
 }
 
@@ -67,6 +78,14 @@ func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.Changeset
 	if err != nil {
 		return nil, err
 	}
+
+	events.Publish(events.ChangesetReviewEvent, events.ChangesetPayload{
+		Actor:  authpkg.UserSpecFromContext(ctx),
+		ID:     op.ChangesetID,
+		Repo:   op.Repo.URI,
+		Review: review,
+	})
+
 	return review, err
 }
 

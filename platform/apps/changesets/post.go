@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -43,25 +42,10 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := writeJSON(w, struct {
+	return writeJSON(w, struct {
 		Repo string
 		ID   int64
-	}{uri, cs.ID}); err != nil {
-		return err
-	}
-
-	if flags.JiraURL != "" {
-		jiraOnChangesetUpdate(ctx, cs)
-	}
-	events.Publish(events.ChangesetCreateEvent, events.ChangesetPayload{
-		Actor:     user.Spec(),
-		ID:        cs.ID,
-		Repo:      uri,
-		Title:     cs.Title,
-		URL:       urlToChangeset(ctx, cs.ID),
-		Changeset: cs,
-	})
-	return nil
+	}{uri, cs.ID})
 }
 
 // serveUpdate updates a changeset based on the data received in the request's
@@ -100,31 +84,6 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 	result, err := sg.Changesets.Update(ctx, &op)
 	if err != nil {
 		return err
-	}
-
-	cs, err := sg.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{
-		Repo: sourcegraph.RepoSpec{URI: uri},
-		ID:   id,
-	})
-	if err != nil {
-		return err
-	}
-	if flags.JiraURL != "" {
-		jiraOnChangesetUpdate(ctx, cs)
-	}
-
-	payload := events.ChangesetPayload{
-		Actor:  user.Spec(),
-		ID:     op.ID,
-		Repo:   uri,
-		Title:  op.Title,
-		URL:    urlToChangeset(ctx, op.ID),
-		Update: &op,
-	}
-	if op.Close {
-		events.Publish(events.ChangesetCloseEvent, payload)
-	} else {
-		events.Publish(events.ChangesetUpdateEvent, payload)
 	}
 
 	return writeJSON(w, result)
@@ -166,24 +125,7 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := writeJSON(w, review); err != nil {
-		return err
-	}
-	cs, err := sg.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{Repo: repo.RepoSpec, ID: id})
-	if err != nil {
-		return err
-	}
-
-	events.Publish(events.ChangesetReviewEvent, events.ChangesetPayload{
-		Actor:     user.Spec(),
-		ID:        cs.ID,
-		Repo:      uri,
-		Title:     cs.Title,
-		URL:       urlToChangeset(ctx, cs.ID),
-		Changeset: cs,
-		Review:    review,
-	})
-	return nil
+	return writeJSON(w, review)
 }
 
 // serverMerge initiates a merge from the changeset's head branch to its base
@@ -223,20 +165,6 @@ func serveMerge(w http.ResponseWriter, r *http.Request) (err error) {
 	if err != nil {
 		return err
 	}
-
-	cs, err := sg.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{Repo: repo.RepoSpec, ID: id})
-	if err != nil {
-		return err
-	}
-
-	events.Publish(events.ChangesetMergeEvent, events.ChangesetPayload{
-		Actor: user.Spec(),
-		ID:    op.ID,
-		Repo:  uri,
-		Title: cs.Title,
-		URL:   urlToChangeset(ctx, op.ID),
-		Merge: &op,
-	})
 
 	return writeJSON(w, event)
 }
