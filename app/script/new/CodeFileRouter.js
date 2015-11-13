@@ -31,6 +31,21 @@ export default class CodeFileRouter extends Component {
 		state.repo = repoParts[0];
 		state.rev = repoParts[1] || "master";
 
+		// We split the URI path based on `/.` because that usually denotes an
+		// operation, but in the case of the tree operation consider this path:
+		//
+		//  "/sourcegraph@master/.tree/.gitignore"
+		//
+		// In the above, .gitignore is the file name not the operation. So we handle
+		// this case specially here.
+		if (pathParts.length >= 2 && pathParts[1] === "tree") {
+			// Parse the filepath following "/.tree/".
+			let treePath = state.uri.path.substring(state.uri.path.indexOf("/.tree/") + "/.tree/".length);
+
+			// Reform the pathParts array with the corrected URI path split.
+			pathParts = [pathParts[0], `tree/${treePath}`];
+		}
+
 		let keys = [];
 		let vars = URI.parseQuery(state.uri.query);
 		pathParts.slice(1).forEach((part) => {
