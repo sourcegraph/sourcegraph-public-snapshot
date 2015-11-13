@@ -100,6 +100,9 @@
 							{
 								"type": "CodeListing",
 								"props": {
+									"repo": "aRepo",
+									"rev": "123abc",
+									"path": "aTree",
 									"lines": [
 										"someLine"
 									],

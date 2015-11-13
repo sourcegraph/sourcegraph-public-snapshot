@@ -184,7 +184,7 @@
 												"className": "thread-comment-add",
 												"placeholder": "",
 												"defaultValue": "",
-												"autoFocus": "false"
+												"autoFocus": false
 											}
 										},
 										{

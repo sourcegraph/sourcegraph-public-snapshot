@@ -14,7 +14,8 @@
 								"key": "0",
 								"props": {
 									"tokens": [],
-									"selected": false
+									"selected": false,
+									"lineButton": false
 								}
 							}
 						]
