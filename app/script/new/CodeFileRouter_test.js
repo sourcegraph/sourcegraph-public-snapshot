@@ -11,6 +11,7 @@ import * as DefActions from "./DefActions";
 import {GoTo} from "./util/hotLink";
 
 import testdataFile from "./testdata/CodeFileRouter-file.json";
+import testdataDotfile from "./testdata/CodeFileRouter-dotfile.json";
 import testdataLineSelection from "./testdata/CodeFileRouter-lineSelection.json";
 import testdataDefSelection from "./testdata/CodeFileRouter-defSelection.json";
 import testdataDefinition from "./testdata/CodeFileRouter-definition.json";
@@ -23,7 +24,7 @@ describe("CodeFileRouter", () => {
 	});
 
 	it("should handle dotfile URLs", () => {
-		autotest(testdataFile, `${__dirname}/testdata/CodeFileRouter-dotfile.json`,
+		autotest(testdataDotfile, `${__dirname}/testdata/CodeFileRouter-dotfile.json`,
 			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/.travis.yml" />
 		);
 	});
