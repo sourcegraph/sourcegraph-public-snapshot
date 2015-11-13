@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/jmoiron/sqlx/reflectx"
@@ -18,6 +19,7 @@ type TableMap struct {
 	Columns    []*ColumnMap
 	gotype     reflect.Type
 	version    *ColumnMap
+	cacheMu    sync.RWMutex
 	updatePlan bindPlan
 	deletePlan bindPlan
 	getPlan    bindPlan
@@ -40,6 +42,8 @@ type TableMap struct {
 // associated with this TableMap.  Call this if you've modified
 // any column names or the table name itself.
 func (t *TableMap) ResetSql() {
+	t.cacheMu.Lock()
+	defer t.cacheMu.Unlock()
 	t.insertPlan = nil
 	t.insertAutoIncrPlan = nil
 	t.updatePlan = bindPlan{}
@@ -93,7 +97,9 @@ func (t *TableMap) SetVersionCol(field string) *ColumnMap {
 }
 
 func (t *TableMap) bindGet() bindPlan {
+	t.cacheMu.RLock()
 	plan := t.getPlan
+	t.cacheMu.RUnlock()
 	if plan.query == "" {
 
 		s := bytes.Buffer{}
@@ -127,14 +133,18 @@ func (t *TableMap) bindGet() bindPlan {
 		s.WriteString(";")
 
 		plan.query = s.String()
+		t.cacheMu.Lock()
 		t.getPlan = plan
+		t.cacheMu.Unlock()
 	}
 
 	return plan
 }
 
 func (t *TableMap) bindDelete(elem reflect.Value) bindInstance {
+	t.cacheMu.RLock()
 	plan := t.deletePlan
+	t.cacheMu.RUnlock()
 	if plan.query == "" {
 
 		s := bytes.Buffer{}
@@ -173,14 +183,18 @@ func (t *TableMap) bindDelete(elem reflect.Value) bindInstance {
 		s.WriteString(";")
 
 		plan.query = s.String()
+		t.cacheMu.Lock()
 		t.deletePlan = plan
+		t.cacheMu.Unlock()
 	}
 
 	return plan.createBindInstance(elem)
 }
 
 func (t *TableMap) bindUpdate(elem reflect.Value) bindInstance {
+	t.cacheMu.RLock()
 	plan := t.updatePlan
+	t.cacheMu.RUnlock()
 	if plan.query == "" {
 
 		s := bytes.Buffer{}
@@ -231,7 +245,9 @@ func (t *TableMap) bindUpdate(elem reflect.Value) bindInstance {
 		s.WriteString(";")
 
 		plan.query = s.String()
+		t.cacheMu.Lock()
 		t.updatePlan = plan
+		t.cacheMu.Unlock()
 	}
 
 	return plan.createBindInstance(elem)
@@ -257,11 +273,13 @@ func (t *TableMap) bindInsert(elem reflect.Value) bindInstance {
 	}
 
 	var plan *bindPlan
+	t.cacheMu.RLock()
 	if insertsAutoIncrVal {
 		plan = t.insertAutoIncrPlan
 	} else {
 		plan = t.insertPlan
 	}
+	t.cacheMu.RUnlock()
 
 	if plan == nil {
 		plan = &bindPlan{}
@@ -312,11 +330,13 @@ func (t *TableMap) bindInsert(elem reflect.Value) bindInstance {
 
 		plan.query = s.String()
 
+		t.cacheMu.Lock()
 		if insertsAutoIncrVal {
 			t.insertAutoIncrPlan = plan
 		} else {
 			t.insertPlan = plan
 		}
+		t.cacheMu.Unlock()
 	}
 
 	return plan.createBindInstance(elem)

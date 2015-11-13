@@ -541,7 +541,7 @@
 		},
 		{
 			"ImportPath": "github.com/sqs/modl",
-			"Rev": "09df66aaf3a40de41eaaedff0ffabf256b6fb310"
+			"Rev": "8b246f69234077ca1e4656ec5fe38c61574f5c9c"
 		},
 		{
 			"ImportPath": "github.com/sqs/s3",
