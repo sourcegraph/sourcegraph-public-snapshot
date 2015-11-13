@@ -38,7 +38,9 @@ var MarkdownView = React.createClass({
 			},
 			data: props.content,
 		}).done(function(data) {
-			this.setState({html: data});
+			if (this.isMounted()) {
+				this.setState({html: data});
+			}
 		}.bind(this));
 	},
 

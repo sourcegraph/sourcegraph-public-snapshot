@@ -20,7 +20,7 @@
 									"selected": true,
 									"selectedDef": "someDef",
 									"highlightedDef": "otherDef",
-									"lineButton": false,
+									"lineButton": true,
 									"alwaysShowLineButton": false
 								}
 							},
@@ -33,7 +33,7 @@
 									"selected": true,
 									"selectedDef": "someDef",
 									"highlightedDef": "otherDef",
-									"lineButton": false,
+									"lineButton": true,
 									"alwaysShowLineButton": true
 								}
 							},
@@ -48,7 +48,7 @@
 									"selected": false,
 									"selectedDef": "someDef",
 									"highlightedDef": "otherDef",
-									"lineButton": false,
+									"lineButton": true,
 									"alwaysShowLineButton": false
 								}
 							},
@@ -61,7 +61,7 @@
 									"selected": false,
 									"selectedDef": "someDef",
 									"highlightedDef": "otherDef",
-									"lineButton": false,
+									"lineButton": true,
 									"alwaysShowLineButton": false
 								}
 							}

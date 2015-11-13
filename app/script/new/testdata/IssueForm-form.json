@@ -1,0 +1,91 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "inline-content",
+			"children": [
+				{
+					"type": "p",
+					"props": {
+						"children": [
+							{
+								"type": "b",
+								"props": {
+									"children": [
+										"Creating an issue on a/path:1-42"
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "inline-form",
+						"children": [
+							{
+								"type": "input",
+								"ref": "title",
+								"props": {
+									"type": "text",
+									"placeholder": "Title",
+									"autoFocus": "true"
+								}
+							},
+							{
+								"type": "",
+								"ref": "body",
+								"props": {
+									"placeholder": "Description",
+									"defaultValue": "",
+									"autoFocus": false
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "actions",
+									"children": [
+										{
+											"type": "button",
+											"props": {
+												"className": "btn btn-success",
+												"tabIndex": "0",
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "CreateIssue",
+															"repo": "aRepo",
+															"path": "a/path",
+															"commitID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+															"startLine": 1,
+															"endLine": 42
+														}
+													]
+												},
+												"children": [
+													"Create Issue"
+												]
+											}
+										},
+										{
+											"type": "button",
+											"props": {
+												"className": "btn btn-neutral",
+												"tabIndex": "0",
+												"children": [
+													"Cancel"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

@@ -3,6 +3,8 @@ import React from "react";
 import Component from "./Component";
 import CodeLineView from "./CodeLineView";
 
+import classNames from "classnames";
+
 const tilingFactor = 500;
 const emptyArray = [];
 
@@ -77,8 +79,43 @@ export default class CodeListing extends Component {
 			offscreenCodeBelow += "\n";
 		});
 
+		let lines = this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) => {
+			let lineNumber = 1 + visibleLinesStart + i;
+			let selected = this.state.startLine <= lineNumber && this.state.endLine >= lineNumber;
+			return (
+				<CodeLineView
+					lineNumber={this.state.lineNumbers ? lineNumber : null}
+					tokens={lineData.Tokens || emptyArray}
+					selected={selected}
+					selectedDef={this.state.selectedDef}
+					highlightedDef={this.state.highlightedDef}
+					lineButton={Boolean(this.state.lineNumbers && this.state.onLineButtonClick)}
+					onLineButtonClick={() => { if (this.state.onLineButtonClick) this.state.onLineButtonClick(lineNumber, selected); }}
+					alwaysShowLineButton={this.state.lineNumbers && !this.state.lineSelectionForm && lineNumber === this.state.endLine}
+					key={visibleLinesStart + i} />
+			);
+		});
+
+		if (this.state.lineSelectionForm) {
+			let form = (
+				<tr key="form">
+					<td className="line-number"></td>
+					<td>
+						{this.state.lineSelectionForm}
+					</td>
+				</tr>
+			);
+
+			lines.splice(this.state.endLine, 0, form);
+		}
+
+		let listingClasses = classNames({
+			"line-numbered-code": true,
+			"fade-unselected-lines": this.state.lineSelectionForm,
+		});
+
 		return (
-			<table className="line-numbered-code" ref="table">
+			<table className={listingClasses} ref="table">
 				<tbody>
 					{offscreenCodeAbove !== "" &&
 						<tr className="line">
@@ -86,15 +123,7 @@ export default class CodeListing extends Component {
 							<td className="line-content">{offscreenCodeAbove}</td>
 						</tr>
 					}
-					{this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) =>
-						<CodeLineView
-							lineNumber={this.state.lineNumbers ? 1 + visibleLinesStart + i : null}
-							tokens={lineData.Tokens || emptyArray}
-							selected={this.state.startLine <= i + 1 && this.state.endLine >= i + 1}
-							selectedDef={this.state.selectedDef}
-							highlightedDef={this.state.highlightedDef}
-							key={visibleLinesStart + i} />
-					)}
+					{lines}
 					{offscreenCodeBelow !== "" &&
 						<tr className="line">
 							<td className="line-number"></td>
@@ -114,4 +143,6 @@ CodeListing.propTypes = {
 	endLine: React.PropTypes.number,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
+	lineSelectionForm: React.PropTypes.element,
+	onLineButtonClick: React.PropTypes.func,
 };

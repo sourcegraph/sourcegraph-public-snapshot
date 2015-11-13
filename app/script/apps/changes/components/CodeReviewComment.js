@@ -107,8 +107,8 @@ var CodeReviewComment = React.createClass({
 	render() {
 		if (this.props.draftForm) {
 			return (
-				<div className="inline-comment">
-					<MarkdownTextarea ref="draftEdit" placeholder="Leave a comment..." autoFocus="true" />
+				<div className="inline-content inline-comment">
+					<MarkdownTextarea ref="draftEdit" placeholder="Leave a comment..." autoFocus={true} />
 					<div className="actions">
 						<button className="btn btn-success btn-small" onClick={this._onSubmit} tabIndex="0">Save draft</button>
 						<button className="btn btn-neutral btn-small" onClick={this.props.onCancel} tabIndex="0">Cancel</button>
@@ -126,13 +126,13 @@ var CodeReviewComment = React.createClass({
 		}
 
 		return (
-			<div className="inline-comment">
+			<div className="inline-content inline-comment">
 				<b>{author}</b> commented <span className="date">{moment(this.state.CreatedAt).fromNow()}</span>
 				{this.state.Draft ? <span><span className="label-draft">draft</span> <i data-tooltip={true} title="To submit your review, go to the Activity tab and click on 'Submit your review' at the bottom" className="draft-help fa fa-question-circle"></i></span> : null}
 
 				{this.state.editingComment ? (
 					<div className="comment-edit-wrapper">
-						<MarkdownTextarea ref="commentEdit" defaultValue={this.state.Body} autoFocus="true" />
+						<MarkdownTextarea ref="commentEdit" defaultValue={this.state.Body} autoFocus={true} />
 						<div className="actions">
 							<button className="btn btn-success" onClick={this._onEdit} tabIndex="0">Save</button>
 							<button className="btn btn-neutral" onClick={this._onEditCancel} tabIndex="0">Cancel</button>

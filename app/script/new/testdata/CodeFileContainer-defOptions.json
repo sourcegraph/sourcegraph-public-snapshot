@@ -104,7 +104,25 @@
 										"someLine"
 									],
 									"lineNumbers": true,
-									"highlightedDef": "otherDef"
+									"highlightedDef": "otherDef",
+									"onLineButtonClick": {
+										"dispatched": [
+											{
+												"$constructor": "SelectLine",
+												"line": {
+													"currentTarget": {
+														"href": "[currentTarget.href]"
+													},
+													"view": {
+														"scrollX": 11,
+														"scrollY": 22
+													},
+													"clientX": 10,
+													"clientY": 20
+												}
+											}
+										]
+									}
 								}
 							}
 						]

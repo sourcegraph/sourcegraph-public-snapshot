@@ -26,7 +26,9 @@ export default function(expected, filename, component) {
 				return noJSON;
 			}
 			if (k === "children") {
-				return mergeText(toChildArray(v));
+				let children = toChildArray(v);
+				if (children.length === 0) return noJSON;
+				return mergeText(children);
 			}
 			switch (v.constructor) {
 			case String:
@@ -42,11 +44,15 @@ export default function(expected, filename, component) {
 				}
 				if (k.substr(0, 2) === "on") {
 					let defaultPrevented = noJSON;
+					let propagationStopped = noJSON;
 					let funcDispatched = Dispatcher.catchDispatched(() => {
 						mockTimeout(() => {
 							v({
 								preventDefault() {
 									defaultPrevented = true;
+								},
+								stopPropagation() {
+									propagationStopped = true;
 								},
 								currentTarget: {
 									href: "[currentTarget.href]",
@@ -65,6 +71,7 @@ export default function(expected, filename, component) {
 					}
 					return {
 						defaultPrevented: defaultPrevented,
+						propagationStopped: propagationStopped,
 						dispatched: funcDispatched,
 					};
 				}

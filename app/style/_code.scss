@@ -114,11 +114,22 @@ pre code, .line-numbered-code td {
 	table-layout: fixed;
 	border-collapse: separate;
 
+	.line {
+		&:not(.main-byte-range)
+			.line-number:hover, .btn-inline:hover {
+				.btn-inline {
+					display: inline-block;
+				}
+			}
+	}
+
 	.line-number {
+		position: relative;
 		width: 50px;
 		text-align: right;
 		vertical-align: top;
 		overflow: hidden;
+		overflow: visible;
 		// match code
 		font-family: $font-family-monospace;
 		font-size: $code-font-size;
@@ -136,14 +147,65 @@ pre code, .line-numbered-code td {
 		-ms-user-select: none;
 		user-select: none;
 		&:before { content: attr(data-line); }
-	}
 
-	tr:hover .line-number {
-		color: $gray-mid;
+		.btn-inline {
+			width: 16px;
+			height: 16px;
+			position: absolute;
+			right: -9px;
+			top: 1px;
+			border-radius: 3px;
+			color: #fff;
+			text-align: center;
+			display: none;
+			cursor: pointer;
+			background-color: $sg-blue-color;
+			box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+
+			&:hover {
+				background-color: darken($sg-blue-color, 10%);
+				opacity: 1;
+			}
+
+			span {
+				font-size: 14px;
+			}
+		}
 	}
 
 	.line-content {
 		padding-left: 14px;
+	}
+
+	.inline-content {
+		@include base-font;
+		padding: 10px;
+
+		.inline-form {
+			max-width: 640px;
+
+			.markdown-textarea, & > input, & > textarea {
+				margin-bottom: $line-height-computed / 2;
+			}
+
+			input, textarea {
+				width: 100%;
+				border: solid 1px #eee;
+				padding: 6px;
+				background-color: #fafafa;
+				&:focus {
+					background-color: $white;
+				}
+			}
+
+			textarea {
+				height: 80px;
+			}
+		}
+	}
+
+	tr:hover .line-number {
+		color: $gray-mid;
 	}
 
 	&.static-code-view {
@@ -152,6 +214,14 @@ pre code, .line-numbered-code td {
 				background: $highlight-ref-bg;
 				border: $highlight-ref-border;
 				-webkit-filter: brightness(0.9) contrast(1.55);
+			}
+		}
+	}
+
+	&.fade-unselected-lines {
+		.line:not(.main-byte-range) .line-content {
+			span, a {
+				opacity: 0.45;
 			}
 		}
 	}

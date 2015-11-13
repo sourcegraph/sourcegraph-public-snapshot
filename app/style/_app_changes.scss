@@ -468,7 +468,7 @@ h1.changeset-title {
 		}
 
 		.line:hover {
-			.btn-inline-comment {
+			.btn-inline {
 				display: inline-block;
 			}
 		}
@@ -486,9 +486,6 @@ h1.changeset-title {
 		}
 
 		.inline-comment {
-			@include base-font;
-			padding: 10px;
-
 			&.draft-form {
 				border: 1px solid #eee;
 				border-width: 1px 0;
@@ -568,24 +565,8 @@ h1.changeset-title {
 			position: relative;
 			overflow: visible;
 
-			.btn-inline-comment {
-				background-color: $sg-blue-color;
-				border-radius: 3px;
-				color: #fff;
-				text-align: center;
-				box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-				width: 16px;
-				height: 16px;
+			.btn-inline {
 				display: none;
-				padding: 0 0 0 1px;
-				cursor: pointer;
-				position: absolute;
-				right: -9px;
-				top: 1px;
-
-				span {
-					font-size: 13px;
-				}
 			}
 		}
 	}
