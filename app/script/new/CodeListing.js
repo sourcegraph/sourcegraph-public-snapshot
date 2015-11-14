@@ -90,8 +90,9 @@ export default class CodeListing extends Component {
 					selected={selected}
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
-					lineButton={this.state.lineNumbers && !this.state.lineSelectionForm && lineNumber === this.state.endLine}
-					onLineButtonClick={() => { this.state.onLineButtonClick(lineNumber, selected); }}
+					lineButton={this.state.lineNumbers && this.state.onLineButtonClick}
+					onLineButtonClick={() => { if (this.state.onLineButtonClick) this.state.onLineButtonClick(lineNumber, selected); }}
+					alwaysShowLineButton={this.state.lineNumbers && !this.state.lineSelectionForm && lineNumber === this.state.endLine}
 					key={visibleLinesStart + i} />
 			);
 		});
@@ -144,4 +145,5 @@ CodeListing.propTypes = {
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 	lineSelectionForm: React.PropTypes.element,
+	onLineButtonClick: React.PropTypes.func,
 };
