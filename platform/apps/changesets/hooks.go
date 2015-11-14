@@ -181,8 +181,9 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 
 	// Send notification
 	msg := bytes.NewBufferString(payload.Review.Body)
+	msg.WriteString("\n")
 	for _, c := range payload.Review.Comments {
-		msg.WriteString(fmt.Sprintf("\n*%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
+		msg.WriteString(fmt.Sprintf("\n- *%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
 	}
 	actionContent := msg.String()
 	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
