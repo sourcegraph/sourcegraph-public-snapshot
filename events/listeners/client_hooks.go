@@ -85,7 +85,7 @@ func notifyClientEvent(ctx context.Context, id events.EventID, payload events.Cl
 		granteeLogin := getUserLogin(cl, ctx, &payload.Grantee)
 		permsString := getPermsStr(payload.Perms)
 		msg += fmt.Sprintf("\nGrantee: *%s* (UID %v) [%s]", granteeLogin, payload.Grantee.UID, permsString)
-		if userUrl := getDecodedEnvVar("SG_KIBANA_USER_URL_BASE64"); userUrl != "" {
+		if userUrl := getDecodedEnvVar("SG_KIBANA_USER_URL"); userUrl != "" {
 			userUrl = strings.Replace(userUrl, "{ClientID}", escapedClientID, 1)
 
 			escapedUID := url.QueryEscape(strconv.Itoa(int(payload.Grantee.UID)))
@@ -95,7 +95,7 @@ func notifyClientEvent(ctx context.Context, id events.EventID, payload events.Cl
 		}
 	}
 
-	if clientUrl := getDecodedEnvVar("SG_KIBANA_CLIENT_URL_BASE64"); clientUrl != "" {
+	if clientUrl := getDecodedEnvVar("SG_KIBANA_CLIENT_URL"); clientUrl != "" {
 		clientUrl = strings.Replace(clientUrl, "{ClientID}", escapedClientID, 1)
 		msg += fmt.Sprintf("\n<%s|View client activity>", clientUrl)
 	}
