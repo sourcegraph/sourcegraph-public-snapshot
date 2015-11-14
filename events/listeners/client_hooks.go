@@ -70,7 +70,10 @@ func notifyClientEvent(ctx context.Context, id events.EventID, payload events.Cl
 		return
 	}
 
-	appURL := strings.TrimSuffix(client.RedirectURIs[0], "/login/oauth/receive")
+	var appURL string
+	if len(client.RedirectURIs) > 0 {
+		appURL = strings.TrimSuffix(client.RedirectURIs[0], "/login/oauth/receive")
+	}
 
 	msg := fmt.Sprintf("*%s* (UID %v) %s: *%s* (%s)",
 		userLogin,
