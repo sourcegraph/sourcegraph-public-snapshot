@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-
 	"strings"
 
 	gcontext "github.com/gorilla/context"
 	"github.com/sourcegraph/mux"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -128,6 +129,9 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	var appError error
 	if rr.Code == http.StatusOK {
 		appHTML = template.HTML(body)
+	} else if rr.Code == http.StatusUnauthorized && nil == handlerutil.UserFromContext(ctx) {
+		// App returned Unauthorized, and user's not logged in. So redirect to login page and try again.
+		return grpc.Errorf(codes.Unauthenticated, "platform app returned unauthorized and no authenticated user in current context")
 	} else {
 		appError = errors.New(body)
 	}
