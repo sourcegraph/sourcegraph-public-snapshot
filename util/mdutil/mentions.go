@@ -12,7 +12,7 @@ import (
 
 // mentionsPattern is a regular expression that matches user and email mentions of
 // the form @user or @user@domain.
-var mentionsPattern = regexp.MustCompile("\\B@[@.a-zA-Z0-9_-]+")
+var mentionsPattern = regexp.MustCompile(`\B@[@.a-zA-Z0-9_-]+`)
 
 // Mentions returns the list of people (users or emails) mentioned in the passed
 // argument.
