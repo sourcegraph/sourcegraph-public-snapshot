@@ -23,13 +23,13 @@ var _ interface {
 	refIndexBuilder
 } = (*refFileIndex)(nil)
 
-var c_refFileIndex_getByFile = 0 // counter
+var c_refFileIndex_getByFile = &counter{count: new(int64)}
 
 // getByFile returns a byteRanges describing the positions of refs in
 // the given source file (i.e., for which ref.File == file). The
 // byteRanges refer to offsets within the ref data file.
 func (x *refFileIndex) getByFile(file string) (byteRanges, bool, error) {
-	c_refFileIndex_getByFile++
+	c_refFileIndex_getByFile.increment()
 	if x.phtable == nil {
 		panic("phtable not built/read")
 	}

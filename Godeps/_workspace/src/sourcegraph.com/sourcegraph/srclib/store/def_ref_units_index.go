@@ -30,7 +30,7 @@ var _ interface {
 	unitIndex
 } = (*defRefUnitsIndex)(nil)
 
-var c_defRefUnitsIndex_getByDef = 0 // counter
+var c_defRefUnitsIndex_getByDef = &counter{count: new(int64)}
 
 func (x *defRefUnitsIndex) String() string { return fmt.Sprintf("defRefUnitsIndex(ready=%v)", x.ready) }
 
@@ -38,7 +38,7 @@ func (x *defRefUnitsIndex) String() string { return fmt.Sprintf("defRefUnitsInde
 // specified def.
 func (x *defRefUnitsIndex) getByDef(def graph.RefDefKey) ([]unit.ID2, bool, error) {
 	vlog.Printf("defRefUnitsIndex.getByDef(%v)", def)
-	c_defRefUnitsIndex_getByDef++
+	c_defRefUnitsIndex_getByDef.increment()
 
 	k, err := proto.Marshal(&def)
 	if err != nil {

@@ -80,7 +80,7 @@ func (s unitStores) Defs(fs ...DefFilter) ([]*graph.Def, error) {
 	return allDefs, err
 }
 
-var c_unitStores_Refs_last_numUnitsQueried = 0
+var c_unitStores_Refs_last_numUnitsQueried = &counter{count: new(int64)}
 
 func (s unitStores) Refs(f ...RefFilter) ([]*graph.Ref, error) {
 	uss, err := openUnitStores(s.opener, f)
@@ -88,7 +88,7 @@ func (s unitStores) Refs(f ...RefFilter) ([]*graph.Ref, error) {
 		return nil, err
 	}
 
-	c_unitStores_Refs_last_numUnitsQueried = 0
+	c_unitStores_Refs_last_numUnitsQueried.set(0)
 	var (
 		allRefsMu sync.Mutex
 		allRefs   []*graph.Ref
@@ -100,7 +100,7 @@ func (s unitStores) Refs(f ...RefFilter) ([]*graph.Ref, error) {
 		}
 		u, us := u, us
 
-		c_unitStores_Refs_last_numUnitsQueried++
+		c_unitStores_Refs_last_numUnitsQueried.increment()
 
 		par.Do(func() error {
 			if _, moreOK := LimitRemaining(f); !moreOK {

@@ -38,7 +38,7 @@ var _ interface {
 	defIndex
 } = (*defFilesIndex)(nil)
 
-var c_defFilesIndex_getByPath = 0 // counter
+var c_defFilesIndex_getByPath = &counter{count: new(int64)}
 
 func (x *defFilesIndex) String() string {
 	return fmt.Sprintf("defFilesIndex(ready=%v, filters=%v)", x.ready, x.filters)
@@ -50,7 +50,7 @@ func (x *defFilesIndex) String() string {
 // are returned.
 func (x *defFilesIndex) getByPath(path string) (byteOffsets, bool, error) {
 	vlog.Printf("defFilesIndex.getByPath(%s)", path)
-	c_defFilesIndex_getByPath++
+	c_defFilesIndex_getByPath.increment()
 
 	if x.phtable == nil {
 		panic("phtable not built/read")

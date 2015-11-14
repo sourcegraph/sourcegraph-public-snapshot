@@ -28,7 +28,7 @@ var _ interface {
 	unitIndex
 } = (*unitFilesIndex)(nil)
 
-var c_unitFilesIndex_getByPath = 0 // counter
+var c_unitFilesIndex_getByPath = &counter{count: new(int64)}
 
 func (x *unitFilesIndex) String() string { return fmt.Sprintf("unitFilesIndex(ready=%v)", x.ready) }
 
@@ -38,7 +38,7 @@ func (x *unitFilesIndex) String() string { return fmt.Sprintf("unitFilesIndex(re
 // are returned.
 func (x *unitFilesIndex) getByPath(path string) ([]unit.ID2, bool, error) {
 	vlog.Printf("unitFilesIndex.getByPath(%s)", path)
-	c_unitFilesIndex_getByPath++
+	c_unitFilesIndex_getByPath.increment()
 
 	if x.phtable == nil {
 		panic("phtable not built/read")

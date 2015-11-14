@@ -22,7 +22,7 @@ var _ interface {
 	unitFullIndex
 } = (*unitsIndex)(nil)
 
-var c_unitsIndex_listUnits = 0 // counter
+var c_unitsIndex_listUnits = &counter{count: new(int64)}
 
 func (x *unitsIndex) String() string { return fmt.Sprintf("unitsIndex(ready=%v)", x.ready) }
 
@@ -38,7 +38,7 @@ func (x *unitsIndex) Units(fs ...UnitFilter) ([]*unit.SourceUnit, error) {
 		panic("units not built/read")
 	}
 
-	c_unitsIndex_listUnits++
+	c_unitsIndex_listUnits.increment()
 
 	var units []*unit.SourceUnit
 	for _, u := range x.units {

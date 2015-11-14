@@ -30,13 +30,13 @@ var _ interface {
 	defIndex
 } = (*defQueryIndex)(nil)
 
-var c_defQueryIndex_getByQuery = 0 // counter
+var c_defQueryIndex_getByQuery = &counter{count: new(int64)}
 
 func (x *defQueryIndex) String() string { return fmt.Sprintf("defQueryIndex(ready=%v)", x.ready) }
 
 func (x *defQueryIndex) getByQuery(q string) (byteOffsets, bool) {
 	vlog.Printf("defQueryIndex.getByQuery(%q)", q)
-	c_defQueryIndex_getByQuery++
+	c_defQueryIndex_getByQuery.increment()
 
 	if x.mt == nil {
 		panic("mafsaTable not built/read")

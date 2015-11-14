@@ -26,12 +26,12 @@ var _ interface {
 	refIndexBuilder
 } = (*defRefsIndex)(nil)
 
-var c_defRefsIndex_getByDef = 0 // counter
+var c_defRefsIndex_getByDef = &counter{count: new(int64)}
 
 func (x *defRefsIndex) String() string { return "defRefsIndex" }
 
 func (x *defRefsIndex) getByDef(def graph.RefDefKey) (byteOffsets, bool, error) {
-	c_defRefsIndex_getByDef++
+	c_defRefsIndex_getByDef.increment()
 	if x.phtable == nil {
 		panic("phtable not built/read")
 	}

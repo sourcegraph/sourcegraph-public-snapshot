@@ -29,7 +29,7 @@ var _ interface {
 	defTreeIndex
 } = (*defQueryTreeIndex)(nil)
 
-var c_defQueryTreeIndex_getByQuery = 0 // counter
+var c_defQueryTreeIndex_getByQuery = &counter{count: new(int64)}
 
 func (x *defQueryTreeIndex) String() string {
 	return fmt.Sprintf("defQueryTreeIndex(ready=%v)", x.ready)
@@ -37,7 +37,7 @@ func (x *defQueryTreeIndex) String() string {
 
 func (x *defQueryTreeIndex) getByQuery(q string) (map[unit.ID2]byteOffsets, bool) {
 	vlog.Printf("defQueryTreeIndex.getByQuery(%q)", q)
-	c_defQueryTreeIndex_getByQuery++
+	c_defQueryTreeIndex_getByQuery.increment()
 
 	if x.mt == nil {
 		panic("mafsaTable not built/read")

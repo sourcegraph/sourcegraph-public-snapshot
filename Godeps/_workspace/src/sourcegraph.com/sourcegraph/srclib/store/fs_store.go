@@ -296,7 +296,7 @@ func newFSTreeStore(fs rwvfs.FileSystem) *fsTreeStore {
 	return ts
 }
 
-var c_fsTreeStore_unitsOpened = 0 // counter
+var c_fsTreeStore_unitsOpened = &counter{count: new(int64)}
 
 func (s *fsTreeStore) Units(f ...UnitFilter) ([]*unit.SourceUnit, error) {
 	var unitFilenames []string
@@ -320,7 +320,7 @@ func (s *fsTreeStore) Units(f ...UnitFilter) ([]*unit.SourceUnit, error) {
 
 	var units []*unit.SourceUnit
 	for _, filename := range unitFilenames {
-		c_fsTreeStore_unitsOpened++
+		c_fsTreeStore_unitsOpened.increment()
 		unit, err := s.openUnitFile(filename)
 		if err != nil {
 			return nil, err

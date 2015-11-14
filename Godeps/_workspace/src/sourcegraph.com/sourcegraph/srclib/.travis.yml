@@ -28,7 +28,7 @@ install:
   - go install ./cmd/srclib
 
 script:
-  - go test -v ./...
+  - go test -race -v ./...
   - make install-all-toolchains
   - make test-all-toolchains
 
