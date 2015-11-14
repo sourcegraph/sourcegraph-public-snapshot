@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -149,6 +150,11 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 		Result:   "success",
 	})
 
+	events.Publish(events.ClientRegisterEvent, events.ClientPayload{
+		Actor:    authpkg.UserSpecFromContext(ctx),
+		ClientID: client.ID,
+	})
+
 	return client, nil
 }
 
@@ -185,6 +191,10 @@ func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.Regi
 	if err := store.Update(ctx, *client); err != nil {
 		return nil, err
 	}
+	events.Publish(events.ClientUpdateEvent, events.ClientPayload{
+		Actor:    authpkg.UserSpecFromContext(ctx),
+		ClientID: client.ID,
+	})
 	return &pbtypes.Void{}, nil
 }
 
@@ -338,6 +348,16 @@ func setPermissionsForUser(ctx context.Context, userPerms *sourcegraph.UserPermi
 		Method:   "SetPermissionsForUser",
 		Result:   "success",
 	})
+
+	user := authpkg.UserSpecFromContext(ctx)
+	if user.UID != userPerms.UID {
+		events.Publish(events.ClientGrantAccessEvent, events.ClientPayload{
+			Actor:    user,
+			ClientID: userPerms.ClientID,
+			Grantee:  sourcegraph.UserSpec{UID: userPerms.UID},
+			Perms:    userPerms,
+		})
+	}
 
 	return &pbtypes.Void{}, nil
 }

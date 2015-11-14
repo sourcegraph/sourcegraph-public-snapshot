@@ -48,3 +48,17 @@ type ChangesetPayload struct {
 	Update    *sourcegraph.ChangesetUpdateOp
 	Merge     *sourcegraph.ChangesetMergeOp
 }
+
+const ClientRegisterEvent EventID = "client.register"
+const ClientUpdateEvent EventID = "client.update"
+const ClientGrantAccessEvent EventID = "client.grant.access"
+
+type ClientPayload struct {
+	// The user that performed the register client or grant access operation.
+	Actor    sourcegraph.UserSpec
+	ClientID string
+
+	// The user that was granted permissions on the client.
+	Grantee sourcegraph.UserSpec
+	Perms   *sourcegraph.UserPermissions
+}
