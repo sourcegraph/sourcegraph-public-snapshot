@@ -178,7 +178,7 @@ export default class CodeFileContainer extends Container {
 								<IssueForm
 									repo={this.state.repo}
 									path={this.state.tree}
-									commitID={this.state.rev}
+									commitID={this.state.file.EntrySpec.RepoRev.CommitID}
 									startLine={this.state.startLine}
 									endLine={this.state.endLine}
 									onCancel={() => { this.setState({creatingIssue: false}); }}

@@ -44,3 +44,12 @@ export default class IssueForm extends Component {
 		);
 	}
 }
+
+IssueForm.propTypes = {
+	repo: React.PropTypes.string.isRequired,
+	path: React.PropTypes.string.isRequired,
+	commitID: React.PropTypes.string.isRequired,
+	startLine: React.PropTypes.number.isRequired,
+	endLine: React.PropTypes.number.isRequired,
+	onSubmit: React.PropTypes.func,
+};
