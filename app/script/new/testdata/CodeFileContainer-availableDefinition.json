@@ -100,15 +100,30 @@
 							{
 								"type": "CodeListing",
 								"props": {
-									"repo": "aRepo",
-									"rev": "123abc",
-									"path": "aTree",
 									"lines": [
 										"someLine"
 									],
 									"lineNumbers": true,
 									"selectedDef": "someDef",
-									"highlightedDef": "otherDef"
+									"highlightedDef": "otherDef",
+									"onLineButtonClick": {
+										"dispatched": [
+											{
+												"$constructor": "SelectLine",
+												"line": {
+													"currentTarget": {
+														"href": "[currentTarget.href]"
+													},
+													"view": {
+														"scrollX": 11,
+														"scrollY": 22
+													},
+													"clientX": 10,
+													"clientY": 20
+												}
+											}
+										]
+									}
 								}
 							}
 						]
