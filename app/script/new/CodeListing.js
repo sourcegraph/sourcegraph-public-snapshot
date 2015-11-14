@@ -14,7 +14,6 @@ export default class CodeListing extends Component {
 		this.state = {
 			firstVisibleLine: 0,
 			visibleLinesCount: tilingFactor * 3,
-			creatingIssue: false,
 		};
 		this._updateVisibleLines = this._updateVisibleLines.bind(this);
 	}
@@ -99,7 +98,7 @@ export default class CodeListing extends Component {
 
 		if (this.state.lineSelectionForm) {
 			let form = (
-				<tr key={"form"}>
+				<tr key="form">
 					<td className="line-number"></td>
 					<td>
 						{this.state.lineSelectionForm}

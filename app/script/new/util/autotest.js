@@ -26,7 +26,9 @@ export default function(expected, filename, component) {
 				return noJSON;
 			}
 			if (k === "children") {
-				return mergeText(toChildArray(v));
+				let children = toChildArray(v);
+				if (children.length === 0) return noJSON;
+				return mergeText(children);
 			}
 			switch (v.constructor) {
 			case String:
