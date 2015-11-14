@@ -22,8 +22,9 @@ export default class IssueForm extends Component {
 			this.state.commitID,
 			this.state.startLine,
 			this.state.endLine,
-			this.refs.title.value,
-			this.refs.body.value(),
+			// TODO this is so autotest will work.
+			this.refs.title && this.refs.title.value,
+			this.refs.body && this.refs.body.value(),
 			this.state.onSubmit
 		));
 	}

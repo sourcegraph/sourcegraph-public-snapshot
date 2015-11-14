@@ -1,6 +1,6 @@
 import * as IssueActions from "./IssueActions";
 import Dispatcher from "./Dispatcher";
-import defaultXhr from "xhr";
+import defaultXhr from "./util/xhr";
 
 const IssueBackend = {
 	xhr: defaultXhr,
@@ -11,9 +11,6 @@ const IssueBackend = {
 			IssueBackend.xhr({
 				uri: `/${action.repo}/.issues/new`,
 				method: "POST",
-				headers: {
-					"X-Csrf-Token": window._csrfToken,
-				},
 				json: {
 					title: action.title,
 					body: action.body,
