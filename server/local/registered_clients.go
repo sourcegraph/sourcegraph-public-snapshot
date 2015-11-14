@@ -230,6 +230,8 @@ func (s *registeredClients) List(ctx context.Context, opt *sourcegraph.Registere
 }
 
 func (s *registeredClients) GetUserPermissions(ctx context.Context, opt *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
+	mediumCache(ctx)
+
 	if opt.ClientSpec.ID == "" || opt.UID == 0 {
 		return nil, grpc.Errorf(codes.InvalidArgument, "RegisteredClients.GetUserPermissions: caller must specify valid clientID and UID")
 	}
@@ -276,6 +278,8 @@ func (s *registeredClients) SetUserPermissions(ctx context.Context, userPerms *s
 }
 
 func (s *registeredClients) ListUserPermissions(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
+	mediumCache(ctx)
+
 	if client.ID == "" {
 		return &sourcegraph.UserPermissionsList{}, nil
 	}

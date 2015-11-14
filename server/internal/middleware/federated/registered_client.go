@@ -62,11 +62,13 @@ func CustomRegisteredClientsSetUserPermissions(ctx context.Context, in *sourcegr
 		return nil, err
 	}
 	if ctx2 == nil {
+		defer sourcegraph.Cache.Clear()
 		return s.SetUserPermissions(ctx, in)
 	}
 	if in.ClientID == "" {
 		in.ClientID = clientID
 	}
+	defer sourcegraph.Cache.Clear()
 	return svc.RegisteredClients(ctx2).SetUserPermissions(ctx2, in)
 }
 
