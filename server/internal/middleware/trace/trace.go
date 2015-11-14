@@ -11,8 +11,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
-	tg_context "src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/context"
+	"github.com/resonancelabs/go-pub/instrument"
+	tg_context "github.com/resonancelabs/go-pub/instrument/context"
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"

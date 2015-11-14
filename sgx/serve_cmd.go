@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/resonancelabs/go-pub/instrument"
+	tg_client "github.com/resonancelabs/go-pub/instrument/client"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
@@ -61,8 +63,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/statsutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
-	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
-	tg_client "src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/client"
 )
 
 // Stripped down help message presented to most users (full help message can be

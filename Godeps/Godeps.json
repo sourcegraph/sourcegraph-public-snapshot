@@ -296,6 +296,10 @@
 			"Rev": "c91d8eefde16bd047416409eb56353ea84a186e4"
 		},
 		{
+			"ImportPath": "github.com/resonancelabs/go-pub/instrument",
+			"Rev": "d6189421f93dd1fe95afafd22623335e9dd01efc"
+		},
+		{
 			"ImportPath": "github.com/russross/blackfriday",
 			"Comment": "v1.3",
 			"Rev": "8cec3a854e68dba10faabbe31c089abf4a3e57a6"

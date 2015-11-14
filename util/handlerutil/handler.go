@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/schema"
-	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument"
-	"src.sourcegraph.com/sourcegraph/vendored/github.com/resonancelabs/go-pub/instrument/httpwrapper"
+	"github.com/resonancelabs/go-pub/instrument"
+	"github.com/resonancelabs/go-pub/instrument/httpwrapper"
 
 	"code.google.com/p/rog-go/parallel"
 
