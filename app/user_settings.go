@@ -91,7 +91,8 @@ func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.Use
 	} else if err != nil {
 		return *userSpec, nil, err
 	}
-	orgsAndSelf := []*sourcegraph.User{currentUser}
+
+	orgsAndSelf := []*sourcegraph.User{p}
 	for _, org := range orgs.Orgs {
 		orgsAndSelf = append(orgsAndSelf, &org.User)
 	}
@@ -120,7 +121,7 @@ func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.Use
 
 // Redirects "/.me/.settings/*" to "/<u>/.settings/*". Returns errUserSettingsCommonWroteResponse if redirect should
 // happen. Otherwise returns nil.
-func userSettingsMeRedirect(w http.ResponseWriter, r *http.Request, u *sourcegraph.User) error {
+func userSettingsMeRedirect(w http.ResponseWriter, r *http.Request, u *sourcegraph.UserSpec) error {
 	if u == nil {
 		return nil
 	}

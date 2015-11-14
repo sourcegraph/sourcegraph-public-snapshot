@@ -342,7 +342,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 
 // canEdit returns nil error if currentUser is authorized to edit an entry created by authorUID.
 // It returns os.ErrPermission or an error that happened in other cases.
-func canEdit(ctx context.Context, sg *sourcegraph.Client, currentUser *sourcegraph.User, authorUID int32) error {
+func canEdit(ctx context.Context, sg *sourcegraph.Client, currentUser *sourcegraph.UserSpec, authorUID int32) error {
 	if currentUser == nil {
 		// Not logged in, cannot edit anything.
 		return os.ErrPermission
@@ -548,13 +548,13 @@ func nextID(dir string) (uint64, error) {
 
 // TODO.
 func (service) CurrentUser(ctx context.Context) (*issues.User, error) {
-	user := putil.UserFromContext(ctx)
-	if user == nil {
+	userSpec := putil.UserFromContext(ctx)
+	if userSpec == nil {
 		// Not authenticated, no current user.
 		return nil, nil
 	}
 	sg := sourcegraph.NewClientFromContext(ctx)
-	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: user.UID}) // TODO: Confirm this is needed (as in, it populates some previously-blank values that are required).
+	user, err := sg.Users.Get(ctx, userSpec)
 	if err != nil {
 		return nil, err
 	}

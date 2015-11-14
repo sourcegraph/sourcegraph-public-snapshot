@@ -21,10 +21,10 @@ func CLIContext() context.Context {
 	return sgx.WithClientContext(context.Background())
 }
 
-func UserFromRequest(r *http.Request) *sourcegraph.User {
+func UserFromRequest(r *http.Request) *sourcegraph.UserSpec {
 	return handlerutil.UserFromRequest(r)
 }
 
-func UserFromContext(ctx context.Context) *sourcegraph.User {
+func UserFromContext(ctx context.Context) *sourcegraph.UserSpec {
 	return handlerutil.UserFromContext(ctx)
 }

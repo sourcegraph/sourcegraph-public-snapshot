@@ -116,7 +116,7 @@ func serveRepoDiscussionUpdate(w http.ResponseWriter, r *http.Request) error {
 	}
 	c := &sourcegraph.DiscussionComment{
 		Body:   frm("body"),
-		Author: u.Spec(),
+		Author: *u,
 		DefKey: dk,
 	}
 	op := sourcegraph.DiscussionCommentCreateOp{id, c}

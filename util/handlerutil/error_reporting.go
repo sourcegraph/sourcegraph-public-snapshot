@@ -104,7 +104,6 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 		addTag("Authed", "yes")
 		addTag("Authed UID", strconv.Itoa(actor.UID))
 		addTag("Authed user", UserFromRequest(r).Login)
-		addTag("Authed name", UserFromRequest(r).Name)
 	} else {
 		addTag("Authed", "no")
 	}

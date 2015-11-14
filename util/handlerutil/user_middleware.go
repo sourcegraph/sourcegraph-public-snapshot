@@ -6,8 +6,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
@@ -42,7 +40,7 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 	next(w, r)
 }
 
-func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.User {
+func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.UserSpec {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	// Call to Identify will be authenticated with the
@@ -61,17 +59,7 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.User 
 		return nil
 	}
 
-	// Fetch user.
-	user, err := cl.Users.Get(ctx, authInfo.UserSpec())
-	if err != nil {
-		if grpc.Code(err) != codes.Unimplemented && grpc.Code(err) != codes.Unauthenticated {
-			log.Printf("warning: fetching user failed: %s (continuing, deleting cookie)", err)
-			appauth.DeleteSessionCookie(w)
-		}
-		return nil
-	}
-
-	return user
+	return authInfo.UserSpec()
 }
 
 // fetchUserForCredentials is whether UserMiddleware should try to
@@ -98,13 +86,13 @@ func fetchUserForCredentials(cred sourcegraph.Credentials) bool {
 //
 // TODO(sqs): rename to CurrentUser or something -- "FromContext"
 // implies it takes a context.Context, which it does not.
-func UserFromRequest(r *http.Request) *sourcegraph.User {
+func UserFromRequest(r *http.Request) *sourcegraph.UserSpec {
 	return UserFromContext(httpctx.FromRequest(r))
 }
 
 // userFromContext returns the context's authenticated user (if any).
-func UserFromContext(ctx context.Context) *sourcegraph.User {
-	user, _ := ctx.Value(userKey).(*sourcegraph.User)
+func UserFromContext(ctx context.Context) *sourcegraph.UserSpec {
+	user, _ := ctx.Value(userKey).(*sourcegraph.UserSpec)
 	return user
 }
 
@@ -112,6 +100,6 @@ func UserFromContext(ctx context.Context) *sourcegraph.User {
 // (and available via UserFromContext). Generally you should use
 // UserMiddleware to set it in the context; WithUser is probably most
 // useful for tests where you want to inject a specific user.
-func WithUser(ctx context.Context, user *sourcegraph.User) context.Context {
+func WithUser(ctx context.Context, user *sourcegraph.UserSpec) context.Context {
 	return context.WithValue(ctx, userKey, user)
 }

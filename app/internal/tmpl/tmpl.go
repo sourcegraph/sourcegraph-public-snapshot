@@ -182,7 +182,7 @@ type Common struct {
 	Session   *appauth.Session // the session cookie
 	CSRFToken string
 
-	CurrentUser   *sourcegraph.User
+	CurrentUser   *sourcegraph.UserSpec
 	CurrentRoute  string
 	CurrentURI    *url.URL
 	CurrentURL    *url.URL

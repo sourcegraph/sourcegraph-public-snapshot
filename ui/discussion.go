@@ -104,7 +104,7 @@ func serveDiscussionCreate(w http.ResponseWriter, r *http.Request) error {
 		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
 	}
 
-	d.Author = user.Spec()
+	d.Author = *user
 	d, err := cl.Discussions.Create(ctx, d)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func serveDiscussionCommentCreate(w http.ResponseWriter, r *http.Request) error 
 	if user == nil {
 		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
 	}
-	c.Author = user.Spec()
+	c.Author = *user
 
 	op := sourcegraph.DiscussionCommentCreateOp{
 		DiscussionID: id,

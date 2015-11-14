@@ -32,7 +32,7 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 	if user == nil {
 		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
 	}
-	newChangeset.Author = user.Spec()
+	newChangeset.Author = *user
 
 	sg := sourcegraph.NewClientFromContext(ctx)
 	cs, err := sg.Changesets.Create(ctx, &sourcegraph.ChangesetCreateOp{
@@ -79,7 +79,7 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 	if user == nil {
 		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
 	}
-	op.Author = user.Spec()
+	op.Author = *user
 	sg := sourcegraph.NewClientFromContext(ctx)
 	result, err := sg.Changesets.Update(ctx, &op)
 	if err != nil {
@@ -113,7 +113,7 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 	if user == nil {
 		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
 	}
-	newReview.Author = user.Spec()
+	newReview.Author = *user
 
 	sg := sourcegraph.NewClientFromContext(ctx)
 	op := &sourcegraph.ChangesetCreateReviewOp{
