@@ -44,7 +44,7 @@ func TestRepoTree(t *testing.T) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	contents := string(body)
 	if !strings.Contains(contents, expectedHTML) {
-		t.Errorf("Expected reponse body to contain '%s'", expectedHTML, contents)
+		t.Errorf("Expected reponse body to contain '%s': %s", expectedHTML, contents)
 	}
 	if !*calledRepoTreeGet {
 		t.Error("!calledRepoTreeGet")
@@ -112,6 +112,6 @@ func TestRepoTree_plaintext(t *testing.T) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	contents := string(body)
 	if !strings.Contains(contents, expectedHTML) {
-		t.Errorf("Expected reponse body to contain '%s'", expectedHTML, contents)
+		t.Errorf("Expected reponse body to contain '%s': %s", expectedHTML, contents)
 	}
 }

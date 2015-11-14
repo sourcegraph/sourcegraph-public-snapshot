@@ -714,7 +714,7 @@ func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDK
 	for _, l := range events.GetRegisteredListeners() {
 		listenerCtx, err := c.authenticateScopedContext(ctx, k, l.Scopes())
 		if err != nil {
-			log.Fatal("Could not initialize listener context: %v", err)
+			log.Fatalf("Could not initialize listener context: %v", err)
 		} else {
 			l.Start(listenerCtx)
 		}

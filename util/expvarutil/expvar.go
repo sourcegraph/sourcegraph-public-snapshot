@@ -67,7 +67,7 @@ func (c *Client) GC() error {
 
 func checkStatus(resp *http.Response) error {
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("HTTP error status %s (URL: %s)", resp.StatusCode, resp.Request.URL)
+		return fmt.Errorf("HTTP error status %d (URL: %s)", resp.StatusCode, resp.Request.URL)
 	}
 	return nil
 }

@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"testing"
@@ -81,7 +80,7 @@ func Accounts_RequestPasswordReset(ctx context.Context, t *testing.T, s store.Ac
 	p := "[0-9a-zA-Z]{44}"
 	r := regexp.MustCompile(p)
 	if !r.MatchString(token.Token) {
-		fmt.Errorf("token should match %s", p)
+		t.Errorf("token should match %s", p)
 	}
 }
 
