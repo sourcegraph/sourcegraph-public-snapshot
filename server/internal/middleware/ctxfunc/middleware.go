@@ -894,6 +894,20 @@ func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 	return rv, s.errFunc(err)
 }
 
+func (s wrappedMeta) PubKey(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
+	var err error
+	ctx, err = s.ctxFunc(ctx)
+	if err != nil {
+		return nil, s.errFunc(err)
+	}
+	svc := svc.MetaOrNil(ctx)
+	if svc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Meta")
+	}
+	rv, err := svc.PubKey(ctx, v1)
+	return rv, s.errFunc(err)
+}
+
 type wrappedMirrorRepos struct {
 	ctxFunc ContextFunc
 	errFunc ErrorFunc

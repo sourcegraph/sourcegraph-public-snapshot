@@ -1437,6 +1437,25 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 
 }
 
+func (s wrappedMeta) PubKey(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerPubKey, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Meta", "PubKey", param)
+	defer func() {
+		trace.After(ctx, "Meta", "PubKey", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Meta.PubKey")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.MetaServer = s.u
+
+	res, err = target.PubKey(ctx, param)
+	return
+
+}
+
 type wrappedMirrorRepos struct {
 	u sourcegraph.MirrorReposServer
 	c *auth.Config

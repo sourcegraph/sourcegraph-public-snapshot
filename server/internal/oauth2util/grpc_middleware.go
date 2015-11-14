@@ -64,16 +64,22 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		return nil, grpc.Errorf(codes.Unauthenticated, "access token middleware failed to parse/verify token: %s", err)
 	}
 
-	// Only trust the UIDs in tokens signed by us. And only trust
-	// tokens signed by clients to have their ClientID field set to
+	// Only trust the UIDs in tokens signed by us or the root. And only
+	// trust tokens signed by clients to have their ClientID field set to
 	// that client's own ID (not impersonate another client).
 	if actor != nil {
 		sigClientID, _ := claims["kid"].(string)
-		if signedBySelf := idkey.FromContext(ctx).ID == sigClientID; !signedBySelf {
+		signedBySelf := idkey.FromContext(ctx).ID == sigClientID
+
+		var signedByRoot bool
+		if rootKey := idkey.RootPubKey(ctx); rootKey != nil {
+			signedByRoot = rootKey.ID == sigClientID
+		}
+
+		if !signedBySelf && !signedByRoot {
 			if actor.ClientID != sigClientID {
 				return nil, grpc.Errorf(codes.Unauthenticated, "access token signed by external client %q may only contain ClientID claim of same client ID (got %q)", sigClientID, actor.ClientID)
 			}
-
 			// Don't copy over UID, Scope, etc.
 			tmp := auth.Actor{ClientID: sigClientID}
 			actor = &tmp

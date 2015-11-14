@@ -1,12 +1,16 @@
 package local
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -52,4 +56,18 @@ func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 	}
 
 	return c, nil
+}
+
+func (s *meta) PubKey(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
+	idKey := idkey.FromContext(ctx)
+	if idKey == nil {
+		return nil, grpc.Errorf(codes.Unavailable, "public key unavailable")
+	}
+	pubKey, err := x509.MarshalPKIXPublicKey(idKey.Public())
+	if err != nil {
+		return nil, err
+	}
+	return &sourcegraph.ServerPubKey{
+		Key: string(pubKey),
+	}, nil
 }

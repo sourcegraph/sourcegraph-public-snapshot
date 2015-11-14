@@ -269,6 +269,10 @@ func (s remoteMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.
 	return sourcegraph.NewClientFromContext(ctx).Meta.Config(ctx, v1)
 }
 
+func (s remoteMeta) PubKey(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
+	return sourcegraph.NewClientFromContext(ctx).Meta.PubKey(ctx, v1)
+}
+
 type remoteMirrorRepos struct{ sourcegraph.MirrorReposServer }
 
 func (s remoteMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
