@@ -94,7 +94,6 @@ func TestChangesets_getAffected(t *testing.T) {
 				ID:    1,
 				Close: true,
 			},
-			Base: fakeCommit("master"),
 			Head: fakeCommit("old(feature)"),
 		}, {
 			// (4)
@@ -103,7 +102,6 @@ func TestChangesets_getAffected(t *testing.T) {
 				ID:    2,
 				Close: true,
 			},
-			Base: fakeCommit("dev"),
 			Head: fakeCommit("old(feature)"),
 		},
 	})
