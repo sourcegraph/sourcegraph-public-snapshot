@@ -29,7 +29,7 @@
 								"ref": "title",
 								"props": {
 									"type": "text",
-									"placeholder": "Thread title.",
+									"placeholder": "Title",
 									"autoFocus": "true"
 								}
 							},
@@ -37,7 +37,7 @@
 								"type": "",
 								"ref": "body",
 								"props": {
-									"placeholder": "Leave a comment.",
+									"placeholder": "Comment",
 									"defaultValue": "",
 									"autoFocus": false
 								}
@@ -65,7 +65,7 @@
 													]
 												},
 												"children": [
-													"Create new thread"
+													"Create Thread"
 												]
 											}
 										},
