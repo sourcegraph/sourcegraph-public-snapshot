@@ -14,7 +14,6 @@ import (
 var Features = struct {
 	Discussions bool
 	SearchNext  bool
-	IssuesNext  bool
 }{
 	Discussions: true,
 	SearchNext:  true,
@@ -31,7 +30,7 @@ func init() {
 
 const envPrefix = "SG_FEATURE_"
 
-// featureStruct is expected to be a pointer to a simple struct like Feature
+// setFeatures expects featureStruct to be a pointer to a simple struct like Features.
 func setFeatures(featureStruct interface{}, environ []string) error {
 	t := reflect.TypeOf(featureStruct).Elem()
 	v := reflect.ValueOf(featureStruct).Elem()
@@ -48,7 +47,8 @@ func setFeatures(featureStruct interface{}, environ []string) error {
 		}
 		field, ok := toggles[key]
 		if !ok {
-			return fmt.Errorf("Unknown feature toggle %s", key)
+			log.Printf("warning: Skipping unknown feature toggle %s", key)
+			continue
 		}
 		on, err := strconv.ParseBool(val)
 		if err != nil {

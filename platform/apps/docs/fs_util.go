@@ -71,3 +71,4 @@ func (aferoFile) Write(p []byte) (n int, err error)              { return 0, nil
 func (aferoFile) WriteAt(p []byte, off int64) (n int, err error) { return 0, nil }
 func (aferoFile) WriteString(s string) (ret int, err error)      { return 0, nil }
 func (aferoFile) Truncate(size int64) error                      { return nil }
+func (aferoFile) Sync() error                                    { return nil }
