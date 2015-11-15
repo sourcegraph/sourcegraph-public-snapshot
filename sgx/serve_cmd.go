@@ -453,6 +453,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
+	listener = tcpKeepAliveListener{listener.(*net.TCPListener)}
 
 	if useTLS {
 		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
@@ -473,7 +474,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 		config.Certificates = []tls.Certificate{cert}
 		srv.TLSConfig = config
-		// TODO(sqs): add tcpKeepAliveListener
 		listener = tls.NewListener(listener, srv.TLSConfig)
 	}
 
@@ -1008,4 +1008,22 @@ func (c *ServeCmd) fetchRootPubKey() *idkey.PubKey {
 	}
 
 	return &idkey.PubKey{Key: rootPubKeyRSA, ID: rootID}
+}
+
+// tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
+// connections. It's used by ListenAndServe and ListenAndServeTLS so
+// dead TCP connections (e.g. closing laptop mid-download) eventually
+// go away.
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
 }
