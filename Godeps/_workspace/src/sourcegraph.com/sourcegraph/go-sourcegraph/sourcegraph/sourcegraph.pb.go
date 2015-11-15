@@ -2196,6 +2196,8 @@ type AuthInfo struct {
 	// any), or blank if the user account was registered on the
 	// current server.
 	Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:",omitempty"`
+	// Login is the login of the currently authenticated user (if any).
+	Login string `protobuf:"bytes,4,opt,name=login,proto3" json:",omitempty"`
 }
 
 func (m *AuthInfo) Reset()         { *m = AuthInfo{} }

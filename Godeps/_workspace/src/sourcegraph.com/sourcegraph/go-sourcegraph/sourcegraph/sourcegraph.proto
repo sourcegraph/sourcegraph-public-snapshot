@@ -1973,6 +1973,8 @@ message AuthInfo {
 	// current server.
 	string domain = 3;
 
+	// Login is the login of the currently authenticated user (if any).
+	string login = 4;
 }
 
 message AuthorshipInfo {
