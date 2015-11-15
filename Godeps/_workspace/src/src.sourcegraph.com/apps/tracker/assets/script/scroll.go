@@ -3,14 +3,17 @@
 package main
 
 import (
+	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/gopherjs/gopherjs/js"
+	"github.com/shurcooL/go/gopherjs_http/jsutil"
 	"honnef.co/go/js/dom"
 )
 
 func init() {
-	js.Global.Set("MustScrollTo", MustScrollTo)
+	js.Global.Set("AnchorScroll", jsutil.Wrap(AnchorScroll))
 
 	processHashSet := func() {
 		// Scroll to hash target.
@@ -59,17 +62,26 @@ func init() {
 	})
 }
 
-// targetID must point to a valid target.
-func MustScrollTo(targetID string) {
+// AnchorScroll scrolls window to target that is pointed by fragment of href of given anchor element.
+// It must point to a valid target.
+func AnchorScroll(anchor dom.HTMLElement, e dom.Event) {
+	url, err := url.Parse(anchor.(*dom.HTMLAnchorElement).Href)
+	if err != nil {
+		// Should never happen if AnchorScroll is used correctly.
+		panic(fmt.Errorf("AnchorScroll: url.Parse:", err))
+	}
+	targetID := url.Fragment
 	target := document.GetElementByID(targetID).(dom.HTMLElement)
 
 	// TODO: dom.GetWindow().History().ReplaceState(...)
 	js.Global.Get("window").Get("history").Call("replaceState", nil, nil, "#"+targetID)
 
 	// TODO: Decide if it's better to do this or not to.
-	//centerWindowOn(target)
+	centerWindowOn(target)
 
 	processHash(target)
+
+	e.PreventDefault()
 }
 
 // processHash highlights the selected element by giving it a "hash-selected" class.

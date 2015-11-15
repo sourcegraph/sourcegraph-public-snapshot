@@ -249,6 +249,7 @@ func (s service) CreateComment(_ context.Context, rs issues.RepoSpec, id uint64,
 		User:      ghUser(comment.User),
 		CreatedAt: *comment.CreatedAt,
 		Body:      *comment.Body,
+		Editable:  true, // You can always edit comments you've created.
 	}, nil
 }
 
@@ -270,6 +271,7 @@ func (s service) Create(_ context.Context, rs issues.RepoSpec, i issues.Issue) (
 			ID:        issueDescriptionCommentID,
 			User:      ghUser(issue.User),
 			CreatedAt: *issue.CreatedAt,
+			Editable:  true, // You can always edit issues you've created.
 		},
 	}, nil
 }
@@ -302,6 +304,7 @@ func (s service) Edit(_ context.Context, rs issues.RepoSpec, id uint64, ir issue
 			ID:        issueDescriptionCommentID,
 			User:      ghUser(issue.User),
 			CreatedAt: *issue.CreatedAt,
+			Editable:  true, // You can always edit issues you've edited.
 		},
 	}, nil
 }
@@ -327,6 +330,7 @@ func (s service) EditComment(_ context.Context, rs issues.RepoSpec, id uint64, c
 			User:      ghUser(issue.User),
 			CreatedAt: *issue.CreatedAt,
 			Body:      *issue.Body,
+			Editable:  true, // You can always edit comments you've edited.
 		}, nil
 	}
 
@@ -343,6 +347,7 @@ func (s service) EditComment(_ context.Context, rs issues.RepoSpec, id uint64, c
 		User:      ghUser(comment.User),
 		CreatedAt: *comment.CreatedAt,
 		Body:      *comment.Body,
+		Editable:  true, // You can always edit comments you've edited.
 	}, nil
 }
 

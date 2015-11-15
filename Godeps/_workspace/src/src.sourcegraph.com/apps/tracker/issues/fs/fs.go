@@ -262,6 +262,7 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 		User:      sgUser(ctx, user),
 		CreatedAt: comment.CreatedAt,
 		Body:      comment.Body,
+		Editable:  true, // You can always edit comments you've created.
 	}, nil
 }
 
@@ -334,6 +335,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 			User:      sgUser(ctx, user),
 			CreatedAt: issue.CreatedAt,
 			Body:      issue.Body,
+			Editable:  true, // You can always edit issues you've created.
 		},
 	}, nil
 }
@@ -442,6 +444,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 			ID:        0,
 			User:      sgUser(ctx, user),
 			CreatedAt: issue.CreatedAt,
+			Editable:  true, // You can always edit issues you've edited.
 		},
 	}, nil
 }
@@ -491,6 +494,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 			User:      sgUser(ctx, user),
 			CreatedAt: issue.CreatedAt,
 			Body:      issue.Body,
+			Editable:  true, // You can always edit comments you've edited.
 		}, nil
 	}
 
@@ -526,6 +530,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 		User:      sgUser(ctx, user),
 		CreatedAt: comment.CreatedAt,
 		Body:      comment.Body,
+		Editable:  true, // You can always edit comments you've edited.
 	}, nil
 }
 
