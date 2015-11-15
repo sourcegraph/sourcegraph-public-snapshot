@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"log"
+	"net/url"
 	"os"
 
 	"golang.org/x/net/context"
@@ -12,7 +13,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/grpccache"
-	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
@@ -20,11 +20,66 @@ import (
 var ClientContextFuncs []func(context.Context) context.Context
 
 func init() {
-	cli.CLI.AddGroup("Client API endpoint", "", &Endpoints)
+	cli.CLI.AddGroup("Client API endpoint", "", &Endpoint)
 	cli.CLI.AddGroup("Client authentication", "", &Credentials)
 }
 
-var Endpoints conf.EndpointOpts
+var Endpoint EndpointOpts
+
+// EndpointOpts sets the URL to use when contacting the Sourcegraph
+// server.
+//
+// This endpoint may differ from the endpoint that a server wishes to
+// advertise externally. For example, if internal API traffic is
+// routed through a local network, you may want to use
+// "http://10.1.2.3:3000" as the endpoint here, but you may want
+// external clients to use "https://example.com:443". To do so, run
+// the server with `src --endpoint http://10.1.2.3:3000 serve
+// --app-url https://example.com`.
+type EndpointOpts struct {
+	// RawURL is the raw endpoint URL. Callers should almost never use
+	// this; use the URLOrDefault method instead.
+	RawURL string `short:"u" long:"endpoint" description:"URL to Sourcegraph server" default:"" env:"SRC_URL"`
+}
+
+// NewContext sets the server endpoint in the context.
+func (c *EndpointOpts) NewContext(ctx context.Context) context.Context {
+	return sourcegraph.WithGRPCEndpoint(ctx, c.URLOrDefault())
+}
+
+// URLOrDefault returns c.Endpoint as a *url.URL but with various
+// modifications (e.g. a sensible default, no path component, etc). It
+// is also responsible for erroring out when the user provides a
+// garbage endpoint URL. Always use c.URLOrDefault instead of
+// c.Endpoint, even when you just need a string form (just call
+// URLOrDefault().String()).
+func (c *EndpointOpts) URLOrDefault() *url.URL {
+	e := c.RawURL
+	if e == "" {
+		e = "http://localhost:3000"
+	}
+	endpoint, err := url.Parse(e)
+	if err != nil {
+		log.Fatal(err, "invalid endpoint URL specified (in EndpointOpts.URLOrDefault")
+	}
+
+	// This prevents users who might be using e.g. Sourcegraph under a reverse proxy
+	// at mycompany.com/sourcegraph (a subdirectory) from logging in -- but this
+	// is not a typical case and otherwise users who effectively run:
+	//
+	//  src --endpoint=http://localhost:3000 login
+	//
+	// will be unable to authenticate in the event that they add a slash suffix:
+	//
+	//  src --endpoint=http://localhost:3000/ login
+	//
+	endpoint.Path = ""
+
+	if endpoint.Scheme == "" {
+		log.Fatal("invalid endpoint URL specified, endpoint URL must start with a schema (e.g. http://mydomain.com)")
+	}
+	return endpoint
+}
 
 // CredentialOpts sets the authentication credentials to use when
 // contacting the Sourcegraph server's API.
@@ -44,19 +99,19 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 		}
 
 		// Prefer explicitly specified endpoint, then auth file default endpoint,
-		// then fallback default. For this reason, we use Endpoint not EndpointURL
+		// then fallback default. For this reason, we use Endpoint not URLOrDefault
 		// (which provides the fallback default) here.
-		ua := userAuth[Endpoints.Endpoint]
-		if Endpoints.Endpoint == "" {
+		ua := userAuth[Endpoint.RawURL]
+		if Endpoint.RawURL == "" {
 			if ua == nil {
 				var ep string
 				ep, ua = userAuth.getDefault()
 				if ep != "" {
-					Endpoints.Endpoint = ep
+					Endpoint.RawURL = ep
 				}
 			}
 			if ua == nil {
-				ua = userAuth[Endpoints.EndpointURL().String()]
+				ua = userAuth[Endpoint.URLOrDefault().String()]
 			}
 		}
 		if ua != nil {
@@ -138,9 +193,7 @@ func init() {
 func WithClientContext(parent context.Context) context.Context {
 	// The "src serve" command is the only non-client command; it
 	// must not have credentials set (because it is not a client
-	// command) or a default discovery endpoint (because it is
-	// what creates the endpoint, and the check would occur before
-	// the server could start).
+	// command).
 	if cli.CLI.Active != nil && cli.CLI.Active.Name == "serve" {
 		Credentials.AuthFile = ""
 	}
@@ -154,9 +207,5 @@ func WithClientContext(parent context.Context) context.Context {
 
 // WithClientContextUnauthed returns a copy of parent with client endpoint added.
 func WithClientContextUnauthed(parent context.Context) context.Context {
-	ctx, err := Endpoints.WithEndpoints(parent)
-	if err != nil {
-		log.Fatalf("Error constructing API client endpoints: %s.", err)
-	}
-	return ctx
+	return Endpoint.NewContext(parent)
 }

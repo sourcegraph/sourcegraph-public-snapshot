@@ -57,7 +57,7 @@ func (c *metaStatusCmd) Execute(args []string) error {
 type metaConfigCmd struct{}
 
 func (c *metaConfigCmd) Execute(args []string) error {
-	log.Println("#", Endpoints.Endpoint)
+	log.Println("#", Endpoint.URLOrDefault())
 	cl := Client()
 	config, err := cl.Meta.Config(cliCtx, &pbtypes.Void{})
 	if err != nil {

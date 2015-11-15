@@ -348,13 +348,10 @@ func (c *ServeCmd) Execute(args []string) error {
 			ctx = f(ctx)
 		}
 
-		var err error
-		ctx, err = Endpoints.WithEndpoints(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
+		ctx = Endpoint.NewContext(ctx)
 
 		for _, f := range ServerContextFuncs {
+			var err error
 			ctx, err = f(ctx)
 			if err != nil {
 				log.Fatal(err)

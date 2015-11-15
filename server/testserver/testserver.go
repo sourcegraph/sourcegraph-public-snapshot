@@ -90,14 +90,14 @@ type Server struct {
 
 type Config struct {
 	Flags      []interface{} // flags to `src`
-	Endpoints  conf.EndpointOpts
+	Endpoint   sgx.EndpointOpts
 	Serve      sgx.ServeCmd
 	ServeFlags []interface{} // flags to `src serve`
 }
 
 func (c *Config) args() ([]string, error) {
 	flags := c.Flags
-	flags = append(flags, &c.Endpoints, "serve", &c.Serve)
+	flags = append(flags, &c.Endpoint, "serve", &c.Serve)
 	flags = append(flags, c.ServeFlags...)
 	return makeCommandLineArgs(flags...)
 }
@@ -164,7 +164,7 @@ func (s *Server) CmdAsSystem(args []string) (*exec.Cmd, error) {
 // operations against the server spawned by s.
 func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 	configArgs, err := makeCommandLineArgs(
-		&s.Config.Endpoints,
+		&s.Config.Endpoint,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -387,9 +387,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// HTTP
 	s.Config.Serve.HTTPAddr = fmt.Sprintf(":%d", httpPort)
-
-	// gRPC
-	s.Config.Endpoints.GRPCEndpoint = fmt.Sprintf("%s://localhost:%d", scheme, httpPort)
+	s.Config.Endpoint.RawURL = fmt.Sprintf("%s://localhost:%d", scheme, httpPort)
 
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, httpPort)
@@ -434,10 +432,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	}
 
 	s.Ctx = context.Background()
-	s.Ctx, err = s.Config.Endpoints.WithEndpoints(s.Ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	s.Ctx = s.Config.Endpoint.NewContext(s.Ctx)
 	s.Ctx = conf.WithAppURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key

@@ -136,9 +136,8 @@ type accessListCmd struct{}
 
 func (c *accessListCmd) Execute(args []string) error {
 	cl := Client()
-	endpointURL := Endpoints.EndpointURL().String()
 
-	fmt.Printf("# fetching list of users with access to server running at %s... ", endpointURL)
+	fmt.Printf("# fetching list of users with access to server running at %s... ", Endpoint.URLOrDefault())
 	userList, err := cl.RegisteredClients.ListUserPermissions(cliCtx, &sourcegraph.RegisteredClientSpec{})
 	if err != nil {
 		fmt.Println("FAILED")
