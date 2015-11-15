@@ -21,15 +21,6 @@
 					</a>
 				</li>
 
-				{{if .Features.Discussions}}
-					<li {{if (eq .CurrentRoute "repo.discussions")}}class="active"{{end}}>
-						<a href="{{urlToRepoSubroute "repo.discussions" .Repo.URI}}">
-							<i class="octicon octicon-comment-discussion"></i>
-							<span class="txt">Discussions</span>
-						</a>
-					</li>
-				{{end}}
-
 				{{range (repoEnabledFrames .Repo)}}
 					<li {{if activeRepoApp $.CurrentURI $.Repo.URI .ID}}class="active"{{end}}>
 						<a href="{{urlToRepoApp $.Repo.URI .ID}}">

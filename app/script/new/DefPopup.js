@@ -86,14 +86,6 @@ export default class DefPopup extends Component {
 			);
 		}
 
-		let topDiscussions = this.state.discussions && this.state.discussions.slice().sort((a, b) => {
-			let d = b.Comments.length - a.Comments.length;
-			if (d !== 0) {
-				return d;
-			}
-			return b.ID - a.ID;
-		}).slice(0, 4);
-
 		return (
 			<div>
 				<section className="docHTML">
@@ -106,25 +98,6 @@ export default class DefPopup extends Component {
 				</section>
 
 				<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
-
-				{this.state.discussions &&
-					<div className="code-discussions">
-						{this.state.discussions.length === 0 ? (
-							<div className="no-discussions"><a ref="createBtn" onClick={() => { this.setState({newDiscussion: true}); }}><i className="octicon octicon-plus" /> Start a code discussion</a></div>
-						) : (
-							<div className="contents">
-								<DiscussionsList
-									discussions={topDiscussions}
-									onViewDiscussion={(d) => { this.setState({viewDiscussion: d}); }}
-									small={true} />
-								<footer>
-									<a ref="listBtn" onClick={() => { this.setState({viewAllDiscussions: true}); }}><i className="fa fa-eye" /> View all</a>
-									<a ref="createBtn" onClick={() => { this.setState({newDiscussion: true}); }}><i className="fa fa-comment" /> New</a>
-								</footer>
-							</div>
-						)}
-					</div>
-				}
 			</div>
 		);
 	}

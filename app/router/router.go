@@ -203,8 +203,6 @@ func New(base *mux.Router) *Router {
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
 	repoRev.Path("/.counters").Methods("GET").Name(RepoCounters)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
-	repoRev.Path(`/.discussion/{ID:\d+}`).Methods("GET", "POST").Name(RepoDiscussion)
-	repoRev.Path("/.discussions").Methods("GET").Name(RepoDiscussionList)
 
 	headVar := "{Head:" + routevar.NamedToNonCapturingGroups(spec.RevPattern) + "}"
 	repoRev.Path("/.compare/" + headVar).Methods("GET").Name(RepoCompare)

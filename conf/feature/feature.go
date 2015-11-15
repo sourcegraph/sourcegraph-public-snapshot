@@ -15,7 +15,7 @@ var Features = struct {
 	Discussions bool
 	SearchNext  bool
 }{
-	Discussions: true,
+	Discussions: false,
 	SearchNext:  true,
 }
 
