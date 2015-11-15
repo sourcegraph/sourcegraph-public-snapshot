@@ -25,6 +25,6 @@ If we don't yet support your language, there are two options:
 1. **Contribute support for your language.**
   * [Write and contribute a srclib toolchain](https://sourcegraph.com/github.com/sourcegraph/srclib) for your language. We'd be delighted to help you through this process in case you have questions!
 1. **Vote for your favorite language.**
-  * Send an email to [support@sourcegraph.com](mailto:support@sourcegraph.com) with the title "Vote: &lt;my language&gt;"!
+  * Send an email to [help@sourcegraph.com](mailto:help@sourcegraph.com) with the title "Vote: &lt;my language&gt;"!
 
 Note that even if we don't support your language, _you can still continue using Sourcegraph as a git repository host_ -- just some core features like jump-to-defition, usage examples, etc. will be disabled.

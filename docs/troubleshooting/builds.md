@@ -49,7 +49,7 @@ when reporting issues.
 
 # Contact Us
 
-Can't figure out what is going wrong? We'd love to help! Please create an issue or [contact us](mailto:support@sourcegraph.com) and provide:
+Can't figure out what is going wrong? We'd love to help! Please create an issue or [contact us](mailto:help@sourcegraph.com) and provide:
 
 1. As much information as you can that may relate to the issue (was it just this build that failed, or all of them? etc).
 2. Steps to reproduce the issue on our end, if possible.

@@ -1,5 +1,5 @@
 FROM ubuntu:14.04
-MAINTAINER Sourcegraph Team <support@sourcegraph.com>
+MAINTAINER Sourcegraph Team <help@sourcegraph.com>
 
 RUN apt-get update -q \
     && apt-get install -qy --no-install-recommends \

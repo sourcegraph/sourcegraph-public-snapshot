@@ -66,7 +66,7 @@ func serveDownloadInstall(w http.ResponseWriter, r *http.Request) error {
 # directory, and your OAuth tokens are stored in the ~/.src-auth file.
 #
 # Visit sourcegraph.com for more information. You can also reach us at
-# support@sourcegraph.com should you have any questions, comments or concerns.
+# help@sourcegraph.com should you have any questions, comments or concerns.
 # We'd love to hear from you!
 
 set -e
@@ -76,7 +76,7 @@ on_error() {
 	echo
 	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 	echo "!! ERROR! One or more of the commands above failed to run!                    !!"
-	echo "!! -> Please contact support@sourcegraph.com and include the above output!    !!"
+	echo "!! -> Please contact help@sourcegraph.com and include the above output!       !!"
 	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 	exit 1
 }
