@@ -97,37 +97,6 @@
 													"generation": 42
 												}
 											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"className": "code-discussions",
-												"children": [
-													{
-														"type": "div",
-														"props": {
-															"className": "no-discussions",
-															"children": [
-																{
-																	"type": "a",
-																	"ref": "createBtn",
-																	"props": {
-																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "octicon octicon-plus"
-																				}
-																			},
-																			" Start a code discussion"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
 										}
 									]
 								}

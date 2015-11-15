@@ -5,7 +5,6 @@ import React from "react";
 import DefPopup from "./DefPopup";
 
 import testdataData from "./testdata/DefPopup-data.json";
-import testdataNoDiscussions from "./testdata/DefPopup-noDiscussions.json";
 import testdataNotAvailable from "./testdata/DefPopup-notAvailable.json";
 
 describe("DefPopup", () => {
@@ -29,16 +28,6 @@ describe("DefPopup", () => {
 		autotest(testdataNotAvailable, `${__dirname}/testdata/DefPopup-notAvailable.json`,
 			<DefPopup
 				def={{Found: false, URL: "someURL", QualifiedName: {__html: "someName"}}}
-				examples={{test: "examples", generation: 42}}
-				discussions={[]}
-				highlightedDef={null} />
-		);
-	});
-
-	it("should render no discussions", () => {
-		autotest(testdataNoDiscussions, `${__dirname}/testdata/DefPopup-noDiscussions.json`,
-			<DefPopup
-				def={{Found: true, URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
 				examples={{test: "examples", generation: 42}}
 				discussions={[]}
 				highlightedDef={null} />
