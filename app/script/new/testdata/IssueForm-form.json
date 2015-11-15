@@ -12,7 +12,7 @@
 								"type": "b",
 								"props": {
 									"children": [
-										"Creating an issue on a/path:1-42"
+										"Creating a thread on a/path:1-42."
 									]
 								}
 							}
@@ -29,7 +29,7 @@
 								"ref": "title",
 								"props": {
 									"type": "text",
-									"placeholder": "Title",
+									"placeholder": "Thread title.",
 									"autoFocus": "true"
 								}
 							},
@@ -37,7 +37,7 @@
 								"type": "",
 								"ref": "body",
 								"props": {
-									"placeholder": "Description",
+									"placeholder": "Leave a comment.",
 									"defaultValue": "",
 									"autoFocus": false
 								}
@@ -65,7 +65,7 @@
 													]
 												},
 												"children": [
-													"Create Issue"
+													"Create new thread"
 												]
 											}
 										},
