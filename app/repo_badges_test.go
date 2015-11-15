@@ -1,4 +1,4 @@
-package httpapi
+package app_test
 
 import (
 	"net/http"
@@ -8,21 +8,26 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
-	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/app/appconf"
+	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
+	"src.sourcegraph.com/sourcegraph/app/router"
 )
 
 func TestRepoBadge(t *testing.T) {
-	c, mock := newTest()
+	orig := appconf.Flags.RepoBadgesAndCounters
+	appconf.Flags.RepoBadgesAndCounters = true
+	defer func() {
+		appconf.Flags.RepoBadgesAndCounters = orig
+	}()
+
+	c, mock := apptest.New()
 
 	calledGet := mock.Repos.MockGet(t, "my/repo")
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 
 	want := "https://img.shields.io/badge/Sourcegraph-Status-blue.svg"
 
-	u, err := apirouter.URL(apirouter.RepoBadge, map[string]string{"Repo": "my/repo", "Badge": "status", "Format": "svg"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	u := router.Rel.URLTo(router.RepoBadge, "Repo", "my/repo", "Badge", "status", "Format", "svg")
 	resp, err := c.GetNoFollowRedirects(u.String())
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +53,13 @@ func TestRepoCounter_record(t *testing.T) { testRepoCounter(t, true) }
 func TestRepoCounter_noRecord(t *testing.T) { testRepoCounter(t, false) }
 
 func testRepoCounter(t *testing.T, record bool) {
-	c, mock := newTest()
+	orig := appconf.Flags.RepoBadgesAndCounters
+	appconf.Flags.RepoBadgesAndCounters = true
+	defer func() {
+		appconf.Flags.RepoBadgesAndCounters = orig
+	}()
+
+	c, mock := apptest.New()
 
 	calledGet := mock.Repos.MockGet(t, "my/repo")
 	var calledRecordHit, calledCountHits bool
@@ -63,10 +74,7 @@ func testRepoCounter(t *testing.T, record bool) {
 
 	want := "https://img.shields.io/badge/views-123-blue.svg"
 
-	u, err := apirouter.URL(apirouter.RepoCounter, map[string]string{"Repo": "my/repo", "Counter": "views", "Format": "svg"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	u := router.Rel.URLTo(router.RepoCounter, "Repo", "my/repo", "Counter", "views", "Format", "svg")
 	urlStr := u.String()
 	if !record {
 		urlStr += "?no-record"

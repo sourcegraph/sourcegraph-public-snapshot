@@ -9,9 +9,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/mux"
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
-	"src.sourcegraph.com/sourcegraph/conf"
 )
 
 const (
@@ -21,11 +19,9 @@ const (
 	Def               = "def"
 	Defs              = "defs"
 	Repo              = "repo"
-	RepoBadge         = "repo.badge"
 	RepoBranches      = "repo.branches"
 	RepoBuildInfo     = "repo.build"
 	RepoBuildsCreate  = "repo.builds.create"
-	RepoCounter       = "repo.counter"
 	RepoTags          = "repo.tags"
 	Repos             = "repos"
 	Search            = "search"
@@ -47,7 +43,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/repos").Methods("GET").Name(Repos)
 
 	repoRev := base.PathPrefix(`/repos/` + routevar.RepoRev).PostMatchFunc(routevar.FixRepoRevVars).BuildVarsFunc(routevar.PrepareRepoRevRouteVars).Subrouter()
-	repoRev.Path("/.badges/{Badge}.{Format}").Methods("GET").Name(RepoBadge)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -55,7 +50,6 @@ func New(base *mux.Router) *mux.Router {
 	repo := base.PathPrefix(repoPath).Subrouter()
 	repo.Path("/.branches").Methods("GET").Name(RepoBranches)
 	repo.Path("/.tags").Methods("GET").Name(RepoTags)
-	repo.Path("/.counters/{Counter}.{Format}").Methods("GET").Name(RepoCounter)
 
 	repoRev.Path("/.build").Methods("GET").Name(RepoBuildInfo)
 	repoRev.Path("/.builds").Methods("POST").Name(RepoBuildsCreate)
@@ -78,19 +72,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path(defPath).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
 
 	return base
-}
-
-// Abs returns the absolute URL (on the server's publicly advertised
-// HTTP API base URL) to access the specified relative resource.
-//
-func Abs(ctx context.Context, rel *url.URL) *url.URL {
-	// Remove leading slash so that HTTPEndpoint's path prefix is preserved.
-	if rel.Path != "" && rel.Path[0] == '/' {
-		tmp := *rel
-		rel = &tmp
-		rel.Path = rel.Path[1:]
-	}
-	return conf.ExternalEndpoints(ctx).HTTPEndpointURL().ResolveReference(rel)
 }
 
 var rel = New(nil)

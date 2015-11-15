@@ -149,6 +149,7 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	r.Get(router.Repo).Handler(internal.Handler(serveRepo))
+	r.Get(router.RepoBadge).Handler(internal.Handler(serveRepoBadge))
 	r.Get(router.RepoBadges).Handler(internal.Handler(serveRepoBadges))
 	r.Get(router.RepoBuild).Handler(internal.Handler(serveRepoBuild))
 	r.Get(router.RepoBuildUpdate).Handler(internal.Handler(serveRepoBuildUpdate))
@@ -156,6 +157,7 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoBuildTaskLog).Handler(internal.Handler(serveRepoBuildTaskLog))
 	r.Get(router.RepoBuilds).Handler(internal.Handler(serveRepoBuilds))
 	r.Get(router.RepoBuildsCreate).Handler(internal.Handler(serveRepoBuildsCreate))
+	r.Get(router.RepoCounter).Handler(internal.Handler(serveRepoCounter))
 	r.Get(router.RepoCounters).Handler(internal.Handler(serveRepoCounters))
 	r.Get(router.RepoCompare).Handler(internal.Handler(serveRepoCompare))
 	r.Get(router.RepoCompareAll).Handler(internal.Handler(serveRepoCompare))
