@@ -159,8 +159,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoCounters).Handler(internal.Handler(serveRepoCounters))
 	r.Get(router.RepoCompare).Handler(internal.Handler(serveRepoCompare))
 	r.Get(router.RepoCompareAll).Handler(internal.Handler(serveRepoCompare))
-	r.Get(router.RepoDiscussion).Handler(internal.Handler(serveRepoDiscussion))
-	r.Get(router.RepoDiscussionList).Handler(internal.Handler(serveRepoDiscussions))
 	r.Get(router.RepoRefresh).Handler(internal.Handler(serveRepoRefresh))
 	if feature.Features.SearchNext {
 		r.Get(router.RepoSearch).Handler(internal.Handler(serveRepoSearchNext))
