@@ -2,10 +2,8 @@ package sgx
 
 import (
 	"log"
-	"os"
 
 	"bytes"
-	"strings"
 
 	"sourcegraph.com/sourcegraph/go-flags"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
@@ -50,31 +48,6 @@ func Main() error {
 	_, err := cli.CLI.Parse()
 	printErrorHelp(err)
 	return err
-}
-
-func init() {
-	// Hack: treat command-line args after "sgx env exec" and "sgx
-	// runas" as args to pass through to the program, not as flags
-	// that we should parse. Use a heuristic to tell whether one of
-	// these subexecing commands is probably being invoked.
-	var isEnv, seenFirstCmd bool
-	for i, a := range os.Args {
-		if i == 0 {
-			continue
-		}
-		if !seenFirstCmd && a == "env" {
-			isEnv = true
-		}
-		if !strings.HasPrefix(a, "-") {
-			seenFirstCmd = true
-		}
-		if ((isEnv && a == "exec") || a == "runas") && i+1 < len(os.Args) {
-			// Insert a "--" after "exec" or "runas" in the
-			// command-line args to stop flag parsing.
-			os.Args = append(os.Args[:i+1], append([]string{"--"}, os.Args[i+1:]...)...)
-			break
-		}
-	}
 }
 
 // addHelpGroups adds help groups to the given command and all of it's sub
