@@ -9,7 +9,7 @@ const IssueBackend = {
 		switch (action.constructor) {
 		case IssueActions.CreateIssue:
 			IssueBackend.xhr({
-				uri: `/${action.repo}/.issues/new`,
+				uri: `/${action.repo}/.tracker/new`,
 				method: "POST",
 				json: {
 					title: action.title,
