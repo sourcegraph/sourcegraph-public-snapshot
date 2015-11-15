@@ -1,6 +1,6 @@
 // +build dev
 
-package issues
+package tracker
 
 import (
 	"go/build"

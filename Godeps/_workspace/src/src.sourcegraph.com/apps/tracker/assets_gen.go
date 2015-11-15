@@ -7,12 +7,12 @@ import (
 
 	"github.com/shurcooL/vfsgen"
 
-	issues "src.sourcegraph.com/apps/tracker"
+	"src.sourcegraph.com/apps/tracker"
 )
 
 func main() {
-	err := vfsgen.Generate(issues.Assets, vfsgen.Options{
-		PackageName:  "issues",
+	err := vfsgen.Generate(tracker.Assets, vfsgen.Options{
+		PackageName:  "tracker",
 		BuildTags:    "!dev",
 		VariableName: "Assets",
 	})

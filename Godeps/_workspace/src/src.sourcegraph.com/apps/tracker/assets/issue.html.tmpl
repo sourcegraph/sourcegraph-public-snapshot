@@ -11,7 +11,7 @@
 	<h1>{{.Issue.Title}} <span class="gray">#{{.Issue.ID}}</span></h1>
 	<div id="issue-state-badge" style="margin-bottom: 20px;">
 		{{template "issue-badge" (print .Issue.State)}}
-		<span>{{template "user" .Issue.User}} opened this issue {{template "time" .Issue.CreatedAt}}</span>
+		<span>{{template "user" .Issue.User}} opened this thread {{template "time" .Issue.CreatedAt}}</span>
 	</div>
 	{{if .Issue.Reference}}{{template "reference" .Issue}}{{end}}
 	{{range .Items}}

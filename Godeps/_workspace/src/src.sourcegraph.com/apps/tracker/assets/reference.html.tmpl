@@ -20,7 +20,7 @@
 	<div class="list-entry-border reference">
 		<div class="list-entry-header">
 			{{/* TODO: Replace manual href construction with a router helper from sourcegraph/app/router. */}}
-			<span class="content">{{template "user" .User}} referenced <a href="/{{.Reference.Repo.URI}}@{{.Reference.CommitID}}/.tree/{{.Reference.Path}}?startline={{.Reference.StartLine}}&endline={{.Reference.EndLine}}">{{.Reference.Path}}</a> {{template "time" .CreatedAt}}</span>
+			<span class="content">{{template "user" .User}} referenced <a href="/{{.Reference.Repo.URI}}@{{.Reference.CommitID}}/.tree/{{.Reference.Path}}?startline={{.Reference.StartLine}}&endline={{.Reference.EndLine}}">{{.Reference.Path}}:{{.Reference.StartLine}}-{{.Reference.EndLine}}</a> {{template "time" .CreatedAt}}</span>
 		</div>
 		<div id="IssuesReference"></div>
 	</div>
