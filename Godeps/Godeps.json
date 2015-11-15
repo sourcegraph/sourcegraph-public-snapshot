@@ -296,7 +296,15 @@
 			"Rev": "c91d8eefde16bd047416409eb56353ea84a186e4"
 		},
 		{
+			"ImportPath": "github.com/resonancelabs/go-pub/base",
+			"Rev": "d6189421f93dd1fe95afafd22623335e9dd01efc"
+		},
+		{
 			"ImportPath": "github.com/resonancelabs/go-pub/instrument",
+			"Rev": "d6189421f93dd1fe95afafd22623335e9dd01efc"
+		},
+		{
+			"ImportPath": "github.com/resonancelabs/go-pub/thrift_0_9_2/lib/go/thrift",
 			"Rev": "d6189421f93dd1fe95afafd22623335e9dd01efc"
 		},
 		{
@@ -634,10 +642,6 @@
 			"Rev": "4e86f4367175e39f69d9358a5f17b4dda270378d"
 		},
 		{
-			"ImportPath": "gopkg.in/check.v1",
-			"Rev": "11d3bc7aa68e238947792f30573146a3231fc0f1"
-		},
-		{
 			"ImportPath": "gopkg.in/fsnotify.v1",
 			"Comment": "v1.2.0",
 			"Rev": "96c060f6a6b7e0d6f75fddd10efeaca3e5d1bcb0"
@@ -779,8 +783,8 @@
 			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
 		},
 		{
-			"ImportPath": "src.sourcegraph.com/apps/issues",
-			"Rev": "ab74955439229a9516573f67b55a328cd6b6b722"
+			"ImportPath": "src.sourcegraph.com/apps/tracker",
+			"Rev": "65ddb3b68bbc15bf78ebf8fa383fa6414e212e8a"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",

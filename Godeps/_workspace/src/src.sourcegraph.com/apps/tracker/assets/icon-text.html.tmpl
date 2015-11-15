@@ -1,0 +1,47 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		<div>{{template "issue-badge" "open"}}</div>
+		<div>{{template "issue-badge" "closed"}}</div>
+	</body>
+</html>
+
+{{/* TODO: Try to use issues.OpenState and issues.ClosedState constants. */}}
+{{define "issue-badge"}}
+	{{if eq . "open"}}
+		{{template "open-badge"}}
+	{{else if eq . "closed"}}
+		{{template "closed-badge"}}
+	{{else}}
+		{{.}}
+	{{end}}
+{{end}}
+
+{{define "open-badge"}}
+<span style="display: inline-block; padding: 4px 6px 4px 6px; margin: 4px; color: #fff; background-color: #6cc644;"><span style="margin-right: 6px;" class="octicon octicon-issue-opened"></span>Open</span>
+{{end}}
+
+{{define "closed-badge"}}
+<span style="display: inline-block; padding: 4px 6px 4px 6px; margin: 4px; color: #fff; background-color: #bd2c00;"><span style="margin-right: 6px;" class="octicon octicon-issue-closed"></span>Closed</span>
+{{end}}
+
+{{/* TODO: Try to use issues.OpenState and issues.ClosedState constants. */}}
+{{define "toggle-button"}}
+	{{if eq . "open"}}
+		{{template "close-button"}}
+	{{else if eq . "closed"}}
+		{{template "reopen-button"}}
+	{{else}}
+		{{.}}
+	{{end}}
+{{end}}
+
+{{define "close-button"}}
+<button id="issue-toggle-button" class="btn btn-neutral btn-small" data-1-action="Close issue" data-2-actions="Comment and close" onclick="ToggleIssueState('closed');" tabindex=1>Close issue</button>
+{{end}}
+
+{{define "reopen-button"}}
+<button id="issue-toggle-button" class="btn btn-neutral btn-small" data-1-action="Reopen issue" data-2-actions="Reopen and comment" onclick="ToggleIssueState('open');" tabindex=1>Reopen issue</button>
+{{end}}
