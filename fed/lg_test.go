@@ -4,9 +4,7 @@ package fed_test
 
 import (
 	"fmt"
-	"net"
 	"net/url"
-	"os"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -18,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
@@ -41,36 +38,6 @@ func TestFederation(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer a1.Close()
-
-	_, a1HTTPPort, err := net.SplitHostPort(conf.AppURL(ctx1).Host)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Set the HTTP_DISCOVERY_PORT env var to a1's HTTP port so that
-	// when we exec a2, it inherits that value. This means that
-	// discovering localhost/foo/bar will hit a1.
-	origEnv := os.Getenv("HTTP_DISCOVERY_PORT")
-	if err := os.Setenv("HTTP_DISCOVERY_PORT", a1HTTPPort); err != nil {
-		t.Fatal(err)
-	}
-	origVar := discover.TestingHTTPPort
-	discover.TestingHTTPPort = a1HTTPPort
-	if err := os.Setenv("HTTP_DISCOVERY_INSECURE", "t"); err != nil {
-		t.Fatal(err)
-	}
-	discover.InsecureHTTP = true
-	defer func() {
-		// Revert back to original values.
-		if err := os.Setenv("HTTP_DISCOVERY_PORT", origEnv); err != nil {
-			t.Fatal(err)
-		}
-		discover.TestingHTTPPort = origVar
-		discover.InsecureHTTP = false
-		if err := os.Setenv("HTTP_DISCOVERY_INSECURE", ""); err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	// Start the server (#2) that our client will contact.
 	a2, ctx2 := testserver.NewUnstartedServer()
@@ -102,7 +69,6 @@ func TestFederation(t *testing.T) {
 		}
 	}
 
-	testRepoFederation(t, a1, ctx1, a2, ctx2)
 	testUserFederation(t, a1, ctx1, a2, ctx2)
 }
 
@@ -116,81 +82,6 @@ func urlsEqualIgnoreRootSlash(a, b *url.URL) bool {
 		b2.Path = ""
 	}
 	return a2 == b2
-}
-
-// testRepoFederation tests that #2 serves #1's repos to the client by
-// transparently communicating with #1.
-func testRepoFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Context, a2 *testserver.Server, ctx2 context.Context) {
-	// Create the repo that #1 owns.
-	_, done, err := testutil.CreateRepo(t, ctx1, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer done()
-
-	{
-		// Check that discovery finds the repo on server #1.
-		info, err := discover.Repo(ctx2, "localhost/a/b")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Determine whether discovery was successful by seeing the gRPC
-		// and HTTP endpoints that `info` holds.
-		ctx, err := info.NewContext(ctx2)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if v, want := sourcegraph.GRPCEndpoint(ctx), sourcegraph.GRPCEndpoint(ctx1); !urlsEqualIgnoreRootSlash(v, want) {
-			t.Errorf("discovery: got GRPC endpoint == %q, want %q", v, want)
-		}
-	}
-
-	// Try to access the repo from #2's API.
-	repo, err := a2.Client.Repos.Get(ctx2, &sourcegraph.RepoSpec{URI: "localhost/a/b"})
-	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
-			// To help debug, list all repos that DO exist on #1.
-			listAllRepos(t, ctx1, "server #1")
-			listAllRepos(t, ctx2, "server #2")
-		}
-		t.Fatal(err)
-	}
-	if want := "a/b"; repo.URI != want {
-		t.Errorf("got repo.URI == %q, want %q", repo.URI, want)
-	}
-
-	{
-		// Check that server #2 doesn't advertise server #1's repos
-		// for discovery. Only the server that owns the repo should
-		// advertise the repos.
-
-		orig := discover.TestingHTTPPort
-		_, a2HTTPPort, err := net.SplitHostPort(conf.AppURL(ctx2).Host)
-		if err != nil {
-			t.Fatal(err)
-		}
-		discover.TestingHTTPPort = a2HTTPPort
-
-		// Try to run discovery against server #2. It should fail
-		// because the repo's origin is server #1, not #2.
-		repos := []string{
-			"localhost/a/b",
-
-			// TODO(sqs): Prevent this from succeeding...recursive
-			// discovery is silly.
-			//
-			// "localhost/localhost/a/b",
-		}
-		for _, repo := range repos {
-			if _, err := discover.Repo(ctx2, repo); !discover.IsNotFound(err) {
-				t.Fatalf("Discover %q on server #2: got err == %v, want NotFound", repo, err)
-			}
-		}
-
-		// Revert to previous value.
-		discover.TestingHTTPPort = orig
-	}
 }
 
 // testUserFederation tests that #2 serves #1's users to the client by
@@ -225,17 +116,17 @@ func testUserFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Contex
 	// Try to fetch the user from #2's API, both with *and* without an
 	// explicit domain specified.
 	{
-		// Without an explicit domain, it should fail -- because the user
-		// is not on #2.
-		//
-		// TODO(sqs): I temporarily made this succeed by using the
-		// federation root domain. Is this desirable?
-		_, err := a2.Client.Users.Get(ctx2, &sourcegraph.UserSpec{Login: "alice", Domain: ""})
-		// if grpc.Code(err) != codes.NotFound {
-		// 	t.Fatalf("get alice from #2: got err %v, want codes.NotFound", err)
-		// }
+		// Without an explicit domain, it should fall back to the fed
+		// root -- because the user is not on #2.
+		user, err := a2.Client.Users.Get(ctx2, &sourcegraph.UserSpec{Login: "alice", Domain: ""})
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		// The returned user's Domain field should always be set.
+		want := sourcegraph.UserSpec{Login: "alice", Domain: wantDomain, UID: user.UID}
+		if user.Spec() != want {
+			t.Errorf("got user == %+v, want %+v", user.Spec(), want)
 		}
 	}
 	{

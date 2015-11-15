@@ -81,29 +81,25 @@ func RepoContext(ctx context.Context, repo *string) (context.Context, error) {
 	return ctx, err
 }
 
-func lookupUser(ctx context.Context, user sourcegraph.UserSpec) (context.Context, discover.Info, error) {
+// UserContext gets the context to use to perform operations on a
+// user. It is used in the codegenned federated method
+// implementations.
+func UserContext(ctx context.Context, user sourcegraph.UserSpec) (context.Context, error) {
 	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
-		return nil, nil, nil
+		return nil, nil
 	}
 	if user.Domain == "" {
 		if !fed.Config.IsRoot {
 			user.Domain = fed.Config.RootURL().Host
 		} else {
-			return nil, nil, nil
+			return nil, nil
 		}
 	}
-	info, err := discover.SiteURL(ctx, user.Domain)
-	if err != nil {
-		return nil, nil, err
-	}
-	ctx, err = info.NewContext(ctx)
-	return ctx, info, err
-}
-
-// UserContext wraps lookupUser and discards the discover.Info return
-// value. It is used in the codegenned federated method
-// implementations (where the Info is not needed).
-func UserContext(ctx context.Context, user sourcegraph.UserSpec) (context.Context, error) {
-	ctx, _, err := lookupUser(ctx, user)
-	return ctx, err
+	// Communicate with the fed root. Assumes that the domain is
+	// the fed root, which is not necessarily true.
+	//
+	// TODO(sqs): Generalize this when we have true generalized
+	// federation.
+	ctx = fed.Config.NewRemoteContext(ctx)
+	return ctx, nil
 }

@@ -168,7 +168,7 @@ Now run the standalone instance (make sure the demo mothership is
 still running):
 
 ```
-HTTP_DISCOVERY_INSECURE=t make serve-dev SERVEFLAGS='--fed.root-url=http://demo-mothership:13000'
+make serve-dev SERVEFLAGS='--fed.root-url=http://demo-mothership:13000'
 ```
 
 Go to http://localhost:3000 to view your standalone instance. Click

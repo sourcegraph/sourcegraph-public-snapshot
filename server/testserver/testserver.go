@@ -127,8 +127,6 @@ func (s *Server) srclibEnvConfig() []string {
 func (s *Server) serverEnvConfig() []string {
 	return []string{
 		"SGPATH=" + s.SGPATH,
-		"HTTP_DISCOVERY_PORT=" + os.Getenv("HTTP_DISCOVERY_PORT"),
-		"HTTP_DISCOVERY_INSECURE=t",
 		"DEBUG=t",
 	}
 }

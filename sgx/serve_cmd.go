@@ -977,12 +977,7 @@ func (c *ServeCmd) fetchRootPubKey() *idkey.PubKey {
 		return nil
 	}
 
-	mothership, err := fed.Config.RootGRPCEndpoint()
-	if err != nil {
-		log15.Error("fetchRootPubKey could not identify the mothership", "error", err)
-		return nil
-	}
-	ctx := sourcegraph.WithGRPCEndpoint(context.Background(), mothership)
+	ctx := fed.Config.NewRemoteContext(context.Background())
 	rootKey, err := sourcegraph.NewClientFromContext(ctx).Meta.PubKey(ctx, &pbtypes.Void{})
 	if err != nil {
 		log15.Error("fetchRootPubKey could not fetch public key", "error", err)
