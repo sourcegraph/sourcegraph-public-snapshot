@@ -1,6 +1,8 @@
 package discover
 
 import (
+	"fmt"
+	"net"
 	"net/url"
 	"strings"
 
@@ -16,13 +18,12 @@ import (
 // and you want to communicate with the Sourcegraph site located at
 // that host.
 func Site(ctx context.Context, host string) (Info, error) {
-	info, err := discoverSiteHTTP(ctx, "https", host)
-	if err == nil {
-		return info, nil
-	} else if IsNotFound(err) && InsecureHTTP {
-		return discoverSiteHTTP(ctx, "http", host)
+	if strings.Contains(host, ":") {
+		panic(fmt.Sprintf("host cannot contain colon: %q", host))
 	}
-	return nil, err
+
+	scheme, port := schemeAndPortForSiteDiscovery()
+	return discoverSiteHTTP(ctx, scheme, host, port)
 }
 
 // SiteURL is like Site, but it accepts a URL instead of just a
@@ -33,12 +34,52 @@ func Site(ctx context.Context, host string) (Info, error) {
 // prepended with "https://". This is so that you must be explicit if
 // you want HTTP (non-HTTPS) discovery.
 func SiteURL(ctx context.Context, urlStr string) (Info, error) {
+	defaultScheme, _ := schemeAndPortForSiteDiscovery()
+
 	if !strings.HasPrefix(urlStr, "http://") && !strings.HasPrefix(urlStr, "https://") {
-		urlStr = "https://" + urlStr
+		urlStr = defaultScheme + "://" + urlStr
 	}
 	url, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
 	}
-	return discoverSiteHTTP(ctx, url.Scheme, url.Host)
+
+	host, port, err := net.SplitHostPort(url.Host)
+	if err != nil {
+		if strings.Contains(err.Error(), "missing port") {
+			err = nil
+			host = url.Host
+
+			switch url.Scheme {
+			case "http":
+				port = "80"
+			case "https":
+				port = "443"
+			}
+			if TestingHTTPPort != "" {
+				port = TestingHTTPPort
+			}
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return discoverSiteHTTP(ctx, url.Scheme, host, port)
+}
+
+func schemeAndPortForSiteDiscovery() (scheme, port string) {
+	if InsecureHTTP {
+		scheme = "http"
+		port = "80"
+	} else {
+		scheme = "https"
+		port = "443"
+	}
+	if TestingHTTPPort != "" {
+		port = TestingHTTPPort
+	}
+
+	return scheme, port
 }

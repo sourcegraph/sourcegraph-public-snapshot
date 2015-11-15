@@ -12,7 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
 )
 
 // VerifyUserHasWriteAccess checks if the user in the current context
@@ -158,14 +157,9 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*sourcegraph.UserPermissions, error) {
 	// TODO: Cache UserPermissions to avoid making a call to root server for every
 	// write/admin operation.
-	rootGRPCURL, err := fed.Config.RootGRPCEndpoint()
-	if err != nil {
-		return nil, err
-	}
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, rootGRPCURL)
-	ctx = svc.WithServices(ctx, remote.Services)
-	rootCl := sourcegraph.NewClientFromContext(ctx)
-	userPermissions, err := rootCl.RegisteredClients.GetUserPermissions(ctx, &sourcegraph.UserPermissionsOptions{
+	rootCtx := fed.Config.NewRemoteContext(ctx)
+	rootCl := sourcegraph.NewClientFromContext(rootCtx)
+	userPermissions, err := rootCl.RegisteredClients.GetUserPermissions(rootCtx, &sourcegraph.UserPermissionsOptions{
 		UID:        int32(actor.UID),
 		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: actor.ClientID},
 	})

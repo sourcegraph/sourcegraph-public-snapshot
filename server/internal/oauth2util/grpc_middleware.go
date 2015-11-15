@@ -91,7 +91,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 	// federation root or some other external host). In that case,
 	// call the remote Auth.Identify to figure out who the actor is.
 	if actor == nil && !fed.Config.IsRoot {
-		info, err := discover.Site(ctx, fed.Config.RootURL().Host)
+		info, err := discover.SiteURL(ctx, fed.Config.RootURL().String())
 		if err != nil {
 			return nil, err
 		}

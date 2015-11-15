@@ -927,26 +927,21 @@ func (c *ServeCmd) graphUplink(ctx context.Context) {
 		return
 	}
 
-	mothership, err := fed.Config.RootGRPCEndpoint()
-	if err != nil {
-		log15.Error("GraphUplink could not identify the mothership", "error", err)
-		return
-	}
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, mothership)
+	rctx := fed.Config.NewRemoteContext(ctx)
 
 	for {
 		time.Sleep(c.GraphUplinkPeriod)
-		cl := sourcegraph.NewClientFromContext(ctx)
+		cl := sourcegraph.NewClientFromContext(rctx)
 		buf := &bytes.Buffer{}
 		mfs := metricutil.SnapshotMetricFamilies()
 		mfs.Marshal(buf)
 
-		log15.Debug("GraphUplink sending metrics snapshot", "mothership", mothership, "numMetrics", len(mfs))
+		log15.Debug("GraphUplink sending metrics snapshot", "mothership", fed.Config.RootURL(), "numMetrics", len(mfs))
 		snapshot := sourcegraph.MetricsSnapshot{
 			Type:          sourcegraph.TelemetryType_PrometheusDelimited0dot0dot4,
 			TelemetryData: buf.Bytes(),
 		}
-		_, err := cl.GraphUplink.Push(ctx, &snapshot)
+		_, err := cl.GraphUplink.Push(rctx, &snapshot)
 		if err != nil {
 			log15.Error("GraphUplink push failed", "error", err)
 		}

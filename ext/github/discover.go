@@ -7,14 +7,12 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
 )
 
 func init() {
@@ -48,17 +46,11 @@ func (i *discoveryInfo) NewContext(ctx context.Context) (context.Context, error)
 		return svc.WithServices(ctx, local.Services), nil
 	}
 	if !fed.Config.IsRoot {
-		rootGRPCEndpoint, err := fed.Config.RootGRPCEndpoint()
-		if err != nil {
-			log15.Error("GitHub repo discovery could not locate the mothership", "error", err)
-			return nil, err
-		}
-		if rootGRPCEndpoint == nil {
+		if fed.Config.RootURL() == nil {
 			return nil, errors.New("federation root URL not configured")
 		}
-		log15.Debug("Routing external repo request to root", "RootGRPCEndpoint", rootGRPCEndpoint.String())
-		ctx = sourcegraph.WithGRPCEndpoint(ctx, rootGRPCEndpoint)
-		return svc.WithServices(ctx, remote.Services), nil
+		log15.Debug("Routing external repo request to root", "RootURL", fed.Config.RootURL().String())
+		return fed.Config.NewRemoteContext(ctx), nil
 	} else {
 		log15.Debug("Serving GitHub repo request locally")
 		ctx = store.WithRepos(ctx, &Repos{})

@@ -119,7 +119,7 @@ func checkOAuth2Config(w http.ResponseWriter, r *http.Request) error {
 // getRegisteredClientForServer gets the mothership's registered
 // client entry for this server.
 var getRegisteredClientForServer = func(ctx context.Context) (*sourcegraph.RegisteredClient, error) {
-	info, err := discover.Site(ctx, fed.Config.RootURL().Host)
+	info, err := discover.SiteURL(ctx, fed.Config.RootURL().String())
 	if err != nil {
 		return nil, err
 	}

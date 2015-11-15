@@ -22,7 +22,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -372,18 +371,12 @@ func linkLDAPUserAccount(ctx context.Context, ldapuser *ldap.LDAPUser) (*sourceg
 	if len(ldapuser.Emails) == 0 {
 		return nil, grpc.Errorf(codes.FailedPrecondition, "LDAP accounts must have an associated email address to access Sourcegraph")
 	}
-	info, err := discover.Site(ctx, fed.Config.RootURL().Host)
-	if err != nil {
-		return nil, err
-	}
-	ctx2, err := info.NewContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	ctx2 := fed.Config.NewRemoteContext(ctx)
 	cl2 := sourcegraph.NewClientFromContext(ctx2)
 
 	var federatedUser *sourcegraph.User
 	var commonEmail string
+	var err error
 
 	// First check if a federated user with common a email exists
 	for _, e := range ldapuser.Emails {

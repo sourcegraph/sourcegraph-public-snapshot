@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
+	"src.sourcegraph.com/sourcegraph/fed"
 
 	"golang.org/x/net/context"
 )
@@ -45,13 +43,11 @@ var _ Info = (*remoteInfo)(nil)
 
 // NewContext implements Info.
 func (i *remoteInfo) NewContext(ctx context.Context) (context.Context, error) {
-	grpcEndpoint, err := url.Parse(i.grpcEndpoint)
+	url, err := url.Parse(i.grpcEndpoint)
 	if err != nil {
 		return nil, err
 	}
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, grpcEndpoint)
-
-	return svc.WithServices(ctx, remote.Services), nil
+	return fed.NewRemoteContext(ctx, url), nil
 }
 
 func (i *remoteInfo) String() string {

@@ -17,7 +17,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/env"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
@@ -188,14 +188,7 @@ func (c *loginCmd) Execute(args []string) error {
 
 	// Create a context for communicating with the fed root directly
 	// (to avoid leaking username/password to the leaf server).
-	rootInfo, err := discover.SiteURL(cliCtx, rootURL.String())
-	if err != nil {
-		return err
-	}
-	rootCtx, err := rootInfo.NewContext(unauthedCtx)
-	if err != nil {
-		return err
-	}
+	rootCtx := fed.NewRemoteContext(unauthedCtx, rootURL)
 	rootCl := sourcegraph.NewClientFromContext(rootCtx)
 
 	// First, get a user access token to the root.

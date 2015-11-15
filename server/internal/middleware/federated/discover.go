@@ -92,7 +92,7 @@ func lookupUser(ctx context.Context, user sourcegraph.UserSpec) (context.Context
 			return nil, nil, nil
 		}
 	}
-	info, err := discover.Site(ctx, user.Domain)
+	info, err := discover.SiteURL(ctx, user.Domain)
 	if err != nil {
 		return nil, nil, err
 	}

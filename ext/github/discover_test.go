@@ -14,10 +14,8 @@ import (
 
 func TestDiscoverRepoLocal_found(t *testing.T) {
 	origRootFlag := fed.Config.IsRoot
-	origRootGRPCURL := fed.Config.RootGRPCURLStr
 	defer func() {
 		fed.Config.IsRoot = origRootFlag
-		fed.Config.RootGRPCURLStr = origRootGRPCURL
 	}()
 
 	fed.Config.IsRoot = true
@@ -43,10 +41,8 @@ func TestDiscoverRepoLocal_found(t *testing.T) {
 
 func TestDiscoverRepoLocalGHE_found(t *testing.T) {
 	origRootFlag := fed.Config.IsRoot
-	origRootGRPCURL := fed.Config.RootGRPCURLStr
 	defer func() {
 		fed.Config.IsRoot = origRootFlag
-		fed.Config.RootGRPCURLStr = origRootGRPCURL
 	}()
 
 	fed.Config.IsRoot = true
@@ -76,14 +72,14 @@ func TestDiscoverRepoLocalGHE_found(t *testing.T) {
 
 func TestDiscoverRepoRemote_found(t *testing.T) {
 	origRootFlag := fed.Config.IsRoot
-	origRootGRPCURL := fed.Config.RootGRPCURLStr
+	origRootURL := fed.Config.RootURLStr
 	defer func() {
 		fed.Config.IsRoot = origRootFlag
-		fed.Config.RootGRPCURLStr = origRootGRPCURL
+		fed.Config.RootURLStr = origRootURL
 	}()
 
 	fed.Config.IsRoot = false
-	fed.Config.RootGRPCURLStr = "https://demo-mothership:13000"
+	fed.Config.RootURLStr = "https://demo-mothership:13000"
 
 	info, err := discover.Repo(context.Background(), "github.com/o/r")
 	if err != nil {
@@ -98,7 +94,7 @@ func TestDiscoverRepoRemote_found(t *testing.T) {
 		t.Errorf("got info %q, want %q", info, want)
 	}
 
-	if u, want := sourcegraph.GRPCEndpoint(ctx), fed.Config.RootGRPCURLStr; u.String() != want {
+	if u, want := sourcegraph.GRPCEndpoint(ctx), fed.Config.RootURLStr; u.String() != want {
 		t.Errorf("got gRPC endpoint %q, want %q", u.String(), want)
 	}
 

@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"strconv"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -56,7 +55,7 @@ func TestFederation(t *testing.T) {
 		t.Fatal(err)
 	}
 	origVar := discover.TestingHTTPPort
-	discover.TestingHTTPPort, _ = strconv.Atoi(a1HTTPPort)
+	discover.TestingHTTPPort = a1HTTPPort
 	if err := os.Setenv("HTTP_DISCOVERY_INSECURE", "t"); err != nil {
 		t.Fatal(err)
 	}
@@ -131,14 +130,14 @@ func testRepoFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Contex
 
 	{
 		// Check that discovery finds the repo on server #1.
-		info, err := discover.Repo(context.Background(), "localhost/a/b")
+		info, err := discover.Repo(ctx2, "localhost/a/b")
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Determine whether discovery was successful by seeing the gRPC
 		// and HTTP endpoints that `info` holds.
-		ctx, err := info.NewContext(context.Background())
+		ctx, err := info.NewContext(ctx2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -162,27 +161,30 @@ func testRepoFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Contex
 	}
 
 	{
-		// Check that server #2 doesn't have the discovery meta
-		// tags. Only the server that owns the repo should advertise
-		// the meta tags.
+		// Check that server #2 doesn't advertise server #1's repos
+		// for discovery. Only the server that owns the repo should
+		// advertise the repos.
 
 		orig := discover.TestingHTTPPort
 		_, a2HTTPPort, err := net.SplitHostPort(conf.AppURL(ctx2).Host)
 		if err != nil {
 			t.Fatal(err)
 		}
-		discover.TestingHTTPPort, _ = strconv.Atoi(a2HTTPPort)
+		discover.TestingHTTPPort = a2HTTPPort
 
-		// Try to run discovery against server #2. It should succeed
-		// and return server #2's information.
-		//
-		// TODO(sqs): Make server #2 return the info of the servers
-		// that actually host the repos, instead of its own info, to
-		// cut down on intermediate proxying.
-		repos := []string{"localhost/a/b", "localhost/localhost/a/b"}
+		// Try to run discovery against server #2. It should fail
+		// because the repo's origin is server #1, not #2.
+		repos := []string{
+			"localhost/a/b",
+
+			// TODO(sqs): Prevent this from succeeding...recursive
+			// discovery is silly.
+			//
+			// "localhost/localhost/a/b",
+		}
 		for _, repo := range repos {
-			if _, err := discover.Repo(context.Background(), repo); err != nil {
-				t.Fatalf("Discover %q on server #2: got err == %v", repo, err)
+			if _, err := discover.Repo(ctx2, repo); !discover.IsNotFound(err) {
+				t.Fatalf("Discover %q on server #2: got err == %v, want NotFound", repo, err)
 			}
 		}
 

@@ -76,7 +76,7 @@ func (c *discoverSiteCmd) Execute(args []string) error {
 	}
 	for _, host := range c.Args.Hosts {
 		fmt.Print(host, ": ")
-		info, err := discover.Site(context.Background(), host)
+		info, err := discover.SiteURL(context.Background(), host)
 		if err != nil {
 			fmt.Printf("error: %s\n", err)
 			continue
