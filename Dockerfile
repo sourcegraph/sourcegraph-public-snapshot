@@ -6,14 +6,14 @@ RUN apt-get update -q \
             curl \
             git \
             make \
-			wget \
-			ca-certificates
+            wget \
+            ca-certificates
 
 RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
 RUN apt-get install -y nodejs
 
 # Install Go
-RUN curl -Ls https://storage.googleapis.com/golang/go1.4.3.linux-amd64.tar.gz | tar -C /usr/local -xz
+RUN curl -Ls https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz | tar -C /usr/local -xz
 ENV PATH=$PATH:/usr/local/go/bin
 
 ## Install the protobuf compiler (required for building the binary)
