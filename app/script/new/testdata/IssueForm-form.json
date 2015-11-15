@@ -37,7 +37,7 @@
 								"type": "",
 								"ref": "body",
 								"props": {
-									"placeholder": "Comment",
+									"placeholder": "Leave a comment.",
 									"defaultValue": "",
 									"autoFocus": false
 								}
