@@ -100,11 +100,11 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 
 	// Test HTTP API.
-	httpURL, err := url.Parse(serverConfig.HTTPEndpoint)
+	httpURL, err := url.Parse(serverConfig.AppURL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	apiURL := httpURL.ResolveReference(&url.URL{Path: ".defs"}).String()
+	apiURL := httpURL.ResolveReference(&url.URL{Path: "/.api/.defs"}).String()
 	resp, err := http.Get(apiURL)
 	if err != nil {
 		t.Fatal(err)

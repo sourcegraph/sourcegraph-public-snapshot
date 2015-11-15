@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"time"
 
@@ -43,8 +42,6 @@ func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 	c := &sourcegraph.ServerConfig{
 		Version:               buildvar.Version,
 		AppURL:                conf.AppURL(ctx).String(),
-		GRPCEndpoint:          conf.AppURL(ctx).String(),
-		HTTPEndpoint:          conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/.api/"}).String(),
 		AllowAnonymousReaders: authutil.ActiveFlags.AllowAnonymousReaders,
 		IDKey:      idkey.FromContext(ctx).ID,
 		AuthSource: authutil.ActiveFlags.Source,
