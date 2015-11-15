@@ -2,7 +2,7 @@ MAKEFLAGS+=--no-print-directory
 
 .PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smtest src test clone-private libvfsgen
 
-PRIVATE_HASH := 22b1d3c07bdf8ee8fab7734472c457c891ed0510
+PRIVATE_HASH := 9418935da9461423c7bd33cdcfdf30278e48e2f2
 
 SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
 
@@ -65,7 +65,7 @@ serve-dev: serve-dep
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
-	$(MAKE) serve-dev SRCFLAGS="--grpc-endpoint http://demo-mothership:13100 $(SRCFLAGS)" SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13000 --addr=:13001 --grpc-addr=:13100 --app-url http://demo-mothership:13000 --appdash.disable-server $(SERVEFLAGS)"
+	$(MAKE) serve-dev SRCFLAGS="--grpc-endpoint http://demo-mothership:13000 $(SRCFLAGS)" SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13000 --app-url http://demo-mothership:13000 --appdash.disable-server $(SERVEFLAGS)"
 
 serve-beyang-dev:
 	$(MAKE) serve-dev SERVEFLAGS="--app.disable-apps --app.disable-dir-defs --app.disable-external-links --app.disable-repo-tree-search --app.disable-search --app.header-footer-links 0 --app.motd '' --app.no-auto-build --auth.source=none --fed.is-root --graphuplink 0 --local.clcache 10s --local.clcachesize 2000 --num-workers 0 $(SERVEFLAGS)"

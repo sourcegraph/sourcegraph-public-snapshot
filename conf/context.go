@@ -10,7 +10,6 @@ type contextKey int
 
 const (
 	appURLKey contextKey = iota
-	externalEndpointsKey
 )
 
 // WithAppURL returns a copy of parent with the given base URL

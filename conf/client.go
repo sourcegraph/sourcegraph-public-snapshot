@@ -15,13 +15,13 @@ import (
 // These endpoints may differ from the endpoints that a server wishes
 // to advertise externally. For example, if internal API traffic is
 // routed through a local network, you may want to use
-// "http://10.1.2.3:3100" as the gRPC endpoint here, but you may want
-// external clients to use "https://example.com:3100". The externally
+// "http://10.1.2.3:3000" as the gRPC endpoint here, but you may want
+// external clients to use "https://example.com:3000". The externally
 // advertised endpoints may be passed as CLI flags to `src serve`.
 type EndpointOpts struct {
 	Endpoint string `short:"u" long:"endpoint" description:"URL or hostname of Sourcegraph endpoint for API client operations (auto-detects and overrides --grpc-endpoint)" default:"" env:"SRC_URL"`
 
-	GRPCEndpoint string `long:"grpc-endpoint" description:"URL of gRPC API (use -u/--endpoint to auto-detect)" default:"http://localhost:3100" env:"SG_GRPC_URL"`
+	GRPCEndpoint string `long:"grpc-endpoint" description:"URL of gRPC API (use -u/--endpoint to auto-detect)" default:"http://localhost:3000" env:"SG_GRPC_URL"`
 }
 
 // WithEndpoints sets the HTTP and gRPC endpoint in the context. If a

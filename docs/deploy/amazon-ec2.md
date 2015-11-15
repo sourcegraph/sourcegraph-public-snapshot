@@ -15,7 +15,6 @@ To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instanc
 * **Configure Security Group:** Allow external access to the following ports (or just choose All TCP).
   * Port 22 (for server administration via SSH)
   * Ports 80 and 443 (for the Web app)
-  * Port 3100 (for the API)
 * In 5 minutes, your Sourcegraph server should be available via HTTP at the EC2 instance's public IP or hostname.
 
 # Next steps

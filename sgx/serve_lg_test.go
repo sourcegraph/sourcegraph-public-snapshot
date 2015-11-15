@@ -3,12 +3,15 @@
 package sgx_test
 
 import (
+	"crypto/tls"
 	"flag"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
+
+	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
@@ -22,6 +25,18 @@ import (
 // Test that spawning one server works (the simple case).
 func TestServer(t *testing.T) {
 	testServer(t)
+}
+
+// Test that spawning one TLS server works.
+func TestServerTLS(t *testing.T) {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	defer func() {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = false
+	}()
+
+	a, ctx := testserver.NewUnstartedServerTLS()
+
+	doTestServer(t, a, ctx)
 }
 
 var numServersSerialParallel = flag.Int("test.servers", 3, "number of servers to spawn for serial/parallel server tests")
@@ -66,6 +81,10 @@ func TestManyServers_Parallel(t *testing.T) {
 
 func testServer(t *testing.T) {
 	a, ctx := testserver.NewUnstartedServer()
+	doTestServer(t, a, ctx)
+}
+
+func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
 		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
 	)

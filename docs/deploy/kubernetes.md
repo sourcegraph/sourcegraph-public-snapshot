@@ -45,10 +45,7 @@ spec:
   - name: https
     protocol: TCP
     port: 443
-    targetPort: 3001
-  - name: grpc
-    protocol: TCP
-    port: 3100
+    targetPort: 3000
   type: LoadBalancer
 ```
 
@@ -89,10 +86,6 @@ spec:
           mountPath: /home/sourcegraph/.sourcegraph
         ports:
         - containerPort: 3000
-          protocol: TCP
-        - containerPort: 3001
-          protocol: TCP
-        - containerPort: 3100
           protocol: TCP
       volumes:
       - name: data

@@ -3,6 +3,7 @@ package sgx
 import (
 	"bytes"
 	"crypto"
+	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
@@ -24,14 +25,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/resonancelabs/go-pub/instrument"
 	tg_client "github.com/resonancelabs/go-pub/instrument/client"
+	"github.com/soheilhy/cmux"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
-	"golang.org/x/net/http2"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -76,13 +76,9 @@ Starts an HTTP server serving the app and API.
 
 [serve command options]
           --http-addr=                           regular HTTP/1 address to listen on, if not blank (:3000)
-          --addr=                                HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank (:3001)
           --ssh-addr=                            SSH address to listen on, if not blank (:3002)
-          --grpc-addr=                           gRPC address to listen on (:3100)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
-          --external-http-endpoint=              externally accessible base URL to HTTP API (default: --http-endpoint value)
-          --external-grpc-endpoint=              externally accessible base URL to gRPC API (default: --grpc-endpoint value)
           --reload                               reload templates, blog posts, etc. on each request (dev mode)
           --no-worker                            do not start background worker
           --test-ui                              starts the UI test server which causes all UI endpoints to return mock data
@@ -165,15 +161,12 @@ type ServeCmdPrivate struct {
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
-	HTTPAddr string `long:"http-addr" default:":3000" description:"regular HTTP/1 address to listen on, if not blank"`
-	Addr     string `long:"addr" default:":3001" description:"HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank" required:"yes"`
+	HTTPAddr string `long:"addr" default:":3000" description:"Web and API listen address (uses TLS if cert/key are set)" required:"yes"`
 	SSHAddr  string `long:"ssh-addr" default:":3002" description:"SSH address to listen on, if not blank"`
-	GRPCAddr string `long:"grpc-addr" default:":3100" description:"gRPC address to listen on"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
 
 	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)"`
-	conf.ExternalEndpointsOpts
 
 	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
 
@@ -210,47 +203,6 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	}
 
 	return appURL, nil
-}
-
-// configureExternalEndpoints sets default external endpoints.
-func (c *ServeCmd) configureExternalEndpoints() {
-	guessExternalURL := func(appURLStr, listenPort string) string {
-		appURL, err := url.Parse(appURLStr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		xhost, _, err := net.SplitHostPort(appURL.Host)
-		if err != nil {
-			if strings.Contains(err.Error(), "missing port in address") {
-				xhost = appURL.Host
-			} else {
-				log.Fatalf("Error determining host and port from app URL: %s.", err)
-			}
-		}
-
-		return (&url.URL{Scheme: appURL.Scheme, Host: xhost + ":" + listenPort}).String()
-	}
-
-	if c.ExternalEndpointsOpts.HTTPEndpoint == "" {
-		u, err := url.Parse(c.AppURL)
-		if err != nil {
-			log.Fatal(err)
-		}
-		c.ExternalEndpointsOpts.HTTPEndpoint = u.ResolveReference(&url.URL{Path: "/.api/"}).String()
-	}
-	if c.ExternalEndpointsOpts.GRPCEndpoint == "" {
-		host, port, err := net.SplitHostPort(c.GRPCAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		switch host {
-		case "localhost", "127.0.0.1":
-			// GRPC server is not listening externally
-			c.ExternalEndpointsOpts.GRPCEndpoint = sourcegraph.GRPCEndpoint(cliCtx).String()
-		default:
-			c.ExternalEndpointsOpts.GRPCEndpoint = guessExternalURL(c.AppURL, port)
-		}
-	}
 }
 
 func (c *ServeCmd) Execute(args []string) error {
@@ -372,8 +324,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 
-	c.configureExternalEndpoints()
-
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
 		for _, f := range sharedCtxFuncs {
@@ -403,8 +353,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		ctx = conf.WithExternalEndpoints(ctx, c.ExternalEndpointsOpts)
 
 		for _, f := range ServerContextFuncs {
 			ctx, err = f(ctx)
@@ -454,7 +402,12 @@ func (c *ServeCmd) Execute(args []string) error {
 	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(newRouter())))
 
+	useTLS := c.CertFile != "" || c.KeyFile != ""
+
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
+	if useTLS {
+		mw = append(mw, setTLSMiddleware)
+	}
 	if c.RedirectToHTTPS {
 		mw = append(mw, redirectToHTTPSMiddleware)
 	}
@@ -485,14 +438,11 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	h := handlerutil.WithMiddleware(sm, mw...)
 
-	c.Addr = interpolatePort(c.Addr)
+	c.HTTPAddr = interpolatePort(c.HTTPAddr)
 
 	var srv http.Server
-	srv.Addr = c.Addr
+	srv.Addr = c.HTTPAddr
 	srv.Handler = h
-
-	http2.ConfigureServer(&srv, &http2.Server{})
-	useTLS := c.CertFile != "" || c.KeyFile != ""
 
 	if useTLS && appURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", appURL)
@@ -502,52 +452,53 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
 	}
 
-	// TLS and HTTP/2
-	if c.Addr != "" {
-		go func() {
-			if useTLS {
-				log15.Debug("HTTP/2 and HTTPS", "on", c.Addr, "TLS", useTLS)
-				log.Fatal(srv.ListenAndServeTLS(c.CertFile, c.KeyFile))
-			} else {
-				log15.Debug("HTTP/2", "on", c.Addr, "TLS", useTLS)
-				log.Fatal(srv.ListenAndServe())
-			}
-		}()
-	}
-
-	// gRPC
-	grpcListener, err := net.Listen("tcp", c.GRPCAddr)
+	listener, err := net.Listen("tcp", c.HTTPAddr)
 	if err != nil {
 		return err
 	}
-	var grpcServerOpts []grpc.ServerOption
+
 	if useTLS {
-		creds, err := credentials.NewServerTLSFromFile(c.CertFile, c.KeyFile)
+		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
 		if err != nil {
 			return err
 		}
-		grpcServerOpts = append(grpcServerOpts, grpc.Creds(creds))
+
+		config := srv.TLSConfig
+		if config == nil {
+			config = &tls.Config{}
+		}
+
+		if config.NextProtos == nil {
+			config.NextProtos = []string{"http/1.1"}
+		}
+		if config.NextProtos == nil {
+			config.NextProtos = append(config.NextProtos, "http/1.1")
+		}
+		config.Certificates = []tls.Certificate{cert}
+		srv.TLSConfig = config
+		// TODO(sqs): add tcpKeepAliveListener
+		listener = tls.NewListener(listener, srv.TLSConfig)
 	}
-	log15.Debug("gRPC API running", "on", c.GRPCAddr, "TLS", useTLS)
-	grpcSrv := server.NewServer(server.Config(serverCtxFunc), grpcServerOpts...)
-	go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
+
+	lmux := cmux.New(listener)
+	grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
+	anyListener := lmux.Match(cmux.Any())
+
+	if c.HTTPAddr != "" {
+		// Web
+		log15.Debug("HTTP running", "on", c.HTTPAddr, "TLS", useTLS)
+		go func() { log.Fatal(srv.Serve(anyListener)) }()
+
+		// gRPC
+		log15.Debug("gRPC API running", "on", c.HTTPAddr, "TLS", useTLS)
+		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
+
+		log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
+	}
 
 	if err := c.authenticateCLIContext(idKey); err != nil {
 		return err
-	}
-
-	// Connection test
-	c.checkReachability()
-
-	// HTTP/1
-	if c.HTTPAddr != "" {
-		log15.Debug("HTTP/1", "on", c.HTTPAddr)
-		go func() { log.Fatal(http.ListenAndServe(c.HTTPAddr, h)) }()
-	}
-
-	// At least one of HTTP/1 and HTTP/2 server are running
-	if c.HTTPAddr != "" || c.Addr != "" {
-		log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 	}
 
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
@@ -601,11 +552,19 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
 
+	go func() {
+		if err := lmux.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
+			log.Fatalf("Error serving: %s.", err)
+		}
+	}()
+
+	// Connection test
+	c.checkReachability()
+
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
-	grpcSrv.Stop()
 	return nil
 }
 
@@ -760,13 +719,25 @@ func (c *ServeCmd) checkReachability() {
 
 	// Check external gRPC endpoint if it differs from the internal
 	// endpoint.
-	extEndpoint, err := url.Parse(c.ExternalEndpointsOpts.GRPCEndpoint)
+	extEndpoint, err := url.Parse(c.AppURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(cliCtx).String() {
 		doCheck(sourcegraph.WithGRPCEndpoint(cliCtx, extEndpoint), false)
 	}
+}
+
+// setTLSMiddleware causes downstream handlers to treat this HTTP
+// request as having come via TLS. It is necessary because connection
+// muxing (which enables a single port to serve both Web and gRPC)
+// does not set the http.Request TLS field (since TLS occurs before
+// muxing).
+func setTLSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	if r.Header.Get("x-forwarded-proto") == "" {
+		r.Header.Set("x-forwarded-proto", "https")
+	}
+	next(w, r)
 }
 
 func redirectToHTTPSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {

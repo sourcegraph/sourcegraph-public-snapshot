@@ -15,4 +15,4 @@ RUN for lang in "python" "go" "java"; do src toolchain get sourcegraph.com/sourc
 ENTRYPOINT ["src"]
 CMD ["serve", "--http-addr=:3000"]
 
-EXPOSE 3000 3100
+EXPOSE 3000

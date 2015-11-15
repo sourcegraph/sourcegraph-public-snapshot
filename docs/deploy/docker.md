@@ -16,8 +16,7 @@ docker run \
   --detach \
   --hostname src.example.com \
   --publish 80:3000 \
-  --publish 443:3001 \
-  --publish 3100:3100 \
+  --publish 443:3000 \
   --restart on-failure:10 \
   --volume /etc/sourcegraph:/etc/sourcegraph \
   --volume /var/lib/sourcegraph:/home/sourcegraph/.sourcegraph \

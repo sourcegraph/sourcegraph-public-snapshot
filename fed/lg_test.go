@@ -5,6 +5,7 @@ package fed_test
 import (
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"testing"
@@ -106,6 +107,18 @@ func TestFederation(t *testing.T) {
 	testUserFederation(t, a1, ctx1, a2, ctx2)
 }
 
+func urlsEqualIgnoreRootSlash(a, b *url.URL) bool {
+	a2 := *a
+	b2 := *b
+	if a2.Path == "/" {
+		a2.Path = ""
+	}
+	if b2.Path == "/" {
+		b2.Path = ""
+	}
+	return a2 == b2
+}
+
 // testRepoFederation tests that #2 serves #1's repos to the client by
 // transparently communicating with #1.
 func testRepoFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Context, a2 *testserver.Server, ctx2 context.Context) {
@@ -129,7 +142,7 @@ func testRepoFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Contex
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v, want := sourcegraph.GRPCEndpoint(ctx), sourcegraph.GRPCEndpoint(ctx1); *v != *want {
+		if v, want := sourcegraph.GRPCEndpoint(ctx), sourcegraph.GRPCEndpoint(ctx1); !urlsEqualIgnoreRootSlash(v, want) {
 			t.Errorf("discovery: got GRPC endpoint == %q, want %q", v, want)
 		}
 	}
