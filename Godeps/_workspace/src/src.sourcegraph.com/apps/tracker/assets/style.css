@@ -31,6 +31,13 @@ div.list-entry-header {
 	border-radius: 4px 4px 0 0;
 	border-bottom: 1px solid #eee;
 }
+.hash-selected div.list-entry-border {
+	border: 1px solid #e7dfbe;
+}
+.hash-selected div.list-entry-header {
+	background-color: #fff8db;
+	border-bottom: 1px solid #e7dfbe;
+}
 div.list-entry-header.tabs {
 	padding: 16px 10px 6px 10px;
 }

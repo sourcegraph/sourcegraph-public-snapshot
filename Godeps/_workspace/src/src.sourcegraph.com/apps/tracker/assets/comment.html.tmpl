@@ -12,7 +12,7 @@
 {{define "comment"}}
 <div class="comment-edit-container">
 	<div>
-		<div style="display: flex;" class="list-entry">
+		<div id="comment-{{.ID}}" style="display: flex;" class="list-entry">
 			<div>
 				<a href="{{.User.HTMLURL}}" target="_blank" tabindex=-1>
 					<img class="comment-avatar" width="48" height="48" src="{{.User.AvatarURL}}">
@@ -20,7 +20,7 @@
 			</div>
 			<div class="list-entry-border" style="flex-grow: 1;">
 				<div class="list-entry-header" style="display: flex;">
-					<span class="content">{{template "user" .User}} commented {{template "time" .CreatedAt}}</span>
+					<span class="content">{{template "user" .User}} commented <a onclick="MustScrollTo('comment-{{.ID}}');">{{template "time" .CreatedAt}}</a></span>
 					{{if .Editable}}<span class="right-icon"><a href="javascript:" onclick="EditComment({{`edit` | json}}, this);"><span class="octicon octicon-pencil"></span></a></span>{{end}}
 				</div>
 				<div class="list-entry-body">
