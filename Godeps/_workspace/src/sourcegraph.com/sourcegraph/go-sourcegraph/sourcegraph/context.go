@@ -2,8 +2,10 @@ package sourcegraph
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -147,12 +149,28 @@ var realNewClientFromContext = func(ctx context.Context) *Client {
 	}
 	opts = append(opts, grpc.WithTimeout(timeout))
 
-	conn, err := pooledGRPCDial(grpcEndpoint.Host, opts...)
+	conn, err := pooledGRPCDial(hostWithExplicitPort(grpcEndpoint), opts...)
 	if err != nil {
 		panic(err)
 	}
 	c := NewClient(conn)
 	return c
+}
+
+// hostWithExplicitPort returns u's host with an explicit port number
+// (determined by the scheme), if none is present.
+func hostWithExplicitPort(u *url.URL) string {
+	if _, _, err := net.SplitHostPort(u.Host); err != nil && strings.Contains(err.Error(), "missing port in address") {
+		var port int
+		switch u.Scheme {
+		case "http":
+			port = 80
+		case "https":
+			port = 443
+		}
+		return fmt.Sprintf("%s:%d", u.Host, port)
+	}
+	return u.Host
 }
 
 // RemovePooledGRPCConn removes the pooled grpc.ClientConnection to the gRPC endpoint

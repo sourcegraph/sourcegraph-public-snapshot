@@ -216,6 +216,7 @@ It has these top-level messages:
 	PBToken
 	ServerStatus
 	ServerConfig
+	ServerPubKey
 	RegisteredClient
 	RegisteredClientSpec
 	RegisteredClientCredentials
@@ -3553,6 +3554,16 @@ type ServerConfig struct {
 func (m *ServerConfig) Reset()         { *m = ServerConfig{} }
 func (m *ServerConfig) String() string { return proto.CompactTextString(m) }
 func (*ServerConfig) ProtoMessage()    {}
+
+// ServerPubKey holds the server's public key.
+type ServerPubKey struct {
+	// Key contains the server's published public key.
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:",omitempty"`
+}
+
+func (m *ServerPubKey) Reset()         { *m = ServerPubKey{} }
+func (m *ServerPubKey) String() string { return proto.CompactTextString(m) }
+func (*ServerPubKey) ProtoMessage()    {}
 
 // A RegisteredClient is a registered API client.
 //
@@ -7339,6 +7350,8 @@ type MetaClient interface {
 	Status(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*ServerStatus, error)
 	// Config returns the server's configuration.
 	Config(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*ServerConfig, error)
+	// PubKey returns the server's public key.
+	PubKey(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*ServerPubKey, error)
 }
 
 type metaClient struct {
@@ -7367,6 +7380,15 @@ func (c *metaClient) Config(ctx context.Context, in *pbtypes1.Void, opts ...grpc
 	return out, nil
 }
 
+func (c *metaClient) PubKey(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*ServerPubKey, error) {
+	out := new(ServerPubKey)
+	err := grpc.Invoke(ctx, "/sourcegraph.Meta/PubKey", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Meta service
 
 type MetaServer interface {
@@ -7375,6 +7397,8 @@ type MetaServer interface {
 	Status(context.Context, *pbtypes1.Void) (*ServerStatus, error)
 	// Config returns the server's configuration.
 	Config(context.Context, *pbtypes1.Void) (*ServerConfig, error)
+	// PubKey returns the server's public key.
+	PubKey(context.Context, *pbtypes1.Void) (*ServerPubKey, error)
 }
 
 func RegisterMetaServer(s *grpc.Server, srv MetaServer) {
@@ -7405,6 +7429,18 @@ func _Meta_Config_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return out, nil
 }
 
+func _Meta_PubKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(pbtypes1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(MetaServer).PubKey(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Meta_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Meta",
 	HandlerType: (*MetaServer)(nil),
@@ -7416,6 +7452,10 @@ var _Meta_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Config",
 			Handler:    _Meta_Config_Handler,
+		},
+		{
+			MethodName: "PubKey",
+			Handler:    _Meta_PubKey_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
