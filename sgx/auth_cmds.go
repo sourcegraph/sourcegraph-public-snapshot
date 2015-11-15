@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
@@ -69,13 +68,8 @@ func (c *authIdentifyCmd) Execute(args []string) error {
 		fmt.Printf("client ID %s\n", clientID)
 	}
 
-	if uid := authInfo.UID; uid != 0 {
-		user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: uid})
-		if err == nil {
-			fmt.Printf("%s (%d)\n", user.Login, user.UID)
-		} else {
-			fmt.Printf("uid %d (fetching user login failed: %s)\n", uid, err)
-		}
+	if authInfo.UID != 0 {
+		fmt.Printf("%s (%d)\n", authInfo.Login, authInfo.UID)
 	}
 
 	return nil

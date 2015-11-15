@@ -281,11 +281,7 @@ func (c *whoamiCmd) Execute(args []string) error {
 	if err != nil {
 		log.Fatalf("Error verifying auth credentials with endpoint %s: %s.", endpointURL, err)
 	}
-	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: authInfo.UID})
-	if err != nil {
-		log.Fatalf("Error getting user with UID %d: %s.", authInfo.UID, err)
-	}
-	log.Printf("%s (UID %d) on %s (verified remotely)", user.Login, user.UID, endpointURL)
+	log.Printf("%s (UID %d) on %s", authInfo.Login, authInfo.UID, endpointURL)
 
 	return nil
 }

@@ -187,15 +187,9 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 	}
 
 	// Get user info for output message.
-	// NOTE: auth.ActorFromContext doesn't work because actor is not set in cliCtx locally.
 	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
 	if err != nil {
-		return fmt.Errorf("Error verifying auth credentials: %s.", err)
-	}
-	uid := authInfo.UID
-	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: uid})
-	if err != nil {
-		return fmt.Errorf("Error getting user with UID %d: %s.", uid, err)
+		return err
 	}
 
 	// Add key.
@@ -204,7 +198,7 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# Added SSH public key %v for user %q", c.Args.PublicKeyPath, user.Login)
+	log.Printf("# Added SSH public key %v for user %q", c.Args.PublicKeyPath, authInfo.Login)
 	return nil
 }
 
@@ -214,15 +208,9 @@ func (c *userKeysDeleteCmd) Execute(args []string) error {
 	cl := Client()
 
 	// Get user info for output message.
-	// NOTE: auth.ActorFromContext doesn't work because actor is not set in cliCtx locally.
 	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
 	if err != nil {
-		return fmt.Errorf("Error verifying auth credentials: %s.", err)
-	}
-	uid := authInfo.UID
-	user, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: uid})
-	if err != nil {
-		return fmt.Errorf("Error getting user with UID %d: %s.", uid, err)
+		return err
 	}
 
 	// Delete key.
@@ -231,6 +219,6 @@ func (c *userKeysDeleteCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# Deleted SSH public key for user %q\n", user.Login)
+	log.Printf("# Deleted SSH public key for user %q\n", authInfo.Login)
 	return nil
 }

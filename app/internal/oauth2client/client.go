@@ -348,9 +348,8 @@ func serveOAuth2ClientReceive(w http.ResponseWriter, r *http.Request) (err error
 	if authInfo.UID == 0 {
 		return fmt.Errorf("UID is zero in auth info: %v (token: %v)", authInfo, tok)
 	}
-	user, err := cl.Users.Get(ctx, authInfo.UserSpec())
-	if err != nil {
-		return err
+	if authInfo.Login == "" {
+		return fmt.Errorf("Login is empty in auth info: %v (token: %v)", authInfo, tok)
 	}
 
 	// Set user cookies.
@@ -363,7 +362,7 @@ func serveOAuth2ClientReceive(w http.ResponseWriter, r *http.Request) (err error
 		return err
 	}
 	if returnTo == "" {
-		returnTo = router.Rel.URLToUser(user.Login).String()
+		returnTo = router.Rel.URLToUser(authInfo.Login).String()
 	}
 	return tmpl.Exec(r, w, "oauth-client/success.html", http.StatusOK, nil, &struct {
 		tmpl.Common

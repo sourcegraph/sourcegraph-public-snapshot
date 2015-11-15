@@ -1,6 +1,7 @@
 package oauth2util
 
 import (
+	"log"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -91,6 +92,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 	// federation root or some other external host). In that case,
 	// call the remote Auth.Identify to figure out who the actor is.
 	if actor == nil && !fed.Config.IsRoot {
+		log.Printf("federating auth.identify")
 		info, err := discover.Site(ctx, fed.Config.RootURL().Host)
 		if err != nil {
 			return nil, err
@@ -105,7 +107,12 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		if err != nil {
 			return nil, err
 		}
-		actor = &auth.Actor{UID: int(authInfo.UID), Domain: authInfo.Domain, ClientID: authInfo.ClientID}
+		actor = &auth.Actor{
+			UID:      int(authInfo.UID),
+			Login:    authInfo.Login,
+			Domain:   authInfo.Domain,
+			ClientID: authInfo.ClientID,
+		}
 	}
 
 	// Make future calls use this access token.

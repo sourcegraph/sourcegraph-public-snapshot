@@ -34,6 +34,9 @@ func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expire
 	if actor.UID != 0 {
 		tok.Claims["UID"] = strconv.Itoa(actor.UID)
 	}
+	if actor.Login != "" {
+		tok.Claims["Login"] = actor.Login
+	}
 	AddDomain(tok, actor.Domain)
 	if actor.ClientID != "" {
 		tok.Claims["ClientID"] = actor.ClientID
@@ -249,7 +252,6 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 	var err error
 
 	uidStr, _ := tok.Claims["UID"].(string)
-	a.Domain, _ = tok.Claims["Domain"].(string)
 
 	if uidStr != "" {
 		a.UID, err = strconv.Atoi(uidStr)
@@ -258,6 +260,8 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 		}
 	}
 
+	a.Login, _ = tok.Claims["Login"].(string)
+	a.Domain, _ = tok.Claims["Domain"].(string)
 	a.ClientID, _ = tok.Claims["ClientID"].(string)
 
 	scopeStr, _ := tok.Claims["Scope"].(string)

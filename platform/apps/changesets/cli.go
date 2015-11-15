@@ -198,10 +198,6 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	user, err := sg.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: authInfo.UID})
-	if err != nil {
-		return err
-	}
 
 	title, description, err := newChangesetInEditor(c.Title)
 	if err != nil {
@@ -213,7 +209,11 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		Changeset: &sourcegraph.Changeset{
 			Title:       title,
 			Description: description,
-			Author:      user.Spec(),
+			Author: sourcegraph.UserSpec{
+				UID:    authInfo.UID,
+				Login:  authInfo.Login,
+				Domain: authInfo.Domain,
+			},
 			DeltaSpec: &sourcegraph.DeltaSpec{
 				Base: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Base},
 				Head: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Head},

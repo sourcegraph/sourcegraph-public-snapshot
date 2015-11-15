@@ -49,31 +49,13 @@ func CustomAuthGetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRe
 }
 
 func CustomAuthIdentify(ctx context.Context, op *pbtypes.Void, s sourcegraph.AuthServer) (*sourcegraph.AuthInfo, error) {
-	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
-		return s.Identify(ctx, op)
-	}
-
-	isCurrentDomain, domain, err := isCurrentDomain(ctx, oauth2client.TokenURL())
-	if err != nil {
-		return nil, err
-	}
-	if !isCurrentDomain {
-		info, err := discover.Site(ctx, domain)
-		if err != nil {
-			return nil, err
-		}
-
-		ctx, err = info.NewContext(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		authInfo, err := svc.Auth(ctx).Identify(ctx, op)
-		if authInfo != nil {
-			authInfo.Domain = domain
-		}
-		return authInfo, err
-	}
+	// The Auth.Identify call returns the authed actor in the ctx obtained
+	// from verifying the auth token. If the token needs to be parsed and
+	// verified remotely, an Auth.Identify call on the remote server
+	// will be executed in the GRPCMiddleware wrapper and the correct actor
+	// will be set in the context before reaching this wrapper. So, here
+	// the actor should already be set in the context, hence federation
+	// is not necessary.
 	return s.Identify(ctx, op)
 }
 

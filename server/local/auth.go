@@ -95,6 +95,11 @@ func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph
 		return nil, grpc.Errorf(codes.Unimplemented, "no Authorizations")
 	}
 
+	usersStore := store.UsersFromContextOrNil(ctx)
+	if usersStore == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "no Users")
+	}
+
 	clientID := authpkg.ActorFromContext(ctx).ClientID
 	client, err := (&registeredClients{}).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: clientID})
 	if err != nil {
@@ -114,8 +119,14 @@ func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph
 		return nil, err
 	}
 
+	user, err := usersStore.Get(ctx, sourcegraph.UserSpec{UID: req.UID})
+	if err != nil {
+		return nil, err
+	}
+
 	tok, err := accesstoken.New(idkey.FromContext(ctx), authpkg.Actor{
-		UID:      int(req.UID),
+		UID:      int(user.UID),
+		Login:    user.Login,
 		ClientID: req.ClientID,
 		Scope:    req.Scope,
 	}, map[string]string{"GrantType": "AuthorizationCode"}, 7*24*time.Hour)
@@ -187,6 +198,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 
 	tok, err := accesstoken.New(idkey.FromContext(ctx), authpkg.Actor{
 		UID:      int(user.UID),
+		Login:    user.Login,
 		ClientID: a.ClientID,
 	}, map[string]string{"GrantType": "ResourceOwnerPassword"}, 7*24*time.Hour)
 	if err != nil {
@@ -274,6 +286,7 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 	return &sourcegraph.AuthInfo{
 		ClientID: a.ClientID,
 		UID:      int32(a.UID),
+		Login:    a.Login,
 		Domain:   a.Domain,
 	}, nil
 }

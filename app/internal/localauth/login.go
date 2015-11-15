@@ -122,10 +122,6 @@ func serveLoginSubmit(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	user, err := cl.Users.Get(ctx, authInfo.UserSpec())
-	if err != nil {
-		return err
-	}
 
 	// Authenticate as newly created user.
 	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}); err != nil {
@@ -137,7 +133,7 @@ func serveLoginSubmit(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if returnTo == "" {
-		returnTo = router.Rel.URLToUser(user.Login).String()
+		returnTo = router.Rel.URLToUser(authInfo.Login).String()
 	}
 
 	http.Redirect(w, r, returnTo, http.StatusSeeOther)
