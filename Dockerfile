@@ -9,6 +9,7 @@ RUN apt-get update -q \
             wget \
             ca-certificates
 
+RUN apt-get install -qq curl git python-software-properties software-properties-common
 RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
 RUN apt-get install -y nodejs
 
@@ -28,6 +29,21 @@ ENV PATH=$PATH:/usr/local/go/bin
 COPY package/etc/known_hosts /tmp/known_hosts
 RUN install -Dm 600 /tmp/known_hosts /root/.ssh/known_hosts \
     && chmod 700 /root/.ssh
+
+# Install Java 8 (to bootstrap building our own one, below) -- COPIED from sourcegraph.com/sourcegraph/srclib-java Dockerfile
+RUN add-apt-repository ppa:webupd8team/java
+RUN apt-get update -qq
+# auto accept oracle jdk license
+RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
+RUN apt-get install -y oracle-java8-installer
+
+# Install Gradle 2.2 -- COPIED from sourcegraph.com/sourcegraph/srclib-java Dockerfile
+RUN apt-get install -qq unzip
+RUN curl -L -o gradle.zip https://services.gradle.org/distributions/gradle-2.2-bin.zip
+RUN unzip gradle.zip
+RUN mv gradle-2.2 /gradle
+ENV PATH /gradle/bin:${PATH}
+RUN ln -s /usr/lib/jvm/java-8-oracle /usr/lib/jvm/default-java
 
 # Deps for building .deb
 RUN apt-get install -yq ruby-dev gcc && gem install fpm
