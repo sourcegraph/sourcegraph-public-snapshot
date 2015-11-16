@@ -7,7 +7,9 @@ import (
 )
 
 func ComputeBuildStats(cl *sourcegraph.Client, ctx context.Context) (map[string]int32, error) {
-	buildsList, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{})
+	buildsList, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
+		ListOptions: sourcegraph.ListOptions{PerPage: 10000},
+	})
 	if err != nil {
 		return nil, err
 	}
