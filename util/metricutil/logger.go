@@ -39,11 +39,11 @@ func (w *Worker) Work() {
 			}
 			continue
 		}
-		w.Buffer[w.Position] = event
-		w.Position += 1
 		if w.Position >= len(w.Buffer) {
 			w.Flush()
 		}
+		w.Buffer[w.Position] = event
+		w.Position += 1
 	}
 }
 
