@@ -35,7 +35,7 @@ var TextSearchResultsView = React.createClass({
 		var results = this.props.results.map((result) => {
 			if (currentFile !== result.File) {
 				// TODO(renfred) link to user-specified rev instead of default branch.
-				var fileURL = routing.fileURL(this.props.repo.URI, this.props.repo.DefaultBranch, result.File);
+				var fileURL = routing.fileRangeURL(this.props.repo.URI, this.props.repo.DefaultBranch, result.File, result.StartLine, this.props.results[this.props.results.length - 1].EndLine);
 				header = <header><a href={fileURL}>{result.File}</a></header>;
 			} else {
 				header = null;
