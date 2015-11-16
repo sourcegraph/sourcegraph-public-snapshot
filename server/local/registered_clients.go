@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -241,12 +242,12 @@ func (s *registeredClients) GetUserPermissions(ctx context.Context, opt *sourceg
 		return nil, err
 	}
 
-	if authpkg.ActorFromContext(ctx).UID != int(opt.UID) {
-		// check if user is admin on client.
+	if authpkg.ActorFromContext(ctx).ClientID != opt.ClientSpec.ID {
+		// check if ctx user is admin on client.
 		if isAdmin, err := s.checkCtxUserIsAdmin(ctx, opt.ClientSpec.ID); err != nil {
 			return nil, err
 		} else if !isAdmin {
-			// check if user is admin on fed root server.
+			// check if ctx user is admin on fed root server.
 			if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.GetUserPermissions"); err != nil {
 				return nil, err
 			}
@@ -312,7 +313,7 @@ func (s *registeredClients) checkCtxUserIsAdmin(ctx context.Context, clientID st
 		// that grants admin access on that client.
 		for _, scope := range actor.Scope {
 			// internal server commands have default admin access.
-			if scope == "internal:cli" {
+			if strings.HasPrefix(scope, "internal:") {
 				return true, nil
 			}
 		}
@@ -321,6 +322,9 @@ func (s *registeredClients) checkCtxUserIsAdmin(ctx context.Context, clientID st
 	userPermsStore, err := userPermissionsOrError(ctx)
 	if err != nil {
 		return false, err
+	}
+	if actor.UID == 0 {
+		return false, grpc.Errorf(codes.Unauthenticated, "RegisteredClients.UserPermissions: no authenticated user in context")
 	}
 	return userPermsStore.Verify(ctx, &sourcegraph.UserPermissions{
 		UID:      int32(actor.UID),
@@ -381,9 +385,6 @@ func userPermissionsOrError(ctx context.Context) (store.UserPermissions, error) 
 	s := store.UserPermissionsFromContextOrNil(ctx)
 	if s == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "UserPermissions"}
-	}
-	if authpkg.ActorFromContext(ctx).UID == 0 {
-		return nil, grpc.Errorf(codes.Unauthenticated, "RegisteredClients.UserPermissions: no authenticated user in context")
 	}
 	return s, nil
 }
