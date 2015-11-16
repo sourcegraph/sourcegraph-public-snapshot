@@ -375,10 +375,10 @@ func (c *ServeCmd) Execute(args []string) error {
 	if fed.Config.IsRoot {
 		// Listen for events and flush them to elasticsearch
 		metricutil.StartEventForwarder(clientCtx)
-		metricutil.StartEventLogger(clientCtx, 4096, 1024, 5*time.Minute)
+		metricutil.StartEventLogger(clientCtx, 10*4096, 1024, 5*time.Minute)
 	} else if c.GraphUplinkPeriod != 0 {
 		// Listen for events and periodically push them upstream
-		metricutil.StartEventLogger(clientCtx, 4096, 256, 10*time.Minute)
+		metricutil.StartEventLogger(clientCtx, 10*4096, 256, 10*time.Minute)
 	}
 
 	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{

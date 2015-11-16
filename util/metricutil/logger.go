@@ -29,6 +29,16 @@ type Worker struct {
 
 func (w *Worker) Work() {
 	for {
+		if w.Position >= len(w.Buffer) {
+			if err := w.Flush(); err != nil {
+				// Flush didn't succeed and buffer is full
+				// so don't dequeue the new event.
+				// Dequeue after a short interval to avoid
+				// immediately re-connecting to the root.
+				time.Sleep(30 * time.Second)
+				continue
+			}
+		}
 		event := <-w.Channel
 		if event.Type == "command" {
 			switch event.Method {
@@ -38,9 +48,6 @@ func (w *Worker) Work() {
 				log15.Debug("EventLogger got unknown command", "command", event.Method)
 			}
 			continue
-		}
-		if w.Position >= len(w.Buffer) {
-			w.Flush()
 		}
 		w.Buffer[w.Position] = event
 		w.Position += 1
@@ -73,9 +80,9 @@ func (w *Worker) LocateRootInstance() error {
 // If Flush fails, the event buffer is not modified. Repeatedly failing
 // to flush events will fill the local buffer and eventually newer events
 // will start getting discarded.
-func (w *Worker) Flush() {
+func (w *Worker) Flush() error {
 	if w.Position == 0 {
-		return
+		return nil
 	}
 	eventList := &sourcegraph.UserEventList{Events: w.Buffer[:w.Position]}
 	if fed.Config.IsRoot {
@@ -84,7 +91,7 @@ func (w *Worker) Flush() {
 		if !w.RootAvailable {
 			if err := w.LocateRootInstance(); err != nil {
 				log15.Error("EventLogger flush failed to locate root instance", "error", err)
-				return
+				return err
 			}
 		}
 		cl := sourcegraph.NewClientFromContext(w.RootCtx)
@@ -93,11 +100,12 @@ func (w *Worker) Flush() {
 			log15.Error("GraphUplink.PushEvents failed", "error", err)
 			// Force the connection to root to be re-established on the next flush.
 			w.RootAvailable = false
-			return
+			return err
 		}
 	}
 	// Flush successful
 	w.Position = 0
+	return nil
 }
 
 type Logger struct {
