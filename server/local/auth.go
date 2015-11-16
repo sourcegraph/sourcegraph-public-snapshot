@@ -182,23 +182,13 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	}
 
 	a := authpkg.ActorFromContext(ctx)
-
-	// TODO(public-release): This is commented out to allow the gitserver to fetch access
-	// tokens directly via the gRPC endpoint of the federation root. This is non-standard
-	// OAuth2 API usage, and must be changed to fetching the tokens over HTTP, so that this
-	// check can be added back in.
-	// k := idkey.FromContext(ctx)
-	// if k.ID != a.ClientID {
-	// 	return nil, grpc.Errorf(codes.Unauthenticated, "client authentication as %q (actor client ID is %q) required to access token from resource owner password (user %q)", k.ID, a.ClientID, cred.Login)
-	// }
 	if a.IsUser() {
 		return nil, grpc.Errorf(codes.PermissionDenied, "refusing to issue access token from resource owner password to already authenticated user %d (only client, not user, must be authenticated)", a.UID)
 	}
 
 	tok, err := accesstoken.New(idkey.FromContext(ctx), authpkg.Actor{
-		UID:      int(user.UID),
-		Login:    user.Login,
-		ClientID: a.ClientID,
+		UID:   int(user.UID),
+		Login: user.Login,
 	}, map[string]string{"GrantType": "ResourceOwnerPassword"}, 7*24*time.Hour)
 	if err != nil {
 		return nil, err
