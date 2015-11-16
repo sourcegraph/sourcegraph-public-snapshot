@@ -67,7 +67,9 @@ func ComputeUsageStats(ctx context.Context, interval time.Duration) {
 }
 
 func updateNumReposAndCommitters(cl *sourcegraph.Client, ctx context.Context) {
-	reposList, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{})
+	reposList, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		ListOptions: sourcegraph.ListOptions{PerPage: 10000},
+	})
 	if err != nil {
 		log15.Warn("ComputeUsageStats: could not compute number of repos", "error", err)
 		return
@@ -100,7 +102,9 @@ func updateNumBuilds(cl *sourcegraph.Client, ctx context.Context) {
 }
 
 func updateNumUsers(cl *sourcegraph.Client, ctx context.Context) {
-	usersList, err := cl.Users.List(ctx, &sourcegraph.UsersListOptions{})
+	usersList, err := cl.Users.List(ctx, &sourcegraph.UsersListOptions{
+		ListOptions: sourcegraph.ListOptions{PerPage: 10000},
+	})
 	if err != nil {
 		log15.Warn("ComputeUsageStats: could not compute number of users", "error", err)
 		return
