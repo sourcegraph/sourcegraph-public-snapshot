@@ -13,8 +13,8 @@ development environment. Here's what you need:
 - [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 
-If you are new to Go, you should also [set up your `GOPATH` which contains all your projects.]
-(https://golang.org/doc/code.html)
+If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html)
+(a directory which contains all your projects).
 
 ## Get the code
 
@@ -156,13 +156,7 @@ README.md for instructions on how to install them.
 The Sourcegraph repository enforces some code standards via `make
 test`, which is also run in CI.
 
-Useful reading:
-
-* [Go "style guide"](https://github.com/golang/go/wiki/CodeReviewComments):
-  we generally adhere to these guidelines. Many of them are caught by
-  `gofmt`, `golint`, and `go vet` (all of which you should set up to
-  run automatically in your editor). Others should be raised during
-  code review.
+Read more about our style in [README.style.md](README.style.md).
 
 ## Protocol Buffers
 

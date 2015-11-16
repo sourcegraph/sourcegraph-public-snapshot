@@ -3,7 +3,7 @@ title = "Getting started with Sourcegraph"
 navtitle = "Getting started"
 +++
 
-# Team Setup
+## Team Setup
 
 Setting up Sourcegraph for your team takes 5 minutes.
 
