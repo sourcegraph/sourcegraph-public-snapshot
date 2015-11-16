@@ -45,7 +45,7 @@ make serve-dev
 ```
 
 This will continuously compile your code and live reload your locally running
-instance of Sourcegraph. Navigate your browser to http://localhost:3000 to
+instance of Sourcegraph. Navigate your browser to http://localhost:3080 to
 see if everything worked.
 
 ## Test

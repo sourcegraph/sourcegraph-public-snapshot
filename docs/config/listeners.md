@@ -24,13 +24,13 @@ You can configure the HTTP listener with:
 
 ```
 [serve]
-HTTPAddr = :3000
+HTTPAddr = :3080
 ```
 
 The port can have the following formats:
 
-* `:port` to listen on all interfaces (`:3000`, for example)
-* `addr:port` to listen on a single address (`10.1.2.3:3000`, for example)
+* `:port` to listen on all interfaces (`:3080`, for example)
+* `addr:port` to listen on a single address (`10.1.2.3:3080`, for example)
 
 Make sure that the [app URL]({{ relref "config/appurl-dns.md" >}})
 refers to the externally accessible URL of the listener defined

@@ -14,7 +14,7 @@ of the following methods:
 * (Homebrew coming soon)
 
 Next, run `src serve` and visit
-[http://localhost:3000](http://localhost:3000).
+[http://localhost:3080](http://localhost:3080).
 
 # Next steps
 

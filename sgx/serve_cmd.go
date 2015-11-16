@@ -76,8 +76,8 @@ var shortHelpMessage = `Usage:
 Starts an HTTP server serving the app and API.
 
 [serve command options]
-          --http-addr=                           HTTP listen address for app, REST API, and gRPC API (:3000)
-          --https-addr=                          HTTPS (TLS) listen address for app, REST API, and gRPC API (:3001)
+          --http-addr=                           HTTP listen address for app, REST API, and gRPC API (:3080)
+          --https-addr=                          HTTPS (TLS) listen address for app, REST API, and gRPC API (:3443)
           --ssh-addr=                            SSH address to listen on, if not blank (:3002)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
@@ -163,8 +163,8 @@ type ServeCmdPrivate struct {
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
-	HTTPAddr  string `long:"http-addr" default:":3000" description:"HTTP listen address for app, REST API, and gRPC API"`
-	HTTPSAddr string `long:"https-addr" default:":3001" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API"`
+	HTTPAddr  string `long:"http-addr" default:":3080" description:"HTTP listen address for app, REST API, and gRPC API"`
+	HTTPSAddr string `long:"https-addr" default:":3443" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API"`
 	SSHAddr   string `long:"ssh-addr" default:":3002" description:"SSH address to listen on, if not blank"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`

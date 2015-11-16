@@ -17,13 +17,13 @@ CertFile = /path/to/cert.pem
 KeyFile = /path/to/key.pem
 
 ; Sets the ports for the Web app, REST API, and gRPC API.
-HTTPAddr  = :3000
-HTTPSAddr = :3001
+HTTPAddr  = :3080
+HTTPSAddr = :3443
 
 ; Be sure that your AppURL is "https://...".
 ;
 ; This also assumes that you have a proxy that forwards
-; example.com:443 to the server's port 3001.
+; example.com:443 to the server's port 3443.
 AppURL = https://example.com
 
 ; Redirect "http://..." requests to "https://...".

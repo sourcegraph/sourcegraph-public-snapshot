@@ -79,7 +79,7 @@ func TestDiscoverRepoRemote_found(t *testing.T) {
 	}()
 
 	fed.Config.IsRoot = false
-	fed.Config.RootURLStr = "https://demo-mothership:13000"
+	fed.Config.RootURLStr = "https://demo-mothership:13080"
 
 	info, err := discover.Repo(context.Background(), "github.com/o/r")
 	if err != nil {

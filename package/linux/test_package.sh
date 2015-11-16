@@ -21,10 +21,10 @@ sleep 2
 curl http://localhost:7800/ > /dev/null
 
 # Try and fetch the homepage \o/
-curl http://localhost:3000/ > /dev/null
+curl http://localhost:3080/ > /dev/null
 
 # Output the status page
-curl http://localhost:3000/_/status
+curl http://localhost:3080/_/status
 
 # Some extra info
 cat /var/log/src.log

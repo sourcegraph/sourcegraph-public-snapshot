@@ -13,7 +13,7 @@ of the following methods:
 * Download [src.deb (64-bit)](https://sourcegraph.com/.download/latest/linux-amd64/src.deb) and install with `sudo dpkg -i src.deb`
 
 Next, edit `/etc/sourcegraph/config.ini`. When done, run `sudo restart
-src` and visit [http://localhost:3000](http://localhost:3000) (or an
+src` and visit [http://localhost:3080](http://localhost:3080) (or an
 alternate address, if you modified the configuration).
 
 # Next steps

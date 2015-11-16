@@ -32,9 +32,9 @@ var Endpoint EndpointOpts
 // This endpoint may differ from the endpoint that a server wishes to
 // advertise externally. For example, if internal API traffic is
 // routed through a local network, you may want to use
-// "http://10.1.2.3:3000" as the endpoint here, but you may want
+// "http://10.1.2.3:3080" as the endpoint here, but you may want
 // external clients to use "https://example.com:443". To do so, run
-// the server with `src --endpoint http://10.1.2.3:3000 serve
+// the server with `src --endpoint http://10.1.2.3:3080 serve
 // --app-url https://example.com`.
 type EndpointOpts struct {
 	// RawURL is the raw endpoint URL. Callers should almost never use
@@ -56,7 +56,7 @@ func (c *EndpointOpts) NewContext(ctx context.Context) context.Context {
 func (c *EndpointOpts) URLOrDefault() *url.URL {
 	e := c.RawURL
 	if e == "" {
-		e = "http://localhost:3000"
+		e = "http://localhost:3080"
 	}
 	endpoint, err := url.Parse(e)
 	if err != nil {
@@ -67,11 +67,11 @@ func (c *EndpointOpts) URLOrDefault() *url.URL {
 	// at mycompany.com/sourcegraph (a subdirectory) from logging in -- but this
 	// is not a typical case and otherwise users who effectively run:
 	//
-	//  src --endpoint=http://localhost:3000 login
+	//  src --endpoint=http://localhost:3080 login
 	//
 	// will be unable to authenticate in the event that they add a slash suffix:
 	//
-	//  src --endpoint=http://localhost:3000/ login
+	//  src --endpoint=http://localhost:3080/ login
 	//
 	endpoint.Path = ""
 
