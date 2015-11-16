@@ -5,6 +5,9 @@ import (
 	"io/ioutil"
 	"log"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/crypto/ssh"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
@@ -151,13 +154,18 @@ func (c *userGetCmd) Execute(args []string) error {
 	userSpec2 := user.Spec()
 	emails, err := cl.Users.ListEmails(cliCtx, &userSpec2)
 	if err != nil {
-		return err
-	}
-	if len(emails.EmailAddrs) == 0 {
-		fmt.Println("# (no emails found for user)")
-	}
-	for _, email := range emails.EmailAddrs {
-		fmt.Println(email)
+		if grpc.Code(err) == codes.PermissionDenied {
+			fmt.Println("# (permission denied)")
+		} else {
+			return err
+		}
+	} else {
+		if len(emails.EmailAddrs) == 0 {
+			fmt.Println("# (no emails found for user)")
+		}
+		for _, email := range emails.EmailAddrs {
+			fmt.Println(email)
+		}
 	}
 
 	return nil

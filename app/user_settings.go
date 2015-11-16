@@ -250,7 +250,13 @@ func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {
 
 	emails, err := apiclient.Users.ListEmails(ctx, &userSpec)
 	if err != nil {
-		return err
+		if grpc.Code(err) == codes.PermissionDenied {
+			// We are not allowed to view the emails, so just show
+			// an empty list
+			emails = &sourcegraph.EmailAddrList{EmailAddrs: []*sourcegraph.EmailAddr{}}
+		} else {
+			return err
+		}
 	}
 
 	return tmpl.Exec(r, w, "user/settings/emails.html", http.StatusOK, nil, &struct {
