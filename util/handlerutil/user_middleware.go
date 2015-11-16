@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
@@ -31,8 +32,14 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 
 	cred := sourcegraph.CredentialsFromContext(ctx)
 	if cred != nil && UserFromRequest(r) == nil && fetchUserForCredentials(cred) {
-		if user := identifyUser(ctx, w); user != nil {
-			ctx = WithUser(ctx, user)
+		if authInfo := identifyUser(ctx, w); authInfo != nil {
+			ctx = WithUser(ctx, authInfo.UserSpec())
+			ctx = auth.WithActor(ctx, auth.Actor{
+				UID:      int(authInfo.UID),
+				Login:    authInfo.Login,
+				Domain:   authInfo.Domain,
+				ClientID: authInfo.ClientID,
+			})
 		}
 	}
 
@@ -40,7 +47,7 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 	next(w, r)
 }
 
-func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.UserSpec {
+func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.AuthInfo {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	// Call to Identify will be authenticated with the
@@ -59,7 +66,7 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.UserS
 		return nil
 	}
 
-	return authInfo.UserSpec()
+	return authInfo
 }
 
 // fetchUserForCredentials is whether UserMiddleware should try to
