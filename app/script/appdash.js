@@ -36,8 +36,10 @@ function setupMeasurement() {
 		// page.
 		measured = true;
 		var loadTimeSeconds = (endTime-startTime) / 1000;
+		var currentRoute = document.head.dataset.currentRoute;
+		var templateName = document.head.dataset.templateName;
 		$.ajax({
-			url: router.appdashUploadPageLoadURL(startTime, endTime),
+			url: router.appdashUploadPageLoadURL(startTime, endTime, currentRoute, templateName),
 			method: "post",
 			headers: {"X-CSRF-Token": document.head.dataset.csrfToken},
 		});

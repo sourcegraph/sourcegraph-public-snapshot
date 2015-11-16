@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"sourcegraph.com/sourcegraph/appdash"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
@@ -14,6 +16,9 @@ import (
 
 type PageLoadEvent struct {
 	S, E time.Time
+
+	// route and template name of the rendered page
+	Route, Template string
 }
 
 // Schema implements the appdash.Event interface.
@@ -25,7 +30,19 @@ func (e PageLoadEvent) Start() time.Time { return e.S }
 // End implements the appdash.TimespanEvent interface.
 func (e PageLoadEvent) End() time.Time { return e.E }
 
-func init() { appdash.RegisterEvent(PageLoadEvent{}) }
+var pageLoadLabels = []string{"route", "template"}
+var pageLoadDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "trace",
+	Name:      "page_load_duration_seconds",
+	Help:      "Total time taken to load the entire page.",
+	Buckets:   []float64{1, 5, 10, 60, 300},
+}, pageLoadLabels)
+
+func init() {
+	appdash.RegisterEvent(PageLoadEvent{})
+	prometheus.MustRegister(pageLoadDuration)
+}
 
 // serveAppdashUploadPageLoad is an endpoint that simply generates a 'fake'
 // PageLoadEvent Appdash timespan event to represent how long exactly
@@ -40,6 +57,14 @@ func serveAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) error {
 	if err := schemaDecoder.Decode(ev, r.URL.Query()); err != nil {
 		return err
 	}
+
+	// Record page load duration in Prometheus histogram.
+	labels := prometheus.Labels{
+		"route":    ev.Route,
+		"template": ev.Template,
+	}
+	elapsed := ev.E.Sub(ev.S)
+	pageLoadDuration.With(labels).Observe(elapsed.Seconds())
 
 	// Grab the collector from the context.
 	collector := appdashctx.Collector(ctx)
