@@ -11,24 +11,19 @@ src --endpoint=https://src.mycompany.com login
 src users keys add <public-key-file>
 ```
 
-Then, configure a host which communicates with Sourcegraph over port 3022.
-Open your `.ssh/config` (usually located at `~/.ssh/config`) and append the following
-(replacing `<private-key-file>`):
+Then, do some git operations:
 
 ```
-Host src
-  HostName https://src.mycompany.com
-  Port 3022
-  User root
-  IdentityFile <private-key-file>
-```
-
-Now you can address the upstream repository as `git@src:path/to/repo.git`.
-From your local reposotory root, try:
-
-```
-git remote add src `git@src:path/to/repo.git`
+git remote add src `ssh://git@src.mycompany.com:3022/path/to/repo`
 git push src master
 ```
 
 The git transport will be done over SSH using your keypair.
+
+If you'd like to change the ssh port of your Sourcegraph server, set
+the `--ssh-addr` flag or update your `config.ini` file:
+
+```
+[serve]
+SSHAddr = 22
+```
