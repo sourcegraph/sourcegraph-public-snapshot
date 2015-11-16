@@ -30,12 +30,9 @@ var _ store.Repos = (*Repos)(nil)
 
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	dir := dirForRepo(repo)
-	if fi, err := os.Stat(filepath.Join(reposAbsPath(ctx), dir)); os.IsNotExist(err) {
+	reposVFS := rwvfs.OS(reposAbsPath(ctx))
+	if !isGitRepoDir(reposVFS, dir) {
 		return nil, &store.RepoNotFoundError{Repo: repo}
-	} else if err != nil {
-		return nil, err
-	} else if !fi.IsDir() {
-		return nil, &os.PathError{Op: "Repos.Get", Path: dir, Err: os.ErrInvalid}
 	}
 	return s.newRepo(ctx, dir)
 }
