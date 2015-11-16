@@ -33,6 +33,7 @@ var SearchResultsStore = {
 			break;
 		case globals.Actions.SEARCH_TOKENS_SUBMIT:
 			SearchResultsStore.state.tokenSearch.loading = true;
+			SearchResultsStore.state.tokenSearch.error = null;
 			break;
 		case globals.Actions.SEARCH_TOKENS_RECEIVED_RESULTS:
 			SearchResultsStore.state.tokenSearch.loading = false;
@@ -44,6 +45,7 @@ var SearchResultsStore = {
 			break;
 		case globals.Actions.SEARCH_TEXT_SUBMIT:
 			SearchResultsStore.state.textSearch.loading = true;
+			SearchResultsStore.state.textSearch.error = null;
 			break;
 		case globals.Actions.SEARCH_TEXT_RECEIVED_RESULTS:
 			SearchResultsStore.state.textSearch.loading = false;
