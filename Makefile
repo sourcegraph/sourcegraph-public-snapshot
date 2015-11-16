@@ -67,8 +67,35 @@ serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
 	$(MAKE) serve-dev SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --http-addr=:13080 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
 
+BD_SGPATH = $(HOME)/.sourcegraph
 serve-beyang-dev:
-	$(MAKE) serve-dev SERVEFLAGS="--app.disable-apps --app.disable-dir-defs --app.disable-external-links --app.disable-repo-tree-search --app.disable-search --app.header-footer-links 0 --app.motd '' --app.no-auto-build --auth.source=none --fed.is-root --graphuplink 0 --local.clcache 10s --local.clcachesize 2000 --num-workers 0 $(SERVEFLAGS)"
+	SG_FEATURE_SEARCHNEXT=f SG_FEATURE_DISCUSSIONS=f $(MAKE) serve-dev SRCFLAGS="-v --grpc-endpoint http://localhost:3100 $(SRCFLAGS)" SERVEFLAGS="\
+--graphstore.root='$(BD_SGPATH)/repos' \
+--fs.build-store-dir='$(BD_SGPATH)/buildstore' \
+--no-worker \
+--app-url '' \
+--app.custom-logo 'MyLogo' \
+--app.disable-apps \
+--app.disable-dir-defs \
+--app.disable-external-links \
+--app.disable-repo-tree-search \
+--app.disable-search \
+--app.motd 'Message of the day here' \
+--app.no-ui-build \
+--app.show-latest-built-commit \
+--app.check-for-updates 0 \
+--appdash.http-addr ':7800' \
+--appdash.url 'http://localhost:7800' \
+--auth.source none \
+--clean \
+--graphuplink 0 \
+--grpc-addr ':3100' \
+--http-addr ':3000' \
+--local.clcache 10s \
+--local.clcachesize 2000 \
+--num-workers 0 \
+--fed.is-root \
+$(SERVEFLAGS)"
 
 serve-test-ui: serve-dep
 	@echo Starting UI test server\; will recompile and restart when source files change

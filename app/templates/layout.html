@@ -64,9 +64,11 @@
 			data-file-search-disabled="true"
 		{{end}}
 	>
-	{{if motd}}<div class="motd">{{motd}}</div>{{end}}
+
 		<header class="page-header">
 			<div class="fixed">
+				{{if motd}}<div class="motd">{{motd}}</div>{{end}}
+
 				{{template "Nav" $}}
 
 				<!-- If the "RepoSubnav" template is defined in the current -->

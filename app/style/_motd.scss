@@ -1,5 +1,5 @@
 .motd {
-	position: fixed;
+	position: relative;
 	top: 0;
 	width: 100%;
 	height: $motd-height;
@@ -13,18 +13,16 @@
 }
 
 body.has-motd {
-	#nav {
-		margin-top: $motd-height;
+	// Check that these stay consistent with _nav.scss and _code_file.scss.
+	header.page-header {
+		height: $navbar-height + $subnav-height + $motd-height;
 	}
 
-	// Check that these stay consistent with _nav.scss and _code_file.scss.
-	.repo-subnav {
-		top: $navbar-height + $motd-height !important;
-	}
-	&.route-repo, &.route-def {
-		padding-top: 2*$navbar-height + 14px + $motd-height !important;
-	}
 	.code-file-toolbar {
-		top: 2*$navbar-height + $motd-height + 11px !important;
+		top: $navbar-height + $subnav-height + $motd-height !important;
+	}
+
+	.token-details {
+			margin-top: $motd-height;
 	}
 }
