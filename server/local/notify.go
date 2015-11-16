@@ -3,6 +3,7 @@ package local
 import (
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/store"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -49,7 +50,6 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 
 	if !e.NoEmail {
 		if s.shouldFederateEmail() {
-			// Forward request to mothership since we are not setup to send email
 			notify := s.mothershipNotifyClient(ctx)
 			// Don't send a Slack message from the mothership
 			e.NoSlack = true
@@ -64,8 +64,29 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 
 func (s *notify) getPeople(ctx context.Context, users ...*sourcegraph.UserSpec) []*sourcegraph.Person {
 	people := make([]*sourcegraph.Person, len(users))
+	store := store.UsersFromContextOrNil(ctx)
 	for i, u := range users {
 		people[i] = notif.Person(ctx, u)
+		if people[i].Email == "" && store != nil {
+			// We directly query the user store, since the gRPC
+			// layer enforces that the actor can only query there
+			// own emails. The emails here will not be leaked back
+			// to the actor, but instead used to send the emails.
+			emails, err := store.ListEmails(ctx, *u)
+			if err == nil {
+				email := ""
+				for _, emailAddr := range emails {
+					if emailAddr.Blacklisted {
+						continue
+					}
+					email = emailAddr.Email
+					if emailAddr.Primary {
+						break
+					}
+				}
+				people[i].Email = email
+			}
+		}
 	}
 	return people
 }

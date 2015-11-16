@@ -46,20 +46,6 @@ func Person(ctx context.Context, u *sourcegraph.UserSpec) *sourcegraph.Person {
 			p.FullName = "anonymous user"
 		}
 	}
-	if p.Email == "" {
-		emails, err := cl.Users.ListEmails(ctx, u)
-		if err == nil {
-			for _, emailAddr := range emails.EmailAddrs {
-				if emailAddr.Blacklisted {
-					continue
-				}
-				p.Email = emailAddr.Email
-				if emailAddr.Primary {
-					break
-				}
-			}
-		}
-	}
 	return p
 }
 
