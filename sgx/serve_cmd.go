@@ -205,6 +205,14 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 		return nil, err
 	}
 
+	// Endpoint defaults to the AppURL.
+	if Endpoint.URL == "" {
+		Endpoint.URL = appURL.String()
+
+		// Reset cliCtx to use new endpoint.
+		cliCtx = WithClientContext(context.Background())
+	}
+
 	return appURL, nil
 }
 
