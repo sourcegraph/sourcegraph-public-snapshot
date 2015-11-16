@@ -28,7 +28,7 @@ func TestOAuth2ServerAuthorize_notEnabled(t *testing.T) {
 
 	c, mock := apptest.New()
 
-	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.User{UID: 1})
+	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.UserSpec{UID: 1})
 	resp, err := c.Get(router.Rel.URLTo(router.OAuth2ServerAuthorize).String())
 	if err != nil {
 		t.Fatalf("Get: %s", err)
@@ -93,7 +93,7 @@ func TestOAuth2ServerAuthorize(t *testing.T) {
 		t.Fatal(err)
 	}
 	u.RawQuery = q.Encode()
-	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.User{UID: 1})
+	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.UserSpec{UID: 1})
 	resp, err := c.Get(u.String())
 	if err != nil {
 		t.Fatalf("Get: %s", err)
@@ -159,7 +159,7 @@ func TestOAuth2ServerAuthorize_newClientID(t *testing.T) {
 		t.Fatal(err)
 	}
 	u.RawQuery = q.Encode()
-	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.User{UID: 1})
+	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.UserSpec{UID: 1})
 	resp, err := c.GetNoFollowRedirects(u.String())
 	if err != nil {
 		t.Fatalf("client ID %q: Get: %s", newClientID, err)
