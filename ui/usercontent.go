@@ -9,11 +9,19 @@ import (
 
 	"github.com/satori/go.uuid"
 	"sourcegraph.com/sourcegraph/rwvfs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/usercontent"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 	const maxSizeBytes = 10 * 1024 * 1024
+
+	// TODO we should be doing gRPC calls for storing content, and keep
+	// the webserver stateless
+	if err := accesscontrol.VerifyUserHasWriteAccess(httpctx.FromRequest(req), "Content.Upload"); err != nil {
+		return err
+	}
 
 	if usercontent.Store == nil {
 		return fmt.Errorf("no store for user content available")
