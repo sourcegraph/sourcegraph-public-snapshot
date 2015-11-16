@@ -35,13 +35,8 @@ func Annotate(src []byte, fileName string, mimeType string, annotator Annotator)
 		return nil, err
 	}
 	if lexer == nil {
-		// The whole file is one large token
-		a, err := annotator.Annotate(NewToken(src, Whitespace, 0))
-		if err != nil {
-			return nil, err
-		}
-		annotations = append(annotations, a)
-		return annotations, nil
+		// falling back
+		lexer = &fallbackLexer{}
 	}
 	lexer.Init(src)
 	pos := 0

@@ -197,7 +197,10 @@ func Words(words ...string) Matcher {
 func WordsWithBoundary(boundary bool, words ...string) Matcher {
 	t := newTrie()
 	for _, w := range words {
-		t.insert(w)
+		err := t.insert(w)
+		if err != nil {
+			panic(err)
+		}
 	}
 	return func(source []byte) []int {
 		ret := t.lookup(source, func(len int) bool {
