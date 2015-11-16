@@ -61,7 +61,7 @@ RUN src srclib toolchain install java
 
 VOLUME ["/etc/sourcegraph", "/home/sourcegraph/.sourcegraph"]
 
-EXPOSE 3000 3001 3100
+EXPOSE 3080 3443
 
 # Invoke src in a similar way to how the .deb would invoke it as a
 # system service (but avoid the complexity of Docker+upstart/systemd

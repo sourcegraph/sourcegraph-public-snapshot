@@ -4,19 +4,18 @@ package httpapi_test
 
 import (
 	"net/http"
-	"net/url"
 	"testing"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/fed"
+	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 	"src.sourcegraph.com/sourcegraph/util/httptestutil"
 )
@@ -43,17 +42,12 @@ func TestAuth(t *testing.T) {
 
 	httpClient := &httptestutil.Client{Client: *http.DefaultClient}
 
-	// Get server's HTTP endpoint URL.
-	serverConfig, err := a.Client.Meta.Config(ctx, &pbtypes.Void{})
+	url, err := apirouter.URL(apirouter.Repos, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	httpURL, err := url.Parse(serverConfig.HTTPEndpoint)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	url := httpURL.ResolveReference(&url.URL{Path: "repos"})
+	url.Path = "/.api" + url.Path
+	url = a.Config.Endpoint.URLOrDefault().ResolveReference(url)
 
 	// No auth for an endpoint that requires auth.
 	resp, err := httpClient.Get(url.String())

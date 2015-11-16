@@ -16,21 +16,16 @@ Sourcegraph to use a TLS (SSL) certificate and key as follows.
 CertFile = /path/to/cert.pem
 KeyFile = /path/to/key.pem
 
-; Sets the HTTPS port for the Web app. HTTP will still
-; be available on the HTTPAddr.
-Addr = :8443
+; Sets the ports for the Web app, REST API, and gRPC API.
+HTTPAddr  = :3080
+HTTPSAddr = :3443
 
 ; Be sure that your AppURL is "https://...".
-AppURL = https://example.com:8443
-
-; Set these to the externally accessible endpoints.
-HTTPEndpoint = https://example.com:8443/api/
-GRPCEndpoint = https://example.com:3100
+;
+; This also assumes that you have a proxy that forwards
+; example.com:443 to the server's port 3443.
+AppURL = https://example.com
 
 ; Redirect "http://..." requests to "https://...".
 RedirectToHTTPS = true
-
-[Client API endpoint]
-; Set this to the internally accessible gRPC endpoint.
-GRPCEndpoint = https://example.com:3100
 ```

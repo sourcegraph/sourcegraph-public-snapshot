@@ -81,7 +81,7 @@ func (c *stressCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("## Stress-testing server with app URL %s and gRPC endpoint %s", c.site.AppURL, c.site.GRPCEndpoint)
+	log.Printf("## Stress-testing server at URL %s", c.site.AppURL)
 	log.Println()
 
 	host, _, _ := net.SplitHostPort(c.appURL.Host)

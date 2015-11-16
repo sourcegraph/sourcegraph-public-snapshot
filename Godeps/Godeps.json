@@ -402,6 +402,10 @@
 			"Rev": "ab6b5abc58c9d82560b127e23bfd3e39a25e8f05"
 		},
 		{
+			"ImportPath": "github.com/soheilhy/cmux",
+			"Rev": "e3b9994b7b77414869ce54070ccc6f53f26531b2"
+		},
+		{
 			"ImportPath": "github.com/sourcegraph/annotate",
 			"Rev": "cebcce68942725de59a25b3f5fb202c5d0d4a01d"
 		},
@@ -686,15 +690,15 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/routevar",
-			"Rev": "4466fa427c7296db2e358265918a5cc202e019f4"
+			"Rev": "301e014f4cf19542f116e92f290393dc17f92323"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph",
-			"Rev": "4466fa427c7296db2e358265918a5cc202e019f4"
+			"Rev": "301e014f4cf19542f116e92f290393dc17f92323"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-sourcegraph/spec",
-			"Rev": "4466fa427c7296db2e358265918a5cc202e019f4"
+			"Rev": "301e014f4cf19542f116e92f290393dc17f92323"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",

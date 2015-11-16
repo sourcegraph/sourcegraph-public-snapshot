@@ -14,11 +14,11 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
-// cmdWithClientArgs prepends --endpoint, --grpc-endpoint, etc., and
-// their current values to args and then returns a command that
-// executes the Sourcegraph program with those options and args.
+// cmdWithClientArgs prepends --endpoint, etc., and their current
+// values to args and then returns a command that executes the
+// Sourcegraph program with those options and args.
 func cmdWithClientArgs(args ...string) *exec.Cmd {
-	endpointArgs, err := flagutil.MarshalArgs(&Endpoints)
+	endpointArgs, err := flagutil.MarshalArgs(&Endpoint)
 	if err != nil {
 		log.Fatal(err)
 	}

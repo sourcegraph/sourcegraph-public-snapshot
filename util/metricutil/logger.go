@@ -52,11 +52,18 @@ func (w *Worker) LocateRootInstance() error {
 	if fed.Config.IsRoot {
 		return fmt.Errorf("cannot locate root as a root instance")
 	}
-	mothership, err := fed.Config.RootGRPCEndpoint()
+	rootCtx := fed.Config.NewRemoteContext(w.Ctx)
+	rootCl := sourcegraph.NewClientFromContext(rootCtx)
+
+	config, err := rootCl.Meta.Config(rootCtx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
-	w.RootCtx = sourcegraph.WithGRPCEndpoint(w.Ctx, mothership)
+	if !config.IsFederationRoot {
+		return fmt.Errorf("server %q is not a federation root", fed.Config.RootURL())
+	}
+
+	w.RootCtx = rootCtx
 	w.RootAvailable = true
 	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/svc/middleware/remote"
 )
 
 // Only the RegisteredClients.*UserPermissions methods are to be federated, since
@@ -97,10 +96,5 @@ func getUserPermissionsCtx(ctx context.Context) (context.Context, string, error)
 	}
 	clientID := idKey.ID
 
-	mothership, err := fed.Config.RootGRPCEndpoint()
-	if err != nil {
-		return nil, "", err
-	}
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, mothership)
-	return svc.WithServices(ctx, remote.Services), clientID, nil
+	return fed.Config.NewRemoteContext(ctx), clientID, nil
 }

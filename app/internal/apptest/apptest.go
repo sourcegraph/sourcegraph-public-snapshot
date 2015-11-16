@@ -30,10 +30,6 @@ func New() (*httptestutil.Client, *httptestutil.MockClients) {
 	c, mock := httptestutil.NewTest(mux)
 	mock.Ctx = conf.WithAppURL(mock.Ctx, &url.URL{Scheme: "http", Host: "example.com", Path: "/"})
 	mock.Ctx = sourcegraph.WithGRPCEndpoint(mock.Ctx, &url.URL{Scheme: "http", Host: "grpc.example.com", Path: "/"})
-	mock.Ctx = conf.WithExternalEndpoints(mock.Ctx, conf.ExternalEndpointsOpts{
-		HTTPEndpoint: "http://example.com/api/",
-		GRPCEndpoint: "http://grpc.example.com/",
-	})
 
 	// Convenience mocks.
 	mock.Meta.Config_ = func(context.Context, *pbtypes.Void) (*sourcegraph.ServerConfig, error) {

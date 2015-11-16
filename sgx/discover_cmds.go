@@ -27,15 +27,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	_, err = g.AddCommand("site",
-		"perform site discovery",
-		"The 'sgx discover site' command performs the site discovery process to determine the Sourcegraph server configuration (endpoint URLs, etc.) for the specified host (and optional port).",
-		&discoverSiteCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 type discoverCmd struct{}
@@ -55,28 +46,6 @@ func (c *discoverRepoCmd) Execute(args []string) error {
 	for _, repo := range c.Args.Paths {
 		fmt.Print(repo, ": ")
 		info, err := discover.Repo(context.Background(), repo)
-		if err != nil {
-			fmt.Printf("error: %s\n", err)
-			continue
-		}
-		fmt.Println(info)
-	}
-	return nil
-}
-
-type discoverSiteCmd struct {
-	Args struct {
-		Hosts []string `name:"HOST" description:"Sourcegraph hosts (e.g., host.com, host.com:1234)"`
-	} `positional-args:"yes" required:"yes"`
-}
-
-func (c *discoverSiteCmd) Execute(args []string) error {
-	if len(c.Args.Hosts) == 0 {
-		log.Println("# warning: nothing to discover")
-	}
-	for _, host := range c.Args.Hosts {
-		fmt.Print(host, ": ")
-		info, err := discover.Site(context.Background(), host)
 		if err != nil {
 			fmt.Printf("error: %s\n", err)
 			continue

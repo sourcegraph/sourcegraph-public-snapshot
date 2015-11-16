@@ -14,7 +14,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -91,17 +90,10 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 	// federation root or some other external host). In that case,
 	// call the remote Auth.Identify to figure out who the actor is.
 	if actor == nil && !fed.Config.IsRoot {
-		info, err := discover.Site(ctx, fed.Config.RootURL().Host)
-		if err != nil {
-			return nil, err
-		}
-		ctx2, err := info.NewContext(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		ctx2 = metadata.NewContext(ctx2, md)
+		rctx := fed.Config.NewRemoteContext(context.Background())
+		rctx = metadata.NewContext(rctx, md)
 
-		authInfo, err := svc.Auth(ctx2).Identify(ctx2, &pbtypes.Void{})
+		authInfo, err := svc.Auth(rctx).Identify(rctx, &pbtypes.Void{})
 		if err != nil {
 			return nil, err
 		}

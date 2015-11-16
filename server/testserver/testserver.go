@@ -90,14 +90,14 @@ type Server struct {
 
 type Config struct {
 	Flags      []interface{} // flags to `src`
-	Endpoints  conf.EndpointOpts
+	Endpoint   sgx.EndpointOpts
 	Serve      sgx.ServeCmd
 	ServeFlags []interface{} // flags to `src serve`
 }
 
 func (c *Config) args() ([]string, error) {
 	flags := c.Flags
-	flags = append(flags, &c.Endpoints, "serve", &c.Serve)
+	flags = append(flags, &c.Endpoint, "serve", &c.Serve)
 	flags = append(flags, c.ServeFlags...)
 	return makeCommandLineArgs(flags...)
 }
@@ -127,8 +127,6 @@ func (s *Server) srclibEnvConfig() []string {
 func (s *Server) serverEnvConfig() []string {
 	return []string{
 		"SGPATH=" + s.SGPATH,
-		"HTTP_DISCOVERY_PORT=" + os.Getenv("HTTP_DISCOVERY_PORT"),
-		"HTTP_DISCOVERY_INSECURE=t",
 		"DEBUG=t",
 	}
 }
@@ -164,7 +162,7 @@ func (s *Server) CmdAsSystem(args []string) (*exec.Cmd, error) {
 // operations against the server spawned by s.
 func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 	configArgs, err := makeCommandLineArgs(
-		&s.Config.Endpoints,
+		&s.Config.Endpoint,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -352,7 +350,26 @@ func NewServer() (*Server, context.Context) {
 	return a, ctx
 }
 
+func NewUnstartedServerTLS() (*Server, context.Context) {
+	s, ctx := newUnstartedServer("https")
+
+	s.Config.Serve.KeyFile = filepath.Join(s.SGPATH, "localhost.key")
+	s.Config.Serve.CertFile = filepath.Join(s.SGPATH, "localhost.crt")
+	if err := ioutil.WriteFile(s.Config.Serve.KeyFile, localhostKey, 0600); err != nil {
+		log.Fatal(err)
+	}
+	if err := ioutil.WriteFile(s.Config.Serve.CertFile, localhostCert, 0600); err != nil {
+		log.Fatal(err)
+	}
+
+	return s, ctx
+}
+
 func NewUnstartedServer() (*Server, context.Context) {
+	return newUnstartedServer("http")
+}
+
+func newUnstartedServer(scheme string) (*Server, context.Context) {
 	var s Server
 
 	// SGPATH
@@ -363,18 +380,26 @@ func NewUnstartedServer() (*Server, context.Context) {
 	s.SGPATH = sgpath
 
 	// Find unused ports
-	var httpPort, grpcPort, appdashHTTPPort int
-	s.selectUnusedPorts(&httpPort, &grpcPort, &appdashHTTPPort)
+	var httpPort, httpsPort, appdashHTTPPort int
+	s.selectUnusedPorts(&httpPort, &httpsPort, &appdashHTTPPort)
+
+	var mainHTTPPort int
+	switch scheme {
+	case "http":
+		mainHTTPPort = httpPort
+	case "https":
+		mainHTTPPort = httpsPort
+	default:
+		panic("bad scheme: " + scheme)
+	}
 
 	// HTTP
 	s.Config.Serve.HTTPAddr = fmt.Sprintf(":%d", httpPort)
-
-	// gRPC
-	s.Config.Serve.GRPCAddr = fmt.Sprintf(":%d", grpcPort)
-	s.Config.Endpoints.GRPCEndpoint = fmt.Sprintf("http://localhost:%d", grpcPort)
+	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
+	s.Config.Endpoint.RawURL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
 
 	// App
-	s.Config.Serve.AppURL = fmt.Sprintf("http://localhost:%d/", httpPort)
+	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
 
 	// Store type
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &storecli.Flags{
@@ -416,10 +441,7 @@ func NewUnstartedServer() (*Server, context.Context) {
 	}
 
 	s.Ctx = context.Background()
-	s.Ctx, err = s.Config.Endpoints.WithEndpoints(s.Ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	s.Ctx = s.Config.Endpoint.NewContext(s.Ctx)
 	s.Ctx = conf.WithAppURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key
@@ -561,3 +583,40 @@ func makeCommandLineArgs(flagsAndSubcommands ...interface{}) ([]string, error) {
 	}
 	return args, nil
 }
+
+// localhostCert is a PEM-encoded TLS cert with SAN IPs
+// "127.0.0.1" and "[::1]", expiring at the last second of 2049 (the end
+// of ASN.1 time).
+// generated from src/crypto/tls:
+// go run generate_cert.go  --rsa-bits 1024 --host 127.0.0.1,::1,example.com --ca --start-date "Jan 1 00:00:00 1970" --duration=1000000h
+var localhostCert = []byte(`-----BEGIN CERTIFICATE-----
+MIICEzCCAXygAwIBAgIQMIMChMLGrR+QvmQvpwAU6zANBgkqhkiG9w0BAQsFADAS
+MRAwDgYDVQQKEwdBY21lIENvMCAXDTcwMDEwMTAwMDAwMFoYDzIwODQwMTI5MTYw
+MDAwWjASMRAwDgYDVQQKEwdBY21lIENvMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCB
+iQKBgQDuLnQAI3mDgey3VBzWnB2L39JUU4txjeVE6myuDqkM/uGlfjb9SjY1bIw4
+iA5sBBZzHi3z0h1YV8QPuxEbi4nW91IJm2gsvvZhIrCHS3l6afab4pZBl2+XsDul
+rKBxKKtD1rGxlG4LjncdabFn9gvLZad2bSysqz/qTAUStTvqJQIDAQABo2gwZjAO
+BgNVHQ8BAf8EBAMCAqQwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDwYDVR0TAQH/BAUw
+AwEB/zAuBgNVHREEJzAlggtleGFtcGxlLmNvbYcEfwAAAYcQAAAAAAAAAAAAAAAA
+AAAAATANBgkqhkiG9w0BAQsFAAOBgQCEcetwO59EWk7WiJsG4x8SY+UIAA+flUI9
+tyC4lNhbcF2Idq9greZwbYCqTTTr2XiRNSMLCOjKyI7ukPoPjo16ocHj+P3vZGfs
+h1fIw3cSS2OolhloGw/XM6RWPWtPAlGykKLciQrBru5NAPvCMsb/I1DAceTiotQM
+fblo6RBxUQ==
+-----END CERTIFICATE-----`)
+
+// localhostKey is the private key for localhostCert.
+var localhostKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
+MIICXgIBAAKBgQDuLnQAI3mDgey3VBzWnB2L39JUU4txjeVE6myuDqkM/uGlfjb9
+SjY1bIw4iA5sBBZzHi3z0h1YV8QPuxEbi4nW91IJm2gsvvZhIrCHS3l6afab4pZB
+l2+XsDulrKBxKKtD1rGxlG4LjncdabFn9gvLZad2bSysqz/qTAUStTvqJQIDAQAB
+AoGAGRzwwir7XvBOAy5tM/uV6e+Zf6anZzus1s1Y1ClbjbE6HXbnWWF/wbZGOpet
+3Zm4vD6MXc7jpTLryzTQIvVdfQbRc6+MUVeLKwZatTXtdZrhu+Jk7hx0nTPy8Jcb
+uJqFk541aEw+mMogY/xEcfbWd6IOkp+4xqjlFLBEDytgbIECQQDvH/E6nk+hgN4H
+qzzVtxxr397vWrjrIgPbJpQvBsafG7b0dA4AFjwVbFLmQcj2PprIMmPcQrooz8vp
+jy4SHEg1AkEA/v13/5M47K9vCxmb8QeD/asydfsgS5TeuNi8DoUBEmiSJwma7FXY
+fFUtxuvL7XvjwjN5B30pNEbc6Iuyt7y4MQJBAIt21su4b3sjXNueLKH85Q+phy2U
+fQtuUE9txblTu14q3N7gHRZB4ZMhFYyDy8CKrN2cPg/Fvyt0Xlp/DoCzjA0CQQDU
+y2ptGsuSmgUtWj3NM9xuwYPm+Z/F84K6+ARYiZ6PYj013sovGKUFfYAqVXVlxtIX
+qyUBnu3X9ps8ZfjLZO7BAkEAlT4R5Yl6cGhaJQYZHOde3JEMhNRcVFMO8dJDaFeo
+f9Oeos0UUothgiDktdQHxdNEwLjQf7lJJBzV+5OtwswCWA==
+-----END RSA PRIVATE KEY-----`)

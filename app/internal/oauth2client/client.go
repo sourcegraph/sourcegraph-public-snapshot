@@ -28,7 +28,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -119,16 +118,10 @@ func checkOAuth2Config(w http.ResponseWriter, r *http.Request) error {
 // getRegisteredClientForServer gets the mothership's registered
 // client entry for this server.
 var getRegisteredClientForServer = func(ctx context.Context) (*sourcegraph.RegisteredClient, error) {
-	info, err := discover.Site(ctx, fed.Config.RootURL().Host)
-	if err != nil {
-		return nil, err
-	}
-	ctx2, err := info.NewContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	cl2 := sourcegraph.NewClientFromContext(ctx2)
-	return cl2.RegisteredClients.GetCurrent(ctx2, &pbtypes.Void{})
+	rctx := fed.Config.NewRemoteContext(ctx)
+	rcl := sourcegraph.NewClientFromContext(rctx)
+	c, err := rcl.RegisteredClients.GetCurrent(rctx, &pbtypes.Void{})
+	return c, err
 }
 
 // ServeOAuth2Initiate serves the welcome screen for OAuth2, which

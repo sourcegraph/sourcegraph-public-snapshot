@@ -50,10 +50,7 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 	if !e.NoEmail {
 		if s.shouldFederateEmail() {
 			// Forward request to mothership since we are not setup to send email
-			notify, err := s.mothershipNotifyClient(ctx)
-			if err != nil {
-				return nil, err
-			}
+			notify := s.mothershipNotifyClient(ctx)
 			// Don't send a Slack message from the mothership
 			e.NoSlack = true
 			return notify.GenericEvent(ctx, e)
@@ -78,13 +75,8 @@ func (s *notify) verifyCanNotify(ctx context.Context, actor *sourcegraph.UserSpe
 	return nil
 }
 
-func (s *notify) mothershipNotifyClient(ctx context.Context) (sourcegraph.NotifyClient, error) {
-	mothership, err := fed.Config.RootGRPCEndpoint()
-	if err != nil {
-		return nil, err
-	}
-	mctx := sourcegraph.WithGRPCEndpoint(ctx, mothership)
-	return sourcegraph.NewClientFromContext(mctx).Notify, nil
+func (s *notify) mothershipNotifyClient(ctx context.Context) sourcegraph.NotifyClient {
+	return sourcegraph.NewClientFromContext(fed.Config.NewRemoteContext(ctx)).Notify
 }
 
 func (s *notify) shouldFederateEmail() bool {

@@ -30,7 +30,7 @@ To authenticate with the server, run:
 		// instead of something more concrete that we can rely on (instead of a
 		// string containment check).
 
-		endpoint := Endpoints.EndpointURL()
+		endpoint := Endpoint.URLOrDefault()
 		log.Printf(`
 ================================================================================
 ======== The server at %v is not available.

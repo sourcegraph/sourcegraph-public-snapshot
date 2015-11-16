@@ -41,14 +41,11 @@ spec:
   - name: http
     protocol: TCP
     port: 80
-    targetPort: 3000
+    targetPort: 3080
   - name: https
     protocol: TCP
     port: 443
-    targetPort: 3001
-  - name: grpc
-    protocol: TCP
-    port: 3100
+    targetPort: 3443
   type: LoadBalancer
 ```
 
@@ -88,11 +85,10 @@ spec:
         - name: config
           mountPath: /home/sourcegraph/.sourcegraph
         ports:
-        - containerPort: 3000
-          protocol: TCP
-        - containerPort: 3001
-          protocol: TCP
-        - containerPort: 3100
+        - containerPort: 3080
+        protocol: TCP
+        ports:
+        - containerPort: 3443
           protocol: TCP
       volumes:
       - name: data

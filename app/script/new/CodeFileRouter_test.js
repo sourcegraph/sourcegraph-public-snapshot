@@ -19,81 +19,81 @@ import testdataDefinition from "./testdata/CodeFileRouter-definition.json";
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {
 		autotest(testdataFile, `${__dirname}/testdata/CodeFileRouter-file.json`,
-			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go" />
+			<CodeFileRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go" />
 		);
 	});
 
 	it("should handle dotfile URLs", () => {
 		autotest(testdataDotfile, `${__dirname}/testdata/CodeFileRouter-dotfile.json`,
-			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/.travis.yml" />
+			<CodeFileRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/.travis.yml" />
 		);
 	});
 
 	it("should handle line selection URLs", () => {
 		autotest(testdataLineSelection, `${__dirname}/testdata/CodeFileRouter-lineSelection.json`,
-			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53" />
+			<CodeFileRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=40&endline=53" />
 		);
 	});
 
 	it("should handle definition selection URLs", () => {
 		autotest(testdataDefSelection, `${__dirname}/testdata/CodeFileRouter-defSelection.json`,
-			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someDef" />
+			<CodeFileRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?seldef=someDef" />
 		);
 	});
 
 	it("should handle definition URLs", () => {
 		autotest(testdataDefinition, `${__dirname}/testdata/CodeFileRouter-definition.json`,
-			<CodeFileRouter location="http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router" />
+			<CodeFileRouter location="http://localhost:3080/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router" />
 		);
 	});
 
 	it("should handle DefActions.SelectDef", () => {
 		testAction(
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
 			new DefActions.SelectDef("someURL"),
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?seldef=someURL"
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?seldef=someURL"
 		);
 	});
 
 	it("should handle CodeActions.SelectLine", () => {
 		testAction(
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
 			new CodeActions.SelectLine(42),
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
 		);
 
 		testAction(
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=60",
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=60",
 			new CodeActions.SelectLine(42),
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
 		);
 	});
 
 	it("should handle CodeActions.SelectRange", () => {
 		testAction(
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
 			new CodeActions.SelectRange(42),
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42"
 		);
 
 		testAction(
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=20",
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=20",
 			new CodeActions.SelectRange(42),
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=42"
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=20&endline=42"
 		);
 
 		testAction(
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=50&endline=50",
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=50&endline=50",
 			new CodeActions.SelectRange(42),
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=50"
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=50"
 		);
 	});
 
 	it("should handle GoTo", () => {
 		testAction(
-			"http://localhost:3000/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42&seldef=someURL",
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go?startline=42&endline=42&seldef=someURL",
 			new GoTo("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"),
-			"http://localhost:3000/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
+			"http://localhost:3080/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
 		);
 	});
 });

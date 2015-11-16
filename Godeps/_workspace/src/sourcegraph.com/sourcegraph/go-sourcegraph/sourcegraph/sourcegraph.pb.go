@@ -3525,15 +3525,6 @@ type ServerConfig struct {
 	// AppURL is the base URL of the user-facing web application
 	// (e.g., "https://sourcegraph.com").
 	AppURL string `protobuf:"bytes,2,opt,name=app_url,proto3" json:",omitempty"`
-	// GRPCEndpoint is the external base URL of the GRPC API (e.g.,
-	// "https://sourcegraph.com:3100"). This is the address to which
-	// external gRPC clients should connect.
-	GRPCEndpoint string `protobuf:"bytes,3,opt,name=grpc_endpoint,proto3" json:",omitempty"`
-	// HTTPEndpoint is the external base URL of the HTTP API. It
-	// typically should end in "/api/" (note the trailing slash). For
-	// example, "https://sourcegraph.com/api/". This is the address
-	// that external HTTP clients should use.
-	HTTPEndpoint string `protobuf:"bytes,4,opt,name=http_endpoint,proto3" json:",omitempty"`
 	// FederationRootURL is the --fed.root-url CLI flag's value. It is
 	// the URL of the federation root server, or blank if this server
 	// is itself a federation root (in which case IsFederationRoot is

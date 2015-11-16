@@ -213,7 +213,7 @@ func init() {
 	if UseWebpackDevServer {
 		cspConfig.PolicyReportOnly.ScriptSrc = append(cspConfig.PolicyReportOnly.ScriptSrc, "localhost:8080")
 		cspConfig.PolicyReportOnly.FontSrc = append(cspConfig.PolicyReportOnly.FontSrc, "localhost:8080")
-		cspConfig.PolicyReportOnly.ConnectSrc = append(cspConfig.PolicyReportOnly.ConnectSrc, "localhost:3000", "localhost:8080", "ws://localhost:8080")
+		cspConfig.PolicyReportOnly.ConnectSrc = append(cspConfig.PolicyReportOnly.ConnectSrc, "localhost:3080", "localhost:8080", "ws://localhost:8080")
 	}
 }
 

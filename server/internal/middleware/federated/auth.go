@@ -10,14 +10,14 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func CustomAuthGetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRequest, s sourcegraph.AuthServer) (*sourcegraph.AccessTokenResponse, error) {
 	// Route to the Sourcegraph host based on the access token
 	// request's TokenURL.
-	isCurrentDomain, domain, err := isCurrentDomain(ctx, op.TokenURL)
+	isCurrentDomain, _, err := isCurrentDomain(ctx, op.TokenURL)
 	if err != nil {
 		return nil, err
 	}
@@ -28,15 +28,12 @@ func CustomAuthGetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRe
 		// because auth codes, etc., are stored per-client ID).
 		ctx = sourcegraph.WithCredentials(ctx, idkey.FromContext(ctx).TokenSource(ctx, op.TokenURL))
 
-		info, err := discover.Site(ctx, domain)
-		if err != nil {
-			return nil, err
-		}
-
-		ctx, err = info.NewContext(ctx)
-		if err != nil {
-			return nil, err
-		}
+		// Communicate with the fed root. Assumes that the domain is
+		// the fed root, which is not necessarily true.
+		//
+		// TODO(sqs): Generalize this when we have true generalized
+		// federation.
+		ctx = fed.Config.NewRemoteContext(ctx)
 
 		// Get access token from remote. The request is authenticated
 		// with this client's credentials. The access token will be
@@ -64,20 +61,17 @@ func CustomAuthGetPermissions(ctx context.Context, op *pbtypes.Void, s sourcegra
 		return s.GetPermissions(ctx, op)
 	}
 
-	isCurrentDomain, domain, err := isCurrentDomain(ctx, oauth2client.TokenURL())
+	isCurrentDomain, _, err := isCurrentDomain(ctx, oauth2client.TokenURL())
 	if err != nil {
 		return nil, err
 	}
 	if !isCurrentDomain {
-		info, err := discover.Site(ctx, domain)
-		if err != nil {
-			return nil, err
-		}
-
-		ctx, err = info.NewContext(ctx)
-		if err != nil {
-			return nil, err
-		}
+		// Communicate with the fed root. Assumes that the domain is
+		// the fed root, which is not necessarily true.
+		//
+		// TODO(sqs): Generalize this when we have true generalized
+		// federation.
+		ctx = fed.Config.NewRemoteContext(ctx)
 
 		return svc.Auth(ctx).GetPermissions(ctx, op)
 	}

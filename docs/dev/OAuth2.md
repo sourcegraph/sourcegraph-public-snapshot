@@ -33,7 +33,7 @@ automatically at server startup if it does not exist.
 An instance is identified by its public key fingerprint (hereafter its
 "ID"). This is also its OAuth2 client ID. Running `src meta config` or
 fetching the HTTP path `/.well-known/sourcegraph` (e.g.,
-http://localhost:3000/.well-known/sourcegraph) returns the ID (in the
+http://localhost:3080/.well-known/sourcegraph) returns the ID (in the
 IDKey field).
 
 Two kinds of authorization grants for client authentication are
@@ -168,10 +168,10 @@ Now run the standalone instance (make sure the demo mothership is
 still running):
 
 ```
-HTTP_DISCOVERY_INSECURE=t make serve-dev SERVEFLAGS='--fed.root-url=http://demo-mothership:13000'
+make serve-dev SERVEFLAGS='--fed.root-url=http://demo-mothership:13080'
 ```
 
-Go to http://localhost:3000 to view your standalone instance. Click
+Go to http://localhost:3080 to view your standalone instance. Click
 Sign In in the top right, and you'll be asked to log in. If you
 haven't created an account on the demo mothership yet, create
 one.
@@ -183,7 +183,7 @@ Then it'll ask you:
 
 ```
 Authorize My OAuth2 client?
-The application at localhost:3000 requests:
+The application at localhost:3080 requests:
 
 Your public user profile (username and company)
 You are logged in as sqs. Only proceed if you trust this application.

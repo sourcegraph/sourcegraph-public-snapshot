@@ -39,12 +39,9 @@ func (s *meta) Status(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 }
 
 func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
-	xe := conf.ExternalEndpoints(ctx)
 	c := &sourcegraph.ServerConfig{
 		Version:               buildvar.Version,
 		AppURL:                conf.AppURL(ctx).String(),
-		GRPCEndpoint:          xe.GRPCEndpoint,
-		HTTPEndpoint:          xe.HTTPEndpoint,
 		AllowAnonymousReaders: authutil.ActiveFlags.AllowAnonymousReaders,
 		IDKey:      idkey.FromContext(ctx).ID,
 		AuthSource: authutil.ActiveFlags.Source,

@@ -13,6 +13,6 @@ ADD src /usr/local/bin/src
 RUN for lang in "python" "go" "java"; do src toolchain get sourcegraph.com/sourcegraph/srclib-$lang; done
 
 ENTRYPOINT ["src"]
-CMD ["serve", "--http-addr=:3000"]
+CMD ["serve", "--http-addr=:3080"]
 
-EXPOSE 3000 3100
+EXPOSE 3080 3443

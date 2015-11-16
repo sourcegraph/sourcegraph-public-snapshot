@@ -3,7 +3,9 @@ package sgx
 import (
 	"bytes"
 	"crypto"
+	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -24,14 +26,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/resonancelabs/go-pub/instrument"
 	tg_client "github.com/resonancelabs/go-pub/instrument/client"
+	"github.com/soheilhy/cmux"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
-	"golang.org/x/net/http2"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -75,14 +76,11 @@ var shortHelpMessage = `Usage:
 Starts an HTTP server serving the app and API.
 
 [serve command options]
-          --http-addr=                           regular HTTP/1 address to listen on, if not blank (:3000)
-          --addr=                                HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank (:3001)
-          --ssh-addr=                            SSH address to listen on, if not blank (:3002)
-          --grpc-addr=                           gRPC address to listen on (:3100)
+          --http-addr=                           HTTP listen address for app, REST API, and gRPC API (:3080)
+          --https-addr=                          HTTPS (TLS) listen address for app, REST API, and gRPC API (:3443)
+          --ssh-addr=                            SSH address to listen on, if not blank (:3022)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
-          --external-http-endpoint=              externally accessible base URL to HTTP API (default: --http-endpoint value)
-          --external-grpc-endpoint=              externally accessible base URL to gRPC API (default: --grpc-endpoint value)
           --reload                               reload templates, blog posts, etc. on each request (dev mode)
           --no-worker                            do not start background worker
           --test-ui                              starts the UI test server which causes all UI endpoints to return mock data
@@ -165,15 +163,13 @@ type ServeCmdPrivate struct {
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
-	HTTPAddr string `long:"http-addr" default:":3000" description:"regular HTTP/1 address to listen on, if not blank"`
-	Addr     string `long:"addr" default:":3001" description:"HTTP/2 (and HTTPS if TLS is enabled) address to listen on, if not blank" required:"yes"`
-	SSHAddr  string `long:"ssh-addr" default:":3002" description:"SSH address to listen on, if not blank"`
-	GRPCAddr string `long:"grpc-addr" default:":3100" description:"gRPC address to listen on"`
+	HTTPAddr  string `long:"http-addr" default:":3080" description:"HTTP listen address for app, REST API, and gRPC API"`
+	HTTPSAddr string `long:"https-addr" default:":3443" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API"`
+	SSHAddr   string `long:"ssh-addr" default:":3022" description:"SSH address to listen on, if not blank"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
 
 	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)"`
-	conf.ExternalEndpointsOpts
 
 	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
 
@@ -210,47 +206,6 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	}
 
 	return appURL, nil
-}
-
-// configureExternalEndpoints sets default external endpoints.
-func (c *ServeCmd) configureExternalEndpoints() {
-	guessExternalURL := func(appURLStr, listenPort string) string {
-		appURL, err := url.Parse(appURLStr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		xhost, _, err := net.SplitHostPort(appURL.Host)
-		if err != nil {
-			if strings.Contains(err.Error(), "missing port in address") {
-				xhost = appURL.Host
-			} else {
-				log.Fatalf("Error determining host and port from app URL: %s.", err)
-			}
-		}
-
-		return (&url.URL{Scheme: appURL.Scheme, Host: xhost + ":" + listenPort}).String()
-	}
-
-	if c.ExternalEndpointsOpts.HTTPEndpoint == "" {
-		u, err := url.Parse(c.AppURL)
-		if err != nil {
-			log.Fatal(err)
-		}
-		c.ExternalEndpointsOpts.HTTPEndpoint = u.ResolveReference(&url.URL{Path: "/.api/"}).String()
-	}
-	if c.ExternalEndpointsOpts.GRPCEndpoint == "" {
-		host, port, err := net.SplitHostPort(c.GRPCAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		switch host {
-		case "localhost", "127.0.0.1":
-			// GRPC server is not listening externally
-			c.ExternalEndpointsOpts.GRPCEndpoint = sourcegraph.GRPCEndpoint(cliCtx).String()
-		default:
-			c.ExternalEndpointsOpts.GRPCEndpoint = guessExternalURL(c.AppURL, port)
-		}
-	}
 }
 
 func (c *ServeCmd) Execute(args []string) error {
@@ -372,8 +327,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 
-	c.configureExternalEndpoints()
-
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
 		for _, f := range sharedCtxFuncs {
@@ -398,15 +351,10 @@ func (c *ServeCmd) Execute(args []string) error {
 			ctx = f(ctx)
 		}
 
-		var err error
-		ctx, err = Endpoints.WithEndpoints(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		ctx = conf.WithExternalEndpoints(ctx, c.ExternalEndpointsOpts)
+		ctx = Endpoint.NewContext(ctx)
 
 		for _, f := range ServerContextFuncs {
+			var err error
 			ctx, err = f(ctx)
 			if err != nil {
 				log.Fatal(err)
@@ -454,6 +402,19 @@ func (c *ServeCmd) Execute(args []string) error {
 	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(newRouter())))
 
+	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {
+		return errors.New("HTTPS listen address (--https-addr) must be specified if TLS cert and key are set")
+	}
+	useTLS := c.CertFile != "" || c.KeyFile != ""
+
+	if useTLS && appURL.Scheme == "http" {
+		log15.Warn("TLS is enabled but app url scheme is http", "appURL", appURL)
+	}
+
+	if !useTLS && appURL.Scheme == "https" {
+		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
+	}
+
 	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
 	if c.RedirectToHTTPS {
 		mw = append(mw, redirectToHTTPSMiddleware)
@@ -485,69 +446,77 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	h := handlerutil.WithMiddleware(sm, mw...)
 
-	c.Addr = interpolatePort(c.Addr)
+	serveHTTP := func(l net.Listener, srv http.Server, addr string, tls bool) {
+		lmux := cmux.New(l)
+		grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
+		anyListener := lmux.Match(cmux.Any())
 
-	var srv http.Server
-	srv.Addr = c.Addr
-	srv.Handler = h
+		// Web
+		log15.Debug("HTTP running", "on", addr, "TLS", tls)
+		srv.Addr = addr
+		srv.Handler = h
+		if tls {
+			srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				setTLSMiddleware(w, r, h.ServeHTTP)
+			})
+		}
+		go func() { log.Fatal(srv.Serve(anyListener)) }()
 
-	http2.ConfigureServer(&srv, &http2.Server{})
-	useTLS := c.CertFile != "" || c.KeyFile != ""
+		// gRPC
+		log15.Debug("gRPC API running", "on", addr, "TLS", tls)
+		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
 
-	if useTLS && appURL.Scheme == "http" {
-		log15.Warn("TLS is enabled but app url scheme is http", "appURL", appURL)
-	}
-
-	if !useTLS && appURL.Scheme == "https" {
-		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
-	}
-
-	// TLS and HTTP/2
-	if c.Addr != "" {
 		go func() {
-			if useTLS {
-				log15.Debug("HTTP/2 and HTTPS", "on", c.Addr, "TLS", useTLS)
-				log.Fatal(srv.ListenAndServeTLS(c.CertFile, c.KeyFile))
-			} else {
-				log15.Debug("HTTP/2", "on", c.Addr, "TLS", useTLS)
-				log.Fatal(srv.ListenAndServe())
+			if err := lmux.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
+				log.Fatalf("Error serving: %s.", err)
 			}
 		}()
 	}
 
-	// gRPC
-	grpcListener, err := net.Listen("tcp", c.GRPCAddr)
-	if err != nil {
-		return err
-	}
-	var grpcServerOpts []grpc.ServerOption
-	if useTLS {
-		creds, err := credentials.NewServerTLSFromFile(c.CertFile, c.KeyFile)
+	// Start HTTP server.
+	if c.HTTPAddr != "" {
+		l, err := net.Listen("tcp", c.HTTPAddr)
 		if err != nil {
 			return err
 		}
-		grpcServerOpts = append(grpcServerOpts, grpc.Creds(creds))
+		l = tcpKeepAliveListener{l.(*net.TCPListener)}
+		serveHTTP(l, http.Server{}, c.HTTPAddr, false)
 	}
-	log15.Debug("gRPC API running", "on", c.GRPCAddr, "TLS", useTLS)
-	grpcSrv := server.NewServer(server.Config(serverCtxFunc), grpcServerOpts...)
-	go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
+
+	// Start HTTPS server.
+	if useTLS && c.HTTPSAddr != "" {
+		l, err := net.Listen("tcp", c.HTTPSAddr)
+		if err != nil {
+			return err
+		}
+		l = tcpKeepAliveListener{l.(*net.TCPListener)}
+
+		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
+		if err != nil {
+			return err
+		}
+
+		var srv http.Server
+		config := srv.TLSConfig
+		if config == nil {
+			config = &tls.Config{}
+		}
+
+		if config.NextProtos == nil {
+			config.NextProtos = []string{"http/1.1"}
+		}
+		config.Certificates = []tls.Certificate{cert}
+		srv.TLSConfig = config
+		l = tls.NewListener(l, srv.TLSConfig)
+
+		serveHTTP(l, srv, c.HTTPSAddr, true)
+	}
+
+	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	if err := c.authenticateCLIContext(idKey); err != nil {
 		return err
-	}
-
-	// Connection test
-	c.checkReachability()
-
-	// HTTP/1
-	if c.HTTPAddr != "" {
-		log15.Debug("HTTP/1", "on", c.HTTPAddr)
-		go func() { log.Fatal(http.ListenAndServe(c.HTTPAddr, h)) }()
-	}
-
-	// At least one of HTTP/1 and HTTP/2 server are running
-	if c.HTTPAddr != "" || c.Addr != "" {
-		log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 	}
 
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
@@ -601,16 +570,14 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
 
+	// Connection test
+	c.checkReachability()
+
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
-	grpcSrv.Stop()
 	return nil
-}
-
-func interpolatePort(s string) string {
-	return strings.Replace(s, "$PORT", os.Getenv("PORT"), 1)
 }
 
 // generateOrReadIDKey reads the server's ID key (or creates one on-demand).
@@ -760,13 +727,25 @@ func (c *ServeCmd) checkReachability() {
 
 	// Check external gRPC endpoint if it differs from the internal
 	// endpoint.
-	extEndpoint, err := url.Parse(c.ExternalEndpointsOpts.GRPCEndpoint)
+	extEndpoint, err := url.Parse(c.AppURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(cliCtx).String() {
 		doCheck(sourcegraph.WithGRPCEndpoint(cliCtx, extEndpoint), false)
 	}
+}
+
+// setTLSMiddleware causes downstream handlers to treat this HTTP
+// request as having come via TLS. It is necessary because connection
+// muxing (which enables a single port to serve both Web and gRPC)
+// does not set the http.Request TLS field (since TLS occurs before
+// muxing).
+func setTLSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	if r.Header.Get("x-forwarded-proto") == "" {
+		r.Header.Set("x-forwarded-proto", "https")
+	}
+	next(w, r)
 }
 
 func redirectToHTTPSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
@@ -959,26 +938,21 @@ func (c *ServeCmd) graphUplink(ctx context.Context) {
 		return
 	}
 
-	mothership, err := fed.Config.RootGRPCEndpoint()
-	if err != nil {
-		log15.Error("GraphUplink could not identify the mothership", "error", err)
-		return
-	}
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, mothership)
+	rctx := fed.Config.NewRemoteContext(ctx)
 
 	for {
 		time.Sleep(c.GraphUplinkPeriod)
-		cl := sourcegraph.NewClientFromContext(ctx)
+		cl := sourcegraph.NewClientFromContext(rctx)
 		buf := &bytes.Buffer{}
 		mfs := metricutil.SnapshotMetricFamilies()
 		mfs.Marshal(buf)
 
-		log15.Debug("GraphUplink sending metrics snapshot", "mothership", mothership, "numMetrics", len(mfs))
+		log15.Debug("GraphUplink sending metrics snapshot", "mothership", fed.Config.RootURL(), "numMetrics", len(mfs))
 		snapshot := sourcegraph.MetricsSnapshot{
 			Type:          sourcegraph.TelemetryType_PrometheusDelimited0dot0dot4,
 			TelemetryData: buf.Bytes(),
 		}
-		_, err := cl.GraphUplink.Push(ctx, &snapshot)
+		_, err := cl.GraphUplink.Push(rctx, &snapshot)
 		if err != nil {
 			log15.Error("GraphUplink push failed", "error", err)
 		}
@@ -1014,12 +988,7 @@ func (c *ServeCmd) fetchRootPubKey() *idkey.PubKey {
 		return nil
 	}
 
-	mothership, err := fed.Config.RootGRPCEndpoint()
-	if err != nil {
-		log15.Error("fetchRootPubKey could not identify the mothership", "error", err)
-		return nil
-	}
-	ctx := sourcegraph.WithGRPCEndpoint(context.Background(), mothership)
+	ctx := fed.Config.NewRemoteContext(context.Background())
 	rootKey, err := sourcegraph.NewClientFromContext(ctx).Meta.PubKey(ctx, &pbtypes.Void{})
 	if err != nil {
 		log15.Error("fetchRootPubKey could not fetch public key", "error", err)
@@ -1045,4 +1014,22 @@ func (c *ServeCmd) fetchRootPubKey() *idkey.PubKey {
 	}
 
 	return &idkey.PubKey{Key: rootPubKeyRSA, ID: rootID}
+}
+
+// tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
+// connections. It's used by ListenAndServe and ListenAndServeTLS so
+// dead TCP connections (e.g. closing laptop mid-download) eventually
+// go away.
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
 }
