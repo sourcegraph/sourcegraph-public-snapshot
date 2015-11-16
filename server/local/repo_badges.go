@@ -7,11 +7,13 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
-	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -40,14 +42,14 @@ func (s *repoBadges) ListBadges(ctx context.Context, repo *sourcegraph.RepoSpec)
 
 	var badges []*sourcegraph.Badge
 	for _, b := range allRepositoryBadges {
-		imageURL, err := apirouter.URL(
-			apirouter.RepoBadge,
-			map[string]string{"Repo": repo.URI, "Badge": b.Name, "Format": "svg"},
+		imageURL, err := approuter.Rel.URLToOrError(
+			approuter.RepoBadge,
+			"Repo", repo.URI, "Badge", b.Name, "Format", "svg",
 		)
 		if err != nil {
 			return nil, err
 		}
-		imageURL = apirouter.Abs(ctx, imageURL)
+		imageURL = conf.AppURL(ctx).ResolveReference(imageURL)
 
 		repoURL := conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepo(repo.URI))
 		b.ImageURL = imageURL.String()
@@ -68,16 +70,20 @@ func (s *repoBadges) ListCounters(ctx context.Context, repo *sourcegraph.RepoSpe
 		return nil, err
 	}
 
+	if store.RepoCountersFromContextOrNil(ctx) == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")
+	}
+
 	var counters []*sourcegraph.Counter
 	for _, c := range allRepositoryCounters {
-		imageURL, err := apirouter.URL(
-			apirouter.RepoCounter,
-			map[string]string{"Repo": repo.URI, "Counter": c.Name, "Format": "svg"},
+		imageURL, err := approuter.Rel.URLToOrError(
+			approuter.RepoCounter,
+			"Repo", repo.URI, "Counter", c.Name, "Format", "svg",
 		)
 		if err != nil {
 			return nil, err
 		}
-		imageURL = apirouter.Abs(ctx, imageURL)
+		imageURL = conf.AppURL(ctx).ResolveReference(imageURL)
 
 		repoURL := conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepo(repo.URI))
 		c.ImageURL = imageURL.String()
@@ -89,15 +95,25 @@ func (s *repoBadges) ListCounters(ctx context.Context, repo *sourcegraph.RepoSpe
 }
 
 func (s *repoBadges) RecordHit(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return &pbtypes.Void{}, store.RepoCountersFromContext(ctx).RecordHit(ctx, repo.URI)
+	store := store.RepoCountersFromContextOrNil(ctx)
+	if store == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")
+	}
+
+	return &pbtypes.Void{}, store.RecordHit(ctx, repo.URI)
 }
 
 func (s *repoBadges) CountHits(ctx context.Context, op *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
+	store := store.RepoCountersFromContextOrNil(ctx)
+	if store == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")
+	}
+
 	var since time.Time
 	if op.Since != nil {
 		since = op.Since.Time()
 	}
-	hits, err := store.RepoCountersFromContext(ctx).CountHits(ctx, op.Repo.URI, since)
+	hits, err := store.CountHits(ctx, op.Repo.URI, since)
 	if err != nil {
 		return nil, err
 	}

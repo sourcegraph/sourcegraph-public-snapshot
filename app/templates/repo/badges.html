@@ -12,9 +12,6 @@
 <table class="table">
 	{{range .Badges}}
 	{{/* Only show certain badges (the others are kinda lame). */}}
-	{{/* TODO(sqs): put top-func back when this index is finished being created:
-(SELECT commit_id FROM repo_build WHERE repo=(select rid from repo where uri='github.com/django/django' limit 1) AND success ORDER BY started_at DESC LIMIT 1)
-but it's not yet in the create table sql in package svc, since i am not totally sure it'll work */}}
 	{{if or (eq .Name "dependents") (eq .Name "library-users") (eq .Name "status") (eq .Name "docs-examples")}}
 	{{template "BadgeAndCounterRow" .}}
 	{{end}}

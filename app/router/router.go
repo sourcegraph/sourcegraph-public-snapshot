@@ -46,7 +46,9 @@ const (
 	OrgMembers                     = "org.members"
 
 	Repo               = "repo"
+	RepoBadge          = "repo.badge"
 	RepoBadges         = "repo.badges"
+	RepoCounter        = "repo.counter"
 	RepoCounters       = "repo.counters"
 	RepoBuilds         = "repo.builds"
 	RepoBuild          = "repo.build"
@@ -200,8 +202,10 @@ func New(base *mux.Router) *Router {
 
 	repoRev.Path("/.refresh").Methods("POST", "PUT").Name(RepoRefresh)
 	repoRev.Path("/.badges").Methods("GET").Name(RepoBadges)
+	repoRev.Path("/.badges/{Badge}.{Format}").Methods("GET").Name(RepoBadge)
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
 	repoRev.Path("/.counters").Methods("GET").Name(RepoCounters)
+	repoRev.Path("/.counters/{Counter}.{Format}").Methods("GET").Name(RepoCounter)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
 
 	headVar := "{Head:" + routevar.NamedToNonCapturingGroups(spec.RevPattern) + "}"
