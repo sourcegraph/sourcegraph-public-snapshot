@@ -255,6 +255,7 @@ func (c *loginCmd) Execute(args []string) error {
 }
 
 type whoamiCmd struct {
+	PrintToken bool `long:"print-token" description:"print the token used for authenticating requests"`
 }
 
 func (c *whoamiCmd) Execute(args []string) error {
@@ -275,6 +276,10 @@ func (c *whoamiCmd) Execute(args []string) error {
 		log.Fatalf("Error verifying auth credentials with endpoint %s: %s.", endpointURL, err)
 	}
 	log.Printf("%s (UID %d) on %s", authInfo.Login, authInfo.UID, endpointURL)
+
+	if c.PrintToken {
+		log.Printf(" Auth token: %s", ua.AccessToken)
+	}
 
 	return nil
 }
