@@ -147,21 +147,14 @@ func TestOAuth2ClientReceive(t *testing.T) {
 
 	mock.Ctx = oauth2client.WithClientID(mock.Ctx, "a")
 
-	var calledAuthGetAccessToken, calledAuthIdentify, calledUsersGet bool
+	var calledAuthGetAccessToken, calledAuthIdentify bool
 	mock.Auth.GetAccessToken_ = func(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
 		calledAuthGetAccessToken = true
 		return &sourcegraph.AccessTokenResponse{AccessToken: "t"}, nil
 	}
 	mock.Auth.Identify_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 		calledAuthIdentify = true
-		return &sourcegraph.AuthInfo{UID: 1}, nil
-	}
-	mock.Users.Get_ = func(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.User, error) {
-		calledUsersGet = true
-		if want := int32(1); user.UID != want {
-			t.Errorf("got UID == %d, want %d", user.UID, want)
-		}
-		return &sourcegraph.User{Login: "u"}, nil
+		return &sourcegraph.AuthInfo{UID: 1, Login: "u"}, nil
 	}
 
 	u := router.Rel.URLTo(router.OAuth2ClientReceive)
@@ -186,9 +179,6 @@ func TestOAuth2ClientReceive(t *testing.T) {
 	}
 	if !calledAuthIdentify {
 		t.Error("!calledAuthIdentify")
-	}
-	if !calledUsersGet {
-		t.Error("!calledUsersGet")
 	}
 
 	// Check the nonce is DELETED (set to empty and expired) in the response, to prevent reuse.

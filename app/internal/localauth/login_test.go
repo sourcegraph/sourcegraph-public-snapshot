@@ -69,7 +69,7 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var calledAuthGetAccessToken, calledAuthIdentify, calledUsersGet bool
+	var calledAuthGetAccessToken, calledAuthIdentify bool
 	mock.Auth.GetAccessToken_ = func(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
 		if !reflect.DeepEqual(*op.GetResourceOwnerPassword(), frm) {
 			t.Errorf("got form == %+v, want %+v", op, frm)
@@ -79,11 +79,7 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 	}
 	mock.Auth.Identify_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 		calledAuthIdentify = true
-		return &sourcegraph.AuthInfo{UID: 123}, nil
-	}
-	mock.Users.Get_ = func(ctx context.Context, userSpec *sourcegraph.UserSpec) (*sourcegraph.User, error) {
-		calledUsersGet = true
-		return &sourcegraph.User{Login: "u"}, nil
+		return &sourcegraph.AuthInfo{UID: 123, Login: "u"}, nil
 	}
 
 	resp, err := c.PostFormNoFollowRedirects(router.Rel.URLTo(router.LogIn).String(), data)
@@ -113,9 +109,6 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 	}
 	if !calledAuthIdentify {
 		t.Error("!calledAuthIdentify")
-	}
-	if !calledUsersGet {
-		t.Error("!calledUsersGet")
 	}
 }
 
