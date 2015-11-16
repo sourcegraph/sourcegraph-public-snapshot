@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -793,25 +794,47 @@ func goGetHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 		return
 	}
 
-	// Escape the repo URI so we don't open ourselves up to XSS. We just assume
-	// that the user requested a valid repo URI, go get handles the rest for us if
-	// they didn't.
-	if !strings.HasPrefix(r.URL.Path, "/") {
-		r.URL.Path = "/" + r.URL.Path
+	ctx := httpctx.FromRequest(r)
+	cl := Client()
+
+	// Escape the URL so we don't expose ourselves to XSS.
+	r.URL.Path = template.HTMLEscapeString(r.URL.Path)
+
+	// The user may be requesting a subpackage, e.g. "src.example.com/my/repo/sub/pkg"
+	// so we must find the right repo ("src.example.com/my/repo") by walking up
+	// directories until we find a valid repository.
+	repoURI := strings.TrimPrefix(r.URL.Path, "/")
+	for {
+		_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
+			URI: repoURI,
+		})
+		if err == nil {
+			// We found the repo!
+			break
+		}
+		split := strings.Split(repoURI, "/")
+		if len(split) > 1 {
+			split = split[:len(split)-1]
+		}
+		repoURI = path.Join(split...)
 	}
-	repoURI := template.HTMLEscapeString(r.URL.Path)
 
 	// Build git repository clone URL.
 	appURL := conf.AppURL(httpctx.FromRequest(r))
 	gitRepo := &url.URL{
 		Scheme: appURL.Scheme,
 		Host:   appURL.Host,
-		Path:   repoURI,
+		Path:   template.HTMLEscapeString(repoURI),
 	}
 
-	// Build the Go package path (e.g. "src.example.com/my/go/pkg").
-	pkgPath := strings.TrimPrefix(appURL.Host, "www.") + repoURI // for when AppURL has a leading www
+	// Build the Go package path (e.g. "src.example.com/my/go/pkg") corresponding
+	// to the repo root.
+	pkgPath := strings.TrimPrefix(appURL.Host, "www.") + "/" + repoURI // for when AppURL has a leading www
 
+	// For details on the meta tag, see:
+	//
+	//  https://golang.org/cmd/go/#hdr-Remote_import_paths
+	//
 	fmt.Fprintf(w, `<html><head><meta name="go-import" content="%s git %s"></head><body>go get %s</body></html>`, pkgPath, gitRepo, pkgPath)
 	log.Println("go get", pkgPath)
 }
