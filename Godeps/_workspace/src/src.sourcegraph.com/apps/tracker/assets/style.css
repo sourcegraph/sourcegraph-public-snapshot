@@ -181,3 +181,23 @@ nav .selected {
 	color: #000;
 	font-weight: bold;
 }
+
+.thread-list-item {
+	display: flex;
+	line-height: 1.42857;
+}
+.thread-list-item .title {
+	font-size: 19px;
+}
+.thread-list-item .subtitle {
+	font-size: 14px;
+}
+.thread-list-item .subtitle a {
+	font-style: italic;
+}
+.thread-list-item .id {
+	font-size: 21px;
+	line-height: 24px;
+	color: #bfbfbf;
+	padding-right: 10px;
+}

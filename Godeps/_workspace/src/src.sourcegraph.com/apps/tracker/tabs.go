@@ -15,7 +15,7 @@ import (
 // TODO: Factor out somehow...
 var tabsTmpl = template.Must(template.New("").Parse(`
 {{define "open-issue-count"}}<span><span style="margin-right: 4px;" class="octicon octicon-issue-opened"></span>{{.OpenCount}} Open</span>{{end}}
-{{define "closed-issue-count"}}<span style="margin-left: 12px;"><span style="margin-right: 4px;" class="octicon octicon-check"></span>{{.ClosedCount}} Closed</span>{{end}}
+{{define "closed-issue-count"}}<span><span style="margin-right: 4px;" class="octicon octicon-check"></span>{{.ClosedCount}} Closed</span>{{end}}
 `))
 
 const (
@@ -49,9 +49,10 @@ func tabs(s *state, path string, rawQuery string) (template.HTML, error) {
 		{id: "", templateName: "open-issue-count"},
 		{id: string(issues.ClosedState), templateName: "closed-issue-count"},
 	} {
+		li := &html.Node{Type: html.ElementNode, Data: atom.Li.String()}
 		a := &html.Node{Type: html.ElementNode, Data: atom.A.String()}
 		if tab.id == selectedTab {
-			a.Attr = []html.Attribute{{Key: atom.Class.String(), Val: "selected"}}
+			li.Attr = []html.Attribute{{Key: atom.Class.String(), Val: "active"}}
 		} else {
 			q := query
 			if tab.id == "" {
@@ -78,7 +79,8 @@ func tabs(s *state, path string, rawQuery string) (template.HTML, error) {
 			return "", err
 		}
 		a.AppendChild(tmplNode)
-		ns = append(ns, a)
+		li.AppendChild(a)
+		ns = append(ns, li)
 	}
 
 	return htmlg.Render(ns...), nil

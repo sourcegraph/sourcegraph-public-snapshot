@@ -9,11 +9,10 @@
 </html>
 
 {{define "issues-nav"}}
-{{/*<div class="list-entry-header">
-	<span><span style="margin-right: 4px;" class="octicon octicon-issue-opened"></span>{{.OpenCount}} Open</span>
-	<span style="margin-left: 8px;"><span  style="margin-right: 4px;" class="octicon octicon-check"></span>{{.ClosedCount}} Closed</span>
-</div>*/}}
-<div class="list-entry-header">
-	<nav>{{.Tabs}}</nav>
-</div>
+<nav>
+	<ul class="nav nav-tabs">
+		{{.Tabs}}
+		<button class="btn btn-success btn-small pull-right" onclick="window.location = '{{.BaseURI}}/new';">Create Thread</button>
+	</ul>
+</nav>
 {{end}}

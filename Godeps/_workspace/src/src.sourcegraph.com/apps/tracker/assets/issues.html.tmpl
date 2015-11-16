@@ -3,7 +3,6 @@
 		{{template "scriptless-head" .}}
 	</head>
 	<body>
-		<div style="text-align: right;"><button class="btn btn-success btn-small" onclick="window.location = '{{.BaseURI}}/new';">Create Thread</button></div>
 		{{template "issues" .}}
 	</body>
 </html>
@@ -24,19 +23,15 @@
 {{end}}
 
 {{define "issues"}}
-<div class="list-entry list-entry-border">
+<div class="list-entry">
 	{{template "issues-nav" .}}
 	{{with .Issues}}{{range .}}
 	<div class="list-entry-body multilist-entry">
-		<div style="display: flex;">
-			{{if eq .State "open"}}
-				<span style="margin-right: 6px; color: #6cc644;" class="octicon octicon-issue-opened"></span>
-			{{else if eq .State "closed"}}
-				<span style="margin-right: 6px; color: #bd2c00;" class="octicon octicon-issue-closed"></span>
-			{{end}}
+		<div class="thread-list-item">
+			<span class="id">#{{.ID}}</span>
 			<div style="flex-grow: 1;">
-				<div><a class="black" href="{{$.BaseURI}}/{{.ID}}"><strong>{{.Title}}</strong></a></div>
-				<div class="gray tiny">#{{.ID}} opened {{template "time" .CreatedAt}} by {{.User.Login}}</div>
+				<div class="title"><a href="{{$.BaseURI}}/{{.ID}}">{{.Title}}</a></div>
+				<div class="subtitle"> opened {{template "time" .CreatedAt}} by <a href="/~{{.User.Login}}">{{.User.Login}}</a></div>
 			</div>
 			<span title="{{.Replies}} replies" class="tiny {{if .Replies}}gray{{else}}lightgray{{end}}"><span class="octicon octicon-comment"></span> {{.Replies}}</span>
 		</div>
