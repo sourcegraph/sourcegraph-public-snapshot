@@ -792,7 +792,7 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",
-			"Rev": "56d7e2fb8dc326f3108a90034315eebc85396769"
+			"Rev": "870b72a67c8689d9c2b6efe144637fab8daf80f1"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/vfs",

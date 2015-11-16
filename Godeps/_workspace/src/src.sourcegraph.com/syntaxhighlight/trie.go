@@ -1,19 +1,23 @@
 package syntaxhighlight
 
+import (
+	"errors"
+)
+
 // trie branch
 type branch struct {
 	// matching character
-	v byte
+	V byte `json:"v"`
 	// reference to trie object
-	t *trie
+	T *trie `json:"t"`
 }
 
 // Trie structure
 type trie struct {
 	// children
-	children []branch
+	Children []branch `json:"children"`
 	// indicates that current object is a terminal node
-	end bool
+	End bool `json:"end"`
 }
 
 // Callback that defines if we should continue our search or stop at the current position
@@ -22,7 +26,7 @@ type lookupFunc func(len int) bool
 
 // Constructs new trie object
 func newTrie() *trie {
-	return &trie{children: make([]branch, 0), end: true}
+	return &trie{Children: make([]branch, 0), End: true}
 }
 
 // Inserts new prefix into trie.
@@ -32,25 +36,26 @@ func newTrie() *trie {
 // We expecting each tree path to contain only one terminal node
 // otherwise there might be a collision when there are both
 // "instanceof" and "in" prefixes
-func (root *trie) insert(prefix string) {
+func (root *trie) insert(prefix string) error {
 	node := root
 	for _, r := range prefix {
 		b := byte(r)
-		ti, ok := findBranch(node.children, b)
+		ti, ok := findBranch(node.Children, b)
 		if !ok {
-			ti = &trie{children: make([]branch, 0)}
-			node.children = append(node.children, branch{v: b, t: ti})
+			ti = &trie{Children: make([]branch, 0)}
+			node.Children = append(node.Children, branch{V: b, T: ti})
 		} else {
-			if ti.end {
-				panic("Shorter prefix exists for " + prefix)
+			if ti.End {
+				return errors.New("Shorter prefix exists for " + prefix)
 			}
 		}
 		node = ti
 	}
-	node.end = true
-	if len(node.children) > 0 {
-		panic("Longer prefix exists for " + prefix)
+	node.End = true
+	if len(node.Children) > 0 {
+		return errors.New("Longer prefix exists for " + prefix)
 	}
+	return nil
 }
 
 // Returns length of found prefix in a given slice or -1
@@ -62,12 +67,12 @@ func (root *trie) insert(prefix string) {
 func (root *trie) lookup(s []byte, fn lookupFunc) int {
 	node := root
 	for pos, r := range s {
-		ti, ok := findBranch(node.children, r)
+		ti, ok := findBranch(node.Children, r)
 		if !ok {
 			return -1
 		}
 		node = ti
-		if node.end && fn(pos+1) {
+		if node.End && fn(pos+1) {
 			return pos + 1
 		}
 	}
@@ -77,8 +82,8 @@ func (root *trie) lookup(s []byte, fn lookupFunc) int {
 // Returns associated trie if there is a branch that matches given byte
 func findBranch(branches []branch, value byte) (*trie, bool) {
 	for _, branch := range branches {
-		if branch.v == value {
-			return branch.t, true
+		if branch.V == value {
+			return branch.T, true
 		}
 	}
 	return nil, false
