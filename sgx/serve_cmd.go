@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -75,7 +76,8 @@ var shortHelpMessage = `Usage:
 Starts an HTTP server serving the app and API.
 
 [serve command options]
-          --http-addr=                           regular HTTP/1 address to listen on, if not blank (:3000)
+          --http-addr=                           HTTP listen address for app, REST API, and gRPC API (:3000)
+          --https-addr=                          HTTPS (TLS) listen address for app, REST API, and gRPC API (:3001)
           --ssh-addr=                            SSH address to listen on, if not blank (:3002)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
@@ -161,8 +163,9 @@ type ServeCmdPrivate struct {
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
-	HTTPAddr string `long:"addr" default:":3000" description:"Web and API listen address (uses TLS if cert/key are set)" required:"yes"`
-	SSHAddr  string `long:"ssh-addr" default:":3002" description:"SSH address to listen on, if not blank"`
+	HTTPAddr  string `long:"http-addr" default:":3000" description:"HTTP listen address for app, REST API, and gRPC API"`
+	HTTPSAddr string `long:"https-addr" default:":3001" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API"`
+	SSHAddr   string `long:"ssh-addr" default:":3002" description:"SSH address to listen on, if not blank"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
 
@@ -399,12 +402,20 @@ func (c *ServeCmd) Execute(args []string) error {
 	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(newRouter())))
 
+	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {
+		return errors.New("HTTPS listen address (--https-addr) must be specified if TLS cert and key are set")
+	}
 	useTLS := c.CertFile != "" || c.KeyFile != ""
 
-	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
-	if useTLS {
-		mw = append(mw, setTLSMiddleware)
+	if useTLS && appURL.Scheme == "http" {
+		log15.Warn("TLS is enabled but app url scheme is http", "appURL", appURL)
 	}
+
+	if !useTLS && appURL.Scheme == "https" {
+		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
+	}
+
+	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
 	if c.RedirectToHTTPS {
 		mw = append(mw, redirectToHTTPSMiddleware)
 	}
@@ -435,32 +446,58 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	h := handlerutil.WithMiddleware(sm, mw...)
 
-	c.HTTPAddr = interpolatePort(c.HTTPAddr)
+	serveHTTP := func(l net.Listener, srv http.Server, addr string, tls bool) {
+		lmux := cmux.New(l)
+		grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
+		anyListener := lmux.Match(cmux.Any())
 
-	var srv http.Server
-	srv.Addr = c.HTTPAddr
-	srv.Handler = h
+		// Web
+		log15.Debug("HTTP running", "on", addr, "TLS", tls)
+		srv.Addr = addr
+		srv.Handler = h
+		if tls {
+			srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				setTLSMiddleware(w, r, h.ServeHTTP)
+			})
+		}
+		go func() { log.Fatal(srv.Serve(anyListener)) }()
 
-	if useTLS && appURL.Scheme == "http" {
-		log15.Warn("TLS is enabled but app url scheme is http", "appURL", appURL)
+		// gRPC
+		log15.Debug("gRPC API running", "on", addr, "TLS", tls)
+		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
+
+		go func() {
+			if err := lmux.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
+				log.Fatalf("Error serving: %s.", err)
+			}
+		}()
 	}
 
-	if !useTLS && appURL.Scheme == "https" {
-		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
+	// Start HTTP server.
+	if c.HTTPAddr != "" {
+		l, err := net.Listen("tcp", c.HTTPAddr)
+		if err != nil {
+			return err
+		}
+		l = tcpKeepAliveListener{l.(*net.TCPListener)}
+		serveHTTP(l, http.Server{}, c.HTTPAddr, false)
 	}
 
-	listener, err := net.Listen("tcp", c.HTTPAddr)
-	if err != nil {
-		return err
-	}
-	listener = tcpKeepAliveListener{listener.(*net.TCPListener)}
+	// Start HTTPS server.
+	if useTLS && c.HTTPSAddr != "" {
+		l, err := net.Listen("tcp", c.HTTPSAddr)
+		if err != nil {
+			return err
+		}
+		l = tcpKeepAliveListener{l.(*net.TCPListener)}
 
-	if useTLS {
 		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
 		if err != nil {
 			return err
 		}
 
+		var srv http.Server
 		config := srv.TLSConfig
 		if config == nil {
 			config = &tls.Config{}
@@ -469,30 +506,14 @@ func (c *ServeCmd) Execute(args []string) error {
 		if config.NextProtos == nil {
 			config.NextProtos = []string{"http/1.1"}
 		}
-		if config.NextProtos == nil {
-			config.NextProtos = append(config.NextProtos, "http/1.1")
-		}
 		config.Certificates = []tls.Certificate{cert}
 		srv.TLSConfig = config
-		listener = tls.NewListener(listener, srv.TLSConfig)
+		l = tls.NewListener(l, srv.TLSConfig)
+
+		serveHTTP(l, srv, c.HTTPSAddr, true)
 	}
 
-	lmux := cmux.New(listener)
-	grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
-	anyListener := lmux.Match(cmux.Any())
-
-	if c.HTTPAddr != "" {
-		// Web
-		log15.Debug("HTTP running", "on", c.HTTPAddr, "TLS", useTLS)
-		go func() { log.Fatal(srv.Serve(anyListener)) }()
-
-		// gRPC
-		log15.Debug("gRPC API running", "on", c.HTTPAddr, "TLS", useTLS)
-		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
-		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
-
-		log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
-	}
+	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	if err := c.authenticateCLIContext(idKey); err != nil {
 		return err
@@ -549,12 +570,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
 
-	go func() {
-		if err := lmux.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
-			log.Fatalf("Error serving: %s.", err)
-		}
-	}()
-
 	// Connection test
 	c.checkReachability()
 
@@ -563,10 +578,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
 	return nil
-}
-
-func interpolatePort(s string) string {
-	return strings.Replace(s, "$PORT", os.Getenv("PORT"), 1)
 }
 
 // generateOrReadIDKey reads the server's ID key (or creates one on-demand).

@@ -13,8 +13,11 @@ import (
 
 	"golang.org/x/net/context"
 
+	"strings"
+
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
+	"src.sourcegraph.com/sourcegraph/util/httptestutil"
 
 	"sync"
 
@@ -35,8 +38,29 @@ func TestServerTLS(t *testing.T) {
 	}()
 
 	a, ctx := testserver.NewUnstartedServerTLS()
+	a.Config.Serve.RedirectToHTTPS = true
 
 	doTestServer(t, a, ctx)
+	defer a.Close()
+
+	// Test that HTTP redirects to HTTPS.
+	httpsURL := conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/foo/bar"}).String()
+	httpURL := strings.Replace(httpsURL, "https://", "http://", 1)
+	httpURL = strings.Replace(httpURL, a.Config.Serve.HTTPSAddr, a.Config.Serve.HTTPAddr, 1)
+	httpClient := &httptestutil.Client{}
+	resp, err := httpClient.GetNoFollowRedirects(httpURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if want := http.StatusMovedPermanently; resp.StatusCode != want {
+		t.Errorf("got HTTP status %d, want %d", resp.StatusCode, want)
+	}
+	if got, want := resp.Header.Get("location"), strings.Replace(httpURL, "http://", "https://", 1); got != want {
+		t.Errorf("got HTTP Location redirect to %q, want %q", got, want)
+	}
 }
 
 var numServersSerialParallel = flag.Int("test.servers", 3, "number of servers to spawn for serial/parallel server tests")
@@ -82,16 +106,17 @@ func TestManyServers_Parallel(t *testing.T) {
 func testServer(t *testing.T) {
 	a, ctx := testserver.NewUnstartedServer()
 	doTestServer(t, a, ctx)
+	defer a.Close()
 }
 
 func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
 		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
 	)
+
 	if err := a.Start(); err != nil {
 		log.Fatal(err)
 	}
-	defer a.Close()
 
 	// Test gRPC server.
 	serverConfig, err := a.Client.Meta.Config(ctx, &pbtypes.Void{})

@@ -2,15 +2,16 @@
 title = "Listeners and endpoints"
 +++
 
-Sourcegraph's HTTP listener exposes 3 services, all multiplexed on the
+Sourcegraph exposes 3 services over HTTP, all multiplexed on the
 same port:
 
 * HTTP for the Web app
 * HTTP for the REST API
 * HTTP/2 for the gRPC API
 
-If [TLS is enabled]({{< relref "config/https.md" >}})), then all of
-these services are accessible by HTTPS only.
+You can [configure Sourcegraph to use TLS]({{< relref
+"config/https.md" >}})) to make these services available over HTTPS,
+in addition to or instead of HTTP.
 
 Note: The examples in this document use `http://` URLs, because that is the
 default. On the public Internet, you are strongly recommended to
@@ -19,7 +20,7 @@ to avoid leaking credentials on the wire.
 
 # Listen ports
 
-You can configure the listeners using the settings shown below.
+You can configure the HTTP listener with:
 
 ```
 [serve]
@@ -63,7 +64,7 @@ Or, if [using TLS]({{< relref "config/https.md" >}}):
 
 ```
 [serve]
-HTTPAddr = :443
+HTTPSAddr = :443
 CertFile = my.crt
 KeyFile = my.key
 ```

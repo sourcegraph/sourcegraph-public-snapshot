@@ -380,15 +380,26 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.SGPATH = sgpath
 
 	// Find unused ports
-	var httpPort, appdashHTTPPort int
-	s.selectUnusedPorts(&httpPort, &appdashHTTPPort)
+	var httpPort, httpsPort, appdashHTTPPort int
+	s.selectUnusedPorts(&httpPort, &httpsPort, &appdashHTTPPort)
+
+	var mainHTTPPort int
+	switch scheme {
+	case "http":
+		mainHTTPPort = httpPort
+	case "https":
+		mainHTTPPort = httpsPort
+	default:
+		panic("bad scheme: " + scheme)
+	}
 
 	// HTTP
 	s.Config.Serve.HTTPAddr = fmt.Sprintf(":%d", httpPort)
-	s.Config.Endpoint.RawURL = fmt.Sprintf("%s://localhost:%d", scheme, httpPort)
+	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
+	s.Config.Endpoint.RawURL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
 
 	// App
-	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, httpPort)
+	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
 
 	// Store type
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &storecli.Flags{

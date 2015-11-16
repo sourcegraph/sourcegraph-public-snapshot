@@ -45,7 +45,7 @@ spec:
   - name: https
     protocol: TCP
     port: 443
-    targetPort: 3000
+    targetPort: 3001
   type: LoadBalancer
 ```
 
