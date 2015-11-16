@@ -80,9 +80,9 @@ func (s *notify) mothershipNotifyClient(ctx context.Context) sourcegraph.NotifyC
 }
 
 func (s *notify) shouldFederateEmail() bool {
-	// If we are configured to send email or we are the mothership then
-	// our instance should send the email, rather than federating out
-	return !(notif.EmailIsConfigured() || fed.Config.IsRoot)
+	// Only the mothership can look up arbitrary user emails, so we
+	// federate all email notifications to it.
+	return !fed.Config.IsRoot
 }
 
 func dedupUsers(users []*sourcegraph.UserSpec) []*sourcegraph.UserSpec {
