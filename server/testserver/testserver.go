@@ -396,7 +396,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	// HTTP
 	s.Config.Serve.HTTPAddr = fmt.Sprintf(":%d", httpPort)
 	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
-	s.Config.Endpoint.RawURL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
+	s.Config.Endpoint.URL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
 
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)

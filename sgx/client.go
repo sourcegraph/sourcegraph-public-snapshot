@@ -37,9 +37,9 @@ var Endpoint EndpointOpts
 // the server with `src --endpoint http://10.1.2.3:3080 serve
 // --app-url https://example.com`.
 type EndpointOpts struct {
-	// RawURL is the raw endpoint URL. Callers should almost never use
+	// URL is the raw endpoint URL. Callers should almost never use
 	// this; use the URLOrDefault method instead.
-	RawURL string `short:"u" long:"endpoint" description:"URL to Sourcegraph server" default:"" env:"SRC_URL"`
+	URL string `short:"u" long:"endpoint" description:"URL to Sourcegraph server" default:"" env:"SRC_URL"`
 }
 
 // NewContext sets the server endpoint in the context.
@@ -54,7 +54,7 @@ func (c *EndpointOpts) NewContext(ctx context.Context) context.Context {
 // c.Endpoint, even when you just need a string form (just call
 // URLOrDefault().String()).
 func (c *EndpointOpts) URLOrDefault() *url.URL {
-	e := c.RawURL
+	e := c.URL
 	if e == "" {
 		e = "http://localhost:3080"
 	}
@@ -101,13 +101,13 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 		// Prefer explicitly specified endpoint, then auth file default endpoint,
 		// then fallback default. For this reason, we use Endpoint not URLOrDefault
 		// (which provides the fallback default) here.
-		ua := userAuth[Endpoint.RawURL]
-		if Endpoint.RawURL == "" {
+		ua := userAuth[Endpoint.URL]
+		if Endpoint.URL == "" {
 			if ua == nil {
 				var ep string
 				ep, ua = userAuth.getDefault()
 				if ep != "" {
-					Endpoint.RawURL = ep
+					Endpoint.URL = ep
 				}
 			}
 			if ua == nil {
