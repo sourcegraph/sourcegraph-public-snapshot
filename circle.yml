@@ -120,3 +120,4 @@ deployment:
       - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
       - docker tag sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
       - docker push sourcegraph/sourcegraph:latest
+      - echo $CIRCLE_SHA1 | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
