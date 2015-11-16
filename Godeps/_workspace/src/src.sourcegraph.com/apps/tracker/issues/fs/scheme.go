@@ -35,5 +35,5 @@ type event struct {
 	ActorUID  int32
 	CreatedAt time.Time
 	Type      issues.EventType
-	Rename    *issues.Rename
+	Rename    *issues.Rename `json:",omitempty"`
 }

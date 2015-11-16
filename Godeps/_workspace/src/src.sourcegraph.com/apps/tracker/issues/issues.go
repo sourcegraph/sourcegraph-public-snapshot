@@ -13,6 +13,10 @@ type RepoSpec struct {
 	URI string // URI is clean '/'-separated URI. E.g, "user/repo".
 }
 
+func (rs RepoSpec) String() string {
+	return rs.URI
+}
+
 type Service interface {
 	List(ctx context.Context, repo RepoSpec, opt IssueListOptions) ([]Issue, error)
 	Count(ctx context.Context, repo RepoSpec, opt IssueListOptions) (uint64, error)
