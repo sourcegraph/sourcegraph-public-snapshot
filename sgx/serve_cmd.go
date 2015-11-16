@@ -813,9 +813,12 @@ func goGetHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 			break
 		}
 		split := strings.Split(repoURI, "/")
-		if len(split) > 1 {
-			split = split[:len(split)-1]
+		if len(split) == 1 {
+			// This was our last attempt; there isn't a repo for this request.
+			http.Error(w, "no such repository", http.StatusNotFound)
+			return
 		}
+		split = split[:len(split)-1]
 		repoURI = path.Join(split...)
 	}
 
