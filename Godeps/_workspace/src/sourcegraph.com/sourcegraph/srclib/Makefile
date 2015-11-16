@@ -49,9 +49,9 @@ check-release:
 	@echo Released srclib $(V)
 
 install-all-toolchains:
-	srclib toolchain install go python ruby javascript java
+	srclib toolchain install go python javascript java
 
-toolchains ?= go javascript python ruby
+toolchains ?= go javascript python java
 
 test-all-toolchains:
 	@echo Checking that all standard toolchains are installed

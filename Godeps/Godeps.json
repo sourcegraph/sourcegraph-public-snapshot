@@ -730,8 +730,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-200-g88078d6",
-			"Rev": "88078d6e65fdbbff925c45f9c40b3c98d16aeab5"
+			"Comment": "v0.5-c-206-g42e0bfd",
+			"Rev": "42e0bfdbd27a6d41b7814fbb1284c64248f96956"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -751,7 +751,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-java/java_def",
-			"Rev": "ccd33ec3f96697ae4977f1a40c7d8afd23e7380d"
+			"Rev": "b562a32537bac7c2b21e48d90b43f77f0c3a8f23"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-javascript/javascript_def",

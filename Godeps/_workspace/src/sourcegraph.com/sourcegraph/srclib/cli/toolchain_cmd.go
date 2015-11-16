@@ -3,16 +3,12 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
-	"time"
 
 	"strings"
 	"sync"
@@ -436,13 +432,15 @@ func installGoToolchain() error {
 	const toolchain = "sourcegraph.com/sourcegraph/srclib-go"
 
 	// Identify if Go is installed already or not.
-	if _, err := exec.LookPath("go"); err != nil {
+	if _, err := exec.LookPath("go"); isExecErrNotFound(err) {
 		return errors.New(`
 Refusing to install Go toolchain because Go is not installed or is not on the
 system path.
 
 -> Please install the latest version of Go (https://golang.org/doc/install) and
 run this command again.`)
+	} else if err != nil {
+		return err
 	}
 
 	if os.Getenv("GOPATH") == "" {
@@ -475,12 +473,19 @@ func installRubyToolchain() error {
 	const toolchain = "sourcegraph.com/sourcegraph/srclib-ruby"
 
 	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+		return err
+	}
 
 	if _, err := exec.LookPath("ruby"); isExecErrNotFound(err) {
 		return errors.New("no `ruby` in PATH (do you have Ruby installed properly?)")
+	} else if err != nil {
+		return err
 	}
 	if _, err := exec.LookPath("bundle"); isExecErrNotFound(err) {
 		return fmt.Errorf("found `ruby` in PATH but did not find `bundle` in PATH; Ruby toolchain requires bundler (run `gem install bundler` to install it)")
+	} else if err != nil {
+		return err
 	}
 
 	log.Println("Downloading or updating Ruby toolchain in", srclibpathDir)
@@ -551,76 +556,32 @@ func installPythonToolchain() error {
 }
 
 func installJavaToolchain() error {
-	return installToolchainFromBundle("Java", "sourcegraph.com/sourcegraph/srclib-java", "https://srclib-support.s3-us-west-2.amazonaws.com/srclib-java/srclib-java__bundle__jdk-1.8.tar.gz")
-}
+	const toolchain = "sourcegraph.com/sourcegraph/srclib-java"
 
-func installToolchainFromBundle(name, toolchainPath, bundleURL string) (err error) {
-	tmpDir, err := ioutil.TempDir("", "srclib-toolchain-bundle")
-	if err != nil {
-		return err
-	}
+	reqCmds := []string{"java", "gradle"}
+	for _, cmd := range reqCmds {
+		if _, err := exec.LookPath(cmd); isExecErrNotFound(err) {
+			return fmt.Errorf(`
+Refusing to install Java toolchain because %s is not installed or is not on the system path.
 
-	url, err := url.Parse(bundleURL)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("Installing %s toolchain from %s", name, bundleURL)
-	outputFile := filepath.Join(tmpDir, filepath.Base(url.Path))
-	f, err := os.Create(outputFile)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err2 := f.Close(); err2 != nil && err == nil {
-			err = err2
+-> Please install %s and run this command again`, cmd, cmd)
+		} else if err != nil {
+			return err
 		}
-	}()
-
-	resp, err := http.Get(bundleURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("GET %s: unexpected HTTP status %d (%s)", bundleURL, resp.StatusCode, resp.Status)
 	}
 
-	done := make(chan struct{})
-	go func() {
-		for {
-			t := time.After(time.Second * 2)
-			select {
-			case <-t:
-				fi, err := os.Stat(outputFile)
-				if err == nil {
-					colorable.Printf("\rDownload %.1f%% complete (%.1f MB / %.1f MB)",
-						float64(fi.Size())/float64(resp.ContentLength)*100,
-						float64(fi.Size())/1024/1024,
-						float64(resp.ContentLength)/1024/1024,
-					)
-				}
-			case <-done:
-				return
-			}
-		}
-	}()
-
-	log.Printf("Downloading %s (%.1f MB)", bundleURL, float64(resp.ContentLength)/1024/1024)
-	_, err = io.Copy(f, resp.Body)
-	done <- struct{}{}
-	colorable.Println() // for the "\r" line in the progress indicator
-	if err != nil {
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
 		return err
 	}
 
-	log.Printf("Finished downloading")
+	log.Println("Downloading or updating Java toolchain in", srclibpathDir)
+	if err := execSrcCmd("toolchain", "get", "-u", toolchain); err != nil {
+		return err
+	}
 
-	log.Printf("Unarchiving %s toolchain bundle at %s", name, outputFile)
-	var unbundleCmd ToolchainUnbundleCmd
-	unbundleCmd.Args.BundleFile = outputFile
-	unbundleCmd.Args.Toolchain = toolchainPath
-	if err := unbundleCmd.Execute(nil); err != nil {
+	log.Println("Building Java toolchain program")
+	if err := execCmd("make", "-C", srclibpathDir); err != nil {
 		return err
 	}
 

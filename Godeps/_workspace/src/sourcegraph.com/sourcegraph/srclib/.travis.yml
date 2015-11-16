@@ -7,6 +7,20 @@ before_install:
   - mkdir -p $HOME/gopath/src/sourcegraph.com/sourcegraph
   - mv $TRAVIS_BUILD_DIR $HOME/gopath/src/sourcegraph.com/sourcegraph/srclib
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/sourcegraph.com/sourcegraph/srclib
+  # Java 8
+  - sudo add-apt-repository -y ppa:webupd8team/java
+  - sudo apt-get update -qq
+  - sudo apt-get install -y oracle-java8-installer
+  - sudo ln -s /usr/lib/jvm/java-8-oracle /usr/lib/jvm/default-java
+  - unset JAVA_HOME
+  - sudo rm /usr/bin/java
+  - export PATH=/usr/lib/jvm/java-8-oracle/jre/bin:$PATH
+  - java -version
+  # gradle 2.2
+  - curl -L -o gradle.zip https://services.gradle.org/distributions/gradle-2.2-bin.zip
+  - unzip gradle.zip
+  - mv gradle-2.2 $HOME/gradle
+  - export PATH=$HOME/gradle/bin:$PATH
   # for rst2html (package doc)
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-docutils
