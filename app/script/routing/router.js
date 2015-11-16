@@ -141,6 +141,6 @@ module.exports = {
 	// request can be made, given start and end unix timestamps in milliseconds
 	// representing the start and end of page content loading.
 	appdashUploadPageLoadURL(start, end, route, template) {
-		return `/.ui/.appdash/upload-page-load?S=${start}&E=${end}&Route=${route}&Template={template}`;
+		return `/.ui/.appdash/upload-page-load?S=${start}&E=${end}&Route=${route}&Template=${template}`;
 	},
 };
