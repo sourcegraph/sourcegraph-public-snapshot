@@ -7,21 +7,19 @@ letting them:
 * view live usage examples for any function, type, etc.
 * perform code reviews
 * carry on persistent discussions on any piece of code
+* discover important information in context
+* track issues and projects
 
-Status: **limited release** ([Go](https://golang.org) support only)
+Status: **limited release** ([Go](https://golang.org) and [Java](http://docs.oracle.com/javase/8/)
+support only)
 
 Your git repositories can live on Sourcegraph, or you can use it to
 search and browse existing repositories.
 
-Start using Sourcegraph for your team's code (see **Quickstart**
-below), or try it out at [Sourcegraph.com](https://sourcegraph.com)
-for public, open-source code.
-
-
 ## Installation
 
-See the [Sourcegraph documentation](https://src.sourcegraph.com/sourcegraph/.docs) for
-installation instructions.
+See the [Sourcegraph Docs](https://src.sourcegraph.com/sourcegraph/.docs)
+for installation instructions.
 
 ## Under the hood
 
@@ -38,7 +36,6 @@ Sourcegraph is built on several components:
   Sourcegraph that provides information about open-source projects to
   your local Sourcegraph.
 
-
 ## Contributing to Sourcegraph
 
 Want to make Sourcegraph better? Great! Check out
@@ -46,6 +43,7 @@ Want to make Sourcegraph better? Great! Check out
 contributions--code, documentation, assets, community support, and
 user feedback.
 
+Our [README.dev.md](README.dev.md) is a good place to start.
 
 ## Security
 
@@ -53,7 +51,8 @@ Security is very important to us. If you discover a security-related
 issue, please responsibly disclose it by emailing
 security@sourcegraph.com and not by creating an issue.
 
+[Read our complete security policy.](https://sourcegraph.com/security)
 
 ## License
 
-(TODO)
+[Fair Source License](https://fair.io)

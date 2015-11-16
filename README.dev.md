@@ -5,8 +5,8 @@ reading the code at https://src.sourcegraph.com/sourcegraph.
 
 ## Environment
 
-First, before you can develop Sourcegraph you will need to set up a
-development environment. Here is what you need:
+Before you can develop Sourcegraph you'll need to set up a
+development environment. Here's what you need:
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [Go](https://golang.org/doc/install) (v1.5.0 or higher)
@@ -18,13 +18,10 @@ If you are new to Go, you should also [set up your `GOPATH` which contains all y
 
 ## Get the code
 
-[Create an account](https://sourcegraph.com/join) on sourcegraph.com.
-
-Then, clone the `sourcegraph` repository into `$GOPATH/src/src.sourcegraph.com/sourcegraph`.
-When prompted for your git credentials, use your sourcegraph.com login.
+Then, clone the `sourcegraph` repository into `$GOPATH/src/src.sourcegraph.com/sourcegraph`
 
 ```
-git clone https://src.sourcegraph.com/sourcegraph $GOPATH/src/src.sourcegraph.com/sourcegraph
+go get src.sourcegraph.com/sourcegraph
 ```
 
 ## Build
@@ -68,6 +65,8 @@ To run a specific package's tests:
 godep go test ./util/textutil
 ```
 
+Learn more at [README.tests.md](README.tests.md).
+
 ## godep
 
 The Sourcegraph repository uses
@@ -91,7 +90,7 @@ godep go install ./cmd/src && godep go test -tags 'buildtest exectest' ./sgx
 
 Also, keep in mind that after you update dependencies, you must re-run
 codegen (see the Codegen section for more info). Here's a one-liner
-for updating go-sourcegraph (the most commonly updated dependency):
+for updating `go-sourcegraph` (the most commonly updated dependency):
 
 ```
 godep update sourcegraph.com/sourcegraph/go-sourcegraph/... && godep go generate ./...
@@ -121,9 +120,6 @@ generate`. Code generation is used for a variety of tasks:
 (this is a tech debt TODO to obviate)
 * generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
 * pack app templates and assets into binaries
-
-The way we use code generation is not necessarily good, so you should
-think carefully before adding more.
 
 To re-generate codegenned code, run:
 
@@ -167,3 +163,8 @@ Useful reading:
   `gofmt`, `golint`, and `go vet` (all of which you should set up to
   run automatically in your editor). Others should be raised during
   code review.
+
+## Protocol Buffers
+
+Sourcegraph uses gRPC and Protocol Buffers under the hood. Read more at
+[README.protobuf.md](README.protobuf.md).
