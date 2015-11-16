@@ -3,8 +3,12 @@ package local
 import (
 	"log"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -41,6 +45,9 @@ func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*so
 		log.Printf("Warning: users not implemented, returning empty list")
 		return &sourcegraph.EmailAddrList{}, nil
 	}
+	if err := s.verifyCanReadEmail(ctx, *user); err != nil {
+		return nil, err
+	}
 
 	emails, err := store.ListEmails(ctx, *user)
 	if err != nil {
@@ -67,4 +74,11 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*s
 	}
 	shortCache(ctx)
 	return &sourcegraph.UserList{Users: users}, nil
+}
+
+func (s *users) verifyCanReadEmail(ctx context.Context, user sourcegraph.UserSpec) error {
+	if authpkg.UserSpecFromContext(ctx).UID == user.UID {
+		return nil
+	}
+	return grpc.Errorf(codes.PermissionDenied, "Can not view user email")
 }

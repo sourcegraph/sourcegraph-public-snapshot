@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
+
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -49,5 +51,20 @@ func TestUsersService_List(t *testing.T) {
 	}
 	if !reflect.DeepEqual(users, wantUsers) {
 		t.Errorf("got %+v, want %+v", users, wantUsers)
+	}
+}
+
+func TestVerifyCanReadOwnEmail(t *testing.T) {
+	var s users
+	ctx, _ := testContext()
+
+	actor := sourcegraph.UserSpec{UID: 100}
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(actor.UID)})
+	if err := s.verifyCanReadEmail(ctx, actor); err != nil {
+		t.Error("Should be able to read own email")
+	}
+
+	if err := s.verifyCanReadEmail(ctx, sourcegraph.UserSpec{UID: 123}); err == nil {
+		t.Error("Should not be allowed to read other user's email")
 	}
 }
