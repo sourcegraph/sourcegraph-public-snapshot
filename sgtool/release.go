@@ -81,8 +81,8 @@ func (c *ReleaseCmd) Execute(args []string) error {
 
 	// Versions like "10.3.100" are considered public by default, while ones with
 	// a dash suffix like "10.3.101-hack" are considered private by default.
-	privateVersion := len(strings.Split(c.Args.Version, "-")) > 1
-	if c.Private || privateVersion {
+	isPrivate := len(strings.Split(c.Args.Version, "-")) > 1
+	if c.Private || isPrivate {
 		matches, err := filepath.Glob(selfupdateDir + "/*/src.json")
 		if err != nil {
 			return err
