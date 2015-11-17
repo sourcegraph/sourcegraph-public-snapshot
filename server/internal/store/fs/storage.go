@@ -271,7 +271,7 @@ func isAlphaNumeric(s string) bool {
 	return true
 }
 
-// storageNamePath converts a storage name into a sanitized path safe for perfoming
+// storageNamePath converts a storage name into a sanitized path safe for performing
 // FS actions on. The directory has a structure like e.g.:
 //
 //  $SGPATH/appdata/repo/<RepoURI>/<AppName>/...
