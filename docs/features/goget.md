@@ -2,7 +2,7 @@
 title = "Go get support"
 +++
 
-All repositories hosted on Sourcegraph automatically support [go get](https://golang.org/cmd/go/#hdr-Remote_import_paths). Only basic configuration of the server is required, in specific you must:
+All repositories hosted on Sourcegraph automatically support [go get](https://golang.org/cmd/go/#hdr-Remote_import_paths). Only basic configuration of the server is required, specifically you must:
 
 1. [Configure AppURL and DNS]({{< relref "config/appurl-dns.md" >}}); `go get` requires a domain name to work.
 1. [Configure HTTPS and TLS]({{< relref "config/https.md" >}}); otherwise `go get --insecure` must be used.
