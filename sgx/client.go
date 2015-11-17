@@ -56,7 +56,18 @@ func (c *EndpointOpts) NewContext(ctx context.Context) context.Context {
 func (c *EndpointOpts) URLOrDefault() *url.URL {
 	e := c.URL
 	if e == "" {
-		e = "http://localhost:3080"
+		// The user did not explicitly specify a endpoint URL, so use the default
+		// found in the auth file.
+		userAuth, err := readUserAuth()
+		if err != nil {
+			log.Fatal(err, "failed to read user auth file (in EndpointOpts.URLOrDefault)")
+		}
+		e, _ = userAuth.getDefault()
+		if e == "" {
+			// Auth file has no default, so just choose a sensible default value
+			// instead.
+			e = "http://localhost:3080"
+		}
 	}
 	endpoint, err := url.Parse(e)
 	if err != nil {
