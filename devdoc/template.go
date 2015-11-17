@@ -25,7 +25,6 @@ var templates = [][]string{
 	{"root.html", "layout.html"},
 	{"libraries.html", "layout.html"},
 	{"api.html", "layout.html"},
-	{"community.html", "layout.html"},
 	{"enable.html", "layout.html"},
 }
 
