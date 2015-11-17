@@ -11,8 +11,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"strings"
-
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
 	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/hgcmd"
@@ -71,11 +69,6 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		// it's ever possible for the HTTPCloneURL to be on a
 		// different server but still have this if-condition hold,
 		// then we could leak the user's credentials.
-		//
-		// TODO(public-release): This leaks the access token, which
-		// currently has arbitrary scope, in case of clone errors to
-		// anyone who views the logs, because the error message often
-		// contains the clone URL.
 		if repo.Origin == "" && !repo.Mirror {
 			if Credentials.AccessToken != "" {
 				username = "x-oauth-basic"
@@ -125,62 +118,16 @@ func (c *prepBuildCmd) Execute(args []string) error {
 // because they are often temporary credentials that expire after this
 // operation), we remove them from the git remote URL after use,
 // although the current method is not very reliably secure.
-//
-// TODO(#nongit): The removal of the authenticated git remote URL
-// means that this is currently git-specific.
 func PrepBuildDir(vcsType, unauthedCloneURL, username, password, dir, commitID string, opt vcs.RemoteOpts) (err error) {
-	credentialsNeeded := username != "" || password != ""
-
-	// Generate authenticated clone URL (with credentials, if any).
-	//
-	// TODO(sqs): Move this to go-vcs RemoteOpts (like ssh credentials
-	// support).
 	u, err := url.Parse(unauthedCloneURL)
 	if err != nil {
 		return err
 	}
-	if credentialsNeeded {
-		u.User = url.UserPassword(username, password)
+	if username != "" { // a username has to be set if the password is non-empty
+		u.User = url.User(username)
+		opt.HTTPS = &vcs.HTTPSConfig{Pass: password}
 	}
 	authedCloneURL := u.String()
-
-	setOriginRemoteURL := func(url string) error {
-		// TODO(public-release): Anyone can run a well-timed `ps` to
-		// see the authed clone URL (if url contains credentials), and
-		// if there's an error, the credentials might be printed to
-		// publicly viewable logs. The feeble attempt to cleanse the
-		// output (strings.Replace'ing the authed clone URL in a defer
-		// block) is not reliable enough.
-		return execCmdInDir(dir, "git", "remote", "set-url", "origin", url)
-	}
-
-	defer func() {
-		// Feebly attempt to cleanse the error output of the clone
-		// URL's credentials.
-		//
-		// TODO(public-release): This is not reliable enough to be
-		// secure.
-		if err != nil {
-			s := strings.Replace(err.Error(), authedCloneURL, unauthedCloneURL+" (WITH AUTH)", -1)
-			if password != "" {
-				s = strings.Replace(s, password, "(REDACTED)", -1)
-			}
-			err = fmt.Errorf("%s", s)
-		}
-	}()
-
-	defer func() {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			return
-		}
-		if err2 := setOriginRemoteURL(unauthedCloneURL); err2 != nil {
-			if err == nil {
-				err = err2
-			} else {
-				err = fmt.Errorf("%s (while cleaning up, failed to set remote origin URL: %s)", err, err2)
-			}
-		}
-	}()
 
 	start := time.Now()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -205,7 +152,7 @@ func PrepBuildDir(vcsType, unauthedCloneURL, username, password, dir, commitID s
 			return err
 		}
 		if r, ok := r.(vcs.RemoteUpdater); ok {
-			if err := setOriginRemoteURL(authedCloneURL); err != nil {
+			if err := execCmdInDir(dir, "git", "remote", "set-url", "origin", authedCloneURL); err != nil {
 				return err
 			}
 			if err := r.UpdateEverything(opt); err != nil {

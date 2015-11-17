@@ -52,7 +52,7 @@ func BasicAuth(username, password string, noAuthStatus int, h http.Handler) http
 		// Constant time comparison to avoid timing attack.
 		if subtle.ConstantTimeCompare([]byte(username+password), []byte(u+p)) != 1 {
 			w.Header().Set("WWW-Authenticate", `Basic realm="appdash"`)
-			http.Error(w, "bad credentials", http.StatusForbidden)
+			http.Error(w, "bad credentials", noAuthStatus)
 			return
 		}
 
