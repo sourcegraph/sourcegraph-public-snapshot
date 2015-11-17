@@ -27,7 +27,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/resonancelabs/go-pub/instrument"
 	tg_client "github.com/resonancelabs/go-pub/instrument/client"
-	"github.com/soheilhy/cmux"
+	"github.com/sourcegraph/cmux"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
