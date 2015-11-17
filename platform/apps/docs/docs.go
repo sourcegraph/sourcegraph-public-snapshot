@@ -137,19 +137,28 @@ func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir 
 }
 
 func cachedBuild(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, error) {
+	// Bypass cache if we are running in local dev mode.
+	useCache := localHugoDir == ""
+
 	cacheMu.Lock()
 	defer cacheMu.Unlock()
 
-	fs, present := cache[repoRev]
-	if present {
-		return fs, nil
+	if useCache {
+		fs, present := cache[repoRev]
+		if present {
+			return fs, nil
+		}
 	}
 
 	fs, err := build(ctx, repoRev)
 	if err != nil {
 		return nil, err
 	}
-	cache[repoRev] = fs
+
+	if useCache {
+		cache[repoRev] = fs
+	}
+
 	return fs, nil
 }
 
