@@ -19,6 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
@@ -35,7 +36,7 @@ func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
 	if !authutil.ActiveFlags.OAuth2AuthServer {
-		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("oauth2 auth server disabled")}
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("oauth2 auth server disabled")}
 	}
 
 	currentUser := handlerutil.UserFromRequest(r)
@@ -51,7 +52,7 @@ func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
 	// Look up registered API client based on client ID. If the client
 	// isn't yet registered, redirect to the client registration page.
 	if opt.ClientID == "" {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no client ID")}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no client ID")}
 	}
 	regClient, err := cl.RegisteredClients.Get(ctx, &sourcegraph.RegisteredClientSpec{ID: opt.ClientID})
 	if grpc.Code(err) == codes.NotFound {
@@ -65,7 +66,7 @@ func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 	if err != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
 	// Create code that will enable the OAuth2 client to obtain the
@@ -101,7 +102,7 @@ func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
 	// client.
 	redirectURL, err := url.Parse(code.RedirectURI)
 	if err != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	q, err := query.Values(oauth2util.ReceiveParams{
 		ClientID: regClient.ID,
@@ -129,7 +130,7 @@ func serveOAuth2ServerToken(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
 	if !authutil.ActiveFlags.OAuth2AuthServer {
-		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("oauth2 auth server disabled")}
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("oauth2 auth server disabled")}
 	}
 
 	currentUser := handlerutil.UserFromRequest(r)

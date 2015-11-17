@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -112,7 +113,7 @@ func serveRepoDiscussionUpdate(w http.ResponseWriter, r *http.Request) error {
 	}
 	u := handlerutil.UserFromRequest(r)
 	if u == nil {
-		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
+		return &errcode.HTTPErr{Status: http.StatusUnauthorized}
 	}
 	c := &sourcegraph.DiscussionComment{
 		Body:   frm("body"),

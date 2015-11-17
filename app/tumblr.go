@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 )
 
@@ -173,7 +173,7 @@ func (t *Tumblr) Posts(opt PostsOpts) (*PostsResponse, error) {
 		} else {
 			s = 500
 		}
-		return nil, &handlerutil.HTTPErr{
+		return nil, &errcode.HTTPErr{
 			Status: s,
 			Err:    err,
 		}

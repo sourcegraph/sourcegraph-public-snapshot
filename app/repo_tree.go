@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/doc"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -72,7 +73,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	case vcsclient.FileEntry:
 		return serveRepoTreeEntry(w, r, tc, rc, vc, bc, nil)
 	}
-	return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("unrecognized tree entry type")}
+	return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("unrecognized tree entry type")}
 }
 
 func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, bc handlerutil.RepoBuildCommon) error {

@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
@@ -110,7 +111,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	cs, err := sg.Changesets.Get(ctx, changesetSpec)
 	if err != nil {
 		if grpc.Code(err) == codes.NotFound {
-			return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("changeset does not exist")}
+			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("changeset does not exist")}
 		}
 		return err
 	}

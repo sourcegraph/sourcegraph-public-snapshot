@@ -11,6 +11,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -266,7 +267,7 @@ func getBuildSpec(r *http.Request) (sourcegraph.BuildSpec, error) {
 	commit, repo := v["CommitID"], v["Repo"]
 	attempt, err := strconv.ParseUint(v["Attempt"], 10, 32)
 	if commit == "" || repo == "" || err != nil {
-		return sourcegraph.BuildSpec{}, &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return sourcegraph.BuildSpec{}, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	return sourcegraph.BuildSpec{
 		Attempt:  uint32(attempt),
@@ -290,7 +291,7 @@ func getRepoBuild(r *http.Request, repo *sourcegraph.Repo) (*sourcegraph.Build, 
 	}
 
 	if repo.URI != build.Repo {
-		return nil, buildSpec, &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("no such build for this repository")}
+		return nil, buildSpec, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("no such build for this repository")}
 	}
 
 	return build, buildSpec, nil
@@ -305,7 +306,7 @@ func getBuildTaskSpec(r *http.Request) (sourcegraph.TaskSpec, error) {
 	v := mux.Vars(r)
 	taskID, err := strconv.ParseInt(v["TaskID"], 10, 64)
 	if err != nil {
-		return sourcegraph.TaskSpec{}, &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return sourcegraph.TaskSpec{}, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	return sourcegraph.TaskSpec{BuildSpec: buildSpec, TaskID: taskID}, nil
 }

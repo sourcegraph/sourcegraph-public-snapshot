@@ -1,6 +1,7 @@
 package errcode
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -92,4 +93,22 @@ func HTTP(err error) int {
 func GRPC(err error) codes.Code {
 	// Piggyback on the HTTP func to reduce code duplication.
 	return httpToGRPC(HTTP(err))
+}
+
+type HTTPErr struct {
+	Status int   // HTTP status code.
+	Err    error // Optional reason for the HTTP error.
+}
+
+func (err *HTTPErr) Error() string {
+	if err.Err != nil {
+		return fmt.Sprintf("status %d, reason %s", err.Status, err.Err)
+	}
+	return fmt.Sprintf("Status %d", err.Status)
+}
+
+func (err *HTTPErr) HTTPStatusCode() int { return err.Status }
+
+func IsHTTPErrorCode(err error, statusCode int) bool {
+	return HTTP(err) == statusCode
 }

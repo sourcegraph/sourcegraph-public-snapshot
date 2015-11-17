@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
@@ -107,7 +108,7 @@ func GetRepoAndRevCommon(r *http.Request, opts *GetRepoCommonOpt) (rc *RepoCommo
 }
 
 func IsRepoNoVCSDataError(err error) bool {
-	return err != nil && (strings.Contains(err.Error(), "vcsstore") || IsHTTPErrorCode(err, http.StatusNotFound) ||
+	return err != nil && (strings.Contains(err.Error(), "vcsstore") || errcode.IsHTTPErrorCode(err, http.StatusNotFound) ||
 		strings.Contains(err.Error(), "has no default branch"))
 }
 

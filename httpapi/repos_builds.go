@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -44,7 +45,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	var opt sourcegraph.BuildCreateOptions
 	err := json.NewDecoder(r.Body).Decode(&opt)
 	if err != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
 	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, s.Repos)

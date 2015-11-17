@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -53,7 +54,7 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	frames, _ := repoEnabledFrames(rc.Repo)
 	app, ok := frames[appID]
 	if !ok {
-		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("not a valid app")}
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("not a valid app")}
 	}
 
 	if vc.RepoCommit == nil {

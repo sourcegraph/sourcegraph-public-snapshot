@@ -156,7 +156,7 @@ const (
 
 func checkSignupEnabled() error {
 	if !authutil.ActiveFlags.HasSignup() {
-		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("signup not enabled")}
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("signup not enabled")}
 	}
 	return nil
 }

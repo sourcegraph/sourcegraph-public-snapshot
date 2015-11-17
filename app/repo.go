@@ -22,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
@@ -107,7 +108,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		i := strings.Index(repoSpec.URI, "/")
 		login := repoSpec.URI[i+1:]
 		if login == "" {
-			return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("bad repository URI")}
+			return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("bad repository URI")}
 		}
 		http.Redirect(w, r, router.Rel.URLToUser(login).String(), http.StatusMovedPermanently)
 		return nil
@@ -118,7 +119,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	if strings.HasPrefix(repoSpec.URI, "github.com/") && strings.Count(repoSpec.URI, "/") > 2 {
 		parts := strings.SplitN(repoSpec.URI, "/", 4)
 		if len(parts) < 4 {
-			return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("bad github repository url")}
+			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("bad github repository url")}
 		}
 		http.Redirect(w, r, router.Rel.URLToRepo(string(strings.Join(parts[0:3], "/"))).String(), http.StatusMovedPermanently)
 		return nil
@@ -177,7 +178,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		run := parallel.NewRun(7)
 		run.Do(func() (err error) {
 			readme, err = apiclient.Repos.GetReadme(ctx, &bc.BestRevSpec)
-			if handlerutil.IsHTTPErrorCode(err, http.StatusNotFound) {
+			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 				// Lack of a readme is not a fatal error.
 				err = nil
 				readme = nil
@@ -206,7 +207,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 				Exact: true,
 			},
 		})
-		if err != nil && !handlerutil.IsHTTPErrorCode(err, http.StatusNotFound) {
+		if err != nil && !errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 			return err
 		}
 		if err == nil {

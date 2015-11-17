@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -110,7 +111,7 @@ func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
 		subject = "Sourcegraph"
 		status = "Status"
 	default:
-		return &handlerutil.HTTPErr{http.StatusNotFound, errors.New("bad badge name")}
+		return &errcode.HTTPErr{http.StatusNotFound, errors.New("bad badge name")}
 	}
 
 	if status == "" {
@@ -169,7 +170,7 @@ func doServeRepoCounter(w http.ResponseWriter, r *http.Request, repo sourcegraph
 	case "views":
 		subject = "views"
 	default:
-		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("bad counter name")}
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("bad counter name")}
 	}
 
 	count, err := s.RepoBadges.CountHits(ctx, &sourcegraph.RepoBadgesCountHitsOp{

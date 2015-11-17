@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/errcode"
 )
 
 // WriteJSON writes a JSON Content-Type header and a JSON-encoded
@@ -12,7 +12,7 @@ import (
 func WriteJSON(w http.ResponseWriter, v interface{}) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusInternalServerError, Err: err}
+		return &errcode.HTTPErr{Status: http.StatusInternalServerError, Err: err}
 	}
 
 	w.Header().Set("content-type", "application/json; charset=utf-8")

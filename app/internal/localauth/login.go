@@ -149,7 +149,7 @@ const (
 
 func checkLoginEnabled() error {
 	if !authutil.ActiveFlags.HasLogin() {
-		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("login not enabled")}
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("login not enabled")}
 	}
 	return nil
 }

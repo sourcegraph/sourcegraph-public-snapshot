@@ -15,7 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -133,7 +133,7 @@ func serveBlogIndex(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if len(posts) == 0 {
-		return &handlerutil.HTTPErr{
+		return &errcode.HTTPErr{
 			Status: http.StatusNotFound,
 			Err:    fmt.Errorf("no such page"),
 		}
@@ -170,7 +170,7 @@ func serveBlogIndexAtom(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if len(posts) == 0 {
-		return &handlerutil.HTTPErr{
+		return &errcode.HTTPErr{
 			Status: http.StatusNotFound,
 			Err:    fmt.Errorf("no such page"),
 		}
@@ -337,7 +337,7 @@ func blogResolveSlug(slug string) (string, error) {
 	// Validate that the post ID is an integer.
 	_, err := strconv.ParseInt(slug, 10, 64)
 	if err != nil {
-		return "", &handlerutil.HTTPErr{
+		return "", &errcode.HTTPErr{
 			Status: http.StatusNotFound,
 			Err:    fmt.Errorf("no blog post found with slug %q (expected ID)", slug),
 		}
@@ -366,7 +366,7 @@ func serveBlogPost(w http.ResponseWriter, r *http.Request) error {
 
 	// Validate that we only got one post.
 	if len(postsResp.Posts) != 1 {
-		return &handlerutil.HTTPErr{
+		return &errcode.HTTPErr{
 			Status: http.StatusNotFound,
 			Err:    fmt.Errorf("expected one blog post; found %d", len(postsResp.Posts)),
 		}

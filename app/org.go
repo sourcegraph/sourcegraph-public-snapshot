@@ -7,6 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -26,7 +27,7 @@ func serveOrgMembers(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if !p.IsOrganization {
-		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("only organizations have a members page")}
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("only organizations have a members page")}
 	}
 
 	if opt.PerPage == 0 {

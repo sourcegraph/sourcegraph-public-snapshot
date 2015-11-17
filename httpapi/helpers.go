@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"reflect"
 
+	"src.sourcegraph.com/sourcegraph/errcode"
+
 	"github.com/google/go-querystring/query"
 
 	"strconv"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 // writeJSON writes a JSON Content-Type header and a JSON-encoded object to the
@@ -26,7 +27,7 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusInternalServerError, Err: err}
+		return &errcode.HTTPErr{Status: http.StatusInternalServerError, Err: err}
 	}
 
 	w.Header().Set("content-type", "application/json; charset=utf-8")

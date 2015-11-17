@@ -27,6 +27,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -265,7 +266,7 @@ func serveOAuth2ClientReceive(w http.ResponseWriter, r *http.Request) (err error
 
 	currentUser := handlerutil.UserFromRequest(r)
 	if currentUser != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusForbidden, Err: errors.New("already logged in")}
+		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("already logged in")}
 	}
 
 	var opt oauth2util.ReceiveParams
@@ -279,13 +280,13 @@ func serveOAuth2ClientReceive(w http.ResponseWriter, r *http.Request) (err error
 		return oauth2client.ErrClientNotRegistered
 	}
 	if opt.ClientID == "" {
-		return &handlerutil.HTTPErr{
+		return &errcode.HTTPErr{
 			Status: http.StatusBadRequest,
 			Err:    errors.New("no OAuth2 client ID"),
 		}
 	}
 	if clientID != opt.ClientID {
-		return &handlerutil.HTTPErr{
+		return &errcode.HTTPErr{
 			Status: http.StatusForbidden,
 			Err:    errors.New("OAuth2 client ID mismatch"),
 		}
@@ -295,12 +296,12 @@ func serveOAuth2ClientReceive(w http.ResponseWriter, r *http.Request) (err error
 	// prevent CSRF).
 	var state oauthAuthorizeClientState
 	if err := state.UnmarshalText([]byte(opt.State)); err != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	nonce, present := nonceFromCookie(r)
 	deleteNonceCookie(w) // prevent reuse of nonce
 	if !present || nonce != state.Nonce || nonce == "" {
-		return &handlerutil.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state nonce from OAuth2 provider")}
+		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state nonce from OAuth2 provider")}
 	}
 
 	// Configure OAuth2.

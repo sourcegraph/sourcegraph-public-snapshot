@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -28,7 +29,7 @@ func getUser(r *http.Request) (*sourcegraph.User, *sourcegraph.UserSpec, error) 
 	}
 
 	if p.Disabled {
-		return nil, nil, &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("user account is disabled")}
+		return nil, nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("user account is disabled")}
 	}
 
 	spec.UID = int32(p.UID)

@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 func TestHTTP(t *testing.T) {
@@ -40,8 +39,8 @@ func TestGRPC(t *testing.T) {
 		want codes.Code
 	}{
 		{os.ErrNotExist, codes.NotFound},
-		{&handlerutil.HTTPErr{Status: http.StatusNotFound}, codes.NotFound},
-		{&handlerutil.HTTPErr{Status: http.StatusInternalServerError}, codes.Unknown},
+		{&errcode.HTTPErr{Status: http.StatusNotFound}, codes.NotFound},
+		{&errcode.HTTPErr{Status: http.StatusInternalServerError}, codes.Unknown},
 		{grpc.Errorf(codes.NotFound, ""), codes.NotFound},
 		{grpc.Errorf(codes.OK, ""), codes.OK},
 		{nil, codes.OK},

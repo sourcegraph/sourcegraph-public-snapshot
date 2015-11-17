@@ -28,7 +28,7 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/errcode"
 )
 
 // ParamName is the URL query param name for the "return-to" URL.
@@ -43,10 +43,10 @@ const ParamName = "return-to"
 func CheckSafe(urlStr string) error {
 	u, err := url.Parse(urlStr)
 	if err != nil {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	if u.Scheme != "" || u.Host != "" || u.User != nil {
-		return &handlerutil.HTTPErr{
+		return &errcode.HTTPErr{
 			Status: http.StatusForbidden,
 			Err:    fmt.Errorf("suspicious URL pointing to an external site: %q", urlStr),
 		}

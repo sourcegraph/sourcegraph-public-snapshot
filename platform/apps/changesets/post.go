@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 // serveCreate creates a new changeset. It takes the changeset data from within
@@ -30,7 +30,7 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 
 	user := putil.UserFromRequest(r)
 	if user == nil {
-		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
+		return &errcode.HTTPErr{Status: http.StatusUnauthorized}
 	}
 	newChangeset.Author = *user
 
@@ -77,7 +77,7 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 
 	user := putil.UserFromRequest(r)
 	if user == nil {
-		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
+		return &errcode.HTTPErr{Status: http.StatusUnauthorized}
 	}
 	op.Author = *user
 	sg := sourcegraph.NewClientFromContext(ctx)
@@ -111,7 +111,7 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 	user := putil.UserFromRequest(r)
 	if user == nil {
-		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
+		return &errcode.HTTPErr{Status: http.StatusUnauthorized}
 	}
 	newReview.Author = *user
 
@@ -150,7 +150,7 @@ func serveMerge(w http.ResponseWriter, r *http.Request) (err error) {
 
 	user := putil.UserFromRequest(r)
 	if user == nil {
-		return &handlerutil.HTTPErr{Status: http.StatusUnauthorized}
+		return &errcode.HTTPErr{Status: http.StatusUnauthorized}
 	}
 
 	var op sourcegraph.ChangesetMergeOp

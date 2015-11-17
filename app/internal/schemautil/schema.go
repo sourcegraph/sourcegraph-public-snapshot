@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"reflect"
 
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/errcode"
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/schema"
@@ -20,7 +20,7 @@ func init() {
 
 func Decode(dst interface{}, src url.Values) error {
 	if err := decoder.Decode(dst, src); err != nil {
-		return &handlerutil.HTTPErr{Status: 400, Err: err}
+		return &errcode.HTTPErr{Status: 400, Err: err}
 	}
 	return nil
 }

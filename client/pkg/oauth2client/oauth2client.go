@@ -10,8 +10,8 @@ import (
 	"golang.org/x/oauth2"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 type contextKey int
@@ -64,7 +64,7 @@ func Config(ctx context.Context) (*oauth2.Config, error) {
 // ErrClientNotRegistered occurs when an operation that requires a
 // registered client ID is required, and none is present in the
 // context.
-var ErrClientNotRegistered = &handlerutil.HTTPErr{
+var ErrClientNotRegistered = &errcode.HTTPErr{
 	Status: http.StatusForbidden,
 	Err:    errors.New("no OAuth2 client ID configured"),
 }

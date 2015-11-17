@@ -4,26 +4,7 @@ import (
 	"fmt"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/errcode"
 )
-
-type HTTPErr struct {
-	Status int   // HTTP status code.
-	Err    error // Optional reason for the HTTP error.
-}
-
-func (err *HTTPErr) Error() string {
-	if err.Err != nil {
-		return fmt.Sprintf("status %d, reason %s", err.Status, err.Err)
-	}
-	return fmt.Sprintf("Status %d", err.Status)
-}
-
-func (err *HTTPErr) HTTPStatusCode() int { return err.Status }
-
-func IsHTTPErrorCode(err error, statusCode int) bool {
-	return errcode.HTTP(err) == statusCode
-}
 
 // NoBuildError is returned whenever a build is requested for an unbuilt repo.
 type NoBuildError struct {

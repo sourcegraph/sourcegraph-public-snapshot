@@ -107,7 +107,7 @@ func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.Use
 		}
 	}
 	if !currentUserCanAdminOrg {
-		return *userSpec, nil, &handlerutil.HTTPErr{
+		return *userSpec, nil, &errcode.HTTPErr{
 			Status: http.StatusForbidden,
 			Err:    errors.New("only a user or an org admin can view/edit profile"),
 		}
@@ -242,7 +242,7 @@ func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if cd.User.IsOrganization {
-		return &handlerutil.HTTPErr{
+		return &errcode.HTTPErr{
 			Status: http.StatusNotFound,
 			Err:    errors.New("only users have emails"),
 		}

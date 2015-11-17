@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -64,7 +65,7 @@ func getBuildSpec(r *http.Request) (*sourcegraph.BuildSpec, error) {
 	commit, repo := v["CommitID"], v["Repo"]
 	attempt, err := strconv.ParseInt(v["Attempt"], 10, 32)
 	if commit == "" || repo == "" || err != nil {
-		return nil, &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	return &sourcegraph.BuildSpec{
 		Attempt:  uint32(attempt),

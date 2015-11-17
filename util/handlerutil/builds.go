@@ -6,6 +6,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -67,7 +68,7 @@ func GetRepoBuildCommon(r *http.Request, rc *RepoCommon, vc *RepoRevCommon, opts
 		Repo: vc.RepoRevSpec,
 		Opt:  &sourcegraph.BuildsGetRepoBuildInfoOptions{Exact: isExact},
 	})
-	noBuild := err != nil && IsHTTPErrorCode(err, http.StatusNotFound)
+	noBuild := err != nil && errcode.IsHTTPErrorCode(err, http.StatusNotFound)
 	noSuccessfulBuild := bc.RepoBuildInfo != nil && bc.RepoBuildInfo.LastSuccessful == nil
 	if noBuild || noSuccessfulBuild {
 		err = nil // zero out so we don't return a stale, already-handled error later

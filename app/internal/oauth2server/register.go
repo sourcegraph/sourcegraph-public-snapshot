@@ -11,6 +11,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -30,13 +31,13 @@ func serveRegisterClient(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if opt.ClientID == "" {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no ClientID in URL")}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no ClientID in URL")}
 	}
 	if opt.JWKS == "" {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no JWKS in URL")}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no JWKS in URL")}
 	}
 	if opt.RedirectURI == "" {
-		return &handlerutil.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no RedirectURI in URL")}
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no RedirectURI in URL")}
 	}
 
 	if err := r.ParseForm(); err != nil {
