@@ -195,6 +195,10 @@
 			"Rev": "8fef92e41e22a70e700a96b29f066cda30ea24ef"
 		},
 		{
+			"ImportPath": "github.com/keegancsmith/tmpfriend",
+			"Rev": "4896069a1a657f06e8be73589f34a04b76a16b13"
+		},
+		{
 			"ImportPath": "github.com/kr/binarydist",
 			"Rev": "9955b0ab8708602d411341e55fffd7e0700f86bd"
 		},

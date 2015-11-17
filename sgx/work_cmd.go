@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/keegancsmith/tmpfriend"
+
 	"golang.org/x/oauth2"
 
 	"google.golang.org/grpc"
@@ -58,6 +60,9 @@ type WorkCmd struct {
 var cleanBuildData bool
 
 func (c *WorkCmd) Execute(args []string) error {
+	cleanup := tmpfriend.SetupOrNOOP()
+	defer cleanup()
+
 	c.BuildRoot = os.ExpandEnv(c.BuildRoot)
 
 	workersNoun := "worker"

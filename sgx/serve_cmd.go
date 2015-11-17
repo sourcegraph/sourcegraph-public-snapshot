@@ -24,6 +24,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/resonancelabs/go-pub/instrument"
 	tg_client "github.com/resonancelabs/go-pub/instrument/client"
@@ -218,6 +219,9 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 }
 
 func (c *ServeCmd) Execute(args []string) error {
+	cleanup := tmpfriend.SetupOrNOOP()
+	defer cleanup()
+
 	logHandler := log15.StderrHandler
 	if globalOpt.VerbosePkg != "" {
 		logHandler = log15.MatchFilterHandler("pkg", globalOpt.VerbosePkg, log15.StderrHandler)
