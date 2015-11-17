@@ -308,23 +308,22 @@ func (s *registeredClients) ListUserPermissions(ctx context.Context, client *sou
 
 func (s *registeredClients) checkCtxUserIsAdmin(ctx context.Context, clientID string) (bool, error) {
 	actor := authpkg.ActorFromContext(ctx)
-	if !actor.IsAuthenticated() && actor.ClientID == clientID {
+	if !actor.IsAuthenticated() {
 		// If ctx is not authenticated with a user, check if actor has a special scope
 		// that grants admin access on that client.
-		for _, scope := range actor.Scope {
-			// internal server commands have default admin access.
-			if strings.HasPrefix(scope, "internal:") {
-				return true, nil
+		if actor.ClientID == clientID {
+			for _, scope := range actor.Scope {
+				// internal server commands have default admin access.
+				if strings.HasPrefix(scope, "internal:") {
+					return true, nil
+				}
 			}
 		}
-		return false, nil
+		return false, grpc.Errorf(codes.Unauthenticated, "RegisteredClients.UserPermissions: no authenticated user in context")
 	}
 	userPermsStore, err := userPermissionsOrError(ctx)
 	if err != nil {
 		return false, err
-	}
-	if actor.UID == 0 {
-		return false, grpc.Errorf(codes.Unauthenticated, "RegisteredClients.UserPermissions: no authenticated user in context")
 	}
 	return userPermsStore.Verify(ctx, &sourcegraph.UserPermissions{
 		UID:      int32(actor.UID),
