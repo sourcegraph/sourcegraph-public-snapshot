@@ -19,14 +19,6 @@ var numReposGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 	Help:      "Total repos on the local Sourcegraph instance.",
 })
 
-var committerLabels = []string{"domain"}
-var numCommittersGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "usage_stats",
-	Name:      "committers_total",
-	Help:      "Total committers on the local Sourcegraph instance.",
-}, committerLabels)
-
 var buildLabels = []string{"build_type"}
 var numBuildsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -44,7 +36,6 @@ var numUsersGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 
 func init() {
 	prometheus.MustRegister(numReposGauge)
-	prometheus.MustRegister(numCommittersGauge)
 	prometheus.MustRegister(numBuildsGauge)
 	prometheus.MustRegister(numUsersGauge)
 }
@@ -58,7 +49,7 @@ func ComputeUsageStats(ctx context.Context, interval time.Duration) {
 		return
 	}
 	for {
-		updateNumReposAndCommitters(cl, ctx)
+		updateNumRepos(cl, ctx)
 		updateNumBuilds(cl, ctx)
 		updateNumUsers(cl, ctx)
 
@@ -66,7 +57,7 @@ func ComputeUsageStats(ctx context.Context, interval time.Duration) {
 	}
 }
 
-func updateNumReposAndCommitters(cl *sourcegraph.Client, ctx context.Context) {
+func updateNumRepos(cl *sourcegraph.Client, ctx context.Context) {
 	reposList, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
 		ListOptions: sourcegraph.ListOptions{PerPage: 10000},
 	})
@@ -79,14 +70,6 @@ func updateNumReposAndCommitters(cl *sourcegraph.Client, ctx context.Context) {
 	if fed.Config.IsRoot {
 		// don't compute committer stats on the mothership.
 		return
-	}
-	numCommitters, err := CountCommittersPerDomain(cl, ctx, reposList)
-	if err != nil {
-		log15.Warn("ComputeUsageStats: could not compute number of committers", "error", err)
-		return
-	}
-	for domain, count := range numCommitters {
-		numCommittersGauge.WithLabelValues(domain).Set(float64(count))
 	}
 }
 
