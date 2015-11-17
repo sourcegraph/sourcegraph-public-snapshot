@@ -56,4 +56,4 @@ creating an issue.
 
 ## License
 
-[Fair Source License](https://fair.io)
+[Fair Source License](http://fair.io)

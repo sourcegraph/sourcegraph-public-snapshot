@@ -1,6 +1,6 @@
 # How to contribute
 
-Sourcegraph is [Fair Source licensed](https://fair.io) and accepts contributions.
+Sourcegraph is [Fair Source licensed](http://fair.io) and accepts contributions.
 This document outlines some of the conventions, resources, and contact points for
 developers to make getting your contribution into Sourcegraph easier.
 
