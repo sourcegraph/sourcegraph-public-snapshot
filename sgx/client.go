@@ -56,7 +56,18 @@ func (c *EndpointOpts) NewContext(ctx context.Context) context.Context {
 func (c *EndpointOpts) URLOrDefault() *url.URL {
 	e := c.URL
 	if e == "" {
-		e = "http://localhost:3080"
+		// The user did not explicitly specify a endpoint URL, so use the default
+		// found in the auth file.
+		userAuth, err := readUserAuth()
+		if err != nil {
+			log.Fatal(err, "failed to read user auth file (in EndpointOpts.URLOrDefault)")
+		}
+		e, _ = userAuth.getDefault()
+		if e == "" {
+			// Auth file has no default, so just choose a sensible default value
+			// instead.
+			e = "http://localhost:3080"
+		}
 	}
 	endpoint, err := url.Parse(e)
 	if err != nil {
@@ -98,22 +109,7 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 			return nil, err
 		}
 
-		// Prefer explicitly specified endpoint, then auth file default endpoint,
-		// then fallback default. For this reason, we use Endpoint not URLOrDefault
-		// (which provides the fallback default) here.
-		ua := userAuth[Endpoint.URL]
-		if Endpoint.URL == "" {
-			if ua == nil {
-				var ep string
-				ep, ua = userAuth.getDefault()
-				if ep != "" {
-					Endpoint.URL = ep
-				}
-			}
-			if ua == nil {
-				ua = userAuth[Endpoint.URLOrDefault().String()]
-			}
-		}
+		ua := userAuth[Endpoint.URLOrDefault().String()]
 		if ua != nil {
 			c.AccessToken = ua.AccessToken
 		}
