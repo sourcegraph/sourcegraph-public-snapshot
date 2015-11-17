@@ -797,13 +797,10 @@ func goGetHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 	ctx := httpctx.FromRequest(r)
 	cl := Client()
 
-	// Escape the URL so we don't expose ourselves to XSS.
-	r.URL.Path = template.HTMLEscapeString(r.URL.Path)
-
 	// The user may be requesting a subpackage, e.g. "src.example.com/my/repo/sub/pkg"
 	// so we must find the right repo ("src.example.com/my/repo") by walking up
 	// directories until we find a valid repository.
-	repoURI := strings.TrimPrefix(r.URL.Path, "/")
+	repoURI := strings.TrimPrefix(template.HTMLEscapeString(r.URL.Path), "/")
 	for {
 		_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
 			URI: repoURI,
