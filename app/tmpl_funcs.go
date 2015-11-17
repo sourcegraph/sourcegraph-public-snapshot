@@ -22,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
@@ -237,7 +238,14 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 
-	"repoEnabledFrames":  repoEnabledFrames,
+	"repoEnabledFrames": func(repo *sourcegraph.Repo) []platform.RepoFrame {
+		framesByID, ids := repoEnabledFrames(repo)
+		frames := make([]platform.RepoFrame, len(ids))
+		for i, id := range ids {
+			frames[i] = framesByID[id]
+		}
+		return frames
+	},
 	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 	"disableCloneURL":    func() bool { return appconf.Flags.DisableCloneURL },

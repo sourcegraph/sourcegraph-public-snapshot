@@ -24,20 +24,20 @@ import (
 )
 
 // repoEnabledFrames returns apps that are enabled for the given repo. Map key is the app id.
-func repoEnabledFrames(repo *sourcegraph.Repo) map[string]platform.RepoFrame {
+func repoEnabledFrames(repo *sourcegraph.Repo) (map[string]platform.RepoFrame, []string) {
 	if appconf.Flags.DisableApps {
-		return nil
+		return nil, nil
 	}
 
 	// If the repo's canonical location is on another server, disallow all apps for now.
 	// TODO: There may still be some apps that can be enabled for non-canonical repos, provide a way for that to happen.
 	if repo.Mirror {
-		return nil
+		return nil, nil
 	}
 
 	// Non-git apps are not currently supported
 	if repo.VCS != "git" {
-		return nil
+		return nil, nil
 	}
 
 	return platform.Frames(repo)
@@ -50,7 +50,8 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	appID := mux.Vars(r)["App"]
-	app, ok := repoEnabledFrames(rc.Repo)[appID]
+	frames, _ := repoEnabledFrames(rc.Repo)
+	app, ok := frames[appID]
 	if !ok {
 		return &handlerutil.HTTPErr{Status: http.StatusNotFound, Err: errors.New("not a valid app")}
 	}

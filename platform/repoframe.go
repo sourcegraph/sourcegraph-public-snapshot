@@ -36,7 +36,10 @@ type RepoFrame struct {
 	Enable func(*sourcegraph.Repo) bool
 }
 
-var repoFrames = map[string]RepoFrame{}
+var (
+	repoFrameIDs []string
+	repoFrames   = map[string]RepoFrame{}
+)
 
 // CLI exposes the command line interface to platform applications. Applications
 // may add their own CLI commands during initialization.
@@ -53,16 +56,29 @@ func RegisterFrame(frame RepoFrame) {
 		panic(fmt.Sprintf("RepoFrame with ID %s already exists", frame.ID))
 	}
 	repoFrames[frame.ID] = frame
+	repoFrameIDs = append(repoFrameIDs, frame.ID)
 }
 
 // Frames returns the frames registered in this instance of
-// Sourcegraph for the given repo.
-func Frames(repo *sourcegraph.Repo) map[string]RepoFrame {
+// Sourcegraph for the given repo and the frame IDs in the order in
+// which they should be displayed.
+func Frames(repo *sourcegraph.Repo) (map[string]RepoFrame, []string) {
 	frames := make(map[string]RepoFrame)
 	for _, frame := range repoFrames {
 		if frame.Enable == nil || frame.Enable(repo) {
 			frames[frame.ID] = frame
 		}
 	}
-	return frames
+
+	frameIDs := append(([]string)(nil), repoFrameIDs...)
+
+	// HACK: make issues the leftmost app for now. This should
+	// eventually be configurable
+	for i, id := range frameIDs {
+		if id == "issues" {
+			frameIDs[0], frameIDs[i] = frameIDs[i], frameIDs[0]
+		}
+	}
+
+	return frames, frameIDs
 }
