@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"src.sourcegraph.com/sourcegraph/dev/release"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
@@ -26,7 +27,7 @@ type ReleaseCmd struct {
 	SkipPackage      bool `long:"skip-package" description:"skip package step (assumes it has already been run)"`
 	SkipDistPackage  bool `long:"skip-dist-package" description:"skip create deb and rpm step (assumes it has already been run)"`
 	InspectArtifacts bool `long:"inspect-artifacts" description:"avoids upload, but puts all artifacts in ./selfupdate"`
-	Public           bool `long:"public" description:"upload src.json files to make this version the latest public version"`
+	Private          bool `long:"private" description:"do not upload src.json files which make this version the latest public version"`
 
 	S3Dir string `long:"s3-dir" description:"S3 base directory to upload release to (default: src)"`
 
@@ -78,7 +79,10 @@ func (c *ReleaseCmd) Execute(args []string) error {
 		return err
 	}
 
-	if !c.Public {
+	// Versions like "10.3.100" are considered public by default, while ones with
+	// a dash suffix like "10.3.101-hack" are considered private by default.
+	privateVersion := len(strings.Split(c.Args.Version, "-")) > 1
+	if c.Private || privateVersion {
 		matches, err := filepath.Glob(selfupdateDir + "/*/src.json")
 		if err != nil {
 			return err
