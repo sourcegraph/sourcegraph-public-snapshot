@@ -153,10 +153,6 @@
 			"Rev": "efd7476481382c195beb33acd8ec2f1527167fb4"
 		},
 		{
-			"ImportPath": "github.com/google/go-github/github",
-			"Rev": "6eb49d4ba5175412dcbb29b0031ebf02ab85a48d"
-		},
-		{
 			"ImportPath": "github.com/google/go-querystring/query",
 			"Rev": "ec0a78e0f4db229b7897be36596a8944230b857a"
 		},
@@ -402,12 +398,12 @@
 			"Rev": "ab6b5abc58c9d82560b127e23bfd3e39a25e8f05"
 		},
 		{
-			"ImportPath": "github.com/soheilhy/cmux",
-			"Rev": "e3b9994b7b77414869ce54070ccc6f53f26531b2"
-		},
-		{
 			"ImportPath": "github.com/sourcegraph/annotate",
 			"Rev": "cebcce68942725de59a25b3f5fb202c5d0d4a01d"
+		},
+		{
+			"ImportPath": "github.com/sourcegraph/cmux",
+			"Rev": "3b3ceaacf4091fabf598414bb34ae79a69f330cd"
 		},
 		{
 			"ImportPath": "github.com/sourcegraph/gddo/doc",
