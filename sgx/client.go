@@ -60,7 +60,7 @@ func (c *EndpointOpts) URLOrDefault() *url.URL {
 	}
 	endpoint, err := url.Parse(e)
 	if err != nil {
-		log.Fatal(err, "invalid endpoint URL specified (in EndpointOpts.URLOrDefault")
+		log.Fatal(err, "invalid endpoint URL specified (in EndpointOpts.URLOrDefault)")
 	}
 
 	// This prevents users who might be using e.g. Sourcegraph under a reverse proxy
