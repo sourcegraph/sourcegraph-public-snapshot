@@ -17,3 +17,7 @@ of the `package store` interfaces, you must rerun `go generate ./...` in this re
 
 You will need `gen-mocks`, which you can install by running
 `go get -u sourcegraph.com/sourcegraph/gen-mocks`.
+
+## Documentation
+
+API documentation is auto-generated based on the protobuf sources and is available for viewing online at [developer.sourcegraph.com](https://developer.sourcegraph.com) and also in local development instances at e.g. `http://localhost:3080/.docs`.
