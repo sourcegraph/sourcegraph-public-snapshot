@@ -3,13 +3,13 @@
 	<hr />
 	<p>This error has been logged and will be brought to our attention.
 	{{if (not .DisableExternalLinks)}}
-	If you would like to provide additional context or track our progress on fixing this issue, please post in <a href="https://github.com/sourcegraph/sourcegraph.com/issues">our tracker</a>.</p>
+	If you would like to provide additional context or track our progress on fixing this issue, please post in <a href="https://src.sourcegraph.com/sourcegraph/.tracker/new">our tracker</a>.</p>
 	{{end}}
 	{{if and (.Err) (.Debug) (not .DisableExternalLinks)}}
 	<div class="error-message">
 		{{.Err}}
 		<div class="actions">
-			<a class="btn btn-default" href="https://github.com/sourcegraph/sourcegraph.com/issues">Open issue</a>
+			<a class="btn btn-default" href="https://src.sourcegraph.com/sourcegraph/.tracker/new">Open thread</a>
 			<a class="btn btn-default" href="mailto:help@sourcegraph.com">Contact us</a>
 		</div>
 	</div>
