@@ -184,7 +184,11 @@ func (s *Storage) ReadDir(ctx context.Context, opt *sourcegraph.StorageName) (*s
 	// Read the directory.
 	// TODO(slimsag): implement pagination here.
 	f := s.openFiles[path]
-	infos, err := f.Readdir(-1)
+	_, err = f.Seek(0, os.SEEK_SET) // Rewind to beginning since previous Readdir operations might've changed the offset.
+	if err != nil {
+		return &sourcegraph.StorageReadDir{Error: storageError(err)}, nil
+	}
+	infos, err := f.Readdir(0)
 	if err != nil {
 		return &sourcegraph.StorageReadDir{Error: storageError(err)}, nil
 	}
