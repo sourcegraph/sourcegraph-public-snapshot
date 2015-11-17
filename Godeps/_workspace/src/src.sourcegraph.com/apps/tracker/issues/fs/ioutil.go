@@ -5,6 +5,8 @@ import (
 	"os"
 	"sort"
 	"strconv"
+
+	"src.sourcegraph.com/vfs"
 )
 
 // fileInfoID describes a file, whose name is an ID of type uint64.
@@ -24,17 +26,12 @@ func (f byID) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
 // a list of directory entries whose names are IDs of type uint64, sorted by ID.
 // Other entries with names don't match the naming scheme are ignored.
 // If the directory doesn't exist, empty list and no error are returned.
-func readDirIDs(path string) ([]fileInfoID, error) {
-	f, err := os.Open(path)
+func readDirIDs(fs vfs.FileSystem, path string) ([]fileInfoID, error) {
+	fis, err := fs.ReadDir(path)
 	if err != nil {
 		if os.IsNotExist(err) { // Non-existing dirs are not considered an error.
 			return nil, nil
 		}
-		return nil, err
-	}
-	fis, err := f.Readdir(0)
-	_ = f.Close()
-	if err != nil {
 		return nil, err
 	}
 	var fiis []fileInfoID
@@ -53,8 +50,8 @@ func readDirIDs(path string) ([]fileInfoID, error) {
 }
 
 // jsonEncodeFile encodes v into file at path, overwriting or creating it.
-func jsonEncodeFile(path string, v interface{}) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func jsonEncodeFile(fs vfs.FileSystem, path string, v interface{}) error {
+	f, err := fs.Create(path)
 	if err != nil {
 		return err
 	}
@@ -67,8 +64,8 @@ func jsonEncodeFile(path string, v interface{}) error {
 }
 
 // jsonDecodeFile decodes contents of file at path into v.
-func jsonDecodeFile(path string, v interface{}) error {
-	f, err := os.Open(path)
+func jsonDecodeFile(fs vfs.FileSystem, path string, v interface{}) error {
+	f, err := fs.Open(path)
 	if err != nil {
 		return err
 	}

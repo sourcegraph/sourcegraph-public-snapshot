@@ -2,8 +2,6 @@ package sgapp
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"golang.org/x/net/context"
 
@@ -18,9 +16,7 @@ import (
 )
 
 func init() {
-	// TODO: Consider creating the tracker dir when starting service, etc. We should create it by the time service is active.
-	//       Currently, creating the first issue will make it via MkdirAll, but that's potentially suboptimal.
-	service := fsissues.NewService(filepath.Join(os.Getenv("SGPATH"), "tracker"))
+	service := fsissues.NewService("tracker")
 
 	opt := issuesapp.Options{
 		Context: func(req *http.Request) context.Context {

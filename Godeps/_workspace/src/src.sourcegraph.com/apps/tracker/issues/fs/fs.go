@@ -4,7 +4,7 @@ package fs
 import (
 	"html/template"
 	"os"
-	"path/filepath"
+	"path"
 	"strconv"
 	"time"
 
@@ -14,32 +14,34 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
+	"src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
+	"src.sourcegraph.com/vfs"
 )
 
-// NewService creates a filesystem-backed issues.Service rooted at rootDir.
-func NewService(rootDir string) issues.Service {
-	return service{
-		root: rootDir,
-	}
+// NewService creates a Sourcegraph platform storage-backed issues.Service,
+// using platformStorageAppName as the app name identifier.
+func NewService(platformStorageAppName string) issues.Service {
+	return service{appName: platformStorageAppName}
 }
 
 type service struct {
-	// root directory for issue storage for all repos.
-	root string
+	// appName is the app name used for Sourcegraph platform storage.
+	appName string
 }
 
-// dir returns the path to root of issue storage for the given repo.
-func (s service) dir(repo issues.RepoSpec) string {
-	return filepath.Join(s.root, "threads", filepath.FromSlash(repo.URI))
-}
+const (
+	// threadsDir is '/'-separated path for thread storage.
+	threadsDir = "threads"
+)
 
 func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) ([]issues.Issue, error) {
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	var is []issues.Issue
 
-	dirs, err := readDirIDs(s.dir(repo))
+	dirs, err := readDirIDs(fs, threadsDir)
 	if err != nil {
 		return is, err
 	}
@@ -50,7 +52,7 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 		}
 
 		var issue issue
-		err = jsonDecodeFile(filepath.Join(s.dir(repo), dir.Name(), "0"), &issue)
+		err = jsonDecodeFile(fs, path.Join(threadsDir, dir.Name(), "0"), &issue)
 		if err != nil {
 			return is, err
 		}
@@ -60,7 +62,7 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 		}
 
 		// Count comments.
-		comments, err := readDirIDs(filepath.Join(s.dir(repo), dir.Name()))
+		comments, err := readDirIDs(fs, path.Join(threadsDir, dir.Name()))
 		if err != nil {
 			return is, err
 		}
@@ -83,10 +85,12 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 	return is, nil
 }
 
-func (s service) Count(_ context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) (uint64, error) {
+func (s service) Count(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) (uint64, error) {
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
+
 	var count uint64
 
-	dirs, err := readDirIDs(s.dir(repo))
+	dirs, err := readDirIDs(fs, threadsDir)
 	if err != nil {
 		return 0, err
 	}
@@ -96,7 +100,7 @@ func (s service) Count(_ context.Context, repo issues.RepoSpec, opt issues.Issue
 		}
 
 		var issue issue
-		err = jsonDecodeFile(filepath.Join(s.dir(repo), dir.Name(), "0"), &issue)
+		err = jsonDecodeFile(fs, path.Join(threadsDir, dir.Name(), "0"), &issue)
 		if err != nil {
 			return 0, err
 		}
@@ -115,9 +119,10 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 	currentUser := putil.UserFromContext(ctx)
 
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	var issue issue
-	err := jsonDecodeFile(filepath.Join(s.dir(repo), formatUint64(id), "0"), &issue)
+	err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -159,17 +164,18 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 	currentUser := putil.UserFromContext(ctx)
 
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	var comments []issues.Comment
 
-	dir := filepath.Join(s.dir(repo), formatUint64(id))
-	fis, err := readDirIDs(dir)
+	dir := path.Join(threadsDir, formatUint64(id))
+	fis, err := readDirIDs(fs, dir)
 	if err != nil {
 		return comments, err
 	}
 	for _, fi := range fis {
 		var comment comment
-		err = jsonDecodeFile(filepath.Join(dir, fi.Name()), &comment)
+		err = jsonDecodeFile(fs, path.Join(dir, fi.Name()), &comment)
 		if err != nil {
 			return comments, err
 		}
@@ -192,17 +198,18 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 
 func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64, opt interface{}) ([]issues.Event, error) {
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	var events []issues.Event
 
-	dir := filepath.Join(s.dir(repo), formatUint64(id), "events")
-	fis, err := readDirIDs(dir)
+	dir := path.Join(threadsDir, formatUint64(id), "events")
+	fis, err := readDirIDs(fs, dir)
 	if err != nil {
 		return events, err
 	}
 	for _, fi := range fis {
 		var event event
-		err = jsonDecodeFile(filepath.Join(dir, fi.Name()), &event)
+		err = jsonDecodeFile(fs, path.Join(dir, fi.Name()), &event)
 		if err != nil {
 			return events, err
 		}
@@ -234,6 +241,7 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	comment := comment{
 		AuthorUID: currentUser.UID,
@@ -247,12 +255,12 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 	}
 
 	// Commit to storage.
-	dir := filepath.Join(s.dir(repo), formatUint64(id))
-	commentID, err := nextID(dir)
+	dir := path.Join(threadsDir, formatUint64(id))
+	commentID, err := nextID(fs, dir)
 	if err != nil {
 		return issues.Comment{}, err
 	}
-	err = jsonEncodeFile(filepath.Join(dir, formatUint64(commentID)), comment)
+	err = jsonEncodeFile(fs, path.Join(dir, formatUint64(commentID)), comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -278,6 +286,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	issue := issue{
 		State: issues.OpenState,
@@ -304,24 +313,11 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 	}
 
 	// Commit to storage.
-	issueID, err := nextID(s.dir(repo))
+	issueID, err := nextID(fs, threadsDir)
 	if err != nil {
 		return issues.Issue{}, err
 	}
-	dir := filepath.Join(s.dir(repo), formatUint64(issueID))
-	err = os.MkdirAll(s.dir(repo), 0755) // Only needed for first issue in the repo. TODO: Consider MkdirAll or even better?
-	if err != nil {
-		return issues.Issue{}, err
-	}
-	err = os.Mkdir(dir, 0755)
-	if err != nil {
-		return issues.Issue{}, err
-	}
-	err = os.Mkdir(filepath.Join(dir, "events"), 0755)
-	if err != nil {
-		return issues.Issue{}, err
-	}
-	err = jsonEncodeFile(filepath.Join(dir, "0"), issue)
+	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(issueID), "0"), issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -375,10 +371,11 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	// Get from storage.
 	var issue issue
-	err := jsonDecodeFile(filepath.Join(s.dir(repo), formatUint64(id), "0"), &issue)
+	err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -404,14 +401,14 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	}
 
 	// Commit to storage.
-	err = jsonEncodeFile(filepath.Join(s.dir(repo), formatUint64(id), "0"), issue)
+	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
 
 	// THINK: Is this the best place to do this? Should it be returned from this func? How would GH backend do it?
 	// Create event and commit to storage.
-	eventID, err := nextID(filepath.Join(s.dir(repo), formatUint64(id), "events"))
+	eventID, err := nextID(fs, path.Join(threadsDir, formatUint64(id), "events"))
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -431,7 +428,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 			To:   *ir.Title,
 		}
 	}
-	err = jsonEncodeFile(filepath.Join(s.dir(repo), formatUint64(id), "events", formatUint64(eventID)), event)
+	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), "events", formatUint64(eventID)), event)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -460,11 +457,12 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
+	fs := storage.Namespace(ctx, s.appName, repo.URI)
 
 	if c.ID == 0 {
 		// Get from storage.
 		var issue issue
-		err := jsonDecodeFile(filepath.Join(s.dir(repo), formatUint64(id), "0"), &issue)
+		err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), &issue)
 		if err != nil {
 			return issues.Comment{}, err
 		}
@@ -484,7 +482,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 		issue.Body = c.Body
 
 		// Commit to storage.
-		err = jsonEncodeFile(filepath.Join(s.dir(repo), formatUint64(id), "0"), issue)
+		err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), issue)
 		if err != nil {
 			return issues.Comment{}, err
 		}
@@ -500,7 +498,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 
 	// Get from storage.
 	var comment comment
-	err := jsonDecodeFile(filepath.Join(s.dir(repo), formatUint64(id), formatUint64(c.ID)), &comment)
+	err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), formatUint64(c.ID)), &comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -520,7 +518,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	comment.Body = c.Body
 
 	// Commit to storage.
-	err = jsonEncodeFile(filepath.Join(s.dir(repo), formatUint64(id), formatUint64(c.ID)), comment)
+	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), formatUint64(c.ID)), comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -535,8 +533,8 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 }
 
 // nextID returns the next id for the given dir. If there are no previous elements, it begins with id 1.
-func nextID(dir string) (uint64, error) {
-	fis, err := readDirIDs(dir)
+func nextID(fs vfs.FileSystem, dir string) (uint64, error) {
+	fis, err := readDirIDs(fs, dir)
 	if err != nil {
 		return 0, err
 	}
