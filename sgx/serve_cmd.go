@@ -551,7 +551,13 @@ func (c *ServeCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		err = (&sshgit.Server{}).ListenAndStart(cliCtx, c.SSHAddr, privateSigner, idKey.ID)
+		// create a context with regular (non self-signed) tokens that
+		// are valid on the federation root server.
+		ctx, err := c.authenticateScopedContext(cliCtx, idKey, []string{"internal:sshgit"})
+		if err != nil {
+			return err
+		}
+		err = (&sshgit.Server{}).ListenAndStart(ctx, c.SSHAddr, privateSigner, idKey.ID)
 		if err != nil {
 			return err
 		}

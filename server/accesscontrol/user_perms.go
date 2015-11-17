@@ -184,7 +184,7 @@ var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*s
 func verifyScopeHasAccess(ctx context.Context, scopes []string, method string) bool {
 	for _, scope := range scopes {
 		switch {
-		case scope == "internal:cli":
+		case strings.HasPrefix(scope, "internal:"):
 			// internal server commands have default write access.
 			return true
 
