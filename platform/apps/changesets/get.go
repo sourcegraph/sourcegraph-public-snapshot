@@ -75,7 +75,7 @@ func serveList(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return executeTemplate(w, r, "list.html", &struct {
-		tmplCommon
+		TmplCommon
 		Repo                     sourcegraph.RepoRevSpec
 		Op                       *sourcegraph.ChangesetListOp
 		List                     []*sourcegraph.Changeset
@@ -212,7 +212,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return executeTemplate(w, r, "changeset.html", &struct {
-		tmplCommon
+		TmplCommon
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
 		payloads.Changeset

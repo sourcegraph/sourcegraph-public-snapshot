@@ -16,9 +16,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 
-// tmplCommon stores common information that will be exposed to all templates
+// TmplCommon stores common information that will be exposed to all templates
 // that serve data with this structure embedded (via executeTemplate).
-type tmplCommon struct {
+type TmplCommon struct {
 	// BaseURI holds the base URI provided by the platform for this app.
 	BaseURI string
 
@@ -59,7 +59,7 @@ func executeTemplate(w http.ResponseWriter, r *http.Request, name string, data i
 	return t.Execute(w, data)
 }
 
-// putCommon fills in the embedded tmplCommon structure inside data, if it exists.
+// putCommon fills in the embedded TmplCommon structure inside data, if it exists.
 func putCommon(ctx context.Context, data interface{}) {
 	if data == nil {
 		return
@@ -68,11 +68,11 @@ func putCommon(ctx context.Context, data interface{}) {
 	if v.Kind() != reflect.Ptr {
 		panic("in executeTemplate: struct needs to be addressable (reflect.Ptr)")
 	}
-	f := v.Elem().FieldByName("tmplCommon")
+	f := v.Elem().FieldByName("TmplCommon")
 	if !f.IsValid() {
 		return
 	}
-	f.Set(reflect.ValueOf(tmplCommon{
+	f.Set(reflect.ValueOf(TmplCommon{
 		BaseURI:   pctx.BaseURI(ctx),
 		CSRFToken: pctx.CSRFToken(ctx),
 		Ctx:       ctx,
