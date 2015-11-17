@@ -94,7 +94,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		}
 	}
 
-	if username != "" {
+	if username != "" { // a username has to be set if the password is non-empty
 		u, err := url.Parse(cloneURL)
 		if err != nil {
 			return err
