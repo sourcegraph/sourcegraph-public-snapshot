@@ -8,6 +8,7 @@ import (
 	issuesapp "src.sourcegraph.com/apps/tracker"
 	"src.sourcegraph.com/apps/tracker/common"
 	"src.sourcegraph.com/apps/tracker/issues"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
@@ -16,7 +17,21 @@ import (
 )
 
 func init() {
-	service := fsissues.NewService("tracker")
+	// Arrange sgapp so we can get a background app-level context during Start,
+	// create a service with it and register the app frame.
+	events.RegisterListener(sgapp{})
+}
+
+// sgapp implements events.EventListener.
+type sgapp struct{}
+
+func (sgapp) Scopes() []string {
+	return []string{"app:tracker"}
+}
+
+// Start creates a service using ctx and registers the app frame.
+func (sgapp) Start(ctx context.Context) {
+	service := fsissues.NewService(ctx, "tracker")
 
 	opt := issuesapp.Options{
 		Context: func(req *http.Request) context.Context {
