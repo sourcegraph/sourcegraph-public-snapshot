@@ -27,7 +27,7 @@
     "lintspaces-cli": "0.1.0",
     "lintspaces-loader": "1.0.0",
     "madge": "0.5.2",
-    "mocha": "2.3.2",
+    "mocha": "2.3.4",
     "mocha-loader": "0.7.1",
     "node-sass": "3.3.3",
     "raw-loader": "0.5.1",
