@@ -20,12 +20,20 @@ import (
 )
 
 // NewService creates a Sourcegraph platform storage-backed issues.Service,
-// using platformStorageAppName as the app name identifier.
-func NewService(platformStorageAppName string) issues.Service {
-	return service{appName: platformStorageAppName}
+// using appCtx context and platformStorageAppName as the app name identifier.
+func NewService(appCtx context.Context, platformStorageAppName string) issues.Service {
+	return service{
+		appCtx:  appCtx,
+		appName: platformStorageAppName,
+	}
 }
 
 type service struct {
+	// appCtx is the app context with high priveldge. It's used to access the Sourcegraph platform storage
+	// (on behalf of users that may not have write access). This service implementation is responsible for doing
+	// authorization checks.
+	appCtx context.Context
+
 	// appName is the app name used for Sourcegraph platform storage.
 	appName string
 }
@@ -37,7 +45,7 @@ const (
 
 func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) ([]issues.Issue, error) {
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var is []issues.Issue
 
@@ -86,7 +94,7 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 }
 
 func (s service) Count(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) (uint64, error) {
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var count uint64
 
@@ -119,7 +127,7 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 	currentUser := putil.UserFromContext(ctx)
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var issue issue
 	err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), &issue)
@@ -164,7 +172,7 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 	currentUser := putil.UserFromContext(ctx)
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var comments []issues.Comment
 
@@ -198,7 +206,7 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 
 func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64, opt interface{}) ([]issues.Event, error) {
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var events []issues.Event
 
@@ -241,7 +249,7 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	comment := comment{
 		AuthorUID: currentUser.UID,
@@ -286,7 +294,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	issue := issue{
 		State: issues.OpenState,
@@ -371,7 +379,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	// Get from storage.
 	var issue issue
@@ -457,7 +465,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(ctx, s.appName, repo.URI)
+	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	if c.ID == 0 {
 		// Get from storage.
