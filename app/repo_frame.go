@@ -24,9 +24,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
-// repoEnabledFrames returns apps that are enabled for the given repo. Key of frames map is the app ID.
-// It also returns a slice of app IDs that defines the visual presentation order of apps.
-func repoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platform.RepoFrame, orderedIDs []string) {
+// orderedRepoEnabledFrames returns apps that are enabled for the given repo. Key of frames map is the app ID.
+// It also returns a slice of app IDs that defines the order in which they should be displayed.
+func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platform.RepoFrame, orderedIDs []string) {
 	if appconf.Flags.DisableApps {
 		return nil, nil
 	}
@@ -42,7 +42,24 @@ func repoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platform.RepoF
 		return nil, nil
 	}
 
-	return platform.Frames(repo)
+	frames = make(map[string]platform.RepoFrame)
+	for _, frame := range platform.Frames() {
+		if frame.Enable == nil || frame.Enable(repo) {
+			frames[frame.ID] = frame
+			orderedIDs = append(orderedIDs, frame.ID)
+		}
+	}
+
+	// Make tracker the leftmost app for now.
+	// TODO: This should eventually be configurable.
+	for i, appID := range orderedIDs {
+		if appID == "tracker" {
+			orderedIDs[0], orderedIDs[i] = orderedIDs[i], orderedIDs[0]
+			break
+		}
+	}
+
+	return frames, orderedIDs
 }
 
 func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
@@ -52,7 +69,7 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	appID := mux.Vars(r)["App"]
-	frames, _ := repoEnabledFrames(rc.Repo)
+	frames, _ := orderedRepoEnabledFrames(rc.Repo)
 	app, ok := frames[appID]
 	if !ok {
 		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("not a valid app")}

@@ -56,26 +56,8 @@ func RegisterFrame(frame RepoFrame) {
 	repoFrames[frame.ID] = frame
 }
 
-// Frames returns the frames registered in this instance of
-// Sourcegraph for the given repo and the frame IDs in the order in
-// which they should be displayed.
-func Frames(repo *sourcegraph.Repo) (frames map[string]RepoFrame, orderedIDs []string) {
-	frames = make(map[string]RepoFrame)
-	for _, frame := range repoFrames {
-		if frame.Enable == nil || frame.Enable(repo) {
-			frames[frame.ID] = frame
-			orderedIDs = append(orderedIDs, frame.ID)
-		}
-	}
-
-	// Make tracker the leftmost app for now.
-	// TODO: This should eventually be configurable.
-	for i, appID := range orderedIDs {
-		if appID == "tracker" {
-			orderedIDs[0], orderedIDs[i] = orderedIDs[i], orderedIDs[0]
-			break
-		}
-	}
-
-	return frames, orderedIDs
+// Frames returns all the frames registered in this instance of Sourcegraph.
+// The map key is the app ID.
+func Frames() map[string]RepoFrame {
+	return repoFrames
 }
