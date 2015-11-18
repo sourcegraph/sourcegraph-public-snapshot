@@ -112,6 +112,7 @@ type Flags struct {
 	DBDir         string `long:"fs.db-dir" description:"root dir containing user/account/etc. data" default:"$SGPATH/db"`
 	RepoStatusDir string `long:"fs.repo-status-dir" description:"root dir containing repo statuses" default:"$SGPATH/statuses"`
 	AppStorageDir string `long:"fs.app-storage-dir" description:"root dir containing app storage" default:"$SGPATH/appdata"`
+	GitRepoMirror string `long:"fs.git-repo-mirror" description:"comma-separated string map in the form '<LocalRepoURI>:<GitRemoteURL>' defining which repos to mirror on a remote host"`
 }
 
 var ActiveFlags Flags
