@@ -1,9 +1,0 @@
-{
-    "preset": "node-style-guide",
-    "fileExtensions": [ ".js", "jscs" ],
-    "excludeFiles": [
-        "test/fixtures/**",
-        "test/output/**",
-        "node_modules/**"
-    ]
-}

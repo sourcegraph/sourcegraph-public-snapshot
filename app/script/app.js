@@ -1,6 +1,6 @@
 // webpack entry point
 
-require("babel/polyfill");
+require("babel-polyfill");
 
 window.jQuery = window.$ = require("jquery");
 

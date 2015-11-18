@@ -1,3 +1,0 @@
-{
-  "args": ["src", "--source-maps", "--out-dir", "lib"]
-}

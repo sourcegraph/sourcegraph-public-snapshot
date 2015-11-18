@@ -1,0 +1,35 @@
+/* @flow */
+
+"use strict";
+
+exports.__esModule = true;
+exports.TaggedTemplateExpression = TaggedTemplateExpression;
+exports.TemplateElement = TemplateElement;
+exports.TemplateLiteral = TemplateLiteral;
+
+function TaggedTemplateExpression(node /*: Object*/) {
+  this.print(node.tag, node);
+  this.print(node.quasi, node);
+}
+
+function TemplateElement(node /*: Object*/) {
+  this._push(node.value.raw);
+}
+
+function TemplateLiteral(node /*: Object*/) {
+  this.push("`");
+
+  var quasis = node.quasis;
+
+  for (var i = 0; i < quasis.length; i++) {
+    this.print(quasis[i], node);
+
+    if (i + 1 < quasis.length) {
+      this._push("${ ");
+      this.print(node.expressions[i], node);
+      this.push(" }");
+    }
+  }
+
+  this._push("`");
+}

@@ -12,6 +12,7 @@ var fs = require('fs');
 var path = require('path');
 var assign = require('object-assign');
 var exists = require('./helpers/exists')({});
+var read = require('./helpers/read')({});
 
 var find = function find(start, rel) {
   var file = path.join(start, rel);
@@ -19,7 +20,7 @@ var find = function find(start, rel) {
   var up = '';
 
   if (exists(file)) {
-    return fs.readFileSync(file, 'utf8');
+    return read(file);
   }
 
   up = path.dirname(start);

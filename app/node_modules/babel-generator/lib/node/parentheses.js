@@ -1,0 +1,223 @@
+/* @flow */
+
+"use strict";
+
+var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
+
+exports.__esModule = true;
+exports.NullableTypeAnnotation = NullableTypeAnnotation;
+exports.UpdateExpression = UpdateExpression;
+exports.ObjectExpression = ObjectExpression;
+exports.Binary = Binary;
+exports.BinaryExpression = BinaryExpression;
+exports.SequenceExpression = SequenceExpression;
+exports.YieldExpression = YieldExpression;
+exports.ClassExpression = ClassExpression;
+exports.UnaryLike = UnaryLike;
+exports.FunctionExpression = FunctionExpression;
+exports.ArrowFunctionExpression = ArrowFunctionExpression;
+exports.ConditionalExpression = ConditionalExpression;
+exports.AssignmentExpression = AssignmentExpression;
+
+var _babelTypes = require("babel-types");
+
+var t = _interopRequireWildcard(_babelTypes);
+
+var PRECEDENCE = {
+  "||": 0,
+  "&&": 1,
+  "|": 2,
+  "^": 3,
+  "&": 4,
+  "==": 5,
+  "===": 5,
+  "!=": 5,
+  "!==": 5,
+  "<": 6,
+  ">": 6,
+  "<=": 6,
+  ">=": 6,
+  "in": 6,
+  "instanceof": 6,
+  ">>": 7,
+  "<<": 7,
+  ">>>": 7,
+  "+": 8,
+  "-": 8,
+  "*": 9,
+  "/": 9,
+  "%": 9,
+  "**": 10
+};
+
+function NullableTypeAnnotation(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  return t.isArrayTypeAnnotation(parent);
+}
+
+exports.FunctionTypeAnnotation = NullableTypeAnnotation;
+
+function UpdateExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  if (t.isMemberExpression(parent) && parent.object === node) {
+    // (foo++).test()
+    return true;
+  }
+
+  return false;
+}
+
+function ObjectExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  if (t.isExpressionStatement(parent)) {
+    // ({ foo: "bar" });
+    return true;
+  }
+
+  if (t.isMemberExpression(parent) && parent.object === node) {
+    // ({ foo: "bar" }).foo
+    return true;
+  }
+
+  return false;
+}
+
+function Binary(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  if ((t.isCallExpression(parent) || t.isNewExpression(parent)) && parent.callee === node) {
+    return true;
+  }
+
+  if (t.isUnaryLike(parent)) {
+    return true;
+  }
+
+  if (t.isMemberExpression(parent) && parent.object === node) {
+    return true;
+  }
+
+  if (t.isBinary(parent)) {
+    var parentOp = parent.operator;
+    var parentPos = PRECEDENCE[parentOp];
+
+    var nodeOp = node.operator;
+    var nodePos = PRECEDENCE[nodeOp];
+
+    if (parentPos > nodePos) {
+      return true;
+    }
+
+    // Logical expressions with the same precedence don't need parens.
+    if (parentPos === nodePos && parent.right === node && !t.isLogicalExpression(parent)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function BinaryExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  if (node.operator === "in") {
+    // let i = (1 in []);
+    if (t.isVariableDeclarator(parent)) {
+      return true;
+    }
+
+    // for ((1 in []);;);
+    if (t.isFor(parent)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function SequenceExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  if (t.isForStatement(parent)) {
+    // Although parentheses wouldn"t hurt around sequence
+    // expressions in the head of for loops, traditional style
+    // dictates that e.g. i++, j++ should not be wrapped with
+    // parentheses.
+    return false;
+  }
+
+  if (t.isExpressionStatement(parent) && parent.expression === node) {
+    return false;
+  }
+
+  if (t.isReturnStatement(parent)) {
+    return false;
+  }
+
+  // Otherwise err on the side of overparenthesization, adding
+  // explicit exceptions above if this proves overzealous.
+  return true;
+}
+
+function YieldExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  return t.isBinary(parent) || t.isUnaryLike(parent) || t.isCallExpression(parent) || t.isMemberExpression(parent) || t.isNewExpression(parent) || t.isConditionalExpression(parent) || t.isYieldExpression(parent);
+}
+
+function ClassExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  // (class {});
+  if (t.isExpressionStatement(parent)) {
+    return true;
+  }
+
+  // export default (class () {});
+  if (t.isExportDeclaration(parent)) {
+    return true;
+  }
+
+  return false;
+}
+
+function UnaryLike(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  if (t.isMemberExpression(parent, { object: node })) {
+    return true;
+  }
+
+  if (t.isCallExpression(parent, { callee: node }) || t.isNewExpression(parent, { callee: node })) {
+    return true;
+  }
+
+  return false;
+}
+
+function FunctionExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  // (function () {});
+  if (t.isExpressionStatement(parent)) {
+    return true;
+  }
+
+  return ArrowFunctionExpression(node, parent);
+}
+
+function ArrowFunctionExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  // export default (function () {});
+  if (t.isExportDeclaration(parent)) {
+    return true;
+  }
+
+  return UnaryLike(node, parent);
+}
+
+function ConditionalExpression(node /*: Object*/, parent /*: Object*/) /*: boolean*/ {
+  if (t.isUnaryLike(parent)) {
+    return true;
+  }
+
+  if (t.isBinary(parent)) {
+    return true;
+  }
+
+  if (t.isConditionalExpression(parent, { test: node })) {
+    return true;
+  }
+
+  return UnaryLike(node, parent);
+}
+
+function AssignmentExpression(node /*: Object*/) /*: boolean*/ {
+  if (t.isObjectPattern(node.left)) {
+    return true;
+  } else {
+    return ConditionalExpression.apply(undefined, arguments);
+  }
+}
