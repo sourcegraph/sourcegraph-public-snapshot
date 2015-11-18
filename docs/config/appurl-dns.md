@@ -16,7 +16,7 @@ set your DNS records to point to your server's IP address and update the configu
 AppURL = http://src.mycompany.com
 ```
 
-Ffter updating your config, restart the `src` process:
+After updating your config, restart the `src` process:
 
 ```
 sudo restart src
