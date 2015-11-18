@@ -16,6 +16,7 @@
 	"rules": {
 		"no-array-constructor": 2,
 		"no-caller": 2,
+		"no-case-declarations": 2,
 		"no-cond-assign": 2,
 		"no-constant-condition": 1,
 		"no-control-regex": 2,
