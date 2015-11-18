@@ -116,8 +116,6 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
-	r.Get(router.BetaSignup).Handler(internal.Handler(serveBetaSignup))
-
 	r.Get(router.Download).Handler(internal.Handler(serveDownload))
 	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))
 

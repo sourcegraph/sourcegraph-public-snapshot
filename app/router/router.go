@@ -25,8 +25,7 @@ const (
 
 	Builds = "builds"
 
-	Home       = "home"
-	BetaSignup = "beta-signup"
+	Home = "home"
 
 	RegisterClient = "register-client"
 
@@ -129,7 +128,6 @@ func New(base *mux.Router) *Router {
 	base.Path("/blog/{Slug:.*}").Methods("GET").Name(BlogPost)
 
 	base.Path("/.builds").Methods("GET").Name(Builds)
-	base.Path("/.beta-signup").Methods("POST").Name(BetaSignup)
 
 	base.Path("/.download/install.sh").Methods("GET").Name(DownloadInstall)
 	base.Path("/.download/{Suffix:.*}").Methods("GET").Name(Download)
