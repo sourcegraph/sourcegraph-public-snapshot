@@ -13,6 +13,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 var (
@@ -96,6 +97,7 @@ func AssetsMiddleware() func(http.ResponseWriter, *http.Request, http.HandlerFun
 	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		for _, h := range handlers {
 			if strings.HasPrefix(r.URL.Path, h.PathPrefix) {
+				httpctx.SetRouteName(r, "asset")
 				h.Handler.ServeHTTP(w, r)
 				return
 			}
