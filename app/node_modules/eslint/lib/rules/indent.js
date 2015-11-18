@@ -284,6 +284,22 @@ module.exports = function(context) {
     }
 
     /**
+     * Check to see if the argument before the callee node is multi-line and
+     * there should only be 1 argument before the callee node
+     * @param {ASTNode} node node to check
+     * @returns {boolean} True if arguments are multi-line
+     */
+    function isArgBeforeCalleeNodeMultiline(node) {
+        var parent = node.parent;
+
+        if (parent.arguments.length >= 2 && parent.arguments[1] === node) {
+            return parent.arguments[0].loc.end.line > parent.arguments[0].loc.start.line;
+        }
+
+        return false;
+    }
+
+    /**
      * Check indent for function block content
      * @param {ASTNode} node node to examine
      * @returns {void}
@@ -314,17 +330,20 @@ module.exports = function(context) {
             indent = getNodeIndent(calleeNode);
         }
 
-        // If part of a multi-line chain call, indent one more to differentiate:
-        // var a = new P()
-        //     .done(function (result) {
-        //         doUsefulStuff(result);
-        //     });
-        var calleeLoc = calleeNode.type === "CallExpression" && calleeNode.callee.loc;
-        if (calleeLoc &&
-            calleeLoc.end.line - calleeLoc.start.line === 1 &&
-            calleeLoc.end.line < node.loc.start.line
-        ) {
-            indent += indentSize;
+        if (calleeNode.parent.type === "CallExpression") {
+            var calleeParent = calleeNode.parent;
+
+            if (calleeNode.type !== "FunctionExpression" && calleeNode.type !== "ArrowFunctionExpression") {
+                if (calleeParent && calleeParent.loc.start.line < node.loc.start.line) {
+                    indent = getNodeIndent(calleeParent);
+                }
+            } else {
+                if (isArgBeforeCalleeNodeMultiline(calleeNode) &&
+                    calleeParent.callee.loc.start.line === calleeParent.callee.loc.end.line &&
+                    !isNodeFirstInLine(calleeNode)) {
+                    indent = getNodeIndent(calleeParent);
+                }
+            }
         }
 
         // function body indent should be indent + indent size
@@ -417,7 +436,7 @@ module.exports = function(context) {
                 } else if (parent.loc.start.line !== node.loc.start.line && parentVarNode === parentVarNode.parent.declarations[0]) {
                     nodeIndent = nodeIndent + indentSize;
                 }
-            } else if (!parentVarNode && !isFirstArrayElementOnSameLine(parent) && effectiveParent.type !== "ExpressionStatement" && effectiveParent.type !== "AssignmentExpression" && effectiveParent.type !== "Property") {
+            } else if (!parentVarNode && !isFirstArrayElementOnSameLine(parent) && effectiveParent.type !== "MemberExpression" && effectiveParent.type !== "ExpressionStatement" && effectiveParent.type !== "AssignmentExpression" && effectiveParent.type !== "Property") {
                 nodeIndent = nodeIndent + indentSize;
             }
 

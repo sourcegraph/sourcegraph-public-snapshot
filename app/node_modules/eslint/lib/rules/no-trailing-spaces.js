@@ -55,12 +55,20 @@ module.exports = function(context) {
                 re = new RegExp(NONBLANK),
                 skipMatch = new RegExp(SKIP_BLANK),
                 matches, lines = src.split(/\r?\n/),
+                linebreaks = context.getSource().match(/\r\n|\r|\n|\u2028|\u2029/g),
                 location,
                 totalLength = 0,
                 fixRange = [];
 
             for (var i = 0, ii = lines.length; i < ii; i++) {
                 matches = re.exec(lines[i]);
+
+                // Always add linebreak length to line length to accommodate for line break (\n or \r\n)
+                // Because during the fix time they also reserve one spot in the array.
+                // Usually linebreak length is 2 for \r\n (CRLF) and 1 for \n (LF)
+                var linebreakLength = linebreaks && linebreaks[i] ? linebreaks[i].length : 1;
+                var lineLength = lines[i].length + linebreakLength;
+
                 if (matches) {
 
                     // If the line has only whitespace, and skipBlankLines
@@ -73,16 +81,12 @@ module.exports = function(context) {
                         column: matches.index
                     };
 
-                    if (i === ii - 1) {
-                        fixRange = [totalLength + location.column + 1, totalLength + lines[i].length + 1];
-                    } else {
-                        fixRange = [totalLength + location.column, totalLength + lines[i].length];
-                    }
+                    fixRange = [totalLength + location.column, totalLength + lineLength - linebreakLength];
 
                     report(node, location, fixRange);
                 }
 
-                totalLength += lines[i].length;
+                totalLength += lineLength;
             }
         }
 

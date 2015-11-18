@@ -56,6 +56,15 @@ SourceCodeFixer.applyFixes = function(sourceCode, messages) {
 
     debug("Applying fixes");
 
+    if (!sourceCode) {
+        debug("No source code to fix");
+        return {
+            fixed: false,
+            messages: messages,
+            output: ""
+        };
+    }
+
     // clone the array
     var remainingMessages = [],
         fixes = [],
@@ -88,7 +97,7 @@ SourceCodeFixer.applyFixes = function(sourceCode, messages) {
         fixes.forEach(function(problem) {
             var fix = problem.fix;
 
-            if (fix.range[1] <= lastFixPos) {
+            if (fix.range[1] < lastFixPos) {
                 chars.splice(fix.range[0], fix.range[1] - fix.range[0], fix.text);
                 lastFixPos = fix.range[0];
             } else {

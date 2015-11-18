@@ -178,14 +178,14 @@ module.exports = function(context) {
         var tokens;
         if (node.cases && node.cases.length) {
             tokens = context.getTokensBefore(node.cases[0], 2);
-            if (tokens[0].loc.start.line !== tokens[1].loc.start.line) {
-                context.report(node, OPEN_MESSAGE);
-            }
         } else {
             tokens = context.getLastTokens(node, 3);
-            if (tokens[0].loc.start.line !== tokens[1].loc.start.line) {
-                context.report(node, OPEN_MESSAGE);
-            }
+        }
+
+        if (style !== "allman" && tokens[0].loc.start.line !== tokens[1].loc.start.line) {
+            context.report(node, OPEN_MESSAGE);
+        } else if (style === "allman" && tokens[0].loc.start.line === tokens[1].loc.start.line) {
+            context.report(node, OPEN_MESSAGE_ALLMAN);
         }
     }
 

@@ -10,7 +10,7 @@
 // Requirements
 //------------------------------------------------------------------------------
 
-var estraverse = require("estraverse-fb"),
+var estraverse = require("./util/estraverse"),
     escope = require("escope"),
     environments = require("../conf/environments"),
     blankScriptAST = require("../conf/blank-script.json"),
@@ -31,17 +31,6 @@ var DEFAULT_PARSER = require("../conf/eslint.json").parser;
 //------------------------------------------------------------------------------
 // Helpers
 //------------------------------------------------------------------------------
-
-// additional changes to make estraverse happy
-estraverse.Syntax.ExperimentalSpreadProperty = "ExperimentalSpreadProperty";
-estraverse.Syntax.ExperimentalRestProperty = "ExperimentalRestProperty";
-
-estraverse.VisitorKeys.ExperimentalSpreadProperty = ["argument"];
-estraverse.VisitorKeys.ExperimentalRestProperty = ["argument"];
-
-// All nodes in ObjectExpression.properties and ObjectPattern.properties are visited as `Property`.
-// See Also: https://github.com/estools/estraverse/blob/master/estraverse.js#L687-L688
-estraverse.VisitorKeys.Property.push("argument");
 
 /**
  * Parses a list of "name:boolean_value" or/and "name" options divided by comma or
@@ -554,7 +543,7 @@ module.exports = (function() {
                 fatal: true,
                 severity: 2,
 
-                message: message,
+                message: "Parsing error: " + message,
 
                 line: ex.lineNumber,
                 column: ex.column + 1
@@ -637,6 +626,20 @@ module.exports = (function() {
             this.reset();
         }
 
+        // search and apply "eslint-env *".
+        var envInFile = findEslintEnv(text || textOrSourceCode.text);
+        if (envInFile) {
+            if (!config || !config.env) {
+                config = assign({}, config || {}, {env: envInFile});
+            } else {
+                config = assign({}, config);
+                config.env = assign({}, config.env, envInFile);
+            }
+        }
+
+        // process initial config to make it safe to extend
+        config = prepareConfig(config || {});
+
         // only do this for text
         if (text !== null) {
 
@@ -645,20 +648,6 @@ module.exports = (function() {
                 sourceCode = new SourceCode(text, blankScriptAST);
                 return messages;
             }
-
-            // search and apply "eslint-env *".
-            var envInFile = findEslintEnv(text);
-            if (envInFile) {
-                if (!config || !config.env) {
-                    config = assign({}, config || {}, {env: envInFile});
-                } else {
-                    config = assign({}, config);
-                    config.env = assign({}, config.env, envInFile);
-                }
-            }
-
-            // process initial config to make it safe to extend
-            config = prepareConfig(config || {});
 
             ast = parse(text.replace(/^#!([^\r\n]+)/, function(match, captured) {
                 shebang = captured;
@@ -689,9 +678,8 @@ module.exports = (function() {
                     options,
                     rule;
 
-                if (rules.get(key)) {
-                    ruleCreator = rules.get(key);
-                } else {
+                ruleCreator = rules.get(key);
+                if (!ruleCreator) {
                     var replacementMsg = getRuleReplacementMessage(key);
                     if (replacementMsg) {
                         ruleCreator = createStubRule(replacementMsg);
@@ -830,14 +818,16 @@ module.exports = (function() {
             return;
         }
 
-        message = message.replace(/\{\{\s*(.+?)\s*\}\}/g, function(fullMatch, term) {
-            if (term in opts) {
-                return opts[term];
-            }
+        if (opts) {
+            message = message.replace(/\{\{\s*(.+?)\s*\}\}/g, function(fullMatch, term) {
+                if (term in opts) {
+                    return opts[term];
+                }
 
-            // Preserve old behavior: If parameter name not provided, don't replace it.
-            return fullMatch;
-        });
+                // Preserve old behavior: If parameter name not provided, don't replace it.
+                return fullMatch;
+            });
+        }
 
         var problem = {
             ruleId: ruleId,

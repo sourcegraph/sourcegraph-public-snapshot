@@ -74,11 +74,17 @@ module.exports = {
     applescript: {
         globals: globals.applescript
     },
+    nashorn: {
+        globals: globals.nashorn
+    },
     serviceworker: {
         globals: globals.serviceworker
     },
     embertest: {
         globals: globals.embertest
+    },
+    webextensions: {
+        globals: globals.webextensions
     },
     es6: {
         ecmaFeatures: {

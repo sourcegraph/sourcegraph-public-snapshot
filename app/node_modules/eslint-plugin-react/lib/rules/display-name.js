@@ -4,22 +4,18 @@
  */
 'use strict';
 
-var componentUtil = require('../util/component');
-var ComponentList = componentUtil.List;
+var Components = require('../util/Components');
 
 // ------------------------------------------------------------------------------
 // Rule Definition
 // ------------------------------------------------------------------------------
 
-module.exports = function(context) {
+module.exports = Components.detect(function(context, components) {
 
   var config = context.options[0] || {};
   var acceptTranspilerName = config.acceptTranspilerName || false;
 
-  var componentList = new ComponentList();
-
   var MISSING_MESSAGE = 'Component definition is missing display name';
-  var MISSING_MESSAGE_NAMED_COMP = '{{component}} component definition is missing display name';
 
   /**
    * Checks if we are declaring a display name
@@ -51,7 +47,7 @@ module.exports = function(context) {
    * @param {ASTNode} node The AST node being checked.
    */
   function markDisplayNameAsDeclared(node) {
-    componentList.set(context, node, {
+    components.set(node, {
       hasDisplayName: true
     });
   }
@@ -63,7 +59,7 @@ module.exports = function(context) {
   function reportMissingDisplayName(component) {
     context.report(
       component.node,
-      component.name === componentUtil.DEFAULT_COMPONENT_NAME ? MISSING_MESSAGE : MISSING_MESSAGE_NAMED_COMP, {
+      MISSING_MESSAGE, {
         component: component.name
       }
     );
@@ -135,7 +131,7 @@ module.exports = function(context) {
       if (!isDisplayNameDeclaration(node.property)) {
         return;
       }
-      var component = componentList.getByName(context.getSource(node.object));
+      var component = context.react.getRelatedComponent(node);
       if (!component) {
         return;
       }
@@ -143,7 +139,6 @@ module.exports = function(context) {
     },
 
     FunctionExpression: function(node) {
-      componentList.set(context, node);
       if (!acceptTranspilerName || !hasTranspilerName(node)) {
         return;
       }
@@ -151,7 +146,6 @@ module.exports = function(context) {
     },
 
     FunctionDeclaration: function(node) {
-      componentList.set(context, node);
       if (!acceptTranspilerName || !hasTranspilerName(node)) {
         return;
       }
@@ -159,7 +153,6 @@ module.exports = function(context) {
     },
 
     ArrowFunctionExpression: function(node) {
-      componentList.set(context, node);
       if (!acceptTranspilerName || !hasTranspilerName(node)) {
         return;
       }
@@ -174,7 +167,6 @@ module.exports = function(context) {
     },
 
     ClassDeclaration: function(node) {
-      componentList.set(context, node);
       if (!acceptTranspilerName || !hasTranspilerName(node)) {
         return;
       }
@@ -182,7 +174,6 @@ module.exports = function(context) {
     },
 
     ObjectExpression: function(node) {
-      componentList.set(context, node);
       if (!acceptTranspilerName || !hasTranspilerName(node)) {
         // Search for the displayName declaration
         node.properties.forEach(function(property) {
@@ -196,12 +187,8 @@ module.exports = function(context) {
       markDisplayNameAsDeclared(node);
     },
 
-    ReturnStatement: function(node) {
-      componentList.set(context, node);
-    },
-
     'Program:exit': function() {
-      var list = componentList.getList();
+      var list = components.list();
       // Report missing display name for all components
       for (var component in list) {
         if (!list.hasOwnProperty(component) || list[component].hasDisplayName) {
@@ -211,7 +198,7 @@ module.exports = function(context) {
       }
     }
   };
-};
+});
 
 module.exports.schema = [{
   type: 'object',

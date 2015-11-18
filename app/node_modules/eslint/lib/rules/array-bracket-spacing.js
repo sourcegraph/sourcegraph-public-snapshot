@@ -47,8 +47,15 @@ module.exports = function(context) {
     * @returns {void}
     */
     function reportNoBeginningSpace(node, token) {
-        context.report(node, token.loc.start,
-            "There should be no space after '" + token.value + "'");
+        context.report({
+            node: node,
+            loc: token.loc.start,
+            message: "There should be no space after '" + token.value + "'",
+            fix: function(fixer) {
+                var nextToken = context.getSourceCode().getTokenAfter(token);
+                return fixer.removeRange([token.range[1], nextToken.range[0]]);
+            }
+        });
     }
 
     /**
@@ -58,8 +65,15 @@ module.exports = function(context) {
     * @returns {void}
     */
     function reportNoEndingSpace(node, token) {
-        context.report(node, token.loc.start,
-            "There should be no space before '" + token.value + "'");
+        context.report({
+            node: node,
+            loc: token.loc.start,
+            message: "There should be no space before '" + token.value + "'",
+            fix: function(fixer) {
+                var previousToken = context.getSourceCode().getTokenBefore(token);
+                return fixer.removeRange([previousToken.range[1], token.range[0]]);
+            }
+        });
     }
 
     /**
@@ -69,8 +83,14 @@ module.exports = function(context) {
     * @returns {void}
     */
     function reportRequiredBeginningSpace(node, token) {
-        context.report(node, token.loc.start,
-            "A space is required after '" + token.value + "'");
+        context.report({
+            node: node,
+            loc: token.loc.start,
+            message: "A space is required after '" + token.value + "'",
+            fix: function(fixer) {
+                return fixer.insertTextAfter(token, " ");
+            }
+        });
     }
 
     /**
@@ -80,8 +100,32 @@ module.exports = function(context) {
     * @returns {void}
     */
     function reportRequiredEndingSpace(node, token) {
-        context.report(node, token.loc.start,
-                    "A space is required before '" + token.value + "'");
+        context.report({
+            node: node,
+            loc: token.loc.start,
+            message: "A space is required before '" + token.value + "'",
+            fix: function(fixer) {
+                return fixer.insertTextBefore(token, " ");
+            }
+        });
+    }
+
+    /**
+    * Determines if a node is an object type
+    * @param {ASTNode} node - The node to check.
+    * @returns {boolean} Whether or not the node is an object type.
+    */
+    function isObjectType(node) {
+        return node && (node.type === "ObjectExpression" || node.type === "ObjectPattern");
+    }
+
+    /**
+    * Determines if a node is an array type
+    * @param {ASTNode} node - The node to check.
+    * @returns {boolean} Whether or not the node is an array type.
+    */
+    function isArrayType(node) {
+        return node && (node.type === "ArrayExpression" || node.type === "ArrayPattern");
     }
 
     /**
@@ -90,24 +134,26 @@ module.exports = function(context) {
      * @returns {void}
      */
     function validateArraySpacing(node) {
-        if (node.elements.length === 0) {
+        if (options.spaced && node.elements.length === 0) {
             return;
         }
 
         var first = context.getFirstToken(node),
             second = context.getFirstToken(node, 1),
             penultimate = context.getLastToken(node, 1),
-            last = context.getLastToken(node);
+            last = context.getLastToken(node),
+            firstElement = node.elements[0],
+            lastElement = node.elements[node.elements.length - 1];
 
         var openingBracketMustBeSpaced =
-            options.objectsInArraysException && second.value === "{" ||
-            options.arraysInArraysException && second.value === "[" ||
+            options.objectsInArraysException && isObjectType(firstElement) ||
+            options.arraysInArraysException && isArrayType(firstElement) ||
             options.singleElementException && node.elements.length === 1
                 ? !options.spaced : options.spaced;
 
         var closingBracketMustBeSpaced =
-            options.objectsInArraysException && penultimate.value === "}" ||
-            options.arraysInArraysException && penultimate.value === "]" ||
+            options.objectsInArraysException && isObjectType(lastElement) ||
+            options.arraysInArraysException && isArrayType(lastElement) ||
             options.singleElementException && node.elements.length === 1
                 ? !options.spaced : options.spaced;
 
@@ -120,7 +166,7 @@ module.exports = function(context) {
             }
         }
 
-        if (astUtils.isTokenOnSameLine(penultimate, last)) {
+        if (first !== penultimate && astUtils.isTokenOnSameLine(penultimate, last)) {
             if (closingBracketMustBeSpaced && !sourceCode.isSpaceBetweenTokens(penultimate, last)) {
                 reportRequiredEndingSpace(node, last);
             }

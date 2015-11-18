@@ -3,8 +3,8 @@
 module.exports = function () {
 	var set, iterator, result;
 	if (typeof Set !== 'function') return false;
-	if (String(Set.prototype) !== '[object Set]') return false;
 	set = new Set(['raz', 'dwa', 'trzy']);
+	if (String(set) !== '[object Set]') return false;
 	if (set.size !== 3) return false;
 	if (typeof set.add !== 'function') return false;
 	if (typeof set.clear !== 'function') return false;

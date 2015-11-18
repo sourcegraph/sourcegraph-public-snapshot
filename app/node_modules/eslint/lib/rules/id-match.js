@@ -2,6 +2,7 @@
  * @fileoverview Rule to flag non-matching identifiers
  * @author Matthieu Larcher
  * @copyright 2015 Matthieu Larcher. All rights reserved.
+ * See LICENSE in root directory for full license.
  */
 
 "use strict";
@@ -34,6 +35,19 @@ module.exports = function(context) {
      */
     function isInvalid(name) {
         return !regexp.test(name);
+    }
+
+    /**
+     * Verifies if we should report an error or not based on the effective
+     * parent node and the identifier name.
+     * @param {ASTNode} effectiveParent The effective parent node of the node to be reported
+     * @param {String} name The identifier name of the identifier node
+     * @returns {boolean} whether an error should be reported or not
+     */
+    function shouldReport(effectiveParent, name) {
+        return effectiveParent.type !== "CallExpression"
+            && effectiveParent.type !== "NewExpression" &&
+            isInvalid(name);
     }
 
     /**
@@ -86,12 +100,12 @@ module.exports = function(context) {
                     return;
                 }
 
-                if (effectiveParent.type !== "CallExpression" && isInvalid(name)) {
+                if (shouldReport(effectiveParent, name)) {
                     report(node);
                 }
 
             // Report anything that is a match and not a CallExpression
-            } else if (effectiveParent.type !== "CallExpression" && isInvalid(name)) {
+            } else if (shouldReport(effectiveParent, name)) {
                 report(node);
             }
         }
@@ -108,7 +122,7 @@ module.exports.schema = [
         "type": "object",
         "properties": {
             "properties": {
-                "enum": [true, false]
+                "type": "boolean"
             }
         }
     }

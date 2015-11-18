@@ -1,6 +1,7 @@
 /**
  * @fileoverview Mocha test wrapper
  * @author Ilya Volodin
+ * @copyright 2015 Kevin Partington. All rights reserved.
  * @copyright 2015 Nicholas C. Zakas. All rights reserved.
  * @copyright 2014 Ilya Volodin. All rights reserved.
  * See LICENSE file in root directory for full license.
@@ -19,6 +20,7 @@
  *      ],
  *      invalid: [
  *          { code: "{code}", errors: {numErrors} },
+ *          { code: "{code}", errors: ["{errorMessage}"] },
  *          { code: "{code}", options: {options}, global: {globals}, parser: "{parser}", settings: {settings}, errors: [{ message: "{errorMessage}", type: "{errorNodeType}"}] }
  *      ]
  *  });
@@ -75,6 +77,34 @@ var RuleTesterParameters = [
 ];
 
 var validateSchema = validate(metaSchema, { verbose: true });
+
+var hasOwnProperty = Function.call.bind(Object.hasOwnProperty);
+
+/**
+ * Clones a given value deeply.
+ * Note: This ignores `parent` property.
+ *
+ * @param {any} x - A value to clone.
+ * @returns {any} A cloned value.
+ */
+function cloneDeeplyExcludesParent(x) {
+    if (typeof x === "object" && x !== null) {
+        if (Array.isArray(x)) {
+            return x.map(cloneDeeplyExcludesParent);
+        }
+
+        var retv = {};
+        for (var key in x) {
+            if (key !== "parent" && hasOwnProperty(x, key)) {
+                retv[key] = cloneDeeplyExcludesParent(x[key]);
+            }
+        }
+
+        return retv;
+    }
+
+    return x;
+}
 
 //------------------------------------------------------------------------------
 // Public Interface
@@ -176,7 +206,7 @@ RuleTester.prototype = {
          */
         function runRuleForItem(ruleName, item) {
             var config = clone(testerConfig),
-                code, filename, schema;
+                code, filename, schema, beforeAST, afterAST;
 
             if (typeof item === "string") {
                 code = item;
@@ -221,7 +251,21 @@ RuleTester.prototype = {
 
             validator.validate(config, "rule-tester");
 
-            return eslint.verify(code, config, filename);
+            // To cache AST.
+            eslint.reset();
+            eslint.on("Program", function(node) {
+                beforeAST = cloneDeeplyExcludesParent(node);
+
+                eslint.on("Program:exit", function(node) {
+                    afterAST = cloneDeeplyExcludesParent(node);
+                });
+            });
+
+            return {
+                messages: eslint.verify(code, config, filename, true),
+                beforeAST: beforeAST,
+                afterAST: afterAST
+            };
         }
 
         /**
@@ -233,10 +277,17 @@ RuleTester.prototype = {
          * @private
          */
         function testValidTemplate(ruleName, item) {
-            var messages = runRuleForItem(ruleName, item);
+            var result = runRuleForItem(ruleName, item);
+            var messages = result.messages;
 
             assert.equal(messages.length, 0, util.format("Should have no errors but had %d: %s",
                         messages.length, util.inspect(messages)));
+
+            assert.deepEqual(
+                result.beforeAST,
+                result.afterAST,
+                "Rule should not modify AST."
+            );
         }
 
         /**
@@ -248,7 +299,8 @@ RuleTester.prototype = {
          * @private
          */
         function testInvalidTemplate(ruleName, item) {
-            var messages = runRuleForItem(ruleName, item);
+            var result = runRuleForItem(ruleName, item);
+            var messages = result.messages;
 
             if (typeof item.errors === "number") {
                 assert.equal(messages.length, item.errors, util.format("Should have %d errors but had %d: %s",
@@ -259,32 +311,49 @@ RuleTester.prototype = {
                     item.errors.length, messages.length, util.inspect(messages)));
 
                 if (item.hasOwnProperty("output")) {
-                    var result = SourceCodeFixer.applyFixes(eslint.getSourceCode(), messages);
-                    assert.equal(result.output, item.output, "Output is incorrect.");
+                    var fixResult = SourceCodeFixer.applyFixes(eslint.getSourceCode(), messages);
+                    assert.equal(fixResult.output, item.output, "Output is incorrect.");
                 }
-
 
                 for (var i = 0, l = item.errors.length; i < l; i++) {
                     assert.ok(!("fatal" in messages[i]), "A fatal parsing error occurred: " + messages[i].message);
                     assert.equal(messages[i].ruleId, ruleName, "Error rule name should be the same as the name of the rule being tested");
 
-                    if (item.errors[i].message) {
-                        assert.equal(messages[i].message, item.errors[i].message, "Error message should be " + item.errors[i].message);
-                    }
+                    if (typeof item.errors[i] === "string") {
+                        // Just an error message.
 
-                    if (item.errors[i].type) {
-                        assert.equal(messages[i].nodeType, item.errors[i].type, "Error type should be " + item.errors[i].type);
-                    }
+                        assert.equal(messages[i].message, item.errors[i], "Error message should be " + item.errors[i]);
+                    } else if (typeof item.errors[i] === "object") {
+                        // Error object. This may have a message, node type,
+                        // line, and/or column.
 
-                    if (item.errors[i].hasOwnProperty("line")) {
-                        assert.equal(messages[i].line, item.errors[i].line, "Error line should be " + item.errors[i].line);
-                    }
+                        if (item.errors[i].message) {
+                            assert.equal(messages[i].message, item.errors[i].message, "Error message should be " + item.errors[i].message);
+                        }
 
-                    if (item.errors[i].hasOwnProperty("column")) {
-                        assert.equal(messages[i].column, item.errors[i].column, "Error column should be " + item.errors[i].column);
+                        if (item.errors[i].type) {
+                            assert.equal(messages[i].nodeType, item.errors[i].type, "Error type should be " + item.errors[i].type);
+                        }
+
+                        if (item.errors[i].hasOwnProperty("line")) {
+                            assert.equal(messages[i].line, item.errors[i].line, "Error line should be " + item.errors[i].line);
+                        }
+
+                        if (item.errors[i].hasOwnProperty("column")) {
+                            assert.equal(messages[i].column, item.errors[i].column, "Error column should be " + item.errors[i].column);
+                        }
+                    } else {
+                        // Only string or object errors are valid.
+                        assert.fail(messages[i], null, "Error should be a string or object.");
                     }
                 }
             }
+
+            assert.deepEqual(
+                result.beforeAST,
+                result.afterAST,
+                "Rule should not modify AST."
+            );
         }
 
         // this creates a mocha test suite and pipes all supplied info

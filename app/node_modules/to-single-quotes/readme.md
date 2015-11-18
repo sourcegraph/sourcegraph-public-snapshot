@@ -1,44 +1,29 @@
 # to-single-quotes [![Build Status](https://travis-ci.org/sindresorhus/to-single-quotes.svg?branch=master)](https://travis-ci.org/sindresorhus/to-single-quotes)
 
-> Convert matching double-quotes to single-quotes: `I "love" unicorns` => `I 'love' unicorns`
+> Convert matching double-quotes to single-quotes: `I "love" unicorns` → `I 'love' unicorns`
 
 
-## Usage
+## Install
 
 ```
 $ npm install --save to-single-quotes
 ```
 
+
+## Usage
+
 ```js
-var toSingleQuotes = require('to-single-quotes');
+const toSingleQuotes = require('to-single-quotes');
 
 toSingleQuotes('I love "unicorns" \'and\' "ponies"');
-//=> I love 'unicorns' 'and' 'ponies'
-```
-
-
-## CLI
-
-```
-$ npm install --global to-single-quotes
-```
-
-```
-$ to-single-quotes --help
-
-  Usage
-    $ to-single-quotes <string>
-    $ echo <string> | to-single-quotes
-
-  Example
-    $ to-single-quotes 'I love "unicorns"'
-    I love 'unicorns'
+//=> "I love 'unicorns' 'and' 'ponies'"
 ```
 
 
 ## Related
 
-See [to-double-quotes](https://github.com/sindresorhus/to-double-quotes) for the inverse.
+- [to-single-quotes-cli](https://github.com/sindresorhus/to-single-quotes-cli) - CLI for this module
+- [to-double-quotes](https://github.com/sindresorhus/to-double-quotes) - Convert matching single-quotes to double-quotes
 
 
 ## License

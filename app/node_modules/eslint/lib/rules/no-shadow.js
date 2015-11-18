@@ -14,8 +14,19 @@ module.exports = function(context) {
 
     var options = {
         builtinGlobals: Boolean(context.options[0] && context.options[0].builtinGlobals),
-        hoist: (context.options[0] && context.options[0].hoist) || "functions"
+        hoist: (context.options[0] && context.options[0].hoist) || "functions",
+        allow: (context.options[0] && context.options[0].allow) || []
     };
+
+    /**
+     * Check if variable name is allowed.
+     *
+     * @param  {ASTNode} variable The variable to check.
+     * @returns {boolean} Whether or not the variable name is allowed.
+     */
+    function isAllowed(variable) {
+        return options.allow.indexOf(variable.name) !== -1;
+    }
 
     /**
      * Checks if a variable of the class name in the class scope of ClassDeclaration.
@@ -121,7 +132,7 @@ module.exports = function(context) {
             if (variable.identifiers.length > 0 && isContainedInScopeVars(variable, scope.variables)) {
                 context.report(
                     variable.identifiers[0],
-                    "{{name}} is already declared in the upper scope.",
+                    "\"{{name}}\" is already declared in the upper scope.",
                     {name: variable.name});
             } else {
                 passedVars.push(variable);
@@ -142,7 +153,8 @@ module.exports = function(context) {
                 // Skip "arguments".
                 variable.identifiers.length > 0 &&
                 // Skip variables of a class name in the class scope of ClassDeclaration.
-                !isDuplicatedClassNameVariable(variable)
+                !isDuplicatedClassNameVariable(variable) &&
+                !isAllowed(variable)
             );
         });
 
@@ -156,12 +168,7 @@ module.exports = function(context) {
 
     return {
         "Program:exit": function() {
-            // Nodejs env or modules has a special scope for globals.
             var globalScope = context.getScope();
-            if (context.ecmaFeatures.globalReturn || context.ecmaFeatures.modules) {
-                globalScope = globalScope.childScopes[0];
-            }
-
             var stack = globalScope.childScopes.slice();
             var scope;
 
@@ -180,7 +187,13 @@ module.exports.schema = [
         "type": "object",
         "properties": {
             "builtinGlobals": {"type": "boolean"},
-            "hoist": {"enum": ["all", "functions", "never"]}
+            "hoist": {"enum": ["all", "functions", "never"]},
+            "allow": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
         },
         "additionalProperties": false
     }

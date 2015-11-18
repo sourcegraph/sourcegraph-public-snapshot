@@ -36,13 +36,23 @@ var DOM_PROPERTY_NAMES = [
 // ------------------------------------------------------------------------------
 
 /**
- * Checks if a node name match the JSX tag convention.
- * @param {String} name - Name of the node to check.
+ * Checks if a node matches the JSX tag convention.
+ * @param {Object} node - JSX element being tested.
  * @returns {boolean} Whether or not the node name match the JSX tag convention.
  */
-var tagConvention = /^[a-z]|\-/;
-function isTagName(name) {
-  return tagConvention.test(name);
+var tagConvention = /^[a-z][^-]*$/;
+function isTagName(node) {
+  if (tagConvention.test(node.parent.name.name)) {
+    // http://www.w3.org/TR/custom-elements/#type-extension-semantics
+    return !node.parent.attributes.some(function(attrNode) {
+      return (
+        attrNode.type === 'JSXAttribute' &&
+        attrNode.name.type === 'JSXIdentifier' &&
+        attrNode.name.name === 'is'
+      );
+    });
+  }
+  return false;
 }
 
 /**
@@ -72,7 +82,7 @@ module.exports = function(context) {
 
     JSXAttribute: function(node) {
       var standardName = getStandardName(node.name.name);
-      if (!isTagName(node.parent.name.name) || !standardName) {
+      if (!isTagName(node) || !standardName) {
         return;
       }
       context.report(node, UNKNOWN_MESSAGE, {

@@ -12,7 +12,7 @@
 //------------------------------------------------------------------------------
 
 var createTokenStore = require("../token-store.js"),
-    estraverse = require("estraverse"),
+    estraverse = require("./estraverse"),
     assign = require("object-assign");
 
 //------------------------------------------------------------------------------
@@ -115,6 +115,10 @@ function SourceCode(text, ast) {
      */
     this.lines = text.split(/\r\n|\r|\n|\u2028|\u2029/g);
 
+    this.tokensAndComments = ast.tokens.concat(ast.comments).sort(function(left, right) {
+        return left.range[0] - right.range[0];
+    });
+
     // create token store methods
     var tokenStore = createTokenStore(ast.tokens);
     Object.keys(tokenStore).forEach(function(methodName) {
@@ -210,6 +214,12 @@ SourceCode.prototype = {
                     return findJSDocComment(node.leadingComments, line);
                 }
                 break;
+
+            case "ClassDeclaration":
+                return findJSDocComment(node.leadingComments, line);
+
+            case "ClassExpression":
+                return findJSDocComment(parent.parent.leadingComments, line);
 
             case "ArrowFunctionExpression":
             case "FunctionExpression":

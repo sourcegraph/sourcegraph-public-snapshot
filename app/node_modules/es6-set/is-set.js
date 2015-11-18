@@ -7,6 +7,6 @@ var toString          = Object.prototype.toString
   , Global = (typeof Set === 'undefined') ? null : Set;
 
 module.exports = function (x) {
-	return (x && ((Global && (x instanceof Global)) ||
+	return (x && ((Global && ((x instanceof Global) || (x === Global.prototype))) ||
 			(toString.call(x) === id) || (x[toStringTagSymbol] === 'Set'))) || false;
 };

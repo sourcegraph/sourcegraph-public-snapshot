@@ -4,16 +4,13 @@
  */
 'use strict';
 
-var componentUtil = require('../util/component');
-var ComponentList = componentUtil.List;
+var Components = require('../util/Components');
 
 // ------------------------------------------------------------------------------
 // Rule Definition
 // ------------------------------------------------------------------------------
 
-module.exports = function(context) {
-
-  var componentList = new ComponentList();
+module.exports = Components.detect(function(context, components) {
 
   /**
    * Checks if the component is valid
@@ -41,15 +38,6 @@ module.exports = function(context) {
   // --------------------------------------------------------------------------
 
   return {
-
-    ObjectExpression: function(node) {
-      componentList.set(context, node);
-    },
-
-    ClassDeclaration: function(node) {
-      componentList.set(context, node);
-    },
-
     AssignmentExpression: function(node) {
       var item;
       if (!node.left || !node.left.object || !node.left.object.object) {
@@ -63,10 +51,10 @@ module.exports = function(context) {
         item.object.type === 'ThisExpression' &&
         item.property.name === 'state'
       ) {
-        var component = componentList.getByNode(context, node);
+        var component = components.get(context.react.getParentComponent());
         var mutations = component && component.mutations || [];
         mutations.push(node.left.object);
-        componentList.set(context, node, {
+        components.set(node, {
           mutateSetState: true,
           mutations: mutations
         });
@@ -74,7 +62,7 @@ module.exports = function(context) {
     },
 
     'Program:exit': function() {
-      var list = componentList.getList();
+      var list = components.list();
       for (var component in list) {
         if (!list.hasOwnProperty(component) || isValid(list[component])) {
           continue;
@@ -84,4 +72,4 @@ module.exports = function(context) {
     }
   };
 
-};
+});
