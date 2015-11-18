@@ -1,15 +1,21 @@
 package auth
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -35,7 +41,13 @@ func PasswordMiddleware(w http.ResponseWriter, r *http.Request, next http.Handle
 			http.Error(w, "error getting access token for username/password", http.StatusForbidden)
 			return
 		}
-		ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok.AccessToken, TokenType: "Bearer"}))
+		accessTok, err := getOAuthAccessToken(ctx, tok.AccessToken)
+		if err != nil {
+			log.Printf("PasswordMiddleware: error getting oauth access token for user %q: %s.", username, err)
+			http.Error(w, "error getting oauth access token for username/password", http.StatusForbidden)
+			return
+		}
+		ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: accessTok, TokenType: "Bearer"}))
 		httpctx.SetForRequest(r, ctx)
 
 		// Vary based on Authorization header if the request is
@@ -94,4 +106,46 @@ func readBearerToken(r *http.Request) (token, tokenType string, err error) {
 	}
 
 	return "", "", nil
+}
+
+// getOAuthAccessToken returns the OAuth access token for authenticating
+// the user on the local server. It fetches an auth code from the root
+// and exchanges it for an access token.
+func getOAuthAccessToken(ctx context.Context, accessTok string) (string, error) {
+	if fed.Config.IsRoot || authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
+		return accessTok, nil
+	}
+	rootCtx := fed.NewRemoteContext(ctx, fed.Config.RootURL())
+	rootCl := sourcegraph.NewClientFromContext(rootCtx)
+	// Use the root access token to issue an auth code that
+	// this server can then exchange for an access token.
+	rootAuthedCtx := sourcegraph.WithCredentials(ctx,
+		oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessTok}),
+	)
+	authInfo, err := rootCl.Auth.Identify(rootAuthedCtx, &pbtypes.Void{})
+	if err != nil {
+		return "", fmt.Errorf("could not identify root user: %s", err)
+	}
+
+	code, err := rootCl.Auth.GetAuthorizationCode(rootAuthedCtx, &sourcegraph.AuthorizationCodeRequest{
+		ResponseType: "code",
+		ClientID:     idkey.FromContext(ctx).ID,
+		UID:          authInfo.UID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("could not get auth code from root: %s", err)
+	}
+
+	// Exchange the auth code (from the root) for an access token.
+	tok, err := sourcegraph.NewClientFromContext(ctx).Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_AuthorizationCode{
+			AuthorizationCode: code,
+		},
+		TokenURL: oauth2client.TokenURL(),
+	})
+	if err != nil {
+		return "", fmt.Errorf("could not exchange auth code for access token: %s", err)
+	}
+
+	return tok.AccessToken, nil
 }
