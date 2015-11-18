@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"runtime"
 	"time"
 
 	"sourcegraph.com/sourcegraph/makex"
@@ -53,7 +52,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 		return err
 	}
 
-	makex.Default.ParallelJobs = runtime.GOMAXPROCS(0)
+	makex.Default.ParallelJobs = 1
 	makex.Default.Verbose = true
 
 	mf, err := srclib.CreateMakefile(execOpt, globalOpt.Verbose)
