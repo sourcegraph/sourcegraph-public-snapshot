@@ -11,7 +11,7 @@ describe("ModelPropWatcherMixin", () => {
 		return React.createClass({
 			displayName: "dummyComponent",
 			mixins: [ModelPropWatcherMixin],
-			render: () => <div></div>,
+			render: () => <div key="dummy"></div>,
 		});
 	}
 

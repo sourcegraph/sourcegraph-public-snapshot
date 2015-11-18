@@ -136,6 +136,7 @@
 		"react/jsx-curly-spacing": [1, "never"],
 		"react/jsx-indent-props": [1, "tab"],
 		"react/jsx-no-duplicate-props": 2,
+		"react/jsx-key": 2,
 		"react/jsx-no-undef": 2,
 		"react/jsx-uses-react": 2,
 		"react/jsx-uses-vars": 2,

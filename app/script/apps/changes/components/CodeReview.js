@@ -95,7 +95,7 @@ var CodeReview = React.createClass({
 		var jiraIssues = null;
 		if (this.state.JiraIssues && Object.keys(this.state.JiraIssues).length > 0) {
 			var issueList = Object.keys(this.state.JiraIssues).map((id) =>
-				<li>
+				<li key={id}>
 					<a href={this.state.JiraIssues[id]}>{id}</a>
 				</li>
 			);
