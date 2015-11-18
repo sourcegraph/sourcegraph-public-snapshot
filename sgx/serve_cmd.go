@@ -455,6 +455,22 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	h := handlerutil.WithMiddleware(sm, mw...)
 
+	// Start background workers that receive input from main app.
+	//
+	// It's safe (and better) to start them before starting the HTTP(S) web server to avoid
+	// a brief moment where the web server is started, but the background workers haven't yet.
+	{
+		if err := c.authenticateCLIContext(idKey); err != nil {
+			return err
+		}
+
+		// Start background repo updater worker.
+		app.RepoUpdater.Start(cliCtx)
+
+		// Start event listeners.
+		c.initializeEventListeners(cliCtx, idKey, appURL)
+	}
+
 	serveHTTP := func(l net.Listener, srv http.Server, addr string, tls bool) {
 		lmux := cmux.New(l)
 		grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
@@ -522,12 +538,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		serveHTTP(l, srv, c.HTTPSAddr, true)
 	}
 
-	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
-
-	if err := c.authenticateCLIContext(idKey); err != nil {
-		return err
-	}
-
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
 
 	if !c.NoWorker {
@@ -564,14 +574,8 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 	}
 
-	// Start background repo updater worker.
-	app.RepoUpdater.Start(cliCtx)
-
 	// Refresh commit list periodically
 	go c.repoStatusCommitLogCacheRefresher()
-
-	// Start event listeners
-	c.initializeEventListeners(cliCtx, idKey, appURL)
 
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
@@ -587,6 +591,8 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Connection test
 	c.checkReachability()
+
+	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
