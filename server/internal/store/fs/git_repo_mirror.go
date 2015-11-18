@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -116,13 +117,27 @@ func (g *gitMirrorListener) onGitEvent(id events.EventID, p events.GitPayload) {
 		return
 	}
 
-	// Perform mirroring push.
+	// Perform mirroring push. This is likely to stall completely if the user
+	// didn't configure git properly (e.g. if git hangs asking for a user and
+	// password combo). For this reason we place a timeout.
 	cmd = exec.Command("git", "push", "mirror", "--mirror")
 	cmd.Dir = absRepoPath
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		log.Printf("%s", output)
-		log15.Warn("git push mirror --mirror", "error", err)
+	done := make(chan bool, 1)
+	go func() {
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			log.Printf("%s", output)
+			log15.Warn("git push mirror --mirror", "error", err)
+			return
+		}
+		done <- true
+	}()
+
+	select {
+	case <-done:
 		return
+	case <-time.After(15 * time.Second):
+		log15.Warn("git push mirror --mirror took longer than 15s; process killed")
+		cmd.Process.Kill()
 	}
 }
