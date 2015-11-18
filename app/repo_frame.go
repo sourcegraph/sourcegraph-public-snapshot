@@ -50,12 +50,14 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platfor
 		}
 	}
 
-	// Make tracker the leftmost app for now.
+	// Make tracker the first app and changes the second for now.
 	// TODO: This should eventually be configurable.
 	for i, appID := range orderedIDs {
-		if appID == "tracker" {
+		switch appID {
+		case "tracker":
 			orderedIDs[0], orderedIDs[i] = orderedIDs[i], orderedIDs[0]
-			break
+		case "changes":
+			orderedIDs[1], orderedIDs[i] = orderedIDs[i], orderedIDs[1]
 		}
 	}
 
