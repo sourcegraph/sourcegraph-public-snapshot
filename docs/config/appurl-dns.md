@@ -2,7 +2,7 @@
 title = "AppURL and DNS"
 +++
 
-If you installed using one of the standard distribution or cloud provider packages,
+If you installed Sourcegraph using one of the standard distribution or cloud provider packages,
 Sourcegraph will run with configuration found at `/etc/sourcegraph/config.ini`.
 
 By default, your Sourcegraph server will be accessible at the public IP address of its
