@@ -7,14 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/csp"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
-	"src.sourcegraph.com/sourcegraph/app/assets"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -56,6 +54,7 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	mw := []handlerutil.Middleware{
+		AssetsMiddleware(),
 		appauth.CookieMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
 		handlerutil.UserMiddleware,
@@ -68,26 +67,6 @@ func NewHandler(r *router.Router) http.Handler {
 		cspHandler.ReportLog = log.New(ioutil.Discard, "", 0)
 		mw = append(mw, cspHandler.ServeHTTP)
 	}
-
-	m.Handle(AssetsBasePath, http.StripPrefix(AssetsBasePath, assets.AssetFS(assets.ShortTermCache)))
-	m.Handle(VersionedAssetsBasePath, http.StripPrefix(VersionedAssetsBasePath, assets.AssetFS(assets.LongTermCache)))
-	m.Handle("/versioned-assets/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// This handler redirects paths to old versions of assets to
-		// the latest asset. This should rarely happen, but in
-		// production there is a race condition while deploying a new
-		// version
-		p := strings.SplitN(req.URL.Path, "/", 4)
-		// We require len(p) == 4 since that implies we have something
-		// after the version part of the path
-		if len(p) >= 3 {
-			http.Redirect(w, req, VersionedAssetsBasePath+p[len(p)-1], 303)
-		} else {
-			http.NotFound(w, req)
-		}
-	}))
-
-	m.HandleFunc("/robots.txt", robotsTxt)
-	m.HandleFunc("/favicon.ico", favicon)
 
 	m.Handle("/_/route/", http.StripPrefix("/_/route", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var rtmatch mux.RouteMatch

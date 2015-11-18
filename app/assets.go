@@ -1,6 +1,7 @@
 package app
 
 import (
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -9,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
@@ -50,4 +52,54 @@ func assetAbsURL(ctx context.Context, p string) *url.URL {
 		u.Host = conf.AppURL(ctx).Host
 	}
 	return u
+}
+
+func AssetsMiddleware() func(http.ResponseWriter, *http.Request, http.HandlerFunc) {
+	handlers := []struct {
+		PathPrefix string
+		Handler    http.Handler
+	}{
+		{
+			AssetsBasePath,
+			http.StripPrefix(AssetsBasePath, assets.AssetFS(assets.ShortTermCache)),
+		},
+		{
+			VersionedAssetsBasePath,
+			http.StripPrefix(VersionedAssetsBasePath, assets.AssetFS(assets.LongTermCache)),
+		},
+		{
+			"/versioned-assets/",
+			http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				// This handler redirects paths to old versions of assets to
+				// the latest asset. This should rarely happen, but in
+				// production there is a race condition while deploying a new
+				// version
+				p := strings.SplitN(req.URL.Path, "/", 4)
+				// We require len(p) == 4 since that implies we have something
+				// after the version part of the path
+				if len(p) >= 3 {
+					http.Redirect(w, req, VersionedAssetsBasePath+p[len(p)-1], 303)
+				} else {
+					http.NotFound(w, req)
+				}
+			}),
+		},
+		{
+			"/robots.txt",
+			http.HandlerFunc(robotsTxt),
+		},
+		{
+			"/favicon.ico",
+			http.HandlerFunc(favicon),
+		},
+	}
+	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		for _, h := range handlers {
+			if strings.HasPrefix(r.URL.Path, h.PathPrefix) {
+				h.Handler.ServeHTTP(w, r)
+				return
+			}
+		}
+		next(w, r)
+	}
 }
