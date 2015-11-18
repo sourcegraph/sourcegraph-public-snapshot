@@ -301,7 +301,7 @@ func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegrap
 	//
 	// On instances with local auth, a user's permissions for the local server are
 	// obtained directly from the Users store.
-	if a.ClientID == idkey.FromContext(ctx).ID && authutil.ActiveFlags.IsLocal() {
+	if authutil.ActiveFlags.IsLocal() && a.ClientID == idkey.FromContext(ctx).ID {
 		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(a.UID)})
 		if err != nil && grpc.Code(err) == codes.NotFound {
 			return userPerms, nil
