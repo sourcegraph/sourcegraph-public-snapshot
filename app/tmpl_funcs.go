@@ -239,12 +239,12 @@ var TemplateFunctions = htmpl.FuncMap{
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 
 	"repoEnabledFrames": func(repo *sourcegraph.Repo) []platform.RepoFrame {
-		framesByID, ids := repoEnabledFrames(repo)
-		frames := make([]platform.RepoFrame, len(ids))
-		for i, id := range ids {
-			frames[i] = framesByID[id]
+		frames, orderedIDs := repoEnabledFrames(repo)
+		orderedFrames := make([]platform.RepoFrame, len(orderedIDs))
+		for i, id := range orderedIDs {
+			orderedFrames[i] = frames[id]
 		}
-		return frames
+		return orderedFrames
 	},
 	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },

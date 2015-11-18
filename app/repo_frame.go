@@ -24,8 +24,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
-// repoEnabledFrames returns apps that are enabled for the given repo. Map key is the app id.
-func repoEnabledFrames(repo *sourcegraph.Repo) (map[string]platform.RepoFrame, []string) {
+// repoEnabledFrames returns apps that are enabled for the given repo. Key of frames map is the app ID.
+// It also returns a slice of app IDs that defines the visual presentation order of apps.
+func repoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platform.RepoFrame, orderedIDs []string) {
 	if appconf.Flags.DisableApps {
 		return nil, nil
 	}

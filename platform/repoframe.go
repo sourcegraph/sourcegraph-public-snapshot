@@ -36,10 +36,8 @@ type RepoFrame struct {
 	Enable func(*sourcegraph.Repo) bool
 }
 
-var (
-	repoFrameIDs []string
-	repoFrames   = map[string]RepoFrame{}
-)
+// repoFrames map key is app ID.
+var repoFrames = map[string]RepoFrame{}
 
 // CLI exposes the command line interface to platform applications. Applications
 // may add their own CLI commands during initialization.
@@ -56,29 +54,28 @@ func RegisterFrame(frame RepoFrame) {
 		panic(fmt.Sprintf("RepoFrame with ID %s already exists", frame.ID))
 	}
 	repoFrames[frame.ID] = frame
-	repoFrameIDs = append(repoFrameIDs, frame.ID)
 }
 
 // Frames returns the frames registered in this instance of
 // Sourcegraph for the given repo and the frame IDs in the order in
 // which they should be displayed.
-func Frames(repo *sourcegraph.Repo) (map[string]RepoFrame, []string) {
-	frames := make(map[string]RepoFrame)
+func Frames(repo *sourcegraph.Repo) (frames map[string]RepoFrame, orderedIDs []string) {
+	frames = make(map[string]RepoFrame)
 	for _, frame := range repoFrames {
 		if frame.Enable == nil || frame.Enable(repo) {
 			frames[frame.ID] = frame
+			orderedIDs = append(orderedIDs, frame.ID)
 		}
 	}
 
-	frameIDs := append(([]string)(nil), repoFrameIDs...)
-
-	// HACK: make issues the leftmost app for now. This should
-	// eventually be configurable
-	for i, id := range frameIDs {
-		if id == "issues" {
-			frameIDs[0], frameIDs[i] = frameIDs[i], frameIDs[0]
+	// Make tracker the leftmost app for now.
+	// TODO: This should eventually be configurable.
+	for i, appID := range orderedIDs {
+		if appID == "tracker" {
+			orderedIDs[0], orderedIDs[i] = orderedIDs[i], orderedIDs[0]
+			break
 		}
 	}
 
-	return frames, frameIDs
+	return frames, orderedIDs
 }
