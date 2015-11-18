@@ -173,6 +173,10 @@
 			"Rev": "6eb6ad425a89d9da7a5549bc6da8f79ba5c17844"
 		},
 		{
+			"ImportPath": "github.com/hashicorp/go-version",
+			"Rev": "2b9865f60ce11e527bd1255ba82036d465570aa3"
+		},
+		{
 			"ImportPath": "github.com/howeyc/gopass",
 			"Rev": "10b54de414cc9693221d5ff2ae14fd2fbf1b0ac1"
 		},
