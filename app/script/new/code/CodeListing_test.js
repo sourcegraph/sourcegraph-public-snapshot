@@ -23,7 +23,7 @@ describe("CodeListing", () => {
 
 	it("should render line selection form", () => {
 		autotest(testdataSelectionForm, `${__dirname}/testdata/CodeListing-selectionForm.json`,
-			<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}, {}]} lineNumbers={true} startLine={1} endLine={2} selectedDef="someDef" highlightedDef="otherDef" onLineButtonClick={() => {}}/>
+			<CodeListing lines={[{Tokens: ["foo"]}, {}, {Tokens: ["bar"]}, {}]} lineNumbers={true} startLine={1} endLine={2} selectedDef="someDef" highlightedDef="otherDef" onLineButtonClick={function() {}}/>
 		);
 	});
 });

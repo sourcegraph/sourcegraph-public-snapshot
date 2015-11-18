@@ -16,8 +16,8 @@ module.exports = {
 			},
 			timeout: SEARCH_TIMEOUT,
 		})
-		.done((data) => { return data; })
-		.fail((err, status) => { return err; });
+		.done((data) => data)
+		.fail((err, status) => err);
 	},
 
 	fetchTextResults(query, repoURI, page) {
@@ -32,7 +32,7 @@ module.exports = {
 			},
 			timeout: SEARCH_TIMEOUT,
 		})
-		.done((data) => { return data; })
-		.fail((err, status) => { return err; });
+		.done((data) => data)
+		.fail((err, status) => err);
 	},
 };

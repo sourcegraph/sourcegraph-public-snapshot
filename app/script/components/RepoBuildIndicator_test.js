@@ -58,9 +58,7 @@ describe("RepoBuildIndicator", () => {
 	Object.keys(renderTests).forEach((name) => {
 		it(`should have correct classes, attributes and state when build is: ${name}`, () => {
 			var test = renderTests[name];
-			sandbox.stub(client, "builds", () => {
-				return $.Deferred().resolve({Builds: [test]}).promise();
-			});
+			sandbox.stub(client, "builds", () => $.Deferred().resolve({Builds: [test]}).promise());
 
 			var component = sandbox.renderComponent(
 				<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />

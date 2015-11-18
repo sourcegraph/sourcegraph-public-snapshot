@@ -14,7 +14,7 @@ describe("components/Pagination", () => {
 			currentPage: 1,
 			totalPages: 10,
 			pageRange: 10,
-			onPageChange: () => {},
+			onPageChange() {},
 		};
 
 		var component = sandbox.renderComponent(<Pagination {...props} />);
@@ -35,7 +35,7 @@ describe("components/Pagination", () => {
 			currentPage: 1,
 			totalPages: 5,
 			pageRange: 10,
-			onPageChange: () => {},
+			onPageChange() {},
 		};
 
 		var component = sandbox.renderComponent(<Pagination {...props} />);
@@ -49,7 +49,7 @@ describe("components/Pagination", () => {
 			currentPage: 42,
 			totalPages: 42,
 			pageRange: 10,
-			onPageChange: () => {},
+			onPageChange() {},
 		};
 
 		var component = sandbox.renderComponent(<Pagination {...props} />);
@@ -83,7 +83,7 @@ describe("components/Pagination", () => {
 			currentPage: 5,
 			totalPages: 100,
 			pageRange: 10,
-			onPageChange: () => {},
+			onPageChange() {},
 		};
 		var activeClass = "active";
 

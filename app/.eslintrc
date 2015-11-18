@@ -87,6 +87,7 @@
 		"no-with": 2,
 
 		"array-bracket-spacing": [1, "never"],
+		"arrow-body-style": [2, "as-needed"],
 		"block-spacing": 1,
 		"brace-style": [1, "1tbs", {"allowSingleLine": true}],
 		"comma-dangle": [1, "always-multiline"],

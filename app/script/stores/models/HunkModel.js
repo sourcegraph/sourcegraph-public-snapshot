@@ -82,16 +82,16 @@ var HunkModel = Backbone.Model.extend({
 	 * @private
 	 */
 	_newContextLines(lines, baseStart, headStart) {
-		return lines.map((line, i) => {
-			return new CodeLineModel({
+		return lines.map((line, i) =>
+			new CodeLineModel({
 				tokens: this._registerTokens(line.Tokens),
 				prefix: " ",
 				extraClass: "gray",
 				lineNumberBase: baseStart + i,
 				lineNumberHead: headStart + i,
 				contextLine: true,
-			});
-		});
+			})
+		);
 	},
 
 	/**

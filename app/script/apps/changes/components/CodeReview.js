@@ -94,13 +94,11 @@ var CodeReview = React.createClass({
 		// TODO(renfred) Move this into its own component/app.
 		var jiraIssues = null;
 		if (this.state.JiraIssues && Object.keys(this.state.JiraIssues).length > 0) {
-			var issueList = Object.keys(this.state.JiraIssues).map((id) => {
-				return (
-					<li>
-						<a href={this.state.JiraIssues[id]}>{id}</a>
-					</li>
-				);
-			});
+			var issueList = Object.keys(this.state.JiraIssues).map((id) =>
+				<li>
+					<a href={this.state.JiraIssues[id]}>{id}</a>
+				</li>
+			);
 
 			jiraIssues = (
 				<div className="well jira-issues">

@@ -6,18 +6,14 @@ var $ = require("jquery");
 
 describe("util/CodeUtil", () => {
 	it("should correctly set request headers for JSON file requests", () => {
-		sandbox.stub($, "ajax", () => {
-			return $.Deferred().resolve({});
-		});
+		sandbox.stub($, "ajax", () => $.Deferred().resolve({}));
 
 		CodeUtil.fetchFile("/path/to/file");
 		expect($.ajax.firstCall.args[0].contentType).to.be("application/json");
 	});
 
 	it("should do a correct AJAX request when fetching popup", () => {
-		sandbox.stub($, "ajax", () => {
-			return $.Deferred().resolve("dummyData");
-		});
+		sandbox.stub($, "ajax", () => $.Deferred().resolve("dummyData"));
 
 		CodeUtil.fetchPopup("/a/b/c");
 
@@ -28,9 +24,7 @@ describe("util/CodeUtil", () => {
 	});
 
 	it("should fetch from cache when popup is already available", () => {
-		sandbox.stub($, "ajax", () => {
-			return $.Deferred().resolve("dummyData");
-		});
+		sandbox.stub($, "ajax", () => $.Deferred().resolve("dummyData"));
 
 		CodeUtil.fetchPopup("a/b/c");
 		CodeUtil.fetchPopup("a/b/c");
@@ -41,9 +35,7 @@ describe("util/CodeUtil", () => {
 	});
 
 	it("should call correct URL for fetching a popover", () => {
-		sandbox.stub($, "ajax", () => {
-			return $.Deferred().resolve("dummyData");
-		});
+		sandbox.stub($, "ajax", () => $.Deferred().resolve("dummyData"));
 
 		CodeUtil.fetchPopover("a/b/c");
 		expect($.ajax.callCount).to.be(1);
@@ -51,9 +43,7 @@ describe("util/CodeUtil", () => {
 	});
 
 	it("should resort to cache when fetching an already fetched popover", () => {
-		sandbox.stub($, "ajax", () => {
-			return $.Deferred().resolve("dummyData");
-		});
+		sandbox.stub($, "ajax", () => $.Deferred().resolve("dummyData"));
 
 		CodeUtil.fetchPopover("a/b/c/d");
 		CodeUtil.fetchPopover("a/b/c/d");
@@ -64,9 +54,7 @@ describe("util/CodeUtil", () => {
 	it("should fetch examples using the correct params", () => {
 		var testUrl = "/repo@rev/.unitType/unit/.def/path";
 
-		sandbox.stub($, "ajax", () => {
-			return $.Deferred().resolve("dummyData");
-		});
+		sandbox.stub($, "ajax", () => $.Deferred().resolve("dummyData"));
 
 		CodeUtil.fetchExample(testUrl, 1);
 

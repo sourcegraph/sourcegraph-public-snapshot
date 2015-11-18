@@ -12,7 +12,7 @@ describe("IssueBackend", () => {
 		};
 		let cid = "a".repeat(40);
 		Dispatcher.directDispatch(
-			IssueBackend, new IssueActions.CreateIssue("aRepo", "a/path", cid, 1, 42, "aTitle", "aBody", () => {})
+			IssueBackend, new IssueActions.CreateIssue("aRepo", "a/path", cid, 1, 42, "aTitle", "aBody", function() {})
 		);
 	});
 });

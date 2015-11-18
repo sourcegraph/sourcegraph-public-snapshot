@@ -15,7 +15,7 @@ describe("IssueForm", () => {
 				commitID={"a".repeat(40)}
 				startLine={1}
 				endLine={42}
-				onSubmit={() => {}} />
+				onSubmit={function() {}} />
 		);
 	});
 });

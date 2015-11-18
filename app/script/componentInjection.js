@@ -61,9 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	el = $("#IssuesReference");
 	if (el.length > 0 && window.preloadedIssuesReference) {
 		var reference = JSON.parse(window.preloadedIssuesReference);
-		var lines = reference.Contents.split("\n").map((line) => {
-			return {__html: line};
-		});
+		var lines = reference.Contents.split("\n").map((line) => ({__html: line}));
 		ReactDOM.render(
 			<CodeFileRange
 				repo={reference.Repo.URI}

@@ -161,21 +161,19 @@ var CompareView = React.createClass({
 						onCancel={()=>this.setState({proposingChange: false})} />
 				) : null}
 
-				{this.state.OverThreshold ? (() => {
-					return (
-						<table className="over-threshold-warning">
-							<tbody>
-								<td className="icon">
-									<i className="fa fa-icon fa-warning" />
-								</td>
-								<td className="text">
-									The requested diff is larger than usual and is surpressed. We recommend viewing it on a file-by-file basis.
-									To do this, click on any of the files below. <br /><b>Tip:</b> You may also view smaller groups of files using the <span className="backtick">filter</span> query parameter.
-								</td>
-							</tbody>
-						</table>
-					);
-				})() : null}
+				{this.state.OverThreshold &&
+					<table className="over-threshold-warning">
+						<tbody>
+							<td className="icon">
+								<i className="fa fa-icon fa-warning" />
+							</td>
+							<td className="text">
+								The requested diff is larger than usual and is surpressed. We recommend viewing it on a file-by-file basis.
+								To do this, click on any of the files below. <br /><b>Tip:</b> You may also view smaller groups of files using the <span className="backtick">filter</span> query parameter.
+							</td>
+						</tbody>
+					</table>
+				}
 
 				<DiffFileList
 					model={this.state.fileDiffs}
