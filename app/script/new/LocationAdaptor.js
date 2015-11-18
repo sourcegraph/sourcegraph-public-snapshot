@@ -1,6 +1,6 @@
 import React from "react";
 
-export default class LocationAdaptor extends React.Component {
+class LocationAdaptor extends React.Component {
 	componentDidMount() {
 		window.addEventListener("popstate", this._locationChanged.bind(this));
 	}
@@ -22,3 +22,5 @@ export default class LocationAdaptor extends React.Component {
 		);
 	}
 }
+
+export default LocationAdaptor;

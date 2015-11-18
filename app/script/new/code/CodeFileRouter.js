@@ -13,7 +13,7 @@ import {GoTo} from "../util/hotLink";
 // to sub-components via props. Every time window.location changes, this
 // component gets re-rendered. Sub-components should never access
 // window.location by themselves.
-export default class CodeFileRouter extends Component {
+class CodeFileRouter extends Component {
 	componentDidMount() {
 		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
 	}
@@ -133,3 +133,5 @@ CodeFileRouter.propTypes = {
 	location: React.PropTypes.string,
 	navigate: React.PropTypes.func,
 };
+
+export default CodeFileRouter;

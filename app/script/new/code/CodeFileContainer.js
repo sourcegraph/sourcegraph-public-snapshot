@@ -26,7 +26,7 @@ function lineFromByte(file, byte) {
 	return null;
 }
 
-export default class CodeFileContainer extends Container {
+class CodeFileContainer extends Container {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -234,3 +234,5 @@ CodeFileContainer.propTypes = {
 	selectedDef: React.PropTypes.string,
 	example: React.PropTypes.number,
 };
+
+export default CodeFileContainer;

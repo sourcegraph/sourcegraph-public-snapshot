@@ -7,7 +7,7 @@ import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
 import hotLink from "../util/hotLink";
 
-export default class DefPopup extends Component {
+class DefPopup extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.examplesGeneration = props.examples.generation;
@@ -53,3 +53,5 @@ DefPopup.propTypes = {
 	examples: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
 };
+
+export default DefPopup;

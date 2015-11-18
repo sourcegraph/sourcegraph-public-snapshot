@@ -2,7 +2,7 @@ import React from "react";
 
 import Component from "../Component";
 
-export default class DefTooltip extends Component {
+class DefTooltip extends Component {
 	constructor(props) {
 		super(props);
 		this._updatePosition = this._updatePosition.bind(this);
@@ -46,3 +46,5 @@ export default class DefTooltip extends Component {
 DefTooltip.propTypes = {
 	def: React.PropTypes.object,
 };
+
+export default DefTooltip;

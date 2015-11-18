@@ -2,7 +2,7 @@ import FluxStoreGroup from "flux/lib/FluxStoreGroup";
 
 import Component from "./Component";
 
-export default class Container extends Component {
+class Container extends Component {
 	componentDidMount() {
 		let stores = this.stores();
 
@@ -23,3 +23,5 @@ export default class Container extends Component {
 		this._containerSubscriptions.forEach((subscription) => { subscription.remove(); });
 	}
 }
+
+export default Container;

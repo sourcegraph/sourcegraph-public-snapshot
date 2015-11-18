@@ -5,7 +5,7 @@ import Dispatcher from "../Dispatcher";
 import * as CodeActions from "./CodeActions";
 import * as DefActions from "../def/DefActions";
 
-export default class CodeLineView extends Component {
+class CodeLineView extends Component {
 	reconcileState(state, props) {
 		// update ownURLs if showing different tokens
 		if (state.tokens !== props.tokens) {
@@ -120,3 +120,5 @@ CodeLineView.propTypes = {
 	alwaysShowLineButton: React.PropTypes.bool,
 	onLineButtonClick: React.PropTypes.func,
 };
+
+export default CodeLineView;

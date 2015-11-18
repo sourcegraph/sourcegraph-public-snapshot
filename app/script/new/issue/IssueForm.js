@@ -6,7 +6,7 @@ import MarkdownTextarea from "../../components/MarkdownTextarea"; // FIXME
 import * as IssueActions from "./IssueActions";
 import "./IssueBackend";
 
-export default class IssueForm extends Component {
+class IssueForm extends Component {
 	constructor(props) {
 		super(props);
 	}
@@ -54,3 +54,5 @@ IssueForm.propTypes = {
 	endLine: React.PropTypes.number.isRequired,
 	onSubmit: React.PropTypes.func,
 };
+
+export default IssueForm;

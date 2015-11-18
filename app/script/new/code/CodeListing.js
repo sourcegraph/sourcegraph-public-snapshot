@@ -8,7 +8,7 @@ import classNames from "classnames";
 const tilingFactor = 500;
 const emptyArray = [];
 
-export default class CodeListing extends Component {
+class CodeListing extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -147,3 +147,5 @@ CodeListing.propTypes = {
 	lineSelectionForm: React.PropTypes.element,
 	onLineButtonClick: React.PropTypes.func,
 };
+
+export default CodeListing;

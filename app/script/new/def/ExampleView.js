@@ -6,7 +6,7 @@ import * as DefActions from "./DefActions";
 import CodeListing from "../code/CodeListing";
 import hotLink from "../util/hotLink";
 
-export default class ExampleView extends Component {
+class ExampleView extends Component {
 	reconcileState(state, props) {
 		// reset examples if showing a different definition
 		if (state.defURL !== props.defURL) {
@@ -90,3 +90,5 @@ ExampleView.propTypes = {
 	examples: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
 };
+
+export default ExampleView;
