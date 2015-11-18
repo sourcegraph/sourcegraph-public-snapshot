@@ -50,7 +50,7 @@ func checkForUpdates() {
 		}
 
 		// Grab the mutex and set the available update version string (only if the
-		// current version is lesser than the latest version).
+		// current version is less than the latest version).
 		availableUpdate.Lock()
 		if currentVersion.LessThan(latestVersion) {
 			availableUpdate.Version = u.Info.Version
