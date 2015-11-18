@@ -20,6 +20,12 @@ div.list-entry {
 	margin-top: 12px;
 	margin-bottom: 12px;
 }
+div.list-entry-container {
+	flex: 1;
+}
+div.avatar-container {
+	float: left;
+}
 div.list-entry-border {
 	border: 1px solid #ddd;
 	border-radius: 4px;
@@ -47,6 +53,7 @@ div.list-entry-header.tabs-title {
 }
 div.list-entry-body {
 	padding: 10px;
+	overflow: scroll;
 }
 
 div.multilist-entry:not(:nth-child(0n+2)) {

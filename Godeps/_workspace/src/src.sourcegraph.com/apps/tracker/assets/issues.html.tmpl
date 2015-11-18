@@ -31,7 +31,7 @@
 			<span class="id">#{{.ID}}</span>
 			<div style="flex-grow: 1;">
 				<div class="title"><a href="{{$.BaseURI}}/{{.ID}}">{{.Title}}</a></div>
-				<div class="subtitle"> opened {{template "time" .CreatedAt}} by <a href="/~{{.User.Login}}">{{.User.Login}}</a></div>
+				<div class="subtitle"> opened {{template "time" .CreatedAt}} by <a href="{{.User.HTMLURL}}">{{.User.Login}}</a></div>
 			</div>
 			<span title="{{.Replies}} replies" class="tiny {{if .Replies}}gray{{else}}lightgray{{end}}"><span class="octicon octicon-comment"></span> {{.Replies}}</span>
 		</div>
