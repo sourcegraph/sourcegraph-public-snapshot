@@ -27,6 +27,10 @@ func checkForUpdates() {
 	// Parse our current version string.
 	currentVersion, err := version.NewVersion(u.CurrentVersion)
 	if err != nil {
+		// "dev" is the version string used for development builds. To not annoy
+		// developers we special case it.
+		//
+		// TODO: replace "dev" with a semver-compatible version string instead.
 		if u.CurrentVersion == "dev" {
 			return
 		}
