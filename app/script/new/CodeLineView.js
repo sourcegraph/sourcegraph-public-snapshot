@@ -49,7 +49,7 @@ export default class CodeLineView extends Component {
 							<a className="btn-inline"
 								style={this.state.alwaysShowLineButton ? {display: "inline-block"} : null}
 								onClick={(event) => {
-									this.state.onLineButtonClick();
+									this.state.onLineButtonClick(this.state.lineNumber, this.state.selected);
 									event.stopPropagation();
 								}}>
 								<span className="octicon octicon-plus"></span>

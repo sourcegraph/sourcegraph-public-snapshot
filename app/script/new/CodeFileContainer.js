@@ -34,6 +34,7 @@ export default class CodeFileContainer extends Container {
 		};
 		this._onClick = this._onClick.bind(this);
 		this._onKeyDown = this._onKeyDown.bind(this);
+		this._onLineButtonClick = this._onLineButtonClick.bind(this);
 	}
 
 	componentDidMount() {
@@ -109,6 +110,14 @@ export default class CodeFileContainer extends Container {
 		}
 	}
 
+	_onLineButtonClick(lineNumber, selected) {
+		this.setState({creatingIssue: true}, () => {
+			if (!selected) {
+				Dispatcher.dispatch(new CodeActions.SelectLine(lineNumber));
+			}
+		});
+	}
+
 	render() {
 		if (!this.state.tree) {
 			return null;
@@ -167,13 +176,7 @@ export default class CodeFileContainer extends Container {
 							endLine={this.state.endLine}
 							selectedDef={this.state.selectedDef}
 							highlightedDef={this.state.highlightedDef}
-							onLineButtonClick={(lineNumber, selected) => {
-								this.setState({creatingIssue: true}, () => {
-									if (!selected) {
-										Dispatcher.dispatch(new CodeActions.SelectLine(lineNumber));
-									}
-								});
-							}}
+							onLineButtonClick={this._onLineButtonClick}
 							lineSelectionForm={(this.state.creatingIssue && this.state.startLine && this.state.endLine) ? (
 								<IssueForm
 									repo={this.state.repo}

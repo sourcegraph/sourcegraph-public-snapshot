@@ -90,7 +90,7 @@ export default class CodeListing extends Component {
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
 					lineButton={Boolean(this.state.lineNumbers && this.state.onLineButtonClick)}
-					onLineButtonClick={() => { if (this.state.onLineButtonClick) this.state.onLineButtonClick(lineNumber, selected); }}
+					onLineButtonClick={this.state.onLineButtonClick}
 					alwaysShowLineButton={this.state.lineNumbers && !this.state.lineSelectionForm && lineNumber === this.state.endLine}
 					key={visibleLinesStart + i} />
 			);
