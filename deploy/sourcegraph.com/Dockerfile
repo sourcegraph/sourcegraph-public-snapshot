@@ -3,7 +3,7 @@ FROM alpine:3.2
 RUN apk add --update git docker mailcap && rm -rf /var/cache/apk/* # install mailcap for /etc/mime.types, needed by HTTP server
 ENV GOPATH /usr/local
 
-ENV STATIC_SITE_VERSION 15bfd5d01b8cf2e1588278b762d20467b4a6a873
+ENV STATIC_SITE_VERSION 5c1de43040383f83a4ac6a7bfc81f2e37d290ac9
 ENV STATIC_SITE_URL https://s3-us-west-2.amazonaws.com/sourcegraph-site/sourcegraph-site-$STATIC_SITE_VERSION.tar
 RUN curl -Ls $STATIC_SITE_URL | tar x
 
