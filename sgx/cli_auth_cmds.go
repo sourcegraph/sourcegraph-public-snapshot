@@ -238,7 +238,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 	}
 }
 
-func (c *loginCmd) Execute(args []string) error {
+func saveCredentials(endpointURL *url.URL, accessTok string, makeDefault bool) error {
 	a, err := readUserAuth()
 	if err != nil {
 		return err
@@ -247,20 +247,38 @@ func (c *loginCmd) Execute(args []string) error {
 		a = userAuth{}
 	}
 
+	ua := userEndpointAuth{AccessToken: accessTok}
+	a[endpointURL.String()] = &ua
+	if makeDefault {
+		a.setDefault(endpointURL.String())
+	}
+	if err := writeUserAuth(a); err != nil {
+		return err
+	}
+	log.Printf("# Credentials for %s saved to %s.", endpointURL, userAuthFileName())
+	if makeDefault {
+		log.Printf("# Default endpoint set to %s.", endpointURL)
+	}
+	return nil
+}
+
+func (c *loginCmd) Execute(args []string) error {
+	// Check if parseable, before attempting authentication
+	_, err := readUserAuth()
+	if err != nil {
+		return err
+	}
+
 	endpointURL := Endpoint.URLOrDefault()
 	accessTok, err := GetAccessToken(endpointURL)
 	if err != nil {
 		return err
 	}
 
-	ua := userEndpointAuth{AccessToken: accessTok}
-	a[endpointURL.String()] = &ua
-	a.setDefault(endpointURL.String())
-	if err := writeUserAuth(a); err != nil {
+	err = saveCredentials(endpointURL, accessTok, true)
+	if err != nil {
 		return err
 	}
-	log.Printf("# Credentials saved to %s.", userAuthFileName())
-	log.Printf("# Default endpoint set to %s.", endpointURL)
 	return nil
 }
 
