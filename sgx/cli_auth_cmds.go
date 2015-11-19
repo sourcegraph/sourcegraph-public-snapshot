@@ -141,6 +141,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	isLocalAuth := conf.IsFederationRoot || conf.AuthSource == "local" || conf.AuthSource == "ldap"
 
 	///
 	// Generate the token URL. OAuth2 auth is performed via the
@@ -148,15 +149,24 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 	// Server).
 	///
 	var rootURL *url.URL
-
-	isLocalAuth := conf.IsFederationRoot || conf.AuthSource == "local" || conf.AuthSource == "ldap"
 	if isLocalAuth {
 		rootURL = endpointURL
-		tokenURL, err := router.Rel.URLToOrError(router.OAuth2ServerToken)
+	} else {
+		var err error
+		rootURL, err = url.Parse(conf.FederationRootURL)
 		if err != nil {
 			return "", err
 		}
-		tokenURL = rootURL.ResolveReference(tokenURL)
+	}
+	tokenURL, err := router.Rel.URLToOrError(router.OAuth2ServerToken)
+	if err != nil {
+		return "", err
+	}
+	tokenURL = rootURL.ResolveReference(tokenURL)
+
+	// Using the tokenURL, login either via username/password (local) or
+	// get an oauth token from the fedRoot
+	if isLocalAuth {
 		fmt.Printf("Enter credentials for %s\n", rootURL)
 		fmt.Print("Username: ")
 		username, err := getLine()
@@ -188,17 +198,6 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 
 		return rootTok.AccessToken, nil
 	} else {
-		var err error
-		rootURL, err = url.Parse(conf.FederationRootURL)
-		if err != nil {
-			return "", err
-		}
-		tokenURL, err := router.Rel.URLToOrError(router.OAuth2ServerToken)
-		if err != nil {
-			return "", err
-		}
-		tokenURL = rootURL.ResolveReference(tokenURL)
-
 		// Create a context for communicating with the fed root directly
 		// (to avoid leaking username/password to the leaf server).
 		rootCtx := fed.NewRemoteContext(unauthedCtx, rootURL)
