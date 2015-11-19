@@ -52,34 +52,3 @@ export class NoExampleAvailable {
 		this.index = index;
 	}
 }
-
-export class WantDiscussions {
-	constructor(defURL) {
-		this.defURL = defURL;
-	}
-}
-
-export class DiscussionsFetched {
-	constructor(defURL, discussions) {
-		this.defURL = defURL;
-		this.discussions = discussions;
-	}
-}
-
-export class CreateDiscussion {
-	constructor(defURL, title, description, callback) {
-		this.defURL = defURL;
-		this.title = title;
-		this.description = description;
-		this.callback = callback;
-	}
-}
-
-export class CreateDiscussionComment {
-	constructor(defURL, discussionID, body, callback) {
-		this.defURL = defURL;
-		this.discussionID = discussionID;
-		this.body = body;
-		this.callback = callback;
-	}
-}

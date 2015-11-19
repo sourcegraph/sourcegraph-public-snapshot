@@ -96,12 +96,7 @@
 							"counts": {},
 							"generation": 1
 						},
-						"highlightedDef": "otherDef",
-						"discussions": [
-							{
-								"test": "discussionData"
-							}
-						]
+						"highlightedDef": "otherDef"
 					}
 				},
 				{
@@ -126,10 +121,6 @@
 		{
 			"$constructor": "WantDef",
 			"url": "someDef"
-		},
-		{
-			"$constructor": "WantDiscussions",
-			"defURL": "someDef"
 		},
 		{
 			"$constructor": "WantDef",

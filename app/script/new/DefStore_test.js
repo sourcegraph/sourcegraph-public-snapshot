@@ -32,11 +32,6 @@ describe("DefStore", () => {
 		expect(DefStore.examples.getCount("/someURL")).to.be(0);
 	});
 
-	it("should handle DiscussionsFetched", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.DiscussionsFetched("/someURL", "someData"));
-		expect(DefStore.discussions.get("/someURL")).to.be("someData");
-	});
-
 	it("should handle SelectMultipleDefs", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.SelectMultipleDefs(["/someURL", "/otherURL"], 10, 20));
 		expect(DefStore.defOptionsURLs).to.eql(["/someURL", "/otherURL"]);

@@ -72,8 +72,6 @@ export default class CodeFileContainer extends Container {
 		state.examples = DefStore.examples;
 		state.examplesGeneration = DefStore.examples.generation;
 		state.highlightedDef = DefStore.highlightedDef;
-		state.discussions = DefStore.discussions;
-		state.discussionsGeneration = DefStore.discussions.generation;
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;
 		state.defOptionsLeft = DefStore.defOptionsLeft;
@@ -86,7 +84,6 @@ export default class CodeFileContainer extends Container {
 		}
 		if (nextState.selectedDef && prevState.selectedDef !== nextState.selectedDef) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.selectedDef));
-			Dispatcher.asyncDispatch(new DefActions.WantDiscussions(nextState.selectedDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
@@ -197,8 +194,7 @@ export default class CodeFileContainer extends Container {
 					<DefPopup
 						def={selectedDefData}
 						examples={this.state.examples}
-						highlightedDef={this.state.highlightedDef}
-						discussions={this.state.discussions.get(this.state.selectedDef)} />
+						highlightedDef={this.state.highlightedDef} />
 				}
 
 				{highlightedDefData && highlightedDefData.Found && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}

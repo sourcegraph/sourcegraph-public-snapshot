@@ -13,13 +13,6 @@ describe("DefPopup", () => {
 			<DefPopup
 				def={{Found: true, URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
 				examples={{test: "examples", generation: 42}}
-				discussions={[
-					{ID: 0, Comments: []},
-					{ID: 1, Comments: []},
-					{ID: 2, Comments: [{ID: 0}]},
-					{ID: 3, Comments: []},
-					{ID: 4, Comments: []},
-				]}
 				highlightedDef="otherURL" />
 		);
 	});
@@ -29,7 +22,6 @@ describe("DefPopup", () => {
 			<DefPopup
 				def={{Found: false, URL: "someURL", QualifiedName: {__html: "someName"}}}
 				examples={{test: "examples", generation: 42}}
-				discussions={[]}
 				highlightedDef={null} />
 		);
 	});

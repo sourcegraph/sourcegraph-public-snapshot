@@ -29,13 +29,6 @@ export class DefStore extends Store {
 				return this.counts.hasOwnProperty(defURL) ? this.counts[defURL] : 1000; // high initial value until count is known
 			},
 		};
-		this.discussions = {
-			content: {},
-			generation: 0,
-			get(defURL) {
-				return this.content[defURL] || null;
-			},
-		};
 
 		this.defOptionsURLs = null;
 		this.defOptionsLeft = 0;
@@ -61,11 +54,6 @@ export class DefStore extends Store {
 		case DefActions.NoExampleAvailable:
 			this.examples.counts[action.defURL] = Math.min(this.examples.getCount(action.defURL), action.index);
 			this.examples.generation++;
-			break;
-
-		case DefActions.DiscussionsFetched:
-			this.discussions.content[action.defURL] = action.discussions;
-			this.discussions.generation++;
 			break;
 
 		case DefActions.SelectMultipleDefs:

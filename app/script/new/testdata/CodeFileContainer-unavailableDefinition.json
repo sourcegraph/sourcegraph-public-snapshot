@@ -141,10 +141,6 @@
 		{
 			"$constructor": "WantDef",
 			"url": "someDef"
-		},
-		{
-			"$constructor": "WantDiscussions",
-			"defURL": "someDef"
 		}
 	]
 }
