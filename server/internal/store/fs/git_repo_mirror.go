@@ -83,13 +83,16 @@ func (g *gitMirrorListener) parseMirrors() error {
 		}
 
 		// Store in the map.
+		if _, ok := g.mirrors[localRepo]; ok {
+			return fmt.Errorf("found duplicate <LocalRepoURI>: %q", localRepo)
+		}
 		g.mirrors[localRepo] = gitRemoteURL
 	}
 	return nil
 }
 
 func (g *gitMirrorListener) onGitEvent(id events.EventID, p events.GitPayload) {
-	// A git operation has occured, do we need ot mirror any changes?
+	// A git operation has occured, do we need to mirror any changes?
 	gitRemoteURL, ok := g.mirrors[p.Repo.URI]
 	if !ok {
 		return // Nothing to do for this repo.
@@ -113,7 +116,7 @@ func (g *gitMirrorListener) onGitEvent(id events.EventID, p events.GitPayload) {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("%s", output)
-		log15.Warn(fmt.Sprintf("git remote add mirror %s", gitRemoteURL), "error", err)
+		log15.Error(fmt.Sprintf("git remote add mirror %s", gitRemoteURL), "error", err)
 		return
 	}
 
@@ -127,7 +130,7 @@ func (g *gitMirrorListener) onGitEvent(id events.EventID, p events.GitPayload) {
 		output, err = cmd.CombinedOutput()
 		if err != nil {
 			log.Printf("%s", output)
-			log15.Warn("git push mirror --mirror", "error", err)
+			log15.Error("git push mirror --mirror", "error", err)
 			return
 		}
 		done <- true
@@ -137,7 +140,7 @@ func (g *gitMirrorListener) onGitEvent(id events.EventID, p events.GitPayload) {
 	case <-done:
 		return
 	case <-time.After(15 * time.Second):
-		log15.Warn("git push mirror --mirror took longer than 15s; process killed")
+		log15.Error("git push mirror --mirror took longer than 15s; process killed")
 		cmd.Process.Kill()
 	}
 }
