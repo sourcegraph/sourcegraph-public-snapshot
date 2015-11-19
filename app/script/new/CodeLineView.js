@@ -29,7 +29,7 @@ export default class CodeLineView extends Component {
 		state.selected = Boolean(props.selected);
 		state.lineButton = Boolean(props.lineButton && props.onLineButtonClick);
 		state.alwaysShowLineButton = Boolean(state.lineButton && props.alwaysShowLineButton);
-		state.onLineButtonClick = props.onLineButtonClick || function() {};
+		state.onLineButtonClick = props.onLineButtonClick || null;
 	}
 
 	render() {

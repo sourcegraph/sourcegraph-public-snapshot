@@ -33,7 +33,7 @@ export default class CodeListing extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.lineNumbers = Boolean(props.lineNumbers);
-		state.onLineButtonClick = props.onLineButtonClick || function() {};
+		state.onLineButtonClick = props.onLineButtonClick || null;
 	}
 
 	_updateVisibleLines() {
