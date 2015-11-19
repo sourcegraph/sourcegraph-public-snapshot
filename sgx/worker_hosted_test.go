@@ -3,6 +3,7 @@
 package sgx_test
 
 import (
+	"os"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -14,6 +15,11 @@ import (
 )
 
 func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		// TODO(sqs): Disabled flaky test.
+		t.Skip()
+	}
+
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
