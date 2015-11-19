@@ -128,7 +128,9 @@ func init() {
 }
 
 type loginCmd struct {
-	Root string `long:"root" description:"URL to federation root server"`
+	Args struct {
+		EndpointURL string `name:"endpoint" description:"Optionally specify the endpoint to authenticate against."`
+	} `positional-args:"yes" count:"1"`
 }
 
 // getSavedToken checks if we already have a token for an endpoint, and
@@ -317,6 +319,12 @@ func (c *loginCmd) Execute(args []string) error {
 	_, err := readUserAuth()
 	if err != nil {
 		return err
+	}
+
+	// We allow the endpoint URL to be passed in as an argument as a
+	// convenience to --endpoint
+	if c.Args.EndpointURL != "" {
+		Endpoint.URL = c.Args.EndpointURL
 	}
 
 	endpointURL := Endpoint.URLOrDefault()
