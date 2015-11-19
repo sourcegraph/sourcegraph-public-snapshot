@@ -131,23 +131,14 @@ type loginCmd struct {
 	Root string `long:"root" description:"URL to federation root server"`
 }
 
-func (c *loginCmd) Execute(args []string) error {
-	a, err := readUserAuth()
-	if err != nil {
-		return err
-	}
-	if a == nil {
-		a = userAuth{}
-	}
-
-	endpointURL := Endpoint.URLOrDefault()
+func GetAccessToken(endpointURL *url.URL) (string, error) {
 	cl := Client()
 	unauthedCtx := sourcegraph.WithCredentials(cliCtx, nil)
 
 	// Get client ID of server.
 	conf, err := cl.Meta.Config(unauthedCtx, &pbtypes.Void{})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	///
@@ -164,12 +155,12 @@ func (c *loginCmd) Execute(args []string) error {
 		var err error
 		rootURL, err = url.Parse(conf.FederationRootURL)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 	tokenURL, err := router.Rel.URLToOrError(router.OAuth2ServerToken)
 	if err != nil {
-		return err
+		return "", err
 	}
 	tokenURL = rootURL.ResolveReference(tokenURL)
 
@@ -181,7 +172,7 @@ func (c *loginCmd) Execute(args []string) error {
 	fmt.Print("Username: ")
 	username, err := getLine()
 	if err != nil {
-		return err
+		return "", err
 	}
 	fmt.Print("Password: ")
 	password := string(gopass.GetPasswd())
@@ -203,7 +194,7 @@ func (c *loginCmd) Execute(args []string) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("authenticating to root: %s", err)
+		return "", fmt.Errorf("authenticating to root: %s", err)
 	}
 
 	var accessTok string
@@ -217,7 +208,7 @@ func (c *loginCmd) Execute(args []string) error {
 		)
 		authInfo, err := rootCl.Auth.Identify(rootAuthedCtx, &pbtypes.Void{})
 		if err != nil {
-			return fmt.Errorf("identifying root user: %s", err)
+			return "", fmt.Errorf("identifying root user: %s", err)
 		}
 
 		code, err := rootCl.Auth.GetAuthorizationCode(rootAuthedCtx, &sourcegraph.AuthorizationCodeRequest{
@@ -226,7 +217,7 @@ func (c *loginCmd) Execute(args []string) error {
 			UID:          authInfo.UID,
 		})
 		if err != nil {
-			return fmt.Errorf("getting auth code from root: %s", err)
+			return "", fmt.Errorf("getting auth code from root: %s", err)
 		}
 
 		// Exchange the auth code (from the root) for an access token.
@@ -237,10 +228,28 @@ func (c *loginCmd) Execute(args []string) error {
 			TokenURL: tokenURL.String(),
 		})
 		if err != nil {
-			return fmt.Errorf("exchanging auth code for access token: %s", err)
+			return "", fmt.Errorf("exchanging auth code for access token: %s", err)
 		}
 
 		accessTok = tok.AccessToken
+	}
+
+	return accessTok, nil
+}
+
+func (c *loginCmd) Execute(args []string) error {
+	a, err := readUserAuth()
+	if err != nil {
+		return err
+	}
+	if a == nil {
+		a = userAuth{}
+	}
+
+	endpointURL := Endpoint.URLOrDefault()
+	accessTok, err := GetAccessToken(endpointURL)
+	if err != nil {
+		return err
 	}
 
 	ua := userEndpointAuth{AccessToken: accessTok}
