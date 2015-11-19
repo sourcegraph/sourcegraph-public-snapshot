@@ -24,7 +24,7 @@ GitRepoMirror = <LocalRepoURI>:<GitRemoteURL>
 ```
 
 - More than one repo can be mirrored by simply adding a comma.
-- Note: If you installed using one of the standard distribution or cloud provider packages,
+- Note: If you installed Sourcegraph using one of the standard distribution or cloud provider packages,
 Sourcegraph will run with configuration found at `/etc/sourcegraph/config.ini`.
 
 Example:
