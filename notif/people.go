@@ -46,6 +46,26 @@ func Person(ctx context.Context, u *sourcegraph.UserSpec) *sourcegraph.Person {
 			p.FullName = "anonymous user"
 		}
 	}
+	if p.Email == "" {
+		emails, err := cl.Users.ListEmails(ctx, u)
+		// An error will occur when one user tries to retrieve the email
+		// of a different user since ListEmails will only return emails that
+		// the user has permission to view.
+		if err != nil {
+			log15.Warn("notif.Person", "ignoring", err)
+		} else {
+			for _, emailAddr := range emails.EmailAddrs {
+				if emailAddr.Blacklisted {
+					continue
+				}
+				p.Email = emailAddr.Email
+				if emailAddr.Primary {
+					break
+				}
+			}
+		}
+	}
+
 	return p
 }
 

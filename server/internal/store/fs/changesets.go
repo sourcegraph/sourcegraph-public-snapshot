@@ -406,33 +406,20 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	}
 	defer rs.Free()
 
-	// The author of the resulting merge commit is the user that initially
-	// created this changeset. The committer is the user that initiated the
-	// merge.
-	csMerger := notif.PersonFromContext(ctx)
+	p := notif.PersonFromContext(ctx)
 	if err != nil {
 		return err
 	}
-	committer := vcs.Signature{
-		Name:  csMerger.FullName,
-		Email: csMerger.Email,
+	merger := vcs.Signature{
+		Name:  p.FullName,
+		Email: p.Email,
 		Date:  pbtypes.NewTimestamp(time.Now()),
-	}
-
-	csCreator := notif.Person(ctx, &cs.Author)
-	if err != nil {
-		return err
-	}
-	author := vcs.Signature{
-		Name:  csCreator.FullName,
-		Email: csCreator.Email,
-		Date:  *cs.CreatedAt,
 	}
 
 	if err := rs.Pull(head, opt.Squash); err != nil {
 		return err
 	}
-	if err := rs.Commit(author, committer, msg); err != nil {
+	if err := rs.Commit(merger, merger, msg); err != nil {
 		return err
 	}
 
