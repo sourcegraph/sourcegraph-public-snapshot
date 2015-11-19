@@ -3,7 +3,7 @@ package local
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store/mockstore"
 )
 

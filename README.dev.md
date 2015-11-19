@@ -93,7 +93,7 @@ codegen (see the Codegen section for more info). Here's a one-liner
 for updating `go-sourcegraph` (the most commonly updated dependency):
 
 ```
-godep update sourcegraph.com/sourcegraph/go-sourcegraph/... && godep go generate ./...
+godep update src.sourcegraph.com/sourcegraph/go-sourcegraph/... && godep go generate ./...
 ```
 
 When you add a new package dependency, you need to run `godep save

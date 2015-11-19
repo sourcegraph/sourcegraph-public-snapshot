@@ -8,7 +8,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Parse tokenizes q and returns a query State object for determining

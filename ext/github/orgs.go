@@ -3,7 +3,7 @@ package github
 import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 

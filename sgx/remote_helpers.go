@@ -3,7 +3,7 @@ package sgx
 import (
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 

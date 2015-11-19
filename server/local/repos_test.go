@@ -8,7 +8,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
 	"sourcegraph.com/sourcegraph/rwvfs"

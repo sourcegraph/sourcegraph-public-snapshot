@@ -4,7 +4,7 @@ import (
 	"log"
 
 	wd "github.com/mb0/diff"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // chunk holds a group of consecutive additions and deletions.

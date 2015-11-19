@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	vcstest "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"

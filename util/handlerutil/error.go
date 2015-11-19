@@ -3,7 +3,7 @@ package handlerutil
 import (
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // NoBuildError is returned whenever a build is requested for an unbuilt repo.

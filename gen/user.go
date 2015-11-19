@@ -21,7 +21,7 @@ func UserSpecExpr(arg ast.Expr, argType ast.Expr) ast.Expr {
 		return UserSpecExpr(arg, t.X)
 	case *ast.Ident:
 		if ast.IsExported(t.Name) {
-			_, spec, err := typeSpec("sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph", t.Name)
+			_, spec, err := typeSpec("src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph", t.Name)
 			if err != nil {
 				return nil
 			}

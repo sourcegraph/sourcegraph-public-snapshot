@@ -1,6 +1,6 @@
 package search
 
-import "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+import "src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 type sortByRawQueryString []sourcegraph.Tokens
 

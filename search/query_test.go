@@ -3,7 +3,7 @@ package search
 import (
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Q is an alias for newQueryWithInsertionPoint.

@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func mustCreateUser(ctx context.Context, t *testing.T, users ...*sourcegraph.User) []*sourcegraph.User {

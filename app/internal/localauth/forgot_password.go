@@ -7,7 +7,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/form"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"

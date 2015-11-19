@@ -2,7 +2,7 @@ syntax = "proto3";
 package gitpb;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/sourcegraph.proto";
+import "src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/sourcegraph.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 

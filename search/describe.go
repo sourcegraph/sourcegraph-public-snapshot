@@ -5,7 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Describe returns a string that describes in English what the query

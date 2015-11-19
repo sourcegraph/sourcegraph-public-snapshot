@@ -6,7 +6,7 @@ import (
 
 	"strconv"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func BuildTag(build sourcegraph.BuildSpec) string {

@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/conf"
 )
 

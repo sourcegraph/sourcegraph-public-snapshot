@@ -11,8 +11,8 @@ import (
 
 	"github.com/kr/pretty"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
 	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 

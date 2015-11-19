@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/oauth2"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestGetGitHubUserEmailAddresses(t *testing.T) {

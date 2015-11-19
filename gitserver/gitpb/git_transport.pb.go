@@ -21,7 +21,7 @@ import fmt "fmt"
 import math "math"
 
 // discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
-import sourcegraph "sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+import sourcegraph "src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 import (
 	context "golang.org/x/net/context"

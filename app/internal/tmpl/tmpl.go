@@ -18,7 +18,7 @@ import (
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal/canonicalurl"

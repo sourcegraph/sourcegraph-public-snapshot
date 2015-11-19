@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 	"src.sourcegraph.com/sourcegraph/util/jsonutil"

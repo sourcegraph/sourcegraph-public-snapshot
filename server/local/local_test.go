@@ -2,7 +2,7 @@ package local
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
 	gitmock "src.sourcegraph.com/sourcegraph/gitserver/gitpb/mock"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/mockstore"

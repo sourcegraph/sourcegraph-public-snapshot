@@ -17,7 +17,7 @@ import (
 	"github.com/flynn/go-shlex"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )

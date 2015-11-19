@@ -6,7 +6,7 @@ import (
 
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestUsersService_Get(t *testing.T) {

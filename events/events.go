@@ -2,7 +2,7 @@ package events
 
 import (
 	"github.com/AaronO/go-git-http"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 type EventID string

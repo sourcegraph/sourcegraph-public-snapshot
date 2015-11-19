@@ -7,7 +7,7 @@ import (
 	"src.sourcegraph.com/vfs"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // fileSystem implements the vfs.FileSystem interface on top of the gRPC API.

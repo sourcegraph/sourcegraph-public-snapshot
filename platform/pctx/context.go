@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // file implements the vfs.File interface on top of the gRPC API.

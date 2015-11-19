@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func getBuild(repoURI string, commitID string, attempt uint32) (*sourcegraph.Build, *sourcegraph.Repo, error) {

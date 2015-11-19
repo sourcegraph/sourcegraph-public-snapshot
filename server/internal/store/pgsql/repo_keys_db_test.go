@@ -8,7 +8,7 @@ import (
 	"encoding/pem"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestRepos_CreateAndGetRemoteKey(t *testing.T) {

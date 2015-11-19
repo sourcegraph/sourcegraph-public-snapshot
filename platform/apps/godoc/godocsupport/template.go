@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/sourcegraph/gddo/doc"
 	"github.com/sourcegraph/gddo/gosrc"
