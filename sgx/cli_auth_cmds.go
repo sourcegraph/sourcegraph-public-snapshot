@@ -131,7 +131,39 @@ type loginCmd struct {
 	Root string `long:"root" description:"URL to federation root server"`
 }
 
+// getSavedToken checks if we already have a token for an endpoint, and
+// validates that it still works.
+func getSavedToken(endpointURL *url.URL) string {
+	a, err := readUserAuth()
+	if err != nil || a == nil {
+		return ""
+	}
+	var accessToken string
+	e, ok := a[endpointURL.String()]
+	if !ok {
+		return ""
+	}
+	accessToken = e.AccessToken
+
+	ctx := sourcegraph.WithCredentials(cliCtx,
+		oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}),
+	)
+	ctx = fed.NewRemoteContext(ctx, endpointURL)
+	cl := sourcegraph.NewClientFromContext(ctx)
+	_, err = cl.Auth.Identify(ctx, &pbtypes.Void{})
+	if err != nil {
+		log.Printf("# Failed to verify saved auth credentials for %s", endpointURL)
+		return ""
+	}
+	return accessToken
+}
+
 func GetAccessToken(endpointURL *url.URL) (string, error) {
+	if savedToken := getSavedToken(endpointURL); savedToken != "" {
+		log.Printf("Using saved auth token for %s", endpointURL)
+		return savedToken, nil
+	}
+
 	unauthedCtx := sourcegraph.WithCredentials(cliCtx, nil)
 	unauthedCtx = fed.NewRemoteContext(unauthedCtx, endpointURL)
 	cl := sourcegraph.NewClientFromContext(unauthedCtx)
