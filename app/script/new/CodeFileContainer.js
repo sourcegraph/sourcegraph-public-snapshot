@@ -174,7 +174,7 @@ export default class CodeFileContainer extends Container {
 									}
 								});
 							}}
-							lineSelectionForm={this.state.creatingIssue ? (
+							lineSelectionForm={(this.state.creatingIssue && this.state.startLine && this.state.endLine) ? (
 								<IssueForm
 									repo={this.state.repo}
 									path={this.state.tree}
