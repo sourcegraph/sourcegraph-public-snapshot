@@ -2,11 +2,11 @@
 title = "Git Repo Mirroring"
 +++
 
-Sourcegraph works great as the system of record, but there are some situations in which you will want to mirror your repositories hosted on Sourcegraph to a Git repository hosted somewhere else. After some small configuration, your repositories can automatically be pushed to another host each time someone pushes changes to Sourcegraph.
+Sourcegraph works great as the system of record, but there are some situations in which you will want to mirror your repositories hosted on Sourcegraph to a Git repository hosted somewhere else. With configuration, Sourcegraph can automatically push changes to an external code host each time someone pushes changes to Sourcegraph.
 
 # Configuration
 
-Lets say you have a repository hosted on Sourcegraph (`src.example.com/my/repo`) and want to have this repository automatically mirrored to `github.com/my/repo`. Here's what you need to do:
+Lets say you have a repository hosted on Sourcegraph (`src.example.com/my/repo`) and want to have this repository automatically mirrored on `github.com/my/repo`. Here's what you need to do:
 
 ## 1. Ensure you can push changes
 
@@ -31,10 +31,10 @@ Example:
 
 ```
 [serve.Local filesystem storage (fs store)]
-GitRepoMirror = my/repo:git@github.com:my/repo,other/hacks:https://github.com/me/hacks
+GitRepoMirror = my/repo:git@github.com:my/repo,other/hacks:git@github.com:me/hacks
 ```
 
-Would cause any pushes to `src.example.com/my/repo` to be mirrored to `git@github.com/my/repo` and likewise any changes to `src.example.com/other/hacks` would be mirrored to `https://github.com/me/hacks`.
+Would cause any pushes to `src.example.com/my/repo` to be mirrored to `git@github.com/my/repo` and likewise any changes to `src.example.com/other/hacks` would be mirrored to `git@github.com:me/hacks`.
 
 ## 3. Restart Sourcegraph
 
@@ -46,4 +46,4 @@ sudo restart src
 
 ## 4. Test it out!
 
-Now that everything is configured, simply push any change to your Sourcegraph repository and watch as it is instantly mirrored to the remote Git URL you specified!
+Now that everything is configured, simply push any change to your Sourcegraph repository and watch as it is mirrored to the remote Git URL you specified!
