@@ -2,9 +2,9 @@
 {{end}}
 
 {{define "Body"}}
-<h1>{{nl2br .Meta.Title}}</h1>
 	<div class="row">
-		<div class="col-md-8 blog-post">
+		<div class="col-md-10 col-md-offset-1 blog-post">
+			<h1>{{nl2br .Meta.Title}}</h1>
 			{{if .Meta.Author.Login}}
 			<div class="byline">
 				By <a href="{{urlToUser .Meta.Author.Login}}">{{.Meta.Author.Name}}</a>
