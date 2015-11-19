@@ -30,6 +30,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
+	"src.sourcegraph.com/sourcegraph/util/randstring"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
@@ -228,6 +229,10 @@ type Common struct {
 	// Configuration for connecting to Traceguide servers.
 	TraceguideAccessToken string
 	TraceguideServiceHost string
+
+	// ErrorID is a randomly generated string used to identify a specific instance
+	// of app error in the error logs.
+	ErrorID string
 }
 
 func executeTemplateBase(w http.ResponseWriter, templateName, templateSubName string, data interface{}) error {
@@ -277,6 +282,14 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 		returnTo, _ := returnto.BestGuess(req)
 
+		var errorID string
+		errField := reflect.ValueOf(data).Elem().FieldByName("Err")
+		if errField.IsValid() {
+			errorID = randstring.NewLen(6)
+			appError := errField.Interface().(error)
+			appEvent.Message = fmt.Sprintf("ErrorID:%s Msg:%s", errorID, appError.Error())
+		}
+
 		field.Set(reflect.ValueOf(Common{
 			CurrentUser: currentUser,
 
@@ -308,13 +321,9 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			TraceguideAccessToken: os.Getenv("SG_TRACEGUIDE_ACCESS_TOKEN"),
 			TraceguideServiceHost: os.Getenv("SG_TRACEGUIDE_SERVICE_HOST"),
-		}))
 
-		errField := reflect.ValueOf(data).Elem().FieldByName("Err")
-		if errField.IsValid() {
-			appError := errField.Interface().(error)
-			appEvent.Message = appError.Error()
-		}
+			ErrorID: errorID,
+		}))
 	}
 
 	metricutil.LogEvent(ctx, appEvent)
