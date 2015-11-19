@@ -8,7 +8,7 @@
 	<hr />
 	<p>Sorry, there’s been a problem.{{if .ErrorID}} To quickly identify this issue, use the ID <b>{{.ErrorID}}</b>.{{end}}</p>
 	{{if (not .DisableExternalLinks)}}
-	<p>If you would like to provide additional context or track our progress on fixing this issue, please post an issue in <a href="https://src.sourcegraph.com/sourcegraph/.tracker/new">our tracker</a>{{if .ErrorID}} and include the id above{{end}}.</p>
+	<p>If this issue persists, please post an issue in <a href="https://src.sourcegraph.com/sourcegraph/.tracker/new">our tracker</a> with steps to reproduce and other useful context{{if .ErrorID}}, and include the id above{{end}}. Or, <a href="mailto:help@sourcegraph.com">contact us</a> by email.</p>
 	{{end}}
 </div>
 {{end}}
