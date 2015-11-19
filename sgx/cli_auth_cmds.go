@@ -198,6 +198,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 
 	// Using the tokenURL, login either via username/password (local) or
 	// get an oauth token from the fedRoot
+	var accessTok string
 	if isLocalAuth {
 		fmt.Printf("Enter credentials for %s\n", rootURL)
 		fmt.Print("Username: ")
@@ -228,7 +229,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 			return "", fmt.Errorf("authenticating to %s: %s", rootURL, err)
 		}
 
-		return rootTok.AccessToken, nil
+		accessTok = rootTok.AccessToken
 	} else {
 		// Create a context for communicating with the fed root directly
 		// (to avoid leaking username/password to the leaf server).
@@ -266,8 +267,11 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 			return "", fmt.Errorf("exchanging auth code from %s for access token on %s: %s", rootURL, endpointURL, err)
 		}
 
-		return tok.AccessToken, nil
+		accessTok = tok.AccessToken
 	}
+
+	saveCredentials(endpointURL, accessTok, false)
+	return accessTok, nil
 }
 
 func saveCredentials(endpointURL *url.URL, accessTok string, makeDefault bool) error {
@@ -279,16 +283,30 @@ func saveCredentials(endpointURL *url.URL, accessTok string, makeDefault bool) e
 		a = userAuth{}
 	}
 
-	ua := userEndpointAuth{AccessToken: accessTok}
-	a[endpointURL.String()] = &ua
-	if makeDefault {
+	var updatedDefault, updatedCredentials bool
+	ua, ok := a[endpointURL.String()]
+	if ok {
+		if ua.AccessToken != accessTok {
+			updatedCredentials = true
+			ua.AccessToken = accessTok
+		}
+	} else {
+		updatedCredentials = true
+		ua = &userEndpointAuth{AccessToken: accessTok}
+		a[endpointURL.String()] = ua
+	}
+	if makeDefault && !ua.Default {
+		updatedDefault = true
 		a.setDefault(endpointURL.String())
 	}
+
 	if err := writeUserAuth(a); err != nil {
 		return err
 	}
-	log.Printf("# Credentials for %s saved to %s.", endpointURL, userAuthFileName())
-	if makeDefault {
+	if updatedCredentials {
+		log.Printf("# Credentials for %s saved to %s.", endpointURL, userAuthFileName())
+	}
+	if updatedDefault {
 		log.Printf("# Default endpoint set to %s.", endpointURL)
 	}
 	return nil
