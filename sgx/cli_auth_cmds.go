@@ -139,7 +139,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 	// Get client ID of server.
 	conf, err := cl.Meta.Config(unauthedCtx, &pbtypes.Void{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Could not fetch config for %s: %v", endpointURL, err)
 	}
 	isLocalAuth := conf.IsFederationRoot || conf.AuthSource == "local" || conf.AuthSource == "ldap"
 
@@ -155,7 +155,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 		var err error
 		rootURL, err = url.Parse(conf.FederationRootURL)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("%s has a malformed FederationRootURL: %s", endpointURL, err)
 		}
 	}
 	tokenURL, err := router.Rel.URLToOrError(router.OAuth2ServerToken)
@@ -193,7 +193,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 			},
 		})
 		if err != nil {
-			return "", fmt.Errorf("authenticating to root: %s", err)
+			return "", fmt.Errorf("authenticating to %s: %s", rootURL, err)
 		}
 
 		return rootTok.AccessToken, nil
@@ -211,7 +211,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 		)
 		authInfo, err := rootCl.Auth.Identify(rootAuthedCtx, &pbtypes.Void{})
 		if err != nil {
-			return "", fmt.Errorf("identifying root user: %s", err)
+			return "", fmt.Errorf("identifying user on %s: %s", rootURL, err)
 		}
 
 		code, err := rootCl.Auth.GetAuthorizationCode(rootAuthedCtx, &sourcegraph.AuthorizationCodeRequest{
@@ -220,7 +220,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 			UID:          authInfo.UID,
 		})
 		if err != nil {
-			return "", fmt.Errorf("getting auth code from root: %s", err)
+			return "", fmt.Errorf("getting auth code from %s: %s", rootURL, err)
 		}
 
 		// Exchange the auth code (from the root) for an access token.
@@ -231,7 +231,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 			TokenURL: tokenURL.String(),
 		})
 		if err != nil {
-			return "", fmt.Errorf("exchanging auth code for access token: %s", err)
+			return "", fmt.Errorf("exchanging auth code from %s for access token on %s: %s", rootURL, endpointURL, err)
 		}
 
 		return tok.AccessToken, nil
