@@ -2,7 +2,7 @@ MAKEFLAGS+=--no-print-directory
 
 .PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smtest src test clone-private libvfsgen
 
-PRIVATE_HASH := a3980aa4fc462253310fc4a0d35b950a4ef15b86
+PRIVATE_HASH := 16a4742b08be44e986335cfeca2aafa6d0cef361
 
 SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
 
