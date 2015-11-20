@@ -535,7 +535,96 @@ service Repos {
 	rpc ListCommitters(ReposListCommittersOp) returns (CommitterList);
 }
 
-// TODO(slimsag): implement storage service
+// StorageBucket represents the location where keys are stored.
+//
+// Understanding the name-spacing of storage objects is often helped by
+// visualizing the filesystem-backed implementation, which looks like:
+//
+//  /repo/<Repo>/<AppName>/<Bucket>/<Key>
+//  /global/<AppName>/<Bucket>/<Key>
+//
+message StorageBucket {
+	// AppName is the name of the application whose data you are trying to
+	// read/write, applications may read and write to each other's data assuming
+	// the admin has not restricted such access.
+	string app_name = 1;
+
+	// Repo is the repository URI. If specified storage is considered local to the
+	// repository. Otherwise it is considered "global" (i.e. shared across all
+	// repositories).
+	string repo = 2;
+
+	// Name is the bucket name. In filesystem terminology, a bucket is a 'folder'
+	// and an object is a 'file'.
+	string name = 3;
+}
+
+// StorageKey is a storage object's key.
+message StorageKey {
+	// Bucket is the bucket name.
+	string bucket = 3;
+
+	// Key is the name of the storage object. In filesystem terminology, this is
+	// the 'filename' and thus must be unique against all other key names in the
+	// bucket.
+	string key = 4;
+}
+
+// StorageValue is the value of a storage object.
+message StorageValue {
+	// Value is the value of the object.
+	bytes value = 2;
+}
+
+// StoragePutOp is the parameters for putting an object into storage.
+message StoragePutOp {
+	// Name is the name of the object to put into storage.
+	StorageName name = 1 [(gogoproto.nullable) = false];
+
+	// Value is the value of the object.
+	bytes value = 2;
+}
+
+// Storage provides applications with storage mechanisms. It is a simple key /
+// value store.
+service Storage {
+	// Get gets the value of a storage object.
+	rpc Get(StorageName) returns (StorageValue) {
+		option (google.api.http) = {
+			get: "/storage"
+		};
+	}
+
+	// Put puts a value into a storage object.
+	rpc Put(StoragePutOp) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			put: "/storage"
+		};
+	}
+
+	// Delete deletes the specific storage object or, if no key is specified, all
+	// objects in the bucket.
+	rpc Delete(StorageName) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			delete: "/storage"
+		};
+	}
+
+	// Exists tells if the given key exists in the bucket or not.
+	rpc Exists(StorageName) returns bool {
+		option (google.api.http) = {
+			get: "/storage/exists"
+		};
+	}
+
+	// List lists all objects in the bucket. It ignores the 'key' field of the
+	// storage name parameter.
+	rpc List(StorageName) returns (StorageList) {
+		option (google.api.http) = {
+			get: "/storage/list"
+		};
+	}
+}
 
 service Changesets {
 	// Create creates a new Changeset and returns it, populating
