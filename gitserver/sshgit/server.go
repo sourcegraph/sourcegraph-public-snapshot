@@ -214,8 +214,8 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		log.Printf("failed to exit cmd: %v\n", err)
 	} else {
 		payload := events.GitPayload{
-			Actor:           sourcegraph.UserSpec{UID: uid},
-			Repo:            sourcegraph.RepoSpec{URI: repo},
+			Actor: sourcegraph.UserSpec{UID: uid},
+			Repo:  sourcegraph.RepoSpec{URI: repo},
 		}
 		for _, e := range collapseDuplicateEvents(rpcReader.Events) {
 			payload.Event = e
