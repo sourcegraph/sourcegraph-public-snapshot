@@ -96,6 +96,15 @@ func psMarshal(fs sfs.FileSystem, path string, v interface{}) error {
 	return err
 }
 
+func psUnmarshal(fs sfs.FileSystem, path string, v interface{}) error {
+	f, err := fs.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return json.NewDecoder(f).Decode(v)
+}
+
 // writeChangeset writes the given changeset into the repository specified by
 // repoPath. When committing the change, msg is used as the commit message to
 // which the changeset ID is appended.
@@ -140,13 +149,9 @@ func (s *Changesets) Get(ctx context.Context, repoPath string, ID int64) (*sourc
 // callers must guard
 func (s *Changesets) get(ctx context.Context, repoPath string, ID int64) (*sourcegraph.Changeset, error) {
 	fs := s.storage(ctx, repoPath)
-	f, err := fs.Open(filepath.Join(strconv.FormatInt(ID, 10), changesetMetadataFile))
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+	path := filepath.Join(strconv.FormatInt(ID, 10), changesetMetadataFile)
 	cs := &sourcegraph.Changeset{}
-	return cs, json.NewDecoder(f).Decode(cs)
+	return cs, psUnmarshal(fs, path, cs)
 }
 
 // getReviewRefTip returns the commit ID that is at the tip of the reference where
@@ -206,12 +211,8 @@ func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID i
 //
 // Callers must guard by holding the s.fsLock lock.
 func (s *Changesets) readFile(ctx context.Context, fs sfs.FileSystem, changesetID int64, filename string, v interface{}) error {
-	f, err := fs.Open(filepath.Join(strconv.FormatInt(changesetID, 10), filename))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return json.NewDecoder(f).Decode(v)
+	path := filepath.Join(strconv.FormatInt(changesetID, 10), filename)
+	return psUnmarshal(fs, path, v)
 }
 
 var errInvalidUpdateOp = errors.New("invalid update operation")
@@ -481,13 +482,8 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 	// Read each metadata file from the VFS.
 	skip := op.Offset()
 	for _, p := range paths {
-		f, err := fs.Open(p)
-		if err != nil {
-			return nil, err
-		}
 		var cs sourcegraph.Changeset
-		err = json.NewDecoder(f).Decode(&cs)
-		f.Close()
+		err = psUnmarshal(fs, p, &cs)
 		if err != nil {
 			return nil, err
 		}
