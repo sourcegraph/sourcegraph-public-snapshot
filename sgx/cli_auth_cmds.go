@@ -48,7 +48,7 @@ func (ua userAuth) getDefault() (endpoint string, a *userEndpointAuth) {
 }
 
 // userEndpointAuth holds a user's authentication credentials for a
-// srclib endpoint.
+// sourcegraph endpoint.
 type userEndpointAuth struct {
 	AccessToken string
 
@@ -110,7 +110,7 @@ func userAuthFileName() string {
 func init() {
 	_, err := cli.CLI.AddCommand("login",
 		"log in to Sourcegraph.com",
-		"The login command logs into Sourcegraph.com using an access token. To obtain these values, sign up or log into Sourcegraph.com, then go to the 'Integrations' page in your user settings.",
+		"The login command logs into a Sourcegraph instance. It requires an account on a root Sourcegraph instance (usually sourcegraph.com).",
 		&loginCmd{},
 	)
 	if err != nil {
