@@ -160,7 +160,7 @@ func getSavedToken(endpointURL *url.URL) string {
 	return accessToken
 }
 
-func GetAccessToken(endpointURL *url.URL) (string, error) {
+func getAccessToken(endpointURL *url.URL) (string, error) {
 	if savedToken := getSavedToken(endpointURL); savedToken != "" {
 		log.Printf("Using saved auth token for %s", endpointURL)
 		return savedToken, nil
@@ -240,7 +240,7 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 
 		// Now, use the root access token to issue an auth code that
 		// the leaf server can then exchange for an access token.
-		rootAccessToken, err := GetAccessToken(rootURL)
+		rootAccessToken, err := getAccessToken(rootURL)
 		if err != nil {
 			return "", err
 		}
@@ -331,7 +331,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	endpointURL := Endpoint.URLOrDefault()
-	accessTok, err := GetAccessToken(endpointURL)
+	accessTok, err := getAccessToken(endpointURL)
 	if err != nil {
 		return err
 	}
