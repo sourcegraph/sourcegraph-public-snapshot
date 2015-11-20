@@ -18,6 +18,7 @@ import (
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/appdash"
+	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal/canonicalurl"
@@ -233,6 +234,10 @@ type Common struct {
 	// ErrorID is a randomly generated string used to identify a specific instance
 	// of app error in the error logs.
 	ErrorID string
+
+	// CacheControl is the HTTP cache-control header value that should be set in all
+	// AJAX requests originating from this page.
+	CacheControl string
 }
 
 func executeTemplateBase(w http.ResponseWriter, templateName, templateSubName string, data interface{}) error {
@@ -290,6 +295,11 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			appEvent.Message = fmt.Sprintf("ErrorID:%s Msg:%s", errorID, appError.Error())
 		}
 
+		var cacheControl string
+		if grpccache.GetNoCache(ctx) {
+			cacheControl = "no-cache"
+		}
+
 		field.Set(reflect.ValueOf(Common{
 			CurrentUser: currentUser,
 
@@ -323,6 +333,8 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			TraceguideServiceHost: os.Getenv("SG_TRACEGUIDE_SERVICE_HOST"),
 
 			ErrorID: errorID,
+
+			CacheControl: cacheControl,
 		}))
 	}
 

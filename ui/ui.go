@@ -46,6 +46,7 @@ func init() {
 // the processing of this request.
 func NewHandler(r *mux.Router, isTest bool) http.Handler {
 	mw := []handlerutil.Middleware{
+		handlerutil.CacheMiddleware,
 		appauth.CookieMiddleware,
 		handlerutil.UserMiddleware,
 	}

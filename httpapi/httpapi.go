@@ -24,6 +24,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.StrictSlash(true)
 
 	mw := []handlerutil.Middleware{
+		handlerutil.CacheMiddleware,
 		httpapiauth.PasswordMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
 	}

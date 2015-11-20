@@ -8,6 +8,7 @@
 		{{if publicRavenDSN}}data-public-raven-dsn="{{publicRavenDSN}}"{{end}}
 		data-current-route="{{.CurrentRoute}}"
 		data-template-name="{{.TemplateName}}"
+		{{if .CacheControl}}data-cache-control="{{.CacheControl}}"{{end}}
 		{{if .CurrentUser}}data-current-user-login="{{.CurrentUser.Login}}"{{end}}
 		{{if .CurrentUser}}data-current-user-uid="{{.CurrentUser.UID}}"{{end}}
 		{{with .Session}}data-current-user-oauth2-access-token="{{.AccessToken}}"{{end}}
