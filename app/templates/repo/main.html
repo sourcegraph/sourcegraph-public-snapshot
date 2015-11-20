@@ -23,13 +23,10 @@
 		{{end}}
 
 		{{if not disableCloneURL}}
-			<div class="clone-url-container col-sm-4 col-md-2 pull-right">
-				<div class="input-group input-group-sm">
-					<input type="text" class="clone-url form-control" id="clone-url"
-						value="{{.Repo.CloneURL}}"
-						onclick="this.select()"
-						readonly="readonly">
-					<span class="input-group-addon" id="sizing-addon1"><i class="fa fa-files-o"></i></span>
+			<div class="clone-url-container col-sm-4 col-md-4 pull-right">
+				<div data-react="RepoCloneBox"
+					data-SSH-Clone-URL="{{.Repo.SSHCloneURL}}"
+					data-HTTP-Clone-URL="{{.Repo.HTTPCloneURL}}">
 				</div>
 			</div>
 		{{end}}

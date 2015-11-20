@@ -10,6 +10,7 @@ var MarkdownView = require("./components/MarkdownView");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoBuildStatus = require("./components/RepoBuildStatus");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
+var RepoCloneBox = require("./components/RepoCloneBox");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
@@ -139,6 +140,15 @@ document.addEventListener("DOMContentLoaded", () => {
 				rev={el.dataset.rev}
 				path={el.dataset.path}
 				route={el.dataset.route} />, el
+		);
+	}
+
+	el = document.querySelector("[data-react=RepoCloneBox]");
+	if (el) {
+		ReactDOM.render(
+			<RepoCloneBox
+				SSHCloneURL={el.dataset.sshCloneUrl}
+				HTTPCloneURL={el.dataset.httpCloneUrl}/>, el
 		);
 	}
 
