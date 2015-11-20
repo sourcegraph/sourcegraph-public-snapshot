@@ -1,24 +1,25 @@
-# Sourcegraph: the intelligent and hackable code platform
+# Sourcegraph: the intelligent and hackable code host
 
-Sourcegraph makes your team more collaborative and efficient by
-letting them:
+Sourcegraph is a self-hosted Git repository service with Code
+Intelligence. It runs on your own server or cloud, takes 10 minutes to
+install, and gives your team the power to build better software.
 
-* search, browse, and cross-reference code (like an IDE)
-* view live usage examples for any function, type, etc.
-* perform code reviews
-* carry on persistent discussions on any piece of code
-* discover important information in context
-* track issues and projects
+* Sourcegraph's Code Intelligence analyzes and understands your code,
+  letting you browse code like an IDE.
+* Live usage examples save tons of time and help spread best practices.
+* Smart code search quickly gets you what you need.
+* You can start discussions and create issues right inline with your
+  code and have them stay attached even when the code changes.
+
+See the
+[announcement blog post](https://sourcegraph.com/blog/133554180524/announcing-the-sourcegraph-developer-release-an).
 
 Status: **limited release** ([Go](https://golang.org) and [Java](http://docs.oracle.com/javase/8/)
 support only)
 
-Your git repositories can live on Sourcegraph, or you can use it to
-search and browse existing repositories.
-
 ## Installation
 
-See the [Sourcegraph Docs](https://src.sourcegraph.com/sourcegraph/.docs)
+See the [Sourcegraph docs](https://src.sourcegraph.com/sourcegraph/.docs)
 for installation instructions.
 
 ## Under the hood
