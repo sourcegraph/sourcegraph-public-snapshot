@@ -10,7 +10,7 @@ import (
 
 func main() {
 	svcs := []string{
-		"../Godeps/_workspace/src/src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/sourcegraph.pb.go",
+		"../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
 		"../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
 		"../gitserver/gitpb/git_transport.pb.go",
 	}
