@@ -216,7 +216,6 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		payload := events.GitPayload{
 			Actor:           sourcegraph.UserSpec{UID: uid},
 			Repo:            sourcegraph.RepoSpec{URI: repo},
-			ContentEncoding: "",
 		}
 		for _, e := range collapseDuplicateEvents(rpcReader.Events) {
 			payload.Event = e
