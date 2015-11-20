@@ -5,7 +5,6 @@ import Component from "./Component";
 import Dispatcher from "./Dispatcher";
 import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
-import MarkdownTextarea from "../components/MarkdownTextarea"; // FIXME
 import hotLink from "./util/hotLink";
 
 export default class DefPopup extends Component {

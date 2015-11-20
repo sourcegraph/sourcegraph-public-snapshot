@@ -2,7 +2,6 @@ import expect from "expect.js";
 
 import Dispatcher from "./Dispatcher";
 import DefBackend from "./DefBackend";
-import DefStore from "./DefStore";
 import * as DefActions from "./DefActions";
 
 describe("DefBackend", () => {
