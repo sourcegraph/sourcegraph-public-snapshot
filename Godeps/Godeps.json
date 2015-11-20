@@ -698,7 +698,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
-			"Rev": "7e56f1b1ed2f149ed095c3db4d416bef5a4b9062"
+			"Rev": "664bc2347d69eab1e54c8466f5f40551664f23f0"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/makex",
