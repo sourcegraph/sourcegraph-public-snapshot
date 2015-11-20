@@ -183,13 +183,13 @@ func (c *Cache) Clear() {
 // NoCache causes all calls made with the returned ctx to bypass the
 // cache. The result will not be retrieved from nor stored in the
 // cache.
-//
-// TODO(sqs): propagate NoCache to the server for aggregate
-// operations.
 func NoCache(ctx context.Context) context.Context {
 	return context.WithValue(ctx, noCacheKey, struct{}{})
 }
 
+// GetNoCache returns true if the calls made with the current ctx
+// should bypass the cache, which depends on whether the noCacheKey
+// was previously set via NoCache(ctx).
 func GetNoCache(ctx context.Context) bool {
 	_, ok := ctx.Value(noCacheKey).(struct{})
 	return ok
