@@ -36,19 +36,19 @@ func TestTokens_JSON(t *testing.T) {
     "Type": "Term"
   },
   {
-    "uri": "r",
+    "URI": "r",
     "Type": "RepoToken"
   },
   {
-    "rev": "v",
+    "Rev": "v",
     "Type": "RevToken"
   },
   {
-    "path": "p",
+    "Path": "p",
     "Type": "FileToken"
   },
   {
-    "login": "u",
+    "Login": "u",
     "Type": "UserToken"
   }
 ]`

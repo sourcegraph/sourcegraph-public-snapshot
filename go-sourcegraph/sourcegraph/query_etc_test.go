@@ -45,7 +45,7 @@ func TestTokenError_JSON(t *testing.T) {
   {
     "Index": 2,
     "Token": {
-      "uri": "r",
+      "URI": "r",
       "Type": "RepoToken"
     },
     "Message": "b"
