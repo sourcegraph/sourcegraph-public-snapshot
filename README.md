@@ -11,7 +11,8 @@ install, and gives your team the power to build better software.
 * You can start discussions and create issues right inline with your
   code and have them stay attached even when the code changes.
 
-See the
+Watch a [demo video](https://www.youtube.com/watch?v=XOdh3-QJSzs) and
+see the
 [announcement blog post](https://sourcegraph.com/blog/133554180524/announcing-the-sourcegraph-developer-release-an).
 
 Status: **limited release** ([Go](https://golang.org) and [Java](http://docs.oracle.com/javase/8/)
