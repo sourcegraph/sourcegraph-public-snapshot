@@ -86,7 +86,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 }
 
 // collapseDuplicateEvents transforms a githttp event list such that adjacent
-// equivalent events are collapsed into a single event
+// equivalent events are collapsed into a single event.
 func collapseDuplicateEvents(eventsDup []githttp.Event) []githttp.Event {
 	events := []githttp.Event{}
 	var previousEvent githttp.Event

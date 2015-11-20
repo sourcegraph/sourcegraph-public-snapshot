@@ -14,10 +14,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AaronO/go-git-http"
 	"github.com/flynn/go-shlex"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )
@@ -190,23 +192,44 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	default:
 		return fmt.Errorf("%q is not a supported git operation", op)
 	}
+	shortOp := op[4:] // "upload-pack" or "receive-pack".
 
 	// Execute the git operation.
-	cmd := exec.Command("git", op[4:], ".")
+	cmd := exec.Command("git", shortOp, ".")
 	cmd.Dir = repoDir
 	cmd.Stdout = ch
 	cmd.Stderr = ch
-	cmd.Stdin = ch
+	rpcReader := &githttp.RpcReader{
+		Reader: ch,
+		Rpc:    shortOp,
+	}
+	cmd.Stdin = rpcReader
 	err = cmd.Start()
 	if err != nil {
 		return fmt.Errorf("could not start command: %v", err)
 	}
 	err = waitTimeout(cmd, gitTransactionTimeout)
+	cmdExitStatus := exitStatus(err)
 	if err != nil {
 		log.Printf("failed to exit cmd: %v\n", err)
+	} else {
+		payload := events.GitPayload{
+			Actor:           sourcegraph.UserSpec{UID: uid},
+			Repo:            sourcegraph.RepoSpec{URI: repo},
+			ContentEncoding: "",
+		}
+		for _, e := range collapseDuplicateEvents(rpcReader.Events) {
+			payload.Event = e
+			if e.Last == emptyCommitID {
+				events.Publish(events.GitCreateBranchEvent, payload)
+			} else if e.Commit == emptyCommitID {
+				events.Publish(events.GitDeleteBranchEvent, payload)
+			} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
+				events.Publish(events.GitPushEvent, payload)
+			}
+		}
 	}
-	status := exitStatus(err)
-	_, err = ch.SendRequest("exit-status", false, ssh.Marshal(status))
+	_, err = ch.SendRequest("exit-status", false, ssh.Marshal(cmdExitStatus))
 	if err != nil {
 		return fmt.Errorf("ch.SendRequest: %v", err)
 	}
@@ -236,7 +259,10 @@ type exitStatusMsg struct {
 
 // exitStatus converts the error value from exec.Command.Wait() to an exitStatusMsg.
 func exitStatus(err error) exitStatusMsg {
-	if err != nil {
+	switch err {
+	case nil:
+		return exitStatusMsg{0}
+	default:
 		if exitError, ok := err.(*exec.ExitError); ok {
 			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
 				return exitStatusMsg{uint32(status.ExitStatus())}
@@ -244,7 +270,6 @@ func exitStatus(err error) exitStatusMsg {
 		}
 		return exitStatusMsg{1}
 	}
-	return exitStatusMsg{0}
 }
 
 const (
