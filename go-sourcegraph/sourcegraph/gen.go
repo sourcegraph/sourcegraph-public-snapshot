@@ -14,3 +14,5 @@ package sourcegraph
 //go:generate goimports -w cached_grpc.pb.go mock/sourcegraph.pb_mock.go
 
 //go:generate go generate ./mock
+
+//go:generate go run ../../remove_protobuf_json_snake_case_tags.go -w .
