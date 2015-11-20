@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestDefsService_ListExamples(t *testing.T) {

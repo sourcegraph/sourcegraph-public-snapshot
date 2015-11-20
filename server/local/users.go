@@ -7,8 +7,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )

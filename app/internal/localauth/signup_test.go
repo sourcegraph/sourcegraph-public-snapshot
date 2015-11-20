@@ -12,11 +12,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // TestSignUp_disabled_404 tests that the signup endpoint returns 404s

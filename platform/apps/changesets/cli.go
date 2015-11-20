@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"google.golang.org/grpc"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/putil"

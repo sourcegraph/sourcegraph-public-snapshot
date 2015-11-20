@@ -6,12 +6,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )

@@ -3,8 +3,8 @@ package sgx
 import (
 	"fmt"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // getRemoteRepo gets the remote repository that corresponds to the

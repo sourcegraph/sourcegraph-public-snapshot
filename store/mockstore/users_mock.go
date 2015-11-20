@@ -4,8 +4,8 @@ package mockstore
 
 import (
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 

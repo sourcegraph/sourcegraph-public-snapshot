@@ -14,7 +14,6 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -22,6 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 	"src.sourcegraph.com/sourcegraph/util/httptestutil"
 	"src.sourcegraph.com/sourcegraph/util/testutil"

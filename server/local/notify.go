@@ -6,8 +6,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 var Notify sourcegraph.NotifyServer = &notify{}

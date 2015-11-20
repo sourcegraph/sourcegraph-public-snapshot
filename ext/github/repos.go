@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )

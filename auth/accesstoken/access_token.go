@@ -13,10 +13,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 

@@ -9,12 +9,12 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 	"src.sourcegraph.com/sourcegraph/util/httptestutil"

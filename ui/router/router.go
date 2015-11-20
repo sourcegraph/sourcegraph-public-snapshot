@@ -3,8 +3,8 @@ package router
 
 import (
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 )
 
 const (

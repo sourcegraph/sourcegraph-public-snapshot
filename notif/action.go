@@ -10,8 +10,8 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ext/slack"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // ActionContext represents an action. Action* fields are what happened,

@@ -5,10 +5,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Parse takes the Contents of the given TreeEntry and tokenizes them,

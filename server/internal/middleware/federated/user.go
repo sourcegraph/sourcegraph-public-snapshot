@@ -2,11 +2,11 @@ package federated
 
 import (
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 

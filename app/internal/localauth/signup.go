@@ -8,7 +8,6 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/form"
@@ -18,6 +17,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )

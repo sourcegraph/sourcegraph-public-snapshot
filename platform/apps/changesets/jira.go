@@ -9,12 +9,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
 	"net/http"
 	"regexp"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"golang.org/x/net/context"
+
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 const sgIconURL = "https://sourcegraph.com/images/favicon.png"

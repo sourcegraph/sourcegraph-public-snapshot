@@ -7,9 +7,9 @@ import (
 
 	"code.google.com/p/rog-go/parallel"
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 

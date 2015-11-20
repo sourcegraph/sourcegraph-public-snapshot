@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/go-querystring/query"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestGetForgotPassword(t *testing.T) {

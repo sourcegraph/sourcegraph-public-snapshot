@@ -11,12 +11,12 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/config"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 type doBuildCmd struct {

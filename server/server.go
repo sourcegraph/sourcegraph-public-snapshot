@@ -5,9 +5,9 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/cached"

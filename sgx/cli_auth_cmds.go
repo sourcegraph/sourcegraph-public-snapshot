@@ -13,11 +13,11 @@ import (
 	"github.com/howeyc/gopass"
 	"golang.org/x/oauth2"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/env"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )

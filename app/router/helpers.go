@@ -8,8 +8,8 @@ import (
 
 	"strconv"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func (r *Router) URLToBlogAtomFeed() *url.URL {

@@ -10,9 +10,9 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestDefs(t *testing.T) {

@@ -9,11 +9,11 @@ import (
 
 	"sort"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 

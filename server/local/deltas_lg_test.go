@@ -5,8 +5,8 @@ package local_test
 import (
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 	"src.sourcegraph.com/sourcegraph/util/testutil"
 )

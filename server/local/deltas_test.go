@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Test that DeltasService.Get returns partial info even if a call

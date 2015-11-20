@@ -8,10 +8,10 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
 	"sourcegraph.com/sourcegraph/rwvfs"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestReposService_Get(t *testing.T) {

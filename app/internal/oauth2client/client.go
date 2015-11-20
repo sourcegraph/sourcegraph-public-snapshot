@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal"
@@ -29,6 +28,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"

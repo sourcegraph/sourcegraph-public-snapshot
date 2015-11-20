@@ -12,7 +12,6 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
@@ -20,6 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"

@@ -6,8 +6,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Person will convert a UserSpec into a sourcegraph.Person with a best effort

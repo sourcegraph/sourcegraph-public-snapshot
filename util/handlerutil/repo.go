@@ -11,12 +11,12 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"

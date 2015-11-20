@@ -7,11 +7,11 @@ import (
 	"os"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
 )
 
 const (

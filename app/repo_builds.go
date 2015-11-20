@@ -7,11 +7,11 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"

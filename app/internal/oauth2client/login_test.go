@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
@@ -17,6 +16,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	// Register the login handler.
 	_ "src.sourcegraph.com/sourcegraph/app/internal/localauth"

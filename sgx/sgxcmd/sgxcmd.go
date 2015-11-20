@@ -2,9 +2,10 @@
 package sgxcmd
 
 import (
-	"github.com/kardianos/osext"
 	"log"
 	"path/filepath"
+
+	"github.com/kardianos/osext"
 )
 
 // Name is the command name that should be used when suggesting that the user

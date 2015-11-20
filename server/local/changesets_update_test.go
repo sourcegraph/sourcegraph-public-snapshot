@@ -8,9 +8,9 @@ import (
 	"golang.org/x/net/context"
 
 	ppretty "github.com/kr/pretty"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 

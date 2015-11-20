@@ -14,7 +14,6 @@ import (
 
 	"code.google.com/p/rog-go/parallel"
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
@@ -24,6 +23,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"

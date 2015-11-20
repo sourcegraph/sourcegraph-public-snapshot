@@ -8,9 +8,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	searchpkg "src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/store"
 )

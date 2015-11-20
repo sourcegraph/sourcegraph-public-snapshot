@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/kr/pretty"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"src.sourcegraph.com/syntaxhighlight"
 )

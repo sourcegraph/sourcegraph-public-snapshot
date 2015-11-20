@@ -8,8 +8,8 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/fed"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 var numReposGauge = prometheus.NewGauge(prometheus.GaugeOpts{

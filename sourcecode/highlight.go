@@ -3,8 +3,8 @@ package sourcecode
 import (
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/sourcegraph/annotate"
 

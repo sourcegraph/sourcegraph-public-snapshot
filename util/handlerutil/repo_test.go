@@ -7,8 +7,8 @@ package handlerutil
 import (
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Tests that when the URL contains no revision and a build exists, the newest build's commit ID is used.

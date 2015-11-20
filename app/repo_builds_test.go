@@ -9,9 +9,9 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestRepoBuild(t *testing.T) {

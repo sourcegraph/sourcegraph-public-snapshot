@@ -11,8 +11,8 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/metadata"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/grpccache"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )

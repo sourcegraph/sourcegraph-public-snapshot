@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/rwvfs"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // createBuildFile returns a file descriptor pointing to an empty file that stores information

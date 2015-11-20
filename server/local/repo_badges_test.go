@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestReposService_ListBadges(t *testing.T) {

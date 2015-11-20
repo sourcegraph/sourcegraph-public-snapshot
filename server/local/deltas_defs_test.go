@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestDeltasService_ListDefs(t *testing.T) {

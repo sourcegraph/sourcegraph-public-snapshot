@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	searchpkg "src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/svc"
 )

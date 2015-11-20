@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestSearchFormInfo(t *testing.T) {

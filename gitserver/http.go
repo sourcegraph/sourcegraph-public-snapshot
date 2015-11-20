@@ -8,9 +8,9 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"

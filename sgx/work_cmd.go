@@ -22,11 +22,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"

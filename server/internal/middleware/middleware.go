@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/federated"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/trace"

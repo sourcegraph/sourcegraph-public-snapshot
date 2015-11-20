@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc"
 
 	"sourcegraph.com/sourcegraph/go-flags"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func initRepoConfigCmds(repoGroup *flags.Command) {
