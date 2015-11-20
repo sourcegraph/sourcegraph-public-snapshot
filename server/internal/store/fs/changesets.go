@@ -79,20 +79,14 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	return writeChangeset(ctx, fs, cs)
 }
 
-// writeChangeset writes the given changeset into the repository specified by
-// repoPath. When committing the change, msg is used as the commit message to
-// which the changeset ID is appended.
-//
-// Callers must guard by holding the s.fsLock lock.
-func writeChangeset(ctx context.Context, fs sfs.FileSystem, cs *sourcegraph.Changeset) error {
-	b, err := json.MarshalIndent(cs, "", "\t")
+func psMarshal(fs sfs.FileSystem, path string, v interface{}) error {
+	b, err := json.MarshalIndent(v, "", "\t")
 	if err != nil {
 		return err
 	}
-	p := filepath.Join(strconv.FormatInt(cs.ID, 10), changesetMetadataFile)
-	f, err := fs.Open(p)
+	f, err := fs.Open(path)
 	if err != nil && os.IsNotExist(err) {
-		f, err = fs.Create(p)
+		f, err = fs.Create(path)
 	}
 	if err != nil {
 		return err
@@ -100,6 +94,15 @@ func writeChangeset(ctx context.Context, fs sfs.FileSystem, cs *sourcegraph.Chan
 	defer f.Close()
 	_, err = f.Write(b)
 	return err
+}
+
+// writeChangeset writes the given changeset into the repository specified by
+// repoPath. When committing the change, msg is used as the commit message to
+// which the changeset ID is appended.
+//
+// Callers must guard by holding the s.fsLock lock.
+func writeChangeset(ctx context.Context, fs sfs.FileSystem, cs *sourcegraph.Changeset) error {
+	return psMarshal(fs, filepath.Join(strconv.FormatInt(cs.ID, 10), changesetMetadataFile), cs)
 }
 
 func resolveNextChangesetID(fs sfs.FileSystem) (int64, error) {
@@ -179,20 +182,8 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 	newReview.ID = int64(len(all.Reviews) + 1)
 	all.Reviews = append(all.Reviews, newReview)
 
-	b, err := json.MarshalIndent(all.Reviews, "", "\t")
-	if err != nil {
-		return nil, err
-	}
 	p := filepath.Join(strconv.FormatInt(changesetID, 10), changesetReviewsFile)
-	f, err := fs.Open(p)
-	if err != nil && os.IsNotExist(err) {
-		f, err = fs.Create(p)
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	_, err = f.Write(b)
+	err = psMarshal(fs, p, all.Reviews)
 	return newReview, err
 }
 
@@ -305,20 +296,8 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			return nil, err
 		}
 		evts = append(evts, evt)
-		b, err := json.MarshalIndent(evts, "", "\t")
-		if err != nil {
-			return nil, err
-		}
 		p := filepath.Join(strconv.FormatInt(op.ID, 10), changesetEventsFile)
-		f, err := fs.Open(p)
-		if err != nil && os.IsNotExist(err) {
-			f, err = fs.Create(p)
-		}
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		_, err = f.Write(b)
+		err = psMarshal(fs, p, evts)
 		return evt, err
 	}
 
