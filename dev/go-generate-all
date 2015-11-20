@@ -2,7 +2,7 @@
 
 # Runs go generate on all directories
 
-blacklist_re='(_workspace|devdoc|gitserver)'
+blacklist_re='(_workspace|devdoc|gitserver|go-sourcegraph)'
 
 set -e
 cd $(git rev-parse --show-toplevel)
