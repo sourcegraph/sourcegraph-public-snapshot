@@ -241,6 +241,9 @@ func GetAccessToken(endpointURL *url.URL) (string, error) {
 		// Now, use the root access token to issue an auth code that
 		// the leaf server can then exchange for an access token.
 		rootAccessToken, err := GetAccessToken(rootURL)
+		if err != nil {
+			return "", err
+		}
 		rootAuthedCtx := sourcegraph.WithCredentials(rootCtx,
 			oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: rootAccessToken}),
 		)
