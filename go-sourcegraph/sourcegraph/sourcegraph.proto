@@ -588,7 +588,12 @@ message StoragePutOp {
 // StorageExists is the result from checking if a storage object exists within
 // a bucket.
 message StorageExists {
-	exists bool = 1;
+	bool exists = 1;
+}
+
+// StorageList is the result from listing all the keys in a storage bucket.
+message StorageList {
+	repeated string keys = 1;
 }
 
 // Storage provides applications with storage mechanisms. It is a simple key /
