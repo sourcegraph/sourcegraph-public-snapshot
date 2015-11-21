@@ -562,7 +562,7 @@ message StorageBucket {
 // StorageKey is a storage object's key.
 message StorageKey {
 	// Bucket is the bucket name.
-	string bucket = 3;
+	StorageBucket bucket = 3;
 
 	// Key is the name of the storage object. In filesystem terminology, this is
 	// the 'filename' and thus must be unique against all other key names in the
