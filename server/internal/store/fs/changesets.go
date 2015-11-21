@@ -3,7 +3,9 @@ package fs
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -22,11 +24,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util"
 )
 
 const (
@@ -291,8 +295,28 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		return err
 	}
 
-	dir := absolutePathForRepo(ctx, repo.URI)
-	rs, err := NewRepoStage(dir, base)
+	var repoPath string
+	var auth string
+	if repo.Mirror {
+		gitHost := util.RepoURIHost(repo.URI)
+		tokenStore := ext.AccessTokens{}
+		token, err := tokenStore.Get(ctx, gitHost)
+		if err != nil {
+			return fmt.Errorf("unable to fetch git credentials for host %q: %v", gitHost, err)
+		}
+		auth = token
+
+		cloneURL, err := url.Parse(repo.HTTPCloneURL)
+		if err != nil {
+			return err
+		}
+		cloneURL.User = url.User("x-oauth-basic")
+		repoPath = cloneURL.String()
+	} else {
+		repoPath = absolutePathForRepo(ctx, repo.URI)
+	}
+
+	rs, err := NewRepoStage(repoPath, base, auth)
 	if err != nil {
 		return err
 	}
