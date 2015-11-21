@@ -585,6 +585,12 @@ message StoragePutOp {
 	bytes value = 2;
 }
 
+// StorageExists is the result from checking if a storage object exists within
+// a bucket.
+message StorageExists {
+	exists bool = 1;
+}
+
 // Storage provides applications with storage mechanisms. It is a simple key /
 // value store.
 service Storage {
@@ -611,7 +617,7 @@ service Storage {
 	}
 
 	// Exists tells if the given key exists in the bucket or not.
-	rpc Exists(StorageName) returns bool {
+	rpc Exists(StorageName) returns (StorageExists) {
 		option (google.api.http) = {
 			get: "/storage/exists"
 		};
