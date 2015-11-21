@@ -221,10 +221,10 @@ func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, err
 	}
 
 	// Make the user input safe for use in the path.
-	key := storageSafePath(k.Key)
-	appName := storageSafePath(k.Bucket.AppName)
-	repoURI := storageSafePath(k.Bucket.Repo) // TODO(slimsag): keep repoURI as full path elements.
-	bucket := storageSafePath(k.Bucket.Name)
+	key := slashesToDashes(storageSafePath(k.Key))
+	appName := slashesToDashes(storageSafePath(k.Bucket.AppName))
+	repoURI := storageSafePath(k.Bucket.Repo) // not ran through slashesToDashes to keep nice filepaths.
+	bucket := slashesToDashes(storageSafePath(k.Bucket.Name))
 
 	// Determine the location, global or local to a repo.
 	location := "global"
@@ -246,18 +246,22 @@ func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, err
 }
 
 // storageSafePath makes a user-provided path component (i.e. AppName, Bucket,
-// or Key) safe for use as a path element in a filesystem.
+// or Key) safe for use as a path in a filesystem. To keep the input string as a
+// single path element, it must also be processed via slashesToDashes.
 //
 // Invalid filepath characters are handled by performing URL encoding on the
 // path string.
 //
 // Relative filepath elements ("..") are replaced with "dotdot" to prevent
 // escaping into parent directories.
-//
-// All slashes are replaced with dashes to keep the value a single path element.
 func storageSafePath(p string) string {
 	p = (&url.URL{Path: p}).String()
-	p = strings.Replace(p, "..", "dotdot", -1)
+	return strings.Replace(p, "..", "dotdot", -1)
+}
+
+// slashesToDashes converts all slashes in the input string with dashes to keep
+// the string as a single path element.
+func slashesToDashes(p string) string {
 	p = strings.Replace(p, "/", "-", -1)
 	return strings.Replace(p, "\\", "-", -1)
 }
