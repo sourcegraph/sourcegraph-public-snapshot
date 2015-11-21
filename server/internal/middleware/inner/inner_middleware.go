@@ -2405,20 +2405,21 @@ type wrappedStorage struct {
 	c *auth.Config
 }
 
-func (s wrappedStorage) Create(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
+func (s wrappedStorage) Get(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageValue, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Create", param)
+	ctx = trace.Before(ctx, "Storage", "Get", param)
 	defer func() {
-		trace.After(ctx, "Storage", "Create", param, err, time.Since(start))
+		trace.After(ctx, "Storage", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Create")
+	err = s.c.Authenticate(ctx, "Storage.Get")
 	if err != nil {
 		return
 	}
 
 	target := local.Services.Storage
 
+<<<<<<< HEAD:server/internal/middleware/inner/inner_middleware.go
 	res, err = target.Create(ctx, param)
 	return
 
@@ -2458,82 +2459,85 @@ func (s wrappedStorage) Read(ctx context.Context, param *sourcegraph.StorageRead
 	target := local.Services.Storage
 
 	res, err = target.Read(ctx, param)
+=======
+	res, err = target.Get(ctx, param)
+>>>>>>> go generate ./server/...:server/internal/middleware/middleware.go
 	return
 
 }
 
-func (s wrappedStorage) Write(ctx context.Context, param *sourcegraph.StorageWriteOp) (res *sourcegraph.StorageWrite, err error) {
+func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp) (res *pbtypes.Void, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Write", param)
+	ctx = trace.Before(ctx, "Storage", "Put", param)
 	defer func() {
-		trace.After(ctx, "Storage", "Write", param, err, time.Since(start))
+		trace.After(ctx, "Storage", "Put", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Write")
+	err = s.c.Authenticate(ctx, "Storage.Put")
 	if err != nil {
 		return
 	}
 
 	target := local.Services.Storage
 
-	res, err = target.Write(ctx, param)
+	res, err = target.Put(ctx, param)
 	return
 
 }
 
-func (s wrappedStorage) Stat(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageStat, err error) {
+func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKey) (res *pbtypes.Void, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Stat", param)
+	ctx = trace.Before(ctx, "Storage", "Delete", param)
 	defer func() {
-		trace.After(ctx, "Storage", "Stat", param, err, time.Since(start))
+		trace.After(ctx, "Storage", "Delete", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Stat")
+	err = s.c.Authenticate(ctx, "Storage.Delete")
 	if err != nil {
 		return
 	}
 
 	target := local.Services.Storage
 
-	res, err = target.Stat(ctx, param)
+	res, err = target.Delete(ctx, param)
 	return
 
 }
 
-func (s wrappedStorage) ReadDir(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageReadDir, err error) {
+func (s wrappedStorage) Exists(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageExists, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "ReadDir", param)
+	ctx = trace.Before(ctx, "Storage", "Exists", param)
 	defer func() {
-		trace.After(ctx, "Storage", "ReadDir", param, err, time.Since(start))
+		trace.After(ctx, "Storage", "Exists", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.ReadDir")
+	err = s.c.Authenticate(ctx, "Storage.Exists")
 	if err != nil {
 		return
 	}
 
 	target := local.Services.Storage
 
-	res, err = target.ReadDir(ctx, param)
+	res, err = target.Exists(ctx, param)
 	return
 
 }
 
-func (s wrappedStorage) Close(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
+func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageList, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Close", param)
+	ctx = trace.Before(ctx, "Storage", "List", param)
 	defer func() {
-		trace.After(ctx, "Storage", "Close", param, err, time.Since(start))
+		trace.After(ctx, "Storage", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Close")
+	err = s.c.Authenticate(ctx, "Storage.List")
 	if err != nil {
 		return
 	}
 
 	target := local.Services.Storage
 
-	res, err = target.Close(ctx, param)
+	res, err = target.List(ctx, param)
 	return
 
 }
