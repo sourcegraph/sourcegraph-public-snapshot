@@ -5,7 +5,6 @@ import Dispatcher from "../Dispatcher";
 import * as CodeActions from "./CodeActions";
 import * as DefActions from "../def/DefActions";
 
-// TODO support for tokens with more than one URL
 export default class CodeLineView extends Component {
 	reconcileState(state, props) {
 		// update ownURLs if showing different tokens
