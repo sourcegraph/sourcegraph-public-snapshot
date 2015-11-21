@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/tmpr/store"
+	"src.sourcegraph.com/sourcegraph/store"
 )
 
 const (
