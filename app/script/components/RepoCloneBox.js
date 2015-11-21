@@ -40,9 +40,9 @@ var RepoCloneBox = React.createClass({
 		}
 
 		return (
-      <div className="clone-url-wrap input-group input-group-sm">
+			<div className="clone-url-wrap input-group input-group-sm">
 				<button className="btn btn-primary clone-copy" data-clipboard-target="#clone-url-value">
-						<span className="octicon octicon-clippy"></span>
+					<span className="octicon octicon-clippy"></span>
 				</button>
 
 				<button className="btn btn-default clone-type"
@@ -51,9 +51,9 @@ var RepoCloneBox = React.createClass({
 						{this.state.type + (url.indexOf("https://") > -1 ? "S" : "")}
 				</button>
 
-        <span id="clone-url-value" className="form-control">{url}</span>
+				<span id="clone-url-value" className="form-control">{url}</span>
 			</div>
-    );
+		);
 	},
 });
 
