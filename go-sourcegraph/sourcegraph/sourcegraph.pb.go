@@ -788,8 +788,8 @@ func (*StorageValue) ProtoMessage()    {}
 
 // StoragePutOp is the parameters for putting an object into storage.
 type StoragePutOp struct {
-	// Name is the name of the object to put into storage.
-	Name StorageKey `protobuf:"bytes,1,opt,name=name" `
+	// Key is the key of the object to put into storage.
+	Key StorageKey `protobuf:"bytes,1,opt,name=key" `
 	// Value is the value of the object.
 	Value []byte `protobuf:"bytes,2,opt,name=value,proto3" json:",omitempty"`
 }
