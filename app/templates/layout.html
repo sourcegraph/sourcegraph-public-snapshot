@@ -33,6 +33,7 @@
 		<script ignore-csp>
 			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
 			window._csrfToken = "{{.CSRFToken}}";
+			{{if .CacheControl}}window._cacheControl = "{{.CacheControl}}";{{end}}
 		</script>
 
 		<script src="{{assetURL "/analytics.js"}}"></script>
