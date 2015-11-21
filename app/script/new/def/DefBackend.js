@@ -3,7 +3,6 @@ import DefStore from "./DefStore";
 import Dispatcher from "../Dispatcher";
 import defaultXhr from "xhr";
 
-// TODO preloading
 const DefBackend = {
 	xhr: defaultXhr,
 

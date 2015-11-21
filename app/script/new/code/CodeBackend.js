@@ -3,7 +3,6 @@ import CodeStore from "./CodeStore";
 import Dispatcher from "../Dispatcher";
 import defaultXhr from "xhr";
 
-// TODO preloading
 const CodeBackend = {
 	xhr: defaultXhr,
 
