@@ -1,12 +1,9 @@
 package server
 
 import (
-	"strings"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
@@ -77,17 +74,6 @@ func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 		}
 
 		return ctx, nil
-	}, func(err error) error {
-		if err == nil {
-			return nil
-		}
-
-		// Don't double-wrap errors that are already gRPC errors.
-		if strings.HasPrefix(err.Error(), "rpc error: code = ") {
-			return err
-		}
-
-		return grpc.Errorf(errcode.GRPC(err), "%s", err.Error())
 	})
 
 	outerServices = cached.Wrap(outerServices)

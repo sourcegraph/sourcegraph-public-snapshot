@@ -46,13 +46,10 @@ import (
 // A ContextFunc is called before a method executes and lets you customize its context.
 type ContextFunc func(context.Context) (context.Context, error)
 
-// An ErrorFunc maps from one error to another (e.g., app-specific error to a gRPC error code).
-type ErrorFunc func(error) error
-
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.
-func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
+func Services(ctxFunc ContextFunc) svc.Services {
 	s := svc.Services{
-		<<<range .>>><<<.Name>>>: wrapped<<<.Name>>>{ctxFunc, errFunc},
+		<<<range .>>><<<.Name>>>: wrapped<<<.Name>>>{ctxFunc},
 		<<<end>>>
 	}
 	return s
@@ -61,7 +58,6 @@ func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
 <<<range .>>>
 	type wrapped<<<.Name>>> struct{
 		ctxFunc ContextFunc
-		errFunc ErrorFunc
 	}
 
   <<<$service := .>>>
@@ -70,14 +66,14 @@ func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
 			var err error
 			ctx, err = s.ctxFunc(ctx)
 			if err != nil {
-				return nil, s.errFunc(err)
+				return nil, wrapErr(err)
 			}
 			svc := svc.<<<$service.Name>>>OrNil(ctx)
 			if svc == nil {
 				return nil, grpc.Errorf(codes.Unimplemented, "<<<$service.Name>>>")
 			}
 			rv, err := svc.<<<.Name>>>(ctx, v1)
-			return rv, s.errFunc(err)
+			return rv, wrapErr(err)
 		}
 	<<<end>>>
 <<<end>>>

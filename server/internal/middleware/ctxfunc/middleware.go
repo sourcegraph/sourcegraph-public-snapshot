@@ -27,1750 +27,1721 @@ import (
 // A ContextFunc is called before a method executes and lets you customize its context.
 type ContextFunc func(context.Context) (context.Context, error)
 
-// An ErrorFunc maps from one error to another (e.g., app-specific error to a gRPC error code).
-type ErrorFunc func(error) error
-
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.
-func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
+func Services(ctxFunc ContextFunc) svc.Services {
 	s := svc.Services{
-		GitTransport:        wrappedGitTransport{ctxFunc, errFunc},
-		MultiRepoImporter:   wrappedMultiRepoImporter{ctxFunc, errFunc},
-		Accounts:            wrappedAccounts{ctxFunc, errFunc},
-		Auth:                wrappedAuth{ctxFunc, errFunc},
-		Builds:              wrappedBuilds{ctxFunc, errFunc},
-		Changesets:          wrappedChangesets{ctxFunc, errFunc},
-		Defs:                wrappedDefs{ctxFunc, errFunc},
-		Deltas:              wrappedDeltas{ctxFunc, errFunc},
-		GraphUplink:         wrappedGraphUplink{ctxFunc, errFunc},
-		Markdown:            wrappedMarkdown{ctxFunc, errFunc},
-		Meta:                wrappedMeta{ctxFunc, errFunc},
-		MirrorRepos:         wrappedMirrorRepos{ctxFunc, errFunc},
-		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{ctxFunc, errFunc},
-		Notify:              wrappedNotify{ctxFunc, errFunc},
-		Orgs:                wrappedOrgs{ctxFunc, errFunc},
-		People:              wrappedPeople{ctxFunc, errFunc},
-		RegisteredClients:   wrappedRegisteredClients{ctxFunc, errFunc},
-		RepoBadges:          wrappedRepoBadges{ctxFunc, errFunc},
-		RepoStatuses:        wrappedRepoStatuses{ctxFunc, errFunc},
-		RepoTree:            wrappedRepoTree{ctxFunc, errFunc},
-		Repos:               wrappedRepos{ctxFunc, errFunc},
-		Search:              wrappedSearch{ctxFunc, errFunc},
-		Storage:             wrappedStorage{ctxFunc, errFunc},
-		Units:               wrappedUnits{ctxFunc, errFunc},
-		UserKeys:            wrappedUserKeys{ctxFunc, errFunc},
-		Users:               wrappedUsers{ctxFunc, errFunc},
+		GitTransport:        wrappedGitTransport{ctxFunc},
+		MultiRepoImporter:   wrappedMultiRepoImporter{ctxFunc},
+		Accounts:            wrappedAccounts{ctxFunc},
+		Auth:                wrappedAuth{ctxFunc},
+		Builds:              wrappedBuilds{ctxFunc},
+		Changesets:          wrappedChangesets{ctxFunc},
+		Defs:                wrappedDefs{ctxFunc},
+		Deltas:              wrappedDeltas{ctxFunc},
+		GraphUplink:         wrappedGraphUplink{ctxFunc},
+		Markdown:            wrappedMarkdown{ctxFunc},
+		Meta:                wrappedMeta{ctxFunc},
+		MirrorRepos:         wrappedMirrorRepos{ctxFunc},
+		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{ctxFunc},
+		Notify:              wrappedNotify{ctxFunc},
+		Orgs:                wrappedOrgs{ctxFunc},
+		People:              wrappedPeople{ctxFunc},
+		RegisteredClients:   wrappedRegisteredClients{ctxFunc},
+		RepoBadges:          wrappedRepoBadges{ctxFunc},
+		RepoStatuses:        wrappedRepoStatuses{ctxFunc},
+		RepoTree:            wrappedRepoTree{ctxFunc},
+		Repos:               wrappedRepos{ctxFunc},
+		Search:              wrappedSearch{ctxFunc},
+		Storage:             wrappedStorage{ctxFunc},
+		Units:               wrappedUnits{ctxFunc},
+		UserKeys:            wrappedUserKeys{ctxFunc},
+		Users:               wrappedUsers{ctxFunc},
 	}
 	return s
 }
 
 type wrappedGitTransport struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedGitTransport) InfoRefs(ctx context.Context, v1 *gitpb.InfoRefsOp) (*gitpb.Packet, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.GitTransportOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "GitTransport")
 	}
 	rv, err := svc.InfoRefs(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedGitTransport) ReceivePack(ctx context.Context, v1 *gitpb.ReceivePackOp) (*gitpb.Packet, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.GitTransportOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "GitTransport")
 	}
 	rv, err := svc.ReceivePack(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedGitTransport) UploadPack(ctx context.Context, v1 *gitpb.UploadPackOp) (*gitpb.Packet, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.GitTransportOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "GitTransport")
 	}
 	rv, err := svc.UploadPack(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedMultiRepoImporter struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MultiRepoImporterOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MultiRepoImporter")
 	}
 	rv, err := svc.Import(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, v1 *pb.IndexOp) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MultiRepoImporterOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MultiRepoImporter")
 	}
 	rv, err := svc.Index(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedAccounts struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AccountsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Accounts")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AccountsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Accounts")
 	}
 	rv, err := svc.RequestPasswordReset(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedAccounts) ResetPassword(ctx context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AccountsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Accounts")
 	}
 	rv, err := svc.ResetPassword(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AccountsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Accounts")
 	}
 	rv, err := svc.Update(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedAuth struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, v1 *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AuthOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
 	}
 	rv, err := svc.GetAuthorizationCode(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedAuth) GetAccessToken(ctx context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AuthOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
 	}
 	rv, err := svc.GetAccessToken(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AuthOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
 	}
 	rv, err := svc.Identify(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedAuth) GetPermissions(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.AuthOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
 	}
 	rv, err := svc.GetPermissions(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedBuilds struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, v1 *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.GetRepoBuildInfo(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) Create(ctx context.Context, v1 *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) Update(ctx context.Context, v1 *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.Update(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) ListBuildTasks(ctx context.Context, v1 *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.ListBuildTasks(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) CreateTasks(ctx context.Context, v1 *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.CreateTasks(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.UpdateTask(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) GetLog(ctx context.Context, v1 *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.GetLog(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.GetTaskLog(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.BuildsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 	rv, err := svc.DequeueNext(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedChangesets struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedChangesets) Create(ctx context.Context, v1 *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) List(ctx context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.Update(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.Merge(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) UpdateAffected(ctx context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.UpdateAffected(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.CreateReview(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) ListReviews(ctx context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.ListReviews(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedChangesets) ListEvents(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ChangesetsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
 	}
 	rv, err := svc.ListEvents(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedDefs struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedDefs) Get(ctx context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DefsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDefs) List(ctx context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DefsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDefs) ListRefs(ctx context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DefsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs")
 	}
 	rv, err := svc.ListRefs(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DefsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs")
 	}
 	rv, err := svc.ListExamples(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DefsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs")
 	}
 	rv, err := svc.ListAuthors(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDefs) ListClients(ctx context.Context, v1 *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DefsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Defs")
 	}
 	rv, err := svc.ListClients(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedDeltas struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedDeltas) Get(ctx context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DeltasOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDeltas) ListUnits(ctx context.Context, v1 *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DeltasOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
 	}
 	rv, err := svc.ListUnits(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDeltas) ListDefs(ctx context.Context, v1 *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DeltasOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
 	}
 	rv, err := svc.ListDefs(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DeltasOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
 	}
 	rv, err := svc.ListFiles(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, v1 *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DeltasOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
 	}
 	rv, err := svc.ListAffectedAuthors(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedDeltas) ListAffectedClients(ctx context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.DeltasOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
 	}
 	rv, err := svc.ListAffectedClients(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedGraphUplink struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.GraphUplinkOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "GraphUplink")
 	}
 	rv, err := svc.Push(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.UserEventList) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.GraphUplinkOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "GraphUplink")
 	}
 	rv, err := svc.PushEvents(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedMarkdown struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedMarkdown) Render(ctx context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MarkdownOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Markdown")
 	}
 	rv, err := svc.Render(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedMeta struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedMeta) Status(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerStatus, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MetaOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Meta")
 	}
 	rv, err := svc.Status(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MetaOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Meta")
 	}
 	rv, err := svc.Config(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedMeta) PubKey(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MetaOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Meta")
 	}
 	rv, err := svc.PubKey(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedMirrorRepos struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MirrorReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MirrorRepos")
 	}
 	rv, err := svc.RefreshVCS(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedMirroredRepoSSHKeys struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, v1 *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MirroredRepoSSHKeysOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MirroredRepoSSHKeysOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.MirroredRepoSSHKeysOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 	rv, err := svc.Delete(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedNotify struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.NotifyOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Notify")
 	}
 	rv, err := svc.GenericEvent(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedOrgs struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedOrgs) Get(ctx context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.OrgsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Orgs")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedOrgs) List(ctx context.Context, v1 *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.OrgsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Orgs")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedOrgs) ListMembers(ctx context.Context, v1 *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.OrgsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Orgs")
 	}
 	rv, err := svc.ListMembers(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedPeople struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedPeople) Get(ctx context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.Person, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.PeopleOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "People")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedRegisteredClients struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedRegisteredClients) Get(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.RegisteredClient, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.GetCurrent(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) Create(ctx context.Context, v1 *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) Update(ctx context.Context, v1 *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.Update(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) Delete(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.Delete(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) List(ctx context.Context, v1 *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, v1 *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.GetUserPermissions(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, v1 *sourcegraph.UserPermissions) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.SetUserPermissions(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RegisteredClientsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	rv, err := svc.ListUserPermissions(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedRepoBadges struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedRepoBadges) ListBadges(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoBadgesOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
 	}
 	rv, err := svc.ListBadges(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepoBadges) ListCounters(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoBadgesOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
 	}
 	rv, err := svc.ListCounters(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepoBadges) RecordHit(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoBadgesOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
 	}
 	rv, err := svc.RecordHit(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepoBadges) CountHits(ctx context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoBadgesOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
 	}
 	rv, err := svc.CountHits(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedRepoStatuses struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoStatusesOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoStatuses")
 	}
 	rv, err := svc.GetCombined(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepoStatuses) Create(ctx context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoStatusesOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoStatuses")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedRepoTree struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoTreeOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoTree")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoTreeOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoTree")
 	}
 	rv, err := svc.Search(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepoTree) List(ctx context.Context, v1 *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.RepoTreeOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoTree")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedRepos struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.Update(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.Delete(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) GetReadme(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.GetReadme(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) Enable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.Enable(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) Disable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.Disable(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.GetConfig(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) GetCommit(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.GetCommit(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) ListCommits(ctx context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.ListCommits(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) ListBranches(ctx context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.ListBranches(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.ListTags(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.ReposOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 	rv, err := svc.ListCommitters(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedSearch struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.SearchOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Search")
 	}
 	rv, err := svc.Search(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.SearchOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Search")
 	}
 	rv, err := svc.SearchTokens(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.SearchOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Search")
 	}
 	rv, err := svc.SearchText(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedSearch) Complete(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.Completions, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.SearchOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Search")
 	}
 	rv, err := svc.Complete(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.SearchOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Search")
 	}
 	rv, err := svc.Suggest(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedStorage struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.StorageOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.StorageOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 	rv, err := svc.RemoveAll(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.StorageOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 	rv, err := svc.Read(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.StorageOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 	rv, err := svc.Write(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.StorageOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 	rv, err := svc.Stat(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.StorageOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 	rv, err := svc.ReadDir(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.StorageOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 	rv, err := svc.Close(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedUnits struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UnitsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Units")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UnitsOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Units")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedUserKeys struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UserKeysOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
 	}
 	rv, err := svc.AddKey(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UserKeysOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
 	}
 	rv, err := svc.LookupUser(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UserKeysOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
 	}
 	rv, err := svc.DeleteKey(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 type wrappedUsers struct {
 	ctxFunc ContextFunc
-	errFunc ErrorFunc
 }
 
 func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UsersOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UsersOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 	rv, err := svc.GetWithEmail(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UsersOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 	rv, err := svc.ListEmails(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
 
 func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
 	var err error
 	ctx, err = s.ctxFunc(ctx)
 	if err != nil {
-		return nil, s.errFunc(err)
+		return nil, wrapErr(err)
 	}
 	svc := svc.UsersOrNil(ctx)
 	if svc == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
+	return rv, wrapErr(err)
 }
