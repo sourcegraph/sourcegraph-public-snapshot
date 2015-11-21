@@ -43,13 +43,10 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-// A ContextFunc is called before a method executes and lets you customize its context.
-type ContextFunc func(context.Context) (context.Context, error)
-
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.
-func Services(ctxFunc ContextFunc) svc.Services {
+func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 	s := svc.Services{
-		<<<range .>>><<<.Name>>>: wrapped<<<.Name>>>{ctxFunc},
+		<<<range .>>><<<.Name>>>: wrapped<<<.Name>>>{ctxFunc, services},
 		<<<end>>>
 	}
 	return s
@@ -58,13 +55,14 @@ func Services(ctxFunc ContextFunc) svc.Services {
 <<<range .>>>
 	type wrapped<<<.Name>>> struct{
 		ctxFunc ContextFunc
+		services svc.Services
 	}
 
   <<<$service := .>>>
 	<<<range .Methods>>>
 		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 <<<.ParamType>>>) (<<<.ResultType>>>, error) {
 			var err error
-			ctx, err = s.ctxFunc(ctx)
+			ctx, err = initContext(ctx, s.ctxFunc, s.services)
 			if err != nil {
 				return nil, wrapErr(err)
 			}

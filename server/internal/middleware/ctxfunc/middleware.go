@@ -24,49 +24,47 @@ import (
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
-// A ContextFunc is called before a method executes and lets you customize its context.
-type ContextFunc func(context.Context) (context.Context, error)
-
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.
-func Services(ctxFunc ContextFunc) svc.Services {
+func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 	s := svc.Services{
-		GitTransport:        wrappedGitTransport{ctxFunc},
-		MultiRepoImporter:   wrappedMultiRepoImporter{ctxFunc},
-		Accounts:            wrappedAccounts{ctxFunc},
-		Auth:                wrappedAuth{ctxFunc},
-		Builds:              wrappedBuilds{ctxFunc},
-		Changesets:          wrappedChangesets{ctxFunc},
-		Defs:                wrappedDefs{ctxFunc},
-		Deltas:              wrappedDeltas{ctxFunc},
-		GraphUplink:         wrappedGraphUplink{ctxFunc},
-		Markdown:            wrappedMarkdown{ctxFunc},
-		Meta:                wrappedMeta{ctxFunc},
-		MirrorRepos:         wrappedMirrorRepos{ctxFunc},
-		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{ctxFunc},
-		Notify:              wrappedNotify{ctxFunc},
-		Orgs:                wrappedOrgs{ctxFunc},
-		People:              wrappedPeople{ctxFunc},
-		RegisteredClients:   wrappedRegisteredClients{ctxFunc},
-		RepoBadges:          wrappedRepoBadges{ctxFunc},
-		RepoStatuses:        wrappedRepoStatuses{ctxFunc},
-		RepoTree:            wrappedRepoTree{ctxFunc},
-		Repos:               wrappedRepos{ctxFunc},
-		Search:              wrappedSearch{ctxFunc},
-		Storage:             wrappedStorage{ctxFunc},
-		Units:               wrappedUnits{ctxFunc},
-		UserKeys:            wrappedUserKeys{ctxFunc},
-		Users:               wrappedUsers{ctxFunc},
+		GitTransport:        wrappedGitTransport{ctxFunc, services},
+		MultiRepoImporter:   wrappedMultiRepoImporter{ctxFunc, services},
+		Accounts:            wrappedAccounts{ctxFunc, services},
+		Auth:                wrappedAuth{ctxFunc, services},
+		Builds:              wrappedBuilds{ctxFunc, services},
+		Changesets:          wrappedChangesets{ctxFunc, services},
+		Defs:                wrappedDefs{ctxFunc, services},
+		Deltas:              wrappedDeltas{ctxFunc, services},
+		GraphUplink:         wrappedGraphUplink{ctxFunc, services},
+		Markdown:            wrappedMarkdown{ctxFunc, services},
+		Meta:                wrappedMeta{ctxFunc, services},
+		MirrorRepos:         wrappedMirrorRepos{ctxFunc, services},
+		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{ctxFunc, services},
+		Notify:              wrappedNotify{ctxFunc, services},
+		Orgs:                wrappedOrgs{ctxFunc, services},
+		People:              wrappedPeople{ctxFunc, services},
+		RegisteredClients:   wrappedRegisteredClients{ctxFunc, services},
+		RepoBadges:          wrappedRepoBadges{ctxFunc, services},
+		RepoStatuses:        wrappedRepoStatuses{ctxFunc, services},
+		RepoTree:            wrappedRepoTree{ctxFunc, services},
+		Repos:               wrappedRepos{ctxFunc, services},
+		Search:              wrappedSearch{ctxFunc, services},
+		Storage:             wrappedStorage{ctxFunc, services},
+		Units:               wrappedUnits{ctxFunc, services},
+		UserKeys:            wrappedUserKeys{ctxFunc, services},
+		Users:               wrappedUsers{ctxFunc, services},
 	}
 	return s
 }
 
 type wrappedGitTransport struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedGitTransport) InfoRefs(ctx context.Context, v1 *gitpb.InfoRefsOp) (*gitpb.Packet, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -80,7 +78,7 @@ func (s wrappedGitTransport) InfoRefs(ctx context.Context, v1 *gitpb.InfoRefsOp)
 
 func (s wrappedGitTransport) ReceivePack(ctx context.Context, v1 *gitpb.ReceivePackOp) (*gitpb.Packet, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -94,7 +92,7 @@ func (s wrappedGitTransport) ReceivePack(ctx context.Context, v1 *gitpb.ReceiveP
 
 func (s wrappedGitTransport) UploadPack(ctx context.Context, v1 *gitpb.UploadPackOp) (*gitpb.Packet, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -107,12 +105,13 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, v1 *gitpb.UploadPac
 }
 
 type wrappedMultiRepoImporter struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -126,7 +125,7 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (
 
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, v1 *pb.IndexOp) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -139,12 +138,13 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, v1 *pb.IndexOp) (*p
 }
 
 type wrappedAccounts struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -158,7 +158,7 @@ func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount)
 
 func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -172,7 +172,7 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegra
 
 func (s wrappedAccounts) ResetPassword(ctx context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -186,7 +186,7 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, v1 *sourcegraph.NewP
 
 func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -199,12 +199,13 @@ func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbt
 }
 
 type wrappedAuth struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, v1 *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -218,7 +219,7 @@ func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, v1 *sourcegraph.A
 
 func (s wrappedAuth) GetAccessToken(ctx context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -232,7 +233,7 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, v1 *sourcegraph.AccessT
 
 func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -246,7 +247,7 @@ func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegra
 
 func (s wrappedAuth) GetPermissions(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -259,12 +260,13 @@ func (s wrappedAuth) GetPermissions(ctx context.Context, v1 *pbtypes.Void) (*sou
 }
 
 type wrappedBuilds struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -278,7 +280,7 @@ func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sou
 
 func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, v1 *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -292,7 +294,7 @@ func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, v1 *sourcegraph.Bui
 
 func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -306,7 +308,7 @@ func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOption
 
 func (s wrappedBuilds) Create(ctx context.Context, v1 *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -320,7 +322,7 @@ func (s wrappedBuilds) Create(ctx context.Context, v1 *sourcegraph.BuildsCreateO
 
 func (s wrappedBuilds) Update(ctx context.Context, v1 *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -334,7 +336,7 @@ func (s wrappedBuilds) Update(ctx context.Context, v1 *sourcegraph.BuildsUpdateO
 
 func (s wrappedBuilds) ListBuildTasks(ctx context.Context, v1 *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -348,7 +350,7 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, v1 *sourcegraph.Build
 
 func (s wrappedBuilds) CreateTasks(ctx context.Context, v1 *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -362,7 +364,7 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, v1 *sourcegraph.BuildsCr
 
 func (s wrappedBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -376,7 +378,7 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpd
 
 func (s wrappedBuilds) GetLog(ctx context.Context, v1 *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -390,7 +392,7 @@ func (s wrappedBuilds) GetLog(ctx context.Context, v1 *sourcegraph.BuildsGetLogO
 
 func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -404,7 +406,7 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGet
 
 func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -417,12 +419,13 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDe
 }
 
 type wrappedChangesets struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedChangesets) Create(ctx context.Context, v1 *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -436,7 +439,7 @@ func (s wrappedChangesets) Create(ctx context.Context, v1 *sourcegraph.Changeset
 
 func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -450,7 +453,7 @@ func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetSpe
 
 func (s wrappedChangesets) List(ctx context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -464,7 +467,7 @@ func (s wrappedChangesets) List(ctx context.Context, v1 *sourcegraph.ChangesetLi
 
 func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -478,7 +481,7 @@ func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.Changeset
 
 func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -492,7 +495,7 @@ func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetM
 
 func (s wrappedChangesets) UpdateAffected(ctx context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -506,7 +509,7 @@ func (s wrappedChangesets) UpdateAffected(ctx context.Context, v1 *sourcegraph.C
 
 func (s wrappedChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -520,7 +523,7 @@ func (s wrappedChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.Cha
 
 func (s wrappedChangesets) ListReviews(ctx context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -534,7 +537,7 @@ func (s wrappedChangesets) ListReviews(ctx context.Context, v1 *sourcegraph.Chan
 
 func (s wrappedChangesets) ListEvents(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -547,12 +550,13 @@ func (s wrappedChangesets) ListEvents(ctx context.Context, v1 *sourcegraph.Chang
 }
 
 type wrappedDefs struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedDefs) Get(ctx context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -566,7 +570,7 @@ func (s wrappedDefs) Get(ctx context.Context, v1 *sourcegraph.DefsGetOp) (*sourc
 
 func (s wrappedDefs) List(ctx context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -580,7 +584,7 @@ func (s wrappedDefs) List(ctx context.Context, v1 *sourcegraph.DefListOptions) (
 
 func (s wrappedDefs) ListRefs(ctx context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -594,7 +598,7 @@ func (s wrappedDefs) ListRefs(ctx context.Context, v1 *sourcegraph.DefsListRefsO
 
 func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -608,7 +612,7 @@ func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListE
 
 func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -622,7 +626,7 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAu
 
 func (s wrappedDefs) ListClients(ctx context.Context, v1 *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -635,12 +639,13 @@ func (s wrappedDefs) ListClients(ctx context.Context, v1 *sourcegraph.DefsListCl
 }
 
 type wrappedDeltas struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedDeltas) Get(ctx context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -654,7 +659,7 @@ func (s wrappedDeltas) Get(ctx context.Context, v1 *sourcegraph.DeltaSpec) (*sou
 
 func (s wrappedDeltas) ListUnits(ctx context.Context, v1 *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -668,7 +673,7 @@ func (s wrappedDeltas) ListUnits(ctx context.Context, v1 *sourcegraph.DeltasList
 
 func (s wrappedDeltas) ListDefs(ctx context.Context, v1 *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -682,7 +687,7 @@ func (s wrappedDeltas) ListDefs(ctx context.Context, v1 *sourcegraph.DeltasListD
 
 func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -696,7 +701,7 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasList
 
 func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, v1 *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -710,7 +715,7 @@ func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, v1 *sourcegraph.
 
 func (s wrappedDeltas) ListAffectedClients(ctx context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -723,12 +728,13 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, v1 *sourcegraph.
 }
 
 type wrappedGraphUplink struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -742,7 +748,7 @@ func (s wrappedGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSna
 
 func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.UserEventList) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -755,12 +761,13 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.User
 }
 
 type wrappedMarkdown struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedMarkdown) Render(ctx context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -773,12 +780,13 @@ func (s wrappedMarkdown) Render(ctx context.Context, v1 *sourcegraph.MarkdownRen
 }
 
 type wrappedMeta struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedMeta) Status(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerStatus, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -792,7 +800,7 @@ func (s wrappedMeta) Status(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 
 func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -806,7 +814,7 @@ func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 
 func (s wrappedMeta) PubKey(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -819,12 +827,13 @@ func (s wrappedMeta) PubKey(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 }
 
 type wrappedMirrorRepos struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -837,12 +846,13 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.Mirr
 }
 
 type wrappedMirroredRepoSSHKeys struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, v1 *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -856,7 +866,7 @@ func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, v1 *sourcegraph.
 
 func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -870,7 +880,7 @@ func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.Rep
 
 func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -883,12 +893,13 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.
 }
 
 type wrappedNotify struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -901,12 +912,13 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyG
 }
 
 type wrappedOrgs struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedOrgs) Get(ctx context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -920,7 +932,7 @@ func (s wrappedOrgs) Get(ctx context.Context, v1 *sourcegraph.OrgSpec) (*sourceg
 
 func (s wrappedOrgs) List(ctx context.Context, v1 *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -934,7 +946,7 @@ func (s wrappedOrgs) List(ctx context.Context, v1 *sourcegraph.OrgsListOp) (*sou
 
 func (s wrappedOrgs) ListMembers(ctx context.Context, v1 *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -947,12 +959,13 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, v1 *sourcegraph.OrgsListMe
 }
 
 type wrappedPeople struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedPeople) Get(ctx context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.Person, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -965,12 +978,13 @@ func (s wrappedPeople) Get(ctx context.Context, v1 *sourcegraph.PersonSpec) (*so
 }
 
 type wrappedRegisteredClients struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedRegisteredClients) Get(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -984,7 +998,7 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, v1 *sourcegraph.Regis
 
 func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.RegisteredClient, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -998,7 +1012,7 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, v1 *pbtypes.Vo
 
 func (s wrappedRegisteredClients) Create(ctx context.Context, v1 *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1012,7 +1026,7 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, v1 *sourcegraph.Re
 
 func (s wrappedRegisteredClients) Update(ctx context.Context, v1 *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1026,7 +1040,7 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, v1 *sourcegraph.Re
 
 func (s wrappedRegisteredClients) Delete(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1040,7 +1054,7 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, v1 *sourcegraph.Re
 
 func (s wrappedRegisteredClients) List(ctx context.Context, v1 *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1054,7 +1068,7 @@ func (s wrappedRegisteredClients) List(ctx context.Context, v1 *sourcegraph.Regi
 
 func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, v1 *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1068,7 +1082,7 @@ func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, v1 *so
 
 func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, v1 *sourcegraph.UserPermissions) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1082,7 +1096,7 @@ func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, v1 *so
 
 func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1095,12 +1109,13 @@ func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, v1 *s
 }
 
 type wrappedRepoBadges struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedRepoBadges) ListBadges(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1114,7 +1129,7 @@ func (s wrappedRepoBadges) ListBadges(ctx context.Context, v1 *sourcegraph.RepoS
 
 func (s wrappedRepoBadges) ListCounters(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1128,7 +1143,7 @@ func (s wrappedRepoBadges) ListCounters(ctx context.Context, v1 *sourcegraph.Rep
 
 func (s wrappedRepoBadges) RecordHit(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1142,7 +1157,7 @@ func (s wrappedRepoBadges) RecordHit(ctx context.Context, v1 *sourcegraph.RepoSp
 
 func (s wrappedRepoBadges) CountHits(ctx context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1155,12 +1170,13 @@ func (s wrappedRepoBadges) CountHits(ctx context.Context, v1 *sourcegraph.RepoBa
 }
 
 type wrappedRepoStatuses struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1174,7 +1190,7 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.Re
 
 func (s wrappedRepoStatuses) Create(ctx context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1187,12 +1203,13 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, v1 *sourcegraph.RepoSta
 }
 
 type wrappedRepoTree struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1206,7 +1223,7 @@ func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp)
 
 func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1220,7 +1237,7 @@ func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSea
 
 func (s wrappedRepoTree) List(ctx context.Context, v1 *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1233,12 +1250,13 @@ func (s wrappedRepoTree) List(ctx context.Context, v1 *sourcegraph.RepoTreeListO
 }
 
 type wrappedRepos struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1252,7 +1270,7 @@ func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourc
 
 func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1266,7 +1284,7 @@ func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions)
 
 func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1280,7 +1298,7 @@ func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp)
 
 func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1294,7 +1312,7 @@ func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp)
 
 func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1308,7 +1326,7 @@ func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pb
 
 func (s wrappedRepos) GetReadme(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1322,7 +1340,7 @@ func (s wrappedRepos) GetReadme(ctx context.Context, v1 *sourcegraph.RepoRevSpec
 
 func (s wrappedRepos) Enable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1336,7 +1354,7 @@ func (s wrappedRepos) Enable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pb
 
 func (s wrappedRepos) Disable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1350,7 +1368,7 @@ func (s wrappedRepos) Disable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*p
 
 func (s wrappedRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1364,7 +1382,7 @@ func (s wrappedRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (
 
 func (s wrappedRepos) GetCommit(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1378,7 +1396,7 @@ func (s wrappedRepos) GetCommit(ctx context.Context, v1 *sourcegraph.RepoRevSpec
 
 func (s wrappedRepos) ListCommits(ctx context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1392,7 +1410,7 @@ func (s wrappedRepos) ListCommits(ctx context.Context, v1 *sourcegraph.ReposList
 
 func (s wrappedRepos) ListBranches(ctx context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1406,7 +1424,7 @@ func (s wrappedRepos) ListBranches(ctx context.Context, v1 *sourcegraph.ReposLis
 
 func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1420,7 +1438,7 @@ func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTag
 
 func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1433,12 +1451,13 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposL
 }
 
 type wrappedSearch struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1452,7 +1471,7 @@ func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOptions
 
 func (s wrappedSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1466,7 +1485,7 @@ func (s wrappedSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSe
 
 func (s wrappedSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1480,7 +1499,7 @@ func (s wrappedSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearc
 
 func (s wrappedSearch) Complete(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.Completions, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1494,7 +1513,7 @@ func (s wrappedSearch) Complete(ctx context.Context, v1 *sourcegraph.RawQuery) (
 
 func (s wrappedSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1507,12 +1526,13 @@ func (s wrappedSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*
 }
 
 type wrappedStorage struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1526,7 +1546,7 @@ func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName)
 
 func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1540,7 +1560,7 @@ func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageNa
 
 func (s wrappedStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1554,7 +1574,7 @@ func (s wrappedStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp)
 
 func (s wrappedStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1568,7 +1588,7 @@ func (s wrappedStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteO
 
 func (s wrappedStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1582,7 +1602,7 @@ func (s wrappedStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (
 
 func (s wrappedStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1596,7 +1616,7 @@ func (s wrappedStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName
 
 func (s wrappedStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1609,12 +1629,13 @@ func (s wrappedStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) 
 }
 
 type wrappedUnits struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1628,7 +1649,7 @@ func (s wrappedUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.
 
 func (s wrappedUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1641,12 +1662,13 @@ func (s wrappedUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions)
 }
 
 type wrappedUserKeys struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1660,7 +1682,7 @@ func (s wrappedUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKe
 
 func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1674,7 +1696,7 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPubl
 
 func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1687,12 +1709,13 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbty
 }
 
 type wrappedUsers struct {
-	ctxFunc ContextFunc
+	ctxFunc  ContextFunc
+	services svc.Services
 }
 
 func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1706,7 +1729,7 @@ func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourc
 
 func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1720,7 +1743,7 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAdd
 
 func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -1734,7 +1757,7 @@ func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) 
 
 func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
 	var err error
-	ctx, err = s.ctxFunc(ctx)
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

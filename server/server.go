@@ -9,10 +9,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/cached"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/ctxfunc"
-	"src.sourcegraph.com/sourcegraph/server/internal/oauth2util"
-	"src.sourcegraph.com/sourcegraph/server/serverctx"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
 // NewServer creates a new gRPC server with all RPC services
@@ -45,37 +42,5 @@ func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 	// request (it does not need to be re-run when services make
 	// internal requests to their own methods or other services'
 	// methods).
-	outerServices := ctxfunc.Services(func(ctx context.Context) (context.Context, error) {
-		var err error
-
-		// Initialize from command-line args.
-		ctx = ctxFunc(ctx)
-
-		// Propagate span ID for tracing.
-		ctx, err = traceutil.MiddlewareGRPC(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, f := range serverctx.Funcs {
-			ctx, err = f(ctx)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// Set the services in the context so they are available to
-		ctx = svc.WithServices(ctx, services)
-
-		// Check for and verify OAuth2 credentials.
-		ctx, err = oauth2util.GRPCMiddleware(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return ctx, nil
-	})
-
-	outerServices = cached.Wrap(outerServices)
-	return outerServices
+	return cached.Wrap(ctxfunc.Services(ctxFunc, services))
 }
