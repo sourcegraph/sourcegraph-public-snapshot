@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/tmpr/store"
 )
 
 const (
@@ -24,6 +25,8 @@ type Storage struct {
 	sync.Mutex
 	openFiles map[string]*os.File
 }
+
+var _ store.Storage = (*Storage)(nil)
 
 // NewStorage returns a new and initialized app storage store.
 func NewStorage() *Storage {
