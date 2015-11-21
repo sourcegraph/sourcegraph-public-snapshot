@@ -4,46 +4,37 @@ package mockstore
 
 import (
 	"golang.org/x/net/context"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
 type Storage struct {
-	Create_    func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
-	RemoveAll_ func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
-	Read_      func(ctx context.Context, opt *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error)
-	Write_     func(ctx context.Context, opt *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error)
-	Stat_      func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageStat, error)
-	ReadDir_   func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error)
-	Close_     func(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error)
+	Get_    func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
+	Put_    func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
+	Delete_ func(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error)
+	Exists_ func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
+	List_   func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
 }
 
-func (s *Storage) Create(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return s.Create_(ctx, opt)
+func (s *Storage) Get(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
+	return s.Get_(v0, v1)
 }
 
-func (s *Storage) RemoveAll(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return s.RemoveAll_(ctx, opt)
+func (s *Storage) Put(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	return s.Put_(v0, v1)
 }
 
-func (s *Storage) Read(ctx context.Context, opt *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
-	return s.Read_(ctx, opt)
+func (s *Storage) Delete(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {
+	return s.Delete_(v0, v1)
 }
 
-func (s *Storage) Write(ctx context.Context, opt *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
-	return s.Write_(ctx, opt)
+func (s *Storage) Exists(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+	return s.Exists_(v0, v1)
 }
 
-func (s *Storage) Stat(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
-	return s.Stat_(ctx, opt)
-}
-
-func (s *Storage) ReadDir(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
-	return s.ReadDir_(ctx, opt)
-}
-
-func (s *Storage) Close(ctx context.Context, opt *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return s.Close_(ctx, opt)
+func (s *Storage) List(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
+	return s.List_(v0, v1)
 }
 
 var _ store.Storage = (*Storage)(nil)

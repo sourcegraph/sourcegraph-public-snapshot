@@ -462,32 +462,24 @@ func (s remoteSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*s
 
 type remoteStorage struct{ sourcegraph.StorageServer }
 
-func (s remoteStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.Create(ctx, v1)
+func (s remoteStorage) Get(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Get(ctx, v1)
 }
 
-func (s remoteStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.RemoveAll(ctx, v1)
+func (s remoteStorage) Put(ctx context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Put(ctx, v1)
 }
 
-func (s remoteStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.Read(ctx, v1)
+func (s remoteStorage) Delete(ctx context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Delete(ctx, v1)
 }
 
-func (s remoteStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.Write(ctx, v1)
+func (s remoteStorage) Exists(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.Exists(ctx, v1)
 }
 
-func (s remoteStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.Stat(ctx, v1)
-}
-
-func (s remoteStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.ReadDir(ctx, v1)
-}
-
-func (s remoteStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	return sourcegraph.NewClientFromContext(ctx).Storage.Close(ctx, v1)
+func (s remoteStorage) List(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.List(ctx, v1)
 }
 
 type remoteUnits struct{ sourcegraph.UnitsServer }
