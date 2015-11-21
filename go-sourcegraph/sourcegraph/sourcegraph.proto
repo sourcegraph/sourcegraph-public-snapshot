@@ -578,8 +578,8 @@ message StorageValue {
 
 // StoragePutOp is the parameters for putting an object into storage.
 message StoragePutOp {
-	// Name is the name of the object to put into storage.
-	StorageKey name = 1 [(gogoproto.nullable) = false];
+	// Key is the key of the object to put into storage.
+	StorageKey key = 1 [(gogoproto.nullable) = false];
 
 	// Value is the value of the object.
 	bytes value = 2;
