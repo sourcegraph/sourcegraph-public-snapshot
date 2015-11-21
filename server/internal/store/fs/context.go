@@ -63,7 +63,7 @@ func repoStatusVFS(ctx context.Context) rwvfs.WalkableFileSystem {
 
 // appStorageVFS returns the virtual filesystem pointed to where app storage is
 // located.
-func appStorageVFS(ctx context.Context) string {
+func appStorageVFS(ctx context.Context) rwvfs.WalkableFileSystem {
 	return mustWalkableVFS(ctx, appStorageVFSKey)
 }
 
