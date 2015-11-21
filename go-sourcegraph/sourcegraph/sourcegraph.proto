@@ -579,7 +579,7 @@ message StorageValue {
 // StoragePutOp is the parameters for putting an object into storage.
 message StoragePutOp {
 	// Name is the name of the object to put into storage.
-	StorageName name = 1 [(gogoproto.nullable) = false];
+	StorageKey name = 1 [(gogoproto.nullable) = false];
 
 	// Value is the value of the object.
 	bytes value = 2;
@@ -595,7 +595,7 @@ message StorageExists {
 // value store.
 service Storage {
 	// Get gets the value of a storage object.
-	rpc Get(StorageName) returns (StorageValue) {
+	rpc Get(StorageKey) returns (StorageValue) {
 		option (google.api.http) = {
 			get: "/storage"
 		};
@@ -610,14 +610,14 @@ service Storage {
 
 	// Delete deletes the specific storage object or, if no key is specified, all
 	// objects in the bucket.
-	rpc Delete(StorageName) returns (pbtypes.Void) {
+	rpc Delete(StorageKey) returns (pbtypes.Void) {
 		option (google.api.http) = {
 			delete: "/storage"
 		};
 	}
 
 	// Exists tells if the given key exists in the bucket or not.
-	rpc Exists(StorageName) returns (StorageExists) {
+	rpc Exists(StorageKey) returns (StorageExists) {
 		option (google.api.http) = {
 			get: "/storage/exists"
 		};
@@ -625,7 +625,7 @@ service Storage {
 
 	// List lists all objects in the bucket. It ignores the 'key' field of the
 	// storage name parameter.
-	rpc List(StorageName) returns (StorageList) {
+	rpc List(StorageKey) returns (StorageList) {
 		option (google.api.http) = {
 			get: "/storage/list"
 		};
