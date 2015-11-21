@@ -1,13 +1,13 @@
-import autotest from "./util/autotest";
+import autotest from "../util/autotest";
 
 import React from "react";
 
 import CodeFileContainer from "./CodeFileContainer";
 import CodeStore from "./CodeStore";
-import DefStore from "./DefStore";
+import DefStore from "../def/DefStore";
 import * as CodeActions from "./CodeActions";
-import * as DefActions from "./DefActions";
-import Dispatcher from "./Dispatcher";
+import * as DefActions from "../def/DefActions";
+import Dispatcher from "../Dispatcher";
 
 import testdataUnavailableFile from "./testdata/CodeFileContainer-unavailableFile.json";
 import testdataUnavailableDefinition from "./testdata/CodeFileContainer-unavailableDefinition.json";

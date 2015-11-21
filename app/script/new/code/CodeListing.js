@@ -1,6 +1,6 @@
 import React from "react";
 
-import Component from "./Component";
+import Component from "../Component";
 import CodeLineView from "./CodeLineView";
 
 import classNames from "classnames";

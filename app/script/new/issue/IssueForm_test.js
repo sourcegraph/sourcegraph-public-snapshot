@@ -1,4 +1,4 @@
-import autotest from "./util/autotest";
+import autotest from "../util/autotest";
 
 import React from "react";
 

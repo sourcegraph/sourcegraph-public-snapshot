@@ -1,10 +1,10 @@
 import React from "react";
 
-import Component from "./Component";
-import Dispatcher from "./Dispatcher";
+import Component from "../Component";
+import Dispatcher from "../Dispatcher";
 import * as DefActions from "./DefActions";
-import CodeListing from "./CodeListing";
-import hotLink from "./util/hotLink";
+import CodeListing from "../code/CodeListing";
+import hotLink from "../util/hotLink";
 
 export default class ExampleView extends Component {
 	reconcileState(state, props) {

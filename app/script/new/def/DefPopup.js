@@ -1,11 +1,11 @@
 import React from "react";
 import Draggable from "react-draggable";
 
-import Component from "./Component";
-import Dispatcher from "./Dispatcher";
+import Component from "../Component";
+import Dispatcher from "../Dispatcher";
 import * as DefActions from "./DefActions";
 import ExampleView from "./ExampleView";
-import hotLink from "./util/hotLink";
+import hotLink from "../util/hotLink";
 
 export default class DefPopup extends Component {
 	reconcileState(state, props) {

@@ -1,6 +1,6 @@
 import * as IssueActions from "./IssueActions";
-import Dispatcher from "./Dispatcher";
-import defaultXhr from "./util/xhr";
+import Dispatcher from "../Dispatcher";
+import defaultXhr from "../util/xhr";
 
 const IssueBackend = {
 	xhr: defaultXhr,

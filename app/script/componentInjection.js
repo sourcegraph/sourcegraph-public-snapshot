@@ -16,7 +16,7 @@ var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
 var CodeFileRange = require("./components/CodeFileRange");
-var CodeFileRouter = require("./new/CodeFileRouter");
+var CodeFileRouter = require("./new/code/CodeFileRouter");
 var LocationAdaptor = require("./new/LocationAdaptor");
 
 // Application-specific JS

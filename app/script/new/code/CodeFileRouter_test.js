@@ -1,14 +1,14 @@
-import autotest from "./util/autotest";
+import autotest from "../util/autotest";
 import expect from "expect.js";
 
 import React from "react";
 import TestUtils from "react-addons-test-utils";
 
-import Dispatcher from "./Dispatcher";
+import Dispatcher from "../Dispatcher";
 import CodeFileRouter from "./CodeFileRouter";
 import * as CodeActions from "./CodeActions";
-import * as DefActions from "./DefActions";
-import {GoTo} from "./util/hotLink";
+import * as DefActions from "../def/DefActions";
+import {GoTo} from "../util/hotLink";
 
 import testdataFile from "./testdata/CodeFileRouter-file.json";
 import testdataDotfile from "./testdata/CodeFileRouter-dotfile.json";

@@ -1,6 +1,6 @@
 import * as DefActions from "./DefActions";
 import DefStore from "./DefStore";
-import Dispatcher from "./Dispatcher";
+import Dispatcher from "../Dispatcher";
 import defaultXhr from "xhr";
 
 // TODO preloading

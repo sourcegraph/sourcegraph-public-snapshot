@@ -1,6 +1,6 @@
 import expect from "expect.js";
 
-import Dispatcher from "./Dispatcher";
+import Dispatcher from "../Dispatcher";
 import IssueBackend from "./IssueBackend";
 import * as IssueActions from "./IssueActions";
 

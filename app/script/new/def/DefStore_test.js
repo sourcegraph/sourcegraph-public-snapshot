@@ -1,6 +1,6 @@
 import expect from "expect.js";
 
-import Dispatcher from "./Dispatcher";
+import Dispatcher from "../Dispatcher";
 import DefStore from "./DefStore";
 import * as DefActions from "./DefActions";
 

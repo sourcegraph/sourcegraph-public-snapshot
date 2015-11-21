@@ -1,9 +1,9 @@
 import React from "react";
 
-import Component from "./Component";
-import Dispatcher from "./Dispatcher";
+import Component from "../Component";
+import Dispatcher from "../Dispatcher";
 import * as CodeActions from "./CodeActions";
-import * as DefActions from "./DefActions";
+import * as DefActions from "../def/DefActions";
 
 // TODO support for tokens with more than one URL
 export default class CodeLineView extends Component {

@@ -1,6 +1,6 @@
 import * as CodeActions from "./CodeActions";
 import CodeStore from "./CodeStore";
-import Dispatcher from "./Dispatcher";
+import Dispatcher from "../Dispatcher";
 import defaultXhr from "xhr";
 
 // TODO preloading

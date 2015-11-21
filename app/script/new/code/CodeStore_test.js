@@ -1,6 +1,6 @@
 import expect from "expect.js";
 
-import Dispatcher from "./Dispatcher";
+import Dispatcher from "../Dispatcher";
 import CodeStore from "./CodeStore";
 import * as CodeActions from "./CodeActions";
 

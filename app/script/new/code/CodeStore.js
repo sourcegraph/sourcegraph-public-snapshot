@@ -1,6 +1,6 @@
 import {Store} from "flux/utils";
 
-import Dispatcher from "./Dispatcher";
+import Dispatcher from "../Dispatcher";
 import * as CodeActions from "./CodeActions";
 
 function keyFor(repo, rev, tree) {

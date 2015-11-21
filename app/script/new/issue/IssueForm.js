@@ -1,8 +1,8 @@
 import React from "react";
 
-import Component from "./Component";
-import Dispatcher from "./Dispatcher";
-import MarkdownTextarea from "../components/MarkdownTextarea"; // FIXME
+import Component from "../Component";
+import Dispatcher from "../Dispatcher";
+import MarkdownTextarea from "../../components/MarkdownTextarea"; // FIXME
 import * as IssueActions from "./IssueActions";
 import "./IssueBackend";
 
