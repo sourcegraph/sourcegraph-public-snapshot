@@ -91,6 +91,7 @@ func init() {
 		dbVFS := newVFS(ActiveFlags.DBDir)
 		buildStoreVFS := newVFS(ActiveFlags.BuildStoreDir)
 		repoStatusVFS := newVFS(ActiveFlags.RepoStatusDir)
+		appStorageVFS := newVFS(ActiveFlags.AppStorageDir)
 
 		serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) {
 			if dir := ActiveFlags.ReposDir; dir != "" {
@@ -99,7 +100,7 @@ func init() {
 			ctx = WithBuildStoreVFS(ctx, buildStoreVFS)
 			ctx = WithDBVFS(ctx, dbVFS)
 			ctx = WithRepoStatusVFS(ctx, repoStatusVFS)
-			ctx = WithAppStorageDir(ctx, ActiveFlags.AppStorageDir)
+			ctx = WithAppStorageVFS(ctx, appStorageVFS)
 			return ctx, nil
 		})
 	})

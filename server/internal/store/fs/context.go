@@ -12,7 +12,7 @@ const (
 	buildStoreVFSKey
 	usersVFSKey
 	repoStatusVFSKey
-	appStorageDirKey
+	appStorageVFSKey
 )
 
 // WithReposVFS creates a new child context that looks for
@@ -39,10 +39,10 @@ func WithRepoStatusVFS(parent context.Context, fs rwvfs.FileSystem) context.Cont
 	return context.WithValue(parent, repoStatusVFSKey, rwvfs.Walkable(fs))
 }
 
-// WithAppStorageDir creates a new child context that reads and writes app
-// storage data at the given directory.
-func WithAppStorageDir(parent context.Context, dir string) context.Context {
-	return context.WithValue(parent, appStorageDirKey, dir)
+// WithAppStorageVFS creates a new child context that reads and writes app
+// storage data.
+func WithAppStorageVFS(parent context.Context, fs rwvfs.FileSystem) context.Context {
+	return context.WithValue(parent, appStorageVFSKey, rwvfs.Walkable(fs))
 }
 
 // reposAbsPath returns the absolute path of the repository storage directory.
@@ -61,10 +61,10 @@ func repoStatusVFS(ctx context.Context) rwvfs.WalkableFileSystem {
 	return mustWalkableVFS(ctx, repoStatusVFSKey)
 }
 
-// appStorageDir returns the virtual filesystem pointed to where app storage is
+// appStorageVFS returns the virtual filesystem pointed to where app storage is
 // located.
-func appStorageDir(ctx context.Context) string {
-	return mustString(ctx, appStorageDirKey)
+func appStorageVFS(ctx context.Context) string {
+	return mustWalkableVFS(ctx, appStorageVFSKey)
 }
 
 // dbVFS returns the VFS in which most other data is stored (users,
