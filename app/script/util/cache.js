@@ -1,3 +1,5 @@
+var $ = require("jquery");
+
 /**
  * @description Set the cache header on all subsequent AJAX requests to match
  * the data-cache-control attribute in the head tag of the current page.
