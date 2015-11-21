@@ -13,7 +13,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/cached"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/ctxfunc"
 	"src.sourcegraph.com/sourcegraph/server/internal/oauth2util"
-	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/server/serverctx"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
@@ -41,7 +40,7 @@ func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 	// statement) we wrap them with authentication, metadata, config,
 	// etc., handlers that only need to be run once per external
 	// request.
-	services := middleware.Wrap(local.Services, authConfig)
+	services := middleware.Services(authConfig)
 
 	// Wrap in middleware for context initialization. This is the
 	// outermost wrapper (except caching) because it performs the most

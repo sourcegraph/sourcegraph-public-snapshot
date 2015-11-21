@@ -24,122 +24,69 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/federated"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/trace"
+	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
-// Wrap wraps the services and returns a set of services that performs
-// authorization checks as specified in the Config.
-func Wrap(s svc.Services, c *auth.Config) svc.Services {
+// Services returns the local services wrapped with auth, federation, etc.
+func Services(c *auth.Config) svc.Services {
+	return svc.Services{
 
-	if s.GitTransport != nil {
-		s.GitTransport = wrappedGitTransport{s.GitTransport, c}
+		GitTransport: wrappedGitTransport{c},
+
+		MultiRepoImporter: wrappedMultiRepoImporter{c},
+
+		Accounts: wrappedAccounts{c},
+
+		Auth: wrappedAuth{c},
+
+		Builds: wrappedBuilds{c},
+
+		Changesets: wrappedChangesets{c},
+
+		Defs: wrappedDefs{c},
+
+		Deltas: wrappedDeltas{c},
+
+		GraphUplink: wrappedGraphUplink{c},
+
+		Markdown: wrappedMarkdown{c},
+
+		Meta: wrappedMeta{c},
+
+		MirrorRepos: wrappedMirrorRepos{c},
+
+		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{c},
+
+		Notify: wrappedNotify{c},
+
+		Orgs: wrappedOrgs{c},
+
+		People: wrappedPeople{c},
+
+		RegisteredClients: wrappedRegisteredClients{c},
+
+		RepoBadges: wrappedRepoBadges{c},
+
+		RepoStatuses: wrappedRepoStatuses{c},
+
+		RepoTree: wrappedRepoTree{c},
+
+		Repos: wrappedRepos{c},
+
+		Search: wrappedSearch{c},
+
+		Storage: wrappedStorage{c},
+
+		Units: wrappedUnits{c},
+
+		UserKeys: wrappedUserKeys{c},
+
+		Users: wrappedUsers{c},
 	}
-
-	if s.MultiRepoImporter != nil {
-		s.MultiRepoImporter = wrappedMultiRepoImporter{s.MultiRepoImporter, c}
-	}
-
-	if s.Accounts != nil {
-		s.Accounts = wrappedAccounts{s.Accounts, c}
-	}
-
-	if s.Auth != nil {
-		s.Auth = wrappedAuth{s.Auth, c}
-	}
-
-	if s.Builds != nil {
-		s.Builds = wrappedBuilds{s.Builds, c}
-	}
-
-	if s.Changesets != nil {
-		s.Changesets = wrappedChangesets{s.Changesets, c}
-	}
-
-	if s.Defs != nil {
-		s.Defs = wrappedDefs{s.Defs, c}
-	}
-
-	if s.Deltas != nil {
-		s.Deltas = wrappedDeltas{s.Deltas, c}
-	}
-
-	if s.GraphUplink != nil {
-		s.GraphUplink = wrappedGraphUplink{s.GraphUplink, c}
-	}
-
-	if s.Markdown != nil {
-		s.Markdown = wrappedMarkdown{s.Markdown, c}
-	}
-
-	if s.Meta != nil {
-		s.Meta = wrappedMeta{s.Meta, c}
-	}
-
-	if s.MirrorRepos != nil {
-		s.MirrorRepos = wrappedMirrorRepos{s.MirrorRepos, c}
-	}
-
-	if s.MirroredRepoSSHKeys != nil {
-		s.MirroredRepoSSHKeys = wrappedMirroredRepoSSHKeys{s.MirroredRepoSSHKeys, c}
-	}
-
-	if s.Notify != nil {
-		s.Notify = wrappedNotify{s.Notify, c}
-	}
-
-	if s.Orgs != nil {
-		s.Orgs = wrappedOrgs{s.Orgs, c}
-	}
-
-	if s.People != nil {
-		s.People = wrappedPeople{s.People, c}
-	}
-
-	if s.RegisteredClients != nil {
-		s.RegisteredClients = wrappedRegisteredClients{s.RegisteredClients, c}
-	}
-
-	if s.RepoBadges != nil {
-		s.RepoBadges = wrappedRepoBadges{s.RepoBadges, c}
-	}
-
-	if s.RepoStatuses != nil {
-		s.RepoStatuses = wrappedRepoStatuses{s.RepoStatuses, c}
-	}
-
-	if s.RepoTree != nil {
-		s.RepoTree = wrappedRepoTree{s.RepoTree, c}
-	}
-
-	if s.Repos != nil {
-		s.Repos = wrappedRepos{s.Repos, c}
-	}
-
-	if s.Search != nil {
-		s.Search = wrappedSearch{s.Search, c}
-	}
-
-	if s.Storage != nil {
-		s.Storage = wrappedStorage{s.Storage, c}
-	}
-
-	if s.Units != nil {
-		s.Units = wrappedUnits{s.Units, c}
-	}
-
-	if s.UserKeys != nil {
-		s.UserKeys = wrappedUserKeys{s.UserKeys, c}
-	}
-
-	if s.Users != nil {
-		s.Users = wrappedUsers{s.Users, c}
-	}
-
-	return s
 }
 
 type wrappedGitTransport struct {
-	u gitpb.GitTransportServer
 	c *auth.Config
 }
 
@@ -155,7 +102,7 @@ func (s wrappedGitTransport) InfoRefs(ctx context.Context, param *gitpb.InfoRefs
 		return
 	}
 
-	var target gitpb.GitTransportServer = s.u
+	target := local.Services.GitTransport
 
 	res, err = target.InfoRefs(ctx, param)
 	return
@@ -174,7 +121,7 @@ func (s wrappedGitTransport) ReceivePack(ctx context.Context, param *gitpb.Recei
 		return
 	}
 
-	var target gitpb.GitTransportServer = s.u
+	target := local.Services.GitTransport
 
 	res, err = target.ReceivePack(ctx, param)
 	return
@@ -193,7 +140,7 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.Upload
 		return
 	}
 
-	var target gitpb.GitTransportServer = s.u
+	target := local.Services.GitTransport
 
 	res, err = target.UploadPack(ctx, param)
 	return
@@ -201,7 +148,6 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.Upload
 }
 
 type wrappedMultiRepoImporter struct {
-	u pb.MultiRepoImporterServer
 	c *auth.Config
 }
 
@@ -217,7 +163,7 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 		return
 	}
 
-	var target pb.MultiRepoImporterServer = s.u
+	target := local.Services.MultiRepoImporter
 
 	res, err = target.Import(ctx, param)
 	return
@@ -236,7 +182,7 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 		return
 	}
 
-	var target pb.MultiRepoImporterServer = s.u
+	target := local.Services.MultiRepoImporter
 
 	res, err = target.Index(ctx, param)
 	return
@@ -244,7 +190,6 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 }
 
 type wrappedAccounts struct {
-	u sourcegraph.AccountsServer
 	c *auth.Config
 }
 
@@ -260,7 +205,7 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 		return
 	}
 
-	var target sourcegraph.AccountsServer = s.u
+	target := local.Services.Accounts
 
 	res, err = target.Create(ctx, param)
 	return
@@ -279,7 +224,7 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 		return
 	}
 
-	var target sourcegraph.AccountsServer = s.u
+	target := local.Services.Accounts
 
 	res, err = target.RequestPasswordReset(ctx, param)
 	return
@@ -298,7 +243,7 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.N
 		return
 	}
 
-	var target sourcegraph.AccountsServer = s.u
+	target := local.Services.Accounts
 
 	res, err = target.ResetPassword(ctx, param)
 	return
@@ -317,13 +262,12 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 		return
 	}
 
-	res, err = federated.CustomAccountsUpdate(ctx, param, s.u)
+	res, err = federated.CustomAccountsUpdate(ctx, param, local.Services.Accounts)
 	return
 
 }
 
 type wrappedAuth struct {
-	u sourcegraph.AuthServer
 	c *auth.Config
 }
 
@@ -339,7 +283,7 @@ func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, param *sourcegrap
 		return
 	}
 
-	var target sourcegraph.AuthServer = s.u
+	target := local.Services.Auth
 
 	res, err = target.GetAuthorizationCode(ctx, param)
 	return
@@ -358,7 +302,7 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 		return
 	}
 
-	res, err = federated.CustomAuthGetAccessToken(ctx, param, s.u)
+	res, err = federated.CustomAuthGetAccessToken(ctx, param, local.Services.Auth)
 	return
 
 }
@@ -375,7 +319,7 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 		return
 	}
 
-	res, err = federated.CustomAuthIdentify(ctx, param, s.u)
+	res, err = federated.CustomAuthIdentify(ctx, param, local.Services.Auth)
 	return
 
 }
@@ -392,7 +336,7 @@ func (s wrappedAuth) GetPermissions(ctx context.Context, param *pbtypes.Void) (r
 		return
 	}
 
-	var target sourcegraph.AuthServer = s.u
+	target := local.Services.Auth
 
 	res, err = target.GetPermissions(ctx, param)
 	return
@@ -400,7 +344,6 @@ func (s wrappedAuth) GetPermissions(ctx context.Context, param *pbtypes.Void) (r
 }
 
 type wrappedBuilds struct {
-	u sourcegraph.BuildsServer
 	c *auth.Config
 }
 
@@ -416,7 +359,7 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -445,7 +388,7 @@ func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, param *sourcegraph.
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -474,7 +417,7 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 		return
 	}
 
-	res, err = federated.CustomBuildsList(ctx, param, s.u)
+	res, err = federated.CustomBuildsList(ctx, param, local.Services.Builds)
 	return
 
 }
@@ -491,7 +434,7 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
@@ -520,7 +463,7 @@ func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpda
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
@@ -549,7 +492,7 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.Bu
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
@@ -578,7 +521,7 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.Build
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
@@ -607,7 +550,7 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Task.Repo.URI)
@@ -636,7 +579,7 @@ func (s wrappedBuilds) GetLog(ctx context.Context, param *sourcegraph.BuildsGetL
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
@@ -665,7 +608,7 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Task.Repo.URI)
@@ -694,7 +637,7 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 		return
 	}
 
-	var target sourcegraph.BuildsServer = s.u
+	target := local.Services.Builds
 
 	res, err = target.DequeueNext(ctx, param)
 	return
@@ -702,7 +645,6 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 }
 
 type wrappedChangesets struct {
-	u sourcegraph.ChangesetsServer
 	c *auth.Config
 }
 
@@ -718,7 +660,7 @@ func (s wrappedChangesets) Create(ctx context.Context, param *sourcegraph.Change
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.Create(ctx, param)
 	return
@@ -737,7 +679,7 @@ func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.Changeset
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.Get(ctx, param)
 	return
@@ -756,7 +698,7 @@ func (s wrappedChangesets) List(ctx context.Context, param *sourcegraph.Changese
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.List(ctx, param)
 	return
@@ -775,7 +717,7 @@ func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.Change
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.Update(ctx, param)
 	return
@@ -794,7 +736,7 @@ func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.Changes
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.Merge(ctx, param)
 	return
@@ -813,7 +755,7 @@ func (s wrappedChangesets) UpdateAffected(ctx context.Context, param *sourcegrap
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.UpdateAffected(ctx, param)
 	return
@@ -832,7 +774,7 @@ func (s wrappedChangesets) CreateReview(ctx context.Context, param *sourcegraph.
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.CreateReview(ctx, param)
 	return
@@ -851,7 +793,7 @@ func (s wrappedChangesets) ListReviews(ctx context.Context, param *sourcegraph.C
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.ListReviews(ctx, param)
 	return
@@ -870,7 +812,7 @@ func (s wrappedChangesets) ListEvents(ctx context.Context, param *sourcegraph.Ch
 		return
 	}
 
-	var target sourcegraph.ChangesetsServer = s.u
+	target := local.Services.Changesets
 
 	res, err = target.ListEvents(ctx, param)
 	return
@@ -878,7 +820,6 @@ func (s wrappedChangesets) ListEvents(ctx context.Context, param *sourcegraph.Ch
 }
 
 type wrappedDefs struct {
-	u sourcegraph.DefsServer
 	c *auth.Config
 }
 
@@ -894,7 +835,7 @@ func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res
 		return
 	}
 
-	var target sourcegraph.DefsServer = s.u
+	target := local.Services.Defs
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
@@ -923,7 +864,7 @@ func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions
 		return
 	}
 
-	res, err = federated.CustomDefsList(ctx, param, s.u)
+	res, err = federated.CustomDefsList(ctx, param, local.Services.Defs)
 	return
 
 }
@@ -940,7 +881,7 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 		return
 	}
 
-	var target sourcegraph.DefsServer = s.u
+	target := local.Services.Defs
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
@@ -969,7 +910,7 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 		return
 	}
 
-	var target sourcegraph.DefsServer = s.u
+	target := local.Services.Defs
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
@@ -998,7 +939,7 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 		return
 	}
 
-	var target sourcegraph.DefsServer = s.u
+	target := local.Services.Defs
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
@@ -1027,7 +968,7 @@ func (s wrappedDefs) ListClients(ctx context.Context, param *sourcegraph.DefsLis
 		return
 	}
 
-	var target sourcegraph.DefsServer = s.u
+	target := local.Services.Defs
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
@@ -1045,7 +986,6 @@ func (s wrappedDefs) ListClients(ctx context.Context, param *sourcegraph.DefsLis
 }
 
 type wrappedDeltas struct {
-	u sourcegraph.DeltasServer
 	c *auth.Config
 }
 
@@ -1061,7 +1001,7 @@ func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (r
 		return
 	}
 
-	var target sourcegraph.DeltasServer = s.u
+	target := local.Services.Deltas
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Base.URI)
@@ -1090,7 +1030,7 @@ func (s wrappedDeltas) ListUnits(ctx context.Context, param *sourcegraph.DeltasL
 		return
 	}
 
-	var target sourcegraph.DeltasServer = s.u
+	target := local.Services.Deltas
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
@@ -1119,7 +1059,7 @@ func (s wrappedDeltas) ListDefs(ctx context.Context, param *sourcegraph.DeltasLi
 		return
 	}
 
-	var target sourcegraph.DeltasServer = s.u
+	target := local.Services.Deltas
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
@@ -1148,7 +1088,7 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 		return
 	}
 
-	var target sourcegraph.DeltasServer = s.u
+	target := local.Services.Deltas
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
@@ -1177,7 +1117,7 @@ func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, param *sourcegra
 		return
 	}
 
-	var target sourcegraph.DeltasServer = s.u
+	target := local.Services.Deltas
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
@@ -1206,7 +1146,7 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegra
 		return
 	}
 
-	var target sourcegraph.DeltasServer = s.u
+	target := local.Services.Deltas
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
@@ -1224,7 +1164,6 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegra
 }
 
 type wrappedGraphUplink struct {
-	u sourcegraph.GraphUplinkServer
 	c *auth.Config
 }
 
@@ -1240,7 +1179,7 @@ func (s wrappedGraphUplink) Push(ctx context.Context, param *sourcegraph.Metrics
 		return
 	}
 
-	var target sourcegraph.GraphUplinkServer = s.u
+	target := local.Services.GraphUplink
 
 	res, err = target.Push(ctx, param)
 	return
@@ -1259,7 +1198,7 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.U
 		return
 	}
 
-	var target sourcegraph.GraphUplinkServer = s.u
+	target := local.Services.GraphUplink
 
 	res, err = target.PushEvents(ctx, param)
 	return
@@ -1267,7 +1206,6 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.U
 }
 
 type wrappedMarkdown struct {
-	u sourcegraph.MarkdownServer
 	c *auth.Config
 }
 
@@ -1283,7 +1221,7 @@ func (s wrappedMarkdown) Render(ctx context.Context, param *sourcegraph.Markdown
 		return
 	}
 
-	var target sourcegraph.MarkdownServer = s.u
+	target := local.Services.Markdown
 
 	res, err = target.Render(ctx, param)
 	return
@@ -1291,7 +1229,6 @@ func (s wrappedMarkdown) Render(ctx context.Context, param *sourcegraph.Markdown
 }
 
 type wrappedMeta struct {
-	u sourcegraph.MetaServer
 	c *auth.Config
 }
 
@@ -1307,7 +1244,7 @@ func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sour
 		return
 	}
 
-	var target sourcegraph.MetaServer = s.u
+	target := local.Services.Meta
 
 	res, err = target.Status(ctx, param)
 	return
@@ -1326,7 +1263,7 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 		return
 	}
 
-	var target sourcegraph.MetaServer = s.u
+	target := local.Services.Meta
 
 	res, err = target.Config(ctx, param)
 	return
@@ -1345,7 +1282,7 @@ func (s wrappedMeta) PubKey(ctx context.Context, param *pbtypes.Void) (res *sour
 		return
 	}
 
-	var target sourcegraph.MetaServer = s.u
+	target := local.Services.Meta
 
 	res, err = target.PubKey(ctx, param)
 	return
@@ -1353,7 +1290,6 @@ func (s wrappedMeta) PubKey(ctx context.Context, param *pbtypes.Void) (res *sour
 }
 
 type wrappedMirrorRepos struct {
-	u sourcegraph.MirrorReposServer
 	c *auth.Config
 }
 
@@ -1369,13 +1305,12 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 		return
 	}
 
-	res, err = federated.CustomMirrorReposRefreshVCS(ctx, param, s.u)
+	res, err = federated.CustomMirrorReposRefreshVCS(ctx, param, local.Services.MirrorRepos)
 	return
 
 }
 
 type wrappedMirroredRepoSSHKeys struct {
-	u sourcegraph.MirroredRepoSSHKeysServer
 	c *auth.Config
 }
 
@@ -1391,7 +1326,7 @@ func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, param *sourcegra
 		return
 	}
 
-	var target sourcegraph.MirroredRepoSSHKeysServer = s.u
+	target := local.Services.MirroredRepoSSHKeys
 
 	res, err = target.Create(ctx, param)
 	return
@@ -1410,7 +1345,7 @@ func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, param *sourcegraph.
 		return
 	}
 
-	var target sourcegraph.MirroredRepoSSHKeysServer = s.u
+	target := local.Services.MirroredRepoSSHKeys
 
 	res, err = target.Get(ctx, param)
 	return
@@ -1429,7 +1364,7 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, param *sourcegra
 		return
 	}
 
-	var target sourcegraph.MirroredRepoSSHKeysServer = s.u
+	target := local.Services.MirroredRepoSSHKeys
 
 	res, err = target.Delete(ctx, param)
 	return
@@ -1437,7 +1372,6 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, param *sourcegra
 }
 
 type wrappedNotify struct {
-	u sourcegraph.NotifyServer
 	c *auth.Config
 }
 
@@ -1453,7 +1387,7 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 		return
 	}
 
-	var target sourcegraph.NotifyServer = s.u
+	target := local.Services.Notify
 
 	res, err = target.GenericEvent(ctx, param)
 	return
@@ -1461,7 +1395,6 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 }
 
 type wrappedOrgs struct {
-	u sourcegraph.OrgsServer
 	c *auth.Config
 }
 
@@ -1477,7 +1410,7 @@ func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *
 		return
 	}
 
-	var target sourcegraph.OrgsServer = s.u
+	target := local.Services.Orgs
 
 	res, err = target.Get(ctx, param)
 	return
@@ -1496,7 +1429,7 @@ func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (r
 		return
 	}
 
-	var target sourcegraph.OrgsServer = s.u
+	target := local.Services.Orgs
 
 	res, err = target.List(ctx, param)
 	return
@@ -1515,7 +1448,7 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 		return
 	}
 
-	var target sourcegraph.OrgsServer = s.u
+	target := local.Services.Orgs
 
 	res, err = target.ListMembers(ctx, param)
 	return
@@ -1523,7 +1456,6 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 }
 
 type wrappedPeople struct {
-	u sourcegraph.PeopleServer
 	c *auth.Config
 }
 
@@ -1539,7 +1471,7 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 		return
 	}
 
-	var target sourcegraph.PeopleServer = s.u
+	target := local.Services.People
 
 	res, err = target.Get(ctx, param)
 	return
@@ -1547,7 +1479,6 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 }
 
 type wrappedRegisteredClients struct {
-	u sourcegraph.RegisteredClientsServer
 	c *auth.Config
 }
 
@@ -1563,7 +1494,7 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, param *sourcegraph.Re
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsGet(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsGet(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1580,7 +1511,7 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsGetCurrent(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsGetCurrent(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1597,7 +1528,7 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsCreate(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsCreate(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1614,7 +1545,7 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsUpdate(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsUpdate(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1631,7 +1562,7 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsDelete(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsDelete(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1648,7 +1579,7 @@ func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.R
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsList(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsList(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1665,7 +1596,7 @@ func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, param 
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsGetUserPermissions(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsGetUserPermissions(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1682,7 +1613,7 @@ func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, param 
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsSetUserPermissions(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsSetUserPermissions(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
@@ -1699,13 +1630,12 @@ func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, param
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsListUserPermissions(ctx, param, s.u)
+	res, err = federated.CustomRegisteredClientsListUserPermissions(ctx, param, local.Services.RegisteredClients)
 	return
 
 }
 
 type wrappedRepoBadges struct {
-	u sourcegraph.RepoBadgesServer
 	c *auth.Config
 }
 
@@ -1721,7 +1651,7 @@ func (s wrappedRepoBadges) ListBadges(ctx context.Context, param *sourcegraph.Re
 		return
 	}
 
-	var target sourcegraph.RepoBadgesServer = s.u
+	target := local.Services.RepoBadges
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -1750,7 +1680,7 @@ func (s wrappedRepoBadges) ListCounters(ctx context.Context, param *sourcegraph.
 		return
 	}
 
-	var target sourcegraph.RepoBadgesServer = s.u
+	target := local.Services.RepoBadges
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -1779,7 +1709,7 @@ func (s wrappedRepoBadges) RecordHit(ctx context.Context, param *sourcegraph.Rep
 		return
 	}
 
-	var target sourcegraph.RepoBadgesServer = s.u
+	target := local.Services.RepoBadges
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -1808,7 +1738,7 @@ func (s wrappedRepoBadges) CountHits(ctx context.Context, param *sourcegraph.Rep
 		return
 	}
 
-	var target sourcegraph.RepoBadgesServer = s.u
+	target := local.Services.RepoBadges
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -1826,7 +1756,6 @@ func (s wrappedRepoBadges) CountHits(ctx context.Context, param *sourcegraph.Rep
 }
 
 type wrappedRepoStatuses struct {
-	u sourcegraph.RepoStatusesServer
 	c *auth.Config
 }
 
@@ -1842,7 +1771,7 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 		return
 	}
 
-	var target sourcegraph.RepoStatusesServer = s.u
+	target := local.Services.RepoStatuses
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -1871,7 +1800,7 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 		return
 	}
 
-	var target sourcegraph.RepoStatusesServer = s.u
+	target := local.Services.RepoStatuses
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -1889,7 +1818,6 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 }
 
 type wrappedRepoTree struct {
-	u sourcegraph.RepoTreeServer
 	c *auth.Config
 }
 
@@ -1905,7 +1833,7 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 		return
 	}
 
-	var target sourcegraph.RepoTreeServer = s.u
+	target := local.Services.RepoTree
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Entry.RepoRev.URI)
@@ -1934,7 +1862,7 @@ func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTree
 		return
 	}
 
-	var target sourcegraph.RepoTreeServer = s.u
+	target := local.Services.RepoTree
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Rev.URI)
@@ -1963,7 +1891,7 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 		return
 	}
 
-	var target sourcegraph.RepoTreeServer = s.u
+	target := local.Services.RepoTree
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Rev.URI)
@@ -1981,7 +1909,6 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 }
 
 type wrappedRepos struct {
-	u sourcegraph.ReposServer
 	c *auth.Config
 }
 
@@ -1997,7 +1924,7 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 		return
 	}
 
-	res, err = federated.CustomReposGet(ctx, param, s.u)
+	res, err = federated.CustomReposGet(ctx, param, local.Services.Repos)
 	return
 
 }
@@ -2014,7 +1941,7 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 		return
 	}
 
-	res, err = federated.CustomReposList(ctx, param, s.u)
+	res, err = federated.CustomReposList(ctx, param, local.Services.Repos)
 	return
 
 }
@@ -2031,7 +1958,7 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 		return
 	}
 
-	res, err = federated.CustomReposCreate(ctx, param, s.u)
+	res, err = federated.CustomReposCreate(ctx, param, local.Services.Repos)
 	return
 
 }
@@ -2048,7 +1975,7 @@ func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdate
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -2077,7 +2004,7 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -2106,7 +2033,7 @@ func (s wrappedRepos) GetReadme(ctx context.Context, param *sourcegraph.RepoRevS
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -2135,7 +2062,7 @@ func (s wrappedRepos) Enable(ctx context.Context, param *sourcegraph.RepoSpec) (
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -2164,7 +2091,7 @@ func (s wrappedRepos) Disable(ctx context.Context, param *sourcegraph.RepoSpec) 
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -2193,7 +2120,7 @@ func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -2222,7 +2149,7 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -2251,7 +2178,7 @@ func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposL
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -2280,7 +2207,7 @@ func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.Repos
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -2309,7 +2236,7 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -2338,7 +2265,7 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 		return
 	}
 
-	var target sourcegraph.ReposServer = s.u
+	target := local.Services.Repos
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
@@ -2356,7 +2283,6 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 }
 
 type wrappedSearch struct {
-	u sourcegraph.SearchServer
 	c *auth.Config
 }
 
@@ -2372,7 +2298,7 @@ func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOpti
 		return
 	}
 
-	var target sourcegraph.SearchServer = s.u
+	target := local.Services.Search
 
 	res, err = target.Search(ctx, param)
 	return
@@ -2391,7 +2317,7 @@ func (s wrappedSearch) SearchTokens(ctx context.Context, param *sourcegraph.Toke
 		return
 	}
 
-	var target sourcegraph.SearchServer = s.u
+	target := local.Services.Search
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
@@ -2420,7 +2346,7 @@ func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSe
 		return
 	}
 
-	var target sourcegraph.SearchServer = s.u
+	target := local.Services.Search
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
@@ -2449,7 +2375,7 @@ func (s wrappedSearch) Complete(ctx context.Context, param *sourcegraph.RawQuery
 		return
 	}
 
-	var target sourcegraph.SearchServer = s.u
+	target := local.Services.Search
 
 	res, err = target.Complete(ctx, param)
 	return
@@ -2468,7 +2394,7 @@ func (s wrappedSearch) Suggest(ctx context.Context, param *sourcegraph.RawQuery)
 		return
 	}
 
-	var target sourcegraph.SearchServer = s.u
+	target := local.Services.Search
 
 	res, err = target.Suggest(ctx, param)
 	return
@@ -2476,7 +2402,6 @@ func (s wrappedSearch) Suggest(ctx context.Context, param *sourcegraph.RawQuery)
 }
 
 type wrappedStorage struct {
-	u sourcegraph.StorageServer
 	c *auth.Config
 }
 
@@ -2492,7 +2417,7 @@ func (s wrappedStorage) Create(ctx context.Context, param *sourcegraph.StorageNa
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.Create(ctx, param)
 	return
@@ -2511,7 +2436,7 @@ func (s wrappedStorage) RemoveAll(ctx context.Context, param *sourcegraph.Storag
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.RemoveAll(ctx, param)
 	return
@@ -2530,7 +2455,7 @@ func (s wrappedStorage) Read(ctx context.Context, param *sourcegraph.StorageRead
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.Read(ctx, param)
 	return
@@ -2549,7 +2474,7 @@ func (s wrappedStorage) Write(ctx context.Context, param *sourcegraph.StorageWri
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.Write(ctx, param)
 	return
@@ -2568,7 +2493,7 @@ func (s wrappedStorage) Stat(ctx context.Context, param *sourcegraph.StorageName
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.Stat(ctx, param)
 	return
@@ -2587,7 +2512,7 @@ func (s wrappedStorage) ReadDir(ctx context.Context, param *sourcegraph.StorageN
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.ReadDir(ctx, param)
 	return
@@ -2606,7 +2531,7 @@ func (s wrappedStorage) Close(ctx context.Context, param *sourcegraph.StorageNam
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.Close(ctx, param)
 	return
@@ -2614,7 +2539,6 @@ func (s wrappedStorage) Close(ctx context.Context, param *sourcegraph.StorageNam
 }
 
 type wrappedUnits struct {
-	u sourcegraph.UnitsServer
 	c *auth.Config
 }
 
@@ -2630,7 +2554,7 @@ func (s wrappedUnits) Get(ctx context.Context, param *sourcegraph.UnitSpec) (res
 		return
 	}
 
-	var target sourcegraph.UnitsServer = s.u
+	target := local.Services.Units
 
 	var fedCtx context.Context
 	fedCtx, err = federated.RepoContext(ctx, &param.URI)
@@ -2659,7 +2583,7 @@ func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptio
 		return
 	}
 
-	var target sourcegraph.UnitsServer = s.u
+	target := local.Services.Units
 
 	res, err = target.List(ctx, param)
 	return
@@ -2667,7 +2591,6 @@ func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptio
 }
 
 type wrappedUserKeys struct {
-	u sourcegraph.UserKeysServer
 	c *auth.Config
 }
 
@@ -2683,7 +2606,7 @@ func (s wrappedUserKeys) AddKey(ctx context.Context, param *sourcegraph.SSHPubli
 		return
 	}
 
-	var target sourcegraph.UserKeysServer = s.u
+	target := local.Services.UserKeys
 
 	res, err = target.AddKey(ctx, param)
 	return
@@ -2702,7 +2625,7 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHP
 		return
 	}
 
-	var target sourcegraph.UserKeysServer = s.u
+	target := local.Services.UserKeys
 
 	res, err = target.LookupUser(ctx, param)
 	return
@@ -2721,7 +2644,7 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *pbtypes.Void) (re
 		return
 	}
 
-	var target sourcegraph.UserKeysServer = s.u
+	target := local.Services.UserKeys
 
 	res, err = target.DeleteKey(ctx, param)
 	return
@@ -2729,7 +2652,6 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *pbtypes.Void) (re
 }
 
 type wrappedUsers struct {
-	u sourcegraph.UsersServer
 	c *auth.Config
 }
 
@@ -2745,7 +2667,7 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 		return
 	}
 
-	res, err = federated.CustomUsersGet(ctx, param, s.u)
+	res, err = federated.CustomUsersGet(ctx, param, local.Services.Users)
 	return
 
 }
@@ -2762,7 +2684,7 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.Email
 		return
 	}
 
-	var target sourcegraph.UsersServer = s.u
+	target := local.Services.Users
 
 	res, err = target.GetWithEmail(ctx, param)
 	return
@@ -2781,7 +2703,7 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 		return
 	}
 
-	var target sourcegraph.UsersServer = s.u
+	target := local.Services.Users
 
 	var fedCtx context.Context
 	fedCtx, err = federated.UserContext(ctx, *param)
@@ -2810,7 +2732,7 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 		return
 	}
 
-	var target sourcegraph.UsersServer = s.u
+	target := local.Services.Users
 
 	res, err = target.List(ctx, param)
 	return

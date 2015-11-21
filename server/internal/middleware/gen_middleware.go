@@ -109,26 +109,24 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/federated"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/trace"
+	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-// Wrap wraps the services and returns a set of services that performs
-// authorization checks as specified in the Config.
-func Wrap(s svc.Services, c *auth.Config) svc.Services {
-	<<<range .>>>
-	  if s.<<<.Name>>> != nil {
-			s.<<<.Name>>> = wrapped<<<.Name>>>{s.<<<.Name>>>, c}
-		}
-	<<<end>>>
-	return s
+// Services returns the local services wrapped with auth, federation, etc.
+func Services(c *auth.Config) svc.Services {
+	return svc.Services{
+		<<<range .>>>
+			<<<.Name>>>: wrapped<<<.Name>>>{c},
+		<<<end>>>
+	}
 }
 
 <<<range .>>>
 	type wrapped<<<.Name>>> struct{
-		u <<<.TypeName>>>
 		c *auth.Config
 	}
 
@@ -147,10 +145,10 @@ func Wrap(s svc.Services, c *auth.Config) svc.Services {
 			}
 
 			<<<if methodHasCustomFederation $service .Name>>>
-				res, err = federated.Custom<<<$service.Name>>><<<.Name>>>(ctx, param, s.u)
+				res, err = federated.Custom<<<$service.Name>>><<<.Name>>>(ctx, param, local.Services.<<<$service.Name>>>)
 				return
 			<<<else>>>
-				var target <<<$service.TypeName>>> = s.u
+				target := local.Services.<<<$service.Name>>>
 				<<<$repoURIExpr := repoURIExpr .>>>
 				<<<$userSpecExpr := userSpecExpr .>>>
 				<<<if and (serviceIsFederated $service) (or (ne $repoURIExpr "") (ne $userSpecExpr ""))>>>
