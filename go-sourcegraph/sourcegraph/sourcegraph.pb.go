@@ -765,7 +765,7 @@ func (*StorageBucket) ProtoMessage()    {}
 // StorageKey is a storage object's key.
 type StorageKey struct {
 	// Bucket is the bucket name.
-	Bucket string `protobuf:"bytes,3,opt,name=bucket,proto3" json:",omitempty"`
+	Bucket *StorageBucket `protobuf:"bytes,3,opt,name=bucket" json:",omitempty"`
 	// Key is the name of the storage object. In filesystem terminology, this is
 	// the 'filename' and thus must be unique against all other key names in the
 	// bucket.
