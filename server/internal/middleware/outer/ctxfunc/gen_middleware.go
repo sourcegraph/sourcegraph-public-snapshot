@@ -10,9 +10,9 @@ import (
 
 func main() {
 	svcs := []string{
-		"../../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
-		"../../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
-		"../../../../gitserver/gitpb/git_transport.pb.go",
+		"../../../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
+		"../../../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
+		"../../../../../gitserver/gitpb/git_transport.pb.go",
 	}
 	gen.Generate("middleware.go", tmpl, svcs, nil)
 }

@@ -5,10 +5,10 @@ import (
 	"google.golang.org/grpc"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/cached"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/ctxfunc"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer/cached"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer/ctxfunc"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -34,7 +34,7 @@ func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 	// statement) we wrap them with authentication, metadata, config,
 	// etc., handlers that only need to be run once per external
 	// request.
-	services := middleware.Services(authConfig)
+	services := inner.Services(authConfig)
 
 	// Wrap in middleware for context initialization. This is the
 	// outermost wrapper (except caching) because it performs the most

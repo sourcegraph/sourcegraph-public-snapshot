@@ -11,11 +11,11 @@ import (
 
 func main() {
 	svcs := []string{
-		"../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
-		"../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
-		"../../../gitserver/gitpb/git_transport.pb.go",
+		"../../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
+		"../../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
+		"../../../../gitserver/gitpb/git_transport.pb.go",
 	}
-	gen.Generate("middleware.go", tmpl, svcs, nil)
+	gen.Generate("inner_middleware.go", tmpl, svcs, nil)
 }
 
 func serviceIsFederated(x *gen.Service) bool {
@@ -97,7 +97,7 @@ var tmpl = template.Must(template.New("").Delims("<<<", ">>>").Funcs(template.Fu
 //   go generate
 //
 
-package middleware
+package inner
 
 import (
 	"time"
@@ -106,9 +106,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/federated"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/trace"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/federated"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/trace"
 	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"

@@ -9,7 +9,7 @@
 //   go generate
 //
 
-package middleware
+package inner
 
 import (
 	"time"
@@ -21,9 +21,9 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/auth"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/federated"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/trace"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/federated"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/trace"
 	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
