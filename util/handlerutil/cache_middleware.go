@@ -21,14 +21,14 @@ func CacheMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFu
 }
 
 func hasNoCacheHeader(r *http.Request) bool {
-	cacheControl := r.Header.Get(http.CanonicalHeaderKey("Cache-Control"))
+	cacheControl := r.Header.Get("Cache-Control")
 	if cacheControl == "no-cache" {
 		return true
 	}
 
 	// For compatibility with older HTTP 1.0 clients.
 	// See http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32.
-	pragma := r.Header.Get(http.CanonicalHeaderKey("Pragma"))
+	pragma := r.Header.Get("Pragma")
 	if pragma == "no-cache" {
 		return true
 	}
