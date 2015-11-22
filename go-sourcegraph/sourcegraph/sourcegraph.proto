@@ -282,7 +282,7 @@ message Repo {
 	pbtypes.Timestamp updated_at = 16 [(gogoproto.nullable) = false];
 
 	// PushedAt is when this repository's was last (VCS-)pushed to.
-	pbtypes.Timestamp pushed_at = 17 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp pushed_at = 17;
 
 	// Permissions describes the permissions that the current user (or anonymous users,
 	// if there is no current user) is granted to this repository.

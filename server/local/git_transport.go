@@ -2,12 +2,14 @@ package local
 
 import (
 	"reflect"
+	"time"
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -56,8 +58,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		return nil, err
 	}
 
-	store := store.RepoVCSFromContext(ctx)
-	t, err := store.OpenGitTransport(ctx, op.Repo.URI)
+	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,20 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 			events.Publish(events.GitPushEvent, payload)
 		}
 	}
+
+	if err := updateRepoPushedAt(ctx, op.Repo); err != nil {
+		return nil, err
+	}
+
 	return &gitpb.Packet{Data: data}, nil
+}
+
+func updateRepoPushedAt(ctx context.Context, repo sourcegraph.RepoSpec) error {
+	now := time.Now()
+	return store.ReposFromContext(ctx).Update(ctx, &store.RepoUpdate{
+		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo},
+		PushedAt:      &now,
+	})
 }
 
 // collapseDuplicateEvents transforms a githttp event list such that adjacent

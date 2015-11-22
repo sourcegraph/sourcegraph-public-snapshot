@@ -21,6 +21,7 @@ func init() {
 		"ALTER TABLE repo ALTER COLUMN description TYPE text",
 		`ALTER TABLE repo ALTER COLUMN default_branch SET NOT NULL;`,
 		`ALTER TABLE repo ALTER COLUMN vcs SET NOT NULL;`,
+		`ALTER TABLE repo ALTER COLUMN pushed_at TYPE timestamp with time zone USING pushed_at::timestamp with time zone;`,
 		"CREATE INDEX repo_name ON repo(name text_pattern_ops);",
 
 		// fast for repo searching by URI and name
@@ -45,13 +46,13 @@ type dbRepo struct {
 	Fork          bool
 	Mirror        bool
 	Private       bool
-	CreatedAt     time.Time `db:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at"`
-	PushedAt      time.Time `db:"pushed_at"`
+	CreatedAt     time.Time  `db:"created_at"`
+	UpdatedAt     time.Time  `db:"updated_at"`
+	PushedAt      *time.Time `db:"pushed_at"`
 }
 
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
-	return &sourcegraph.Repo{
+	r2 := &sourcegraph.Repo{
 		URI:           r.URI,
 		Origin:        r.Origin,
 		Name:          r.Name,
@@ -69,8 +70,14 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		Private:       r.Private,
 		CreatedAt:     pbtypes.NewTimestamp(r.CreatedAt),
 		UpdatedAt:     pbtypes.NewTimestamp(r.UpdatedAt),
-		PushedAt:      pbtypes.NewTimestamp(r.PushedAt),
 	}
+
+	if r.PushedAt != nil {
+		ts := pbtypes.NewTimestamp(*r.PushedAt)
+		r2.PushedAt = &ts
+	}
+
+	return r2
 }
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
@@ -91,7 +98,11 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.Private = r2.Private
 	r.CreatedAt = r2.CreatedAt.Time()
 	r.UpdatedAt = r2.UpdatedAt.Time()
-	r.PushedAt = r2.PushedAt.Time()
+
+	if r2.PushedAt != nil {
+		ts := r2.PushedAt.Time()
+		r.PushedAt = &ts
+	}
 }
 
 func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
@@ -322,7 +333,7 @@ func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourceg
 	return r.toRepo(), nil
 }
 
-func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error {
+func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	if op.Description != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
 		if err != nil {
@@ -331,6 +342,12 @@ func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error
 	}
 	if op.Language != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
+		if err != nil {
+			return err
+		}
+	}
+	if op.PushedAt != nil {
+		_, err := dbh(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo.URI)
 		if err != nil {
 			return err
 		}

@@ -110,8 +110,8 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 		return nil, err
 	}
 
-	store := store.ReposFromContext(ctx)
-	if err := store.Update(ctx, op); err != nil {
+	update := &store.RepoUpdate{ReposUpdateOp: op}
+	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
 		return nil, err
 	}
 	return s.get(ctx, op.Repo.URI)

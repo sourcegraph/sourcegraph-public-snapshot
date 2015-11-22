@@ -29,10 +29,21 @@ type Repos interface {
 	Create(context.Context, *sourcegraph.Repo) (*sourcegraph.Repo, error)
 
 	// Update updates a repository.
-	Update(context.Context, *sourcegraph.ReposUpdateOp) error
+	Update(context.Context, *RepoUpdate) error
 
 	// Delete deletes a repository.
 	Delete(ctx context.Context, repo string) error
+}
+
+// RepoUpdate represents an update to specific fields of a repo. Only
+// fields with non-zero values are updated.
+//
+// The ReposUpdateUp.Repo field must be filled in to specify the repo
+// that will be updated.
+type RepoUpdate struct {
+	*sourcegraph.ReposUpdateOp
+
+	PushedAt *time.Time
 }
 
 // RepoConfigs is the interface for storing Sourcegraph-specific repo

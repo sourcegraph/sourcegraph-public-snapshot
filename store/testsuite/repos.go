@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -133,7 +134,7 @@ func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos, 
 		t.Errorf("got description %q, want %q", repo.Description, want)
 	}
 
-	if err := s.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}); err != nil {
+	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,6 +144,37 @@ func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos, 
 	}
 	if want := "d"; repo.Description != want {
 		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
+}
+
+func Repos_Update_PushedAt(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+	// Add a repo.
+	if _, err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b"})); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.PushedAt != nil {
+		t.Errorf("got PushedAt %v, want nil", repo.PushedAt.Time())
+	}
+
+	newTime := time.Unix(123456, 0)
+	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, PushedAt: &newTime}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.PushedAt == nil {
+		t.Fatal("got PushedAt nil, want non-nil")
+	}
+	if want := newTime; !repo.PushedAt.Time().Equal(want) {
+		t.Errorf("got PushedAt %q, want %q", repo.PushedAt.Time(), want)
 	}
 }
 

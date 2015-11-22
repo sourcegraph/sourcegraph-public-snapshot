@@ -84,3 +84,9 @@ func TestRepos_Update_Description(t *testing.T) {
 	defer done()
 	testsuite.Repos_Update_Description(ctx, t, &Repos{}, preCreateRepo)
 }
+
+func TestRepos_Update_PushedAt(t *testing.T) {
+	ctx, done := testContext()
+	defer done()
+	testsuite.Repos_Update_PushedAt(ctx, t, &Repos{}, preCreateRepo)
+}

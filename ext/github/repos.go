@@ -90,7 +90,8 @@ func repoFromGitHub(ghrepo *github.Repository) *sourcegraph.Repo {
 		repo.UpdatedAt = pbtypes.NewTimestamp(ghrepo.UpdatedAt.Time)
 	}
 	if ghrepo.PushedAt != nil {
-		repo.PushedAt = pbtypes.NewTimestamp(ghrepo.PushedAt.Time)
+		ts := pbtypes.NewTimestamp(ghrepo.PushedAt.Time)
+		repo.PushedAt = &ts
 	}
 
 	// Look for "DEPRECATED" in the description. If it's removed from the
@@ -241,7 +242,7 @@ func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourceg
 	return nil, errors.New("GitHub repo creation is not implemented")
 }
 
-func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error {
+func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	return errors.New("GitHub repo updating is not implemented")
 }
 

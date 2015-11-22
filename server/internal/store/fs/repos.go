@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"time"
 
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sourcegraph/rwvfs"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -27,6 +29,8 @@ import (
 type Repos struct{}
 
 var _ store.Repos = (*Repos)(nil)
+
+const timeFormat = time.RFC3339Nano
 
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	dir := dirForRepo(repo)
@@ -185,6 +189,15 @@ func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, err
 		repo.Description = gitConfig.Sourcegraph.Description
 		repo.Language = gitConfig.Sourcegraph.Language
 		repo.Private = gitConfig.Sourcegraph.Private
+		if gitConfig.Sourcegraph.PushedAt != "" {
+			pushedAt, err := time.Parse(timeFormat, gitConfig.Sourcegraph.PushedAt)
+			if err == nil {
+				ts := pbtypes.NewTimestamp(pushedAt)
+				repo.PushedAt = &ts
+			} else {
+				log.Printf("warning: failed to parse PushedAt time %q: %s", pushedAt, err)
+			}
+		}
 
 		if origin := gitConfig.Remote["origin"]; origin != nil {
 			repo.Mirror = origin.Mirror
@@ -300,7 +313,7 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master"}, nil
 }
 
-func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error {
+func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	dir := absolutePathForRepo(ctx, op.Repo.URI)
 
 	if op.Description != "" {
@@ -311,6 +324,12 @@ func (s *Repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) error
 
 	if op.Language != "" {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", strings.TrimSpace(op.Language)); err != nil {
+			return err
+		}
+	}
+
+	if op.PushedAt != nil {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.pushedat", op.PushedAt.Format(timeFormat)); err != nil {
 			return err
 		}
 	}

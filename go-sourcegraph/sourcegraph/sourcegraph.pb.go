@@ -615,7 +615,7 @@ type Repo struct {
 	// it's an externally hosted repository).
 	UpdatedAt pbtypes.Timestamp `protobuf:"bytes,16,opt,name=updated_at" `
 	// PushedAt is when this repository's was last (VCS-)pushed to.
-	PushedAt pbtypes.Timestamp `protobuf:"bytes,17,opt,name=pushed_at" `
+	PushedAt *pbtypes.Timestamp `protobuf:"bytes,17,opt,name=pushed_at" json:",omitempty"`
 	// Permissions describes the permissions that the current user (or anonymous users,
 	// if there is no current user) is granted to this repository.
 	Permissions *RepoPermissions `protobuf:"bytes,18,opt,name=permissions" json:",omitempty"`
