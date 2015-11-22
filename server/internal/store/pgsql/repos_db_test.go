@@ -154,6 +154,13 @@ func TestRepos_Update_Description(t *testing.T) {
 	testsuite.Repos_Update_Description(ctx, t, &Repos{}, preCreateRepo)
 }
 
+func TestRepos_Update_UpdatedAt(t *testing.T) {
+	t.Parallel()
+	ctx, done := testContext()
+	defer done()
+	testsuite.Repos_Update_UpdatedAt(ctx, t, &Repos{}, preCreateRepo)
+}
+
 func TestRepos_Update_PushedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()

@@ -189,15 +189,20 @@ func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, err
 		repo.Description = gitConfig.Sourcegraph.Description
 		repo.Language = gitConfig.Sourcegraph.Language
 		repo.Private = gitConfig.Sourcegraph.Private
-		if gitConfig.Sourcegraph.PushedAt != "" {
-			pushedAt, err := time.Parse(timeFormat, gitConfig.Sourcegraph.PushedAt)
-			if err == nil {
-				ts := pbtypes.NewTimestamp(pushedAt)
-				repo.PushedAt = &ts
-			} else {
-				log.Printf("warning: failed to parse PushedAt time %q: %s", pushedAt, err)
+
+		parseTime := func(dest **pbtypes.Timestamp, value string) {
+			if value != "" {
+				t, err := time.Parse(timeFormat, value)
+				if err == nil {
+					ts := pbtypes.NewTimestamp(t)
+					*dest = &ts
+				} else {
+					log.Printf("warning: failed to parse time %q: %s", value, err)
+				}
 			}
 		}
+		parseTime(&repo.UpdatedAt, gitConfig.Sourcegraph.UpdatedAt)
+		parseTime(&repo.PushedAt, gitConfig.Sourcegraph.PushedAt)
 
 		if origin := gitConfig.Remote["origin"]; origin != nil {
 			repo.Mirror = origin.Mirror
@@ -324,6 +329,12 @@ func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 
 	if op.Language != "" {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", strings.TrimSpace(op.Language)); err != nil {
+			return err
+		}
+	}
+
+	if op.UpdatedAt != nil {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.updatedat", op.UpdatedAt.Format(timeFormat)); err != nil {
 			return err
 		}
 	}

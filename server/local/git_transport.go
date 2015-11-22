@@ -96,6 +96,9 @@ func updateRepoPushedAt(ctx context.Context, repo sourcegraph.RepoSpec) error {
 	return store.ReposFromContext(ctx).Update(ctx, &store.RepoUpdate{
 		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo},
 		PushedAt:      &now,
+		// Note: No need to update the UpdatedAt field, since it
+		// should track significant updates to repo metadata, not just
+		// pushes.
 	})
 }
 

@@ -23,6 +23,7 @@ type repoGitConfig struct {
 		Description string
 		Language    string
 		Private     bool
+		UpdatedAt   string
 		PushedAt    string
 	}
 }

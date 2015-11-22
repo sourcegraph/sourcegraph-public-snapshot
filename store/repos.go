@@ -43,7 +43,8 @@ type Repos interface {
 type RepoUpdate struct {
 	*sourcegraph.ReposUpdateOp
 
-	PushedAt *time.Time
+	UpdatedAt *time.Time
+	PushedAt  *time.Time
 }
 
 // RepoConfigs is the interface for storing Sourcegraph-specific repo

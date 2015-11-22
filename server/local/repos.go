@@ -3,6 +3,7 @@ package local
 import (
 	"io/ioutil"
 	"log"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -110,7 +111,8 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 		return nil, err
 	}
 
-	update := &store.RepoUpdate{ReposUpdateOp: op}
+	ts := time.Now()
+	update := &store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
 		return nil, err
 	}
