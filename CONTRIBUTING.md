@@ -32,6 +32,7 @@ This is a rough outline of what a contributor's workflow looks like today:
 - Make commits of logical units.
 - Create a patch via [`git format-patch`](https://ariejan.net/2009/10/26/how-to-create-and-apply-a-patch-with-git/)
 and send it to us [via a thread](https://src.sourcegraph.com/sourcegraph/.tracker).
+- Sign the CLA (in misc/CLA.txt) and send it to us so we may incorporate your contributions.
 - We'll open a changeset and have a conversation about the patch.
 - We'll merge the changeset if everything looks good.
 
