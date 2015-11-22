@@ -41,7 +41,11 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		listOpts.PerPage = 50
 	}
 
-	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{ListOptions: listOpts})
+	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		Sort:        "pushed",
+		Direction:   "desc",
+		ListOptions: listOpts,
+	})
 	if err != nil {
 		return err
 	}
