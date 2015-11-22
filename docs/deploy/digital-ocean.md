@@ -16,11 +16,3 @@ To set up Sourcegraph on a new [Digital Ocean](https://www.digitalocean.com/) cl
 * Click **Create Droplet**.
 * In 3-4 minutes, your Sourcegraph server should be available at `http://<ip-address>`
 (the instance will show you its IP address).
-
-# Next steps
-
-* [Configure DNS]({{< relref "config/appurl-dns.md" >}})
-
-# Troubleshooting
-
-* [cloud-init troubleshooting]({{< relref "troubleshooting/cloud-init.md" >}})

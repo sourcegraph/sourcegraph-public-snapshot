@@ -1,5 +1,5 @@
 +++
-title = "Git Repo Mirroring"
+title = "Git mirroring"
 +++
 
 Sourcegraph works great as the system of record, but there are some situations in which you will want to mirror your repositories hosted on Sourcegraph to a Git repository hosted somewhere else. With configuration, Sourcegraph can automatically push changes to an external code host each time someone pushes changes to Sourcegraph.
