@@ -91,6 +91,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, err
 	}
 
+	ts := pbtypes.NewTimestamp(time.Now())
 	repo := &sourcegraph.Repo{
 		URI:          op.URI,
 		VCS:          op.VCS,
@@ -99,6 +100,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		Private:      op.Private,
 		Description:  op.Description,
 		Language:     op.Language,
+		CreatedAt:    &ts,
 	}
 	if _, err := store.ReposFromContextOrNil(ctx).Create(ctx, repo); err != nil {
 		return nil, err

@@ -79,6 +79,12 @@ func TestRepos_List_URIs(t *testing.T) {
 	testsuite.Repos_List_URIs(ctx, t, &Repos{}, preCreateRepo)
 }
 
+func TestRepos_Create(t *testing.T) {
+	ctx, done := testContext()
+	defer done()
+	testsuite.Repos_Create(ctx, t, &Repos{}, preCreateRepo)
+}
+
 func TestRepos_Update_Description(t *testing.T) {
 	ctx, done := testContext()
 	defer done()

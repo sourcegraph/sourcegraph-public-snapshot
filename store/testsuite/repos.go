@@ -10,6 +10,8 @@ import (
 
 	"sort"
 
+	"sourcegraph.com/sqs/pbtypes"
+
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -115,6 +117,27 @@ func Repos_List_URIs(ctx context.Context, t *testing.T, s store.Repos, preCreate
 		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%v: got repos %v, want %v", test.uris, got, test.want)
 		}
+	}
+}
+
+func Repos_Create(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+	tm := time.Now().Round(time.Second)
+	ts := pbtypes.NewTimestamp(tm)
+
+	// Add a repo.
+	if _, err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b", CreatedAt: &ts})); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.CreatedAt == nil {
+		t.Fatal("got CreatedAt nil")
+	}
+	if want := ts.Time(); !repo.CreatedAt.Time().Equal(want) {
+		t.Errorf("got CreatedAt %q, want %q", repo.CreatedAt.Time(), want)
 	}
 }
 

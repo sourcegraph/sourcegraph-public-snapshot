@@ -201,6 +201,7 @@ func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, err
 				}
 			}
 		}
+		parseTime(&repo.CreatedAt, gitConfig.Sourcegraph.CreatedAt)
 		parseTime(&repo.UpdatedAt, gitConfig.Sourcegraph.UpdatedAt)
 		parseTime(&repo.PushedAt, gitConfig.Sourcegraph.PushedAt)
 
@@ -291,6 +292,12 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 
 	if repo.Language != "" {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", repo.Language); err != nil {
+			return nil, err
+		}
+	}
+
+	if repo.CreatedAt != nil {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.createdat", repo.CreatedAt.Time().Format(timeFormat)); err != nil {
 			return nil, err
 		}
 	}
