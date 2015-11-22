@@ -13,9 +13,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// githttp.Event objects have the EmptyCommitID value in the Last (or Commit)
-// field to signify that a branch was created (or deleted).
-const EmptyCommitID = "0000000000000000000000000000000000000000"
+// emptyGitCommitID is used in githttp.Event objects in the Last (or
+// Commit) field to signify that a branch was created (or deleted).
+const emptyGitCommitID = "0000000000000000000000000000000000000000"
 
 var GitTransport gitpb.GitTransportServer = &gitTransport{}
 
@@ -74,9 +74,9 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 	}
 	for _, e := range gitEvents {
 		payload.Event = e
-		if e.Last == EmptyCommitID {
+		if e.Last == emptyGitCommitID {
 			events.Publish(events.GitCreateBranchEvent, payload)
-		} else if e.Commit == EmptyCommitID {
+		} else if e.Commit == emptyGitCommitID {
 			events.Publish(events.GitDeleteBranchEvent, payload)
 		} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
 			events.Publish(events.GitPushEvent, payload)

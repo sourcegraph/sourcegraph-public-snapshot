@@ -100,7 +100,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 		return nil, grpc.Errorf(codes.Internal, "cannot list changesets for base: %v", err)
 	}
 
-	isBranchDeleted := (op.Commit == EmptyCommitID)
+	isBranchDeleted := (op.Commit == emptyGitCommitID)
 
 	// Record all changeset updates to be executed.
 	updates := make([]*store.ChangesetUpdateOp, 0)
