@@ -155,8 +155,10 @@ func (c *repoGetCmd) Execute(args []string) error {
 }
 
 type repoListCmd struct {
-	Owner string `long:"owner" description:"login of user whose owned repositories to list"`
-	Query string `short:"q" long:"query" description:"query"`
+	Owner     string `long:"owner" description:"login of user whose owned repositories to list"`
+	Query     string `short:"q" long:"query" description:"query"`
+	Sort      string `long:"sort" description:"sort-by field"`
+	Direction string `long:"direction" description:"sort direction (asc or desc)" default:"asc"`
 }
 
 func (c *repoListCmd) Execute(args []string) error {
@@ -166,6 +168,8 @@ func (c *repoListCmd) Execute(args []string) error {
 		repos, err := cl.Repos.List(cliCtx, &sourcegraph.RepoListOptions{
 			Owner:       c.Owner,
 			Query:       c.Query,
+			Sort:        c.Sort,
+			Direction:   c.Direction,
 			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
 		})
 

@@ -59,8 +59,6 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		}
 	}
 	w := fs.WalkFS(".", rwvfs.Walkable(reposVFS))
-	skip := opt.ListOptions.Offset()
-	limit := opt.ListOptions.Limit()
 	for w.Step() {
 		if err := w.Err(); err != nil {
 			return nil, err
@@ -68,75 +66,17 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		fi := w.Stat()
 		if fi.IsDir() || fi.Mode()&os.ModeSymlink != 0 {
 			if isGitRepoDir(reposVFS, w.Path()) {
+				w.SkipDir()
 				repo, err := s.newRepo(ctx, w.Path())
 				if err != nil {
 					return nil, err
 				}
-				w.SkipDir()
-
-				if !repoSatisfiesOpts(repo, opt) {
-					continue
-				}
-
-				// Paginate.
-				if skip == 0 {
-					repos = append(repos, repo)
-					limit--
-				} else {
-					skip--
-				}
-				if limit == 0 {
-					break
-				}
+				repos = append(repos, repo)
 			}
 		}
 	}
 
-	return repos, nil
-}
-
-func repoSatisfiesOpts(repo *sourcegraph.Repo, opt *sourcegraph.RepoListOptions) bool {
-	if opt == nil {
-		return true
-	}
-
-	if query := opt.Query; query != "" {
-		ok := func() bool {
-			query = strings.ToLower(query)
-			uri, name := strings.ToLower(repo.URI), strings.ToLower(repo.Name)
-
-			if query == uri || strings.HasPrefix(name, query) {
-				return true
-			}
-
-			// Match any path component prefix.
-			for _, pc := range strings.Split(uri, "/") {
-				if strings.HasPrefix(pc, query) {
-					return true
-				}
-			}
-
-			return false
-		}()
-		if !ok {
-			return false
-		}
-	}
-
-	if len(opt.URIs) > 0 {
-		uriMatch := false
-		for _, uri := range opt.URIs {
-			if strings.EqualFold(uri, repo.URI) {
-				uriMatch = true
-				break
-			}
-		}
-		if !uriMatch {
-			return false
-		}
-	}
-
-	return true
+	return reposFilter(repos, opt), nil
 }
 
 func isGitRepoDir(reposVFS rwvfs.FileSystem, path string) bool {

@@ -285,6 +285,7 @@ func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 	}
 	sortKeyToCol := map[string]string{
 		"uri":     "repo.uri",
+		"path":    "repo.uri",
 		"name":    "repo.name",
 		"created": "repo.created_at",
 		"updated": "repo.updated_at",
