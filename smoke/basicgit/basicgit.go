@@ -14,8 +14,12 @@ import (
 )
 
 var (
-	username = flag.String("username", "", "the username to use for src operations")
-	password = flag.String("password", "", "the password to use for src operations")
+	username = flag.String("username", "testuser", "the username to use for src operations")
+	password = flag.String("password", "24a6d249fa9c0a280cfabf9d9b90eec33914e546", "the password to use for src operations")
+
+	registeredClient            = "testserver"
+	registeredClientURL         = "http://localhost:3080"
+	registeredClientRedirectURL = "http://localhost:3080/login/oauth/receive"
 
 	verbose = true
 
@@ -49,11 +53,15 @@ func main() {
 }
 
 func main_() error {
-	server, err := async(`src serve`)
+	c(`src login --endpoint=https://sourcegraph.com -u %s -p %s`, username, password)
+
+	server, err := async(`src serve --allow-all-logins`)
 	if err != nil {
 		return err
 	}
 	defer server.Process.Signal(os.Interrupt)
+
+	c(`src registered-clients create --client-name=%s --client-uri='%s' --redirect-uri='%s'`, registeredClient, registeredClientURL, registeredClientRedirectURL)
 
 	c(`rm -rf ~/.sourcegraph/repos/testrepo`)
 	c(`src --endpoint=http://localhost:3080 repo create testrepo`)
