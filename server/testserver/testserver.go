@@ -47,7 +47,7 @@ var (
 	// CLI flag.
 	Store = getTestStore()
 
-	waitServerStart = flag.Duration("testapp.wait", 2*time.Second, "max time to wait for server to start")
+	waitServerStart = flag.Duration("testapp.wait", 5*time.Second, "max time to wait for server to start")
 )
 
 func getTestStore() string {
@@ -512,6 +512,7 @@ func (s *Server) Start() error {
 			// busy wait
 		}
 		if time.Since(start) > maxWait {
+			s.Close()
 			return fmt.Errorf("timeout waiting for test server at %s to start (%s)", s.Config.Serve.AppURL, maxWait)
 		}
 		if resp, err := http.Get(s.Config.Serve.AppURL + wellknown.ConfigPath); err == nil {
