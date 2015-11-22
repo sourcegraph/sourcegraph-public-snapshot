@@ -84,10 +84,12 @@ func repoFromGitHub(ghrepo *github.Repository) *sourcegraph.Repo {
 		repo.Private = *ghrepo.Private
 	}
 	if ghrepo.CreatedAt != nil {
-		repo.CreatedAt = pbtypes.NewTimestamp(ghrepo.CreatedAt.Time)
+		ts := pbtypes.NewTimestamp(ghrepo.CreatedAt.Time)
+		repo.CreatedAt = &ts
 	}
 	if ghrepo.UpdatedAt != nil {
-		repo.UpdatedAt = pbtypes.NewTimestamp(ghrepo.UpdatedAt.Time)
+		ts := pbtypes.NewTimestamp(ghrepo.UpdatedAt.Time)
+		repo.UpdatedAt = &ts
 	}
 	if ghrepo.PushedAt != nil {
 		ts := pbtypes.NewTimestamp(ghrepo.PushedAt.Time)

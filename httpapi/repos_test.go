@@ -35,10 +35,11 @@ func TestRepo_caching_notModified(t *testing.T) {
 	c, mock := newTest()
 
 	mtime := time.Now().UTC()
+	ts := pbtypes.NewTimestamp(mtime)
 
 	calledGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
 		URI:       "r/r",
-		UpdatedAt: pbtypes.NewTimestamp(mtime),
+		UpdatedAt: &ts,
 	})
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)
@@ -62,10 +63,11 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	c, mock := newTest()
 
 	mtime := time.Now().UTC()
+	ts := pbtypes.NewTimestamp(mtime)
 
 	calledGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
 		URI:       "r/r",
-		UpdatedAt: pbtypes.NewTimestamp(mtime),
+		UpdatedAt: &ts,
 	})
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)

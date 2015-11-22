@@ -18,7 +18,12 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if clientCached, err := writeCacheHeaders(w, r, repo.UpdatedAt.Time(), defaultCacheMaxAge); clientCached || err != nil {
+	var lastMod time.Time
+	if repo.UpdatedAt != nil {
+		lastMod = repo.UpdatedAt.Time()
+	}
+
+	if clientCached, err := writeCacheHeaders(w, r, lastMod, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
 

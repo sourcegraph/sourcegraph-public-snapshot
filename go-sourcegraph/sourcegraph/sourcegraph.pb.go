@@ -610,10 +610,10 @@ type Repo struct {
 	// CreatedAt is when this repository was created. If it represents an externally
 	// hosted (e.g., GitHub) repository, the creation date is when it was created at
 	// that origin.
-	CreatedAt pbtypes.Timestamp `protobuf:"bytes,15,opt,name=created_at" `
+	CreatedAt *pbtypes.Timestamp `protobuf:"bytes,15,opt,name=created_at" json:",omitempty"`
 	// UpdatedAt is when this repository's metadata was last updated (on its origin if
 	// it's an externally hosted repository).
-	UpdatedAt pbtypes.Timestamp `protobuf:"bytes,16,opt,name=updated_at" `
+	UpdatedAt *pbtypes.Timestamp `protobuf:"bytes,16,opt,name=updated_at" json:",omitempty"`
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	PushedAt *pbtypes.Timestamp `protobuf:"bytes,17,opt,name=pushed_at" json:",omitempty"`
 	// Permissions describes the permissions that the current user (or anonymous users,

@@ -275,11 +275,11 @@ message Repo {
 	// CreatedAt is when this repository was created. If it represents an externally
 	// hosted (e.g., GitHub) repository, the creation date is when it was created at
 	// that origin.
-	pbtypes.Timestamp created_at = 15 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp created_at = 15;
 
 	// UpdatedAt is when this repository's metadata was last updated (on its origin if
 	// it's an externally hosted repository).
-	pbtypes.Timestamp updated_at = 16 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp updated_at = 16;
 
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	pbtypes.Timestamp pushed_at = 17;

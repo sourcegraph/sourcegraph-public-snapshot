@@ -21,6 +21,7 @@ func init() {
 		"ALTER TABLE repo ALTER COLUMN description TYPE text",
 		`ALTER TABLE repo ALTER COLUMN default_branch SET NOT NULL;`,
 		`ALTER TABLE repo ALTER COLUMN vcs SET NOT NULL;`,
+		`ALTER TABLE repo ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		`ALTER TABLE repo ALTER COLUMN pushed_at TYPE timestamp with time zone USING pushed_at::timestamp with time zone;`,
 		"CREATE INDEX repo_name ON repo(name text_pattern_ops);",
 
@@ -47,7 +48,7 @@ type dbRepo struct {
 	Mirror        bool
 	Private       bool
 	CreatedAt     time.Time  `db:"created_at"`
-	UpdatedAt     time.Time  `db:"updated_at"`
+	UpdatedAt     *time.Time `db:"updated_at"`
 	PushedAt      *time.Time `db:"pushed_at"`
 }
 
@@ -68,10 +69,16 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		Fork:          r.Fork,
 		Mirror:        r.Mirror,
 		Private:       r.Private,
-		CreatedAt:     pbtypes.NewTimestamp(r.CreatedAt),
-		UpdatedAt:     pbtypes.NewTimestamp(r.UpdatedAt),
 	}
 
+	{
+		ts := pbtypes.NewTimestamp(r.CreatedAt)
+		r2.CreatedAt = &ts
+	}
+	if r.UpdatedAt != nil {
+		ts := pbtypes.NewTimestamp(*r.UpdatedAt)
+		r2.UpdatedAt = &ts
+	}
 	if r.PushedAt != nil {
 		ts := pbtypes.NewTimestamp(*r.PushedAt)
 		r2.PushedAt = &ts
@@ -96,9 +103,14 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.Fork = r2.Fork
 	r.Mirror = r2.Mirror
 	r.Private = r2.Private
-	r.CreatedAt = r2.CreatedAt.Time()
-	r.UpdatedAt = r2.UpdatedAt.Time()
 
+	if r2.CreatedAt != nil {
+		r.CreatedAt = r2.CreatedAt.Time()
+	}
+	if r2.UpdatedAt != nil {
+		ts := r2.UpdatedAt.Time()
+		r.UpdatedAt = &ts
+	}
 	if r2.PushedAt != nil {
 		ts := r2.PushedAt.Time()
 		r.PushedAt = &ts
@@ -342,6 +354,12 @@ func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	}
 	if op.Language != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
+		if err != nil {
+			return err
+		}
+	}
+	if op.UpdatedAt != nil {
+		_, err := dbh(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo.URI)
 		if err != nil {
 			return err
 		}
