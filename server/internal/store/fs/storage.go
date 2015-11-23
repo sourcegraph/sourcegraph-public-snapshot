@@ -41,7 +41,7 @@ func NewStorage() *Storage {
 	return &Storage{}
 }
 
-// Get gets the value of a storage object.
+// Get implements the store.Storage interface.
 func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
@@ -69,7 +69,7 @@ func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 	return &sourcegraph.StorageValue{Value: data}, nil
 }
 
-// Put puts a value into a storage object.
+// Put implements the store.Storage interface.
 func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key.Key == "" {
@@ -100,8 +100,7 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 	return &pbtypes.Void{}, err
 }
 
-// Delete deletes the specific storage object or, if no key is specified, all
-// objects in the bucket.
+// Delete implements the store.Storage interface.
 func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
 	// Parse the path and grab the lock.
 	path, err := storageKeyPath(ctx, opt)
@@ -120,7 +119,7 @@ func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 	return &pbtypes.Void{}, err
 }
 
-// Exists tells if the given key exists in the bucket or not.
+// Exists implements the store.Storage interface.
 func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
@@ -150,8 +149,7 @@ func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 	return &sourcegraph.StorageExists{Exists: exists}, nil
 }
 
-// List lists all objects in the bucket. It ignores the 'key' field of the
-// storage name parameter.
+// List implements the store.Storage interface.
 func (s *Storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
 	// Disregard the key field.
 	opt.Key = ""
