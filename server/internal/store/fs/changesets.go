@@ -36,6 +36,7 @@ const (
 	changesetReviewsFile  = "reviews.json"
 	changesetEventsFile   = "events.json"
 
+	changesetIndexAllDir    = "index_all"
 	changesetIndexOpenDir   = "index_open"
 	changesetIndexClosedDir = "index_closed"
 
@@ -60,9 +61,6 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 		return err
 	}
 
-	// Update the index with the changeset's current state.
-	s.updateIndex(ctx, fs, cs.ID, true)
-
 	ts := pbtypes.NewTimestamp(time.Now())
 	cs.CreatedAt = &ts
 	id := strconv.FormatInt(cs.ID, 10)
@@ -74,7 +72,13 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	if err := updateRef(dir, "refs/changesets/"+id+"/head", string(head)); err != nil {
 		return err
 	}
-	return writeChangeset(ctx, fs, cs)
+	err = writeChangeset(ctx, fs, cs)
+	if err == nil {
+		// Update the index with the changeset's current state.
+		s.updateIndex(ctx, fs, cs.ID, true)
+		s.indexAdd(ctx, fs, cs.ID, changesetIndexAllDir)
+	}
+	return err
 }
 
 // writeChangeset writes the given changeset into the repository specified by
@@ -87,7 +91,7 @@ func writeChangeset(ctx context.Context, sys storage.System, cs *sourcegraph.Cha
 }
 
 func resolveNextChangesetID(fs storage.System) (int64, error) {
-	fis, err := fs.List("index_all")
+	fis, err := fs.List(changesetIndexAllDir)
 	if err != nil {
 		if grpc.Code(err) == codes.NotFound {
 			return 1, nil
@@ -360,7 +364,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		op.Closed = true
 	}
 	list := sourcegraph.ChangesetList{Changesets: []*sourcegraph.Changeset{}}
-	fis, err := fs.List("index_all")
+	fis, err := fs.List(changesetIndexAllDir)
 	if err != nil {
 		if grpc.Code(err) == codes.NotFound {
 			return &list, nil
@@ -641,7 +645,7 @@ func vfsRecursiveCopy(from vfs.FileSystem, to storage.System, dir string) error 
 			if _, err := strconv.Atoi(c.Name()); err == nil && bucket == "" {
 				// Top-level directories we need to remember
 				// since they are changesets
-				err = to.Put("index_all", c.Name(), []byte{})
+				err = to.Put(changesetIndexAllDir, c.Name(), []byte{})
 				if err != nil {
 					return err
 				}
