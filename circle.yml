@@ -68,6 +68,8 @@ test:
         pwd: $REPO
     - set -o pipefail; make mdtest TESTFLAGS="-test.v -test.timeout 5m" | tee $HOME/mdtest.out:
         pwd: $REPO
+    - godep go run ./smoke/basicgit/basicgit.go:
+        pwd: $REPO
   post:
     - grep '^FAIL' $HOME/mdtest.out || true
 
