@@ -12,6 +12,11 @@
 package cached
 
 import (
+	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/grpccache"
+	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -20,100 +25,1340 @@ import (
 func Wrap(s svc.Services) svc.Services {
 
 	if s.Accounts != nil {
-		s.Accounts = &sourcegraph.CachedAccountsServer{s.Accounts}
+		s.Accounts = &CachedAccountsServer{s.Accounts}
 	}
 
 	if s.Auth != nil {
-		s.Auth = &sourcegraph.CachedAuthServer{s.Auth}
+		s.Auth = &CachedAuthServer{s.Auth}
 	}
 
 	if s.Builds != nil {
-		s.Builds = &sourcegraph.CachedBuildsServer{s.Builds}
+		s.Builds = &CachedBuildsServer{s.Builds}
 	}
 
 	if s.Changesets != nil {
-		s.Changesets = &sourcegraph.CachedChangesetsServer{s.Changesets}
+		s.Changesets = &CachedChangesetsServer{s.Changesets}
 	}
 
 	if s.Defs != nil {
-		s.Defs = &sourcegraph.CachedDefsServer{s.Defs}
+		s.Defs = &CachedDefsServer{s.Defs}
 	}
 
 	if s.Deltas != nil {
-		s.Deltas = &sourcegraph.CachedDeltasServer{s.Deltas}
+		s.Deltas = &CachedDeltasServer{s.Deltas}
 	}
 
 	if s.GraphUplink != nil {
-		s.GraphUplink = &sourcegraph.CachedGraphUplinkServer{s.GraphUplink}
+		s.GraphUplink = &CachedGraphUplinkServer{s.GraphUplink}
 	}
 
 	if s.Markdown != nil {
-		s.Markdown = &sourcegraph.CachedMarkdownServer{s.Markdown}
+		s.Markdown = &CachedMarkdownServer{s.Markdown}
 	}
 
 	if s.Meta != nil {
-		s.Meta = &sourcegraph.CachedMetaServer{s.Meta}
+		s.Meta = &CachedMetaServer{s.Meta}
 	}
 
 	if s.MirrorRepos != nil {
-		s.MirrorRepos = &sourcegraph.CachedMirrorReposServer{s.MirrorRepos}
+		s.MirrorRepos = &CachedMirrorReposServer{s.MirrorRepos}
 	}
 
 	if s.MirroredRepoSSHKeys != nil {
-		s.MirroredRepoSSHKeys = &sourcegraph.CachedMirroredRepoSSHKeysServer{s.MirroredRepoSSHKeys}
+		s.MirroredRepoSSHKeys = &CachedMirroredRepoSSHKeysServer{s.MirroredRepoSSHKeys}
 	}
 
 	if s.Notify != nil {
-		s.Notify = &sourcegraph.CachedNotifyServer{s.Notify}
+		s.Notify = &CachedNotifyServer{s.Notify}
 	}
 
 	if s.Orgs != nil {
-		s.Orgs = &sourcegraph.CachedOrgsServer{s.Orgs}
+		s.Orgs = &CachedOrgsServer{s.Orgs}
 	}
 
 	if s.People != nil {
-		s.People = &sourcegraph.CachedPeopleServer{s.People}
+		s.People = &CachedPeopleServer{s.People}
 	}
 
 	if s.RegisteredClients != nil {
-		s.RegisteredClients = &sourcegraph.CachedRegisteredClientsServer{s.RegisteredClients}
+		s.RegisteredClients = &CachedRegisteredClientsServer{s.RegisteredClients}
 	}
 
 	if s.RepoBadges != nil {
-		s.RepoBadges = &sourcegraph.CachedRepoBadgesServer{s.RepoBadges}
+		s.RepoBadges = &CachedRepoBadgesServer{s.RepoBadges}
 	}
 
 	if s.RepoStatuses != nil {
-		s.RepoStatuses = &sourcegraph.CachedRepoStatusesServer{s.RepoStatuses}
+		s.RepoStatuses = &CachedRepoStatusesServer{s.RepoStatuses}
 	}
 
 	if s.RepoTree != nil {
-		s.RepoTree = &sourcegraph.CachedRepoTreeServer{s.RepoTree}
+		s.RepoTree = &CachedRepoTreeServer{s.RepoTree}
 	}
 
 	if s.Repos != nil {
-		s.Repos = &sourcegraph.CachedReposServer{s.Repos}
+		s.Repos = &CachedReposServer{s.Repos}
 	}
 
 	if s.Search != nil {
-		s.Search = &sourcegraph.CachedSearchServer{s.Search}
+		s.Search = &CachedSearchServer{s.Search}
 	}
 
 	if s.Storage != nil {
-		s.Storage = &sourcegraph.CachedStorageServer{s.Storage}
+		s.Storage = &CachedStorageServer{s.Storage}
 	}
 
 	if s.Units != nil {
-		s.Units = &sourcegraph.CachedUnitsServer{s.Units}
+		s.Units = &CachedUnitsServer{s.Units}
 	}
 
 	if s.UserKeys != nil {
-		s.UserKeys = &sourcegraph.CachedUserKeysServer{s.UserKeys}
+		s.UserKeys = &CachedUserKeysServer{s.UserKeys}
 	}
 
 	if s.Users != nil {
-		s.Users = &sourcegraph.CachedUsersServer{s.Users}
+		s.Users = &CachedUsersServer{s.Users}
 	}
 
 	return s
+}
+
+type CachedAccountsServer struct{ sourcegraph.AccountsServer }
+
+func (s *CachedAccountsServer) Create(ctx context.Context, in *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AccountsServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedAccountsServer) RequestPasswordReset(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AccountsServer.RequestPasswordReset(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedAccountsServer) ResetPassword(ctx context.Context, in *sourcegraph.NewPassword) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AccountsServer.ResetPassword(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedAccountsServer) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AccountsServer.Update(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedAuthServer struct{ sourcegraph.AuthServer }
+
+func (s *CachedAuthServer) GetAuthorizationCode(ctx context.Context, in *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AuthServer.GetAuthorizationCode(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedAuthServer) GetAccessToken(ctx context.Context, in *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AuthServer.GetAccessToken(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedAuthServer) Identify(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AuthServer.Identify(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedAuthServer) GetPermissions(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.AuthServer.GetPermissions(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedBuildsServer struct{ sourcegraph.BuildsServer }
+
+func (s *CachedBuildsServer) Get(ctx context.Context, in *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) GetRepoBuildInfo(ctx context.Context, in *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.GetRepoBuildInfo(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) List(ctx context.Context, in *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) Create(ctx context.Context, in *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) Update(ctx context.Context, in *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.Update(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) ListBuildTasks(ctx context.Context, in *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.ListBuildTasks(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) CreateTasks(ctx context.Context, in *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.CreateTasks(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) UpdateTask(ctx context.Context, in *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.UpdateTask(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) GetLog(ctx context.Context, in *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.GetLog(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) GetTaskLog(ctx context.Context, in *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.GetTaskLog(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedBuildsServer) DequeueNext(ctx context.Context, in *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.BuildsServer.DequeueNext(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedChangesetsServer struct{ sourcegraph.ChangesetsServer }
+
+func (s *CachedChangesetsServer) Create(ctx context.Context, in *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) Get(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) List(ctx context.Context, in *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) Update(ctx context.Context, in *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.Update(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) Merge(ctx context.Context, in *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.Merge(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) UpdateAffected(ctx context.Context, in *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.UpdateAffected(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) CreateReview(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.CreateReview(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) ListReviews(ctx context.Context, in *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.ListReviews(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedChangesetsServer) ListEvents(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ChangesetsServer.ListEvents(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedDefsServer struct{ sourcegraph.DefsServer }
+
+func (s *CachedDefsServer) Get(ctx context.Context, in *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DefsServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDefsServer) List(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DefsServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDefsServer) ListRefs(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DefsServer.ListRefs(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDefsServer) ListExamples(ctx context.Context, in *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DefsServer.ListExamples(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDefsServer) ListAuthors(ctx context.Context, in *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DefsServer.ListAuthors(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDefsServer) ListClients(ctx context.Context, in *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DefsServer.ListClients(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedDeltasServer struct{ sourcegraph.DeltasServer }
+
+func (s *CachedDeltasServer) Get(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DeltasServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDeltasServer) ListUnits(ctx context.Context, in *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DeltasServer.ListUnits(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDeltasServer) ListDefs(ctx context.Context, in *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DeltasServer.ListDefs(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDeltasServer) ListFiles(ctx context.Context, in *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DeltasServer.ListFiles(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDeltasServer) ListAffectedAuthors(ctx context.Context, in *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DeltasServer.ListAffectedAuthors(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedDeltasServer) ListAffectedClients(ctx context.Context, in *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.DeltasServer.ListAffectedClients(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedGraphUplinkServer struct{ sourcegraph.GraphUplinkServer }
+
+func (s *CachedGraphUplinkServer) Push(ctx context.Context, in *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.GraphUplinkServer.Push(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedGraphUplinkServer) PushEvents(ctx context.Context, in *sourcegraph.UserEventList) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.GraphUplinkServer.PushEvents(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedMarkdownServer struct{ sourcegraph.MarkdownServer }
+
+func (s *CachedMarkdownServer) Render(ctx context.Context, in *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MarkdownServer.Render(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedMetaServer struct{ sourcegraph.MetaServer }
+
+func (s *CachedMetaServer) Status(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerStatus, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MetaServer.Status(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedMetaServer) Config(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MetaServer.Config(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedMetaServer) PubKey(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MetaServer.PubKey(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedMirrorReposServer struct{ sourcegraph.MirrorReposServer }
+
+func (s *CachedMirrorReposServer) RefreshVCS(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MirrorReposServer.RefreshVCS(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedMirroredRepoSSHKeysServer struct {
+	sourcegraph.MirroredRepoSSHKeysServer
+}
+
+func (s *CachedMirroredRepoSSHKeysServer) Create(ctx context.Context, in *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MirroredRepoSSHKeysServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedMirroredRepoSSHKeysServer) Get(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MirroredRepoSSHKeysServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedMirroredRepoSSHKeysServer) Delete(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.MirroredRepoSSHKeysServer.Delete(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedNotifyServer struct{ sourcegraph.NotifyServer }
+
+func (s *CachedNotifyServer) GenericEvent(ctx context.Context, in *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.NotifyServer.GenericEvent(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedOrgsServer struct{ sourcegraph.OrgsServer }
+
+func (s *CachedOrgsServer) Get(ctx context.Context, in *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.OrgsServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedOrgsServer) List(ctx context.Context, in *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.OrgsServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedOrgsServer) ListMembers(ctx context.Context, in *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.OrgsServer.ListMembers(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedPeopleServer struct{ sourcegraph.PeopleServer }
+
+func (s *CachedPeopleServer) Get(ctx context.Context, in *sourcegraph.PersonSpec) (*sourcegraph.Person, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.PeopleServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedRegisteredClientsServer struct {
+	sourcegraph.RegisteredClientsServer
+}
+
+func (s *CachedRegisteredClientsServer) Get(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) GetCurrent(ctx context.Context, in *pbtypes.Void) (*sourcegraph.RegisteredClient, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.GetCurrent(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) Create(ctx context.Context, in *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) Update(ctx context.Context, in *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.Update(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) Delete(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.Delete(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) List(ctx context.Context, in *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) GetUserPermissions(ctx context.Context, in *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.GetUserPermissions(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) SetUserPermissions(ctx context.Context, in *sourcegraph.UserPermissions) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.SetUserPermissions(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRegisteredClientsServer) ListUserPermissions(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RegisteredClientsServer.ListUserPermissions(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedRepoBadgesServer struct{ sourcegraph.RepoBadgesServer }
+
+func (s *CachedRepoBadgesServer) ListBadges(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoBadgesServer.ListBadges(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRepoBadgesServer) ListCounters(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoBadgesServer.ListCounters(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRepoBadgesServer) RecordHit(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoBadgesServer.RecordHit(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRepoBadgesServer) CountHits(ctx context.Context, in *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoBadgesServer.CountHits(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedRepoStatusesServer struct{ sourcegraph.RepoStatusesServer }
+
+func (s *CachedRepoStatusesServer) GetCombined(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoStatusesServer.GetCombined(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRepoStatusesServer) Create(ctx context.Context, in *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoStatusesServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedRepoTreeServer struct{ sourcegraph.RepoTreeServer }
+
+func (s *CachedRepoTreeServer) Get(ctx context.Context, in *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoTreeServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRepoTreeServer) Search(ctx context.Context, in *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoTreeServer.Search(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedRepoTreeServer) List(ctx context.Context, in *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.RepoTreeServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedReposServer struct{ sourcegraph.ReposServer }
+
+func (s *CachedReposServer) Get(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) List(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) Create(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) Update(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.Update(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) Delete(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.Delete(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) GetReadme(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.GetReadme(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) Enable(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.Enable(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) Disable(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.Disable(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) GetConfig(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.GetConfig(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) GetCommit(ctx context.Context, in *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.GetCommit(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) ListCommits(ctx context.Context, in *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.ListCommits(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) ListBranches(ctx context.Context, in *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.ListBranches(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) ListTags(ctx context.Context, in *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.ListTags(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedReposServer) ListCommitters(ctx context.Context, in *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.ReposServer.ListCommitters(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedSearchServer struct{ sourcegraph.SearchServer }
+
+func (s *CachedSearchServer) Search(ctx context.Context, in *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.SearchServer.Search(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedSearchServer) SearchTokens(ctx context.Context, in *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.SearchServer.SearchTokens(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedSearchServer) SearchText(ctx context.Context, in *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.SearchServer.SearchText(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedSearchServer) Complete(ctx context.Context, in *sourcegraph.RawQuery) (*sourcegraph.Completions, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.SearchServer.Complete(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedSearchServer) Suggest(ctx context.Context, in *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.SearchServer.Suggest(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedStorageServer struct{ sourcegraph.StorageServer }
+
+func (s *CachedStorageServer) Create(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Create(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) RemoveAll(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.RemoveAll(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Read(ctx context.Context, in *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Read(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Write(ctx context.Context, in *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Write(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Stat(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Stat(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) ReadDir(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.ReadDir(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedStorageServer) Close(ctx context.Context, in *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.StorageServer.Close(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedUnitsServer struct{ sourcegraph.UnitsServer }
+
+func (s *CachedUnitsServer) Get(ctx context.Context, in *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UnitsServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUnitsServer) List(ctx context.Context, in *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UnitsServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedUserKeysServer struct{ sourcegraph.UserKeysServer }
+
+func (s *CachedUserKeysServer) AddKey(ctx context.Context, in *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.AddKey(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUserKeysServer) LookupUser(ctx context.Context, in *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.LookupUser(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUserKeysServer) DeleteKey(ctx context.Context, in *pbtypes.Void) (*pbtypes.Void, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UserKeysServer.DeleteKey(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+type CachedUsersServer struct{ sourcegraph.UsersServer }
+
+func (s *CachedUsersServer) Get(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UsersServer.Get(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUsersServer) GetWithEmail(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UsersServer.GetWithEmail(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUsersServer) ListEmails(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UsersServer.ListEmails(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
+}
+
+func (s *CachedUsersServer) List(ctx context.Context, in *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
+	ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+	result, err := s.UsersServer.List(ctx, in)
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+	return result, err
 }

@@ -35,6 +35,11 @@ var tmpl = template.Must(template.New("").Delims("<<<", ">>>").Parse(`// GENERAT
 package cached
 
 import (
+	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/grpccache"
+	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -43,8 +48,27 @@ import (
 func Wrap(s svc.Services) svc.Services {
 	<<<range .>>>
 	  if s.<<<.Name>>> != nil {
-			s.<<<.Name>>> = &sourcegraph.Cached<<<.Name>>>Server{s.<<<.Name>>>}
+			s.<<<.Name>>> = &Cached<<<.Name>>>Server{s.<<<.Name>>>}
 		}
 	<<<end>>>
 	return s
-}`))
+}
+
+<<<range .>>>
+	type Cached<<<.Name>>>Server struct{ sourcegraph.<<<.Name>>>Server }
+
+	<<<$service := .>>>
+	<<<range .Methods>>>
+		func (s *Cached<<<$service.Name>>>Server) <<<.Name>>>(ctx context.Context, in <<<.ParamType>>>) (<<<.ResultType>>>, error) {
+			ctx, cc := grpccache.Internal_WithCacheControl(ctx)
+			result, err := s.<<<$service.Name>>>Server.<<<.Name>>>(ctx, in)
+			if !cc.IsZero() {
+				if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+					return nil, err
+				}
+			}
+			return result, err
+		}
+	<<<end>>>
+<<<end>>>
+`))
