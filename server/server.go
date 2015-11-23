@@ -7,7 +7,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer/cached"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer/ctxfunc"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -42,5 +41,5 @@ func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 	// request (it does not need to be re-run when services make
 	// internal requests to their own methods or other services'
 	// methods).
-	return cached.Wrap(ctxfunc.Services(ctxFunc, services))
+	return ctxfunc.Services(ctxFunc, services)
 }
