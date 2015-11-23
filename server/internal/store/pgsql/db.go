@@ -13,8 +13,11 @@ import (
 var (
 	// Schema is the DB schema for the database used by this package.
 	Schema = dbutil2.Schema{
-		CreateSQL: []string{`CREATE EXTENSION IF NOT EXISTS citext;`},
-		Map:       &modl.DbMap{Dialect: modl.PostgresDialect{}},
+		CreateSQL: []string{
+			`CREATE EXTENSION IF NOT EXISTS citext;`,
+			`CREATE EXTENSION IF NOT EXISTS hstore;`,
+		},
+		Map: &modl.DbMap{Dialect: modl.PostgresDialect{}},
 	}
 )
 

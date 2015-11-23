@@ -201,6 +201,8 @@ func (s *Storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourc
 func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, error) {
 	// Be very strict about what names may look like. The goal here is to keep
 	// them human-readable and also make errors obvious.
+	//
+	// TODO(slimsag): duplicated in ../pgsql/storage.go
 	validateName := func(field, v string) error {
 		if !isAlphaNumeric(v) {
 			return fmt.Errorf("%s must only be alphanumeric with underscores and dashes", field)
@@ -268,6 +270,8 @@ func slashesToDashes(p string) string {
 
 // isAlphaNumeric reports whether the string is alphabetic, digit, underscore,
 // or dash.
+//
+// TODO(slimsag): duplicated in ../pgsql/storage.go
 func isAlphaNumeric(s string) bool {
 	for _, r := range s {
 		if r != '_' && r != '-' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {

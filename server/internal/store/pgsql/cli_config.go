@@ -23,6 +23,7 @@ var Stores = &store.Stores{
 	RegisteredClients:   &RegisteredClients{},
 	RepoVCS:             &fs.RepoVCS{},
 	Repos:               &Repos{},
+	Storage:             &Storage{},
 	RepoStatuses:        &RepoStatuses{},
 	UserPermissions:     &UserPermissions{},
 	Users:               &Users{},
