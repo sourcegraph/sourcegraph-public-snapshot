@@ -2485,6 +2485,25 @@ func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp
 
 }
 
+func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.StoragePutOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Storage", "PutNoOverwrite", param)
+	defer func() {
+		trace.After(ctx, "Storage", "PutNoOverwrite", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Storage.PutNoOverwrite")
+	if err != nil {
+		return
+	}
+
+	var target sourcegraph.StorageServer = s.u
+
+	res, err = target.PutNoOverwrite(ctx, param)
+	return
+
+}
+
 func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKey) (res *pbtypes.Void, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Storage", "Delete", param)
