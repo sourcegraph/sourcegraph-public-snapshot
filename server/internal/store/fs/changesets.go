@@ -2,9 +2,8 @@ package fs
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
-	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -29,7 +28,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
-	sfs "src.sourcegraph.com/vfs"
 )
 
 const (
@@ -38,8 +36,8 @@ const (
 	changesetReviewsFile  = "reviews.json"
 	changesetEventsFile   = "events.json"
 
-	changesetIndexOpenDir   = "index/open"
-	changesetIndexClosedDir = "index/closed"
+	changesetIndexOpenDir   = "index_open"
+	changesetIndexClosedDir = "index_closed"
 
 	defaultCommitMessageTmpl = "{{.Title}}\n\nMerge changeset #{{.ID}}\n\n{{.Description}}"
 )
@@ -79,43 +77,17 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	return writeChangeset(ctx, fs, cs)
 }
 
-func psMarshal(fs sfs.FileSystem, path string, v interface{}) error {
-	b, err := json.MarshalIndent(v, "", "\t")
-	if err != nil {
-		return err
-	}
-	f, err := fs.Open(path)
-	if err != nil && os.IsNotExist(err) {
-		f, err = fs.Create(path)
-	}
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.Write(b)
-	return err
-}
-
-func psUnmarshal(fs sfs.FileSystem, path string, v interface{}) error {
-	f, err := fs.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return json.NewDecoder(f).Decode(v)
-}
-
 // writeChangeset writes the given changeset into the repository specified by
 // repoPath. When committing the change, msg is used as the commit message to
 // which the changeset ID is appended.
 //
 // Callers must guard by holding the s.fsLock lock.
-func writeChangeset(ctx context.Context, fs sfs.FileSystem, cs *sourcegraph.Changeset) error {
-	return psMarshal(fs, filepath.Join(strconv.FormatInt(cs.ID, 10), changesetMetadataFile), cs)
+func writeChangeset(ctx context.Context, sys storage.System, cs *sourcegraph.Changeset) error {
+	return storage.PutJSON(sys, strconv.FormatInt(cs.ID, 10), changesetMetadataFile, cs)
 }
 
-func resolveNextChangesetID(fs sfs.FileSystem) (int64, error) {
-	fis, err := fs.ReadDir(".")
+func resolveNextChangesetID(fs storage.System) (int64, error) {
+	fis, err := fs.List("index_all")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return 1, nil
@@ -123,11 +95,8 @@ func resolveNextChangesetID(fs sfs.FileSystem) (int64, error) {
 		return 0, err
 	}
 	max := int64(0)
-	for _, fi := range fis {
-		if !fi.IsDir() {
-			continue
-		}
-		n, err := strconv.Atoi(fi.Name())
+	for _, name := range fis {
+		n, err := strconv.Atoi(name)
 		if err != nil {
 			continue
 		}
@@ -149,9 +118,8 @@ func (s *Changesets) Get(ctx context.Context, repoPath string, ID int64) (*sourc
 // callers must guard
 func (s *Changesets) get(ctx context.Context, repoPath string, ID int64) (*sourcegraph.Changeset, error) {
 	fs := s.storage(ctx, repoPath)
-	path := filepath.Join(strconv.FormatInt(ID, 10), changesetMetadataFile)
 	cs := &sourcegraph.Changeset{}
-	return cs, psUnmarshal(fs, path, cs)
+	return cs, storage.GetJSON(fs, strconv.FormatInt(ID, 10), changesetMetadataFile, cs)
 }
 
 // getReviewRefTip returns the commit ID that is at the tip of the reference where
@@ -187,8 +155,7 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 	newReview.ID = int64(len(all.Reviews) + 1)
 	all.Reviews = append(all.Reviews, newReview)
 
-	p := filepath.Join(strconv.FormatInt(changesetID, 10), changesetReviewsFile)
-	err = psMarshal(fs, p, all.Reviews)
+	err = storage.PutJSON(fs, strconv.FormatInt(changesetID, 10), changesetReviewsFile, all.Reviews)
 	return newReview, err
 }
 
@@ -210,9 +177,8 @@ func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID i
 // the folder of the given changeset into v.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) readFile(ctx context.Context, fs sfs.FileSystem, changesetID int64, filename string, v interface{}) error {
-	path := filepath.Join(strconv.FormatInt(changesetID, 10), filename)
-	return psUnmarshal(fs, path, v)
+func (s *Changesets) readFile(ctx context.Context, fs storage.System, changesetID int64, filename string, v interface{}) error {
+	return storage.GetJSON(fs, strconv.FormatInt(changesetID, 10), filename, v)
 }
 
 var errInvalidUpdateOp = errors.New("invalid update operation")
@@ -297,8 +263,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			return nil, err
 		}
 		evts = append(evts, evt)
-		p := filepath.Join(strconv.FormatInt(op.ID, 10), changesetEventsFile)
-		err = psMarshal(fs, p, evts)
+		err = storage.PutJSON(fs, strconv.FormatInt(op.ID, 10), changesetEventsFile, evts)
 		return evt, err
 	}
 
@@ -395,7 +360,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		op.Closed = true
 	}
 	list := sourcegraph.ChangesetList{Changesets: []*sourcegraph.Changeset{}}
-	fis, err := fs.ReadDir(".")
+	fis, err := fs.List("index_all")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &list, nil
@@ -422,40 +387,35 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		return nil, err
 	}
 
-	var paths []string
-	for _, fi := range fis {
-		// skip files
-		if !fi.IsDir() {
-			continue
-		}
-
-		// skip non-numeric folders
-		id, err := strconv.ParseInt(fi.Name(), 10, 64)
+	var ids []int
+	for _, name := range fis {
+		id, err := strconv.Atoi(name)
 		if err != nil {
+			log15.Debug("Non numeric changeset id", "name", name)
 			continue
 		}
 
 		// If requesting only open changests, check the index.
 		if op.Open && !buildIndex {
-			if _, ok := open[id]; !ok {
+			if _, ok := open[int64(id)]; !ok {
 				continue
 			}
 		}
 
 		// If requesting only closed changesets, check the index.
 		if op.Closed && !buildIndex {
-			if _, ok := closed[id]; !ok {
+			if _, ok := closed[int64(id)]; !ok {
 				continue
 			}
 		}
-		paths = append(paths, filepath.Join(fi.Name(), changesetMetadataFile))
+		ids = append(ids, id)
 	}
 
 	// Sort the filepaths by ID in reverse, i.e. descending order. We use
 	// descending order as higher IDs were created most recently.
 	//
 	// TODO(slimsag): let the user choose the sorting order.
-	sort.Sort(sort.Reverse(byChangesetID(paths)))
+	sort.Sort(sort.Reverse(sort.IntSlice(ids)))
 
 	// TODO(slimsag): we currently do not index by Head/Base like we should. For
 	// now, we special case it by iterating over each path element, which is
@@ -466,24 +426,24 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		if start < 0 {
 			start = 0
 		}
-		if start > len(paths) {
-			start = len(paths)
+		if start > len(ids) {
+			start = len(ids)
 		}
 		end := start + op.Limit()
 		if end < 0 {
 			end = 0
 		}
-		if end > len(paths) {
-			end = len(paths)
+		if end > len(ids) {
+			end = len(ids)
 		}
-		paths = paths[start:end]
+		ids = ids[start:end]
 	}
 
 	// Read each metadata file from the VFS.
 	skip := op.Offset()
-	for _, p := range paths {
+	for _, id := range ids {
 		var cs sourcegraph.Changeset
-		err = psUnmarshal(fs, p, &cs)
+		err = storage.GetJSON(fs, strconv.Itoa(id), changesetMetadataFile, &cs)
 		if err != nil {
 			return nil, err
 		}
@@ -542,7 +502,7 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 // it is opened or closed).
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) updateIndex(ctx context.Context, fs sfs.FileSystem, cid int64, open bool) error {
+func (s *Changesets) updateIndex(ctx context.Context, fs storage.System, cid int64, open bool) error {
 	var adds, removes []string
 	if open {
 		// Changeset opened.
@@ -574,41 +534,32 @@ func (s *Changesets) updateIndex(ctx context.Context, fs sfs.FileSystem, cid int
 // already exist.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) indexAdd(ctx context.Context, fs sfs.FileSystem, cid int64, indexDir string) error {
+func (s *Changesets) indexAdd(ctx context.Context, fs storage.System, cid int64, indexDir string) error {
 	// If the file exists nothing needs to be done.
-	if _, err := s.indexStatName(ctx, fs, cid, indexDir); err == nil {
+	if s.indexHas(ctx, fs, cid, indexDir) {
 		return nil
 	}
 
-	p := filepath.Join(indexDir, strconv.FormatInt(cid, 10))
-	f, err := fs.Create(p)
-	if err != nil {
-		return err
-	}
-	f.Close()
-	return nil
+	return fs.Put(indexDir, strconv.FormatInt(cid, 10), []byte{})
 }
 
 // indexRemove removes the given changeset ID from the index directory if it
 // exists.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) indexRemove(ctx context.Context, fs sfs.FileSystem, cid int64, indexDir string) error {
+func (s *Changesets) indexRemove(ctx context.Context, fs storage.System, cid int64, indexDir string) error {
 	// If the file does not exist nothing needs to be done.
-	if _, err := s.indexStatName(ctx, fs, cid, indexDir); os.IsNotExist(err) {
+	if !s.indexHas(ctx, fs, cid, indexDir) {
 		return nil
-	} else if err != nil {
-		return err
 	}
-
-	return fs.RemoveAll(filepath.Join(indexDir, strconv.FormatInt(cid, 10)))
+	return fs.Delete(indexDir, strconv.FormatInt(cid, 10))
 }
 
 // indexList returns a list of changeset IDs found in the given index directory.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) indexList(ctx context.Context, fs sfs.FileSystem, indexDir string) (map[int64]struct{}, error) {
-	infos, err := fs.ReadDir(indexDir)
+func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir string) (map[int64]struct{}, error) {
+	infos, err := fs.List(indexDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -616,8 +567,8 @@ func (s *Changesets) indexList(ctx context.Context, fs sfs.FileSystem, indexDir 
 		return nil, err
 	}
 	ids := make(map[int64]struct{})
-	for _, fi := range infos {
-		id, err := strconv.ParseInt(fi.Name(), 10, 64)
+	for _, name := range infos {
+		id, err := strconv.ParseInt(name, 10, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -629,11 +580,11 @@ func (s *Changesets) indexList(ctx context.Context, fs sfs.FileSystem, indexDir 
 // indexStat stats the changeset ID in the given index directory.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) indexStatName(ctx context.Context, fs sfs.FileSystem, cid int64, indexDir string) (os.FileInfo, error) {
-	return fs.Stat(filepath.Join(indexDir, strconv.FormatInt(cid, 10)))
+func (s *Changesets) indexHas(ctx context.Context, fs storage.System, cid int64, indexDir string) bool {
+	return fs.Exists(indexDir, strconv.FormatInt(cid, 10))
 }
 
-func (s *Changesets) storage(ctx context.Context, repoPath string) sfs.FileSystem {
+func (s *Changesets) storage(ctx context.Context, repoPath string) storage.System {
 	return storage.Namespace(ctx, "changesets", repoPath)
 }
 
@@ -659,13 +610,13 @@ func csGetMigrateOnce(repo string) *sync.Once {
 func (s *Changesets) migrate(ctx context.Context, repoPath string) {
 	once := csGetMigrateOnce(repoPath)
 	once.Do(func() {
-		fs := s.storage(ctx, repoPath)
-		if _, err := fs.Stat("version"); err == nil {
+		system := s.storage(ctx, repoPath)
+		if system.Exists("meta", "version") {
 			// Migration has already happened
 			return
 		}
 		log15.Info("Starting migration of Changesets to Platform Storage", "repo", repoPath)
-		err := s.doMigration(ctx, repoPath, fs)
+		err := s.doMigration(ctx, repoPath, system)
 		if err != nil {
 			log15.Info("Changesets Migration failed", "repo", repoPath, "error", err)
 		} else {
@@ -674,11 +625,12 @@ func (s *Changesets) migrate(ctx context.Context, repoPath string) {
 	})
 }
 
-func vfsRecursiveCopy(from vfs.FileSystem, to sfs.FileSystem, dir string) error {
+func vfsRecursiveCopy(from vfs.FileSystem, to storage.System, dir string) error {
 	children, err := from.ReadDir(dir)
 	if err != nil {
 		return err
 	}
+	bucket := strings.Replace(strings.Trim(dir, "/"), "/", "_", -1)
 	for _, c := range children {
 		p := filepath.Join(dir, c.Name())
 		if c.IsDir() {
@@ -686,19 +638,29 @@ func vfsRecursiveCopy(from vfs.FileSystem, to sfs.FileSystem, dir string) error 
 			if err != nil {
 				return err
 			}
+			if _, err := strconv.Atoi(c.Name()); err == nil && bucket == "" {
+				// Top-level directories we need to remember
+				// since they are changesets
+				err = to.Put("index_all", c.Name(), []byte{})
+				if err != nil {
+					return err
+				}
+			}
 		} else {
+			if bucket == "" {
+				// We ignore top-level files
+				continue
+			}
 			src, err := from.Open(p)
 			if err != nil {
 				return err
 			}
-			dst, err := to.Create(p)
+			b, err := ioutil.ReadAll(src)
+			src.Close()
 			if err != nil {
-				src.Close()
 				return err
 			}
-			_, err = io.Copy(dst, src)
-			src.Close()
-			dst.Close()
+			err = to.Put(bucket, c.Name(), b)
 			if err != nil {
 				return err
 			}
@@ -707,7 +669,7 @@ func vfsRecursiveCopy(from vfs.FileSystem, to sfs.FileSystem, dir string) error 
 	return nil
 }
 
-func (s *Changesets) doMigration(ctx context.Context, repo string, to sfs.FileSystem) error {
+func (s *Changesets) doMigration(ctx context.Context, repo string, to storage.System) error {
 	dir := absolutePathForRepo(ctx, repo)
 	r, err := vcs.Open("git", dir)
 	if err != nil {
@@ -729,25 +691,8 @@ func (s *Changesets) doMigration(ctx context.Context, repo string, to sfs.FileSy
 			return err
 		}
 	}
-	f, err := to.Create("version")
-	if err != nil {
-		return err
-	}
-	return f.Close()
-}
-
-type byChangesetID []string
-
-func (v byChangesetID) Len() int      { return len(v) }
-func (v byChangesetID) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
-func (v byChangesetID) Less(i, j int) bool {
-	return v.id(v[i]) < v.id(v[j])
-}
-func (v byChangesetID) id(path string) int64 {
-	split := strings.Split(path, string(os.PathSeparator))
-	id, err := strconv.ParseInt(split[len(split)-2], 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	return id
+	version := struct {
+		Version int
+	}{1}
+	return storage.PutJSON(to, "meta", "version", version)
 }
