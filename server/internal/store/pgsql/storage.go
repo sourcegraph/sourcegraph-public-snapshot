@@ -157,11 +157,12 @@ func hQuote(s string) string {
 // bucketKey returns the key for a bucket. The composed key will be in the
 // format of:
 //
-//  <RepoURI>-<AppName>-<BucketName>
+//  <RepoURI|global>-<AppName>-<BucketName>
 //
 // For example:
 //
-//  github.com/foo/bar-issues-comments
+//  repo-github.com/foo/bar-issues-comments
+//  global-issues-comments
 //
 // It returns an error only if the app name or bucket name are invalid.
 func bucketKey(bucket *sourcegraph.StorageBucket) (string, error) {
@@ -187,7 +188,14 @@ func bucketKey(bucket *sourcegraph.StorageBucket) (string, error) {
 	if err := validateName("bucket name", bucket.Name); err != nil {
 		return "", err
 	}
-	return bucket.Repo + "-" + bucket.AppName + "-" + bucket.Name, nil
+
+	// Determine the location, global or local to a repo.
+	location := "global"
+	if bucket.Repo != "" {
+		location = "repo-" + bucket.Repo
+	}
+
+	return location + "-" + bucket.AppName + "-" + bucket.Name, nil
 }
 
 // isAlphaNumeric reports whether the string is alphabetic, digit, underscore,
