@@ -1,4 +1,4 @@
-package fs
+package sourcegraph
 
 import (
 	"time"
@@ -8,9 +8,10 @@ import (
 
 // issue is an on-disk representation of an issue.
 type issue struct {
-	State issues.State
-	Title string
-	comment
+	State     issues.State
+	Title     string
+	AuthorUID int32
+	CreatedAt time.Time
 	Reference *reference `json:",omitempty"`
 }
 

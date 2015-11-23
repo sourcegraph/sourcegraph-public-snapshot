@@ -1,12 +1,12 @@
-package fs
+package sourcegraph
 
 import (
 	"html/template"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func sgUser(ctx context.Context, user *sourcegraph.User) issues.User {

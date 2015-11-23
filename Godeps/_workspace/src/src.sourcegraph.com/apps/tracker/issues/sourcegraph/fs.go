@@ -1,22 +1,20 @@
-// Package fs implements issues.Service using a filesystem.
-package fs
+// Package sourcegraph implements issues.Service using a the Sourcegraph platform storage API.
+package sourcegraph
 
 import (
 	"html/template"
 	"os"
-	"path"
 	"strconv"
 	"time"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/apps/tracker/issues"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
-	"src.sourcegraph.com/vfs"
 )
 
 // NewService creates a Sourcegraph platform storage-backed issues.Service,
@@ -39,29 +37,40 @@ type service struct {
 }
 
 const (
-	// threadsDir is '/'-separated path for thread storage.
-	threadsDir = "threads"
+	// threadsBucket is the bucket used for storing issues by thread ID.
+	threadsBucket = "threads"
+
+	// commentsBucket is the bucket name prefix used for storing comments. Actual
+	// comments for a thread are stored in "comments-<thread ID>".
+	commentsBucket = "comments"
+
+	// eventsBucket is the bucket name prefix used for storing events. Actual
+	// events for a thread are stored in "events-<thread ID>".
+	eventsBucket = "events"
 )
+
+func threadCommentsBucket(threadID uint64) string {
+	return commentsBucket + "-" + formatUint64(threadID)
+}
+
+func threadEventsBucket(threadID uint64) string {
+	return eventsBucket + "-" + formatUint64(threadID)
+}
 
 func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) ([]issues.Issue, error) {
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var is []issues.Issue
 
-	dirs, err := readDirIDs(fs, threadsDir)
+	threads, err := readIDs(sys, threadsBucket)
 	if err != nil {
 		return is, err
 	}
-	for i := len(dirs); i > 0; i-- {
-		dir := dirs[i-1]
-		if !dir.IsDir() {
-			continue
-		}
-
+	for i := len(threads); i > 0; i-- {
+		threadID := threads[i-1]
 		var issue issue
-		err = jsonDecodeFile(fs, path.Join(threadsDir, dir.Name(), "0"), &issue)
-		if err != nil {
+		if err := storage.GetJSON(sys, threadsBucket, formatUint64(threadID), &issue); err != nil {
 			return is, err
 		}
 
@@ -70,7 +79,7 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 		}
 
 		// Count comments.
-		comments, err := readDirIDs(fs, path.Join(threadsDir, dir.Name()))
+		comments, err := sys.List(threadCommentsBucket(threadID))
 		if err != nil {
 			return is, err
 		}
@@ -79,7 +88,7 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 			return is, err
 		}
 		is = append(is, issues.Issue{
-			ID:    dir.ID,
+			ID:    threadID,
 			State: issue.State,
 			Title: issue.Title,
 			Comment: issues.Comment{
@@ -94,21 +103,17 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 }
 
 func (s service) Count(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) (uint64, error) {
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var count uint64
 
-	dirs, err := readDirIDs(fs, threadsDir)
+	threads, err := readIDs(sys, threadsBucket)
 	if err != nil {
 		return 0, err
 	}
-	for _, dir := range dirs {
-		if !dir.IsDir() {
-			continue
-		}
-
+	for _, threadID := range threads {
 		var issue issue
-		err = jsonDecodeFile(fs, path.Join(threadsDir, dir.Name(), "0"), &issue)
+		err := storage.GetJSON(sys, threadsBucket, formatUint64(threadID), &issue)
 		if err != nil {
 			return 0, err
 		}
@@ -127,10 +132,10 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 	currentUser := putil.UserFromContext(ctx)
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var issue issue
-	err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), &issue)
+	err := storage.GetJSON(sys, threadsBucket, formatUint64(id), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -172,18 +177,17 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 	currentUser := putil.UserFromContext(ctx)
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var comments []issues.Comment
 
-	dir := path.Join(threadsDir, formatUint64(id))
-	fis, err := readDirIDs(fs, dir)
+	commentIDs, err := readIDs(sys, threadCommentsBucket(id))
 	if err != nil {
 		return comments, err
 	}
-	for _, fi := range fis {
+	for _, commentID := range commentIDs {
 		var comment comment
-		err = jsonDecodeFile(fs, path.Join(dir, fi.Name()), &comment)
+		err := storage.GetJSON(sys, threadCommentsBucket(id), formatUint64(commentID), &comment)
 		if err != nil {
 			return comments, err
 		}
@@ -193,7 +197,7 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 			return comments, err
 		}
 		comments = append(comments, issues.Comment{
-			ID:        fi.ID,
+			ID:        commentID,
 			User:      sgUser(ctx, user),
 			CreatedAt: comment.CreatedAt,
 			Body:      comment.Body,
@@ -206,18 +210,17 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 
 func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64, opt interface{}) ([]issues.Event, error) {
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var events []issues.Event
 
-	dir := path.Join(threadsDir, formatUint64(id), "events")
-	fis, err := readDirIDs(fs, dir)
+	eventIDs, err := readIDs(sys, threadEventsBucket(id))
 	if err != nil {
 		return events, err
 	}
-	for _, fi := range fis {
+	for _, eventID := range eventIDs {
 		var event event
-		err = jsonDecodeFile(fs, path.Join(dir, fi.Name()), &event)
+		err := storage.GetJSON(sys, threadEventsBucket(id), formatUint64(eventID), &event)
 		if err != nil {
 			return events, err
 		}
@@ -249,7 +252,7 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	comment := comment{
 		AuthorUID: currentUser.UID,
@@ -262,13 +265,12 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 		return issues.Comment{}, err
 	}
 
-	// Commit to storage.
-	dir := path.Join(threadsDir, formatUint64(id))
-	commentID, err := nextID(fs, dir)
+	// Put in storage.
+	commentID, err := nextID(sys, threadCommentsBucket(id))
 	if err != nil {
 		return issues.Comment{}, err
 	}
-	err = jsonEncodeFile(fs, path.Join(dir, formatUint64(commentID)), comment)
+	err = storage.PutJSON(sys, threadCommentsBucket(id), formatUint64(commentID), comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -294,16 +296,19 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
+	createdAt := time.Now()
+	comment := comment{
+		AuthorUID: currentUser.UID,
+		CreatedAt: createdAt,
+		Body:      i.Body,
+	}
 	issue := issue{
-		State: issues.OpenState,
-		Title: i.Title,
-		comment: comment{
-			AuthorUID: currentUser.UID,
-			CreatedAt: time.Now(),
-			Body:      i.Body,
-		},
+		State:     issues.OpenState,
+		Title:     i.Title,
+		AuthorUID: currentUser.UID,
+		CreatedAt: createdAt,
 	}
 	if ref := i.Reference; ref != nil {
 		issue.Reference = &reference{
@@ -320,25 +325,29 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 		return issues.Issue{}, err
 	}
 
-	// Commit to storage.
-	issueID, err := nextID(fs, threadsDir)
+	// Put in storage.
+	threadID, err := nextID(sys, threadsBucket)
 	if err != nil {
 		return issues.Issue{}, err
 	}
-	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(issueID), "0"), issue)
-	if err != nil {
+	if err := storage.PutJSON(sys, threadsBucket, formatUint64(threadID), issue); err != nil {
+		return issues.Issue{}, err
+	}
+
+	// Put first comment in storage.
+	if err := storage.PutJSON(sys, threadCommentsBucket(threadID), "0", comment); err != nil {
 		return issues.Issue{}, err
 	}
 
 	return issues.Issue{
-		ID:    issueID,
+		ID:    threadID,
 		State: issue.State,
 		Title: issue.Title,
 		Comment: issues.Comment{
 			ID:        0,
 			User:      sgUser(ctx, user),
 			CreatedAt: issue.CreatedAt,
-			Body:      issue.Body,
+			Body:      comment.Body,
 			Editable:  true, // You can always edit issues you've created.
 		},
 	}, nil
@@ -379,11 +388,11 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	// Get from storage.
 	var issue issue
-	err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), &issue)
+	err := storage.GetJSON(sys, threadsBucket, formatUint64(id), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -408,15 +417,15 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 		issue.Title = *ir.Title
 	}
 
-	// Commit to storage.
-	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), issue)
+	// Put in storage.
+	err = storage.PutJSON(sys, threadsBucket, formatUint64(id), issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
 
 	// THINK: Is this the best place to do this? Should it be returned from this func? How would GH backend do it?
 	// Create event and commit to storage.
-	eventID, err := nextID(fs, path.Join(threadsDir, formatUint64(id), "events"))
+	eventID, err := nextID(sys, threadEventsBucket(id))
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -436,7 +445,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 			To:   *ir.Title,
 		}
 	}
-	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), "events", formatUint64(eventID)), event)
+	err = storage.PutJSON(sys, threadEventsBucket(id), formatUint64(eventID), event)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -465,48 +474,11 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	}
 
 	sg := sourcegraph.NewClientFromContext(ctx)
-	fs := storage.Namespace(s.appCtx, s.appName, repo.URI)
-
-	if c.ID == 0 {
-		// Get from storage.
-		var issue issue
-		err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), &issue)
-		if err != nil {
-			return issues.Comment{}, err
-		}
-
-		// Authorization check.
-		if err := canEdit(ctx, sg, currentUser, issue.AuthorUID); err != nil {
-			return issues.Comment{}, err
-		}
-
-		// TODO: Doing this here before committing in case it fails; think about factoring this out into a user service that augments...
-		user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
-		if err != nil {
-			return issues.Comment{}, err
-		}
-
-		// Apply edits.
-		issue.Body = c.Body
-
-		// Commit to storage.
-		err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), "0"), issue)
-		if err != nil {
-			return issues.Comment{}, err
-		}
-
-		return issues.Comment{
-			ID:        0,
-			User:      sgUser(ctx, user),
-			CreatedAt: issue.CreatedAt,
-			Body:      issue.Body,
-			Editable:  true, // You can always edit comments you've edited.
-		}, nil
-	}
+	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	// Get from storage.
 	var comment comment
-	err := jsonDecodeFile(fs, path.Join(threadsDir, formatUint64(id), formatUint64(c.ID)), &comment)
+	err := storage.GetJSON(sys, threadCommentsBucket(id), formatUint64(c.ID), &comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -526,7 +498,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	comment.Body = c.Body
 
 	// Commit to storage.
-	err = jsonEncodeFile(fs, path.Join(threadsDir, formatUint64(id), formatUint64(c.ID)), comment)
+	err = storage.PutJSON(sys, threadCommentsBucket(id), formatUint64(c.ID), comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -540,16 +512,17 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	}, nil
 }
 
-// nextID returns the next id for the given dir. If there are no previous elements, it begins with id 1.
-func nextID(fs vfs.FileSystem, dir string) (uint64, error) {
-	fis, err := readDirIDs(fs, dir)
+// nextID returns the next id for the given bucket. If there are no previous
+// keys in the bucket, it begins with id 1.
+func nextID(sys storage.System, bucket string) (uint64, error) {
+	ids, err := readIDs(sys, bucket)
 	if err != nil {
 		return 0, err
 	}
-	if len(fis) == 0 {
+	if len(ids) == 0 {
 		return 1, nil
 	}
-	return fis[len(fis)-1].ID + 1, nil
+	return ids[len(ids)-1] + 1, nil
 }
 
 // TODO.
