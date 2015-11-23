@@ -242,11 +242,12 @@ func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposLi
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)
 
 type StorageClient struct {
-	Get_    func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
-	Put_    func(ctx context.Context, in *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
-	Delete_ func(ctx context.Context, in *sourcegraph.StorageKey) (*pbtypes.Void, error)
-	Exists_ func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
-	List_   func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
+	Get_            func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
+	Put_            func(ctx context.Context, in *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
+	PutNoOverwrite_ func(ctx context.Context, in *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
+	Delete_         func(ctx context.Context, in *sourcegraph.StorageKey) (*pbtypes.Void, error)
+	Exists_         func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
+	List_           func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
 }
 
 func (s *StorageClient) Get(ctx context.Context, in *sourcegraph.StorageKey, opts ...grpc.CallOption) (*sourcegraph.StorageValue, error) {
@@ -255,6 +256,10 @@ func (s *StorageClient) Get(ctx context.Context, in *sourcegraph.StorageKey, opt
 
 func (s *StorageClient) Put(ctx context.Context, in *sourcegraph.StoragePutOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.Put_(ctx, in)
+}
+
+func (s *StorageClient) PutNoOverwrite(ctx context.Context, in *sourcegraph.StoragePutOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.PutNoOverwrite_(ctx, in)
 }
 
 func (s *StorageClient) Delete(ctx context.Context, in *sourcegraph.StorageKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
@@ -272,11 +277,12 @@ func (s *StorageClient) List(ctx context.Context, in *sourcegraph.StorageKey, op
 var _ sourcegraph.StorageClient = (*StorageClient)(nil)
 
 type StorageServer struct {
-	Get_    func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
-	Put_    func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
-	Delete_ func(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error)
-	Exists_ func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
-	List_   func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
+	Get_            func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
+	Put_            func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
+	PutNoOverwrite_ func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
+	Delete_         func(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error)
+	Exists_         func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
+	List_           func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
 }
 
 func (s *StorageServer) Get(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
@@ -285,6 +291,10 @@ func (s *StorageServer) Get(v0 context.Context, v1 *sourcegraph.StorageKey) (*so
 
 func (s *StorageServer) Put(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	return s.Put_(v0, v1)
+}
+
+func (s *StorageServer) PutNoOverwrite(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	return s.PutNoOverwrite_(v0, v1)
 }
 
 func (s *StorageServer) Delete(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {

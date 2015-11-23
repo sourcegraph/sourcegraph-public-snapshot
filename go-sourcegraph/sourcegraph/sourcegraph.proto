@@ -600,14 +600,25 @@ message StorageList {
 // value store.
 service Storage {
 	// Get gets the value of a storage object.
+	//
+	// If the specified object does not exist, an error detectable with
+	// os.IsNotExist is returned.
 	rpc Get(StorageKey) returns (StorageValue) {
 		option (google.api.http) = {
 			get: "/storage"
 		};
 	}
 
-	// Put puts a value into a storage object.
+	// Put puts an object into storage overwriting the old object (if any).
 	rpc Put(StoragePutOp) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			put: "/storage"
+		};
+	}
+
+	// PutNoOverwrite puts an object into storage, returning an error detectable
+	// with os.IsNotExist if the object already exists.
+	rpc PutNoOverwrite(StoragePutOp) returns (pbtypes.Void) {
 		option (google.api.http) = {
 			put: "/storage"
 		};
@@ -615,6 +626,8 @@ service Storage {
 
 	// Delete deletes the specific storage object or, if no key is specified, all
 	// objects in the bucket.
+	//
+	// If the given key or bucket does not exist, this function is no-op.
 	rpc Delete(StorageKey) returns (pbtypes.Void) {
 		option (google.api.http) = {
 			delete: "/storage"
@@ -622,6 +635,9 @@ service Storage {
 	}
 
 	// Exists tells if the given key exists in the bucket or not.
+	//
+	// If the object does not exist, no error is returned, only exists=false is
+	// returned.
 	rpc Exists(StorageKey) returns (StorageExists) {
 		option (google.api.http) = {
 			get: "/storage/exists"
@@ -630,6 +646,9 @@ service Storage {
 
 	// List lists all objects in the bucket. It ignores the 'key' field of the
 	// storage name parameter.
+	//
+	// If the bucket does not exist, no error is returned, only an empty list is
+	// returned.
 	rpc List(StorageKey) returns (StorageList) {
 		option (google.api.http) = {
 			get: "/storage/list"
