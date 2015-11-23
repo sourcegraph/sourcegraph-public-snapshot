@@ -14,7 +14,7 @@ func main() {
 		"../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
 		"../../../gitserver/gitpb/git_transport.pb.go",
 	}
-	gen.Generate("remote.go", tmpl, svcs, isRemote)
+	gen.Generate("remote.go", tmpl, svcs, isRemote, "")
 }
 
 func isRemote(x *gen.Service) bool {

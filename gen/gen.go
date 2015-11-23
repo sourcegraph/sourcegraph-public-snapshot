@@ -32,7 +32,7 @@ type Method struct {
 	ResultType string
 }
 
-func typeName(e ast.Expr, pkg string) string {
+func typeName(e ast.Expr, pkg string, thisPkg string) string {
 	var typ string
 	switch x := e.(*ast.StarExpr).X.(type) {
 	case *ast.Ident:
@@ -45,6 +45,9 @@ func typeName(e ast.Expr, pkg string) string {
 	}
 	if pkg == "pbtypes1" {
 		pkg = "pbtypes"
+	}
+	if pkg == thisPkg {
+		return typ
 	}
 	return fmt.Sprintf("%s.%s", pkg, typ)
 }
@@ -61,7 +64,7 @@ var ifacePat = regexp.MustCompile(`^\w+Server$`)
 // "Server" suffix. It uses them to render tmpl into the file outFile.
 // Optionally, a filter function can be provided to only render a subset of
 // services.
-func Generate(outFile string, tmpl *template.Template, files []string, filter func(*Service) bool) {
+func Generate(outFile string, tmpl *template.Template, files []string, filter func(*Service) bool, thisPkg string) {
 	fset := token.NewFileSet()
 	var svcs []*Service
 	for _, file := range files {
@@ -87,8 +90,8 @@ func Generate(outFile string, tmpl *template.Template, files []string, filter fu
 				methods[i] = &Method{
 					Name:       m.Names[0].Name,
 					Type:       t,
-					ParamType:  typeName(t.Params.List[1].Type, astFile.Name.Name),
-					ResultType: typeName(t.Results.List[0].Type, astFile.Name.Name),
+					ParamType:  typeName(t.Params.List[1].Type, astFile.Name.Name, thisPkg),
+					ResultType: typeName(t.Results.List[0].Type, astFile.Name.Name, thisPkg),
 				}
 			}
 

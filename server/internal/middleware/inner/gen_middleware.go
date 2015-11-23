@@ -15,7 +15,7 @@ func main() {
 		"../../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
 		"../../../../gitserver/gitpb/git_transport.pb.go",
 	}
-	gen.Generate("inner_middleware.go", tmpl, svcs, nil)
+	gen.Generate("inner_middleware.go", tmpl, svcs, nil, "")
 }
 
 func serviceIsFederated(x *gen.Service) bool {
