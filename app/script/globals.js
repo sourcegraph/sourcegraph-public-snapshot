@@ -12,9 +12,6 @@ module.exports = {
 	// Number of lines to expand on hunk
 	HunkExpandLines: 20,
 
-	// Number of entries in the discussion snippet.
-	DiscussionSnippetEntries: 4,
-
 	TokenSearchResultsPerPage: 50,
 	TextSearchResultsPerPage: 10,
 
@@ -43,23 +40,7 @@ module.exports = {
 		RECEIVED_MENU_OPTIONS: null,
 		RECEIVED_MENU_OPTIONS_FAILED: null,
 		CODE_FILE_CLICK: null,
-		FETCH_TOP_DISCUSSIONS: null,
-		RECEIVED_TOP_DISCUSSIONS: null,
-		RECEIVED_TOP_DISCUSSIONS_FAILED: null,
-		FETCH_DISCUSSION: null,
-		RECEIVED_DISCUSSION: null,
-		RECEIVED_DISCUSSION_FAILED: null,
-		FETCH_DISCUSSIONS: null,
-		RECEIVED_DISCUSSIONS: null,
-		RECEIVED_DISCUSSIONS_FAILED: null,
-		SUBMIT_DISCUSSION: null,
-		SUBMIT_DISCUSSION_FAILED: null,
-		SUBMIT_DISCUSSION_SUCCESS: null,
-		POPUP_CREATE_DISCUSSION: null,
 		POPUP_SHOW_DEFAULT_VIEW: null,
-		DISCUSSION_COMMENT: null,
-		DISCUSSION_COMMENT_FAILED: null,
-		DISCUSSION_COMMENT_SUCCESS: null,
 
 		POPUP_FETCH_PAGE: null,
 		POPUP_SHOW_PAGE: null,
@@ -125,9 +106,6 @@ module.exports = {
 
 	PopupPages: keyMirror({
 		DEFAULT: null,
-		NEW_DISCUSSION: null,
-		VIEW_DISCUSSION: null,
-		LIST_DISCUSSION: null,
 	}),
 
 	SearchType: keyMirror({

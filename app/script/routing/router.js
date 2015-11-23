@@ -8,35 +8,6 @@ module.exports = {
 		return `${module.exports.repoURL(repo)}/.changes/${id}`;
 	},
 
-	discussionURL(defKey, id) {
-		var repo;
-		if (typeof defKey === "string") {
-			var parts = module.exports.deconstructDefURL(defKey);
-			repo = parts.repo;
-		}
-		if (typeof defKey === "object") {
-			repo = defKey.Repo;
-		}
-		return `${module.exports.repoURL(repo)}/.discussion/${id}`;
-	},
-
-	discussionListURL(defKey, order) {
-		var params = order ? `?order=${order}` : "";
-		return module.exports._discussionsURL(defKey) + params;
-	},
-
-	discussionCreateURL(defKey) {
-		return `${module.exports._discussionsURL(defKey)}/create`;
-	},
-
-	discussionCreateCommentURL(defKey, id) {
-		return `${module.exports._discussionsURL(defKey)}/${id}/.comment`;
-	},
-
-	_discussionsURL(defKey) {
-		return `${defKey}/.discussions`;
-	},
-
 	// defURL constructs the application (not API) URL to a def. The def
 	// spec may be passed as individual arguments as listed in the
 	// function prototype, or as one DefSpec object argument.

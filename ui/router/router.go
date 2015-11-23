@@ -16,12 +16,6 @@ const (
 	DefPopover  = "def.popover"
 	DefExamples = "def.examples"
 
-	Discussion         = "discussion"
-	DiscussionListDef  = "discussion.list.def"
-	DiscussionListRepo = "discussion.list.repo"
-	DiscussionCreate   = "discussion.create"
-	DiscussionComment  = "discussion.comment"
-
 	SearchTokens = "search.tokens"
 	SearchText   = "search.text"
 
@@ -50,8 +44,6 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 	}
 
 	base.StrictSlash(true)
-
-	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
 
 	repoRevPath := `/` + routevar.RepoRev
 	repoRev := base.PathPrefix(repoRevPath).
@@ -89,26 +81,6 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 	def.Path("/.popover").
 		Methods(m("GET")...).
 		Name(DefPopover)
-
-	repo.Path("/.discussion/{ID:[0-9]+}").
-		Methods(m("GET")...).
-		Name(Discussion)
-
-	repo.Path("/.discussions").
-		Methods(m("GET")...).
-		Name(DiscussionListRepo)
-
-	def.Path("/.discussions").
-		Methods(m("GET")...).
-		Name(DiscussionListDef)
-
-	def.Path("/.discussions/create").
-		Methods(m("POST")...).
-		Name(DiscussionCreate)
-
-	def.Path("/.discussions/{ID:[0-9]+}/.comment").
-		Methods(m("POST")...).
-		Name(DiscussionComment)
 
 	repoRev.Path("/.search/tokens").
 		Methods(m("GET")...).

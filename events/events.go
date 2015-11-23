@@ -18,19 +18,6 @@ type GitPayload struct {
 	Event           githttp.Event
 }
 
-const DiscussionCreateEvent EventID = "discussion.create"
-const DiscussionCommentEvent EventID = "discussion.comment"
-
-type DiscussionPayload struct {
-	Actor      sourcegraph.UserSpec
-	ID         int64
-	Repo       string
-	Title      string
-	URL        string
-	Discussion *sourcegraph.Discussion
-	Comment    *sourcegraph.DiscussionComment
-}
-
 const ChangesetCreateEvent EventID = "changeset.create"
 const ChangesetUpdateEvent EventID = "changeset.update"
 const ChangesetReviewEvent EventID = "changeset.review"

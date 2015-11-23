@@ -23,7 +23,6 @@ var Services = svc.Services{
 	Changesets:          Changesets,
 	Defs:                Defs,
 	Deltas:              Deltas,
-	Discussions:         Discussions,
 	GitTransport:        GitTransport,
 	GraphUplink:         GraphUplink,
 	Markdown:            Markdown,

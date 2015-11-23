@@ -41,7 +41,6 @@ func Services(ctxFunc ContextFunc, errFunc ErrorFunc) svc.Services {
 		Changesets:          wrappedChangesets{ctxFunc, errFunc},
 		Defs:                wrappedDefs{ctxFunc, errFunc},
 		Deltas:              wrappedDeltas{ctxFunc, errFunc},
-		Discussions:         wrappedDiscussions{ctxFunc, errFunc},
 		GraphUplink:         wrappedGraphUplink{ctxFunc, errFunc},
 		Markdown:            wrappedMarkdown{ctxFunc, errFunc},
 		Meta:                wrappedMeta{ctxFunc, errFunc},
@@ -731,81 +730,6 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, v1 *sourcegraph.
 		return nil, grpc.Errorf(codes.Unimplemented, "Deltas")
 	}
 	rv, err := svc.ListAffectedClients(ctx, v1)
-	return rv, s.errFunc(err)
-}
-
-type wrappedDiscussions struct {
-	ctxFunc ContextFunc
-	errFunc ErrorFunc
-}
-
-func (s wrappedDiscussions) Create(ctx context.Context, v1 *sourcegraph.Discussion) (*sourcegraph.Discussion, error) {
-	var err error
-	ctx, err = s.ctxFunc(ctx)
-	if err != nil {
-		return nil, s.errFunc(err)
-	}
-	svc := svc.DiscussionsOrNil(ctx)
-	if svc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Discussions")
-	}
-	rv, err := svc.Create(ctx, v1)
-	return rv, s.errFunc(err)
-}
-
-func (s wrappedDiscussions) Get(ctx context.Context, v1 *sourcegraph.DiscussionSpec) (*sourcegraph.Discussion, error) {
-	var err error
-	ctx, err = s.ctxFunc(ctx)
-	if err != nil {
-		return nil, s.errFunc(err)
-	}
-	svc := svc.DiscussionsOrNil(ctx)
-	if svc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Discussions")
-	}
-	rv, err := svc.Get(ctx, v1)
-	return rv, s.errFunc(err)
-}
-
-func (s wrappedDiscussions) List(ctx context.Context, v1 *sourcegraph.DiscussionListOp) (*sourcegraph.DiscussionList, error) {
-	var err error
-	ctx, err = s.ctxFunc(ctx)
-	if err != nil {
-		return nil, s.errFunc(err)
-	}
-	svc := svc.DiscussionsOrNil(ctx)
-	if svc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Discussions")
-	}
-	rv, err := svc.List(ctx, v1)
-	return rv, s.errFunc(err)
-}
-
-func (s wrappedDiscussions) CreateComment(ctx context.Context, v1 *sourcegraph.DiscussionCommentCreateOp) (*sourcegraph.DiscussionComment, error) {
-	var err error
-	ctx, err = s.ctxFunc(ctx)
-	if err != nil {
-		return nil, s.errFunc(err)
-	}
-	svc := svc.DiscussionsOrNil(ctx)
-	if svc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Discussions")
-	}
-	rv, err := svc.CreateComment(ctx, v1)
-	return rv, s.errFunc(err)
-}
-
-func (s wrappedDiscussions) UpdateRating(ctx context.Context, v1 *sourcegraph.DiscussionRatingUpdateOp) (*pbtypes.Void, error) {
-	var err error
-	ctx, err = s.ctxFunc(ctx)
-	if err != nil {
-		return nil, s.errFunc(err)
-	}
-	svc := svc.DiscussionsOrNil(ctx)
-	if svc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Discussions")
-	}
-	rv, err := svc.UpdateRating(ctx, v1)
 	return rv, s.errFunc(err)
 }
 

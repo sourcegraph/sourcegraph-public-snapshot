@@ -43,10 +43,6 @@ func Wrap(s svc.Services) svc.Services {
 		s.Deltas = &sourcegraph.CachedDeltasServer{s.Deltas}
 	}
 
-	if s.Discussions != nil {
-		s.Discussions = &sourcegraph.CachedDiscussionsServer{s.Discussions}
-	}
-
 	if s.GraphUplink != nil {
 		s.GraphUplink = &sourcegraph.CachedGraphUplinkServer{s.GraphUplink}
 	}

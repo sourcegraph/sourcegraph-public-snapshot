@@ -421,66 +421,6 @@ func (s *ChangesetsServer) ListEvents(v0 context.Context, v1 *sourcegraph.Change
 
 var _ sourcegraph.ChangesetsServer = (*ChangesetsServer)(nil)
 
-type DiscussionsClient struct {
-	Create_        func(ctx context.Context, in *sourcegraph.Discussion) (*sourcegraph.Discussion, error)
-	Get_           func(ctx context.Context, in *sourcegraph.DiscussionSpec) (*sourcegraph.Discussion, error)
-	List_          func(ctx context.Context, in *sourcegraph.DiscussionListOp) (*sourcegraph.DiscussionList, error)
-	CreateComment_ func(ctx context.Context, in *sourcegraph.DiscussionCommentCreateOp) (*sourcegraph.DiscussionComment, error)
-	UpdateRating_  func(ctx context.Context, in *sourcegraph.DiscussionRatingUpdateOp) (*pbtypes.Void, error)
-}
-
-func (s *DiscussionsClient) Create(ctx context.Context, in *sourcegraph.Discussion, opts ...grpc.CallOption) (*sourcegraph.Discussion, error) {
-	return s.Create_(ctx, in)
-}
-
-func (s *DiscussionsClient) Get(ctx context.Context, in *sourcegraph.DiscussionSpec, opts ...grpc.CallOption) (*sourcegraph.Discussion, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *DiscussionsClient) List(ctx context.Context, in *sourcegraph.DiscussionListOp, opts ...grpc.CallOption) (*sourcegraph.DiscussionList, error) {
-	return s.List_(ctx, in)
-}
-
-func (s *DiscussionsClient) CreateComment(ctx context.Context, in *sourcegraph.DiscussionCommentCreateOp, opts ...grpc.CallOption) (*sourcegraph.DiscussionComment, error) {
-	return s.CreateComment_(ctx, in)
-}
-
-func (s *DiscussionsClient) UpdateRating(ctx context.Context, in *sourcegraph.DiscussionRatingUpdateOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.UpdateRating_(ctx, in)
-}
-
-var _ sourcegraph.DiscussionsClient = (*DiscussionsClient)(nil)
-
-type DiscussionsServer struct {
-	Create_        func(v0 context.Context, v1 *sourcegraph.Discussion) (*sourcegraph.Discussion, error)
-	Get_           func(v0 context.Context, v1 *sourcegraph.DiscussionSpec) (*sourcegraph.Discussion, error)
-	List_          func(v0 context.Context, v1 *sourcegraph.DiscussionListOp) (*sourcegraph.DiscussionList, error)
-	CreateComment_ func(v0 context.Context, v1 *sourcegraph.DiscussionCommentCreateOp) (*sourcegraph.DiscussionComment, error)
-	UpdateRating_  func(v0 context.Context, v1 *sourcegraph.DiscussionRatingUpdateOp) (*pbtypes.Void, error)
-}
-
-func (s *DiscussionsServer) Create(v0 context.Context, v1 *sourcegraph.Discussion) (*sourcegraph.Discussion, error) {
-	return s.Create_(v0, v1)
-}
-
-func (s *DiscussionsServer) Get(v0 context.Context, v1 *sourcegraph.DiscussionSpec) (*sourcegraph.Discussion, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *DiscussionsServer) List(v0 context.Context, v1 *sourcegraph.DiscussionListOp) (*sourcegraph.DiscussionList, error) {
-	return s.List_(v0, v1)
-}
-
-func (s *DiscussionsServer) CreateComment(v0 context.Context, v1 *sourcegraph.DiscussionCommentCreateOp) (*sourcegraph.DiscussionComment, error) {
-	return s.CreateComment_(v0, v1)
-}
-
-func (s *DiscussionsServer) UpdateRating(v0 context.Context, v1 *sourcegraph.DiscussionRatingUpdateOp) (*pbtypes.Void, error) {
-	return s.UpdateRating_(v0, v1)
-}
-
-var _ sourcegraph.DiscussionsServer = (*DiscussionsServer)(nil)
-
 type MirrorReposClient struct {
 	RefreshVCS_ func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
 }

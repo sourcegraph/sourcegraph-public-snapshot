@@ -112,7 +112,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"urlToUserSubroute":          router.Rel.URLToUserSubroute,
 	"urlToRepo":                  router.Rel.URLToRepo,
 	"urlToRepoRev":               router.Rel.URLToRepoRev,
-	"urlToRepoDiscussion":        router.Rel.URLToRepoDiscussion,
 	"urlToRepoBuild":             router.Rel.URLToRepoBuild,
 	"urlToRepoSubroute":          router.Rel.URLToRepoSubroute,
 	"urlToRepoSubrouteRev":       router.Rel.URLToRepoSubrouteRev,

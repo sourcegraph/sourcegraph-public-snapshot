@@ -28,7 +28,6 @@ var Services = svc.Services{
 	Changesets:          remoteChangesets{},
 	Defs:                remoteDefs{},
 	Deltas:              remoteDeltas{},
-	Discussions:         remoteDiscussions{},
 	GraphUplink:         remoteGraphUplink{},
 	Markdown:            remoteMarkdown{},
 	Meta:                remoteMeta{},
@@ -219,28 +218,6 @@ func (s remoteDeltas) ListAffectedAuthors(ctx context.Context, v1 *sourcegraph.D
 
 func (s remoteDeltas) ListAffectedClients(ctx context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
 	return sourcegraph.NewClientFromContext(ctx).Deltas.ListAffectedClients(ctx, v1)
-}
-
-type remoteDiscussions struct{ sourcegraph.DiscussionsServer }
-
-func (s remoteDiscussions) Create(ctx context.Context, v1 *sourcegraph.Discussion) (*sourcegraph.Discussion, error) {
-	return sourcegraph.NewClientFromContext(ctx).Discussions.Create(ctx, v1)
-}
-
-func (s remoteDiscussions) Get(ctx context.Context, v1 *sourcegraph.DiscussionSpec) (*sourcegraph.Discussion, error) {
-	return sourcegraph.NewClientFromContext(ctx).Discussions.Get(ctx, v1)
-}
-
-func (s remoteDiscussions) List(ctx context.Context, v1 *sourcegraph.DiscussionListOp) (*sourcegraph.DiscussionList, error) {
-	return sourcegraph.NewClientFromContext(ctx).Discussions.List(ctx, v1)
-}
-
-func (s remoteDiscussions) CreateComment(ctx context.Context, v1 *sourcegraph.DiscussionCommentCreateOp) (*sourcegraph.DiscussionComment, error) {
-	return sourcegraph.NewClientFromContext(ctx).Discussions.CreateComment(ctx, v1)
-}
-
-func (s remoteDiscussions) UpdateRating(ctx context.Context, v1 *sourcegraph.DiscussionRatingUpdateOp) (*pbtypes.Void, error) {
-	return sourcegraph.NewClientFromContext(ctx).Discussions.UpdateRating(ctx, v1)
 }
 
 type remoteGraphUplink struct{ sourcegraph.GraphUplinkServer }

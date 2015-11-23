@@ -24,7 +24,6 @@ type Stores struct {
 	Builds                          Builds
 	Changesets                      Changesets
 	Directory                       Directory
-	Discussions                     Discussions
 	ExternalAuthTokens              ExternalAuthTokens
 	Graph                           srcstore.MockMultiRepoStore
 	MirroredRepoSSHKeys             MirroredRepoSSHKeys
@@ -54,7 +53,6 @@ func (s *Stores) Stores() store.Stores {
 		Builds:                          &s.Builds,
 		Changesets:                      &s.Changesets,
 		Directory:                       &s.Directory,
-		Discussions:                     &s.Discussions,
 		ExternalAuthTokens:              &s.ExternalAuthTokens,
 		Graph:                           &s.Graph,
 		MirroredRepoSSHKeys:             &s.MirroredRepoSSHKeys,

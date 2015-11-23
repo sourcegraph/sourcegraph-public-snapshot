@@ -67,59 +67,6 @@ message StreamResponse {
 	bool has_more = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// Discussion stores information about a discussion
-message Discussion {
-	// ID is the unique identifier for this discussion, relative to the repository
-	// that contains it.
-	int64 id = 1 [(gogoproto.customname) = "ID"];
-
-	// Title holds a summary about this discussion.
-	string title = 2;
-
-	// Description holds the description for this discussion.
-	string description = 3;
-
-	// Author is the user that initiated this discussion.
-	UserSpec author = 4 [(gogoproto.nullable) = false];
-
-	// DefKey is the unit the discussion is about. Note that a DefKey
-	// contains a commit component, but we track Discussions across
-	// commits. So all lookups normalize out the commit component, but the
-	// commit component records the commit at the time the Discussion was
-	// created.
-	graph.DefKey def_key = 5 [(gogoproto.nullable) = false];
-
-	// Ratings contains a list of users who have "starred" the discussion
-	repeated UserSpec ratings = 6;
-
-	// Comments contains comments by users in the discussion
-	repeated DiscussionComment comments = 7;
-
-	// CreatedAt holds the creation time of this changeset.
-	pbtypes.Timestamp created_at = 8;
-}
-
-// DiscussionComment contains information about a single comment by a user.
-message DiscussionComment {
-	// ID holds the unique identifier (with reference to the Discussion) of the
-	// comment.
-	int64 id = 1 [(gogoproto.customname) = "ID"];
-
-	// Body holds the text description of the comment.
-	string body = 2;
-
-	// Author is the spec of the user that submitted this comment.
-	UserSpec author = 3 [(gogoproto.nullable) = false];
-
-	// DefKey is the unit the discussion is about. Note this will be the
-	// same as the Discussion's DefKey, except the commit component will
-	// be the commit the user submitted on.
-	graph.DefKey def_key = 5 [(gogoproto.nullable) = false];
-
-	// CreatedAt is the date at which this comment was submitted.
-	pbtypes.Timestamp created_at = 6;
-}
-
 // Changeset stores information about a changeset.
 message Changeset {
 	// ID is the unique identifier for this changeset, relative to the repository
@@ -829,26 +776,6 @@ service Changesets {
 	rpc ListEvents(ChangesetSpec) returns (ChangesetEventList);
 }
 
-// Discussions is a service for discussing units in a repository
-service Discussions {
-	// Create creates a new Discussion and returns it, populating its
-	// fields, such as ID and CreatedAt.
-	rpc Create(Discussion) returns (Discussion);
-
-	// Get returns the Discussion by RepoSpec and ID.
-	rpc Get(DiscussionSpec) returns (Discussion);
-
-	// List lists changesets for a DefKey
-	rpc List(DiscussionListOp) returns (DiscussionList);
-
-	// CreateComment creates a new DiscussionComment and returns it,
-	// populating its fields, such as ID and CreatedAt.
-	rpc CreateComment(DiscussionCommentCreateOp) returns (DiscussionComment);
-
-	// UpdateRating either adds or removes a star by a User
-	rpc UpdateRating(DiscussionRatingUpdateOp) returns (pbtypes.Void);
-}
-
 message ReposCreateOp {
 	// URI is the desired URI of the new repository.
 	string uri = 1 [(gogoproto.customname) = "URI"];
@@ -1025,36 +952,6 @@ message ChangesetUpdateAffectedOp {
 
 	// Commit is the SHA1 of the tip of the newly pushed commits on the branch.
 	string commit = 4;
-}
-
-message DiscussionSpec {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	int64 id = 2 [(gogoproto.customname) = "ID"];
-}
-
-enum DiscussionListOrder {
-	// List discussions in reverse chronological order
-	Date = 0;
-
-	// List discussion such that highly rated items are in front
-	Top = 1;
-}
-
-message DiscussionListOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	graph.DefKey def_key = 2 [(gogoproto.nullable) = false];
-	DiscussionListOrder order = 3;
-	ListOptions list_options = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-}
-
-message DiscussionCommentCreateOp {
-	int64 discussion_id = 1 [(gogoproto.customname) = "DiscussionID"];
-	DiscussionComment comment = 2;
-}
-
-message DiscussionRatingUpdateOp {
-	int64 discussion_id = 1 [(gogoproto.customname) = "DiscussionID"];
-	UserSpec user = 2;
 }
 
 message RepoListTagsOptions {
@@ -1390,10 +1287,6 @@ message ChangesetList {
 
 message ChangesetEventList {
 	repeated ChangesetEvent events = 1;
-}
-
-message DiscussionList {
-	repeated Discussion discussions = 1;
 }
 
 message BuildsCreateTasksOp {

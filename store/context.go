@@ -24,7 +24,6 @@ type Stores struct {
 	Builds                          Builds
 	Changesets                      Changesets
 	Directory                       Directory
-	Discussions                     Discussions
 	ExternalAuthTokens              ExternalAuthTokens
 	Graph                           srcstore.MultiRepoStoreImporterIndexer
 	MirroredRepoSSHKeys             MirroredRepoSSHKeys
@@ -55,7 +54,6 @@ const (
 	_BuildsKey
 	_ChangesetsKey
 	_DirectoryKey
-	_DiscussionsKey
 	_ExternalAuthTokensKey
 	_GraphKey
 	_MirroredRepoSSHKeysKey
@@ -96,9 +94,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Directory != nil {
 		ctx = WithDirectory(ctx, s.Directory)
-	}
-	if s.Discussions != nil {
-		ctx = WithDiscussions(ctx, s.Discussions)
 	}
 	if s.ExternalAuthTokens != nil {
 		ctx = WithExternalAuthTokens(ctx, s.ExternalAuthTokens)
@@ -292,29 +287,6 @@ func DirectoryFromContext(ctx context.Context) Directory {
 // DirectoryFromContextOrNil returns the context's Directory store if present, or else nil.
 func DirectoryFromContextOrNil(ctx context.Context) Directory {
 	s, ok := ctx.Value(_DirectoryKey).(Directory)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithDiscussions returns a copy of parent with the given Discussions store.
-func WithDiscussions(parent context.Context, s Discussions) context.Context {
-	return context.WithValue(parent, _DiscussionsKey, s)
-}
-
-// DiscussionsFromContext gets the context's Discussions store. If the store is not present, it panics.
-func DiscussionsFromContext(ctx context.Context) Discussions {
-	s, ok := ctx.Value(_DiscussionsKey).(Discussions)
-	if !ok || s == nil {
-		panic("no Discussions set in context")
-	}
-	return s
-}
-
-// DiscussionsFromContextOrNil returns the context's Discussions store if present, or else nil.
-func DiscussionsFromContextOrNil(ctx context.Context) Discussions {
-	s, ok := ctx.Value(_DiscussionsKey).(Discussions)
 	if ok {
 		return s
 	}

@@ -88,8 +88,6 @@ func repoTemplates() error {
 		{"repo/branches.html"},
 		{"repo/tags.html"},
 		{"repo/compare.html", "repo/commit.inc.html"},
-		{"repo/discussion.html", "repo/discussions.inc.html"},
-		{"repo/discussions.html", "repo/discussions.inc.html"},
 		{"repo/no_vcs_data.html"},
 		{"repo/no_build.html"},
 

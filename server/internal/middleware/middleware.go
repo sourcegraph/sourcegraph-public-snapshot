@@ -63,10 +63,6 @@ func Wrap(s svc.Services, c *auth.Config) svc.Services {
 		s.Deltas = wrappedDeltas{s.Deltas, c}
 	}
 
-	if s.Discussions != nil {
-		s.Discussions = wrappedDiscussions{s.Discussions, c}
-	}
-
 	if s.GraphUplink != nil {
 		s.GraphUplink = wrappedGraphUplink{s.GraphUplink, c}
 	}
@@ -1223,106 +1219,6 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegra
 	}
 
 	res, err = target.ListAffectedClients(ctx, param)
-	return
-
-}
-
-type wrappedDiscussions struct {
-	u sourcegraph.DiscussionsServer
-	c *auth.Config
-}
-
-func (s wrappedDiscussions) Create(ctx context.Context, param *sourcegraph.Discussion) (res *sourcegraph.Discussion, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Discussions", "Create", param)
-	defer func() {
-		trace.After(ctx, "Discussions", "Create", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Discussions.Create")
-	if err != nil {
-		return
-	}
-
-	var target sourcegraph.DiscussionsServer = s.u
-
-	res, err = target.Create(ctx, param)
-	return
-
-}
-
-func (s wrappedDiscussions) Get(ctx context.Context, param *sourcegraph.DiscussionSpec) (res *sourcegraph.Discussion, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Discussions", "Get", param)
-	defer func() {
-		trace.After(ctx, "Discussions", "Get", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Discussions.Get")
-	if err != nil {
-		return
-	}
-
-	var target sourcegraph.DiscussionsServer = s.u
-
-	res, err = target.Get(ctx, param)
-	return
-
-}
-
-func (s wrappedDiscussions) List(ctx context.Context, param *sourcegraph.DiscussionListOp) (res *sourcegraph.DiscussionList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Discussions", "List", param)
-	defer func() {
-		trace.After(ctx, "Discussions", "List", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Discussions.List")
-	if err != nil {
-		return
-	}
-
-	var target sourcegraph.DiscussionsServer = s.u
-
-	res, err = target.List(ctx, param)
-	return
-
-}
-
-func (s wrappedDiscussions) CreateComment(ctx context.Context, param *sourcegraph.DiscussionCommentCreateOp) (res *sourcegraph.DiscussionComment, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Discussions", "CreateComment", param)
-	defer func() {
-		trace.After(ctx, "Discussions", "CreateComment", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Discussions.CreateComment")
-	if err != nil {
-		return
-	}
-
-	var target sourcegraph.DiscussionsServer = s.u
-
-	res, err = target.CreateComment(ctx, param)
-	return
-
-}
-
-func (s wrappedDiscussions) UpdateRating(ctx context.Context, param *sourcegraph.DiscussionRatingUpdateOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Discussions", "UpdateRating", param)
-	defer func() {
-		trace.After(ctx, "Discussions", "UpdateRating", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Discussions.UpdateRating")
-	if err != nil {
-		return
-	}
-
-	var target sourcegraph.DiscussionsServer = s.u
-
-	res, err = target.UpdateRating(ctx, param)
 	return
 
 }

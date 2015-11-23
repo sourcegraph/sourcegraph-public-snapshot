@@ -14,7 +14,6 @@ type Client struct {
 	Builds              BuildsClient
 	Defs                DefsClient
 	Deltas              DeltasClient
-	Discussions         DiscussionsClient
 	GraphUplink         GraphUplinkClient
 	Markdown            MarkdownClient
 	Meta                MetaClient
@@ -54,7 +53,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Builds = &CachedBuildsClient{NewBuildsClient(conn), Cache}
 	c.Defs = &CachedDefsClient{NewDefsClient(conn), Cache}
 	c.Deltas = &CachedDeltasClient{NewDeltasClient(conn), Cache}
-	c.Discussions = &CachedDiscussionsClient{NewDiscussionsClient(conn), Cache}
 	c.GraphUplink = &CachedGraphUplinkClient{NewGraphUplinkClient(conn), Cache}
 	c.Markdown = &CachedMarkdownClient{NewMarkdownClient(conn), Cache}
 	c.Meta = &CachedMetaClient{NewMetaClient(conn), Cache}

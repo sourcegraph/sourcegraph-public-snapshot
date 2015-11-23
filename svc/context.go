@@ -30,7 +30,6 @@ const (
 	_ChangesetsKey          contextKey = iota
 	_DefsKey                contextKey = iota
 	_DeltasKey              contextKey = iota
-	_DiscussionsKey         contextKey = iota
 	_GraphUplinkKey         contextKey = iota
 	_MarkdownKey            contextKey = iota
 	_MetaKey                contextKey = iota
@@ -61,7 +60,6 @@ type Services struct {
 	Changesets          sourcegraph.ChangesetsServer
 	Defs                sourcegraph.DefsServer
 	Deltas              sourcegraph.DeltasServer
-	Discussions         sourcegraph.DiscussionsServer
 	GraphUplink         sourcegraph.GraphUplinkServer
 	Markdown            sourcegraph.MarkdownServer
 	Meta                sourcegraph.MetaServer
@@ -115,10 +113,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Deltas != nil {
 		sourcegraph.RegisterDeltasServer(s, svcs.Deltas)
-	}
-
-	if svcs.Discussions != nil {
-		sourcegraph.RegisterDiscussionsServer(s, svcs.Discussions)
 	}
 
 	if svcs.GraphUplink != nil {
@@ -228,10 +222,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Deltas != nil {
 		ctx = WithDeltas(ctx, s.Deltas)
-	}
-
-	if s.Discussions != nil {
-		ctx = WithDiscussions(ctx, s.Discussions)
 	}
 
 	if s.GraphUplink != nil {
@@ -487,29 +477,6 @@ func Deltas(ctx context.Context) sourcegraph.DeltasServer {
 // DeltasOrNil returns the context's Deltas service if present, or else nil.
 func DeltasOrNil(ctx context.Context) sourcegraph.DeltasServer {
 	s, ok := ctx.Value(_DeltasKey).(sourcegraph.DeltasServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithDiscussions returns a copy of parent that uses the given Discussions service.
-func WithDiscussions(ctx context.Context, s sourcegraph.DiscussionsServer) context.Context {
-	return context.WithValue(ctx, _DiscussionsKey, s)
-}
-
-// Discussions gets the context's Discussions service. If the service is not present, it panics.
-func Discussions(ctx context.Context) sourcegraph.DiscussionsServer {
-	s, ok := ctx.Value(_DiscussionsKey).(sourcegraph.DiscussionsServer)
-	if !ok || s == nil {
-		panic("no Discussions set in context")
-	}
-	return s
-}
-
-// DiscussionsOrNil returns the context's Discussions service if present, or else nil.
-func DiscussionsOrNil(ctx context.Context) sourcegraph.DiscussionsServer {
-	s, ok := ctx.Value(_DiscussionsKey).(sourcegraph.DiscussionsServer)
 	if ok {
 		return s
 	}

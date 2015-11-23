@@ -64,12 +64,6 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 	r.Get(ui_router.Definition).Handler(p.handler(serveDef))
 	r.Get(ui_router.DefExamples).Handler(p.handler(serveDefExamples))
 
-	r.Get(ui_router.Discussion).Handler(p.handler(serveDiscussion))
-	r.Get(ui_router.DiscussionComment).Handler(p.handler(serveDiscussionCommentCreate))
-	r.Get(ui_router.DiscussionCreate).Handler(p.handler(serveDiscussionCreate))
-	r.Get(ui_router.DiscussionListDef).Handler(p.handler(serveDiscussionListDef))
-	r.Get(ui_router.DiscussionListRepo).Handler(p.handler(serveDiscussionListRepo))
-
 	r.Get(ui_router.SearchTokens).Handler(p.handler(serveTokenSearch))
 	r.Get(ui_router.SearchText).Handler(p.handler(serveTextSearch))
 
