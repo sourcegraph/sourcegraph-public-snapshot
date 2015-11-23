@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	username = flag.String("username", "testuser", "the username to use for src operations")
-	password = flag.String("password", "24a6d249fa9c0a280cfabf9d9b90eec33914e546", "the password to use for src operations")
+	username = flag.String("username", "testuser1", "the username to use for src operations")
+	password = flag.String("password", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "the password to use for src operations")
 
 	registeredClient            = "testserver"
 	registeredClientURL         = "http://localhost:3080"
