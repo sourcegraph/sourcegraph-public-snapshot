@@ -470,6 +470,10 @@ func (s remoteStorage) Put(ctx context.Context, v1 *sourcegraph.StoragePutOp) (*
 	return sourcegraph.NewClientFromContext(ctx).Storage.Put(ctx, v1)
 }
 
+func (s remoteStorage) PutNoOverwrite(ctx context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Storage.PutNoOverwrite(ctx, v1)
+}
+
 func (s remoteStorage) Delete(ctx context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {
 	return sourcegraph.NewClientFromContext(ctx).Storage.Delete(ctx, v1)
 }
