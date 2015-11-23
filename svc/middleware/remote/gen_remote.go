@@ -54,7 +54,7 @@ var Services = svc.Services{
 
   <<<$service := .>>>
 	<<<range .Methods>>>
-		func (s remote<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 <<<.ParamType>>>) (<<<.ResultType>>>, error) {
+		func (s remote<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 *<<<.ParamType>>>) (*<<<.ResultType>>>, error) {
 			return sourcegraph.NewClientFromContext(ctx).<<<$service.Name>>>.<<<.Name>>>(ctx, v1)
 		}
 	<<<end>>>

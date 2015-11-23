@@ -46,7 +46,7 @@ func typeName(e ast.Expr, pkg string) string {
 	if pkg == "pbtypes1" {
 		pkg = "pbtypes"
 	}
-	return fmt.Sprintf("*%s.%s", pkg, typ)
+	return fmt.Sprintf("%s.%s", pkg, typ)
 }
 
 type serviceList []*Service

@@ -132,7 +132,7 @@ func Services(c *auth.Config) svc.Services {
 
   <<<$service := .>>>
 	<<<range .Methods>>>
-		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, param <<<.ParamType>>>) (res <<<.ResultType>>>, err error) {
+		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, param *<<<.ParamType>>>) (res *<<<.ResultType>>>, err error) {
 			start := time.Now()
 			ctx = trace.Before(ctx, "<<<$service.Name>>>", "<<<.Name>>>", param)
 			defer func(){

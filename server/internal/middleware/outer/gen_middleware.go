@@ -61,7 +61,7 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 
   <<<$service := .>>>
 	<<<range .Methods>>>
-		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 <<<.ParamType>>>) (<<<.ResultType>>>, error) {
+		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 *<<<.ParamType>>>) (*<<<.ResultType>>>, error) {
 			var cc *grpccache.CacheControl
 			ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
