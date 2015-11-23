@@ -230,12 +230,27 @@ func (rs *RepoStage) Free() error {
 	return os.RemoveAll(rs.stagingDir)
 }
 
-func updateRef(repoPath, ref, val string) error {
+type GitRefStore interface {
+	UpdateRef(ref, val string) error
+}
+
+type localGitRefStore struct {
+	dir string
+}
+
+func (s *localGitRefStore) UpdateRef(ref, val string) error {
 	cmd := exec.Command("git", "update-ref", ref, val)
-	cmd.Dir = repoPath
+	cmd.Dir = s.dir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
 	}
+	return nil
+}
+
+type noopGitRefStore struct {
+}
+
+func (_ *noopGitRefStore) UpdateRef(_, _ string) error {
 	return nil
 }
 

@@ -68,7 +68,9 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 		return err
 	}
 	cs.DeltaSpec.Head.CommitID = string(head)
-	if err := updateRef(dir, "refs/changesets/"+id+"/head", string(head)); err != nil {
+
+	refStore := s.GitRefStoreFromContext(ctx, repoPath)
+	if err = refStore.UpdateRef("refs/changesets/"+id+"/head", string(head)); err != nil {
 		return err
 	}
 	err = writeChangeset(ctx, fs, cs)
@@ -78,6 +80,14 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 		s.indexAdd(ctx, fs, cs.ID, changesetIndexAllDir)
 	}
 	return err
+}
+
+func (s *Changesets) GitRefStoreFromContext(ctx context.Context, repo string) GitRefStore {
+	dir := absolutePathForRepo(ctx, repo)
+	if _, err := os.Stat(dir); err != nil {
+		return &noopGitRefStore{}
+	}
+	return &localGitRefStore{dir: dir}
 }
 
 // writeChangeset writes the given changeset into the repository specified by
@@ -194,7 +204,6 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 
 	op := opt.Op
 
-	dir := absolutePathForRepo(ctx, op.Repo.URI)
 	if (op.Close && op.Open) || (op.Open && op.Merged) {
 		return nil, errInvalidUpdateOp
 	}
@@ -224,18 +233,19 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	// Update the index with the changeset's current state.
 	s.updateIndex(ctx, fs, op.ID, after.ClosedAt == nil)
 
+	refStore := s.GitRefStoreFromContext(ctx, opt.Op.Repo.URI)
 	if opt.Head != "" {
 		// We need to track the tip of this branch so that we can access its
 		// data even after a potential deletion or merge.
 		id := strconv.FormatInt(current.ID, 10)
-		if err := updateRef(dir, "refs/changesets/"+id+"/head", opt.Head); err != nil {
+		if err := refStore.UpdateRef("refs/changesets/"+id+"/head", opt.Head); err != nil {
 			return nil, err
 		}
 		after.DeltaSpec.Head.CommitID = opt.Head
 	}
 	if opt.Base != "" {
 		id := strconv.FormatInt(current.ID, 10)
-		if err := updateRef(dir, "refs/changesets/"+id+"/base", opt.Base); err != nil {
+		if err := refStore.UpdateRef("refs/changesets/"+id+"/base", opt.Base); err != nil {
 			return nil, err
 		}
 		after.DeltaSpec.Base.CommitID = opt.Base
