@@ -4225,13 +4225,12 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 type StorageClient interface {
 	// Get gets the value of a storage object.
 	//
-	// If the specified object does not exist, an error detectable with
-	// os.IsNotExist is returned.
+	// If the specified object does not exist, a NotFound error is returned.
 	Get(ctx context.Context, in *StorageKey, opts ...grpc.CallOption) (*StorageValue, error)
 	// Put puts an object into storage overwriting the old object (if any).
 	Put(ctx context.Context, in *StoragePutOp, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// PutNoOverwrite puts an object into storage, returning an error detectable
-	// with os.IsNotExist if the object already exists.
+	// PutNoOverwrite puts an object into storage, returning a AlreadyExists error
+	// if the object already exists.
 	PutNoOverwrite(ctx context.Context, in *StoragePutOp, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Delete deletes the specific storage object or, if no key is specified, all
 	// objects in the bucket.
@@ -4318,13 +4317,12 @@ func (c *storageClient) List(ctx context.Context, in *StorageKey, opts ...grpc.C
 type StorageServer interface {
 	// Get gets the value of a storage object.
 	//
-	// If the specified object does not exist, an error detectable with
-	// os.IsNotExist is returned.
+	// If the specified object does not exist, a NotFound error is returned.
 	Get(context.Context, *StorageKey) (*StorageValue, error)
 	// Put puts an object into storage overwriting the old object (if any).
 	Put(context.Context, *StoragePutOp) (*pbtypes1.Void, error)
-	// PutNoOverwrite puts an object into storage, returning an error detectable
-	// with os.IsNotExist if the object already exists.
+	// PutNoOverwrite puts an object into storage, returning a AlreadyExists error
+	// if the object already exists.
 	PutNoOverwrite(context.Context, *StoragePutOp) (*pbtypes1.Void, error)
 	// Delete deletes the specific storage object or, if no key is specified, all
 	// objects in the bucket.

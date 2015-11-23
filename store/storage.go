@@ -9,15 +9,14 @@ import (
 type Storage interface {
 	// Get gets the value of a storage object.
 	//
-	// If the specified object does not exist, an error detectable with
-	// os.IsNotExist is returned.
+	// If the specified object does not exist, a NotFound error is returned.
 	Get(context.Context, *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
 
 	// Put puts a value into a storage object.
 	Put(context.Context, *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
 
-	// PutNoOverwrite puts an object into storage, returning an error detectable
-	// with os.IsNotExist if the object already exists.
+	// PutNoOverwrite puts an object into storage, returning a AlreadyExists error
+	// if the object already exists.
 	PutNoOverwrite(context.Context, *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
 
 	// Delete deletes the specific storage object or, if no key is specified, all

@@ -601,8 +601,7 @@ message StorageList {
 service Storage {
 	// Get gets the value of a storage object.
 	//
-	// If the specified object does not exist, an error detectable with
-	// os.IsNotExist is returned.
+	// If the specified object does not exist, a NotFound error is returned.
 	rpc Get(StorageKey) returns (StorageValue) {
 		option (google.api.http) = {
 			get: "/storage"
@@ -616,8 +615,8 @@ service Storage {
 		};
 	}
 
-	// PutNoOverwrite puts an object into storage, returning an error detectable
-	// with os.IsNotExist if the object already exists.
+	// PutNoOverwrite puts an object into storage, returning a AlreadyExists error
+	// if the object already exists.
 	rpc PutNoOverwrite(StoragePutOp) returns (pbtypes.Void) {
 		option (google.api.http) = {
 			put: "/storage"
