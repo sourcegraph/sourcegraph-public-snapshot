@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -372,20 +371,12 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		return nil, err
 	}
 
-	var buildIndex bool // auto-migration
-
-	var open, closed map[int64]struct{}
+	var open, closed map[int64]bool
 	if op.Open {
 		open, err = s.indexList(ctx, fs, changesetIndexOpenDir)
-		if open == nil {
-			buildIndex = true
-		}
 	}
 	if op.Closed {
 		closed, err = s.indexList(ctx, fs, changesetIndexClosedDir)
-		if closed == nil {
-			buildIndex = true
-		}
 	}
 	if err != nil {
 		return nil, err
@@ -400,17 +391,13 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		}
 
 		// If requesting only open changests, check the index.
-		if op.Open && !buildIndex {
-			if _, ok := open[int64(id)]; !ok {
-				continue
-			}
+		if op.Open && !open[int64(id)] {
+			continue
 		}
 
 		// If requesting only closed changesets, check the index.
-		if op.Closed && !buildIndex {
-			if _, ok := closed[int64(id)]; !ok {
-				continue
-			}
+		if op.Closed && !closed[int64(id)] {
+			continue
 		}
 		ids = append(ids, id)
 	}
@@ -425,7 +412,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 	// now, we special case it by iterating over each path element, which is
 	// slower.
 	headBaseSearch := op.Head != "" || op.Base != ""
-	if !buildIndex && !headBaseSearch {
+	if !headBaseSearch {
 		start := op.Offset()
 		if start < 0 {
 			start = 0
@@ -452,22 +439,6 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 			return nil, err
 		}
 
-		// Handle auto-migration of data (create the index).
-		if buildIndex {
-			// Exit our read lock and acquire write lock.
-			s.fsLock.RUnlock()
-			s.fsLock.Lock()
-
-			// Update the index.
-			if err := s.updateIndex(ctx, fs, cs.ID, cs.ClosedAt == nil); err != nil {
-				log.Println("changeset data migration failure:", err)
-			}
-
-			// Exit our write lock and reacquire read lock.
-			s.fsLock.Unlock()
-			s.fsLock.RLock()
-		}
-
 		// If we're only interested in a changeset with a specific branch for head
 		// or base, check that now or simply continue.
 		if (op.Head != "" && op.Head != cs.DeltaSpec.Head.Rev) || (op.Base != "" && op.Base != cs.DeltaSpec.Base.Rev) {
@@ -475,7 +446,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		}
 
 		// Handle offset.
-		if !buildIndex && headBaseSearch && skip > 0 {
+		if headBaseSearch && skip > 0 {
 			skip--
 			continue
 		}
@@ -484,7 +455,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 
 		// If we're not migrating data, abort early once we have gotten enough
 		// changesets.
-		if !buildIndex && headBaseSearch && len(list.Changesets) >= op.Limit() {
+		if headBaseSearch && len(list.Changesets) >= op.Limit() {
 			break
 		}
 	}
@@ -562,7 +533,7 @@ func (s *Changesets) indexRemove(ctx context.Context, fs storage.System, cid int
 // indexList returns a list of changeset IDs found in the given index directory.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir string) (map[int64]struct{}, error) {
+func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir string) (map[int64]bool, error) {
 	infos, err := fs.List(indexDir)
 	if err != nil {
 		if grpc.Code(err) == codes.NotFound {
@@ -570,13 +541,13 @@ func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir 
 		}
 		return nil, err
 	}
-	ids := make(map[int64]struct{})
+	ids := make(map[int64]bool)
 	for _, name := range infos {
 		id, err := strconv.ParseInt(name, 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		ids[id] = struct{}{}
+		ids[id] = true
 	}
 	return ids, nil
 }
