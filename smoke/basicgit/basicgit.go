@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
@@ -29,7 +31,7 @@ var (
 
 func main() {
 	flag.Parse()
-	if username == "" || password == "" {
+	if *username == "" || *password == "" {
 		fmt.Fprintf(os.Stderr, "username or password not specified\n")
 		os.Exit(1)
 	}
@@ -53,15 +55,39 @@ func main() {
 }
 
 func main_() error {
-	c(`src login --endpoint=https://sourcegraph.com -u %s -p %s`, username, password)
+	// authenticate with mothership
+	c(`src --endpoint=https://sourcegraph.com login -u %s -p %s`, (*username), (*password))
 
-	server, err := async(`src serve --allow-all-logins`)
+	// launch local server
+	server, err := async(`src serve --auth.allow-all-logins`)
 	if err != nil {
 		return err
 	}
 	defer server.Process.Signal(os.Interrupt)
+	for {
+		if _, err := os.Stat(os.ExpandEnv("$HOME/.sourcegraph/id.pem")); err == nil {
+			break
+		} else if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 
-	c(`src registered-clients create --client-name=%s --client-uri='%s' --redirect-uri='%s'`, registeredClient, registeredClientURL, registeredClientRedirectURL)
+	// register local instance with mothership
+	outObj, err := cJSON(`src registered-clients create --client-name=%s --client-uri='%s' --redirect-uri='%s'`, registeredClient, registeredClientURL, registeredClientRedirectURL)
+	if err != nil {
+		return err
+	}
+	clientID := outObj["ID"].(string)
+	defer c(`src --endpoint='https://sourcegraph.com' registered-clients delete '%s'`, clientID)
+
+	// authenticate with local instance (the mothership may not immediately register the client instance, so try multiple attempts)
+	for i := 0; i < 20; i++ {
+		if err := ce(`src --endpoint=http://localhost:3080 login -u %s -p %s`, (*username), (*password)); err == nil {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 
 	c(`rm -rf ~/.sourcegraph/repos/testrepo`)
 	c(`src --endpoint=http://localhost:3080 repo create testrepo`)
@@ -113,12 +139,31 @@ func must(rets ...interface{}) {
 // If the exit code is non-zero, then it will panic.
 func c(cmdStr string, args ...interface{}) {
 	expCmdStr := fmt.Sprintf(cmdStr, args...)
+	if err := ce(cmdStr, args...); err != nil {
+		panic(fmt.Sprintf("Error running %q: %s\n", expCmdStr, err))
+	}
+}
+
+func ce(cmdStr string, args ...interface{}) error {
+	expCmdStr := fmt.Sprintf(cmdStr, args...)
 	if verbose {
 		fmt.Printf("$ %s\n", expCmdStr)
 	}
-	if err := newCmd(cmdStr, args...).Run(); err != nil {
-		panic(fmt.Sprintf("Error running %q: %s\n", expCmdStr, err))
+	return newCmd(cmdStr, args...).Run()
+}
+
+func cJSON(cmdStr string, args ...interface{}) (map[string]interface{}, error) {
+	cmd := newCmd(cmdStr, args...)
+	cmd.Stdout = nil
+	stdout, err := cmd.Output()
+	if err != nil {
+		return nil, err
 	}
+	outObj := make(map[string]interface{})
+	if err := json.Unmarshal(stdout, &outObj); err != nil {
+		return nil, err
+	}
+	return outObj, nil
 }
 
 // noErr runs the specified command. If the error code is non-zero,
