@@ -9,7 +9,7 @@
 //   go generate
 //
 
-package ctxfunc
+package outer
 
 import (
 	"golang.org/x/net/context"

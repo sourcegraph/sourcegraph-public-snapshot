@@ -10,11 +10,11 @@ import (
 
 func main() {
 	svcs := []string{
-		"../../../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
-		"../../../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
-		"../../../../../gitserver/gitpb/git_transport.pb.go",
+		"../../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
+		"../../../../Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
+		"../../../../gitserver/gitpb/git_transport.pb.go",
 	}
-	gen.Generate("middleware.go", tmpl, svcs, nil)
+	gen.Generate("outer_middleware.go", tmpl, svcs, nil)
 }
 
 var tmpl = template.Must(template.New("").Delims("<<<", ">>>").Parse(`// GENERATED CODE - DO NOT EDIT!
@@ -28,7 +28,7 @@ var tmpl = template.Must(template.New("").Delims("<<<", ">>>").Parse(`// GENERAT
 //   go generate
 //
 
-package ctxfunc
+package outer
 
 import (
 	"golang.org/x/net/context"

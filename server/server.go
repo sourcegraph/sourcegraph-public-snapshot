@@ -7,7 +7,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer/ctxfunc"
+	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -29,17 +29,16 @@ func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 
 	// Construct the inner services. The inner services are the
 	// services as they appear in the context of service method
-	// implementations. Below (in the "return middleware.Services"
-	// statement) we wrap them with authentication, metadata, config,
-	// etc., handlers that only need to be run once per external
-	// request.
+	// implementations. Below we wrap them with authentication,
+	// metadata, config, etc., handlers that only need to be run
+	// once per external request.
 	services := inner.Services(authConfig)
 
 	// Wrap in middleware for context initialization. This is the
-	// outermost wrapper (except caching) because it performs the most
+	// outermost wrapper because it performs the most
 	// expensive work, and we only want it to be run once per external
 	// request (it does not need to be re-run when services make
 	// internal requests to their own methods or other services'
 	// methods).
-	return ctxfunc.Services(ctxFunc, services)
+	return outer.Services(ctxFunc, services)
 }

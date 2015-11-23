@@ -1,4 +1,4 @@
-package ctxfunc
+package outer
 
 import (
 	"strings"
