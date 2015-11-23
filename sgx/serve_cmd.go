@@ -728,7 +728,7 @@ func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDK
 func (c *ServeCmd) checkReachability() {
 	var timeout time.Duration
 	if os.Getenv("CI") == "" {
-		timeout = time.Second
+		timeout = 5 * time.Second
 	} else {
 		timeout = 15 * time.Second // CI is slower
 	}
