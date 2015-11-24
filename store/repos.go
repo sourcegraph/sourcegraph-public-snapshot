@@ -38,7 +38,7 @@ type Repos interface {
 // RepoUpdate represents an update to specific fields of a repo. Only
 // fields with non-zero values are updated.
 //
-// The ReposUpdateUp.Repo field must be filled in to specify the repo
+// The ReposUpdateOp.Repo field must be filled in to specify the repo
 // that will be updated.
 type RepoUpdate struct {
 	*sourcegraph.ReposUpdateOp

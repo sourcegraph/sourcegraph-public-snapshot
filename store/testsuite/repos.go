@@ -228,6 +228,9 @@ func Repos_Update_PushedAt(ctx context.Context, t *testing.T, s store.Repos, pre
 	if repo.PushedAt == nil {
 		t.Fatal("got PushedAt nil, want non-nil")
 	}
+	if repo.UpdatedAt != nil {
+		t.Fatal("got UpdatedAt non-nil, want nil")
+	}
 	if want := newTime; !repo.PushedAt.Time().Equal(want) {
 		t.Errorf("got PushedAt %q, want %q", repo.PushedAt.Time(), want)
 	}
