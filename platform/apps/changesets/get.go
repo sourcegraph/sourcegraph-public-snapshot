@@ -147,20 +147,48 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ds := cs.DeltaSpec
-	// Compute delta (actual merge-base, commit IDs and build status for both revs)
-	delta, err := sg.Deltas.Get(ctx, &sourcegraph.DeltaSpec{
-		Base: ds.Base,
-		Head: ds.Head,
+	// Fetch data which depends on the deltaspec concurrently
+	var (
+		ds      = cs.DeltaSpec
+		delta   *sourcegraph.Delta
+		baseTip *vcs.Commit
+		files   *sourcegraph.DeltaFiles
+	)
+	par = parallel.NewRun(3)
+	par.Do(func() error {
+		// Compute delta (actual merge-base, commit IDs and build status for both revs)
+		var err error
+		delta, err = sg.Deltas.Get(ctx, &sourcegraph.DeltaSpec{
+			Base: ds.Base,
+			Head: ds.Head,
+		})
+		return err
 	})
+	par.Do(func() error {
+		// Compute the tip of the base branch
+		var err error
+		baseTip, err = sg.Repos.GetCommit(ctx, &ds.Base)
+		return err
+	})
+	par.Do(func() error {
+		// If this route is for changes, request the diffs too
+		var err error
+		opt := sourcegraph.DeltaListFilesOptions{
+			Formatted: false,
+			Tokenized: true,
+			Filter:    v["Filter"],
+		}
+		files, err = sg.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
+			Ds:  *ds,
+			Opt: &opt,
+		})
+		return err
+	})
+	err = par.Wait()
 	if err != nil {
 		return err
 	}
-	// Compute the tip of the base branch
-	baseTip, err := sg.Repos.GetCommit(ctx, &ds.Base)
-	if err != nil {
-		return err
-	}
+
 	// Retrieve commit list
 	commitList, err := sg.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
 		Repo: ds.Base.RepoSpec,
@@ -174,26 +202,6 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	sort.Sort(byDate(commitList.Commits))
-	// If this route is for changes, request the diffs too
-	var (
-		files  *sourcegraph.DeltaFiles
-		filter string
-	)
-	if f, ok := v["Filter"]; ok {
-		filter = f
-	}
-	opt := sourcegraph.DeltaListFilesOptions{
-		Formatted: false,
-		Tokenized: true,
-		Filter:    filter,
-	}
-	files, err = sg.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
-		Ds:  *ds,
-		Opt: &opt,
-	})
-	if err != nil {
-		return err
-	}
 	// Augment commits with data from People
 	augmentedCommits := make([]*payloads.AugmentedCommit, len(commitList.Commits))
 	for i, c := range commitList.Commits {
@@ -245,7 +253,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	}{
 		RepoCommon:       *rc,
 		RepoRevCommon:    *vc,
-		FileFilter:       filter,
+		FileFilter:       v["Filter"],
 		ReviewGuidelines: guide,
 		JiraIssues:       jiraIssues,
 
