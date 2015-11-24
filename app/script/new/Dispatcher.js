@@ -1,9 +1,11 @@
 import flux from "flux";
 
+import deepFreeze from "./util/deepFreeze";
 import testOnly from "./util/testOnly";
 
 class Dispatcher extends flux.Dispatcher {
 	dispatch(payload) {
+		deepFreeze(payload);
 		if (this._catch) {
 			this._dispatched.push(payload);
 			return;
@@ -37,6 +39,7 @@ class Dispatcher extends flux.Dispatcher {
 	directDispatch(store, payload) {
 		testOnly();
 
+		deepFreeze(payload);
 		this._startDispatching(payload);
 		try {
 			store.__onDispatch(payload);

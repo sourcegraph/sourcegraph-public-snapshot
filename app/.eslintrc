@@ -1,6 +1,7 @@
 {
 	"ecmaFeatures": {
 		"arrowFunctions": true,
+		"objectLiteralComputedProperties": true,
 		"objectLiteralShorthandMethods": true,
 		"templateStrings": true,
 		"jsx": true,

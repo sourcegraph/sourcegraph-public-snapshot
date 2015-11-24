@@ -12,7 +12,7 @@ describe("DefPopup", () => {
 		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
 			<DefPopup
 				def={{Found: true, URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
-				examples={{test: "examples", generation: 42}}
+				examples={{test: "examples"}}
 				highlightedDef="otherURL" />
 		);
 	});
@@ -21,7 +21,7 @@ describe("DefPopup", () => {
 		autotest(testdataNotAvailable, `${__dirname}/testdata/DefPopup-notAvailable.json`,
 			<DefPopup
 				def={{Found: false, URL: "someURL", QualifiedName: {__html: "someName"}}}
-				examples={{test: "examples", generation: 42}}
+				examples={{test: "examples"}}
 				highlightedDef={null} />
 		);
 	});

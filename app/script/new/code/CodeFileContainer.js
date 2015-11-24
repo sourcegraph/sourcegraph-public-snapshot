@@ -68,9 +68,7 @@ class CodeFileContainer extends Container {
 		state.endLine = props.def ? lineFromByte(state.file, defData && defData.ByteEndPosition) : (props.endLine || null);
 
 		state.defs = DefStore.defs;
-		state.defsGeneration = DefStore.defs.generation;
 		state.examples = DefStore.examples;
-		state.examplesGeneration = DefStore.examples.generation;
 		state.highlightedDef = DefStore.highlightedDef;
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;

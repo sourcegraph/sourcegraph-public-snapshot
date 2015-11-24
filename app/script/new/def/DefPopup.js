@@ -10,7 +10,6 @@ import hotLink from "../util/hotLink";
 class DefPopup extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.examplesGeneration = props.examples.generation;
 	}
 
 	render() {
