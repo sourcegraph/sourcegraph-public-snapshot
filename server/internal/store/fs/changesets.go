@@ -95,7 +95,7 @@ func (s *Changesets) GitRefStoreFromContext(ctx context.Context, repo string) Gi
 func resolveNextChangesetID(fs storage.System) (int64, error) {
 	fis, err := fs.List(changesetIndexAllDir)
 	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
+		if os.IsNotExist(err) {
 			return 1, nil
 		}
 		return 0, err
@@ -154,7 +154,7 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 	// Read current reviews into structure
 	all := sourcegraph.ChangesetReviewList{Reviews: []*sourcegraph.ChangesetReview{}}
 	err := s.unmarshal(fs, changesetID, changesetReviewsFile, &all.Reviews)
-	if err != nil && grpc.Code(err) != codes.NotFound {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 
@@ -174,7 +174,7 @@ func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID i
 
 	list := &sourcegraph.ChangesetReviewList{Reviews: []*sourcegraph.ChangesetReview{}}
 	err := s.unmarshal(fs, changesetID, changesetReviewsFile, &list.Reviews)
-	if grpc.Code(err) == codes.NotFound {
+	if os.IsNotExist(err) {
 		err = nil
 	}
 	return list, err
@@ -262,7 +262,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		}
 		evts := []*sourcegraph.ChangesetEvent{}
 		err = s.unmarshal(fs, op.ID, changesetEventsFile, &evts)
-		if err != nil && grpc.Code(err) != codes.NotFound {
+		if err != nil && !os.IsNotExist(err) {
 			return nil, err
 		}
 		evts = append(evts, evt)
@@ -365,7 +365,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 	list := sourcegraph.ChangesetList{Changesets: []*sourcegraph.Changeset{}}
 	fis, err := fs.List(changesetIndexAllDir)
 	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
+		if os.IsNotExist(err) {
 			return &list, nil
 		}
 		return nil, err
@@ -467,7 +467,7 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 	fs := s.storage(ctx, spec.Repo.URI)
 	list := sourcegraph.ChangesetEventList{Events: []*sourcegraph.ChangesetEvent{}}
 	err := s.unmarshal(fs, spec.ID, changesetEventsFile, &list.Events)
-	if err != nil && grpc.Code(err) != codes.NotFound {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 	return &list, nil
@@ -536,7 +536,7 @@ func (s *Changesets) indexRemove(ctx context.Context, fs storage.System, cid int
 func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir string) (map[int64]bool, error) {
 	infos, err := fs.List(indexDir)
 	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
+		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
