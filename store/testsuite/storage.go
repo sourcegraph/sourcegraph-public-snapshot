@@ -3,6 +3,8 @@ package testsuite
 import (
 	"fmt"
 	"reflect"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -133,6 +135,45 @@ func Storage_PutNoOverwrite(ctx context.Context, t *testing.T, s store.Storage) 
 	})
 	if grpc.Code(err) != codes.AlreadyExists {
 		t.Fatalf("Expected codes.AlreadyExists, got: %+v\n", err)
+	}
+}
+
+// TestStorage_PutNoOverwriteConcurrent tests that Storage.PutNoOverwrite works.
+func TestStorage_PutNoOverwriteConcurrent(ctx context.Context, t *testing.T, s store.Storage) {
+	storageBucket := randomBucket()
+
+	for attempt := 0; attempt < 4; attempt++ {
+		// Spawn off a bunch of goroutines to try PutNoOverwrite; only one should
+		// succeed.
+		var (
+			success    uint32
+			wg         sync.WaitGroup
+			storageKey = sourcegraph.StorageKey{
+				Bucket: storageBucket,
+				Key:    randomKey(),
+			}
+		)
+		for g := 0; g < 10; g++ {
+			wg.Add(1)
+			go func() {
+				_, err := s.PutNoOverwrite(ctx, &sourcegraph.StoragePutOp{
+					Key:   storageKey,
+					Value: storageValue,
+				})
+				if err == nil {
+					atomic.AddUint32(&success, 1)
+				} else if grpc.Code(err) != codes.AlreadyExists {
+					t.Log("got error:", err)
+				}
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+		if success != 1 {
+			t.Log("expected 1 success, got", success)
+		} else {
+			t.Log("got 1 success", success)
+		}
 	}
 }
 

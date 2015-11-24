@@ -27,6 +27,13 @@ func TestStorage_PutNoOverwrite(t *testing.T) {
 	testsuite.Storage_PutNoOverwrite(ctx, t, &Storage{})
 }
 
+func TestStorage_PutNoOverwriteConcurrent(t *testing.T) {
+	ctx, done := testContext()
+	defer done()
+
+	testsuite.TestStorage_PutNoOverwriteConcurrent(ctx, t, &Storage{})
+}
+
 func TestStorage_Delete(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
