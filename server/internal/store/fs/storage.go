@@ -77,6 +77,14 @@ func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 
 // Put implements the store.Storage interface.
 func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	s.fs.Lock()
+	v, err := s.putNoLock(ctx, opt)
+	s.fs.Unlock()
+	return v, err
+}
+
+// putNoLock does not hold s.fs for writing.
+func (s *Storage) putNoLock(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key.Key == "" {
 		return &pbtypes.Void{}, errors.New("key must be specified")
@@ -87,8 +95,6 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 	if err != nil {
 		return &pbtypes.Void{}, err
 	}
-	s.fs.Lock()
-	defer s.fs.Unlock()
 
 	// Create the directory.
 	err = rwvfs.MkdirAll(appStorageVFS(ctx), filepath.Dir(path))
@@ -108,14 +114,17 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 
 // PutNoOverwrite implements the store.Storage interface.
 func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
-	exists, err := s.Exists(ctx, &opt.Key)
+	s.fs.Lock()
+	defer s.fs.Unlock()
+
+	exists, err := s.existsNoLock(ctx, &opt.Key)
 	if err != nil {
 		return &pbtypes.Void{}, err
 	}
 	if exists.Exists {
 		return &pbtypes.Void{}, grpc.Errorf(codes.AlreadyExists, "key already exists")
 	}
-	return s.Put(ctx, opt)
+	return s.putNoLock(ctx, opt)
 }
 
 // Delete implements the store.Storage interface.
@@ -142,6 +151,14 @@ func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 
 // Exists implements the store.Storage interface.
 func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+	s.fs.Lock()
+	v, err := s.existsNoLock(ctx, opt)
+	s.fs.Unlock()
+	return v, err
+}
+
+// existsNoLock does not hold s.fs for reading.
+func (s *Storage) existsNoLock(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageExists{}, errors.New("key must be specified")
@@ -152,8 +169,6 @@ func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 	if err != nil {
 		return &sourcegraph.StorageExists{}, err
 	}
-	s.fs.Lock()
-	defer s.fs.Unlock()
 
 	// Stat the file.
 	fi, err := appStorageVFS(ctx).Lstat(path)
