@@ -128,12 +128,15 @@ func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 		return &sourcegraph.StorageExists{}, err
 	}
 
-	var exists bool
+	var exists []bool
 	err = dbh(ctx).Select(&exists, "SELECT exist(objects, $1) FROM appdata WHERE name = $2", url.QueryEscape(opt.Key), bucket)
 	if err != nil {
 		return &sourcegraph.StorageExists{}, err
 	}
-	return &sourcegraph.StorageExists{Exists: exists}, nil
+	if len(exists) != 1 {
+		return &sourcegraph.StorageExists{}, nil
+	}
+	return &sourcegraph.StorageExists{Exists: exists[0]}, nil
 }
 
 // List implements the store.Storage interface.
