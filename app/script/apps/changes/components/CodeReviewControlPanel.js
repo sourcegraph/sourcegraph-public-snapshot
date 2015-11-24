@@ -34,6 +34,9 @@ var CodeReviewControlPanel = React.createClass({
 	_merge(evt) {
 		if (this.props.changeset.ClosedAt || this.props.changeset.Merged) return;
 
+		// TODO(renfred) use better UI element instead of native browser popup.
+		if (!confirm(`Merge branch ${this.props.changeset.DeltaSpec.Head.Rev} into ${this.props.changeset.DeltaSpec.Base.Rev}?`)) return;
+
 		evt.currentTarget.blur(); // Unfocus merge button.
 		var opt = {
 			squash: this.refs.squashOption.checked,
