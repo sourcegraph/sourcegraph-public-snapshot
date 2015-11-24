@@ -55,8 +55,11 @@ func main() {
 }
 
 func main_() error {
+	os.Setenv("SG_USERNAME", *username)
+	os.Setenv("SG_PASSWORD", *password)
+
 	// authenticate with mothership
-	c(`src --endpoint=https://sourcegraph.com login -u %s -p %s`, (*username), (*password))
+	c(`src --endpoint=https://sourcegraph.com login`)
 
 	// launch local server
 	server, err := async(`src serve --auth.allow-all-logins`)
@@ -83,7 +86,7 @@ func main_() error {
 
 	// authenticate with local instance (the mothership may not immediately register the client instance, so try multiple attempts)
 	for i := 0; i < 20; i++ {
-		if err := ce(`src --endpoint=http://localhost:3080 login -u %s -p %s`, (*username), (*password)); err == nil {
+		if err := ce(`src --endpoint=http://localhost:3080 login`); err == nil {
 			break
 		}
 		time.Sleep(500 * time.Millisecond)
