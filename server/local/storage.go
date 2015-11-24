@@ -31,6 +31,16 @@ func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 	return v1, v2
 }
 
+// PutNoOverwrite implements the sourcegraph.StorageServer interface.
+func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.PutNoOverwrite"); err != nil {
+		return nil, err
+	}
+	v1, v2 := store.StorageFromContext(ctx).PutNoOverwrite(ctx, opt)
+	noCache(ctx)
+	return v1, v2
+}
+
 // Delete implements the sourcegraph.StorageServer interface.
 func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Delete"); err != nil {

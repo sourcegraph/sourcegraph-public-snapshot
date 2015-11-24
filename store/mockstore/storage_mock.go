@@ -10,11 +10,12 @@ import (
 )
 
 type Storage struct {
-	Get_    func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
-	Put_    func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
-	Delete_ func(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error)
-	Exists_ func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
-	List_   func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
+	Get_            func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
+	Put_            func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
+	PutNoOverwrite_ func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
+	Delete_         func(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error)
+	Exists_         func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
+	List_           func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
 }
 
 func (s *Storage) Get(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
@@ -23,6 +24,10 @@ func (s *Storage) Get(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegr
 
 func (s *Storage) Put(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	return s.Put_(v0, v1)
+}
+
+func (s *Storage) PutNoOverwrite(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	return s.PutNoOverwrite_(v0, v1)
 }
 
 func (s *Storage) Delete(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {

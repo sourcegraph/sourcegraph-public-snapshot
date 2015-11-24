@@ -8,6 +8,9 @@ import (
 	"strings"
 	"unicode"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -79,6 +82,18 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 	  INSERT INTO appdata (name, objects) SELECT $2, $1 WHERE NOT EXISTS (SELECT * FROM upsert)`,
 		hQuote(url.QueryEscape(opt.Key.Key))+"=>"+hQuote(base64.StdEncoding.EncodeToString(opt.Value)), bucket)
 	return &pbtypes.Void{}, err
+}
+
+// PutNoOverwrite implements the store.Storage interface.
+func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	exists, err := s.Exists(ctx, &opt.Key)
+	if err != nil {
+		return &pbtypes.Void{}, err
+	}
+	if exists.Exists {
+		return &pbtypes.Void{}, grpc.Errorf(codes.AlreadyExists, "key already exists")
+	}
+	return s.Put(ctx, opt)
 }
 
 // Delete implements the store.Storage interface.

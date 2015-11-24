@@ -13,6 +13,9 @@ import (
 	"sync"
 	"unicode"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"sourcegraph.com/sqs/pbtypes"
@@ -98,6 +101,18 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 	defer f.Close()
 	_, err = io.Copy(f, bytes.NewReader(opt.Value))
 	return &pbtypes.Void{}, err
+}
+
+// PutNoOverwrite implements the store.Storage interface.
+func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	exists, err := s.Exists(ctx, &opt.Key)
+	if err != nil {
+		return &pbtypes.Void{}, err
+	}
+	if exists.Exists {
+		return &pbtypes.Void{}, grpc.Errorf(codes.AlreadyExists, "key already exists")
+	}
+	return s.Put(ctx, opt)
 }
 
 // Delete implements the store.Storage interface.
