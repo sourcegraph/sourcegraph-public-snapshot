@@ -502,7 +502,9 @@ func (s *Changesets) updateIndex(ctx context.Context, fs storage.System, cid int
 // Callers must guard by holding the s.fsLock lock.
 func (s *Changesets) indexAdd(ctx context.Context, fs storage.System, cid int64, indexDir string) error {
 	// If the file exists nothing needs to be done.
-	if s.indexHas(ctx, fs, cid, indexDir) {
+	if exists, err := s.indexHas(ctx, fs, cid, indexDir); err != nil {
+		return err
+	} else if exists {
 		return nil
 	}
 
@@ -515,7 +517,9 @@ func (s *Changesets) indexAdd(ctx context.Context, fs storage.System, cid int64,
 // Callers must guard by holding the s.fsLock lock.
 func (s *Changesets) indexRemove(ctx context.Context, fs storage.System, cid int64, indexDir string) error {
 	// If the file does not exist nothing needs to be done.
-	if !s.indexHas(ctx, fs, cid, indexDir) {
+	if exists, err := s.indexHas(ctx, fs, cid, indexDir); err != nil {
+		return err
+	} else if !exists {
 		return nil
 	}
 	return fs.Delete(indexDir, strconv.FormatInt(cid, 10))
@@ -542,7 +546,7 @@ func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir 
 }
 
 // indexHas stats the changeset ID in the given index directory.
-func (s *Changesets) indexHas(ctx context.Context, fs storage.System, cid int64, indexDir string) bool {
+func (s *Changesets) indexHas(ctx context.Context, fs storage.System, cid int64, indexDir string) (bool, error) {
 	return fs.Exists(indexDir, strconv.FormatInt(cid, 10))
 }
 
@@ -573,11 +577,16 @@ func (s *Changesets) migrate(ctx context.Context, repoPath string) {
 	once := csGetMigrateOnce(repoPath)
 	once.Do(func() {
 		system := s.storage(ctx, repoPath)
-		if system.Exists("meta", "version") {
+		exists, err := system.Exists("meta", "version")
+		if err != nil {
+			log15.Error("Changesets.migrate checking for meta version got", err)
+			return
+		}
+		if exists {
 			// Migration has already happened
 			return
 		}
-		err := s.doMigration(ctx, repoPath, system)
+		err = s.doMigration(ctx, repoPath, system)
 		if err != nil {
 			log15.Info("Changesets Migration failed", "repo", repoPath, "error", err)
 		}
