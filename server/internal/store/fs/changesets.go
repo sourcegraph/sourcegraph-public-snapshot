@@ -156,8 +156,6 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 
 func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID int64) (*sourcegraph.ChangesetReviewList, error) {
 	s.migrate(ctx, repo)
-	s.fsLock.RLock()
-	defer s.fsLock.RUnlock()
 	fs := s.storage(ctx, repo)
 
 	list := &sourcegraph.ChangesetReviewList{Reviews: []*sourcegraph.ChangesetReview{}}
@@ -341,8 +339,6 @@ func shouldRegisterEvent(op *sourcegraph.ChangesetUpdateOp) bool {
 
 func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
 	s.migrate(ctx, op.Repo)
-	s.fsLock.RLock()
-	defer s.fsLock.RUnlock()
 	fs := s.storage(ctx, op.Repo)
 
 	// by default, retrieve all changesets
@@ -519,8 +515,6 @@ func (s *Changesets) indexRemove(ctx context.Context, fs storage.System, cid int
 }
 
 // indexList returns a list of changeset IDs found in the given index directory.
-//
-// Callers must guard by holding the s.fsLock lock.
 func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir string) (map[int64]bool, error) {
 	infos, err := fs.List(indexDir)
 	if err != nil {
@@ -540,9 +534,7 @@ func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir 
 	return ids, nil
 }
 
-// indexStat stats the changeset ID in the given index directory.
-//
-// Callers must guard by holding the s.fsLock lock.
+// indexHas stats the changeset ID in the given index directory.
 func (s *Changesets) indexHas(ctx context.Context, fs storage.System, cid int64, indexDir string) bool {
 	return fs.Exists(indexDir, strconv.FormatInt(cid, 10))
 }
