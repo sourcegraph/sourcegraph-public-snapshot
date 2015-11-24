@@ -3,6 +3,7 @@ import URI from "urijs";
 
 import Component from "../Component";
 import Dispatcher from "../Dispatcher";
+import * as SearchActions from "./SearchActions";
 import SearchResultsContainer from "./SearchResultsContainer";
 
 export default class SearchResultsRouter extends Component {
@@ -40,7 +41,17 @@ export default class SearchResultsRouter extends Component {
 	}
 
 	__onDispatch(action) {
+		switch (action.constructor) {
+		case SearchActions.SelectResultType:
+			this._navigate(this._searchPath(), {
+				type: action.type,
+			});
+			break;
+		}
+	}
 
+	_searchPath() {
+		return `/${this.state.repo}@${this.state.rev}/.search`;
 	}
 
 	render() {

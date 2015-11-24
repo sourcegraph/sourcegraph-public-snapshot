@@ -18,3 +18,9 @@ export class ResultsFetched {
 		this.results = results;
 	}
 }
+
+export class SelectResultType {
+	constructor(type) {
+		this.type = type;
+	}
+}

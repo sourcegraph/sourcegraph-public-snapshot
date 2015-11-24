@@ -24,7 +24,6 @@ export class SearchResultsStore extends Store {
 		case SearchActions.ResultsFetched:
 			this.results.content[keyFor(action.repo, action.rev, action.type, action.page)] = action.results;
 			this.results.generation++;
-			console.log(action, this.results.generation);
 			break;
 
 		default:
