@@ -38,6 +38,8 @@
 				<a class="list-group-item" href="{{urlToRepo .URI}}">
 					<h4>{{template "RepoIcon" .}} {{template "RepoLabel" (repoLabelForOwner "" .URI)}}</h4>
 					{{with .Description}}<p class="description">{{.}}</p>{{end}}
+					{{$lastPush := lastPushedAt .PushedAt}}
+					{{if $lastPush}}<p class="description">Last pushed: {{$lastPush}}</p>{{end}}
 				</a>
 			{{end}}
 		</div>

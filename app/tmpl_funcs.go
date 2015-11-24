@@ -14,6 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"src.sourcegraph.com/sourcegraph/app/appconf"
@@ -287,4 +288,36 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"buildvar":        func() buildvar.Vars { return buildvar.All },
 	"updateAvailable": updateAvailable,
+
+	"lastPushedAt": func(last *pbtypes.Timestamp) string {
+		if last == nil || last.Seconds == 0 {
+			return ""
+		}
+		lastPush := last.Time()
+		elapsed := time.Since(lastPush)
+
+		hoursElapsed := int(elapsed.Hours())
+		hoursNoun := "hour"
+		if hoursElapsed > 1 {
+			hoursNoun += "s"
+		}
+
+		minsElapsed := int(elapsed.Minutes()) - 60*hoursElapsed
+		minsNoun := "minute"
+		if minsElapsed > 1 {
+			minsNoun += "s"
+		}
+
+		secondsElapsed := elapsed.Seconds()
+		switch {
+		case secondsElapsed < 60:
+			return "now"
+		case secondsElapsed < 60*60:
+			return fmt.Sprintf("%v %s ago", minsElapsed, minsNoun)
+		case secondsElapsed < 24*60*60:
+			return fmt.Sprintf("%v %s, %v %s ago", hoursElapsed, hoursNoun, minsElapsed, minsNoun)
+		default:
+			return lastPush.Format(time.RFC1123Z)
+		}
+	},
 }
