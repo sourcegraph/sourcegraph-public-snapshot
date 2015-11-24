@@ -128,6 +128,10 @@ func init() {
 }
 
 type loginCmd struct {
+	// Optional username and password (set via environment variables)
+	Username string
+	Password string
+
 	Args struct {
 		EndpointURL string `name:"endpoint" description:"Optionally specify the endpoint to authenticate against."`
 	} `positional-args:"yes" count:"1"`
@@ -160,7 +164,7 @@ func getSavedToken(endpointURL *url.URL) string {
 	return accessToken
 }
 
-func getAccessToken(endpointURL *url.URL) (string, error) {
+func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 	if savedToken := getSavedToken(endpointURL); savedToken != "" {
 		log.Printf("Using saved auth token for %s", endpointURL)
 		return savedToken, nil
@@ -202,14 +206,20 @@ func getAccessToken(endpointURL *url.URL) (string, error) {
 	// get an oauth token from the fedRoot
 	var accessTok string
 	if isLocalAuth {
-		fmt.Printf("Enter credentials for %s\n", rootURL)
-		fmt.Print("Username: ")
-		username, err := getLine()
-		if err != nil {
-			return "", err
+		var username, password string
+		if c.Username != "" {
+			username, password = c.Username, c.Password
+		} else {
+			fmt.Printf("Enter credentials for %s\n", rootURL)
+			fmt.Print("Username: ")
+			var err error
+			username, err = getLine()
+			if err != nil {
+				return "", err
+			}
+			fmt.Print("Password: ")
+			password = string(gopass.GetPasswd())
 		}
-		fmt.Print("Password: ")
-		password := string(gopass.GetPasswd())
 
 		// Create a context for communicating with the fed root directly
 		// (to avoid leaking username/password to the leaf server).
@@ -240,7 +250,7 @@ func getAccessToken(endpointURL *url.URL) (string, error) {
 
 		// Now, use the root access token to issue an auth code that
 		// the leaf server can then exchange for an access token.
-		rootAccessToken, err := getAccessToken(rootURL)
+		rootAccessToken, err := c.getAccessToken(rootURL)
 		if err != nil {
 			return "", err
 		}
@@ -318,6 +328,11 @@ func saveCredentials(endpointURL *url.URL, accessTok string, makeDefault bool) e
 }
 
 func (c *loginCmd) Execute(args []string) error {
+	if username := os.Getenv("SG_USERNAME"); username != "" {
+		c.Username = username
+		c.Password = os.Getenv("SG_PASSWORD")
+	}
+
 	// Check if parseable, before attempting authentication
 	_, err := readUserAuth()
 	if err != nil {
@@ -331,7 +346,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	endpointURL := Endpoint.URLOrDefault()
-	accessTok, err := getAccessToken(endpointURL)
+	accessTok, err := c.getAccessToken(endpointURL)
 	if err != nil {
 		return err
 	}

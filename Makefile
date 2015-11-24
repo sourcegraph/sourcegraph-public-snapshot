@@ -1,6 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smtest src test clone-private libvfsgen
+.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smoke smtest src test clone-private libvfsgen
 
 PRIVATE_HASH := 16a4742b08be44e986335cfeca2aafa6d0cef361
 
@@ -120,6 +120,8 @@ serve-dep:
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 5000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 16384\n\nOn OS X you may need to first run\n\n  sudo launchctl limit maxfiles 16384\n" 1>&2; exit 1)
 	@[ $(SG_USE_WEBPACK_DEV_SERVER) = t ] && curl -Ss -o /dev/null http://localhost:8080 || (cd app && npm start &)
 
+smoke:
+	godep go run ./smoke/basicgit/basicgit.go
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
