@@ -47,16 +47,13 @@ type Changesets struct {
 
 func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegraph.Changeset) error {
 	s.migrate(ctx, repoPath)
-	s.fsLock.Lock()
-	defer s.fsLock.Unlock()
-
 	fs := s.storage(ctx, repoPath)
 	repoVCS, err := store.RepoVCSFromContext(ctx).Open(ctx, repoPath)
 	if err != nil {
 		return err
 	}
 
-	cs.ID, err = resolveNextChangesetID(fs)
+	cs.ID, err = claimNextChangesetID(fs)
 	if err != nil {
 		return err
 	}
@@ -78,7 +75,6 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	if err == nil {
 		// Update the index with the changeset's current state.
 		s.updateIndex(ctx, fs, cs.ID, true)
-		s.indexAdd(ctx, fs, cs.ID, changesetIndexAllDir)
 	}
 	return err
 }
@@ -89,6 +85,23 @@ func (s *Changesets) GitRefStoreFromContext(ctx context.Context, repo string) Gi
 		return &noopGitRefStore{}
 	}
 	return &localGitRefStore{dir: dir}
+}
+
+func claimNextChangesetID(sys storage.System) (int64, error) {
+	id, err := resolveNextChangesetID(sys)
+	if err != nil {
+		return 0, err
+	}
+	maxID := id + 100
+
+	for ; id <= maxID; id++ {
+		err = sys.PutNoOverwrite(changesetIndexAllDir, strconv.FormatInt(id, 10), []byte{})
+		if err != nil && os.IsExist(err) {
+			continue
+		}
+		break
+	}
+	return id, err
 }
 
 func resolveNextChangesetID(fs storage.System) (int64, error) {
