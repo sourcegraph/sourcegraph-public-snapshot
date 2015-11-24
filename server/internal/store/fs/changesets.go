@@ -134,7 +134,8 @@ func (s *Changesets) Get(ctx context.Context, repoPath string, ID int64) (*sourc
 func (s *Changesets) get(ctx context.Context, repoPath string, ID int64) (*sourcegraph.Changeset, error) {
 	fs := s.storage(ctx, repoPath)
 	cs := &sourcegraph.Changeset{}
-	return cs, storage.GetJSON(fs, strconv.FormatInt(ID, 10), changesetMetadataFile, cs)
+	err := s.unmarshal(fs, ID, changesetMetadataFile, cs)
+	return cs, err
 }
 
 // getReviewRefTip returns the commit ID that is at the tip of the reference where
@@ -161,7 +162,7 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 
 	// Read current reviews into structure
 	all := sourcegraph.ChangesetReviewList{Reviews: []*sourcegraph.ChangesetReview{}}
-	err := s.readFile(ctx, fs, changesetID, changesetReviewsFile, &all.Reviews)
+	err := s.unmarshal(fs, changesetID, changesetReviewsFile, &all.Reviews)
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return nil, err
 	}
@@ -181,18 +182,15 @@ func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID i
 	fs := s.storage(ctx, repo)
 
 	list := &sourcegraph.ChangesetReviewList{Reviews: []*sourcegraph.ChangesetReview{}}
-	err := s.readFile(ctx, fs, changesetID, changesetReviewsFile, &list.Reviews)
+	err := s.unmarshal(fs, changesetID, changesetReviewsFile, &list.Reviews)
 	if grpc.Code(err) == codes.NotFound {
 		err = nil
 	}
 	return list, err
 }
 
-// readFile JSON decodes the contents of the file named 'filename' from
-// the folder of the given changeset into v.
-//
-// Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) readFile(ctx context.Context, fs storage.System, changesetID int64, filename string, v interface{}) error {
+// unmarshal JSON decodes the contents of the file for a changeset into v
+func (s *Changesets) unmarshal(fs storage.System, changesetID int64, filename string, v interface{}) error {
 	return storage.GetJSON(fs, strconv.FormatInt(changesetID, 10), filename, v)
 }
 
@@ -273,7 +271,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			CreatedAt: &ts,
 		}
 		evts := []*sourcegraph.ChangesetEvent{}
-		err = s.readFile(ctx, fs, op.ID, changesetEventsFile, &evts)
+		err = s.unmarshal(fs, op.ID, changesetEventsFile, &evts)
 		if err != nil && grpc.Code(err) != codes.NotFound {
 			return nil, err
 		}
@@ -478,7 +476,7 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 	s.migrate(ctx, spec.Repo.URI)
 	fs := s.storage(ctx, spec.Repo.URI)
 	list := sourcegraph.ChangesetEventList{Events: []*sourcegraph.ChangesetEvent{}}
-	err := s.readFile(ctx, fs, spec.ID, changesetEventsFile, &list.Events)
+	err := s.unmarshal(fs, spec.ID, changesetEventsFile, &list.Events)
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return nil, err
 	}
