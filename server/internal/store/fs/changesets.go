@@ -175,8 +175,6 @@ var errInvalidUpdateOp = errors.New("invalid update operation")
 
 func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	s.migrate(ctx, opt.Op.Repo.URI)
-	s.fsLock.Lock()
-	defer s.fsLock.Unlock()
 	fs := s.storage(ctx, opt.Op.Repo.URI)
 
 	op := opt.Op
@@ -247,6 +245,8 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			CreatedAt: &ts,
 		}
 		evts := []*sourcegraph.ChangesetEvent{}
+		s.fsLock.Lock()
+		defer s.fsLock.Unlock()
 		err = s.unmarshal(fs, op.ID, changesetEventsFile, &evts)
 		if err != nil && !os.IsNotExist(err) {
 			return nil, err
@@ -459,8 +459,6 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 
 // updateIndex updates the index with the given changeset state (whether or not
 // it is opened or closed).
-//
-// Callers must guard by holding the s.fsLock lock.
 func (s *Changesets) updateIndex(ctx context.Context, fs storage.System, cid int64, open bool) error {
 	var adds, removes []string
 	if open {
@@ -472,6 +470,12 @@ func (s *Changesets) updateIndex(ctx context.Context, fs storage.System, cid int
 		adds = append(adds, changesetIndexClosedDir)
 		removes = append(removes, changesetIndexOpenDir)
 	}
+
+	// We need the state between open and closed to stay consistent. We
+	// grab a lock to prevent race conditions for concurrent modifications
+	// to the same CS's state
+	s.fsLock.Lock()
+	defer s.fsLock.Unlock()
 
 	// Perform additions.
 	for _, indexDir := range adds {
