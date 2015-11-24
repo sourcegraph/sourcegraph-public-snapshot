@@ -56,6 +56,8 @@
 		{{end}}
 
 		{{template "Head" $}}
+
+		{{appconf.ExtraHeadHTML}}
 	</head>
 	<body class="{{classForRoute .CurrentRoute}}{{if motd}} has-motd{{end}}{{if hasField . "Repo"}} with-fixed-subnav{{end}}"
 		{{if hasField . "Repo"}}
@@ -132,6 +134,7 @@
 		{{end}}
 
 		<script src="{{assetURL "/bundle.js"}}"></script>
+		{{appconf.ExtraBodyHTML}}
 	</body>
 </html>
 {{end}}
