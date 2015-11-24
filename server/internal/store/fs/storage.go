@@ -62,6 +62,9 @@ func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 	// Read the file.
 	f, err := appStorageVFS(ctx).Open(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return &sourcegraph.StorageValue{}, grpc.Errorf(codes.NotFound, "no such object")
+		}
 		return &sourcegraph.StorageValue{}, err
 	}
 	defer f.Close()
@@ -129,6 +132,9 @@ func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 	//
 	// TODO(slimsag): need a RemoveAll implementation here.
 	err = appStorageVFS(ctx).Remove(path)
+	if err != nil && os.IsNotExist(err) {
+		return &pbtypes.Void{}, nil
+	}
 
 	// TODO(slimsag): consider automatic cleanup of directories here.
 	return &pbtypes.Void{}, err
