@@ -17,19 +17,7 @@ import (
 
 var (
 	storageKeyName = randomKey()
-
-	storageBucket = &sourcegraph.StorageBucket{
-		AppName: "go-test",
-		Name:    "go-test-bucket" + fmt.Sprint(time.Now().UnixNano()),
-		Repo:    "github.com/foo/bar",
-	}
-
-	storageKey = &sourcegraph.StorageKey{
-		Bucket: storageBucket, // TODO(slimsag): Bucket should not be nullable
-		Key:    storageKeyName,
-	}
-
-	storageValue = fullByteRange()
+	storageValue   = fullByteRange()
 )
 
 func fullByteRange() (v []byte) {
@@ -43,8 +31,22 @@ func randomKey() string {
 	return "my-awesome\x00\x00key" + fmt.Sprint(time.Now().UnixNano())
 }
 
+func randomBucket() *sourcegraph.StorageBucket {
+	return &sourcegraph.StorageBucket{
+		AppName: "go-test",
+		Name:    "go-test-bucket" + fmt.Sprint(time.Now().UnixNano()),
+		Repo:    "github.com/foo/bar",
+	}
+}
+
 // Storage_Get tests that Storage.Get works.
 func Storage_Get(ctx context.Context, t *testing.T, s store.Storage) {
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket, // TODO(slimsag): Bucket should not be nullable
+		Key:    storageKeyName,
+	}
+
 	// Test that a NotFound error is returned.
 	value, err := s.Get(ctx, storageKey)
 	if grpc.Code(err) != codes.NotFound {
@@ -72,6 +74,12 @@ func Storage_Get(ctx context.Context, t *testing.T, s store.Storage) {
 
 // Storage_Put tests that Storage.Put works.
 func Storage_Put(ctx context.Context, t *testing.T, s store.Storage) {
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
 	// Put the first object in.
 	_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
 		Key:   *storageKey,
@@ -103,6 +111,12 @@ func Storage_Put(ctx context.Context, t *testing.T, s store.Storage) {
 
 // Storage_PutNoOverwrite tests that Storage.PutNoOverwrite works.
 func Storage_PutNoOverwrite(ctx context.Context, t *testing.T, s store.Storage) {
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
 	// Put the first object in.
 	_, err := s.PutNoOverwrite(ctx, &sourcegraph.StoragePutOp{
 		Key:   *storageKey,
@@ -124,6 +138,12 @@ func Storage_PutNoOverwrite(ctx context.Context, t *testing.T, s store.Storage) 
 
 // Storage_Delete tests that Storage.Delete works.
 func Storage_Delete(ctx context.Context, t *testing.T, s store.Storage) {
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
 	// Ensure delete on non-existant bucket is no-op.
 	_, err := s.Delete(ctx, &sourcegraph.StorageKey{
 		Bucket: storageBucket,
@@ -165,6 +185,12 @@ func Storage_Delete(ctx context.Context, t *testing.T, s store.Storage) {
 
 // Storage_Exists tests that Storage.Exists works.
 func Storage_Exists(ctx context.Context, t *testing.T, s store.Storage) {
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
 	// Check that no error is returned for non-existant object.
 	exists, err := s.Exists(ctx, storageKey)
 	if err != nil {
@@ -195,6 +221,12 @@ func Storage_Exists(ctx context.Context, t *testing.T, s store.Storage) {
 
 // Storage_List tests that Storage.List works.
 func Storage_List(ctx context.Context, t *testing.T, s store.Storage) {
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
 	// Check that no error is returned for non-existant bucket.
 	list, err := s.List(ctx, storageKey)
 	if err != nil {
