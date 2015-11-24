@@ -75,7 +75,7 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	if err = refStore.UpdateRef("refs/changesets/"+id+"/head", string(head)); err != nil {
 		return err
 	}
-	err = writeChangeset(ctx, fs, cs)
+	err = storage.PutJSON(fs, id, changesetMetadataFile, cs)
 	if err == nil {
 		// Update the index with the changeset's current state.
 		s.updateIndex(ctx, fs, cs.ID, true)
@@ -90,15 +90,6 @@ func (s *Changesets) GitRefStoreFromContext(ctx context.Context, repo string) Gi
 		return &noopGitRefStore{}
 	}
 	return &localGitRefStore{dir: dir}
-}
-
-// writeChangeset writes the given changeset into the repository specified by
-// repoPath. When committing the change, msg is used as the commit message to
-// which the changeset ID is appended.
-//
-// Callers must guard by holding the s.fsLock lock.
-func writeChangeset(ctx context.Context, sys storage.System, cs *sourcegraph.Changeset) error {
-	return storage.PutJSON(sys, strconv.FormatInt(cs.ID, 10), changesetMetadataFile, cs)
 }
 
 func resolveNextChangesetID(fs storage.System) (int64, error) {
@@ -233,18 +224,17 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	// Update the index with the changeset's current state.
 	s.updateIndex(ctx, fs, op.ID, after.ClosedAt == nil)
 
+	id := strconv.FormatInt(current.ID, 10)
 	refStore := s.GitRefStoreFromContext(ctx, opt.Op.Repo.URI)
 	if opt.Head != "" {
 		// We need to track the tip of this branch so that we can access its
 		// data even after a potential deletion or merge.
-		id := strconv.FormatInt(current.ID, 10)
 		if err := refStore.UpdateRef("refs/changesets/"+id+"/head", opt.Head); err != nil {
 			return nil, err
 		}
 		after.DeltaSpec.Head.CommitID = opt.Head
 	}
 	if opt.Base != "" {
-		id := strconv.FormatInt(current.ID, 10)
 		if err := refStore.UpdateRef("refs/changesets/"+id+"/base", opt.Base); err != nil {
 			return nil, err
 		}
@@ -257,7 +247,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		return &sourcegraph.ChangesetEvent{}, nil
 	}
 
-	err = writeChangeset(ctx, fs, &after)
+	err = storage.PutJSON(fs, id, changesetMetadataFile, &after)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +266,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			return nil, err
 		}
 		evts = append(evts, evt)
-		err = storage.PutJSON(fs, strconv.FormatInt(op.ID, 10), changesetEventsFile, evts)
+		err = storage.PutJSON(fs, id, changesetEventsFile, evts)
 		return evt, err
 	}
 
