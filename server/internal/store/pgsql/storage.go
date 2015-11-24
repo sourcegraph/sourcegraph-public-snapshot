@@ -57,7 +57,7 @@ func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 		return &sourcegraph.StorageValue{}, err
 	}
 	if len(value) != 1 {
-		return &sourcegraph.StorageValue{}, errors.New("no such object")
+		return &sourcegraph.StorageValue{}, grpc.Errorf(codes.NotFound, "no such object")
 	}
 	v, err := base64.StdEncoding.DecodeString(value[0])
 	return &sourcegraph.StorageValue{Value: []byte(v)}, nil
