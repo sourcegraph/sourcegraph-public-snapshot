@@ -10,7 +10,6 @@ export default class SearchResultsContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		console.log(state);
 	}
 
 	render() {
