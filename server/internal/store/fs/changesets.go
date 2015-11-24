@@ -52,8 +52,10 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	defer s.fsLock.Unlock()
 
 	fs := s.storage(ctx, repoPath)
-	dir := absolutePathForRepo(ctx, repoPath)
-	repo, err := vcs.Open("git", dir)
+	repoVCS, err := store.RepoVCSFromContext(ctx).Open(ctx, repoPath)
+	if err != nil {
+		return err
+	}
 
 	cs.ID, err = resolveNextChangesetID(fs)
 	if err != nil {
@@ -63,7 +65,7 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	ts := pbtypes.NewTimestamp(time.Now())
 	cs.CreatedAt = &ts
 	id := strconv.FormatInt(cs.ID, 10)
-	head, err := repo.ResolveBranch(cs.DeltaSpec.Head.Rev)
+	head, err := repoVCS.ResolveBranch(cs.DeltaSpec.Head.Rev)
 	if err != nil {
 		return err
 	}
@@ -600,12 +602,9 @@ func (s *Changesets) migrate(ctx context.Context, repoPath string) {
 			// Migration has already happened
 			return
 		}
-		log15.Info("Starting migration of Changesets to Platform Storage", "repo", repoPath)
 		err := s.doMigration(ctx, repoPath, system)
 		if err != nil {
 			log15.Info("Changesets Migration failed", "repo", repoPath, "error", err)
-		} else {
-			log15.Info("Finished migration of Changesets to Platform Storage", "repo", repoPath)
 		}
 	})
 }
@@ -662,11 +661,12 @@ func (s *Changesets) doMigration(ctx context.Context, repo string, to storage.Sy
 	}
 	cid, err := s.getReviewRefTip(r)
 	if err != nil {
-		if grpc.Code(err) != codes.NotFound {
+		if !os.IsNotExist(err) {
 			return err
 		}
 		// Changesets is empty, no migration necessary
 	} else {
+		log15.Info("Starting migration of Changesets to Platform Storage", "repo", repo)
 		from, err := r.FileSystem(cid)
 		if err != nil {
 			return err
@@ -675,6 +675,7 @@ func (s *Changesets) doMigration(ctx context.Context, repo string, to storage.Sy
 		if err != nil {
 			return err
 		}
+		log15.Info("Finished migration of Changesets to Platform Storage", "repo", repo)
 	}
 	version := struct {
 		Version int
