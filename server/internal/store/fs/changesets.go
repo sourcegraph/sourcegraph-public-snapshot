@@ -205,9 +205,6 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		after.Merged = true
 	}
 
-	// Update the index with the changeset's current state.
-	s.updateIndex(ctx, fs, op.ID, after.ClosedAt == nil)
-
 	id := strconv.FormatInt(current.ID, 10)
 	refStore := s.GitRefStoreFromContext(ctx, opt.Op.Repo.URI)
 	if opt.Head != "" {
@@ -231,10 +228,16 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		return &sourcegraph.ChangesetEvent{}, nil
 	}
 
+	// HERE BE DRAGONS: We are doing a read followed by a write without
+	// any concurrency control. We are relying on the fact that concurrent
+	// changes to CS metadata should be exceedingly rare, and we do as
+	// little as possible between read and write. This is done in the vain
+	// of performance wins.
 	err = storage.PutJSON(fs, id, changesetMetadataFile, &after)
 	if err != nil {
 		return nil, err
 	}
+	s.updateIndex(ctx, fs, op.ID, after.ClosedAt == nil)
 
 	var evt *sourcegraph.ChangesetEvent
 	if shouldRegisterEvent(op) {
