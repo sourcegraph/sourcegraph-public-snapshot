@@ -30,7 +30,6 @@ import (
 )
 
 const (
-	reviewRef             = "refs/src/review"
 	changesetMetadataFile = "changeset.json"
 	changesetReviewsFile  = "reviews.json"
 	changesetEventsFile   = "events.json"
@@ -127,22 +126,6 @@ func (s *Changesets) get(ctx context.Context, repoPath string, ID int64) (*sourc
 	cs := &sourcegraph.Changeset{}
 	err := s.unmarshal(fs, ID, changesetMetadataFile, cs)
 	return cs, err
-}
-
-// getReviewRefTip returns the commit ID that is at the tip of the reference where
-// the changeset data is stored.
-//
-// Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) getReviewRefTip(repo vcs.Repository) (vcs.CommitID, error) {
-	refResolver, ok := repo.(refResolver)
-	if !ok {
-		return "", &os.PathError{Op: "getReviewRefTip", Path: reviewRef, Err: os.ErrNotExist}
-	}
-	id, err := refResolver.ResolveRef(reviewRef)
-	if err == vcs.ErrRefNotFound {
-		return "", &os.PathError{Op: "getReviewRefTip", Path: reviewRef, Err: os.ErrNotExist}
-	}
-	return id, err
 }
 
 func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changesetID int64, newReview *sourcegraph.ChangesetReview) (*sourcegraph.ChangesetReview, error) {
@@ -641,13 +624,25 @@ func vfsRecursiveCopy(from vfs.FileSystem, to storage.System, dir string) error 
 	return nil
 }
 
-func (s *Changesets) doMigration(ctx context.Context, repo string, to storage.System) error {
+func getOldChangesets(ctx context.Context, repo string) (vfs.FileSystem, error) {
 	dir := absolutePathForRepo(ctx, repo)
 	r, err := vcs.Open("git", dir)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	cid, err := s.getReviewRefTip(r)
+	refResolver, ok := r.(refResolver)
+	if !ok {
+		return nil, os.ErrNotExist
+	}
+	cid, err := refResolver.ResolveRef("refs/src/review")
+	if err == vcs.ErrRefNotFound {
+		return nil, os.ErrNotExist
+	}
+	return r.FileSystem(cid)
+}
+
+func (s *Changesets) doMigration(ctx context.Context, repo string, to storage.System) error {
+	from, err := getOldChangesets(ctx, repo)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return err
@@ -655,10 +650,6 @@ func (s *Changesets) doMigration(ctx context.Context, repo string, to storage.Sy
 		// Changesets is empty, no migration necessary
 	} else {
 		log15.Info("Starting migration of Changesets to Platform Storage", "repo", repo)
-		from, err := r.FileSystem(cid)
-		if err != nil {
-			return err
-		}
 		err = vfsRecursiveCopy(from, to, "/")
 		if err != nil {
 			return err
