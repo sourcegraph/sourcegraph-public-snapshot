@@ -63,7 +63,7 @@ func Storage_Get(ctx context.Context, t *testing.T, s store.Storage) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(value, storageValue) {
+	if !reflect.DeepEqual(value.Value, storageValue) {
 		t.Fatalf("got %q expected %q\n", value, storageValue)
 	}
 }
@@ -94,7 +94,7 @@ func Storage_Put(ctx context.Context, t *testing.T, s store.Storage) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(value, newValue) {
+	if !reflect.DeepEqual(value.Value, newValue) {
 		t.Fatalf("got %q expected %q\n", value, newValue)
 	}
 }
