@@ -128,9 +128,11 @@ func init() {
 }
 
 type loginCmd struct {
-	Username string `long:"username" short:"u" description:"username of user to log in"`
-	Password string `long:"password" short:"p" description:"password of user to log in"`
-	Args     struct {
+	// Optional username and password (set via environment variables)
+	Username string
+	Password string
+
+	Args struct {
 		EndpointURL string `name:"endpoint" description:"Optionally specify the endpoint to authenticate against."`
 	} `positional-args:"yes" count:"1"`
 }
@@ -326,6 +328,11 @@ func saveCredentials(endpointURL *url.URL, accessTok string, makeDefault bool) e
 }
 
 func (c *loginCmd) Execute(args []string) error {
+	if username := os.Getenv("SG_USERNAME"); username != "" {
+		c.Username = username
+		c.Password = os.Getenv("SG_PASSWORD")
+	}
+
 	// Check if parseable, before attempting authentication
 	_, err := readUserAuth()
 	if err != nil {
