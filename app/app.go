@@ -38,6 +38,11 @@ import (
 //
 func NewHandlerWithCSRFProtection(r *router.Router) http.Handler {
 	h := nosurf.New(NewHandler(r))
+	// Prevent setting a different cookie for subpaths if someone
+	// directly visits a subpath.
+	h.SetBaseCookie(http.Cookie{
+		Path: "/",
+	})
 	h.ExemptRegexps("^/login/oauth/", "git-[\\w-]+$")
 	h.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		httpctx.SetRouteName(r, "")
