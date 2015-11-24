@@ -43,7 +43,7 @@ func (s *system) Get(bucket, key string) ([]byte, error) {
 	if err != nil {
 		// If the specified object does not exist, os.ErrNotExist is returned.
 		if grpc.Code(err) == codes.NotFound {
-			return os.ErrNotExist
+			err = os.ErrNotExist
 		}
 		return nil, err
 	}
