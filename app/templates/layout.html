@@ -57,7 +57,10 @@
 
 		{{template "Head" $}}
 	</head>
-	<body class="{{classForRoute .CurrentRoute}}{{if motd}} has-motd{{end}}{{if hasField . "Repo"}} with-fixed-subnav{{end}}"
+
+	{{$motd := ifTrue (not .HideMOTD) appconf.MOTD}}
+
+	<body class="{{classForRoute .CurrentRoute}}{{if $motd}} has-motd{{end}}{{if hasField . "Repo"}} with-fixed-subnav{{end}}"
 		{{if hasField . "Repo"}}
 			data-current-repo-url="{{(urlToRepo .Repo.URI).String}}"
 			data-current-repo-builds-url="{{(urlToRepoSubroute "repo.builds" .Repo.URI).String}}"
@@ -69,7 +72,7 @@
 
 		<header class="page-header">
 			<div class="fixed">
-				{{if motd}}<div class="motd">{{motd}}</div>{{end}}
+				{{with $motd}}<div class="motd">{{.}}</div>{{end}}
 
 				{{template "Nav" $}}
 

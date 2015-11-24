@@ -236,6 +236,10 @@ type Common struct {
 	// CacheControl is the HTTP cache-control header value that should be set in all
 	// AJAX requests originating from this page.
 	CacheControl string
+
+	// HideMOTD, if true, prevents the MOTD (message of the day) from
+	// being displayed at the top of the template.
+	HideMOTD bool
 }
 
 func executeTemplateBase(w http.ResponseWriter, templateName, templateSubName string, data interface{}) error {
@@ -333,6 +337,8 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			ErrorID: errorID,
 
 			CacheControl: cacheControl,
+
+			HideMOTD: existingCommon.HideMOTD,
 		}))
 	}
 
