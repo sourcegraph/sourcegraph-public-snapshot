@@ -2,6 +2,10 @@ package storage
 
 import (
 	"fmt"
+	"os"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -37,6 +41,10 @@ func (s *system) storageKey(bucket, key string) *sourcegraph.StorageKey {
 func (s *system) Get(bucket, key string) ([]byte, error) {
 	v, err := s.client.Storage.Get(s.ctx, s.storageKey(bucket, key))
 	if err != nil {
+		// If the specified object does not exist, os.ErrNotExist is returned.
+		if grpc.Code(err) == codes.NotFound {
+			return os.ErrNotExist
+		}
 		return nil, err
 	}
 	return v.Value, nil
@@ -48,6 +56,18 @@ func (s *system) Put(bucket, key string, value []byte) error {
 		Key:   *s.storageKey(bucket, key),
 		Value: value,
 	})
+	return err
+}
+
+// PutNoOverwrite implements the Storage interface.
+func (s *system) PutNoOverwrite(bucket, key string, value []byte) error {
+	_, err := s.client.Storage.PutNoOverwrite(s.ctx, &sourcegraph.StoragePutOp{
+		Key:   *s.storageKey(bucket, key),
+		Value: value,
+	})
+	if err != nil && grpc.Code(err) == codes.AlreadyExists {
+		return os.ErrExist
+	}
 	return err
 }
 
