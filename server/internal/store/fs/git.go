@@ -119,24 +119,19 @@ func (r *localGitTransport) servicePack(ctx context.Context, service string, dat
 		return nil, nil, err
 	}
 
-	// Scan's git command's output for errors
-	gitReader := &githttp.GitReader{Reader: stdout}
-
 	// Copy input to git binary
 	if _, err := io.Copy(stdin, rpcReader); err != nil {
 		return nil, nil, err
 	}
 
 	// Write git binary's output to http response
-	out, err = ioutil.ReadAll(gitReader)
+	out, err = ioutil.ReadAll(stdout)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Wait till command has completed
-	if err = cmd.Wait(); err == nil {
-		err = gitReader.GitError
-	}
+	err = cmd.Wait()
 	if err != nil {
 		return nil, nil, err
 	}
