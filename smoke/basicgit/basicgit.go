@@ -55,6 +55,26 @@ func main() {
 }
 
 func main_() error {
+	// Set up temporary dirs/files
+	if sgpathDir, err := ioutil.TempDir("", "sgpath"); err == nil {
+		os.Setenv("SGPATH", sgpathDir)
+		defer os.RemoveAll(sgpathDir)
+	} else {
+		return err
+	}
+	if srcAuthFile, err := ioutil.TempFile("", "src-auth"); err == nil {
+		if err := srcAuthFile.Close(); err != nil {
+			return err
+		}
+		if err := os.Remove(srcAuthFile.Name()); err != nil {
+			return err
+		}
+		os.Setenv("SRC_AUTH_FILE", srcAuthFile.Name())
+		defer os.Remove(srcAuthFile.Name())
+	} else {
+		return err
+	}
+
 	os.Setenv("SG_USERNAME", *username)
 	os.Setenv("SG_PASSWORD", *password)
 
@@ -67,11 +87,15 @@ func main_() error {
 		return err
 	}
 	defer server.Process.Signal(os.Interrupt)
+	start := time.Now()
 	for {
-		if _, err := os.Stat(os.ExpandEnv("$HOME/.sourcegraph/id.pem")); err == nil {
+		if _, err := os.Stat(os.ExpandEnv("$SGPATH/id.pem")); err == nil {
 			break
 		} else if err != nil && !os.IsNotExist(err) {
 			return err
+		}
+		if time.Now().Sub(start) > 5*time.Second {
+			return fmt.Errorf("timeout after %v waiting for $SGPATH/id.pem to be created", 5*time.Second)
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
