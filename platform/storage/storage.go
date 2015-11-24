@@ -31,7 +31,7 @@ type System interface {
 	//
 	// If the object does not exist, no error is returned, only exists=false is
 	// returned.
-	Exists(bucket, key string) bool
+	Exists(bucket, key string) (bool, error)
 
 	// List lists all objects in <bucket>.
 	//

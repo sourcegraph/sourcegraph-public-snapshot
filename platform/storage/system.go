@@ -78,12 +78,12 @@ func (s *system) Delete(bucket, key string) error {
 }
 
 // Exists implements the Storage interface.
-func (s *system) Exists(bucket, key string) bool {
+func (s *system) Exists(bucket, key string) (bool, error) {
 	exists, err := s.client.Storage.Exists(s.ctx, s.storageKey(bucket, key))
 	if err != nil {
-		return false
+		return false, err
 	}
-	return exists.Exists
+	return exists.Exists, nil
 }
 
 // List implements the Storage interface.
