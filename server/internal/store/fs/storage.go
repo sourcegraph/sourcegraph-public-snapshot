@@ -188,7 +188,11 @@ func (s *Storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourc
 	list := &sourcegraph.StorageList{}
 	for _, fi := range fis {
 		if !fi.IsDir() {
-			list.Keys = append(list.Keys, filepath.Base(fi.Name()))
+			name, err := url.QueryUnescape(filepath.Base(fi.Name()))
+			if err != nil {
+				return &sourcegraph.StorageList{}, err
+			}
+			list.Keys = append(list.Keys, name)
 		}
 	}
 	return list, nil
@@ -270,7 +274,7 @@ func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, err
 // Relative filepath elements ("..") are replaced with "dotdot" to prevent
 // escaping into parent directories.
 func storageSafePath(p string) string {
-	p = (&url.URL{Path: p}).String()
+	p = url.QueryEscape(p)
 	return strings.Replace(p, "..", "dotdot", -1)
 }
 
