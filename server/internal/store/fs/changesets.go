@@ -127,14 +127,6 @@ func resolveNextChangesetID(fs storage.System) (int64, error) {
 
 func (s *Changesets) Get(ctx context.Context, repoPath string, ID int64) (*sourcegraph.Changeset, error) {
 	s.migrate(ctx, repoPath)
-	s.fsLock.RLock()
-	defer s.fsLock.RUnlock()
-
-	return s.get(ctx, repoPath, ID)
-}
-
-// callers must guard
-func (s *Changesets) get(ctx context.Context, repoPath string, ID int64) (*sourcegraph.Changeset, error) {
 	fs := s.storage(ctx, repoPath)
 	cs := &sourcegraph.Changeset{}
 	err := s.unmarshal(fs, ID, changesetMetadataFile, cs)
@@ -194,7 +186,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	if (op.Close && op.Open) || (op.Open && op.Merged) {
 		return nil, errInvalidUpdateOp
 	}
-	current, err := s.get(ctx, op.Repo.URI, op.ID)
+	current, err := s.Get(ctx, op.Repo.URI, op.ID)
 	if err != nil {
 		return nil, err
 	}
