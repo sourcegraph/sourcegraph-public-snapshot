@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 
+	"code.google.com/p/rog-go/parallel"
+
 	"github.com/sourcegraph/mux"
 
 	"google.golang.org/grpc"
@@ -103,30 +105,53 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	// Retrieve Changeset
+
+	// Parallel fetch from Changesets service
+	var (
+		par     = parallel.NewRun(3)
+		cs      *sourcegraph.Changeset
+		reviews *sourcegraph.ChangesetReviewList
+		events  *sourcegraph.ChangesetEventList
+		csErr   error
+	)
 	changesetSpec := &sourcegraph.ChangesetSpec{
 		Repo: vc.RepoRevSpec.RepoSpec,
 		ID:   id,
 	}
-	cs, err := sg.Changesets.Get(ctx, changesetSpec)
+	reviewsSpec := &sourcegraph.ChangesetListReviewsOp{
+		Repo:        vc.RepoRevSpec.RepoSpec,
+		ChangesetID: id,
+	}
+	par.Do(func() error {
+		cs, csErr = sg.Changesets.Get(ctx, changesetSpec)
+		return csErr
+	})
+	par.Do(func() error {
+		var err error
+		reviews, err = sg.Changesets.ListReviews(ctx, reviewsSpec)
+		return err
+	})
+	par.Do(func() error {
+		var err error
+		events, err = sg.Changesets.ListEvents(ctx, changesetSpec)
+		return err
+	})
+	err = par.Wait()
+	if csErr != nil {
+		err = csErr
+	}
 	if err != nil {
 		if grpc.Code(err) == codes.NotFound {
 			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("changeset does not exist")}
 		}
 		return err
 	}
+
 	ds := cs.DeltaSpec
 	// Compute delta (actual merge-base, commit IDs and build status for both revs)
 	delta, err := sg.Deltas.Get(ctx, &sourcegraph.DeltaSpec{
 		Base: ds.Base,
 		Head: ds.Head,
-	})
-	if err != nil {
-		return err
-	}
-	reviews, err := sg.Changesets.ListReviews(ctx, &sourcegraph.ChangesetListReviewsOp{
-		Repo:        vc.RepoRevSpec.RepoSpec,
-		ChangesetID: cs.ID,
 	})
 	if err != nil {
 		return err
@@ -176,10 +201,6 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-	}
-	events, err := sg.Changesets.ListEvents(ctx, changesetSpec)
-	if err != nil {
-		return err
 	}
 	guide := pbtypes.HTML{}
 	if flags.ReviewGuidelines != "" {
