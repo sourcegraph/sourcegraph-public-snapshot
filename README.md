@@ -1,27 +1,34 @@
-# Sourcegraph: the intelligent and hackable code host
+# Sourcegraph: the intelligent, hackable code host for teams
 
-Sourcegraph is a self-hosted Git repository service with Code
-Intelligence. It runs on your own server or cloud, takes 10 minutes to
-install, and gives your team the power to build better software.
+Sourcegraph is a **self-hosted Git repository service** with Code
+Intelligence. It **runs on your own server** or cloud and installs in
+5 minutes.
 
-* Sourcegraph's Code Intelligence analyzes and understands your code,
-  letting you browse code like an IDE.
-* Live usage examples save tons of time and help spread best practices.
-* Smart code search quickly gets you what you need.
-* You can start discussions and create issues right inline with your
-  code and have them stay attached even when the code changes.
+Sourcegraph gives your team the power to build better software by
+offering:
 
-Watch a [demo video](https://www.youtube.com/watch?v=XOdh3-QJSzs) and
+* **Code Intelligence ([example](https://src.sourcegraph.com/sourcegraph@0788772f7fec57c62bbd1eba83839d5d0de97b23/.GoPackage/src.sourcegraph.com/sourcegraph/util/mdutil/.def/Mentions)):** Understand code more quickly with jump-to-definition and tooltips. (Go and Java only, more languages coming soon.)
+* **Live usage examples ([example](https://src.sourcegraph.com/sourcegraph@master/.GoPackage/src.sourcegraph.com/sourcegraph/app/router/.def/Router/URLToRepo/.examples)):** See how code is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
+* **Better code reviews ([example](https://src.sourcegraph.com/sourcegraph/.changes/302)):** Review changesets more effectively with drafts and Code Intelligence context in diffs---and an easy branch-based pull request model.
+* **Code-linked issue tracking ([example](https://src.sourcegraph.com/sourcegraph/.tracker/27)):** Ask questions, suggest improvements, and explain design decisions inline in your code.
+* **Smart search ([example](https://src.sourcegraph.com/sourcegraph/.search?q=NewClient)):** Find code quickly by function name, full text, etc.
+* **Hackable source code:** [Sourcegraph's source code](https://src.sourcegraph.com/sourcegraph) is publicly available under the [Fair Source License](https://fair.io).
+
+[**Get started with your own Sourcegraph server**](https://src.sourcegraph.com/sourcegraph/.docs/getting-started/) in 5 minutes! Want to try it out first? You're on a Sourcegraph server ([src.sourcegraph.com](https://src.sourcegraph.com)) now, so just browse around this server.
+
+*More info? Watch the [demo video](https://www.youtube.com/watch?v=XOdh3-QJSzs),
 see the
-[announcement blog post](https://sourcegraph.com/blog/133554180524/announcing-the-sourcegraph-developer-release-an).
+[announcement blog post](https://sourcegraph.com/blog/133554180524/announcing-the-sourcegraph-developer-release-an),
+and [view enterprise capabilities](https://sourcegraph.com).*
 
-Status: **limited release** ([Go](https://golang.org) and [Java](http://docs.oracle.com/javase/8/)
-support only)
 
 ## Installation
 
-See the [Sourcegraph docs](https://src.sourcegraph.com/sourcegraph/.docs)
-for installation instructions.
+Follow the 5-minute
+[Sourcegraph installation instructions](https://src.sourcegraph.com/sourcegraph/.docs/getting-started/). For
+more installation methods, check out the
+[docs](https://src.sourcegraph.com/sourcegraph/.docs).
+
 
 ## Under the hood
 

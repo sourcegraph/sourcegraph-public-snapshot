@@ -7,7 +7,7 @@ Sourcegraph is the intelligent, hackable code host for teams. <a
 href="https://www.youtube.com/watch?v=XOdh3-QJSzs" target="_blank">Watch the
 demo video</a> or browse around this server---it's a live Sourcegraph instance!
 
-Setting up Sourcegraph for your team takes 10 minutes.
+Setting up Sourcegraph for your team takes 5 minutes.
 
 ### 1. Choose your cloud provider
 
