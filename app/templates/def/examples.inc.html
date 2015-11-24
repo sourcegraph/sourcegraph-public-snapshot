@@ -16,7 +16,7 @@
 						</div>
 						<br>
 					{{else}}
-						<div class="alert alert-warning">An error occurred while showing an example from {{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File (toInt .StartLine) (toInt .EndLine) $defURL)}}.</div>
+						<div class="alert alert-warning">An error occurred while showing an example from {{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File .StartLine .EndLine $defURL)}}.</div>
 					{{end}}
 				</li>
 			{{end}}
