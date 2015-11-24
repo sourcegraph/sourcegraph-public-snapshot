@@ -120,6 +120,8 @@ func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
 		RegisteredClient *sourcegraph.RegisteredClient
 		RedirectURL      *url.URL
 	}{
+		Common: tmpl.Common{HideMOTD: true},
+
 		RegisteredClient: regClient,
 		RedirectURL:      redirectURL,
 	})
