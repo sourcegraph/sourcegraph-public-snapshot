@@ -2,7 +2,6 @@ var $ = require("jquery");
 var React = require("react");
 var ReactDOM = require("react-dom");
 
-var globals = require("./globals");
 var CloseChangesetButton = require("./components/CloseChangesetButton");
 var CompareView = require("./components/CompareView");
 var DeltaDefsContainer = require("./components/DeltaDefsContainer");
@@ -11,7 +10,7 @@ var MarkdownView = require("./components/MarkdownView");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoBuildStatus = require("./components/RepoBuildStatus");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
-var SearchBar = require("./components/SearchBar");
+var SearchBar = require("./new/search/SearchBar");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
@@ -28,25 +27,12 @@ require("./apps/changes/componentInjection.js");
 document.addEventListener("DOMContentLoaded", () => {
 	var el;
 
-	if (globals.Features.SearchNext) {
-		var currentRepo, searchOptions;
-
-		if (window.preloadedRepo) {
-			currentRepo = JSON.parse(window.preloadedRepo.data);
-		}
-		if (window.preloadedSearchOptions) {
-			searchOptions = JSON.parse(window.preloadedSearchOptions.data);
-		}
-
-		el = $("#SearchBar");
-		if (el.length > 0 && currentRepo) {
-			ReactDOM.render(
-				<SearchBar
-					repo={currentRepo}
-					searchOptions={searchOptions||null} />,
-				el[0]
-			);
-		}
+	el = $("#SearchBar");
+	if (el.length > 0) {
+		ReactDOM.render(
+			<LocationAdaptor component={SearchBar} />,
+			el[0]
+		);
 	}
 
 	el = $("#CodeFileView");
