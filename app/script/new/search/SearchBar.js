@@ -69,6 +69,7 @@ export default class SearchBar extends Component {
 		let query = this.refs.queryInput.value;
 		this._navigate(this._searchPath(), {
 			q: query,
+			type: "tokens",
 		});
 	}
 

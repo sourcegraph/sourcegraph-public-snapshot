@@ -25,6 +25,7 @@ export default class SearchResultsRouter extends Component {
 
 		let vars = URI.parseQuery(state.uri.query);
 		state.query = vars["q"] || null;
+		state.type = vars["type"] || null;
 	}
 
 	_navigate(path, query) {
@@ -38,11 +39,16 @@ export default class SearchResultsRouter extends Component {
 		this.state.navigate(URI.build(uri));
 	}
 
+	__onDispatch(action) {
+
+	}
+
 	render() {
 		return (
 			<SearchResultsContainer
 				repo={this.state.repo}
 				rev={this.state.rev}
+				type={this.state.type}
 				query={this.state.query} />
 		);
 	}
