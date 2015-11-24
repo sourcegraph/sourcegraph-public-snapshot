@@ -45,6 +45,9 @@ var Flags struct {
 
 	CustomNavLayout template.HTML `long:"app.custom-nav-layout" description:"custom layout to display in place of the search form (HTML)"`
 
+	// MOTD is a message of the day that is shown in a ribbon at the
+	// top of the page. It can be hidden on a per-response basis by
+	// setting the tmpl.Common HideMOTD field to true.
 	MOTD template.HTML `long:"app.motd" description:"show a custom message to all users beneath the top nav bar (HTML)" env:"SG_NAV_MSG"`
 
 	GoogleAnalyticsTrackingID string `long:"app.google-analytics-tracking-id" description:"Google Analytics tracking ID (UA-########-#)" env:"GOOGLE_ANALYTICS_TRACKING_ID"`

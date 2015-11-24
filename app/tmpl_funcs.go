@@ -98,7 +98,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	},
 
 	"customLogo":         func() htmpl.HTML { return appconf.Flags.CustomLogo },
-	"motd":               func() htmpl.HTML { return appconf.Flags.MOTD },
 	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
 	"uiBuild":            func() bool { return !appconf.Flags.NoUIBuild },
 
@@ -172,6 +171,13 @@ var TemplateFunctions = htmpl.FuncMap{
 			return 1
 		}
 		return p
+	},
+
+	"ifTrue": func(cond bool, v interface{}) interface{} {
+		if cond {
+			return v
+		}
+		return nil
 	},
 
 	"commitSummary":       commitSummary,
