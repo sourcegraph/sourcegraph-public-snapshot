@@ -2,10 +2,12 @@ package testsuite
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
 
@@ -45,8 +47,8 @@ func randomKey() string {
 func Storage_Get(ctx context.Context, t *testing.T, s store.Storage) {
 	// Test that a NotFound error is returned.
 	value, err := s.Get(ctx, storageKey)
-	if !os.IsNotExist(err) {
-		t.Fatalf("Expected os.IsNotExist(err), got: %+v\n", err)
+	if grpc.Code(err) != codes.NotFound {
+		t.Fatalf("Expected codes.NotFound, got: %+v\n", err)
 	}
 
 	// Put the first object in.
@@ -115,8 +117,8 @@ func Storage_PutNoOverwrite(ctx context.Context, t *testing.T, s store.Storage) 
 		Key:   *storageKey,
 		Value: storageValue,
 	})
-	if !os.IsExist(err) {
-		t.Fatalf("Expected os.IsExist(err), got: %+v\n", err)
+	if grpc.Code(err) != codes.AlreadyExists {
+		t.Fatalf("Expected codes.AlreadyExists, got: %+v\n", err)
 	}
 }
 
