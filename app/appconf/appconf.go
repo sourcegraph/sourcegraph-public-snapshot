@@ -63,6 +63,9 @@ var Flags struct {
 	DisableExternalLinks bool `long:"app.disable-external-links" description:"Disable links to external websites"`
 
 	ReloadAssets bool `long:"reload" description:"(development mode only) reload app templates and other assets on each request"`
+
+	ExtraHeadHTML template.HTML `long:"app.extra-head-html" description:"extra HTML (<script> tags, etc.) to insert before the </head> tag"`
+	ExtraBodyHTML template.HTML `long:"app.extra-body-html" description:"extra HTML (<script> tags, etc.) to insert before the </body> tag"`
 }
 
 func init() {
