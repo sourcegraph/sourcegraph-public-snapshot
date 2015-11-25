@@ -67,7 +67,7 @@ func Storage_Get(ctx context.Context, t *testing.T, s store.Storage) {
 	// Now test that NotFound is returned for a valid bucket but an invalid key.
 	value, err = s.Get(ctx, &sourcegraph.StorageKey{
 		Bucket: storageBucket,
-		Key:    randomKey(),
+		Key:    storageKeyName + "-secondary",
 	})
 	if grpc.Code(err) != codes.NotFound {
 		t.Fatalf("(2) Expected codes.NotFound, got: %+v\n", err)
