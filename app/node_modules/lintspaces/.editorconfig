@@ -19,3 +19,8 @@ insert_final_newline = true
 [*.example]
 trim_trailing_whitespace = false
 insert_final_newline = false
+
+[*.other-example]
+trim_trailing_whitespace = true
+insert_final_newline = true
+

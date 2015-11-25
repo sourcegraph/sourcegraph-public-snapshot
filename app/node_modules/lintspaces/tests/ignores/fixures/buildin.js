@@ -21,3 +21,13 @@
 		index++;
 	}
 });
+
+
+/**
+ * This is a multiline comment which should be INGORED.
+ * It contains extra trailingspaces.   
+ */
+while (index < foo.length) {
+	console.log(foo.charAt(index));
+	index++;
+}

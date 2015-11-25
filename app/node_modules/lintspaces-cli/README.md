@@ -46,3 +46,14 @@ Check that 2 spaces are used as indent:
 ```
 lintspaces -nt -s 2 -d spaces ./*.js
 ```
+
+## Changelog
+
+* 0.1.1 - Support for Node.js <=4.0.0 (thank you @gurdiga)
+
+* 0.1.0 - Initial stable release
+
+* < 0.1.0 - Dark ages...
+
+## Contributors
+* [Vlad Gurdiga](https://github.com/gurdiga)

@@ -291,7 +291,10 @@ Validator.prototype._validateNewlineMaximum = function() {
 						message,
 						data,
 						line,
-						payload
+						payload,
+						fromLine,
+						toLine,
+						foundIgnore
 					;
 
 					// When current match is not at the beginning of a file,
@@ -302,7 +305,31 @@ Validator.prototype._validateNewlineMaximum = function() {
 					}
 
 					// Test if found lines are not in ignored lines:
-					if (!self._ignoredLines[atLine + 1]) {
+					fromLine = atLine;
+					toLine = atLine + amount;
+					foundIgnore = false;
+					while (fromLine <= toLine) {
+						// Is the current line in ignored lines?...
+						if (self._ignoredLines[fromLine]) {
+							// ...yes, reuduce amount of found newlines
+							// save flag that there are at least one line in
+							// ignored lines...
+							foundIgnore = true;
+							amount--;
+						}
+						fromLine++;
+					}
+
+					// If there is at least one line listed in ignored lines,
+					// we have to reduce the amount of found new lines because
+					// an ignored line (or multinewline block) has an following
+					// newline sign at the end which should not be counted as
+					// linebreak in this validation...
+					if (foundIgnore) {
+						amount--;
+					}
+
+					if (amount > self._settings.newlineMaximum) {
 
 						// Build message and report:
 						message = MESSAGES.NEWLINE_MAXIMUM.message

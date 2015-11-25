@@ -43,6 +43,30 @@ exports.tests = {
 		test.done();
 	},
 
+	'should load specific settings by extension': function(test) {
+		options = {
+			editorconfig: '.editorconfig'
+		};
+
+		// Load editorconfig with extension where options are disabled
+		validator = new Validator(options);
+		validator._path = __dirname + '/fixures/file.example';
+		validator._loadSettings();
+
+		test.equal(validator._settings.trailingspaces, false);
+		test.equal(validator._settings.newline, false);
+
+		// Load editorconfig with extension where options are enabled
+		validator = new Validator(options);
+		validator._path = __dirname + '/fixures/file.other-example';
+		validator._loadSettings();
+
+		test.equal(validator._settings.trailingspaces, true);
+		test.equal(validator._settings.newline, true);
+
+		test.done();
+	},
+
 	'should throw an exception if editorconfig has no valid path': function(test) {
 		test.throws(function() {
 			validator = new Validator({editorconfig: '.'});
