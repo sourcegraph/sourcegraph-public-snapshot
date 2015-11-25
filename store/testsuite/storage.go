@@ -367,3 +367,28 @@ func Storage_GarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
 		}
 	}
 }
+
+// Storage_ValidNames tests that valid complex user keys, bucket names, app
+// names and repo URIs are accepted by the Storage service.
+func Storage_ValidNames(ctx context.Context, t *testing.T, s store.Storage) {
+	tests := []sourcegraph.StorageKey{
+		// A normal test case.
+		sourcegraph.StorageKey{
+			Bucket: &sourcegraph.StorageBucket{
+				Name:    "normal-bucket",
+				AppName: "normal-app",
+			},
+			Key: "normal-key",
+		},
+	}
+
+	for _, sk := range tests {
+		_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
+			Key:   sk,
+			Value: storageValue,
+		})
+		if err != nil {
+			t.Fatalf("Put Key: %#q got error=%v\n", sk, err)
+		}
+	}
+}
