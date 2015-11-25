@@ -253,6 +253,10 @@ func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, err
 	// Determine the location, global or local to a repo.
 	location := "global"
 	if repoURI != "" {
+		// Validate the repo URI.
+		if err := storageutil.ValidateRepoURI(k.Bucket.Repo); err != nil {
+			return "", err
+		}
 		location = filepath.Join("repo", repoURI)
 	}
 
