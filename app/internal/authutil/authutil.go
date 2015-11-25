@@ -8,11 +8,23 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {
 	internal.UnauthorizedErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) error {
+		// Remove any user and credentials from the request context
+		// to prevent any subsequent gRPC requests from hitting the
+		// same unauthorized error (eg. if the token has expired).
+		ctx := httpctx.FromRequest(r)
+		ctx = handlerutil.WithUser(ctx, nil)
+		ctx = auth.WithActor(ctx, auth.Actor{})
+		ctx = sourcegraph.WithCredentials(ctx, nil)
+		httpctx.SetForRequest(r, ctx)
 		return RedirectToLogIn(w, r)
 	}
 }
