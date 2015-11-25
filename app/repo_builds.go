@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -151,10 +153,12 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	}
 	var commit *payloads.AugmentedCommit
 	if commit0 != nil {
-		commit, err = handlerutil.AugmentCommit(r, rc.Repo.URI, commit0)
+		var commits []*payloads.AugmentedCommit
+		commits, err = handlerutil.AugmentCommits(r, rc.Repo.URI, []*vcs.Commit{commit0})
 		if err != nil {
 			return err
 		}
+		commit = commits[0]
 	}
 
 	return tmpl.Exec(r, w, "repo/build.html", http.StatusOK, nil, &struct {

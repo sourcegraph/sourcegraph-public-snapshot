@@ -203,12 +203,9 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	}
 	sort.Sort(byDate(commitList.Commits))
 	// Augment commits with data from People
-	augmentedCommits := make([]*payloads.AugmentedCommit, len(commitList.Commits))
-	for i, c := range commitList.Commits {
-		augmentedCommits[i], err = handlerutil.AugmentCommit(r, delta.HeadRepo.URI, c)
-		if err != nil {
-			return err
-		}
+	augmentedCommits, err := handlerutil.AugmentCommits(r, delta.HeadRepo.URI, commitList.Commits)
+	if err != nil {
+		return err
 	}
 	guide := pbtypes.HTML{}
 	if flags.ReviewGuidelines != "" {
