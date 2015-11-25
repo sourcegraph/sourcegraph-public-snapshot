@@ -6,7 +6,7 @@ import Component from "../Component";
 import LocationAdaptor from "../LocationAdaptor";
 import SearchResultsRouter from "./SearchResultsRouter";
 
-export default class SearchBar extends Component {
+class SearchBar extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -90,3 +90,5 @@ export default class SearchBar extends Component {
 		);
 	}
 }
+
+export default SearchBar;

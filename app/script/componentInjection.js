@@ -10,13 +10,13 @@ var MarkdownView = require("./components/MarkdownView");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoBuildStatus = require("./components/RepoBuildStatus");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
-var SearchBar = require("./new/search/SearchBar");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
 var CodeFileRange = require("./components/CodeFileRange");
 var CodeFileRouter = require("./new/code/CodeFileRouter").default;
 var LocationAdaptor = require("./new/LocationAdaptor").default;
+var SearchBar = require("./new/search/SearchBar").default;
 
 // Application-specific JS
 //
