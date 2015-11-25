@@ -111,7 +111,7 @@ func TestRepoStage_New(t *testing.T) {
 	repoDir := setup(t)
 	defer teardown(t, repoDir)
 
-	rs, err := NewRepoStage(repoDir, "refs/tests/a")
+	rs, err := NewRepoStage(repoDir, "refs/tests/a", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestRepoStage_Add(t *testing.T) {
 	repoDir := setup(t)
 	defer teardown(t, repoDir)
 
-	rs, err := NewRepoStage(repoDir, "refs/tests/b")
+	rs, err := NewRepoStage(repoDir, "refs/tests/b", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +160,7 @@ func TestRepoStage_Add_Multiple(t *testing.T) {
 	repoDir := setup(t)
 	defer teardown(t, repoDir)
 
-	rs, err := NewRepoStage(repoDir, "refs/test/c")
+	rs, err := NewRepoStage(repoDir, "refs/test/c", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestRepoStage_Commit(t *testing.T) {
 	repoDir := setup(t)
 	defer teardown(t, repoDir)
 
-	rs, err := NewRepoStage(repoDir, "refs/tests/d")
+	rs, err := NewRepoStage(repoDir, "refs/tests/d", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func TestRepoStage_Commit_Mulitple(t *testing.T) {
 	repoDir := setup(t)
 	defer teardown(t, repoDir)
 
-	rs, err := NewRepoStage(repoDir, "refs/test/e")
+	rs, err := NewRepoStage(repoDir, "refs/test/e", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +254,7 @@ func TestRepoStage_Mulitple_Instances(t *testing.T) {
 	repoDir := setup(t)
 	defer teardown(t, repoDir)
 
-	rs, err := NewRepoStage(repoDir, "refs/test/e")
+	rs, err := NewRepoStage(repoDir, "refs/test/e", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +271,7 @@ func TestRepoStage_Mulitple_Instances(t *testing.T) {
 	rs.Free()
 
 	// Reinstantiate
-	rs, err = NewRepoStage(repoDir, "refs/test/e")
+	rs, err = NewRepoStage(repoDir, "refs/test/e", "")
 	if err != nil {
 		t.Fatal(err)
 	}
