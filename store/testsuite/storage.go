@@ -362,7 +362,7 @@ func Storage_GarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
 			Value: storageValue,
 		})
 		if err == nil {
-			t.Fatalf("Put Key.Bucket: %#q\n", bucket)
+			t.Logf("Put Key.Bucket: %#q\n", bucket)
 			t.Fatal("expected error for non-compliant bucket name")
 		}
 	}
