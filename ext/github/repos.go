@@ -197,13 +197,13 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 // TODO: rename or consolidate this method, since it can be used to list private
 // as well as public repos.
 func (s *Repos) ListPrivate(ctx context.Context) ([]*sourcegraph.Repo, error) {
-	tokenStore := &ext.AccessTokens{}
-	token, err := tokenStore.Get(ctx, githubcli.Config.Host())
+	authStore := &ext.AuthStore{}
+	cred, err := authStore.Get(ctx, githubcli.Config.Host())
 	if err != nil {
 		return nil, err
 	}
 
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cred.Token})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
 	client := github.NewClient(tc)

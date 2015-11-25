@@ -299,12 +299,12 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	var auth string
 	if repo.Mirror {
 		gitHost := util.RepoURIHost(repo.URI)
-		tokenStore := ext.AccessTokens{}
-		token, err := tokenStore.Get(ctx, gitHost)
+		authStore := ext.AuthStore{}
+		cred, err := authStore.Get(ctx, gitHost)
 		if err != nil {
 			return fmt.Errorf("unable to fetch git credentials for host %q: %v", gitHost, err)
 		}
-		auth = token
+		auth = cred.Token
 
 		cloneURL, err := url.Parse(repo.HTTPCloneURL)
 		if err != nil {

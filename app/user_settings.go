@@ -327,8 +327,8 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 	switch mux.Vars(r)["Integration"] {
 	case "github":
 		token := r.PostFormValue("Token")
-		tokenStore := ext.AccessTokens{}
-		err := tokenStore.Set(ctx, githubcli.Config.Host(), token)
+		authStore := ext.AuthStore{}
+		err := authStore.Set(ctx, githubcli.Config.Host(), ext.Credentials{Token: token})
 		if err != nil {
 			return err
 		}
@@ -351,14 +351,14 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 		var credentials *sourcegraph.VCSCredentials
 
 		host := util.RepoURIHost(repoURI)
-		tokenStore := ext.AccessTokens{}
-		token, err := tokenStore.Get(ctx, host)
+		authStore := ext.AuthStore{}
+		cred, err := authStore.Get(ctx, host)
 		if err != nil {
 			return fmt.Errorf("could not fetch credentials for host %q: %v", host, err)
 		}
 
 		credentials = &sourcegraph.VCSCredentials{
-			Pass: token,
+			Pass: cred.Token,
 		}
 
 		// Perform the following operations locally (non-federated) because it's a private repo and credentials are set.

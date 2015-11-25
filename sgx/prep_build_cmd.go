@@ -84,13 +84,13 @@ func (c *prepBuildCmd) Execute(args []string) error {
 
 		if repo.Private && repo.Mirror {
 			host := util.RepoURIHost(repo.URI)
-			tokenStore := ext.AccessTokens{}
-			token, err := tokenStore.Get(cliCtx, host)
+			authStore := ext.AuthStore{}
+			cred, err := authStore.Get(cliCtx, host)
 			if err != nil {
 				return fmt.Errorf("unable to fetch credentials for host %q: %v", host, err)
 			}
 			username = "token"
-			password = token
+			password = cred.Token
 		}
 	}
 

@@ -1,15 +1,13 @@
 package ext
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"golang.org/x/net/context"
+	"src.sourcegraph.com/sourcegraph/platform/storage"
 )
 
-var accessTokenConfigFilename = filepath.Join("config", "access_tokens.json")
+const credentialsBucket = "credentials"
 
 type TokenNotFoundError struct {
 	msg string
@@ -19,72 +17,31 @@ func (e TokenNotFoundError) Error() string { return e.msg }
 
 // AccessTokens contains methods for storing global access tokens needed
 // to authenticate against external services.
-type AccessTokens struct{}
+type AuthStore struct{}
 
-type serviceTokens map[string]string // Key is a service name, value is its token.
+type Credentials struct {
+	Token string
+}
 
-func readAccessTokenFile(ctx context.Context) (serviceTokens, error) {
-	tokenFile := filepath.Join(os.Getenv("SGPATH"), accessTokenConfigFilename)
-	f, err := os.Open(tokenFile)
+func (s *AuthStore) storage(ctx context.Context) storage.System {
+	return storage.Namespace(ctx, "core.external-auth", "")
+}
+
+func (s *AuthStore) Set(ctx context.Context, host string, cred Credentials) error {
+	fs := s.storage(ctx)
+	return storage.PutJSON(fs, credentialsBucket, host, cred)
+}
+
+func (s *AuthStore) Get(ctx context.Context, host string) (Credentials, error) {
+	cred := Credentials{}
+	fs := s.storage(ctx)
+	err := storage.GetJSON(fs, credentialsBucket, host, &cred)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return serviceTokens{}, nil
+			return Credentials{}, nil
 		}
-		return nil, err
-	}
-	defer f.Close()
-
-	var tokens serviceTokens
-	if err := json.NewDecoder(f).Decode(&tokens); err != nil {
-		return nil, err
-	}
-	return tokens, nil
-}
-
-func writeAccessTokenFile(ctx context.Context, tokens serviceTokens) error {
-	data, err := json.MarshalIndent(tokens, "", "  ")
-	if err != nil {
-		return err
+		return Credentials{}, err
 	}
 
-	tokenFile := filepath.Join(os.Getenv("SGPATH"), accessTokenConfigFilename)
-	dir, _ := filepath.Split(tokenFile)
-	err = os.MkdirAll(dir, 0700)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(tokenFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if err := os.Chmod(f.Name(), 0600); err != nil {
-		return err
-	}
-
-	_, err = f.Write(data)
-	return err
-}
-
-func (s *AccessTokens) Set(ctx context.Context, host, token string) error {
-	tokens, err := readAccessTokenFile(ctx)
-	if err != nil {
-		return err
-	}
-
-	tokens[host] = token
-	return writeAccessTokenFile(ctx, tokens)
-}
-
-func (s *AccessTokens) Get(ctx context.Context, host string) (string, error) {
-	tokens, err := readAccessTokenFile(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	token, present := tokens[host]
-	if !present {
-		return "", TokenNotFoundError{msg: fmt.Sprintf("no token found for %s", host)}
-	}
-	return token, nil
+	return cred, nil
 }

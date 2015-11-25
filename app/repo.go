@@ -63,15 +63,15 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	}
 	// For private repos, supply auth.
 	if rc.Repo.Private {
-		tokenStore := ext.AccessTokens{}
-		token, err := tokenStore.Get(ctx, util.RepoURIHost(rc.Repo.URI))
+		authStore := ext.AuthStore{}
+		cred, err := authStore.Get(ctx, util.RepoURIHost(rc.Repo.URI))
 		if err != nil {
 			return err
 		}
 
 		// Setting credentials will perform this operation locally (non-federated).
 		op.Credentials = &sourcegraph.VCSCredentials{
-			Pass: token,
+			Pass: cred.Token,
 		}
 	}
 
