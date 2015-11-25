@@ -38,6 +38,10 @@ PGSSLMODE=disable
 
 If you are running Sourcegraph on Ubuntu Linux or one of the supported cloud providers, you can edit the ``/etc/sourcegraph/config.env` file to export these variables in the server’s environment.
 
+## Initialization
+
+Prior to running for the first time, you will need to run `src pgsql create` which will initialize the database and tables. See the Management section below for more information.c
+
 ## Management
 
 The `src pgsql` command allows you to manage the database simply. It uses the same environment variables mentioned above. The very first time you'll need to create the database using:
