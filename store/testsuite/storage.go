@@ -411,20 +411,52 @@ func Storage_InvalidNames(ctx context.Context, t *testing.T, s store.Storage) {
 // storage service.
 func Storage_ValidNames(ctx context.Context, t *testing.T, s store.Storage) {
 	tests := []sourcegraph.StorageKey{
-		// A normal test case.
-		sourcegraph.StorageKey{
+		// Valid bucket name tests.
+		sourcegraph.StorageKey{ // Just a normal situation.
 			Bucket: &sourcegraph.StorageBucket{
 				Name:    "normal-bucket",
 				AppName: "normal-app",
 			},
 			Key: "normal-key",
 		},
-
-		// Bucket names may contain dots, but app names may not.
-		sourcegraph.StorageKey{
+		sourcegraph.StorageKey{ // Bucket names may contain dots, but app names may not.
 			Bucket: &sourcegraph.StorageBucket{
 				Name:    "www.sourcegraph.com",
 				AppName: "normal-app",
+			},
+			Key: "normal-key",
+		},
+
+		// Valid repo URI tests.
+		sourcegraph.StorageKey{ // A normal repo URI.
+			Bucket: &sourcegraph.StorageBucket{
+				Name:    "www.sourcegraph.com",
+				AppName: "normal-app",
+				Repo:    "src.sourcegraph.com/foo/bar",
+			},
+			Key: "normal-key",
+		},
+		sourcegraph.StorageKey{ // Another normal repo URI.
+			Bucket: &sourcegraph.StorageBucket{
+				Name:    "www.sourcegraph.com",
+				AppName: "normal-app",
+				Repo:    "github.com/foo/bar",
+			},
+			Key: "normal-key",
+		},
+		sourcegraph.StorageKey{ // Repo "" is accepted as "global storage".
+			Bucket: &sourcegraph.StorageBucket{
+				Name:    "www.sourcegraph.com",
+				AppName: "normal-app",
+				Repo:    "",
+			},
+			Key: "normal-key",
+		},
+		sourcegraph.StorageKey{ // Crazy null bytes etc. are escaped.
+			Bucket: &sourcegraph.StorageBucket{
+				Name:    "www.sourcegraph.com",
+				AppName: "normal-app",
+				Repo:    "src.\x00\x00example.com/\x00/bar",
 			},
 			Key: "normal-key",
 		},
