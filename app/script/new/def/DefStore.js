@@ -1,6 +1,7 @@
 import {Store} from "flux/utils";
 
 import Dispatcher from "../Dispatcher";
+import deepFreeze from "../util/deepFreeze";
 import * as DefActions from "./DefActions";
 
 function exampleKeyFor(defURL, index) {
@@ -10,25 +11,23 @@ function exampleKeyFor(defURL, index) {
 export class DefStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
-		this.defs = {
+		this.defs = deepFreeze({
 			content: {},
-			generation: 0,
 			get(url) {
 				return this.content[url] || null;
 			},
-		};
+		});
 		this.highlightedDef = null;
-		this.examples = {
+		this.examples = deepFreeze({
 			content: {},
 			counts: {},
-			generation: 0,
 			get(defURL, index) {
 				return this.content[exampleKeyFor(defURL, index)] || null;
 			},
 			getCount(defURL) {
 				return this.counts.hasOwnProperty(defURL) ? this.counts[defURL] : 1000; // high initial value until count is known
 			},
-		};
+		});
 
 		this.defOptionsURLs = null;
 		this.defOptionsLeft = 0;
@@ -38,8 +37,11 @@ export class DefStore extends Store {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DefActions.DefFetched:
-			this.defs.content[action.url] = action.def;
-			this.defs.generation++;
+			this.defs = deepFreeze(Object.assign({}, this.defs, {
+				content: Object.assign({}, this.defs.content, {
+					[action.url]: action.def,
+				}),
+			}));
 			break;
 
 		case DefActions.HighlightDef:
@@ -47,13 +49,19 @@ export class DefStore extends Store {
 			break;
 
 		case DefActions.ExampleFetched:
-			this.examples.content[exampleKeyFor(action.defURL, action.index)] = action.example;
-			this.examples.generation++;
+			this.examples = deepFreeze(Object.assign({}, this.examples, {
+				content: Object.assign({}, this.examples.content, {
+					[exampleKeyFor(action.defURL, action.index)]: action.example,
+				}),
+			}));
 			break;
 
 		case DefActions.NoExampleAvailable:
-			this.examples.counts[action.defURL] = Math.min(this.examples.getCount(action.defURL), action.index);
-			this.examples.generation++;
+			this.examples = deepFreeze(Object.assign({}, this.examples, {
+				counts: Object.assign({}, this.examples.counts, {
+					[action.defURL]: Math.min(this.examples.getCount(action.defURL), action.index),
+				}),
+			}));
 			break;
 
 		case DefActions.SelectMultipleDefs:

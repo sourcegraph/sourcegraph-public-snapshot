@@ -93,8 +93,7 @@
 						},
 						"examples": {
 							"content": {},
-							"counts": {},
-							"generation": 1
+							"counts": {}
 						},
 						"highlightedDef": "otherDef"
 					}
