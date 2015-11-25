@@ -316,9 +316,9 @@ func Storage_List(ctx context.Context, t *testing.T, s store.Storage) {
 	}
 }
 
-// Storage_TestGarbageNames tests that garbage, non-alphanumeric, bucket and app
+// Storage_GarbageNames tests that garbage, non-alphanumeric, bucket and app
 // names are rejected by at least one method in the storage service.
-func Storage_TestGarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
+func Storage_GarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
 	_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
 		Key: sourcegraph.StorageKey{
 			Bucket: &sourcegraph.StorageBucket{
@@ -329,11 +329,7 @@ func Storage_TestGarbageNames(ctx context.Context, t *testing.T, s store.Storage
 		},
 		Value: storageValue,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	if err == nil {
 		t.Fatal("expected error for non-compliant bucket name")
 	}
-
 }

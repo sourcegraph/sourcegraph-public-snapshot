@@ -55,9 +55,9 @@ func TestStorage_List(t *testing.T) {
 	testsuite.Storage_List(ctx, t, &Storage{})
 }
 
-func Storage_TestGarbageNames(t *testing.T) {
+func TestStorage_GarbageNames(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Storage_TestGarbageNames(ctx, t, &Storage{})
+	testsuite.Storage_GarbageNames(ctx, t, &Storage{})
 }
