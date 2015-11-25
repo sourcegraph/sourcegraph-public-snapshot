@@ -53,7 +53,7 @@ func ValidateRepoURI(s string) error {
 		return errors.New("repo URI may not be an empty string")
 	}
 	if strings.TrimSpace(s) != s {
-		return errors.New("repo URI may not start or end with a space")
+		return errors.New("repo URI may not start or end with whitespace")
 	}
 
 	// First parse the string as a URL. For any valid repo URI this should always
