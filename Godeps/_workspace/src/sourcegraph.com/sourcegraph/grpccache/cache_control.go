@@ -22,17 +22,15 @@ type CacheControl struct {
 
 func (cc *CacheControl) cacheable() bool {
 	cc.RLock()
-	v := cc.MaxAge > 0
-	cc.RUnlock()
-	return v
+	defer cc.RUnlock()
+	return cc.MaxAge > 0
 }
 
 // IsZero returns true if cc refers to an empty CacheControl struct.
 func (cc *CacheControl) IsZero() bool {
 	cc.RLock()
-	v := *cc == CacheControl{}
-	cc.RUnlock()
-	return v
+	defer cc.RUnlock()
+	return *cc == CacheControl{}
 }
 
 // SetCacheControl is called by gRPC server method implementations to
