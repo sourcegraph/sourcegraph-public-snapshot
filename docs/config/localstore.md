@@ -13,7 +13,7 @@ With this configuration, Sourcegraph will store all user data, Tracker threads, 
 
 ## Enable PostgreSQL Backend
 
-In order to use the `pgsql` backend you will need to use the `src serve --local-store=...` CLI option or modify your configuration file with the following:
+In order to use the `pgsql` backend you will need to use the `src serve --local-store=pgsql` CLI option or modify your configuration file with the following:
 
 ```
 [serve.Local store]
