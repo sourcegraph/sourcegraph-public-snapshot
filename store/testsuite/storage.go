@@ -316,9 +316,9 @@ func Storage_List(ctx context.Context, t *testing.T, s store.Storage) {
 	}
 }
 
-// Storage_GarbageNames tests that garbage / invalid names are not allowed by
-// the storage service.
-func Storage_GarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
+// Storage_InvalidNames tests that invalid names are not allowed by the storage
+// service.
+func Storage_InvalidNames(ctx context.Context, t *testing.T, s store.Storage) {
 	tests := []sourcegraph.StorageBucket{
 		// Invalid bucket name tests.
 		sourcegraph.StorageBucket{
