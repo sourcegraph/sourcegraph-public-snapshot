@@ -2986,7 +2986,7 @@ type wrappedStorage struct {
 	services svc.Services
 }
 
-func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+func (s wrappedStorage) Get(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3001,7 +3001,7 @@ func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName)
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 
-	rv, err := innerSvc.Create(ctx, v1)
+	rv, err := innerSvc.Get(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -3015,7 +3015,7 @@ func (s wrappedStorage) Create(ctx context.Context, v1 *sourcegraph.StorageName)
 	return rv, nil
 }
 
-func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
+func (s wrappedStorage) Put(ctx context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3030,7 +3030,7 @@ func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageNa
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 
-	rv, err := innerSvc.RemoveAll(ctx, v1)
+	rv, err := innerSvc.Put(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -3044,7 +3044,7 @@ func (s wrappedStorage) RemoveAll(ctx context.Context, v1 *sourcegraph.StorageNa
 	return rv, nil
 }
 
-func (s wrappedStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp) (*sourcegraph.StorageRead, error) {
+func (s wrappedStorage) PutNoOverwrite(ctx context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3059,7 +3059,7 @@ func (s wrappedStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp)
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 
-	rv, err := innerSvc.Read(ctx, v1)
+	rv, err := innerSvc.PutNoOverwrite(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -3073,7 +3073,7 @@ func (s wrappedStorage) Read(ctx context.Context, v1 *sourcegraph.StorageReadOp)
 	return rv, nil
 }
 
-func (s wrappedStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteOp) (*sourcegraph.StorageWrite, error) {
+func (s wrappedStorage) Delete(ctx context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3088,7 +3088,7 @@ func (s wrappedStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteO
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 
-	rv, err := innerSvc.Write(ctx, v1)
+	rv, err := innerSvc.Delete(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -3102,7 +3102,7 @@ func (s wrappedStorage) Write(ctx context.Context, v1 *sourcegraph.StorageWriteO
 	return rv, nil
 }
 
-func (s wrappedStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageStat, error) {
+func (s wrappedStorage) Exists(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3117,7 +3117,7 @@ func (s wrappedStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 
-	rv, err := innerSvc.Stat(ctx, v1)
+	rv, err := innerSvc.Exists(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -3131,7 +3131,7 @@ func (s wrappedStorage) Stat(ctx context.Context, v1 *sourcegraph.StorageName) (
 	return rv, nil
 }
 
-func (s wrappedStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageReadDir, error) {
+func (s wrappedStorage) List(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3146,36 +3146,7 @@ func (s wrappedStorage) ReadDir(ctx context.Context, v1 *sourcegraph.StorageName
 		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
 	}
 
-	rv, err := innerSvc.ReadDir(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
-	return rv, nil
-}
-
-func (s wrappedStorage) Close(ctx context.Context, v1 *sourcegraph.StorageName) (*sourcegraph.StorageError, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.StorageOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Storage")
-	}
-
-	rv, err := innerSvc.Close(ctx, v1)
+	rv, err := innerSvc.List(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

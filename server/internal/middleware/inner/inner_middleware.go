@@ -2419,49 +2419,7 @@ func (s wrappedStorage) Get(ctx context.Context, param *sourcegraph.StorageKey) 
 
 	target := local.Services.Storage
 
-<<<<<<< HEAD:server/internal/middleware/inner/inner_middleware.go
-	res, err = target.Create(ctx, param)
-	return
-
-}
-
-func (s wrappedStorage) RemoveAll(ctx context.Context, param *sourcegraph.StorageName) (res *sourcegraph.StorageError, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "RemoveAll", param)
-	defer func() {
-		trace.After(ctx, "Storage", "RemoveAll", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Storage.RemoveAll")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Storage
-
-	res, err = target.RemoveAll(ctx, param)
-	return
-
-}
-
-func (s wrappedStorage) Read(ctx context.Context, param *sourcegraph.StorageReadOp) (res *sourcegraph.StorageRead, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Read", param)
-	defer func() {
-		trace.After(ctx, "Storage", "Read", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Storage.Read")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Storage
-
-	res, err = target.Read(ctx, param)
-=======
 	res, err = target.Get(ctx, param)
->>>>>>> go generate ./server/...:server/internal/middleware/middleware.go
 	return
 
 }
@@ -2497,7 +2455,7 @@ func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.S
 		return
 	}
 
-	var target sourcegraph.StorageServer = s.u
+	target := local.Services.Storage
 
 	res, err = target.PutNoOverwrite(ctx, param)
 	return
