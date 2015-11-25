@@ -31,10 +31,13 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 		// Do this before creating the changeset in case this step
 		// fails.
 		enqueueBuild := func(rev sourcegraph.RepoRevSpec) error {
-			if err := (&repos{}).resolveRepoRev(ctx, &rev); err != nil {
+			// Builds.Create requires a fully resolved RepoRevSpec
+			commit, err := svc.Repos(ctx).GetCommit(ctx, &rev)
+			if err != nil {
 				return err
 			}
-			_, err := svc.Builds(ctx).Create(ctx, &sourcegraph.BuildsCreateOp{
+			rev.CommitID = string(commit.ID)
+			_, err = svc.Builds(ctx).Create(ctx, &sourcegraph.BuildsCreateOp{
 				RepoRev: rev,
 				Opt:     &sourcegraph.BuildCreateOptions{BuildConfig: sourcegraph.BuildConfig{Import: true, Queue: true}},
 			})
