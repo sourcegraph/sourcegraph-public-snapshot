@@ -373,11 +373,6 @@ func Storage_InvalidNames(ctx context.Context, t *testing.T, s store.Storage) {
 		sourcegraph.StorageBucket{
 			Name:    "my-bucket",
 			AppName: "my-app",
-			Repo:    "contains .space/foo/bar",
-		},
-		sourcegraph.StorageBucket{
-			Name:    "my-bucket",
-			AppName: "my-app",
 			Repo:    "http://src.sourcegraph.com/foo/bar", // scheme not allowed
 		},
 		sourcegraph.StorageBucket{
