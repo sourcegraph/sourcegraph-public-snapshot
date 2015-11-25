@@ -31,12 +31,6 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platfor
 		return nil, nil
 	}
 
-	// If the repo's canonical location is on another server, disallow all apps for now.
-	// TODO: There may still be some apps that can be enabled for non-canonical repos, provide a way for that to happen.
-	if repo.Mirror {
-		return nil, nil
-	}
-
 	// Non-git apps are not currently supported
 	if repo.VCS != "git" {
 		return nil, nil
