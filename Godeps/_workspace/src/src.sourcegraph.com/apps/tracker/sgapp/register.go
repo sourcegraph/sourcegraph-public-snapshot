@@ -13,7 +13,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 
-	sgissues "src.sourcegraph.com/apps/tracker/issues/sourcegraph"
+	kvissues "src.sourcegraph.com/apps/tracker/issues/kv"
 )
 
 func init() {
@@ -31,7 +31,7 @@ func (sgapp) Scopes() []string {
 
 // Start creates a service using ctx and registers the app frame.
 func (sgapp) Start(ctx context.Context) {
-	service := sgissues.NewService(ctx, "tracker")
+	service := kvissues.NewService(ctx, "tracker")
 
 	opt := issuesapp.Options{
 		Context: func(req *http.Request) context.Context {

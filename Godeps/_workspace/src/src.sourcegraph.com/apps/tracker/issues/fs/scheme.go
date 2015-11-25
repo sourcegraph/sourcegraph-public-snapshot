@@ -1,4 +1,4 @@
-package sourcegraph
+package fs
 
 import (
 	"time"
@@ -8,10 +8,9 @@ import (
 
 // issue is an on-disk representation of an issue.
 type issue struct {
-	State     issues.State
-	Title     string
-	AuthorUID int32
-	CreatedAt time.Time
+	State issues.State
+	Title string
+	comment
 	Reference *reference `json:",omitempty"`
 }
 
@@ -38,3 +37,8 @@ type event struct {
 	Type      issues.EventType
 	Rename    *issues.Rename `json:",omitempty"`
 }
+
+const (
+	// threadsDir is '/'-separated path for thread storage.
+	threadsDir = "threads"
+)

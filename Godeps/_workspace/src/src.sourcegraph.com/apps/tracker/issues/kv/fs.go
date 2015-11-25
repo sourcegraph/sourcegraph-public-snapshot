@@ -1,5 +1,5 @@
-// Package sourcegraph implements issues.Service using a the Sourcegraph platform storage API.
-package sourcegraph
+// Package kv implements issues.Service using a the Sourcegraph platform storage API.
+package kv
 
 import (
 	"html/template"
@@ -34,27 +34,6 @@ type service struct {
 
 	// appName is the app name used for Sourcegraph platform storage.
 	appName string
-}
-
-const (
-	// threadsBucket is the bucket used for storing issues by thread ID.
-	threadsBucket = "threads"
-
-	// commentsBucket is the bucket name prefix used for storing comments. Actual
-	// comments for a thread are stored in "comments-<thread ID>".
-	commentsBucket = "comments"
-
-	// eventsBucket is the bucket name prefix used for storing events. Actual
-	// events for a thread are stored in "events-<thread ID>".
-	eventsBucket = "events"
-)
-
-func threadCommentsBucket(threadID uint64) string {
-	return commentsBucket + "-" + formatUint64(threadID)
-}
-
-func threadEventsBucket(threadID uint64) string {
-	return eventsBucket + "-" + formatUint64(threadID)
 }
 
 func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) ([]issues.Issue, error) {
