@@ -93,22 +93,16 @@ func NewRepoStage(repoPath, refName string, password string) (rs *RepoStage, err
 		return nil, fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
 	}
 
-	// Only try to pull if the repo already has the refs/src/review ref
-	// (otherwise it will fail).
-	if present, err := repoHasRef(repoPath, refName); err != nil {
-		return nil, err
-	} else if present {
-		cmd = exec.Command("git", "pull", repoPath, refName)
-		cmd.Dir = rs.stagingDir
-		if rs.gitPassHelper != "" {
-			env := environ(os.Environ())
-			env.Unset("GIT_TERMINAL_PROMPT")
-			env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
-			cmd.Env = env
-		}
-		if out, err := cmd.CombinedOutput(); err != nil {
-			return nil, fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
-		}
+	cmd = exec.Command("git", "pull", repoPath, refName)
+	cmd.Dir = rs.stagingDir
+	if rs.gitPassHelper != "" {
+		env := environ(os.Environ())
+		env.Unset("GIT_TERMINAL_PROMPT")
+		env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
+		cmd.Env = env
+	}
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
 	}
 
 	return rs, nil
