@@ -6,4 +6,7 @@
 //
 // The /ext packages contain other store type implementations that are
 // backed by external services (e.g., /ext/github and /ext/aws).
+//
+// Packages under the ./shared directory are e.g. utility functions which are
+// shared by multiple store implementations.
 package store

@@ -380,6 +380,15 @@ func Storage_ValidNames(ctx context.Context, t *testing.T, s store.Storage) {
 			},
 			Key: "normal-key",
 		},
+
+		// Bucket names may contain dots, but app names may not.
+		sourcegraph.StorageKey{
+			Bucket: &sourcegraph.StorageBucket{
+				Name:    "www.sourcegraph.com",
+				AppName: "normal-app",
+			},
+			Key: "normal-key",
+		},
 	}
 
 	for _, sk := range tests {

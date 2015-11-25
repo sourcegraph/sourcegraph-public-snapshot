@@ -3,12 +3,10 @@ package pgsql
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"hash/crc32"
 	"net/url"
 	"strings"
 	"sync"
-	"unicode"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -18,6 +16,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/internal/store/shared/storageutil"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -231,26 +230,11 @@ func hQuote(s string) string {
 //
 // It returns an error only if the app name or bucket name are invalid.
 func bucketKey(bucket *sourcegraph.StorageBucket) (string, error) {
-	// Be very strict about what names may look like. The goal here is to keep
-	// them human-readable and also make errors obvious.
-	//
-	// TODO(slimsag): duplicated in ../fs/storage.go
-	validateName := func(field, v string) error {
-		if !isAlphaNumeric(v) {
-			return fmt.Errorf("%s must only be alphanumeric with underscores and dashes", field)
-		}
-		if strings.TrimSpace(v) != v {
-			return fmt.Errorf("%s may not start or end with a space", field)
-		}
-		if v == "" {
-			return fmt.Errorf("%s must be specified", field)
-		}
-		return nil
-	}
-	if err := validateName("app name", bucket.AppName); err != nil {
+	// Validate the app and bucket names,
+	if err := storageutil.ValidateAppName(bucket.AppName); err != nil {
 		return "", err
 	}
-	if err := validateName("bucket name", bucket.Name); err != nil {
+	if err := storageutil.ValidateBucketName(bucket.Name); err != nil {
 		return "", err
 	}
 
@@ -261,17 +245,4 @@ func bucketKey(bucket *sourcegraph.StorageBucket) (string, error) {
 	}
 
 	return location + "-" + bucket.AppName + "-" + bucket.Name, nil
-}
-
-// isAlphaNumeric reports whether the string is alphabetic, digit, underscore,
-// or dash.
-//
-// TODO(slimsag): duplicated in ../fs/storage.go
-func isAlphaNumeric(s string) bool {
-	for _, r := range s {
-		if r != '_' && r != '-' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
-			return false
-		}
-	}
-	return true
 }

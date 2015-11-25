@@ -3,7 +3,6 @@ package fs
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -11,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"unicode"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,6 +19,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/internal/store/shared/storageutil"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -237,26 +236,11 @@ func (s *Storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourc
 // The returned filepath is relative to the root storage directory (e.g.
 // $SGPATH/appdata above).
 func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, error) {
-	// Be very strict about what names may look like. The goal here is to keep
-	// them human-readable and also make errors obvious.
-	//
-	// TODO(slimsag): duplicated in ../pgsql/storage.go
-	validateName := func(field, v string) error {
-		if !isAlphaNumeric(v) {
-			return fmt.Errorf("%s must only be alphanumeric with underscores and dashes", field)
-		}
-		if strings.TrimSpace(v) != v {
-			return fmt.Errorf("%s may not start or end with a space", field)
-		}
-		if v == "" {
-			return fmt.Errorf("%s must be specified", field)
-		}
-		return nil
-	}
-	if err := validateName("app name", k.Bucket.AppName); err != nil {
+	// Validate the app and bucket names,
+	if err := storageutil.ValidateAppName(k.Bucket.AppName); err != nil {
 		return "", err
 	}
-	if err := validateName("bucket name", k.Bucket.Name); err != nil {
+	if err := storageutil.ValidateBucketName(k.Bucket.Name); err != nil {
 		return "", err
 	}
 
@@ -304,17 +288,4 @@ func storageSafePath(p string) string {
 func slashesToDashes(p string) string {
 	p = strings.Replace(p, "/", "-", -1)
 	return strings.Replace(p, "\\", "-", -1)
-}
-
-// isAlphaNumeric reports whether the string is alphabetic, digit, underscore,
-// or dash.
-//
-// TODO(slimsag): duplicated in ../pgsql/storage.go
-func isAlphaNumeric(s string) bool {
-	for _, r := range s {
-		if r != '_' && r != '-' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
-			return false
-		}
-	}
-	return true
 }
