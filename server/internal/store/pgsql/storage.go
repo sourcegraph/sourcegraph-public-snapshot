@@ -4,9 +4,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"net/url"
 	"strings"
+	"sync"
 	"unicode"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,7 +38,9 @@ func init() {
 }
 
 // Storage is a DB-backed implementation of the Storage store.
-type Storage struct{}
+type Storage struct {
+	putNoOverwrite sync.Mutex
+}
 
 var _ store.Storage = (*Storage)(nil)
 
@@ -86,6 +92,49 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 
 // PutNoOverwrite implements the store.Storage interface.
 func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	// TODO(slimsag): this is a hack to prevent a race condition with multiple
+	// in-process calls to PutNoOverwrite. Although the advisory lock below does
+	// protect us against distributed race conditions (i.e. the case of multiple
+	// frontend instances) it does not protect us against process-local races
+	// because all PostgreSQL locks for a given transaction are reentrant. To fix
+	// this we should expose the modl.Transaction type from within the context and
+	// use transaction-based locks instead.
+	s.putNoOverwrite.Lock()
+	defer s.putNoOverwrite.Unlock()
+
+	// Use an advisory lock to ensure that another client does not write at the
+	// same time we check for existence. For the lock ID, we use a 32-bit CRC sum
+	// of the composed bucket key + user data key, which gives us good enough
+	// distribution.
+	//
+	// See http://www.postgresql.org/docs/current/static/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+	bucket, err := bucketKey(opt.Key.Bucket)
+	if err != nil {
+		return &pbtypes.Void{}, err
+	}
+	composedKey := bucket + string(opt.Key.Key)
+	keyChecksum := crc32.ChecksumIEEE([]byte(composedKey))
+
+	// Try to grab the session lock. If someone else has it, it is guaranteed that they
+	// are a PutNoOverwrite operation and and thus implies a key _will exist_.
+	var gotLock bool
+	err = dbh(ctx).SelectOne(&gotLock, `SELECT pg_try_advisory_lock($1)`, keyChecksum)
+	if err != nil {
+		return &pbtypes.Void{}, err
+	}
+	if !gotLock {
+		return &pbtypes.Void{}, grpc.Errorf(codes.AlreadyExists, "key already exists")
+	}
+
+	// Once we're finished, unlock.
+	defer func() {
+		_, err = dbh(ctx).Exec(`SELECT pg_advisory_unlock($1)`, keyChecksum)
+		if err != nil {
+			log15.Error("Storage.PutNoOverwrite: pg_advisory_unlock", "error", err, "lock", keyChecksum)
+		}
+	}()
+
+	// Check for existence, write into table if not existing already.
 	exists, err := s.Exists(ctx, &opt.Key)
 	if err != nil {
 		return &pbtypes.Void{}, err
