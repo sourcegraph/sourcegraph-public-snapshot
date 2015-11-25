@@ -58,7 +58,7 @@ func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 	}
 
 	var value []string
-	err = dbh(ctx).Select(&value, "SELECT objects -> $1 FROM appdata WHERE name = $2", url.QueryEscape(opt.Key), bucket)
+	err = dbh(ctx).Select(&value, "SELECT objects -> $1 FROM appdata WHERE name = $2 AND objects ? $1;", url.QueryEscape(opt.Key), bucket)
 	if err != nil {
 		return &sourcegraph.StorageValue{}, err
 	}
