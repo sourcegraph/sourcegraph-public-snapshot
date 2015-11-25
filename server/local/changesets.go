@@ -1,6 +1,7 @@
 package local
 
 import (
+	"code.google.com/p/rog-go/parallel"
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -43,10 +44,11 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 			})
 			return err
 		}
-		if err := enqueueBuild(op.Changeset.DeltaSpec.Base); err != nil {
-			return nil, err
-		}
-		if err := enqueueBuild(op.Changeset.DeltaSpec.Head); err != nil {
+		par := parallel.NewRun(2)
+		par.Do(func() error { return enqueueBuild(op.Changeset.DeltaSpec.Base) })
+		par.Do(func() error { return enqueueBuild(op.Changeset.DeltaSpec.Head) })
+		err := par.Wait()
+		if err != nil {
 			return nil, err
 		}
 	}
