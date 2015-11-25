@@ -319,17 +319,51 @@ func Storage_List(ctx context.Context, t *testing.T, s store.Storage) {
 // Storage_GarbageNames tests that garbage, non-alphanumeric, bucket and app
 // names are rejected by at least one method in the storage service.
 func Storage_GarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
-	_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
-		Key: sourcegraph.StorageKey{
-			Bucket: &sourcegraph.StorageBucket{
-				Name:    " the bucket is a bit em&ty",
-				AppName: "my-app",
-			},
-			Key: storageKeyName,
+	tests := []sourcegraph.StorageBucket{
+		// Invalid bucket name tests.
+		sourcegraph.StorageBucket{
+			Name:    " startswithspace",
+			AppName: "my-app",
 		},
-		Value: storageValue,
-	})
-	if err == nil {
-		t.Fatal("expected error for non-compliant bucket name")
+		sourcegraph.StorageBucket{
+			Name:    "endswithspace ",
+			AppName: "my-app",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "contains space",
+			AppName: "my-app",
+		},
+
+		// Invalid app name tests.
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: " startswithspace",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "endswithspace ",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "contains space",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "contains.period", // App names may not contain periods, bucket names can.
+		},
+	}
+
+	for _, bucket := range tests {
+		_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
+			Key: sourcegraph.StorageKey{
+				Bucket: &bucket,
+				Key:    storageKeyName,
+			},
+			Value: storageValue,
+		})
+		if err == nil {
+			t.Fatalf("Put Key.Bucket: %#q\n", bucket)
+			t.Fatal("expected error for non-compliant bucket name")
+		}
 	}
 }
