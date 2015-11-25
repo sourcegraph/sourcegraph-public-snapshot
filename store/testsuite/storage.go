@@ -172,7 +172,7 @@ func TestStorage_PutNoOverwriteConcurrent(ctx context.Context, t *testing.T, s s
 		if success != 1 {
 			t.Log("expected 1 success, got", success)
 		} else {
-			t.Log("got 1 success", success)
+			t.Log("got 1 success")
 		}
 	}
 }
