@@ -242,7 +242,7 @@ func bucketKey(bucket *sourcegraph.StorageBucket) (string, error) {
 	location := "global"
 	if bucket.Repo != "" {
 		// Validate the repo URI.
-		if err := storageutil.ValidateRepoURI(k.Bucket.Repo); err != nil {
+		if err := storageutil.ValidateRepoURI(bucket.Repo); err != nil {
 			return "", err
 		}
 		location = "repo-" + bucket.Repo
