@@ -316,40 +316,79 @@ func Storage_List(ctx context.Context, t *testing.T, s store.Storage) {
 	}
 }
 
-// Storage_GarbageNames tests that garbage, non-alphanumeric, bucket and app
-// names are rejected by at least one method in the storage service.
+// Storage_GarbageNames tests that garbage / invalid names are not allowed by
+// the storage service.
 func Storage_GarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
 	tests := []sourcegraph.StorageBucket{
 		// Invalid bucket name tests.
 		sourcegraph.StorageBucket{
 			Name:    " startswithspace",
 			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar",
 		},
 		sourcegraph.StorageBucket{
 			Name:    "endswithspace ",
 			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar",
 		},
 		sourcegraph.StorageBucket{
 			Name:    "contains space",
 			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar",
 		},
 
 		// Invalid app name tests.
 		sourcegraph.StorageBucket{
 			Name:    "my-bucket",
 			AppName: " startswithspace",
+			Repo:    "src.sourcegraph.com/foo/bar",
 		},
 		sourcegraph.StorageBucket{
 			Name:    "my-bucket",
 			AppName: "endswithspace ",
+			Repo:    "src.sourcegraph.com/foo/bar",
 		},
 		sourcegraph.StorageBucket{
 			Name:    "my-bucket",
 			AppName: "contains space",
+			Repo:    "src.sourcegraph.com/foo/bar",
 		},
 		sourcegraph.StorageBucket{
 			Name:    "my-bucket",
 			AppName: "contains.period", // App names may not contain periods, bucket names can.
+			Repo:    "src.sourcegraph.com/foo/bar",
+		},
+
+		// Invalid repo URI tests.
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    " starts.with.space/foo/bar",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "ends.with.space/foo/bar ",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "contains .space/foo/bar ",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "http://src.sourcegraph.com/foo/bar", // scheme not allowed
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar?ok=true", // query not allowed
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar#ok", // fragment not allowed
 		},
 	}
 
@@ -368,8 +407,8 @@ func Storage_GarbageNames(ctx context.Context, t *testing.T, s store.Storage) {
 	}
 }
 
-// Storage_ValidNames tests that valid complex user keys, bucket names, app
-// names and repo URIs are accepted by the Storage service.
+// Storage_ValidNames tests that valid and complex names are accepted by the
+// storage service.
 func Storage_ValidNames(ctx context.Context, t *testing.T, s store.Storage) {
 	tests := []sourcegraph.StorageKey{
 		// A normal test case.
