@@ -18,9 +18,6 @@ func ValidateBucketName(s string) error {
 	if s == "" {
 		return errors.New("bucket name may not be an empty string")
 	}
-	if strings.TrimSpace(s) != s {
-		return errors.New("bucket name may not start or end with a space")
-	}
 	for _, r := range s {
 		if r != '_' && r != '-' && r != '.' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
 			return errors.New("bucket name may only contain underscores, dashes, periods, letters and digits")
@@ -37,9 +34,6 @@ func ValidateBucketName(s string) error {
 func ValidateAppName(s string) error {
 	if s == "" {
 		return errors.New("app name may not be an empty string")
-	}
-	if strings.TrimSpace(s) != s {
-		return errors.New("app name may not start or end with a space")
 	}
 	for _, r := range s {
 		if r != '_' && r != '-' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
