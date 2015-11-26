@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"path"
 	"strings"
 	"unicode"
 )
@@ -83,13 +82,4 @@ func ValidateRepoURI(s string) error {
 		return errors.New("repo URI may not contain URL fragments")
 	}
 	return nil
-}
-
-// URLEscapePathElements escapes the unix path's elements using url.QueryEscape.
-func URLEscapePathElements(p string) string {
-	elements := strings.Split(p, "/")
-	for i, element := range elements {
-		elements[i] = url.QueryEscape(element)
-	}
-	return path.Join(elements...)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"hash/crc32"
 	"net/url"
+	"path"
 	"strings"
 	"sync"
 
@@ -245,8 +246,17 @@ func bucketKey(bucket *sourcegraph.StorageBucket) (string, error) {
 		if err := storageutil.ValidateRepoURI(bucket.Repo); err != nil {
 			return "", err
 		}
-		location = "repo-" + storageutil.URLEscapePathElements(bucket.Repo)
+		location = "repo-" + urlEscapePathElements(bucket.Repo)
 	}
 
 	return location + "-" + bucket.AppName + "-" + bucket.Name, nil
+}
+
+// urlEscapePathElements escapes the unix path's elements using url.QueryEscape.
+func urlEscapePathElements(p string) string {
+	elements := strings.Split(p, "/")
+	for i, element := range elements {
+		elements[i] = url.QueryEscape(element)
+	}
+	return path.Join(elements...)
 }
