@@ -74,6 +74,8 @@ export default class SearchResultsContainer extends Container {
 					{currentResult &&
 						<this.state.currentType.component
 							repo={this.state.repo}
+							rev={this.state.rev}
+							query={this.state.query}
 							resultData={currentResult} />
 					}
 				</div>

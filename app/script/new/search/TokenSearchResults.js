@@ -66,6 +66,7 @@ class TokenSearchResultsView extends Component {
 
 TokenSearchResultsView.propTypes = {
 	repo: React.PropTypes.string,
+	query: React.PropTypes.string,
 	resultData: React.PropTypes.object,
 };
 
