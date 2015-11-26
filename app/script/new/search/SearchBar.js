@@ -33,6 +33,7 @@ class SearchBar extends Component {
 
 		let vars = URI.parseQuery(state.uri.query);
 		state.query = vars["q"] || null;
+		state.type = vars["type"] || null;
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -69,7 +70,8 @@ class SearchBar extends Component {
 		let query = this.refs.queryInput.value;
 		this._navigate(this._searchPath(), {
 			q: query,
-			type: "tokens",
+			type: this.state.type || "tokens",
+			page: 1,
 		});
 	}
 

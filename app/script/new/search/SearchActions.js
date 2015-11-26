@@ -10,9 +10,10 @@ export class WantResults {
 }
 
 export class ResultsFetched {
-	constructor(repo, rev, type, page, results) {
+	constructor(repo, rev, query, type, page, results) {
 		this.repo = repo;
 		this.rev = rev;
+		this.query= query;
 		this.type = type;
 		this.page = page;
 		this.results = results;

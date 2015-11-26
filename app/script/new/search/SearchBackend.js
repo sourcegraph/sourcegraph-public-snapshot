@@ -10,7 +10,7 @@ const SearchBackend = {
 		switch (action.constructor) {
 		case SearchActions.WantResults:
 			{
-				let uri = `/.ui/${action.repo}/.search/${action.type}?q=${action.query}`;
+				let uri = `/.ui/${action.repo}/.search/${action.type}?q=${action.query}&PerPage=${action.perPage}&Page=${action.page}`;
 				SearchBackend.xhr({
 					uri: uri,
 					json: {},
@@ -19,7 +19,7 @@ const SearchBackend = {
 						console.error(err);
 						return;
 					}
-					Dispatcher.dispatch(new SearchActions.ResultsFetched(action.repo, action.rev, action.type, action.page, body));
+					Dispatcher.dispatch(new SearchActions.ResultsFetched(action.repo, action.rev, action.query, action.type, action.page, body));
 				});
 				break;
 			}

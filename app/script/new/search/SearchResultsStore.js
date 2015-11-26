@@ -3,8 +3,8 @@ import {Store} from "flux/utils";
 import Dispatcher from "../Dispatcher";
 import * as SearchActions from "./SearchActions";
 
-function keyFor(repo, rev, type, page) {
-	return `${repo}#${rev}#${type}#${page}`;
+function keyFor(repo, rev, query, type, page) {
+	return `${repo}#${rev}#${query}#${type}#${page}`;
 }
 
 export class SearchResultsStore extends Store {
@@ -13,8 +13,8 @@ export class SearchResultsStore extends Store {
 		this.results = {
 			content: {},
 			generation: 0,
-			get(repo, rev, type, page) {
-				return this.content[keyFor(repo, rev, type, page)] || null;
+			get(repo, rev, query, type, page) {
+				return this.content[keyFor(repo, rev, query, type, page)] || null;
 			},
 		};
 	}
@@ -22,7 +22,7 @@ export class SearchResultsStore extends Store {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case SearchActions.ResultsFetched:
-			this.results.content[keyFor(action.repo, action.rev, action.type, action.page)] = action.results;
+			this.results.content[keyFor(action.repo, action.rev, action.query, action.type, action.page)] = action.results;
 			this.results.generation++;
 			break;
 

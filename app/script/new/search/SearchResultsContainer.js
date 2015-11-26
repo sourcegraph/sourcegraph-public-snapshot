@@ -4,8 +4,8 @@ import Container from "../Container";
 import Dispatcher from "../Dispatcher";
 import SearchResultsStore from "./SearchResultsStore";
 import * as SearchActions from "./SearchActions";
-import TokenSearchResults from "../../components/TokenSearchResultsView"; // FIXME
-import TextSearchResults from "../../components/TextSearchResultsView"; // FIXME
+import TokenSearchResults from "./TokenSearchResults";
+import TextSearchResults from "./TextSearchResults";
 import "./SearchBackend";
 
 class ResultType {
@@ -52,15 +52,14 @@ export default class SearchResultsContainer extends Container {
 	}
 
 	render() {
-		let currentResult = this.state.results.get(this.state.repo, this.state.rev, this.state.currentType.label, 1);
+		let currentResult = this.state.results.get(this.state.repo, this.state.rev, this.state.query, this.state.currentType.label, 1);
 
 		return (
 			<div className="search-results row">
 				<div className="col-md-10 col-md-offset-1">
 					<ul className="nav nav-pills">
 						{resultTypes.map((type) => {
-							let results = this.state.results.get(this.state.repo, this.state.rev, type.label, 1);
-							console.log(results);
+							let results = this.state.results.get(this.state.repo, this.state.rev, this.state.query, type.label, 1);
 							return (
 								<li key={type.label} className={type.label === this.state.currentType.label ? "active" : null}>
 									<a onClick={() => {
@@ -72,10 +71,12 @@ export default class SearchResultsContainer extends Container {
 							);
 						})}
 					</ul>
+					{currentResult &&
+						<this.state.currentType.component
+							repo={this.state.repo}
+							resultData={currentResult} />
+					}
 				</div>
-				{currentResult &&
-					<this.state.currentType.component result={currentResult} />
-				}
 			</div>
 		);
 	}
