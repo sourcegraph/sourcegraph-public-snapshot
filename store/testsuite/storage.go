@@ -418,10 +418,13 @@ func Storage_ValidNames(ctx context.Context, t *testing.T, s store.Storage) {
 		},
 
 		// Valid app name tests.
-		sourcegraph.StorageBucket{
-			Name:    "my-bucket",
-			AppName: "core.app", // App names may contain periods.
-			Repo:    "src.sourcegraph.com/foo/bar",
+		sourcegraph.StorageKey{
+			Bucket: &sourcegraph.StorageBucket{
+				Name:    "my-bucket",
+				AppName: "core.app", // App names may contain periods.
+				Repo:    "src.sourcegraph.com/foo/bar",
+			},
+			Key: "normal-key",
 		},
 
 		// Valid repo URI tests.
