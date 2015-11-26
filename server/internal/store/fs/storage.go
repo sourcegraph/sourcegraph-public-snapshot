@@ -284,7 +284,7 @@ func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, err
 // escaping into parent directories.
 func storageSafePath(p string) string {
 	e := strings.Split(p, "/")
-	for i := 0; i < len(e); i++ {
+	for i := range e {
 		switch e[i] {
 		default:
 			e[i] = url.QueryEscape(e[i])
