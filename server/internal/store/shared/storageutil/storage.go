@@ -18,7 +18,8 @@ func validateBucketOrAppName(bucketOrApp, s string) error {
 		return fmt.Errorf("%s name may not be an empty string", bucketOrApp)
 	}
 	for _, r := range s {
-		if r != '_' && r != '-' && r != '.' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+		ok := r == '_' || r == '-' || r == '.' || unicode.IsLetter(r) || unicode.IsDigit(r)
+		if !ok {
 			return fmt.Errorf("%s name may only contain underscores, dashes, periods, letters and digits", bucketOrApp)
 		}
 	}
