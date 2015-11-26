@@ -57,8 +57,6 @@ class TokenSearchResultsView extends Component {
 						</div>
 					);
 				})}
-				<div className="search-pagination">
-				</div>
 			</div>
 		);
 	}

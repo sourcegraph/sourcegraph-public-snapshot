@@ -27,7 +27,7 @@ export default class SearchResultsRouter extends Component {
 		let vars = URI.parseQuery(state.uri.query);
 		state.query = vars["q"] || null;
 		state.type = vars["type"] || null;
-		state.page = vars["page"] || 1;
+		state.page = parseInt(vars["page"], 10) || 1;
 	}
 
 	_navigate(path, query) {
@@ -46,6 +46,13 @@ export default class SearchResultsRouter extends Component {
 		case SearchActions.SelectResultType:
 			this._navigate(this._searchPath(), {
 				type: action.type,
+				page: 1,
+			});
+			break;
+
+		case SearchActions.SelectPage:
+			this._navigate(this._searchPath(), {
+				page: action.page,
 			});
 			break;
 		}

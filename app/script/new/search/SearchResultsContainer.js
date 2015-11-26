@@ -2,6 +2,7 @@ import React from "react";
 
 import Container from "../Container";
 import Dispatcher from "../Dispatcher";
+import Pagination from "../util/Pagination";
 import SearchResultsStore from "./SearchResultsStore";
 import * as SearchActions from "./SearchActions";
 import TokenSearchResults from "./TokenSearchResults";
@@ -28,6 +29,7 @@ export default class SearchResultsContainer extends Container {
 		this.state = {
 			currentType: resultTypes[0],
 		};
+		this._onPageChange = this._onPageChange.bind(this);
 	}
 
 	stores() {
@@ -43,23 +45,36 @@ export default class SearchResultsContainer extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.query !== prevState.query) {
+			// When initiating a new search query, scroll to top of page to
+			// view new results.
+			window.scrollTo(0, 0);
 			for (let type of resultTypes) {
+				let initialPage = type.label === nextState.currentType.label ? nextState.page : 1;
 				Dispatcher.asyncDispatch(
-					new SearchActions.WantResults(nextState.repo, nextState.rev, type.label, 1, type.perPage, nextState.query)
+					new SearchActions.WantResults(nextState.repo, nextState.rev, type.label, initialPage, type.perPage, nextState.query)
 				);
 			}
+		} else if (nextState.page !== prevState.page) {
+			window.scrollTo(0, 0);
+			Dispatcher.asyncDispatch(
+				new SearchActions.WantResults(nextState.repo, nextState.rev, nextState.currentType.label, nextState.page, nextState.currentType.perPage, nextState.query)
+			);
 		}
 	}
 
+	_onPageChange(page) {
+		Dispatcher.dispatch(new SearchActions.SelectPage(page));
+	}
+
 	render() {
-		let currentResult = this.state.results.get(this.state.repo, this.state.rev, this.state.query, this.state.currentType.label, 1);
+		let currentResult = this.state.results.get(this.state.repo, this.state.rev, this.state.query, this.state.currentType.label, this.state.page);
 
 		return (
 			<div className="search-results row">
 				<div className="col-md-10 col-md-offset-1">
 					<ul className="nav nav-pills">
 						{resultTypes.map((type) => {
-							let results = this.state.results.get(this.state.repo, this.state.rev, this.state.query, type.label, 1);
+							let results = this.state.results.get(this.state.repo, this.state.rev, this.state.query, type.label, type.label === this.state.currentType.label ? this.state.page : 1);
 							return (
 								<li key={type.label} className={type.label === this.state.currentType.label ? "active" : null}>
 									<a onClick={() => {
@@ -76,9 +91,19 @@ export default class SearchResultsContainer extends Container {
 							repo={this.state.repo}
 							rev={this.state.rev}
 							query={this.state.query}
+							page={this.state.page}
 							resultData={currentResult} />
 					}
 				</div>
+				{(currentResult && currentResult.Total) &&
+					<div className="search-pagination">
+						<Pagination
+							currentPage={this.state.page}
+							totalPages={Math.ceil(currentResult.Total/this.state.currentType.perPage)}
+							pageRange={10}
+							onPageChange={this._onPageChange} />
+					</div>
+				}
 			</div>
 		);
 	}
@@ -89,4 +114,5 @@ SearchResultsContainer.propTypes = {
 	rev: React.PropTypes.string,
 	type: React.PropTypes.string,
 	query: React.PropTypes.string,
+	page: React.PropTypes.number,
 };

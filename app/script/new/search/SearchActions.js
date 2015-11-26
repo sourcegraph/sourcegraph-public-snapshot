@@ -25,3 +25,9 @@ export class SelectResultType {
 		this.type = type;
 	}
 }
+
+export class SelectPage {
+	constructor(page) {
+		this.page = page;
+	}
+}
