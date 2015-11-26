@@ -283,7 +283,7 @@ func storageKeyPath(ctx context.Context, k *sourcegraph.StorageKey) (string, err
 // Relative filepath elements ("..") are replaced with "dotdot" to prevent
 // escaping into parent directories.
 func storageSafePath(p string) string {
-	p = url.QueryEscape(p)
+	p = storageutil.URLEscapePathElements(p)
 	return strings.Replace(p, "..", "dotdot", -1)
 }
 

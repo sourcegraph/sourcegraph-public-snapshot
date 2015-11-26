@@ -245,7 +245,7 @@ func bucketKey(bucket *sourcegraph.StorageBucket) (string, error) {
 		if err := storageutil.ValidateRepoURI(bucket.Repo); err != nil {
 			return "", err
 		}
-		location = "repo-" + bucket.Repo
+		location = "repo-" + storageutil.URLEscapePathElements(bucket.Repo)
 	}
 
 	return location + "-" + bucket.AppName + "-" + bucket.Name, nil
