@@ -1294,12 +1294,21 @@ func makeGitPassHelper(pass string) (passHelper string, tempDir string, err erro
 		return tmpFile, dir, err
 	}
 
+	passPath := filepath.Join(dir, "password")
+	err = internal.WriteFileWithPermissions(passPath, []byte(pass), 0600)
+	if err != nil {
+		return tmpFile, dir, err
+	}
+
 	var script string
 
+	// We assume passPath can be escaped with a simple wrapping of single
+	// quotes. The path is not user controlled so this assumption should
+	// not be violated.
 	if runtime.GOOS == "windows" {
-		script = "@echo off\necho '" + pass + "'\n"
+		script = "@echo off\ntype " + passPath + "\n"
 	} else {
-		script = "#!/bin/sh\necho '" + pass + "'\n"
+		script = "#!/bin/sh\ncat '" + passPath + "'\n"
 	}
 
 	err = internal.WriteFileWithPermissions(tmpFile, []byte(script), 0500)
