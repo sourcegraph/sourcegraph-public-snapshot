@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 
 	gcontext "github.com/gorilla/context"
@@ -44,8 +45,15 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platfor
 		}
 	}
 
-	// Make tracker the first app and changes the second for now.
-	// TODO: This should eventually be configurable.
+	// TODO: Instead of prioritizing specific apps, determine the sort order
+	// automatically. If little or no ranking data is present, rank alphabetically
+	// and then rank based on "times all users went to this app in the repo" so
+	// that the most-used app for a given repo comes first.
+
+	// First and foremost, sort the app names alphabetically.
+	sort.Strings(orderedIDs)
+
+	// Second, enforce that Tracker and Changes are the first and second.
 	for i, appID := range orderedIDs {
 		switch appID {
 		case "tracker":
