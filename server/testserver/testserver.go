@@ -413,6 +413,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	buildStoreDir := filepath.Join(sgpath, "buildstore")
 	dbDir := filepath.Join(sgpath, "db")
 	statusDir := filepath.Join(sgpath, "statuses")
+	appStorageDir := filepath.Join(sgpath, "appdata")
 
 	// FS
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &fs.Flags{
@@ -420,6 +421,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 		BuildStoreDir: buildStoreDir,
 		DBDir:         dbDir,
 		RepoStatusDir: statusDir,
+		AppStorageDir: appStorageDir,
 	})
 
 	// Appdash
