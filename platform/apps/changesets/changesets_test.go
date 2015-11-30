@@ -56,6 +56,7 @@ type testSuite struct {
 // pushes it.
 func (ts *testSuite) prepRepo() error {
 	// Create the repository
+	ts.t.Log("$ src repo create", repoName)
 	repo, err := ts.server.Client.Repos.Create(ts.ctx, &sourcegraph.ReposCreateOp{
 		URI: repoName,
 		VCS: "git",
@@ -120,6 +121,7 @@ func (ts *testSuite) cmd(args ...string) error {
 
 // addFile writes a file with the given contents in the work directory.
 func (ts *testSuite) addFile(name, contents string) error {
+	ts.t.Logf("$ echo %q > %s", contents, name)
 	return ioutil.WriteFile(filepath.Join(ts.workDir, name), []byte(contents), 0666)
 }
 
@@ -462,8 +464,9 @@ func TestChangesets_CreateReview(t *testing.T) {
 		t.Fatalf("incorrect author, got %q want %q\n", review.Author, wantReview.Author)
 	}
 	if review.CreatedAt == nil {
-		// TODO(slimsag): fixme! currently failing
-		//t.Fatal("incorrect created at status, got nil want non-nil")
+		t.Skip("BUG: currently failing!")
+		return
+		t.Fatal("incorrect created at status, got nil want non-nil")
 	}
 	if review.EditedAt != nil {
 		t.Fatalf("incorrect edited at status, got %v want nil\n", review.EditedAt)
@@ -535,8 +538,9 @@ func TestChangesets_ListReviews(t *testing.T) {
 			t.Fatalf("incorrect author, got %q want %q\n", review.Author, wantReview.Author)
 		}
 		if review.CreatedAt == nil {
-			// TODO(slimsag): fixme! currently failing
-			//t.Fatal("incorrect created at status, got nil want non-nil")
+			t.Skip("BUG: currently failing!")
+			return
+			t.Fatal("incorrect created at status, got nil want non-nil")
 		}
 		if review.EditedAt != nil {
 			t.Fatalf("incorrect edited at status, got %v want nil\n", review.EditedAt)
@@ -688,7 +692,7 @@ func TestChangesets_BackgroundBaseCommits(t *testing.T) {
 		}
 		err = ts.cmds([][]string{
 			{"git", "add", filePair[0]},
-			{"git", "commit", "-m", "add nother file"},
+			{"git", "commit", "-m", "add another file"},
 			{"git", "push"},
 		})
 		if err != nil {
