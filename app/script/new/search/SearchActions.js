@@ -13,7 +13,7 @@ export class ResultsFetched {
 	constructor(repo, rev, query, type, page, results) {
 		this.repo = repo;
 		this.rev = rev;
-		this.query= query;
+		this.query = query;
 		this.type = type;
 		this.page = page;
 		this.results = results;

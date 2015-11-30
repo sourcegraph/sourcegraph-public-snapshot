@@ -1,71 +1,74 @@
 import React from "react";
 
-class Pagination extends React.Component {
-	constructor() {
-		super();
+import Component from "../Component";
+
+class Pagination extends Component {
+	constructor(props) {
+		super(props);
 		this._onPageChange = this._onPageChange.bind(this);
 	}
 
 	_onPageChange(page) {
-		this.props.onPageChange(page);
+		this.state.onPageChange(page);
 	}
 
-	// Determine the range of page numbers to display in the pagination menu.
-	_calculatePageOffsets() {
+	reconcileState(state, props) {
+		Object.assign(state, props);
+
+		// Determine the range of page numbers to display in the pagination menu.
 		let firstPageOffset, lastPageOffset;
 		// Using the current page as a midpoint, show half of the max page links to the
 		// left and right of the current page.
-		let rightPageCount = Math.floor((this.props.pageRange - 1)/2);
-		let leftPageCount = this.props.pageRange - rightPageCount;
+		let rightPageCount = Math.floor((props.pageRange - 1)/2);
+		let leftPageCount = props.pageRange - rightPageCount;
 		// Bound the first page offset to be at least 1.
-		if (this.props.currentPage <= leftPageCount) {
+		if (props.currentPage <= leftPageCount) {
 			firstPageOffset = 1;
-			lastPageOffset = Math.min(this.props.pageRange, this.props.totalPages);
+			lastPageOffset = Math.min(props.pageRange, props.totalPages);
 		} else {
 			// Calculate to offsets for the first and last page link that will be shown based on
 			// the number of pages.
-			firstPageOffset = this.props.currentPage - leftPageCount;
+			firstPageOffset = props.currentPage - leftPageCount;
 			firstPageOffset += 1; // Add 1 to account for showing the current page.
 			// The offset for the last page is bounded by the total number of pages.
-			lastPageOffset = Math.min(this.props.currentPage + rightPageCount, this.props.totalPages);
+			lastPageOffset = Math.min(props.currentPage + rightPageCount, props.totalPages);
 		}
-		return [firstPageOffset, lastPageOffset];
+		state.firstPageOffset = firstPageOffset;
+		state.lastPageOffset = lastPageOffset;
 	}
 
 	render() {
-		if (this.props.totalPages <= 1) return null;
-
-		let pageOffsets = this._calculatePageOffsets();
+		if (this.state.totalPages <= 1) return null;
 
 		let pageList = [];
-		if (pageOffsets[0] > 1) {
+		if (this.state.firstPageOffset > 1) {
 			pageList.push(<li key="previous-indicator" className="disabled"><a>…</a></li>);
 		}
 
 		let i;
-		for (i = pageOffsets[0]; i<=pageOffsets[1]; i++) {
+		for (i = this.state.firstPageOffset; i<=this.state.lastPageOffset; i++) {
 			let pageLinkHTML;
 			// If the current page is still loading, display a spnning indicator.
-			if (i === this.props.currentPage && this.props.loading) {
+			if (i === this.state.currentPage && this.state.loading) {
 				pageLinkHTML = <i className="fa fa-circle-o-notch fa-spin"></i>;
 			} else {
 				pageLinkHTML = i;
 			}
 
 			pageList.push(
-				<li key={i} className={i===this.props.currentPage ? "active" : ""}>
+				<li key={i} className={i===this.state.currentPage ? "active" : ""}>
 					<a className="num-page-link"
 						title={`Page ${i}`}
 						onClick={this._onPageChange.bind(this, i)}>{pageLinkHTML}</a>
 				</li>
 			);
 		}
-		if (i < this.props.totalPages) {
+		if (i < this.state.totalPages) {
 			pageList.push(<li key="next-indicator" className="disabled"><a>…</a></li>);
 		}
 
-		let isFirstPage = this.props.currentPage === 1;
-		let isLastPage = this.props.currentPage === this.props.totalPages;
+		let isFirstPage = this.state.currentPage === 1;
+		let isLastPage = this.state.currentPage === this.state.totalPages;
 
 		return (
 			<ul className="pagination">
@@ -77,8 +80,8 @@ class Pagination extends React.Component {
 				</li>
 				{pageList}
 				<li key="last" className={isLastPage ? "disabled" : null}>
-					<a title={`Page ${this.props.totalPages}`}
-						onClick={isLastPage ? null : this._onPageChange.bind(this, this.props.totalPages)}>
+					<a title={`Page ${this.state.totalPages}`}
+						onClick={isLastPage ? null : this._onPageChange.bind(this, this.state.totalPages)}>
 						<i className="fa fa-angle-double-right"></i>
 					</a>
 				</li>

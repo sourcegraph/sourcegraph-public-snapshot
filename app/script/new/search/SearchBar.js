@@ -21,11 +21,7 @@ class SearchBar extends Component {
 		state.navigate = props.navigate || null;
 
 		let pathParts = state.uri.path.substr(1).split("/.");
-		if (pathParts.length >= 2 && pathParts[1] === "search") {
-			state.searchViewIsActive = true;
-		} else {
-			state.searchViewIsActive = false;
-		}
+		state.searchViewIsActive = (pathParts.length >= 2 && pathParts[1] === "search");
 
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0] || null;
