@@ -68,6 +68,7 @@ class SearchBar extends Component {
 	_submitSearch(e) {
 		if (e) e.preventDefault();
 		let query = this.refs.queryInput.value;
+		if (!query) return;
 		this._navigate(this._searchPath(), {
 			q: query,
 			type: this.state.type || "tokens",
