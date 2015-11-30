@@ -240,11 +240,13 @@ func newTestSuite(t *testing.T) (*testSuite, error) {
 		return nil, err
 	}
 
-	return &testSuite{
+	ts := &testSuite{
 		ctx:    ctx,
 		server: server,
 		t:      t,
-	}, nil
+	}
+	ts.cmd("git", "config", "--global", "push.default", "simple")
+	return ts, nil
 }
 
 // TestChangesets_Create tests that creating a changeset works.
