@@ -29,3 +29,5 @@ your server before sharing a link with teammates!)
 * [FAQ]({{< relref "troubleshooting/faq.md" >}})
 * [cloud-init troubleshooting]({{< relref "troubleshooting/cloud-init.md" >}})
 * Anything else? [Create a new thread.](https://src.sourcegraph.com/sourcegraph/.tracker)
+
+{{< ads_conversion >}}

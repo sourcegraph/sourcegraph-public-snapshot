@@ -16,3 +16,5 @@ To set up Sourcegraph on a new [Google Compute Engine](https://cloud.google.com/
 
 * Click **Create**
 * In 5 minutes, your Sourcegraph server should be available via HTTP (not HTTPS) at the VM's external IP. ***Note:** The link from the Web Console is `https://EXTERNAL-IP`, which will not work because there is no HTTPS listener. Make sure you go to `http://EXTERNAL-IP`!*
+
+{{< ads_conversion >}}

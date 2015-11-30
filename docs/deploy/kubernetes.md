@@ -162,3 +162,5 @@ by deleting the Pod:
 ```
 kubectl delete pods/<Pod Name>
 ```
+
+{{< ads_conversion >}}
