@@ -938,17 +938,23 @@ func TestChangesets_MergeFlow(t *testing.T) {
 	t.Skip("not implemented")
 }
 
-// TestChangesets_MirroredList tests that creating a changeset on a mirrored
-// repository and pushing new changes has the new commits appear in the event
-// stream.
-func TestChangesets_MirroredList(t *testing.T) {
+// TestChangesets_MirroredListEvents is identical to the ListEvents test, except
+// it operates on a mirrored GitHub repository.
+func TestChangesets_MirroredListEvents(t *testing.T) {
 	// TODO: implement this
 	t.Skip("not implemented")
 }
 
-// TestChangesets_MirroredMerge tests that creating a changeset on a mirrored
-// repository and then merging it works.
-func TestChangesets_MirroredMerge(t *testing.T) {
+// TestChangesets_MirroredRebaseFlow is identical to the RebaseFlow test, except
+// it operates on a mirrored GitHub repository.
+func TestChangesets_MirroredRebaseFlow(t *testing.T) {
+	// TODO: implement this
+	t.Skip("not implemented")
+}
+
+// TestChangesets_MirroredMergeFlow is identical to the MergeFlow test, except
+// it operates on a mirrored GitHub repository.
+func TestChangesets_MirroredMergeFlow(t *testing.T) {
 	// TODO: implement this
 	t.Skip("not implemented")
 }
