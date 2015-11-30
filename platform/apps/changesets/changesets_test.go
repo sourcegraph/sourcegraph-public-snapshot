@@ -251,6 +251,10 @@ func newTestSuite(t *testing.T) (*testSuite, error) {
 
 // TestChangesets_Create tests that creating a changeset works.
 func TestChangesets_Create(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -267,6 +271,10 @@ func TestChangesets_Create(t *testing.T) {
 
 // TestChangesets_Get tests that creating a changeset and then getting it works.
 func TestChangesets_Get(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -300,6 +308,10 @@ func TestChangesets_Get(t *testing.T) {
 // TestChangesets_List tests that creating a few changesets and then listing
 // them works.
 func TestChangesets_List(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -349,6 +361,10 @@ func TestChangesets_List(t *testing.T) {
 // TestChangesets_Update tests that creating a changeset and then updating it
 // works.
 func TestChangesets_Update(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -390,6 +406,10 @@ func TestChangesets_Update(t *testing.T) {
 // TestChangesets_Merge tests that creating a changeset and then merging it
 // works.
 func TestChangesets_Merge(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -429,6 +449,10 @@ func TestChangesets_Merge(t *testing.T) {
 // TestChangesets_CreateReview tests that creating a changeset and then
 // creating a review on it works.
 func TestChangesets_CreateReview(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -485,6 +509,10 @@ func TestChangesets_CreateReview(t *testing.T) {
 // TestChangesets_ListReviews tests that creating a few changesets and then
 // listing the events on it works.
 func TestChangesets_ListReviews(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -560,6 +588,10 @@ func TestChangesets_ListReviews(t *testing.T) {
 // TestChangesets_ListEvents tests that creating a changeset with a few events
 // and listing them works.
 func TestChangesets_ListEvents(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -625,6 +657,10 @@ func TestChangesets_ListEvents(t *testing.T) {
 // (e.g. master) do not show up in a changeset's event stream after creating a
 // CS.
 func TestChangesets_BackgroundBaseCommits(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -754,6 +790,10 @@ func TestChangesets_BackgroundBaseCommits(t *testing.T) {
 // three commits -> background master changes -> rebase -> force push -> merge
 // works as expected.
 func TestChangesets_RebaseFlow(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -936,6 +976,10 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 // TestChangesets_MergeFlow tests that a basic merge workflow works. i.e. that
 // three commits -> master changes -> merge works as expected.
 func TestChangesets_MergeFlow(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
