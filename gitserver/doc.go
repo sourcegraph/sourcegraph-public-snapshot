@@ -1,2 +1,2 @@
-// Package gitserver provides a Git HTTP (and TODO(sqs): SSH) server.
+// Package gitserver provides a Git HTTP (and in a subpackage, SSH) server.
 package gitserver
