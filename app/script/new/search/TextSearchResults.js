@@ -8,11 +8,20 @@ class TextSearchResults extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 
+		if (props.resultData.Error) {
+			state.error = props.resultData.Error;
+			return;
+		}
+
 		state.results = props.resultData.Results;
 		state.total = props.resultData.Total;
 	}
 
 	render() {
+		if (this.state.error) {
+			return <div className="alert alert-warning">There was an error returning your results: {this.state.error}</div>;
+		}
+
 		if (this.state.results.length === 0) {
 			return <p className="summary">No text results found for "{this.state.query}"</p>;
 		}

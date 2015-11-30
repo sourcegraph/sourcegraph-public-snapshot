@@ -9,12 +9,21 @@ class TokenSearchResultsView extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 
+		if (props.resultData.Error) {
+			state.error = props.resultData.Error;
+			return;
+		}
+
 		state.results = props.resultData.Results;
 		state.total = props.resultData.Total;
 		state.buildInfo = props.resultData.BuildInfo;
 	}
 
 	render() {
+		if (this.state.error) {
+			return <div className="alert alert-warning">There was an error returning your results: {this.state.error}</div>;
+		}
+
 		let summary;
 		if (this.state.results.length === 0) {
 			summary = `No definition results found for "${this.state.query}"`;
