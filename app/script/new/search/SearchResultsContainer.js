@@ -39,7 +39,6 @@ export default class SearchResultsContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.results = SearchResultsStore.results;
-		state.resultsGeneration = SearchResultsStore.results.generation;
 		state.currentType = resultTypes.find((type) => type.label === props.type);
 	}
 
