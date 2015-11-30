@@ -74,8 +74,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	// TODO: Need to detect new tags and copy git_transport.go in event publishing
 	// behavior.
 
-	// Get the current revision of every branch so we can build a list of commits
-	// that have been pushed to each branch during the update.
+	// Grab the current revision of every branch.
 	branches, err := vcsRepo.Branches(vcs.BranchesOptions{})
 	if err != nil {
 		return err
@@ -87,48 +86,29 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	}
 
 	// Find all new commits on each branch.
-	for _, branch := range branches {
+	for _, oldBranch := range branches {
 		// Determine new branch head revision.
-		head, err := vcsRepo.ResolveBranch(branch.Name)
+		head, err := vcsRepo.ResolveBranch(oldBranch.Name)
 		if err != nil {
 			return err
 		}
+		if head == oldBranch.Head {
+			continue // No new commits.
+		}
 
-		// Grab just new commits.
-		commits, _, err := vcsRepo.Commits(vcs.CommitsOptions{
-			Base:    branch.Head,
-			Head:    head,
-			NoTotal: true,
+		// Publish an event for the new commits pushed.
+		// TODO: what about GitPayload.ContentEncoding field?
+		events.Publish(events.GitPushEvent, events.GitPayload{
+			Actor: authpkg.UserSpecFromContext(ctx),
+			Repo:  repo.RepoSpec(),
+			Event: githttp.Event{
+				Type:   githttp.PUSH, // TODO: detect githttp.PUSH_FORCE somehow?
+				Commit: string(head),
+				Last:   string(oldBranch.Head),
+				Branch: oldBranch.Name,
+				// TODO: specify Dir, Tag, Error and Request fields somehow?
+			},
 		})
-		if err != nil {
-			return err
-		}
-
-		// Publish an event for each commit pushed.
-		for _, commit := range commits {
-			// Resolve the last commit behind
-			lastCommit, _, err := vcsRepo.Commits(vcs.CommitsOptions{
-				Head:    commit.ID,
-				N:       1,
-				NoTotal: true,
-			})
-			if err != nil {
-				return err
-			}
-
-			// TODO: what about GitPayload.ContentEncoding field?
-			events.Publish(events.GitPushEvent, events.GitPayload{
-				Actor: authpkg.UserSpecFromContext(ctx),
-				Repo:  repo.RepoSpec(),
-				Event: githttp.Event{
-					Type:   githttp.PUSH, // TODO: detect githttp.PUSH_FORCE somehow?
-					Commit: string(commit.ID),
-					Last:   string(lastCommit[0].ID),
-					Branch: branch.Name,
-					// TODO: specify Dir, Tag, Error and Request fields somehow?
-				},
-			})
-		}
 	}
 	return nil
 }
