@@ -26,7 +26,7 @@ export default class SearchResultsRouter extends Component {
 
 		let vars = URI.parseQuery(state.uri.query);
 		state.query = vars["q"] || null;
-		state.type = vars["type"] || null;
+		state.type = vars["type"] || "tokens";
 		state.page = parseInt(vars["page"], 10) || 1;
 	}
 
