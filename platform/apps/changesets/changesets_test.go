@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"sourcegraph.com/sqs/pbtypes"
 
@@ -751,8 +752,183 @@ func TestChangesets_BackgroundBaseCommits(t *testing.T) {
 // three commits -> background master changes -> rebase -> force push -> merge
 // works as expected.
 func TestChangesets_RebaseFlow(t *testing.T) {
-	// TODO(slimsag): WIP
-	t.Skip("not implemented")
+	// Create a new test suite.
+	ts, err := newTestSuite(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ts.close()
+
+	// Create a basic changeset.
+	cs, err := ts.createBasicChangeset()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add two more commits to feature-branch so our CS has three in total.
+	files := [][2]string{
+		{"third", "third file contents"},
+		{"fourth", "fourth file contents"},
+	}
+	for _, filePair := range files {
+		if err := ts.addFile(filePair[0], filePair[1]); err != nil {
+			t.Fatal(err)
+		}
+		err = ts.cmds([][]string{
+			{"git", "add", filePair[0]},
+			{"git", "commit", "-m", "add another file"},
+			{"git", "push"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	const (
+		csHeadRev = "feature-branch"
+		csBaseRev = "master"
+	)
+
+	// Now checkout the base branch (master) and push three commits.
+	if err := ts.cmd("git", "checkout", csBaseRev); err != nil {
+		t.Fatal(err)
+	}
+	files = [][2]string{
+		{"base-third", "third file contents"},
+		{"base-fourth", "fourth file contents"},
+		{"base-fifth", "fifth file contents"},
+	}
+	for _, filePair := range files {
+		if err := ts.addFile(filePair[0], filePair[1]); err != nil {
+			t.Fatal(err)
+		}
+		err = ts.cmds([][]string{
+			{"git", "add", filePair[0]},
+			{"git", "commit", "-m", "add another file"},
+			{"git", "push"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Grab the current HEAD of the base branch (master) -- this is the commit ID
+	// our branch will be based on after the rebase below.
+	wantBaseCommitID, err := ts.gitRevParse("HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Rebase feature-branch on master and force push so that CS is aware of the
+	// new commits.
+	err = ts.cmds([][]string{
+		{"git", "checkout", csHeadRev},
+		{"git", "rebase", csBaseRev},
+		{"git", "push", "-f"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Grab the current HEAD of the head branch (feature-branch) -- this is the
+	// commit ID of the last commit to our feature branch. From this point on, our
+	// CS base and head commit IDs should never change (or else the diff will be
+	// corrupt).
+	wantHeadCommitID, err := ts.gitRevParse("HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify the current DeltaSpec of the changeset.
+	//
+	// We do this once prior to merge; and also after merge (below) as there was
+	// once a bug that caused the DeltaSpec.Base.CommitID to not be updated on a
+	// force push (causing the computed diff to show all commits to e.g. master
+	// since the CS was opened).
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
+		Repo: basicRepo,
+		ID:   cs.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != "" && gotHead != wantHeadCommitID {
+		t.Skip("BUG: currently failing!")
+		return
+		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
+	}
+	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != "" && gotBase != wantBaseCommitID {
+		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
+	}
+
+	// Force push the rebased feature-branch and merge.
+	err = ts.cmds([][]string{
+		{"git", "checkout", csBaseRev},
+		{"git", "merge", csHeadRev},
+		{"git", "push"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify the current DeltaSpec of the changeset.
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
+		Repo: basicRepo,
+		ID:   cs.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != "" && gotHead != wantHeadCommitID {
+		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
+	}
+	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != "" && gotBase != wantBaseCommitID {
+		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
+	}
+
+	// Wait for hook to fire and event to be generated.
+	time.Sleep(500 * time.Millisecond)
+	events, err := ts.server.Client.Changesets.ListEvents(ts.ctx, &sourcegraph.ChangesetSpec{
+		Repo: basicRepo,
+		ID:   cs.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events.Events) != 1 {
+		t.Fatalf("wrong number of events, got %v expected 1", len(events.Events))
+	}
+
+	// Confirm that we have exactly one merge event.
+	ev := events.Events[0]
+	if err := ts.changesetEqual(ev.Before, cs); err != nil {
+		t.Fatal(err)
+	}
+	afterCS := *cs
+	afterCS.Merged = true
+	afterCS.ClosedAt = &pbtypes.Timestamp{}
+	if err := ts.changesetEqual(ev.After, &afterCS); err != nil {
+		t.Fatal(err)
+	}
+	if ev.Op.Merged != true {
+		t.Fatalf("incorrect merged status, got false expected true")
+	}
+
+	// The changeset is now merged, verify the DeltaSpec has exactly the right
+	// CommitIDs (which must be present for persistence after branch deletion).
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
+		Repo: basicRepo,
+		ID:   cs.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != wantHeadCommitID {
+		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
+	}
+	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != wantBaseCommitID {
+		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
+	}
 }
 
 // TestChangesets_MergeFlow tests that a basic merge workflow works. i.e. that
