@@ -30,4 +30,3 @@ your server before sharing a link with teammates!)
 * [cloud-init troubleshooting]({{< relref "troubleshooting/cloud-init.md" >}})
 * Anything else? [Create a new thread.](https://src.sourcegraph.com/sourcegraph/.tracker)
 
-{{< ads_conversion >}}
