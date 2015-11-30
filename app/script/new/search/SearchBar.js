@@ -28,8 +28,14 @@ class SearchBar extends Component {
 		}
 
 		let repoParts = pathParts[0].split("@");
-		state.repo = repoParts[0];
+		state.repo = repoParts[0] || null;
 		state.rev = repoParts[1] || "master";
+
+		// The "~" prefix indicates we're on a user page, not a repo.
+		if (state.repo && state.repo[0] === "~") {
+			state.repo = null;
+			state.rev = null;
+		}
 
 		let vars = URI.parseQuery(state.uri.query);
 		state.query = vars["q"] || null;
@@ -77,6 +83,9 @@ class SearchBar extends Component {
 	}
 
 	render() {
+		// Only search within a repo for now.
+		if (!this.state.repo) return null;
+
 		return (
 			<form className="navbar-form" onSubmit={this._submitSearch.bind(this)}>
 				<div className="form-group">
