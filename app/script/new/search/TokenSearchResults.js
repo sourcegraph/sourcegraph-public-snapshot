@@ -77,4 +77,4 @@ TokenSearchResultsView.propTypes = {
 	resultData: React.PropTypes.object,
 };
 
-module.exports = TokenSearchResultsView;
+export default TokenSearchResultsView;
