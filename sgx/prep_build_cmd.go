@@ -155,7 +155,7 @@ func PrepBuildDir(vcsType, unauthedCloneURL, username, password, dir, commitID s
 			if err := execCmdInDir(dir, "git", "remote", "set-url", "origin", authedCloneURL); err != nil {
 				return err
 			}
-			if err := r.UpdateEverything(opt); err != nil {
+			if _, err := r.UpdateEverything(opt); err != nil {
 				return err
 			}
 		} else {
