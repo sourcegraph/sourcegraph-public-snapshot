@@ -229,9 +229,14 @@ func (rs *RepoStage) Pull(head string, squash bool) error {
 	args = append(args, rs.repoDir, head)
 	cmd := exec.Command("git", args...)
 	cmd.Dir = rs.stagingDir
+	env := environ(os.Environ())
+	if rs.gitPassHelper != "" {
+		env.Unset("GIT_TERMINAL_PROMPT")
+		env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
+	}
 	// Git requires you to configure a name and email to use "git pull", even if
 	// you aren't committing anything.
-	cmd.Env = append(os.Environ(),
+	cmd.Env = append(env,
 		"GIT_COMMITTER_NAME="+RefCommitter.Name,
 		"GIT_COMMITTER_EMAIL="+RefCommitter.Email,
 	)
