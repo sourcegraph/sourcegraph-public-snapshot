@@ -6,7 +6,7 @@ import Dispatcher from "../Dispatcher";
 import * as SearchActions from "./SearchActions";
 import SearchResultsContainer from "./SearchResultsContainer";
 
-export default class SearchResultsRouter extends Component {
+class SearchResultsRouter extends Component {
 	componentDidMount() {
 		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
 	}
@@ -78,3 +78,5 @@ SearchResultsRouter.propTypes = {
 	location: React.PropTypes.string,
 	navigate: React.PropTypes.func,
 };
+
+export default SearchResultsRouter;

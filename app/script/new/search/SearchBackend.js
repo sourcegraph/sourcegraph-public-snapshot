@@ -12,7 +12,7 @@ const SearchBackend = {
 			{
 				let result = SearchResultsStore.results.get(action.repo, action.rev, action.query, action.type, action.page);
 				if (result === null) {
-					let uri = `/.ui/${action.repo}/.search/${action.type}?q=${action.query}&PerPage=${action.perPage}&Page=${action.page}`;
+					let uri = `/.ui/${action.repo}@${action.rev}/.search/${action.type}?q=${action.query}&PerPage=${action.perPage}&Page=${action.page}`;
 					SearchBackend.xhr({
 						uri: uri,
 						json: {},

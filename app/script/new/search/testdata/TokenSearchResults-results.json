@@ -1,0 +1,79 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "token-search-results",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "alert alert-info",
+						"children": [
+							{
+								"type": "i",
+								"props": {
+									"className": "fa fa-warning"
+								}
+							},
+							"Showing definition results from  commits behind latest. Newer results are shown when available."
+						]
+					}
+				},
+				{
+					"type": "p",
+					"props": {
+						"className": "summary",
+						"children": [
+							"1 definition result for \"aQuery\""
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": "aRepo/.def/aFunction",
+					"props": {
+						"className": "token-search-result",
+						"children": [
+							{
+								"type": "hr",
+								"props": {}
+							},
+							{
+								"type": "a",
+								"props": {
+									"href": "/undefined/.undefined/undefined/.def/undefined",
+									"children": [
+										{
+											"type": "code",
+											"props": {
+												"children": [
+													"func "
+												]
+											}
+										},
+										{
+											"type": "code",
+											"props": {
+												"dangerouslySetInnerHTML": {
+													"__html": "func <span class=\"name\">aFunction</span>"
+												}
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "p",
+								"props": {
+									"dangerouslySetInnerHTML": {
+										"__html": "This is a function."
+									}
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

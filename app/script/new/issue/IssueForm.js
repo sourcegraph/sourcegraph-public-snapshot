@@ -22,7 +22,7 @@ class IssueForm extends Component {
 			this.state.commitID,
 			this.state.startLine,
 			this.state.endLine,
-			// TODO this is so autotest will work.
+			// TODO(autotest) support refs.
 			this.refs.title && this.refs.title.value,
 			this.refs.body && this.refs.body.value(),
 			this.state.onSubmit

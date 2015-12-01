@@ -40,9 +40,14 @@ class SearchBar extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (!prevState.searchViewIsActive && nextState.searchViewIsActive) {
-			ReactDOM.render((
-				<LocationAdaptor component={SearchResultsRouter} />
-			), document.getElementById("main"));
+			let el;
+			// TODO(autotest) support document object.
+			if (typeof document !== "undefined") el = document.getElementById("main");
+			if (el) {
+				ReactDOM.render((
+					<LocationAdaptor component={SearchResultsRouter} />
+				), el);
+			}
 		} else if (prevState.searchViewIsActive && !nextState.searchViewIsActive) {
 			window.location.href = URI.build(nextState.uri);
 		}
@@ -69,7 +74,8 @@ class SearchBar extends Component {
 
 	_submitSearch(e) {
 		if (e) e.preventDefault();
-		let query = this.refs.queryInput.value;
+		// TODO(autotest) support refs.
+		let query = this.refs.queryInput && this.refs.queryInput.value;
 		if (!query) return;
 		this._navigate(this._searchPath(), {
 			q: query,

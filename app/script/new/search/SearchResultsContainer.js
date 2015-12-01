@@ -23,7 +23,7 @@ const resultTypes = [
 	new ResultType("text", "Text", 10, TextSearchResults),
 ];
 
-export default class SearchResultsContainer extends Container {
+class SearchResultsContainer extends Container {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -46,7 +46,7 @@ export default class SearchResultsContainer extends Container {
 		if (nextState.query !== prevState.query) {
 			// When initiating a new search query, scroll to top of page to
 			// view new results.
-			window.scrollTo(0, 0);
+			if (typeof window !== "undefined") window.scrollTo(0, 0); // TODO(autotest) support window object.
 			for (let type of resultTypes) {
 				let initialPage = type.label === nextState.currentType.label ? nextState.page : 1;
 				Dispatcher.asyncDispatch(
@@ -54,7 +54,7 @@ export default class SearchResultsContainer extends Container {
 				);
 			}
 		} else if (nextState.page !== prevState.page) {
-			window.scrollTo(0, 0);
+			if (typeof window !== "undefined") window.scrollTo(0, 0); // TODO(autotest) support window object.
 			Dispatcher.asyncDispatch(
 				new SearchActions.WantResults(nextState.repo, nextState.rev, nextState.currentType.label, nextState.page, nextState.currentType.perPage, nextState.query)
 			);
@@ -115,3 +115,5 @@ SearchResultsContainer.propTypes = {
 	query: React.PropTypes.string,
 	page: React.PropTypes.number,
 };
+
+export default SearchResultsContainer;

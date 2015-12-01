@@ -1,0 +1,56 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "text-search-results",
+			"children": [
+				{
+					"type": "p",
+					"props": {
+						"className": "summary",
+						"children": [
+							"1 text result for \"aQuery\""
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": "app.go-1",
+					"props": {
+						"className": "text-search-result",
+						"children": [
+							{
+								"type": "header",
+								"props": {
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"href": "/aRepo@aRev/.tree/app.go?startline=1&endline=10",
+												"children": [
+													"app.go"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "",
+								"props": {
+									"repo": "aRepo",
+									"rev": "aRev",
+									"path": "app.go",
+									"startLine": 1,
+									"endLine": 10,
+									"lines": [],
+									"showFileRangeLink": true
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}
