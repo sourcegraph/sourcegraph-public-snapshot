@@ -68,9 +68,6 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		return &sourcegraph.NotImplementedError{What: "MirrorRepos.RefreshVCS on hosted repo"}
 	}
 
-	// TODO: Need to detect new branches and copy git_transport.go in event
-	// publishing behavior.
-	//
 	// TODO: Need to detect new tags and copy git_transport.go in event publishing
 	// behavior.
 
@@ -81,15 +78,71 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	}
 
 	// Update everything.
-	if err := ru.UpdateEverything(remoteOpts); err != nil {
+	updateResult, err := ru.UpdateEverything(remoteOpts)
+	if err != nil {
 		return err
+	}
+
+	forcePushes := make(map[string]bool)
+	for _, change := range updateResult.Changes {
+		switch change.Op {
+		case vcs.NewOp, vcs.ForceUpdatedOp:
+			// Determine the event type, and if it's a force push mark for later to
+			// avoid additional work.
+			eventType := events.GitCreateBranchEvent
+			gitEventType := githttp.EventType(githttp.PUSH)
+			if change.Op == vcs.ForceUpdatedOp {
+				// Force push, remember for later.
+				forcePushes[change.Branch] = true
+				eventType = events.GitPushEvent
+				gitEventType = githttp.PUSH_FORCE
+			}
+
+			// Determine the new branch head revision.
+			head, err := vcsRepo.ResolveBranch(change.Branch)
+			if err != nil {
+				return err
+			}
+
+			// Publish the event.
+			// TODO: what about GitPayload.ContentEncoding field?
+			events.Publish(eventType, events.GitPayload{
+				Actor: authpkg.UserSpecFromContext(ctx),
+				Repo:  repo.RepoSpec(),
+				Event: githttp.Event{
+					Type:   gitEventType,
+					Commit: string(head),
+					Branch: change.Branch,
+					// TODO: specify Dir, Tag, Error and Request fields somehow?
+				},
+			})
+		}
 	}
 
 	// Find all new commits on each branch.
 	for _, oldBranch := range branches {
+		if _, ok := forcePushes[oldBranch.Name]; ok {
+			// Already handled above.
+			continue
+		}
+
 		// Determine new branch head revision.
 		head, err := vcsRepo.ResolveBranch(oldBranch.Name)
-		if err != nil {
+		if err == vcs.ErrBranchNotFound {
+			// Branch was deleted.
+			// TODO: what about GitPayload.ContentEncoding field?
+			events.Publish(events.GitDeleteBranchEvent, events.GitPayload{
+				Actor: authpkg.UserSpecFromContext(ctx),
+				Repo:  repo.RepoSpec(),
+				Event: githttp.Event{
+					Type:   githttp.PUSH,
+					Commit: emptyGitCommitID,
+					Branch: oldBranch.Name,
+					// TODO: specify Dir, Tag, Error and Request fields somehow?
+				},
+			})
+			continue
+		} else if err != nil {
 			return err
 		}
 		if head == oldBranch.Head {
@@ -102,7 +155,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			Actor: authpkg.UserSpecFromContext(ctx),
 			Repo:  repo.RepoSpec(),
 			Event: githttp.Event{
-				Type:   githttp.PUSH, // TODO: detect githttp.PUSH_FORCE somehow?
+				Type:   githttp.PUSH,
 				Commit: string(head),
 				Last:   string(oldBranch.Head),
 				Branch: oldBranch.Name,
