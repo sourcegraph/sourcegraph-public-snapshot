@@ -92,6 +92,15 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	_, err = changesetsGroup.AddCommand("open",
+		"open a changeset",
+		"The `sgx changeset open` command opens a changeset.",
+		&changesetOpenCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type changesetsCmd struct{}
@@ -123,6 +132,7 @@ func (c *changesetListCmd) Execute(args []string) error {
 			return err
 		}
 		if len(changesets.Changesets) == 0 {
+			fmt.Println("no changesets", c.Repo)
 			break
 		}
 		for _, changeset := range changesets.Changesets {
@@ -340,5 +350,24 @@ func (c *changesetCloseCmd) Execute(args []string) error {
 	}
 
 	log.Printf("# closed changeset %s #%d", c.Repo, ev.After.ID)
+	return nil
+}
+
+type changesetOpenCmd struct{ changesetUpdateCmdCommon }
+
+func (c *changesetOpenCmd) Execute(args []string) error {
+	cliCtx := putil.CLIContext()
+	sg := sourcegraph.NewClientFromContext(cliCtx)
+
+	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+		Repo: sourcegraph.RepoSpec{URI: c.Repo},
+		ID:   c.Args.ID,
+		Open: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("# opened changeset %s #%d", c.Repo, ev.After.ID)
 	return nil
 }
