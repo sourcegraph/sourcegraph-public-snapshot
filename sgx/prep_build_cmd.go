@@ -89,7 +89,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 			if err != nil {
 				return fmt.Errorf("unable to fetch credentials for host %q: %v", host, err)
 			}
-			username = "token"
+			username = "x-oauth-basic"
 			password = cred.Token
 		}
 	}
