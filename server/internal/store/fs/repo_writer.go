@@ -95,12 +95,7 @@ func NewRepoStage(repoPath, refName string, password string) (rs *RepoStage, err
 
 	cmd = exec.Command("git", "pull", repoPath, refName)
 	cmd.Dir = rs.stagingDir
-	if rs.gitPassHelper != "" {
-		env := environ(os.Environ())
-		env.Unset("GIT_TERMINAL_PROMPT")
-		env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
-		cmd.Env = env
-	}
+	cmd.Env = rs.getEnviron()
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
 	}
@@ -198,12 +193,7 @@ func (rs *RepoStage) Commit(author, committer vcs.Signature, message string) err
 	// available.
 	cmd = exec.Command("git", "push", rs.repoDir, "HEAD:"+rs.refName)
 	cmd.Dir = rs.stagingDir
-	if rs.gitPassHelper != "" {
-		env := environ(os.Environ())
-		env.Unset("GIT_TERMINAL_PROMPT")
-		env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
-		cmd.Env = env
-	}
+	cmd.Env = rs.getEnviron()
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
 	}
@@ -229,11 +219,7 @@ func (rs *RepoStage) Pull(head string, squash bool) error {
 	args = append(args, rs.repoDir, head)
 	cmd := exec.Command("git", args...)
 	cmd.Dir = rs.stagingDir
-	env := environ(os.Environ())
-	if rs.gitPassHelper != "" {
-		env.Unset("GIT_TERMINAL_PROMPT")
-		env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
-	}
+	env := rs.getEnviron()
 	// Git requires you to configure a name and email to use "git pull", even if
 	// you aren't committing anything.
 	cmd.Env = append(env,
@@ -246,6 +232,17 @@ func (rs *RepoStage) Pull(head string, squash bool) error {
 	}
 
 	return nil
+}
+
+func (rs *RepoStage) getEnviron() []string {
+	env := environ(os.Environ())
+
+	if rs.gitPassHelper != "" {
+		env.Unset("GIT_TERMINAL_PROMPT")
+		env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
+	}
+
+	return env
 }
 
 // Free frees up the resources used by the allocated repository and index.
