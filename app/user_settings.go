@@ -18,7 +18,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/router_util"
@@ -348,19 +347,6 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		var credentials *sourcegraph.VCSCredentials
-
-		host := util.RepoURIHost(repoURI)
-		authStore := ext.AuthStore{}
-		cred, err := authStore.Get(ctx, host)
-		if err != nil {
-			return fmt.Errorf("could not fetch credentials for host %q: %v", host, err)
-		}
-
-		credentials = &sourcegraph.VCSCredentials{
-			Pass: cred.Token,
-		}
-
 		// Perform the following operations locally (non-federated) because it's a private repo and credentials are set.
 		_, err = apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 			URI:      repoURI,
@@ -374,8 +360,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 		}
 
 		_, err = apiclient.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{
-			Repo:        sourcegraph.RepoSpec{URI: repoURI},
-			Credentials: credentials,
+			Repo: sourcegraph.RepoSpec{URI: repoURI},
 		})
 		if err != nil {
 			// If there was a problem, rollback to avoid leaving behind an invalid repo.

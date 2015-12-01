@@ -13,8 +13,10 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util"
 )
 
 var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}
@@ -34,9 +36,17 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	// probably, esp. on NFS.
 
 	remoteOpts := vcs.RemoteOpts{}
-	if op.Credentials != nil {
+	// For private repos, supply auth.
+	if r.Private {
+		host := util.RepoURIHost(op.Repo.URI)
+		authStore := ext.AuthStore{}
+		cred, err := authStore.Get(ctx, host)
+		if err != nil {
+			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", host, err)
+		}
+
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
-			Pass: op.Credentials.Pass,
+			Pass: cred.Token,
 		}
 	}
 

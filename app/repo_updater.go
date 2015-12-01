@@ -6,9 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util"
 )
 
 const (
@@ -70,21 +68,6 @@ func (ru *repoUpdater) run(ctx context.Context) {
 	for repo := range ru.queue {
 		op := &sourcegraph.MirrorReposRefreshVCSOp{
 			Repo: repo.RepoSpec(),
-		}
-		// For private repos, supply auth.
-		if repo.Private {
-			host := util.RepoURIHost(repo.URI)
-			authStore := ext.AuthStore{}
-			cred, err := authStore.Get(ctx, host)
-			if err != nil {
-				log15.Warn("repoUpdater: could not fetch credentials", "host", host, "error", err)
-				continue
-			}
-
-			// Setting credentials will perform this operation locally (non-federated).
-			op.Credentials = &sourcegraph.VCSCredentials{
-				Pass: cred.Token,
-			}
 		}
 
 		if _, err := apiclient.MirrorRepos.RefreshVCS(ctx, op); err != nil {

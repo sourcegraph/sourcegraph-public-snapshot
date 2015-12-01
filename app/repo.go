@@ -22,9 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -61,21 +59,8 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	op := &sourcegraph.MirrorReposRefreshVCSOp{
 		Repo: rc.Repo.RepoSpec(),
 	}
-	// For private repos, supply auth.
-	if rc.Repo.Private {
-		authStore := ext.AuthStore{}
-		cred, err := authStore.Get(ctx, util.RepoURIHost(rc.Repo.URI))
-		if err != nil {
-			return err
-		}
 
-		// Setting credentials will perform this operation locally (non-federated).
-		op.Credentials = &sourcegraph.VCSCredentials{
-			Pass: cred.Token,
-		}
-	}
-
-	if _, err := apiclient.MirrorRepos.RefreshVCS(httpctx.FromRequest(r), op); err != nil {
+	if _, err := apiclient.MirrorRepos.RefreshVCS(ctx, op); err != nil {
 		return err
 	}
 
