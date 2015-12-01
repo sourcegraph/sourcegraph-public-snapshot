@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,10 +13,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 )
-
-type refResolver interface {
-	ResolveRef(name string) (vcs.CommitID, error)
-}
 
 var (
 	RefAuthor = vcs.Signature{
@@ -101,22 +96,6 @@ func NewRepoStage(repoPath, refName string, password string) (rs *RepoStage, err
 	}
 
 	return rs, nil
-}
-
-func repoHasRef(repoDir, refName string) (bool, error) {
-	repo, err := vcs.Open("git", repoDir)
-	if err != nil {
-		return false, err
-	}
-	repoRR, ok := repo.(refResolver)
-	if !ok {
-		return false, errors.New("repository does not support refs")
-	}
-	_, err = repoRR.ResolveRef(refName)
-	if err == vcs.ErrRefNotFound {
-		return false, nil
-	}
-	return err == nil, err
 }
 
 // Add adds a new file to the index (in the staging repository). The
