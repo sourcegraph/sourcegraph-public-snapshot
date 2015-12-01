@@ -36,7 +36,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	// probably, esp. on NFS.
 
 	remoteOpts := vcs.RemoteOpts{}
-	// For private repos, supply auth.
+	// For private repos, supply auth from local auth store.
 	if r.Private {
 		host := util.RepoURIHost(op.Repo.URI)
 		authStore := ext.AuthStore{}

@@ -18,6 +18,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/router_util"
@@ -347,7 +348,15 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		// Perform the following operations locally (non-federated) because it's a private repo and credentials are set.
+		// Verify that credentials are available for this host.
+		host := util.RepoURIHost(repoURI)
+		authStore := ext.AuthStore{}
+		_, err := authStore.Get(ctx, host)
+		if err != nil {
+			return err
+		}
+
+		// Perform the following operations locally (non-federated) because it's a private repo.
 		_, err = apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 			URI:      repoURI,
 			VCS:      "git",
