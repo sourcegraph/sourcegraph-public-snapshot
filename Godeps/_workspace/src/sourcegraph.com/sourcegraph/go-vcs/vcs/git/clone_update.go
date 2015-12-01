@@ -67,22 +67,22 @@ func Clone(url, dir string, opt vcs.CloneOpt) (vcs.Repository, error) {
 		return nil, err
 	}
 	r := &Repository{Repository: cr, u: u}
-	if err := r.UpdateEverything(opt.RemoteOpts); err != nil {
+	if _, err := r.UpdateEverything(opt.RemoteOpts); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) error {
+func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
 	// TODO(sqs): allow use of a remote other than "origin"
 	rm, err := r.u.Remotes.Lookup("origin")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	rc, cfs, err := makeRemoteCallbacks(rm.Url(), opt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if cfs != nil {
 		defer cfs.run()
@@ -93,10 +93,11 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) error {
 	}
 
 	if err := rm.Fetch([]string{"+refs/*:refs/*"}, &opts, ""); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	// TODO: Calculate value of vcs.UpdateResult.
+	return nil, nil
 }
 
 type cleanupFuncs []func() error

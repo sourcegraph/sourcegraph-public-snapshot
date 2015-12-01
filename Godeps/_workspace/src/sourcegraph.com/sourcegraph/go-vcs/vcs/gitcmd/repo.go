@@ -620,7 +620,7 @@ func (r *Repository) fetchRemote(repoDir string) error {
 	return nil
 }
 
-func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) error {
+func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
 	// TODO(sqs): this lock is different from libgit2's lock, but
 	// libgit2 Repositories call this method because of
 	// embedding. Therefore there could be a race condition.
@@ -640,7 +640,7 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) error {
 			}
 		}()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer os.Remove(gitSSHWrapper)
 		if gitSSHWrapperDir != "" {
@@ -655,7 +655,7 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) error {
 
 		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.Pass)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer os.Remove(gitPassHelper)
 		if gitPassHelperDir != "" {
@@ -666,11 +666,17 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) error {
 		cmd.Env = env
 	}
 
-	out, err := cmd.CombinedOutput()
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("exec `git remote update` failed: %s. Output was:\n\n%s", err, out)
+		return nil, fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, stderr.String())
 	}
-	return nil
+	result, err := parseRemoteUpdate(stderr.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("parsing output of `git remote update` failed: %v", err)
+	}
+	return &result, nil
 }
 
 func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
