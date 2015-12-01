@@ -7,11 +7,12 @@ Intelligence. It **runs on your own server** or cloud and installs in
 Sourcegraph gives your team the power to build better software by
 offering:
 
-* **Code Intelligence ([example](https://src.sourcegraph.com/sourcegraph@0788772f7fec57c62bbd1eba83839d5d0de97b23/.GoPackage/src.sourcegraph.com/sourcegraph/util/mdutil/.def/Mentions)):** Understand code more quickly with jump-to-definition and tooltips. (Go and Java only, more languages coming soon.)
-* **Live usage examples ([example](https://src.sourcegraph.com/sourcegraph@master/.GoPackage/src.sourcegraph.com/sourcegraph/app/router/.def/Router/URLToRepo/.examples)):** See how code is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
+* **Code Intelligence ([example](https://src.sourcegraph.com/sourcegraph@0788772f7fec57c62bbd1eba83839d5d0de97b23/.GoPackage/src.sourcegraph.com/sourcegraph/util/mdutil/.def/Mentions)):** Understand code more quickly with language-aware jump-to-definition and tooltips. (Go and Java only, more languages coming soon.)
+* **Live usage examples ([example](https://src.sourcegraph.com/sourcegraph@master/.GoPackage/src.sourcegraph.com/sourcegraph/app/router/.def/Router/URLToRepo/.examples)):** See how any function, class, etc., is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
 * **Better code reviews ([example](https://src.sourcegraph.com/sourcegraph/.changes/302)):** Review changesets more effectively with drafts and Code Intelligence context in diffs---and an easy branch-based pull request model.
 * **Code-linked issue tracking ([example](https://src.sourcegraph.com/sourcegraph/.tracker/27)):** Ask questions, suggest improvements, and explain design decisions inline in your code.
 * **Smart search ([example](https://src.sourcegraph.com/sourcegraph/.search?q=NewClient)):** Find code quickly by function name, full text, etc.
+* **Deep integrations:** Works great standalone or with GitHub, GitHub Enterprise, JIRA, and more.
 * **Hackable source code:** [Sourcegraph's source code](https://src.sourcegraph.com/sourcegraph) is publicly available under the [Fair Source License](https://fair.io).
 
 [**Get started with your own Sourcegraph server**](https://src.sourcegraph.com/sourcegraph/.docs/getting-started/) in 5 minutes! Want to try it out first? You're on a Sourcegraph server ([src.sourcegraph.com](https://src.sourcegraph.com)) now, so just browse around this server.
