@@ -1068,8 +1068,7 @@ func (m *TagList) String() string { return proto.CompactTextString(m) }
 func (*TagList) ProtoMessage()    {}
 
 type MirrorReposRefreshVCSOp struct {
-	Repo        RepoSpec        `protobuf:"bytes,1,opt,name=repo" `
-	Credentials *VCSCredentials `protobuf:"bytes,2,opt,name=credentials" json:",omitempty"`
+	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
 }
 
 func (m *MirrorReposRefreshVCSOp) Reset()         { *m = MirrorReposRefreshVCSOp{} }

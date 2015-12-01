@@ -880,7 +880,6 @@ message TagList {
 
 message MirrorReposRefreshVCSOp {
 	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	VCSCredentials credentials = 2;
 }
 
 // VCSCredentials for authentication during communication with VCS remotes.
@@ -899,7 +898,6 @@ service MirrorRepos {
 		};
 	};
 }
-
 
 // MirroredRepoSSHKeys stores repository SSH keys (e.g., to access
 // private repos on some external origin that we mirror).
