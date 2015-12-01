@@ -35,10 +35,11 @@ class CodeFileRouter extends Component {
 		// operation, but in the case of the tree operation consider this path:
 		//
 		//  "/sourcegraph@master/.tree/.gitignore"
+		//  "/sourcegraph@master/.tree/subdirectory/.gitignore"
 		//
 		// In the above, .gitignore is the file name not the operation. So we handle
 		// this case specially here.
-		if (pathParts.length >= 2 && pathParts[1] === "tree") {
+		if (pathParts.length >= 2 && (pathParts[1] === "tree" || pathParts[1].indexOf("tree/") === 0)) {
 			// Parse the filepath following "/.tree/".
 			let treePath = state.uri.path.substring(state.uri.path.indexOf("/.tree/") + "/.tree/".length);
 
