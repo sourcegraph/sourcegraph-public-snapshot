@@ -58,8 +58,8 @@
     "xhr": "2.2.0"
   },
   "scripts": {
-    "start": "./node_modules/.bin/webpack-dev-server --devtool cheap-module-source-map",
-    "build": "env NODE_ENV=production ./node_modules/.bin/webpack",
+    "start": "node ./node_modules/.bin/webpack-dev-server --devtool cheap-module-source-map",
+    "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
     "test": "find script -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill",
     "test-new": "find script/new -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill",
     "dep": "npm rebuild node-sass",

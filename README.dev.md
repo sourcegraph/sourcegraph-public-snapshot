@@ -162,3 +162,26 @@ Read more about our style in [README.style.md](README.style.md).
 
 Sourcegraph uses gRPC and Protocol Buffers under the hood. Read more at
 [README.protobuf.md](README.protobuf.md) or view the documentation for the API at [developer.sourcegraph.com](https://developer.sourcegraph.com).
+
+## Windows notes
+
+Windows support for Sourcegraph is currently in alpha. A few extra
+steps are required to run Sourcegraph in a Windows environment:
+
+- Sourcegraph depends on some GNU and open-source command line tools
+  like `make`, `sh`, and `find`. Install Cygwin from
+  http://cygwin.org/ (tested with 2.2.1 x32).
+- Install Git from http://git-scm.com rather than use Cygwin's
+  default Git, which does not properly handle local repositories.
+- Configure your Git to use Unix-style line endings.
+- Unix symlinks must be converted to Windows symlimks. This does not
+  happen automatically (see
+  http://stackoverflow.com/questions/5917249/git-symlinks-in-windows).
+  After checking out Sourcegraph, run `bash
+  dev/git-windows-aliases.sh` to install the git aliases needed to do
+  the conversion. Then run `git rm-symlinks` from the repository root
+  to convert all symlinks into Windows symlinks and mark them as "not
+  changed" (necessary to avoid issues related to running npm-based
+  tasks).
+
+Note that multiple unit tests currently fail on Windows.

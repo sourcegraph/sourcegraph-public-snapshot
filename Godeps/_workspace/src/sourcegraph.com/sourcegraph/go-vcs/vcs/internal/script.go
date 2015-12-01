@@ -11,27 +11,20 @@ import (
 // On Windows such a file must have .bat extension
 // Returns triplet where
 // - filePath is a location of file
-// - rootPath may refer to temporary root directory
+// - rootPath refers to temporary root directory the filePath is in
 // (everything under the rootPath (including rootPath) should be removed when no longer needed)
-// rootPath makes sense on Windows only where location of script file is TEMP_DIR()/RANDOM_DIR()/FILE.bat
 // - error indicates possible error
 func ScriptFile(prefix string) (filePath string, rootPath string, err error) {
-
+	var suffix string
 	if runtime.GOOS == "windows" {
-		// making unique temporary directory and file inside it
-		tempDir, err := ioutil.TempDir("", prefix)
-		if err != nil {
-			return "", "", err
-		}
-		return filepath.Join(tempDir, prefix+".bat"), tempDir, nil
-	} else {
-		tf, err := ioutil.TempFile("", prefix)
-		if err != nil {
-			return "", "", err
-		}
-		tf.Close()
-		return filepath.ToSlash(tf.Name()), "", nil
+		suffix = ".bat"
 	}
+
+	tempDir, err := ioutil.TempDir("", prefix)
+	if err != nil {
+		return "", "", err
+	}
+	return filepath.Join(tempDir, prefix+suffix), tempDir, nil
 }
 
 // Wrapper around ioutil.WriteFile that updates permissions regardless if file existed before
