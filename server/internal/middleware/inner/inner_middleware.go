@@ -1305,7 +1305,19 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 		return
 	}
 
-	res, err = federated.CustomMirrorReposRefreshVCS(ctx, param, local.Services.MirrorRepos)
+	target := local.Services.MirrorRepos
+
+	var fedCtx context.Context
+	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
+	if err != nil {
+		return
+	}
+	if fedCtx != nil {
+		target = svc.MirrorRepos(fedCtx)
+		ctx = fedCtx
+	}
+
+	res, err = target.RefreshVCS(ctx, param)
 	return
 
 }

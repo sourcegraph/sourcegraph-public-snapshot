@@ -5,7 +5,6 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/search"
@@ -69,23 +68,6 @@ func CustomReposCreate(ctx context.Context, op *sourcegraph.ReposCreateOp, s sou
 
 	// At this time, we never federate Create anyway (but if we did, it would happen here).
 	return s.Create(ctx, op)
-}
-
-func CustomMirrorReposRefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp, s sourcegraph.MirrorReposServer) (*pbtypes.Void, error) {
-	// Avoid federating operations that have sensitive credentials set.
-	if op.Credentials != nil {
-		return s.RefreshVCS(ctx, op)
-	}
-
-	ctx2, err := RepoContext(ctx, &op.Repo.URI)
-	if err != nil {
-		return nil, err
-	}
-	if ctx2 == nil {
-		return s.RefreshVCS(ctx, op)
-	}
-	ctx = ctx2
-	return svc.MirrorRepos(ctx).RefreshVCS(ctx, op)
 }
 
 func CustomReposList(ctx context.Context, opt *sourcegraph.RepoListOptions, s sourcegraph.ReposServer) (*sourcegraph.RepoList, error) {

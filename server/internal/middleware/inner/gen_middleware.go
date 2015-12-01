@@ -48,8 +48,6 @@ func methodHasCustomFederation(x gen.Service, method string) bool {
 		default:
 			return false
 		}
-	case "MirrorRepos":
-		return method == "RefreshVCS"
 	case "Users":
 		switch method {
 		case "Get":
