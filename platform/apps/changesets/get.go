@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 
+	"code.google.com/p/rog-go/parallel"
+
 	"github.com/sourcegraph/mux"
 
 	"google.golang.org/grpc"
@@ -103,39 +105,90 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	// Retrieve Changeset
+
+	// Parallel fetch from Changesets service
+	var (
+		par     = parallel.NewRun(3)
+		cs      *sourcegraph.Changeset
+		reviews *sourcegraph.ChangesetReviewList
+		events  *sourcegraph.ChangesetEventList
+		csErr   error
+	)
 	changesetSpec := &sourcegraph.ChangesetSpec{
 		Repo: vc.RepoRevSpec.RepoSpec,
 		ID:   id,
 	}
-	cs, err := sg.Changesets.Get(ctx, changesetSpec)
+	reviewsSpec := &sourcegraph.ChangesetListReviewsOp{
+		Repo:        vc.RepoRevSpec.RepoSpec,
+		ChangesetID: id,
+	}
+	par.Do(func() error {
+		cs, csErr = sg.Changesets.Get(ctx, changesetSpec)
+		return csErr
+	})
+	par.Do(func() error {
+		var err error
+		reviews, err = sg.Changesets.ListReviews(ctx, reviewsSpec)
+		return err
+	})
+	par.Do(func() error {
+		var err error
+		events, err = sg.Changesets.ListEvents(ctx, changesetSpec)
+		return err
+	})
+	err = par.Wait()
+	if csErr != nil {
+		err = csErr
+	}
 	if err != nil {
 		if grpc.Code(err) == codes.NotFound {
 			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("changeset does not exist")}
 		}
 		return err
 	}
-	ds := cs.DeltaSpec
-	// Compute delta (actual merge-base, commit IDs and build status for both revs)
-	delta, err := sg.Deltas.Get(ctx, &sourcegraph.DeltaSpec{
-		Base: ds.Base,
-		Head: ds.Head,
+
+	// Fetch data which depends on the deltaspec concurrently
+	var (
+		ds      = cs.DeltaSpec
+		delta   *sourcegraph.Delta
+		baseTip *vcs.Commit
+		files   *sourcegraph.DeltaFiles
+	)
+	par = parallel.NewRun(3)
+	par.Do(func() error {
+		// Compute delta (actual merge-base, commit IDs and build status for both revs)
+		var err error
+		delta, err = sg.Deltas.Get(ctx, &sourcegraph.DeltaSpec{
+			Base: ds.Base,
+			Head: ds.Head,
+		})
+		return err
 	})
-	if err != nil {
+	par.Do(func() error {
+		// Compute the tip of the base branch
+		var err error
+		baseTip, err = sg.Repos.GetCommit(ctx, &ds.Base)
 		return err
-	}
-	reviews, err := sg.Changesets.ListReviews(ctx, &sourcegraph.ChangesetListReviewsOp{
-		Repo:        vc.RepoRevSpec.RepoSpec,
-		ChangesetID: cs.ID,
 	})
+	par.Do(func() error {
+		// If this route is for changes, request the diffs too
+		var err error
+		opt := sourcegraph.DeltaListFilesOptions{
+			Formatted: false,
+			Tokenized: true,
+			Filter:    v["Filter"],
+		}
+		files, err = sg.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
+			Ds:  *ds,
+			Opt: &opt,
+		})
+		return err
+	})
+	err = par.Wait()
 	if err != nil {
 		return err
 	}
-	// Compute the tip of the base branch
-	baseTip, err := sg.Repos.GetCommit(ctx, &ds.Base)
-	if err != nil {
-		return err
-	}
+
 	// Retrieve commit list
 	commitList, err := sg.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
 		Repo: ds.Base.RepoSpec,
@@ -149,35 +202,8 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	sort.Sort(byDate(commitList.Commits))
-	// If this route is for changes, request the diffs too
-	var (
-		files  *sourcegraph.DeltaFiles
-		filter string
-	)
-	if f, ok := v["Filter"]; ok {
-		filter = f
-	}
-	opt := sourcegraph.DeltaListFilesOptions{
-		Formatted: false,
-		Tokenized: true,
-		Filter:    filter,
-	}
-	files, err = sg.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
-		Ds:  *ds,
-		Opt: &opt,
-	})
-	if err != nil {
-		return err
-	}
 	// Augment commits with data from People
-	augmentedCommits := make([]*payloads.AugmentedCommit, len(commitList.Commits))
-	for i, c := range commitList.Commits {
-		augmentedCommits[i], err = handlerutil.AugmentCommit(r, delta.HeadRepo.URI, c)
-		if err != nil {
-			return err
-		}
-	}
-	events, err := sg.Changesets.ListEvents(ctx, changesetSpec)
+	augmentedCommits, err := handlerutil.AugmentCommits(r, delta.HeadRepo.URI, commitList.Commits)
 	if err != nil {
 		return err
 	}
@@ -224,7 +250,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	}{
 		RepoCommon:       *rc,
 		RepoRevCommon:    *vc,
-		FileFilter:       filter,
+		FileFilter:       v["Filter"],
 		ReviewGuidelines: guide,
 		JiraIssues:       jiraIssues,
 

@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"net/url"
 
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+
 	"google.golang.org/grpc"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/ui/payloads"
 
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
@@ -53,10 +56,12 @@ func GetRepoAndRevCommon(r *http.Request) (rc *handlerutil.RepoCommon, vc *handl
 		rrs.Rev = rc.Repo.DefaultBranch
 	}
 	vc = &handlerutil.RepoRevCommon{RepoRevSpec: rrs}
-	vc.RepoCommit, err = handlerutil.AugmentCommit(r, spec.URI, commit)
+	var commits []*payloads.AugmentedCommit
+	commits, err = handlerutil.AugmentCommits(r, spec.URI, []*vcs.Commit{commit})
 	if err != nil {
 		return nil, nil, err
 	}
+	vc.RepoCommit = commits[0]
 
 	return
 }

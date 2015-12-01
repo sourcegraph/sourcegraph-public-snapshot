@@ -98,10 +98,12 @@ func GetRepoAndRevCommon(r *http.Request, opts *GetRepoCommonOpt) (rc *RepoCommo
 	}
 
 	if commit0 != nil {
-		vc.RepoCommit, err = AugmentCommit(r, rc.Repo.URI, commit0)
+		var augCommits []*payloads.AugmentedCommit
+		augCommits, err = AugmentCommits(r, rc.Repo.URI, []*vcs.Commit{commit0})
 		if err != nil {
 			return
 		}
+		vc.RepoCommit = augCommits[0]
 	}
 
 	return

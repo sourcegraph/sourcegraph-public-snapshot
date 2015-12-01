@@ -2,7 +2,10 @@ package handlerutil
 
 import (
 	"net/http"
+	"sync"
 	"time"
+
+	"code.google.com/p/rog-go/parallel"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -10,36 +13,61 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
-// AugmentCommit fills in fields on this package's commit type for
+// AugmentCommits fills in fields on this package's commit type for
 // presentation in the app.
-func AugmentCommit(r *http.Request, repoURI string, commit0 *vcs.Commit) (*payloads.AugmentedCommit, error) {
+func AugmentCommits(r *http.Request, repoURI string, commits []*vcs.Commit) ([]*payloads.AugmentedCommit, error) {
 	ctx := httpctx.FromRequest(r)
 	cl := APIClient(r)
 
-	var author *sourcegraph.Person
-	if commit0.Author.Email != "" {
-		var err error
-		author, err = cl.People.Get(ctx, &sourcegraph.PersonSpec{Email: commit0.Author.Email})
-		if err != nil {
-			return nil, err
+	people := map[string]*sourcegraph.Person{}
+	for _, commit0 := range commits {
+		if commit0.Author.Email != "" {
+			people[commit0.Author.Email] = nil
+		}
+		if commit0.Committer != nil && commit0.Committer.Email != commit0.Author.Email {
+			people[commit0.Committer.Email] = nil
 		}
 	}
 
-	var committer *sourcegraph.Person
-	if commit0.Committer != nil && commit0.Committer.Email != commit0.Author.Email {
-		var err error
-		committer, err = cl.People.Get(ctx, &sourcegraph.PersonSpec{Email: commit0.Committer.Email})
-		if err != nil {
-			return nil, err
-		}
+	peopleMu := sync.Mutex{}
+	par := parallel.NewRun(4)
+	for email := range people {
+		email := email
+		par.Do(func() error {
+			author, err := cl.People.Get(ctx, &sourcegraph.PersonSpec{Email: email})
+			if err != nil {
+				return err
+			}
+			peopleMu.Lock()
+			people[email] = author
+			peopleMu.Unlock()
+			return nil
+		})
+	}
+	err := par.Wait()
+	if err != nil {
+		return nil, err
 	}
 
-	return &payloads.AugmentedCommit{
-		Commit:          commit0,
-		AuthorPerson:    author,
-		CommitterPerson: committer,
-		RepoURI:         repoURI,
-	}, nil
+	// We now have all the emails, lets construct the augmented commit list
+	augmentedCommits := make([]*payloads.AugmentedCommit, len(commits))
+	for i, commit0 := range commits {
+		var author *sourcegraph.Person
+		if commit0.Author.Email != "" {
+			author = people[commit0.Author.Email]
+		}
+		var committer *sourcegraph.Person
+		if commit0.Committer != nil && commit0.Committer.Email != commit0.Author.Email {
+			committer = people[commit0.Committer.Email]
+		}
+		augmentedCommits[i] = &payloads.AugmentedCommit{
+			Commit:          commit0,
+			AuthorPerson:    author,
+			CommitterPerson: committer,
+			RepoURI:         repoURI,
+		}
+	}
+	return augmentedCommits, nil
 }
 
 // DayOfAugmentedCommits is the same as DayOfCommits but its commits
@@ -62,12 +90,12 @@ func AugmentAndGroupCommitsByDay(r *http.Request, commits []*vcs.Commit, repoURI
 			Start:   day.Start,
 			Commits: make([]*payloads.AugmentedCommit, len(day.Commits)),
 		}
-		for j, c0 := range day.Commits {
-			c, err := AugmentCommit(r, repoURI, c0)
-			if err != nil {
-				return nil, err
-			}
-			augDays[i].Commits[j] = c
+		augCommits, err := AugmentCommits(r, repoURI, day.Commits)
+		if err != nil {
+			return nil, err
+		}
+		for j := range day.Commits {
+			augDays[i].Commits[j] = augCommits[j]
 		}
 	}
 	return augDays, nil
