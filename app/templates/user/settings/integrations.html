@@ -9,6 +9,8 @@
 	<div class="panel-heading"><i class="fa fa-github"></i> GitHub</div>
 	<div class="panel-body">
 		<p>To use Sourcegraph with your private repositories on GitHub, <a href="{{.URL}}/settings/tokens">create a GitHub personal access token</a> with <b>repo</b> scope.</p>
+		<p><strong>Security note:</strong> any user with read or write access to this Sourcegraph instance can use the instance to access <strong>any</strong> of the GitHub
+		repositories within the token's scope. Do not share this instance with anyone to whom you would not grant read/write access to all of your private repositories on GitHub.</p>
 		<form class="form-inline access-token-form" action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "github"}}" method="POST">
 			<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
 			<div class="form-group">
