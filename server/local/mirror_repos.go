@@ -35,6 +35,10 @@ var activeGitGC = prometheus.NewGauge(prometheus.GaugeOpts{
 	Help:      `Total number of "git gc" commands that are currently running.`,
 })
 
+func init() {
+	prometheus.MustRegister(activeGitGC)
+}
+
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	r, err := store.ReposFromContext(ctx).Get(ctx, op.Repo.URI)
 	if err != nil {
