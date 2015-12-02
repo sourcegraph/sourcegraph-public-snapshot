@@ -165,17 +165,36 @@ func (s *repos) listCommitsUncached(ctx context.Context, op *sourcegraph.ReposLi
 	if op.Opt.PerPage == -1 {
 		n = 0 // retrieve all commits
 	}
-	commits, total, err := vcsrepo.Commits(vcs.CommitsOptions{
-		Head: head,
-		Base: base,
-		N:    n,
-		Skip: uint(op.Opt.ListOptions.Offset()),
-		Path: op.Opt.Path,
+	commits, _, err := vcsrepo.Commits(vcs.CommitsOptions{
+		Head:    head,
+		Base:    base,
+		Skip:    uint(op.Opt.ListOptions.Offset()),
+		N:       n,
+		Path:    op.Opt.Path,
+		NoTotal: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	streamResponse := sourcegraph.StreamResponse{HasMore: total > uint(op.Opt.ListOptions.Offset()+op.Opt.PerPageOrDefault())}
+
+	// Determine if next page has more results.
+	var streamResponse sourcegraph.StreamResponse
+	if n > 0 {
+		// Fetch at most one commit from next page, just to check if it's there.
+		commitsFromNextPage, _, err := vcsrepo.Commits(vcs.CommitsOptions{
+			Head:    head,
+			Base:    base,
+			Skip:    uint(op.Opt.ListOptions.Offset()) + n,
+			N:       1,
+			Path:    op.Opt.Path,
+			NoTotal: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		streamResponse.HasMore = len(commitsFromNextPage) > 0
+	}
 
 	return &sourcegraph.CommitList{Commits: commits, StreamResponse: streamResponse}, nil
 }
