@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 
@@ -229,12 +230,13 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		if cs.Description != "" {
 			ids = append(ids, parseJIRAIssues(cs.Description)...)
 		}
-		protocol := "http"
-		if flags.JiraTLS {
-			protocol = "https"
+
+		jiraURL, err := url.Parse(flags.JiraURL)
+		if err != nil {
+			return err
 		}
 		for _, id := range ids {
-			jiraIssues[id] = fmt.Sprintf("%s://%s/browse/%s", protocol, flags.JiraURL, id)
+			jiraIssues[id] = fmt.Sprintf("%s://%s/browse/%s", jiraURL.Scheme, jiraURL.Host, id)
 		}
 	}
 

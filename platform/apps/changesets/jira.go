@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 
@@ -100,13 +101,12 @@ func parseJIRAIssues(body string) []string {
 
 // postJIRARemoteLink posts a new remote link to a specified JIRA issue.
 func postJIRARemoteLink(issue string, linkURL string, title string, resolved bool) error {
-	domain := flags.JiraURL
 	auth := flags.JiraCredentials
 	if auth == "" {
 		auth = os.Getenv("SG_JIRA_CREDENTIALS")
 	}
 
-	if domain == "" || auth == "" {
+	if flags.JiraURL == "" || auth == "" {
 		return errors.New("JIRA URL and credentials not configured")
 	}
 
@@ -118,11 +118,12 @@ func postJIRARemoteLink(issue string, linkURL string, title string, resolved boo
 		}
 	}
 
-	protocol := "http"
-	if flags.JiraTLS {
-		protocol = "https"
+	jiraURL, err := url.Parse(flags.JiraURL)
+	if err != nil {
+		return err
 	}
-	url := fmt.Sprintf("%s://%s@%s/rest/api/2/issue/%s/remotelink", protocol, auth, domain, issue)
+
+	url := fmt.Sprintf("%s://%s@%s/rest/api/2/issue/%s/remotelink", jiraURL.Scheme, auth, jiraURL.Host, issue)
 	payload := struct {
 		GlobalID       string `json:"globalId"`
 		jiraRemoteLink `json:"object"`
