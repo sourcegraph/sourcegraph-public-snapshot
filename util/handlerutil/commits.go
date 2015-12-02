@@ -31,6 +31,7 @@ func AugmentCommits(r *http.Request, repoURI string, commits []*vcs.Commit) ([]*
 
 	peopleMu := sync.Mutex{}
 	par := parallel.NewRun(4)
+	peopleMu.Lock() // Lock so we can iterate over the keys
 	for email := range people {
 		email := email
 		par.Do(func() error {
@@ -44,6 +45,7 @@ func AugmentCommits(r *http.Request, repoURI string, commits []*vcs.Commit) ([]*
 			return nil
 		})
 	}
+	peopleMu.Unlock()
 	err := par.Wait()
 	if err != nil {
 		return nil, err
