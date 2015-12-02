@@ -24,7 +24,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/platform"
-	"src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/util/envutil"
@@ -134,8 +133,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"absSnippetToBreadcrumb": AbsSnippetToBreadcrumb,
 	"router":                 func() *router.Router { return router.Rel },
 
-	"searchFormInfo": searchFormInfo,
-
 	"flattenName":     handlerutil.FlattenName,
 	"flattenNameHTML": handlerutil.FlattenNameHTML,
 
@@ -218,13 +215,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"maxLen":           maxLen,
 	"displayURL": func(urlStr string) string {
 		return strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(urlStr, "https://"), "http://"), "/")
-	},
-
-	"queryDescribe": func(pbtoks []sourcegraph.PBToken) string {
-		return search.Describe(sourcegraph.PBTokens(pbtoks))
-	},
-	"queryRevision": func(pbtoks []sourcegraph.PBToken) string {
-		return search.Revision(sourcegraph.PBTokens(pbtoks))
 	},
 
 	"assetURL": assetURL,

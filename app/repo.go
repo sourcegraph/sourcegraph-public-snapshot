@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -242,68 +241,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		Common: tmpl.Common{
 			CanonicalURL: canonicalURL,
 		},
-	})
-}
-
-func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	//TODO remove this and implement proper pagnination for search results.
-	const maxResults = 10
-
-	var opt sourcegraph.SearchOptions
-	err := schemautil.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
-
-	apiclient := handlerutil.APIClient(r)
-
-	// TODO(sqs): This could be optimized since we're calling it via PJAX and
-	// don't need to look all this up each time. #*perf
-
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
-	if err != nil {
-		return err
-	}
-
-	bc, err := handlerutil.GetRepoBuildCommon(r, rc, vc, nil)
-	if err != nil {
-		return err
-	}
-	vc.RepoRevSpec = bc.BestRevSpec // Remove after getRepo refactor.
-
-	origOpt := opt
-	if explicitRev := mux.Vars(r)["Rev"]; explicitRev != "" {
-		opt.Query = fmt.Sprintf("%s :%s %s", vc.RepoRevSpec.URI, vc.RepoRevSpec.Rev, opt.Query)
-	} else {
-		opt.Query = fmt.Sprintf("%s %s", vc.RepoRevSpec.URI, opt.Query)
-	}
-	opt.Defs = true
-
-	opt.Tree = !appconf.Flags.DisableRepoTreeSearch
-	opt.ListOptions.PerPage = maxResults
-
-	results, err := apiclient.Search.Search(ctx, &opt)
-	if err != nil {
-		return err
-	}
-	addPopoversToTextSearchResults(results.Tree)
-
-	return tmpl.Exec(r, w, "repo/search_results.html", http.StatusOK, nil, &struct {
-		MaxResults int
-		handlerutil.RepoCommon
-		handlerutil.RepoRevCommon
-		handlerutil.RepoBuildCommon
-		SearchOptions *sourcegraph.SearchOptions
-		SearchResults *sourcegraph.SearchResults
-		tmpl.Common
-	}{
-		MaxResults:      maxResults,
-		RepoCommon:      *rc,
-		RepoRevCommon:   *vc,
-		RepoBuildCommon: bc,
-		SearchOptions:   &origOpt,
-		SearchResults:   results,
 	})
 }
 

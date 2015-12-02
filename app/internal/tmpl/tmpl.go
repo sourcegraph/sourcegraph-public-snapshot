@@ -80,7 +80,7 @@ func repoTemplates() error {
 		{"repo/tree/doc.html", "repo/commit.inc.html"},
 		{"repo/tree/share.html"},
 		{"repo/tree/dir.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
-		{"repo/search_results.html", "search/results.inc.html"},
+		{"repo/search_results.html"},
 		{"repo/search.html"},
 		{"repo/frame.html", "error/common.html"},
 		{"repo/commit.html", "repo/commit.inc.html"},
@@ -128,9 +128,6 @@ func commonTemplates() error {
 		{"liveblog/post.html", "liveblog/layout.html", "liveblog/common.inc.html"},
 
 		{"home/dashboard.html"},
-
-		{"search/form.html"},
-		{"search/results.html", "search/results.inc.html"},
 
 		{"builds/builds.html", "builds/build.inc.html"},
 		{"error/error.html", "error/common.html"},

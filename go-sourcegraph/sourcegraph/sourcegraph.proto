@@ -1794,20 +1794,6 @@ message AuthorshipInfo {
 	string last_commit_id = 3 [(gogoproto.customname) = "LastCommitID"];
 }
 
-// Completions holds search query completions.
-message Completions {
-	// TokenCompletions are suggested completions for the token at the raw query's
-	// InsertionPoint.
-	repeated PBToken token_completions = 1 [(gogoproto.nullable) = false];
-
-	// ResolvedTokens is the resolution of the original query's tokens used to produce
-	// the completions. It is useful for debugging.
-	repeated PBToken resolved_tokens = 2 [(gogoproto.nullable) = false];
-
-	repeated TokenError resolve_errors = 3 [(gogoproto.nullable) = false];
-	bool resolution_fatal = 4;
-}
-
 // Def is a code def returned by the Sourcegraph API.
 message Def {
 	graph.Def def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -2318,51 +2304,6 @@ message TextSearchOptions {
 	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
-// Deprecated.
-message SearchOptions {
-	string query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
-	bool defs = 2;
-	bool repos = 3;
-	bool people = 4;
-	bool tree = 5;
-	ListOptions list_options = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-}
-
-// Deprecated.
-message SearchResults {
-	repeated Def defs = 1;
-	repeated Person people = 2;
-	repeated Repo repos = 3;
-	repeated RepoTreeSearchResult tree = 4;
-
-	// RawQuery is the raw query passed to search.
-	RawQuery raw_query = 5 [(gogoproto.nullable) = false];
-
-	// Tokens are the unresolved tokens.
-	repeated PBToken tokens = 6 [(gogoproto.nullable) = false];
-
-	// Plan is the query plan used to fetch the results.
-	Plan plan = 7;
-
-	// ResolvedTokens holds the resolved tokens from the original query string.
-	repeated PBToken resolved_tokens = 8 [(gogoproto.nullable) = false];
-
-	repeated TokenError resolve_errors = 9 [(gogoproto.nullable) = false];
-
-	// Tips are helpful tips for the user about their query. They are not errors per
-	// se, but they use the TokenError type because it allows us to associate a message
-	// with a particular token (and JSON de/serialize that).
-	repeated TokenError tips = 10 [(gogoproto.nullable) = false];
-
-	// Canceled is true if the query was canceled. More information about how to
-	// correct the issue can be found in the ResolveErrors and Tips.
-	bool canceled = 11;
-}
-
-message SuggestionList {
-	repeated Suggestion suggestions = 1;
-}
-
 // SourceCode contains a snippet of code with linked and classed tokens, along with
 // other information about the contents.
 //
@@ -2618,14 +2559,6 @@ service RepoTree {
 // SearchService communicates with the search-related endpoints in the Sourcegraph
 // API.
 service Search {
-	// Search searches the full index.
-	// Deprecated: use one of the more specific search methods below.
-	rpc Search(SearchOptions) returns (SearchResults) {
-		option (google.api.http) = {
-			post: "/search"
-		};
-	};
-
 	// SearchTokens searches the index of tokens.
 	rpc SearchTokens(TokenSearchOptions) returns (DefList) {
 		option (google.api.http) = {
@@ -2637,22 +2570,6 @@ service Search {
 	rpc SearchText(TextSearchOptions) returns (VCSSearchResultList) {
 		option (google.api.http) = {
 			post: "/search/text"
-		};
-	};
-
-	// Complete completes the token at the RawQuery's InsertionPoint.
-	rpc Complete(RawQuery) returns (Completions) {
-		option (google.api.http) = {
-			post: "/search/complete"
-		};
-	};
-
-	// Suggest suggests queries given an existing query. It can be called with an empty
-	// query to get example queries that pertain to the current user's repositories,
-	// orgs, etc.
-	rpc Suggest(RawQuery) returns (SuggestionList) {
-		option (google.api.http) = {
-			get: "/search/suggest"
 		};
 	};
 }
@@ -2687,126 +2604,6 @@ message FileToken {
 	string path = 1;
 	vcsclient.TreeEntry entry = 2;
 }
-
-// A Plan is a query plan that fetches the data necessary to satisfy (and provide
-// autocomplete suggestions for) a query.
-message Plan {
-	RepoListOptions repos = 1;
-	DefListOptions defs = 2;
-	UsersListOptions users = 3;
-	RepoTreeSearchOptions tree = 4;
-
-	// TreeRepoRevs constrains the Tree search results to a set of repository revisions
-	// (given by their URIs plus an optional "@" and a revision specifier). For
-	// example, "repo.com/foo@revspec".
-	//
-	// TODO(sqs): gorilla/schema does not respect ",comma" and it has no similar
-	// option, so specifying multiple repo revs here does NOT work.
-	repeated string tree_repo_revs = 5 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
-}
-
-// A RawQuery is a raw search query. To obtain the results for the query, it must
-// be tokenized, parsed, resolved, planned, etc.
-message RawQuery {
-	// Text is the raw query string from the client.
-	string text = 1;
-
-	// InsertionPoint is the 0-indexed character offset of the text insertion cursor on
-	// the client.
-	int32 insertion_point = 2;
-}
-
-// A RepoToken represents a repository, although it does not necessarily uniquely
-// identify the repository. It consists of any number of slash-separated path
-// components, such as "a/b" or "github.com/foo/bar".
-message RepoToken {
-	string uri = 1 [(gogoproto.customname) = "URI"];
-	Repo repo = 2;
-}
-
-// A ResolvedQuery is a query that has been parsed and resolved so that each token
-// is given an unambiguous meaning.
-message ResolvedQuery {
-	// Tokens are resolved tokens, each of whose meaning is unambiguous.
-	repeated PBToken tokens = 1 [(gogoproto.nullable) = false];
-}
-
-// A RevToken represents a specific revision (either a revspec or a commit ID) of a
-// repository (which must be specified by a previous RepoToken in the query).
-message RevToken {
-	// Rev is either a revspec or commit ID
-	string rev = 1;
-
-	vcs.Commit commit = 2;
-}
-
-// A Suggestion is a possible completion of a query (returned by Suggest method).
-// It does not attempt to "complete" a query but rather indicate to the user what
-// types of queries are possible.
-message Suggestion {
-	// Query is a suggested query related to the original query.
-	repeated PBToken query = 1 [(gogoproto.nullable) = false];
-
-	// QueryString is what the user needs to enter into the search field to search
-	// using this suggested query.
-	string query_string = 2;
-
-	// Description is the human-readable description of Query (usually generated by
-	// calling the Describe func).
-	string description = 3;
-}
-
-// A UnitToken represents a source unit in a repository.
-message UnitToken {
-	// UnitType is the type of the source unit (e.g., GoPackage).
-	string unit_type = 1;
-
-	// Name is the name of the source unit (e.g., mypkg).
-	string name = 2;
-
-	unit.RepoSourceUnit unit = 3;
-}
-
-// A UserToken represents a user or org, although it does not necessarily uniquely
-// identify one. It consists of the string "@" followed by a full or partial
-// user/org login.
-message UserToken {
-	string login = 1;
-	User user = 2;
-}
-
-// A TokenError is an error about a specific token.
-message TokenError {
-	// Index is the 1-indexed index of the token that caused the error (0 means not
-	// associated with any particular token).
-	//
-	// NOTE: Index is 1-indexed (not 0-indexed) because some TokenErrors don't pertain
-	// to a token, and it's misleading if the Index in the JSON is 0 (which could mean
-	// that it pertains to the 1st token if index was 0-indexed).
-	int32 index = 1;
-
-	PBToken token = 2;
-	string message = 3;
-}
-
-// A PBToken is a protobuf wrapper (hence the prefix "PB") for a
-// search token. Exactly one field must be non-empty.
-message PBToken {
-	// TODO(sqs!nodb-ctx): how to get protobuf unions to work?
-	//
-	// option (gogoproto.onlyone) = true;
-
-	oneof token {
-		string term = 1;
-		string any_token = 2;
-		RepoToken repo_token = 3;
-		RevToken rev_token = 4;
-		UnitToken unit_token = 5;
-		FileToken file_token = 6;
-		UserToken user_token = 7;
-	}
-}
-
 // Meta provides meta-information about Sourcegraph.
 service Meta {
 	// Status returns status information from the server's point of

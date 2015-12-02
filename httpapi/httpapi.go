@@ -56,9 +56,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoBuildsCreate).Handler(handler(serveRepoBuildsCreate))
 	m.Get(apirouter.RepoTags).Handler(handler(serveRepoTags))
 	m.Get(apirouter.Repos).Handler(handler(serveRepos))
-	m.Get(apirouter.Search).Handler(handler(serveSearch))
-	m.Get(apirouter.SearchComplete).Handler(handler(serveSearchComplete))
-	m.Get(apirouter.SearchSuggestions).Handler(handler(serveSearchSuggestions))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
