@@ -9,3 +9,10 @@ package sourcegraph
 //go:generate go generate ./mock
 
 //go:generate go run ../../remove_protobuf_json_snake_case_tags.go -w .
+
+// The pbtypes package selector is emitted as pbtypes1 when more than
+// one pbtypes type is used. Fix this up so that goimports works.
+//
+//go:generate go run gen/goreplace.go -from "pbtypes1" -to "pbtypes" cached_grpc.pb.go mock/sourcegraph.pb_mock.go
+
+//go:generate goimports -w cached_grpc.pb.go mock/sourcegraph.pb_mock.go
