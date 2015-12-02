@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 
 	"golang.org/x/net/context"
@@ -101,6 +102,10 @@ func parseJIRAIssues(body string) []string {
 func postJIRARemoteLink(issue string, linkURL string, title string, resolved bool) error {
 	domain := flags.JiraURL
 	auth := flags.JiraCredentials
+	if auth == "" {
+		auth = os.Getenv("SG_JIRA_CREDENTIALS")
+	}
+
 	if domain == "" || auth == "" {
 		return errors.New("JIRA URL and credentials not configured")
 	}
