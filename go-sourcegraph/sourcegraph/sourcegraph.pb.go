@@ -120,7 +120,6 @@ It has these top-level messages:
 	AccessTokenResponse
 	AuthInfo
 	AuthorshipInfo
-	Completions
 	Def
 	DefAuthor
 	DefAuthorship
@@ -178,9 +177,6 @@ It has these top-level messages:
 	VCSSearchResultList
 	TokenSearchOptions
 	TextSearchOptions
-	SearchOptions
-	SearchResults
-	SuggestionList
 	SourceCode
 	SourceCodeLine
 	SourceCodeToken
@@ -194,16 +190,6 @@ It has these top-level messages:
 	DefClientList
 	Checklist
 	FileToken
-	Plan
-	RawQuery
-	RepoToken
-	ResolvedQuery
-	RevToken
-	Suggestion
-	UnitToken
-	UserToken
-	TokenError
-	PBToken
 	ServerStatus
 	ServerConfig
 	ServerPubKey
@@ -1984,22 +1970,6 @@ func (m *AuthorshipInfo) Reset()         { *m = AuthorshipInfo{} }
 func (m *AuthorshipInfo) String() string { return proto.CompactTextString(m) }
 func (*AuthorshipInfo) ProtoMessage()    {}
 
-// Completions holds search query completions.
-type Completions struct {
-	// TokenCompletions are suggested completions for the token at the raw query's
-	// InsertionPoint.
-	TokenCompletions []PBToken `protobuf:"bytes,1,rep,name=token_completions" `
-	// ResolvedTokens is the resolution of the original query's tokens used to produce
-	// the completions. It is useful for debugging.
-	ResolvedTokens  []PBToken    `protobuf:"bytes,2,rep,name=resolved_tokens" `
-	ResolveErrors   []TokenError `protobuf:"bytes,3,rep,name=resolve_errors" `
-	ResolutionFatal bool         `protobuf:"varint,4,opt,name=resolution_fatal,proto3" json:",omitempty"`
-}
-
-func (m *Completions) Reset()         { *m = Completions{} }
-func (m *Completions) String() string { return proto.CompactTextString(m) }
-func (*Completions) ProtoMessage()    {}
-
 // Def is a code def returned by the Sourcegraph API.
 type Def struct {
 	graph.Def  `protobuf:"bytes,1,opt,name=def,embedded=def" json:""`
@@ -2693,56 +2663,6 @@ func (m *TextSearchOptions) Reset()         { *m = TextSearchOptions{} }
 func (m *TextSearchOptions) String() string { return proto.CompactTextString(m) }
 func (*TextSearchOptions) ProtoMessage()    {}
 
-// Deprecated.
-type SearchOptions struct {
-	Query       string `protobuf:"bytes,1,opt,name=query,proto3" json:",omitempty" url:"q" schema:"q"`
-	Defs        bool   `protobuf:"varint,2,opt,name=defs,proto3" json:",omitempty"`
-	Repos       bool   `protobuf:"varint,3,opt,name=repos,proto3" json:",omitempty"`
-	People      bool   `protobuf:"varint,4,opt,name=people,proto3" json:",omitempty"`
-	Tree        bool   `protobuf:"varint,5,opt,name=tree,proto3" json:",omitempty"`
-	ListOptions `protobuf:"bytes,6,opt,name=list_options,embedded=list_options" `
-}
-
-func (m *SearchOptions) Reset()         { *m = SearchOptions{} }
-func (m *SearchOptions) String() string { return proto.CompactTextString(m) }
-func (*SearchOptions) ProtoMessage()    {}
-
-// Deprecated.
-type SearchResults struct {
-	Defs   []*Def                  `protobuf:"bytes,1,rep,name=defs" json:",omitempty"`
-	People []*Person               `protobuf:"bytes,2,rep,name=people" json:",omitempty"`
-	Repos  []*Repo                 `protobuf:"bytes,3,rep,name=repos" json:",omitempty"`
-	Tree   []*RepoTreeSearchResult `protobuf:"bytes,4,rep,name=tree" json:",omitempty"`
-	// RawQuery is the raw query passed to search.
-	RawQuery RawQuery `protobuf:"bytes,5,opt,name=raw_query" `
-	// Tokens are the unresolved tokens.
-	Tokens []PBToken `protobuf:"bytes,6,rep,name=tokens" `
-	// Plan is the query plan used to fetch the results.
-	Plan *Plan `protobuf:"bytes,7,opt,name=plan" json:",omitempty"`
-	// ResolvedTokens holds the resolved tokens from the original query string.
-	ResolvedTokens []PBToken    `protobuf:"bytes,8,rep,name=resolved_tokens" `
-	ResolveErrors  []TokenError `protobuf:"bytes,9,rep,name=resolve_errors" `
-	// Tips are helpful tips for the user about their query. They are not errors per
-	// se, but they use the TokenError type because it allows us to associate a message
-	// with a particular token (and JSON de/serialize that).
-	Tips []TokenError `protobuf:"bytes,10,rep,name=tips" `
-	// Canceled is true if the query was canceled. More information about how to
-	// correct the issue can be found in the ResolveErrors and Tips.
-	Canceled bool `protobuf:"varint,11,opt,name=canceled,proto3" json:",omitempty"`
-}
-
-func (m *SearchResults) Reset()         { *m = SearchResults{} }
-func (m *SearchResults) String() string { return proto.CompactTextString(m) }
-func (*SearchResults) ProtoMessage()    {}
-
-type SuggestionList struct {
-	Suggestions []*Suggestion `protobuf:"bytes,1,rep,name=suggestions" json:",omitempty"`
-}
-
-func (m *SuggestionList) Reset()         { *m = SuggestionList{} }
-func (m *SuggestionList) String() string { return proto.CompactTextString(m) }
-func (*SuggestionList) ProtoMessage()    {}
-
 // SourceCode contains a snippet of code with linked and classed tokens, along with
 // other information about the contents.
 //
@@ -2916,360 +2836,6 @@ type FileToken struct {
 func (m *FileToken) Reset()         { *m = FileToken{} }
 func (m *FileToken) String() string { return proto.CompactTextString(m) }
 func (*FileToken) ProtoMessage()    {}
-
-// A Plan is a query plan that fetches the data necessary to satisfy (and provide
-// autocomplete suggestions for) a query.
-type Plan struct {
-	Repos *RepoListOptions       `protobuf:"bytes,1,opt,name=repos" json:",omitempty"`
-	Defs  *DefListOptions        `protobuf:"bytes,2,opt,name=defs" json:",omitempty"`
-	Users *UsersListOptions      `protobuf:"bytes,3,opt,name=users" json:",omitempty"`
-	Tree  *RepoTreeSearchOptions `protobuf:"bytes,4,opt,name=tree" json:",omitempty"`
-	// TreeRepoRevs constrains the Tree search results to a set of repository revisions
-	// (given by their URIs plus an optional "@" and a revision specifier). For
-	// example, "repo.com/foo@revspec".
-	//
-	// TODO(sqs): gorilla/schema does not respect ",comma" and it has no similar
-	// option, so specifying multiple repo revs here does NOT work.
-	TreeRepoRevs []string `protobuf:"bytes,5,rep,name=tree_repo_revs" json:",omitempty" url:",omitempty,comma"`
-}
-
-func (m *Plan) Reset()         { *m = Plan{} }
-func (m *Plan) String() string { return proto.CompactTextString(m) }
-func (*Plan) ProtoMessage()    {}
-
-// A RawQuery is a raw search query. To obtain the results for the query, it must
-// be tokenized, parsed, resolved, planned, etc.
-type RawQuery struct {
-	// Text is the raw query string from the client.
-	Text string `protobuf:"bytes,1,opt,name=text,proto3" json:",omitempty"`
-	// InsertionPoint is the 0-indexed character offset of the text insertion cursor on
-	// the client.
-	InsertionPoint int32 `protobuf:"varint,2,opt,name=insertion_point,proto3" json:",omitempty"`
-}
-
-func (m *RawQuery) Reset()         { *m = RawQuery{} }
-func (m *RawQuery) String() string { return proto.CompactTextString(m) }
-func (*RawQuery) ProtoMessage()    {}
-
-// A RepoToken represents a repository, although it does not necessarily uniquely
-// identify the repository. It consists of any number of slash-separated path
-// components, such as "a/b" or "github.com/foo/bar".
-type RepoToken struct {
-	URI  string `protobuf:"bytes,1,opt,name=uri,proto3" json:",omitempty"`
-	Repo *Repo  `protobuf:"bytes,2,opt,name=repo" json:",omitempty"`
-}
-
-func (m *RepoToken) Reset()         { *m = RepoToken{} }
-func (m *RepoToken) String() string { return proto.CompactTextString(m) }
-func (*RepoToken) ProtoMessage()    {}
-
-// A ResolvedQuery is a query that has been parsed and resolved so that each token
-// is given an unambiguous meaning.
-type ResolvedQuery struct {
-	// Tokens are resolved tokens, each of whose meaning is unambiguous.
-	Tokens []PBToken `protobuf:"bytes,1,rep,name=tokens" `
-}
-
-func (m *ResolvedQuery) Reset()         { *m = ResolvedQuery{} }
-func (m *ResolvedQuery) String() string { return proto.CompactTextString(m) }
-func (*ResolvedQuery) ProtoMessage()    {}
-
-// A RevToken represents a specific revision (either a revspec or a commit ID) of a
-// repository (which must be specified by a previous RepoToken in the query).
-type RevToken struct {
-	// Rev is either a revspec or commit ID
-	Rev    string      `protobuf:"bytes,1,opt,name=rev,proto3" json:",omitempty"`
-	Commit *vcs.Commit `protobuf:"bytes,2,opt,name=commit" json:",omitempty"`
-}
-
-func (m *RevToken) Reset()         { *m = RevToken{} }
-func (m *RevToken) String() string { return proto.CompactTextString(m) }
-func (*RevToken) ProtoMessage()    {}
-
-// A Suggestion is a possible completion of a query (returned by Suggest method).
-// It does not attempt to "complete" a query but rather indicate to the user what
-// types of queries are possible.
-type Suggestion struct {
-	// Query is a suggested query related to the original query.
-	Query []PBToken `protobuf:"bytes,1,rep,name=query" `
-	// QueryString is what the user needs to enter into the search field to search
-	// using this suggested query.
-	QueryString string `protobuf:"bytes,2,opt,name=query_string,proto3" json:",omitempty"`
-	// Description is the human-readable description of Query (usually generated by
-	// calling the Describe func).
-	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:",omitempty"`
-}
-
-func (m *Suggestion) Reset()         { *m = Suggestion{} }
-func (m *Suggestion) String() string { return proto.CompactTextString(m) }
-func (*Suggestion) ProtoMessage()    {}
-
-// A UnitToken represents a source unit in a repository.
-type UnitToken struct {
-	// UnitType is the type of the source unit (e.g., GoPackage).
-	UnitType string `protobuf:"bytes,1,opt,name=unit_type,proto3" json:",omitempty"`
-	// Name is the name of the source unit (e.g., mypkg).
-	Name string               `protobuf:"bytes,2,opt,name=name,proto3" json:",omitempty"`
-	Unit *unit.RepoSourceUnit `protobuf:"bytes,3,opt,name=unit" json:",omitempty"`
-}
-
-func (m *UnitToken) Reset()         { *m = UnitToken{} }
-func (m *UnitToken) String() string { return proto.CompactTextString(m) }
-func (*UnitToken) ProtoMessage()    {}
-
-// A UserToken represents a user or org, although it does not necessarily uniquely
-// identify one. It consists of the string "@" followed by a full or partial
-// user/org login.
-type UserToken struct {
-	Login string `protobuf:"bytes,1,opt,name=login,proto3" json:",omitempty"`
-	User  *User  `protobuf:"bytes,2,opt,name=user" json:",omitempty"`
-}
-
-func (m *UserToken) Reset()         { *m = UserToken{} }
-func (m *UserToken) String() string { return proto.CompactTextString(m) }
-func (*UserToken) ProtoMessage()    {}
-
-// A TokenError is an error about a specific token.
-type TokenError struct {
-	// Index is the 1-indexed index of the token that caused the error (0 means not
-	// associated with any particular token).
-	//
-	// NOTE: Index is 1-indexed (not 0-indexed) because some TokenErrors don't pertain
-	// to a token, and it's misleading if the Index in the JSON is 0 (which could mean
-	// that it pertains to the 1st token if index was 0-indexed).
-	Index   int32    `protobuf:"varint,1,opt,name=index,proto3" json:",omitempty"`
-	Token   *PBToken `protobuf:"bytes,2,opt,name=token" json:",omitempty"`
-	Message string   `protobuf:"bytes,3,opt,name=message,proto3" json:",omitempty"`
-}
-
-func (m *TokenError) Reset()         { *m = TokenError{} }
-func (m *TokenError) String() string { return proto.CompactTextString(m) }
-func (*TokenError) ProtoMessage()    {}
-
-// A PBToken is a protobuf wrapper (hence the prefix "PB") for a
-// search token. Exactly one field must be non-empty.
-type PBToken struct {
-	// Types that are valid to be assigned to Token:
-	//	*PBToken_Term
-	//	*PBToken_AnyToken
-	//	*PBToken_RepoToken
-	//	*PBToken_RevToken
-	//	*PBToken_UnitToken
-	//	*PBToken_FileToken
-	//	*PBToken_UserToken
-	Token isPBToken_Token `protobuf_oneof:"token"`
-}
-
-func (m *PBToken) Reset()         { *m = PBToken{} }
-func (m *PBToken) String() string { return proto.CompactTextString(m) }
-func (*PBToken) ProtoMessage()    {}
-
-type isPBToken_Token interface {
-	isPBToken_Token()
-}
-
-type PBToken_Term struct {
-	Term string `protobuf:"bytes,1,opt,name=term,proto3,oneof"`
-}
-type PBToken_AnyToken struct {
-	AnyToken string `protobuf:"bytes,2,opt,name=any_token,proto3,oneof"`
-}
-type PBToken_RepoToken struct {
-	RepoToken *RepoToken `protobuf:"bytes,3,opt,name=repo_token,oneof"`
-}
-type PBToken_RevToken struct {
-	RevToken *RevToken `protobuf:"bytes,4,opt,name=rev_token,oneof"`
-}
-type PBToken_UnitToken struct {
-	UnitToken *UnitToken `protobuf:"bytes,5,opt,name=unit_token,oneof"`
-}
-type PBToken_FileToken struct {
-	FileToken *FileToken `protobuf:"bytes,6,opt,name=file_token,oneof"`
-}
-type PBToken_UserToken struct {
-	UserToken *UserToken `protobuf:"bytes,7,opt,name=user_token,oneof"`
-}
-
-func (*PBToken_Term) isPBToken_Token()      {}
-func (*PBToken_AnyToken) isPBToken_Token()  {}
-func (*PBToken_RepoToken) isPBToken_Token() {}
-func (*PBToken_RevToken) isPBToken_Token()  {}
-func (*PBToken_UnitToken) isPBToken_Token() {}
-func (*PBToken_FileToken) isPBToken_Token() {}
-func (*PBToken_UserToken) isPBToken_Token() {}
-
-func (m *PBToken) GetToken() isPBToken_Token {
-	if m != nil {
-		return m.Token
-	}
-	return nil
-}
-
-func (m *PBToken) GetTerm() string {
-	if x, ok := m.GetToken().(*PBToken_Term); ok {
-		return x.Term
-	}
-	return ""
-}
-
-func (m *PBToken) GetAnyToken() string {
-	if x, ok := m.GetToken().(*PBToken_AnyToken); ok {
-		return x.AnyToken
-	}
-	return ""
-}
-
-func (m *PBToken) GetRepoToken() *RepoToken {
-	if x, ok := m.GetToken().(*PBToken_RepoToken); ok {
-		return x.RepoToken
-	}
-	return nil
-}
-
-func (m *PBToken) GetRevToken() *RevToken {
-	if x, ok := m.GetToken().(*PBToken_RevToken); ok {
-		return x.RevToken
-	}
-	return nil
-}
-
-func (m *PBToken) GetUnitToken() *UnitToken {
-	if x, ok := m.GetToken().(*PBToken_UnitToken); ok {
-		return x.UnitToken
-	}
-	return nil
-}
-
-func (m *PBToken) GetFileToken() *FileToken {
-	if x, ok := m.GetToken().(*PBToken_FileToken); ok {
-		return x.FileToken
-	}
-	return nil
-}
-
-func (m *PBToken) GetUserToken() *UserToken {
-	if x, ok := m.GetToken().(*PBToken_UserToken); ok {
-		return x.UserToken
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*PBToken) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _PBToken_OneofMarshaler, _PBToken_OneofUnmarshaler, []interface{}{
-		(*PBToken_Term)(nil),
-		(*PBToken_AnyToken)(nil),
-		(*PBToken_RepoToken)(nil),
-		(*PBToken_RevToken)(nil),
-		(*PBToken_UnitToken)(nil),
-		(*PBToken_FileToken)(nil),
-		(*PBToken_UserToken)(nil),
-	}
-}
-
-func _PBToken_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*PBToken)
-	// token
-	switch x := m.Token.(type) {
-	case *PBToken_Term:
-		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
-		_ = b.EncodeStringBytes(x.Term)
-	case *PBToken_AnyToken:
-		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
-		_ = b.EncodeStringBytes(x.AnyToken)
-	case *PBToken_RepoToken:
-		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.RepoToken); err != nil {
-			return err
-		}
-	case *PBToken_RevToken:
-		_ = b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.RevToken); err != nil {
-			return err
-		}
-	case *PBToken_UnitToken:
-		_ = b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.UnitToken); err != nil {
-			return err
-		}
-	case *PBToken_FileToken:
-		_ = b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.FileToken); err != nil {
-			return err
-		}
-	case *PBToken_UserToken:
-		_ = b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.UserToken); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("PBToken.Token has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _PBToken_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*PBToken)
-	switch tag {
-	case 1: // token.term
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Token = &PBToken_Term{x}
-		return true, err
-	case 2: // token.any_token
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Token = &PBToken_AnyToken{x}
-		return true, err
-	case 3: // token.repo_token
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(RepoToken)
-		err := b.DecodeMessage(msg)
-		m.Token = &PBToken_RepoToken{msg}
-		return true, err
-	case 4: // token.rev_token
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(RevToken)
-		err := b.DecodeMessage(msg)
-		m.Token = &PBToken_RevToken{msg}
-		return true, err
-	case 5: // token.unit_token
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(UnitToken)
-		err := b.DecodeMessage(msg)
-		m.Token = &PBToken_UnitToken{msg}
-		return true, err
-	case 6: // token.file_token
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(FileToken)
-		err := b.DecodeMessage(msg)
-		m.Token = &PBToken_FileToken{msg}
-		return true, err
-	case 7: // token.user_token
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(UserToken)
-		err := b.DecodeMessage(msg)
-		m.Token = &PBToken_UserToken{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
 
 // ServerStatus describes the server's status.
 type ServerStatus struct {
@@ -6645,19 +6211,10 @@ var _RepoTree_serviceDesc = grpc.ServiceDesc{
 // Client API for Search service
 
 type SearchClient interface {
-	// Search searches the full index.
-	// Deprecated: use one of the more specific search methods below.
-	Search(ctx context.Context, in *SearchOptions, opts ...grpc.CallOption) (*SearchResults, error)
 	// SearchTokens searches the index of tokens.
 	SearchTokens(ctx context.Context, in *TokenSearchOptions, opts ...grpc.CallOption) (*DefList, error)
 	// SearchText searches the content of files in the repo tree.
 	SearchText(ctx context.Context, in *TextSearchOptions, opts ...grpc.CallOption) (*VCSSearchResultList, error)
-	// Complete completes the token at the RawQuery's InsertionPoint.
-	Complete(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*Completions, error)
-	// Suggest suggests queries given an existing query. It can be called with an empty
-	// query to get example queries that pertain to the current user's repositories,
-	// orgs, etc.
-	Suggest(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*SuggestionList, error)
 }
 
 type searchClient struct {
@@ -6666,15 +6223,6 @@ type searchClient struct {
 
 func NewSearchClient(cc *grpc.ClientConn) SearchClient {
 	return &searchClient{cc}
-}
-
-func (c *searchClient) Search(ctx context.Context, in *SearchOptions, opts ...grpc.CallOption) (*SearchResults, error) {
-	out := new(SearchResults)
-	err := grpc.Invoke(ctx, "/sourcegraph.Search/Search", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *searchClient) SearchTokens(ctx context.Context, in *TokenSearchOptions, opts ...grpc.CallOption) (*DefList, error) {
@@ -6695,56 +6243,17 @@ func (c *searchClient) SearchText(ctx context.Context, in *TextSearchOptions, op
 	return out, nil
 }
 
-func (c *searchClient) Complete(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*Completions, error) {
-	out := new(Completions)
-	err := grpc.Invoke(ctx, "/sourcegraph.Search/Complete", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *searchClient) Suggest(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*SuggestionList, error) {
-	out := new(SuggestionList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Search/Suggest", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Server API for Search service
 
 type SearchServer interface {
-	// Search searches the full index.
-	// Deprecated: use one of the more specific search methods below.
-	Search(context.Context, *SearchOptions) (*SearchResults, error)
 	// SearchTokens searches the index of tokens.
 	SearchTokens(context.Context, *TokenSearchOptions) (*DefList, error)
 	// SearchText searches the content of files in the repo tree.
 	SearchText(context.Context, *TextSearchOptions) (*VCSSearchResultList, error)
-	// Complete completes the token at the RawQuery's InsertionPoint.
-	Complete(context.Context, *RawQuery) (*Completions, error)
-	// Suggest suggests queries given an existing query. It can be called with an empty
-	// query to get example queries that pertain to the current user's repositories,
-	// orgs, etc.
-	Suggest(context.Context, *RawQuery) (*SuggestionList, error)
 }
 
 func RegisterSearchServer(s *grpc.Server, srv SearchServer) {
 	s.RegisterService(&_Search_serviceDesc, srv)
-}
-
-func _Search_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(SearchOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(SearchServer).Search(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func _Search_SearchTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
@@ -6771,38 +6280,10 @@ func _Search_SearchText_Handler(srv interface{}, ctx context.Context, dec func(i
 	return out, nil
 }
 
-func _Search_Complete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(SearchServer).Complete(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Search_Suggest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(SearchServer).Suggest(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 var _Search_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Search",
 	HandlerType: (*SearchServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Search",
-			Handler:    _Search_Search_Handler,
-		},
 		{
 			MethodName: "SearchTokens",
 			Handler:    _Search_SearchTokens_Handler,
@@ -6810,14 +6291,6 @@ var _Search_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchText",
 			Handler:    _Search_SearchText_Handler,
-		},
-		{
-			MethodName: "Complete",
-			Handler:    _Search_Complete_Handler,
-		},
-		{
-			MethodName: "Suggest",
-			Handler:    _Search_Suggest_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

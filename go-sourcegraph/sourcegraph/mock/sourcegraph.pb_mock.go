@@ -1042,15 +1042,8 @@ func (s *RepoTreeServer) List(v0 context.Context, v1 *sourcegraph.RepoTreeListOp
 var _ sourcegraph.RepoTreeServer = (*RepoTreeServer)(nil)
 
 type SearchClient struct {
-	Search_       func(ctx context.Context, in *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error)
 	SearchTokens_ func(ctx context.Context, in *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error)
 	SearchText_   func(ctx context.Context, in *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error)
-	Complete_     func(ctx context.Context, in *sourcegraph.RawQuery) (*sourcegraph.Completions, error)
-	Suggest_      func(ctx context.Context, in *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error)
-}
-
-func (s *SearchClient) Search(ctx context.Context, in *sourcegraph.SearchOptions, opts ...grpc.CallOption) (*sourcegraph.SearchResults, error) {
-	return s.Search_(ctx, in)
 }
 
 func (s *SearchClient) SearchTokens(ctx context.Context, in *sourcegraph.TokenSearchOptions, opts ...grpc.CallOption) (*sourcegraph.DefList, error) {
@@ -1061,26 +1054,11 @@ func (s *SearchClient) SearchText(ctx context.Context, in *sourcegraph.TextSearc
 	return s.SearchText_(ctx, in)
 }
 
-func (s *SearchClient) Complete(ctx context.Context, in *sourcegraph.RawQuery, opts ...grpc.CallOption) (*sourcegraph.Completions, error) {
-	return s.Complete_(ctx, in)
-}
-
-func (s *SearchClient) Suggest(ctx context.Context, in *sourcegraph.RawQuery, opts ...grpc.CallOption) (*sourcegraph.SuggestionList, error) {
-	return s.Suggest_(ctx, in)
-}
-
 var _ sourcegraph.SearchClient = (*SearchClient)(nil)
 
 type SearchServer struct {
-	Search_       func(v0 context.Context, v1 *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error)
 	SearchTokens_ func(v0 context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error)
 	SearchText_   func(v0 context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error)
-	Complete_     func(v0 context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.Completions, error)
-	Suggest_      func(v0 context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error)
-}
-
-func (s *SearchServer) Search(v0 context.Context, v1 *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error) {
-	return s.Search_(v0, v1)
 }
 
 func (s *SearchServer) SearchTokens(v0 context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
@@ -1089,14 +1067,6 @@ func (s *SearchServer) SearchTokens(v0 context.Context, v1 *sourcegraph.TokenSea
 
 func (s *SearchServer) SearchText(v0 context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
 	return s.SearchText_(v0, v1)
-}
-
-func (s *SearchServer) Complete(v0 context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.Completions, error) {
-	return s.Complete_(v0, v1)
-}
-
-func (s *SearchServer) Suggest(v0 context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error) {
-	return s.Suggest_(v0, v1)
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)

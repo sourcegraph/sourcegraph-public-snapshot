@@ -2298,25 +2298,6 @@ type wrappedSearch struct {
 	c *auth.Config
 }
 
-func (s wrappedSearch) Search(ctx context.Context, param *sourcegraph.SearchOptions) (res *sourcegraph.SearchResults, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "Search", param)
-	defer func() {
-		trace.After(ctx, "Search", "Search", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Search.Search")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Search
-
-	res, err = target.Search(ctx, param)
-	return
-
-}
-
 func (s wrappedSearch) SearchTokens(ctx context.Context, param *sourcegraph.TokenSearchOptions) (res *sourcegraph.DefList, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Search", "SearchTokens", param)
@@ -2371,44 +2352,6 @@ func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSe
 	}
 
 	res, err = target.SearchText(ctx, param)
-	return
-
-}
-
-func (s wrappedSearch) Complete(ctx context.Context, param *sourcegraph.RawQuery) (res *sourcegraph.Completions, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "Complete", param)
-	defer func() {
-		trace.After(ctx, "Search", "Complete", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Search.Complete")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Search
-
-	res, err = target.Complete(ctx, param)
-	return
-
-}
-
-func (s wrappedSearch) Suggest(ctx context.Context, param *sourcegraph.RawQuery) (res *sourcegraph.SuggestionList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "Suggest", param)
-	defer func() {
-		trace.After(ctx, "Search", "Suggest", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Search.Suggest")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Search
-
-	res, err = target.Suggest(ctx, param)
 	return
 
 }

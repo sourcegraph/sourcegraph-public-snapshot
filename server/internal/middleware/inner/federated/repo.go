@@ -7,7 +7,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -39,7 +38,7 @@ func CustomDefsList(ctx context.Context, opt *sourcegraph.DefListOptions, s sour
 	// TODO(sqs): parallelize
 	var defList sourcegraph.DefList
 	for _, repoRev := range opt.RepoRevs {
-		repo, commitID := search.ParseRepoAndCommitID(repoRev)
+		repo, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
 		repoCtx, _, err := lookupRepo(ctx, &repo)
 		if err != nil {
 			return nil, err
