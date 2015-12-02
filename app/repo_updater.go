@@ -11,20 +11,22 @@ import (
 
 const (
 	repoUpdaterQueueDepth       = 10
-	repoUpdaterDebounceDuration = 10 * time.Second
+	repoUpdaterDebounceDuration = 3 * time.Second
 )
 
 // RepoUpdater is the app repo updater worker. Repo update requests can be enqueued, with debouncing taken care of.
 var RepoUpdater = &repoUpdater{
-	recent: make(map[sourcegraph.RepoSpec]time.Time),
-	queue:  make(chan *sourcegraph.Repo, repoUpdaterQueueDepth),
+	recent:            make(map[sourcegraph.RepoSpec]time.Time),
+	queue:             make(chan *sourcegraph.Repo, repoUpdaterQueueDepth),
+	disablePermaQueue: false,
 }
 
 type repoUpdater struct {
 	mu     sync.Mutex
 	recent map[sourcegraph.RepoSpec]time.Time // Map of recently scheduled repo updates. Value is last updated time.
 
-	queue chan *sourcegraph.Repo // Queue of scheduled repo updates.
+	queue             chan *sourcegraph.Repo // Queue of scheduled repo updates.
+	disablePermaQueue bool
 }
 
 // Start one background repo updater worker with the given context.
@@ -51,6 +53,10 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 
 	// Skip if recently updated.
 	if _, recent := ru.recent[repo.RepoSpec()]; recent {
+		// Enqueue the repo again at a later time if desired.
+		if !ru.disablePermaQueue {
+			go ru.enqueueLater(repo)
+		}
 		return
 	}
 
@@ -59,6 +65,11 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 		ru.recent[repo.RepoSpec()] = now
 	default:
 		// Skip since queue is full.
+	}
+
+	// Enqueue the repo again at a later time if desired.
+	if !ru.disablePermaQueue {
+		go ru.enqueueLater(repo)
 	}
 }
 
@@ -70,9 +81,18 @@ func (ru *repoUpdater) run(ctx context.Context) {
 			Repo: repo.RepoSpec(),
 		}
 
+		log15.Debug("repoUpdater: RefreshVCS:", "repo", repo.URI)
 		if _, err := apiclient.MirrorRepos.RefreshVCS(ctx, op); err != nil {
 			log15.Warn("repoUpdater: RefreshVCS:", "error", err)
 			continue
 		}
 	}
+}
+
+// enqueueLater is called to enqueue the repo automatically at a later time.
+func (ru *repoUpdater) enqueueLater(repo *sourcegraph.Repo) {
+	// Sleep a tiny bit longer than repoUpdaterDebounceDuration to avoid our
+	// enqueue being no-op / hitting "was recently updated".
+	time.Sleep(repoUpdaterDebounceDuration + (200 * time.Millisecond))
+	ru.enqueue(repo)
 }
