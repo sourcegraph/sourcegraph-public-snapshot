@@ -879,11 +879,9 @@ message TagList {
 }
 
 message MirrorReposRefreshVCSOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	reserved 2;
 
-	// This is no longer in use as the credentials for private repos
-	// will be fetched from the local token store by the gRPC method.
-	VCSCredentials OBSOLETE_credentials = 2;
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
 }
 
 // VCSCredentials for authentication during communication with VCS remotes.

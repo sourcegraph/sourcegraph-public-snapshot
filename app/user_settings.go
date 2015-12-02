@@ -353,7 +353,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 		authStore := ext.AuthStore{}
 		_, err := authStore.Get(ctx, host)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not fetch credentials for host %q: %v", host, err)
 		}
 
 		// Perform the following operations locally (non-federated) because it's a private repo.

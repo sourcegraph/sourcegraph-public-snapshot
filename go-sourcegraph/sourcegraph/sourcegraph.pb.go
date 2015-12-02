@@ -1069,9 +1069,6 @@ func (*TagList) ProtoMessage()    {}
 
 type MirrorReposRefreshVCSOp struct {
 	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
-	// This is no longer in use as the credentials for private repos
-	// will be fetched from the local token store by the gRPC method.
-	OBSOLETECredentials *VCSCredentials `protobuf:"bytes,2,opt,name=OBSOLETE_credentials" json:",omitempty"`
 }
 
 func (m *MirrorReposRefreshVCSOp) Reset()         { *m = MirrorReposRefreshVCSOp{} }
