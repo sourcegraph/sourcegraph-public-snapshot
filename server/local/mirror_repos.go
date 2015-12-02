@@ -2,13 +2,16 @@ package local
 
 import (
 	"os"
+	"os/exec"
 
 	"github.com/AaronO/go-git-http"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
@@ -24,6 +27,13 @@ var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}
 type mirrorRepos struct{}
 
 var _ sourcegraph.MirrorReposServer = (*mirrorRepos)(nil)
+
+var activeGitGC = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "git",
+	Name:      "active_gc",
+	Help:      `Total number of "git gc" commands that are currently running.`,
+})
 
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	r, err := store.ReposFromContext(ctx).Get(ctx, op.Repo.URI)
@@ -91,6 +101,16 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	updateResult, err := ru.UpdateEverything(remoteOpts)
 	if err != nil {
 		return err
+	}
+
+	if gitRepo, ok := vcsRepo.(*gitcmd.Repository); ok && len(updateResult.Changes) > 0 {
+		go func() {
+			activeGitGC.Inc()
+			defer activeGitGC.Dec()
+			gcCmd := exec.Command("git", "gc")
+			gcCmd.Dir = gitRepo.RepoDir()
+			gcCmd.Run() // ignore error
+		}()
 	}
 
 	forcePushes := make(map[string]bool)
