@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
@@ -76,7 +77,9 @@ func jiraOnChangesetUpdate(ctx context.Context, cs *sourcegraph.Changeset) {
 	}
 
 	for id := range issueIDs {
-		url := conf.AppURL(ctx).String() + urlToChangeset(ctx, cs.ID)
+		// Manually contrust the changeset URL (as opposed to using urlToChangeset)
+		// since BaseURI only works on request contexts.
+		url := fmt.Sprintf("%s%s/.changes/%d", conf.AppURL(ctx).String(), approuter.Rel.URLToRepo(cs.DeltaSpec.Base.RepoSpec.URI).String(), cs.ID)
 		title := fmt.Sprintf("Sourcegraph Changeset #%d", cs.ID)
 		postJIRARemoteLink(id, url, title, cs.ClosedAt != nil)
 	}
