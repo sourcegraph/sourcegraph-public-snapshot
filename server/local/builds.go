@@ -93,6 +93,19 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo.URI)
 	}
 
+	successful, err := s.List(ctx, &sourcegraph.BuildListOptions{
+		Repo:      repo.URI,
+		CommitID:  repoRevSpec.CommitID,
+		Succeeded: true,
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 1,
+		},
+	})
+
+	if err == nil && len(successful.Builds) > 0 {
+		return successful.Builds[0], nil
+	}
+
 	b := &sourcegraph.Build{
 		Repo:        repo.URI,
 		CommitID:    repoRevSpec.CommitID,
