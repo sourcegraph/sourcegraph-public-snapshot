@@ -80,7 +80,6 @@ func repoTemplates() error {
 		{"repo/tree/doc.html", "repo/commit.inc.html"},
 		{"repo/tree/share.html"},
 		{"repo/tree/dir.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
-		{"repo/search_results.html"},
 		{"repo/search.html"},
 		{"repo/frame.html", "error/common.html"},
 		{"repo/commit.html", "repo/commit.inc.html"},
