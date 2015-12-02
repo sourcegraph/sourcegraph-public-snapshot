@@ -48,7 +48,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"repoLabelForOwner": repoLabelForOwner,
 
 	"repoMetaDescription": repoMetaDescription,
-	"repoStat":            repoStat,
 
 	"defQualifiedName":            sourcecode.DefQualifiedName,
 	"defQualifiedNameAndType":     sourcecode.DefQualifiedNameAndType,
@@ -60,13 +59,9 @@ var TemplateFunctions = htmpl.FuncMap{
 	"buildClass":  buildClass,
 	"buildStatus": buildStatus,
 
-	"number":        number,
-	"pluralizeWord": pluralizeWord,
-	"pluralize":     pluralize,
-	"firstSentence": textutil.FirstSentence,
-	"firstChars":    textutil.FirstChars,
-	"add":           func(a, b int) int { return a + b },
-	"add32":         func(a, b int32) int32 { return a + b },
+	"pluralize": pluralize,
+	"add":       func(a, b int) int { return a + b },
+	"add32":     func(a, b int32) int32 { return a + b },
 	"min": func(a, b int) int {
 		if a < b {
 			return a
@@ -79,21 +74,6 @@ var TemplateFunctions = htmpl.FuncMap{
 			return "", err
 		}
 		return string(b), nil
-	},
-
-	// map creates a map of string keys and interface{} values given pairs. It can
-	// be used to invoke templates with multiple parameters:
-	//
-	//  {{template "foo" (map "A" $a "B" $b)}}
-	//
-	// There must be an even number of values (i.e. pairs), with each first item
-	// in the pair being a string, or else this function will panic.
-	"map": func(values ...interface{}) map[string]interface{} {
-		m := make(map[string]interface{}, len(values)/2)
-		for i := 0; i < len(values); i += 2 {
-			m[values[i].(string)] = values[i+1]
-		}
-		return m
 	},
 
 	"customLogo":         func() htmpl.HTML { return appconf.Flags.CustomLogo },
@@ -163,12 +143,6 @@ var TemplateFunctions = htmpl.FuncMap{
 
 		return "?" + values.Encode()
 	},
-	"effectivePage": func(p int) int {
-		if p == 0 {
-			return 1
-		}
-		return p
-	},
 
 	"ifTrue": func(cond bool, v interface{}) interface{} {
 		if cond {
@@ -181,7 +155,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"commitRestOfMessage": commitRestOfMessage,
 
 	"toString2":             func(v interface{}) string { return fmt.Sprintf("%s", v) },
-	"bytesToString":         func(v []byte) string { return string(v) },
 	"sanitizeHTML":          sanitizeHTML,
 	"sanitizeFormattedCode": sanitizeFormattedCode,
 	"textFromHTML":          textutil.TextFromHTML,
