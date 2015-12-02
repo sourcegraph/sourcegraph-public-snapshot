@@ -161,21 +161,28 @@ func (s *repos) listCommitsUncached(ctx context.Context, op *sourcegraph.ReposLi
 		}
 	}
 
-	n := uint(op.Opt.PerPageOrDefault())
+	n := uint(op.Opt.PerPageOrDefault()) + 1 // Request one additional commit to determine value of StreamResponse.HasMore.
 	if op.Opt.PerPage == -1 {
 		n = 0 // retrieve all commits
 	}
-	commits, total, err := vcsrepo.Commits(vcs.CommitsOptions{
-		Head: head,
-		Base: base,
-		N:    n,
-		Skip: uint(op.Opt.ListOptions.Offset()),
-		Path: op.Opt.Path,
+	commits, _, err := vcsrepo.Commits(vcs.CommitsOptions{
+		Head:    head,
+		Base:    base,
+		Skip:    uint(op.Opt.ListOptions.Offset()),
+		N:       n,
+		Path:    op.Opt.Path,
+		NoTotal: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	streamResponse := sourcegraph.StreamResponse{HasMore: total > uint(op.Opt.ListOptions.Offset()+op.Opt.PerPageOrDefault())}
+
+	// Determine if there are more results.
+	var streamResponse sourcegraph.StreamResponse
+	if n != 0 && uint(len(commits)) == n {
+		streamResponse.HasMore = true
+		commits = commits[:len(commits)-1] // Don't include the additional commit in results, it's from next page.
+	}
 
 	return &sourcegraph.CommitList{Commits: commits, StreamResponse: streamResponse}, nil
 }
