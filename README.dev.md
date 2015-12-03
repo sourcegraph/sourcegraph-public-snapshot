@@ -45,6 +45,16 @@ This will continuously compile your code and live reload your locally running
 instance of Sourcegraph. Navigate your browser to http://localhost:3080 to
 see if everything worked.
 
+`make serve-dev` may ask you to run ulimit to increase the maximum number
+of available file descriptors for a process. You can make this setting
+permanent for every shell session by adding the following line to your
+`.*rc` file (usually bash or zsh):
+
+```bash
+# increase max number of file descriptors for running a sourcegraph instance.
+ulimit -n 16384
+```
+
 ## Test
 
 To run all tests:
