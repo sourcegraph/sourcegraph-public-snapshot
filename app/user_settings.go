@@ -333,49 +333,57 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 			return err
 		}
 	case "enable":
-		repoURI := r.PostFormValue("RepoURI")
+		r.ParseForm() // required if you don't call r.FormValue()
+		repoURIs := r.Form["RepoURI[]"]
 
-		// Check repo doesn't already exist, skip if so.
-		_, err = apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
-		if grpc.Code(err) != codes.NotFound {
-			switch err {
-			case nil:
-				log15.Warn("repo", repoURI, "already exists")
-				http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsIntegrations, "User", cd.User.Login).String(), http.StatusSeeOther)
-				return nil
-			default:
-				return fmt.Errorf("problem getting repo %q: %v", repoURI, err)
+		var authStore *ext.AuthStore
+		for _, repoURI := range repoURIs {
+			// Check repo doesn't already exist, skip if so.
+			_, err = apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
+			if grpc.Code(err) != codes.NotFound {
+				switch err {
+				case nil:
+					log15.Warn("repo", repoURI, "already exists")
+					http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsIntegrations, "User", cd.User.Login).String(), http.StatusSeeOther)
+					return nil
+				default:
+					return fmt.Errorf("problem getting repo %q: %v", repoURI, err)
+				}
 			}
-		}
 
-		// Verify that credentials are available for this host.
-		host := util.RepoURIHost(repoURI)
-		authStore := ext.AuthStore{}
-		_, err := authStore.Get(ctx, host)
-		if err != nil {
-			return fmt.Errorf("could not fetch credentials for host %q: %v", host, err)
-		}
+			// Verify that credentials are available.
+			// We should only need to do this once for all repos
+			// (since we may assume they all have the same host).
+			if authStore == nil {
+				host := util.RepoURIHost(repoURI)
+				authStore = &ext.AuthStore{}
+				_, err := authStore.Get(ctx, host)
+				if err != nil {
+					return fmt.Errorf("could not fetch credentials for host %q: %v", host, err)
+				}
+			}
 
-		// Perform the following operations locally (non-federated) because it's a private repo.
-		_, err = apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-			URI:      repoURI,
-			VCS:      "git",
-			CloneURL: "https://" + repoURI + ".git",
-			Mirror:   true,
-			Private:  true,
-		})
-		if err != nil {
-			return err
-		}
+			// Perform the following operations locally (non-federated) because it's a private repo.
+			_, err = apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+				URI:      repoURI,
+				VCS:      "git",
+				CloneURL: "https://" + repoURI + ".git",
+				Mirror:   true,
+				Private:  true,
+			})
+			if err != nil {
+				return err
+			}
 
-		_, err = apiclient.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{
-			Repo: sourcegraph.RepoSpec{URI: repoURI},
-		})
-		if err != nil {
-			// If there was a problem, rollback to avoid leaving behind an invalid repo.
-			_, _ = apiclient.Repos.Delete(ctx, &sourcegraph.RepoSpec{URI: repoURI})
+			_, err = apiclient.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{
+				Repo: sourcegraph.RepoSpec{URI: repoURI},
+			})
+			if err != nil {
+				// If there was a problem, rollback to avoid leaving behind an invalid repo.
+				_, _ = apiclient.Repos.Delete(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 
-			return err
+				return err
+			}
 		}
 	}
 

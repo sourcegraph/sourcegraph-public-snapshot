@@ -32,34 +32,38 @@
 		{{if .PrivateRemoteRepos}}
 			<div class="repo-list">
 				<h3>Available Private GitHub Repositories</h3>
-				<table class="table repo-list">
-					{{$host := .Host}}
-					{{range $repo := .PrivateRemoteRepos}}
+				<form action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">
+					<table class="table repo-list">
+						{{$host := .Host}}
+						{{range $repo := .PrivateRemoteRepos}}
+							<tr>
+								<td>
+									{{if $repo.ExistsLocally}}
+										<a href="{{urlToRepo $repo.URI}}">{{trimPrefix $repo.URI $host}}</a>
+										<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
+									{{else}}
+										{{trimPrefix $repo.URI $host}}
+										<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
+									{{end}}
+								</td>
+								<td>
+									{{if $repo.ExistsLocally}}
+										<input type="checkbox" checked="true" disabled="true">
+									{{else}}
+										<input type="checkbox" name="RepoURI[]" value="{{$repo.URI}}" >
+									{{end}}
+								</td>
+							</tr>
+						{{end}}
 						<tr>
-							{{if $repo.ExistsLocally}}
-								<td>
-									<a href="{{urlToRepo $repo.URI}}">{{trimPrefix $repo.URI $host}}</a>
-									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
-								</td>
-								<td>
-									<button type="submit" class="btn disabled">Enable</button>
-								</td>
-							{{else}}
-								<td>
-									{{trimPrefix $repo.URI $host}}
-									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
-								</td>
-								<td>
-									<form class="form-inline" action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">
-										<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-										<input type="hidden" name="RepoURI" value="{{$repo.URI}}" />
-										<button type="submit" class="btn btn-success">Enable</button>
-									</form>
-								</td>
-							{{end}}
+							<td></td>
+							<td>
+								<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+								<button type="submit" class="btn btn-success">Submit</button>
+							</td>
 						</tr>
-					{{end}}
-				</table>
+					</table>
+				</form>
 			</div>
 		{{end}}
 	</div>
