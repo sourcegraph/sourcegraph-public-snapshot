@@ -243,7 +243,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveRepoSearchNext(w http.ResponseWriter, r *http.Request) error {
+func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
 	if err != nil {
 		return err
@@ -347,7 +347,7 @@ func showRepoRevSwitcher(routeName string) bool {
 		return true
 	}
 	switch routeName {
-	case router.Repo, router.RepoBadges, router.RepoSearch:
+	case router.Repo, router.RepoBadges:
 		return true
 	}
 	return false
