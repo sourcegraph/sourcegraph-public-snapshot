@@ -3,6 +3,7 @@
 		"blockBindings": true,
 		"classes": true,
 		"modules": true,
+		"forOf": true,
 	},
 	"rules": {
 		"no-undefined": 2,

@@ -1,0 +1,176 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "search-results row",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "col-md-10 col-md-offset-1",
+						"children": [
+							{
+								"type": "ul",
+								"props": {
+									"className": "nav nav-pills",
+									"children": [
+										{
+											"type": "li",
+											"key": "tokens",
+											"props": {
+												"children": [
+													{
+														"type": "a",
+														"props": {
+															"onClick": {
+																"dispatched": [
+																	{
+																		"$constructor": "SelectResultType",
+																		"type": "tokens"
+																	}
+																]
+															},
+															"children": [
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-asterisk"
+																	}
+																},
+																" Definitions ",
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "badge",
+																		"children": [
+																			{
+																				"type": "i",
+																				"props": {
+																					"className": "fa fa-circle-o-notch fa-spin"
+																				}
+																			}
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "li",
+											"key": "text",
+											"props": {
+												"className": "active",
+												"children": [
+													{
+														"type": "a",
+														"props": {
+															"onClick": {
+																"dispatched": [
+																	{
+																		"$constructor": "SelectResultType",
+																		"type": "text"
+																	}
+																]
+															},
+															"children": [
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-asterisk"
+																	}
+																},
+																" Text ",
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "badge",
+																		"children": [
+																			"42"
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "TextSearchResults",
+								"props": {
+									"repo": "aRepo",
+									"rev": "aRev",
+									"query": "foo",
+									"page": 1,
+									"resultData": {
+										"Total": 42
+									}
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "search-pagination",
+						"children": [
+							{
+								"type": "Pagination",
+								"props": {
+									"currentPage": 1,
+									"totalPages": 5,
+									"pageRange": 10,
+									"onPageChange": {
+										"dispatched": [
+											{
+												"$constructor": "SelectPage",
+												"page": {
+													"currentTarget": {
+														"href": "[currentTarget.href]"
+													},
+													"view": {
+														"scrollX": 11,
+														"scrollY": 22
+													},
+													"clientX": 10,
+													"clientY": 20
+												}
+											}
+										]
+									}
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantResults",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"type": "tokens",
+			"page": 1,
+			"perPage": 50,
+			"query": "foo"
+		},
+		{
+			"$constructor": "WantResults",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"type": "text",
+			"page": 1,
+			"perPage": 10,
+			"query": "foo"
+		}
+	]
+}

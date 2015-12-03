@@ -1,0 +1,12 @@
+{
+	"renderOutput": {
+		"type": "SearchResultsContainer",
+		"props": {
+			"repo": "github.com/gorilla/mux",
+			"rev": "master",
+			"query": "foo",
+			"type": "tokens",
+			"page": 1
+		}
+	}
+}

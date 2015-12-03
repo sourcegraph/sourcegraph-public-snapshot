@@ -1,0 +1,46 @@
+{
+	"renderOutput": {
+		"type": "form",
+		"props": {
+			"className": "navbar-form",
+			"onSubmit": {
+				"defaultPrevented": true,
+				"dispatched": []
+			},
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "form-group",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "input-group",
+									"children": [
+										{
+											"type": "input",
+											"ref": "queryInput",
+											"props": {
+												"className": "form-control search-input-next",
+												"name": "q",
+												"placeholder": "Search",
+												"defaultValue": "test"
+											}
+										},
+										{
+											"type": "span",
+											"props": {
+												"className": "input-group-addon"
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

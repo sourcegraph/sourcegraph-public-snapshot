@@ -1,0 +1,11 @@
+{
+	"renderOutput": {
+		"type": "p",
+		"props": {
+			"className": "summary",
+			"children": [
+				"No text results found for \"aQuery\""
+			]
+		}
+	}
+}

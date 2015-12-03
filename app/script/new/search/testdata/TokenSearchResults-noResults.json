@@ -1,0 +1,34 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "token-search-results",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "alert alert-info",
+						"children": [
+							{
+								"type": "i",
+								"props": {
+									"className": "fa fa-warning"
+								}
+							},
+							"Showing definition results from  commits behind latest. Newer results are shown when available."
+						]
+					}
+				},
+				{
+					"type": "p",
+					"props": {
+						"className": "summary",
+						"children": [
+							"No definition results found for \"aQuery\""
+						]
+					}
+				}
+			]
+		}
+	}
+}
