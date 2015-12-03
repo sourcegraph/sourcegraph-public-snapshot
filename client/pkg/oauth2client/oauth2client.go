@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/fed"
 )
@@ -39,12 +38,6 @@ func Config(ctx context.Context) (*oauth2.Config, error) {
 		return nil, ErrClientNotRegistered
 	}
 
-	// Client endpoint
-	receiveURL, err := router.Rel.URLToOrError(router.OAuth2ClientReceive)
-	if err != nil {
-		return nil, err
-	}
-
 	// Provider endpoints
 	authURL, err := router.Rel.URLToOrError(router.OAuth2ServerAuthorize)
 	if err != nil {
@@ -57,7 +50,6 @@ func Config(ctx context.Context) (*oauth2.Config, error) {
 			AuthURL:  fed.Config.RootURL().ResolveReference(authURL).String(),
 			TokenURL: TokenURL(),
 		},
-		RedirectURL: conf.AppURL(ctx).ResolveReference(receiveURL).String(),
 	}, nil
 }
 

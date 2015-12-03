@@ -5,11 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"os"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
@@ -100,34 +96,7 @@ func (c *regClientsListCmd) Execute(args []string) error {
 			if c.Detail {
 				printRegisteredClient(client)
 			} else {
-				users, err := cl.RegisteredClients.ListUserPermissions(cliCtx, &sourcegraph.RegisteredClientSpec{ID: client.ID})
-				if grpc.Code(err) == codes.PermissionDenied {
-					err = nil
-					users = &sourcegraph.UserPermissionsList{}
-				} else if err != nil {
-					return err
-				}
-
-				var host string
-				if len(client.RedirectURIs) > 0 {
-					url, err := url.Parse(client.RedirectURIs[0])
-					if err != nil {
-						host = "(invalid URL)"
-					} else {
-						host = url.Host
-					}
-				} else {
-					host = "(none)"
-				}
-
-				fmt.Printf("%- 25s   %d users   %s   %- 20s\n", host, len(users.UserPermissions), timeutil.TimeAgo(client.CreatedAt), client.ClientName)
-				for _, up := range users.UserPermissions {
-					u, err := cl.Users.Get(cliCtx, &sourcegraph.UserSpec{UID: up.UID})
-					if err != nil {
-						return err
-					}
-					fmt.Printf("\t%s (%s)\n", u.Login, accessString(up))
-				}
+				fmt.Printf("%- 48s   %- 20s\n", client.ID, timeutil.TimeAgo(client.CreatedAt))
 			}
 		}
 		if !clients.HasMore {

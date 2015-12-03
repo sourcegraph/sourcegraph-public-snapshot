@@ -124,15 +124,12 @@ will be labeled as *LoadBalancer Ingres* when running the following command:
 kubectl describe services/sourcegraph
 ```
 
-Visit the IP address in your browser. You should see the Sourcegraph UI
-display a warning with a **Wrong application URL** message.
+Visit the IP address in your browser. You are ready to use Sourcegraph!
 
 # Configure Sourcegraph
 
-To remove the error message and to customize your Sourcegraph instance
-some configuration is required.
-
-First, get the name of the Pod that Sourcegraph is running on:
+To configure your Sourcegraph server, first get the name of the Pod
+that Sourcegraph is running on:
 
 ```
 kubectl get pods
@@ -145,18 +142,7 @@ and edit your Sourcegraph configuration:
 kubectl exec <Pod Name> -i -t -- vi /etc/sourcegraph/config.ini
 ```
 
-There are several [configuration options](https://src.sourcegraph.com/sourcegraph/.docs/config/)
-but the one required to remove the error message is `AppURL`. Use the IP of your
-load balancer as `Endpoint`.
-
-**Note:** if you're setting up a domain to host Sourcegraph, point the A
-DNS record to the IP address above and set `Endpoint` below to the domain.
-
-```
-AppURL = http://<Endpoint>
-```
-
-Once you're done editing the configuration, restart the Sourcegraph instance
+After editing the configuration, restart the Sourcegraph instance
 by deleting the Pod:
 
 ```

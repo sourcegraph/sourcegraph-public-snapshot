@@ -1,6 +1,7 @@
 package accesscontrol
 
 import (
+	"errors"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -155,6 +156,8 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 }
 
 var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*sourcegraph.UserPermissions, error) {
+	return nil, errors.New("TODO(pararth): update to not rely on root server permissions")
+
 	// TODO: Cache UserPermissions to avoid making a call to root server for every
 	// write/admin operation.
 	rootCtx := fed.Config.NewRemoteContext(ctx)

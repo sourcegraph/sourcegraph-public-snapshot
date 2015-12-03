@@ -2620,13 +2620,6 @@ service Meta {
 			get: "/meta/config"
 		};
 	};
-
-	// PubKey returns the server's public key.
-	rpc PubKey(pbtypes.Void) returns (ServerPubKey) {
-		option (google.api.http) = {
-			get: "/meta/pub_key"
-		};
-	};
 }
 
 // ServerStatus describes the server's status.
@@ -2670,12 +2663,6 @@ message ServerConfig {
 	// AuthSource is which mode of authentication is set up on the
 	// server (local|oauth|ldap).
 	string auth_source = 10;
-}
-
-// ServerPubKey holds the server's public key.
-message ServerPubKey {
-	// Key contains the server's published public key.
-	string key = 1;
 }
 
 // A RegisteredClient is a registered API client.
@@ -2936,9 +2923,6 @@ message NotifyGenericEvent {
 
 	// EmailHTML, if present, will override the notification email body for this event.
 	string email_html = 11 [(gogoproto.customname) = "EmailHTML"];
-
-	// NoSlack turns off the Slack notification for this event.
-	bool no_slack = 12;
 
 	// NoEmail turns off the email notification for this event.
 	bool no_email = 13;

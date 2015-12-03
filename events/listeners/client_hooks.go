@@ -49,15 +49,18 @@ func notifyClientEvent(ctx context.Context, id events.EventID, payload events.Cl
 		return
 	}
 
+	if payload.Actor.Login == "" {
+		log15.Warn("ClientHook: ignoring event", "event", id, "error", "login not set in payload")
+		return
+	}
+
 	client, err := cl.RegisteredClients.Get(ctx, &sourcegraph.RegisteredClientSpec{ID: payload.ClientID})
 	if err != nil {
 		log15.Warn("ClientHook: could not fetch client info", "event", id, "payload", payload, "error", err)
 		return
 	}
 
-	userLogin := getUserLogin(cl, ctx, &payload.Actor)
 	var actionStr string
-
 	switch id {
 	case events.ClientRegisterEvent:
 		actionStr = "registered a new Sourcegraph"
@@ -70,17 +73,11 @@ func notifyClientEvent(ctx context.Context, id events.EventID, payload events.Cl
 		return
 	}
 
-	var appURL string
-	if len(client.RedirectURIs) > 0 {
-		appURL = strings.TrimSuffix(client.RedirectURIs[0], "/login/oauth/receive")
-	}
-
-	msg := fmt.Sprintf("*%s* (UID %v) %s: *%s* (%s)",
-		userLogin,
+	msg := fmt.Sprintf("%s: *%s* (UID %v) %s",
+		client.ClientNameOrDefault(),
+		payload.Actor.Login,
 		payload.Actor.UID,
 		actionStr,
-		client.ClientName,
-		appURL,
 	)
 	escapedClientID := url.QueryEscape(client.ID)
 

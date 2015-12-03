@@ -5,10 +5,8 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/local"
@@ -79,27 +77,4 @@ func lookupRepo(ctx context.Context, repo *string) (context.Context, discover.In
 func RepoContext(ctx context.Context, repo *string) (context.Context, error) {
 	ctx, _, err := lookupRepo(ctx, repo)
 	return ctx, err
-}
-
-// UserContext gets the context to use to perform operations on a
-// user. It is used in the codegenned federated method
-// implementations.
-func UserContext(ctx context.Context, user sourcegraph.UserSpec) (context.Context, error) {
-	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
-		return nil, nil
-	}
-	if user.Domain == "" {
-		if !fed.Config.IsRoot {
-			user.Domain = fed.Config.RootURL().Host
-		} else {
-			return nil, nil
-		}
-	}
-	// Communicate with the fed root. Assumes that the domain is
-	// the fed root, which is not necessarily true.
-	//
-	// TODO(sqs): Generalize this when we have true generalized
-	// federation.
-	ctx = fed.Config.NewRemoteContext(ctx)
-	return ctx, nil
 }

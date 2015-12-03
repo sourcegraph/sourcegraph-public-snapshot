@@ -1,9 +1,0 @@
-{{define "OAuth2Error"}}
-<strong>OAuth2 redirect URI misconfiguration</strong>
-
-<p>This site has registered OAuth2 redirect URIs with <tt>{{.RootHostname}}</tt>, but none of them match <tt>{{.RedirectURL}}</tt>. The server administrator must fix the issue before users can authenticate.</p>
-
-<hr>
-
-<p><em>Server administrators: see the docs for <a href="https://src.sourcegraph.com/sourcegraph/.docs/config/appurl-dns/" target="_blank">updating redirect URIs</a>.</em></p>
-{{end}}

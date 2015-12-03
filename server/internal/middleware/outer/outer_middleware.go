@@ -1563,35 +1563,6 @@ func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 	return rv, nil
 }
 
-func (s wrappedMeta) PubKey(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.MetaOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Meta")
-	}
-
-	rv, err := innerSvc.PubKey(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
-	return rv, nil
-}
-
 type wrappedMirrorRepos struct {
 	ctxFunc  ContextFunc
 	services svc.Services

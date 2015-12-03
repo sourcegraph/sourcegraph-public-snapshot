@@ -75,8 +75,9 @@ ID and secret, clients may provide a public key in JWKS form during
 which is used to authenticate the client in the future. Sourcegraph
 clients typically use their ID key's public key here.
 
-After they have registered their public key with the server, clients
-may present the server with a signed
+After they have registered their public key with the server (which
+happens automatically on first-run), clients may present the server
+with a signed
 [JWT bearer token](https://tools.ietf.org/html/draft-ietf-oauth-jwt-bearer-12)
 to obtain an access token.
 
@@ -117,15 +118,14 @@ authentication for a few reasons:
 
 A user account lives on the Sourcegraph server where the account was
 originally created (the "authorization server", in OAuth2
-terminology), typically Sourcegraph.com. Users may log into the
-authorization server directly (e.g., via HTML forms), and session
-credentials there are stored in cookies.
+terminology). Users may log into the authorization server directly
+(e.g., via HTML forms), and session credentials there are stored in
+cookies.
 
-Users also can authenticate their identity to Sourcegraph clients
-(such as their own Sourcegraph instance) using OAuth2. After the
-client receives the authorization code for the user from the
-authorization server, it authenticates using its client credentials to
-obtain the user's access token.
+Client applications also can authenticate as a user to a Sourcegraph
+server using OAuth2. After the client receives the authorization code
+for the user from the authorization server, it authenticates using its
+client credentials to obtain the user's access token.
 
 An access token encodes the user's UID and the client ID that the
 access token was generated for.
@@ -142,14 +142,15 @@ other API methods may be restricted to only logged-in users.
 
 To set up an environment that mimics the situation where there's a
 mothership and standalone Sourcegraph instances, follow these
-steps. The end result is that you can register user accounts, etc., on
-your demo mothership, and you can authenticate (via OAuth2) via the
-mothership to log into your demo standalone instance. This lets you
-test features that involve user federation or sending data to or
-authenticating via the mothership.
+steps. This lets you test features that involve federation, or sending
+data to the mothership.
 
 You'll need 2 Sourcegraph instances: the mothership and the local
-instance. To make OAuth2 work, they need to be on separate domains. So, first:
+instance. To make OAuth2 work, they need to be on separate
+domains. (Note: this is not strictly true since we no longer perform
+browser-based user authentication via the mothership, but that will be
+reenabled soon, so you're still recommended to use separate domains.)
+So, first:
 
 ```bash
 sudo sh -c 'echo 127.0.0.1 demo-mothership >> /etc/hosts'
@@ -171,35 +172,13 @@ still running):
 make serve-dev SERVEFLAGS='--fed.root-url=http://demo-mothership:13080'
 ```
 
-Go to http://localhost:3080 to view your standalone instance. Click
-Sign In in the top right, and you'll be asked to log in. If you
-haven't created an account on the demo mothership yet, create
-one.
+Go to http://localhost:3080 to view your standalone instance. Upon
+first run, it registers an OAuth2 client on the demo mothership. All
+subsequent API calls to the mothership are authenticated using its
+OAuth2 client credentials.
 
-Next, it asks you to register your new Sourcegraph server. Give it a
-name and click Continue.
-
-Then it'll ask you:
-
-```
-Authorize My OAuth2 client?
-The application at localhost:3080 requests:
-
-Your public user profile (username and company)
-You are logged in as sqs. Only proceed if you trust this application.
-```
-
-Click the Authorize button, and you are now logged into the standalone
-instance with your mothership user account, using an OAuth2 access
-token from the mothership that authenticates you to the mothership.
-
-The app session cookie encodes your mothership's OAuth2 access
-token. The standalone app and gRPC server treat it as an opaque
-value. They pass it along to the mothership untouched to authenticate
-you.
-
-In any code path on the mothership that's authenticated using an
-actor's OAuth2 access token, the IDKey is also available on the
+When the mothership is handling an API request from the standalone
+(client) instance, the ID of the client instance is available in the
 actor's ClientID field. This can be obtained using
 `auth.ActorFromContext(ctx)`. Note that this will not work in app
 (frontend app) contexts because the originator of the action there is

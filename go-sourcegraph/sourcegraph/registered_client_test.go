@@ -36,3 +36,29 @@ func TestRegisteredClientCredentials_TextMarshalerUnmarshaler(t *testing.T) {
 		}
 	}
 }
+
+func TestRegisteredClient_ClientNameOrDefault(t *testing.T) {
+	tests := []struct {
+		client *RegisteredClient
+		want   string
+	}{
+		{
+			client: &RegisteredClient{ClientName: "a"},
+			want:   "a",
+		},
+		{
+			client: &RegisteredClient{ID: "a"},
+			want:   "Client a",
+		},
+		{
+			client: &RegisteredClient{ID: "abcdefghijk"},
+			want:   "Client abcde",
+		},
+	}
+	for _, test := range tests {
+		got := test.client.ClientNameOrDefault()
+		if got != test.want {
+			t.Errorf("%v: got %q, want %q", test.client, got, test.want)
+		}
+	}
+}

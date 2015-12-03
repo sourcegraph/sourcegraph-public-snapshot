@@ -15,7 +15,6 @@ import (
 	"golang.org/x/oauth2"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -190,13 +189,6 @@ func parseToken(ctx context.Context, idKey *idkey.IDKey, tokStr string) (*jwt.To
 			return idKey.Public(), nil
 		}
 
-		if !fed.Config.IsRoot {
-			rootPubKey := getRootPublicKey(ctx, clientID)
-			if rootPubKey != nil {
-				return rootPubKey, nil
-			}
-		}
-
 		pubKey, err := getClientPublicKey(ctx, clientID)
 		if pubKey == nil {
 			innerErr = &PublicKeyUnavailableError{ID: clientID, Err: err}
@@ -236,14 +228,6 @@ func getClientPublicKey(ctx context.Context, clientID string) (crypto.PublicKey,
 		return nil, fmt.Errorf("parsing client ID %s JWKS public key: %s", clientID, err)
 	}
 	return pubKey, nil
-}
-
-func getRootPublicKey(ctx context.Context, clientID string) crypto.PublicKey {
-	rootKey := idkey.RootPubKey(ctx)
-	if rootKey != nil && rootKey.ID == clientID {
-		return rootKey.Key
-	}
-	return nil
 }
 
 func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor, error) {

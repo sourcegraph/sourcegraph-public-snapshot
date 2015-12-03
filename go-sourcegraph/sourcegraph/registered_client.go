@@ -4,11 +4,26 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"fmt"
 )
 
 // Spec returns c's RegisteredClientSpec.
 func (c *RegisteredClient) Spec() RegisteredClientSpec {
 	return RegisteredClientSpec{ID: c.ID}
+}
+
+// ClientNameOrDefault returns the client name, if non-empty, or else
+// "Client XYZ", where "XYZ" is a prefix of the client ID.
+func (c *RegisteredClient) ClientNameOrDefault() string {
+	if c.ClientName != "" {
+		return c.ClientName
+	}
+
+	abbrev := c.ID
+	if max := 5; len(abbrev) > max {
+		abbrev = abbrev[:5]
+	}
+	return fmt.Sprintf("Client %s", abbrev)
 }
 
 // MarshalText implements encoding.TextMarshaler.

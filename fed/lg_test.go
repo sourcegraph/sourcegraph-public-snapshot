@@ -3,7 +3,6 @@
 package fed_test
 
 import (
-	"fmt"
 	"net/url"
 	"testing"
 
@@ -48,8 +47,6 @@ func TestFederation(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer a2.Close()
-
-	ctx2 = a1.AsUID(ctx2, 1)
 
 	{
 		// Register #2 as a client of #1.
@@ -111,40 +108,12 @@ func testUserFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Contex
 		}
 	}
 
-	wantDomain := conf.AppURL(ctx1).Host
-
-	// Try to fetch the user from #2's API, both with *and* without an
-	// explicit domain specified.
 	{
-		// Without an explicit domain, it should fall back to the fed
-		// root -- because the user is not on #2.
-		user, err := a2.Client.Users.Get(ctx2, &sourcegraph.UserSpec{Login: "alice", Domain: ""})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// The returned user's Domain field should always be set.
-		want := sourcegraph.UserSpec{Login: "alice", Domain: wantDomain, UID: user.UID}
-		if user.Spec() != want {
-			t.Errorf("got user == %+v, want %+v", user.Spec(), want)
-		}
-	}
-	{
-		// With an explicit domain of "localhost", it should succeed,
-		// because that's where the user's account lives.
-		user, err := a2.Client.Users.Get(ctx2, &sourcegraph.UserSpec{Login: "alice", Domain: wantDomain})
-		if err != nil {
-			if grpc.Code(err) == codes.NotFound {
-				// To help debug, list all users that DO exist on #1.
-				listAllUsers(t, ctx1, fmt.Sprintf("server #1 (with domain %q)", wantDomain))
-			}
-			t.Fatal(err)
-		}
-
-		// The returned user's Domain field should always be set.
-		want := sourcegraph.UserSpec{Login: "alice", Domain: wantDomain, UID: user.UID}
-		if user.Spec() != want {
-			t.Errorf("got user == %+v, want %+v", user.Spec(), want)
+		// Without an explicit domain, it should fall back to the
+		// local server, which has no such user.
+		_, err := a2.Client.Users.Get(ctx2, &sourcegraph.UserSpec{Login: "alice", Domain: ""})
+		if grpc.Code(err) != codes.NotFound {
+			t.Fatalf("got err == %v, want NotFound", err)
 		}
 	}
 }
@@ -160,16 +129,4 @@ func listAllRepos(t *testing.T, ctx context.Context, label string) {
 		t.Errorf("warning: listing repos on %s failed: %s", label, err)
 	}
 
-}
-
-func listAllUsers(t *testing.T, ctx context.Context, label string) {
-	users, err := sourcegraph.NewClientFromContext(ctx).Users.List(ctx, &sourcegraph.UsersListOptions{})
-	if err == nil {
-		t.Logf("%s has %d users", label, len(users.Users))
-		for _, user := range users.Users {
-			t.Logf(" - %s (domain %q, UID %d)", user.Login, user.Domain, user.UID)
-		}
-	} else {
-		t.Errorf("warning: listing users on %s failed: %s", label, err)
-	}
 }

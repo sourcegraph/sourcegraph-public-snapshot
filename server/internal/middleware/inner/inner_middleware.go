@@ -262,7 +262,9 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 		return
 	}
 
-	res, err = federated.CustomAccountsUpdate(ctx, param, local.Services.Accounts)
+	target := local.Services.Accounts
+
+	res, err = target.Update(ctx, param)
 	return
 
 }
@@ -302,7 +304,9 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 		return
 	}
 
-	res, err = federated.CustomAuthGetAccessToken(ctx, param, local.Services.Auth)
+	target := local.Services.Auth
+
+	res, err = target.GetAccessToken(ctx, param)
 	return
 
 }
@@ -319,7 +323,9 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 		return
 	}
 
-	res, err = federated.CustomAuthIdentify(ctx, param, local.Services.Auth)
+	target := local.Services.Auth
+
+	res, err = target.Identify(ctx, param)
 	return
 
 }
@@ -1270,25 +1276,6 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 
 }
 
-func (s wrappedMeta) PubKey(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerPubKey, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Meta", "PubKey", param)
-	defer func() {
-		trace.After(ctx, "Meta", "PubKey", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Meta.PubKey")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Meta
-
-	res, err = target.PubKey(ctx, param)
-	return
-
-}
-
 type wrappedMirrorRepos struct {
 	c *auth.Config
 }
@@ -1506,7 +1493,9 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, param *sourcegraph.Re
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsGet(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.Get(ctx, param)
 	return
 
 }
@@ -1523,7 +1512,9 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsGetCurrent(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.GetCurrent(ctx, param)
 	return
 
 }
@@ -1540,7 +1531,9 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsCreate(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.Create(ctx, param)
 	return
 
 }
@@ -1557,7 +1550,9 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsUpdate(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.Update(ctx, param)
 	return
 
 }
@@ -1574,7 +1569,9 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsDelete(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.Delete(ctx, param)
 	return
 
 }
@@ -1591,7 +1588,9 @@ func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.R
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsList(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.List(ctx, param)
 	return
 
 }
@@ -1608,7 +1607,9 @@ func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, param 
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsGetUserPermissions(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.GetUserPermissions(ctx, param)
 	return
 
 }
@@ -1625,7 +1626,9 @@ func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, param 
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsSetUserPermissions(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.SetUserPermissions(ctx, param)
 	return
 
 }
@@ -1642,7 +1645,9 @@ func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, param
 		return
 	}
 
-	res, err = federated.CustomRegisteredClientsListUserPermissions(ctx, param, local.Services.RegisteredClients)
+	target := local.Services.RegisteredClients
+
+	res, err = target.ListUserPermissions(ctx, param)
 	return
 
 }
@@ -2640,16 +2645,6 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 	}
 
 	target := local.Services.Users
-
-	var fedCtx context.Context
-	fedCtx, err = federated.UserContext(ctx, *param)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Users(fedCtx)
-		ctx = fedCtx
-	}
 
 	res, err = target.ListEmails(ctx, param)
 	return

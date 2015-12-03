@@ -1104,7 +1104,6 @@ var _ sourcegraph.UnitsServer = (*UnitsServer)(nil)
 type MetaClient struct {
 	Status_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerStatus, error)
 	Config_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerConfig, error)
-	PubKey_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerPubKey, error)
 }
 
 func (s *MetaClient) Status(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.ServerStatus, error) {
@@ -1115,16 +1114,11 @@ func (s *MetaClient) Config(ctx context.Context, in *pbtypes.Void, opts ...grpc.
 	return s.Config_(ctx, in)
 }
 
-func (s *MetaClient) PubKey(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.ServerPubKey, error) {
-	return s.PubKey_(ctx, in)
-}
-
 var _ sourcegraph.MetaClient = (*MetaClient)(nil)
 
 type MetaServer struct {
 	Status_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerStatus, error)
 	Config_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error)
-	PubKey_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerPubKey, error)
 }
 
 func (s *MetaServer) Status(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerStatus, error) {
@@ -1133,10 +1127,6 @@ func (s *MetaServer) Status(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.
 
 func (s *MetaServer) Config(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
 	return s.Config_(v0, v1)
-}
-
-func (s *MetaServer) PubKey(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerPubKey, error) {
-	return s.PubKey_(v0, v1)
 }
 
 var _ sourcegraph.MetaServer = (*MetaServer)(nil)

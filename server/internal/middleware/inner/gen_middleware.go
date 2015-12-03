@@ -28,15 +28,6 @@ func serviceIsFederated(x *gen.Service) bool {
 
 func methodHasCustomFederation(x gen.Service, method string) bool {
 	switch x.Name {
-	case "Accounts":
-		return method == "Update"
-	case "Auth":
-		switch method {
-		case "GetAccessToken", "Identify":
-			return true
-		default:
-			return false
-		}
 	case "Builds":
 		return method == "List"
 	case "Defs":
@@ -55,9 +46,6 @@ func methodHasCustomFederation(x gen.Service, method string) bool {
 		default:
 			return false
 		}
-	case "RegisteredClients":
-		// hack: keep every method with custom implementation
-		return true
 	default:
 		return false
 	}
@@ -149,9 +137,9 @@ func Services(c *auth.Config) svc.Services {
 				target := local.Services.<<<$service.Name>>>
 				<<<$repoURIExpr := repoURIExpr .>>>
 				<<<$userSpecExpr := userSpecExpr .>>>
-				<<<if and (serviceIsFederated $service) (or (ne $repoURIExpr "") (ne $userSpecExpr ""))>>>
+				<<<if and (serviceIsFederated $service) (ne $repoURIExpr "")>>>
 					var fedCtx context.Context
-					fedCtx, err = <<<if ne $repoURIExpr "">>>federated.RepoContext(ctx, &<<<$repoURIExpr>>>)<<<else if ne $userSpecExpr "">>>federated.UserContext(ctx, <<<$userSpecExpr>>>)<<<end>>>
+					fedCtx, err = federated.RepoContext(ctx, &<<<$repoURIExpr>>>)
 					if err != nil {
 						return
 					}

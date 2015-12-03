@@ -1236,32 +1236,6 @@ func (s *CachedMetaClient) Config(ctx context.Context, in *pbtypes.Void, opts ..
 	return result, nil
 }
 
-func (s *CachedMetaClient) PubKey(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*ServerPubKey, error) {
-	if s.Cache != nil {
-		var cachedResult ServerPubKey
-		cached, err := s.Cache.Get(ctx, "Meta.PubKey", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.MetaClient.PubKey(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Meta.PubKey", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
 type CachedMirrorReposClient struct {
 	MirrorReposClient
 	Cache *grpccache.Cache

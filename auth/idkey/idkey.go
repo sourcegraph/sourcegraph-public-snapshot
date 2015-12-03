@@ -173,7 +173,6 @@ type contextKey int
 
 const (
 	idKeyKey contextKey = iota
-	rootPubKeyKey
 )
 
 // FromContext returns the Sourcegraph identity key from the context,
@@ -186,21 +185,4 @@ func FromContext(ctx context.Context) *IDKey {
 // NewContext returns a child context with the given ID key.
 func NewContext(ctx context.Context, idkey *IDKey) context.Context {
 	return context.WithValue(ctx, idKeyKey, idkey)
-}
-
-type PubKey struct {
-	Key crypto.PublicKey
-	ID  string // precomputed public key fingerprint
-}
-
-// RootPubKey returns the root server's public key from the context,
-// or nil if none is set.
-func RootPubKey(ctx context.Context) *PubKey {
-	pubKey, _ := ctx.Value(rootPubKeyKey).(*PubKey)
-	return pubKey
-}
-
-// WithRootPubKey returns a child context with the given root public key.
-func WithRootPubKey(ctx context.Context, pubKey *PubKey) context.Context {
-	return context.WithValue(ctx, rootPubKeyKey, pubKey)
 }

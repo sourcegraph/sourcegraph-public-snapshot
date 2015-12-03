@@ -1,7 +1,6 @@
 package local
 
 import (
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/store"
 
@@ -44,19 +43,10 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 		EmailHTML:     e.EmailHTML,
 	}
 
-	if !e.NoSlack {
-		notif.ActionSlackMessage(nctx)
-	}
+	notif.ActionSlackMessage(nctx)
 
 	if !e.NoEmail {
-		if s.shouldFederateEmail() {
-			notify := s.mothershipNotifyClient(ctx)
-			// Don't send a Slack message from the mothership
-			e.NoSlack = true
-			return notify.GenericEvent(ctx, e)
-		} else {
-			notif.ActionEmailMessage(nctx)
-		}
+		notif.ActionEmailMessage(nctx)
 	}
 
 	return &pbtypes.Void{}, nil
@@ -94,16 +84,6 @@ func (s *notify) getPeople(ctx context.Context, users ...*sourcegraph.UserSpec) 
 func (s *notify) verifyCanNotify(ctx context.Context, actor *sourcegraph.UserSpec, recipients []*sourcegraph.UserSpec) error {
 	// TODO(keegan) implement some sort of verification to prevent abuse
 	return nil
-}
-
-func (s *notify) mothershipNotifyClient(ctx context.Context) sourcegraph.NotifyClient {
-	return sourcegraph.NewClientFromContext(fed.Config.NewRemoteContext(ctx)).Notify
-}
-
-func (s *notify) shouldFederateEmail() bool {
-	// Only the mothership can look up arbitrary user emails, so we
-	// federate all email notifications to it.
-	return !fed.Config.IsRoot
 }
 
 func dedupUsers(users []*sourcegraph.UserSpec) []*sourcegraph.UserSpec {

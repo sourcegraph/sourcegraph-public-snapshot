@@ -131,13 +131,7 @@ func commonTemplates() error {
 		{"builds/builds.html", "builds/build.inc.html"},
 		{"error/error.html", "error/common.html"},
 
-		{"oauth-client/initiate.html"},
-		{"oauth-client/app_url_mismatch.error.html", "oauth-client/error.inc.html"},
-		{"oauth-client/redirect_uri_mismatch.error.html", "oauth-client/error.inc.html"},
-		{"oauth-client/success.html"},
 		{"oauth-provider/authorize.html"},
-		{"oauth-provider/auth_required.html"},
-		{"client-registration/register-client.html"},
 		{"org/members.html", "org/members.inc.html", "user/person.html", "user/profile.inc.html"},
 
 		{"app_global.html"},

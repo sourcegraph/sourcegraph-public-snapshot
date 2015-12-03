@@ -177,8 +177,9 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	}
 
 	tok, err := accesstoken.New(idkey.FromContext(ctx), authpkg.Actor{
-		UID:   int(user.UID),
-		Login: user.Login,
+		UID:      int(user.UID),
+		Login:    user.Login,
+		ClientID: idkey.FromContext(ctx).ID,
 	}, map[string]string{"GrantType": "ResourceOwnerPassword"}, 7*24*time.Hour)
 	if err != nil {
 		return nil, err

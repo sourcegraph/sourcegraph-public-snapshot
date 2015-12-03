@@ -26,10 +26,6 @@ docker run \
 This will download and run Sourcegraph. Once started, you can access
 your Sourcegraph server on the host's HTTP port (80).
 
-NOTE: In order to register your Sourcegraph server, you need to set
-the AppURL to its externally accessible URL. See below for how to edit
-the server's configuration.
-
 
 ## Storage
 

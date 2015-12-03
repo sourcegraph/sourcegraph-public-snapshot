@@ -159,14 +159,6 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 	return client, nil
 }
 
-func checkActorAuthedAsClient(ctx context.Context, client sourcegraph.RegisteredClientSpec) error {
-	aid := authpkg.ActorFromContext(ctx).ClientID
-	if aid != client.ID {
-		return grpc.Errorf(codes.PermissionDenied, "ClientID must match (authenticated as %s, target %s)", aid, client.ID)
-	}
-	return nil
-}
-
 func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
 	if isAdmin, err := s.checkCtxUserIsAdmin(ctx, client.ID); err != nil {
 		return nil, err

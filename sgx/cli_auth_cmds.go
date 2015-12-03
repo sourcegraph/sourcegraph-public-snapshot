@@ -14,7 +14,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/env"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -171,122 +170,42 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 	}
 
 	unauthedCtx := sourcegraph.WithCredentials(cliCtx, nil)
-	unauthedCtx = fed.NewRemoteContext(unauthedCtx, endpointURL)
 	cl := sourcegraph.NewClientFromContext(unauthedCtx)
 
-	// Get client ID of server.
-	conf, err := cl.Meta.Config(unauthedCtx, &pbtypes.Void{})
-	if err != nil {
-		return "", fmt.Errorf("Could not fetch config for %s: %v", endpointURL, err)
-	}
-	isLocalAuth := conf.IsFederationRoot || conf.AuthSource == "local" || conf.AuthSource == "ldap"
-
-	///
-	// Generate the token URL. OAuth2 auth is performed via the
-	// federation root (which is also the OAuth2 Authorization
-	// Server).
-	///
-	var rootURL *url.URL
-	if isLocalAuth {
-		rootURL = endpointURL
+	var username, password string
+	if c.Username != "" {
+		username, password = c.Username, c.Password
 	} else {
+		fmt.Printf("Enter credentials for %s\n", endpointURL)
+		fmt.Print("Username: ")
 		var err error
-		rootURL, err = url.Parse(conf.FederationRootURL)
-		if err != nil {
-			return "", fmt.Errorf("%s has a malformed FederationRootURL: %s", endpointURL, err)
-		}
-	}
-	tokenURL, err := router.Rel.URLToOrError(router.OAuth2ServerToken)
-	if err != nil {
-		return "", err
-	}
-	tokenURL = rootURL.ResolveReference(tokenURL)
-
-	// Using the tokenURL, login either via username/password (local) or
-	// get an oauth token from the fedRoot
-	var accessTok string
-	if isLocalAuth {
-		var username, password string
-		if c.Username != "" {
-			username, password = c.Username, c.Password
-		} else {
-			fmt.Printf("Enter credentials for %s\n", rootURL)
-			fmt.Print("Username: ")
-			var err error
-			username, err = getLine()
-			if err != nil {
-				return "", err
-			}
-			fmt.Print("Password: ")
-			password = string(gopass.GetPasswd())
-		}
-
-		// Create a context for communicating with the fed root directly
-		// (to avoid leaking username/password to the leaf server).
-		rootCtx := fed.NewRemoteContext(unauthedCtx, rootURL)
-		rootCl := sourcegraph.NewClientFromContext(rootCtx)
-
-		// First, get a user access token to the root.
-		//
-		// We could do this via HTTP (as defined in the OAuth2 spec), but
-		// using gRPC is a bit simpler and is consistent with how we do it
-		// below (where using gRPC makes it much simpler, since we don't
-		// have to mimic a browser's cookies and CSRF tokens).
-		rootTok, err := rootCl.Auth.GetAccessToken(rootCtx, &sourcegraph.AccessTokenRequest{
-			AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
-				ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
-			},
-		})
-		if err != nil {
-			return "", fmt.Errorf("authenticating to %s: %s", rootURL, err)
-		}
-
-		accessTok = rootTok.AccessToken
-	} else {
-		// Create a context for communicating with the fed root directly
-		// (to avoid leaking username/password to the leaf server).
-		rootCtx := fed.NewRemoteContext(unauthedCtx, rootURL)
-		rootCl := sourcegraph.NewClientFromContext(rootCtx)
-
-		// Now, use the root access token to issue an auth code that
-		// the leaf server can then exchange for an access token.
-		rootAccessToken, err := c.getAccessToken(rootURL)
+		username, err = getLine()
 		if err != nil {
 			return "", err
 		}
-		rootAuthedCtx := sourcegraph.WithCredentials(rootCtx,
-			oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: rootAccessToken}),
-		)
-		authInfo, err := rootCl.Auth.Identify(rootAuthedCtx, &pbtypes.Void{})
-		if err != nil {
-			return "", fmt.Errorf("identifying user on %s: %s", rootURL, err)
-		}
-
-		code, err := rootCl.Auth.GetAuthorizationCode(rootAuthedCtx, &sourcegraph.AuthorizationCodeRequest{
-			ResponseType: "code",
-			ClientID:     conf.IDKey,
-			UID:          authInfo.UID,
-		})
-		if err != nil {
-			return "", fmt.Errorf("getting auth code from %s: %s", rootURL, err)
-		}
-
-		// Exchange the auth code (from the root) for an access token.
-		tok, err := cl.Auth.GetAccessToken(unauthedCtx, &sourcegraph.AccessTokenRequest{
-			AuthorizationGrant: &sourcegraph.AccessTokenRequest_AuthorizationCode{
-				AuthorizationCode: code,
-			},
-			TokenURL: tokenURL.String(),
-		})
-		if err != nil {
-			return "", fmt.Errorf("exchanging auth code from %s for access token on %s: %s", rootURL, endpointURL, err)
-		}
-
-		accessTok = tok.AccessToken
+		fmt.Print("Password: ")
+		password = string(gopass.GetPasswd())
 	}
 
-	saveCredentials(endpointURL, accessTok, false)
-	return accessTok, nil
+	// Get a user access token.
+	//
+	// We could do this via HTTP (as defined in the OAuth2 spec), but
+	// using gRPC is a bit simpler and is consistent with how we do it
+	// below (where using gRPC makes it much simpler, since we don't
+	// have to mimic a browser's cookies and CSRF tokens).
+	tok, err := cl.Auth.GetAccessToken(unauthedCtx, &sourcegraph.AccessTokenRequest{
+		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
+			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("authenticating to %s: %s", endpointURL, err)
+	}
+
+	if err := saveCredentials(endpointURL, tok.AccessToken, false); err != nil {
+		log.Printf("warning: failed to save credentials: %s.", err)
+	}
+	return tok.AccessToken, nil
 }
 
 func saveCredentials(endpointURL *url.URL, accessTok string, makeDefault bool) error {

@@ -2,9 +2,7 @@ package sgx
 
 import (
 	"bytes"
-	"crypto"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -296,19 +294,14 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Uncomment to add ID key prefix to log messages.
 	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
 	var idKeyToken oauth2.TokenSource
-	var rootPubKey *idkey.PubKey
 	if !fed.Config.IsRoot {
 		tokenURL := fed.Config.RootURL().ResolveReference(app_router.Rel.URLTo(app_router.OAuth2ServerToken))
 		idKeyToken = idKey.TokenSource(context.Background(), tokenURL.String())
-
-		// Fetch the root server's public key
-		rootPubKey = c.fetchRootPubKey()
 	}
 
 	sharedCtxFuncs = append(sharedCtxFuncs, func(ctx context.Context) context.Context {
 		if !fed.Config.IsRoot {
 			ctx = sourcegraph.WithCredentials(ctx, idKeyToken)
-			ctx = idkey.WithRootPubKey(ctx, rootPubKey)
 		}
 		ctx = idkey.NewContext(ctx, idKey)
 		return ctx
@@ -1026,41 +1019,6 @@ func (c *ServeCmd) safeConfigFlags() string {
 		}
 	}
 	return configStr
-}
-
-// fetchRootPubKey will fetch the root server's published public key
-// and return the public key and fingerprint.
-func (c *ServeCmd) fetchRootPubKey() *idkey.PubKey {
-	if fed.Config.IsRoot {
-		return nil
-	}
-
-	ctx := fed.Config.NewRemoteContext(context.Background())
-	rootKey, err := sourcegraph.NewClientFromContext(ctx).Meta.PubKey(ctx, &pbtypes.Void{})
-	if err != nil {
-		log15.Error("fetchRootPubKey could not fetch public key", "error", err)
-		return nil
-	}
-
-	rootPubKey, err := x509.ParsePKIXPublicKey([]byte(rootKey.Key))
-	if err != nil {
-		log15.Error("fetchRootPubKey could not parse the public key", "error", err)
-		return nil
-	}
-
-	rootPubKeyRSA, ok := rootPubKey.(crypto.PublicKey)
-	if !ok {
-		log15.Error("fetchRootPubKey got unknown public key format")
-		return nil
-	}
-
-	rootID, err := idkey.Fingerprint(rootPubKeyRSA)
-	if err != nil {
-		log15.Error("fetchRootPubKey could not compute public key fingerprint", err)
-		return nil
-	}
-
-	return &idkey.PubKey{Key: rootPubKeyRSA, ID: rootID}
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
