@@ -2,10 +2,7 @@ package handlerutil
 
 import (
 	"net/http"
-	"sync"
 	"time"
-
-	"code.google.com/p/rog-go/parallel"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -29,26 +26,29 @@ func AugmentCommits(r *http.Request, repoURI string, commits []*vcs.Commit) ([]*
 		}
 	}
 
-	peopleMu := sync.Mutex{}
-	par := parallel.NewRun(4)
-	peopleMu.Lock() // Lock so we can iterate over the keys
+	// Perform People.Get calls concurrently to assign authors to emails.
+	type emailAuthor struct {
+		email  string
+		author *sourcegraph.Person
+	}
+	authors := make(chan emailAuthor, 4)
 	for email := range people {
 		email := email
-		par.Do(func() error {
+		go func() error {
 			author, err := cl.People.Get(ctx, &sourcegraph.PersonSpec{Email: email})
 			if err != nil {
 				return err
 			}
-			peopleMu.Lock()
-			people[email] = author
-			peopleMu.Unlock()
+			authors <- emailAuthor{
+				email:  email,
+				author: author,
+			}
 			return nil
-		})
+		}()
 	}
-	peopleMu.Unlock()
-	err := par.Wait()
-	if err != nil {
-		return nil, err
+	for _ = range people {
+		pair := <-authors
+		people[pair.email] = pair.author
 	}
 
 	// We now have all the emails, lets construct the augmented commit list
