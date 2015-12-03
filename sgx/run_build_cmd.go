@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.google.com/p/rog-go/parallel"
+
 	"golang.org/x/net/context"
 
 	"strings"
@@ -17,10 +19,15 @@ import (
 
 type runBuildCmd struct {
 	prepBuildCmd
-	Clean bool `long:"clean" description:"remove temp dir and build data after build (regardless of success/failure)"`
+	Clean            bool   `long:"clean" description:"remove temp dir and build data after build (regardless of success/failure)"`
+	PrivateWorkspace string `long:"private-workspace-dir" description:"ensures private repos are available in this directory before building"`
 }
 
 func (c *runBuildCmd) Execute(args []string) error {
+	if c.PrivateWorkspace != "" {
+		c.prepOtherRepos()
+	}
+
 	if err := c.prepBuildCmd.Execute(nil); err != nil {
 		return err
 	}
@@ -59,6 +66,61 @@ func (c *runBuildCmd) Execute(args []string) error {
 	}
 
 	return nil
+}
+
+// prepOtherRepos (HACK go-specific) is a workaround for the fact that we
+// don't have creds for cloning private repos available for go get. It
+// attempts to checkout all repos on the host to the default branch in build
+// dir, to make them available on the GOPATH
+func (c *runBuildCmd) prepOtherRepos() {
+	cl := Client()
+	maxRepoPrep := 50
+	repos, err := cl.Repos.List(cliCtx, &sourcegraph.RepoListOptions{
+		Sort:        "pushed",
+		Direction:   "desc",
+		ListOptions: sourcegraph.ListOptions{PerPage: int32(maxRepoPrep)},
+	})
+	if err != nil {
+		log.Printf("Failed to prep other repos for build %v, go get for deps may fail", *c)
+		return
+	}
+
+	if len(repos.Repos) == maxRepoPrep {
+		log.Printf("Too many other repos to checkout for build %v, go get for deps may fail", *c)
+		return
+	}
+
+	par := parallel.NewRun(4)
+	for _, repo := range repos.Repos {
+		repo := repo
+		// Normal prep will take care of c.Repo
+		if repo.URI == c.Repo {
+			continue
+		}
+		// We only need to clone repos which require auth
+		if !(repo.Origin == "" && !repo.Mirror) && !(repo.Private && repo.Mirror) {
+			continue
+		}
+		par.Do(func() error {
+			cmd := &prepBuildCmd{
+				Repo:      repo.URI,
+				BuildDir:  filepath.Join(c.PrivateWorkspace, "src", repo.URI),
+				forcePrep: true,
+			}
+			err := cmd.Execute(nil)
+			if err != nil {
+				log.Printf("Failed to checkout potential dep %v for build %v, go get for deps may fail: %s", repo.URI, *c, err)
+			}
+			return nil
+		})
+	}
+	par.Wait()
+
+	gopath := c.PrivateWorkspace
+	if curGopath := os.Getenv("GOPATH"); curGopath != "" {
+		gopath = curGopath + string(filepath.ListSeparator) + gopath
+	}
+	os.Setenv("GOPATH", gopath)
 }
 
 // buildHeartbeat sends heartbeats to the build DB until c is closed.

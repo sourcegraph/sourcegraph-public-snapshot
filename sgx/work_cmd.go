@@ -26,6 +26,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
@@ -134,7 +135,8 @@ func (c *WorkCmd) Execute(args []string) error {
 		buildDirsInUseMu sync.Mutex
 	)
 
-	for i := 0; i < c.NumWorkers; i++ {
+	for i := 1; i <= c.NumWorkers; i++ {
+		i := i
 		go func() {
 			for {
 				func() {
@@ -210,6 +212,12 @@ func (c *WorkCmd) Execute(args []string) error {
 
 					if c.Clean {
 						cmd.Args = append(cmd.Args, "--clean")
+					}
+					if !fed.Config.IsRoot {
+						// Mothership does not have private repos
+						privDir := filepath.Join(c.BuildRoot, ".private_workspace_dir_"+strconv.Itoa(i))
+						os.MkdirAll(filepath.Join(privDir, "src"), 0700)
+						cmd.Args = append(cmd.Args, "--private-workspace-dir", privDir)
 					}
 					cmd.Stdout, cmd.Stderr = lw, lw
 					endUpdate := sourcegraph.BuildUpdate{}

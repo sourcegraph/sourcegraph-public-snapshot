@@ -16,6 +16,7 @@ import (
 	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/hgcmd"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util"
 )
 
@@ -29,12 +30,23 @@ type prepBuildCmd struct {
 	CommitID string `long:"commit-id" description:"Commit ID of build" required:"yes" value-name:"CommitID"`
 	Repo     string `long:"repo" description:"URI of repository" required:"yes" value-name:"Repo"`
 	BuildDir string `long:"build-dir" description:"dir to prepare for build" required:"yes" value-name:"DIR"`
+
+	forcePrep bool
 }
 
 func (c *prepBuildCmd) Execute(args []string) error {
 	cl := Client()
 
-	build, repo, err := getBuild(c.Repo, c.CommitID, c.Attempt)
+	var (
+		build *sourcegraph.Build
+		repo  *sourcegraph.Repo
+		err   error
+	)
+	if c.forcePrep {
+		build, repo, err = forcePrepBuild(c.Repo)
+	} else {
+		build, repo, err = getBuild(c.Repo, c.CommitID, c.Attempt)
+	}
 	if err != nil {
 		return err
 	}
@@ -199,4 +211,37 @@ func CheckCommitIDResolution(vcsType, cloneDir, commitID string) {
 	if commitID != string(commitID2) {
 		log.Fatalf("In clone dir %s (%s), commit ID %q resolves to a different full commit ID %q", cloneDir, vcsType, commitID, commitID2)
 	}
+}
+
+// forcePrepBuild fakes a build for the latest commit so Prep can checkout the
+// repo
+func forcePrepBuild(repoURI string) (*sourcegraph.Build, *sourcegraph.Repo, error) {
+	cl := Client()
+
+	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
+	repo, err := cl.Repos.Get(cliCtx, &repoSpec)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting repository %q: %s", repoURI, err)
+	}
+	if repo.HTTPCloneURL != "" {
+		checkHTTPCloneURL(repo.HTTPCloneURL)
+	}
+	if repo.SSHCloneURL != "" {
+		checkSSHCloneURL(string(repo.SSHCloneURL))
+	}
+
+	repoRevSpec := sourcegraph.RepoRevSpec{
+		RepoSpec: repoSpec,
+		Rev:      repo.DefaultBranch,
+	}
+	commit, err := cl.Repos.GetCommit(cliCtx, &repoRevSpec)
+	if err != nil {
+		return nil, nil, err
+	}
+	build := &sourcegraph.Build{
+		Repo:     repoURI,
+		CommitID: string(commit.ID),
+	}
+	checkCommitID(build.CommitID)
+	return build, repo, nil
 }
