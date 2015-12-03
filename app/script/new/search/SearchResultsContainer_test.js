@@ -11,30 +11,21 @@ import testdataUnfetched from "./testdata/SearchResultsContainer-unfetched.json"
 import testdataFetched from "./testdata/SearchResultsContainer-fetched.json";
 
 describe("SearchResultsContainer", () => {
-	let exampleResults = {
-		Total: 42,
-	};
-
-	let exampleRepo = {
-		repo: "aRepo",
-		rev: "aRev",
-	};
-
 	it("should handle unfetched results", () => {
 		autotest(testdataUnfetched, `${__dirname}/testdata/SearchResultsContainer-unfetched.json`,
-			<SearchResultsContainer type="tokens" page={1} query="foo" {...exampleRepo} />
+			<SearchResultsContainer repo="aRepo" rev="aRev" query="foo" type="tokens" page={1} />
 		);
 	});
 
 	it("should display fetched results", () => {
-		let query = "foo";
-		let type = "text";
-		let page = 1;
+		let results = {
+			Total: 42,
+		};
 		Dispatcher.directDispatch(SearchResultsStore, new SearchActions.ResultsFetched(
-			exampleRepo.repo, exampleRepo.rev, query, type, page, exampleResults
+			"aRepo", "aRev", "foo", "text", 1, results
 		));
 		autotest(testdataFetched, `${__dirname}/testdata/SearchResultsContainer-fetched.json`,
-			<SearchResultsContainer query={query} type={type} page={page} {...exampleRepo} />
+			<SearchResultsContainer repo="aRepo" rev="aRev" query="foo" type="text" page={1}/>
 		);
 	});
 });

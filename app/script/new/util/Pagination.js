@@ -16,25 +16,23 @@ class Pagination extends Component {
 		Object.assign(state, props);
 
 		// Determine the range of page numbers to display in the pagination menu.
-		let firstPageOffset, lastPageOffset;
+		//
 		// Using the current page as a midpoint, show half of the max page links to the
 		// left and right of the current page.
 		let rightPageCount = Math.floor((props.pageRange - 1)/2);
 		let leftPageCount = props.pageRange - rightPageCount;
 		// Bound the first page offset to be at least 1.
 		if (props.currentPage <= leftPageCount) {
-			firstPageOffset = 1;
-			lastPageOffset = Math.min(props.pageRange, props.totalPages);
+			state.firstPageOffset = 1;
+			state.lastPageOffset = Math.min(props.pageRange, props.totalPages);
 		} else {
 			// Calculate to offsets for the first and last page link that will be shown based on
 			// the number of pages.
-			firstPageOffset = props.currentPage - leftPageCount;
-			firstPageOffset += 1; // Add 1 to account for showing the current page.
+			state.firstPageOffset = props.currentPage - leftPageCount;
+			state.firstPageOffset += 1; // Add 1 to account for showing the current page.
 			// The offset for the last page is bounded by the total number of pages.
-			lastPageOffset = Math.min(props.currentPage + rightPageCount, props.totalPages);
+			state.lastPageOffset = Math.min(props.currentPage + rightPageCount, props.totalPages);
 		}
-		state.firstPageOffset = firstPageOffset;
-		state.lastPageOffset = lastPageOffset;
 	}
 
 	render() {
