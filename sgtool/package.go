@@ -28,10 +28,9 @@ func init() {
 type PackageCmd struct {
 	OS string `long:"os" description:"operating system targets to cross-compile for" default:"linux darwin"`
 
-	SkipWebpack  bool `long:"skip-webpack" description:"skip webpack (JS/SCSS preparation, concatenation, minification, etc.)"`
-	SkipProtoc   bool `long:"skip-protoc" description:"skip devdoc protobuf dump generation (which requires protoc)"`
-	IgnoreDirty  bool `long:"ignore-dirty" description:"ignore dirty working directory"`
-	IgnoreBranch bool `long:"ignore-branch" description:"ignore non-master branch"`
+	SkipWebpack bool `long:"skip-webpack" description:"skip webpack (JS/SCSS preparation, concatenation, minification, etc.)"`
+	SkipProtoc  bool `long:"skip-protoc" description:"skip devdoc protobuf dump generation (which requires protoc)"`
+	IgnoreDirty bool `long:"ignore-dirty" description:"ignore dirty working directory"`
 
 	Args struct {
 		Version string `name:"version" description:"version number ('1.2.3') or identifier ('snapshot' is default)"`
@@ -135,20 +134,6 @@ func (c *PackageCmd) getLDFlags() (string, error) {
 	if commitID != "" {
 		buildvars["commitID"] = strings.TrimSpace(commitID)
 	}
-
-	branch, err := cmdOutput("git", "rev-parse", "--verify", "--abbrev-ref", "HEAD")
-	if err != nil {
-		return "", err
-	}
-	branch = strings.TrimSpace(branch) // Needed due to a trailing newline.
-	if branch != "master" && !c.IgnoreBranch {
-		return "", fmt.Errorf(`
-Aborting! On branch "%s" but should be on master branch!
-
-note: You can use --ignore-branch to skip this check.
-`, branch)
-	}
-	buildvars["branch"] = branch
 
 	status, err := cmdOutput("git", "status", "--porcelain")
 	if err != nil {
