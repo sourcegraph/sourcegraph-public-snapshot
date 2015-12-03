@@ -1,6 +1,6 @@
 +++
 title = "Git hosting troubleshooting"
-navtitle = "Git hosting"
+linktitle = "Git hosting"
 +++
 
 To use Sourcegraph as your git repository host, simply

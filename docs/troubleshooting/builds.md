@@ -1,6 +1,6 @@
 +++
-title = "Failed or incomplete builds"
-navtitle = "Builds"
+title = "Failed or incomplete code analysis"
+linktitle = "Code Intelligence"
 +++
 
 In Sourcegraph, a "build" is the analysis process of an entire

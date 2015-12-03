@@ -1,6 +1,6 @@
 +++
 title = "cloud-init troubleshooting"
-navtitle = "cloud-init"
+linktitle = "cloud-init"
 +++
 
 [cloud-init](https://cloudinit.readthedocs.org/en/latest/) is an

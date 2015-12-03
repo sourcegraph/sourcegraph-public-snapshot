@@ -1,12 +1,15 @@
 +++
 title = "Git mirroring"
+description = "Make Sourcegraph read from or write to an external repository"
 +++
 
 Sourcegraph works great as the system of record, but there are some situations in which you will want to mirror your repositories hosted on Sourcegraph to a Git repository hosted somewhere else. With configuration, Sourcegraph can automatically push changes to an external code host each time someone pushes changes to Sourcegraph.
 
-# Configuration
+Likewise, there are situations in which you will want to to mirror your externally hosted Git repositories on Sourcegraph. With this configuration, Sourcegraph will poll the external repository for changes on a short interval.
 
-Lets say you have a repository hosted on Sourcegraph (`src.example.com/my/repo`) and want to have this repository automatically mirrored on `github.com/my/repo`. Here's what you need to do:
+# Mirroring *to* externally hosted repositories
+
+Let's say you have a repository hosted on Sourcegraph (`src.example.com/my/repo`) and want to have this repository automatically mirrored on `github.com/my/repo`. Here's what you need to do:
 
 ## 1. Ensure you can push changes
 
@@ -47,3 +50,21 @@ sudo restart src
 ## 4. Test it out!
 
 Now that everything is configured, simply push any change to your Sourcegraph repository and watch as it is mirrored to the remote Git URL you specified!
+
+# Mirroring *from* externally hosted repositories
+
+## Public repository
+
+Let's say you have a repository hosted on an `host.com/my/repo` and with public read access and want to
+have this repository automatically mirrored on your Sourcegraph server. Use the `src` CLI to create
+the mirror:
+
+```
+src repo create -m --clone-url=http://host.com/my/repo <repo-name>
+```
+
+## Private repository
+
+Sourcegraph currently supports importing private repositories from GitHub.com and GitHub Enterprise.
+Follow instructions for [GitHub.com]({{< relref "integrations/GitHub.md" >}}) or
+[GitHub Enterprise]({{< relref "integrations/GitHub_Enterprise.md" >}}).

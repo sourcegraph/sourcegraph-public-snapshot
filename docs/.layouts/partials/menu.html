@@ -16,10 +16,10 @@
 					</a>
 					{{if not (eq $section "getting-started")}}
 						<ul class="nav">
-							{{ range .Pages.Reverse }}
+							{{ range .Pages.ByLinkTitle }}
 								<li class="{{if eq ($.Scratch.Get "PageUniqueID") .UniqueID}}active{{end}}">
 									<a href="{{ .Permalink }}">
-										{{with .Params.navtitle}}{{.}}{{else}}{{ .Title }}{{end}}
+										{{with .LinkTitle}}{{.}}{{else}}{{ .Title }}{{end}}
 									</a>
 								</li>
 							{{ end }}

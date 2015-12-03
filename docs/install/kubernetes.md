@@ -1,6 +1,6 @@
 +++
 title = "Deploying on Kubernetes"
-navtitle = "on Kubernetes"
+linktitle = "on Kubernetes"
 +++
 
 Sourcegraph can be deployed on any Kubernetes cluster. This guide will

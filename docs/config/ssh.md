@@ -1,5 +1,6 @@
 +++
 title = "Git over SSH"
+description = "Configure Sourcegraph to use SSH protocol for git operations"
 +++
 
 Sourcegraph supports HTTP and SSH transfer protocols for git operations.
@@ -25,5 +26,5 @@ the `--ssh-addr` flag or update your `config.ini` file:
 
 ```
 [serve]
-SSHAddr = 22
+SSHAddr = :22
 ```

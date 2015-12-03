@@ -12,17 +12,4 @@
     </article>
 </section>
 
-<aside id="meta">
-	<hr>
-    <div>
-        {{ with .PrevInSection }}
-			<a class="previous" href="{{.Permalink}}">&larr; {{.Title}}</a>
-        {{ end }}
-		&nbsp;&nbsp;&nbsp;&nbsp;
-        {{ with .NextInSection }}
-			<a class="next" href="{{.Permalink}}"> {{.Title}} &rarr;</a>
-        {{ end }}
-    </div>
-</aside>
-
 {{partial "footer.html" .}}

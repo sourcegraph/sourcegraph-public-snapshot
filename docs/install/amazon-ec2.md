@@ -1,6 +1,6 @@
 +++
 title = "Installing on Amazon EC2"
-navtitle = "on Amazon EC2"
+linktitle = "on Amazon EC2"
 +++
 
 To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instance, follow these steps.

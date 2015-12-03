@@ -1,5 +1,6 @@
 +++
 title = "AppURL and DNS"
+description = "Update your Sourcegraph server URL"
 +++
 
 If you installed Sourcegraph using one of the standard distribution or cloud provider packages,
@@ -24,7 +25,7 @@ sudo restart src
 
 If you have already logged in and authorized your Sourcegraph server with OAuth,
 you'll also need to reset the redirect URI of your instance. First, get your instance's
-`CLIENT-ID` (it is the `"IDKey"` field printed by the following command):
+`IDKey`:
 
 ```
 src --endpoint http://src.mycompany.com meta config
@@ -34,7 +35,7 @@ Then, update the server redirect URI:
 
 ```
 src --endpoint https://sourcegraph.com login
-src registered-clients update --redirect-uri http://src.mycompany.com CLIENT-ID
+src registered-clients update --redirect-uri http://src.mycompany.com <IDKey>
 # to reset src's default --endpoint, run "src --endpoint http://src.mycompany.com login"
 ```
 

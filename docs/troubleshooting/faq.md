@@ -1,6 +1,6 @@
 +++
 title = "Frequently Asked Questions"
-navtitle = "FAQ"
+linktitle = "FAQ"
 +++
 
 ## How to get Sourcegraph logs

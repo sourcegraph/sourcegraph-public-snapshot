@@ -1,5 +1,6 @@
 +++
 title = "Public server"
+description = "Allow your Sourcegraph server to be accessed by the public"
 +++
 
 By default, only specific users (chosen by the administrator) may

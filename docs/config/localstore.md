@@ -1,5 +1,6 @@
 +++
-title = "Persistence Backends"
+title = "Persistence backends"
+description = "Choose a scheme for persisting user data"
 +++
 
 Sourcegraph supports choosing between two storage backends. User data can either be stored on the filesystem using the default `fs` backend, or it can be configured to store data in a [PostgreSQL database](http://www.postgresql.org) for high scalability & availability.

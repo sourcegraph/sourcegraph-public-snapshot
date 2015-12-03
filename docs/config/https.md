@@ -1,5 +1,6 @@
 +++
 title = "HTTPS and TLS"
+description = "Secure your Sourcegraph server with HTTPS"
 +++
 
 If your Sourcegraph server is accessed over the public Internet (not a

@@ -1,6 +1,6 @@
 +++
 title = "Upgrading Sourcegraph"
-navtitle = "Upgrading"
+linktitle = "Upgrading"
 +++
 
 When an updated version of Sourcegraph is available for your server, a

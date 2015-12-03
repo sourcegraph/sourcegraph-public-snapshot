@@ -1,6 +1,6 @@
 +++
 title = "Deploying with Docker"
-navtitle = "with Docker"
+linktitle = "with Docker"
 +++
 
 Sourcegraph is available as the

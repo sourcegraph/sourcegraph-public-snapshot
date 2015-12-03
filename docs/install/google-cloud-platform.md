@@ -1,6 +1,6 @@
 +++
 title = "Installing on Google Cloud Platform"
-navtitle = "on Google Cloud Platform"
+linktitle = "on Google Cloud Platform"
 +++
 
 To set up Sourcegraph on a new [Google Compute Engine](https://cloud.google.com/compute/) instance, follow these steps.

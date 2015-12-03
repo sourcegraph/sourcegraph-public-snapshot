@@ -1,5 +1,6 @@
 +++
 title = "Listeners and endpoints"
+description = "Configure your Sourcegraph server port bindings"
 +++
 
 Sourcegraph exposes 3 services over HTTP, all multiplexed on the
@@ -10,7 +11,7 @@ same port:
 * HTTP/2 for the gRPC API
 
 You can [configure Sourcegraph to use TLS]({{< relref
-"config/https.md" >}})) to make these services available over HTTPS,
+"config/https.md" >}}) to make these services available over HTTPS,
 in addition to or instead of HTTP.
 
 Note: The examples in this document use `http://` URLs, because that is the
@@ -32,7 +33,7 @@ The port can have the following formats:
 * `:port` to listen on all interfaces (`:3080`, for example)
 * `addr:port` to listen on a single address (`10.1.2.3:3080`, for example)
 
-Make sure that the [app URL]({{ relref "config/appurl-dns.md" >}})
+Make sure that the [app URL]({{< relref "config/appurl-dns.md" >}})
 refers to the externally accessible URL of the listener defined
 here. For example, if your `HTTPAddr` is `:7000`, and you expect Web
 clients to access the server directly via HTTP (and not via a proxy or

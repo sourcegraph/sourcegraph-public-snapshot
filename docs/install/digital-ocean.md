@@ -1,6 +1,6 @@
 +++
 title = "Installing on Digital Ocean"
-navtitle = "on Digital Ocean"
+linktitle = "on Digital Ocean"
 +++
 
 To set up Sourcegraph on a new [Digital Ocean](https://www.digitalocean.com/) cloud VM, follow these steps.

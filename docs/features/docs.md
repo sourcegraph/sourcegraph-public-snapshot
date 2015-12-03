@@ -1,6 +1,6 @@
 +++
 title = "Documentation on Sourcegraph"
-navtitle = "Documentation"
+linktitle = "Documentation"
 +++
 
 Sourcegraph embeds a static site generator you may use to serve documentation
@@ -16,9 +16,11 @@ In addition to embedding a static site engine, Sourcegraph can also run `godoc` 
 Go source. To enable `godoc`, simply set the `--lang` option on any Go repository as follows:
 
 ```
-src repo update my/repo --lang Go
+src repo update my/repo --lang go
 ```
 
 Then open the repository's page in your browser and use the "godoc"
 navigation bar link to see godoc-generated package, function, and type
 documentation.
+
+**Note:** you may need to hard refresh your browser to see the `godoc` tab.

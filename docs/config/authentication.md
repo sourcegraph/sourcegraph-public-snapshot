@@ -1,5 +1,6 @@
 +++
 title = "Authentication"
+description = "Manage user authentication on your Sourcegraph instance"
 +++
 
 ## OAuth
