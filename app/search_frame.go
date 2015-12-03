@@ -54,15 +54,20 @@ func serveRepoPlatformSearchResults(w http.ResponseWriter, r *http.Request) erro
 
 	searchFrame.Handler.ServeHTTP(rr, rCopy)
 
-	if rr.Code == http.StatusOK {
-		_, err := io.Copy(w, rr.Body)
-		return err
-	} else if rr.Code == http.StatusUnauthorized && nil == handlerutil.UserFromContext(ctx) {
+	if rr.Code == http.StatusUnauthorized && nil == handlerutil.UserFromContext(ctx) {
 		return grpc.Errorf(codes.Unauthenticated, "platform search return unauthorized and no authenticated user in current context")
-	} else {
-		// TODO(poler) Should other response codes have specific semantics?
-		return fmt.Errorf("Unexpected response code from %q search frame: %d", searchFrame.ID, rr.Code)
+	} else if rr.Code != http.StatusOK {
+		// NOTE The internal.Handler handles an error by returning
+		// specific error html. We don't want to do that in this case
+		// and instead just pass the raw bytes returned from the search
+		// frame. This will forward the response body and error code
+		// to the client, which allows the search frame to define the
+		// desired HTTP semantics.
+		w.WriteHeader(rr.Code)
 	}
+
+	io.Copy(w, rr.Body)
+	return nil
 }
 
 func copyRequest(r *http.Request) *http.Request {
