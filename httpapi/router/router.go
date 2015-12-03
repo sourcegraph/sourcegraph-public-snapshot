@@ -20,6 +20,7 @@ const (
 	Defs              = "defs"
 	Repo              = "repo"
 	RepoBranches      = "repo.branches"
+	RepoTree          = "repo.tree"
 	RepoBuildInfo     = "repo.build"
 	RepoBuildsCreate  = "repo.builds.create"
 	RepoTags          = "repo.tags"
@@ -49,6 +50,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path(repoPath).Methods("GET").Name(Repo)
 	repo := base.PathPrefix(repoPath).Subrouter()
 	repo.Path("/.branches").Methods("GET").Name(RepoBranches)
+	repoRev.Path("/.tree" + routevar.TreeEntryPath).PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 	repo.Path("/.tags").Methods("GET").Name(RepoTags)
 
 	repoRev.Path("/.build").Methods("GET").Name(RepoBuildInfo)
