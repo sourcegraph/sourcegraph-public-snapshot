@@ -94,14 +94,14 @@ class SearchResultsContainer extends Container {
 							resultData={currentResult} />
 					}
 				</div>
-				{(currentResult && currentResult.Total) &&
+				{(currentResult && currentResult.Total) ?
 					<div className="search-pagination">
 						<Pagination
 							currentPage={this.state.page}
 							totalPages={Math.ceil(currentResult.Total/this.state.currentType.perPage)}
 							pageRange={10}
 							onPageChange={this._onPageChange} />
-					</div>
+					</div> : null
 				}
 			</div>
 		);
