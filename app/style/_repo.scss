@@ -104,19 +104,25 @@ div.repo-body {
 
 		.clone-copy {
 			position: absolute;
-			right: 6px;
-			top: 5px;
-			z-index: 3;
-			padding: 1px 3px 1px 5px;
+	    top: 3px;
+	    z-index: 3;
+	    padding: 1px 2px 0px 5px;
+	    right: 4px;
+	    border-radius: 0px 2px 2px 0px;
+	    width: 30px;
+	    height: 28px;
+	    padding-left: -8px;
 		}
 
 		.clone-type {
 			position: absolute;
-			left: 0;
+			left: -3px;
 			z-index: 3;
-			top: 5px;
+			top: 2px;
 			font-weight: bold;
 			border-radius: 0;
+			height: 30px;
+			padding-top: 6px;
 		}
 
 		#clone-url-value {
