@@ -111,3 +111,7 @@ func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*s
 func (s *Users) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
 	return &sourcegraph.NotImplementedError{What: "GitHub email updating"}
 }
+
+func (s *Users) Count(ctx context.Context) (int32, error) {
+	return 0, &sourcegraph.NotImplementedError{What: "GitHub user count"}
+}

@@ -130,9 +130,9 @@ func (s *CachedAccountsClient) Update(ctx context.Context, in *User, opts ...grp
 	return result, nil
 }
 
-func (s *CachedAccountsClient) Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+func (s *CachedAccountsClient) Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*PendingInvite, error) {
 	if s.Cache != nil {
-		var cachedResult pbtypes.Void
+		var cachedResult PendingInvite
 		cached, err := s.Cache.Get(ctx, "Accounts.Invite", in, &cachedResult)
 		if err != nil {
 			return nil, err
@@ -2891,6 +2891,32 @@ func (s *CachedUsersClient) List(ctx context.Context, in *UsersListOptions, opts
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Users.List", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedUsersClient) Count(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*UserCount, error) {
+	if s.Cache != nil {
+		var cachedResult UserCount
+		cached, err := s.Cache.Get(ctx, "Users.Count", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UsersClient.Count(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Users.Count", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

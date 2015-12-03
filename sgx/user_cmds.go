@@ -35,6 +35,15 @@ func init() {
 	}
 	createCmd.Aliases = []string{"add"}
 
+	_, err = userGroup.AddCommand("invite",
+		"send an invite to access this server",
+		"Send a user invite.",
+		&userInviteCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	listCmd, err := userGroup.AddCommand("list",
 		"list users",
 		"List users.",
@@ -100,6 +109,47 @@ func (c *userCreateCmd) Execute(args []string) error {
 	}
 
 	log.Printf("# Created user %q with UID %d", user.Login, user.UID)
+	return nil
+}
+
+type userInviteCmd struct {
+	Args struct {
+		Emails []string `value-name:"EMAILS" description:"user emails"`
+	} `positional-args:"yes"`
+	Write bool `long:"write" description:"set write permissions on all specified users"`
+	Admin bool `long:"admin" description:"set admin permissions on all specified users"`
+}
+
+func (c *userInviteCmd) Execute(args []string) error {
+	cl := Client()
+
+	if len(c.Args.Emails) == 0 {
+		return fmt.Errorf(`Must specify at least one email to invite (e.g. "src user invite EMAIL")`)
+	}
+
+	var success bool
+	for _, email := range c.Args.Emails {
+		pendingInvite, err := cl.Accounts.Invite(cliCtx, &sourcegraph.AccountInvite{
+			Email: email,
+			Write: c.Write,
+			Admin: c.Admin,
+		})
+		if err != nil {
+			fmt.Println("FAIL %s: %v", email, err)
+			continue
+		}
+		status := fmt.Sprintf("  OK %s: %s", email, pendingInvite.Link)
+		if pendingInvite.EmailSent {
+			status += " (email sent)"
+		}
+		fmt.Println(status)
+		success = true
+	}
+
+	if success {
+		fmt.Println("# Share the above link with users for signing up on Sourcegraph")
+	}
+
 	return nil
 }
 

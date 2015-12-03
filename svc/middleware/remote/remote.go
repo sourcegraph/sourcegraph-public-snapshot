@@ -66,7 +66,7 @@ func (s remoteAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbty
 	return sourcegraph.NewClientFromContext(ctx).Accounts.Update(ctx, v1)
 }
 
-func (s remoteAccounts) Invite(ctx context.Context, v1 *sourcegraph.AccountInvite) (*pbtypes.Void, error) {
+func (s remoteAccounts) Invite(ctx context.Context, v1 *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
 	return sourcegraph.NewClientFromContext(ctx).Accounts.Invite(ctx, v1)
 }
 
@@ -522,4 +522,8 @@ func (s remoteUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) (
 
 func (s remoteUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
 	return sourcegraph.NewClientFromContext(ctx).Users.List(ctx, v1)
+}
+
+func (s remoteUsers) Count(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error) {
+	return sourcegraph.NewClientFromContext(ctx).Users.Count(ctx, v1)
 }

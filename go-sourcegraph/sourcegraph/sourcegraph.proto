@@ -1274,6 +1274,10 @@ message UserList {
 	repeated User users = 1;
 }
 
+message UserCount {
+	int32 Count = 1;
+}
+
 // A Person represents either a registered user or a committer to a repository
 // (typically when their commit email can't be resolved to a user).
 message Person {
@@ -1576,7 +1580,7 @@ service Accounts {
 	};
 
 	// Invite creates a pending invite and notifies the recipient via email.
-	rpc Invite(AccountInvite) returns (pbtypes.Void) {
+	rpc Invite(AccountInvite) returns (PendingInvite) {
 		option (google.api.http) = {
 			post: "/accounts/Invite"
 		};
@@ -1635,6 +1639,17 @@ message AccountInvite {
 	bool admin = 3;
 }
 
+message PendingInvite {
+	// Link is the URL for signing up using this invite.
+	string link = 1;
+
+	// Token identifies the pending invite.
+	string token = 2;
+
+	// EmailSent is set if the invite link was emailed to the user.
+	bool email_sent = 3;
+}
+
 message AccountInviteList {
 	repeated AccountInvite invites = 1;
 }
@@ -1675,6 +1690,13 @@ service Users {
 	rpc List(UsersListOptions) returns (UserList) {
 		option (google.api.http) = {
 			get: "/users/list"
+		};
+	};
+
+	// Count returns the number of users signed up on this instance.
+	rpc Count(pbtypes.Void) returns (UserCount) {
+		option (google.api.http) = {
+			get: "/users/count"
 		};
 	};
 }

@@ -16,6 +16,7 @@ type Users interface {
 	GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
 	ListEmails(context.Context, sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
+	Count(context.Context) (int32, error)
 }
 
 // Accounts manages user accounts that can be registered and

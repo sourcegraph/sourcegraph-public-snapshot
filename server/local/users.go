@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -74,6 +75,21 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*s
 	}
 	shortCache(ctx)
 	return &sourcegraph.UserList{Users: users}, nil
+}
+
+func (s *users) Count(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
+	store := store.UsersFromContextOrNil(ctx)
+	if store == nil {
+		log.Printf("Warning: users not implemented, returning zero")
+		return &sourcegraph.UserCount{}, nil
+	}
+
+	count, err := store.Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	noCache(ctx)
+	return &sourcegraph.UserCount{Count: count}, nil
 }
 
 func (s *users) verifyCanReadEmail(ctx context.Context, user sourcegraph.UserSpec) error {

@@ -269,7 +269,7 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 
 }
 
-func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountInvite) (res *pbtypes.Void, err error) {
+func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountInvite) (res *sourcegraph.PendingInvite, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Invite", param)
 	defer func() {
@@ -2723,6 +2723,25 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	target := local.Services.Users
 
 	res, err = target.List(ctx, param)
+	return
+
+}
+
+func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserCount, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Users", "Count", param)
+	defer func() {
+		trace.After(ctx, "Users", "Count", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Users.Count")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Users
+
+	res, err = target.Count(ctx, param)
 	return
 
 }

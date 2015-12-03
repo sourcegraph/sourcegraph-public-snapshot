@@ -14,6 +14,7 @@ type Users struct {
 	GetWithEmail_ func(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	List_         func(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
 	ListEmails_   func(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
+	Count_        func(v0 context.Context) (int32, error)
 }
 
 func (s *Users) Get(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error) {
@@ -31,6 +32,8 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 func (s *Users) ListEmails(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
 	return s.ListEmails_(v0, v1)
 }
+
+func (s *Users) Count(v0 context.Context) (int32, error) { return s.Count_(v0) }
 
 var _ store.Users = (*Users)(nil)
 

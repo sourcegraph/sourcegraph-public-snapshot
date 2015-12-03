@@ -334,7 +334,7 @@ func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbt
 	return rv, nil
 }
 
-func (s wrappedAccounts) Invite(ctx context.Context, v1 *sourcegraph.AccountInvite) (*pbtypes.Void, error) {
+func (s wrappedAccounts) Invite(ctx context.Context, v1 *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3394,6 +3394,35 @@ func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions
 	}
 
 	rv, err := innerSvc.List(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
+func (s wrappedUsers) Count(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.UsersOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Users")
+	}
+
+	rv, err := innerSvc.Count(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

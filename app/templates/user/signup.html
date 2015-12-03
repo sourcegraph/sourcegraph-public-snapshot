@@ -5,7 +5,13 @@
 {{define "Body"}}
 <div class="row">
 	<div class="col-md-5">
+		{{if .FirstUser}}
+		<h1>Welcome to Sourcegraph!</h1>
+		<p>Set up your instance by first creating an admin account. You can then invite teammates to this instance by
+		following <a href="https://src.sourcegraph.com/sourcegraph/.docs/management/access-control/">these instructions</a>.</p>
+		{{else}}
 		<h1>Create a personal account</h1>
+		{{end}}
 
 		<form method="post" action="{{urlToWithReturnTo "sign-up" .ReturnTo}}" class="sign-up">
 			<p class="help-block">{{.SignupForm.FormError}}</p>

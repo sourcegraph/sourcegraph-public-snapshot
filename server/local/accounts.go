@@ -37,13 +37,11 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 
 	var write, admin bool
 	// If this is the first user, set them as admin.
-	// TODO(performance): avoid doing a List() operation here by exposing a Count()
-	// method on the Users store.
-	existingUsers, err := usersStore.List(ctx, &sourcegraph.UsersListOptions{})
+	numUsers, err := usersStore.Count(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(existingUsers) == 0 {
+	if numUsers == 0 {
 		write = true
 		admin = true
 	} else if !authutil.ActiveFlags.AllowAllLogins {
@@ -151,7 +149,7 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 	return &pbtypes.Void{}, nil
 }
 
-func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite) (*pbtypes.Void, error) {
+func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
 	defer noCache(ctx)
 
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
@@ -173,13 +171,21 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 	v.Set("email", invite.Email)
 	v.Set("token", token)
 	u.RawQuery = v.Encode()
-	_, err = sendEmail("invite-user", "", invite.Email, "You've been invited to Sourcegraph", nil,
-		[]gochimp.Var{gochimp.Var{Name: "INVITE_LINK", Content: u.String()}})
-	if err != nil {
-		return nil, fmt.Errorf("Error sending email: %s", err)
+	var emailSent bool
+	if notif.EmailIsConfigured() {
+		_, err = sendEmail("invite-user", "", invite.Email, "You've been invited to Sourcegraph", nil,
+			[]gochimp.Var{gochimp.Var{Name: "INVITE_LINK", Content: u.String()}})
+		if err != nil {
+			return nil, grpc.Errorf(codes.Internal, "Error sending email: %s", err)
+		}
+		emailSent = true
 	}
 
-	return &pbtypes.Void{}, nil
+	return &sourcegraph.PendingInvite{
+		Link:      u.String(),
+		Token:     token,
+		EmailSent: emailSent,
+	}, nil
 }
 
 func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error) {

@@ -9,6 +9,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
 
+	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/form"
@@ -82,11 +83,21 @@ func serveSignupForm(w http.ResponseWriter, r *http.Request, form signupForm) er
 		return err
 	}
 
+	cl := handlerutil.APIClient(r)
+	ctx := httpctx.FromRequest(r)
+
+	numUsers, err := cl.Users.Count(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
 	return tmpl.Exec(r, w, "user/signup.html", http.StatusOK, nil, &struct {
 		SignupForm signupForm
+		FirstUser  bool
 		tmpl.Common
 	}{
 		SignupForm: form,
+		FirstUser:  (numUsers.Count == 0),
 	})
 }
 

@@ -163,6 +163,22 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 	return users[low:high], nil
 }
 
+func (s *Users) Count(ctx context.Context) (int32, error) {
+	entries, err := readUserDB(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	var count int32
+	for _, e := range entries {
+		if !e.User.Disabled {
+			count += 1
+		}
+	}
+
+	return count, nil
+}
+
 func userMatchesQuery(user *sourcegraph.User, query string) bool {
 	return strings.HasPrefix(strings.ToLower(user.Login), strings.ToLower(query))
 }

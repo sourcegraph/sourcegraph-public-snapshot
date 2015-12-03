@@ -97,6 +97,7 @@ It has these top-level messages:
 	OrgSpec
 	OrgsListMembersOp
 	UserList
+	UserCount
 	Person
 	PersonSpec
 	RepoBuildInfo
@@ -112,6 +113,7 @@ It has these top-level messages:
 	NewPassword
 	NewAccount
 	AccountInvite
+	PendingInvite
 	AccountInviteList
 	AcceptedInvite
 	SSHPublicKey
@@ -1528,6 +1530,14 @@ func (m *UserList) Reset()         { *m = UserList{} }
 func (m *UserList) String() string { return proto.CompactTextString(m) }
 func (*UserList) ProtoMessage()    {}
 
+type UserCount struct {
+	Count int32 `protobuf:"varint,1,opt,name=Count,proto3" json:",omitempty"`
+}
+
+func (m *UserCount) Reset()         { *m = UserCount{} }
+func (m *UserCount) String() string { return proto.CompactTextString(m) }
+func (*UserCount) ProtoMessage()    {}
+
 // A Person represents either a registered user or a committer to a repository
 // (typically when their commit email can't be resolved to a user).
 type Person struct {
@@ -1736,6 +1746,19 @@ type AccountInvite struct {
 func (m *AccountInvite) Reset()         { *m = AccountInvite{} }
 func (m *AccountInvite) String() string { return proto.CompactTextString(m) }
 func (*AccountInvite) ProtoMessage()    {}
+
+type PendingInvite struct {
+	// Link is the URL for signing up using this invite.
+	Link string `protobuf:"bytes,1,opt,name=link,proto3" json:",omitempty"`
+	// Token identifies the pending invite.
+	Token string `protobuf:"bytes,2,opt,name=token,proto3" json:",omitempty"`
+	// EmailSent is set if the invite link was emailed to the user.
+	EmailSent bool `protobuf:"varint,3,opt,name=email_sent,proto3" json:",omitempty"`
+}
+
+func (m *PendingInvite) Reset()         { *m = PendingInvite{} }
+func (m *PendingInvite) String() string { return proto.CompactTextString(m) }
+func (*PendingInvite) ProtoMessage()    {}
 
 type AccountInviteList struct {
 	Invites []*AccountInvite `protobuf:"bytes,1,rep,name=invites" json:",omitempty"`
@@ -5073,7 +5096,7 @@ type AccountsClient interface {
 	// Update profile of existing account.
 	Update(ctx context.Context, in *User, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Invite creates a pending invite and notifies the recipient via email.
-	Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*PendingInvite, error)
 	// AcceptInvite uses a pending invite to create a new user account.
 	AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error)
 	// ListInvites lists the pending invites on this server.
@@ -5124,8 +5147,8 @@ func (c *accountsClient) Update(ctx context.Context, in *User, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *accountsClient) Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
+func (c *accountsClient) Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*PendingInvite, error) {
+	out := new(PendingInvite)
 	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/Invite", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -5164,7 +5187,7 @@ type AccountsServer interface {
 	// Update profile of existing account.
 	Update(context.Context, *User) (*pbtypes1.Void, error)
 	// Invite creates a pending invite and notifies the recipient via email.
-	Invite(context.Context, *AccountInvite) (*pbtypes1.Void, error)
+	Invite(context.Context, *AccountInvite) (*PendingInvite, error)
 	// AcceptInvite uses a pending invite to create a new user account.
 	AcceptInvite(context.Context, *AcceptedInvite) (*UserSpec, error)
 	// ListInvites lists the pending invites on this server.
@@ -5306,6 +5329,8 @@ type UsersClient interface {
 	ListEmails(ctx context.Context, in *UserSpec, opts ...grpc.CallOption) (*EmailAddrList, error)
 	// List users.
 	List(ctx context.Context, in *UsersListOptions, opts ...grpc.CallOption) (*UserList, error)
+	// Count returns the number of users signed up on this instance.
+	Count(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*UserCount, error)
 }
 
 type usersClient struct {
@@ -5352,6 +5377,15 @@ func (c *usersClient) List(ctx context.Context, in *UsersListOptions, opts ...gr
 	return out, nil
 }
 
+func (c *usersClient) Count(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*UserCount, error) {
+	out := new(UserCount)
+	err := grpc.Invoke(ctx, "/sourcegraph.Users/Count", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Users service
 
 type UsersServer interface {
@@ -5363,6 +5397,8 @@ type UsersServer interface {
 	ListEmails(context.Context, *UserSpec) (*EmailAddrList, error)
 	// List users.
 	List(context.Context, *UsersListOptions) (*UserList, error)
+	// Count returns the number of users signed up on this instance.
+	Count(context.Context, *pbtypes1.Void) (*UserCount, error)
 }
 
 func RegisterUsersServer(s *grpc.Server, srv UsersServer) {
@@ -5417,6 +5453,18 @@ func _Users_List_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return out, nil
 }
 
+func _Users_Count_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(pbtypes1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(UsersServer).Count(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Users_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Users",
 	HandlerType: (*UsersServer)(nil),
@@ -5436,6 +5484,10 @@ var _Users_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _Users_List_Handler,
+		},
+		{
+			MethodName: "Count",
+			Handler:    _Users_Count_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
