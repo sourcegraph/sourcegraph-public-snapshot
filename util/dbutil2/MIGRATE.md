@@ -1,6 +1,13 @@
 Migrations
 ==========
 
+## 2015 Dec 03
+
+```
+alter table users add column write boolean default 'f';
+update users set write = 't' where admin = 't';
+```
+
 ## 2015 Aug 02
 
 ```
