@@ -32,6 +32,7 @@ type dbUser struct {
 	Company        string
 	HomepageURL    string `db:"homepage_url"`
 	Disabled       bool   `db:"disabled"`
+	Write          bool
 	Admin          bool
 	RegisteredAt   *time.Time `db:"registered_at"`
 }
@@ -47,6 +48,7 @@ func (u *dbUser) toUser() *sourcegraph.User {
 		Company:        u.Company,
 		HomepageURL:    u.HomepageURL,
 		Disabled:       u.Disabled,
+		Write:          u.Write,
 		Admin:          u.Admin,
 		RegisteredAt:   ts(u.RegisteredAt),
 	}
@@ -62,6 +64,7 @@ func (u *dbUser) fromUser(u2 *sourcegraph.User) {
 	u.Company = u2.Company
 	u.HomepageURL = u2.HomepageURL
 	u.Disabled = u2.Disabled
+	u.Write = u2.Write
 	u.Admin = u2.Admin
 	u.RegisteredAt = tm(u2.RegisteredAt)
 }

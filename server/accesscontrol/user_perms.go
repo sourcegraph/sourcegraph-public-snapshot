@@ -12,7 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // VerifyUserHasWriteAccess checks if the user in the current context
@@ -83,32 +82,22 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method str
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
 	}
 
-	// If auth source is local, we currently do not differentiate between
-	// read and write access. The supported access levels for a user are:
-	// unauthenticated, authenticated and admin. It is recommended for
-	// instances with local auth to use the `auth.restrict-write-access`
-	// flag to restrict write access to admin users.
-	if authutil.ActiveFlags.IsLocal() {
-		return nil
+	var hasWrite bool
+	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
+		hasWrite = actor.HasWriteAccess()
+	} else {
+		// Get UserPermissions info for this user from the root server.
+		perms, err := getUserPermissionsFromRoot(ctx, actor)
+		if err != nil {
+			return err
+		}
+
+		hasWrite = perms.Write || perms.Admin
 	}
 
-	// If auth source is ldap, we currently do not differentiate between
-	// read and write access. The supported access levels for a user are:
-	// unauthenticated, authenticated and admin.
-	if authutil.ActiveFlags.IsLDAP() {
-		return nil
-	}
-
-	// Get UserPermissions info for this user from the root server.
-	perms, err := getUserPermissionsFromRoot(ctx, actor)
-	if err != nil {
-		return err
-	}
-
-	if !perms.Write && !perms.Admin {
+	if !hasWrite {
 		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
 	}
-
 	return nil
 }
 
@@ -134,12 +123,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 
 	var isAdmin bool
 	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
-		// Check local auth server for user's admin privileges.
-		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID)})
-		if err != nil {
-			return grpc.Errorf(codes.Internal, "admin operation (%s) denied: could not complete permissions check for user %v: %v", method, actor.UID, err)
-		}
-		isAdmin = user.Admin
+		isAdmin = actor.HasAdminAccess()
 	} else {
 		// Get UserPermissions info for this user from the root server.
 		if perms, err := getUserPermissionsFromRoot(ctx, actor); err != nil {
@@ -184,8 +168,8 @@ var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*s
 // context. To avoid additional latency from expensive public key
 // operations, that check is not repeated here, but be careful
 // about refactoring that check.
-func verifyScopeHasAccess(ctx context.Context, scopes []string, method string) bool {
-	for _, scope := range scopes {
+func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string) bool {
+	for scope := range scopes {
 		switch {
 		case strings.HasPrefix(scope, "internal:"):
 			// internal server commands have default write access.

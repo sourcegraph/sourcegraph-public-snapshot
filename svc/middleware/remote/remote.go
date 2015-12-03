@@ -66,6 +66,18 @@ func (s remoteAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbty
 	return sourcegraph.NewClientFromContext(ctx).Accounts.Update(ctx, v1)
 }
 
+func (s remoteAccounts) Invite(ctx context.Context, v1 *sourcegraph.AccountInvite) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Accounts.Invite(ctx, v1)
+}
+
+func (s remoteAccounts) AcceptInvite(ctx context.Context, v1 *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error) {
+	return sourcegraph.NewClientFromContext(ctx).Accounts.AcceptInvite(ctx, v1)
+}
+
+func (s remoteAccounts) ListInvites(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
+	return sourcegraph.NewClientFromContext(ctx).Accounts.ListInvites(ctx, v1)
+}
+
 type remoteAuth struct{ sourcegraph.AuthServer }
 
 func (s remoteAuth) GetAuthorizationCode(ctx context.Context, v1 *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {

@@ -42,6 +42,7 @@
 			</p>
 			<button type="submit" class="btn btn-primary btn-lg" tabindex=4>Create an account</button>
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			{{with .SignupForm.Token}}<input type="hidden" name="token" value="{{.}}">{{end}}
 		</form>
 	</div>
 </div>

@@ -1362,6 +1362,10 @@ message User {
 	// the Domain field.
 	bool admin = 12;
 
+	// Write is whether the user has write access for the site named by
+	// the Domain field.
+	bool write = 13;
+
 	// RegisteredAt is the date that the user registered. If the user has not
 	// registered (i.e., we have processed their repos but they haven't signed into
 	// Sourcegraph), it is null.
@@ -1570,6 +1574,27 @@ service Accounts {
 			post: "/accounts/update"
 		};
 	};
+
+	// Invite creates a pending invite and notifies the recipient via email.
+	rpc Invite(AccountInvite) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			post: "/accounts/Invite"
+		};
+	};
+
+	// AcceptInvite uses a pending invite to create a new user account.
+	rpc AcceptInvite(AcceptedInvite) returns (UserSpec) {
+		option (google.api.http) = {
+			post: "/accounts/Invite"
+		};
+	};
+
+	// ListInvites lists the pending invites on this server.
+	rpc ListInvites(pbtypes.Void) returns (AccountInviteList) {
+		option (google.api.http) = {
+			post: "/accounts/Invite"
+		};
+	};
 }
 
 message PasswordResetToken {
@@ -1597,6 +1622,29 @@ message NewAccount {
 
 	// UID is the desired UID for the new user account.
 	int32 uid = 4 [(gogoproto.customname) = "UID"];
+}
+
+message AccountInvite {
+	// Email is the primary email address for the new user account.
+	string email = 1;
+
+	// Write, if set, will grant write access to the user.
+	bool write = 2;
+
+	// Admin, if set, will grant admin access to the user.
+	bool admin = 3;
+}
+
+message AccountInviteList {
+	repeated AccountInvite invites = 1;
+}
+
+message AcceptedInvite {
+	// Account holds the desired account details.
+	NewAccount account = 1;
+
+	// Token identifies the pending invite.
+	string token = 2;
 }
 
 // UsersService communicates with the users-related endpoints in the Sourcegraph

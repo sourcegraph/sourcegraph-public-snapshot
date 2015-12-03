@@ -304,7 +304,7 @@ func (s *registeredClients) checkCtxUserIsAdmin(ctx context.Context, clientID st
 		// If ctx is not authenticated with a user, check if actor has a special scope
 		// that grants admin access on that client.
 		if actor.ClientID == clientID {
-			for _, scope := range actor.Scope {
+			for scope := range actor.Scope {
 				// internal server commands have default admin access.
 				if strings.HasPrefix(scope, "internal:") {
 					return true, nil

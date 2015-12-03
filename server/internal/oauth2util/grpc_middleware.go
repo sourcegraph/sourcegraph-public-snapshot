@@ -82,5 +82,5 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 }
 
 func elevatedActor(ctx context.Context) context.Context {
-	return auth.WithActor(ctx, auth.Actor{Scope: []string{"internal:tmp"}})
+	return auth.WithActor(ctx, auth.Actor{Scope: map[string]bool{"internal:tmp": true}})
 }

@@ -40,7 +40,8 @@ func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expire
 	if actor.ClientID != "" {
 		tok.Claims["ClientID"] = actor.ClientID
 	}
-	addScope(tok, actor.Scope)
+	scopes := auth.MarshalScope(actor.Scope)
+	addScope(tok, scopes)
 	addExpiry(tok, expiry)
 	addExtraClaims(tok, extraClaims)
 
@@ -100,8 +101,8 @@ func getSelfSigningKey(k *idkey.IDKey) ([]byte, error) {
 	return sk[:], nil
 }
 
-func addScope(tok *jwt.Token, scope []string) {
-	tok.Claims["Scope"] = strings.Join(scope, " ")
+func addScope(tok *jwt.Token, scopes []string) {
+	tok.Claims["Scope"] = strings.Join(scopes, " ")
 }
 
 func addExpiry(tok *jwt.Token, expiry time.Time) {
@@ -249,7 +250,8 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 	a.ClientID, _ = tok.Claims["ClientID"].(string)
 
 	scopeStr, _ := tok.Claims["Scope"].(string)
-	a.Scope = strings.Fields(scopeStr)
+	scopes := strings.Fields(scopeStr)
+	a.Scope = auth.UnmarshalScope(scopes)
 
 	return &a, nil
 }

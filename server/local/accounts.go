@@ -15,9 +15,11 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -28,6 +30,32 @@ type accounts struct{}
 func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
 	defer noCache(ctx)
 
+	usersStore := store.UsersFromContextOrNil(ctx)
+	if usersStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "users"}
+	}
+
+	var write, admin bool
+	// If this is the first user, set them as admin.
+	// TODO(performance): avoid doing a List() operation here by exposing a Count()
+	// method on the Users store.
+	existingUsers, err := usersStore.List(ctx, &sourcegraph.UsersListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if len(existingUsers) == 0 {
+		write = true
+		admin = true
+	} else if !authutil.ActiveFlags.AllowAllLogins {
+		// This is not the first user and this instance does not allow
+		// signup without an invite.
+		return nil, grpc.Errorf(codes.PermissionDenied, "cannot sign up without an invite")
+	}
+
+	return s.createWithPermissions(ctx, newAcct, write, admin)
+}
+
+func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.UserSpec, error) {
 	accountsStore := store.AccountsFromContextOrNil(ctx)
 	if accountsStore == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
@@ -56,6 +84,8 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		Login:        newAcct.Login,
 		RegisteredAt: &now,
 		UID:          newAcct.UID,
+		Write:        write,
+		Admin:        admin,
 	}
 
 	created, err := accountsStore.Create(ctx, newUser)
@@ -119,6 +149,90 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 	}
 
 	return &pbtypes.Void{}, nil
+}
+
+func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite) (*pbtypes.Void, error) {
+	defer noCache(ctx)
+
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
+		return nil, err
+	}
+
+	invitesStore := store.InvitesFromContextOrNil(ctx)
+	if invitesStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+	}
+
+	token, err := invitesStore.CreateOrUpdate(ctx, invite)
+	if err != nil {
+		return nil, err
+	}
+
+	u := conf.AppURL(ctx).ResolveReference(app_router.Rel.URLTo(app_router.SignUp))
+	v := url.Values{}
+	v.Set("email", invite.Email)
+	v.Set("token", token)
+	u.RawQuery = v.Encode()
+	_, err = sendEmail("invite-user", "", invite.Email, "You've been invited to Sourcegraph", nil,
+		[]gochimp.Var{gochimp.Var{Name: "INVITE_LINK", Content: u.String()}})
+	if err != nil {
+		return nil, fmt.Errorf("Error sending email: %s", err)
+	}
+
+	return &pbtypes.Void{}, nil
+}
+
+func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error) {
+	defer noCache(ctx)
+
+	invitesStore := store.InvitesFromContextOrNil(ctx)
+	if invitesStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+	}
+
+	invite, err := invitesStore.Retrieve(ctx, acceptedInvite.Token)
+	if err != nil {
+		return nil, grpc.Errorf(codes.PermissionDenied, "Invite is invalid: %v", err)
+	}
+
+	if invite.Email != acceptedInvite.Account.Email {
+		return nil, grpc.Errorf(codes.PermissionDenied, "Invite is invalid for the provided email: %s", acceptedInvite.Account.Email)
+	}
+
+	userSpec, err := s.createWithPermissions(ctx, acceptedInvite.Account, invite.Write, invite.Admin)
+	// If an account could not be created, mark the invite as unused.
+	if err != nil {
+		// If MarkUnused fails, we ignore the error. This makes the invite unusable,
+		// so the admin must send a new invite to the user.
+		invitesStore.MarkUnused(ctx, invite.Email)
+		return nil, err
+	}
+
+	if err := invitesStore.Delete(ctx, invite.Email); err != nil {
+		return nil, err
+	}
+
+	return userSpec, err
+}
+
+func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
+	defer noCache(ctx)
+
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.ListInvites"); err != nil {
+		return nil, err
+	}
+
+	invitesStore := store.InvitesFromContextOrNil(ctx)
+	if invitesStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+	}
+
+	invites, err := invitesStore.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sourcegraph.AccountInviteList{Invites: invites}, err
 }
 
 var validLoginRE = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)

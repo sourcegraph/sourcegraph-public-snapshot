@@ -130,6 +130,84 @@ func (s *CachedAccountsClient) Update(ctx context.Context, in *User, opts ...grp
 	return result, nil
 }
 
+func (s *CachedAccountsClient) Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "Accounts.Invite", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.AccountsClient.Invite(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Accounts.Invite", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedAccountsClient) AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error) {
+	if s.Cache != nil {
+		var cachedResult UserSpec
+		cached, err := s.Cache.Get(ctx, "Accounts.AcceptInvite", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.AccountsClient.AcceptInvite(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Accounts.AcceptInvite", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedAccountsClient) ListInvites(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*AccountInviteList, error) {
+	if s.Cache != nil {
+		var cachedResult AccountInviteList
+		cached, err := s.Cache.Get(ctx, "Accounts.ListInvites", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.AccountsClient.ListInvites(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Accounts.ListInvites", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 type CachedAuthClient struct {
 	AuthClient
 	Cache *grpccache.Cache

@@ -126,7 +126,7 @@ func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph
 		UID:      int(user.UID),
 		Login:    user.Login,
 		ClientID: req.ClientID,
-		Scope:    req.Scope,
+		Scope:    authpkg.UnmarshalScope(req.Scope),
 	}, map[string]string{"GrantType": "AuthorizationCode"}, 7*24*time.Hour)
 	if err != nil {
 		return nil, err
@@ -176,11 +176,24 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 		return nil, grpc.Errorf(codes.PermissionDenied, "refusing to issue access token from resource owner password to already authenticated user %d (only client, not user, must be authenticated)", a.UID)
 	}
 
-	tok, err := accesstoken.New(idkey.FromContext(ctx), authpkg.Actor{
-		UID:      int(user.UID),
-		Login:    user.Login,
-		ClientID: idkey.FromContext(ctx).ID,
-	}, map[string]string{"GrantType": "ResourceOwnerPassword"}, 7*24*time.Hour)
+	a.UID = int(user.UID)
+	a.Login = user.Login
+	a.ClientID = idkey.FromContext(ctx).ID
+	a.Scope = make(map[string]bool)
+	if user.Write {
+		a.Scope["user:write"] = true
+	}
+	if user.Write {
+		a.Scope["user:admin"] = true
+	}
+
+	tok, err := accesstoken.New(
+		idkey.FromContext(ctx),
+		a,
+		map[string]string{"GrantType": "ResourceOwnerPassword"},
+		7*24*time.Hour,
+	)
+
 	if err != nil {
 		return nil, err
 	}

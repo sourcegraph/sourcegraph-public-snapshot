@@ -26,6 +26,7 @@ type Stores struct {
 	Directory                       Directory
 	ExternalAuthTokens              ExternalAuthTokens
 	Graph                           srcstore.MultiRepoStoreImporterIndexer
+	Invites                         Invites
 	MirroredRepoSSHKeys             MirroredRepoSSHKeys
 	Orgs                            Orgs
 	Password                        Password
@@ -56,6 +57,7 @@ const (
 	_DirectoryKey
 	_ExternalAuthTokensKey
 	_GraphKey
+	_InvitesKey
 	_MirroredRepoSSHKeysKey
 	_OrgsKey
 	_PasswordKey
@@ -100,6 +102,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Graph != nil {
 		ctx = WithGraph(ctx, s.Graph)
+	}
+	if s.Invites != nil {
+		ctx = WithInvites(ctx, s.Invites)
 	}
 	if s.MirroredRepoSSHKeys != nil {
 		ctx = WithMirroredRepoSSHKeys(ctx, s.MirroredRepoSSHKeys)
@@ -333,6 +338,29 @@ func GraphFromContext(ctx context.Context) srcstore.MultiRepoStoreImporterIndexe
 // GraphFromContextOrNil returns the context's Graph store if present, or else nil.
 func GraphFromContextOrNil(ctx context.Context) srcstore.MultiRepoStoreImporterIndexer {
 	s, ok := ctx.Value(_GraphKey).(srcstore.MultiRepoStoreImporterIndexer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithInvites returns a copy of parent with the given Invites store.
+func WithInvites(parent context.Context, s Invites) context.Context {
+	return context.WithValue(parent, _InvitesKey, s)
+}
+
+// InvitesFromContext gets the context's Invites store. If the store is not present, it panics.
+func InvitesFromContext(ctx context.Context) Invites {
+	s, ok := ctx.Value(_InvitesKey).(Invites)
+	if !ok || s == nil {
+		panic("no Invites set in context")
+	}
+	return s
+}
+
+// InvitesFromContextOrNil returns the context's Invites store if present, or else nil.
+func InvitesFromContextOrNil(ctx context.Context) Invites {
+	s, ok := ctx.Value(_InvitesKey).(Invites)
 	if ok {
 		return s
 	}

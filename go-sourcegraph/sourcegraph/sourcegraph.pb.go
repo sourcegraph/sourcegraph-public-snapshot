@@ -111,6 +111,9 @@ It has these top-level messages:
 	PasswordResetToken
 	NewPassword
 	NewAccount
+	AccountInvite
+	AccountInviteList
+	AcceptedInvite
 	SSHPublicKey
 	AuthorizationCodeRequest
 	AuthorizationCode
@@ -1618,6 +1621,9 @@ type User struct {
 	// Admin is whether the user is a site admin for the site named by
 	// the Domain field.
 	Admin bool `protobuf:"varint,12,opt,name=admin,proto3" json:",omitempty"`
+	// Write is whether the user has write access for the site named by
+	// the Domain field.
+	Write bool `protobuf:"varint,13,opt,name=write,proto3" json:",omitempty"`
 	// RegisteredAt is the date that the user registered. If the user has not
 	// registered (i.e., we have processed their repos but they haven't signed into
 	// Sourcegraph), it is null.
@@ -1717,6 +1723,38 @@ type NewAccount struct {
 func (m *NewAccount) Reset()         { *m = NewAccount{} }
 func (m *NewAccount) String() string { return proto.CompactTextString(m) }
 func (*NewAccount) ProtoMessage()    {}
+
+type AccountInvite struct {
+	// Email is the primary email address for the new user account.
+	Email string `protobuf:"bytes,1,opt,name=email,proto3" json:",omitempty"`
+	// Write, if set, will grant write access to the user.
+	Write bool `protobuf:"varint,2,opt,name=write,proto3" json:",omitempty"`
+	// Admin, if set, will grant admin access to the user.
+	Admin bool `protobuf:"varint,3,opt,name=admin,proto3" json:",omitempty"`
+}
+
+func (m *AccountInvite) Reset()         { *m = AccountInvite{} }
+func (m *AccountInvite) String() string { return proto.CompactTextString(m) }
+func (*AccountInvite) ProtoMessage()    {}
+
+type AccountInviteList struct {
+	Invites []*AccountInvite `protobuf:"bytes,1,rep,name=invites" json:",omitempty"`
+}
+
+func (m *AccountInviteList) Reset()         { *m = AccountInviteList{} }
+func (m *AccountInviteList) String() string { return proto.CompactTextString(m) }
+func (*AccountInviteList) ProtoMessage()    {}
+
+type AcceptedInvite struct {
+	// Account holds the desired account details.
+	Account *NewAccount `protobuf:"bytes,1,opt,name=account" json:",omitempty"`
+	// Token identifies the pending invite.
+	Token string `protobuf:"bytes,2,opt,name=token,proto3" json:",omitempty"`
+}
+
+func (m *AcceptedInvite) Reset()         { *m = AcceptedInvite{} }
+func (m *AcceptedInvite) String() string { return proto.CompactTextString(m) }
+func (*AcceptedInvite) ProtoMessage()    {}
 
 // SSHPublicKey that users to authenticate with for SSH git access.
 type SSHPublicKey struct {
@@ -5034,6 +5072,12 @@ type AccountsClient interface {
 	ResetPassword(ctx context.Context, in *NewPassword, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Update profile of existing account.
 	Update(ctx context.Context, in *User, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// Invite creates a pending invite and notifies the recipient via email.
+	Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// AcceptInvite uses a pending invite to create a new user account.
+	AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error)
+	// ListInvites lists the pending invites on this server.
+	ListInvites(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AccountInviteList, error)
 }
 
 type accountsClient struct {
@@ -5080,6 +5124,33 @@ func (c *accountsClient) Update(ctx context.Context, in *User, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *accountsClient) Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/Invite", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountsClient) AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error) {
+	out := new(UserSpec)
+	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/AcceptInvite", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountsClient) ListInvites(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AccountInviteList, error) {
+	out := new(AccountInviteList)
+	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/ListInvites", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Accounts service
 
 type AccountsServer interface {
@@ -5092,6 +5163,12 @@ type AccountsServer interface {
 	ResetPassword(context.Context, *NewPassword) (*pbtypes1.Void, error)
 	// Update profile of existing account.
 	Update(context.Context, *User) (*pbtypes1.Void, error)
+	// Invite creates a pending invite and notifies the recipient via email.
+	Invite(context.Context, *AccountInvite) (*pbtypes1.Void, error)
+	// AcceptInvite uses a pending invite to create a new user account.
+	AcceptInvite(context.Context, *AcceptedInvite) (*UserSpec, error)
+	// ListInvites lists the pending invites on this server.
+	ListInvites(context.Context, *pbtypes1.Void) (*AccountInviteList, error)
 }
 
 func RegisterAccountsServer(s *grpc.Server, srv AccountsServer) {
@@ -5146,6 +5223,42 @@ func _Accounts_Update_Handler(srv interface{}, ctx context.Context, dec func(int
 	return out, nil
 }
 
+func _Accounts_Invite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(AccountInvite)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AccountsServer).Invite(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Accounts_AcceptInvite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(AcceptedInvite)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AccountsServer).AcceptInvite(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Accounts_ListInvites_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(pbtypes1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AccountsServer).ListInvites(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Accounts_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Accounts",
 	HandlerType: (*AccountsServer)(nil),
@@ -5165,6 +5278,18 @@ var _Accounts_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Update",
 			Handler:    _Accounts_Update_Handler,
+		},
+		{
+			MethodName: "Invite",
+			Handler:    _Accounts_Invite_Handler,
+		},
+		{
+			MethodName: "AcceptInvite",
+			Handler:    _Accounts_AcceptInvite_Handler,
+		},
+		{
+			MethodName: "ListInvites",
+			Handler:    _Accounts_ListInvites_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

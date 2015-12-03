@@ -269,6 +269,63 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 
 }
 
+func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountInvite) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Accounts", "Invite", param)
+	defer func() {
+		trace.After(ctx, "Accounts", "Invite", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Accounts.Invite")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Accounts
+
+	res, err = target.Invite(ctx, param)
+	return
+
+}
+
+func (s wrappedAccounts) AcceptInvite(ctx context.Context, param *sourcegraph.AcceptedInvite) (res *sourcegraph.UserSpec, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Accounts", "AcceptInvite", param)
+	defer func() {
+		trace.After(ctx, "Accounts", "AcceptInvite", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Accounts.AcceptInvite")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Accounts
+
+	res, err = target.AcceptInvite(ctx, param)
+	return
+
+}
+
+func (s wrappedAccounts) ListInvites(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.AccountInviteList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Accounts", "ListInvites", param)
+	defer func() {
+		trace.After(ctx, "Accounts", "ListInvites", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Accounts.ListInvites")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Accounts
+
+	res, err = target.ListInvites(ctx, param)
+	return
+
+}
+
 type wrappedAuth struct {
 	c *auth.Config
 }

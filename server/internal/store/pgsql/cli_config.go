@@ -29,4 +29,5 @@ var Stores = &store.Stores{
 	Users:               &Users{},
 	UserKeys:            fs.NewUserKeys(),
 	Changesets:          &fs.Changesets{},
+	Invites:             &Invites{},
 }

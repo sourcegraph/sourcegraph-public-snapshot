@@ -27,17 +27,9 @@ type Actor struct {
 	// server executing the operation.
 	ClientID string `json:",omitempty"`
 
-	// Scope is the list of authorized scopes that the actor has
-	// access to.
-	Scope []string `json:",omitempty"`
-
-	// SiteAdmin is whether this actor is a site admin. NOTE: It is
-	// not implemented.
-	//
-	// TODO(sqs): derive this from (sourcegraph.User).Admin or
-	// something like that. Currently this is never set to true (which
-	// is fine for now).
-	SiteAdmin_UNIMPLEMENTED bool `json:",omitempty"`
+	// Scope is a map of authorized scopes that the actor has
+	// access to on the given server.
+	Scope map[string]bool `json:",omitempty"`
 }
 
 func (a Actor) String() string {
@@ -56,4 +48,37 @@ func (a Actor) IsAuthenticated() bool {
 // authenticated user.
 func (a Actor) IsUser() bool {
 	return a.UID != 0
+}
+
+// HasScope returns a boolean indicating whether this actor has the
+// given scope.
+func (a Actor) HasScope(s string) bool {
+	hasScope, ok := a.Scope[s]
+	return ok && hasScope
+}
+
+// HasWriteAccess checks if the actor has "user:write" or "user:admin" scopes.
+func (a Actor) HasWriteAccess() bool {
+	return a.HasScope("user:write") || a.HasScope("user:admin")
+}
+
+// HasAdminAccess checks if the actor has "user:admin" scope.
+func (a Actor) HasAdminAccess() bool {
+	return a.HasScope("user:admin")
+}
+
+func UnmarshalScope(scope []string) map[string]bool {
+	scopeMap := make(map[string]bool)
+	for _, s := range scope {
+		scopeMap[s] = true
+	}
+	return scopeMap
+}
+
+func MarshalScope(scopeMap map[string]bool) []string {
+	scope := make([]string, 0)
+	for s := range scopeMap {
+		scope = append(scope, s)
+	}
+	return scope
 }

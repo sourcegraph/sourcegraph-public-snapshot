@@ -30,6 +30,28 @@ type Accounts interface {
 	ResetPassword(context.Context, *sourcegraph.NewPassword) error
 }
 
+// Invites manages pending invites to new users.
+type Invites interface {
+	// CreateOrUpdate creates an invite for the given email, and if one exists then
+	// the invite is updated. A token is returned which can be used to retrieve the invite.
+	CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error)
+
+	// Retrieve gets the invite and marks as in use to avoid creating multiple accounts
+	// from one invite. If the invite is already marked for use, this will return an error.
+	Retrieve(ctx context.Context, token string) (*sourcegraph.AccountInvite, error)
+
+	// MarkUnused marks an invite as unused. This should be called if an account could
+	// not be created from this invite.
+	MarkUnused(ctx context.Context, token string) error
+
+	// Delete removes an invite. This should be called after an account is successfully
+	// created from this invite, to prevent creation of multiple accounts.
+	Delete(ctx context.Context, token string) error
+
+	// List fetches all pending invites on this server.
+	List(ctx context.Context) ([]*sourcegraph.AccountInvite, error)
+}
+
 type Directory interface {
 	GetUserByEmail(ctx context.Context, email string) (*sourcegraph.UserSpec, error)
 }

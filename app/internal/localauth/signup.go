@@ -2,6 +2,7 @@ package localauth
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -29,6 +30,8 @@ func init() {
 type signupForm struct {
 	sourcegraph.NewAccount
 	form.Validation
+
+	Token string
 }
 
 func (f *signupForm) Validate() {
@@ -55,9 +58,18 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
+	if err := r.ParseForm(); err != nil {
+		return fmt.Errorf("parse form error: %s", err)
+	}
+	inviteToken := r.Form.Get("token")
+	email := r.Form.Get("email")
+
 	switch r.Method {
 	case "GET":
-		return serveSignupForm(w, r, signupForm{})
+		return serveSignupForm(w, r, signupForm{
+			NewAccount: sourcegraph.NewAccount{Email: email},
+			Token:      inviteToken,
+		})
 	case "POST":
 		return serveSignupSubmit(w, r)
 	}
@@ -99,7 +111,18 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 		return serveSignupForm(w, r, form)
 	}
 
-	userSpec, err := cl.Accounts.Create(ctx, &form.NewAccount)
+	var userSpec *sourcegraph.UserSpec
+	var err error
+
+	if form.Token == "" {
+		userSpec, err = cl.Accounts.Create(ctx, &form.NewAccount)
+	} else {
+		userSpec, err = cl.Accounts.AcceptInvite(ctx, &sourcegraph.AcceptedInvite{
+			Account: &form.NewAccount,
+			Token:   form.Token,
+		})
+	}
+
 	if err != nil {
 		switch errcode.GRPC(err) {
 		case codes.InvalidArgument:
@@ -110,7 +133,8 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 			} else {
 				form.AddFieldError("Login", formErrorUsernameAlreadyTaken)
 			}
-
+		case codes.PermissionDenied:
+			form.Errors = []string{err.Error()}
 		default:
 			return err
 		}

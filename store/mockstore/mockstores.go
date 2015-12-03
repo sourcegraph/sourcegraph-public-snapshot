@@ -26,6 +26,7 @@ type Stores struct {
 	Directory                       Directory
 	ExternalAuthTokens              ExternalAuthTokens
 	Graph                           srcstore.MockMultiRepoStore
+	Invites                         Invites
 	MirroredRepoSSHKeys             MirroredRepoSSHKeys
 	Orgs                            Orgs
 	Password                        Password
@@ -55,6 +56,7 @@ func (s *Stores) Stores() store.Stores {
 		Directory:                       &s.Directory,
 		ExternalAuthTokens:              &s.ExternalAuthTokens,
 		Graph:                           &s.Graph,
+		Invites:                         &s.Invites,
 		MirroredRepoSSHKeys:             &s.MirroredRepoSSHKeys,
 		Orgs:                            &s.Orgs,
 		Password:                        &s.Password,

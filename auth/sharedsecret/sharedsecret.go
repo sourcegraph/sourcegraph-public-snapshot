@@ -39,7 +39,7 @@ type tokenSource struct {
 func (ts *tokenSource) Token() (*oauth2.Token, error) {
 	return accesstoken.New(ts.k, auth.Actor{
 		ClientID: ts.k.ID,
-		Scope:    ts.scope,
+		Scope:    auth.UnmarshalScope(ts.scope),
 	}, map[string]string{"GrantType": "SharedSecret"}, expiry)
 }
 
