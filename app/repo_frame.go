@@ -90,9 +90,7 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	// TODO(beyang): think of more robust way of isolating apps to
 	// prevent shared mutable state (e.g., modifying http.Requests) to
 	// prevent inter-app interference
-	rCopy := *r
-	urlCopy := *r.URL
-	rCopy.URL = &urlCopy
+	rCopy := copyRequest(r)
 
 	ctx := httpctx.FromRequest(r)
 
@@ -100,8 +98,8 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	httpctx.SetForRequest(&rCopy, framectx)
-	defer gcontext.Clear(&rCopy) // clear the app context after finished to avoid a memory leak
+	httpctx.SetForRequest(rCopy, framectx)
+	defer gcontext.Clear(rCopy) // clear the app context after finished to avoid a memory leak
 
 	rr := httptest.NewRecorder()
 
@@ -112,9 +110,9 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	platform.SetPlatformRequestURL(framectx, w, r, &rCopy)
+	platform.SetPlatformRequestURL(framectx, w, r, rCopy)
 
-	app.Handler.ServeHTTP(rr, &rCopy)
+	app.Handler.ServeHTTP(rr, rCopy)
 
 	// extract response body (purposefully ignoring headers)
 	body := string(rr.Body.Bytes())

@@ -2,6 +2,7 @@ package app
 
 import (
 	"html/template"
+	"net/http"
 	"regexp"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -22,4 +23,11 @@ func sanitizeFormattedCode(html string) template.HTML {
 	p.AllowAttrs("href").OnElements("a")
 	p.AllowAttrs("class").Matching(formattingClasses).OnElements("a", "span")
 	return template.HTML(p.Sanitize(html))
+}
+
+func copyRequest(r *http.Request) *http.Request {
+	rCopy := *r
+	urlCopy := *r.URL
+	rCopy.URL = &urlCopy
+	return &rCopy
 }

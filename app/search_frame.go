@@ -66,13 +66,6 @@ func serveRepoPlatformSearchResults(w http.ResponseWriter, r *http.Request) erro
 		w.WriteHeader(rr.Code)
 	}
 
-	io.Copy(w, rr.Body)
-	return nil
-}
-
-func copyRequest(r *http.Request) *http.Request {
-	rCopy := *r
-	urlCopy := *r.URL
-	rCopy.URL = &urlCopy
-	return &rCopy
+	_, err = io.Copy(w, rr.Body)
+	return err
 }
