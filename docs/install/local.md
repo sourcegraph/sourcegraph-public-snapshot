@@ -19,18 +19,31 @@ Sourcegraph is supported on OS X 10.8+. Install using one of the following metho
 
 Next, try `src serve` and visit [http://localhost:3080](http://localhost:3080).
 
-# Install on Ubuntu Linux
+# Install on Linux
 
-Sourcegraph is supported on Ubuntu 12.04 and 14.04. Install using one of the following methods:
+Linux installations will create a configuration file at `/etc/sourcegraph/config.ini` and
+an upstart script which runs your Sourcegraph server.
+
+## Ubuntu 12.04/14.04
+
+Install using one of the following methods:
 
 * `wget -O - https://sourcegraph.com/.download/install.sh | bash`
 * Download [src.deb (64-bit)](https://sourcegraph.com/.download/latest/linux-amd64/src.deb)
 and install with `sudo dpkg -i src.deb`
 
-**Note:** installing the `.deb` will create a configuration file at `/etc/sourcegraph/config.ini`
-and an upstart script which runs a Sourcegraph server.
-
 When done, run `sudo restart src` and visit [http://localhost:3080](http://localhost:3080)
+(or an alternate address, if you modified the configuration).
+
+## CentOS 6.3 or Red Hat 7.1
+
+Install using one of the following methods:
+
+* `curl -sSL https://sourcegraph.com/.download/install.sh | bash`
+* Download [src.rpm (64-bit)](https://sourcegraph.com/.download/latest/linux-amd64/src.rpm)
+and install with `sudo yum -y src.rpm`
+
+When done, run `src serve` and visit [http://localhost:3080](http://localhost:3080)
 (or an alternate address, if you modified the configuration).
 
 # Next steps
