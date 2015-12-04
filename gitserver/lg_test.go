@@ -71,7 +71,7 @@ func TestGitClone_authRequired(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	authedCtx := a.AsUID(ctx, int(user.UID))
+	authedCtx := a.AsUIDWithScope(ctx, int(user.UID), []string{"user:write"})
 
 	_, done, err := testutil.CreateRepo(t, authedCtx, "myrepo")
 	if err != nil {

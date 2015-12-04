@@ -206,12 +206,12 @@ func (s *Server) AsUser(ctx context.Context, login string) (context.Context, err
 	return s.AsUID(ctx, int(u.UID)), nil
 }
 
-func (s *Server) AsUID(ctx context.Context, uid int) context.Context {
+func (s *Server) AsUIDWithScope(ctx context.Context, uid int, scope []string) context.Context {
 	k := idkey.FromContext(s.Ctx)
 	token, err := accesstoken.New(
 		k,
-		auth.Actor{UID: uid, ClientID: k.ID},
-		map[string]string{"GrantType": "AsUID"},
+		auth.Actor{UID: uid, ClientID: k.ID, Scope: auth.UnmarshalScope(scope)},
+		map[string]string{"GrantType": "AsUIDWithScope"},
 		0,
 	)
 	if err != nil {
@@ -462,7 +462,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	}
 	s.Ctx = idkey.NewContext(s.Ctx, idKey)
 
-	s.Ctx = s.AsUID(s.Ctx, 1)
+	s.Ctx = s.AsUIDWithScope(s.Ctx, 1, []string{"user:write"})
 
 	if Store == "pgsql" {
 		if err := s.configDB(); err != nil {

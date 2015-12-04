@@ -67,7 +67,7 @@ func (c *Config) Authenticate(ctx context.Context, label string) (err error) {
 	// Always allow methods that are called to establish
 	// authentication; otherwise users wouldn't be able ever log in.
 	switch label {
-	case "Auth.GetAccessToken", "Accounts.Create", "Auth.Identify", "Meta.Config", "Accounts.RequestPasswordReset", "Accounts.ResetPassword", "RegisteredClients.GetCurrent":
+	case "Auth.GetAccessToken", "Accounts.Create", "Accounts.AcceptInvite", "Auth.Identify", "Meta.Config", "Accounts.RequestPasswordReset", "Accounts.ResetPassword", "RegisteredClients.GetCurrent", "Users.Count":
 		return nil
 	case "GraphUplink.Push", "GraphUplink.PushEvents":
 		// This is for backwards compatibility with client instances that are running older versions

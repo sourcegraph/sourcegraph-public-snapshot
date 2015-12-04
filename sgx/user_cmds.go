@@ -135,7 +135,7 @@ func (c *userInviteCmd) Execute(args []string) error {
 			Admin: c.Admin,
 		})
 		if err != nil {
-			fmt.Println("FAIL %s: %v", email, err)
+			fmt.Printf("FAIL %s: %v\n", email, err)
 			continue
 		}
 		status := fmt.Sprintf("  OK %s: %s", email, pendingInvite.Link)
@@ -147,7 +147,7 @@ func (c *userInviteCmd) Execute(args []string) error {
 	}
 
 	if success {
-		fmt.Println("# Share the above link with users for signing up on Sourcegraph")
+		fmt.Println("# Share the above link with the user(s) to accept the invite")
 	}
 
 	return nil

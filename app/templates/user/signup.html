@@ -9,6 +9,9 @@
 		<h1>Welcome to Sourcegraph!</h1>
 		<p>Set up your instance by first creating an admin account. You can then invite teammates to this instance by
 		following <a href="https://src.sourcegraph.com/sourcegraph/.docs/management/access-control/">these instructions</a>.</p>
+		{{else if .SignupFrom.Token}}
+		<h1>Join this Sourcegraph</h1>
+		<p>To accept your invitation, create a new account on this Sourcegraph server by choosing a login and password.</p>
 		{{else}}
 		<h1>Create a personal account</h1>
 		{{end}}
@@ -48,7 +51,7 @@
 			</p>
 			<button type="submit" class="btn btn-primary btn-lg" tabindex=4>Create an account</button>
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-			{{with .SignupForm.Token}}<input type="hidden" name="token" value="{{.}}">{{end}}
+			{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
 		</form>
 	</div>
 </div>

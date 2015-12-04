@@ -111,7 +111,7 @@ func TestBuildRepo_serverside_hosted_authRequired_lg(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = a.AsUID(ctx, int(user.UID))
+	ctx = a.AsUID(ctx, int(user.UID), []string{"user:write"})
 
 	repo, done, err := testutil.CreateRepo(t, ctx, "r/r")
 	if err != nil {
@@ -160,7 +160,7 @@ func TestBuildRepo_push_hosted_authRequired_lg(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = a.AsUID(ctx, int(user.UID))
+	ctx = a.AsUIDWithScope(ctx, int(user.UID), []string{"user:write"})
 
 	repo, done, err := testutil.CreateRepo(t, ctx, "r/r")
 	if err != nil {

@@ -20,7 +20,7 @@ func main() {
 
 func serviceIsFederated(x *gen.Service) bool {
 	switch x.Name {
-	case "Accounts", "Auth", "Builds", "Defs", "Deltas", "MirrorRepos", "RegisteredClients", "RepoBadges", "RepoStatuses", "RepoTree", "Repos", "Search", "Units", "Users":
+	case "Builds", "Defs", "Deltas", "MirrorRepos", "RepoBadges", "RepoStatuses", "RepoTree", "Repos", "Search", "Units", "Users":
 		return true
 	}
 	return false

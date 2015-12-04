@@ -14,7 +14,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
-const invitesDBFilename = "authorization_codes.json"
+const invitesDBFilename = "invites.json"
 
 // dbInvites stores account invites and metadata.
 type dbInvites struct {

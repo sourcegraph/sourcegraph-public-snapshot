@@ -15,8 +15,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestCreate(t *testing.T) {
+func TestCreateFirstAccount(t *testing.T) {
 	ctx, mock := testContext()
+	mock.stores.Users.Count_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
+		return &sourcegraph.UserCount{}, nil
+	}
 	mock.stores.Password.SetPassword_ = func(ctx context.Context, uid int32, password string) error {
 		if want := "secret"; password != want {
 			t.Errorf("got %s, want %s", password, want)
@@ -29,6 +32,35 @@ func TestCreate(t *testing.T) {
 	mock.stores.Accounts.Create_ = func(ctx context.Context, u *sourcegraph.User) (*sourcegraph.User, error) {
 		if want := "a user"; want != u.Login {
 			t.Errorf("got %s, want %s", u.Login, want)
+		}
+		if !u.Write || !u.Admin {
+			t.Errorf("got non-privileged account (write:%v, admin:%v), want admin account", u.Write, u.Admin)
+		}
+		return &sourcegraph.User{UID: 123}, nil
+	}
+	Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "a user", Password: "func"})
+}
+
+func TestCreate(t *testing.T) {
+	ctx, mock := testContext()
+	mock.stores.Users.Count_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
+		return &sourcegraph.UserCount{Count: 1}, nil
+	}
+	mock.stores.Password.SetPassword_ = func(ctx context.Context, uid int32, password string) error {
+		if want := "secret"; password != want {
+			t.Errorf("got %s, want %s", password, want)
+		}
+		if want := int32(123); uid != want {
+			t.Errorf("got %d, want %d", uid, want)
+		}
+		return nil
+	}
+	mock.stores.Accounts.Create_ = func(ctx context.Context, u *sourcegraph.User) (*sourcegraph.User, error) {
+		if want := "a user"; want != u.Login {
+			t.Errorf("got %s, want %s", u.Login, want)
+		}
+		if u.Write || u.Admin {
+			t.Errorf("got privileged account (write:%v, admin:%v), want regular account", u.Write, u.Admin)
 		}
 		return &sourcegraph.User{UID: 123}, nil
 	}

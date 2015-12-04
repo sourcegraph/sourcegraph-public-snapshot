@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/mattbaird/gochimp"
@@ -23,9 +24,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-var Accounts sourcegraph.AccountsServer = &accounts{}
+var Accounts sourcegraph.AccountsServer = &accounts{mu: &sync.Mutex{}}
 
-type accounts struct{}
+type accounts struct {
+	// Used for gating access to AcceptInvite method
+	mu *sync.Mutex
+}
 
 func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
 	defer noCache(ctx)
@@ -191,6 +195,12 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error) {
 	defer noCache(ctx)
 
+	// Prevent concurrent executions of this method to avoid creation of multiple
+	// accounts from the same invite token.
+	// TODO(performance): partition lock on token string.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "invites"}
@@ -214,7 +224,7 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 		return nil, err
 	}
 
-	if err := invitesStore.Delete(ctx, invite.Email); err != nil {
+	if err := invitesStore.Delete(ctx, acceptedInvite.Token); err != nil {
 		return nil, err
 	}
 

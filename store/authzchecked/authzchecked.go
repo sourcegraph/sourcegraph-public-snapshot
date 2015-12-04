@@ -44,7 +44,7 @@ func checkActorUID(ctx context.Context, uid int) error {
 // checkSiteAdmin returns ErrSiteAdminOnly if the context's actor is
 // not a site admin.
 func checkSiteAdmin(ctx context.Context) error {
-	if actor := auth.ActorFromContext(ctx); actor.SiteAdmin_UNIMPLEMENTED {
+	if actor := auth.ActorFromContext(ctx); actor.HasAdminAccess() {
 		return nil
 	}
 	return ErrSiteAdminOnly
