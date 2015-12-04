@@ -1,5 +1,5 @@
 var React			= require("react"),
-		Clipboard	= require("clipboard");
+	Clipboard	= require("clipboard");
 
 var RepoCloneBox = React.createClass({
 
