@@ -97,7 +97,8 @@ const (
 	Markdown = "markdown"
 
 	// Platform routes
-	RepoAppFrame = "repo.appframe"
+	RepoAppFrame       = "repo.appframe"
+	RepoPlatformSearch = "repo.platformsearch"
 )
 
 // Router is an app URL router.
@@ -200,6 +201,7 @@ func New(base *mux.Router) *Router {
 	repoRev.Path("/.badges").Methods("GET").Name(RepoBadges)
 	repoRev.Path("/.badges/{Badge}.{Format}").Methods("GET").Name(RepoBadge)
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
+
 	repoRev.Path("/.counters").Methods("GET").Name(RepoCounters)
 	repoRev.Path("/.counters/{Counter}.{Format}").Methods("GET").Name(RepoCounter)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
@@ -223,6 +225,10 @@ func New(base *mux.Router) *Router {
 	repoBuild := repo.PathPrefix(repoBuildPath).Subrouter()
 	repoBuild.Path("/log").Methods("GET").Name(RepoBuildLog)
 	repoBuild.Path("/tasks/{TaskID}/log").Methods("GET").Name(RepoBuildTaskLog)
+
+	// This route dispatches to all SearchFrames that were registered through
+	// RegisterSearchFrame in the platform package.
+	repoRev.Path("/.search/{AppID}").Methods("GET").Name(RepoPlatformSearch)
 
 	// This route should be AFTER all other repo/repoRev routes;
 	// otherwise it will match every subroute.

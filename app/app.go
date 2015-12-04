@@ -166,6 +166,9 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoTags).Handler(internal.Handler(serveRepoTags))
 	r.Get(router.RepoBranches).Handler(internal.Handler(serveRepoBranches))
 
+	// This route dispatches to registered SearchFrames.
+	r.Get(router.RepoPlatformSearch).Handler(internal.Handler(serveRepoPlatformSearchResults))
+
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(internal.Handler(handlerFunc))
 	}

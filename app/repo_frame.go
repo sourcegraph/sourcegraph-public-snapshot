@@ -2,14 +2,12 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"sort"
-	"strings"
 
 	gcontext "github.com/gorilla/context"
 	"github.com/sourcegraph/mux"
@@ -92,9 +90,7 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	// TODO(beyang): think of more robust way of isolating apps to
 	// prevent shared mutable state (e.g., modifying http.Requests) to
 	// prevent inter-app interference
-	rCopy := *r
-	urlCopy := *r.URL
-	rCopy.URL = &urlCopy
+	rCopy := copyRequest(r)
 
 	ctx := httpctx.FromRequest(r)
 
@@ -102,8 +98,8 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	httpctx.SetForRequest(&rCopy, framectx)
-	defer gcontext.Clear(&rCopy) // clear the app context after finished to avoid a memory leak
+	httpctx.SetForRequest(rCopy, framectx)
+	defer gcontext.Clear(rCopy) // clear the app context after finished to avoid a memory leak
 
 	rr := httptest.NewRecorder()
 
@@ -114,26 +110,9 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// The canonical URL for app root page does not have a trailing slash, so redirect.
-	if rCopy.URL.Path == stripPrefix+"/" {
-		baseURL := stripPrefix
-		if rCopy.URL.RawQuery != "" {
-			baseURL += "?" + rCopy.URL.RawQuery
-		}
-		http.Redirect(w, r, baseURL, http.StatusMovedPermanently)
-		return nil
-	}
+	platform.SetPlatformRequestURL(framectx, w, r, rCopy)
 
-	// strip prefix
-	if p := strings.TrimPrefix(rCopy.URL.Path, stripPrefix); len(p) < len(r.URL.Path) {
-		rCopy.URL.Path = p
-		if rCopy.URL.Path == "" { // For the app http.Handler, the root path should always be "/".
-			rCopy.URL.Path = "/"
-		}
-	} else {
-		return fmt.Errorf("could not load app: %q was not a prefix of %q", stripPrefix, rCopy.URL.Path)
-	}
-	app.Handler.ServeHTTP(rr, &rCopy)
+	app.Handler.ServeHTTP(rr, rCopy)
 
 	// extract response body (purposefully ignoring headers)
 	body := string(rr.Body.Bytes())
