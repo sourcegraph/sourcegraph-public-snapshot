@@ -27,8 +27,21 @@ Sourcegraph is supported on Ubuntu 12.04 and 14.04. Install using one of the fol
 * Download [src.deb (64-bit)](https://sourcegraph.com/.download/latest/linux-amd64/src.deb)
 and install with `sudo dpkg -i src.deb`
 
-**Note:** installing the `.deb` will create a configuration file at `/etc/sourcegraph/config.ini`
-and an upstart script which runs a Sourcegraph server.
+**Note:** both options will will create a configuration file at `/etc/sourcegraph/config.ini`
+and an upstart script which runs your Sourcegraph server.
+
+When done, run `sudo restart src` and visit [http://localhost:3080](http://localhost:3080)
+(or an alternate address, if you modified the configuration).
+
+# Install on CentOS or Red Hat Linux
+
+Sourcegraph is supported on CentOS 6.3 and Red Hat 7.1. Install using one of the following methods:
+
+* `curl -sSL https://sourcegraph.com/.download/install.sh | bash`
+* Download [src.rpm (64-bit)](https://sourcegraph.com/.download/latest/linux-amd64/src.rpm)
+and install with `sudo yum -y src.rpm`
+
+**Note:** both options will create a configuration file at `/etc/sourcegraph/config.ini`.
 
 When done, run `sudo restart src` and visit [http://localhost:3080](http://localhost:3080)
 (or an alternate address, if you modified the configuration).

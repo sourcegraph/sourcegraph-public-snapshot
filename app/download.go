@@ -203,8 +203,8 @@ do_install() {
 			fi
 
 			echo "Installing the rpm package"
-			wget https://sourcegraph.com/.download/latest/linux-amd64/src.rpm
-			sudo yum install src.rpm
+			curl -O -L https://sourcegraph.com/.download/latest/linux-amd64/src.rpm
+			sudo yum -y install src.rpm
 		else
 			# Install git if it's not already installed.
 			if ! have_git; then
