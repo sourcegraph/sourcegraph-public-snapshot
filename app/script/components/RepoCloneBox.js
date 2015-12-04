@@ -1,8 +1,5 @@
 var React			= require("react"),
-	Clipboard 	= require("clipboard");
-
-// TODO(martin): Get rid of this
-var tmp;
+		Clipboard	= require("clipboard");
 
 var RepoCloneBox = React.createClass({
 
@@ -18,11 +15,13 @@ var RepoCloneBox = React.createClass({
 	},
 
 	componentDidMount() {
-		tmp = new Clipboard(".clone-url-wrap .clone-copy");
+		this.cipboard = new Clipboard(".clone-url-wrap .clone-copy");
 	},
 
 	componentWillUnmount() {
-		tmp.destroy();
+		if (this.clipboard) {
+			this.clipboard.destroy();
+		}
 	},
 
 	_toggleType(type) {
