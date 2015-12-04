@@ -281,6 +281,7 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 		UID:      int32(a.UID),
 		Login:    a.Login,
 		Domain:   a.Domain,
+		Scopes:   authpkg.MarshalScope(a.Scope),
 	}, nil
 }
 
@@ -291,13 +292,6 @@ func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegrap
 	}
 
 	userPerms := &sourcegraph.UserPermissions{UID: int32(a.UID), ClientID: a.ClientID}
-
-	// set this flag for testing only; never to be set in production on root server.
-	if authutil.ActiveFlags.AllowAllLogins {
-		userPerms.Read = true
-		userPerms.Write = true
-		return userPerms, nil
-	}
 
 	// A user has a set of permissions within the scope of a particular server.
 	// These permissions may be different from the permissions the same user may
@@ -313,7 +307,7 @@ func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegrap
 			return nil, err
 		}
 		userPerms.Read = true
-		userPerms.Write = true
+		userPerms.Write = user.Write
 		userPerms.Admin = user.Admin
 		return userPerms, nil
 	}

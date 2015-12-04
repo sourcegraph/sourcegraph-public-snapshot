@@ -203,7 +203,7 @@ func (s *Server) AsUser(ctx context.Context, login string) (context.Context, err
 	if err != nil {
 		return nil, err
 	}
-	return s.AsUID(ctx, int(u.UID)), nil
+	return s.AsUIDWithScope(ctx, int(u.UID), []string{"user:write"}), nil
 }
 
 func (s *Server) AsUIDWithScope(ctx context.Context, uid int, scope []string) context.Context {

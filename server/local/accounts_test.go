@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattbaird/gochimp"
 
+	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -17,8 +18,8 @@ import (
 
 func TestCreateFirstAccount(t *testing.T) {
 	ctx, mock := testContext()
-	mock.stores.Users.Count_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
-		return &sourcegraph.UserCount{}, nil
+	mock.stores.Users.Count_ = func(ctx context.Context) (int32, error) {
+		return int32(0), nil
 	}
 	mock.stores.Password.SetPassword_ = func(ctx context.Context, uid int32, password string) error {
 		if want := "secret"; password != want {
@@ -43,8 +44,8 @@ func TestCreateFirstAccount(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	ctx, mock := testContext()
-	mock.stores.Users.Count_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
-		return &sourcegraph.UserCount{Count: 1}, nil
+	mock.stores.Users.Count_ = func(ctx context.Context) (int32, error) {
+		return int32(1), nil
 	}
 	mock.stores.Password.SetPassword_ = func(ctx context.Context, uid int32, password string) error {
 		if want := "secret"; password != want {

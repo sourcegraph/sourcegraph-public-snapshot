@@ -1853,6 +1853,10 @@ message AuthInfo {
 
 	// Login is the login of the currently authenticated user (if any).
 	string login = 4;
+
+	// Scopes represent the permissions granted to the authenticated
+	// user (if any).
+	repeated string scopes = 5;
 }
 
 message AuthorshipInfo {
