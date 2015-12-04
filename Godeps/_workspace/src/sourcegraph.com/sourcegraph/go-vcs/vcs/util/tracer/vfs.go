@@ -38,7 +38,6 @@ type fileSystem struct {
 
 // Open implements the vfs.Opener interface.
 func (fs fileSystem) Open(name string) (vfs.ReadSeekCloser, error) {
-	// TODO(slimsag): track time to Close
 	start := time.Now()
 	f, err := fs.fs.Open(name)
 	end := time.Now()
