@@ -9,7 +9,6 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/search"
 )
 
 // clientCacheInfo reads the cache information supplied by the client in the
@@ -75,7 +74,7 @@ func writeCacheHeaders(w http.ResponseWriter, r *http.Request, lastMod time.Time
 // "repohost.com/foo").
 func getLastModForRepoRevs(r *http.Request, repoRevs []string) (time.Time, error) {
 	if len(repoRevs) == 1 {
-		repoURI, commitID := search.ParseRepoAndCommitID(repoRevs[0])
+		repoURI, commitID := sourcegraph.ParseRepoAndCommitID(repoRevs[0])
 		if commitID != "" {
 			// Only stats could have changed since the build completed, so set a
 			// long max-age.

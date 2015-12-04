@@ -159,13 +159,13 @@ div.search-result-type {
 	font-size: $font-size-large;
 }
 
-// SearchNext
-.search-bar-next {
+// Search
+.search-bar {
 	form {
 		@include box-shadow(none);
 		@include z-index(nav-search-input);
 	}
-	.search-input-next {
+	.search-input{
 		border: none;
 		&:focus {
 			@include box-shadow(none);

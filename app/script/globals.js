@@ -12,9 +12,6 @@ module.exports = {
 	// Number of lines to expand on hunk
 	HunkExpandLines: 20,
 
-	TokenSearchResultsPerPage: 50,
-	TextSearchResultsPerPage: 10,
-
 	Actions: keyMirror({
 		// CodeFile Actions
 		FETCH_FILE: null,
@@ -86,16 +83,6 @@ module.exports = {
 		CR_MERGE: null,
 		CR_MERGE_SUCCESS: null,
 		CR_MERGE_FAIL: null,
-
-		// Search Actions
-		SEARCH_SUBMIT: null,
-		SEARCH_SELECT_TYPE: null,
-		SEARCH_TOKENS_SUBMIT: null,
-		SEARCH_TOKENS_RECEIVED_RESULTS: null,
-		SEARCH_TOKENS_FAILURE: null,
-		SEARCH_TEXT_SUBMIT: null,
-		SEARCH_TEXT_RECEIVED_RESULTS: null,
-		SEARCH_TEXT_FAILURE: null,
 	}),
 
 	ChangesetStatus: keyMirror({
@@ -106,11 +93,6 @@ module.exports = {
 
 	PopupPages: keyMirror({
 		DEFAULT: null,
-	}),
-
-	SearchType: keyMirror({
-		TOKEN: null,
-		TEXT: null,
 	}),
 
 	Features: typeof window !== "undefined" && window._featureToggles,

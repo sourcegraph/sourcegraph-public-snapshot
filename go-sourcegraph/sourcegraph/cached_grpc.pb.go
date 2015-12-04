@@ -2383,32 +2383,6 @@ type CachedSearchClient struct {
 	Cache *grpccache.Cache
 }
 
-func (s *CachedSearchClient) Search(ctx context.Context, in *SearchOptions, opts ...grpc.CallOption) (*SearchResults, error) {
-	if s.Cache != nil {
-		var cachedResult SearchResults
-		cached, err := s.Cache.Get(ctx, "Search.Search", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.SearchClient.Search(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Search.Search", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
 func (s *CachedSearchClient) SearchTokens(ctx context.Context, in *TokenSearchOptions, opts ...grpc.CallOption) (*DefList, error) {
 	if s.Cache != nil {
 		var cachedResult DefList
@@ -2455,58 +2429,6 @@ func (s *CachedSearchClient) SearchText(ctx context.Context, in *TextSearchOptio
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Search.SearchText", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func (s *CachedSearchClient) Complete(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*Completions, error) {
-	if s.Cache != nil {
-		var cachedResult Completions
-		cached, err := s.Cache.Get(ctx, "Search.Complete", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.SearchClient.Complete(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Search.Complete", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func (s *CachedSearchClient) Suggest(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*SuggestionList, error) {
-	if s.Cache != nil {
-		var cachedResult SuggestionList
-		cached, err := s.Cache.Get(ctx, "Search.Suggest", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.SearchClient.Suggest(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Search.Suggest", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

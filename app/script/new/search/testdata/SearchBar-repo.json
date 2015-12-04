@@ -22,7 +22,7 @@
 											"type": "input",
 											"ref": "queryInput",
 											"props": {
-												"className": "form-control search-input-next",
+												"className": "form-control search-input",
 												"name": "q",
 												"placeholder": "Search"
 											}

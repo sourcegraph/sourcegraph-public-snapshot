@@ -11,7 +11,6 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	searchpkg "src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -57,7 +56,7 @@ func (s *units) List(ctx context.Context, opt *sourcegraph.UnitListOptions) (*so
 	if len(opt.RepoRevs) > 0 {
 		vs := make([]srcstore.Version, 0, len(opt.RepoRevs))
 		for _, repoRev := range opt.RepoRevs {
-			repoURI, commitID := searchpkg.ParseRepoAndCommitID(repoRev)
+			repoURI, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
 			if len(commitID) != 40 {
 				repoRev := sourcegraph.RepoRevSpec{
 					RepoSpec: sourcegraph.RepoSpec{URI: repoURI},

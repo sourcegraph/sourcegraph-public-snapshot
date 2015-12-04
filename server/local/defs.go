@@ -9,7 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	searchpkg "src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
@@ -88,7 +87,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	origRepoRevs := opt.RepoRevs
 	opt.RepoRevs = nil
 	for _, repoRev := range origRepoRevs {
-		repoURI, commitID := searchpkg.ParseRepoAndCommitID(repoRev)
+		repoURI, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
 
 		// Dealias.
 		rA, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})

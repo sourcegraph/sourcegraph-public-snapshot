@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/search"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/statsutil"
 )
@@ -153,7 +152,7 @@ func (c *buildsGetRepoBuildInfoCmd) Execute(args []string) error {
 	cl := Client()
 
 	for _, repo := range c.Args.Repo {
-		repo, rev := search.ParseRepoAndCommitID(repo)
+		repo, rev := sourcegraph.ParseRepoAndCommitID(repo)
 		buildInfo, err := cl.Builds.GetRepoBuildInfo(cliCtx, &sourcegraph.BuildsGetRepoBuildInfoOp{
 			Repo: sourcegraph.RepoRevSpec{
 				RepoSpec: sourcegraph.RepoSpec{URI: repo},

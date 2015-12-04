@@ -1,30 +1,3 @@
-{{define "SearchBar"}}
-{{$fi := searchFormInfo .}}
-{{if and (showSearchForm .Ctx .CurrentQuery) $fi}}
-<form class="navbar-form search-form" role="search"
-			action="{{$fi.ActionURL}}"
-			data-action-implicit-query-string="{{$fi.ActionImplicitQueryPrefix.RawQueryString}}"
-			data-pjax="{{$fi.PJAXContainer}}"
-			id="search-form"
-			>
-	<div class="input-group">
-		<input type="text" class="form-control" name="q" tabIndex="1"
-						placeholder="Search"
-						data-pjax="{{$fi.PJAXContainer}}"
-						autocomplete="off"
-
-						value="{{$fi.InputValue}}"
-						data-initial-resolved-tokens="{{$fi.ResolvedTokens|json}}"
-						data-initial-resolve-errors="{{$fi.ResolveErrors|json}}"
-						data-non-deletable-leading-token-count="{{len $fi.ActionImplicitQueryPrefix}}"
-						>
-	</div>
-</form>
-{{else if appconf.CustomNavLayout}}
-	{{appconf.CustomNavLayout}}
-{{end}}
-{{end}}
-
 {{define "Pagination"}}
 <div class="pagination-controls">
 	<ul class="pagination">

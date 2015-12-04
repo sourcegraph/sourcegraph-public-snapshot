@@ -2836,35 +2836,6 @@ type wrappedSearch struct {
 	services svc.Services
 }
 
-func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOptions) (*sourcegraph.SearchResults, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.SearchOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Search")
-	}
-
-	rv, err := innerSvc.Search(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
-	return rv, nil
-}
-
 func (s wrappedSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
@@ -2910,64 +2881,6 @@ func (s wrappedSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearc
 	}
 
 	rv, err := innerSvc.SearchText(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
-	return rv, nil
-}
-
-func (s wrappedSearch) Complete(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.Completions, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.SearchOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Search")
-	}
-
-	rv, err := innerSvc.Complete(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
-	return rv, nil
-}
-
-func (s wrappedSearch) Suggest(ctx context.Context, v1 *sourcegraph.RawQuery) (*sourcegraph.SuggestionList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.SearchOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Search")
-	}
-
-	rv, err := innerSvc.Suggest(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

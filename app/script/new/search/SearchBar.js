@@ -41,7 +41,9 @@ class SearchBar extends Component {
 	onStateTransition(prevState, nextState) {
 		if (!prevState.searchViewIsActive && nextState.searchViewIsActive) {
 			let el;
+			let repoName = nextState.repo.split("/").pop();
 			// TODO(autotest) support document object.
+			if (typeof document !== "undefined") document.title = `Search - ${repoName} - Sourcegraph`;
 			if (typeof document !== "undefined") el = document.getElementById("main");
 			if (el) {
 				ReactDOM.render((
@@ -92,7 +94,7 @@ class SearchBar extends Component {
 			<form className="navbar-form" onSubmit={this._submitSearch.bind(this)}>
 				<div className="form-group">
 					<div className="input-group">
-						<input className="form-control search-input-next"
+						<input className="form-control search-input"
 							ref="queryInput"
 							name="q"
 							placeholder="Search"

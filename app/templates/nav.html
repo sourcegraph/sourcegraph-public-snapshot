@@ -7,8 +7,8 @@
 				<span class="symbol">&#x2731;</span> <span class="name">Sourcegraph</span>
 			</a>
 
-			{{if not .Features.SearchNext}}
-				{{template "SearchBar" $}}
+			{{if appconf.CustomNavLayout}}
+				{{appconf.CustomNavLayout}}
 			{{end}}
 
 			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#top-nav-collapse">
@@ -67,10 +67,7 @@
 				{{end}}
 			</ul>
 
-			{{if .Features.SearchNext}}
-				<div id="SearchBar" class="search-bar-next"></div>
-			{{end}}
-
+			<div id="SearchBar" class="search-bar"></div>
 		</div>
 	</div>
 </nav>

@@ -19,7 +19,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/conf/feature"
 	"src.sourcegraph.com/sourcegraph/gitserver"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -141,16 +140,10 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoCompare).Handler(internal.Handler(serveRepoCompare))
 	r.Get(router.RepoCompareAll).Handler(internal.Handler(serveRepoCompare))
 	r.Get(router.RepoRefresh).Handler(internal.Handler(serveRepoRefresh))
-	if feature.Features.SearchNext {
-		r.Get(router.RepoSearch).Handler(internal.Handler(serveRepoSearchNext))
-	} else {
-		r.Get(router.RepoSearch).Handler(internal.Handler(serveRepoSearch))
-	}
+	r.Get(router.RepoSearch).Handler(internal.Handler(serveRepoSearch))
 	r.Get(router.RepoTree).Handler(internal.Handler(serveRepoTree))
 	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
 	r.Get(router.RepoTreeShare).Handler(internal.Handler(serveRepoTreeShare))
-	r.Get(router.SearchForm).Handler(internal.Handler(serveSearchForm))
-	r.Get(router.SearchResults).Handler(internal.Handler(serveSearchResults))
 	r.Get(router.SourceboxDef).Handler(internal.Handler(serveSourceboxDef))
 	r.Get(router.SourceboxFile).Handler(internal.Handler(serveSourceboxFile))
 

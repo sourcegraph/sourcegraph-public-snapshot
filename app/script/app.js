@@ -32,8 +32,6 @@ require("./stores/collections/CodeTokenCollection");
 // Views
 require("./componentInjection");
 
-require("./search/SearchBar");
-
 require("./activateDefnPopovers");
 require("./build_log");
 require("./buttons");
