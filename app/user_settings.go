@@ -375,15 +375,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 				return err
 			}
 
-			_, err = apiclient.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{
-				Repo: sourcegraph.RepoSpec{URI: repoURI},
-			})
-			if err != nil {
-				// If there was a problem, rollback to avoid leaving behind an invalid repo.
-				_, _ = apiclient.Repos.Delete(ctx, &sourcegraph.RepoSpec{URI: repoURI})
-
-				return err
-			}
+			RepoUpdater.enqueue(&sourcegraph.Repo{URI: repoURI})
 		}
 	}
 
