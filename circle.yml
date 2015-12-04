@@ -21,20 +21,6 @@ dependencies:
     # Use go1.5
     - cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
 
-    # The version of curl provided with CircleCI / Ubuntu 12.04 is not up to
-    # date enough to support HTTP plain auth usernames/passwords greater than
-    # 255 characters. No updated debs are available online, and for this
-    # reason, we must install it manually from source here.
-    - sudo apt-get install librtmp-dev
-    - if [ ! -d ~/curl ]; then mkdir ~/curl; cd ~/curl; wget http://curl.askapache.com/download/curl-7.44.0.tar.gz; tar -xzf ./curl-7.44.0.tar.gz --strip-components=1; ./configure --prefix=/usr --without-ssl --with-gnutls; make -j2; fi
-    # Remove libcurl* files (used by git) which are provided by the libcurl
-    # package. It can't be removed via apt or we will also lose git etc.
-    - sudo rm /usr/lib/x86_64-linux-gnu/libcurl*; cd ~/curl; sudo make install
-    # Ubuntu curl package has all of it's dynamic libraries suffixed with
-    # "-gnutls" for those respective versions. Since we always use gnutls for
-    # ours, we just create symlinks to ours so that apt and git can find it.
-    - for FILE in /usr/lib/libcurl*; do sudo ln -s "$FILE" "$(dirname $FILE)/$(basename ${FILE%%.*})-gnutls.${FILE#*.}"; done
-
   cache_directories:
     - ~/protobuf
     - ~/google-cloud-sdk
