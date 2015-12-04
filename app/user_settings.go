@@ -375,6 +375,12 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 				return err
 			}
 
+			// Mark the repo as enabled.
+			_, err = apiclient.Repos.Enable(ctx, &sourcegraph.RepoSpec{URI: repoURI})
+			if err != nil {
+				return err
+			}
+
 			RepoUpdater.enqueue(&sourcegraph.Repo{URI: repoURI})
 		}
 	}
