@@ -18,7 +18,7 @@ var ActiveForwarder *elastigo.BulkIndexer
 func StartEventForwarder(ctx context.Context) {
 	url := os.Getenv("SG_ELASTICSEARCH_URL")
 	if url == "" {
-		log15.Error("EventForwarder failed to locate elasticsearch endpoint")
+		log15.Debug("EventForwarder failed to locate elasticsearch endpoint")
 		return
 	}
 
