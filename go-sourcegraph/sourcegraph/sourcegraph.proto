@@ -1743,14 +1743,6 @@ service Auth {
 			get: "/auth/identify"
 		};
 	};
-
-	// GetPermissions returns the currently authenticated user's
-	// authorization levels on the client.
-	rpc GetPermissions(pbtypes.Void) returns (UserPermissions) {
-		option (google.api.http) = {
-			get: "/auth/get_permissions"
-		};
-	};
 }
 
 // SSHPublicKey that users to authenticate with for SSH git access.
@@ -1854,9 +1846,15 @@ message AuthInfo {
 	// Login is the login of the currently authenticated user (if any).
 	string login = 4;
 
+	// Write is set if the user (if any) has write access on this server.
+	bool write = 5;
+
+	// Admin is set if the user (if any) has admin access on this server.
+	bool admin = 6;
+
 	// Scopes represent the permissions granted to the authenticated
 	// user (if any).
-	repeated string scopes = 5;
+	repeated string scopes = 7;
 }
 
 message AuthorshipInfo {

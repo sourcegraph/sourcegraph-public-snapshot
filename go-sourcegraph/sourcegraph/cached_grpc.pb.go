@@ -291,32 +291,6 @@ func (s *CachedAuthClient) Identify(ctx context.Context, in *pbtypes.Void, opts 
 	return result, nil
 }
 
-func (s *CachedAuthClient) GetPermissions(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*UserPermissions, error) {
-	if s.Cache != nil {
-		var cachedResult UserPermissions
-		cached, err := s.Cache.Get(ctx, "Auth.GetPermissions", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.AuthClient.GetPermissions(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Auth.GetPermissions", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
 type CachedBuildsClient struct {
 	BuildsClient
 	Cache *grpccache.Cache
