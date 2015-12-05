@@ -627,7 +627,7 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 	r.editLock.Lock()
 	defer r.editLock.Unlock()
 
-	cmd := exec.Command("git", "remote", "update")
+	cmd := exec.Command("git", "remote", "update", "--prune")
 	cmd.Dir = r.Dir
 
 	if opt.SSH != nil {

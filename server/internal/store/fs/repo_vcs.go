@@ -6,9 +6,11 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs/util/tracer"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
 // RepoVCS is a local filesystem-backed implementation of the RepoVCS
@@ -23,7 +25,11 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 		return nil, err
 	}
 
-	return vcs.Open("git", dir)
+	r, err := vcs.Open("git", dir)
+	if err != nil {
+		return nil, err
+	}
+	return tracer.Wrap(r, traceutil.Recorder(ctx)), nil
 }
 
 func (s *RepoVCS) Clone(ctx context.Context, repo string, info *vcsclient.CloneInfo) error {

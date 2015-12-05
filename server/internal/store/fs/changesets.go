@@ -661,6 +661,10 @@ func vfsRecursiveCopy(from vfs.FileSystem, to storage.System, dir string) error 
 	return nil
 }
 
+type refResolver interface {
+	ResolveRef(name string) (vcs.CommitID, error)
+}
+
 func getOldChangesets(ctx context.Context, repo string) (vfs.FileSystem, error) {
 	dir := absolutePathForRepo(ctx, repo)
 	r, err := vcs.Open("git", dir)
