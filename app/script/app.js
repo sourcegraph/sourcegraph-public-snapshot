@@ -18,6 +18,7 @@ require("google-code-prettify/prettify");
 require("./auth");
 require("./appdash");
 require("./globals");
+require("./invite");
 
 // Dispatchers
 require("./dispatchers/AppDispatcher");

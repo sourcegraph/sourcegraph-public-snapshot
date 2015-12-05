@@ -59,12 +59,12 @@ func (a Actor) HasScope(s string) bool {
 
 // HasWriteAccess checks if the actor has "user:write" or "user:admin" scopes.
 func (a Actor) HasWriteAccess() bool {
-	return a.HasScope("user:write") || a.HasScope("user:admin")
+	return a.IsAuthenticated() && (a.HasScope("user:write") || a.HasScope("user:admin"))
 }
 
 // HasAdminAccess checks if the actor has "user:admin" scope.
 func (a Actor) HasAdminAccess() bool {
-	return a.HasScope("user:admin")
+	return a.IsAuthenticated() && (a.HasScope("user:admin"))
 }
 
 func UnmarshalScope(scope []string) map[string]bool {

@@ -49,21 +49,29 @@
 		<h3>Users <button class="btn btn-default" data-toggle="collapse" data-target="#addUser"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addUser">
 			<div class="well">
-				<p>
-					<strong>Grant access</strong> to users with the
-					{{if not .DisableExternalLinks}}<a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank">{{end}}
-						<code><strong>src</strong></code> CLI tool{{if not .DisableExternalLinks}}</a>{{end}}:
-				</p>
-				<pre>src --endpoint={{.AppURL}} access grant <em>USER</em></pre>
-				{{if .RootURL.String}}
-					<p>where <code><em>USER</em></code> is any username on <a href="{{.RootURL}}" target="_blank">{{.RootURL.Host}}</a>.
+				{{if .IsLDAP}}
+				Your teammates can log in with their LDAP credentials. {{if not .DisableExternalLinks}}<a href="https://src.sourcegraph.com/sourcegraph/.docs/config/authentication/" target="_blank">Click here</a> for instructions to configure Sourcegraph for LDAP.{{end}}
+				{{else}}
+				<strong>Create invite links</strong> for your teammates:
+				<ul id="user-invites-list" class="list-group">
+				</ul>
+				<form action="javascript:void(0);" class="form-inline">
+					<input name="Email" type="text" class="input-xlarge form-control" id="user-invite-email" placeholder="user@example.com" value="" required tabindex=1 autofocus>
+					<select name="Permission" class="input-small form-control"class="form-control" id="user-invite-perms" tabindex=2>
+						<option value="read" selected>can read</option>
+						<option value="write">can write</option>
+						<option value="admin">is admin</option>
+					</select>
+					<button type="submit" id="user-invite-btn" class="btn btn-md btn-sgblue" name="Invite" value="Invite" tabindex=3>Invite</button>
+					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+				</form>
 				{{end}}
 			</div>
 		</div>
 		<div class="list-group">
 			{{range .Users}}
 				<li class="list-group-item">
-					{{.}}
+					<strong>{{.Identifier}}</strong>{{if .Invite}}<div class="btn-xs btn-red pull-right">Pending Invite</div>{{end}}{{if .Admin}}<div class="btn-xs btn-green pull-right">Admin</div>{{else if .Write}}<div class="btn-xs btn-sgblue pull-right">Write</div>{{end}}
 				</li>
 			{{end}}
 		</div>

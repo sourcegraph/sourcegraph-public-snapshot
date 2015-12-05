@@ -73,6 +73,8 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 		r.Get(ui_router.UserContentUpload).Handler(p.handler(serveUserContentUpload))
 	}
 
+	r.Get(ui_router.UserInvite).Handler(p.handler(serveUserInvite))
+
 	return handlerutil.WithMiddleware(r, mw...)
 }
 

@@ -5,18 +5,14 @@ import (
 	"net/url"
 	"os"
 
-	"code.google.com/p/rog-go/parallel"
-
-	"sync"
+	"golang.org/x/net/context"
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
@@ -49,38 +45,12 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	var (
-		users   []string
-		usersMu sync.Mutex
-	)
-	userPerms, err := cl.RegisteredClients.ListUserPermissions(ctx, &sourcegraph.RegisteredClientSpec{})
-	if err != nil && grpc.Code(err) != codes.PermissionDenied && grpc.Code(err) != codes.Unauthenticated {
-		return err
-	}
-	if err == nil { // current user is admin of the instance
-		par := parallel.NewRun(10)
-		for _, perms_ := range userPerms.UserPermissions {
-			perms := perms_
-			par.Do(func() error {
-				user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: perms.UID})
-				if err != nil {
-					return err
-				}
-				usersMu.Lock()
-				users = append(users, user.Login)
-				usersMu.Unlock()
-				return nil
-			})
-		}
-		if err := par.Wait(); err != nil {
-			return err
-		}
-	}
 
 	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, &struct {
 		Repos  []*sourcegraph.Repo
 		SGPath string
-		Users  []string
+		Users  []*UserInfo
+		IsLDAP bool
 
 		RootURL *url.URL
 
@@ -88,8 +58,56 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Repos:  repos.Repos,
 		SGPath: os.Getenv("SGPATH"),
-		Users:  users,
+		Users:  getUsersAndInvites(ctx, cl),
+		IsLDAP: authutil.ActiveFlags.IsLDAP(),
 
 		RootURL: rootURL,
 	})
+}
+
+type UserInfo struct {
+	Identifier string
+	Write      bool
+	Admin      bool
+	Invite     bool
+}
+
+func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*UserInfo {
+	var users []*UserInfo
+	ctxActor := auth.ActorFromContext(ctx)
+	if !ctxActor.HasAdminAccess() { // current user is not an admin of the instance
+		return users
+	}
+
+	// Fetch pending invites.
+	inviteList, err := cl.Accounts.ListInvites(ctx, &pbtypes.Void{})
+	if err == nil {
+		for _, invite := range inviteList.Invites {
+			users = append(users, &UserInfo{
+				Identifier: invite.Email,
+				Write:      invite.Write,
+				Admin:      invite.Admin,
+				Invite:     true,
+			})
+		}
+	}
+
+	// Fetch registered users.
+	userList, err := cl.Users.List(ctx, &sourcegraph.UsersListOptions{})
+	if err == nil {
+		for _, user := range userList.Users {
+			users = append(users, &UserInfo{
+				Identifier: user.Login,
+				Write:      user.Write,
+				Admin:      user.Admin,
+			})
+		}
+	}
+	return users
+}
+
+func getInvites(ctx context.Context, cl *sourcegraph.Client) []string {
+	var invites []string
+
+	return invites
 }

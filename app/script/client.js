@@ -49,6 +49,14 @@ function builds(repoURI, rev, noCache) {
 
 exports.builds = builds;
 
+function createInvite(email, perms) {
+	return $.ajax({
+		url: `/.ui/.invite?Email=${email}&Permission=${perms}`,
+	});
+}
+
+exports.createInvite = createInvite;
+
 function createRepoBuild(repoURI, rev) {
 	return $.ajax({
 		url: `/.api/repos/${repoURI}@${rev}/.builds`,

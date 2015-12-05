@@ -13,6 +13,36 @@
 	}
 }
 
+.btn-green {
+	border-radius: 3px;
+	color: #FFF;
+	border: 1px solid darken($green, 8%);
+	background: linear-gradient(lighten($green, 5%), $green);
+	background-repeat: repeat-x;
+	font-size: 13px;
+
+	&:hover {
+		border: 1px solid darken($green, 10%);
+		background: linear-gradient($green, darken($green, 8%));
+		color: #fff;
+	}
+}
+
+.btn-red {
+	border-radius: 3px;
+	color: #FFF;
+	border: 1px solid darken($salmon-red, 8%);
+	background: linear-gradient(lighten($salmon-red, 5%), $salmon-red);
+	background-repeat: repeat-x;
+	font-size: 13px;
+
+	&:hover {
+		border: 1px solid darken($salmon-red, 10%);
+		background: linear-gradient($salmon-red, darken($salmon-red, 8%));
+		color: #fff;
+	}
+}
+
 .btn.btn-secondary {
 	@include button-variant($white, $sg-blue-color, darken($sg-blue-color, 10%));
 }

@@ -67,11 +67,28 @@ func serveLogIn(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveLoginForm(w http.ResponseWriter, r *http.Request, form loginForm) error {
+	cl := handlerutil.APIClient(r)
+	ctx := httpctx.FromRequest(r)
+
+	numUsers, err := cl.Users.Count(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	if numUsers.Count == 0 && authutil.ActiveFlags.IsLocal() {
+		http.Redirect(w, r, "/join", http.StatusSeeOther)
+		return nil
+	}
+
 	return tmpl.Exec(r, w, "user/login.html", http.StatusOK, nil, &struct {
 		LoginForm loginForm
+		FirstUser bool
+		IsLDAP    bool
 		tmpl.Common
 	}{
 		LoginForm: form,
+		FirstUser: (numUsers.Count == 0),
+		IsLDAP:    authutil.ActiveFlags.IsLDAP(),
 	})
 }
 
