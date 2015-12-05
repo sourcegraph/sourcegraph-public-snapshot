@@ -36,7 +36,7 @@ func TestBuilds_Get(t *testing.T) {
 }
 
 func TestBuilds_List_all_siteAdmin(t *testing.T) {
-	ctx := auth.WithActor(nil, auth.Actor{Scope: map[string]bool{"user:admin": true}})
+	ctx := auth.WithActor(nil, auth.Actor{UID: 1, Scope: map[string]bool{"user:admin": true}})
 
 	var calledList bool
 	s := Builds(&mockstore.Builds{
@@ -231,7 +231,7 @@ func TestBuilds_UpdateTask(t *testing.T) {
 }
 
 func TestBuilds_DequeueNext_siteAdmin(t *testing.T) {
-	ctx := auth.WithActor(nil, auth.Actor{Scope: map[string]bool{"user:admin": true}})
+	ctx := auth.WithActor(nil, auth.Actor{UID: 1, Scope: map[string]bool{"user:admin": true}})
 
 	var calledDequeueNext bool
 	s := Builds(&mockstore.Builds{

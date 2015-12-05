@@ -102,7 +102,7 @@ func TestSignUp_submit(t *testing.T) {
 	if want := http.StatusSeeOther; resp.StatusCode != want {
 		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
 	}
-	if want, got := router.Rel.URLToUser("u").String(), resp.Header.Get("location"); got != want {
+	if want, got := "/", resp.Header.Get("location"); got != want {
 		t.Errorf("got Location %q, want %q", got, want)
 	}
 
