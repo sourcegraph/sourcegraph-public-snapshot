@@ -33,7 +33,16 @@
 						</a>
 					</li>
 
-					<li class="current-user settings">
+					<li>
+						{{/* TODO: Loop over multiple global apps, once there's more than 1. */}}
+						{{/* TODO: Proper route. */}}
+						<a href="{{urlTo "appglobal.notificationcenter"}}">
+							<i class="octicon octicon-inbox"></i>
+							<span class="hidden-sm hidden-md hidden-lg">Notification Center</span>
+						</a>
+					</li>
+
+					<li>
 						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}">
 							<i class="octicon octicon-gear"></i>
 							<span class="hidden-sm hidden-md hidden-lg">Settings</span>

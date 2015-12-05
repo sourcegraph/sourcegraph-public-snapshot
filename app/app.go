@@ -166,6 +166,8 @@ func NewHandler(r *router.Router) http.Handler {
 		r.Get(route).Handler(internal.Handler(handlerFunc))
 	}
 
+	r.Get(router.AppGlobalNotificationCenter).Handler(internal.Handler(serveAppGlobalNotificationCenter))
+
 	return handlerutil.WithMiddleware(m, mw...)
 }
 

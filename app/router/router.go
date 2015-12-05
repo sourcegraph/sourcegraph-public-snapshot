@@ -99,6 +99,9 @@ const (
 	// Platform routes
 	RepoAppFrame       = "repo.appframe"
 	RepoPlatformSearch = "repo.platformsearch"
+
+	// TODO: Cleanup.
+	AppGlobalNotificationCenter = "appglobal.notificationcenter"
 )
 
 // Router is an app URL router.
@@ -237,6 +240,9 @@ func New(base *mux.Router) *Router {
 	// path that Sourcegraph passes directly to the app. The empty
 	// AppPath is the app's homepage, and it manages its own subpaths.
 	repoRev.PathPrefix(`/.{App}{AppPath:(?:/.*)?}`).Name(RepoAppFrame)
+
+	// TODO.
+	base.PathPrefix("/.notifications").Methods("GET").Name(AppGlobalNotificationCenter)
 
 	return &Router{*base}
 }

@@ -139,6 +139,8 @@ func commonTemplates() error {
 		{"oauth-provider/auth_required.html"},
 		{"client-registration/register-client.html"},
 		{"org/members.html", "org/members.inc.html", "user/person.html", "user/profile.inc.html"},
+
+		{"app_global.html"},
 	}, []string{
 		"common.html",
 		"layout.html",
