@@ -6,6 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
 )
 
 func init() { appdash.RegisterEvent(GoVCS{}) }
@@ -45,20 +46,36 @@ func Wrap(r vcs.Repository, rec *appdash.Recorder) vcs.Repository {
 	realCrossRepoMerger, isCrossRepoMerger := r.(vcs.CrossRepoMerger)
 	realRemoteUpdater, isRemoteUpdater := r.(vcs.RemoteUpdater)
 	realSearcher, isSearcher := r.(vcs.Searcher)
+	realGitcmdCrossRepo, isGitcmdCrossRepo := r.(gitcmd.CrossRepo)
 
 	// Wrap the optional interfaces.
-	blamer := blamer{repository: t, b: realBlamer, rec: rec}
-	differ := differ{repository: t, d: realDiffer, rec: rec}
-	crossRepoDiffer := crossRepoDiffer{repository: t, c: realCrossRepoDiffer, rec: rec}
-	fileLister := fileLister{repository: t, f: realFileLister, rec: rec}
-	merger := merger{repository: t, m: realMerger, rec: rec}
-	crossRepoMerger := crossRepoMerger{repository: t, m: realCrossRepoMerger, rec: rec}
-	remoteUpdater := remoteUpdater{repository: t, r: realRemoteUpdater, rec: rec}
-	searcher := searcher{repository: t, s: realSearcher, rec: rec}
+	blamer := blamer{b: realBlamer, rec: rec}
+	differ := differ{d: realDiffer, rec: rec}
+	crossRepoDiffer := crossRepoDiffer{c: realCrossRepoDiffer, rec: rec}
+	fileLister := fileLister{f: realFileLister, rec: rec}
+	merger := merger{m: realMerger, rec: rec}
+	crossRepoMerger := crossRepoMerger{m: realCrossRepoMerger, rec: rec}
+	remoteUpdater := remoteUpdater{r: realRemoteUpdater, rec: rec}
+	searcher := searcher{s: realSearcher, rec: rec}
+	gitcmdCrossRepo := gitcmdCrossRepo{c: realGitcmdCrossRepo, rec: rec}
 
 	// Return a union of all optional interfaces that the input vcs.Repository
 	// implements.
 	switch {
+	case isBlamer && isDiffer && isCrossRepoDiffer && isFileLister && isMerger && isCrossRepoMerger && isRemoteUpdater && isSearcher && isGitcmdCrossRepo:
+		return struct {
+			vcs.Repository
+			vcs.Blamer
+			vcs.Differ
+			vcs.CrossRepoDiffer
+			vcs.FileLister
+			vcs.Merger
+			vcs.CrossRepoMerger
+			vcs.RemoteUpdater
+			vcs.Searcher
+			gitcmd.CrossRepo
+		}{t, blamer, differ, crossRepoDiffer, fileLister, merger, crossRepoMerger, remoteUpdater, searcher, gitcmdCrossRepo}
+
 	case isBlamer && isDiffer && isCrossRepoDiffer && isFileLister && isMerger && isCrossRepoMerger && isRemoteUpdater && isSearcher:
 		return struct {
 			vcs.Repository
@@ -140,10 +157,8 @@ func Wrap(r vcs.Repository, rec *appdash.Recorder) vcs.Repository {
 	}
 }
 
-// blamer implements the vcs.Repository interface, adding a wrapped vcs.Blamer
-// implementation.
+// blamer wraps a vcs.Blamer, adding tracing to it.
 type blamer struct {
-	repository
 	b   vcs.Blamer
 	rec *appdash.Recorder
 }
@@ -161,10 +176,8 @@ func (b blamer) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, erro
 	return hunks, err
 }
 
-// differ implements the vcs.Repository interface, adding a wrapped vcs.Differ
-// implementation.
+// differ wraps a vcs.Differ, adding tracing to it.
 type differ struct {
-	repository
 	d   vcs.Differ
 	rec *appdash.Recorder
 }
@@ -182,10 +195,8 @@ func (d differ) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, 
 	return diff, err
 }
 
-// crossRepoDiffer implements the vcs.Repository interface, adding a wrapped
-// vcs.CrossRepoDiffer implementation.
+// crossRepoDiffer wraps a vcs.CrossRepoDiffer, adding tracing to it.
 type crossRepoDiffer struct {
-	repository
 	c   vcs.CrossRepoDiffer
 	rec *appdash.Recorder
 }
@@ -203,10 +214,8 @@ func (c crossRepoDiffer) CrossRepoDiff(base vcs.CommitID, headRepo vcs.Repositor
 	return diff, err
 }
 
-// fileLister implements the vcs.Repository interface, adding a wrapped
-// vcs.FileListener implementation.
+// fileLister wraps a vcs.FileListener, adding tracing to it.
 type fileLister struct {
-	repository
 	f   vcs.FileLister
 	rec *appdash.Recorder
 }
@@ -224,10 +233,8 @@ func (f fileLister) ListFiles(commit vcs.CommitID) ([]string, error) {
 	return files, err
 }
 
-// merger implements the vcs.Repository interface, adding a wrapped vcs.Merger
-// implementation.
+// merger wraps a vcs.Merger, adding tracing to it.
 type merger struct {
-	repository
 	m   vcs.Merger
 	rec *appdash.Recorder
 }
@@ -245,10 +252,8 @@ func (m merger) MergeBase(a vcs.CommitID, b vcs.CommitID) (vcs.CommitID, error) 
 	return commit, err
 }
 
-// crossRepoMerger implements the vcs.Repository interface, adding a wrapped
-// vcs.CrossRepoMerger implementation.
+// crossRepoMerger wraps a vcs.CrossRepoMerger, adding tracing to it.
 type crossRepoMerger struct {
-	repository
 	m   vcs.CrossRepoMerger
 	rec *appdash.Recorder
 }
@@ -266,10 +271,8 @@ func (m crossRepoMerger) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository
 	return commit, err
 }
 
-// remoteUpdater implements the vcs.Repository interface, adding a wrapped
-// vcs.RemoteUpdater implementation.
+// remoteUpdater wraps a vcs.RemoteUpdater, adding tracing to it.
 type remoteUpdater struct {
-	repository
 	r   vcs.RemoteUpdater
 	rec *appdash.Recorder
 }
@@ -287,10 +290,8 @@ func (r remoteUpdater) UpdateEverything(opts vcs.RemoteOpts) (*vcs.UpdateResult,
 	return result, err
 }
 
-// searcher implements the vcs.Repository interface, adding a wrapped
-// vcs.Searcher implementation.
+// searcher wraps a vcs.Searcher, adding tracing to it.
 type searcher struct {
-	repository
 	s   vcs.Searcher
 	rec *appdash.Recorder
 }
