@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/conf/feature"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
@@ -241,8 +242,10 @@ func New(base *mux.Router) *Router {
 	// AppPath is the app's homepage, and it manages its own subpaths.
 	repoRev.PathPrefix(`/.{App}{AppPath:(?:/.*)?}`).Name(RepoAppFrame)
 
-	// TODO.
-	base.PathPrefix("/.notifications").Methods("GET").Name(AppGlobalNotificationCenter)
+	if feature.Features.NotificationCenter {
+		// TODO.
+		base.PathPrefix("/.notifications").Methods("GET").Name(AppGlobalNotificationCenter)
+	}
 
 	return &Router{*base}
 }

@@ -19,6 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/conf/feature"
 	"src.sourcegraph.com/sourcegraph/gitserver"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -166,7 +167,9 @@ func NewHandler(r *router.Router) http.Handler {
 		r.Get(route).Handler(internal.Handler(handlerFunc))
 	}
 
-	r.Get(router.AppGlobalNotificationCenter).Handler(internal.Handler(serveAppGlobalNotificationCenter))
+	if feature.Features.NotificationCenter {
+		r.Get(router.AppGlobalNotificationCenter).Handler(internal.Handler(serveAppGlobalNotificationCenter))
+	}
 
 	return handlerutil.WithMiddleware(m, mw...)
 }

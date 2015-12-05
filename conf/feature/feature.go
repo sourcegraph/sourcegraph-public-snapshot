@@ -12,9 +12,11 @@ import (
 // Features is the source of truth for feature toggles. Use Features for
 // querying whether a feature is toggled or not
 var Features = struct {
-	Discussions bool
+	Discussions        bool
+	NotificationCenter bool
 }{
-	Discussions: false,
+	Discussions:        false,
+	NotificationCenter: false,
 }
 
 func init() {

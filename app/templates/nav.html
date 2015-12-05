@@ -33,6 +33,7 @@
 						</a>
 					</li>
 
+					{{if .Features.NotificationCenter}}
 					<li>
 						{{/* TODO: Loop over multiple global apps, once there's more than 1. */}}
 						{{/* TODO: Proper route. */}}
@@ -41,6 +42,7 @@
 							<span class="hidden-sm hidden-md hidden-lg">Notification Center</span>
 						</a>
 					</li>
+					{{end}}
 
 					<li>
 						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}">
