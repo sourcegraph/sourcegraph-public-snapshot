@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/apps/tracker/common"
 	"src.sourcegraph.com/apps/tracker/issues"
+	"src.sourcegraph.com/apps/tracker/router"
 )
 
 type Options struct {
@@ -58,12 +59,13 @@ func New(service issues.Service, opt Options) http.Handler {
 	// TODO: Make redirection work.
 	//r.StrictSlash(true) // THINK: Can't use this due to redirect not taking baseURI into account.
 	r.HandleFunc("/", issuesHandler).Methods("GET")
-	r.HandleFunc("/{id:[0-9]+}", issueHandler).Methods("GET")
+	r.HandleFunc("/{id:[0-9]+}", issueHandler).Methods("GET").Name(router.Issue)
 	r.HandleFunc("/{id:[0-9]+}/edit", postEditIssueHandler).Methods("POST")
 	r.HandleFunc("/{id:[0-9]+}/comment", postCommentHandler).Methods("POST")
 	r.HandleFunc("/{id:[0-9]+}/comment/{commentID:[0-9]+}", postEditCommentHandler).Methods("POST")
 	r.HandleFunc("/new", createIssueHandler).Methods("GET")
 	r.HandleFunc("/new", postCreateIssueHandler).Methods("POST")
+	router.Router = r // TODO: Make this nicer.
 	h.Handle("/", r)
 	assetsFileServer := gzip_file_server.New(Assets)
 	if opt.Verbatim != nil {
@@ -149,19 +151,19 @@ func (s state) Issues() ([]issues.Issue, error) {
 	var opt issues.IssueListOptions
 	switch selectedTab := s.req.URL.Query().Get(queryKeyState); selectedTab {
 	case "": // Default. TODO: Make this cleaner.
-		opt.State = issues.OpenState
+		opt.State = issues.StateFilter(issues.OpenState)
 	case string(issues.ClosedState):
-		opt.State = issues.ClosedState
+		opt.State = issues.StateFilter(issues.ClosedState)
 	}
 	return is.List(s.ctx, s.repoSpec, opt)
 }
 
 func (s state) OpenCount() (uint64, error) {
-	return is.Count(s.ctx, s.repoSpec, issues.IssueListOptions{State: issues.OpenState})
+	return is.Count(s.ctx, s.repoSpec, issues.IssueListOptions{State: issues.StateFilter(issues.OpenState)})
 }
 
 func (s state) ClosedCount() (uint64, error) {
-	return is.Count(s.ctx, s.repoSpec, issues.IssueListOptions{State: issues.ClosedState})
+	return is.Count(s.ctx, s.repoSpec, issues.IssueListOptions{State: issues.StateFilter(issues.ClosedState)})
 }
 
 func mustAtoi(s string) int {

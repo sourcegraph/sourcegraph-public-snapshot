@@ -36,6 +36,10 @@ type Service interface {
 	CurrentUser(ctx context.Context) (*User, error)
 }
 
+type CopierFrom interface {
+	CopyFrom(src Service, repo RepoSpec) error
+}
+
 // Issue represents an issue on a repository.
 type Issue struct {
 	ID    uint64
@@ -55,8 +59,14 @@ type Comment struct {
 	Editable  bool // Editable represents whether the current user (if any) can perform edit operations on this comment (or the encompassing issue).
 }
 
+type UserSpec struct {
+	ID     uint64
+	Domain string
+}
+
 // User represents a user.
 type User struct {
+	UserSpec
 	Login     string
 	AvatarURL template.URL
 	HTMLURL   template.URL

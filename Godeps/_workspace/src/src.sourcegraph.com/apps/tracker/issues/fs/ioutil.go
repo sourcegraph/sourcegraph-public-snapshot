@@ -6,7 +6,8 @@ import (
 	"sort"
 	"strconv"
 
-	"src.sourcegraph.com/vfs"
+	"github.com/shurcooL/webdavfs/vfsutil"
+	"golang.org/x/net/webdav"
 )
 
 // fileInfoID describes a file, whose name is an ID of type uint64.
@@ -26,8 +27,8 @@ func (f byID) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
 // a list of directory entries whose names are IDs of type uint64, sorted by ID.
 // Other entries with names don't match the naming scheme are ignored.
 // If the directory doesn't exist, empty list and no error are returned.
-func readDirIDs(fs vfs.FileSystem, path string) ([]fileInfoID, error) {
-	fis, err := fs.ReadDir(path)
+func readDirIDs(fs webdav.FileSystem, path string) ([]fileInfoID, error) {
+	fis, err := vfsutil.ReadDir(fs, path)
 	if err != nil {
 		if os.IsNotExist(err) { // Non-existing dirs are not considered an error.
 			return nil, nil
@@ -50,8 +51,8 @@ func readDirIDs(fs vfs.FileSystem, path string) ([]fileInfoID, error) {
 }
 
 // jsonEncodeFile encodes v into file at path, overwriting or creating it.
-func jsonEncodeFile(fs vfs.FileSystem, path string, v interface{}) error {
-	f, err := fs.Create(path)
+func jsonEncodeFile(fs webdav.FileSystem, path string, v interface{}) error {
+	f, err := vfsutil.Create(fs, path)
 	if err != nil {
 		return err
 	}
@@ -64,8 +65,8 @@ func jsonEncodeFile(fs vfs.FileSystem, path string, v interface{}) error {
 }
 
 // jsonDecodeFile decodes contents of file at path into v.
-func jsonDecodeFile(fs vfs.FileSystem, path string, v interface{}) error {
-	f, err := fs.Open(path)
+func jsonDecodeFile(fs webdav.FileSystem, path string, v interface{}) error {
+	f, err := vfsutil.Open(fs, path)
 	if err != nil {
 		return err
 	}

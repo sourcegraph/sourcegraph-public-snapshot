@@ -1,0 +1,46 @@
+a.black {
+	color: black;
+	text-decoration: none;
+}
+a.black:hover {
+	text-decoration: underline;
+}
+
+.tiny {
+	font-size: 12px;
+}
+
+div.list-entry {
+	margin-top: 12px;
+	margin-bottom: 24px;
+}
+div.list-entry-border {
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+div.list-entry-header {
+	font-size: 13px;
+	background-color: #f8f8f8;
+	padding: 10px;
+	border-radius: 4px 4px 0 0;
+	border-bottom: 1px solid #eee;
+}
+div.list-entry-body {
+	padding: 10px;
+}
+div.multilist-entry:not(:nth-child(0n+2)) {
+	border: 0px solid #ddd;
+	border-top-width: 1px;
+}
+
+.notification .octicon {
+	margin-right: 6px;
+	color: #6cc644;
+}
+.notification .octicon-issue-closed {
+	color: #bd2c00;
+}
+
+.read > * {
+	color: #888 !important;
+}

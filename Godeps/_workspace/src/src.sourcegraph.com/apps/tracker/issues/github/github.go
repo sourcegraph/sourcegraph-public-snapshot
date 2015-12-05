@@ -4,8 +4,11 @@ package github
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/github"
@@ -27,8 +30,13 @@ func NewService(client *github.Client) issues.Service {
 	if user, _, err := client.Users.Get(""); err == nil {
 		u := ghUser(user)
 		s.currentUser = &u
+		s.currentUserErr = nil
 	} else if ghErr, ok := err.(*github.ErrorResponse); ok && ghErr.Response.StatusCode == http.StatusUnauthorized {
+		// There's no authenticated user.
+		s.currentUser = nil
+		s.currentUserErr = nil
 	} else {
+		s.currentUser = nil
 		s.currentUserErr = err
 	}
 
@@ -49,10 +57,12 @@ func (s service) List(_ context.Context, rs issues.RepoSpec, opt issues.IssueLis
 	repo := ghRepoSpec(rs)
 	ghOpt := github.IssueListByRepoOptions{}
 	switch opt.State {
-	case issues.OpenState:
+	case issues.StateFilter(issues.OpenState):
 		// Do nothing, this is the GitHub default.
-	case issues.ClosedState:
+	case issues.StateFilter(issues.ClosedState):
 		ghOpt.State = "closed"
+	case issues.AllStates:
+		ghOpt.State = "all"
 	}
 	ghIssuesAndPRs, _, err := s.cl.Issues.ListByRepo(repo.Owner, repo.Repo, &ghOpt)
 	if err != nil {
@@ -83,16 +93,23 @@ func (s service) List(_ context.Context, rs issues.RepoSpec, opt issues.IssueLis
 
 func (s service) Count(_ context.Context, rs issues.RepoSpec, opt issues.IssueListOptions) (uint64, error) {
 	repo := ghRepoSpec(rs)
+	var ghState string
+	switch opt.State {
+	case issues.StateFilter(issues.OpenState):
+		// Do nothing, this is the GitHub default.
+	case issues.StateFilter(issues.ClosedState):
+		ghState = "closed"
+	case issues.AllStates:
+		ghState = "all"
+	}
+
 	var count uint64
 
 	// Count Issues and PRs (since there appears to be no way to count just issues in GitHub API).
 	{
-		ghOpt := github.IssueListByRepoOptions{ListOptions: github.ListOptions{PerPage: 1}}
-		switch opt.State {
-		case issues.OpenState:
-			// Do nothing, this is the GitHub default.
-		case issues.ClosedState:
-			ghOpt.State = "closed"
+		ghOpt := github.IssueListByRepoOptions{
+			State:       ghState,
+			ListOptions: github.ListOptions{PerPage: 1},
 		}
 		ghIssuesAndPRs, ghIssuesAndPRsResp, err := s.cl.Issues.ListByRepo(repo.Owner, repo.Repo, &ghOpt)
 		if err != nil {
@@ -107,12 +124,9 @@ func (s service) Count(_ context.Context, rs issues.RepoSpec, opt issues.IssueLi
 
 	// Subtract PRs.
 	{
-		ghOpt := github.PullRequestListOptions{ListOptions: github.ListOptions{PerPage: 1}}
-		switch opt.State {
-		case issues.OpenState:
-			// Do nothing, this is the GitHub default.
-		case issues.ClosedState:
-			ghOpt.State = "closed"
+		ghOpt := github.PullRequestListOptions{
+			State:       ghState,
+			ListOptions: github.ListOptions{PerPage: 1},
 		}
 		ghPRs, ghPRsResp, err := s.cl.PullRequests.List(repo.Owner, repo.Repo, &ghOpt)
 		if err != nil {
@@ -152,11 +166,68 @@ func (s service) canEdit(repo repoSpec, authorLogin string) error {
 	}
 }
 
+// TODO: Dedup.
+func parseIssueSpec(issueAPIURL string) (issues.RepoSpec, int, error) {
+	u, err := url.Parse(issueAPIURL)
+	if err != nil {
+		return issues.RepoSpec{}, 0, err
+	}
+	e := strings.Split(u.Path, "/")
+	if len(e) < 5 {
+		return issues.RepoSpec{}, 0, fmt.Errorf("unexpected path (too few elements): %q", u.Path)
+	}
+	if got, want := e[len(e)-2], "issues"; got != want {
+		return issues.RepoSpec{}, 0, fmt.Errorf(`unexpected path element %q, expecting %q`, got, want)
+	}
+	id, err := strconv.Atoi(e[len(e)-1])
+	if err != nil {
+		return issues.RepoSpec{}, 0, err
+	}
+	return issues.RepoSpec{URI: e[len(e)-4] + "/" + e[len(e)-3]}, id, nil
+}
+
+// markRead marks the specified issue as read.
+func (s service) markRead(repo repoSpec, id uint64) error {
+	ns, _, err := s.cl.Activity.ListRepositoryNotifications(repo.Owner, repo.Repo, nil)
+	if err != nil {
+		return fmt.Errorf("failed to ListRepositoryNotifications: %v", err)
+	}
+
+	for _, n := range ns {
+		if *n.Subject.Type != "Issue" {
+			continue
+		}
+		_, issueID, err := parseIssueSpec(*n.Subject.URL)
+		if err != nil {
+			return fmt.Errorf("failed to parseIssueSpec: %v", err)
+		}
+		if uint64(issueID) != id {
+			continue
+		}
+
+		_, err = s.cl.Activity.MarkThreadRead(*n.ID)
+		if err != nil {
+			return fmt.Errorf("failed to MarkThreadRead: %v", err)
+		}
+		break
+	}
+
+	return nil
+}
+
 func (s service) Get(_ context.Context, rs issues.RepoSpec, id uint64) (issues.Issue, error) {
 	repo := ghRepoSpec(rs)
 	issue, _, err := s.cl.Issues.Get(repo.Owner, repo.Repo, int(id))
 	if err != nil {
 		return issues.Issue{}, err
+	}
+
+	if s.currentUser != nil {
+		// Mark as read.
+		err = s.markRead(repo, id)
+		if err != nil {
+			log.Println("service.Get: failed to markRead:", err)
+		}
 	}
 
 	return issues.Issue{
@@ -187,18 +258,25 @@ func (s service) ListComments(_ context.Context, rs issues.RepoSpec, id uint64, 
 		Editable:  nil == s.canEdit(repo, *issue.User.Login),
 	})
 
-	ghComments, _, err := s.cl.Issues.ListComments(repo.Owner, repo.Repo, int(id), nil) // TODO: Pagination.
-	if err != nil {
-		return comments, err
-	}
-	for _, comment := range ghComments {
-		comments = append(comments, issues.Comment{
-			ID:        uint64(*comment.ID),
-			User:      ghUser(comment.User),
-			CreatedAt: *comment.CreatedAt,
-			Body:      *comment.Body,
-			Editable:  nil == s.canEdit(repo, *comment.User.Login),
-		})
+	ghOpt := &github.IssueListCommentsOptions{}
+	for {
+		ghComments, resp, err := s.cl.Issues.ListComments(repo.Owner, repo.Repo, int(id), ghOpt)
+		if err != nil {
+			return comments, err
+		}
+		for _, comment := range ghComments {
+			comments = append(comments, issues.Comment{
+				ID:        uint64(*comment.ID),
+				User:      ghUser(comment.User),
+				CreatedAt: *comment.CreatedAt,
+				Body:      *comment.Body,
+				Editable:  nil == s.canEdit(repo, *comment.User.Login),
+			})
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		ghOpt.ListOptions.Page = resp.NextPage
 	}
 
 	return comments, nil
@@ -218,6 +296,7 @@ func (s service) ListEvents(_ context.Context, rs issues.RepoSpec, id uint64, op
 			continue
 		}
 		e := issues.Event{
+			ID:        uint64(*event.ID),
 			Actor:     ghUser(event.Actor),
 			CreatedAt: *event.CreatedAt,
 			Type:      et,
@@ -373,6 +452,10 @@ func ghRepoSpec(repo issues.RepoSpec) repoSpec {
 
 func ghUser(user *github.User) issues.User {
 	return issues.User{
+		UserSpec: issues.UserSpec{
+			ID:     uint64(*user.ID),
+			Domain: "github.com",
+		},
 		Login:     *user.Login,
 		AvatarURL: template.URL(*user.AvatarURL),
 		HTMLURL:   template.URL(*user.HTMLURL),

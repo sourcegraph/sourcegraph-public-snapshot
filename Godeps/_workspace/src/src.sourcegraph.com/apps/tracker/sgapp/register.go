@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
-
 	issuesapp "src.sourcegraph.com/apps/tracker"
 	"src.sourcegraph.com/apps/tracker/common"
 	"src.sourcegraph.com/apps/tracker/issues"
@@ -76,6 +75,19 @@ func (sgapp) Start(ctx context.Context) {
 	}
 	handler := issuesapp.New(service, opt)
 
+	// TODO: Maybe move this to kv (aka Sourcegraph) service?
+	/*{
+		notifyCallback := func(id events.EventID, payload TrackerPayload) {
+			// TODO: Consider using this instead.
+			// THINK: About where to best keep the event id and payload types.
+			//        Also, is enough information passed through? Probably yes, via payload, but context?
+			goon.DumpExpr(payload)
+		}
+
+		//events.Subscribe(TrackerCreateEvent,        notifyCallback)
+		events.Subscribe(TrackerCreateCommentEvent, notifyCallback)
+	}*/
+
 	platform.RegisterFrame(platform.RepoFrame{
 		ID:      "tracker",
 		Title:   "Tracker",
@@ -83,3 +95,18 @@ func (sgapp) Start(ctx context.Context) {
 		Handler: handler,
 	})
 }
+
+// TODO.
+/*const (
+	TrackerCreateEvent        events.EventID = "tracker.Create"
+	TrackerCreateCommentEvent events.EventID = "tracker.CreateComment"
+)
+
+// TODO.
+type TrackerPayload struct {
+	Repo      interface{} // TODO.
+	Title     string
+	HTMLURL   template.URL
+	UpdatedAt time.Time
+	State     string // TODO: Change it, etc.?
+}*/
