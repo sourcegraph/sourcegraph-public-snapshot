@@ -513,35 +513,6 @@ func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegra
 	return rv, nil
 }
 
-func (s wrappedAuth) GetPermissions(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.AuthOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
-	}
-
-	rv, err := innerSvc.GetPermissions(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
-	return rv, nil
-}
-
 type wrappedBuilds struct {
 	ctxFunc  ContextFunc
 	services svc.Services

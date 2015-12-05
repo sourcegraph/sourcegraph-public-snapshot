@@ -281,13 +281,15 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 		UID:      int32(a.UID),
 		Login:    a.Login,
 		Domain:   a.Domain,
+		Write:    a.HasWriteAccess(),
+		Admin:    a.HasAdminAccess(),
 		Scopes:   authpkg.MarshalScope(a.Scope),
 	}, nil
 }
 
 func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
 	a := authpkg.ActorFromContext(ctx)
-	if a.UID == 0 || a.ClientID == "" {
+	if !a.IsAuthenticated() || a.ClientID == "" {
 		return nil, grpc.Errorf(codes.Unauthenticated, "no authenticated actor or client in context")
 	}
 
@@ -299,16 +301,10 @@ func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegrap
 	//
 	// On instances with local auth, a user's permissions for the local server are
 	// obtained directly from the Users store.
-	if authutil.ActiveFlags.IsLocal() && a.ClientID == idkey.FromContext(ctx).ID {
-		user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: int32(a.UID)})
-		if err != nil && grpc.Code(err) == codes.NotFound {
-			return userPerms, nil
-		} else if err != nil {
-			return nil, err
-		}
-		userPerms.Read = true
-		userPerms.Write = user.Write
-		userPerms.Admin = user.Admin
+	if a.ClientID == idkey.FromContext(ctx).ID && (authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLocal()) {
+		userPerms.Read = a.IsAuthenticated()
+		userPerms.Write = a.HasWriteAccess()
+		userPerms.Admin = a.HasAdminAccess()
 		return userPerms, nil
 	}
 

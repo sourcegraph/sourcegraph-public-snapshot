@@ -387,25 +387,6 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 
 }
 
-func (s wrappedAuth) GetPermissions(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserPermissions, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Auth", "GetPermissions", param)
-	defer func() {
-		trace.After(ctx, "Auth", "GetPermissions", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Auth.GetPermissions")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Auth
-
-	res, err = target.GetPermissions(ctx, param)
-	return
-
-}
-
 type wrappedBuilds struct {
 	c *auth.Config
 }

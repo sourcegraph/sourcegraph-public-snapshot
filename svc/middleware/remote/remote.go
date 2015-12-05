@@ -92,10 +92,6 @@ func (s remoteAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegrap
 	return sourcegraph.NewClientFromContext(ctx).Auth.Identify(ctx, v1)
 }
 
-func (s remoteAuth) GetPermissions(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
-	return sourcegraph.NewClientFromContext(ctx).Auth.GetPermissions(ctx, v1)
-}
-
 type remoteBuilds struct{ sourcegraph.BuildsServer }
 
 func (s remoteBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {

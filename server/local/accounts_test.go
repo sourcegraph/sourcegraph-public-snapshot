@@ -7,7 +7,6 @@ import (
 
 	"github.com/mattbaird/gochimp"
 
-	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
