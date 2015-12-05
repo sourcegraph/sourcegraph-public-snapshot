@@ -19,6 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -94,10 +95,12 @@ func serveSignupForm(w http.ResponseWriter, r *http.Request, form signupForm) er
 	return tmpl.Exec(r, w, "user/signup.html", http.StatusOK, nil, &struct {
 		SignupForm signupForm
 		FirstUser  bool
+		IsRoot     bool
 		tmpl.Common
 	}{
 		SignupForm: form,
 		FirstUser:  (numUsers.Count == 0),
+		IsRoot:     fed.Config.IsRoot,
 	})
 }
 
@@ -122,13 +125,12 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 		return serveSignupForm(w, r, form)
 	}
 
-	var userSpec *sourcegraph.UserSpec
 	var err error
 
 	if form.Token == "" {
-		userSpec, err = cl.Accounts.Create(ctx, &form.NewAccount)
+		_, err = cl.Accounts.Create(ctx, &form.NewAccount)
 	} else {
-		userSpec, err = cl.Accounts.AcceptInvite(ctx, &sourcegraph.AcceptedInvite{
+		_, err = cl.Accounts.AcceptInvite(ctx, &sourcegraph.AcceptedInvite{
 			Account: &form.NewAccount,
 			Token:   form.Token,
 		})
@@ -177,7 +179,7 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if returnTo == "" {
-		returnTo = router.Rel.URLToUser(userSpec.Login).String()
+		returnTo = "/" // Redirect to dashboard
 	}
 
 	http.Redirect(w, r, returnTo, http.StatusSeeOther)

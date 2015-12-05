@@ -51,9 +51,9 @@ func (s *Invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.Accoun
 		CreatedAt: time.Now(),
 	}
 
-	err := dbh(ctx).Insert(&dbInvite)
+	err := dbh(ctx).Insert(dbInvite)
 	if err != nil && strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
-		_, err = dbh(ctx).Update(&dbInvite)
+		_, err = dbh(ctx).Update(dbInvite)
 	}
 	if err != nil {
 		return "", err
@@ -85,7 +85,7 @@ func (s *Invites) MarkUnused(ctx context.Context, token string) error {
 
 	dbInvite.InUse = false
 
-	if _, err := dbh(ctx).Update(&dbInvite); err != nil {
+	if _, err := dbh(ctx).Update(dbInvite); err != nil {
 		return err
 	}
 	return nil

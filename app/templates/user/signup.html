@@ -7,8 +7,7 @@
 	<div class="col-md-5">
 		{{if .FirstUser}}
 		<h1>Welcome to Sourcegraph!</h1>
-		<p>Set up your instance by first creating an admin account. You can then invite teammates to this instance by
-		following <a href="https://src.sourcegraph.com/sourcegraph/.docs/management/access-control/">these instructions</a>.</p>
+		<p>Set up your instance by first creating an admin account.</p>
 		{{else if .SignupForm.Token}}
 		<h1>Join this Sourcegraph</h1>
 		<p>To accept your invitation, create a new account on this Sourcegraph server by choosing a login and password.</p>
@@ -24,8 +23,6 @@
 				<p class="help-block">
 					{{with .SignupForm.FieldError "Login"}}
 						{{.}}
-					{{else}}
-						This is your username. <!--<a href="#" onclick="alert('TODO')">Signing up for an organization?</a>-->
 					{{end}}
 				</p>
 			</div>
@@ -35,7 +32,8 @@
 				<p class="help-block">
 					{{with .SignupForm.FieldError "Email"}}
 						{{.}}
-					{{else}}
+					{{end}}
+					{{if (not .IsRoot)}}
 						You'll receive occasional emails about your account. We won't share your email address with anyone.
 					{{end}}
 				</p>

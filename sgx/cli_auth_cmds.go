@@ -298,7 +298,7 @@ func (c *whoamiCmd) Execute(args []string) error {
 	if err != nil {
 		log.Fatalf("Error verifying auth credentials with endpoint %s: %s.", endpointURL, err)
 	}
-	log.Printf("%s (UID %d) on %s", authInfo.Login, authInfo.UID, endpointURL)
+	log.Printf("%s (UID %d) on %s (write: %v, admin: %v)", authInfo.Login, authInfo.UID, endpointURL, authInfo.Write, authInfo.Admin)
 
 	if c.PrintToken {
 		log.Printf(" Auth token: %s", ua.AccessToken)

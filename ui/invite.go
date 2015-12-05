@@ -38,8 +38,8 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	switch query.Permission {
 	case "write":
 		write = true
-		admin = true
 	case "admin":
+		write = true
 		admin = true
 	case "read":
 		// no-op

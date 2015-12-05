@@ -174,9 +174,9 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 
 func (s *Users) Count(ctx context.Context) (int32, error) {
 	sql := "SELECT count(*) FROM users WHERE NOT disabled;"
-	var count int
-	if err := dbh(ctx).Select(&count, sql); err != nil {
+	var count []int
+	if err := dbh(ctx).Select(&count, sql); err != nil || len(count) == 0 {
 		return 0, err
 	}
-	return int32(count), nil
+	return int32(count[0]), nil
 }

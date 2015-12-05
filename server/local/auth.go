@@ -183,7 +183,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	if user.Write {
 		a.Scope["user:write"] = true
 	}
-	if user.Write {
+	if user.Admin {
 		a.Scope["user:admin"] = true
 	}
 
@@ -301,7 +301,7 @@ func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegrap
 	//
 	// On instances with local auth, a user's permissions for the local server are
 	// obtained directly from the Users store.
-	if a.ClientID == idkey.FromContext(ctx).ID && (authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLocal()) {
+	if a.ClientID == idkey.FromContext(ctx).ID && (authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP()) {
 		userPerms.Read = a.IsAuthenticated()
 		userPerms.Write = a.HasWriteAccess()
 		userPerms.Admin = a.HasAdminAccess()
