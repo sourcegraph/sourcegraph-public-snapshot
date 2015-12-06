@@ -4,6 +4,7 @@ import "time"
 
 // Event represents an event that occurred around an issue.
 type Event struct {
+	ID        uint64
 	Actor     User
 	CreatedAt time.Time
 	Type      EventType

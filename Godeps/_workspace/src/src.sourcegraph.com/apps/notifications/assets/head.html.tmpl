@@ -1,0 +1,14 @@
+{{/* HACK: This is a temporary experiment. */}}
+{{define "scriptless-head"}}
+	{{.HeadPre}}
+	<link href="{{.BaseURI}}/assets/style.css" rel="stylesheet" type="text/css" />
+{{end}}
+
+{{define "head"}}
+	{{template "scriptless-head" .}}
+	<script type="text/javascript">
+		var State = {{.BaseState | jsonfmt}};
+		{{/*var State = {{.BaseState}};*/}}
+	</script>
+	<script src="{{.BaseURI}}/assets/script/script.js" type="text/javascript"></script>
+{{end}}

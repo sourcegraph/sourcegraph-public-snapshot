@@ -1,20 +1,30 @@
-// Package kv implements issues.Service using a the Sourcegraph platform storage API.
+// Package kv implements issues.Service using the Sourcegraph platform storage API.
 package kv
 
 import (
+	"fmt"
 	"html/template"
+	"log"
+	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"time"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
+	notif "src.sourcegraph.com/apps/notifications/notifications" // TODO: Make this better.
 	"src.sourcegraph.com/apps/tracker/issues"
+	trackerrouter "src.sourcegraph.com/apps/tracker/router"
+	sgrouter "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/platform/notifications"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
+	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
 // NewService creates a Sourcegraph platform storage-backed issues.Service,
@@ -42,23 +52,23 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 
 	var is []issues.Issue
 
-	threads, err := readIDs(sys, threadsBucket)
+	threads, err := readIDs(sys, issuesBucket)
 	if err != nil {
 		return is, err
 	}
 	for i := len(threads); i > 0; i-- {
 		threadID := threads[i-1]
 		var issue issue
-		if err := storage.GetJSON(sys, threadsBucket, formatUint64(threadID), &issue); err != nil {
+		if err := storage.GetJSON(sys, issuesBucket, formatUint64(threadID), &issue); err != nil {
 			return is, err
 		}
 
-		if issue.State != opt.State {
+		if opt.State != issues.AllStates && issue.State != issues.State(opt.State) {
 			continue
 		}
 
 		// Count comments.
-		comments, err := sys.List(threadCommentsBucket(threadID))
+		comments, err := sys.List(issueCommentsBucket(threadID))
 		if err != nil {
 			return is, err
 		}
@@ -86,18 +96,18 @@ func (s service) Count(ctx context.Context, repo issues.RepoSpec, opt issues.Iss
 
 	var count uint64
 
-	threads, err := readIDs(sys, threadsBucket)
+	threads, err := readIDs(sys, issuesBucket)
 	if err != nil {
 		return 0, err
 	}
 	for _, threadID := range threads {
 		var issue issue
-		err := storage.GetJSON(sys, threadsBucket, formatUint64(threadID), &issue)
+		err := storage.GetJSON(sys, issuesBucket, formatUint64(threadID), &issue)
 		if err != nil {
 			return 0, err
 		}
 
-		if issue.State != opt.State {
+		if opt.State != issues.AllStates && issue.State != issues.State(opt.State) {
 			continue
 		}
 
@@ -114,7 +124,7 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var issue issue
-	err := storage.GetJSON(sys, threadsBucket, formatUint64(id), &issue)
+	err := storage.GetJSON(sys, issuesBucket, formatUint64(id), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -122,6 +132,14 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
 	if err != nil {
 		return issues.Issue{}, err
+	}
+
+	if currentUser != nil {
+		// Mark as read.
+		err = s.markRead(ctx, repo, id)
+		if err != nil {
+			log.Println("service.Get: failed to s.markRead:", err)
+		}
 	}
 
 	var reference *issues.Reference
@@ -160,13 +178,13 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 
 	var comments []issues.Comment
 
-	commentIDs, err := readIDs(sys, threadCommentsBucket(id))
+	commentIDs, err := readIDs(sys, issueCommentsBucket(id))
 	if err != nil {
 		return comments, err
 	}
 	for _, commentID := range commentIDs {
 		var comment comment
-		err := storage.GetJSON(sys, threadCommentsBucket(id), formatUint64(commentID), &comment)
+		err := storage.GetJSON(sys, issueCommentsBucket(id), formatUint64(commentID), &comment)
 		if err != nil {
 			return comments, err
 		}
@@ -193,13 +211,13 @@ func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64
 
 	var events []issues.Event
 
-	eventIDs, err := readIDs(sys, threadEventsBucket(id))
+	eventIDs, err := readIDs(sys, issueEventsBucket(id))
 	if err != nil {
 		return events, err
 	}
 	for _, eventID := range eventIDs {
 		var event event
-		err := storage.GetJSON(sys, threadEventsBucket(id), formatUint64(eventID), &event)
+		err := storage.GetJSON(sys, issueEventsBucket(id), formatUint64(eventID), &event)
 		if err != nil {
 			return events, err
 		}
@@ -209,6 +227,7 @@ func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64
 			return events, err
 		}
 		events = append(events, issues.Event{
+			ID:        eventID,
 			Actor:     sgUser(ctx, user),
 			CreatedAt: event.CreatedAt,
 			Type:      event.Type,
@@ -217,6 +236,93 @@ func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64
 	}
 
 	return events, nil
+}
+
+// subscribe subscribes the author and anyone mentioned in body to the issue.
+func (s service) subscribe(ctx context.Context, repo issues.RepoSpec, issueID uint64, author *sourcegraph.UserSpec, body string) error {
+	if notifications.Service == nil {
+		return nil
+	}
+
+	subscribers := []issues.UserSpec{ // Author.
+		{
+			ID:     uint64(author.UID),
+			Domain: author.Domain, // TODO: If blank, set it to "sourcegraph.com"?
+		}, // TODO: Dedup?
+	}
+	mentions, err := mdutil.Mentions(ctx, []byte(body))
+	if err != nil {
+		return err
+	}
+	for _, mention := range mentions { // Mentions.
+		subscribers = append(subscribers, issues.UserSpec{
+			ID:     uint64(mention.UID),
+			Domain: mention.Domain,
+		})
+	}
+
+	return notifications.Service.Subscribe(ctx, s.appName, repo, issueID, subscribers)
+}
+
+// markRead marks the specified issueID as read for current user.
+func (s service) markRead(ctx context.Context, repo issues.RepoSpec, issueID uint64) error {
+	if notifications.Service == nil {
+		return nil
+	}
+
+	return notifications.Service.MarkRead(ctx, s.appName, repo, issueID)
+}
+
+// notify notifies all subscribed users of an update that shows up in their Notification Center.
+func (s service) notify(ctx context.Context, repo issues.RepoSpec, issueID uint64, fragment string, sys storage.System, createdAt time.Time) error {
+	if notifications.Service == nil {
+		return nil
+	}
+
+	// TODO: Pass this through events system for asynchronous (rather than blocking) notifications.
+	/*{
+		events.Publish(events.TrackerCreateCommentEvent, events.TrackerPayload{
+			Repo:      sourcegraph.RepoSpec{URI: repo.URI},
+			Title:     "Title is TODO in events.Publish track",
+			HTMLURL:   "http://www.example.com/TODO",
+			UpdatedAt: createdAt,
+			State:     "open",
+		})
+	}*/
+
+	// TODO, THINK: Is this the best place/time?
+	// Get issue from storage for to populate notification fields.
+	var issue issue
+	err := storage.GetJSON(sys, issuesBucket, formatUint64(issueID), &issue)
+	if err != nil {
+		return err
+	}
+
+	// Use Sourcegraph app router for repo app path and Tracker app router for the rest.
+	trackerURL, err := sgrouter.Rel.Get(sgrouter.RepoAppFrame).URLPath(
+		"Repo", repo.URI,
+		"App", s.appName,
+		"AppPath", "",
+	)
+	if err != nil {
+		return fmt.Errorf("failed to produce relative URL for tracker app: %v", err)
+	}
+	issueURL, err := trackerrouter.Router.Get(trackerrouter.Issue).URLPath("id", formatUint64(issueID))
+	if err != nil {
+		return fmt.Errorf("failed to produce relative URL for issue: %v", err)
+	}
+	u := &url.URL{
+		Path:     path.Join(trackerURL.Path, issueURL.Path),
+		Fragment: fragment,
+	}
+	htmlURL := template.URL(conf.AppURL(s.appCtx).ResolveReference(u).String())
+
+	return notifications.Service.Notify(ctx, s.appName, repo, issueID, notif.Notification{
+		Title:     issue.Title,
+		Icon:      notificationIcon(issue.State),
+		UpdatedAt: createdAt,
+		HTMLURL:   htmlURL,
+	})
 }
 
 func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uint64, c issues.Comment) (issues.Comment, error) {
@@ -233,9 +339,10 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 	sg := sourcegraph.NewClientFromContext(ctx)
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
+	createdAt := time.Now().UTC()
 	comment := comment{
 		AuthorUID: currentUser.UID,
-		CreatedAt: time.Now(),
+		CreatedAt: createdAt,
 		Body:      c.Body,
 	}
 
@@ -245,13 +352,26 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 	}
 
 	// Put in storage.
-	commentID, err := nextID(sys, threadCommentsBucket(id))
+	commentID, err := nextID(sys, issueCommentsBucket(id))
 	if err != nil {
 		return issues.Comment{}, err
 	}
-	err = storage.PutJSON(sys, threadCommentsBucket(id), formatUint64(commentID), comment)
+	err = storage.PutJSON(sys, issueCommentsBucket(id), formatUint64(commentID), comment)
 	if err != nil {
 		return issues.Comment{}, err
+	}
+
+	// Subscribe interested users.
+	err = s.subscribe(ctx, repo, id, currentUser, c.Body)
+	if err != nil {
+		log.Println("service.CreateComment: failed to s.subscribe:", err)
+	}
+
+	// Notify subscribed users.
+	// TODO: Use Tracker app router to compute fragment; that logic shouldn't be duplicated here.
+	err = s.notify(ctx, repo, id, fmt.Sprintf("comment-%d", commentID), sys, createdAt)
+	if err != nil {
+		log.Println("service.CreateComment: failed to s.notify:", err)
 	}
 
 	return issues.Comment{
@@ -261,6 +381,19 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 		Body:      comment.Body,
 		Editable:  true, // You can always edit comments you've created.
 	}, nil
+}
+
+// TODO: This is display/presentation logic; try to factor it out of the backend service implementation.
+//       (Have it be provided to the service, maybe? Or another way.)
+func notificationIcon(state issues.State) notif.OcticonID {
+	switch state {
+	case issues.OpenState:
+		return "issue-opened"
+	case issues.ClosedState:
+		return "issue-closed"
+	default:
+		return ""
+	}
 }
 
 func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issue) (issues.Issue, error) {
@@ -277,7 +410,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 	sg := sourcegraph.NewClientFromContext(ctx)
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
-	createdAt := time.Now()
+	createdAt := time.Now().UTC()
 	comment := comment{
 		AuthorUID: currentUser.UID,
 		CreatedAt: createdAt,
@@ -305,17 +438,29 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 	}
 
 	// Put in storage.
-	threadID, err := nextID(sys, threadsBucket)
+	threadID, err := nextID(sys, issuesBucket)
 	if err != nil {
 		return issues.Issue{}, err
 	}
-	if err := storage.PutJSON(sys, threadsBucket, formatUint64(threadID), issue); err != nil {
+	if err := storage.PutJSON(sys, issuesBucket, formatUint64(threadID), issue); err != nil {
 		return issues.Issue{}, err
 	}
 
 	// Put first comment in storage.
-	if err := storage.PutJSON(sys, threadCommentsBucket(threadID), "0", comment); err != nil {
+	if err := storage.PutJSON(sys, issueCommentsBucket(threadID), "0", comment); err != nil {
 		return issues.Issue{}, err
+	}
+
+	// Subscribe interested users.
+	err = s.subscribe(ctx, repo, threadID, currentUser, i.Body)
+	if err != nil {
+		log.Println("service.Create: failed to s.subscribe:", err)
+	}
+
+	// Notify subscribed users.
+	err = s.notify(ctx, repo, threadID, "", sys, createdAt)
+	if err != nil {
+		log.Println("service.Edit: failed to s.notify:", err)
 	}
 
 	return issues.Issue{
@@ -371,7 +516,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 
 	// Get from storage.
 	var issue issue
-	err := storage.GetJSON(sys, threadsBucket, formatUint64(id), &issue)
+	err := storage.GetJSON(sys, issuesBucket, formatUint64(id), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -397,20 +542,17 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	}
 
 	// Put in storage.
-	err = storage.PutJSON(sys, threadsBucket, formatUint64(id), issue)
+	err = storage.PutJSON(sys, issuesBucket, formatUint64(id), issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
 
 	// THINK: Is this the best place to do this? Should it be returned from this func? How would GH backend do it?
 	// Create event and commit to storage.
-	eventID, err := nextID(sys, threadEventsBucket(id))
-	if err != nil {
-		return issues.Issue{}, err
-	}
+	createdAt := time.Now().UTC()
 	event := event{
 		ActorUID:  currentUser.UID,
-		CreatedAt: time.Now(),
+		CreatedAt: createdAt,
 	}
 	switch {
 	case ir.State != nil && *ir.State == issues.OpenState:
@@ -424,9 +566,26 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 			To:   *ir.Title,
 		}
 	}
-	err = storage.PutJSON(sys, threadEventsBucket(id), formatUint64(eventID), event)
+	eventID, err := nextID(sys, issueEventsBucket(id))
 	if err != nil {
 		return issues.Issue{}, err
+	}
+	err = storage.PutJSON(sys, issueEventsBucket(id), formatUint64(eventID), event)
+	if err != nil {
+		return issues.Issue{}, err
+	}
+
+	// Subscribe interested users.
+	err = s.subscribe(ctx, repo, id, currentUser, "")
+	if err != nil {
+		log.Println("service.Edit: failed to s.subscribe:", err)
+	}
+
+	// Notify subscribed users.
+	// TODO: Maybe set fragment to fmt.Sprintf("event-%d", eventID), etc.
+	err = s.notify(ctx, repo, id, "", sys, createdAt)
+	if err != nil {
+		log.Println("service.Edit: failed to s.notify:", err)
 	}
 
 	return issues.Issue{
@@ -457,7 +616,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 
 	// Get from storage.
 	var comment comment
-	err := storage.GetJSON(sys, threadCommentsBucket(id), formatUint64(c.ID), &comment)
+	err := storage.GetJSON(sys, issueCommentsBucket(id), formatUint64(c.ID), &comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -477,10 +636,18 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	comment.Body = c.Body
 
 	// Commit to storage.
-	err = storage.PutJSON(sys, threadCommentsBucket(id), formatUint64(c.ID), comment)
+	err = storage.PutJSON(sys, issueCommentsBucket(id), formatUint64(c.ID), comment)
 	if err != nil {
 		return issues.Comment{}, err
 	}
+
+	// Subscribe interested users.
+	err = s.subscribe(ctx, repo, id, currentUser, c.Body)
+	if err != nil {
+		log.Println("service.EditComment: failed to s.subscribe:", err)
+	}
+
+	// TODO: Notify only the newly added subscribers (not existing ones).
 
 	return issues.Comment{
 		ID:        c.ID,

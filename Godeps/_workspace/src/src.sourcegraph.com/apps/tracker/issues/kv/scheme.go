@@ -40,22 +40,22 @@ type event struct {
 }
 
 const (
-	// threadsBucket is the bucket used for storing issues by thread ID.
-	threadsBucket = "threads"
+	// issuesBucket is the bucket used for storing issues by issue ID.
+	issuesBucket = "threads"
 
 	// commentsBucket is the bucket name prefix used for storing comments. Actual
-	// comments for a thread are stored in "comments-<thread ID>".
+	// comments for an issue are stored in "comments-{{.IssueID}}".
 	commentsBucket = "comments"
 
 	// eventsBucket is the bucket name prefix used for storing events. Actual
-	// events for a thread are stored in "events-<thread ID>".
+	// events for an issue are stored in "events-{{.IssueID}}".
 	eventsBucket = "events"
 )
 
-func threadCommentsBucket(threadID uint64) string {
-	return commentsBucket + "-" + formatUint64(threadID)
+func issueCommentsBucket(issueID uint64) string {
+	return commentsBucket + "-" + formatUint64(issueID)
 }
 
-func threadEventsBucket(threadID uint64) string {
-	return eventsBucket + "-" + formatUint64(threadID)
+func issueEventsBucket(issueID uint64) string {
+	return eventsBucket + "-" + formatUint64(issueID)
 }

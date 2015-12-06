@@ -1,5 +1,11 @@
 package issues
 
 type IssueListOptions struct {
-	State State
+	State StateFilter
 }
+
+type StateFilter State
+
+const (
+	AllStates StateFilter = "all"
+)

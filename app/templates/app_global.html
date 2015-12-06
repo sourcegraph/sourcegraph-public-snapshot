@@ -1,0 +1,10 @@
+{{define "Head"}}<title>Notification Center - Sourcegraph</title>
+{{end}}
+
+{{define "Body"}}
+	{{with .AppError}}
+		<strong>App Error:</strong> {{.}}
+	{{else}}
+		{{.AppHTML}}
+	{{end}}
+{{end}}

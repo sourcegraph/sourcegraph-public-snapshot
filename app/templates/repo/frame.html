@@ -1,6 +1,6 @@
 {{define "Head"}}
 <title>
-	{{if .AppSubtitle}}{{.AppSubtitle}} - {{end}}{{.AppTitle}} - {{.Repo.URI}} - Sourcegraph
+	{{with .AppSubtitle}}{{.}} - {{end}}{{.AppTitle}} - {{.Repo.URI}} - Sourcegraph
 </title>
 {{end}}
 

@@ -779,16 +779,16 @@
 			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
 		},
 		{
+			"ImportPath": "src.sourcegraph.com/apps/notifications",
+			"Rev": "8cb0fa665194796986711ec7a9d3dc0f8d3dcc5c"
+		},
+		{
 			"ImportPath": "src.sourcegraph.com/apps/tracker",
-			"Rev": "ec6bd77bd1f0b3d7765a0e5ad7177a8012a39565"
+			"Rev": "7a29e7a132aa7ac6e7b4c14375d0143bf1299dab"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",
 			"Rev": "870b72a67c8689d9c2b6efe144637fab8daf80f1"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/vfs",
-			"Rev": "c6e89b6ce18cc3c12453c27e6c8ab4c4622b19f6"
 		}
 	]
 }

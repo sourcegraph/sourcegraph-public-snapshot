@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"path"
 	"time"
 
 	"src.sourcegraph.com/apps/tracker/issues"
@@ -39,6 +40,25 @@ type event struct {
 }
 
 const (
-	// threadsDir is '/'-separated path for thread storage.
-	threadsDir = "threads"
+	// issuesDir is '/'-separated path for issue storage.
+	issuesDir = "threads"
+
+	// eventsDir is dir name for issue events.
+	eventsDir = "events"
 )
+
+func issueDir(issueID uint64) string {
+	return path.Join(issuesDir, formatUint64(issueID))
+}
+
+func issueCommentPath(issueID, commentID uint64) string {
+	return path.Join(issuesDir, formatUint64(issueID), formatUint64(commentID))
+}
+
+func issueEventsDir(issueID uint64) string {
+	return path.Join(issuesDir, formatUint64(issueID), eventsDir)
+}
+
+func issueEventPath(issueID, eventID uint64) string {
+	return path.Join(issuesDir, formatUint64(issueID), eventsDir, formatUint64(eventID))
+}

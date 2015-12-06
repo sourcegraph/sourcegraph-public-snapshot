@@ -21,6 +21,10 @@ func sgUser(ctx context.Context, user *sourcegraph.User) issues.User {
 	}
 
 	return issues.User{
+		UserSpec: issues.UserSpec{
+			ID:     uint64(user.UID),
+			Domain: user.Domain, // TODO: If blank, set it to "sourcegraph.com"?
+		},
 		Login:     user.Login,
 		AvatarURL: avatarURL,
 		HTMLURL:   template.URL(profile.String()),

@@ -1,0 +1,35 @@
+<html>
+	<head>
+		{{template "head" .}}
+	</head>
+	<body>
+		{{template "notifications" .RepoNotifications}}
+	</body>
+</html>
+
+{{define "notifications"}}
+{{with .}}{{range .}}
+	<div class="list-entry list-entry-border">
+		<div class="list-entry-header">
+			<a class="black" href="{{.RepoURL}}"><strong>{{.Repo}}</strong></a>
+		</div>
+		{{range .Notifications}}
+			<div class="list-entry-body multilist-entry">
+				<table style="width: 100%;">
+				<tr>
+				<td class="notification" style="width: 70%;">
+					<span class="octicon octicon-{{.Icon}}"></span>
+					<a class="black" onclick="MarkRead(this);" href="{{.HTMLURL}}">{{.Title}}</a>
+				</td>
+				<td>
+					<span class="tiny">{{template "time" .UpdatedAt}}</span>
+				</td>
+				</tr>
+				</table>
+			</div>
+		{{end}}
+	</div>
+{{end}}{{else}}
+	<div style="text-align: center; margin-top: 80px; margin-bottom: 80px;">No new notifications.</div>
+{{end}}
+{{end}}
