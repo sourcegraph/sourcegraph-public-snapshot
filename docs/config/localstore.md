@@ -44,3 +44,20 @@ If you are running Sourcegraph on Ubuntu Linux or one of the supported cloud pro
 Prior to running Sourcegraph for the first time you will need to run `src pgsql create` which will initialize the database and tables.
 
 The `src pgsql` command provides subcommands to drop, reset and truncate the database. See `src pgsql -h` for more information.
+
+# `graphstore`
+
+To use S3 as a storage backend for `srclib` Code Intelligence data, set the `graphstore.root` option:
+
+```
+--graphstore.root=s3://bucketname
+```
+
+To tell `src` how to authenticate to S3 by setting environment variables:
+
+```
+AWS_ACCESS_KEY_ID
+AWS_SECRET_KEY
+```
+
+You probably want to use IAM to create an access key that can only read and write to the created bucket.
