@@ -26,9 +26,14 @@
 					{{end}}
 				</p>
 			</div>
+			<div class="form-group {{.SignupForm.FieldClass "Password"}}">
+				<label for="password">Password</label>
+				<input name="Password" type="password" class="form-control" id="password" value="{{.SignupForm.Password}}" required tabindex=2>
+				<p class="help-block">{{.SignupForm.FieldError "Password"}}</p>
+			</div>
 			<div class="form-group {{.SignupForm.FieldClass "Email"}}">
 				<label for="email">Email address</label>
-				<input name="Email" type="email" class="form-control" id="email" value="{{.SignupForm.Email}}" required tabindex=2>
+				<input name="Email" type="email" class="form-control" id="email" value="{{.SignupForm.Email}}" required {{if .SignupForm.Token}}readonly {{end}}tabindex=3>
 				<p class="help-block">
 					{{with .SignupForm.FieldError "Email"}}
 						{{.}}
@@ -37,11 +42,6 @@
 						You'll receive occasional emails about your account. We won't share your email address with anyone.
 					{{end}}
 				</p>
-			</div>
-			<div class="form-group {{.SignupForm.FieldClass "Password"}}">
-				<label for="password">Password</label>
-				<input name="Password" type="password" class="form-control" id="password" value="{{.SignupForm.Password}}" required tabindex=3>
-				<p class="help-block">{{.SignupForm.FieldError "Password"}}</p>
 			</div>
 
 			<p class="notice">

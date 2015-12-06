@@ -51,7 +51,7 @@ exports.builds = builds;
 
 function createInvite(email, perms) {
 	return $.ajax({
-		url: `/.ui/.invite?Email=${email}&Permission=${perms}`,
+		url: `/.ui/.invite?Email=${encodeURIComponent(email)}&Permission=${perms}`,
 	});
 }
 
