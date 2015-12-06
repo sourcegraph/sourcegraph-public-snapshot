@@ -571,6 +571,10 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 	}
 
+	if !fed.Config.IsRoot && c.GraphUplinkPeriod != 0 {
+		c.registerClientWithRoot(appURL, idKey)
+	}
+
 	// Refresh commit list periodically
 	go c.repoStatusCommitLogCacheRefresher()
 
@@ -917,6 +921,45 @@ func webpackDevServerHandler(w http.ResponseWriter, r *http.Request, next http.H
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 	next(w, r)
+}
+
+// registerClientWithRoot registers a local Sourcegraph instance as a client
+// of its root instance.
+func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
+	rctx := fed.Config.NewRemoteContext(context.Background())
+	cl := sourcegraph.NewClientFromContext(rctx)
+
+	shortClientID := idKey.ID
+	if len(shortClientID) > 5 {
+		shortClientID = shortClientID[:5]
+	}
+
+	_, err := cl.RegisteredClients.Get(rctx, &sourcegraph.RegisteredClientSpec{
+		ID: idKey.ID,
+	})
+	if err == nil {
+		log15.Debug("Client already registered with root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
+		return
+	} else if !strings.Contains(err.Error(), "no such registered client with ID") {
+		log.Fatalf("Could not fetch client from root: %v", err)
+	}
+
+	// JWKS
+	jwks, err := idKey.MarshalJWKSPublicKey()
+	if err != nil {
+		log.Fatalf("Could not marshal JWKS for client: %v", err)
+	}
+
+	_, err = cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
+		ID: idKey.ID,
+		ClientName: fmt.Sprintf("Client #%s", shortClientID),
+		ClientURI: appURL.String(),
+		JWKS: string(jwks),
+	})
+	if err != nil {
+		log.Fatalf("Could not register client with root: %v", err)
+	}
+	log15.Debug("Registered as client of root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
 }
 
 // repoStatusCommitLogCacheRefresher periodically refreshes the commit log cache

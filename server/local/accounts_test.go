@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/mattbaird/gochimp"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -130,6 +132,9 @@ func TestUpdate(t *testing.T) {
 	}
 
 	ctx, mock := testContext()
+	mock.stores.Users.Get_ = func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		return user, nil
+	}
 	mock.stores.Accounts.Update_ = func(ctx context.Context, in *sourcegraph.User) error {
 		if in.UID != user.UID || in.Name != user.Name || in.HomepageURL != user.HomepageURL || in.Company != user.Company || in.Location != user.Location {
 			t.Errorf("got %v, want %v", in, user)
@@ -144,5 +149,16 @@ func TestUpdate(t *testing.T) {
 
 	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 124}); err != os.ErrPermission {
 		t.Errorf("expected os.ErrPermission, got %v", err)
+	}
+
+	// Verify that non-admin user cannot set their own access level.
+	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 123, Write: true, Admin: true}); grpc.Code(err) != codes.PermissionDenied {
+		t.Errorf("expected grpc.PermissionDenied, got %v", err)
+	}
+
+	// Verify that admin user can set access levels.
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 124, Scope: map[string]bool{"user:admin": true}})
+	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 123, Write: true, Admin: true}); err != nil {
+		t.Errorf(err)
 	}
 }
