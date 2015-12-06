@@ -39,18 +39,22 @@ var RepoCloneBox = React.createClass({
 		}
 
 		return (
-			<div className="clone-url-wrap input-group input-group-sm">
-				<button className="btn btn-primary clone-copy" data-clipboard-target="#clone-url-value">
-					<span className="octicon octicon-clippy"></span>
-				</button>
-
-				<button className="btn btn-default clone-type"
-					onClick={this._toggleType.bind(this, nextType)}
-					disabled={this.props.SSHCloneURL.length ? "false" : "true"}>
-						{this.state.type + (url.indexOf("https://") > -1 ? "S" : "")}
-				</button>
+			<div className="clone-url-wrap input-group input-group-sm pull-right">
+				<div className="input-group-btn">
+					<button className="btn btn-neutral clone-type"
+						onClick={this._toggleType.bind(this, nextType)}
+						disabled={this.props.SSHCloneURL.length ? "false" : "true"}>
+							{this.state.type + (url.indexOf("https://") > -1 ? "S" : "")}
+					</button>
+				</div>
 
 				<span id="clone-url-value" className="form-control">{url}</span>
+
+				<div className="input-group-btn">
+					<button className="btn btn-neutral clone-copy" data-clipboard-target="#clone-url-value">
+						<span className="octicon octicon-clippy"></span>
+					</button>
+				</div>
 			</div>
 		);
 	},

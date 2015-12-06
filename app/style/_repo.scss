@@ -94,45 +94,19 @@ div.repo-body {
 	}
 
 	.clone-url-container {
-		max-width: 30em;
-
 		.clone-url-wrap {
-			position: relative;
-			float: right;
-			padding: 2px;
-		}
+			max-width: 15em;
 
-		.clone-copy {
-			position: absolute;
-			top: 3px;
-			z-index: 3;
-			padding: 1px 2px 0px 5px;
-			right: 4px;
-			border-radius: 0px 2px 2px 0px;
-			width: 30px;
-			height: 28px;
-			padding-left: -8px;
-		}
+			.clone-type {
+				opacity: 1;
+			}
 
-		.clone-type {
-			position: absolute;
-			left: -3px;
-			z-index: 3;
-			top: 2px;
-			font-weight: bold;
-			border-radius: 0;
-			height: 30px;
-			padding-top: 6px;
-		}
-
-		#clone-url-value {
-			background-color: white;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			padding-right: 33px;
-			padding-left:  59px;
-			width: auto;
-			max-width: 30em;
+			#clone-url-value {
+				background-color: white;
+				overflow: hidden;
+				max-width: 15em;
+				text-overflow: ellipsis;
+			}
 		}
 	}
 }
