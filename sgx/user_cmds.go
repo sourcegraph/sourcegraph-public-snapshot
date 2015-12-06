@@ -63,6 +63,15 @@ func init() {
 		log.Fatal(err)
 	}
 
+	_, err = userGroup.AddCommand("update",
+		"update a user",
+		"Update a user's information.",
+		&userUpdateCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	userKeysGroup, err := userGroup.AddCommand("keys",
 		"manage user's SSH public keys",
 		"Manage user's SSH public keys.",
@@ -131,7 +140,7 @@ func (c *userInviteCmd) Execute(args []string) error {
 	for _, email := range c.Args.Emails {
 		pendingInvite, err := cl.Accounts.Invite(cliCtx, &sourcegraph.AccountInvite{
 			Email: email,
-			Write: c.Write,
+			Write: c.Write || c.Admin,
 			Admin: c.Admin,
 		})
 		if err != nil {
@@ -217,6 +226,49 @@ func (c *userGetCmd) Execute(args []string) error {
 		for _, email := range emails.EmailAddrs {
 			fmt.Println(email)
 		}
+	}
+
+	return nil
+}
+
+type userUpdateCmd struct {
+	Access string `long:"access" description:"set access level for user (read|write|admin)"`
+	Args   struct {
+		User string `name:"User" description:"user login (or login@domain)"`
+	} `positional-args:"yes"`
+}
+
+func (c *userUpdateCmd) Execute(args []string) error {
+	cl := Client()
+
+	userSpec, err := sourcegraph.ParseUserSpec(c.Args.User)
+	if err != nil {
+		return err
+	}
+	user, err := cl.Users.Get(cliCtx, &userSpec)
+	if err != nil {
+		return err
+	}
+
+	if c.Access != "" {
+		switch c.Access {
+		case "read":
+			user.Write = false
+			user.Admin = false
+		case "write":
+			user.Write = true
+			user.Admin = false
+		case "admin":
+			user.Write = true
+			user.Admin = true
+		default:
+			return fmt.Errorf("access level not recognized (should be one of read/write/admin): %s", c.Access)
+		}
+
+		if _, err := cl.Accounts.Update(cliCtx, user); err != nil {
+			return err
+		}
+		fmt.Printf("# updated access level for user %s to %s\n", user.Login, c.Access)
 	}
 
 	return nil

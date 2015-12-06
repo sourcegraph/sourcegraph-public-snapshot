@@ -22,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 var Accounts sourcegraph.AccountsServer = &accounts{mu: &sync.Mutex{}}
@@ -48,9 +49,9 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	if numUsers == 0 {
 		write = true
 		admin = true
-	} else if !authutil.ActiveFlags.AllowAllLogins {
+	} else if !authutil.ActiveFlags.AllowAllLogins && !authpkg.ActorFromContext(ctx).HasAdminAccess() {
 		// This is not the first user and this instance does not allow
-		// signup without an invite.
+		// non-admin users to create an account without an invite.
 		return nil, grpc.Errorf(codes.PermissionDenied, "cannot sign up without an invite")
 	}
 
@@ -121,9 +122,17 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
 	defer noCache(ctx)
 
-	// TODO(richard) permission should be checked at store level
-	if int(in.UID) != authpkg.ActorFromContext(ctx).UID {
+	a := authpkg.ActorFromContext(ctx)
+
+	// A user can only update their own record, but an admin can
+	// update all records.
+	if !a.HasAdminAccess() && a.UID != int(in.UID) {
 		return nil, os.ErrPermission
+	}
+
+	user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: in.UID})
+	if err != nil {
+		return nil, err
 	}
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
@@ -131,18 +140,10 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
 	}
 
-	// TODO(beyang): Right now we do not allow setting a user as having
-	// admin privileges through the API. It must be done by editing the DB or
-	// users file for now. At a later point in time we can allow for this to be
-	// done through the API once we have full ACLs and testing for them.
-	if in.Admin {
-		// Only allow this update to proceed if the user is already an admin.
-		user, err := (&users{}).Get(ctx, &sourcegraph.UserSpec{UID: in.UID})
-		if err != nil {
-			return nil, err
-		}
-		if !user.Admin || user.Domain != "" {
-			return nil, grpc.Errorf(codes.PermissionDenied, "can't set user as admin through API")
+	if (user.Admin != in.Admin) || (user.Write != in.Write) {
+		// Only admin users can modify access levels of a user.
+		if !a.HasAdminAccess() {
+			return nil, grpc.Errorf(codes.PermissionDenied, "need admin privileges to modify user permissions")
 		}
 	}
 
