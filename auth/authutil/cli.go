@@ -29,7 +29,9 @@ type Flags struct {
 
 	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login. CAUTION: use only for testing."`
 
-	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations. CAUTION: use only for testing."`
+	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations"`
+
+	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.

@@ -19,7 +19,7 @@ func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User
 }
 
 func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
-	if newUser.UID != 0 && !authutil.ActiveFlags.IsLDAP() {
+	if newUser.UID != 0 && !authutil.ActiveFlags.MigrateMode {
 		return nil, errors.New("uid already set")
 	}
 	if newUser.Login == "" {
@@ -31,15 +31,20 @@ func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 		return nil, err
 	}
 
+	maxUID := int32(0)
+
 	// Verify login and UID uniqueness.
 	for _, user := range users {
+		if user.UID > maxUID {
+			maxUID = user.UID
+		}
 		if user.Login == newUser.Login || user.UID == newUser.UID {
 			return nil, &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
 		}
 	}
 
 	if newUser.UID == 0 {
-		newUser.UID = int32(len(users) + 1)
+		newUser.UID = maxUID + 1
 	}
 	users = append(users, &userDBEntry{User: *newUser})
 

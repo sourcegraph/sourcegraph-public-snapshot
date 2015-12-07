@@ -94,7 +94,11 @@ func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*UserInfo
 	}
 
 	// Fetch registered users.
-	userList, err := cl.Users.List(ctx, &sourcegraph.UsersListOptions{})
+	userList, err := cl.Users.List(ctx, &sourcegraph.UsersListOptions{
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 10000,
+		},
+	})
 	if err == nil {
 		for _, user := range userList.Users {
 			users = append(users, &UserInfo{

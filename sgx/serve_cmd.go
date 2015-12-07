@@ -572,7 +572,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	if !fed.Config.IsRoot && c.GraphUplinkPeriod != 0 {
-		c.registerClientWithRoot(appURL, idKey)
+		c.registerClientWithRoot(appURL, idKey, 5)
 	}
 
 	// Refresh commit list periodically
@@ -925,7 +925,7 @@ func webpackDevServerHandler(w http.ResponseWriter, r *http.Request, next http.H
 
 // registerClientWithRoot registers a local Sourcegraph instance as a client
 // of its root instance.
-func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
+func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey, retries int) {
 	rctx := fed.Config.NewRemoteContext(context.Background())
 	cl := sourcegraph.NewClientFromContext(rctx)
 
@@ -941,7 +941,14 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 		log15.Debug("Client already registered with root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
 		return
 	} else if !strings.Contains(err.Error(), "no such registered client with ID") {
-		log.Fatalf("Could not fetch client from root: %v", err)
+		retries -= 1
+		if retries > 0 {
+			log15.Error("Could not fetch client from root", "error", err, "retries_left", retries)
+			time.Sleep(2 * time.Second)
+			c.registerClientWithRoot(appURL, idKey, retries)
+		} else {
+			log.Fatalf("Could not contact root server at %v, please email help@sourcegraph.com", fed.Config.RootURLStr)
+		}
 	}
 
 	// JWKS

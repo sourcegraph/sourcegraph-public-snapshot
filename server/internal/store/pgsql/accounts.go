@@ -24,11 +24,20 @@ func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User
 }
 
 func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
-	if newUser.UID != 0 && !authutil.ActiveFlags.IsLDAP() {
+	if newUser.UID != 0 && !authutil.ActiveFlags.MigrateMode {
 		return nil, errors.New("uid already set")
 	}
 	if newUser.Login == "" {
 		return nil, errors.New("login must be set")
+	}
+
+	if newUser.UID == 0 {
+		sql := "SELECT max(*) FROM users WHERE NOT disabled;"
+		var maxUID []int
+		if err := dbh(ctx).Select(&maxUID, sql); err != nil || len(maxUID) == 0 {
+			return nil, err
+		}
+		newUser.UID = int32(maxUID[0]) + 1
 	}
 
 	var u dbUser
