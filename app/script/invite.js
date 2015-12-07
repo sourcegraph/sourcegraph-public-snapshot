@@ -22,13 +22,18 @@ function addInviteClickListener(element) {
 
 		var permsSelect = document.getElementById("user-invite-perms");
 		var perms = permsSelect.options[permsSelect.selectedIndex].value;
-		client.createInvite(email, perms).success(function(resp) {
-			var node = document.createElement("LI");
-			setInviteHTML(node, email, resp);
-			document.getElementById("user-invites-list").appendChild(node);
-		}).error(function(err) {
-			console.error(err);
-		});
+		var cb = {
+			success(resp) {
+				var node = document.createElement("LI");
+				setInviteHTML(node, email, resp);
+				document.getElementById("user-invites-list").appendChild(node);
+			},
+			error(err) {
+				console.error(err);
+				alert("".concat("Error creating invite: ", err.responseText));
+			},
+		};
+		client.createInvite(email, perms, cb);
 	});
 }
 

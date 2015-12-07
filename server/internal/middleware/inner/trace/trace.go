@@ -33,10 +33,6 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 	} else {
 		spanID = appdash.NewSpanID(spanID)
 	}
-	// HACK: remove annoying 'Builds.DequeueNext' statements from the logs.
-	if !(server == "Builds" && method == "DequeueNext") {
-		log15.Debug("gRPC "+server+"."+method+" before", "spanID", spanID)
-	}
 	ctx = traceutil.NewContext(ctx, spanID)
 
 	// Traceguide instrumentation
@@ -136,9 +132,5 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 		Message: message,
 	})
 
-	// HACK: remove annoying 'Builds.DequeueNext' statements from the logs.
-	if server == "Builds" && method == "DequeueNext" {
-		return
-	}
 	log15.Debug("gRPC "+server+"."+method+" after", "spanID", traceutil.SpanIDFromContext(ctx), "elapsed", elapsed)
 }

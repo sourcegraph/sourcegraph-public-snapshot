@@ -161,6 +161,16 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		return nil, err
 	}
 
+	usersStore := store.UsersFromContextOrNil(ctx)
+	if usersStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "users"}
+	}
+
+	user, _ := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: invite.Email})
+	if user != nil {
+		return nil, grpc.Errorf(codes.FailedPrecondition, "a user already exists with this email")
+	}
+
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "invites"}

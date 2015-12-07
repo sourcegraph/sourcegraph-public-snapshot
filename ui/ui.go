@@ -113,6 +113,7 @@ func (h *payloadHandler) serveHandler(fn func(w http.ResponseWriter, r *http.Req
 // when processing a request.
 func (h *payloadHandler) serveError(w http.ResponseWriter, req *http.Request, status int, err error) {
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	msg := err.Error() + " (Code: " + strconv.Itoa(status) + ")"
 	err = json.NewEncoder(w).Encode(struct{ Error string }{msg})
 	if err != nil {

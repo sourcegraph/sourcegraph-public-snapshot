@@ -951,10 +951,10 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 	}
 
 	_, err = cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
-		ID: idKey.ID,
+		ID:         idKey.ID,
 		ClientName: fmt.Sprintf("Client #%s", shortClientID),
-		ClientURI: appURL.String(),
-		JWKS: string(jwks),
+		ClientURI:  appURL.String(),
+		JWKS:       string(jwks),
 	})
 	if err != nil {
 		log.Fatalf("Could not register client with root: %v", err)

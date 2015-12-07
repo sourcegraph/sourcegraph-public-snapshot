@@ -49,9 +49,11 @@ function builds(repoURI, rev, noCache) {
 
 exports.builds = builds;
 
-function createInvite(email, perms) {
+function createInvite(email, perms, cb) {
 	return $.ajax({
 		url: `/.ui/.invite?Email=${encodeURIComponent(email)}&Permission=${perms}`,
+		success: cb.success,
+		error: cb.error,
 	});
 }
 
