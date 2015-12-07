@@ -17,7 +17,7 @@ Sourcegraph is supported on OS X 10.8+. Install using one of the following metho
 * [Download a gzipped static binary for Mac OS X](https://sourcegraph.com/.download/latest/darwin-amd64/src.gz)
 * (Homebrew coming soon)
 
-Next, try `src serve` and visit [http://localhost:3080](http://localhost:3080).
+Next, run `src serve` and visit [http://localhost:3080](http://localhost:3080).
 
 # Install on Linux
 
