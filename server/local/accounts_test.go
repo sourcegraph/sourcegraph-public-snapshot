@@ -131,12 +131,25 @@ func TestUpdate(t *testing.T) {
 		Location:    "someLocation",
 	}
 
+	dbUser := &sourcegraph.User {
+		UID:         123,
+		Name:        "someName",
+		HomepageURL: "someHomepageURL",
+		Company:     "someCompany",
+		Location:    "someLocation",
+	}
+
 	ctx, mock := testContext()
-	mock.stores.Users.Get_ = func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error) {
-		return user, nil
+	mock.servers.Users.Get_ = func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		if in.UID == dbUser.UID {
+			return dbUser, nil
+		} else {
+			// not important for the tests here.
+			return &sourcegraph.User{UID: in.UID}, nil
+		}
 	}
 	mock.stores.Accounts.Update_ = func(ctx context.Context, in *sourcegraph.User) error {
-		if in.UID != user.UID || in.Name != user.Name || in.HomepageURL != user.HomepageURL || in.Company != user.Company || in.Location != user.Location {
+		if in.UID != dbUser.UID || in.Name != dbUser.Name || in.HomepageURL != dbUser.HomepageURL || in.Company != dbUser.Company || in.Location != dbUser.Location {
 			t.Errorf("got %v, want %v", in, user)
 		}
 		return nil
@@ -151,14 +164,18 @@ func TestUpdate(t *testing.T) {
 		t.Errorf("expected os.ErrPermission, got %v", err)
 	}
 
+	// Update user's permissions.
+	user.Write = true
+	user.Admin = true
+
 	// Verify that non-admin user cannot set their own access level.
-	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 123, Write: true, Admin: true}); grpc.Code(err) != codes.PermissionDenied {
+	if _, err := Accounts.Update(ctx, user); grpc.Code(err) != codes.PermissionDenied {
 		t.Errorf("expected grpc.PermissionDenied, got %v", err)
 	}
 
 	// Verify that admin user can set access levels.
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 124, Scope: map[string]bool{"user:admin": true}})
-	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 123, Write: true, Admin: true}); err != nil {
-		t.Errorf(err)
+	if _, err := Accounts.Update(ctx, user); err != nil {
+		t.Error(err)
 	}
 }
