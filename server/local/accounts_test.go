@@ -131,7 +131,7 @@ func TestUpdate(t *testing.T) {
 		Location:    "someLocation",
 	}
 
-	dbUser := &sourcegraph.User {
+	dbUser := &sourcegraph.User{
 		UID:         123,
 		Name:        "someName",
 		HomepageURL: "someHomepageURL",

@@ -78,11 +78,8 @@ func main_() error {
 	os.Setenv("SG_USERNAME", *username)
 	os.Setenv("SG_PASSWORD", *password)
 
-	// authenticate with mothership
-	c(`src --endpoint=https://sourcegraph.com login`)
-
 	// launch local server
-	server, err := async(`src serve --auth.allow-all-logins`)
+	server, err := async(`src serve --auth.allow-all-logins --graphuplink=0m`)
 	if err != nil {
 		return err
 	}
@@ -100,24 +97,18 @@ func main_() error {
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	// register local instance with mothership
-	outObj, err := cJSON(`src registered-clients create --client-name=%s --client-uri='%s' --redirect-uri='%s'`, registeredClient, registeredClientURL, registeredClientRedirectURL)
-	if err != nil {
+	// create user on instance (will be granted admin access)
+	if err := ce(`src --endpoint=http://localhost:3080 user create $SG_USERNAME $SG_PASSWORD`); err != nil {
 		return err
 	}
-	clientID := outObj["ID"].(string)
-	defer c(`src --endpoint='https://sourcegraph.com' registered-clients delete '%s'`, clientID)
 
-	// authenticate with local instance (the mothership may not immediately register the client instance, so try multiple attempts)
-	for i := 0; i < 20; i++ {
-		if err := ce(`src --endpoint=http://localhost:3080 login`); err == nil {
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
+	// authenticate with local instance
+	if err := ce(`src --endpoint=http://localhost:3080 login`); err != nil {
+		return err
 	}
 
-	c(`rm -rf ~/.sourcegraph/repos/testrepo`)
-	c(`src --endpoint=http://localhost:3080 repo create testrepo`)
+	c(`rm -rf $SGPATH/repos/testrepo`)
+	c(`src repo create testrepo`)
 
 	testrepoDir, err := ioutil.TempDir("", "testrepo")
 	must(err)
