@@ -120,7 +120,7 @@ var HunkView = React.createClass({
 					{(i === comments.length - 1) && !withForm ? (
 						<div className="comment-add-note">
 							<a className="btn btn-default" onClick={this._onCommentOpen.bind(this, line)}>
-								<span className="octicon octicon-plus"></span> Add a note
+								<span className="octicon octicon-plus"></span> Add a comment
 							</a>
 						</div>
 					) : null}
