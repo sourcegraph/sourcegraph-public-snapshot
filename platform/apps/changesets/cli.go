@@ -106,8 +106,12 @@ type changesetsCmd struct{}
 
 func (c *changesetsCmd) Execute(args []string) error { return nil }
 
+type changesetsCmdCommon struct {
+	Repo string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+}
+
 type changesetListCmd struct {
-	Repo   string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+	changesetsCmdCommon
 	Status string `long:"status" description:"filter to only 'open' or 'closed' changesets (default: all)"`
 }
 
@@ -148,7 +152,7 @@ func (c *changesetListCmd) Execute(args []string) error {
 }
 
 type changesetCreateCmd struct {
-	Repo  string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+	changesetsCmdCommon
 	Base  string `long:"base" description:"base branch"`
 	Head  string `long:"head" description:"head branch"`
 	Title string `short:"t" long:"title" description:"title"`
@@ -280,7 +284,7 @@ func newChangesetInEditor(origTitle string) (title, description string, err erro
 }
 
 type changesetUpdateCmdCommon struct {
-	Repo string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+	changesetsCmdCommon
 	Args struct {
 		ID int64 `name:"ID" description:"changeset ID"`
 	} `positional-args:"yes" required:"yes" count:"1"`
@@ -309,8 +313,8 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 }
 
 type changesetMergeCmd struct {
-	Repo   string `short:"r" long:"repo" description:"repository URI" required:"yes"`
-	Squash bool   `long:"squash" description:"squash multiple commits on head into a single merge commit"`
+	changesetsCmdCommon
+	Squash bool `long:"squash" description:"squash multiple commits on head into a single merge commit"`
 	Args   struct {
 		ID int64 `name:"ID" description:"changeset ID"`
 	} `positional-args:"yes" required:"yes" count:"1"`
