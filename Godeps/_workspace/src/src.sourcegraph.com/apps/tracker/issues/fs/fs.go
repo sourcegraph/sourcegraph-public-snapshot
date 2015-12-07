@@ -386,11 +386,11 @@ func canEdit(ctx context.Context, sg *sourcegraph.Client, currentUser *sourcegra
 		// If you're the author, you can always edit it.
 		return nil
 	}
-	perm, err := sg.Auth.GetPermissions(ctx, &pbtypes.Void{})
+	authInfo, err := sg.Auth.Identify(ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
-	switch perm.Write {
+	switch authInfo.Write {
 	case true:
 		// If you have write access (or greater), you can edit.
 		return nil
