@@ -32,10 +32,13 @@ func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 	}
 
 	if newUser.UID == 0 {
-		sql := "SELECT max(*) FROM users WHERE NOT disabled;"
+		sql := "SELECT uid FROM users order by uid desc limit 1;"
 		var maxUID []int
-		if err := dbh(ctx).Select(&maxUID, sql); err != nil || len(maxUID) == 0 {
+		if err := dbh(ctx).Select(&maxUID, sql); err != nil {
 			return nil, err
+		} else if len(maxUID) == 0 {
+			// first user
+			maxUID = append(maxUID, 0)
 		}
 		newUser.UID = int32(maxUID[0]) + 1
 	}
