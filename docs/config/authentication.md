@@ -3,9 +3,15 @@ title = "Authentication"
 description = "Manage user authentication on your Sourcegraph instance"
 +++
 
-## OAuth
+## Local auth
 
-The default authentication mechanism for Sourcegraph is using OAuth2 via Sourcegraph.com. Users can log into Sourcegraph instances with their Sourcegraph.com account credentials. This requires no configuration from the admin.
+The default authentication mechanism for Sourcegraph is via username & password.
+Passwords are hashed and stored on your file system or database, depending
+on your [persistence configuration]({{< relref "config/localstore.md" >}}).
+
+The first user to create an account on a Sourcegraph instance becomes the instance
+admin. The admin may [invite other users and manage access controls]
+({{< relref "management/access-control.md" >}}).
 
 See [OAuth2.md]({{< relref "dev/OAuth2.md" >}}) for details of the OAuth2 implementation.
 
