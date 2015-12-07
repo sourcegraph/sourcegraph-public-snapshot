@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"log"
@@ -127,7 +128,7 @@ func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.Acco
 	}
 
 	for i := range invitesList {
-		if token == invitesList[i].Token {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(invitesList[i].Token)) != 1 {
 			if invitesList[i].InUse {
 				return nil, errors.New("already used")
 			}
@@ -145,7 +146,7 @@ func (s *Invites) MarkUnused(ctx context.Context, token string) error {
 	}
 
 	for i := range invitesList {
-		if token == invitesList[i].Token {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(invitesList[i].Token)) != 1 {
 			invitesList[i].InUse = false
 
 			// Save to disk.
@@ -166,7 +167,7 @@ func (s *Invites) Delete(ctx context.Context, token string) error {
 	}
 
 	for i := range invitesList {
-		if token == invitesList[i].Token {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(invitesList[i].Token)) != 1 {
 			invitesList[i] = invitesList[len(invitesList)-1]
 
 			// Save to disk.

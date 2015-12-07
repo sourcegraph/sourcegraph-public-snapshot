@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"crypto/subtle"
 	"errors"
 	"strings"
 	"time"
@@ -93,14 +94,17 @@ func (s *Invites) MarkUnused(ctx context.Context, token string) error {
 
 func (s *Invites) get(ctx context.Context, token string) (*dbInvites, error) {
 	var invites []*dbInvites
-	err := dbh(ctx).Select(&invites, `SELECT * FROM invites WHERE "token"=$1;`, token)
+	err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`)
 	if err != nil {
 		return nil, err
 	}
-	if len(invites) == 0 {
-		return nil, errors.New("not found")
+	// Constant time comparison to prevent timing attacks.
+	for i := range invites {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(invites[i].Token)) != 1 {
+			return invites[i], nil
+		}
 	}
-	return invites[0], nil
+	return nil, errors.New("not found")
 }
 
 func (s *Invites) Delete(ctx context.Context, token string) error {
