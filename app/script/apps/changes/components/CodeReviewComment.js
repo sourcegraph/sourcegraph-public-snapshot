@@ -128,7 +128,7 @@ var CodeReviewComment = React.createClass({
 		return (
 			<div className="inline-content inline-comment">
 				<b>{author}</b> commented <span className="date">{moment(this.state.CreatedAt).fromNow()}</span>
-				{this.state.Draft ? <span><span className="label-draft">draft</span> <i data-tooltip={true} title="To submit your review, go to the Activity tab and click on 'Submit your review' at the bottom" className="draft-help fa fa-question-circle"></i></span> : null}
+				{this.state.Draft ? <span><span className="label-draft">draft</span> <i data-tooltip={true} title="Comment drafts must be submitted using the 'Submit your review' button'" className="draft-help fa fa-question-circle"></i></span> : null}
 
 				{this.state.editingComment ? (
 					<div className="comment-edit-wrapper">
