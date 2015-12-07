@@ -1,110 +1,21 @@
 package sgx
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 
 	"github.com/howeyc/gopass"
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/env"
+	"src.sourcegraph.com/sourcegraph/auth/userauth"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
-
-// userAuth holds user auth credentials keyed on API endpoint
-// URL. It's typically saved in a file named by userAuthFile.
-type userAuth map[string]*userEndpointAuth
-
-func (ua userAuth) setDefault(endpoint string) {
-	for k, v := range ua {
-		if k == endpoint {
-			v.Default = true
-		} else {
-			v.Default = false
-		}
-	}
-}
-
-// getDefault returns the user-endpoint auth entry that is marked as
-// the default, if any exists.
-func (ua userAuth) getDefault() (endpoint string, a *userEndpointAuth) {
-	for k, v := range ua {
-		if v.Default {
-			return k, v
-		}
-	}
-	return "", nil
-}
-
-// userEndpointAuth holds a user's authentication credentials for a
-// sourcegraph endpoint.
-type userEndpointAuth struct {
-	AccessToken string
-
-	// Default is whether this endpoint and access token should be
-	// used as the defaults if none are specified.
-	Default bool `json:",omitempty"`
-}
-
-// readAuth attempts to read a userAuth struct from the
-// userAuthFile. It is not considered an error if the userAuthFile
-// doesn't exist; in that case, an empty userAuth and a nil error is
-// returned.
-func readUserAuth() (userAuth, error) {
-	if Credentials.AuthFile == "/dev/null" {
-		return userAuth{}, nil
-	}
-	f, err := os.Open(userAuthFileName())
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	var ua userAuth
-	if err := json.NewDecoder(f).Decode(&ua); err != nil {
-		return nil, err
-	}
-	return ua, nil
-}
-
-// writeUserAuth writes ua to the userAuthFile.
-func writeUserAuth(a userAuth) error {
-	f, err := os.Create(userAuthFileName())
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if err := os.Chmod(f.Name(), 0600); err != nil {
-		return err
-	}
-	b, err := json.MarshalIndent(a, "", "  ")
-	if err != nil {
-		return err
-	}
-	_, err = f.Write(b)
-	return err
-}
-
-// Resolves user auth file name platform-independent way
-func userAuthFileName() string {
-	ret := Credentials.AuthFile
-	if runtime.GOOS == "windows" {
-		// on Windows there is no HOME
-		ret = strings.Replace(ret, "$HOME", env.CurrentUserHomeDir(), -1)
-	}
-	return filepath.FromSlash(os.ExpandEnv(ret))
-}
 
 func init() {
 	_, err := cli.CLI.AddCommand("login",
@@ -139,7 +50,7 @@ type loginCmd struct {
 // getSavedToken checks if we already have a token for an endpoint, and
 // validates that it still works.
 func getSavedToken(endpointURL *url.URL) string {
-	a, err := readUserAuth()
+	a, err := userauth.ReadUserAuth(Credentials.AuthFile)
 	if err != nil || a == nil {
 		return ""
 	}
@@ -202,48 +113,10 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return "", fmt.Errorf("authenticating to %s: %s", endpointURL, err)
 	}
 
-	if err := saveCredentials(endpointURL, tok.AccessToken, false); err != nil {
+	if err := userauth.SaveCredentials(Credentials.AuthFile, endpointURL, tok.AccessToken, false); err != nil {
 		log.Printf("warning: failed to save credentials: %s.", err)
 	}
 	return tok.AccessToken, nil
-}
-
-func saveCredentials(endpointURL *url.URL, accessTok string, makeDefault bool) error {
-	a, err := readUserAuth()
-	if err != nil {
-		return err
-	}
-	if a == nil {
-		a = userAuth{}
-	}
-
-	var updatedDefault, updatedCredentials bool
-	ua, ok := a[endpointURL.String()]
-	if ok {
-		if ua.AccessToken != accessTok {
-			updatedCredentials = true
-			ua.AccessToken = accessTok
-		}
-	} else {
-		updatedCredentials = true
-		ua = &userEndpointAuth{AccessToken: accessTok}
-		a[endpointURL.String()] = ua
-	}
-	if makeDefault && !ua.Default {
-		updatedDefault = true
-		a.setDefault(endpointURL.String())
-	}
-
-	if err := writeUserAuth(a); err != nil {
-		return err
-	}
-	if updatedCredentials {
-		log.Printf("# Credentials for %s saved to %s.", endpointURL, userAuthFileName())
-	}
-	if updatedDefault {
-		log.Printf("# Default endpoint set to %s.", endpointURL)
-	}
-	return nil
 }
 
 func (c *loginCmd) Execute(args []string) error {
@@ -253,7 +126,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	// Check if parseable, before attempting authentication
-	_, err := readUserAuth()
+	_, err := userauth.ReadUserAuth(Credentials.AuthFile)
 	if err != nil {
 		return err
 	}
@@ -270,7 +143,7 @@ func (c *loginCmd) Execute(args []string) error {
 		return err
 	}
 
-	err = saveCredentials(endpointURL, accessTok, true)
+	err = userauth.SaveCredentials(Credentials.AuthFile, endpointURL, accessTok, true)
 	if err != nil {
 		return err
 	}
@@ -282,7 +155,7 @@ type whoamiCmd struct {
 }
 
 func (c *whoamiCmd) Execute(args []string) error {
-	a, err := readUserAuth()
+	a, err := userauth.ReadUserAuth(Credentials.AuthFile)
 	if err != nil {
 		return err
 	}

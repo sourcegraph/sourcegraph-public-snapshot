@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/grpccache"
+	"src.sourcegraph.com/sourcegraph/auth/userauth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
@@ -58,11 +59,11 @@ func (c *EndpointOpts) URLOrDefault() *url.URL {
 	if e == "" {
 		// The user did not explicitly specify a endpoint URL, so use the default
 		// found in the auth file.
-		userAuth, err := readUserAuth()
+		userAuth, err := userauth.ReadUserAuth(Credentials.AuthFile)
 		if err != nil {
 			log.Fatal(err, "failed to read user auth file (in EndpointOpts.URLOrDefault)")
 		}
-		e, _ = userAuth.getDefault()
+		e, _ = userAuth.GetDefault()
 		if e == "" {
 			// Auth file has no default, so just choose a sensible default value
 			// instead.
@@ -104,7 +105,7 @@ var Credentials CredentialOpts
 // WithCredentials sets the HTTP and gRPC credentials in the context.
 func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, error) {
 	if c.AccessToken == "" && c.AuthFile != "" { // AccessToken takes precedence over AuthFile
-		userAuth, err := readUserAuth()
+		userAuth, err := userauth.ReadUserAuth(c.AuthFile)
 		if err != nil {
 			return nil, err
 		}
