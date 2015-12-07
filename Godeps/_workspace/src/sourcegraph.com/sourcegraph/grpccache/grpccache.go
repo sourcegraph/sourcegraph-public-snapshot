@@ -25,8 +25,9 @@ type cacheEntry struct {
 // A Cache holds and allows retrieval of gRPC method call results that
 // a client has previously seen.
 type Cache struct {
-	mu      sync.Mutex
-	results map[string]cacheEntry // method "-" sha256 of arg proto -> cache entry
+	mu        sync.Mutex
+	results   map[string]cacheEntry // method "-" sha256 of arg proto -> cache entry
+	lastClean time.Time
 
 	// MaxSize is the maximum size, in bytes, that this cache will
 	// store. An item is not stored if storing it would cause the
@@ -74,6 +75,8 @@ func (c *Cache) Get(ctx context.Context, method string, arg proto.Message, resul
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	c.cleanOldEntries()
+
 	cacheKey, err := c.cacheKey(ctx, method, arg)
 	if err != nil {
 		return false, err
@@ -113,6 +116,8 @@ func (c *Cache) Store(ctx context.Context, method string, arg proto.Message, res
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	c.cleanOldEntries()
 
 	if c.results == nil {
 		c.results = map[string]cacheEntry{}
@@ -162,6 +167,31 @@ func (c *Cache) Store(ctx context.Context, method string, arg proto.Message, res
 		log.Printf("Cache: STORE   %s %+v: result %s (size %d)", cacheKey, arg, truncate(result), c.size)
 	}
 	return nil
+}
+
+// cleanOldEntries removes expired entries from the cache. It does so in a
+// separate goroutine and only once every 10 seconds. The method assumes that
+// the cache mutex is locked.
+func (c *Cache) cleanOldEntries() {
+	now := time.Now()
+	if now.After(c.lastClean.Add(10 * time.Second)) {
+		c.lastClean = now
+		// clear old entries asynchronously
+		go func() {
+			c.mu.Lock()
+			defer c.mu.Unlock()
+
+			for key, entry := range c.results {
+				if now.After(entry.expiry) {
+					delete(c.results, key)
+					c.size -= uint64(len(entry.protoBytes))
+					if c.Log {
+						log.Printf("Cache: EXPIRED %s (size %d)", key, c.size)
+					}
+				}
+			}
+		}()
+	}
 }
 
 func truncate(v proto.Message) string {
