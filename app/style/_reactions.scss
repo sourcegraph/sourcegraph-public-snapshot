@@ -1,0 +1,50 @@
+.emoji-menu {
+	position: fixed;
+	z-index: 9000; // TODO Fix this
+	border-radius: 4px;
+
+	.emoji-list {
+		overflow-y: scroll;
+		padding: 6px;
+		border: solid $border-color 1px;
+		border-bottom: none;
+		background-color: $white;
+		border-radius: 4px 4px 0 0;
+
+		.emoji {
+			width: percentage(1/9);
+			padding: 6px;
+			border-radius: 6px;
+			cursor: pointer;
+
+			&:hover {
+				background-color: #b5e0fe;
+			}
+		}
+	}
+
+	.emoji-footer {
+		width: 100%;
+		position: relative;
+		top: 0;
+		background-color: #f7f7f7;
+		border: solid grey 1px;
+		border-radius: 0 0 4px 4px;
+
+		.emoji {
+			height: 100%;
+			padding: 8px;
+		}
+
+		b {
+			font-size: 18px;
+		}
+	}
+}
+		cursor: pointer;
+
+		&:hover {
+			background-color: #b5e0fe;
+		}
+	}
+}
