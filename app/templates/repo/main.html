@@ -12,18 +12,18 @@
 
 {{if or (or .Repo.Description .Repo.HomepageURL) (not disableCloneURL)}}
 	<div class="repo-meta row">
-		{{if or .Repo.Description .Repo.HomepageURL}}
-			<p class="description col-sm-8 col-md-10">
+		<p class="description col-sm-9">
+			{{if or .Repo.Description .Repo.HomepageURL}}
 				{{sanitizeHTML .Repo.Description}}
 				{{if and .Repo.Description .Repo.HomepageURL}}&mdash;{{end}}
 				{{if .Repo.HomepageURL}}
 					<a href="{{.Repo.HomepageURL}}" target="_blank" rel="nofollow">{{displayURL (toString2 .Repo.HomepageURL)}}</a>
 				{{end}}
-			</p>
-		{{end}}
+			{{end}}
+		</p>
 
 		{{if not disableCloneURL}}
-			<div class="clone-url-container col-sm-12">
+			<div class="clone-url-container col-sm-3">
 				<div data-react="RepoCloneBox"
 					data-SSH-Clone-URL="{{.Repo.SSHCloneURL}}"
 					data-HTTP-Clone-URL="{{.Repo.HTTPCloneURL}}">
