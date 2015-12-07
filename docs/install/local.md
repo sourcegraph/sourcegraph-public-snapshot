@@ -5,8 +5,7 @@ linktitle = "Local installation"
 
 Sourcegraph in an all-in-one binary (`src`) which includes:
 
-- a Sourcegraph Core server
-- a web interface
+- a Sourcegraph server with a Web app and Git server
 - a command line interface
 
 # Install on Mac OS X

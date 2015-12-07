@@ -3,9 +3,10 @@ title = "Getting started with Sourcegraph"
 linktitle = "Getting Started"
 +++
 
-Sourcegraph is the intelligent, hackable code host for teams. <a
-href="https://www.youtube.com/watch?v=XOdh3-QJSzs" target="_blank">Watch the
-demo video</a> or browse around this server---it's a live Sourcegraph instance!
+Sourcegraph is the smarter code host for teams. <a
+href="https://www.youtube.com/watch?v=XOdh3-QJSzs"
+target="_blank">Watch the demo video</a> or browse around this
+server---it's a live Sourcegraph instance!
 
 ## Install locally
 

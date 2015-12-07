@@ -1,7 +1,7 @@
 +++
 title = "Enterprise configuration"
 linktitle = "Enterprise"
-description = "Use Sourcegraph's enterprise features"
+description = "Use Sourcegraph for enterprise"
 +++
 
 If you are running Sourcegraph within a large enterprise, you may
@@ -27,7 +27,7 @@ IsRoot = true
 
 # High scalability and availability
 
-Sourcegraph runs on Sourcegraph.com for hundreds of thousands of respositories and
+Sourcegraph runs on Sourcegraph.com for hundreds of thousands of repositories and
 tens of thousands of users. It can be configured to use multiple storage systems including
 key/value stores and SQL databases.
 
@@ -35,10 +35,11 @@ key/value stores and SQL databases.
 
 # License?
 
-Sourcegraph uses the [Fair Source License](https://fair.io) with a user limit of 15.
-It is free to use Sourcegraph enterprise features for teams of less than 15 developers.
-After your organization hits that user limit, you must pay a licensing fee.
+Sourcegraph uses the [Fair Source License](https://fair.io) with a
+user limit of 15. It is free to use Sourcegraph Enterprise for teams
+with 15 or fewer developers. After your organization hits that user
+limit, you must pay a licensing fee.
 
-Sourcegraph Core (non-enterprise) features are free to use for teams of any size.
+Sourcegraph Server (not Enterprise) is free to use for teams of any size.
 
 Have questions? [Contact us.](mailto:help@sourcegraph.com)

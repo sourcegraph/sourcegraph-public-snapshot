@@ -1,4 +1,4 @@
-# Sourcegraph: the intelligent, hackable code host for teams
+# Sourcegraph: the smarter code host for teams
 
 Sourcegraph is a **self-hosted Git repository service** with Code
 Intelligence. It **runs on your own server** or cloud and installs in

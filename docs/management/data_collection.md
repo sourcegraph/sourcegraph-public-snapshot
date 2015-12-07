@@ -52,7 +52,7 @@ information.
 # Choices
 
 For companies whose policies prohibit the use of cloud services,
-Sourcegraph Core Enterprise can operate without any external network
+Sourcegraph Enterprise can operate without any external network
 access. [Contact us](mailto:help@sourcegraph.com) for more
 information.
 

@@ -27,4 +27,4 @@ If we don't yet support your language, there are two options:
 1. **Vote for your favorite language.**
   * Send an email to [help@sourcegraph.com](mailto:help@sourcegraph.com) with the title "Vote: &lt;my language&gt;"!
 
-Note that even if we don't support your language, _you can still continue using Sourcegraph as a git repository host_ -- just some core features like jump-to-defition, usage examples, etc. will be disabled.
+Note that even if we don't support your language, _you can still continue using Sourcegraph as a Git repository host_ -- just some core features like jump-to-definition, usage examples, etc. will be disabled.
