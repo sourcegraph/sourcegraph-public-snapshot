@@ -50,7 +50,7 @@ type loginCmd struct {
 // getSavedToken checks if we already have a token for an endpoint, and
 // validates that it still works.
 func getSavedToken(endpointURL *url.URL) string {
-	a, err := userauth.ReadUserAuth(Credentials.AuthFile)
+	a, err := userauth.Read(Credentials.AuthFile)
 	if err != nil || a == nil {
 		return ""
 	}
@@ -126,7 +126,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	// Check if parseable, before attempting authentication
-	_, err := userauth.ReadUserAuth(Credentials.AuthFile)
+	_, err := userauth.Read(Credentials.AuthFile)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ type whoamiCmd struct {
 }
 
 func (c *whoamiCmd) Execute(args []string) error {
-	a, err := userauth.ReadUserAuth(Credentials.AuthFile)
+	a, err := userauth.Read(Credentials.AuthFile)
 	if err != nil {
 		return err
 	}

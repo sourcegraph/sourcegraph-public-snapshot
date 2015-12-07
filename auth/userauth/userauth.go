@@ -37,6 +37,24 @@ func (ua UserAuth) GetDefault() (endpoint string, a *userEndpointAuth) {
 	return "", nil
 }
 
+// Write writes ua to the userAuthFile.
+func (ua UserAuth) Write(path string) error {
+	f, err := os.Create(userAuthFileName(path))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if err := os.Chmod(f.Name(), 0600); err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(ua, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(b)
+	return err
+}
+
 // userEndpointAuth holds a user's authentication credentials for a
 // sourcegraph endpoint.
 type userEndpointAuth struct {
@@ -47,11 +65,11 @@ type userEndpointAuth struct {
 	Default bool `json:",omitempty"`
 }
 
-// ReadUserAuth attempts to read a UserAuth struct from the userAuthFile.
+// Read attempts to read a UserAuth struct from the userAuthFile.
 // It is not considered an error if the userAuthFile doesn't exist; in that
 // case, an empty UserAuth and a nil error is returned.
 // Typically path is sgx.Credentials.Auth
-func ReadUserAuth(path string) (UserAuth, error) {
+func Read(path string) (UserAuth, error) {
 	if path == "/dev/null" {
 		return UserAuth{}, nil
 	}
@@ -69,24 +87,6 @@ func ReadUserAuth(path string) (UserAuth, error) {
 	return ua, nil
 }
 
-// WriteUserAuth writes ua to the userAuthFile.
-func WriteUserAuth(path string, a UserAuth) error {
-	f, err := os.Create(userAuthFileName(path))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if err := os.Chmod(f.Name(), 0600); err != nil {
-		return err
-	}
-	b, err := json.MarshalIndent(a, "", "  ")
-	if err != nil {
-		return err
-	}
-	_, err = f.Write(b)
-	return err
-}
-
 // Resolves user auth file name platform-independent way
 func userAuthFileName(ret string) string {
 	if runtime.GOOS == "windows" {
@@ -96,8 +96,10 @@ func userAuthFileName(ret string) string {
 	return filepath.FromSlash(os.ExpandEnv(ret))
 }
 
+// SaveCredentials is a wrapper around loading up src-auth, adding a
+// credential and writing.
 func SaveCredentials(path string, endpointURL *url.URL, accessTok string, makeDefault bool) error {
-	a, err := ReadUserAuth(path)
+	a, err := Read(path)
 	if err != nil {
 		return err
 	}
@@ -119,7 +121,7 @@ func SaveCredentials(path string, endpointURL *url.URL, accessTok string, makeDe
 		a.SetDefault(endpointURL.String())
 	}
 
-	if err := WriteUserAuth(path, a); err != nil {
+	if err := a.Write(path); err != nil {
 		return err
 	}
 	if updatedCredentials {

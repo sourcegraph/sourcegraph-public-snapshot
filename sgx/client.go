@@ -59,7 +59,7 @@ func (c *EndpointOpts) URLOrDefault() *url.URL {
 	if e == "" {
 		// The user did not explicitly specify a endpoint URL, so use the default
 		// found in the auth file.
-		userAuth, err := userauth.ReadUserAuth(Credentials.AuthFile)
+		userAuth, err := userauth.Read(Credentials.AuthFile)
 		if err != nil {
 			log.Fatal(err, "failed to read user auth file (in EndpointOpts.URLOrDefault)")
 		}
@@ -105,7 +105,7 @@ var Credentials CredentialOpts
 // WithCredentials sets the HTTP and gRPC credentials in the context.
 func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, error) {
 	if c.AccessToken == "" && c.AuthFile != "" { // AccessToken takes precedence over AuthFile
-		userAuth, err := userauth.ReadUserAuth(c.AuthFile)
+		userAuth, err := userauth.Read(c.AuthFile)
 		if err != nil {
 			return nil, err
 		}
