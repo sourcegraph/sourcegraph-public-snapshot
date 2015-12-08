@@ -13,8 +13,6 @@ The first user to create an account on a Sourcegraph instance becomes the instan
 admin. The admin may [invite other users and manage access controls]
 ({{< relref "management/access-control.md" >}}).
 
-See [OAuth2.md]({{< relref "dev/OAuth2.md" >}}) for details of the OAuth2 implementation.
-
 ## LDAP
 
 Sourcegraph supports authentication via a configured LDAP server. The LDAP server can be internal to your company's network, but it must be accessible from your local Sourcegraph instance.
