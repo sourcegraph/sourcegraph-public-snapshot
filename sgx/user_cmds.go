@@ -298,17 +298,19 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 	}
 
 	var status string
-	if pendingReset.Link == "" {
-		status = fmt.Sprintf("%s: password reset link not available, need to be authenticated as an admin user.", c.Args.Email)
-		return fmt.Errorf("")
-	} else {
-		fmt.Println("# Share the below link with the user to set a new password.")
-		status = fmt.Sprintf("%s: %s", c.Args.Email, pendingReset.Link)
-	}
 	if pendingReset.EmailSent {
-		status += " (email sent)"
+		status = "email sent"
+	} else {
+		status = "email not sent"
 	}
-	fmt.Println(status)
+	fmt.Printf("# Password reset link generated for %v (%s)\n", c.Args.Email, status)
+
+	if pendingReset.Link != "" {
+		fmt.Println("# Share the below link with the user to set a new password.")
+		fmt.Printf("login: %s, reset link: %s\n", pendingReset.Login, pendingReset.Link)
+	} else {
+		fmt.Println("# Link not available: need to be authenticated as an admin user.")
+	}
 
 	return nil
 }
