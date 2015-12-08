@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
@@ -108,13 +109,27 @@ func (c *changesetsCmd) Execute(args []string) error { return nil }
 
 type changesetsCmdCommon struct {
 	// Use the Repo function instead. This ensures the repo exists
-	RepoDONOTUSE string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+	RepoDONOTUSE string `short:"r" long:"repo" description:"repository URI"`
 }
 
 func (c *changesetsCmdCommon) Repo() (*sourcegraph.Repo, error) {
+	var isGuess bool
+	repoURI := c.RepoDONOTUSE
+	if repoURI == "" {
+		isGuess = true
+		repoURI, _ = guessRepo()
+		if repoURI == "" {
+			return nil, errors.New("Could not guess repo, please specify a repo with -r.")
+		}
+	}
+
 	cliCtx := putil.CLIContext()
 	sg := sourcegraph.NewClientFromContext(cliCtx)
-	return sg.Repos.Get(cliCtx, &sourcegraph.RepoSpec{URI: c.RepoDONOTUSE})
+	repo, err := sg.Repos.Get(cliCtx, &sourcegraph.RepoSpec{URI: repoURI})
+	if err != nil && isGuess && grpc.Code(err) == codes.NotFound {
+		return nil, errors.New("Could not guess repo, please specify a repo with -r.")
+	}
+	return repo, err
 }
 
 type changesetListCmd struct {
