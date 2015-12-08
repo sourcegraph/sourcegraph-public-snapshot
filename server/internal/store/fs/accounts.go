@@ -1,12 +1,21 @@
 package fs
 
 import (
+	"crypto/subtle"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"os"
+
+	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/rwvfs"
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
 // Accounts is a FS-backed implementation of the Accounts store.
@@ -87,10 +96,108 @@ func (s *Accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, 
 	return &store.UserNotFoundError{UID: int(user.UID)}
 }
 
-func (s *Accounts) RequestPasswordReset(ctx context.Context, uid *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
-	return nil, &sourcegraph.NotImplementedError{What: "file system user password reset"}
+const passwordResetFilename = "password_reset.json"
+
+type passwordReset struct {
+	Token string
+	UID   int32
+}
+
+// readPasswordResetDB reads the password reset requests db from disk.
+// If no such file exists, an empty slice is returned (and no error).
+func readPasswordResetDB(ctx context.Context) ([]*passwordReset, error) {
+	f, err := dbVFS(ctx).Open(passwordResetFilename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer f.Close()
+
+	var requests []*passwordReset
+	if err := json.NewDecoder(f).Decode(&requests); err != nil {
+		return nil, err
+	}
+	return requests, nil
+}
+
+// writePasswordResetDB writes the password reset requests db to disk.
+func writePasswordResetDB(ctx context.Context, users []*passwordReset) (err error) {
+	data, err := json.MarshalIndent(users, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	if err := rwvfs.MkdirAll(dbVFS(ctx), "."); err != nil {
+		return err
+	}
+	f, err := dbVFS(ctx).Create(passwordResetFilename)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err2 := f.Close(); err2 != nil {
+			if err == nil {
+				err = err2
+			} else {
+				log.Printf("Warning: closing password reset DB after error (%s) failed: %s.", err, err2)
+			}
+		}
+	}()
+
+	_, err = f.Write(data)
+	return err
+}
+
+func (s *Accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
+	const tokenLength = 44
+	if user.UID == 0 {
+		return nil, errors.New("UID must be set")
+	}
+
+	requests, err := readPasswordResetDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	token := randstring.NewLen(tokenLength)
+	requests = append(requests, &passwordReset{
+		Token: token,
+		UID:   user.UID,
+	})
+
+	if err := writePasswordResetDB(ctx, requests); err != nil {
+		return nil, err
+	}
+	return &sourcegraph.PasswordResetToken{Token: token}, nil
 }
 
 func (s *Accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
-	return &sourcegraph.NotImplementedError{What: "file system user password reset"}
+	genericErr := errors.New("error reseting password") // don't need to reveal everything
+	requests, err := readPasswordResetDB(ctx)
+	if err != nil {
+		return err
+	}
+
+	for i := range requests {
+		if subtle.ConstantTimeCompare([]byte(newPass.Token.Token), []byte(requests[i].Token)) == 1 {
+			log15.Info("Resetting password", "store", "Accounts", "UID", requests[i].UID)
+			if err := (Password{}).SetPassword(ctx, requests[i].UID, newPass.Password); err != nil {
+				return fmt.Errorf("Error changing password: %s", err)
+			}
+
+			requests[i] = requests[len(requests)-1]
+			requests = requests[:len(requests)-1]
+
+			// Save to disk
+			if err := writePasswordResetDB(ctx, requests); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	log15.Warn("Token does not exist in password reset database", "store", "Accounts")
+	return genericErr
 }
