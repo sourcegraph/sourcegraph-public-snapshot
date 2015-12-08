@@ -6,8 +6,9 @@
 <div class="row">
 	<div class="col-md-5">
 		{{if .FirstUser}}
-		<h1>Welcome to Sourcegraph!</h1>
-		<p>Set up your instance by logging in{{if .IsLDAP}} via LDAP{{end}} to create an admin account.</p>
+		<h1>Set up Sourcegraph</h1>
+		<p>Set up your new Sourcegraph server by logging in{{if .IsLDAP}} via LDAP{{end}} to create an admin account.</p>
+		<p>{{template "dataCollectionMessage"}}</p>
 		{{else}}
 		<h1>Sign into your account{{if .IsLDAP}} via LDAP{{end}}</h1>
 		{{end}}
