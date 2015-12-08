@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"code.google.com/p/rog-go/parallel"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
@@ -199,52 +201,59 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
 	sg := sourcegraph.NewClientFromContext(cliCtx)
 
-	conf, err := sg.Meta.Config(cliCtx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-
 	repo, err := c.Repo()
 	if err != nil {
 		return err
 	}
 
-	if c.Base == "" {
-		c.Base = repo.DefaultBranch
-	}
-	if c.Base == "" {
-		return errors.New("must specify --base (could not determine default branch for repo)")
-	}
-	if _, err := sg.Repos.GetCommit(cliCtx, &sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Base}); err != nil {
-		return fmt.Errorf("checking that base branch %q exists on remote server: %s", c.Base, err)
-	}
+	var (
+		par      = parallel.NewRun(3)
+		authInfo *sourcegraph.AuthInfo
+	)
+	par.Do(func() error {
+		if c.Base == "" {
+			c.Base = repo.DefaultBranch
+		}
+		if c.Base == "" {
+			return errors.New("must specify --base (could not determine default branch for repo)")
+		}
+		if _, err := sg.Repos.GetCommit(cliCtx, &sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Base}); err != nil {
+			return fmt.Errorf("checking that base branch %q exists on remote server: %s", c.Base, err)
+		}
+		return nil
+	})
+	par.Do(func() error {
+		if c.Head == "" {
+			currentBranch, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+			c.Head = strings.TrimSpace(string(currentBranch))
+		}
+		if c.Head == "" {
+			return errors.New("must specify --head (could not determine current branch)")
+		}
+		remoteHeadCommit, err := sg.Repos.GetCommit(cliCtx, &sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Head})
+		if err != nil {
+			return fmt.Errorf("checking that head branch %q exists on remote server: %s (did you git push?)", c.Head, err)
+		}
 
-	if c.Head == "" {
-		currentBranch, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
-		c.Head = strings.TrimSpace(string(currentBranch))
-	}
-	if c.Head == "" {
-		return errors.New("must specify --head (could not determine current branch)")
-	}
-	remoteHeadCommit, err := sg.Repos.GetCommit(cliCtx, &sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Head})
-	if err != nil {
-		return fmt.Errorf("checking that head branch %q exists on remote server: %s (did you git push?)", c.Head, err)
-	}
-
-	// Convenience check that local head commit == remote head
-	// commit. There are a lot of edge cases, so don't make this check
-	// required.
-	localHeadCommit, err := exec.Command("git", "rev-parse", c.Head).Output()
-	if err != nil {
-		log.Printf("warning: failed to check local head commit of branch %q: %s", c.Head, err)
-	} else if lhc := strings.TrimSpace(string(localHeadCommit)); lhc != string(remoteHeadCommit.ID) {
-		log.Printf("warning: local branch %q head commit is %s, remote is %s", c.Head, lhc, remoteHeadCommit.ID)
-	}
-
-	// TODO(sqs): Move this author field logic to the server so the
-	// client doesn't have to fill in all of these fields.
-
-	authInfo, err := sg.Auth.Identify(cliCtx, &pbtypes.Void{})
+		// Convenience check that local head commit == remote head
+		// commit. There are a lot of edge cases, so don't make this check
+		// required.
+		localHeadCommit, err := exec.Command("git", "rev-parse", c.Head).Output()
+		if err != nil {
+			log.Printf("warning: failed to check local head commit of branch %q: %s", c.Head, err)
+		} else if lhc := strings.TrimSpace(string(localHeadCommit)); lhc != string(remoteHeadCommit.ID) {
+			log.Printf("warning: local branch %q head commit is %s, remote is %s", c.Head, lhc, remoteHeadCommit.ID)
+		}
+		return nil
+	})
+	par.Do(func() error {
+		// TODO(sqs): Move this author field logic to the server so the
+		// client doesn't have to fill in all of these fields.
+		var err error
+		authInfo, err = sg.Auth.Identify(cliCtx, &pbtypes.Void{})
+		return err
+	})
+	err = par.Wait()
 	if err != nil {
 		return err
 	}
@@ -274,6 +283,10 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
+	conf, err := sg.Meta.Config(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
 	baseURL, err := url.Parse(conf.AppURL)
 	if err != nil {
 		return err
