@@ -1,6 +1,6 @@
 FROM sourcegraph/srclib-base
 
-ENV STATIC_SITE_VERSION 07b9eb8158c11c48fb62b17287ee5b83f9abe397
+ENV STATIC_SITE_VERSION 64df72271be077a0a9542d24dd40e22c68aa494d
 ENV STATIC_SITE_URL https://s3-us-west-2.amazonaws.com/sourcegraph-site/sourcegraph-site-$STATIC_SITE_VERSION.tar
 RUN curl -Ls $STATIC_SITE_URL | tar x
 
