@@ -89,7 +89,9 @@ func TestRequestPasswordReset(t *testing.T) {
 	// The VerifyHasAdminAccess function is tested separately in the accesscontrol package
 	// so the goal here is only to ensure that RequestPasswordReset behaves as expected
 	// when it learns about a user's admin privilege.
+	var verifyAdminCalled bool
 	verifyAdminUser = func(ctx context.Context, method string) error {
+		verifyAdminCalled = true
 		a := authpkg.ActorFromContext(ctx)
 		if a.HasAdminAccess() {
 			return nil
@@ -103,14 +105,40 @@ func TestRequestPasswordReset(t *testing.T) {
 	mock.stores.Users.GetWithEmail_ = func(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 		return &sourcegraph.User{Name: "some user", Login: "user1"}, nil
 	}
+	mock.stores.Users.Get_ = func(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		return &sourcegraph.User{Name: "some user", Login: "user1"}, nil
+	}
+	mock.stores.Users.ListEmails_ = func(ctx context.Context, userSpec sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
+		return []*sourcegraph.EmailAddr{&sourcegraph.EmailAddr{Email: "user@example.com"}}, nil
+	}
 
 	s := accounts{}
-	p, err := s.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: "user@example.com"})
+	p, err := s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Email: "user@example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !sendEmailCalled {
 		t.Errorf("sendEmail wasn't called")
+	}
+	if !verifyAdminCalled {
+		t.Errorf("verifyAdminCalled wasn't called")
+	}
+	if p.Link != "" || p.Token.Token != "" || p.Login != "" {
+		t.Errorf("expected no sensitive information in response, got %v", p)
+	}
+
+	// Request using login
+	p, err = s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Login: "user1"})
+	sendEmailCalled = false
+	verifyAdminCalled = false
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !sendEmailCalled {
+		t.Errorf("sendEmail wasn't called")
+	}
+	if !verifyAdminCalled {
+		t.Errorf("verifyAdminCalled wasn't called")
 	}
 	if p.Link != "" || p.Token.Token != "" || p.Login != "" {
 		t.Errorf("expected no sensitive information in response, got %v", p)
@@ -119,12 +147,16 @@ func TestRequestPasswordReset(t *testing.T) {
 	// Request as admin, expect reset link in response
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 2, Scope: map[string]bool{"user:admin": true}})
 	sendEmailCalled = false
-	p, err = s.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: "user@example.com"})
+	verifyAdminCalled = false
+	p, err = s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Email: "user@example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !sendEmailCalled {
 		t.Errorf("sendEmail wasn't called")
+	}
+	if !verifyAdminCalled {
+		t.Errorf("verifyAdminCalled wasn't called")
 	}
 	want := &sourcegraph.PendingPasswordReset{
 		Link:      "/reset?token=secrettoken",

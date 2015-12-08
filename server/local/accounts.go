@@ -282,7 +282,7 @@ var sendEmail = func(template, name, email, subject string, templateContent []go
 
 var verifyAdminUser = accesscontrol.VerifyUserHasAdminAccess
 
-func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.EmailAddr) (*sourcegraph.PendingPasswordReset, error) {
+func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
 	defer noCache(ctx)
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
@@ -294,9 +294,32 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.
 	if usersStore == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "users"}
 	}
-	user, err := usersStore.GetWithEmail(ctx, *email)
-	if err != nil {
-		return nil, err
+	var user *sourcegraph.User
+	var err error
+	if person.Email != "" {
+		user, err = usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: person.Email})
+		if err != nil {
+			return nil, err
+		}
+	} else if person.Login != "" {
+		userSpec := sourcegraph.UserSpec{Login: person.Login}
+		user, err = usersStore.Get(ctx, userSpec)
+		if err != nil {
+			return nil, err
+		}
+
+		// Find the primary email address for this user.
+		emailAddrs, err := usersStore.ListEmails(ctx, userSpec)
+		if err != nil {
+			return nil, err
+		}
+		for _, emailAddr := range emailAddrs {
+			if emailAddr.Primary {
+				person.Email = emailAddr.Email
+			}
+		}
+	} else {
+		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify email or login")
 	}
 
 	token, err := accountsStore.RequestPasswordReset(ctx, user)
@@ -310,12 +333,14 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.
 	u.RawQuery = v.Encode()
 	resetLink := u.String()
 	var emailSent bool
-	_, err = sendEmail("forgot-password", user.Name, email.Email, "Password Reset Requested", nil,
-		[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: resetLink}, {Name: "LOGIN", Content: user.Login}})
-	if err == nil {
-		emailSent = true
-	} else if err != errEmailNotConfigured {
-		return nil, fmt.Errorf("Error sending email: %s", err)
+	if person.Email != "" {
+		_, err = sendEmail("forgot-password", user.Name, person.Email, "Password Reset Requested", nil,
+			[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: resetLink}, {Name: "LOGIN", Content: user.Login}})
+		if err == nil {
+			emailSent = true
+		} else if err != errEmailNotConfigured {
+			return nil, fmt.Errorf("Error sending email: %s", err)
+		}
 	}
 
 	// Return the link, token and login in response only if the request was made by an admin.

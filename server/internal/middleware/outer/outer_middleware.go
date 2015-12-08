@@ -247,7 +247,7 @@ func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount)
 	return rv, nil
 }
 
-func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.PendingPasswordReset, error) {
+func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
