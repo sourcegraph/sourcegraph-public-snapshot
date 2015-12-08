@@ -25,9 +25,9 @@ We collect the following types of information to make Sourcegraph
 better.
 
 * **Information you give us:** For example, when you sign up for an
-  account, we ask for information such as your name and email
-  address. When you register a new Sourcegraph server, we ask you to
-  name the server.
+  account on Sourcegraph.com, we ask for information such as your name
+  and email address. When you register a new Sourcegraph server, we
+  collect your email address.
 * **Information we get from your use of Sourcegraph:** To give you the
   best and most reliable features, we collect statistics about how you
   use Sourcegraph. This consists of metadata about user and server
@@ -36,9 +36,10 @@ better.
   most intelligent developer platform, we use machine learning to
   automatically detect common bugs, alert you about security issues,
   and present opportunities to improve your code based on best
-  practices. To build these models, your server computes statistics
-  and signals derived from code and sends aggregate information to us;
-  none of your code is ever sent. We always invite you to
+  practices. To provide these features, your server computes
+  statistics and signals derived from code and sends aggregate
+  information to us; none of your code is ever sent. We always invite
+  you to
   [inspect the code for this functionality](https://src.sourcegraph.com/sourcegraph@master/.tree/util/statsutil/basic_stats.go).
 
 Sourcegraph keeps your code on your own infrastructure.

@@ -6,11 +6,11 @@
 <div class="row">
 	<div class="col-md-5">
 		{{if .FirstUser}}
-		<h1>Welcome to Sourcegraph!</h1>
-		<p>Set up your instance by first creating an admin account.</p>
+		<h1>Set up Sourcegraph</h1>
+		<p>Set up your new Sourcegraph server by first creating an admin account.</p>
 		{{else if .SignupForm.Token}}
-		<h1>Join this Sourcegraph</h1>
-		<p>To accept your invitation, create a new account on this Sourcegraph server by choosing a login and password.</p>
+		<h1>Join this Sourcegraph server</h1>
+		<p>To accept your invitation and create an account on this server, choose a login and password.</p>
 		{{else}}
 		<h1>Create a personal account</h1>
 		{{end}}
@@ -38,16 +38,17 @@
 					{{with .SignupForm.FieldError "Email"}}
 						{{.}}
 					{{end}}
-					{{if (not .IsRoot)}}
-						You'll receive occasional emails about your account. We won't share your email address with anyone.
-					{{end}}
 				</p>
 			</div>
 
-			<p class="notice">
-				By clicking on "Create an account" below, you agree to our <a href="https://sourcegraph.com/privacy">privacy policy</a> and <a href="https://sourcegraph.com/terms">terms</a>.
+			{{$btnLabel := printf "Create %s account" (ifString .FirstUser "admin")}}
+			<p class="help-block">
+				{{if .IsRoot}}
+					By clicking on "{{$btnLabel}}" below, you agree to our <a href="https://sourcegraph.com/privacy">privacy policy</a> and <a href="https://sourcegraph.com/terms">terms</a>.
+				{{end}}
+				{{if .FirstUser}}{{template "dataCollectionMessage"}}{{end}}
 			</p>
-			<button type="submit" class="btn btn-primary btn-lg" tabindex=4>Create an account</button>
+			<button type="submit" class="btn btn-primary btn-lg" tabindex=4>{{$btnLabel}}</button>
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 			{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
 		</form>

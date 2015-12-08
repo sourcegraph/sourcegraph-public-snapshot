@@ -150,6 +150,12 @@ var TemplateFunctions = htmpl.FuncMap{
 		}
 		return nil
 	},
+	"ifString": func(cond bool, v string) string {
+		if cond {
+			return v
+		}
+		return ""
+	},
 
 	"commitSummary":       commitSummary,
 	"commitRestOfMessage": commitRestOfMessage,
