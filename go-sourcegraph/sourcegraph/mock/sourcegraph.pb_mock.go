@@ -653,7 +653,7 @@ var _ sourcegraph.PeopleServer = (*PeopleServer)(nil)
 
 type AccountsClient struct {
 	Create_               func(ctx context.Context, in *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error)
-	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.User, error)
+	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.EmailAddr) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(ctx context.Context, in *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error)
 	Invite_               func(ctx context.Context, in *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error)
@@ -665,7 +665,7 @@ func (s *AccountsClient) Create(ctx context.Context, in *sourcegraph.NewAccount,
 	return s.Create_(ctx, in)
 }
 
-func (s *AccountsClient) RequestPasswordReset(ctx context.Context, in *sourcegraph.EmailAddr, opts ...grpc.CallOption) (*sourcegraph.User, error) {
+func (s *AccountsClient) RequestPasswordReset(ctx context.Context, in *sourcegraph.EmailAddr, opts ...grpc.CallOption) (*sourcegraph.PendingPasswordReset, error) {
 	return s.RequestPasswordReset_(ctx, in)
 }
 
@@ -693,7 +693,7 @@ var _ sourcegraph.AccountsClient = (*AccountsClient)(nil)
 
 type AccountsServer struct {
 	Create_               func(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error)
-	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error)
+	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(v0 context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(v0 context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error)
 	Invite_               func(v0 context.Context, v1 *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error)
@@ -705,7 +705,7 @@ func (s *AccountsServer) Create(v0 context.Context, v1 *sourcegraph.NewAccount) 
 	return s.Create_(v0, v1)
 }
 
-func (s *AccountsServer) RequestPasswordReset(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+func (s *AccountsServer) RequestPasswordReset(v0 context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.PendingPasswordReset, error) {
 	return s.RequestPasswordReset_(v0, v1)
 }
 

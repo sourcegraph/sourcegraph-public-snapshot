@@ -110,6 +110,7 @@ It has these top-level messages:
 	EmailAddrList
 	OrgList
 	PasswordResetToken
+	PendingPasswordReset
 	NewPassword
 	NewAccount
 	AccountInvite
@@ -1707,6 +1708,25 @@ type PasswordResetToken struct {
 func (m *PasswordResetToken) Reset()         { *m = PasswordResetToken{} }
 func (m *PasswordResetToken) String() string { return proto.CompactTextString(m) }
 func (*PasswordResetToken) ProtoMessage()    {}
+
+type PendingPasswordReset struct {
+	// Link is the URL for resetting password using this token.
+	// It is set in the response only if the request was made
+	// by an admin user.
+	Link string `protobuf:"bytes,1,opt,name=link,proto3" json:",omitempty"`
+	// Token is the hard to guess token that allows a user to
+	// set a new password.
+	// It is set in the response only if the request was made
+	// by an admin user.
+	Token *PasswordResetToken `protobuf:"bytes,2,opt,name=token" json:",omitempty"`
+	// EmailSent is set if the password reset link was emailed to
+	// the user.
+	EmailSent bool `protobuf:"varint,3,opt,name=email_sent,proto3" json:",omitempty"`
+}
+
+func (m *PendingPasswordReset) Reset()         { *m = PendingPasswordReset{} }
+func (m *PendingPasswordReset) String() string { return proto.CompactTextString(m) }
+func (*PendingPasswordReset) ProtoMessage()    {}
 
 type NewPassword struct {
 	// password is the new password for the user who requested the password reset
@@ -5097,7 +5117,7 @@ type AccountsClient interface {
 	Create(ctx context.Context, in *NewAccount, opts ...grpc.CallOption) (*UserSpec, error)
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*User, error)
+	RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*PendingPasswordReset, error)
 	// CheckResetToken verifies a password reset token is authentic and valid
 	ResetPassword(ctx context.Context, in *NewPassword, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Update profile of existing account.
@@ -5127,8 +5147,8 @@ func (c *accountsClient) Create(ctx context.Context, in *NewAccount, opts ...grp
 	return out, nil
 }
 
-func (c *accountsClient) RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*User, error) {
-	out := new(User)
+func (c *accountsClient) RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*PendingPasswordReset, error) {
+	out := new(PendingPasswordReset)
 	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/RequestPasswordReset", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -5188,7 +5208,7 @@ type AccountsServer interface {
 	Create(context.Context, *NewAccount) (*UserSpec, error)
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	RequestPasswordReset(context.Context, *EmailAddr) (*User, error)
+	RequestPasswordReset(context.Context, *EmailAddr) (*PendingPasswordReset, error)
 	// CheckResetToken verifies a password reset token is authentic and valid
 	ResetPassword(context.Context, *NewPassword) (*pbtypes1.Void, error)
 	// Update profile of existing account.

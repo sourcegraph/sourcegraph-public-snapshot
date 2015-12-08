@@ -1559,7 +1559,7 @@ service Accounts {
 
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	rpc RequestPasswordReset(EmailAddr) returns (User) {
+	rpc RequestPasswordReset(EmailAddr) returns (PendingPasswordReset) {
 		option (google.api.http) = {
 			post: "/accounts/request_password_reset"
 		};
@@ -1604,6 +1604,23 @@ service Accounts {
 message PasswordResetToken {
 	// token is the hard to guess token that allows a user to set a new password.
 	string token = 1;
+}
+
+message PendingPasswordReset {
+	// Link is the URL for resetting password using this token.
+	// It is set in the response only if the request was made
+	// by an admin user.
+	string link = 1;
+
+	// Token is the hard to guess token that allows a user to
+	// set a new password.
+	// It is set in the response only if the request was made
+	// by an admin user.
+	PasswordResetToken token = 2;
+
+	// EmailSent is set if the password reset link was emailed to
+	// the user.
+	bool email_sent = 3;
 }
 
 message NewPassword {
