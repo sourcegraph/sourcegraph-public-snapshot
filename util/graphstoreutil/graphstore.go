@@ -126,10 +126,11 @@ func parseS3Bucket(s string) (httpURL *url.URL, err error) {
 		}
 		return u, nil
 	case "s3":
+		region := os.Getenv("AWS_REGION")
 		// Need to use CNAME, not bucket path, because s3util.NewFile assumes that.
 		return &url.URL{
 			Scheme: "https",
-			Host:   u.Host + ".s3-us-west-2.amazonaws.com", // TODO(sqs): unhardcode - use AWS_REGION env var
+			Host:   u.Host + ".s3-" + region + ".amazonaws.com",
 			Path:   u.Path,
 		}, nil
 	}
