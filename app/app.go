@@ -128,7 +128,6 @@ func NewHandler(r *router.Router) http.Handler {
 		r.Get(router.User).Handler(internal.Handler(serveUser))
 		r.Get(router.UserOrgs).Handler(internal.Handler(serveUserOrgs))
 		r.Get(router.OrgMembers).Handler(internal.Handler(serveOrgMembers))
-		r.Get(router.UserSettingsAuth).Handler(internal.Handler(serveUserSettingsAuth))
 	}
 
 	r.Get(router.Repo).Handler(internal.Handler(serveRepo))

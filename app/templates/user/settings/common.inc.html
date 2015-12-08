@@ -44,13 +44,6 @@
 				</li>
 			</a>
 			{{end}}
-			{{if not .IsOrganization}}
-			<a href="{{urlToUserSubroute "person.settings.auth" .Login}}">
-				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.auth" .Login).String)}}active{{end}}">
-					Authentication
-				</li>
-			</a>
-			{{end}}
 		</ul>
 		{{end}}
 	</div>
