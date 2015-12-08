@@ -1,8 +1,10 @@
 package local
 
 import (
+	"errors"
 	"net/url"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/mattbaird/gochimp"
@@ -73,13 +75,26 @@ func TestRequestPasswordReset(t *testing.T) {
 	notif.MustBeDisabled()
 	ctx, mock := testContext()
 	ctx = conf.WithAppURL(ctx, &url.URL{})
-	var called bool
+	var sendEmailCalled bool
 	sendEmail = func(template string, name string, email string, subject string, templateContent []gochimp.Var, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
-		called = true
+		sendEmailCalled = true
 		if want := "user@example.com"; want != email {
 			t.Errorf("email address was %s, wanted %s", email, want)
 		}
 		return nil, nil
+	}
+
+	// This mocks the accesscontrol.VerifyHasAdminAccess function because that function
+	// depends on commandline flags that are not mocked in this test.
+	// The VerifyHasAdminAccess function is tested separately in the accesscontrol package
+	// so the goal here is only to ensure that RequestPasswordReset behaves as expected
+	// when it learns about a user's admin privilege.
+	verifyAdminUser = func(ctx context.Context, method string) error {
+		a := authpkg.ActorFromContext(ctx)
+		if a.HasAdminAccess() {
+			return nil
+		}
+		return errors.New("no admin access")
 	}
 
 	mock.stores.Accounts.RequestPasswordReset_ = func(ctx context.Context, us *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
@@ -90,15 +105,36 @@ func TestRequestPasswordReset(t *testing.T) {
 	}
 
 	s := accounts{}
-	u, err := s.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: "user@example.com"})
+	p, err := s.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: "user@example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !called {
+	if !sendEmailCalled {
 		t.Errorf("sendEmail wasn't called")
 	}
-	if want := "user1"; u.Login != want {
-		t.Errorf("Got user login %s, wanted %s.", u.Login, want)
+	if p.Link != "" || p.Token.Token != "" || p.Login != "" {
+		t.Errorf("expected no sensitive information in response, got %v", p)
+	}
+
+	// Request as admin, expect reset link in response
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 2, Scope: map[string]bool{"user:admin": true}})
+	sendEmailCalled = false
+	p, err = s.RequestPasswordReset(ctx, &sourcegraph.EmailAddr{Email: "user@example.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !sendEmailCalled {
+		t.Errorf("sendEmail wasn't called")
+	}
+	want := &sourcegraph.PendingPasswordReset{
+		Link:      "/reset?token=secrettoken",
+		Token:     &sourcegraph.PasswordResetToken{Token: "secrettoken"},
+		Login:     "user1",
+		EmailSent: true,
+	}
+
+	if !reflect.DeepEqual(want, p) {
+		t.Errorf("got %v, want %v", p, want)
 	}
 }
 
