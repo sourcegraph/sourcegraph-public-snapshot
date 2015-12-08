@@ -1722,6 +1722,8 @@ type PendingPasswordReset struct {
 	// EmailSent is set if the password reset link was emailed to
 	// the user.
 	EmailSent bool `protobuf:"varint,3,opt,name=email_sent,proto3" json:",omitempty"`
+	// Login is the login name of user for whom this request is created.
+	Login string `protobuf:"bytes,4,opt,name=login,proto3" json:",omitempty"`
 }
 
 func (m *PendingPasswordReset) Reset()         { *m = PendingPasswordReset{} }

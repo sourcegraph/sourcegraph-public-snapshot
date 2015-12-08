@@ -1621,6 +1621,9 @@ message PendingPasswordReset {
 	// EmailSent is set if the password reset link was emailed to
 	// the user.
 	bool email_sent = 3;
+
+	// Login is the login name of user for whom this request is created.
+	string login = 4;
 }
 
 message NewPassword {
