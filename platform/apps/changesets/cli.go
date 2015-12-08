@@ -170,7 +170,9 @@ func (c *changesetListCmd) Execute(args []string) error {
 			return err
 		}
 		if len(changesets.Changesets) == 0 {
-			fmt.Println("no changesets", repo.URI)
+			if page == 1 {
+				fmt.Println("no changesets for", repo.URI)
+			}
 			break
 		}
 		for _, changeset := range changesets.Changesets {
