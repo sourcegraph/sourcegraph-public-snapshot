@@ -53,7 +53,7 @@ To use S3 as a storage backend for `srclib` Code Intelligence data, set the `gra
 --graphstore.root=s3://bucketname
 ```
 
-Tell `src` how to authenticate to S3 by setting environment variables:
+Tell `src` how to find and authenticate to your S3 bucket by setting environment variables:
 
 ```
 AWS_REGION (e.g. "us-west-2")
