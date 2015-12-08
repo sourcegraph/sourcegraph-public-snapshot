@@ -100,7 +100,7 @@ func (s *Invites) get(ctx context.Context, token string) (*dbInvites, error) {
 	}
 	// Constant time comparison to prevent timing attacks.
 	for i := range invites {
-		if subtle.ConstantTimeCompare([]byte(token), []byte(invites[i].Token)) != 1 {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(invites[i].Token)) == 1 {
 			return invites[i], nil
 		}
 	}
