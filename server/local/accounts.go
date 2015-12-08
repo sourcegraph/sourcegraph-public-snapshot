@@ -271,7 +271,7 @@ func isValidLogin(login string) bool {
 // sendEmail lets us avoid sending emails in tests.
 var sendEmail = notif.SendMandrillTemplateBlocking
 
-func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.EmailAddr) (*sourcegraph.PendingPasswordReset, error) {
 	defer noCache(ctx)
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
@@ -297,12 +297,29 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, email *sourcegraph.
 	v := url.Values{}
 	v.Set("token", token.Token)
 	u.RawQuery = v.Encode()
-	_, err = sendEmail("forgot-password", user.Name, email.Email, "Password Reset Requested", nil,
-		[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: u.String()}, {Name: "LOGIN", Content: user.Login}})
-	if err != nil {
-		return nil, fmt.Errorf("Error sending email: %s", err)
+	resetLink := u.String()
+	var emailSent bool
+	if notif.EmailIsConfigured() {
+		_, err = sendEmail("forgot-password", user.Name, email.Email, "Password Reset Requested", nil,
+			[]gochimp.Var{gochimp.Var{Name: "RESET_LINK", Content: resetLink}, {Name: "LOGIN", Content: user.Login}})
+		if err != nil {
+			return nil, fmt.Errorf("Error sending email: %s", err)
+		}
+		emailSent = true
 	}
-	return user, nil
+
+	// Return the link and token in response only if the request was made by an admin.
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.RequestPasswordReset"); err != nil {
+		// Ctx user is not an admin.
+		token.Token = ""
+		resetLink = ""
+	}
+
+	return &sourcegraph.PendingPasswordReset{
+		Link:      resetLink,
+		Token:     token,
+		EmailSent: emailSent,
+	}, nil
 }
 
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) (*pbtypes.Void, error) {

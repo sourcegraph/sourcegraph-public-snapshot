@@ -72,6 +72,15 @@ func init() {
 		log.Fatal(err)
 	}
 
+	_, err = userGroup.AddCommand("reset-password",
+		"generate a password reset link for user",
+		"Generate a password reset link for user.",
+		&userResetPasswordCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	userKeysGroup, err := userGroup.AddCommand("keys",
 		"manage user's SSH public keys",
 		"Manage user's SSH public keys.",
@@ -270,6 +279,36 @@ func (c *userUpdateCmd) Execute(args []string) error {
 		}
 		fmt.Printf("# updated access level for user %s to %s\n", user.Login, c.Access)
 	}
+
+	return nil
+}
+
+type userResetPasswordCmd struct {
+	Args struct {
+		Email string `name:"Email" description:"email address associated with account"`
+	} `positional-args:"yes"`
+}
+
+func (c *userResetPasswordCmd) Execute(args []string) error {
+	cl := Client()
+
+	pendingReset, err := cl.Accounts.RequestPasswordReset(cliCtx, &sourcegraph.EmailAddr{Email: c.Args.Email})
+	if err != nil {
+		return err
+	}
+
+	var status string
+	if pendingReset.Link == "" {
+		status = fmt.Sprintf("%s: password reset link not available, need to be authenticated as an admin user.", c.Args.Email)
+		return fmt.Errorf("")
+	} else {
+		fmt.Println("# Share the below link with the user to set a new password.")
+		status = fmt.Sprintf("%s: %s", c.Args.Email, pendingReset.Link)
+	}
+	if pendingReset.EmailSent {
+		status += " (email sent)"
+	}
+	fmt.Println(status)
 
 	return nil
 }
