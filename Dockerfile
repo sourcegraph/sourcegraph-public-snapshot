@@ -1,3 +1,9 @@
+# Sourcegraph Dockerfile
+#
+# See https://src.sourcegraph.com/sourcegraph/.docs/install/docker/
+# for Docker installation instructions.
+#
+
 FROM ubuntu:14.04
 MAINTAINER Sourcegraph Team <help@sourcegraph.com>
 
