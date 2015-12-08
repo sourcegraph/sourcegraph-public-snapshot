@@ -139,7 +139,7 @@ var upper = "[A-Z\\$_\u00c0-\u00d6\u00d8-\u00de\u0100\u0102\u0104\u0106\u0108" +
 	"\ua760\ua762\ua764\ua766\ua768\ua76a\ua76c\ua76e\ua779\ua77b" +
 	"\ua77d-\ua77e\ua780\ua782\ua784\ua786\ua78b\uff21-\uff3a]"
 
-var idrest = fmt.Sprintf("%s(?:%s|[0-9])*(?:(<?=_)%s)?", letter, letter, op)
+var idrest = fmt.Sprintf("%s(?:%s|[0-9])*(?:(?:<?=_)%s)?", letter, letter, op)
 var letter_letter_digit = fmt.Sprintf(`%s(?:%s|\d)*`, letter, letter)
 
 func init() {
