@@ -107,7 +107,14 @@ type changesetsCmd struct{}
 func (c *changesetsCmd) Execute(args []string) error { return nil }
 
 type changesetsCmdCommon struct {
-	Repo string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+	// Use the Repo function instead. This ensures the repo exists
+	RepoDONOTUSE string `short:"r" long:"repo" description:"repository URI" required:"yes"`
+}
+
+func (c *changesetsCmdCommon) Repo() (*sourcegraph.Repo, error) {
+	cliCtx := putil.CLIContext()
+	sg := sourcegraph.NewClientFromContext(cliCtx)
+	return sg.Repos.Get(cliCtx, &sourcegraph.RepoSpec{URI: c.RepoDONOTUSE})
 }
 
 type changesetListCmd struct {
@@ -119,13 +126,14 @@ func (c *changesetListCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
 	sg := sourcegraph.NewClientFromContext(cliCtx)
 
-	if _, err := sg.Repos.Get(cliCtx, &sourcegraph.RepoSpec{URI: c.Repo}); err != nil {
+	repo, err := c.Repo()
+	if err != nil {
 		return err
 	}
 
 	for page := 1; ; page++ {
 		changesets, err := sg.Changesets.List(cliCtx, &sourcegraph.ChangesetListOp{
-			Repo:        c.Repo,
+			Repo:        repo.URI,
 			Open:        c.Status == "open",
 			Closed:      c.Status == "closed",
 			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
@@ -135,7 +143,7 @@ func (c *changesetListCmd) Execute(args []string) error {
 			return err
 		}
 		if len(changesets.Changesets) == 0 {
-			fmt.Println("no changesets", c.Repo)
+			fmt.Println("no changesets", repo.URI)
 			break
 		}
 		for _, changeset := range changesets.Changesets {
@@ -167,7 +175,7 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
-	repo, err := sg.Repos.Get(cliCtx, &sourcegraph.RepoSpec{URI: c.Repo})
+	repo, err := c.Repo()
 	if err != nil {
 		return err
 	}
@@ -218,7 +226,7 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 	}
 
 	changeset, err := sg.Changesets.Create(cliCtx, &sourcegraph.ChangesetCreateOp{
-		Repo: sourcegraph.RepoSpec{URI: c.Repo},
+		Repo: repo.RepoSpec(),
 		Changeset: &sourcegraph.Changeset{
 			Title:       title,
 			Description: description,
@@ -299,8 +307,13 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
 	sg := sourcegraph.NewClientFromContext(cliCtx)
 
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
 	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
-		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
+		Repo:  repo.RepoSpec(),
 		ID:    c.Args.ID,
 		Title: c.Title,
 	})
@@ -308,7 +321,7 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# updated changeset %s #%d", c.Repo, ev.After.ID)
+	log.Printf("# updated changeset %s #%d", repo.URI, ev.After.ID)
 	return nil
 }
 
@@ -324,8 +337,13 @@ func (c *changesetMergeCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
 	sg := sourcegraph.NewClientFromContext(cliCtx)
 
-	_, err := sg.Changesets.Merge(cliCtx, &sourcegraph.ChangesetMergeOp{
-		Repo:   sourcegraph.RepoSpec{URI: c.Repo},
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
+	_, err = sg.Changesets.Merge(cliCtx, &sourcegraph.ChangesetMergeOp{
+		Repo:   repo.RepoSpec(),
 		ID:     c.Args.ID,
 		Squash: c.Squash,
 	})
@@ -333,7 +351,7 @@ func (c *changesetMergeCmd) Execute(args []string) error {
 		return errors.New(grpc.ErrorDesc(err))
 	}
 
-	log.Printf("# merged changeset %s #%d", c.Repo, c.Args.ID)
+	log.Printf("# merged changeset %s #%d", repo.URI, c.Args.ID)
 	return nil
 }
 
@@ -343,8 +361,13 @@ func (c *changesetCloseCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
 	sg := sourcegraph.NewClientFromContext(cliCtx)
 
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
 	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
-		Repo:  sourcegraph.RepoSpec{URI: c.Repo},
+		Repo:  repo.RepoSpec(),
 		ID:    c.Args.ID,
 		Close: true,
 	})
@@ -352,7 +375,7 @@ func (c *changesetCloseCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# closed changeset %s #%d", c.Repo, ev.After.ID)
+	log.Printf("# closed changeset %s #%d", repo.URI, ev.After.ID)
 	return nil
 }
 
@@ -362,8 +385,13 @@ func (c *changesetOpenCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
 	sg := sourcegraph.NewClientFromContext(cliCtx)
 
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
 	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
-		Repo: sourcegraph.RepoSpec{URI: c.Repo},
+		Repo: repo.RepoSpec(),
 		ID:   c.Args.ID,
 		Open: true,
 	})
@@ -371,6 +399,6 @@ func (c *changesetOpenCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# opened changeset %s #%d", c.Repo, ev.After.ID)
+	log.Printf("# opened changeset %s #%d", repo.URI, ev.After.ID)
 	return nil
 }
