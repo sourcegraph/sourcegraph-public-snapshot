@@ -273,6 +273,7 @@ func (c *ServeCmd) Execute(args []string) error {
 			pp.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
 			pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 			pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+			pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 			pp.Handle("/metrics", prometheus.Handler())
 			log.Println("warning: could not start pprof HTTP server:", http.ListenAndServe(c.ProfBindAddr, pp))
 		}()
