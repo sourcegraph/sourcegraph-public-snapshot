@@ -97,7 +97,6 @@ module.exports = {
 		var subroutePaths = {
 			"person.settings.profile": "/.settings/profile",
 			"person.settings.integrations": "/.settings/integrations",
-			"person.settings.auth": "/.settings/auth",
 		};
 		if (!subroutePaths[route]) throw new Error(`No such route: ${route}`);
 		return module.exports.personURL(login) + subroutePaths[route];

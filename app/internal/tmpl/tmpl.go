@@ -119,7 +119,6 @@ func commonTemplates() error {
 		{"user/settings/notifications.html", "user/settings/common.inc.html", "user/profile.inc.html"},
 		{"user/settings/emails.html", "user/settings/common.inc.html", "user/profile.inc.html"},
 		{"user/settings/integrations.html", "user/settings/common.inc.html", "user/profile.inc.html"},
-		{"user/settings/auth.html", "user/settings/common.inc.html", "user/profile.inc.html"},
 		{"blog/index.html", "blog/blog.html", "blog/common.inc.html"},
 		{"blog/post.html", "blog/blog.html", "blog/common.inc.html"},
 

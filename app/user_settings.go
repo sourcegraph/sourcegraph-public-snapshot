@@ -270,22 +270,6 @@ func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveUserSettingsAuth(w http.ResponseWriter, r *http.Request) error {
-	_, cd, err := userSettingsCommon(w, r)
-	if err == errUserSettingsCommonWroteResponse {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	return tmpl.Exec(r, w, "user/settings/auth.html", http.StatusOK, nil, &struct {
-		userSettingsCommonData
-		tmpl.Common
-	}{
-		userSettingsCommonData: *cd,
-	})
-}
-
 func serveUserSettingsIntegrations(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)

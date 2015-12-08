@@ -39,7 +39,6 @@ const (
 	User                           = "person"
 	UserSettingsEmails             = "person.settings.emails"
 	UserSettingsProfile            = "person.settings.profile"
-	UserSettingsAuth               = "person.settings.auth"
 	UserSettingsIntegrations       = "person.settings.integrations"
 	UserSettingsIntegrationsUpdate = "person.settings.integrations.update"
 	UserOrgs                       = "person.orgs"
@@ -165,7 +164,6 @@ func New(base *mux.Router) *Router {
 		base.Path(userPath).Methods("GET").Name(User)
 		user.Path("/.orgs").Methods("GET").Name(UserOrgs)
 		user.Path("/.members").Methods("GET").Name(OrgMembers)
-		user.Path("/.settings/auth").Methods("GET").Name(UserSettingsAuth)
 	}
 
 	// attach git transport endpoints
