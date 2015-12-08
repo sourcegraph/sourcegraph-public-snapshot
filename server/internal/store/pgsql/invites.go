@@ -71,6 +71,11 @@ func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.Acco
 		return nil, errors.New("already used")
 	}
 
+	dbInvite.InUse = true
+	if _, err = dbh(ctx).Update(dbInvite); err != nil {
+		return nil, err
+	}
+
 	return toInvite(dbInvite), nil
 }
 
