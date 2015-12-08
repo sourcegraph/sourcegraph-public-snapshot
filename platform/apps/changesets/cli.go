@@ -134,7 +134,7 @@ func (c *changesetsCmdCommon) Repo() (*sourcegraph.Repo, error) {
 
 type changesetListCmd struct {
 	changesetsCmdCommon
-	Status string `long:"status" description:"filter to only 'open' or 'closed' changesets (default: all)"`
+	Status string `long:"status" description:"filter to only 'open' or 'closed' changesets (default: open)"`
 }
 
 func (c *changesetListCmd) Execute(args []string) error {
@@ -146,11 +146,23 @@ func (c *changesetListCmd) Execute(args []string) error {
 		return err
 	}
 
+	var open, closed bool
+	switch c.Status {
+	case "open", "":
+		open = true
+	case "closed":
+		closed = true
+	case "all":
+		open, closed = true, true
+	default:
+		return fmt.Errorf("Unrecognized status filter %v. Please pick one of open, closed or all", c.Status)
+	}
+
 	for page := 1; ; page++ {
 		changesets, err := sg.Changesets.List(cliCtx, &sourcegraph.ChangesetListOp{
 			Repo:        repo.URI,
-			Open:        c.Status == "open",
-			Closed:      c.Status == "closed",
+			Open:        open,
+			Closed:      closed,
 			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
 		})
 

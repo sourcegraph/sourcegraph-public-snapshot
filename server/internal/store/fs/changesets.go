@@ -368,11 +368,6 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 	s.migrate(ctx, op.Repo)
 	fs := s.storage(ctx, op.Repo)
 
-	// by default, retrieve all changesets
-	if !op.Open && !op.Closed {
-		op.Open = true
-		op.Closed = true
-	}
 	list := sourcegraph.ChangesetList{Changesets: []*sourcegraph.Changeset{}}
 	fis, err := fs.List(changesetIndexAllDir)
 	if err != nil {
@@ -401,16 +396,9 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 			continue
 		}
 
-		// If requesting only open changests, check the index.
-		if op.Open && !open[int64(id)] {
-			continue
+		if (op.Open && open[int64(id)]) || (op.Closed && closed[int64(id)]) {
+			ids = append(ids, id)
 		}
-
-		// If requesting only closed changesets, check the index.
-		if op.Closed && !closed[int64(id)] {
-			continue
-		}
-		ids = append(ids, id)
 	}
 
 	// Sort the filepaths by ID in reverse, i.e. descending order. We use
