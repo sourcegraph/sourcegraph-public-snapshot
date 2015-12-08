@@ -237,7 +237,20 @@ func (s *Server) Close() {
 		log.Fatal(err)
 	}
 	if !*keepTemp {
-		if err := os.RemoveAll(s.SGPATH); err != nil {
+		// Because the build workers may still be running, and hence still writing
+		// to SGPATH, sometimes RemoveAll can fail, so we just try to delete the
+		// directory a few times, waiting for the workers to exit.
+		var err error
+		for i := 0; i < 10; i++ {
+			err = os.RemoveAll(s.SGPATH)
+			if err == nil {
+				break
+			}
+			log.Println(err)
+			time.Sleep(1 * time.Second)
+			err = nil
+		}
+		if err != nil {
 			log.Fatal(err)
 		}
 	}
