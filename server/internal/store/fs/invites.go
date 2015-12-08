@@ -132,6 +132,11 @@ func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.Acco
 			if invitesList[i].InUse {
 				return nil, errors.New("already used")
 			}
+			invitesList[i].InUse = true
+			// Save to disk.
+			if err := writeInvitesDB(ctx, invitesList); err != nil {
+				return nil, err
+			}
 			return toInvite(invitesList[i]), nil
 		}
 	}
