@@ -15,11 +15,15 @@ admin. The admin may [invite other users and manage access controls]
 
 ### Resetting passwords
 
-To reset passwords, users must contact the admin to generate a password reset link. This link can be used by the user to set a new password. Admins can run this command to obtain a password reset link for a user:
+If an SMTP server is not configured for your Sourcegraph server, admins must generate password reset links for users who lose or need to change their password, by running this command:
 
-	src user reset-password <email@domain.com>
+	src user reset-password -e <email@domain.com>
 
-where `<email@domain.com>` is the email associated with the registered user account. This will output a reset link which should be given to the user.
+or
+
+	src user reset-password -l <login>
+
+where `<email@domain.com>` is the email address and `<login>` is the login name associated with the registered user account. This will output a reset link which should be given to the user.
 
 
 ## LDAP

@@ -284,15 +284,26 @@ func (c *userUpdateCmd) Execute(args []string) error {
 }
 
 type userResetPasswordCmd struct {
-	Args struct {
-		Email string `name:"Email" description:"email address associated with account"`
-	} `positional-args:"yes"`
+	Email string `long:"email" short:"e" description:"email address associated with account"`
+	Login string `long:"login" short:"l" description:"login name of the user account"`
 }
 
 func (c *userResetPasswordCmd) Execute(args []string) error {
 	cl := Client()
 
-	pendingReset, err := cl.Accounts.RequestPasswordReset(cliCtx, &sourcegraph.EmailAddr{Email: c.Args.Email})
+	person := &sourcegraph.PersonSpec{}
+	var identifier string
+	if c.Email != "" {
+		person.Email = c.Email
+		identifier = c.Email
+	} else if c.Login != "" {
+		person.Login = c.Login
+		identifier = c.Login
+	} else {
+		return fmt.Errorf("need to specify either email or login of the user account")
+	}
+
+	pendingReset, err := cl.Accounts.RequestPasswordReset(cliCtx, person)
 	if err != nil {
 		return err
 	}
@@ -303,10 +314,10 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 	} else {
 		status = "email not sent"
 	}
-	fmt.Printf("# Password reset link generated for %v (%s)\n", c.Args.Email, status)
+	fmt.Printf("# Password reset link generated for %v (%s)\n", identifier, status)
 
 	if pendingReset.Link != "" {
-		fmt.Println("# Share the below link with the user to set a new password.")
+		fmt.Println("# Share the link below with the user to set a new password.")
 		fmt.Printf("login: %s, reset link: %s\n", pendingReset.Login, pendingReset.Link)
 	} else {
 		fmt.Println("# Link not available: need to be authenticated as an admin user.")

@@ -37,10 +37,10 @@ func TestPostForgotPassword(t *testing.T) {
 	}
 
 	var called bool
-	mock.Accounts.RequestPasswordReset_ = func(ctx context.Context, email *sourcegraph.EmailAddr) (*sourcegraph.PendingPasswordReset, error) {
+	mock.Accounts.RequestPasswordReset_ = func(ctx context.Context, person *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
 		called = true
-		if want := "who@me.com"; email.Email != want {
-			t.Errorf("wanted %s, got %s", want, email.Email)
+		if want := "who@me.com"; person.Email != want {
+			t.Errorf("wanted %s, got %s", want, person.Email)
 		}
 		return nil, nil
 	}

@@ -109,7 +109,7 @@ func TestRequestPasswordReset(t *testing.T) {
 		return &sourcegraph.User{Name: "some user", Login: "user1"}, nil
 	}
 	mock.stores.Users.ListEmails_ = func(ctx context.Context, userSpec sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
-		return []*sourcegraph.EmailAddr{&sourcegraph.EmailAddr{Email: "user@example.com"}}, nil
+		return []*sourcegraph.EmailAddr{&sourcegraph.EmailAddr{Email: "user@example.com", Primary: true}}, nil
 	}
 
 	s := accounts{}
@@ -128,9 +128,9 @@ func TestRequestPasswordReset(t *testing.T) {
 	}
 
 	// Request using login
-	p, err = s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Login: "user1"})
 	sendEmailCalled = false
 	verifyAdminCalled = false
+	p, err = s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Login: "user1"})
 	if err != nil {
 		t.Fatal(err)
 	}
