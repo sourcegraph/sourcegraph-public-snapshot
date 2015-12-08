@@ -5119,7 +5119,7 @@ type AccountsClient interface {
 	Create(ctx context.Context, in *NewAccount, opts ...grpc.CallOption) (*UserSpec, error)
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*PendingPasswordReset, error)
+	RequestPasswordReset(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*PendingPasswordReset, error)
 	// CheckResetToken verifies a password reset token is authentic and valid
 	ResetPassword(ctx context.Context, in *NewPassword, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Update profile of existing account.
@@ -5149,7 +5149,7 @@ func (c *accountsClient) Create(ctx context.Context, in *NewAccount, opts ...grp
 	return out, nil
 }
 
-func (c *accountsClient) RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*PendingPasswordReset, error) {
+func (c *accountsClient) RequestPasswordReset(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*PendingPasswordReset, error) {
 	out := new(PendingPasswordReset)
 	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/RequestPasswordReset", in, out, c.cc, opts...)
 	if err != nil {
@@ -5210,7 +5210,7 @@ type AccountsServer interface {
 	Create(context.Context, *NewAccount) (*UserSpec, error)
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	RequestPasswordReset(context.Context, *EmailAddr) (*PendingPasswordReset, error)
+	RequestPasswordReset(context.Context, *PersonSpec) (*PendingPasswordReset, error)
 	// CheckResetToken verifies a password reset token is authentic and valid
 	ResetPassword(context.Context, *NewPassword) (*pbtypes1.Void, error)
 	// Update profile of existing account.
@@ -5240,7 +5240,7 @@ func _Accounts_Create_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 func _Accounts_RequestPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(EmailAddr)
+	in := new(PersonSpec)
 	if err := dec(in); err != nil {
 		return nil, err
 	}

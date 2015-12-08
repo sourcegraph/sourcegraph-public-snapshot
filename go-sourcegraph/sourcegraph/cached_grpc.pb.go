@@ -52,7 +52,7 @@ func (s *CachedAccountsClient) Create(ctx context.Context, in *NewAccount, opts 
 	return result, nil
 }
 
-func (s *CachedAccountsClient) RequestPasswordReset(ctx context.Context, in *EmailAddr, opts ...grpc.CallOption) (*PendingPasswordReset, error) {
+func (s *CachedAccountsClient) RequestPasswordReset(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*PendingPasswordReset, error) {
 	if s.Cache != nil {
 		var cachedResult PendingPasswordReset
 		cached, err := s.Cache.Get(ctx, "Accounts.RequestPasswordReset", in, &cachedResult)

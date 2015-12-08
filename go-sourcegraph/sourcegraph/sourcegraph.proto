@@ -1559,7 +1559,7 @@ service Accounts {
 
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	rpc RequestPasswordReset(EmailAddr) returns (PendingPasswordReset) {
+	rpc RequestPasswordReset(PersonSpec) returns (PendingPasswordReset) {
 		option (google.api.http) = {
 			post: "/accounts/request_password_reset"
 		};
