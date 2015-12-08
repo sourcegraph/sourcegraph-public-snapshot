@@ -1,4 +1,4 @@
-# 0.8.14
+# 0.8.15
 
 - Change user authentication to be managed locally (not via OAuth2 to Sourcegraph.com)
 	- Store user data and access controls on Sourcegraph server filesystem or database
