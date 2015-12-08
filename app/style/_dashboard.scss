@@ -5,7 +5,11 @@
 			margin-right: 3px;
 		}
 	}
-	p.description {
+	p.description, p.updated {
 		margin: 7px 0 0 0;
+	}
+	p.updated {
+		font-size: $font-size-small;
+		color: $text-muted;
 	}
 }
