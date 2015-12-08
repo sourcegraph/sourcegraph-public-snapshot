@@ -13,6 +13,15 @@ The first user to create an account on a Sourcegraph instance becomes the instan
 admin. The admin may [invite other users and manage access controls]
 ({{< relref "management/access-control.md" >}}).
 
+### Resetting passwords
+
+To reset passwords, users must contact the admin to generate a password reset link. This link can be used by the user to set a new password. Admins can run this command to obtain a password reset link for a user:
+
+	src user reset-password <email@domain.com>
+
+where `<email@domain.com>` is the email associated with the registered user account. This will output a reset link which should be given to the user.
+
+
 ## LDAP
 
 Sourcegraph supports authentication via a configured LDAP server. The LDAP server can be internal to your company's network, but it must be accessible from your local Sourcegraph instance.

@@ -14,6 +14,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -41,10 +42,12 @@ func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 
 func serveForgotPasswordForm(w http.ResponseWriter, r *http.Request, form userForm) error {
 	return tmpl.Exec(r, w, "user/forgot_password.html", http.StatusOK, nil, &struct {
-		UserForm userForm
+		UserForm          userForm
+		IsEmailConfigured bool
 		tmpl.Common
 	}{
-		UserForm: form,
+		IsEmailConfigured: notif.EmailIsConfigured(),
+		UserForm:          form,
 	})
 }
 
