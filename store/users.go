@@ -29,6 +29,7 @@ type Accounts interface {
 	UpdateEmails(context.Context, sourcegraph.UserSpec, []*sourcegraph.EmailAddr) error
 	RequestPasswordReset(context.Context, *sourcegraph.User) (*sourcegraph.PasswordResetToken, error)
 	ResetPassword(context.Context, *sourcegraph.NewPassword) error
+	Delete(context.Context, int32) error
 }
 
 // Invites manages pending invites to new users.
