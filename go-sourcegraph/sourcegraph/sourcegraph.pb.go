@@ -5130,6 +5130,8 @@ type AccountsClient interface {
 	AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error)
 	// ListInvites lists the pending invites on this server.
 	ListInvites(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AccountInviteList, error)
+	// Delete deletes a user account from this server.
+	Delete(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
 
 type accountsClient struct {
@@ -5203,6 +5205,15 @@ func (c *accountsClient) ListInvites(ctx context.Context, in *pbtypes1.Void, opt
 	return out, nil
 }
 
+func (c *accountsClient) Delete(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/Delete", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Accounts service
 
 type AccountsServer interface {
@@ -5221,6 +5232,8 @@ type AccountsServer interface {
 	AcceptInvite(context.Context, *AcceptedInvite) (*UserSpec, error)
 	// ListInvites lists the pending invites on this server.
 	ListInvites(context.Context, *pbtypes1.Void) (*AccountInviteList, error)
+	// Delete deletes a user account from this server.
+	Delete(context.Context, *PersonSpec) (*pbtypes1.Void, error)
 }
 
 func RegisterAccountsServer(s *grpc.Server, srv AccountsServer) {
@@ -5311,6 +5324,18 @@ func _Accounts_ListInvites_Handler(srv interface{}, ctx context.Context, dec fun
 	return out, nil
 }
 
+func _Accounts_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(PersonSpec)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AccountsServer).Delete(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Accounts_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Accounts",
 	HandlerType: (*AccountsServer)(nil),
@@ -5342,6 +5367,10 @@ var _Accounts_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListInvites",
 			Handler:    _Accounts_ListInvites_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _Accounts_Delete_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

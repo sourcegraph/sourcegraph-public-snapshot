@@ -1582,21 +1582,28 @@ service Accounts {
 	// Invite creates a pending invite and notifies the recipient via email.
 	rpc Invite(AccountInvite) returns (PendingInvite) {
 		option (google.api.http) = {
-			post: "/accounts/Invite"
+			post: "/accounts/invite"
 		};
 	};
 
 	// AcceptInvite uses a pending invite to create a new user account.
 	rpc AcceptInvite(AcceptedInvite) returns (UserSpec) {
 		option (google.api.http) = {
-			post: "/accounts/Invite"
+			post: "/accounts/accept_invite"
 		};
 	};
 
 	// ListInvites lists the pending invites on this server.
 	rpc ListInvites(pbtypes.Void) returns (AccountInviteList) {
 		option (google.api.http) = {
-			post: "/accounts/Invite"
+			post: "/accounts/list_invites"
+		};
+	};
+
+	// Delete deletes a user account from this server.
+	rpc Delete(PersonSpec) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			post: "/accounts/delete"
 		};
 	};
 }

@@ -659,6 +659,7 @@ type AccountsClient struct {
 	Invite_               func(ctx context.Context, in *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error)
 	AcceptInvite_         func(ctx context.Context, in *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error)
 	ListInvites_          func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AccountInviteList, error)
+	Delete_               func(ctx context.Context, in *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
 func (s *AccountsClient) Create(ctx context.Context, in *sourcegraph.NewAccount, opts ...grpc.CallOption) (*sourcegraph.UserSpec, error) {
@@ -689,6 +690,10 @@ func (s *AccountsClient) ListInvites(ctx context.Context, in *pbtypes.Void, opts
 	return s.ListInvites_(ctx, in)
 }
 
+func (s *AccountsClient) Delete(ctx context.Context, in *sourcegraph.PersonSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.Delete_(ctx, in)
+}
+
 var _ sourcegraph.AccountsClient = (*AccountsClient)(nil)
 
 type AccountsServer struct {
@@ -699,6 +704,7 @@ type AccountsServer struct {
 	Invite_               func(v0 context.Context, v1 *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error)
 	AcceptInvite_         func(v0 context.Context, v1 *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error)
 	ListInvites_          func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.AccountInviteList, error)
+	Delete_               func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
 func (s *AccountsServer) Create(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
@@ -727,6 +733,10 @@ func (s *AccountsServer) AcceptInvite(v0 context.Context, v1 *sourcegraph.Accept
 
 func (s *AccountsServer) ListInvites(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
 	return s.ListInvites_(v0, v1)
+}
+
+func (s *AccountsServer) Delete(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
+	return s.Delete_(v0, v1)
 }
 
 var _ sourcegraph.AccountsServer = (*AccountsServer)(nil)

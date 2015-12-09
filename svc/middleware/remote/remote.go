@@ -78,6 +78,10 @@ func (s remoteAccounts) ListInvites(ctx context.Context, v1 *pbtypes.Void) (*sou
 	return sourcegraph.NewClientFromContext(ctx).Accounts.ListInvites(ctx, v1)
 }
 
+func (s remoteAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Accounts.Delete(ctx, v1)
+}
+
 type remoteAuth struct{ sourcegraph.AuthServer }
 
 func (s remoteAuth) GetAuthorizationCode(ctx context.Context, v1 *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
