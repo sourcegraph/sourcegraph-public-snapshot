@@ -1,6 +1,7 @@
 package statsutil
 
 import (
+	"os/exec"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -34,10 +35,32 @@ var numUsersGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 	Help:      "Total users on the local Sourcegraph instance.",
 })
 
+var execDurationGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "process",
+	Name:      "exec_duration_seconds",
+	Help:      "Duration of executing the echo command.",
+})
+
 func init() {
 	prometheus.MustRegister(numReposGauge)
 	prometheus.MustRegister(numBuildsGauge)
 	prometheus.MustRegister(numUsersGauge)
+	prometheus.MustRegister(execDurationGauge)
+
+	// test the latency of exec, which may increase under certain memory conditions
+	go func() {
+		for {
+			time.Sleep(10 * time.Second)
+
+			s := time.Now()
+			if err := exec.Command("echo").Run(); err != nil {
+				log15.Warn("exec measurement failed", "error", err)
+				continue
+			}
+			execDurationGauge.Set(time.Now().Sub(s).Seconds())
+		}
+	}()
 }
 
 // ComputeUsageStats takes a daily snapshot of the basic statistics of all
