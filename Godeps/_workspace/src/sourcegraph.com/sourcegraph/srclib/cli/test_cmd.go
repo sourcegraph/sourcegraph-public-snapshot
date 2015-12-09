@@ -281,7 +281,7 @@ func (c *DiffCmd) Execute(args []string) error {
 			differingDefs = append(differingDefs, defKey)
 		}
 	}
-	for defKey, _ := range actDefs {
+	for defKey := range actDefs {
 		if _, exists := expDefs[defKey]; !exists {
 			actOnlyDefs = append(actOnlyDefs, defKey)
 		}

@@ -237,10 +237,6 @@ func (t *dockerToolchain) Command() (*exec.Cmd, error) {
 	//   "--user", "srclib"
 	// to the run options below.
 	var cmd *exec.Cmd
-	if strings.HasSuffix(t.imageName, "srclib-java") { // HACK for srclib-java
-		cmd = exec.Command("docker", "run", "--memory=4g", "-i", "--volume="+t.hostVolumeDir+":/src", t.imageName)
-	} else {
-		cmd = exec.Command("docker", "run", "--memory=4g", "-i", "--volume="+t.hostVolumeDir+":/src:ro", t.imageName)
-	}
+	cmd = exec.Command("docker", "run", "--rm=true", "--memory=4g", "-i", "--volume="+t.hostVolumeDir+":/src:ro", t.imageName)
 	return cmd, nil
 }

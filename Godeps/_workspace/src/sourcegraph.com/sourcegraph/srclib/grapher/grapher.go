@@ -95,13 +95,21 @@ func NormalizeData(currentRepoURI, unitType, dir string, o *graph.Output) error 
 			ref.DefRepo = ""
 		}
 		if ref.DefRepo != "" {
-			ref.DefRepo = graph.MakeURI(string(ref.DefRepo))
+			uri, err := graph.TryMakeURI(string(ref.DefRepo))
+			if err != nil {
+				return err
+			}
+			ref.DefRepo = uri
 		}
 		if ref.Repo == currentRepoURI {
 			ref.Repo = ""
 		}
 		if ref.Repo != "" {
-			ref.Repo = graph.MakeURI(string(ref.Repo))
+			uri, err := graph.TryMakeURI(string(ref.Repo))
+			if err != nil {
+				return err
+			}
+			ref.Repo = uri
 		}
 	}
 

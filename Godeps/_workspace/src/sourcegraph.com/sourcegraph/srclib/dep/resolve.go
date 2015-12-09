@@ -2,10 +2,6 @@ package dep
 
 import (
 	"encoding/json"
-	"sort"
-
-	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
 // START ResolvedTarget OMIT
@@ -67,52 +63,6 @@ func (r *Resolution) RawKeyId() (string, error) {
 
 // Command for dep resolution has no options.
 type Command struct{}
-
-// ResolutionsToResolvedDeps converts a []*Resolution for a source unit to a
-// []*ResolvedDep (which is a data structure that includes the source unit
-// type/name/etc., so elements are meaningful even if the associated source unit
-// struct is not available).
-//
-// Resolutions with Errors are omitted from the returned slice and no such
-// errors are returned.
-func ResolutionsToResolvedDeps(ress []*Resolution, unit *unit.SourceUnit, fromRepo string, fromCommitID string) ([]*ResolvedDep, error) {
-	or := func(a, b string) string {
-		if a != "" {
-			return a
-		}
-		return b
-	}
-	var resolved []*ResolvedDep
-	for _, res := range ress {
-		if res.Error != "" {
-			continue
-		}
-
-		if rt := res.Target; rt != nil {
-			var uri string
-			if rt.ToRepoCloneURL != "" {
-				uri = graph.MakeURI(rt.ToRepoCloneURL)
-			} else {
-				uri = fromRepo
-			}
-
-			rd := &ResolvedDep{
-				FromRepo:        fromRepo,
-				FromCommitID:    fromCommitID,
-				FromUnit:        unit.Name,
-				FromUnitType:    unit.Type,
-				ToRepo:          uri,
-				ToUnit:          or(rt.ToUnit, unit.Name),
-				ToUnitType:      or(rt.ToUnitType, unit.Type),
-				ToVersionString: rt.ToVersionString,
-				ToRevSpec:       rt.ToRevSpec,
-			}
-			resolved = append(resolved, rd)
-		}
-	}
-	sort.Sort(resolvedDeps(resolved))
-	return resolved, nil
-}
 
 type resolvedDeps []*ResolvedDep
 

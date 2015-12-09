@@ -3,6 +3,7 @@ package grapher
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 
 	"sourcegraph.com/sourcegraph/makex"
@@ -58,7 +59,13 @@ func (r *GraphUnitRule) Target() string {
 
 func (r *GraphUnitRule) Prereqs() []string {
 	ps := []string{filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename(unit.SourceUnit{}, r.Unit)))}
-	ps = append(ps, r.Unit.Files...)
+	for _, file := range r.Unit.Files {
+		if _, err := os.Stat(file); err != nil && os.IsNotExist(err) {
+			// skip not-existent files listed in source unit
+			continue
+		}
+		ps = append(ps, file)
+	}
 	return ps
 }
 

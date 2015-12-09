@@ -67,7 +67,7 @@ instructions.
 
 # Development
 
-## Sourcegraph binary release process
+## srclib binary release process
 
 `srclib` uses [equinox.io](https://equinox.io/) to maintain and update
 binary versions. Contributors with deploy privileges can update the
@@ -79,7 +79,7 @@ official binaries via these instructions:
 
 
 ## License
-Sourcegraph is licensed under the [MIT License](https://tldrlegal.com/license/mit-license).
+srclib is licensed under the [MIT License](https://tldrlegal.com/license/mit-license).
 More information in the LICENSE file.
 
 
