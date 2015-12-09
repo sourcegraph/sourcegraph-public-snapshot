@@ -248,7 +248,6 @@ func (s *Server) Close() {
 			}
 			log.Println(err)
 			time.Sleep(1 * time.Second)
-			err = nil
 		}
 		if err != nil {
 			log.Fatal(err)
