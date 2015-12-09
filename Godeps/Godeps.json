@@ -276,19 +276,21 @@
 			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
 		},
 		{
-			"ImportPath": "github.com/prometheus/client_golang/model",
-			"Comment": "0.7.0",
-			"Rev": "6dbab8106ed3ed77359ac85d9cf08e30290df864"
-		},
-		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
-			"Comment": "0.7.0",
-			"Rev": "6dbab8106ed3ed77359ac85d9cf08e30290df864"
+			"Comment": "0.7.0-68-g67994f1",
+			"Rev": "67994f177195311c3ea3d4407ed0175e34a4256f"
 		},
 		{
-			"ImportPath": "github.com/prometheus/client_golang/text",
-			"Comment": "0.7.0",
-			"Rev": "6dbab8106ed3ed77359ac85d9cf08e30290df864"
+			"ImportPath": "github.com/prometheus/common/expfmt",
+			"Rev": "5cb53e5c863aca6e2b8ec958d16d9a93753ecea6"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/model",
+			"Rev": "5cb53e5c863aca6e2b8ec958d16d9a93753ecea6"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg",
+			"Rev": "5cb53e5c863aca6e2b8ec958d16d9a93753ecea6"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_model/go",

@@ -12,8 +12,8 @@ import (
 
 	"github.com/matttproud/golang_protobuf_extensions/pbutil"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/text"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 )
 
 // MetricFamilies represets a collection of distinct metrics. This is a
@@ -64,8 +64,9 @@ func SnapshotMetricFamilies() MetricFamilies {
 
 // Marshal writes all the metric families to the writer
 func (mfs MetricFamilies) Marshal(w io.Writer) error {
+	e := expfmt.NewEncoder(w, expfmt.FmtProtoDelim)
 	for _, mf := range mfs {
-		_, err := text.WriteProtoDelimited(w, mf)
+		err := e.Encode(mf)
 		if err != nil {
 			return err
 		}

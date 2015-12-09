@@ -24,7 +24,6 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"hash/fnv"
 	"io"
 	"net/http"
 	"net/url"
@@ -33,13 +32,10 @@ import (
 	"strings"
 	"sync"
 
-	"bitbucket.org/ww/goautoneg"
 	"github.com/golang/protobuf/proto"
+	"github.com/prometheus/common/expfmt"
 
 	dto "github.com/prometheus/client_model/go"
-
-	"github.com/prometheus/client_golang/model"
-	"github.com/prometheus/client_golang/text"
 )
 
 var (
@@ -340,13 +336,16 @@ func (r *registry) Push(job, instance, pushURL, method string) error {
 	if !strings.Contains(pushURL, "://") {
 		pushURL = "http://" + pushURL
 	}
+	if strings.HasSuffix(pushURL, "/") {
+		pushURL = pushURL[:len(pushURL)-1]
+	}
 	pushURL = fmt.Sprintf("%s/metrics/jobs/%s", pushURL, url.QueryEscape(job))
 	if instance != "" {
 		pushURL += "/instances/" + url.QueryEscape(instance)
 	}
 	buf := r.getBuf()
 	defer r.giveBuf(buf)
-	if _, err := r.writePB(buf, text.WriteProtoDelimited); err != nil {
+	if err := r.writePB(expfmt.NewEncoder(buf, expfmt.FmtProtoDelim)); err != nil {
 		if r.panicOnCollectError {
 			panic(err)
 		}
@@ -369,11 +368,11 @@ func (r *registry) Push(job, instance, pushURL, method string) error {
 }
 
 func (r *registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	enc, contentType := chooseEncoder(req)
+	contentType := expfmt.Negotiate(req.Header)
 	buf := r.getBuf()
 	defer r.giveBuf(buf)
 	writer, encoding := decorateWriter(req, buf)
-	if _, err := r.writePB(writer, enc); err != nil {
+	if err := r.writePB(expfmt.NewEncoder(writer, contentType)); err != nil {
 		if r.panicOnCollectError {
 			panic(err)
 		}
@@ -384,7 +383,7 @@ func (r *registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		closer.Close()
 	}
 	header := w.Header()
-	header.Set(contentTypeHeader, contentType)
+	header.Set(contentTypeHeader, string(contentType))
 	header.Set(contentLengthHeader, fmt.Sprint(buf.Len()))
 	if encoding != "" {
 		header.Set(contentEncodingHeader, encoding)
@@ -392,7 +391,7 @@ func (r *registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Write(buf.Bytes())
 }
 
-func (r *registry) writePB(w io.Writer, writeEncoded encoder) (int, error) {
+func (r *registry) writePB(encoder expfmt.Encoder) error {
 	var metricHashes map[uint64]struct{}
 	if r.collectChecksEnabled {
 		metricHashes = make(map[uint64]struct{})
@@ -444,7 +443,7 @@ func (r *registry) writePB(w io.Writer, writeEncoded encoder) (int, error) {
 			// TODO: Consider different means of error reporting so
 			// that a single erroneous metric could be skipped
 			// instead of blowing up the whole collection.
-			return 0, fmt.Errorf("error collecting metric %v: %s", desc, err)
+			return fmt.Errorf("error collecting metric %v: %s", desc, err)
 		}
 		switch {
 		case metricFamily.Type != nil:
@@ -460,11 +459,11 @@ func (r *registry) writePB(w io.Writer, writeEncoded encoder) (int, error) {
 		case dtoMetric.Histogram != nil:
 			metricFamily.Type = dto.MetricType_HISTOGRAM.Enum()
 		default:
-			return 0, fmt.Errorf("empty metric collected: %s", dtoMetric)
+			return fmt.Errorf("empty metric collected: %s", dtoMetric)
 		}
 		if r.collectChecksEnabled {
 			if err := r.checkConsistency(metricFamily, dtoMetric, desc, metricHashes); err != nil {
-				return 0, err
+				return err
 			}
 		}
 		metricFamily.Metric = append(metricFamily.Metric, dtoMetric)
@@ -478,7 +477,7 @@ func (r *registry) writePB(w io.Writer, writeEncoded encoder) (int, error) {
 				if r.collectChecksEnabled {
 					for _, m := range mf.Metric {
 						if err := r.checkConsistency(mf, m, nil, metricHashes); err != nil {
-							return 0, err
+							return err
 						}
 					}
 				}
@@ -487,7 +486,7 @@ func (r *registry) writePB(w io.Writer, writeEncoded encoder) (int, error) {
 			for _, m := range mf.Metric {
 				if r.collectChecksEnabled {
 					if err := r.checkConsistency(existingMF, m, nil, metricHashes); err != nil {
-						return 0, err
+						return err
 					}
 				}
 				existingMF.Metric = append(existingMF.Metric, m)
@@ -508,15 +507,12 @@ func (r *registry) writePB(w io.Writer, writeEncoded encoder) (int, error) {
 	}
 	sort.Strings(names)
 
-	var written int
 	for _, name := range names {
-		w, err := writeEncoded(w, metricFamiliesByName[name])
-		written += w
-		if err != nil {
-			return written, err
+		if err := encoder.Encode(metricFamiliesByName[name]); err != nil {
+			return err
 		}
 	}
-	return written, nil
+	return nil
 }
 
 func (r *registry) checkConsistency(metricFamily *dto.MetricFamily, dtoMetric *dto.Metric, desc *Desc, metricHashes map[uint64]struct{}) error {
@@ -534,30 +530,25 @@ func (r *registry) checkConsistency(metricFamily *dto.MetricFamily, dtoMetric *d
 	}
 
 	// Is the metric unique (i.e. no other metric with the same name and the same label values)?
-	h := fnv.New64a()
-	var buf bytes.Buffer
-	buf.WriteString(metricFamily.GetName())
-	buf.WriteByte(model.SeparatorByte)
-	h.Write(buf.Bytes())
+	h := hashNew()
+	h = hashAdd(h, metricFamily.GetName())
+	h = hashAddByte(h, separatorByte)
 	// Make sure label pairs are sorted. We depend on it for the consistency
 	// check. Label pairs must be sorted by contract. But the point of this
 	// method is to check for contract violations. So we better do the sort
 	// now.
 	sort.Sort(LabelPairSorter(dtoMetric.Label))
 	for _, lp := range dtoMetric.Label {
-		buf.Reset()
-		buf.WriteString(lp.GetValue())
-		buf.WriteByte(model.SeparatorByte)
-		h.Write(buf.Bytes())
+		h = hashAdd(h, lp.GetValue())
+		h = hashAddByte(h, separatorByte)
 	}
-	metricHash := h.Sum64()
-	if _, exists := metricHashes[metricHash]; exists {
+	if _, exists := metricHashes[h]; exists {
 		return fmt.Errorf(
 			"collected metric %s %s was collected before with the same name and label values",
 			metricFamily.GetName(), dtoMetric,
 		)
 	}
-	metricHashes[metricHash] = struct{}{}
+	metricHashes[h] = struct{}{}
 
 	if desc == nil {
 		return nil // Nothing left to check if we have no desc.
@@ -686,34 +677,6 @@ func newDefaultRegistry() *registry {
 	return r
 }
 
-func chooseEncoder(req *http.Request) (encoder, string) {
-	accepts := goautoneg.ParseAccept(req.Header.Get(acceptHeader))
-	for _, accept := range accepts {
-		switch {
-		case accept.Type == "application" &&
-			accept.SubType == "vnd.google.protobuf" &&
-			accept.Params["proto"] == "io.prometheus.client.MetricFamily":
-			switch accept.Params["encoding"] {
-			case "delimited":
-				return text.WriteProtoDelimited, DelimitedTelemetryContentType
-			case "text":
-				return text.WriteProtoText, ProtoTextTelemetryContentType
-			case "compact-text":
-				return text.WriteProtoCompactText, ProtoCompactTextTelemetryContentType
-			default:
-				continue
-			}
-		case accept.Type == "text" &&
-			accept.SubType == "plain" &&
-			(accept.Params["version"] == "0.0.4" || accept.Params["version"] == ""):
-			return text.MetricFamilyToText, TextTelemetryContentType
-		default:
-			continue
-		}
-	}
-	return text.MetricFamilyToText, TextTelemetryContentType
-}
-
 // decorateWriter wraps a writer to handle gzip compression if requested.  It
 // returns the decorated writer and the appropriate "Content-Encoding" header
 // (which is empty if no compression is enabled).
@@ -756,5 +719,18 @@ func (s metricSorter) Less(i, j int) bool {
 			return vi < vj
 		}
 	}
-	return true
+
+	// We should never arrive here. Multiple metrics with the same
+	// label set in the same scrape will lead to undefined ingestion
+	// behavior. However, as above, we have to provide stable sorting
+	// here, even for inconsistent metrics. So sort equal metrics
+	// by their timestamp, with missing timestamps (implying "now")
+	// coming last.
+	if s[i].TimestampMs == nil {
+		return false
+	}
+	if s[j].TimestampMs == nil {
+		return true
+	}
+	return s[i].GetTimestampMs() < s[j].GetTimestampMs()
 }

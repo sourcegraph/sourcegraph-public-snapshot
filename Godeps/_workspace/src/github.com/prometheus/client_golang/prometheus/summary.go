@@ -15,7 +15,6 @@ package prometheus
 
 import (
 	"fmt"
-	"hash/fnv"
 	"math"
 	"sort"
 	"sync"
@@ -25,9 +24,11 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	dto "github.com/prometheus/client_model/go"
-
-	"github.com/prometheus/client_golang/model"
 )
+
+// quantileLabel is used for the label that defines the quantile in a
+// summary.
+const quantileLabel = "quantile"
 
 // A Summary captures individual observations from an event or sample stream and
 // summarizes them in a manner similar to traditional summary statistics: 1. sum
@@ -57,7 +58,7 @@ var (
 	DefObjectives = map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}
 
 	errQuantileLabelNotAllowed = fmt.Errorf(
-		"%q is not allowed as label name in summaries", model.QuantileLabel,
+		"%q is not allowed as label name in summaries", quantileLabel,
 	)
 )
 
@@ -112,7 +113,9 @@ type SummaryOpts struct {
 	ConstLabels Labels
 
 	// Objectives defines the quantile rank estimates with their respective
-	// absolute error. The default value is DefObjectives.
+	// absolute error. If Objectives[q] = e, then the value reported
+	// for q will be the φ-quantile value for some φ between q-e and q+e.
+	// The default value is DefObjectives.
 	Objectives map[float64]float64
 
 	// MaxAge defines the duration for which an observation stays relevant
@@ -170,12 +173,12 @@ func newSummary(desc *Desc, opts SummaryOpts, labelValues ...string) Summary {
 	}
 
 	for _, n := range desc.variableLabels {
-		if n == model.QuantileLabel {
+		if n == quantileLabel {
 			panic(errQuantileLabelNotAllowed)
 		}
 	}
 	for _, lp := range desc.constLabelPairs {
-		if lp.GetName() == model.QuantileLabel {
+		if lp.GetName() == quantileLabel {
 			panic(errQuantileLabelNotAllowed)
 		}
 	}
@@ -404,7 +407,6 @@ func NewSummaryVec(opts SummaryOpts, labelNames []string) *SummaryVec {
 		MetricVec: MetricVec{
 			children: map[uint64]Metric{},
 			desc:     desc,
-			hash:     fnv.New64a(),
 			newMetric: func(lvs ...string) Metric {
 				return newSummary(desc, opts, lvs...)
 			},
