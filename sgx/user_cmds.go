@@ -81,6 +81,15 @@ func init() {
 		log.Fatal(err)
 	}
 
+	_, err = userGroup.AddCommand("delete",
+		"delete a user account",
+		"Delete a user account.",
+		&userDeleteCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	userKeysGroup, err := userGroup.AddCommand("keys",
 		"manage user's SSH public keys",
 		"Manage user's SSH public keys.",
@@ -322,6 +331,48 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 	} else {
 		fmt.Println("# Link not available: need to be authenticated as an admin user.")
 	}
+
+	return nil
+}
+
+type userDeleteCmd struct {
+	Email string `long:"email" short:"e" description:"email address associated with account"`
+	Login string `long:"login" short:"l" description:"login name of the user account"`
+	UID   int32  `long:"uid" short:"i" description:"UID of the user account"`
+}
+
+func (c *userDeleteCmd) Execute(args []string) error {
+	cl := Client()
+
+	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	if !authInfo.Admin {
+		return fmt.Errorf("# Permission denied: need admin access to complete this operation.")
+	}
+
+	person := &sourcegraph.PersonSpec{}
+	var identifier string
+	if c.Email != "" {
+		person.Email = c.Email
+		identifier = c.Email
+	} else if c.Login != "" {
+		person.Login = c.Login
+		identifier = c.Login
+	} else if c.UID != 0 {
+		person.UID = c.UID
+		identifier = fmt.Sprintf("UID %d", c.UID)
+	} else {
+		return fmt.Errorf("need to specify email, login or UID of the user account")
+	}
+
+	_, err = cl.Accounts.Delete(cliCtx, person)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("# User %q deleted.\n", identifier)
 
 	return nil
 }
