@@ -15,7 +15,7 @@ Sourcegraph in an all-in-one binary (`src`) which includes:
 ## Add language support
 
 Out-of-the box, Sourcegraph does not include Code Intelligence.
-[Follow these instructions]({{relref "config/toolchains.md" >}}) to enable
+[Follow these instructions]({{< relref "config/toolchains.md" >}}) to enable
 language support on your Sourcegraph server.
 
 ## Add a git repository
