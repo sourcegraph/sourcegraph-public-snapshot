@@ -2,7 +2,9 @@
 package main
 
 import (
+	"log"
 	"os"
+	"os/signal"
 
 	"src.sourcegraph.com/sourcegraph/sgx"
 
@@ -33,6 +35,20 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
 )
+
+func init() {
+	// Log OS signals that the process receives. Note that when a
+	// signal leads to termination of the process (e.g., SIGINT or
+	// SIGKILL), the process may terminate before the signal is
+	// printed. This is especially the case if GOMAXPROCS=1.
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		for sig := range c {
+			log.Printf("SIGNAL: Process received signal %q", sig)
+		}
+	}()
+}
 
 func main() {
 	err := sgx.Main()
