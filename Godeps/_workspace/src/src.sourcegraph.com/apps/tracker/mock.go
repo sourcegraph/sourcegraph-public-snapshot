@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"html"
 	"log"
 	"net/http"
 	"path"
@@ -12,7 +13,7 @@ import (
 func mockHandler(w http.ResponseWriter, req *http.Request) {
 	if err := loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
@@ -20,7 +21,7 @@ func mockHandler(w http.ResponseWriter, req *http.Request) {
 	baseState, err := baseState(req)
 	if err != nil {
 		log.Println("baseState:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 	mock := mockState{
@@ -31,7 +32,7 @@ func mockHandler(w http.ResponseWriter, req *http.Request) {
 	err = t.ExecuteTemplate(w, tmpl+".tmpl", &mock)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 }

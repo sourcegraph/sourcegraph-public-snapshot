@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html"
 	"html/template"
 	"io"
 	"log"
@@ -203,14 +204,14 @@ var is issues.Service
 func issuesHandler(w http.ResponseWriter, req *http.Request) {
 	if err := loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	baseState, err := baseState(req)
 	if err != nil {
 		log.Println("baseState:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 	state := state{
@@ -219,7 +220,7 @@ func issuesHandler(w http.ResponseWriter, req *http.Request) {
 	err = t.ExecuteTemplate(w, "issues.html.tmpl", &state)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
@@ -227,14 +228,14 @@ func issuesHandler(w http.ResponseWriter, req *http.Request) {
 func issueHandler(w http.ResponseWriter, req *http.Request) {
 	if err := loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	baseState, err := baseState(req)
 	if err != nil {
 		log.Println("baseState:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 	state := state{
@@ -243,7 +244,7 @@ func issueHandler(w http.ResponseWriter, req *http.Request) {
 	err = t.ExecuteTemplate(w, "issue.html.tmpl", &state)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
@@ -267,14 +268,14 @@ func debugHandler(w http.ResponseWriter, req *http.Request) {
 func createIssueHandler(w http.ResponseWriter, req *http.Request) {
 	if err := loadTemplates(); err != nil {
 		log.Println("loadTemplates:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	baseState, err := baseState(req)
 	if err != nil {
 		log.Println("baseState:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 	if baseState.CurrentUser == nil {
@@ -287,7 +288,7 @@ func createIssueHandler(w http.ResponseWriter, req *http.Request) {
 	err = t.ExecuteTemplate(w, "new-issue.html.tmpl", &state)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
@@ -305,14 +306,14 @@ func postCreateIssueHandler(w http.ResponseWriter, req *http.Request) {
 	err := json.NewDecoder(req.Body).Decode(&issue)
 	if err != nil {
 		log.Println("json.Decode:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusBadRequest)
 		return
 	}
 
 	issue, err = is.Create(ctx, repoSpec, issue)
 	if err != nil {
 		log.Println("is.Create:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
@@ -326,7 +327,7 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -338,14 +339,14 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 	err := json.Unmarshal([]byte(req.PostForm.Get("value")), &ir)
 	if err != nil {
 		log.Println("postEditIssueHandler: json.Unmarshal value:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusBadRequest)
 		return
 	}
 
 	issue, err := is.Edit(ctx, repoSpec, uint64(mustAtoi(vars["id"])), ir)
 	if err != nil {
 		log.Println("is.Edit:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
@@ -353,7 +354,7 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 	user, err := is.CurrentUser(ctx)
 	if err != nil {
 		log.Println("is.CurrentUser:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 	issueEvent := issues.Event{
@@ -400,7 +401,7 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 	}(w, issue)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
@@ -412,7 +413,7 @@ func postCommentHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -427,14 +428,14 @@ func postCommentHandler(w http.ResponseWriter, req *http.Request) {
 	comment, err := is.CreateComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), comment)
 	if err != nil {
 		log.Println("is.CreateComment:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	err = t.ExecuteTemplate(w, "comment", comment)
 	if err != nil {
 		log.Println("t.ExecuteTemplate:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
@@ -446,7 +447,7 @@ func postEditCommentHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Println("req.ParseForm:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -462,7 +463,7 @@ func postEditCommentHandler(w http.ResponseWriter, req *http.Request) {
 	_, err := is.EditComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), comment)
 	if err != nil {
 		log.Println("is.EditComment:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
