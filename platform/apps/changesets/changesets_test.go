@@ -15,7 +15,7 @@ import (
 
 	"sourcegraph.com/sqs/pbtypes"
 
-	"github.com/google/go-github/github"
+	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
