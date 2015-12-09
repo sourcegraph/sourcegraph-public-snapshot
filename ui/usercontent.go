@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"net/http"
 
 	"github.com/satori/go.uuid"
@@ -13,6 +14,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/usercontent"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
+
+var allowedMimeTypes = map[string]struct{}{
+	"image/png":  {},
+	"image/jpeg": {},
+	"image/gif":  {},
+}
 
 func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 	const maxSizeBytes = 10 * 1024 * 1024
@@ -27,14 +34,30 @@ func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 		return fmt.Errorf("no store for user content available")
 	}
 
-	if req.Header.Get("Content-Type") != "image/png" {
-		return fmt.Errorf("invalid Content-Type: %v", w.Header().Get("Content-Type"))
-	}
 	body, err := ioutil.ReadAll(http.MaxBytesReader(w, req.Body, maxSizeBytes))
 	if err != nil {
 		return err
 	}
-	name := uuid.NewV4().String() + ".png"
+
+	mimeType := http.DetectContentType(body)
+	_, ok := allowedMimeTypes[mimeType]
+	if !ok {
+		return fmt.Errorf("unsupported mime type: %v", mimeType)
+	}
+
+	extensions, err := mime.ExtensionsByType(mimeType)
+	if err != nil {
+		return err
+	}
+
+	extension := ""
+	if extensions != nil {
+		extension = extensions[0]
+	} else {
+		return fmt.Errorf("unable to calculate extension")
+	}
+
+	name := uuid.NewV4().String() + extension
 	err = writeFile(usercontent.Store, name, body)
 	if err != nil {
 		return err

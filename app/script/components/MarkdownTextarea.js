@@ -27,7 +27,62 @@ var MarkdownTextarea = React.createClass({
 		return {
 			activeTab: "edit",
 			markdownBody: "",
+			isDragging: false,
 		};
+	},
+
+	componentWillMount() {
+		this._resetDrag();
+	},
+
+	componentDidMount() {
+		this._bindListeners();
+	},
+
+	componentWillUnmount() {
+		this.unbindListeners();
+	},
+
+	_unbindListeners() {
+		ReactDOM.findDOMNode(this).removeEventListener("dragenter", this._handleDrag);
+		ReactDOM.findDOMNode(this).removeEventListener("dragleave", this._handleDrag);
+		ReactDOM.findDOMNode(this).removeEventListener("drop", this._handleDrop);
+	},
+
+	_bindListeners() {
+		ReactDOM.findDOMNode(this).addEventListener("dragenter", this._handleDrag);
+		ReactDOM.findDOMNode(this).addEventListener("dragleave", this._handleDrag);
+		ReactDOM.findDOMNode(this).addEventListener("drop", this._handleDrop);
+	},
+
+	_handleDrag(e) {
+		this._numDrags += e.type === "dragenter" ? 1 : -1;
+		var isDragging = this.state.isDragging;
+
+		if (this._numDrags === 1) {
+			isDragging = true;
+		} else if (this._numDrags === 0) {
+			isDragging = false;
+		}
+
+		this.setState({isDragging: isDragging});
+	},
+
+	_resetDrag() {
+		this._numDrags = 0;
+		this.setState({isDragging: false});
+	},
+
+	_handleDrop(e) {
+		e.preventDefault();
+		this._resetDrag();
+
+		var items = event.dataTransfer ? event.dataTransfer.items : [];
+
+		for (var i = 0; i < items.length; i++) {
+			// Since `items` is read only we have to pass an addition arg
+			this.uploadFile(items[i], "drop");
+		}
 	},
 
 	_showEdit() {
@@ -50,24 +105,28 @@ var MarkdownTextarea = React.createClass({
 		if (items.length === 0) {
 			return;
 		}
+
 		var item = items[0];
+		this.uploadFile(item, "clipboard");
+	},
+
+	uploadFile(item, source) {
 		if (item.kind !== "file") {
 			console.log(`rejecting file upload because "${item.kind}" is not a currently supported item.kind`);
 			return;
 		}
-		if (item.type !== "image/png") {
+
+		if (!item.type.match("image.*")) {
 			console.log(`rejecting file upload because "${item.type}" is not a currently supported item.type`);
 			return;
 		}
-		var file = item.getAsFile();
 
-		// Upload the file.
 		$.ajax({
 			url: "/.ui/.usercontent",
 			method: "POST",
-			contentType: "image/png",
+			contentType: item.type,
 			accepts: "json",
-			data: file,
+			data: item.getAsFile(),
 			processData: false,
 			success: (upload) => {
 				if (upload.Error !== undefined) {
@@ -77,7 +136,7 @@ var MarkdownTextarea = React.createClass({
 
 				// Insert the file into textarea.
 				var url = `/usercontent/${upload.Name}`;
-				this.insertText(`![Image](${url})`);
+				this.insertText(`![Image](${url})`, source === "drop");
 			},
 			error: (upload, error) => {
 				console.log(error);
@@ -102,11 +161,18 @@ var MarkdownTextarea = React.createClass({
 	/**
 	 * @description Inserts a string into the textarea.
 	 * @param {string} inserted - Value to insert into the text area.
+	 * @param {bool}   append   - Whether to append, or insert at cursor pos
 	 * @returns {void}
 	 */
-	insertText(inserted) {
+	insertText(inserted, append) {
 		var txt = $(ReactDOM.findDOMNode(this)).find(".raw-body");
 		var value = txt.val();
+
+		if (append === true) {
+			txt.val(value + inserted);
+			return;
+		}
+
 		var start = txt[0].selectionStart;
 		var end = txt[0].selectionEnd;
 		txt.val(value.substring(0, start) + inserted + value.substring(end));
@@ -119,6 +185,7 @@ var MarkdownTextarea = React.createClass({
 			"tab-content": true,
 			"show-edit": this.state.activeTab === TAB_EDIT,
 			"show-preview": this.state.activeTab === TAB_PREVIEW,
+			"has-drag-item": this.state.isDragging,
 		}) + (this.props.className ? ` ${this.props.className}` : "");
 
 		return (

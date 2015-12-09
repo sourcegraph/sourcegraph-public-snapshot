@@ -1,11 +1,14 @@
 package app_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"image/png"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"testing"
+
+	"image"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
@@ -21,13 +24,17 @@ func TestUserContent(t *testing.T) {
 	usercontent.Store = rwvfs.Map(make(map[string]string))
 	defer func() { usercontent.Store = origStore }()
 
-	const content = "ABC...z"
+	image := image.NewRGBA(image.Rect(0, 0, 10, 10))
+	content := new(bytes.Buffer)
+	png.Encode(content, image)
+	imageString := content.String()
+
 	var name string
 
 	{
 		uic, _ := httptestutil.NewTest(ui.NewHandler(nil, false))
 
-		req, err := http.NewRequest("POST", ui_router.Rel.URLTo(ui_router.UserContentUpload).String(), strings.NewReader(content))
+		req, err := http.NewRequest("POST", ui_router.Rel.URLTo(ui_router.UserContentUpload).String(), content)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -66,8 +73,9 @@ func TestUserContent(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(body) != content {
-			t.Errorf("body doesn't match expected content")
+
+		if string(body) != imageString {
+			t.Errorf("body doesn't match expected content\n")
 		}
 	}
 }
