@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
+	githttp "github.com/AaronO/go-git-http"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -50,10 +51,11 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload ev
 	e := payload.Event
 	cl := sourcegraph.NewClientFromContext(ctx)
 	changesetEvents, err := cl.Changesets.UpdateAffected(ctx, &sourcegraph.ChangesetUpdateAffectedOp{
-		Repo:   payload.Repo,
-		Branch: e.Branch,
-		Last:   e.Last,
-		Commit: e.Commit,
+		Repo:      payload.Repo,
+		Branch:    e.Branch,
+		Last:      e.Last,
+		Commit:    e.Commit,
+		ForcePush: e.Type == githttp.PUSH_FORCE,
 	})
 	if err != nil {
 		log15.Warn("changesetHook: could not update changesets", "error", err)
