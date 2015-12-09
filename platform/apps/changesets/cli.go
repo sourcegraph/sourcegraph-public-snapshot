@@ -118,8 +118,12 @@ func (c *changesetsCmdCommon) Repo() (*sourcegraph.Repo, error) {
 	var isGuess bool
 	repoURI := c.RepoDONOTUSE
 	if repoURI == "" {
+		var err error
 		isGuess = true
-		repoURI, _ = guessRepo()
+		repoURI, err = guessRepo()
+		if err != nil {
+			log.Printf("Could not guess repo due to error: %s", err)
+		}
 		if repoURI == "" {
 			return nil, errors.New("Could not guess repo, please specify a repo with -r.")
 		}
