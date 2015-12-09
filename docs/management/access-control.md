@@ -57,3 +57,12 @@ Admins can use the following command to update a user's access level on the serv
 `<login>` must be an existing username and `<level>` must be one of `read`,
 `write` or `admin`.
 
+# Deleting user accounts
+
+Admins can delete a user account from their Sourcegraph server by running any of the following commands:
+
+	src user delete -l <login>
+	src user delete -e <email@domain.com>
+	src user delete -i <uid>
+
+where `<login>`, `<email@domain.com>` and `<uid>` are the login name, email address and UID, respectively, associated with the user account.
