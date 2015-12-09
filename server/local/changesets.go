@@ -108,17 +108,8 @@ func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp
 		return nil, err
 	}
 
-	event, err := svc.Changesets(ctx).Update(ctx, &sourcegraph.ChangesetUpdateOp{
-		Repo:   op.Repo,
-		ID:     op.ID,
-		Close:  true,
-		Merged: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return event, nil
+	// TODO(slimsag): use pbtypes.Void instead
+	return &sourcegraph.ChangesetEvent{}, nil
 }
 
 func (s *changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {

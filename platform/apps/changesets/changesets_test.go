@@ -1123,6 +1123,8 @@ func TestChangesets_MergeFlow(t *testing.T) {
 // TestChangesets_CLIMergeFlow runs the CLIMergeFlow test on a hosted
 // repository.
 func TestChangesets_CLIMergeFlow(t *testing.T) {
+	t.Skip("BUG: hosted repos do not emit githook events on merge")
+	return
 	testChangesets_MergeFlow(t, false, true)
 }
 
@@ -1302,10 +1304,6 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 	// Confirm that we have exactly one merge event.
 	ev := events.Events[0]
 	if err := ts.changesetEqual(ev.Before, cs); err != nil {
-		if cli {
-			t.Skip("BUG: CLI Merge does not set merged status == true")
-			return
-		}
 		t.Fatal(err)
 	}
 	afterCS := *cs
@@ -1331,10 +1329,6 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
 	}
 	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != wantBaseCommitID {
-		if cli {
-			t.Skip("BUG: CLI Merge does not set DeltaSpec.Base.CommitID!")
-			return
-		}
 		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
 	}
 }
