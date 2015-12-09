@@ -1013,6 +1013,8 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.refreshVCS()
+	time.Sleep(500 * time.Millisecond)
 
 	// Grab the current HEAD of the head branch (feature-branch) -- this is the
 	// commit ID of the last commit to our feature branch. From this point on, our
@@ -1037,8 +1039,6 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 		t.Fatal(err)
 	}
 	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != "" && gotHead != wantHeadCommitID {
-		t.Skip("BUG: currently failing!")
-		return
 		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
 	}
 	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != "" && gotBase != wantBaseCommitID {
@@ -1054,6 +1054,7 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.refreshVCS()
 
 	// Verify the current DeltaSpec of the changeset.
 	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
