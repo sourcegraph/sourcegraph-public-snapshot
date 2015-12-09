@@ -1,7 +1,6 @@
 package syntaxhighlight
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -158,10 +157,6 @@ func ByGroups(args ...interface{}) RuleAction {
 			vf := reflect.ValueOf(arg)
 			ftype := vf.Type()
 			spanIndex := 2 * (i + 1)
-			if notInRange(source, matches, spanIndex) || notInRange(source, matches, spanIndex+1) {
-				continue
-			}
-
 			if ftype.Kind() == reflect.Func {
 				ret = append(ret,
 					arg.(RuleAction)(lexer,
@@ -199,6 +194,10 @@ func Words(words ...string) Matcher {
 // Produces matcher that matches any of the words specified optionally followed by word boundary
 // - boundary - identifies if word should be followed by word boundary
 // - words - dictionary
+//
+// This method should only be called via an init() function at the
+// top-level, because it will panic on failure. Otherwise, there may
+// be unforeseen runtime failures.
 func WordsWithBoundary(boundary bool, words ...string) Matcher {
 	t := newTrie()
 	for _, w := range words {
@@ -240,27 +239,4 @@ func isEndOfWord(source []byte, offset int) bool {
 	}
 	// TODO: add Unicode support
 	return true
-}
-
-// TOOD (alexsaveliev) remove it when
-// "panic: runtime error: slice bounds out of range" will be fixed
-// The purpose of this function is to display debug info
-func notInRange(source []byte, matches []int, index int) bool {
-	l := len(source)
-	offset := matches[index]
-	if offset < 0 || offset > l {
-		start := matches[0]
-		end := matches[1]
-		if start >= 0 && start <= l && end >= 0 && end <= l {
-			println("WARNING: invalid offset", index, offset, `"`+string(source[start:end])+`"`, fmt.Sprintf("%v", matches))
-		} else {
-			end = 100
-			if end > l {
-				end = l
-			}
-			println("WARNING: invalid offset (alt)", index, offset, `"`+string(source[0:end])+`"`, fmt.Sprintf("%v", matches))
-		}
-		return true
-	}
-	return false
 }
