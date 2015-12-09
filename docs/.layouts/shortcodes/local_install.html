@@ -1,0 +1,85 @@
+<h3>First, select your operating system:</h3>
+<div class="row">
+	<div class="col-md-3">
+		<select class="form-control" onchange="refreshInstructions()" id="os-selector">
+		  <option disabled selected>-- select an option --</option>
+		  <option value="mac">Mac OS X</option>
+		  <option value="ubuntu">Ubuntu</option>
+		  <option value="centos">CentOS</option>
+		  <option value="redhat">RedHat</option>
+		</select>
+	</div>
+</div>
+
+<br>
+<div id="instructions"></div>
+
+<script>
+var installURL = "https://sourcegraph.com/.download/install.sh";
+var curlInstall = "<code>curl -sSL " + installURL + " | bash</code>";
+var wgetInstall = "<code>wget -O - " + installURL + " | bash</code>";
+
+var macBinaryDownload =
+	"<a href=\"https://sourcegraph.com/.download/latest/darwin-amd64/src.gz\">Download a gzipped static binary for Mac OS X</a>";
+var debFileDownload =
+	"Download <a href=\"https://sourcegraph.com/.download/latest/darwin-amd64/src.gz\">src.deb (64-bit)</a> and install with <code>sudo dpkg -i src.deb</code>";
+var rpmFileDownload =
+	"Download <a href=\"https://sourcegraph.com/.download/latest/darwin-amd64/src.gz\">src.rpm (64-bit)</a> and install with <code>sudo yum -y src.rpm</code>" ;
+
+var linuxConfiguration = "<p>Linux installations will create a configuration file at <code>/etc/sourcegraph/config.ini</code>\
+and an upstart script to run your Sourcegraph server.</p>";
+
+var openingLine = function(osVersion) {
+	return "<p>Sourcegraph is supported on " + osVersion + ". Install using one of the following methods:</p>";
+}
+
+var installOptionsList = function() {
+	var str = "<ul>";
+	for (var i = 0; i < arguments.length; i++) {
+		str += "<li>";
+		str += arguments[i];
+		str += "</li>";
+	}
+	str += "</ul>";
+	return str;
+}
+
+var macInstructions = openingLine("OS X 10.8+") + installOptionsList(curlInstall, macBinaryDownload) +
+	"<p>Next, run <code>src serve</code> and visit <a>http://localhost:3080</a>.";
+
+var ubuntuInstructions = openingLine("Ubuntu 12.04 & 14.04") + installOptionsList(wgetInstall, debFileDownload) + linuxConfiguration +
+	"<p>When done, run <code>sudo restart src</code> and visit <a>http://localhost:3080</a> (or an alternate address, if you modified the configuration).";
+
+var centosInstructions = openingLine("CentOS 6.3") + installOptionsList(curlInstall, rpmFileDownload) + linuxConfiguration +
+	"<p>When done, run <code>src serve</code> and visit <a>http://localhost:3080</a> (or an alternate address, if you modified the configuration).";
+
+var redhatInstructions = openingLine("RedHat 7.1") + installOptionsList(curlInstall, rpmFileDownload) + linuxConfiguration +
+	"<p>When done, run <code>src serve</code> and visit <a>http://localhost:3080</a> (or an alternate address, if you modified the configuration).";
+
+var instructions = function(os) {
+	if (os == "mac") {
+		return macInstructions;
+	}
+	if (os == "ubuntu") {
+		return ubuntuInstructions;
+	}
+	if (os == "centos") {
+		return centosInstructions;
+	}
+	if (os == "redhat") {
+		return redhatInstructions;
+	}
+	return "";
+}
+
+var setInstructions = function(instructions) {
+	document.getElementById("instructions").innerHTML = instructions;
+}
+
+var refreshInstructions = function() {
+	var el = document.getElementById("os-selector");
+	setInstructions(instructions(el.options[el.selectedIndex].value));
+}
+
+refreshInstructions() // initialization
+</script>

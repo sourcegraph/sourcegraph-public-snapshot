@@ -14,17 +14,15 @@
 					<a href="{{.Key|relURL}}/">
 						{{with index $.Site.Params.SectionNames .Key}}{{.}}{{else}}{{title .Key}}{{end}}
 					</a>
-					{{if not (eq $section "getting-started")}}
-						<ul class="nav">
-							{{ range .Pages.ByLinkTitle }}
-								<li class="{{if eq ($.Scratch.Get "PageUniqueID") .UniqueID}}active{{end}}">
-									<a href="{{ .Permalink }}">
-										{{with .LinkTitle}}{{.}}{{else}}{{ .Title }}{{end}}
-									</a>
-								</li>
-							{{ end }}
-						</ul>
-					{{end}}
+					<ul class="nav">
+						{{ range .Pages.ByLinkTitle }}
+							<li class="{{if eq ($.Scratch.Get "PageUniqueID") .UniqueID}}active{{end}}">
+								<a href="{{ .Permalink }}">
+									{{with .LinkTitle}}{{.}}{{else}}{{ .Title }}{{end}}
+								</a>
+							</li>
+						{{ end }}
+					</ul>
 				</li>
 			{{end}}{{end}}
 		{{end}}

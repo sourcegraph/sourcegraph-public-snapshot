@@ -5,7 +5,7 @@ linktitle = "CLI"
 
 The Sourcegraph CLI (`src`) is bundled with binary which runs your Sourcegraph server.
 
-To install it, [follow the local installation instructions]({{< relref "install/local.md" >}}).
+To install it, [follow the local installation instructions]({{< relref "getting-started/local.md" >}}).
 
 # Usage
 
