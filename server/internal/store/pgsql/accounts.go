@@ -63,6 +63,14 @@ func (s *Accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 	return nil
 }
 
+func (s *Accounts) Delete(ctx context.Context, uid int32) error {
+	dbUID := int(uid)
+	if _, err := dbh(ctx).Exec(`DELETE FROM users where uid=$1`, dbUID); err != nil {
+		return err
+	}
+	return nil
+}
+
 func init() {
 	Schema.Map.AddTableWithName(PasswordResetRequest{}, "password_reset_requests").SetKeys(false, "Token")
 }

@@ -372,3 +372,46 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 	}
 	return &pbtypes.Void{}, nil
 }
+
+func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
+	defer noCache(ctx)
+
+	if err := verifyAdminUser(ctx, "Accounts.Delete"); err != nil {
+		return nil, err
+	}
+
+	usersStore := store.UsersFromContextOrNil(ctx)
+	if usersStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "users"}
+	}
+
+	accountsStore := store.AccountsFromContextOrNil(ctx)
+	if accountsStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "accounts"}
+	}
+
+	var uid int32
+	if person.UID != 0 {
+		uid = person.UID
+	} else if person.Login != "" {
+		user, err := usersStore.Get(ctx, sourcegraph.UserSpec{Login: person.Login})
+		if err != nil {
+			return nil, err
+		}
+		uid = user.UID
+	} else if person.Email != "" {
+		user, err := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: person.Email})
+		if err != nil {
+			return nil, err
+		}
+		uid = user.UID
+	} else {
+		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify UID, login or email of the user account")
+	}
+
+	err := accountsStore.Delete(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	return &pbtypes.Void{}, nil
+}

@@ -96,6 +96,23 @@ func (s *Accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, 
 	return &store.UserNotFoundError{UID: int(user.UID)}
 }
 
+func (s *Accounts) Delete(ctx context.Context, uid int32) error {
+	users, err := readUserDB(ctx)
+	if err != nil {
+		return err
+	}
+
+	for i, u := range users {
+		if u.UID == uid {
+			users[i] = users[len(users)-1]
+			users = users[:len(users)-1]
+			return writeUserDB(ctx, users)
+		}
+	}
+
+	return &store.UserNotFoundError{UID: int(uid)}
+}
+
 const passwordResetFilename = "password_reset.json"
 
 type passwordReset struct {
