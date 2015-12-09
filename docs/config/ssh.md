@@ -15,7 +15,7 @@ src users keys add <public-key-file>
 Then, do some git operations:
 
 ```
-git remote add src `ssh://git@src.mycompany.com:3022/path/to/repo`
+git remote add src ssh://git@src.mycompany.com:3022/path/to/repo
 git push src master
 ```
 
