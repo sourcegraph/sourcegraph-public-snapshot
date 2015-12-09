@@ -149,6 +149,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 					Type:   gitEventType,
 					Commit: string(head),
 					Branch: change.Branch,
+					Last:   emptyGitCommitID,
 					// TODO: specify Dir, Tag, Error and Request fields somehow?
 				},
 			})
