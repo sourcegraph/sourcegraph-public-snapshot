@@ -173,19 +173,28 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
 	uid := uidFromSSHConn(sshConn)
 
+	cl := sourcegraph.NewClientFromContext(s.ctx)
+	user, err := cl.Users.Get(s.ctx, &sourcegraph.UserSpec{UID: uid})
+	if err != nil {
+		fmt.Fprintf(ch.Stderr(), "Could not find user with uid %v.\n\n", uid)
+		return fmt.Errorf("could not find user with uid %v: %v", uid, err)
+	}
+	actor := auth.GetActorFromUser(*user)
+	actor.ClientID = s.clientID
+
 	// Check if user has sufficient permissions for git write/read access to this repo.
 	switch op {
 	case "git-upload-pack":
 		// git-upload-pack uploads packs back to client. It happens when the client does
 		// git fetch or similar. Check for read access.
-		if err := accesscontrol.VerifyActorHasReadAccess(s.ctx, auth.Actor{UID: int(uid), ClientID: s.clientID}, "sshgit.git-receive-pack"); err != nil {
+		if err := accesscontrol.VerifyActorHasReadAccess(s.ctx, actor, "sshgit.git-upload-pack"); err != nil {
 			fmt.Fprintf(ch.Stderr(), "User %q doesn't have read permissions.\n\n", userLogin)
 			return fmt.Errorf("user %q doesn't have read permissions: %v", userLogin, err)
 		}
 	case "git-receive-pack":
 		// git-receive-pack receives packs and applies them to the repository. It happens when the client does
 		// git push or similar. Check for write access.
-		if err := accesscontrol.VerifyActorHasWriteAccess(s.ctx, auth.Actor{UID: int(uid), ClientID: s.clientID}, "sshgit.git-receive-pack"); err != nil {
+		if err := accesscontrol.VerifyActorHasWriteAccess(s.ctx, actor, "sshgit.git-receive-pack"); err != nil {
 			fmt.Fprintf(ch.Stderr(), "User %q doesn't have write permissions.\n\n", userLogin)
 			return fmt.Errorf("user %q doesn't have write permissions: %v", userLogin, err)
 		}

@@ -1,6 +1,10 @@
 package auth
 
-import "fmt"
+import (
+	"fmt"
+
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+)
 
 // Actor represents an agent that accesses resources. It can represent
 // an anonymous user or a logged-in user.
@@ -81,4 +85,20 @@ func MarshalScope(scopeMap map[string]bool) []string {
 		scope = append(scope, s)
 	}
 	return scope
+}
+
+func GetActorFromUser(user sourcegraph.User) Actor {
+	scope := make(map[string]bool)
+	if user.Write {
+		scope["user:write"] = true
+	}
+	if user.Admin {
+		scope["user:admin"] = true
+	}
+	return Actor{
+		UID:    int(user.UID),
+		Login:  user.Login,
+		Domain: user.Domain,
+		Scope:  scope,
+	}
 }

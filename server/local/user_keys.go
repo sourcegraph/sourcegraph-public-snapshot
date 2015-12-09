@@ -2,10 +2,11 @@ package local
 
 import (
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -16,16 +17,16 @@ type userKeys struct{}
 var _ sourcegraph.UserKeysServer = (*userKeys)(nil)
 
 func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "UserKeys.AddKey"); err != nil {
-		return nil, err
+	actor := authpkg.ActorFromContext(ctx)
+
+	if !actor.IsAuthenticated() {
+		return nil, grpc.Errorf(codes.PermissionDenied, "no authenticated user in context")
 	}
 
 	store := store.UserKeysFromContextOrNil(ctx)
 	if store == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "UserKeys"}
 	}
-
-	actor := authpkg.ActorFromContext(ctx)
 
 	err := store.AddKey(ctx, int32(actor.UID), *key)
 	if err != nil {
@@ -53,16 +54,16 @@ func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey
 }
 
 func (s *userKeys) DeleteKey(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "UserKeys.DeleteKey"); err != nil {
-		return nil, err
+	actor := authpkg.ActorFromContext(ctx)
+
+	if !actor.IsAuthenticated() {
+		return nil, grpc.Errorf(codes.PermissionDenied, "no authenticated user in context")
 	}
 
 	store := store.UserKeysFromContextOrNil(ctx)
 	if store == nil {
 		return nil, &sourcegraph.NotImplementedError{What: "UserKeys"}
 	}
-
-	actor := authpkg.ActorFromContext(ctx)
 
 	err := store.DeleteKey(ctx, int32(actor.UID))
 	if err != nil {
