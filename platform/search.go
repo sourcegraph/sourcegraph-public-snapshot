@@ -2,6 +2,7 @@ package platform
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 )
 
@@ -22,6 +23,23 @@ type SearchFrame struct {
 	// Handler is the HTTP handler that is responsible for
 	// returning search results specific to the SearchFrame.
 	Handler http.Handler
+}
+
+// ResponseJSON defines the expected format of the json response
+// body expected to be returned from any app SearchFrame.
+
+// SearchFrameResponse should be imported by SearchFrame
+// applications and used to serialize responses to search requests
+// against the SearchFrame.
+type SearchFrameResponse struct {
+	// Html is raw html to be rendered as search results
+	// on the front end. This contract allows for simplicty
+	// of implementation and flexibility in the rendered format.
+	HTML template.HTML `json:"html"`
+
+	// TotalResults is the total number of results for the given
+	// query.
+	TotalResults int32 `json:"total_results"`
 }
 
 type SearchOptions struct {
