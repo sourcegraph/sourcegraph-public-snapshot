@@ -40,7 +40,7 @@ var MarkdownTextarea = React.createClass({
 	},
 
 	componentWillUnmount() {
-		this.unbindListeners();
+		this._unbindListeners();
 	},
 
 	_unbindListeners() {
