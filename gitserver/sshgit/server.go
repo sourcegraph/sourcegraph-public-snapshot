@@ -159,16 +159,16 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	if err != nil || len(args) != 2 {
 		return fmt.Errorf("command %q is not a valid git command", command)
 	}
-	op := args[0]   // E.g., "git-upload-pack".
-	repo := args[1] // E.g., "/user/repo".
-	repo = path.Clean(repo)
-	if path.IsAbs(repo) {
-		repo = repo[1:] // Normalize "/user/repo" to "user/repo".
+	op := args[0]      // E.g., "git-upload-pack".
+	repoURI := args[1] // E.g., "/user/repo".
+	repoURI = path.Clean(repoURI)
+	if path.IsAbs(repoURI) {
+		repoURI = repoURI[1:] // Normalize "/user/repo" to "user/repo".
 	}
-	repoDir := filepath.Join(s.reposRoot, filepath.FromSlash(repo))
-	if repo == "" || !strings.HasPrefix(repoDir, s.reposRoot) {
-		fmt.Fprintf(ch.Stderr(), "Specified repo %q lies outside of root.\n\n", repo)
-		return fmt.Errorf("specified repo %q lies outside of root", repo)
+	repoDir := filepath.Join(s.reposRoot, filepath.FromSlash(repoURI))
+	if repoURI == "" || !strings.HasPrefix(repoDir, s.reposRoot) {
+		fmt.Fprintf(ch.Stderr(), "Specified repo %q lies outside of root.\n\n", repoURI)
+		return fmt.Errorf("specified repo %q lies outside of root", repoURI)
 	}
 	userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
 	uid := uidFromSSHConn(sshConn)
@@ -224,7 +224,7 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	} else {
 		payload := events.GitPayload{
 			Actor: sourcegraph.UserSpec{UID: uid},
-			Repo:  sourcegraph.RepoSpec{URI: repo},
+			Repo:  sourcegraph.RepoSpec{URI: repoURI},
 		}
 		for _, e := range collapseDuplicateEvents(rpcReader.Events) {
 			payload.Event = e
