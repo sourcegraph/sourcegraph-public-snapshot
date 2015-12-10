@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/srclib/toolchain"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
@@ -240,6 +241,10 @@ var TemplateFunctions = htmpl.FuncMap{
 			return sourcegraph.RepoPermissions{}
 		}
 		return *p
+	},
+
+	"isAdmin": func(ctx context.Context, method string) bool {
+		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil
 	},
 
 	"activeRepoApp": func(currentURL *url.URL, repoURI, appID string) (bool, error) {

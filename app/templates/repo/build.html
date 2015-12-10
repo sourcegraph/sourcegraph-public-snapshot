@@ -14,11 +14,11 @@
 		<input type="hidden" name="Priority" value="{{.Build.Priority}}">
 		<input type="hidden" name="Force" value="true">
 		<button
-		{{if not .Commit}}disabled{{else if .Build.Success}}disabled{{end}}
+		{{if not .Commit}}disabled{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}disabled{{end}}
 		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Re-index code</button>
 		{{if not .Commit}}
 		<span class="help-sm-fade">Disabled because the commit could not be retrieved</span>
-		{{else if .Build.Success}}
+		{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}
 		<span class="help-sm-fade">Disabled because the commit is successfully built</span>
 		{{end}}
 		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
