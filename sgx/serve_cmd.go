@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -15,7 +14,6 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -42,6 +40,7 @@ import (
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/auth/idkeystore"
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
@@ -156,7 +155,7 @@ type ServeCmdPrivate struct {
 	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
 	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
 
-	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem" env:"SRC_ID_KEY_FILE"`
+	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" env:"SRC_ID_KEY_FILE"`
 	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
 }
 
@@ -287,7 +286,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	)
 
 	// Server identity keypair
-	idKey, err := c.generateOrReadIDKey()
+	idKey, err := idkeystore.GenerateOrGetIDKey(c.IDKeyData, c.IDKeyFile)
 	if err != nil {
 		return err
 	}
@@ -601,47 +600,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
 	return nil
-}
-
-// generateOrReadIDKey reads the server's ID key (or creates one on-demand).
-func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
-	if s := c.IDKeyData; s != "" {
-		if globalOpt.Verbose {
-			log.Println("Reading ID key from environment (or CLI flag).")
-		}
-
-		return idkey.FromString(s)
-	}
-
-	c.IDKeyFile = os.ExpandEnv(c.IDKeyFile)
-
-	var k *idkey.IDKey
-	if data, err := ioutil.ReadFile(c.IDKeyFile); err == nil {
-		// File exists.
-		k, err = idkey.New(data)
-		if err != nil {
-			return nil, err
-		}
-	} else if os.IsNotExist(err) {
-		log.Printf("Generating new Sourcegraph ID key at %s...", c.IDKeyFile)
-		k, err = idkey.Generate()
-		if err != nil {
-			return nil, err
-		}
-		data, err := k.MarshalText()
-		if err != nil {
-			return nil, err
-		}
-		if err := os.MkdirAll(filepath.Dir(c.IDKeyFile), 0700); err != nil {
-			return nil, err
-		}
-		if err := ioutil.WriteFile(c.IDKeyFile, data, 0600); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, err
-	}
-	return k, nil
 }
 
 // authenticateCLIContext adds a "service account" access token to
