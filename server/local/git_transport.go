@@ -4,6 +4,9 @@ import (
 	"reflect"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
@@ -13,6 +16,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // emptyGitCommitID is used in githttp.Event objects in the Last (or
@@ -103,6 +107,13 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 func verifyRepoWriteAccess(ctx context.Context, repoSpec sourcegraph.RepoSpec) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack"); err != nil {
 		return err
+	}
+	repo, err := svc.Repos(ctx).Get(ctx, &repoSpec)
+	if err != nil {
+		return err
+	}
+	if !repo.IsSystemOfRecord() {
+		return grpc.Errorf(codes.FailedPrecondition, "repo is not writeable %v", repoSpec.URI)
 	}
 	return nil
 }
