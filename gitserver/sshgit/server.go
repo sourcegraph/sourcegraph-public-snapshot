@@ -14,6 +14,9 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/AaronO/go-git-http"
 	"github.com/flynn/go-shlex"
 	"golang.org/x/crypto/ssh"
@@ -174,6 +177,16 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	uid := uidFromSSHConn(sshConn)
 
 	cl := sourcegraph.NewClientFromContext(s.ctx)
+	repo, err := cl.Repos.Get(s.ctx, &sourcegraph.RepoSpec{URI: repoURI})
+	if err != nil {
+		if grpc.Code(err) == codes.NotFound {
+			fmt.Fprintf(ch.Stderr(), "Specified repo %q does not exist.\n\n", repoURI)
+			return fmt.Errorf("specified repo %q does not exist: %v", repoURI, err)
+		}
+		fmt.Fprintf(ch.Stderr(), "Error accessing repo %q: %v\n\n", repoURI, err)
+		return fmt.Errorf("error accessing repo %q: %v", repoURI, err)
+	}
+
 	user, err := cl.Users.Get(s.ctx, &sourcegraph.UserSpec{UID: uid})
 	if err != nil {
 		fmt.Fprintf(ch.Stderr(), "Could not find user with uid %v.\n\n", uid)
@@ -197,6 +210,11 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		if err := accesscontrol.VerifyActorHasWriteAccess(s.ctx, actor, "sshgit.git-receive-pack"); err != nil {
 			fmt.Fprintf(ch.Stderr(), "User %q doesn't have write permissions.\n\n", userLogin)
 			return fmt.Errorf("user %q doesn't have write permissions: %v", userLogin, err)
+		}
+		// Some repos should never be written to by users directly
+		if !repo.IsSystemOfRecord() {
+			fmt.Fprintf(ch.Stderr(), "Repo %q is not writeable.\n\n", repoURI)
+			return fmt.Errorf("repo %q is not a system of record", repoURI)
 		}
 	default:
 		return fmt.Errorf("%q is not a supported git operation", op)

@@ -11,6 +11,11 @@ import (
 // IsGitHubRepo returns true iff this repository is hosted on GitHub.
 func (r *Repo) IsGitHubRepo() bool { return strings.HasPrefix(r.URI, "github.com/") }
 
+// IsSystemOfRecord returns true iff this repository is the source of truth (not a mirror, etc)
+func (r *Repo) IsSystemOfRecord() bool {
+	return !r.Mirror
+}
+
 // Returns the repository's canonical clone URL
 func (r *Repo) CloneURL() *url.URL {
 	var cloneURL string
