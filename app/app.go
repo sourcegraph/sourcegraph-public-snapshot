@@ -29,7 +29,7 @@ import (
 )
 
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided
-// router. It additionally adds support for cross-site request forgery. To make
+// handler. It additionally adds support for cross-site request forgery. To make
 // your forms compliant you will have to include a hidden input which contains
 // the CSRFToken that is made available to you in the template via tmpl.Common.
 //
