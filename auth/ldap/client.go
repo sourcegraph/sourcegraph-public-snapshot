@@ -18,7 +18,7 @@ type LDAPUser struct {
 func connectLDAP() (l *ldaplib.Conn, err error) {
 	addr := fmt.Sprintf("%s:%d", Config.Host, Config.Port)
 	if Config.TLS {
-		l, err = ldaplib.DialTLS("tcp", addr, &tls.Config{InsecureSkipVerify: Config.TLSSkipVerify})
+		l, err = ldaplib.DialTLS("tcp", addr, &tls.Config{ServerName: Config.Host, InsecureSkipVerify: Config.TLSSkipVerify})
 	} else {
 		l, err = ldaplib.Dial("tcp", addr)
 	}
