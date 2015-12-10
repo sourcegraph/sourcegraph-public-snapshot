@@ -170,6 +170,7 @@ func (rs *changesetsRepoStage) getEnviron() []string {
 
 	if rs.gitPassHelper != "" {
 		env.Unset("GIT_TERMINAL_PROMPT")
+		env.Unset("GIT_ASKPASS")
 		env = append(env, "GIT_ASKPASS="+rs.gitPassHelper)
 	}
 
