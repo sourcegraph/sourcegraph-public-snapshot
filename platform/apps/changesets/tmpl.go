@@ -79,13 +79,13 @@ func putCommon(ctx context.Context, data interface{}) {
 	}))
 }
 
-// toJSON converts v into JSON and returns it as a string.
-func toJSON(v interface{}) (string, error) {
+// toJSON converts v into JSON and returns it as JS.
+func toJSON(v interface{}) (template.JS, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return "", err
 	}
-	return template.JSEscapeString(string(b)), err
+	return template.JS(b), nil
 }
 
 // urlToChangeset returns the URL to the changeset with the given id within the
