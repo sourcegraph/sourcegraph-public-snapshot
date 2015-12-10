@@ -79,7 +79,7 @@ func main_() error {
 	os.Setenv("SG_PASSWORD", *password)
 
 	// launch local server
-	server, err := async(`src serve --auth.allow-all-logins --graphuplink=0m`)
+	server, err := async(`src serve --auth.allow-all-logins --graphuplink=0m --id-key=$SGPATH/id.pem`)
 	if err != nil {
 		return err
 	}
