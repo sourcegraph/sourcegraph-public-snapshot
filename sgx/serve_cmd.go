@@ -285,35 +285,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		clientCtxFuncs []func(context.Context) context.Context = ClientContextFuncs
 	)
 
-	// Server identity keypair
-	idKey, err := idkeystore.GenerateOrGetIDKey(c.IDKeyData, c.IDKeyFile)
-	if err != nil {
-		return err
-	}
-	log15.Debug("Sourcegraph server", "ID", idKey.ID)
-	// Uncomment to add ID key prefix to log messages.
-	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
-	var idKeyToken oauth2.TokenSource
-	if !fed.Config.IsRoot {
-		tokenURL := fed.Config.RootURL().ResolveReference(app_router.Rel.URLTo(app_router.OAuth2ServerToken))
-		idKeyToken = idKey.TokenSource(context.Background(), tokenURL.String())
-	}
-
-	sharedCtxFuncs = append(sharedCtxFuncs, func(ctx context.Context) context.Context {
-		if !fed.Config.IsRoot {
-			ctx = sourcegraph.WithCredentials(ctx, idKeyToken)
-		}
-		ctx = idkey.NewContext(ctx, idKey)
-		return ctx
-	})
-	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
-		return oauth2client.WithClientID(ctx, idKey.ID)
-	})
-	sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
-	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
-		return sourcegraph.WithCredentials(ctx, sharedSecretToken)
-	})
-
 	// graphstore
 	serverCtxFuncs = append(serverCtxFuncs, c.GraphStoreOpts.context)
 
@@ -369,6 +340,35 @@ func (c *ServeCmd) Execute(args []string) error {
 
 		return ctx
 	}
+
+	// Server identity keypair
+	idKey, err := idkeystore.GenerateOrGetIDKey(c.IDKeyData, c.IDKeyFile)
+	if err != nil {
+		return err
+	}
+	log15.Debug("Sourcegraph server", "ID", idKey.ID)
+	// Uncomment to add ID key prefix to log messages.
+	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
+	var idKeyToken oauth2.TokenSource
+	if !fed.Config.IsRoot {
+		tokenURL := fed.Config.RootURL().ResolveReference(app_router.Rel.URLTo(app_router.OAuth2ServerToken))
+		idKeyToken = idKey.TokenSource(context.Background(), tokenURL.String())
+	}
+
+	sharedCtxFuncs = append(sharedCtxFuncs, func(ctx context.Context) context.Context {
+		if !fed.Config.IsRoot {
+			ctx = sourcegraph.WithCredentials(ctx, idKeyToken)
+		}
+		ctx = idkey.NewContext(ctx, idKey)
+		return ctx
+	})
+	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
+		return oauth2client.WithClientID(ctx, idKey.ID)
+	})
+	sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
+	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
+		return sourcegraph.WithCredentials(ctx, sharedSecretToken)
+	})
 
 	if fed.Config.IsRoot {
 		// Listen for events and flush them to elasticsearch
