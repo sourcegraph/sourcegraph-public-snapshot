@@ -28,6 +28,8 @@ func (s *RepoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 	var conf sourcegraph.RepoConfig
 	if err := storage.GetJSON(sys, repoConfigsBucket, repoConfigsKey, &conf); err != nil {
 		if os.IsNotExist(err) {
+			// By default, all repos are enabled on the fs backend.
+			conf.Enabled = true
 			return &conf, nil
 		}
 		return nil, err
