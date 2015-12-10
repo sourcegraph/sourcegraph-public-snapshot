@@ -103,7 +103,7 @@ func (s *platformStore) key() sourcegraph.StorageKey {
 			AppName: "core.serve",
 			Name:    "auth",
 		},
-		Key: "idkey",
+		Key: "id.pem",
 	}
 }
 
