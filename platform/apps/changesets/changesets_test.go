@@ -499,49 +499,6 @@ func TestChangesets_Update(t *testing.T) {
 	// TODO(slimsag): test invalid changes to e.g. Merged and Author.
 }
 
-// TestChangesets_Merge tests that creating a changeset and then merging it
-// works.
-func TestChangesets_Merge(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
-	// Create a new test suite.
-	ts, err := newTestSuite(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer ts.close()
-
-	// Create a basic changeset.
-	cs, err := ts.createBasicChangeset()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Merge the changeset.
-	event, err := ts.server.Client.Changesets.Merge(ts.ctx, &sourcegraph.ChangesetMergeOp{
-		Repo:    basicRepo,
-		ID:      cs.ID,
-		Message: "{{.ID}} {{.Title}} {{.Description}} {{.Author}} {{.DeltaSpec}} {{.Merged}} {{.CreatedAt}} {{.ClosedAt}}",
-	})
-
-	// TODO(slimsag): test Squash option.
-	// TODO(slimsag): verify merge actually worked.
-	// TODO(slimsag): verify commit message correctness.
-
-	// Confirm changeset event.
-	if err := ts.changesetEqual(event.Before, cs); err != nil {
-		t.Fatal(err)
-	}
-	wantCS := *cs
-	wantCS.Merged = true
-	wantCS.ClosedAt = &pbtypes.Timestamp{}
-	if err := ts.changesetEqual(event.After, &wantCS); err != nil {
-		t.Fatal(err)
-	}
-}
-
 // TestChangesets_CreateReview tests that creating a changeset and then
 // creating a review on it works.
 func TestChangesets_CreateReview(t *testing.T) {
