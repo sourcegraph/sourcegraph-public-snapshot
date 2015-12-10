@@ -21,6 +21,7 @@ var Stores = store.Stores{
 	Authorizations:    &Authorizations{},
 	BuildLogs:         &BuildLogs{},
 	Builds:            NewBuildStore(),
+	RepoConfigs:       &RepoConfigs{},
 	Password:          &Password{},
 	RegisteredClients: &RegisteredClients{},
 	RepoStatuses:      &RepoStatuses{},
