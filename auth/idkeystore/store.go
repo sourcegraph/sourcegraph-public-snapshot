@@ -5,17 +5,24 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // GenerateOrGetIDKey reads the server's ID key (or creates one on-demand)
-func GenerateOrGetIDKey(idKeyData string, idKeyFile string) (*idkey.IDKey, error) {
+func GenerateOrGetIDKey(ctx context.Context, idKeyData string, idKeyFile string) (*idkey.IDKey, error) {
 	stringStore := &stringStore{idKeyData}
 	fileStore := &fileStore{idKeyFile}
+	platformStore := &platformStore{ctx}
 
-	getStores := []idStoreGet{stringStore, fileStore}
+	getStores := []idStoreGet{stringStore, fileStore, platformStore}
 	for _, s := range getStores {
 		k, err := s.Get()
 		if k == nil {
@@ -30,7 +37,14 @@ func GenerateOrGetIDKey(idKeyData string, idKeyFile string) (*idkey.IDKey, error
 		return nil, err
 	}
 
-	err = fileStore.Put(k)
+	var p idStorePut
+	if idKeyFile == "" {
+		// If this is not specified, default to platformStore
+		p = platformStore
+	} else {
+		p = fileStore
+	}
+	err = p.Put(k)
 	return k, err
 }
 
@@ -54,6 +68,43 @@ func (s *stringStore) Get() (*idkey.IDKey, error) {
 	}
 	log15.Debug("Reading ID key from environment (or CLI flag).")
 	return idkey.FromString(s.IDKeyData)
+}
+
+type platformStore struct {
+	ctx context.Context
+}
+
+func (s *platformStore) Get() (*idkey.IDKey, error) {
+	key := s.key()
+	v, err := store.StorageFromContext(s.ctx).Get(s.ctx, &key)
+	if err != nil {
+		if grpc.Code(err) != codes.NotFound {
+			return nil, err
+		}
+	}
+	return idkey.New(v.Value)
+}
+
+func (s *platformStore) Put(k *idkey.IDKey) error {
+	data, err := k.MarshalText()
+	if err != nil {
+		return err
+	}
+	_, err = store.StorageFromContext(s.ctx).Put(s.ctx, &sourcegraph.StoragePutOp{
+		Key:   s.key(),
+		Value: data,
+	})
+	return err
+}
+
+func (s *platformStore) key() sourcegraph.StorageKey {
+	return sourcegraph.StorageKey{
+		Bucket: &sourcegraph.StorageBucket{
+			AppName: "core.serve",
+			Name:    "auth",
+		},
+		Key: "idkey",
+	}
 }
 
 type fileStore struct {

@@ -53,6 +53,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
+	"src.sourcegraph.com/sourcegraph/server/serverctx"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/ui"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
@@ -342,7 +343,11 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Server identity keypair
-	idKey, err := idkeystore.GenerateOrGetIDKey(c.IDKeyData, c.IDKeyFile)
+	idKeyCtx, err := serverContextWithStore(serverCtxFunc)
+	if err != nil {
+		return err
+	}
+	idKey, err := idkeystore.GenerateOrGetIDKey(idKeyCtx, c.IDKeyData, c.IDKeyFile)
 	if err != nil {
 		return err
 	}
@@ -1058,4 +1063,17 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc.SetKeepAlive(true)
 	tc.SetKeepAlivePeriod(3 * time.Minute)
 	return tc, nil
+}
+
+// serverContextWithStore generates a context like what is used in the service
+// layer. For use in server setup before the servers are up
+func serverContextWithStore(serverCtxFunc func(context.Context) context.Context) (ctx context.Context, err error) {
+	ctx = serverCtxFunc(context.Background())
+	for _, f := range serverctx.Funcs {
+		ctx, err = f(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ctx, nil
 }
