@@ -336,7 +336,7 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 }
 
 type userDeleteCmd struct {
-	Email string `long:"email" short:"e" description:"email address associated with account"`
+	Email string `long:"email" short:"e" description:"email address associated with user account"`
 	Login string `long:"login" short:"l" description:"login name of the user account"`
 	UID   int32  `long:"uid" short:"i" description:"UID of the user account"`
 }
