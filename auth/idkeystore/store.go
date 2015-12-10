@@ -90,7 +90,7 @@ func (s *platformStore) Put(k *idkey.IDKey) error {
 	if err != nil {
 		return err
 	}
-	_, err = store.StorageFromContext(s.ctx).Put(s.ctx, &sourcegraph.StoragePutOp{
+	_, err = store.StorageFromContext(s.ctx).PutNoOverwrite(s.ctx, &sourcegraph.StoragePutOp{
 		Key:   s.key(),
 		Value: data,
 	})
