@@ -5,7 +5,7 @@ title = "Reporting bugs"
 # Reporting Bugs
 
 If you find bugs or documentation mistakes in Sourcegraph, please let us know by
-[opening a thread](https://src.sourcegrap.com/sourcegraph/.tracker). We appreciate all
+[opening a thread](https://src.sourcegraph.com/sourcegraph/.tracker/new). We appreciate all
 bug reports, no matter how small.
 
 You can also open a thread while browsing through code; hover-over the left gutter
