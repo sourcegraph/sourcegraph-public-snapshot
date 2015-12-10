@@ -19,12 +19,14 @@ var _ store.RepoConfigs = (*RepoConfigs)(nil)
 
 const (
 	repoConfigsAppName = "core.repo-configs"
+	repoConfigsBucket  = "config"
+	repoConfigsKey     = "config.json"
 )
 
 func (s *RepoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
 	sys := storage.Namespace(ctx, repoConfigsAppName, repo)
 	var conf sourcegraph.RepoConfig
-	if err := storage.GetJSON(sys, "config", "config.json", &conf); err != nil {
+	if err := storage.GetJSON(sys, repoConfigsBucket, repoConfigsKey, &conf); err != nil {
 		if os.IsNotExist(err) {
 			return &conf, nil
 		}
@@ -35,5 +37,5 @@ func (s *RepoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 
 func (s *RepoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
 	sys := storage.Namespace(ctx, repoConfigsAppName, repo)
-	return storage.PutJSON(sys, "configs", "config.json", &conf)
+	return storage.PutJSON(sys, repoConfigsBucket, repoConfigsKey, &conf)
 }
