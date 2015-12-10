@@ -405,9 +405,9 @@ func (c *ServeCmd) Execute(args []string) error {
 		router.KeepContext = true
 		return router
 	}
-	sm.Handle("/.api/", httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/")))))
-	sm.Handle("/.ui/", ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI))
-	sm.Handle("/", app.NewHandlerWithCSRFProtection(app_router.New(newRouter())))
+	sm.Handle("/.api/", app.NewHandlerWithCSRFProtection(httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/"))))))
+	sm.Handle("/.ui/", app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI)))
+	sm.Handle("/", app.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter()))))
 
 	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {
 		return errors.New("HTTPS listen address (--https-addr) must be specified if TLS cert and key are set")

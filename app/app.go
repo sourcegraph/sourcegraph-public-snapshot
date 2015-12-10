@@ -36,8 +36,8 @@ import (
 // Example:
 // 	<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
 //
-func NewHandlerWithCSRFProtection(r *router.Router) http.Handler {
-	h := nosurf.New(NewHandler(r))
+func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
+	h := nosurf.New(handler)
 	// Prevent setting a different cookie for subpaths if someone
 	// directly visits a subpath.
 	h.SetBaseCookie(http.Cookie{
