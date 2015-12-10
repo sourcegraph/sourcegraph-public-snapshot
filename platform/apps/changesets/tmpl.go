@@ -3,10 +3,10 @@ package changesets
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"text/template"
 
 	"golang.org/x/net/context"
 
