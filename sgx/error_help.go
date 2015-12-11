@@ -15,16 +15,20 @@ func printErrorHelp(err error) {
 	// authentication or connectivity issues.
 	code := grpc.Code(err)
 	if code == codes.Unauthenticated {
-		log.Println(`
+		endpoint := Endpoint.URL
+		if endpoint == "" {
+			endpoint = "<url-to-sourcegraph-server>"
+		}
+		log.Printf(`
 ================================================================================
 ======== Your 'src' client is not authenticated with the remote server. ========
 ================================================================================
 
 To authenticate with the server, run:
 
-  src --endpoint=<url-to-sourcegraph-server> login
+  src --endpoint=%s login
 
-`)
+`, endpoint)
 	} else if code == codes.Unknown && strings.Contains(err.Error(), "grpc: the client connection is closing") {
 		// TODO(slimsag): determine why the error code for the above Unknown
 		// instead of something more concrete that we can rely on (instead of a
