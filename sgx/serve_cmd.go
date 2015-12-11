@@ -461,6 +461,12 @@ func (c *ServeCmd) Execute(args []string) error {
 		if err := c.authenticateCLIContext(idKey); err != nil {
 			return err
 		}
+	}
+
+	// Start background workers that rely on gRPC services. These have a delayed
+	// start (just long enough for the gRPC server to start).
+	postGRPC := func() {
+		time.Sleep(500 * time.Millisecond)
 
 		// Start background repo updater worker.
 		app.RepoUpdater.Start(cliCtx)
@@ -489,6 +495,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Debug("gRPC API running", "on", addr, "TLS", tls)
 		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
 		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
+		postGRPC()
 
 		go func() {
 			if err := lmux.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
