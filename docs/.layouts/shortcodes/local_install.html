@@ -1,13 +1,16 @@
-<h3>First, select your operating system:</h3>
 <div class="row">
-	<div class="col-md-3">
-		<select class="form-control" onchange="refreshInstructions()" id="os-selector">
-		  <option disabled selected>-- select an option --</option>
-		  <option value="mac">Mac OS X</option>
-		  <option value="ubuntu">Ubuntu</option>
-		  <option value="centos">CentOS</option>
-		  <option value="redhat">RedHat</option>
-		</select>
+	<div class="col-md-6">
+		<form class="form-inline">
+			<label for="os-selector">Choose your operating system:</label>
+			<select class="form-control" onchange="refreshInstructions()" id="os-selector" name="os-selector">
+			  <option disabled selected>-- select an option --</option>
+			  <option value="mac">Mac OS X (10.8+)</option>
+			  <option value="ubuntu">Ubuntu (12.04 & 14.04)</option>
+			  <option value="centos">CentOS (6.3)</option>
+			  <option value="redhat">RedHat (7.1)</option>
+			  <option value="source">from source code</option>
+			</select>
+		</form>
 	</div>
 </div>
 
@@ -19,42 +22,38 @@ var installURL = "https://sourcegraph.com/.download/install.sh";
 var curlInstall = "<code>curl -sSL " + installURL + " | bash</code>";
 var wgetInstall = "<code>wget -O - " + installURL + " | bash</code>";
 
-var macBinaryDownload =
-	"<a href=\"https://sourcegraph.com/.download/latest/darwin-amd64/src.gz\">Download a gzipped static binary for Mac OS X</a>";
-var debFileDownload =
-	"Download <a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.gz\">src.deb (64-bit)</a> and install with <code>sudo dpkg -i src.deb</code>";
-var rpmFileDownload =
-	"Download <a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.gz\">src.rpm (64-bit)</a> and install with <code>sudo yum -y src.rpm</code>" ;
+var macBinary =
+	"<strong><a href=\"https://sourcegraph.com/.download/latest/darwin-amd64/src.gz\">src.gz</a></strong>";
+var linuxBinary =
+	"<strong><a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.gz\">src.gz</a></strong>";
+var debFile =
+	"<strong><a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.deb\">src.deb (64-bit)</a></strong>";
+var rpmFile =
+	"<strong><a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.rpm\">src.rpm (64-bit)</a></strong>";
 
-var linuxConfiguration = "<p>Linux installations will create a configuration file at <code>/etc/sourcegraph/config.ini</code>\
-and an upstart script to run your Sourcegraph server.</p>";
-
-var openingLine = function(osVersion) {
-	return "<p>Sourcegraph is supported on " + osVersion + ". Install using one of the following methods:</p>";
-}
-
-var installOptionsList = function() {
-	var str = "<ul>";
-	for (var i = 0; i < arguments.length; i++) {
-		str += "<li>";
-		str += arguments[i];
-		str += "</li>";
+var runSrcServe = function(linux) {
+	var str = "<h2>Run a local Sourcegraph server</h2><p><pre>src serve</pre></p>";
+	if (linux) {
+		str += "<p>Or, if you installed using the <code>.deb</code> or <code>.rpm</code> and have upstart installed...</p><p><pre>sudo restart src</pre></p>";
 	}
-	str += "</ul>";
 	return str;
 }
 
-var macInstructions = openingLine("OS X 10.8+") + installOptionsList(curlInstall, macBinaryDownload) +
-	"<p>Next, run <code>src serve</code> and visit <a>http://localhost:3080</a>.";
+var visitLocalhost =
+	"<h2>Visit <a href=\"http://localhost:3080\">http://localhost:3080</a> to create an admin account</h2>" +
+	"<p>And make sure everything is working</p>";
 
-var ubuntuInstructions = openingLine("Ubuntu 12.04 & 14.04") + installOptionsList(wgetInstall, debFileDownload) + linuxConfiguration +
-	"<p>When done, run <code>sudo restart src</code> and visit <a>http://localhost:3080</a> (or an alternate address, if you modified the configuration).";
+var installOptions = function() {
+	return "<p><pre>" + arguments[0] + "</pre></p><p>Or, direct downloads: " + arguments[1] + "</p>";
+}
 
-var centosInstructions = openingLine("CentOS 6.3") + installOptionsList(curlInstall, rpmFileDownload) + linuxConfiguration +
-	"<p>When done, run <code>src serve</code> and visit <a>http://localhost:3080</a> (or an alternate address, if you modified the configuration).";
+var macInstructions = installOptions(curlInstall, macBinary) + runSrcServe(false) + visitLocalhost;
 
-var redhatInstructions = openingLine("RedHat 7.1") + installOptionsList(curlInstall, rpmFileDownload) + linuxConfiguration +
-	"<p>When done, run <code>src serve</code> and visit <a>http://localhost:3080</a> (or an alternate address, if you modified the configuration).";
+var ubuntuInstructions = installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(true) + visitLocalhost;
+
+var centosInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(true) + visitLocalhost;
+
+var redhatInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(true) + visitLocalhost;
 
 var instructions = function(os) {
 	if (os == "mac") {
@@ -68,6 +67,9 @@ var instructions = function(os) {
 	}
 	if (os == "redhat") {
 		return redhatInstructions;
+	}
+	if (os == "source") {
+		return "<p>Follow the <strong><a href=\"https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md\">developer README</a></strong>.</p>";
 	}
 	return "";
 }

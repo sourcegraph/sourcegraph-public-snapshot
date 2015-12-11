@@ -8,7 +8,9 @@ Sourcegraph in an all-in-one binary (`src`) which includes:
 - a Sourcegraph server with a Web app and Git server
 - a command line interface
 
-# Instructions
+*You must separately install **Code Intelligence** to enable Sourcegraph's advanced features.*
+
+## Install Sourcegraph
 
 {{< local_install >}}
 
