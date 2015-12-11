@@ -16,8 +16,6 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 
-	"golang.org/x/oauth2"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -271,7 +269,7 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 	}
 
 	// Authenticate future requests.
-	cliCtx = sourcegraph.WithCredentials(cliCtx, oauth2.ReuseTokenSource(tok, src))
+	cliCtx = sourcegraph.WithCredentials(cliCtx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
 }
 

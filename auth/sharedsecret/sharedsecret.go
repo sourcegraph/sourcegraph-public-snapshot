@@ -5,6 +5,7 @@
 package sharedsecret
 
 import (
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -61,6 +62,83 @@ func (ts *shortTokenSource) Token() (*oauth2.Token, error) {
 	return accesstoken.NewSelfSigned(ts.k, ts.scope, map[string]string{"GrantType": "ShortSharedSecret"}, expiry)
 }
 
+// defensiveReuseTokenSource is a oauth2.TokenSource that holds a single token in memory
+// and validates its expiry before each call to retrieve it with Token.
+// If it's going to expire in less than defensiveExpiry, it will be auto-refreshed
+// using the new TokenSource. It is based on oauth2.reuseTokenSource, except that
+// it is more defensive in refreshing the access token.
+type defensiveReuseTokenSource struct {
+	new oauth2.TokenSource // called when t is going to expire soon.
+
+	mu sync.Mutex // guards t
+	t  *oauth2.Token
+}
+
+// Token returns the current token if it's still valid for defensiveExpiry duration,
+// else will refresh the current token (using r.Context for HTTP client information)
+// and return the new one.
+func (s *defensiveReuseTokenSource) Token() (*oauth2.Token, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.Valid() {
+		return s.t, nil
+	}
+	t, err := s.new.Token()
+	if err != nil {
+		return nil, err
+	}
+	s.t = t
+	return t, nil
+}
+
+// Valid reports whether s.t is non-nil, has an AccessToken, and is not
+// set to expire within defensiveExpiry time.
+func (s *defensiveReuseTokenSource) Valid() bool {
+	if s.t == nil || s.t.AccessToken == "" || s.t.Expiry.IsZero() {
+		return false
+	}
+	return s.t.Expiry.Add(-defensiveExpiry).Before(time.Now())
+}
+
+// DefensiveReuseTokenSource returns a TokenSource which repeatedly returns
+// the same token as long as it's valid, starting with t. It is based on
+// oauth2.ReuseTokenSource, with the only difference that it defensively
+// generates a new token if the current token's expiry is less than
+// defensiveExpiry into the future.
+//
+// DefensiveReuseTokenSource is typically used when the token must be passed
+// to a forked subprocess that cannot refresh the token, thus guaranteeing that
+// the subprocess will have a token that is valid for at least defensiveExpiry
+// duration.
+func DefensiveReuseTokenSource(t *oauth2.Token, src oauth2.TokenSource) oauth2.TokenSource {
+	// Don't wrap a defensiveReuseTokenSource in itself. That would work,
+	// but cause an unnecessary number of mutex operations.
+	// Just build the equivalent one.
+	if rt, ok := src.(*defensiveReuseTokenSource); ok {
+		if t == nil {
+			// Just use it directly.
+			return rt
+		}
+		src = rt.new
+	}
+	return &defensiveReuseTokenSource{
+		t:   t,
+		new: src,
+	}
+}
+
+// defensiveExpiry must be less than expiry (below), otherwise
+// DefensiveReuseTokenSource will generate a new token every time.
+//
+// This also must be long enough for any single subprocess CLI
+// operation to complete; for example, the worker runs "src"
+// subprocesses (such as for importing srclib data) and passes the
+// access token to them, and the token must be valid for the entire
+// duration of the operation (which could be 10+ minutes for large
+// imports).
+const defensiveExpiry = 60 * time.Minute
+
 // expiry must be greater than golang.org/x/oauth2's expiryDelta,
 // which currently is 10 seconds. Otherwise tokens will be considered
 // invalid immediately when they are issued.
@@ -71,7 +149,7 @@ func (ts *shortTokenSource) Token() (*oauth2.Token, error) {
 // access token to them, and the token must be valid for the entire
 // duration of the operation (which could be 10+ minutes for large
 // imports).
-const expiry = 60 * time.Minute
+const expiry = 3 * 60 * time.Minute
 
 // NewContext returns a copy of ctx that uses a shared secret
 // TokenSource as API credentials to authenticate future calls.

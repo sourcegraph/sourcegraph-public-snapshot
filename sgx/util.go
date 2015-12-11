@@ -11,6 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
@@ -21,6 +22,19 @@ func cmdWithClientArgs(args ...string) *exec.Cmd {
 	endpointArgs, err := flagutil.MarshalArgs(&Endpoint)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Refresh the global access token if it is set to expire soon.
+	// The token source for cliCtx is set in serve_cmd.go to be
+	// a sharedsecret.DefensiveTokenSource, which will update its
+	// access token if it is going to expire soon.
+	defensiveTokenSource := sourcegraph.CredentialsFromContext(cliCtx)
+	if defensiveTokenSource != nil {
+		// This will update the global token source (i.e. the Credentials object).
+		_, err := defensiveTokenSource.Token()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	credsArgs, err := flagutil.MarshalArgs(&Credentials)

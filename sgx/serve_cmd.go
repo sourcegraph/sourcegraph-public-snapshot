@@ -666,7 +666,7 @@ func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
 		return err
 	}
 
-	cliCtx = sourcegraph.WithCredentials(cliCtx, oauth2.ReuseTokenSource(tok, src))
+	cliCtx = sourcegraph.WithCredentials(cliCtx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
 }
 
