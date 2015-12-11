@@ -1,19 +1,19 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import CodeFileContainer from "./CodeFileContainer";
-import CodeStore from "./CodeStore";
-import DefStore from "../def/DefStore";
-import * as CodeActions from "./CodeActions";
-import * as DefActions from "../def/DefActions";
-import Dispatcher from "../Dispatcher";
+import CodeFileContainer from "sourcegraph/code/CodeFileContainer";
+import CodeStore from "sourcegraph/code/CodeStore";
+import DefStore from "sourcegraph/def/DefStore";
+import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as DefActions from "sourcegraph/def/DefActions";
+import Dispatcher from "sourcegraph/Dispatcher";
 
-import testdataUnavailableFile from "./testdata/CodeFileContainer-unavailableFile.json";
-import testdataUnavailableDefinition from "./testdata/CodeFileContainer-unavailableDefinition.json";
-import testdataAvailableDefinition from "./testdata/CodeFileContainer-availableDefinition.json";
-import testdataFileFromDef from "./testdata/CodeFileContainer-fileFromDef.json";
-import testdataDefOptions from "./testdata/CodeFileContainer-defOptions.json";
+import testdataUnavailableFile from "sourcegraph/code/testdata/CodeFileContainer-unavailableFile.json";
+import testdataUnavailableDefinition from "sourcegraph/code/testdata/CodeFileContainer-unavailableDefinition.json";
+import testdataAvailableDefinition from "sourcegraph/code/testdata/CodeFileContainer-availableDefinition.json";
+import testdataFileFromDef from "sourcegraph/code/testdata/CodeFileContainer-fileFromDef.json";
+import testdataDefOptions from "sourcegraph/code/testdata/CodeFileContainer-defOptions.json";
 
 describe("CodeFileContainer", () => {
 	let exampleFile = {

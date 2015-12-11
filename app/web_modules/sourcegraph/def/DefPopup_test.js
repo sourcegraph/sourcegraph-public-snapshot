@@ -1,11 +1,11 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import DefPopup from "./DefPopup";
+import DefPopup from "sourcegraph/def/DefPopup";
 
-import testdataData from "./testdata/DefPopup-data.json";
-import testdataNotAvailable from "./testdata/DefPopup-notAvailable.json";
+import testdataData from "sourcegraph/def/testdata/DefPopup-data.json";
+import testdataNotAvailable from "sourcegraph/def/testdata/DefPopup-notAvailable.json";
 
 describe("DefPopup", () => {
 	it("should render definition data", () => {

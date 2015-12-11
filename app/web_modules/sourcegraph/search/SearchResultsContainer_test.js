@@ -1,14 +1,14 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import SearchResultsContainer from "./SearchResultsContainer";
-import SearchResultsStore from "./SearchResultsStore";
-import * as SearchActions from "./SearchActions";
-import Dispatcher from "../Dispatcher";
+import SearchResultsContainer from "sourcegraph/search/SearchResultsContainer";
+import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
+import * as SearchActions from "sourcegraph/search/SearchActions";
+import Dispatcher from "sourcegraph/Dispatcher";
 
-import testdataUnfetched from "./testdata/SearchResultsContainer-unfetched.json";
-import testdataFetched from "./testdata/SearchResultsContainer-fetched.json";
+import testdataUnfetched from "sourcegraph/search/testdata/SearchResultsContainer-unfetched.json";
+import testdataFetched from "sourcegraph/search/testdata/SearchResultsContainer-fetched.json";
 
 describe("SearchResultsContainer", () => {
 	it("should handle unfetched results", () => {

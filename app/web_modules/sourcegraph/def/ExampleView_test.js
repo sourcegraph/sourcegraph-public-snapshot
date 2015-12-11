@@ -1,12 +1,12 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import ExampleView from "./ExampleView";
+import ExampleView from "sourcegraph/def/ExampleView";
 
-import testdataInitial from "./testdata/ExampleView-initial.json";
-import testdataAvailable from "./testdata/ExampleView-available.json";
-import testdataNoExamples from "./testdata/ExampleView-noExamples.json";
+import testdataInitial from "sourcegraph/def/testdata/ExampleView-initial.json";
+import testdataAvailable from "sourcegraph/def/testdata/ExampleView-available.json";
+import testdataNoExamples from "sourcegraph/def/testdata/ExampleView-noExamples.json";
 
 describe("ExampleView", () => {
 	it("should initially render empty and want example", () => {

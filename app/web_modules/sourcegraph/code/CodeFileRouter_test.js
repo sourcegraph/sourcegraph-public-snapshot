@@ -1,20 +1,20 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 import expect from "expect.js";
 
 import React from "react";
 import TestUtils from "react-addons-test-utils";
 
-import Dispatcher from "../Dispatcher";
-import CodeFileRouter from "./CodeFileRouter";
-import * as CodeActions from "./CodeActions";
-import * as DefActions from "../def/DefActions";
-import {GoTo} from "../util/hotLink";
+import Dispatcher from "sourcegraph/Dispatcher";
+import CodeFileRouter from "sourcegraph/code/CodeFileRouter";
+import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as DefActions from "sourcegraph/def/DefActions";
+import {GoTo} from "sourcegraph/util/hotLink";
 
-import testdataFile from "./testdata/CodeFileRouter-file.json";
-import testdataDotfile from "./testdata/CodeFileRouter-dotfile.json";
-import testdataLineSelection from "./testdata/CodeFileRouter-lineSelection.json";
-import testdataDefSelection from "./testdata/CodeFileRouter-defSelection.json";
-import testdataDefinition from "./testdata/CodeFileRouter-definition.json";
+import testdataFile from "sourcegraph/code/testdata/CodeFileRouter-file.json";
+import testdataDotfile from "sourcegraph/code/testdata/CodeFileRouter-dotfile.json";
+import testdataLineSelection from "sourcegraph/code/testdata/CodeFileRouter-lineSelection.json";
+import testdataDefSelection from "sourcegraph/code/testdata/CodeFileRouter-defSelection.json";
+import testdataDefinition from "sourcegraph/code/testdata/CodeFileRouter-definition.json";
 
 describe("CodeFileRouter", () => {
 	it("should handle file URLs", () => {

@@ -1,4 +1,4 @@
-import Dispatcher from "../Dispatcher";
+import Dispatcher from "sourcegraph/Dispatcher";
 
 export class GoTo {
 	constructor(url) {

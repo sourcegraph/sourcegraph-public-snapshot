@@ -1,10 +1,10 @@
 import React from "react";
 import URI from "urijs";
 
-import Component from "../Component";
-import Dispatcher from "../Dispatcher";
-import * as SearchActions from "./SearchActions";
-import SearchResultsContainer from "./SearchResultsContainer";
+import Component from "sourcegraph/Component";
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as SearchActions from "sourcegraph/search/SearchActions";
+import SearchResultsContainer from "sourcegraph/search/SearchResultsContainer";
 
 class SearchResultsRouter extends Component {
 	componentDidMount() {

@@ -1,8 +1,8 @@
 import {Store} from "flux/utils";
 
-import Dispatcher from "../Dispatcher";
-import deepFreeze from "../util/deepFreeze";
-import * as CodeActions from "./CodeActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import deepFreeze from "sourcegraph/util/deepFreeze";
+import * as CodeActions from "sourcegraph/code/CodeActions";
 
 function keyFor(repo, rev, tree) {
 	return `${repo}#${rev}#${tree}`;

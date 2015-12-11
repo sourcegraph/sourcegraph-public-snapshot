@@ -1,13 +1,13 @@
 import React from "react";
 import URI from "urijs";
 
-import Component from "../Component";
-import Dispatcher from "../Dispatcher";
-import CodeFileContainer from "./CodeFileContainer";
-import DefStore from "../def/DefStore";
-import * as CodeActions from "./CodeActions";
-import * as DefActions from "../def/DefActions";
-import {GoTo} from "../util/hotLink";
+import Component from "sourcegraph/Component";
+import Dispatcher from "sourcegraph/Dispatcher";
+import CodeFileContainer from "sourcegraph/code/CodeFileContainer";
+import DefStore from "sourcegraph/def/DefStore";
+import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as DefActions from "sourcegraph/def/DefActions";
+import {GoTo} from "sourcegraph/util/hotLink";
 
 // All data from window.location gets processed here and is then passed down
 // to sub-components via props. Every time window.location changes, this

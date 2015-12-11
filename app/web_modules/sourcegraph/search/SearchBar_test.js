@@ -1,10 +1,10 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 import React from "react";
 
-import SearchBar from "./SearchBar";
+import SearchBar from "sourcegraph/search/SearchBar";
 
-import testdataRepo from "./testdata/SearchBar-repo.json";
-import testdataSearchView from "./testdata/SearchBar-searchView.json";
+import testdataRepo from "sourcegraph/search/testdata/SearchBar-repo.json";
+import testdataSearchView from "sourcegraph/search/testdata/SearchBar-searchView.json";
 
 describe("SearchBar", () => {
 	it("should render inside a repo", () => {

@@ -1,8 +1,8 @@
 import {Store} from "flux/utils";
 
-import Dispatcher from "../Dispatcher";
-import deepFreeze from "../util/deepFreeze";
-import * as SearchActions from "./SearchActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import deepFreeze from "sourcegraph/util/deepFreeze";
+import * as SearchActions from "sourcegraph/search/SearchActions";
 
 function keyFor(repo, rev, query, type, page) {
 	return `${repo}#${rev}#${query}#${type}#${page}`;

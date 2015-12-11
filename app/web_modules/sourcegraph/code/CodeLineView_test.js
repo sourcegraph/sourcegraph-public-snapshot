@@ -1,13 +1,13 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import CodeLineView from "./CodeLineView";
+import CodeLineView from "sourcegraph/code/CodeLineView";
 
-import testdataTokens from "./testdata/CodeLineView-tokens.json";
-import testdataEmpty from "./testdata/CodeLineView-empty.json";
-import testdataLineNumber from "./testdata/CodeLineView-lineNumber.json";
-import testdataLineSelection from "./testdata/CodeLineView-selection.json";
+import testdataTokens from "sourcegraph/code/testdata/CodeLineView-tokens.json";
+import testdataEmpty from "sourcegraph/code/testdata/CodeLineView-empty.json";
+import testdataLineNumber from "sourcegraph/code/testdata/CodeLineView-lineNumber.json";
+import testdataLineSelection from "sourcegraph/code/testdata/CodeLineView-selection.json";
 
 describe("CodeLineView", () => {
 	it("should render tokens", () => {

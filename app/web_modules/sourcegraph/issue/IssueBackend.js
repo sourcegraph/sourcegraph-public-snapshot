@@ -1,6 +1,6 @@
-import * as IssueActions from "./IssueActions";
-import Dispatcher from "../Dispatcher";
-import defaultXhr from "../util/xhr";
+import * as IssueActions from "sourcegraph/issue/IssueActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import defaultXhr from "sourcegraph/util/xhr";
 
 const IssueBackend = {
 	xhr: defaultXhr,

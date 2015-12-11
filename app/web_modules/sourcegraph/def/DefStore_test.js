@@ -1,8 +1,8 @@
 import expect from "expect.js";
 
-import Dispatcher from "../Dispatcher";
-import DefStore from "./DefStore";
-import * as DefActions from "./DefActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import DefStore from "sourcegraph/def/DefStore";
+import * as DefActions from "sourcegraph/def/DefActions";
 
 describe("DefStore", () => {
 	it("should handle DefFetched", () => {

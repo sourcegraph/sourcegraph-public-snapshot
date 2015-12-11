@@ -1,6 +1,6 @@
 import FluxStoreGroup from "flux/lib/FluxStoreGroup";
 
-import Component from "./Component";
+import Component from "sourcegraph/Component";
 
 class Container extends Component {
 	componentDidMount() {

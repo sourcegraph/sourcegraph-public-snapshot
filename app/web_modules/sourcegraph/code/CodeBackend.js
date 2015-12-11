@@ -1,6 +1,6 @@
-import * as CodeActions from "./CodeActions";
-import CodeStore from "./CodeStore";
-import Dispatcher from "../Dispatcher";
+import * as CodeActions from "sourcegraph/code/CodeActions";
+import CodeStore from "sourcegraph/code/CodeStore";
+import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "xhr";
 
 const CodeBackend = {

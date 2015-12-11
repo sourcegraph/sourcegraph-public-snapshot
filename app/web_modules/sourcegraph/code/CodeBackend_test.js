@@ -1,8 +1,8 @@
 import expect from "expect.js";
 
-import Dispatcher from "../Dispatcher";
-import CodeBackend from "./CodeBackend";
-import * as CodeActions from "./CodeActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import CodeBackend from "sourcegraph/code/CodeBackend";
+import * as CodeActions from "sourcegraph/code/CodeActions";
 
 describe("CodeBackend", () => {
 	it("should handle WantFile", () => {

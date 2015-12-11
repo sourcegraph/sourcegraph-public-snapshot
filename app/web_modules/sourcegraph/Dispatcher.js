@@ -1,7 +1,7 @@
 import flux from "flux";
 
-import deepFreeze from "./util/deepFreeze";
-import testOnly from "./util/testOnly";
+import deepFreeze from "sourcegraph/util/deepFreeze";
+import testOnly from "sourcegraph/util/testOnly";
 
 class Dispatcher extends flux.Dispatcher {
 	dispatch(payload) {

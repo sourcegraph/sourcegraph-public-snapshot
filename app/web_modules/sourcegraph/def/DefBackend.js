@@ -1,6 +1,6 @@
-import * as DefActions from "./DefActions";
-import DefStore from "./DefStore";
-import Dispatcher from "../Dispatcher";
+import * as DefActions from "sourcegraph/def/DefActions";
+import DefStore from "sourcegraph/def/DefStore";
+import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "xhr";
 
 const DefBackend = {

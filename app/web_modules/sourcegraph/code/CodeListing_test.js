@@ -1,12 +1,12 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import CodeListing from "./CodeListing";
+import CodeListing from "sourcegraph/code/CodeListing";
 
-import testdataLines from "./testdata/CodeListing-lines.json";
-import testdataNoLineNumbers from "./testdata/CodeListing-noLineNumbers.json";
-import testdataSelectionForm from "./testdata/CodeListing-selectionForm.json";
+import testdataLines from "sourcegraph/code/testdata/CodeListing-lines.json";
+import testdataNoLineNumbers from "sourcegraph/code/testdata/CodeListing-noLineNumbers.json";
+import testdataSelectionForm from "sourcegraph/code/testdata/CodeListing-selectionForm.json";
 
 describe("CodeListing", () => {
 	it("should render lines", () => {

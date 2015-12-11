@@ -1,10 +1,10 @@
 import React from "react";
 
-import Component from "../Component";
-import Dispatcher from "../Dispatcher";
-import * as DefActions from "./DefActions";
-import CodeListing from "../code/CodeListing";
-import hotLink from "../util/hotLink";
+import Component from "sourcegraph/Component";
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as DefActions from "sourcegraph/def/DefActions";
+import CodeListing from "sourcegraph/code/CodeListing";
+import hotLink from "sourcegraph/util/hotLink";
 
 class ExampleView extends Component {
 	reconcileState(state, props) {

@@ -2,9 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom";
 import URI from "urijs";
 
-import Component from "../Component";
-import LocationAdaptor from "../LocationAdaptor";
-import SearchResultsRouter from "./SearchResultsRouter";
+import Component from "sourcegraph/Component";
+import LocationAdaptor from "sourcegraph/LocationAdaptor";
+import SearchResultsRouter from "sourcegraph/search/SearchResultsRouter";
 
 class SearchBar extends Component {
 	constructor(props) {

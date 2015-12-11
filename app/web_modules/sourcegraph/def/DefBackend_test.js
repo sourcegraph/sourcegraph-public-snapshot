@@ -1,8 +1,8 @@
 import expect from "expect.js";
 
-import Dispatcher from "../Dispatcher";
-import DefBackend from "./DefBackend";
-import * as DefActions from "./DefActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import DefBackend from "sourcegraph/def/DefBackend";
+import * as DefActions from "sourcegraph/def/DefActions";
 
 describe("DefBackend", () => {
 	describe("should handle WantDef", () => {

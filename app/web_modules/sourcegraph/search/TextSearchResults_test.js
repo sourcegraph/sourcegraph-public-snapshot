@@ -1,11 +1,11 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import TextSearchResults from "./TextSearchResults";
+import TextSearchResults from "sourcegraph/search/TextSearchResults";
 
-import testdataNoResults from "./testdata/TextSearchResults-noResults.json";
-import testdataResults from "./testdata/TextSearchResults-results.json";
+import testdataNoResults from "sourcegraph/search/testdata/TextSearchResults-noResults.json";
+import testdataResults from "sourcegraph/search/testdata/TextSearchResults-results.json";
 
 describe("TextSearchResults", () => {
 	it("should render no results", () => {

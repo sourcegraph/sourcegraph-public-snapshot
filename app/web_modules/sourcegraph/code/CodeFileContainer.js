@@ -1,19 +1,19 @@
 import React from "react";
 
-import Container from "../Container";
-import Dispatcher from "../Dispatcher";
-import * as CodeActions from "./CodeActions";
-import * as DefActions from "../def/DefActions";
-import CodeStore from "./CodeStore";
-import DefStore from "../def/DefStore";
-import CodeListing from "./CodeListing";
-import DefPopup from "../def/DefPopup";
-import DefTooltip from "../def/DefTooltip";
-import IssueForm from "../issue/IssueForm";
+import Container from "sourcegraph/Container";
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as DefActions from "sourcegraph/def/DefActions";
+import CodeStore from "sourcegraph/code/CodeStore";
+import DefStore from "sourcegraph/def/DefStore";
+import CodeListing from "sourcegraph/code/CodeListing";
+import DefPopup from "sourcegraph/def/DefPopup";
+import DefTooltip from "sourcegraph/def/DefTooltip";
+import IssueForm from "sourcegraph/issue/IssueForm";
 import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
 import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
-import "./CodeBackend";
-import "../def/DefBackend";
+import "sourcegraph/code/CodeBackend";
+import "sourcegraph/def/DefBackend";
 
 function lineFromByte(file, byte) {
 	if (!file || !byte) { return null; }

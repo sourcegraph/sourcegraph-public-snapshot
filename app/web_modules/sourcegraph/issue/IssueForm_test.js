@@ -1,10 +1,10 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import IssueForm from "./IssueForm";
+import IssueForm from "sourcegraph/issue/IssueForm";
 
-import testdataForm from "./testdata/IssueForm-form.json";
+import testdataForm from "sourcegraph/issue/testdata/IssueForm-form.json";
 
 describe("IssueForm", () => {
 	it("should render form", () => {

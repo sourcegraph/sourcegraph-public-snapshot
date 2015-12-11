@@ -1,8 +1,8 @@
 import expect from "expect.js";
 
-import Dispatcher from "../Dispatcher";
-import SearchResultsStore from "./SearchResultsStore";
-import * as SearchActions from "./SearchActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
+import * as SearchActions from "sourcegraph/search/SearchActions";
 
 describe("SearchResultsStore", () => {
 	it("should handle ResultsFetched", () => {

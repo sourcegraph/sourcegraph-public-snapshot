@@ -1,4 +1,4 @@
-import Dispatcher from "../Dispatcher";
+import Dispatcher from "sourcegraph/Dispatcher";
 
 Dispatcher.register(function(action) {
 	if (window.localStorage["log-actions"] === "true") {

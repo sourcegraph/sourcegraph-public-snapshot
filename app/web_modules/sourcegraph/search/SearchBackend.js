@@ -1,6 +1,6 @@
-import * as SearchActions from "./SearchActions";
-import SearchResultsStore from "./SearchResultsStore";
-import Dispatcher from "../Dispatcher";
+import * as SearchActions from "sourcegraph/search/SearchActions";
+import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
+import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "xhr";
 
 const SearchBackend = {

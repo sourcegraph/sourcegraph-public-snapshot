@@ -1,14 +1,14 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 import expect from "expect.js";
 
 import React from "react";
 import TestUtils from "react-addons-test-utils";
 
-import Dispatcher from "../Dispatcher";
-import SearchResultsRouter from "./SearchResultsRouter";
-import * as SearchActions from "./SearchActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import SearchResultsRouter from "sourcegraph/search/SearchResultsRouter";
+import * as SearchActions from "sourcegraph/search/SearchActions";
 
-import testdataSearch from "./testdata/SearchResultsRouter-search.json";
+import testdataSearch from "sourcegraph/search/testdata/SearchResultsRouter-search.json";
 
 describe("SearchResultsRouter", () => {
 	it("should handle search URLs", () => {

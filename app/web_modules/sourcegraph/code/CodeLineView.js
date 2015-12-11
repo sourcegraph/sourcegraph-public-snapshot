@@ -1,9 +1,9 @@
 import React from "react";
 
-import Component from "../Component";
-import Dispatcher from "../Dispatcher";
-import * as CodeActions from "./CodeActions";
-import * as DefActions from "../def/DefActions";
+import Component from "sourcegraph/Component";
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as DefActions from "sourcegraph/def/DefActions";
 
 class CodeLineView extends Component {
 	reconcileState(state, props) {

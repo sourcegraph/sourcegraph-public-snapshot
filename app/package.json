@@ -61,10 +61,10 @@
   "scripts": {
     "start": "node ./node_modules/.bin/webpack-dev-server --devtool cheap-module-source-map",
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
-    "test": "find script web_modules -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill",
-    "test-new": "find web_modules -name '*_test.js' | xargs ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill",
+    "test": "find script web_modules -name '*_test.js' | env NODE_PATH=web_modules xargs ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill",
+    "test-new": "find web_modules -name '*_test.js' | env NODE_PATH=web_modules xargs ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill",
     "dep": "npm rebuild node-sass",
-    "graph": "mkdir -p artifacts/; ./node_modules/.bin/babel --no-babelrc --presets react --out-dir artifacts/compiled/ web_modules/; ./node_modules/.bin/madge artifacts/compiled/ -f es6 -i artifacts/app-graph.png -x 'node_modules|_test|util|Dispatcher|Actions|Component'; rm -r artifacts/compiled/"
+    "graph": "mkdir -p artifacts/; ./node_modules/.bin/babel --no-babelrc --presets react --out-dir artifacts/compiled/ web_modules/; ./node_modules/.bin/madge artifacts/compiled/ -p artifacts/compiled/ -f es6 -i artifacts/app-graph.png -x 'node_modules|_test|util|Dispatcher|Actions|Component'; rm -r artifacts/compiled/"
   },
   "browser": {
     "fs": false,

@@ -1,12 +1,12 @@
-import autotest from "./autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import Pagination from "./Pagination";
+import Pagination from "sourcegraph/util/Pagination";
 
-import testdataPageLinks from "./testdata/Pagination-pageLinks.json";
-import testdataBounded from "./testdata/Pagination-bounded.json";
-import testdataBoundedLastPage from "./testdata/Pagination-boundedLastPage.json";
+import testdataPageLinks from "sourcegraph/util/testdata/Pagination-pageLinks.json";
+import testdataBounded from "sourcegraph/util/testdata/Pagination-bounded.json";
+import testdataBoundedLastPage from "sourcegraph/util/testdata/Pagination-boundedLastPage.json";
 
 describe("Pagination", () => {
 	it("displays the correct number of page links", () => {

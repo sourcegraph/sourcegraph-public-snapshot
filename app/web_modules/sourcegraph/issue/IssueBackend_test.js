@@ -1,8 +1,8 @@
 import expect from "expect.js";
 
-import Dispatcher from "../Dispatcher";
-import IssueBackend from "./IssueBackend";
-import * as IssueActions from "./IssueActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import IssueBackend from "sourcegraph/issue/IssueBackend";
+import * as IssueActions from "sourcegraph/issue/IssueActions";
 
 describe("IssueBackend", () => {
 	it("should handle IssueCreate", () => {

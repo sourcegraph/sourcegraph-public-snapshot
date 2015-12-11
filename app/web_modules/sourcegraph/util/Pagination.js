@@ -1,6 +1,6 @@
 import React from "react";
 
-import Component from "../Component";
+import Component from "sourcegraph/Component";
 
 class Pagination extends Component {
 	constructor(props) {

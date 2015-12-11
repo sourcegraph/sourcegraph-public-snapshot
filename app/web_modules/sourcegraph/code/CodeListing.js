@@ -1,7 +1,7 @@
 import React from "react";
 
-import Component from "../Component";
-import CodeLineView from "./CodeLineView";
+import Component from "sourcegraph/Component";
+import CodeLineView from "sourcegraph/code/CodeLineView";
 
 import classNames from "classnames";
 

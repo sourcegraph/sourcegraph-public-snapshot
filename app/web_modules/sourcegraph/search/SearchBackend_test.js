@@ -1,8 +1,8 @@
 import expect from "expect.js";
 
-import Dispatcher from "../Dispatcher";
-import SearchBackend from "./SearchBackend";
-import * as SearchActions from "./SearchActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import SearchBackend from "sourcegraph/search/SearchBackend";
+import * as SearchActions from "sourcegraph/search/SearchActions";
 
 describe("SearchBackend", () => {
 	it("should handle WantResults", () => {

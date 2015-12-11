@@ -1,8 +1,8 @@
 import expect from "expect.js";
 
-import Dispatcher from "../Dispatcher";
-import CodeStore from "./CodeStore";
-import * as CodeActions from "./CodeActions";
+import Dispatcher from "sourcegraph/Dispatcher";
+import CodeStore from "sourcegraph/code/CodeStore";
+import * as CodeActions from "sourcegraph/code/CodeActions";
 
 describe("CodeStore", () => {
 	it("should handle FileFetched", () => {

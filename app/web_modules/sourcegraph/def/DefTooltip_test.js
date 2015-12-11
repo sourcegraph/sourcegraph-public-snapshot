@@ -1,10 +1,10 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import DefTooltip from "./DefTooltip";
+import DefTooltip from "sourcegraph/def/DefTooltip";
 
-import testdataData from "./testdata/DefTooltip-data.json";
+import testdataData from "sourcegraph/def/testdata/DefTooltip-data.json";
 
 describe("DefTooltip", () => {
 	it("should render definition data", () => {

@@ -1,6 +1,6 @@
 import React from "react";
 
-import Component from "../Component";
+import Component from "sourcegraph/Component";
 import CodeFileRange from "../../../script/components/CodeFileRange"; // FIXME
 import router from "../../../script/routing/router"; // FIXME
 

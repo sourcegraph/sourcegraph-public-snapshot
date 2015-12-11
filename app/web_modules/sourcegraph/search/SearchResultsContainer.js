@@ -1,12 +1,12 @@
 import React from "react";
 
-import Container from "../Container";
-import Dispatcher from "../Dispatcher";
-import Pagination from "../util/Pagination";
-import SearchResultsStore from "./SearchResultsStore";
-import * as SearchActions from "./SearchActions";
-import TokenSearchResults from "./TokenSearchResults";
-import TextSearchResults from "./TextSearchResults";
+import Container from "sourcegraph/Container";
+import Dispatcher from "sourcegraph/Dispatcher";
+import Pagination from "sourcegraph/util/Pagination";
+import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
+import * as SearchActions from "sourcegraph/search/SearchActions";
+import TokenSearchResults from "sourcegraph/search/TokenSearchResults";
+import TextSearchResults from "sourcegraph/search/TextSearchResults";
 import "./SearchBackend";
 
 class ResultType {

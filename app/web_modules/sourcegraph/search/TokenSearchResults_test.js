@@ -1,12 +1,12 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import TokenSearchResults from "./TokenSearchResults";
+import TokenSearchResults from "sourcegraph/search/TokenSearchResults";
 
-import testdataNoResults from "./testdata/TokenSearchResults-noResults.json";
-import testdataResults from "./testdata/TokenSearchResults-results.json";
-import testdataStaleResults from "./testdata/TokenSearchResults-staleResults.json";
+import testdataNoResults from "sourcegraph/search/testdata/TokenSearchResults-noResults.json";
+import testdataResults from "sourcegraph/search/testdata/TokenSearchResults-results.json";
+import testdataStaleResults from "sourcegraph/search/testdata/TokenSearchResults-staleResults.json";
 
 describe("TokenSearchResults", () => {
 	let exampleBuildInfo = {

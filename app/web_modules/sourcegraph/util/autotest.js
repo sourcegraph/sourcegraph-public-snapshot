@@ -1,7 +1,7 @@
 import TestUtils from "react-addons-test-utils";
 
-import mockTimeout from "./mockTimeout";
-import Dispatcher from "../Dispatcher";
+import mockTimeout from "sourcegraph/util/mockTimeout";
+import Dispatcher from "sourcegraph/Dispatcher";
 
 import fs from "fs";
 import child_process from "child_process";
