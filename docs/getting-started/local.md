@@ -10,26 +10,15 @@ Sourcegraph in an all-in-one binary (`src`) which includes:
 
 *You must separately install **Code Intelligence** to enable Sourcegraph's advanced features.*
 
-## Install Sourcegraph
+# Install Sourcegraph
 
 {{< local_install >}}
 
-## Add language support
+# Add language support
 
 Out-of-the box, Sourcegraph does not include Code Intelligence.
 [Follow these instructions]({{< relref "config/toolchains.md" >}}) to enable
 language support on your Sourcegraph server.
-
-## Add a git repository
-
-Run these commands from to push a repository to Sourcegraph after you've created an admin
-account on your Sourcegraph server:
-
-```
-src --endpoint=http://localhost:3080 login
-src repo create project
-git push http://localhost:3080/project master
-```
 
 # Next steps
 

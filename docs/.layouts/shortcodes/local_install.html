@@ -8,7 +8,7 @@
 			  <option value="ubuntu">Ubuntu (12.04 & 14.04)</option>
 			  <option value="centos">CentOS (6.3)</option>
 			  <option value="redhat">RedHat (7.1)</option>
-			  <option value="source">from source code</option>
+			  <option value="source">install from source</option>
 			</select>
 		</form>
 	</div>
@@ -51,28 +51,28 @@ var debFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src
 var rpmFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.rpm", "src.rpm (64-bit)"));
 
 
-var runSrcServe = function(linux) {
+var runSrcServe = function(linuxFile) {
 	var str = h2("Run a local Sourcegraph server") + p(precode("src serve"));
-	if (linux) {
-		str += p("Or, if you installed using the " + code(".deb") + " or " + code(".rpm") + " and have upstart installed...)");
+	if (linuxFile) {
+		str += p("Or, if you installed using the " + code(linuxFile) + " and have upstart installed...)");
 		str += p(precode("sudo restart src"));
 	}
 	return str;
 }
 
-var visitLocalhost = h2("Visit " + a("http://localhost:3080", "http://localhost:3080") + " to create an admin acccount");
+var visitLocalhost = h2("Visit " + a("http://localhost:3080", "http://localhost:3080") + " to create an admin acccount") + p("");
 
 var installOptions = function(installScript, downloadLinks) {
 	return p(precode(installScript) + "Direct downloads: " + downloadLinks);
 }
 
-var macInstructions = installOptions(curlInstall, macBinary) + runSrcServe(false) + visitLocalhost;
+var macInstructions = installOptions(curlInstall, macBinary) + runSrcServe() + visitLocalhost;
 
-var ubuntuInstructions = installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(true) + visitLocalhost;
+var ubuntuInstructions = installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(".deb") + visitLocalhost;
 
-var centosInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(true) + visitLocalhost;
+var centosInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
 
-var redhatInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(true) + visitLocalhost;
+var redhatInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
 
 var instructions = function(os) {
 	if (os == "mac") {
@@ -88,7 +88,7 @@ var instructions = function(os) {
 		return redhatInstructions;
 	}
 	if (os == "source") {
-		return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README.")));
+		return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README."))) + runSrcServe() + visitLocalhost;
 	}
 	return "";
 }
