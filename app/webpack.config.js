@@ -33,7 +33,7 @@ module.exports = {
 		sourcebox: "./script/sourcebox.js",
 		analytics: "./script/analytics.js",
 		_goTemplates: glob.sync("./templates/**/*.html"),
-		test: glob.sync("./script/new/**/*_test.js"),
+		test: glob.sync("./web_modules/sourcegraph/**/*_test.js"),
 	},
 	output: {
 		path: __dirname+"/assets",
@@ -84,9 +84,8 @@ module.exports = {
 	},
 
 	resolve: {
-		modulesDirectories: ["node_modules", "bower_components"],
+		modulesDirectories: ["web_modules", "node_modules", "bower_components"],
 		unsafeCache: true,
-		root: __dirname+"/node_modules",
 	},
 
 	plugins: plugins,

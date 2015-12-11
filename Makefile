@@ -193,7 +193,7 @@ compile-test:
 
 
 check: generate-dep
-	cd app && node ./node_modules/.bin/eslint --max-warnings=0 script
+	cd app && node ./node_modules/.bin/eslint --max-warnings=0 script node_modules
 	cd app && node ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
 	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines

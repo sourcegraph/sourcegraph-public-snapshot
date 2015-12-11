@@ -33,7 +33,7 @@ When displaying a component with data from the server, the following happens:
 
 Code style rules
 ----------------
-* Code from the `script/new` directory can not have dependencies to outside of this directory. To use old code, copy or move it into the `script/new` directory after making sure that it fits well.
+* Code from the `web_modules/sourcegraph` directory can not have dependencies to outside of this directory. To use old code, copy or move it into the `web_modules/sourcegraph` directory after making sure that it fits well.
 * Prefix private methods with an underscore. Those methods should only be called on `this`, e.g. `this._foo()`.
 * Use `null` instead of `undefined`. The goal is to keep `undefined` as an indicator of broken code.
 * Do not use jQuery, instead use ES6 functions (we have polyfills) and npm packages that have small scope.

@@ -51,4 +51,4 @@ require("./TwitterButton");
 
 require("../style/web.scss");
 
-require("./new/util/actionLogger");
+require("sourcegraph/util/actionLogger");

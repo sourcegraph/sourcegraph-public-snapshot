@@ -14,9 +14,9 @@ var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
 var CodeFileRange = require("./components/CodeFileRange");
-var CodeFileRouter = require("./new/code/CodeFileRouter").default;
-var LocationAdaptor = require("./new/LocationAdaptor").default;
-var SearchBar = require("./new/search/SearchBar").default;
+var CodeFileRouter = require("sourcegraph/code/CodeFileRouter").default;
+var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
+var SearchBar = require("sourcegraph/search/SearchBar").default;
 
 // Application-specific JS
 //

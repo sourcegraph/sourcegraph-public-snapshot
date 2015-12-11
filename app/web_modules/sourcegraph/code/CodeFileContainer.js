@@ -10,8 +10,8 @@ import CodeListing from "./CodeListing";
 import DefPopup from "../def/DefPopup";
 import DefTooltip from "../def/DefTooltip";
 import IssueForm from "../issue/IssueForm";
-import RepoBuildIndicator from "../../components/RepoBuildIndicator"; // FIXME
-import RepoRevSwitcher from "../../components/RepoRevSwitcher"; // FIXME
+import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
+import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
 import "./CodeBackend";
 import "../def/DefBackend";
 

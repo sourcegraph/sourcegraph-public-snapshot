@@ -1,7 +1,7 @@
 import React from "react";
 
 import Component from "../Component";
-import router from "../../routing/router"; // FIXME
+import router from "../../../script/routing/router"; // FIXME
 
 const helpDocURL = "https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/";
 

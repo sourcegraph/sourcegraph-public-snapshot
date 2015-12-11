@@ -1,8 +1,8 @@
 import React from "react";
 
 import Component from "../Component";
-import CodeFileRange from "../../components/CodeFileRange";
-import router from "../../routing/router"; // FIXME
+import CodeFileRange from "../../../script/components/CodeFileRange"; // FIXME
+import router from "../../../script/routing/router"; // FIXME
 
 class TextSearchResults extends Component {
 	reconcileState(state, props) {
