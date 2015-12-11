@@ -20,11 +20,9 @@ Sourcegraph in an all-in-one binary (`src`) which includes:
 
 # Invite teammates
 
-We provide [automated cloud installation]({{< relref "getting-started/cloud.md" >}})
-on AWS, DigitalOcean, and Google Cloud Platform so you can set up a team server in
-minutes.
+{{< cloud_cta >}} will deploy Sourcegraph on **AWS**, **DigitalOcean**, or **Google Cloud Platform** in minutes.
 
-You can also invite your teammates to your local Sourcegraph server if you're all on the same network!
+You can also invite teammates to a local Sourcegraph server if you're on the same network!
 
 #### 1. [Find your computer's local IP address](http://stackoverflow.com/questions/13322485/how-to-i-get-the-primary-ip-address-of-the-local-machine-on-linux-and-os-x).
 #### 2. Run `src serve --app.url=$LOCAL_IP_ADDRESS`
@@ -32,7 +30,5 @@ You can also invite your teammates to your local Sourcegraph server if you're al
 
 **Warning:** your local IP address may change and your teammates will no longer be able to
 access your server.
-
-[Use automated cloud installation to deploy Sourcegraph for your team in minutes.]({{< relref "getting-started/cloud.md" >}})
 
 {{< ads_conversion >}}
