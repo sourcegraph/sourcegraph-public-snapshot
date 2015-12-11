@@ -18,33 +18,52 @@
 <div id="instructions"></div>
 
 <script>
-var installURL = "https://sourcegraph.com/.download/install.sh";
-var curlInstall = "<code>curl -sSL " + installURL + " | bash</code>";
-var wgetInstall = "<code>wget -O - " + installURL + " | bash</code>";
+var tag = function(str, tagname) {
+	return "<" + tagname + ">" + str + "</" + tagname + ">";
+}
+var code = function(str) {
+	return tag(str, "code");
+}
+var p = function(str) {
+	return tag(str, "p");
+}
+var h2 = function(str) {
+	return tag(str, "h2");
+}
+var strong = function(str) {
+	return tag(str, "strong");
+}
+var precode = function(str) {
+	return tag(code(str), "pre");
+}
+var a = function(href, text) {
+	return "<a href=\"" + href + "\">" + text + "</a>";
+}
 
-var macBinary =
-	"<strong><a href=\"https://sourcegraph.com/.download/latest/darwin-amd64/src.gz\">src.gz</a></strong>";
-var linuxBinary =
-	"<strong><a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.gz\">src.gz</a></strong>";
-var debFile =
-	"<strong><a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.deb\">src.deb (64-bit)</a></strong>";
-var rpmFile =
-	"<strong><a href=\"https://sourcegraph.com/.download/latest/linux-amd64/src.rpm\">src.rpm (64-bit)</a></strong>";
+
+var installURL = "https://sourcegraph.com/.download/install.sh";
+var curlInstall = code("curl -sSL " + installURL + " | bash");
+var wgetInstall = code("wget -O - " + installURL + " | bash");
+
+var macBinary = strong(a("https://sourcegraph.com/.download/latest/darwin-amd64/src.gz", "src.gz"));
+var linuxBinary = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.gz", "src.gz"));
+var debFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.deb", "src.deb (64-bit)"));
+var rpmFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.rpm", "src.rpm (64-bit)"));
+
 
 var runSrcServe = function(linux) {
-	var str = "<h2>Run a local Sourcegraph server</h2><p><pre>src serve</pre></p>";
+	var str = h2("Run a local Sourcegraph server") + p(precode("src serve"));
 	if (linux) {
-		str += "<p>Or, if you installed using the <code>.deb</code> or <code>.rpm</code> and have upstart installed...</p><p><pre>sudo restart src</pre></p>";
+		str += p("Or, if you installed using the " + code(".deb") + " or " + code(".rpm") + " and have upstart installed...)");
+		str += p(precode("sudo restart src"));
 	}
 	return str;
 }
 
-var visitLocalhost =
-	"<h2>Visit <a href=\"http://localhost:3080\">http://localhost:3080</a> to create an admin account</h2>" +
-	"<p>And make sure everything is working</p>";
+var visitLocalhost = h2("Visit " + a("http://localhost:3080", "http://localhost:3080") + " to create an admin acccount");
 
-var installOptions = function() {
-	return "<p><pre>" + arguments[0] + "</pre></p><p>Or, direct downloads: " + arguments[1] + "</p>";
+var installOptions = function(installScript, downloadLinks) {
+	return p(precode(installScript) + "Direct downloads: " + downloadLinks);
 }
 
 var macInstructions = installOptions(curlInstall, macBinary) + runSrcServe(false) + visitLocalhost;
@@ -69,7 +88,7 @@ var instructions = function(os) {
 		return redhatInstructions;
 	}
 	if (os == "source") {
-		return "<p>Follow the <strong><a href=\"https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md\">developer README</a></strong>.</p>";
+		return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README.")));
 	}
 	return "";
 }
