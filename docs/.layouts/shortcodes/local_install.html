@@ -54,7 +54,7 @@ var rpmFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src
 var runSrcServe = function(linuxFile) {
 	var str = h2("Run a local Sourcegraph server") + p(precode("src serve"));
 	if (linuxFile) {
-		str += p("Or, if you installed using the " + code(linuxFile) + " and have upstart installed...)");
+		str += p("Or, if you installed using the " + code(linuxFile) + " and have upstart installed, your server will already be running:");
 		str += p(precode("sudo restart src"));
 	}
 	return str;
@@ -88,7 +88,7 @@ var instructions = function(os) {
 		return redhatInstructions;
 	}
 	if (os == "source") {
-		return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README."))) + runSrcServe() + visitLocalhost;
+		return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README."))) + p("Linux (64-bit) pre-compiled binary: " + linuxBinary) + runSrcServe() + visitLocalhost;
 	}
 	return "";
 }
