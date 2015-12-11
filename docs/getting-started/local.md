@@ -1,6 +1,6 @@
 +++
 title = "Installing Sourcegraph locally"
-linktitle = "Local install"
+linktitle = "on your desktop/laptop"
 +++
 
 Sourcegraph in an all-in-one binary (`src`) which includes:

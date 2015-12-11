@@ -1,6 +1,6 @@
 +++
 title = "Installing Sourcegraph on the cloud"
-linktitle = "Cloud install"
+linktitle = "on the cloud"
 +++
 
 Setting up Sourcegraph for your team takes 5 minutes with our cloud install scripts.
