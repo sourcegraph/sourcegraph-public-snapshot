@@ -1,13 +1,8 @@
 package federated
 
 import (
-	"strings"
-
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -67,41 +62,6 @@ func CustomReposCreate(ctx context.Context, op *sourcegraph.ReposCreateOp, s sou
 
 	// At this time, we never federate Create anyway (but if we did, it would happen here).
 	return s.Create(ctx, op)
-}
-
-func CustomReposList(ctx context.Context, opt *sourcegraph.RepoListOptions, s sourcegraph.ReposServer) (*sourcegraph.RepoList, error) {
-	var allRepos sourcegraph.RepoList
-
-	// Hit only GitHub for Owner, hit both GitHub and local store for
-	// Query, hit only local store for all else.
-	hitGitHub := opt.Owner != "" || opt.Query != ""
-	hitLocalStore := opt.Query != "" || !hitGitHub
-
-	// Local store gets tried first.
-	if hitLocalStore {
-		// local store (fs or pgsql)
-		repos, err := s.List(ctx, opt)
-		if err != nil {
-			return nil, err
-		}
-		allRepos.Repos = append(allRepos.Repos, repos.Repos...)
-	}
-
-	if len(allRepos.Repos) < opt.Limit() && hitGitHub {
-		// GitHub repos store
-		ctx = store.WithRepos(ctx, &github.Repos{})
-		repos, err := s.List(ctx, opt)
-		if err == nil {
-			allRepos.Repos = append(allRepos.Repos, repos.Repos...)
-		} else if strings.Contains(err.Error(), "API rate limit exceeded") {
-			// log error and continue with no results
-			log15.Debug("Repos.List rate limited by GitHub API", "err", err)
-		} else {
-			return nil, err
-		}
-	}
-
-	return &allRepos, nil
 }
 
 // Get sets repo.Origin on repos that originated from a remote server.
