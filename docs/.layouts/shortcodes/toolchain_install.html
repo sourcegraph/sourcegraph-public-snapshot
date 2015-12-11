@@ -1,0 +1,99 @@
+<div class="row">
+	<div class="col-md-8">
+		<form class="form-inline">
+			<label for="toolchain-selector">Choose your programming language:</label>
+			<select class="form-control" onchange="refreshToolchainInstructions()" id="toolchain-selector" name="toolchain-selector">
+			  <option disabled selected>-- select an option --</option>
+			  <option value="go">Go</option>
+			  <option value="java">Java</option>
+			  <option value="python">Python (beta)</option>
+			  <option value="ruby">Ruby (beta)</option>
+			  <option value="javascript">JavaScript (beta)</option>
+			  <option value="scala" disabled>Scala (coming soon)</option>
+			  <option value="php" disabled>PHP (coming soon)</option>
+			  <option value="c#" disabled>C# (coming soon)</option>
+			  <option value="objective-c" disabled>Objective-C (coming soon)</option>
+			</select>
+		</form>
+	</div>
+</div>
+
+<br>
+<div id="toolchain-instructions"></div>
+
+<script>
+var refreshToolchainInstructions = function () {
+
+	var tag = function(str, tagname) {
+		return "<" + tagname + ">" + str + "</" + tagname + ">";
+	}
+	var code = function(str) {
+		return tag(str, "code");
+	}
+	var p = function(str) {
+		return tag(str, "p");
+	}
+	var h2 = function(str) {
+		return tag(str, "h2");
+	}
+	var strong = function(str) {
+		return tag(str, "strong");
+	}
+	var precode = function(str) {
+		return tag(code(str), "pre");
+	}
+	var a = function(href, text) {
+		return "<a href=\"" + href + "\">" + text + "</a>";
+	}
+
+	var toolchainInstall = function(lang) {
+		return p(precode("src toolchain install " + lang));
+	}
+
+	var gopath = code("$GOPATH");
+	var goDependencies = p("You will need Go installed and " + gopath + " set in your environment.")
+	var goInstructions = toolchainInstall("go") + goDependencies;
+
+	var javaDependencies = p("You will need JRE 1.8+ installed.")
+	var javaInstructions = toolchainInstall("java") + javaDependencies;
+
+	var pythonDependencies = p("You will need Go installed and " + gopath + " set in your environment. You will also need " + code("pip") + ".")
+	var pythonInstructions = toolchainInstall("python") + pythonDependencies;
+
+	var rubyInstructions = toolchainInstall("ruby");
+	var javascriptInstructions = toolchainInstall("javascript");
+
+	var openIssue = a("https://src.sourcegraph.com/sourcegraph/.tracker/new", "add an issue to our Tracker");
+
+	var instructions = function(os) {
+		var ending = p("For more information and troubleshooting, " + a("https://src.sourcegraph.com/sourcegraph/.docs/config/toolchains/", "read the Code Intelligence docs") + ". Or, " + openIssue + ".");
+		if (os == "go") {
+			return goInstructions + ending;
+		}
+		if (os == "java") {
+			return javaInstructions + ending;
+		}
+		if (os == "python") {
+			return pythonInstructions + ending;
+		}
+		if (os == "ruby") {
+			return rubyInstructions + ending;
+		}
+		if (os == "javascript") {
+			return opening + javascriptInstructions + ending;
+		}
+		return "";
+	}
+
+	var setInstructions = function(instructions) {
+		document.getElementById("toolchain-instructions").innerHTML = instructions;
+	}
+
+	return function() {
+		var el = document.getElementById("toolchain-selector");
+		setInstructions(instructions(el.options[el.selectedIndex].value));
+	}
+}();
+
+refreshToolchainInstructions(); // initialization
+</script>

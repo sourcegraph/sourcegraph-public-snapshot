@@ -15,7 +15,7 @@
 </div>
 
 <br>
-<div id="instructions"></div>
+<div id="local-install-instructions"></div>
 
 <script>
 var refreshInstallInstructions = function () {
@@ -96,7 +96,7 @@ var refreshInstallInstructions = function () {
 	}
 
 	var setInstructions = function(instructions) {
-		document.getElementById("instructions").innerHTML = instructions;
+		document.getElementById("local-install-instructions").innerHTML = instructions;
 	}
 
 	return function() {
@@ -105,5 +105,5 @@ var refreshInstallInstructions = function () {
 	}
 }();
 
-refreshInstallInstructions() // initialization
+refreshInstallInstructions(); // initialization
 </script>
