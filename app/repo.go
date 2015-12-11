@@ -24,6 +24,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -235,10 +236,12 @@ func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "repo/search.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
+		SearchFrames map[string]platform.SearchFrame
 		tmpl.Common
 	}{
 		RepoCommon:    *rc,
 		RepoRevCommon: *vc,
+		SearchFrames:  platform.SearchFrames(),
 	})
 }
 

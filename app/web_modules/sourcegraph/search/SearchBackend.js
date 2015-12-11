@@ -12,7 +12,12 @@ const SearchBackend = {
 			{
 				let result = SearchResultsStore.results.get(action.repo, action.rev, action.query, action.type, action.page);
 				if (result === null) {
-					let uri = `/.ui/${action.repo}@${action.rev}/.search/${action.type}?q=${action.query}&PerPage=${action.perPage}&Page=${action.page}`;
+					let uri;
+					if (action.type === "tokens" || action.type === "text")	{
+						uri = `/.ui/${action.repo}@${action.rev}/.search/${action.type}?q=${action.query}&PerPage=${action.perPage}&Page=${action.page}`;
+					} else {
+						uri = `/${action.repo}@${action.rev}/.search/${action.type}?q=${action.query}&PerPage=${action.perPage}&Page=${action.page}`;
+					}
 					SearchBackend.xhr({
 						uri: uri,
 						json: {},

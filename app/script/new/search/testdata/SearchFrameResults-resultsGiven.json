@@ -1,0 +1,27 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "aSearchFrame-search-results",
+			"children": [
+				{
+					"type": "p",
+					"props": {
+						"className": "summary",
+						"children": [
+							"9 results for \"aQuery\""
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"dangerouslySetInnerHTML": {
+							"__html": "<div>foo</div>"
+						}
+					}
+				}
+			]
+		}
+	}
+}

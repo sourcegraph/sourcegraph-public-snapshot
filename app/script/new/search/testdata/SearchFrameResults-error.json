@@ -1,0 +1,11 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "alert alert-warning",
+			"children": [
+				"There was an error returning your results: foo"
+			]
+		}
+	}
+}

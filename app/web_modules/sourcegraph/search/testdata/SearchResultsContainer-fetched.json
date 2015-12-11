@@ -108,6 +108,7 @@
 									"rev": "aRev",
 									"query": "foo",
 									"page": 1,
+									"label": "text",
 									"resultData": {
 										"Total": 42
 									}

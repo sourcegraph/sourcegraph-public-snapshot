@@ -14,7 +14,7 @@ type SearchFrame struct {
 
 	// Title is a human-readable that will be displayed on the
 	// tab of results for this search frame.
-	Title string
+	Name string
 
 	// Icon specifies which octicon should serve as the applications
 	// search icon.
@@ -35,11 +35,20 @@ type SearchFrameResponse struct {
 	// Html is raw html to be rendered as search results
 	// on the front end. This contract allows for simplicty
 	// of implementation and flexibility in the rendered format.
-	HTML template.HTML `json:"html"`
+	HTML template.HTML `json:"HTML"`
 
 	// TotalResults is the total number of results for the given
 	// query.
-	TotalResults int32 `json:"total_results"`
+	TotalResults int32 `json:"Total"`
+}
+
+// SearchFrameErrorResponse should be marshalled as a response on any error
+// case during handling of an HTTP request by the search frame.
+// Note that a status code should also be set by the handler
+// to reflect the error case.
+type SearchFrameErrorResponse struct {
+	// Error contains a human-readable error message
+	Error string `json:"Error"`
 }
 
 type SearchOptions struct {

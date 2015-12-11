@@ -57,8 +57,8 @@ func serveRepoPlatformSearchResults(w http.ResponseWriter, r *http.Request) erro
 	if rr.Code == http.StatusUnauthorized && nil == handlerutil.UserFromContext(ctx) {
 		return grpc.Errorf(codes.Unauthenticated, "platform search return unauthorized and no authenticated user in current context")
 	} else if rr.Code != http.StatusOK {
-		// NOTE The internal.Handler handles an error by returning
-		// specific error html. We don't want to do that in this case
+		// NOTE The internal.Handler handles an error by marshalling a
+		// platform-defined error-object. We don't want to do that in this case
 		// and instead just pass the raw bytes returned from the search
 		// frame. This will forward the response body and error code
 		// to the client, which allows the search frame to define the

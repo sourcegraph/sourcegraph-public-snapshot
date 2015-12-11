@@ -7,6 +7,8 @@ import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import TokenSearchResults from "sourcegraph/search/TokenSearchResults";
 import TextSearchResults from "sourcegraph/search/TextSearchResults";
+import SearchFrameResults from "sourcegraph/search/SearchFrameResults";
+
 import "./SearchBackend";
 
 class ResultType {
@@ -18,10 +20,16 @@ class ResultType {
 	}
 }
 
-const resultTypes = [
+let resultTypes = [
 	new ResultType("tokens", "Definitions", 50, TokenSearchResults),
 	new ResultType("text", "Text", 10, TextSearchResults),
 ];
+
+let searchFrames = window.searchFrames || {};
+Array.forEach(Object.keys(searchFrames), (current, i) => {
+	let frame = searchFrames[current];
+	resultTypes.push(new ResultType(frame.ID, frame.Name, 10, SearchFrameResults));
+});
 
 class SearchResultsContainer extends Container {
 	constructor(props) {
@@ -31,7 +39,6 @@ class SearchResultsContainer extends Container {
 		};
 		this._onPageChange = this._onPageChange.bind(this);
 	}
-
 	stores() {
 		return [SearchResultsStore];
 	}
@@ -91,6 +98,7 @@ class SearchResultsContainer extends Container {
 							rev={this.state.rev}
 							query={this.state.query}
 							page={this.state.page}
+							label={this.state.currentType.label}
 							resultData={currentResult} />
 					}
 				</div>
