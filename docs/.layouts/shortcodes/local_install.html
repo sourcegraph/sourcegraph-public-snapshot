@@ -2,7 +2,7 @@
 	<div class="col-md-6">
 		<form class="form-inline">
 			<label for="os-selector">Choose your operating system:</label>
-			<select class="form-control" onchange="refreshInstructions()" id="os-selector" name="os-selector">
+			<select class="form-control" onchange="refreshInstallInstructions()" id="os-selector" name="os-selector">
 			  <option disabled selected>-- select an option --</option>
 			  <option value="mac">Mac OS X (10.8+)</option>
 			  <option value="ubuntu">Ubuntu (12.04 & 14.04)</option>
@@ -18,89 +18,92 @@
 <div id="instructions"></div>
 
 <script>
-var tag = function(str, tagname) {
-	return "<" + tagname + ">" + str + "</" + tagname + ">";
-}
-var code = function(str) {
-	return tag(str, "code");
-}
-var p = function(str) {
-	return tag(str, "p");
-}
-var h2 = function(str) {
-	return tag(str, "h2");
-}
-var strong = function(str) {
-	return tag(str, "strong");
-}
-var precode = function(str) {
-	return tag(code(str), "pre");
-}
-var a = function(href, text) {
-	return "<a href=\"" + href + "\">" + text + "</a>";
-}
+var refreshInstallInstructions = function () {
 
-
-var installURL = "https://sourcegraph.com/.download/install.sh";
-var curlInstall = code("curl -sSL " + installURL + " | bash");
-var wgetInstall = code("wget -O - " + installURL + " | bash");
-
-var macBinary = strong(a("https://sourcegraph.com/.download/latest/darwin-amd64/src.gz", "src.gz"));
-var linuxBinary = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.gz", "src.gz"));
-var debFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.deb", "src.deb (64-bit)"));
-var rpmFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.rpm", "src.rpm (64-bit)"));
-
-
-var runSrcServe = function(linuxFile) {
-	var str = h2("Run a local Sourcegraph server") + p(precode("src serve"));
-	if (linuxFile) {
-		str += p("Or, if you installed using the " + code(linuxFile) + " and have upstart installed, your server will already be running:");
-		str += p(precode("sudo restart src"));
+	var tag = function(str, tagname) {
+		return "<" + tagname + ">" + str + "</" + tagname + ">";
 	}
-	return str;
-}
-
-var visitLocalhost = h2("Visit " + a("http://localhost:3080", "http://localhost:3080") + " to create an admin acccount") + p("");
-
-var installOptions = function(installScript, downloadLinks) {
-	return p(precode(installScript) + "Direct downloads: " + downloadLinks);
-}
-
-var macInstructions = installOptions(curlInstall, macBinary) + runSrcServe() + visitLocalhost;
-
-var ubuntuInstructions = installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(".deb") + visitLocalhost;
-
-var centosInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
-
-var redhatInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
-
-var instructions = function(os) {
-	if (os == "mac") {
-		return macInstructions;
+	var code = function(str) {
+		return tag(str, "code");
 	}
-	if (os == "ubuntu") {
-		return ubuntuInstructions;
+	var p = function(str) {
+		return tag(str, "p");
 	}
-	if (os == "centos") {
-		return centosInstructions;
+	var h2 = function(str) {
+		return tag(str, "h2");
 	}
-	if (os == "redhat") {
-		return redhatInstructions;
+	var strong = function(str) {
+		return tag(str, "strong");
 	}
-	if (os == "source") {
-		return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README."))) + p("Linux (64-bit) pre-compiled binary: " + linuxBinary) + runSrcServe() + visitLocalhost;
+	var precode = function(str) {
+		return tag(code(str), "pre");
 	}
-	return "";
-}
+	var a = function(href, text) {
+		return "<a href=\"" + href + "\">" + text + "</a>";
+	}
 
-var setInstructions = function(instructions) {
-	document.getElementById("instructions").innerHTML = instructions;
-}
 
-var refreshInstructions = function() {
-	var el = document.getElementById("os-selector");
-	setInstructions(instructions(el.options[el.selectedIndex].value));
-}
+	var installURL = "https://sourcegraph.com/.download/install.sh";
+	var curlInstall = code("curl -sSL " + installURL + " | bash");
+	var wgetInstall = code("wget -O - " + installURL + " | bash");
 
-refreshInstructions() // initialization
+	var macBinary = strong(a("https://sourcegraph.com/.download/latest/darwin-amd64/src.gz", "src.gz"));
+	var linuxBinary = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.gz", "src.gz"));
+	var debFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.deb", "src.deb (64-bit)"));
+	var rpmFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.rpm", "src.rpm (64-bit)"));
+
+
+	var runSrcServe = function(linuxFile) {
+		var str = h2("Run a local Sourcegraph server") + p(precode("src serve"));
+		if (linuxFile) {
+			str += p("Or, if you installed using the " + code(linuxFile) + " and have upstart installed, your server will already be running:");
+			str += p(precode("sudo restart src"));
+		}
+		return str;
+	}
+
+	var visitLocalhost = h2("Visit " + a("http://localhost:3080", "http://localhost:3080") + " to create an admin acccount") + p("");
+
+	var installOptions = function(installScript, downloadLinks) {
+		return p(precode(installScript) + "Direct downloads: " + downloadLinks);
+	}
+
+	var macInstructions = installOptions(curlInstall, macBinary) + runSrcServe() + visitLocalhost;
+
+	var ubuntuInstructions = installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(".deb") + visitLocalhost;
+
+	var centosInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+
+	var redhatInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+
+	var instructions = function(os) {
+		if (os == "mac") {
+			return macInstructions;
+		}
+		if (os == "ubuntu") {
+			return ubuntuInstructions;
+		}
+		if (os == "centos") {
+			return centosInstructions;
+		}
+		if (os == "redhat") {
+			return redhatInstructions;
+		}
+		if (os == "source") {
+			return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README."))) + p("Linux (64-bit) pre-compiled binary: " + linuxBinary) + runSrcServe() + visitLocalhost;
+		}
+		return "";
+	}
+
+	var setInstructions = function(instructions) {
+		document.getElementById("instructions").innerHTML = instructions;
+	}
+
+	return function() {
+		var el = document.getElementById("os-selector");
+		setInstructions(instructions(el.options[el.selectedIndex].value));
+	}
+}();
+
+refreshInstallInstructions() // initialization
 </script>
