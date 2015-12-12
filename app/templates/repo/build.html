@@ -4,7 +4,7 @@
 
 {{define "RepoBody"}}
 <nav class="page-actions">
-	<a class="btn btn-default btn-sm" href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">&laquo; View all Code Intelligence jobs</a>
+	<a class="btn btn-default btn-sm" href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">&laquo; View all builds</a>
 	<a class="btn btn-default btn-sm" href="{{urlToRepoBuildSubroute "repo.build.log" .Repo.URI .Build.CommitID .Build.Attempt}}" target="_blank"><i class="fa fa-file-text"></i>&nbsp; Download logs</a>
 	<form action="{{urlToRepoSubroute "repo.builds.create" .Repo.URI}}" method="post" class="form-inline">
 		<input type="hidden" name="CommitID" value="{{.Build.CommitID}}">
@@ -12,7 +12,7 @@
 		<input type="hidden" name="Force" value="true">
 		<button
 		{{if not .Commit}}disabled{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}disabled{{end}}
-		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Re-index code</button>
+		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Rebuild</button>
 		{{if not .Commit}}
 		<span class="help-sm-fade">Disabled because the commit could not be retrieved</span>
 		{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}
@@ -23,8 +23,7 @@
 </nav>
 
 <div class="row">
-
-	<div class="col-md-6">
+	<div class="col-md-4 col-sm-4">
 		<div class="media">
 			<header class="repo-build pull-left">
 				<h1 class="label label-{{buildClass .Build}}">
@@ -42,7 +41,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="col-md-6">
+	<div class="col-md-8 col-lg-6">
 		{{with .Commit}}
 		<div class="commit single media repo-build">
 			{{template "Commit" .}}
@@ -62,42 +61,16 @@
 {{if .Build.Failure}}
 <div class="alert alert-danger">
 {{if .DisableExternalLinks}}
-	<strong>Code indexing failed.</strong> Check the logs for more information about why
-	this failed. Frequent causes are compile errors, dependency fetching
-	dependency fetching errors, or limitations in srclib (the underlying code
-	analysis engine).
+	<strong>Build failed.</strong> Check the logs for more information about why
+	this failed.
 {{else}}
-	<strong>Code indexing failed.</strong> Please see the <a href="https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/">troubleshooting guide</a> or <a href="mailto:help@sourcegraph.com">contact us</a> for help.
+	<strong>Build failed.</strong> Please see the <a href="https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/">troubleshooting guide</a> or <a href="mailto:help@sourcegraph.com">contact us</a> for help.
 {{end}}
 </div>
 {{end}}
 
-{{if .Tasks}}
-<table class="table repo-build-tasks table-condensed">
-	<thead>
-		<tr><th>Task ID</th><th>Source unit</th><th>Title</th><th>Status</th><th>Started</th><th>Elapsed</th><th></th></tr>
-	</thead>
-	{{$currentUser := .CurrentUser}}
-	{{$repo := .Repo}}
-	{{range .Tasks}}
-	<tr class="{{if .Failure}}danger{{else if .Success}}success{{else if and (.StartedAt) (not .EndedAt)}}info{{end}}">
-		<th>#{{.TaskID}}</th>
-		<td>{{if .UnitType}}{{.UnitType}} at {{.Unit}}{{end}}</td>
-		<td class="op">{{.Op}}</td>
-		<td>
-			{{if .Failure}} Failed
-			{{else if .Success}} Succeeded
-			{{else if and (.StartedAt) (not .EndedAt)}} In progress
-			{{else}} Queued
-			{{end}}
-		</td>
-		<td>{{template "TimeAgo" .StartedAt}}</td>
-		<td>{{duration .StartedAt .EndedAt}}</td>
-		<td><a href="{{urlToRepoBuildTaskSubroute "repo.build.task.log" $repo.URI .CommitID .Attempt .TaskID}}" class="build-task-logs" target="_blank">Logs</a></td>
-	</tr>
-	{{end}}
-</table>
-{{else if not .Build.Failure}}
-<div class="alert alert-warning">This indexing job has no tasks created yet. Refresh this page later to see progress.</div>
-{{end}}
+{{$repo := .Repo}}
+<pre id="build-log" data-src="{{urlToRepoBuildTaskSubroute "repo.build.task.log" $repo.URI .Build.CommitID .Build.Attempt 0}}">
+</pre>
+
 {{end}}

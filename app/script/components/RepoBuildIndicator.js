@@ -1,6 +1,5 @@
 var React = require("react");
 var client = require("../client");
-var moment = require("moment");
 
 var RepoBuildIndicator = React.createClass({
 
@@ -16,10 +15,6 @@ var RepoBuildIndicator = React.createClass({
 
 		// Rev sets the revision for which we are checking build information.
 		Rev: React.PropTypes.string,
-
-		// Label will cause the button to display a label on the left of the icon
-		// only if set to "yes".
-		Label: React.PropTypes.string,
 
 		// Buildable is whether or not the RepoBuildIndicator will let the
 		// user trigger a build if a build does not exist.
@@ -127,14 +122,12 @@ var RepoBuildIndicator = React.createClass({
 			location.reload();
 		}
 
-		var label = "Code Intelligence";
-
-		var txt, icon, at, cls;
+		var txt, icon, cls;
 		switch (this.state.status) {
 		case this.BuildStatus.ERROR:
 			return (
 				<a key="indicator" className={`build-indicator btn ${this.props.btnSize} btn-danger`}>
-					{this.props.Label === "yes" ? `${label} ` : null}<i className="fa fa-exclamation-triangle"></i>
+					<i className="fa fa-exclamation-triangle"></i>
 				</a>
 			);
 
@@ -143,48 +136,44 @@ var RepoBuildIndicator = React.createClass({
 			return (
 				<a key="indicator"
 					data-tooltip={this.props.tooltipPosition}
-					title={this.props.Buildable ? "Click to index code." : null}
+					title={this.props.Buildable ? "Build this version" : null}
 					onClick={this.props.Buildable ? this.triggerBuild : null}
-					className={`build-indicator btn ${this.props.btnSize} btn-warning`}>
-					{this.props.Label === "yes" ? `${label} ` : null}<i className="fa fa-exclamation-triangle"></i>
+					className={`build-indicator btn ${this.props.btnSize} not-available`}>
+					<i className="fa fa-circle"></i>
 				</a>
 			);
 
 		case this.BuildStatus.FAILURE:
 			txt = "failed";
-			at = this.state.LastBuild.EndedAt;
-			cls = "warning";
+			cls = "danger";
 			icon = "fa-exclamation-circle";
 			break;
 
 		case this.BuildStatus.BUILT:
-			txt = "indexed";
-			at = this.state.LastBuild.EndedAt;
+			txt = "succeeded";
 			cls = "success";
 			icon = "fa-check";
 			break;
 
 		case this.BuildStatus.STARTED:
 			txt = "started";
-			at = this.state.LastBuild.StartedAt;
 			cls = "info";
 			icon = "fa-circle-o-notch fa-spin";
 			break;
 
 		case this.BuildStatus.QUEUED:
 			txt = "queued";
-			at = this.state.LastBuild.CreatedAt;
 			cls = "info";
-			icon = "fa-clock-o";
+			icon = "fa-circle-o-notch";
 			break;
 		}
 		return (
 			<a key="indicator"
-				className={`build-indicator btn ${this.props.btnSize} btn-${cls}`}
+				className={`build-indicator btn ${this.props.btnSize} text-${cls}`}
 				href={`/${this.props.RepoURI}/.builds/${this.state.LastBuild.CommitID}/${this.state.LastBuild.Attempt}`}
 				data-tooltip={this.props.tooltipPosition}
-				title={`${this.state.LastBuild.CommitID.slice(0, 6)} ${txt} ${moment(at).fromNow()}`}>
-				{this.props.Label === "yes" ? `${label} ` : ""}<i className={`fa ${icon}`}></i>
+				title={`Build ${txt}`}>
+				<i className={`fa ${icon}`}></i>
 			</a>
 		);
 	},

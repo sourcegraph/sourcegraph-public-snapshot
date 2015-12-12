@@ -68,7 +68,7 @@ describe("RepoBuildIndicator", () => {
 
 			expect(client.builds.callCount).to.be(1);
 			expect(component.state.status).to.be(component.BuildStatus[name]);
-			expect($node.hasClass(`btn-${test.expect.cls}`)).to.be(true);
+			expect($node.hasClass(`text-${test.expect.cls}`)).to.be(true);
 			expect($node.attr("href")).to.be(`/test-uri/.builds/${test.CommitID}/${test.Attempt}`);
 			expect($node.attr("title")).to.contain(`${test.CommitID.slice(0, 6)} ${test.expect.txt}`);
 
@@ -105,22 +105,6 @@ describe("RepoBuildIndicator", () => {
 		expect($node.attr("title")).to.not.be.ok();
 	});
 
-	it("should not display label if label prop is not set", () => {
-		var component = sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
-		);
-		var $el = $(ReactDOM.findDOMNode(component));
-		expect($el.html()).not.to.contain("Code Intelligence");
-	});
-
-	it("should display label if label prop is set to \"yes\"", () => {
-		var component = sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.STARTED} Label="yes" btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
-		);
-		var $el = $(ReactDOM.findDOMNode(component));
-		expect($el.html()).to.contain("Code Intelligence");
-	});
-
 	it("should request a new build and change cache when clicked with no build available", () => {
 		sandbox.stub(client, "builds", () => $.Deferred().resolve([]).promise());
 		sandbox.stub(client, "createRepoBuild", () => $.Deferred().resolve([]).promise());
@@ -139,15 +123,14 @@ describe("RepoBuildIndicator", () => {
 		sandbox.stub(client, "builds", () => $.Deferred().reject().promise());
 
 		var component = sandbox.renderComponent(
-			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" Label="yes" />
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
 		);
 		expect(component.state.status).to.be(component.BuildStatus.ERROR);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var $node = $(ReactDOM.findDOMNode(tag));
 
-		expect($node.hasClass("btn-danger")).to.be(true);
-		expect($node.text()).to.contain("Code Intelligence");
+		expect($node.hasClass("text-danger")).to.be(true);
 	});
 
 	it("should not request build status if build is provided in props", () => {

@@ -80,8 +80,4 @@
 		@include square(42px);
 		margin-right: 4px;
 	}
-	&:hover {
-		background-color: lighten($gray-lightest, 2%);
-		border-color: darken($gray-lighter, 4%);
-	}
 }

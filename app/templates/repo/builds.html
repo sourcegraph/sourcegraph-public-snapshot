@@ -1,14 +1,8 @@
-{{define "Head"}}<title>Code Intelligence - {{.Repo.URI}} - Sourcegraph</title>
+{{define "Head"}}<title>Builds - {{.Repo.URI}} - Sourcegraph</title>
 <meta name="robots" content="noindex">
 {{end}}
 
 {{define "RepoBody"}}
-<h1>Code Intelligence</h1>
-
-<p>Each time you push code to Sourcegraph, it analyzes your code.</p>
-<p>The analysis queue is shown below. You may re-index code from the detail page of each job.</p>
-<br>
-
 <table class="table">
 	<thead>
 		<tr><th>Commit</th><th>Attempt</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th></tr>

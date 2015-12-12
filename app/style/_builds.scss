@@ -15,7 +15,6 @@
 }
 
 .build-indicator {
-	color: #fff !important;
 	&.text-danger {
 		font-size: 13px;
 		display: block;
@@ -24,5 +23,11 @@
 	}
 	i {
 		margin-right: 1px !important;
+	}
+	&.not-available {
+		color: brighten($gray-light, 5%);
+	}
+	&.text-success {
+		color: brighten($brand-success, 18%);
 	}
 }

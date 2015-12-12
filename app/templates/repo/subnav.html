@@ -38,9 +38,9 @@
 					</li>
 				{{end}}
 
-				<li class="{{if eq .CurrentRoute "repo.builds"}}active {{end}}navbar-right">
-										<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}" title="Semantic code analysis and related features." data-placement="bottom">
-												<i class="octicon octicon-pulse"></i><span class="txt">Code Intelligence</span>
+				<li class="{{if eq .CurrentRoute "repo.builds"}}active {{end}}">
+					<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}" data-placement="bottom">
+						<i class="fa fa-check-square-o"></i><span class="txt">Builds</span>
 					</a>
 				</li>
 			</ul>
