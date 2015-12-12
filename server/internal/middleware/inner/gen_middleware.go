@@ -34,14 +34,7 @@ func methodHasCustomFederation(x gen.Service, method string) bool {
 		return method == "List"
 	case "Repos":
 		switch method {
-		case "Create", "Get", "List":
-			return true
-		default:
-			return false
-		}
-	case "Users":
-		switch method {
-		case "Get":
+		case "Create", "Get":
 			return true
 		default:
 			return false

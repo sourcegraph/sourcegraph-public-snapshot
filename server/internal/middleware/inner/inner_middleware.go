@@ -2015,7 +2015,9 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 		return
 	}
 
-	res, err = federated.CustomReposList(ctx, param, local.Services.Repos)
+	target := local.Services.Repos
+
+	res, err = target.List(ctx, param)
 	return
 
 }
@@ -2665,7 +2667,9 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 		return
 	}
 
-	res, err = federated.CustomUsersGet(ctx, param, local.Services.Users)
+	target := local.Services.Users
+
+	res, err = target.Get(ctx, param)
 	return
 
 }
