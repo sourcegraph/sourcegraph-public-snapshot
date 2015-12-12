@@ -176,14 +176,6 @@ func (c *WorkCmd) Execute(args []string) error {
 					blog := log.New(lw, "", 0)
 					blog.Printf("Logging build #%s (%s) to %s", build.Spec().IDString(), build.Repo, tl.Destination)
 
-					if _, in := blacklistedRepos[build.Repo]; in {
-						blog.Printf("Builds for %s are temporarily disabled. Marking as failed and skipping.", build.Repo)
-						if _, err := cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{Build: build.Spec(), Info: sourcegraph.BuildUpdate{Failure: true}}); err != nil {
-							blog.Println("Error updating build: ", err)
-						}
-						return
-					}
-
 					blog.Printf("Starting build #%s (%s).", build.Spec().IDString(), build.Repo)
 					var err error
 					now := pbtypes.NewTimestamp(time.Now())
@@ -273,9 +265,4 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 	// Authenticate future requests.
 	cliCtx = sourcegraph.WithCredentials(cliCtx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
-}
-
-// TODO(beyang): remove this once standard lib is supported again
-var blacklistedRepos = map[string]struct{}{
-	"hg.python.org/cpython": struct{}{},
 }
