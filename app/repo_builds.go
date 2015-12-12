@@ -73,8 +73,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	// Default options.
 	form := sourcegraph.BuildCreateOptions{
 		BuildConfig: sourcegraph.BuildConfig{
-			Import: true,
-			Queue:  true,
+			Queue: true,
 		},
 		Force: true,
 	}

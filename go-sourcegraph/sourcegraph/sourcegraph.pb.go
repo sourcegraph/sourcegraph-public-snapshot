@@ -1159,20 +1159,10 @@ func (*Build) ProtoMessage()    {}
 
 // BuildConfig configures a repository build.
 type BuildConfig struct {
-	// Import is whether to import the build data into the database
-	// when the build is complete. The data must be imported for
-	// Sourcegraph's web app or API to use it.
-	Import bool `protobuf:"varint,1,opt,name=import,proto3" json:",omitempty"`
 	// Queue is whether this build should be enqueued. If enqueued, any worker may
 	// begin running this build. If not enqueued, it is up to the client to run the
 	// build and update it accordingly.
 	Queue bool `protobuf:"varint,2,opt,name=queue,proto3" json:",omitempty"`
-	// UseCache is whether to use cached build data files. If false, the
-	// .sourcegraph-data directory will be wiped out before the build begins.
-	//
-	// Regardless of the value of UseCache, the build data files will be uploaded to
-	// the central cache after the build ends.
-	UseCache bool `protobuf:"varint,3,opt,name=use_cache,proto3" json:",omitempty"`
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
 	Priority int32 `protobuf:"varint,4,opt,name=priority,proto3" json:",omitempty"`

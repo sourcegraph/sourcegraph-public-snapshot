@@ -130,7 +130,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
 		_, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
 			RepoRev: sourcegraph.RepoRevSpec{RepoSpec: repo, Rev: event.Branch, CommitID: event.Commit},
-			Opt:     &sourcegraph.BuildCreateOptions{BuildConfig: sourcegraph.BuildConfig{Import: true, Queue: true}},
+			Opt:     &sourcegraph.BuildCreateOptions{BuildConfig: sourcegraph.BuildConfig{Queue: true}},
 		})
 		if err != nil {
 			log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo.URI, "commit", event.Commit, "branch", event.Branch)

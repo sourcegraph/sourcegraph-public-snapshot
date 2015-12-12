@@ -1,5 +1,10 @@
 # dev
 
+- Two unnecessary fields on build objects have been
+  removed. **PostgreSQL backend:** Run `alter table repo_build drop
+  column "import"; alter table repo_build drop column usecache;` to
+  perform this migration.
+
 # 0.9.0
 
 - Display the latest commit that touched each file and directory on

@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/srclib/buildstore"
+	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/hgcmd"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -104,14 +104,6 @@ func (c *prepBuildCmd) Execute(args []string) error {
 	if err := PrepBuildDir(repo.VCS, cloneURL, username, password, c.BuildDir, build.CommitID, remoteOpt); err != nil {
 		return err
 	}
-
-	if !build.UseCache {
-		if err := os.RemoveAll(filepath.Join(c.BuildDir, buildstore.BuildDataDirName)); err != nil {
-			return err
-		}
-	}
-
-	log.Printf("Build directory ready: %s", c.BuildDir)
 
 	return nil
 }

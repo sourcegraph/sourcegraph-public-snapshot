@@ -62,10 +62,12 @@ type dbBuild struct {
 	Killed      bool
 	Host        string
 	Purged      bool
-	Import      bool
 	Queue       bool
-	UseCache    bool
 	Priority    int
+
+	// TODO(sqs!native-ci): Removed fields; add migration to remove these.
+	Import   bool
+	UseCache bool
 }
 
 func (b *dbBuild) toBuild() *sourcegraph.Build {
@@ -83,9 +85,7 @@ func (b *dbBuild) toBuild() *sourcegraph.Build {
 		Host:        b.Host,
 		Purged:      b.Purged,
 		BuildConfig: sourcegraph.BuildConfig{
-			Import:   b.Import,
 			Queue:    b.Queue,
-			UseCache: b.UseCache,
 			Priority: int32(b.Priority),
 		},
 	}
@@ -104,9 +104,7 @@ func (b *dbBuild) fromBuild(b2 *sourcegraph.Build) {
 	b.Killed = b2.Killed
 	b.Host = b2.Host
 	b.Purged = b2.Purged
-	b.Import = b2.Import
 	b.Queue = b2.Queue
-	b.UseCache = b2.UseCache
 	b.Priority = int(b2.Priority)
 }
 
@@ -356,10 +354,10 @@ func (s *Builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 	// Construct SQL manually so we can retrieve the attempt # from
 	// the DB trigger.
 	sql := `INSERT INTO repo_build(attempt, repo, commit_id, created_at, started_at, ended_at, heartbeat_at,
-                                   success, failure, killed, host, purged, import, queue, usecache, priority)
+                                   success, failure, killed, host, purged, queue, priority)
             VALUES(` + arg(b.Attempt) + `, ` + arg(b.Repo) + `, ` + arg(b.CommitID) + `, ` + arg(b.CreatedAt) + `, ` + arg(b.StartedAt) + `,` +
 		arg(b.EndedAt) + `,` + arg(b.HeartbeatAt) + `, ` + arg(b.Success) + `, ` + arg(b.Failure) + `, ` + arg(b.Killed) + `, ` +
-		arg(b.Host) + `, ` + arg(b.Purged) + `, ` + arg(b.Import) + `, ` + arg(b.Queue) + `, ` + arg(b.UseCache) + `,` + arg(b.Priority) + `)
+		arg(b.Host) + `, ` + arg(b.Purged) + `, ` + arg(b.Queue) + `, ` + arg(b.Priority) + `)
             RETURNING attempt;`
 	attempt, err := dbutil.SelectInt(dbh(ctx), sql, args...)
 	if err != nil {

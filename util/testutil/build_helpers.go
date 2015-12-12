@@ -31,7 +31,7 @@ func BuildRepoAndWait(t *testing.T, ctx context.Context, repo string, commitID s
 	// Create the build.
 	b, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Opt: &sourcegraph.BuildCreateOptions{
 		BuildConfig: sourcegraph.BuildConfig{
-			Import: true, Queue: true, UseCache: false, Priority: 1,
+			Queue: true, Priority: 1,
 		},
 		Force: true,
 	}})

@@ -122,17 +122,14 @@ func (c *doBuildCmd) Execute(args []string) error {
 
 	// Treat the import as a task so we can see separate logs and
 	// statuses for it.
-	var importTask *sourcegraph.BuildTask
-	if build.Import {
-		importTask = &sourcegraph.BuildTask{
-			Attempt:  build.Attempt,
-			CommitID: build.CommitID,
-			Repo:     build.Repo,
-			Order:    int32(len(allTasks)),
-			Op:       sourcegraph.ImportTaskOp,
-		}
-		allTasks = append(allTasks, importTask)
+	importTask := &sourcegraph.BuildTask{
+		Attempt:  build.Attempt,
+		CommitID: build.CommitID,
+		Repo:     build.Repo,
+		Order:    int32(len(allTasks)),
+		Op:       sourcegraph.ImportTaskOp,
 	}
+	allTasks = append(allTasks, importTask)
 
 	createdTasks, err := cl.Builds.CreateTasks(cli.Ctx, &sourcegraph.BuildsCreateTasksOp{Build: build.Spec(), Tasks: allTasks})
 	if err != nil {
@@ -208,7 +205,9 @@ func (c *doBuildCmd) Execute(args []string) error {
 	}
 	close(quit)
 
-	if build.Import {
+	{
+		// Import
+
 		setTaskStarted(cl, importTask)
 		w := newLogger(buildutil.TaskTag(importTask.Spec()))
 		fmt.Printf("import: logs at %s\n", w.Destination)

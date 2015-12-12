@@ -319,8 +319,7 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 	if _, err := cl.Builds.GetRepoBuild(cli.Ctx, &repoRevSpec); grpc.Code(err) == codes.NotFound {
 		b, err := cl.Builds.Create(cli.Ctx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Opt: &sourcegraph.BuildCreateOptions{
 			BuildConfig: sourcegraph.BuildConfig{
-				Import: true,
-				Queue:  true,
+				Queue: true,
 			},
 		}})
 		if err != nil {

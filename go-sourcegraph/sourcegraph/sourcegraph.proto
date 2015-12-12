@@ -1004,22 +1004,10 @@ message Build {
 
 // BuildConfig configures a repository build.
 message BuildConfig {
-	// Import is whether to import the build data into the database
-	// when the build is complete. The data must be imported for
-	// Sourcegraph's web app or API to use it.
-	bool import = 1;
-
 	// Queue is whether this build should be enqueued. If enqueued, any worker may
 	// begin running this build. If not enqueued, it is up to the client to run the
 	// build and update it accordingly.
 	bool queue = 2;
-
-	// UseCache is whether to use cached build data files. If false, the
-	// .sourcegraph-data directory will be wiped out before the build begins.
-	//
-	// Regardless of the value of UseCache, the build data files will be uploaded to
-	// the central cache after the build ends.
-	bool use_cache = 3;
 
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
