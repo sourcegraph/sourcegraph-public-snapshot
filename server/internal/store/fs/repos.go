@@ -216,7 +216,7 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 		return nil, err
 	}
 
-	if repo.CloneURL() != nil && repo.Mirror == false {
+	if repo.HTTPCloneURL != "" && repo.Mirror == false {
 		url := repo.CloneURL().String()
 		cmd := exec.Command("git", "clone", url, ".")
 		cmd.Dir = dir
