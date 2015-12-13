@@ -13,6 +13,7 @@ import (
 	"net/http/pprof"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
@@ -702,6 +703,33 @@ func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
 func (c *ServeCmd) initializeStarterProjects() error {
 	cl := Client()
 
+	installToolchain := func(lang string) error {
+		log.Println("Installing Code Intelligence for", lang, "...")
+		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		cmd := exec.Command("src", "toolchain", "install", lang)
+		cmd.Dir = dir
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Fatal(fmt.Sprintf("Installing Code Intelligence for %s failed with output:\n%s", lang, string(out)))
+		}
+
+		log.Println("SUCCESS!")
+		return nil
+		// cmd := &srclib.ToolchainInstallCmd{
+		// 	Args: struct {
+		// 		Languages []string `value-name:"LANG" description:"language toolchains to install"`
+		// 	}{
+		// 		Languages: strings.Split(c.InitLangs, ","),
+		// 	},
+		// }
+		// return cmd.Execute(nil)
+	}
+
 	initRepoURL := func(lang string) (string, error) {
 		switch lang {
 		case "go":
@@ -714,6 +742,11 @@ func (c *ServeCmd) initializeStarterProjects() error {
 	}
 
 	initLang := func(lang string) error {
+		if err := installToolchain(lang); err != nil {
+			return err
+		}
+
+		log.Println("Creating starter repo for", lang, "...")
 		url, err := initRepoURL(lang)
 		if err != nil {
 			return err
@@ -729,11 +762,16 @@ func (c *ServeCmd) initializeStarterProjects() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("# created: %s", repo.URI)
+		log.Println("SUCCESS! Created:", repo.URI)
 
 		return nil
 	}
 
+	// fmt.Println("Installing language toolchains...\n")
+	// if err := installToolchains(); err != nil {
+	// 	return err
+	// }
+	// fmt.Println("Finished installing language toolchains...\n")
 	if initLangs := c.InitLangs; initLangs != "" {
 		for _, lang := range strings.Split(initLangs, ",") {
 			if err := initLang(lang); err != nil {
