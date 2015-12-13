@@ -10,13 +10,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
-func getBuild(repoURI string, commitID string, attempt uint32) (*sourcegraph.Build, *sourcegraph.Repo, error) {
+func getBuild(repoURI string, id uint64) (*sourcegraph.Build, *sourcegraph.Repo, error) {
 	cl := cli.Client()
 
 	build, err := cl.Builds.Get(cli.Ctx, &sourcegraph.BuildSpec{
-		Attempt:  attempt,
-		CommitID: commitID,
-		Repo:     sourcegraph.RepoSpec{URI: repoURI},
+		ID:   id,
+		Repo: sourcegraph.RepoSpec{URI: repoURI},
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting build: %s", err)

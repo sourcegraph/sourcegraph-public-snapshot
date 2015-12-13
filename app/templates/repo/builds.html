@@ -5,12 +5,12 @@
 {{define "RepoBody"}}
 <table class="table">
 	<thead>
-		<tr><th>Commit</th><th>Attempt</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th></tr>
+		<tr><th>#</th><th>Commit</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th></tr>
 	</thead>
 	{{range .Builds}}
 	<tr class="{{buildClass .}}">
+		<th><a href="{{urlToRepoBuild .Repo .ID}}">#{{.ID}}</a></th>
 		<td><a href="{{urlToRepoCommit .Repo .CommitID}}"><tt>{{truncateCommitID .CommitID}}</tt></a></td>
-		<th><a href="{{urlToRepoBuild .Repo .CommitID .Attempt}}">{{.Attempt}}</a></th>
 		<td>
 			{{buildStatus .}}
 		</td>

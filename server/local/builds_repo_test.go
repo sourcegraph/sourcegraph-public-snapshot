@@ -15,7 +15,7 @@ func TestBuildsService_GetRepoBuild(t *testing.T) {
 	ctx, mock := testContext()
 
 	testRepoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "r"}
-	want := &sourcegraph.Build{Attempt: 123, Repo: "r", Success: true, CommitID: "c"}
+	want := &sourcegraph.Build{ID: 123, Repo: "r", Success: true, CommitID: "c"}
 
 	var calledVCSRepoResolveRevision, calledBuildsGetFirstInCommitOrder bool
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{

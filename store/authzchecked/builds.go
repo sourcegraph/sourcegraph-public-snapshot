@@ -65,7 +65,7 @@ func (s *builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec
 
 func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
 	for _, task := range tasks {
-		if err := checkBuild(ctx, task.Spec().BuildSpec, auth.Write); err != nil {
+		if err := checkBuild(ctx, task.Spec().Build, auth.Write); err != nil {
 			return nil, err
 		}
 	}
@@ -98,5 +98,5 @@ func checkBuild(ctx context.Context, build sourcegraph.BuildSpec, what auth.Perm
 }
 
 func checkTask(ctx context.Context, task sourcegraph.TaskSpec, perm auth.PermType) error {
-	return checkBuild(ctx, task.BuildSpec, perm)
+	return checkBuild(ctx, task.Build, perm)
 }

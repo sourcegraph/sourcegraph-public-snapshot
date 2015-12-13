@@ -1129,13 +1129,24 @@ func (*SSHPrivateKey) ProtoMessage()    {}
 // behavior. As we encounter new requirements for the build system, they may
 // evolve.
 type Build struct {
-	// Attempt is the 1-indexed number representing sequential attempts at building
-	// this repository.
-	Attempt uint32 `protobuf:"varint,1,opt,name=attempt,proto3" json:",omitempty"`
 	// Repo is the URI of the repository this build is for.
-	Repo string `protobuf:"bytes,2,opt,name=repo,proto3" json:",omitempty"`
+	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:",omitempty"`
+	// ID is the numeric ID of the build. It is up to the
+	// implementation to decide whether it is sequential within the
+	// repo or globally unique across all repos.
+	ID uint64 `protobuf:"varint,2,opt,name=id,proto3" json:",omitempty"`
 	// CommitID is the full resolved commit ID to build.
-	CommitID    string             `protobuf:"bytes,3,opt,name=commit_id,proto3" json:",omitempty"`
+	CommitID string `protobuf:"bytes,3,opt,name=commit_id,proto3" json:",omitempty"`
+	// Branch, if set, is the name of the VCS branch on which this
+	// commit was built. Commits may be configured to be built in
+	// different ways depending on the branch the build was started on
+	// (e.g., a release branch may trigger additional deployment
+	// actions). A single commit can exist on any number of branches.
+	Branch string `protobuf:"bytes,14,opt,name=branch,proto3" json:",omitempty"`
+	// Tag, if set, is the name of the VCS tag associated with this
+	// commit. See Branch for more information. A single commit can
+	// have any number of tags.
+	Tag         string             `protobuf:"bytes,15,opt,name=tag,proto3" json:",omitempty"`
 	CreatedAt   pbtypes.Timestamp  `protobuf:"bytes,4,opt,name=created_at" `
 	StartedAt   *pbtypes.Timestamp `protobuf:"bytes,5,opt,name=started_at" json:",omitempty"`
 	EndedAt     *pbtypes.Timestamp `protobuf:"bytes,6,opt,name=ended_at" json:",omitempty"`
@@ -1236,10 +1247,14 @@ func (m *ChangesetListOp) Reset()         { *m = ChangesetListOp{} }
 func (m *ChangesetListOp) String() string { return proto.CompactTextString(m) }
 func (*ChangesetListOp) ProtoMessage()    {}
 
+// A BuildSpec uniquely identifies a build.
 type BuildSpec struct {
-	CommitID string   `protobuf:"bytes,1,opt,name=commit_id,proto3" json:",omitempty"`
-	Attempt  uint32   `protobuf:"varint,2,opt,name=attempt,proto3" json:",omitempty"`
-	Repo     RepoSpec `protobuf:"bytes,3,opt,name=repo" `
+	// Repo is the repository associated with the build.
+	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
+	// ID is the numeric ID of the build. It is up to the
+	// implementation to decide whether it is sequential within the
+	// repo or globally unique across all repos' builds.
+	ID uint64 `protobuf:"varint,2,opt,name=id,proto3" json:",omitempty"`
 }
 
 func (m *BuildSpec) Reset()         { *m = BuildSpec{} }
@@ -1251,37 +1266,25 @@ func (*BuildSpec) ProtoMessage()    {}
 // See the documentation for Build for more information about how builds and tasks
 // relate to each other.
 type BuildTask struct {
-	// TaskID is the unique ID of this task. It is unique over all tasks, not just
-	// tasks in the same build.
-	TaskID int64 `protobuf:"varint,1,opt,name=task_id,proto3" json:",omitempty"`
-	// Repo is the URI of the repository that this task's build is for.
-	Repo     string `protobuf:"bytes,2,opt,name=repo,proto3" json:",omitempty"`
-	CommitID string `protobuf:"bytes,3,opt,name=commit_id,proto3" json:",omitempty"`
-	Attempt  uint32 `protobuf:"varint,4,opt,name=attempt,proto3" json:",omitempty"`
-	// UnitType is the srclib source unit type of the source unit that this task is
-	// associated with.
-	UnitType string `protobuf:"bytes,5,opt,name=unit_type,proto3" json:",omitempty"`
-	// Unit is the srclib source unit name of the source unit that this task is
-	// associated with.
-	Unit string `protobuf:"bytes,6,opt,name=unit,proto3" json:",omitempty"`
-	// Op is the srclib toolchain operation (graph, depresolve, etc.) that this task
-	// performs.
-	Op string `protobuf:"bytes,7,opt,name=op,proto3" json:",omitempty"`
-	// Order is the order in which this task is performed, relative to other tasks in
-	// the same build. Lower-number-ordered tasks are built first. Multiple tasks may
-	// have the same order.
-	Order int32 `protobuf:"varint,8,opt,name=order,proto3" json:",omitempty"`
+	// ID is the numeric ID of the task. It is up to the
+	// implementation to decide whether it is sequential within the
+	// build or globally unique across all builds.
+	ID uint64 `protobuf:"varint,1,opt,name=id,proto3" json:",omitempty"`
+	// Build specifies the build associated with this task.
+	Build BuildSpec `protobuf:"bytes,2,opt,name=build" `
+	// Label describes the task (e.g., Code Intelligence).
+	Label string `protobuf:"bytes,4,opt,name=label,proto3" json:",omitempty"`
 	// CreatedAt is when this task was initially created.
-	CreatedAt pbtypes.Timestamp `protobuf:"bytes,9,opt,name=created_at" `
+	CreatedAt pbtypes.Timestamp `protobuf:"bytes,5,opt,name=created_at" `
 	// StartedAt is when this task's execution began.
-	StartedAt *pbtypes.Timestamp `protobuf:"bytes,10,opt,name=started_at" json:",omitempty"`
+	StartedAt *pbtypes.Timestamp `protobuf:"bytes,6,opt,name=started_at" json:",omitempty"`
 	// EndedAt is when this task's execution ended (whether because it succeeded or
 	// failed).
-	EndedAt *pbtypes.Timestamp `protobuf:"bytes,11,opt,name=ended_at" json:",omitempty"`
+	EndedAt *pbtypes.Timestamp `protobuf:"bytes,7,opt,name=ended_at" json:",omitempty"`
 	// Success is whether this task's execution succeeded.
-	Success bool `protobuf:"varint,13,opt,name=success,proto3" json:",omitempty"`
+	Success bool `protobuf:"varint,8,opt,name=success,proto3" json:",omitempty"`
 	// Failure is whether this task's execution failed.
-	Failure bool `protobuf:"varint,14,opt,name=failure,proto3" json:",omitempty"`
+	Failure bool `protobuf:"varint,9,opt,name=failure,proto3" json:",omitempty"`
 }
 
 func (m *BuildTask) Reset()         { *m = BuildTask{} }
@@ -1527,8 +1530,8 @@ func (m *PersonSpec) String() string { return proto.CompactTextString(m) }
 func (*PersonSpec) ProtoMessage()    {}
 
 type TaskSpec struct {
-	BuildSpec `protobuf:"bytes,1,opt,name=build_spec,embedded=build_spec" `
-	TaskID    int64 `protobuf:"varint,2,opt,name=task_id,proto3" json:",omitempty"`
+	Build BuildSpec `protobuf:"bytes,1,opt,name=build" `
+	ID    uint64    `protobuf:"varint,2,opt,name=id,proto3" json:",omitempty"`
 }
 
 func (m *TaskSpec) Reset()         { *m = TaskSpec{} }

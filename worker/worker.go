@@ -24,7 +24,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/executil"
 )
 
@@ -158,7 +157,7 @@ func (c *WorkCmd) Execute(args []string) error {
 					}
 					defer buildDirsInUse[buildDir].Unlock()
 
-					tl := newLogger(buildutil.BuildTag(build.Spec()))
+					tl := newLogger(build.Spec().IDString())
 					defer tl.Close()
 					lw := io.MultiWriter(os.Stderr, tl)
 					blog := log.New(lw, "", 0)
@@ -181,9 +180,8 @@ func (c *WorkCmd) Execute(args []string) error {
 						sgxcmd.Path,
 						"-v", "internal-build", "run",
 						"--build-dir", buildDir,
-						"--commit-id", build.CommitID,
 						"--repo", build.Repo,
-						"--attempt", strconv.Itoa(int(build.Attempt)),
+						"--id", fmt.Sprint(build.ID),
 					)
 
 					if c.Clean {

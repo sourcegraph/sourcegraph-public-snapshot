@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	t := Schema.Map.AddTableWithName(dbBuild{}, "repo_build").SetKeys(false, "attempt", "commit_id", "repo")
+	t := Schema.Map.AddTableWithName(dbBuild{}, "repo_build").SetKeys(false, "repo", "id")
 	t.ColMap("commit_id").SetMaxSize(40)
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE repo_build ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
@@ -24,35 +24,45 @@ func init() {
 		`CREATE INDEX repo_build_priority ON repo_build(priority);`,
 		`create index repo_build_created_at on repo_build(created_at desc nulls last);`,
 		`create index repo_build_updated_at on repo_build((greatest(started_at, ended_at, created_at)) desc nulls last);`,
-		`create index repo_build_successful on repo_build(repo) where success and not purged;`,
+		`create index repo_build_successful on repo_build(repo, commit_id) where success and not purged;`,
 
-		// Set attempt to 1 + the max previous attempt for the repo and commit ID.
-		`CREATE OR REPLACE FUNCTION increment_attempt() RETURNS trigger IMMUTABLE AS $$
+		// Set id to 1 + the max previous build ID for the repo.
+		`CREATE OR REPLACE FUNCTION increment_build_id() RETURNS trigger IMMUTABLE AS $$
          BEGIN
-           RAISE WARNING 'Before %', NEW;
-           IF NEW.attempt = 0 OR NEW.attempt IS NULL THEN
-             NEW.attempt = (SELECT COALESCE(max(b.attempt), 0) + 1 FROM repo_build b WHERE b.repo=NEW.repo AND b.commit_id=NEW.commit_id);
+           IF NEW.id = 0 OR NEW.id IS NULL THEN
+             NEW.id = (SELECT COALESCE(max(b.id), 0) + 1 FROM repo_build b WHERE b.repo=NEW.repo);
            END IF;
-           RAISE WARNING 'After %', NEW;
            RETURN NEW;
          END
          $$ language plpgsql;`,
-		`CREATE TRIGGER repo_build_next_attempt BEFORE INSERT ON repo_build FOR EACH ROW EXECUTE PROCEDURE increment_attempt();`,
+		`CREATE TRIGGER repo_build_next_id BEFORE INSERT ON repo_build FOR EACH ROW EXECUTE PROCEDURE increment_build_id();`,
 	)
 
-	Schema.Map.AddTableWithName(dbBuildTask{}, "repo_build_task").SetKeys(true, "taskid")
+	Schema.Map.AddTableWithName(dbBuildTask{}, "repo_build_task").SetKeys(false, "repo", "build_id", "id")
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE repo_build_task ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build_task ALTER COLUMN ended_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
-		`CREATE INDEX repo_build_task_build ON repo_build_task(repo, attempt, commit_id);`,
+
+		// Set id to 1 + the max previous task ID for the build.
+		`CREATE OR REPLACE FUNCTION increment_build_task_id() RETURNS trigger IMMUTABLE AS $$
+         BEGIN
+           IF NEW.id = 0 OR NEW.id IS NULL THEN
+             NEW.id = (SELECT COALESCE(max(t.id), 0) + 1 FROM repo_build_task t WHERE t.repo=NEW.repo AND t.build_id=NEW.build_id);
+           END IF;
+           RETURN NEW;
+         END
+         $$ language plpgsql;`,
+		`CREATE TRIGGER repo_build_task_next_id BEFORE INSERT ON repo_build_task FOR EACH ROW EXECUTE PROCEDURE increment_build_task_id();`,
 	)
 }
 
 // dbBuild DB-maps a sourcegraph.Build object.
 type dbBuild struct {
-	Attempt     uint32
+	ID          uint64
 	Repo        string
-	CommitID    string     `db:"commit_id"`
+	CommitID    string `db:"commit_id"`
+	Branch      string
+	Tag         string
 	CreatedAt   time.Time  `db:"created_at"`
 	StartedAt   *time.Time `db:"started_at"`
 	EndedAt     *time.Time `db:"ended_at"`
@@ -64,17 +74,15 @@ type dbBuild struct {
 	Purged      bool
 	Queue       bool
 	Priority    int
-
-	// TODO(sqs!native-ci): Removed fields; add migration to remove these.
-	Import   bool
-	UseCache bool
 }
 
 func (b *dbBuild) toBuild() *sourcegraph.Build {
 	return &sourcegraph.Build{
-		Attempt:     b.Attempt,
+		ID:          b.ID,
 		Repo:        b.Repo,
 		CommitID:    b.CommitID,
+		Branch:      b.Branch,
+		Tag:         b.Tag,
 		CreatedAt:   pbtypes.NewTimestamp(b.CreatedAt),
 		StartedAt:   ts(b.StartedAt),
 		EndedAt:     ts(b.EndedAt),
@@ -92,9 +100,11 @@ func (b *dbBuild) toBuild() *sourcegraph.Build {
 }
 
 func (b *dbBuild) fromBuild(b2 *sourcegraph.Build) {
-	b.Attempt = b2.Attempt
+	b.ID = b2.ID
 	b.Repo = b2.Repo
 	b.CommitID = b2.CommitID
+	b.Branch = b2.Branch
+	b.Tag = b2.Tag
 	b.CreatedAt = b2.CreatedAt.Time()
 	b.StartedAt = tm(b2.StartedAt)
 	b.EndedAt = tm(b2.EndedAt)
@@ -118,32 +128,22 @@ func toBuilds(bs []*dbBuild) []*sourcegraph.Build {
 
 // dbBuildTask DB-maps a sourcegraph.BuildTask object.
 type dbBuildTask struct {
-	TaskID    int64 `db:"taskid"`
+	ID        uint64
 	Repo      string
-	Attempt   uint32
-	CommitID  string `db:"commit_id"`
-	UnitType  string `db:"unit_type"`
-	Unit      string
-	Op        string
-	Order     int
+	BuildID   uint64 `db:"build_id"`
+	Label     string
 	CreatedAt time.Time  `db:"created_at"`
 	StartedAt *time.Time `db:"started_at"`
 	EndedAt   *time.Time `db:"ended_at"`
-	Queue     bool
 	Success   bool
 	Failure   bool
 }
 
 func (t *dbBuildTask) toBuildTask() *sourcegraph.BuildTask {
 	return &sourcegraph.BuildTask{
-		TaskID:    t.TaskID,
-		Repo:      t.Repo,
-		Attempt:   t.Attempt,
-		CommitID:  t.CommitID,
-		UnitType:  t.UnitType,
-		Unit:      t.Unit,
-		Op:        t.Op,
-		Order:     int32(t.Order),
+		ID:        t.ID,
+		Build:     sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: t.Repo}, ID: t.BuildID},
+		Label:     t.Label,
 		CreatedAt: pbtypes.NewTimestamp(t.CreatedAt),
 		StartedAt: ts(t.StartedAt),
 		EndedAt:   ts(t.EndedAt),
@@ -153,14 +153,10 @@ func (t *dbBuildTask) toBuildTask() *sourcegraph.BuildTask {
 }
 
 func (t *dbBuildTask) fromBuildTask(t2 *sourcegraph.BuildTask) {
-	t.TaskID = t2.TaskID
-	t.Repo = t2.Repo
-	t.Attempt = t2.Attempt
-	t.CommitID = t2.CommitID
-	t.UnitType = t2.UnitType
-	t.Unit = t2.Unit
-	t.Op = t2.Op
-	t.Order = int(t2.Order)
+	t.ID = t2.ID
+	t.Repo = t2.Build.Repo.URI
+	t.BuildID = t2.Build.ID
+	t.Label = t2.Label
 	t.CreatedAt = t2.CreatedAt.Time()
 	t.StartedAt = tm(t2.StartedAt)
 	t.EndedAt = tm(t2.EndedAt)
@@ -183,7 +179,7 @@ var _ store.Builds = (*Builds)(nil)
 
 func (s *Builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	var builds []*dbBuild
-	err := dbh(ctx).Select(&builds, `SELECT * FROM repo_build WHERE attempt=$1 AND commit_id=$2 AND repo=$3 LIMIT 1;`, buildSpec.Attempt, buildSpec.CommitID, buildSpec.Repo.URI)
+	err := dbh(ctx).Select(&builds, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +247,7 @@ func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 		direction = "asc"
 	}
 	sortKeyToCol := map[string]string{
-		"build":      "b.repo %(direction)s, b.commit_id %(direction)s, b.attempt %(direction)s",
+		"build":      "b.repo %(direction)s, b.commit_id %(direction)s, b.id %(direction)s",
 		"created_at": "b.created_at %(direction)s NULLS LAST",
 		"started_at": "b.started_at %(direction)s NULLS LAST",
 		"ended_at":   "b.ended_at %(direction)s NULLS LAST",
@@ -351,19 +347,19 @@ func (s *Builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 		return modl.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
-	// Construct SQL manually so we can retrieve the attempt # from
+	// Construct SQL manually so we can retrieve the id # from
 	// the DB trigger.
-	sql := `INSERT INTO repo_build(attempt, repo, commit_id, created_at, started_at, ended_at, heartbeat_at,
+	sql := `INSERT INTO repo_build(id, repo, commit_id, branch, tag, created_at, started_at, ended_at, heartbeat_at,
                                    success, failure, killed, host, purged, queue, priority)
-            VALUES(` + arg(b.Attempt) + `, ` + arg(b.Repo) + `, ` + arg(b.CommitID) + `, ` + arg(b.CreatedAt) + `, ` + arg(b.StartedAt) + `,` +
+            VALUES(` + arg(b.ID) + `, ` + arg(b.Repo) + `, ` + arg(b.CommitID) + `, ` + arg(b.Branch) + `, ` + arg(b.Tag) + `, ` + arg(b.CreatedAt) + `, ` + arg(b.StartedAt) + `,` +
 		arg(b.EndedAt) + `,` + arg(b.HeartbeatAt) + `, ` + arg(b.Success) + `, ` + arg(b.Failure) + `, ` + arg(b.Killed) + `, ` +
 		arg(b.Host) + `, ` + arg(b.Purged) + `, ` + arg(b.Queue) + `, ` + arg(b.Priority) + `)
-            RETURNING attempt;`
-	attempt, err := dbutil.SelectInt(dbh(ctx), sql, args...)
+            RETURNING id;`
+	id, err := dbutil.SelectInt(dbh(ctx), sql, args...)
 	if err != nil {
 		return nil, err
 	}
-	b.Attempt = uint32(attempt)
+	b.ID = uint64(id)
 	return b.toBuild(), nil
 }
 
@@ -392,7 +388,7 @@ func (s *Builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 	updates = append(updates, "killed="+arg(info.Killed))
 
 	if len(updates) != 0 {
-		sql := fmt.Sprintf(`UPDATE repo_build SET %s WHERE attempt=%s AND commit_id=%s AND repo=%s`, strings.Join(updates, ", "), arg(build.Attempt), arg(build.CommitID), arg(build.Repo.URI))
+		sql := fmt.Sprintf(`UPDATE repo_build SET %s WHERE id=%s AND repo=%s`, strings.Join(updates, ", "), arg(build.ID), arg(build.Repo.URI))
 
 		if _, err := dbh(ctx).Exec(sql, args...); err != nil {
 			return err
@@ -405,11 +401,26 @@ func (s *Builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 func (s *Builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
 	created := make([]*dbBuildTask, len(tasks))
 	for i, task := range tasks {
+		var args []interface{}
+		arg := func(v interface{}) string {
+			args = append(args, v)
+			return modl.PostgresDialect{}.BindVar(len(args) - 1)
+		}
+
 		created[i] = &dbBuildTask{}
 		created[i].fromBuildTask(task)
-		if err := dbh(ctx).Insert(created[i]); err != nil {
+
+		// Construct SQL manually so we can retrieve the id # from
+		// the DB trigger.
+		t := created[i] // shorter alias
+		sql := `INSERT INTO repo_build_task(id, repo, build_id, label, created_at, started_at, ended_at, success, failure)
+            VALUES(` + arg(t.ID) + `, ` + arg(t.Repo) + `, ` + arg(t.BuildID) + `, ` + arg(t.Label) + `, ` + arg(t.CreatedAt) + `, ` + arg(t.StartedAt) + `,` + arg(t.EndedAt) + `,` + arg(t.Success) + `, ` + arg(t.Failure) + `)
+            RETURNING id;`
+		id, err := dbutil.SelectInt(dbh(ctx), sql, args...)
+		if err != nil {
 			return nil, err
 		}
+		created[i].ID = uint64(id)
 	}
 	return toBuildTasks(created), nil
 }
@@ -436,7 +447,7 @@ func (s *Builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	}
 
 	if len(updates) != 0 {
-		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE taskid=` + arg(task.TaskID)
+		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID)
 		if _, err := dbh(ctx).Exec(sql, args...); err != nil {
 			return err
 		}
@@ -456,13 +467,13 @@ func (s *Builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec
 		return modl.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
-	conds := []string{"attempt=" + arg(build.Attempt), "commit_id=" + arg(build.CommitID), "repo=" + arg(build.Repo.URI)}
+	conds := []string{"build_id=" + arg(build.ID), "repo=" + arg(build.Repo.URI)}
 	condsSQL := strings.Join(conds, " AND ")
 
 	sql := `-- Builds.ListBuildTasks
 SELECT * FROM repo_build_task
 WHERE ` + condsSQL + `
-ORDER BY taskid ASC
+ORDER BY id ASC
 LIMIT ` + arg(opt.Limit()) + ` OFFSET ` + arg(opt.Offset()) + `;`
 	var tasks []*dbBuildTask
 	if err := dbh(ctx).Select(&tasks, sql, args...); err != nil {
@@ -484,7 +495,7 @@ to_dequeue AS (
 UPDATE repo_build
 SET started_at = clock_timestamp()
 FROM to_dequeue
-WHERE repo_build.repo = to_dequeue.repo AND repo_build.commit_id = to_dequeue.commit_id AND repo_build.attempt = to_dequeue.attempt
+WHERE repo_build.repo = to_dequeue.repo AND repo_build.id = to_dequeue.id
 RETURNING repo_build.*;
 `
 	var nextBuilds []*dbBuild
@@ -499,8 +510,8 @@ RETURNING repo_build.*;
 
 func (s *Builds) GetTask(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
 	var tasks []*dbBuildTask
-	sql := `SELECT * FROM repo_build_task WHERE repo=$1 AND attempt=$2 AND commit_id=$3 AND taskid=$4;`
-	if err := dbh(ctx).Select(&tasks, sql, task.Repo.URI, task.Attempt, task.CommitID, task.TaskID); err != nil {
+	sql := `SELECT * FROM repo_build_task WHERE repo=$1 AND build_id=$2 AND id=$3;`
+	if err := dbh(ctx).Select(&tasks, sql, task.Build.Repo.URI, task.Build.ID, task.ID); err != nil {
 		return nil, err
 	}
 	if len(tasks) == 0 {

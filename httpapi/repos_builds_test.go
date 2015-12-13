@@ -39,7 +39,7 @@ func TestRepoBuild(t *testing.T) {
 func TestRepoBuildsCreate(t *testing.T) {
 	c, mock := newTest()
 
-	wantBuild := &sourcegraph.Build{Attempt: 123, Repo: "r/r", CommitID: "c"}
+	wantBuild := &sourcegraph.Build{ID: 123, Repo: "r/r", CommitID: "c"}
 
 	calledRepoGet := mock.Repos.MockGet(t, "r/r")
 	calledRepoGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")

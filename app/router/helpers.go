@@ -6,8 +6,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 
-	"strconv"
-
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
@@ -40,16 +38,16 @@ func (r *Router) URLToRepoRev(repoURI string, rev string) (*url.URL, error) {
 	return r.URLToRepoSubrouteRev(Repo, repoURI, rev)
 }
 
-func (r *Router) URLToRepoBuild(repo string, commitID string, attempt uint32) *url.URL {
-	return r.URLToRepoBuildSubroute(RepoBuild, repo, commitID, attempt)
+func (r *Router) URLToRepoBuild(repo string, build uint64) *url.URL {
+	return r.URLToRepoBuildSubroute(RepoBuild, repo, build)
 }
 
-func (r *Router) URLToRepoBuildSubroute(routeName string, repo string, commitID string, attempt uint32) *url.URL {
-	return r.URLTo(routeName, "Repo", repo, "CommitID", commitID, "Attempt", strconv.Itoa(int(attempt)))
+func (r *Router) URLToRepoBuildSubroute(routeName string, repo string, build uint64) *url.URL {
+	return r.URLTo(routeName, "Repo", repo, "Build", fmt.Sprint(build))
 }
 
-func (r *Router) URLToRepoBuildTaskSubroute(routeName string, repo string, commitID string, attempt uint32, taskID int64) *url.URL {
-	return r.URLTo(routeName, "Repo", repo, "CommitID", commitID, "Attempt", strconv.Itoa(int(attempt)), "TaskID", strconv.Itoa(int(taskID)))
+func (r *Router) URLToRepoBuildTaskSubroute(routeName string, repo string, build, task uint64) *url.URL {
+	return r.URLTo(routeName, "Repo", repo, "Build", fmt.Sprint(build), "Task", fmt.Sprint(task))
 }
 
 func (r *Router) URLToRepoSubroute(routeName string, uri string) *url.URL {

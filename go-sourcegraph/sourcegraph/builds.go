@@ -3,34 +3,30 @@ package sourcegraph
 import (
 	"errors"
 	"fmt"
-
-	"strconv"
 )
 
 func (s *BuildSpec) RouteVars() map[string]string {
 	m := s.Repo.RouteVars()
-	m["Attempt"] = fmt.Sprintf("%d", s.Attempt)
-	m["CommitID"] = s.CommitID
+	m["Build"] = fmt.Sprintf("%d", s.ID)
 	return m
 }
 
 func (s *TaskSpec) RouteVars() map[string]string {
-	v := s.BuildSpec.RouteVars()
-	v["TaskID"] = fmt.Sprintf("%d", s.TaskID)
+	v := s.Build.RouteVars()
+	v["Task"] = fmt.Sprintf("%d", s.ID)
 	return v
 }
 
 func (b *Build) Spec() BuildSpec {
 	return BuildSpec{
-		Repo:     RepoSpec{URI: b.Repo},
-		Attempt:  b.Attempt,
-		CommitID: b.CommitID,
+		Repo: RepoSpec{URI: b.Repo},
+		ID:   b.ID,
 	}
 }
 
 // IDString returns a succinct string that uniquely identifies this build.
 func (b BuildSpec) IDString() string {
-	return fmt.Sprintf("%s/%s/%d", b.Repo.URI, b.CommitID, b.Attempt)
+	return fmt.Sprintf("%s#%d", b.Repo.URI, b.ID)
 }
 
 // Build task ops.
@@ -38,20 +34,14 @@ const ImportTaskOp = "import"
 
 func (t *BuildTask) Spec() TaskSpec {
 	return TaskSpec{
-		BuildSpec: BuildSpec{
-			Repo: RepoSpec{
-				URI: t.Repo,
-			},
-			Attempt:  t.Attempt,
-			CommitID: t.CommitID,
-		},
-		TaskID: t.TaskID,
+		Build: t.Build,
+		ID:    t.ID,
 	}
 }
 
 // IDString returns a succinct string that uniquely identifies this build task.
 func (t TaskSpec) IDString() string {
-	return t.BuildSpec.IDString() + "-T" + strconv.FormatInt(t.TaskID, 36)
+	return fmt.Sprintf("%s.%d", t.Build.IDString(), t.ID)
 }
 
 var ErrBuildNotFound = errors.New("build not found")

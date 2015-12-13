@@ -104,7 +104,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"urlToDefSubroute":           router.Rel.URLToDefSubroute,
 	"urlToWithReturnTo":          urlToWithReturnTo,
 	"urlToRepoBuildSubroute":     router.Rel.URLToRepoBuildSubroute,
-	"urlToRepoBuildTaskSubroute": router.Rel.URLToRepoBuildTaskSubroute,
 	"urlToGlobalApp":             router.Rel.URLToGlobalApp,
 
 	"fileToBreadcrumb":       FileToBreadcrumb,

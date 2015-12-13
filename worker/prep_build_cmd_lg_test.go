@@ -55,7 +55,6 @@ func TestPrepBuildDir_sshGitRepo_md(t *testing.T) {
 	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, *remoteOpts); err != nil {
 		t.Fatal(err)
 	}
-	worker.CheckCommitIDResolution("git", cloneDir, commitID)
 }
 
 func TestPrepBuildDir_httpGitRepo_lg(t *testing.T) {
@@ -77,10 +76,6 @@ func TestPrepBuildDir_httpGitRepo_lg(t *testing.T) {
 	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
-		t.Fatal(err)
-	}
-	worker.CheckCommitIDResolution("git", cloneDir, commitID)
 }
 
 func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
@@ -103,6 +98,14 @@ func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
 	gitURL := s.URL
 	commitID := testutil.TrivialGitRepoHandlerHeadCommitID
 
+	// Need to wipe clone dir or else PrepBuildDir will complain that
+	// it already exists.
+	wipeCloneDir := func() {
+		if err := os.RemoveAll(cloneParentDir); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	// No credentials should fail due to lack of auth.
 	if err := os.Setenv("GIT_ASKPASS", "/bin/echo"); err != nil {
 		t.Fatal(err)
@@ -123,12 +126,9 @@ func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
 	if err := worker.PrepBuildDir("git", gitURL, "u", "p", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := worker.PrepBuildDir("git", gitURL, "u", "p", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
-		t.Fatal(err)
-	}
-	worker.CheckCommitIDResolution("git", cloneDir, commitID)
 
 	// No credentials should fail (after prepping with correct auth).
+	wipeCloneDir()
 	if err := os.Setenv("GIT_ASKPASS", "/bin/echo"); err != nil {
 		t.Fatal(err)
 	}
@@ -165,8 +165,4 @@ func TestPrepBuildDir_httpsHgRepo_lg(t *testing.T) {
 	if err := worker.PrepBuildDir("hg", hgURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := worker.PrepBuildDir("hg", hgURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
-		t.Fatal(err)
-	}
-	worker.CheckCommitIDResolution("hg", cloneDir, commitID)
 }

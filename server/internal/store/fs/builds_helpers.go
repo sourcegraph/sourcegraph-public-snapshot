@@ -2,29 +2,31 @@ package fs
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-
-	"strconv"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-// createBuildFile returns a file descriptor pointing to an empty file that stores information
-// about the build that was passed. If Attempt == 0, it will create the consequential attempt
-// based on the number of files in the directory +1 (excluding "tasks"). If Attempt > 0 it
-// will create or truncate that file. The caller is responsible for handling locking mechanisms
-// for synchronized access.
+// createBuildFile returns a file descriptor pointing to an empty file
+// that stores information about the build that was passed. If ID ==
+// 0, it will create the new build based on the number of files in the
+// directory +1 (excluding "tasks"). If ID > 0 it will create or
+// truncate that file. The caller is responsible for handling locking
+// mechanisms for synchronized access.
 func createBuildFile(ctx context.Context, b *sourcegraph.Build) (io.WriteCloser, error) {
 	fs := buildStoreVFS(ctx)
-	dir := filepath.Join(b.Repo, b.CommitID)
+
+	// This dir path must stay consistent with the dirForBuild logic.
+	dir := b.Repo
 	if err := rwvfs.MkdirAll(fs, dir); err != nil {
 		return nil, err
 	}
-	if b.Attempt == 0 {
+	if b.ID == 0 {
 		// If no attempt is specified, create the subsequent one.
 		fis, err := fs.ReadDir(dir)
 		if err != nil {
@@ -32,36 +34,39 @@ func createBuildFile(ctx context.Context, b *sourcegraph.Build) (io.WriteCloser,
 		}
 		bfis := 0
 		for _, fi := range fis {
-			if fi.Name() != "tasks" {
-				bfis = bfis + 1
+			if fi.Mode().IsDir() {
+				bfis++
 			}
 		}
-		b.Attempt = uint32(bfis + 1)
+		b.ID = uint64(bfis + 1)
 	}
-	fn := filepath.Join(dir, strconv.FormatUint(uint64(b.Attempt), 10))
+	fn := filepath.Join(dir, fmt.Sprint(b.ID), "build.json")
+	if err := rwvfs.MkdirAll(fs, filepath.Dir(fn)); err != nil {
+		return nil, err
+	}
 	return fs.Create(fn)
 }
 
-// createTaskFile creates a new empty task file within the sub-folder "tasks" of the repo. It also
-// creates child folders which are named based on the Attempt that they belong too. For example,
-// task with TaskID 1, belonging to attempt 5 for repo URI my/repo and CommitID a1b2c3 will be
-// located in $SGPATH/<buildstore>/my/repo/a1b2c3/tasks/5/1
-// As for builds, if a TaskID is not supplied (=0) it will be generated based on the number of
-// files in the folder.
+// createTaskFile creates a new empty task file within the sub-folder
+// "tasks" of the repo. For example, task with ID 1, belonging to
+// build ID 5 for repo URI my/repo will be located in
+// $SGPATH/<buildstore>/my/repo/5/tasks/1 If a task ID is not supplied
+// (=0) it will be generated based on the number of files in the
+// folder.
 func createTaskFile(ctx context.Context, t *sourcegraph.BuildTask) (io.WriteCloser, error) {
 	fs := buildStoreVFS(ctx)
-	dir := filepath.Join(t.Repo, t.CommitID, "tasks", strconv.FormatUint(uint64(t.Attempt), 10))
+	dir := filepath.Join(dirForBuild(t.Build), "tasks")
 	if err := rwvfs.MkdirAll(fs, dir); err != nil {
 		return nil, err
 	}
-	if t.TaskID == 0 {
+	if t.ID == 0 {
 		fis, err := fs.ReadDir(dir)
 		if err != nil {
 			return nil, err
 		}
-		t.TaskID = int64(len(fis) + 1)
+		t.ID = uint64(len(fis) + 1)
 	}
-	fn := filepath.Join(dir, strconv.FormatInt(t.TaskID, 10))
+	fn := filepath.Join(dir, fmt.Sprint(t.ID)+".json")
 	return fs.Create(fn)
 }
 
@@ -122,27 +127,30 @@ func createBuildQueueEntry(ctx context.Context, b sourcegraph.Build) error {
 	return replaceQueue(ctx, buildQueueFilename, queue)
 }
 
-func repoBuildIndexFilename(repo string) string {
-	return filepath.Join(repo, buildsIndexFilename)
+func repoBuildCommitIDIndexFilename(repo string) string {
+	return filepath.Join(repo, buildsCommitIDIndexFilename)
 }
 
-const buildsIndexFilename = "builds-index.json"
+const buildsCommitIDIndexFilename = "builds-commit-id-index.json"
 
 // updateRepoBuildIndex adds an entry for the build to the per-repo
 // index of all known builds for that repo. Using an index makes it
 // much faster to list the builds for a given repo.
 //
 // TODO(sqs): If there is a race condition, the index can get out of sync with
-func updateRepoBuildIndex(ctx context.Context, build sourcegraph.BuildSpec) (err error) {
-	builds, err := getRepoBuildIndex(ctx, build.Repo.URI)
+func updateRepoBuildCommitIDIndex(ctx context.Context, build sourcegraph.BuildSpec, commitID string) (err error) {
+	idx, err := getRepoBuildIndex(ctx, build.Repo.URI)
 	if err != nil {
 		return err
 	}
+	if idx == nil {
+		idx = repoBuildCommitIDIndex{}
+	}
 
-	builds = append(builds, build)
+	idx[commitID] = append(idx[commitID], build)
 
 	fs := buildStoreVFS(ctx)
-	filename := repoBuildIndexFilename(build.Repo.URI)
+	filename := repoBuildCommitIDIndexFilename(build.Repo.URI)
 
 	if err := rwvfs.MkdirAll(fs, filepath.Dir(filename)); err != nil {
 		return err
@@ -157,11 +165,13 @@ func updateRepoBuildIndex(ctx context.Context, build sourcegraph.BuildSpec) (err
 			err = err2
 		}
 	}()
-	return json.NewEncoder(f).Encode(builds)
+	return json.NewEncoder(f).Encode(idx)
 }
 
-func getRepoBuildIndex(ctx context.Context, repo string) ([]sourcegraph.BuildSpec, error) {
-	f, err := buildStoreVFS(ctx).Open(repoBuildIndexFilename(repo))
+type repoBuildCommitIDIndex map[string][]sourcegraph.BuildSpec
+
+func getRepoBuildIndex(ctx context.Context, repo string) (repoBuildCommitIDIndex, error) {
+	f, err := buildStoreVFS(ctx).Open(repoBuildCommitIDIndexFilename(repo))
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
@@ -169,28 +179,18 @@ func getRepoBuildIndex(ctx context.Context, repo string) ([]sourcegraph.BuildSpe
 	}
 	defer f.Close()
 
-	var builds []sourcegraph.BuildSpec
-	if err = json.NewDecoder(f).Decode(&builds); err != nil {
+	var idx repoBuildCommitIDIndex
+	if err := json.NewDecoder(f).Decode(&idx); err != nil {
 		return nil, err
 	}
-	return builds, nil
+	return idx, nil
 }
 
-// pathForBuild returns the path for the given build.
-func pathForBuild(b sourcegraph.BuildSpec) string {
-	return filepath.Join(
-		b.Repo.URI,
-		b.CommitID,
-		strconv.FormatUint(uint64(b.Attempt), 10),
-	)
+// dirForBuild returns the dir for the given build.
+func dirForBuild(b sourcegraph.BuildSpec) string {
+	return filepath.Join(b.Repo.URI, fmt.Sprint(b.ID))
 }
 
-func pathForTask(t sourcegraph.TaskSpec) string {
-	return filepath.Join(
-		t.BuildSpec.Repo.URI,
-		t.BuildSpec.CommitID,
-		"tasks",
-		strconv.FormatUint(uint64(t.BuildSpec.Attempt), 10),
-		strconv.FormatInt(int64(t.TaskID), 10),
-	)
+func filenameForTask(t sourcegraph.TaskSpec) string {
+	return filepath.Join(dirForBuild(t.Build), "tasks", fmt.Sprint(t.ID)+".json")
 }

@@ -15,9 +15,9 @@ describe("RepoBuildIndicator", () => {
 			Failure: true,
 			EndedAt: "2014-12-20 22:53:11",
 			CommitID: "CommID123",
-			Attempt: 1,
+			ID: 1,
 			expect: {
-				cls: "warning",
+				cls: "danger",
 				txt: "failed",
 				icon: "fa-exclamation-circle",
 			},
@@ -25,18 +25,18 @@ describe("RepoBuildIndicator", () => {
 		BUILT: {
 			Success: true,
 			EndedAt: "2014-12-20 22:53:11",
-			Attempt: 1,
+			ID: 1,
 			CommitID: "CSmmID123",
 			expect: {
 				cls: "success",
-				txt: "indexed",
+				txt: "succeeded",
 				icon: "fa-check",
 			},
 		},
 		STARTED: {
 			StartedAt: "2014-12-20 22:53:11",
 			CommitID: "CTmmID123",
-			Attempt: 1,
+			ID: 1,
 			expect: {
 				cls: "info",
 				txt: "started",
@@ -46,11 +46,11 @@ describe("RepoBuildIndicator", () => {
 		QUEUED: {
 			CreatedAt: "2014-12-20 22:53:11",
 			CommitID: "CQmmID123",
-			Attempt: 1,
+			ID: 1,
 			expect: {
 				cls: "info",
 				txt: "queued",
-				icon: "fa-clock-o",
+				icon: "fa-circle-o-notch",
 			},
 		},
 	};
@@ -69,8 +69,8 @@ describe("RepoBuildIndicator", () => {
 			expect(client.builds.callCount).to.be(1);
 			expect(component.state.status).to.be(component.BuildStatus[name]);
 			expect($node.hasClass(`text-${test.expect.cls}`)).to.be(true);
-			expect($node.attr("href")).to.be(`/test-uri/.builds/${test.CommitID}/${test.Attempt}`);
-			expect($node.attr("title")).to.contain(`${test.CommitID.slice(0, 6)} ${test.expect.txt}`);
+			expect($node.attr("href")).to.be(`/test-uri/.builds/${test.ID}`);
+			expect($node.attr("title")).to.contain(`Build ${test.expect.txt}`);
 
 			tag = TestUtils.findRenderedDOMComponentWithTag(component, "i");
 			expect($(ReactDOM.findDOMNode(tag)).hasClass(test.expect.icon)).to.be(true);
@@ -88,7 +88,7 @@ describe("RepoBuildIndicator", () => {
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var $node = $(ReactDOM.findDOMNode(tag));
-		expect($node.attr("title")).to.contain("Click to index");
+		expect($node.attr("title")).to.contain("Build this version");
 	});
 
 	it("should not display build link when indicator is not buildable", () => {
@@ -130,7 +130,7 @@ describe("RepoBuildIndicator", () => {
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 		var $node = $(ReactDOM.findDOMNode(tag));
 
-		expect($node.hasClass("text-danger")).to.be(true);
+		expect($node.hasClass("btn-danger")).to.be(true);
 	});
 
 	it("should not request build status if build is provided in props", () => {

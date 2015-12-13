@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 )
 
 // buildLogs is a Papertrail-backed implementation of the build logs
@@ -24,10 +23,10 @@ func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID st
 	// one) and is not expected behavior for other BuildLogs
 	// implementations.
 	var tag string
-	if task.TaskID == 0 {
-		tag = buildutil.BuildTag(task.BuildSpec)
+	if task.ID == 0 {
+		tag = task.Build.IDString()
 	} else {
-		tag = buildutil.TaskTag(task)
+		tag = task.IDString()
 	}
 
 	pOpt := papertrail.SearchOptions{

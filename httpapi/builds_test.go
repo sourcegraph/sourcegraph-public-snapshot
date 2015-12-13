@@ -10,12 +10,12 @@ import (
 func TestBuild(t *testing.T) {
 	c, mock := newTest()
 
-	wantBuild := &sourcegraph.Build{CommitID: "ASD", Attempt: 123, Repo: "r/r"}
+	wantBuild := &sourcegraph.Build{CommitID: "c", ID: 123, Repo: "r/r"}
 
 	calledGet := mock.Builds.MockGet_Return(t, wantBuild)
 
 	var build *sourcegraph.Build
-	if err := c.GetJSON("/repos/r/r/.builds/ASD/123", &build); err != nil {
+	if err := c.GetJSON("/repos/r/r/.builds/123", &build); err != nil {
 		t.Logf("%#v", build)
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestBuild(t *testing.T) {
 func TestBuilds(t *testing.T) {
 	c, mock := newTest()
 
-	wantBuilds := &sourcegraph.BuildList{Builds: []*sourcegraph.Build{{Attempt: 123, CommitID: "ASD", Repo: "r/r"}}}
+	wantBuilds := &sourcegraph.BuildList{Builds: []*sourcegraph.Build{{ID: 123, CommitID: "c", Repo: "r/r"}}}
 
 	calledList := mock.Builds.MockList(t, wantBuilds.Builds...)
 
@@ -49,12 +49,12 @@ func TestBuilds(t *testing.T) {
 func TestBuildTasks(t *testing.T) {
 	c, mock := newTest()
 
-	wantTasks := &sourcegraph.BuildTaskList{BuildTasks: []*sourcegraph.BuildTask{{TaskID: 123}}}
+	wantTasks := &sourcegraph.BuildTaskList{BuildTasks: []*sourcegraph.BuildTask{{ID: 123}}}
 
 	calledListBuildTasks := mock.Builds.MockListBuildTasks(t, wantTasks.BuildTasks...)
 
 	var tasks *sourcegraph.BuildTaskList
-	if err := c.GetJSON("/repos/r/.builds/abc/123/.tasks", &tasks); err != nil {
+	if err := c.GetJSON("/repos/r/.builds/123/.tasks", &tasks); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(tasks, wantTasks) {

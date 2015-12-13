@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/makex"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
@@ -21,15 +20,14 @@ import (
 )
 
 type doBuildCmd struct {
-	Attempt  uint32 `long:"attempt" description:"ID of build to run" required:"yes" value-name:"Attempt"`
-	CommitID string `long:"commit-id" description:"Commit ID of build" required:"yes" value-name:"CommitID"`
-	Repo     string `long:"repo" description:"URI of repository" required:"yes" value-name:"Repo"`
+	Repo string `long:"repo" description:"URI of repository" required:"yes" value-name:"Repo"`
+	ID   uint64 `long:"id" description:"ID of build to run" required:"yes" value-name:"ID"`
 }
 
 func (c *doBuildCmd) Execute(args []string) error {
 	cl := cli.Client()
 
-	build, repo, err := getBuild(c.Repo, c.CommitID, c.Attempt)
+	build, repo, err := getBuild(c.Repo, c.ID)
 	if err != nil {
 		return err
 	}
@@ -71,13 +69,10 @@ func (c *doBuildCmd) Execute(args []string) error {
 
 	ruleTask := map[makex.Rule]*sourcegraph.BuildTask{}
 	var allTasks []*sourcegraph.BuildTask
-	for i, tset := range tsets {
+	for _, tset := range tsets {
 		for _, target := range tset {
 			task := &sourcegraph.BuildTask{
-				Attempt:  build.Attempt,
-				CommitID: build.CommitID,
-				Repo:     build.Repo,
-				Order:    int32(i),
+				Build: build.Spec(),
 			}
 
 			// associate rule with task for later
@@ -91,25 +86,26 @@ func (c *doBuildCmd) Execute(args []string) error {
 			}
 			ruleTask[rule] = task
 
+			// fill in op on task (if available)
+			if dataTypeName, _ := buildstore.DataType(target); dataTypeName != "" {
+				// TODO(sqs): the Op and data type name are not defined to be
+				// the same, but in practice they are the same (depresolve,
+				// graph, etc.). Probably should change srclib so they are
+				// enforced to always be the same. It makes sense for ops to
+				// output to a file that contains the op name.
+				task.Label = dataTypeName
+			}
+
 			// fill in source unit on task (if available)
 			type ruleForSourceUnit interface {
 				SourceUnit() *unit.SourceUnit
 			}
 			if unitRule, ok := rule.(ruleForSourceUnit); ok {
 				u := unitRule.SourceUnit()
-				task.Unit = u.Name
-				task.UnitType = u.Type
-			}
-
-			// fill in op on task (if available)
-			dataTypeName, _ := buildstore.DataType(target)
-			if dataTypeName != "" {
-				// TODO(sqs): the Op and data type name are not defined to be
-				// the same, but in practice they are the same (depresolve,
-				// graph, etc.). Probably should change srclib so they are
-				// enforced to always be the same. It makes sense for ops to
-				// output to a file that contains the op name.
-				task.Op = dataTypeName
+				if task.Label != "" {
+					task.Label += ": "
+				}
+				task.Label += fmt.Sprintf("%s %s", u.Type, u.Name)
 			}
 
 			allTasks = append(allTasks, task)
@@ -123,11 +119,8 @@ func (c *doBuildCmd) Execute(args []string) error {
 	// Treat the import as a task so we can see separate logs and
 	// statuses for it.
 	importTask := &sourcegraph.BuildTask{
-		Attempt:  build.Attempt,
-		CommitID: build.CommitID,
-		Repo:     build.Repo,
-		Order:    int32(len(allTasks)),
-		Op:       sourcegraph.ImportTaskOp,
+		Build: build.Spec(),
+		Label: sourcegraph.ImportTaskOp,
 	}
 	allTasks = append(allTasks, importTask)
 
@@ -151,7 +144,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 		if isPhonyRule(r) {
 			return nopCloser{os.Stderr}, nopCloser{os.Stderr}, log.New(os.Stderr, "", 0)
 		}
-		w := newLogger(buildutil.TaskTag(ruleTask[r].Spec()))
+		w := newLogger(ruleTask[r].Spec().IDString())
 		w.Logger.Printf("rule for target: %s", r.Target())
 		fmt.Printf("%s: logs at %s\n", r.Target(), w.Destination)
 		return w, w, w.Logger
@@ -209,7 +202,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 		// Import
 
 		setTaskStarted(cl, importTask)
-		w := newLogger(buildutil.TaskTag(importTask.Spec()))
+		w := newLogger(importTask.Spec().IDString())
 		fmt.Printf("import: logs at %s\n", w.Destination)
 
 		bdfs, err := srclib.GetBuildDataFS(build.CommitID)

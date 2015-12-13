@@ -15,7 +15,7 @@ func TestRepoURIExpr(t *testing.T) {
 		{"*sourcegraph.RepoRevSpec", "x.URI"},
 		{"*sourcegraph.BuildsCreateOp", "x.RepoRev.URI"},
 		{"*sourcegraph.RepoTreeGetOp", "x.Entry.RepoRev.URI"},
-		{"*sourcegraph.BuildsGetTaskLogOp", "x.Task.Repo.URI"},
+		{"*sourcegraph.BuildsGetTaskLogOp", "x.Task.Build.Repo.URI"},
 		{"*sourcegraph.DefsListRefsOp", "x.Def.Repo"},
 		{"*sourcegraph.UserSpec", ""},
 		{"*sourcegraph.UsersListOptions", ""},

@@ -51,7 +51,7 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 // of Builds.GetFirstInCommitOrder when the first commit ID has
 // multiple builds (it should return the newest).
 func Builds_GetFirstInCommitOrder_firstCommitIDMatch(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	insert(ctx, t, []*sourcegraph.Build{{Attempt: 1, Repo: "r", CommitID: "a"}})
+	insert(ctx, t, []*sourcegraph.Build{{ID: 1, Repo: "r", CommitID: "a"}})
 
 	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a"}, false)
 	if err != nil {
@@ -60,8 +60,8 @@ func Builds_GetFirstInCommitOrder_firstCommitIDMatch(ctx context.Context, t *tes
 	if build == nil {
 		t.Fatal("build == nil")
 	}
-	if build.Attempt != 1 {
-		t.Errorf("got Attempt %d, want %d", build.Attempt, 1)
+	if build.ID != 1 {
+		t.Errorf("got ID %d, want %d", build.ID, 1)
 	}
 	if want := 0; nth != want {
 		t.Errorf("got nth == %d, want %d", nth, want)
@@ -72,7 +72,7 @@ func Builds_GetFirstInCommitOrder_firstCommitIDMatch(ctx context.Context, t *tes
 // of Builds.GetSecondInCommitOrder when the *second* (but not second)
 // commit ID has multiple builds (it should return the newest).
 func Builds_GetFirstInCommitOrder_secondCommitIDMatch(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	insert(ctx, t, []*sourcegraph.Build{{Attempt: 2, Repo: "r", CommitID: "b"}})
+	insert(ctx, t, []*sourcegraph.Build{{ID: 2, Repo: "r", CommitID: "b"}})
 
 	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a", "b"}, false)
 	if err != nil {
@@ -81,8 +81,8 @@ func Builds_GetFirstInCommitOrder_secondCommitIDMatch(ctx context.Context, t *te
 	if build == nil {
 		t.Fatal("build == nil")
 	}
-	if build.Attempt != 2 {
-		t.Errorf("got Attempt %d, want %d", build.Attempt, 2)
+	if build.ID != 2 {
+		t.Errorf("got ID %d, want %d", build.ID, 2)
 	}
 	if want := 1; nth != want {
 		t.Errorf("got nth == %d, want %d", nth, want)
@@ -93,7 +93,7 @@ func Builds_GetFirstInCommitOrder_secondCommitIDMatch(ctx context.Context, t *te
 // Builds.GetFirstInCommitOrder when successfulOnly is true and there
 // are no successful builds.
 func Builds_GetFirstInCommitOrder_successfulOnly(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	insert(ctx, t, []*sourcegraph.Build{{Attempt: 1, Repo: "r", CommitID: "a", Success: false}})
+	insert(ctx, t, []*sourcegraph.Build{{ID: 1, Repo: "r", CommitID: "a", Success: false}})
 
 	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a"}, true)
 	if err != nil {
@@ -111,7 +111,7 @@ func Builds_GetFirstInCommitOrder_successfulOnly(ctx context.Context, t *testing
 // Builds.GetFirstInCommitOrder when there are no builds with any of
 // the specified commitIDs.
 func Builds_GetFirstInCommitOrder_noneFound(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	insert(ctx, t, []*sourcegraph.Build{{Attempt: 1, Repo: "r", CommitID: "a"}})
+	insert(ctx, t, []*sourcegraph.Build{{ID: 1, Repo: "r", CommitID: "a"}})
 
 	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"b"}, false)
 	if err != nil {
@@ -133,9 +133,9 @@ func Builds_GetFirstInCommitOrder_returnNewest(ctx context.Context, t *testing.T
 	t1 := pbtypes.NewTimestamp(time.Unix(1, 0))
 	t2 := pbtypes.NewTimestamp(time.Unix(2, 0)) // newest
 	insert(ctx, t, []*sourcegraph.Build{
-		{Attempt: 1, Repo: "r", CommitID: "a", StartedAt: &t0},
-		{Attempt: 2, Repo: "r", CommitID: "a", StartedAt: &t2}, // newest
-		{Attempt: 3, Repo: "r", CommitID: "a", StartedAt: &t1},
+		{ID: 1, Repo: "r", CommitID: "a", StartedAt: &t0},
+		{ID: 2, Repo: "r", CommitID: "a", StartedAt: &t2}, // newest
+		{ID: 3, Repo: "r", CommitID: "a", StartedAt: &t1},
 	})
 
 	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a"}, false)
@@ -145,8 +145,8 @@ func Builds_GetFirstInCommitOrder_returnNewest(ctx context.Context, t *testing.T
 	if build == nil {
 		t.Fatal("build == nil")
 	}
-	if build.Attempt != 2 {
-		t.Errorf("got Attempt %d, want %d", build.Attempt, 2)
+	if build.ID != 2 {
+		t.Errorf("got ID %d, want %d", build.ID, 2)
 	}
 	if want := 0; nth != want {
 		t.Errorf("got nth == %d, want %d", nth, want)
@@ -155,15 +155,51 @@ func Builds_GetFirstInCommitOrder_returnNewest(ctx context.Context, t *testing.T
 
 // Builds_Get tests that the behavior of Builds.Get indirectly via the assertBuildExists method.
 func Builds_Get(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	want := &sourcegraph.Build{Attempt: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	insert(ctx, t, []*sourcegraph.Build{want})
 	assertBuildExists(ctx, s, want, t)
+}
+
+// Builds_List verifies the correct functioning of the Builds.List method.
+func Builds_List(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
+	want := []*sourcegraph.Build{
+		{ID: 1, Repo: "r", CommitID: "c1"},
+		{ID: 2, Repo: "r", CommitID: "c2"},
+		{ID: 3, Repo: "r", CommitID: "c3"},
+	}
+	insert(ctx, t, want)
+	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(builds, want) {
+		t.Errorf("got %v, want %v", builds, want)
+	}
+}
+
+// Builds_List_byRepoAndCommitID verifies the correct functioning of
+// the Builds.List method when filtering by a repo and commit ID.
+func Builds_List_byRepoAndCommitID(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
+	data := []*sourcegraph.Build{
+		{ID: 1, Repo: "r1", CommitID: "c1"},
+		{ID: 2, Repo: "r1", CommitID: "c2"},
+		{ID: 3, Repo: "r2", CommitID: "c1"},
+	}
+	insert(ctx, t, data)
+	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{Repo: "r1", CommitID: "c1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := []*sourcegraph.Build{data[0]}; !reflect.DeepEqual(builds, want) {
+		t.Errorf("got %v, want %v", builds, want)
+	}
 }
 
 // Builds_Create tests the behavior of Builds.Create and that it correctly creates the passed
 // in build.
 func Builds_Create(ctx context.Context, t *testing.T, s store.Builds) {
-	want := &sourcegraph.Build{Attempt: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	want := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	b, err := s.Create(ctx, want)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
@@ -177,7 +213,7 @@ func Builds_Create(ctx context.Context, t *testing.T, s store.Builds) {
 // Builds_Create_Queue verifies that passing a Build with StartedAt=nil to the Builds.Create method
 // will make it available in the queue.
 func Builds_Create_Queue(ctx context.Context, t *testing.T, s store.Builds, queueEntryExists ValidateQueueEntryFunc) {
-	want := &sourcegraph.Build{Attempt: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	want := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 	_, err := s.Create(ctx, want)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
@@ -187,27 +223,27 @@ func Builds_Create_Queue(ctx context.Context, t *testing.T, s store.Builds, queu
 	}
 }
 
-// Builds_Create_New verifies that passing a Build with Attempt == 0 to Builds.Create will
-// generate an Attempt for it.
+// Builds_Create_New verifies that passing a Build with ID == 0 to Builds.Create will
+// generate an ID for it.
 func Builds_Create_New(ctx context.Context, t *testing.T, s store.Builds) {
-	// no attempt
+	// no id
 	want := &sourcegraph.Build{Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	b, err := s.Create(ctx, want)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
 	}
-	if b.Attempt == 0 {
-		t.Errorf("expected (on create new) attempt to be other than 0, but got %d", b.Attempt)
+	if b.ID == 0 {
+		t.Errorf("expected (on create new) id to be other than 0, but got %d", b.ID)
 	}
-	want.Attempt = b.Attempt
+	want.ID = b.ID
 	assertBuildExists(ctx, s, want, t)
 }
 
-// Builds_Create_SequentialAttempt verifies that passing a Build with
-// Attempt == 0 to Builds.Create will generate an Attempt for it that
-// is greater than all other builds' Attempts.
-func Builds_Create_SequentialAttempt(ctx context.Context, t *testing.T, s store.Builds) {
-	_, err := s.Create(ctx, &sourcegraph.Build{Attempt: 1, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"})
+// Builds_Create_SequentialID verifies that passing a Build with
+// ID == 0 to Builds.Create will generate an ID for it that
+// is greater than all other builds' IDs.
+func Builds_Create_SequentialID(ctx context.Context, t *testing.T, s store.Builds) {
+	_, err := s.Create(ctx, &sourcegraph.Build{ID: 1, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,15 +253,15 @@ func Builds_Create_SequentialAttempt(ctx context.Context, t *testing.T, s store.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := uint32(2); b.Attempt != want {
-		t.Errorf("got attempt == %d, want %d", b.Attempt, want)
+	if want := uint64(2); b.ID != want {
+		t.Errorf("got id == %d, want %d", b.ID, want)
 	}
 }
 
 // Builds_Update tests the correct functioning of the Builds.Update method by inserting a build,
 // Updating it and verifying that it exists in its new form.
 func Builds_Update(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	orig := &sourcegraph.Build{Attempt: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	orig := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
 	update := sourcegraph.BuildUpdate{
 		StartedAt: &t0,
@@ -248,7 +284,7 @@ func Builds_Update(ctx context.Context, t *testing.T, s store.Builds, insert Ins
 }
 
 func Builds_DequeueNext(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	want := &sourcegraph.Build{Attempt: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 	insert(ctx, t, []*sourcegraph.Build{want})
 	build, err := s.DequeueNext(ctx)
 	if err != nil {
@@ -263,10 +299,10 @@ func Builds_DequeueNext(ctx context.Context, t *testing.T, s store.Builds, inser
 // creates these tasks in the store. The existence is asserted using the assertTaskExists method.
 func Builds_CreateTasks(ctx context.Context, t *testing.T, s store.Builds, _ InsertTasksFunc) {
 	tasks := []*sourcegraph.BuildTask{
-		{TaskID: 1, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 1, Op: "import"},
-		{TaskID: 2, Repo: "a/b", CommitID: strings.Repeat("b", 40), Attempt: 1, Op: "import"},
-		{TaskID: 3, Repo: "a/b", CommitID: strings.Repeat("b", 40), Attempt: 2, Op: "graph"},
-		{TaskID: 4, Repo: "x/z", CommitID: strings.Repeat("v", 40), Attempt: 1, Op: "graph"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
 	}
 	tsk, err := s.CreateTasks(ctx, tasks)
 	if err != nil {
@@ -280,13 +316,30 @@ func Builds_CreateTasks(ctx context.Context, t *testing.T, s store.Builds, _ Ins
 	}
 }
 
+// Builds_CreateTasks_SequentialID verifies that when creating tasks
+// with unset IDs, IDs are generated such that they are sequential in
+// the build.
+func Builds_CreateTasks_SequentialID(ctx context.Context, t *testing.T, s store.Builds) {
+	build := sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}
+
+	for i := 1; i < 4; i++ {
+		tasks, err := s.CreateTasks(ctx, []*sourcegraph.BuildTask{{Build: build}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := uint64(i); tasks[0].ID != want {
+			t.Errorf("got id == %d, want %d", tasks[0].ID, want)
+		}
+	}
+}
+
 // Builds_UpdateTask verifies the correct functioning of the Builds.UpdateTask method.
 func Builds_UpdateTask(ctx context.Context, t *testing.T, s store.Builds, insert InsertTasksFunc) {
 	tasks := []*sourcegraph.BuildTask{
-		{TaskID: 1, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 1, Op: "import"},
-		{TaskID: 2, Repo: "a/b", CommitID: strings.Repeat("b", 40), Attempt: 1, Op: "import"},
-		{TaskID: 3, Repo: "a/b", CommitID: strings.Repeat("b", 40), Attempt: 2, Op: "graph"},
-		{TaskID: 4, Repo: "x/z", CommitID: strings.Repeat("v", 40), Attempt: 1, Op: "graph"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
 	}
 	insert(ctx, t, tasks)
 	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
@@ -306,13 +359,13 @@ func Builds_UpdateTask(ctx context.Context, t *testing.T, s store.Builds, insert
 // Builds_ListBuildTasks verifies the correct functioning of the Builds.ListBuildTasks method.
 func Builds_ListBuildTasks(ctx context.Context, t *testing.T, s store.Builds, insert InsertTasksFunc) {
 	tasks := []*sourcegraph.BuildTask{
-		{TaskID: 10, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 1, Op: "graph"}, // test order
-		{TaskID: 1, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 1, Op: "import"},
-		{TaskID: 2, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 1, Op: "graph"},
-		{TaskID: 2, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 2, Op: "graph"},
+		{ID: 10, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"}, // test order
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "a"},
 	}
 	insert(ctx, t, tasks)
-	ts, err := s.ListBuildTasks(ctx, tasks[0].Spec().BuildSpec, nil)
+	ts, err := s.ListBuildTasks(ctx, tasks[0].Spec().Build, nil)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
 	}
@@ -324,9 +377,9 @@ func Builds_ListBuildTasks(ctx context.Context, t *testing.T, s store.Builds, in
 
 func Builds_GetTask(ctx context.Context, t *testing.T, s store.Builds, insert InsertTasksFunc) {
 	tasks := []*sourcegraph.BuildTask{
-		{TaskID: 1, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 1, Op: "import"},
-		{TaskID: 2, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 1, Op: "graph"},
-		{TaskID: 2, Repo: "a/b", CommitID: strings.Repeat("a", 40), Attempt: 2, Op: "graph"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "a"},
 	}
 	insert(ctx, t, tasks)
 	for _, tsk := range tasks {

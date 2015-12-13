@@ -170,7 +170,7 @@ var RepoBuildIndicator = React.createClass({
 		return (
 			<a key="indicator"
 				className={`build-indicator btn ${this.props.btnSize} text-${cls}`}
-				href={`/${this.props.RepoURI}/.builds/${this.state.LastBuild.CommitID}/${this.state.LastBuild.Attempt}`}
+				href={`/${this.props.RepoURI}/.builds/${this.state.LastBuild.ID}`}
 				data-tooltip={this.props.tooltipPosition}
 				title={`Build ${txt}`}>
 				<i className={`fa ${icon}`}></i>

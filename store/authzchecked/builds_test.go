@@ -5,8 +5,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"strings"
-
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store/mockstore"
@@ -194,7 +192,11 @@ func TestBuilds_CreateTasks(t *testing.T) {
 		},
 	})
 
-	if _, err := s.CreateTasks(ctx, []*sourcegraph.BuildTask{{Repo: "r0", Attempt: 0, CommitID: strings.Repeat("A", 40)}, {Repo: "r1", Attempt: 1, CommitID: strings.Repeat("A", 40)}}); err != nil {
+	newTasks := []*sourcegraph.BuildTask{
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r0"}}},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r1"}}},
+	}
+	if _, err := s.CreateTasks(ctx, newTasks); err != nil {
 		t.Fatal(err)
 	}
 	if !calledCreateTasks {
@@ -275,7 +277,7 @@ func TestBuilds_GetTask(t *testing.T) {
 	s := Builds(&mockstore.Builds{
 		GetTask_: func(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
 			calledGetTask = true
-			return &sourcegraph.BuildTask{Attempt: task.Attempt, CommitID: strings.Repeat("A", 40), Repo: "r/r"}, nil
+			return &sourcegraph.BuildTask{ID: task.ID, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r/r"}}}, nil
 		},
 	})
 

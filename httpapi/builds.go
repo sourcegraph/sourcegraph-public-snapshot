@@ -87,14 +87,13 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 
 func getBuildSpec(r *http.Request) (*sourcegraph.BuildSpec, error) {
 	v := mux.Vars(r)
-	commit, repo := v["CommitID"], v["Repo"]
-	attempt, err := strconv.ParseInt(v["Attempt"], 10, 32)
-	if commit == "" || repo == "" || err != nil {
+	repo := v["Repo"]
+	build, err := strconv.ParseUint(v["Build"], 10, 64)
+	if repo == "" || err != nil {
 		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	return &sourcegraph.BuildSpec{
-		Attempt:  uint32(attempt),
-		CommitID: commit,
-		Repo:     sourcegraph.RepoSpec{URI: repo},
+		Repo: sourcegraph.RepoSpec{URI: repo},
+		ID:   build,
 	}, nil
 }

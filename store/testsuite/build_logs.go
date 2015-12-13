@@ -17,7 +17,7 @@ type WriteBuildLogFunc func(ctx context.Context, t *testing.T, task sourcegraph.
 
 func logStr(e *sourcegraph.LogEntries) string { return strings.Join(e.Entries, "\n") }
 
-var task = sourcegraph.TaskSpec{BuildSpec: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"}, TaskID: 456}
+var task = sourcegraph.TaskSpec{Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, ID: 123}, ID: 456}
 
 func BuildLogs_Get_noErrorIfNotExist(ctx context.Context, t *testing.T, s store.BuildLogs, write WriteBuildLogFunc) {
 	e, err := s.Get(ctx, task, "", time.Time{}, time.Time{})

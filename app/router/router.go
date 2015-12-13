@@ -215,12 +215,12 @@ func New(base *mux.Router) *Router {
 
 	repo.Path("/.builds").Methods("GET").Name(RepoBuilds)
 	repo.Path("/.builds").Methods("POST").Name(RepoBuildsCreate)
-	repoBuildPath := `/.builds/{CommitID}/{Attempt:\d+}`
+	repoBuildPath := `/.builds/{Build:\d+}`
 	repo.Path(repoBuildPath).Methods("GET").Name(RepoBuild)
 	repo.Path(repoBuildPath).Methods("POST").Name(RepoBuildUpdate)
 	repoBuild := repo.PathPrefix(repoBuildPath).Subrouter()
 	repoBuild.Path("/log").Methods("GET").Name(RepoBuildLog)
-	repoBuild.Path("/tasks/{TaskID}/log").Methods("GET").Name(RepoBuildTaskLog)
+	repoBuild.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(RepoBuildTaskLog)
 
 	// This route dispatches to all SearchFrames that were registered through
 	// RegisterSearchFrame in the platform package.

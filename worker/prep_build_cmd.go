@@ -20,9 +20,8 @@ import (
 )
 
 type prepBuildCmd struct {
-	Attempt  uint32 `long:"attempt" description:"ID of build to run" required:"yes" value-name:"Attempt"`
-	CommitID string `long:"commit-id" description:"Commit ID of build" required:"yes" value-name:"CommitID"`
 	Repo     string `long:"repo" description:"URI of repository" required:"yes" value-name:"Repo"`
+	ID       uint64 `long:"id" description:"ID of build to prepare" required:"yes" value-name:"ID"`
 	BuildDir string `long:"build-dir" description:"dir to prepare for build" required:"yes" value-name:"DIR"`
 
 	forcePrep bool
@@ -39,7 +38,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 	if c.forcePrep {
 		build, repo, err = forcePrepBuild(c.Repo)
 	} else {
-		build, repo, err = getBuild(c.Repo, c.CommitID, c.Attempt)
+		build, repo, err = getBuild(c.Repo, c.ID)
 	}
 	if err != nil {
 		return err

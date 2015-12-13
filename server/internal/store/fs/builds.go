@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -22,11 +21,12 @@ import (
 // Builds and BuildTasks in the filesystem (by default $SGPATH/buildstore, which
 // can be re-configured via CLI flags).
 //
-// Builds are stored and identified uniquely by the combination of Repo path +
-// CommitID + Attempt. A build is stored as a JSON-encoded structure in a file
-// having the path <repo>/<commit>/<attempt>. Tasks are stored as a JSON-encoded
-// structure having the path: <repo>/<commit>/tasks/<attempt>/<TaskID> and are
-// uniquely identifiable by a combination of the aforementioned variables.
+// Builds are stored and identified uniquely by the combination of
+// Repo + Build ID. A build is stored as a JSON-encoded structure in a
+// file having the path <repo>/<build-id>. Tasks are stored as a
+// JSON-encoded structure having the path:
+// <repo>/<build-id>/tasks/<task-id> and are uniquely identifiable by
+// a combination of the aforementioned variables.
 //
 // Queues are stored as indexes in JSON files at the root of the build filesystem.
 // They do not store actual builds or tasks, only arrays of specs that point to
@@ -56,7 +56,7 @@ func (s *Builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sou
 }
 
 func (s *Builds) get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
-	return s.getFromPath(ctx, pathForBuild(buildSpec))
+	return s.getFromPath(ctx, filepath.Join(dirForBuild(buildSpec), "build.json"))
 }
 
 func (s *Builds) getFromPath(ctx context.Context, path string) (*sourcegraph.Build, error) {
@@ -85,39 +85,76 @@ func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 
 	log15.Debug("Listing builds", "pkg", "server/internal/store/fs", "Repo", opt.Repo, "CommitID", opt.CommitID)
 
-	root := "."
-	if opt.Repo != "" {
-		root = filepath.Join(root, opt.Repo)
-		if opt.CommitID != "" {
-			root = filepath.Join(root, opt.CommitID)
+	// selectFn returns true if the build matches the filters.
+	selectFn := func(b *sourcegraph.Build) bool {
+		if b.ID == 0 {
+			// Omit legacy builds from prior to the migration to
+			// numeric build IDs. This can be removed in a future
+			// version.
+			return false
 		}
-	}
-
-	builds := make([]*sourcegraph.Build, 0)
-	// test verifies the walker's state against the query in the parameters
-	// and adds it to the final list if it matches.
-	testFn := func(w *fs.Walker) {
-		if strings.HasPrefix(filepath.Base(w.Path()), ".") {
-			return
-		}
-		if w.Stat().Name() == buildsIndexFilename || w.Stat().Name() == buildQueueFilename {
-			return
-		}
-		b, err := s.getFromPath(ctx, w.Path())
-		if err != nil {
-			log.Printf("error reading build file %s: %s", w.Path(), err)
-			return // non critical
-		}
-		if (!opt.Queued || (b.Queue && b.StartedAt == nil)) &&
+		return (!opt.Queued || (b.Queue && b.StartedAt == nil)) &&
 			(!opt.Active || (b.StartedAt != nil && b.EndedAt == nil)) &&
 			(!opt.Ended || b.EndedAt != nil) &&
 			(!opt.Succeeded || b.Success) &&
 			(!opt.Failed || b.Failure) &&
-			(!opt.Purged || b.Purged) {
+			(!opt.Purged || b.Purged) &&
+			(opt.Repo == "" || b.Repo == opt.Repo) &&
+			(opt.CommitID == "" || b.CommitID == opt.CommitID)
+	}
 
+	var builds []*sourcegraph.Build
+	if opt.Repo != "" && opt.CommitID != "" {
+		// Fastpath: consult index instead of iterating and
+		// filtering over all.
+		var err error
+		builds, err = s.listBuildsIndexed(ctx, opt.Repo, opt.CommitID, selectFn)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		var err error
+		builds, err = s.listBuildsWalkFS(ctx, opt, selectFn)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	builds = store.SortAndPaginateBuilds(builds, opt)
+	return builds, nil
+}
+
+func (s *Builds) listBuildsIndexed(ctx context.Context, repo, commitID string, selectFn func(*sourcegraph.Build) bool) ([]*sourcegraph.Build, error) {
+	buildIdx, err := getRepoBuildIndex(ctx, repo)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+		}
+		return nil, err
+	}
+
+	var builds []*sourcegraph.Build
+	for _, bs := range buildIdx[commitID] {
+		b, err := s.get(ctx, bs)
+		if os.IsNotExist(err) {
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+		if selectFn(b) {
 			builds = append(builds, b)
 		}
 	}
+	return builds, nil
+}
+
+func (s *Builds) listBuildsWalkFS(ctx context.Context, opt *sourcegraph.BuildListOptions, selectFn func(*sourcegraph.Build) bool) ([]*sourcegraph.Build, error) {
+	root := "."
+	if opt.Repo != "" {
+		root = filepath.Join(root, opt.Repo)
+	}
+
+	var builds []*sourcegraph.Build
 
 	w := fs.WalkFS(root, buildStoreVFS(ctx))
 	for w.Step() {
@@ -132,12 +169,26 @@ func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 			}
 			continue
 		}
-		testFn(w)
+
+		if strings.HasPrefix(filepath.Base(w.Path()), ".") {
+			continue
+		}
+		if name := w.Stat().Name(); name == buildsCommitIDIndexFilename || name == "builds-index.json" || name == buildQueueFilename {
+			continue
+		}
+
+		b, err := s.getFromPath(ctx, w.Path())
+		if err != nil {
+			log.Printf("error reading build file %s: %s", w.Path(), err)
+			continue
+		}
+		if selectFn(b) {
+			builds = append(builds, b)
+		}
 	}
 	if err := w.Err(); err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
-	builds = store.SortAndPaginateBuilds(builds, opt)
 	return builds, nil
 }
 
@@ -145,22 +196,20 @@ func (s *Builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitI
 	log15.Debug("Finding first built commit in order", "pkg", "server/internal/store/fs", "repo", repo, "commit order", commitIDs, "successfulOnly", successfulOnly)
 
 	// TODO(gbbr): Get only commits in parameter, not all for the repo.
-	buildSpecs, err := getRepoBuildIndex(ctx, repo)
+	buildIdx, err := getRepoBuildIndex(ctx, repo)
 	if err != nil {
 		return nil, 0, err
 	}
 	for i, commitID := range commitIDs {
 		var builds []*sourcegraph.Build
-		for _, bs := range buildSpecs {
-			if bs.CommitID == commitID {
-				b, err := s.get(ctx, bs)
-				if os.IsNotExist(err) {
-					continue
-				} else if err != nil {
-					return nil, 0, err
-				}
-				builds = append(builds, b)
+		for _, bs := range buildIdx[commitID] {
+			b, err := s.get(ctx, bs)
+			if os.IsNotExist(err) {
+				continue
+			} else if err != nil {
+				return nil, 0, err
 			}
+			builds = append(builds, b)
 		}
 
 		// Need to get the most recently started of all builds
@@ -205,7 +254,7 @@ func (s *Builds) create(ctx context.Context, b *sourcegraph.Build) error {
 	defer func() {
 		var errors MultiError
 		if err != nil {
-			errors.verify(buildStoreVFS(ctx).Remove(pathForBuild(b.Spec())))
+			errors.verify(buildStoreVFS(ctx).Remove(dirForBuild(b.Spec())))
 		}
 		err = errors.verify(f.Close(), err)
 	}()
@@ -224,7 +273,7 @@ func (s *Builds) createAndUpdateIndex(ctx context.Context, b *sourcegraph.Build)
 	if err := s.create(ctx, b); err != nil {
 		return err
 	}
-	if err := updateRepoBuildIndex(ctx, b.Spec()); err != nil {
+	if err := updateRepoBuildCommitIDIndex(ctx, b.Spec(), b.CommitID); err != nil {
 		return err
 	}
 	return nil
@@ -305,7 +354,7 @@ func (s *Builds) updateTask(ctx context.Context, task *sourcegraph.BuildTask) er
 	defer func() {
 		var errors MultiError
 		if err != nil {
-			errors.verify(buildStoreVFS(ctx).Remove(pathForTask(task.Spec())))
+			errors.verify(buildStoreVFS(ctx).Remove(filenameForTask(task.Spec())))
 		}
 		err = errors.verify(f.Close(), err)
 	}()
@@ -343,7 +392,7 @@ func (s *Builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, 
 type byTaskID []*sourcegraph.BuildTask
 
 func (s byTaskID) Len() int           { return len(s) }
-func (s byTaskID) Less(i, j int) bool { return s[i].TaskID < s[j].TaskID }
+func (s byTaskID) Less(i, j int) bool { return s[i].ID < s[j].ID }
 func (s byTaskID) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 func (s *Builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
@@ -351,7 +400,7 @@ func (s *Builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.Build
 	defer s.mu.RUnlock()
 
 	tasks := make([]*sourcegraph.BuildTask, 0)
-	root := filepath.Join(buildSpec.Repo.URI, buildSpec.CommitID, "tasks", strconv.Itoa(int(buildSpec.Attempt)))
+	root := filepath.Join(dirForBuild(buildSpec), "tasks")
 	// if the directory does not exist, there are no tasks
 	w := fs.WalkFS(root, buildStoreVFS(ctx))
 	for w.Step() {
@@ -389,7 +438,7 @@ func (s *Builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*s
 }
 
 func (s *Builds) getTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
-	f, err := buildStoreVFS(ctx).Open(pathForTask(taskSpec))
+	f, err := buildStoreVFS(ctx).Open(filenameForTask(taskSpec))
 	if err != nil {
 		return nil, err
 	}

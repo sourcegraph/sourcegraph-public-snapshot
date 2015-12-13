@@ -1,8 +1,8 @@
 {{define "BuildLinkCells"}}
 <td>
-	<a href="{{urlToRepoBuildSubroute "repo.build.log" .Repo .CommitID .Attempt}}">Logs</a>
+	<a href="{{urlToRepoBuildSubroute "repo.build.log" .Repo .ID}}">Logs</a>
 </td>
 <td>
-	<a href="{{urlToRepoBuild .Repo .CommitID .Attempt}}">Details</a>
+	<a href="{{urlToRepoBuild .Repo .ID}}">Details</a>
 </td>
 {{end}}

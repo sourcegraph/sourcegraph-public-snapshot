@@ -25,7 +25,7 @@ func (s *Builds) setBuilds(ctx context.Context, t *testing.T, mockBuilds []*sour
 	}
 	for _, b := range mockBuilds {
 		if _, err := s.Create(ctx, b); err != nil {
-			t.Fatalf("failed to create build file %s", err)
+			t.Fatalf("failed to create build file: %s", err)
 		}
 	}
 }
@@ -42,7 +42,7 @@ func (s *Builds) setTasks(ctx context.Context, t *testing.T, mockTasks []*source
 	for _, task := range mockTasks {
 		err := s.updateTask(ctx, task)
 		if err != nil {
-			t.Fatalf("failed to create build file %s", err)
+			t.Fatalf("failed to create build file: %s", err)
 		}
 	}
 }
@@ -108,6 +108,16 @@ func TestBuilds_Get(t *testing.T) {
 	testsuite.Builds_Get(createTestContext(t), t, s, s.setBuilds)
 }
 
+func TestBuilds_List(t *testing.T) {
+	s := NewBuildStore()
+	testsuite.Builds_List(createTestContext(t), t, s, s.setBuilds)
+}
+
+func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
+	s := NewBuildStore()
+	testsuite.Builds_List_byRepoAndCommitID(createTestContext(t), t, s, s.setBuilds)
+}
+
 func TestBuilds_Create(t *testing.T) {
 	s := NewBuildStore()
 	testsuite.Builds_Create(createTestContext(t), t, s)
@@ -118,9 +128,9 @@ func TestBuilds_Create_New(t *testing.T) {
 	testsuite.Builds_Create_New(createTestContext(t), t, s)
 }
 
-func TestBuilds_Create_SequentialAttempt(t *testing.T) {
+func TestBuilds_Create_SequentialID(t *testing.T) {
 	s := NewBuildStore()
-	testsuite.Builds_Create_SequentialAttempt(createTestContext(t), t, s)
+	testsuite.Builds_Create_SequentialID(createTestContext(t), t, s)
 }
 
 func TestBuilds_Update(t *testing.T) {
@@ -136,6 +146,11 @@ func TestBuilds_DequeueNext(t *testing.T) {
 func TestBuilds_CreateTasks(t *testing.T) {
 	s := NewBuildStore()
 	testsuite.Builds_CreateTasks(createTestContext(t), t, s, s.setTasks)
+}
+
+func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
+	s := NewBuildStore()
+	testsuite.Builds_CreateTasks_SequentialID(createTestContext(t), t, s)
 }
 
 func TestBuilds_UpdateTask(t *testing.T) {

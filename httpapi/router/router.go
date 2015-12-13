@@ -57,7 +57,7 @@ func New(base *mux.Router) *mux.Router {
 
 	repoRev.Path("/.build").Methods("GET").Name(RepoBuild)
 	repoRev.Path("/.builds").Methods("POST").Name(RepoBuildsCreate)
-	buildPath := "/.builds/{CommitID}/{Attempt}"
+	buildPath := `/.builds/{Build:\d+}`
 	repo.Path(buildPath).Methods("GET").Name(Build)
 	build := repo.PathPrefix(buildPath).Subrouter()
 	build.Path("/.tasks").Methods("GET").Name(RepoBuildTasks)

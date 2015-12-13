@@ -15,7 +15,7 @@
 {{if .Builds}}
 <table class="table builds">
 	<thead>
-		<tr><th>Attempt</th><th>Repository</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th><th>Host</th></tr>
+		<tr><th>#</th><th>Commit</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th><th>Host</th></tr>
 	</thead>
 	{{range .Builds}}
 	{{template "BuildRow" .}}
@@ -32,11 +32,9 @@
 {{define "BuildRow"}}
 <tr class="build {{buildClass .}}">
 	<th class="bid">
-		<a href="{{urlToRepoBuild .Repo .CommitID .Attempt}}">#{{.Attempt}}</a>
+		<a href="{{urlToRepoBuild .Repo .ID}}">{{.Spec.IDString}}</a>
 	</th>
 	<td>
-		{{template "RepoLink" (repoLink .Repo)}}
-		<br>
 		<tt class="commit-id">{{.CommitID}}</tt>
 	</td>
 	<td>

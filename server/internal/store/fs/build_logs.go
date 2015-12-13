@@ -15,7 +15,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 )
 
 // BuildLogs is a local FS-backed implementation of the BuildLogs
@@ -59,10 +58,10 @@ func (s *BuildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minIDStr
 // given task.
 func logFilePath(task sourcegraph.TaskSpec) string {
 	var tag string
-	if task.TaskID == 0 {
-		tag = buildutil.BuildTag(task.BuildSpec)
+	if task.ID == 0 {
+		tag = task.Build.IDString()
 	} else {
-		tag = buildutil.TaskTag(task)
+		tag = task.IDString()
 	}
 
 	p := tag + ".log"

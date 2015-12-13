@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"strings"
-
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
@@ -15,11 +13,11 @@ func TestBuildsService_Get(t *testing.T) {
 	var s builds
 	ctx, mock := testContext()
 
-	wantBuild := &sourcegraph.Build{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: "r"}
+	wantBuild := &sourcegraph.Build{ID: 1, Repo: "r"}
 
-	calledGet := mock.stores.Builds.MockGet(t, sourcegraph.BuildSpec{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: sourcegraph.RepoSpec{URI: "r"}})
+	calledGet := mock.stores.Builds.MockGet(t, sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
 
-	build, err := s.Get(ctx, &sourcegraph.BuildSpec{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: sourcegraph.RepoSpec{URI: "r"}})
+	build, err := s.Get(ctx, &sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,9 +33,9 @@ func TestBuildsService_List(t *testing.T) {
 	var s builds
 	ctx, mock := testContext()
 
-	wantBuilds := &sourcegraph.BuildList{Builds: []*sourcegraph.Build{{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: "r"}}}
+	wantBuilds := &sourcegraph.BuildList{Builds: []*sourcegraph.Build{{ID: 1, Repo: "r"}}}
 
-	calledList := mock.stores.Builds.MockList(t, sourcegraph.BuildSpec{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: sourcegraph.RepoSpec{URI: "r"}})
+	calledList := mock.stores.Builds.MockList(t, sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
 
 	builds, err := s.List(ctx, nil)
 	if err != nil {
@@ -56,9 +54,9 @@ func TestBuildsService_List_pagination(t *testing.T) {
 	ctx, mock := testContext()
 
 	var buildList = []*sourcegraph.Build{
-		{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(2, 0))},
-		{Attempt: 12, CommitID: strings.Repeat("b", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(1, 0))},
-		{Attempt: 123, CommitID: strings.Repeat("c", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(0, 0))},
+		{ID: 1, Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(2, 0))},
+		{ID: 12, Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(1, 0))},
+		{ID: 123, Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(0, 0))},
 	}
 
 	tests := map[string]struct {
@@ -125,9 +123,9 @@ func TestBuildsService_List_pagination(t *testing.T) {
 
 	for label, test := range tests {
 		calledList := mock.stores.Builds.MockList(t,
-			sourcegraph.BuildSpec{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: sourcegraph.RepoSpec{URI: "r"}},
-			sourcegraph.BuildSpec{Attempt: 12, CommitID: strings.Repeat("b", 40), Repo: sourcegraph.RepoSpec{URI: "r"}},
-			sourcegraph.BuildSpec{Attempt: 123, CommitID: strings.Repeat("c", 40), Repo: sourcegraph.RepoSpec{URI: "r"}},
+			sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}},
+			sourcegraph.BuildSpec{ID: 12, Repo: sourcegraph.RepoSpec{URI: "r"}},
+			sourcegraph.BuildSpec{ID: 123, Repo: sourcegraph.RepoSpec{URI: "r"}},
 		)
 
 		opt := test.opt

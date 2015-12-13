@@ -1,5 +1,11 @@
 # dev
 
+- Builds are now identified by a numeric build ID, instead of by
+  commit ID. After this update, build metadata from pre-update builds
+  will not be available, but build results (source code analysis) will
+  remain. **PostgreSQL backend:** Run `drop table repo_build; drop
+  table repo_build_task;` and then run the CLI command `src pgsql
+  create` to perform this migration.
 - Two unnecessary fields on build objects have been
   removed. **PostgreSQL backend:** Run `alter table repo_build drop
   column "import"; alter table repo_build drop column usecache;` to

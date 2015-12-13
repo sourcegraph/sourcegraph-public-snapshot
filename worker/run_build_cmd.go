@@ -37,9 +37,8 @@ func (c *runBuildCmd) Execute(args []string) error {
 		return err
 	}
 	doBuild := &doBuildCmd{
-		Attempt:  c.Attempt,
-		CommitID: c.CommitID,
-		Repo:     c.Repo,
+		Repo: c.Repo,
+		ID:   c.ID,
 	}
 	if err := doBuild.Execute(nil); err != nil {
 		return err

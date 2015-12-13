@@ -24,7 +24,7 @@ func TestBuilds_Get(t *testing.T) {
 
 	wantBuild := s.mustCreate(ctx, t, &sourcegraph.Build{Repo: "r"})
 
-	build, err := s.Get(ctx, sourcegraph.BuildSpec{Attempt: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
+	build, err := s.Get(ctx, sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,6 +61,22 @@ func TestBuilds_List(t *testing.T) {
 	if !jsonutil.JSONEqual(t, builds[0], wantBuild) {
 		t.Errorf("got build %+v, want %+v", builds[0], wantBuild)
 	}
+}
+
+func TestBuilds_List2(t *testing.T) {
+	var s Builds
+	ctx, done := testContext()
+	defer done()
+
+	testsuite.Builds_List(ctx, t, &s, s.mustCreateBuilds)
+}
+
+func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
+	var s Builds
+	ctx, done := testContext()
+	defer done()
+
+	testsuite.Builds_List_byRepoAndCommitID(ctx, t, &s, s.mustCreateBuilds)
 }
 
 func TestBuilds_GetFirstInCommitOrder_firstCommitIDMatch(t *testing.T) {
@@ -110,10 +126,10 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	newTasks := []*sourcegraph.BuildTask{{Repo: "r", Op: "a"}}
+	newTasks := []*sourcegraph.BuildTask{{Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, ID: 1}, Label: "a"}}
 	wantTasks := s.mustCreateTasks(ctx, t, newTasks)
 
-	tasks, err := s.ListBuildTasks(ctx, sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}}, &sourcegraph.BuildTaskListOptions{ListOptions: sourcegraph.ListOptions{Page: 1, PerPage: 10}})
+	tasks, err := s.ListBuildTasks(ctx, sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, ID: 1}, &sourcegraph.BuildTaskListOptions{ListOptions: sourcegraph.ListOptions{Page: 1, PerPage: 10}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,12 +167,12 @@ func TestBuilds_Create_New(t *testing.T) {
 	testsuite.Builds_Create_New(ctx, t, &s)
 }
 
-func TestBuilds_Create_SequentialAttempt(t *testing.T) {
+func TestBuilds_Create_SequentialID(t *testing.T) {
 	var s Builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_Create_SequentialAttempt(ctx, t, &s)
+	testsuite.Builds_Create_SequentialID(ctx, t, &s)
 }
 
 func TestBuilds_Update(t *testing.T) {
@@ -190,8 +206,8 @@ func TestBuilds_CreateTasks(t *testing.T) {
 
 	buildSpec := sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}}
 	tasks := []*sourcegraph.BuildTask{
-		{Repo: "r", Op: "foo", UnitType: "t", Unit: "u"},
-		{Repo: "r", Op: "bar", UnitType: "t", Unit: "u"},
+		{Build: buildSpec, Label: "foo"},
+		{Build: buildSpec, Label: "bar"},
 	}
 	if _, err := s.CreateTasks(ctx, tasks); err != nil {
 		t.Fatal(err)
@@ -206,6 +222,14 @@ func TestBuilds_CreateTasks(t *testing.T) {
 	}
 }
 
+func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
+	var s Builds
+	ctx, done := testContext()
+	defer done()
+
+	testsuite.Builds_CreateTasks_SequentialID(ctx, t, &s)
+}
+
 func TestBuilds_UpdateTask(t *testing.T) {
 	t.Parallel()
 
@@ -213,7 +237,7 @@ func TestBuilds_UpdateTask(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	task := &sourcegraph.BuildTask{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: "r", Op: "foo", UnitType: "t", Unit: "u"}
+	task := &sourcegraph.BuildTask{ID: 1, Label: "foo"}
 
 	tasks, err := s.CreateTasks(ctx, []*sourcegraph.BuildTask{task})
 	if err != nil {
@@ -245,11 +269,11 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	t1 := time.Unix(100000, 0)
 	t2 := time.Unix(200000, 0)
 
-	b1 := &sourcegraph.Build{Attempt: 1, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(t1), BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: 10}}
-	b2 := &sourcegraph.Build{Attempt: 2, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(t1), BuildConfig: sourcegraph.BuildConfig{Queue: true}}
-	b3 := &sourcegraph.Build{Attempt: 3, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(t2), BuildConfig: sourcegraph.BuildConfig{Queue: true}}
-	bNo1 := &sourcegraph.Build{Attempt: 4, CommitID: strings.Repeat("A", 40), Repo: "r", BuildConfig: sourcegraph.BuildConfig{Queue: false}}
-	bNo2 := &sourcegraph.Build{Attempt: 5, CommitID: strings.Repeat("A", 40), Repo: "r", StartedAt: ts(&t1), BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	b1 := &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(t1), BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: 10}}
+	b2 := &sourcegraph.Build{ID: 2, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(t1), BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	b3 := &sourcegraph.Build{ID: 3, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: pbtypes.NewTimestamp(t2), BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	bNo1 := &sourcegraph.Build{ID: 4, CommitID: strings.Repeat("A", 40), Repo: "r", BuildConfig: sourcegraph.BuildConfig{Queue: false}}
+	bNo2 := &sourcegraph.Build{ID: 5, CommitID: strings.Repeat("A", 40), Repo: "r", StartedAt: ts(&t1), BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 
 	b1 = s.mustCreate(ctx, t, b1)
 	b2 = s.mustCreate(ctx, t, b2)
@@ -308,7 +332,7 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 	}
 	t.Logf("enqueued %d builds", nbuilds)
 
-	dq := map[uint32]bool{} // build attempt -> whether it has already been dequeued
+	dq := map[uint64]bool{} // build attempt -> whether it has already been dequeued
 	var dqMu sync.Mutex
 
 	var wg sync.WaitGroup
@@ -326,22 +350,22 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 				}
 
 				dqMu.Lock()
-				if dq[b.Attempt] {
+				if dq[b.ID] {
 					dqMu.Unlock()
-					t.Errorf("build %d was already dequeued (race condition)", b.Attempt)
+					t.Errorf("build %d was already dequeued (race condition)", b.ID)
 					return
 				}
-				dq[b.Attempt] = true
+				dq[b.ID] = true
 				dqMu.Unlock()
-				t.Logf("worker %d got build %d (priority %d)", i, b.Attempt, b.Priority)
+				t.Logf("worker %d got build %d (priority %d)", i, b.ID, b.Priority)
 			}
 		}(i)
 	}
 	wg.Wait()
 
 	for _, b := range builds {
-		if !dq[b.Attempt] {
-			t.Errorf("build %d was never dequeued", b.Attempt)
+		if !dq[b.ID] {
+			t.Errorf("build %d was never dequeued", b.ID)
 		}
 	}
 }

@@ -21,13 +21,13 @@ func TestRepoBuild(t *testing.T) {
 	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, fakeCommitID)
 	calledBuildsGet := mock.Builds.MockGet_Return(t,
-		&sourcegraph.Build{Attempt: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
+		&sourcegraph.Build{ID: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
 	)
 	calledBuildsListBuildTasks := mock.Builds.MockListBuildTasks(t,
-		&sourcegraph.BuildTask{TaskID: 1, Attempt: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
+		&sourcegraph.BuildTask{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "my/repo"}}},
 	)
 
-	if _, err := c.GetOK(router.Rel.URLToRepoBuild("my/repo", strings.Repeat("a", 40), 1).String()); err != nil {
+	if _, err := c.GetOK(router.Rel.URLToRepoBuild("my/repo", 1).String()); err != nil {
 		t.Fatal(err)
 	}
 	if !*calledGet {
@@ -53,7 +53,7 @@ func TestRepoBuilds(t *testing.T) {
 	calledGet := mockRepoGet(mock, "my/repo")
 	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledBuildsList := mock.Builds.MockList(t,
-		&sourcegraph.Build{Attempt: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
+		&sourcegraph.Build{ID: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
 	)
 
 	if _, err := c.GetOK(router.Rel.URLToRepoSubroute(router.RepoBuilds, "my/repo").String()); err != nil {
@@ -82,7 +82,7 @@ func TestRepoBuildsCreate(t *testing.T) {
 			t.Errorf("got CommitID == %q, want %q", op.RepoRev.CommitID, want)
 		}
 		calledBuildsCreate = true
-		return &sourcegraph.Build{Attempt: 1, CommitID: strings.Repeat("a", 40), Repo: "my/repo"}, nil
+		return &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("a", 40), Repo: "my/repo"}, nil
 	}
 
 	q := url.Values{"CommitID": []string{"c"}}
@@ -97,7 +97,7 @@ func TestRepoBuildsCreate(t *testing.T) {
 		t.Errorf("got status %d, want %d", resp.StatusCode, want)
 	}
 
-	if want, got := router.Rel.URLToRepoBuild("my/repo", strings.Repeat("a", 40), 1).String(), resp.Header.Get("location"); got != want {
+	if want, got := router.Rel.URLToRepoBuild("my/repo", 1).String(), resp.Header.Get("location"); got != want {
 		t.Errorf("got Location %q, want %q", got, want)
 	}
 	if !*calledGet {

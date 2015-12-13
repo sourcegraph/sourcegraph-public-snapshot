@@ -326,9 +326,8 @@ func (s *builds) CreateTasks(ctx context.Context, op *sourcegraph.BuildsCreateTa
 	buildSpec := op.Build
 	tasks := op.Tasks
 	for _, task := range tasks {
-		taskBuildSpec := task.Spec().BuildSpec
-		if taskBuildSpec.Attempt != 0 && taskBuildSpec.IDString() != buildSpec.IDString() {
-			return nil, fmt.Errorf("task BID (%s) does not match build BID (%s)", taskBuildSpec.IDString(), buildSpec.IDString())
+		if task.Build != (sourcegraph.BuildSpec{}) && task.Build != buildSpec {
+			return nil, fmt.Errorf("task build (%s) does not match build (%s)", task.Build.IDString(), buildSpec.IDString())
 		}
 	}
 
@@ -336,7 +335,7 @@ func (s *builds) CreateTasks(ctx context.Context, op *sourcegraph.BuildsCreateTa
 	for i, taskPtr := range tasks {
 		task := *taskPtr
 		task.CreatedAt = pbtypes.NewTimestamp(time.Now())
-		task.Attempt = buildSpec.Attempt
+		task.Build = buildSpec
 		tasks2[i] = &task
 	}
 
@@ -401,7 +400,7 @@ func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLo
 	var minID string
 	var minTime, maxTime time.Time
 
-	build, err := store.BuildsFromContext(ctx).Get(ctx, task.BuildSpec)
+	build, err := store.BuildsFromContext(ctx).Get(ctx, task.Build)
 	if err != nil {
 		return nil, err
 	}

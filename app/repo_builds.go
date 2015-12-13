@@ -105,7 +105,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	http.Redirect(w, r, router.Rel.URLToRepoBuild(rc.Repo.URI, build.Spec().CommitID, build.Spec().Attempt).String(), http.StatusSeeOther)
+	http.Redirect(w, r, router.Rel.URLToRepoBuild(rc.Repo.URI, build.ID).String(), http.StatusSeeOther)
 	return nil
 }
 
@@ -194,7 +194,7 @@ func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	http.Redirect(w, r, router.Rel.URLToRepoBuild(rc.Repo.URI, buildSpec.CommitID, buildSpec.Attempt).String(), http.StatusSeeOther)
+	http.Redirect(w, r, router.Rel.URLToRepoBuild(rc.Repo.URI, buildSpec.ID).String(), http.StatusSeeOther)
 	return nil
 }
 
@@ -228,7 +228,7 @@ func serveRepoBuildLog(w http.ResponseWriter, r *http.Request) error {
 	if v, _ := strconv.ParseBool(os.Getenv("SG_USE_PAPERTRAIL")); v {
 		// Fast-path for Papertrail.
 		allTaskEntries, err := apiclient.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{
-			Task: sourcegraph.TaskSpec{BuildSpec: buildSpec},
+			Task: sourcegraph.TaskSpec{Build: buildSpec},
 			Opt:  &opt,
 		})
 		if err != nil {
@@ -245,7 +245,7 @@ func serveRepoBuildLog(w http.ResponseWriter, r *http.Request) error {
 		// Prepend the build (non-task-specific) log.
 		tasks.BuildTasks = append(
 			[]*sourcegraph.BuildTask{
-				{Repo: buildSpec.Repo.URI, CommitID: buildSpec.CommitID, Attempt: buildSpec.Attempt, Op: "main"},
+				{Build: buildSpec, Label: "main"},
 			},
 			tasks.BuildTasks...,
 		)
@@ -256,7 +256,7 @@ func serveRepoBuildLog(w http.ResponseWriter, r *http.Request) error {
 				return err
 			}
 
-			entries.Entries = append(entries.Entries, "", fmt.Sprintf("=== %s %s %s ===", task.Op, task.UnitType, task.Unit))
+			entries.Entries = append(entries.Entries, "", fmt.Sprintf("=== %s ===", task.Label))
 			entries.Entries = append(entries.Entries, taskEntries.Entries...)
 		}
 	}
@@ -298,15 +298,14 @@ func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 
 func getBuildSpec(r *http.Request) (sourcegraph.BuildSpec, error) {
 	v := mux.Vars(r)
-	commit, repo := v["CommitID"], v["Repo"]
-	attempt, err := strconv.ParseUint(v["Attempt"], 10, 32)
-	if commit == "" || repo == "" || err != nil {
+	repo := v["Repo"]
+	buildID, err := strconv.ParseUint(v["Build"], 10, 64)
+	if repo == "" || err != nil {
 		return sourcegraph.BuildSpec{}, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	return sourcegraph.BuildSpec{
-		Attempt:  uint32(attempt),
-		CommitID: commit,
-		Repo:     sourcegraph.RepoSpec{URI: repo},
+		Repo: sourcegraph.RepoSpec{URI: repo},
+		ID:   buildID,
 	}, nil
 }
 
@@ -338,11 +337,11 @@ func getBuildTaskSpec(r *http.Request) (sourcegraph.TaskSpec, error) {
 	}
 
 	v := mux.Vars(r)
-	taskID, err := strconv.ParseInt(v["TaskID"], 10, 64)
+	taskID, err := strconv.ParseUint(v["Task"], 10, 64)
 	if err != nil {
 		return sourcegraph.TaskSpec{}, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
-	return sourcegraph.TaskSpec{BuildSpec: buildSpec, TaskID: taskID}, nil
+	return sourcegraph.TaskSpec{Build: buildSpec, ID: taskID}, nil
 }
 
 func writePlainLogEntries(w http.ResponseWriter, entries *sourcegraph.LogEntries) error {

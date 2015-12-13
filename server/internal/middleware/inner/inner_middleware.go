@@ -636,7 +636,7 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 	target := local.Services.Builds
 
 	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Task.Repo.URI)
+	fedCtx, err = federated.RepoContext(ctx, &param.Task.Build.Repo.URI)
 	if err != nil {
 		return
 	}
@@ -665,7 +665,7 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 	target := local.Services.Builds
 
 	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Task.Repo.URI)
+	fedCtx, err = federated.RepoContext(ctx, &param.Task.Build.Repo.URI)
 	if err != nil {
 		return
 	}

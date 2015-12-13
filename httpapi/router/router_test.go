@@ -48,9 +48,9 @@ func TestRouter(t *testing.T) {
 
 		// Repo sub-routes
 		{
-			path:          "/repos/a.com/b/.builds/a231af/123",
+			path:          "/repos/a.com/b/.builds/123",
 			wantRouteName: Build,
-			wantVars:      map[string]string{"Repo": "a.com/b", "Attempt": "123", "CommitID": "a231af"},
+			wantVars:      map[string]string{"Repo": "a.com/b", "Build": "123"},
 		},
 
 		// Repo sub-routes that don't allow an "@REVSPEC" revision.
