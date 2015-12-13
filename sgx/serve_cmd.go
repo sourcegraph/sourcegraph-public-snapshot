@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -185,6 +187,8 @@ type ServeCmd struct {
 	worker.WorkCmd
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
+
+	InitLangs string `long:"init-langs" description:"initialize Sourcegraph with Code Intelligence and tutorial repositories"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -644,10 +648,100 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
+	c.InitLangs = "go,java"
+	c.initializeStarterProjects()
+
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
+	return nil
+}
+
+// generateOrReadIDKey reads the server's ID key (or creates one on-demand).
+func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
+	if s := c.IDKeyData; s != "" {
+		if globalOpt.Verbose {
+			log.Println("Reading ID key from environment (or CLI flag).")
+		}
+
+		return idkey.FromString(s)
+	}
+
+	c.IDKeyFile = os.ExpandEnv(c.IDKeyFile)
+
+	var k *idkey.IDKey
+	if data, err := ioutil.ReadFile(c.IDKeyFile); err == nil {
+		// File exists.
+		k, err = idkey.New(data)
+		if err != nil {
+			return nil, err
+		}
+	} else if os.IsNotExist(err) {
+		log.Printf("Generating new Sourcegraph ID key at %s...", c.IDKeyFile)
+		k, err = idkey.Generate()
+		if err != nil {
+			return nil, err
+		}
+		data, err := k.MarshalText()
+		if err != nil {
+			return nil, err
+		}
+		if err := os.MkdirAll(filepath.Dir(c.IDKeyFile), 0700); err != nil {
+			return nil, err
+		}
+		if err := ioutil.WriteFile(c.IDKeyFile, data, 0600); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, err
+	}
+	return k, nil
+}
+
+func (c *ServeCmd) initializeStarterProjects() error {
+	cl := Client()
+
+	initRepoURL := func(lang string) (string, error) {
+		switch lang {
+		case "go":
+			return "https://src.sourcegraph.com/lib/annotate", nil
+		case "java":
+			return "https://github.com/JodaOrg/joda-time.git", nil
+		default:
+			return "", fmt.Errorf("Cannot initialize Sourcegraph with language %s", lang)
+		}
+	}
+
+	initLang := func(lang string) error {
+		url, err := initRepoURL(lang)
+		if err != nil {
+			return err
+		}
+
+		repo, err := cl.Repos.Create(cliCtx, &sourcegraph.ReposCreateOp{
+			VCS:         "git",
+			URI:         fmt.Sprintf("sourcegraph-starter/%s", lang),
+			CloneURL:    url,
+			Description: fmt.Sprintf("A Sourcegraph starter project for %s", lang),
+			Language:    lang,
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("# created: %s", repo.URI)
+
+		return nil
+	}
+
+	if initLangs := c.InitLangs; initLangs != "" {
+		for _, lang := range strings.Split(initLangs, ",") {
+			if err := initLang(lang); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 

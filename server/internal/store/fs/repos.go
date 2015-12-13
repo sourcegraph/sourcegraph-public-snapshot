@@ -216,6 +216,17 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 		return nil, err
 	}
 
+	if repo.CloneURL() != nil && repo.Mirror == false {
+		url := repo.CloneURL().String()
+		cmd := exec.Command("git", "clone", url, ".")
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("cloning %s repository %s failed with output:\n%s", repo.VCS, url, string(out))
+		}
+		return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master"}, nil
+	}
+
 	// TODO: Doing this `git init --bare` followed by a later RefreshVCS results in non-standard default branches
 	//       to not be set. To fix that, either use git clone, or follow up with a `git ls-remote` and parse out HEAD.
 
