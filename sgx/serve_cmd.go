@@ -649,8 +649,7 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
-	c.InitLangs = "go,java"
-	c.initializeStarterProjects()
+	c.initializeLanguages()
 
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
@@ -700,11 +699,11 @@ func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
 	return k, nil
 }
 
-func (c *ServeCmd) initializeStarterProjects() error {
+func (c *ServeCmd) initializeLanguages() error {
 	cl := Client()
 
 	installToolchain := func(lang string) error {
-		log.Println("Installing Code Intelligence for", lang, "...")
+		log15.Info(fmt.Sprintf("Installing Code Intelligence for %s...", lang))
 		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 		if err != nil {
 			log.Fatal(err)
@@ -715,19 +714,11 @@ func (c *ServeCmd) initializeStarterProjects() error {
 
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Fatal(fmt.Sprintf("Installing Code Intelligence for %s failed with output:\n%s", lang, string(out)))
+			return fmt.Errorf("Installing Code Intelligence for %s failed with output:\n%s", lang, string(out))
 		}
 
-		log.Println("SUCCESS!")
+		log15.Info(fmt.Sprintf("Successfully installed Code Intelligence for %s...", lang))
 		return nil
-		// cmd := &srclib.ToolchainInstallCmd{
-		// 	Args: struct {
-		// 		Languages []string `value-name:"LANG" description:"language toolchains to install"`
-		// 	}{
-		// 		Languages: strings.Split(c.InitLangs, ","),
-		// 	},
-		// }
-		// return cmd.Execute(nil)
 	}
 
 	initRepoURL := func(lang string) (string, error) {
@@ -737,21 +728,24 @@ func (c *ServeCmd) initializeStarterProjects() error {
 		case "java":
 			return "https://github.com/JodaOrg/joda-time.git", nil
 		default:
-			return "", fmt.Errorf("Cannot initialize Sourcegraph with language %s", lang)
+			return "", fmt.Errorf("Unrecognized language %s", lang)
 		}
 	}
 
-	initLang := func(lang string) error {
-		if err := installToolchain(lang); err != nil {
-			return err
-		}
-
-		log.Println("Creating starter repo for", lang, "...")
+	initLang := func(lang string) {
 		url, err := initRepoURL(lang)
 		if err != nil {
-			return err
+			log15.Error(err.Error())
+			return
 		}
 
+		if err := installToolchain(lang); err != nil {
+			// If running `src serve` with `--init-langs`, fail the process
+			// if any langs are not installed.
+			log.Fatal(err)
+		}
+
+		log15.Info(fmt.Sprintf("Creating starter repo for %s...", lang))
 		repo, err := cl.Repos.Create(cliCtx, &sourcegraph.ReposCreateOp{
 			VCS:         "git",
 			URI:         fmt.Sprintf("sourcegraph-starter/%s", lang),
@@ -760,23 +754,15 @@ func (c *ServeCmd) initializeStarterProjects() error {
 			Language:    lang,
 		})
 		if err != nil {
-			return err
+			log15.Warn(err.Error())
+		} else {
+			log15.Info(fmt.Sprintf("Created %s", repo.URI))
 		}
-		log.Println("SUCCESS! Created:", repo.URI)
-
-		return nil
 	}
 
-	// fmt.Println("Installing language toolchains...\n")
-	// if err := installToolchains(); err != nil {
-	// 	return err
-	// }
-	// fmt.Println("Finished installing language toolchains...\n")
 	if initLangs := c.InitLangs; initLangs != "" {
 		for _, lang := range strings.Split(initLangs, ",") {
-			if err := initLang(lang); err != nil {
-				return err
-			}
+			initLang(lang)
 		}
 	}
 
