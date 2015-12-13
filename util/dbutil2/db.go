@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 

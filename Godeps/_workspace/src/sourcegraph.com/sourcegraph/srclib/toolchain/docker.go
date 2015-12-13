@@ -24,8 +24,8 @@ func newTLSDockerClient(certPath, host string) (*docker.Client, error) {
 	h.Scheme = "tcp"
 
 	// Create docker client.
-	return docker.NewTLSClient(h.String(), 
-		filepath.Join(certPath, "cert.pem"), 
+	return docker.NewTLSClient(h.String(),
+		filepath.Join(certPath, "cert.pem"),
 		filepath.Join(certPath, "key.pem"),
 		filepath.Join(certPath, "ca.pem"))
 }

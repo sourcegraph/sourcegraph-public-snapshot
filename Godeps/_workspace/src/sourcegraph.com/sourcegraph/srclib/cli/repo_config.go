@@ -7,7 +7,7 @@ import (
 	"log"
 	"path/filepath"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"os"
 	"os/exec"

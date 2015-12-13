@@ -4,8 +4,8 @@ import (
 	"math"
 	"strings"
 
-	"code.google.com/p/rog-go/parallel"
 	"github.com/cznic/mathutil"
+	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

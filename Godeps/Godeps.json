@@ -16,11 +16,6 @@
 			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
 		},
 		{
-			"ImportPath": "code.google.com/p/rog-go/parallel",
-			"Comment": "null-250",
-			"Rev": "e7ca3a2567b8ad482fef7b1aa1a258aa00c82772"
-		},
-		{
 			"ImportPath": "github.com/AaronO/go-git-http",
 			"Rev": "b05ba080e2aba78d8b03ae1fe01d7c1b7fecc734"
 		},
@@ -312,6 +307,10 @@
 		{
 			"ImportPath": "github.com/resonancelabs/go-pub/thrift_0_9_2/lib/go/thrift",
 			"Rev": "d6189421f93dd1fe95afafd22623335e9dd01efc"
+		},
+		{
+			"ImportPath": "github.com/rogpeppe/rog-go/parallel",
+			"Rev": "f57ad5e24ab7813942c045f86eda1066eb969e98"
 		},
 		{
 			"ImportPath": "github.com/russross/blackfriday",
@@ -704,7 +703,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/makex",
-			"Rev": "c8cc99912b772f144ad2902ba210478fd9ac4169"
+			"Rev": "9a03b093bc189b7f30af07076ff81a309d8c7621"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/prototools/tmpl",
@@ -724,8 +723,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-221-gce7a6cc",
-			"Rev": "ce7a6cc96bbb6f052a9e17aafa7ba0ca62c8d291"
+			"Comment": "v0.5-c-224-gd4526b5",
+			"Rev": "d4526b580e0cd732293ce712cb6cfae03b03a2d6"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",

@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strconv"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"github.com/sourcegraph/mux"
 

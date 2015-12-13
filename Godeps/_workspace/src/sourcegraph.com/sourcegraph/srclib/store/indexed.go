@@ -11,7 +11,7 @@ import (
 
 	"compress/gzip"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"sort"
 	"strings"

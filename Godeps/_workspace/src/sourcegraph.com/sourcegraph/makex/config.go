@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"runtime"
+	"time"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
 )
@@ -38,6 +39,14 @@ func (c *Config) pathExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (c *Config) modTime(path string) (time.Time, error) {
+	s, err := c.fs().Stat(path)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return s.ModTime(), nil
 }
 
 // Flags adds makex command-line flags to an existing flag.FlagSet (or the

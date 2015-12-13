@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 )
 
 // NewMaker creates a new Maker, which can build goals in a Makefile.
@@ -15,6 +15,7 @@ func (c *Config) NewMaker(mf *Makefile, goals ...string) *Maker {
 	m := &Maker{
 		mf:     mf,
 		goals:  goals,
+		cycles: make(map[string][]string),
 		Config: c,
 	}
 	m.buildDAG()
@@ -23,9 +24,10 @@ func (c *Config) NewMaker(mf *Makefile, goals ...string) *Maker {
 
 // A Maker can build goals in a Makefile.
 type Maker struct {
-	mf     *Makefile
-	goals  []string
-	dag    map[string][]string
+	mf    *Makefile
+	goals []string
+	// topo is a topological sort of this Maker's targets. It only
+	// includes targets that have rules.
 	topo   [][]string
 	cycles map[string][]string
 
@@ -50,11 +52,7 @@ func (m *Maker) buildDAG() {
 	// topological sort taken from
 	// http://rosettacode.org/wiki/Topological_sort#Go.
 
-	if m.dag == nil || m.cycles == nil {
-		m.dag = make(map[string][]string)
-		m.cycles = make(map[string][]string)
-	}
-
+	dag := make(map[string][]string)
 	seen := make(map[string]struct{})
 	queue := append([]string{}, m.goals...)
 	for {
@@ -70,28 +68,38 @@ func (m *Maker) buildDAG() {
 
 			rule := m.mf.Rule(target)
 			if rule == nil {
+				// ignore targets that don't have
+				// rules, but don't error out.
 				continue
 			}
 			prereqs := uniqAndSort(rule.Prereqs())
-			m.dag[target] = append([]string{}, prereqs...)
+			prereqsWithRules := []string{}
 			for _, dep := range prereqs {
-				// make a node for the prereq target even if it isn't defined
+				// don't process dependencies that don't have rules
+				if m.mf.Rule(dep) == nil {
+					continue
+				}
+				prereqsWithRules = append(prereqsWithRules, dep)
 				queue = append(queue, dep)
-				m.dag[dep] = m.dag[dep]
+				// make a node for the prereq target if it isn't defined
+				if _, ok := dag[dep]; !ok {
+					dag[dep] = nil
+				}
 			}
+			dag[target] = prereqsWithRules
 		}
 		queue = queue[origLen:]
 	}
 
 	// topological sort on the DAG
-	for len(m.dag) > 0 {
+	for len(dag) > 0 {
 
 		// collect targets with no dependencies
 		var zero []string
-		for target, prereqs := range m.dag {
+		for target, prereqs := range dag {
 			if len(prereqs) == 0 {
 				zero = append(zero, target)
-				delete(m.dag, target)
+				delete(dag, target)
 			}
 		}
 
@@ -99,14 +107,14 @@ func (m *Maker) buildDAG() {
 		if len(zero) == 0 {
 			// collect un-orderable dependencies
 			cycle := make(map[string]bool)
-			for _, prereqs := range m.dag {
+			for _, prereqs := range dag {
 				for _, dep := range prereqs {
 					cycle[dep] = true
 				}
 			}
 
 			// mark targets with un-orderable dependencies
-			for target, prereqs := range m.dag {
+			for target, prereqs := range dag {
 				if cycle[target] {
 					m.cycles[target] = prereqs
 				}
@@ -119,11 +127,11 @@ func (m *Maker) buildDAG() {
 
 		// remove edges (dependencies) from dg
 		for _, remove := range zero {
-			for target, prereqs := range m.dag {
+			for target, prereqs := range dag {
 				for i, dep := range prereqs {
 					if dep == remove {
 						copy(prereqs[i:], prereqs[i+1:])
-						m.dag[target] = prereqs[:len(prereqs)-1]
+						dag[target] = prereqs[:len(prereqs)-1]
 						break
 					}
 				}
@@ -159,12 +167,32 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 			if err != nil {
 				return nil, err
 			}
+			// Always build the target if it doesn't
+			// exist.
 			if !exists {
-				rule := m.mf.Rule(target)
-				if rule == nil {
-					return nil, errNoRuleToMakeTarget(target)
-				}
 				targetsNeedingBuild = append(targetsNeedingBuild, target)
+				continue
+			}
+			// The target needs to be built if the mtime
+			// of one of the target's files is greater
+			// than the mtime of the target.
+			targetModTime, err := m.modTime(target)
+			if err != nil {
+				return nil, err
+			}
+			rule := m.mf.Rule(target)
+			if rule == nil {
+				return nil, errNoRuleToMakeTarget(target)
+			}
+			for _, p := range rule.Prereqs() {
+				m, err := m.modTime(p)
+				if err != nil {
+					return nil, err
+				}
+				if m.After(targetModTime) {
+					targetsNeedingBuild = append(targetsNeedingBuild, target)
+					break
+				}
 			}
 		}
 		if len(targetsNeedingBuild) > 0 {
@@ -212,7 +240,8 @@ func (m *Maker) Run() error {
 		return err
 	}
 
-	for _, targetSet := range targetSets {
+	for i, targetSet := range targetSets {
+		m.logTargetSetStart(i, targetSet)
 		par := parallel.NewRun(m.ParallelJobs)
 		for _, target := range targetSet {
 			rule := m.mf.Rule(target)
@@ -270,6 +299,15 @@ func (m *Maker) Run() error {
 	}
 
 	return nil
+}
+
+func (m *Maker) logTargetSetStart(idx int, targetSet []string) {
+	if m.Verbose {
+		if idx != 0 {
+			fmt.Fprintln(os.Stderr)
+		}
+		fmt.Fprintf(os.Stderr, "========= TARGET SET %d (%d targets)\n", idx, len(targetSet))
+	}
 }
 
 type RuleBuildError struct {

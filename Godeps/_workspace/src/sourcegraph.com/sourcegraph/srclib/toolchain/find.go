@@ -132,7 +132,6 @@ func List() ([]*Info, error) {
 					toolchainPath, _ = filepath.Rel(dir, path)
 				}
 				toolchainPath = filepath.ToSlash(toolchainPath)
-				
 
 				if otherDir, seen := seen[toolchainPath]; seen {
 					return nil, fmt.Errorf("saw 2 toolchains at path %s in dirs %s and %s", toolchainPath, otherDir, path)
@@ -164,9 +163,9 @@ func newInfo(toolchainPath, dir, configFile string) (*Info, error) {
 	}
 
 	prog := filepath.Join(".bin", filepath.Base(toolchainPath))
- 	if runtime.GOOS == "windows" {
+	if runtime.GOOS == "windows" {
 		prog = winExe(dir, prog)
- 	}
+	}
 
 	if runtime.GOOS != "windows" {
 		fi, err := os.Stat(filepath.Join(dir, prog))
@@ -214,7 +213,7 @@ func lookInPaths(pattern string, paths string) ([]string, error) {
 }
 
 // searches for matching Windows executable (.exe, .bat, .cmd)
-func winExe(dir string, program string) (string) {
+func winExe(dir string, program string) string {
 	candidate := program + ".exe"
 	if _, err := os.Stat(filepath.Join(dir, candidate)); err == nil {
 		return candidate

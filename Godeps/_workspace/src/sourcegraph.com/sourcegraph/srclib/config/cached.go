@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"github.com/kr/fs"
 	"golang.org/x/tools/godoc/vfs"

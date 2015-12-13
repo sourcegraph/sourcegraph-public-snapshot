@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sort"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 

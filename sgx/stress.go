@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"time"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"github.com/dustin/go-humanize"
 	"golang.org/x/net/context"

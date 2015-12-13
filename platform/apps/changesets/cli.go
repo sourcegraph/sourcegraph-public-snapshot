@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

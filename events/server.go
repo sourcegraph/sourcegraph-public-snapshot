@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

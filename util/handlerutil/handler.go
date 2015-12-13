@@ -11,7 +11,7 @@ import (
 	"github.com/resonancelabs/go-pub/instrument"
 	"github.com/resonancelabs/go-pub/instrument/httpwrapper"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
