@@ -167,12 +167,9 @@ func (c *WorkCmd) Execute(args []string) error {
 					defer tl.Close()
 					lw := io.MultiWriter(os.Stderr, tl)
 					blog := log.New(lw, "", 0)
-					blog.Printf("Logging build #%s (%s) to %s", build.Spec().IDString(), build.Repo, tl.Destination)
-
-					blog.Printf("Starting build #%s (%s).", build.Spec().IDString(), build.Repo)
-					var err error
+					log.Printf("Starting build %s (logged in %s).", build.Spec().IDString(), tl.Destination)
 					now := pbtypes.NewTimestamp(time.Now())
-					build, err = cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
+					build, err := cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
 						Build: build.Spec(),
 						Info: sourcegraph.BuildUpdate{
 							StartedAt: &now,
@@ -206,17 +203,17 @@ func (c *WorkCmd) Execute(args []string) error {
 					cmd.Stdout, cmd.Stderr = lw, lw
 					endUpdate := sourcegraph.BuildUpdate{}
 					if err := cmd.Start(); err != nil {
-						blog.Printf("Build #%s (%s) failed to start: %s.", build.Spec().IDString(), build.Repo, err)
+						log.Printf("Build #%s (%s) failed to start: %s.", build.Spec().IDString(), build.Repo, err)
 						endUpdate.Success, endUpdate.Failure = false, false
 					}
 					if err := executil.CmdWaitWithTimeout(cmdTimeout, cmd); err == nil {
-						blog.Printf("Build #%s (%s) succeeded in %s.", build.Spec().IDString(), build.Repo, time.Since(build.StartedAt.Time()))
+						log.Printf("Build #%s (%s) succeeded in %s.", build.Spec().IDString(), build.Repo, time.Since(build.StartedAt.Time()))
 						endUpdate.Success, endUpdate.Failure = true, false
 					} else if err == executil.ErrCmdTimeout {
-						blog.Printf("Build #%s (%s) timed out after %s.", build.Spec().IDString(), build.Repo, cmdTimeout)
+						log.Printf("Build #%s (%s) timed out after %s.", build.Spec().IDString(), build.Repo, cmdTimeout)
 						endUpdate.Success, endUpdate.Failure = false, true
 					} else {
-						blog.Printf("Build #%s (%s) failed after %s: %s.", build.Spec().IDString(), build.Repo, time.Since(build.StartedAt.Time()), err)
+						log.Printf("Build #%s (%s) failed after %s: %s.", build.Spec().IDString(), build.Repo, time.Since(build.StartedAt.Time()), err)
 						endUpdate.Success, endUpdate.Failure = false, true
 					}
 
