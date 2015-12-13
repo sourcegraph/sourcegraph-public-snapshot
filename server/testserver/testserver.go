@@ -386,6 +386,8 @@ func NewUnstartedServer() (*Server, context.Context) {
 func newUnstartedServer(scheme string) (*Server, context.Context) {
 	var s Server
 
+	s.Config.Flags = append(s.Config.Flags, "-v")
+
 	// SGPATH
 	sgpath, err := ioutil.TempDir("", "sgtest-sgpath")
 	if err != nil {
