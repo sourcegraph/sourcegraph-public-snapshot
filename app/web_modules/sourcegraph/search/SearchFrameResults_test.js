@@ -1,8 +1,8 @@
-import autotest from "../util/autotest";
+import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 
-import SearchFrameResults from "./SearchFrameResults";
+import SearchFrameResults from "sourcegraph/search/SearchFrameResults";
 
 import testdataNoResults from "./testdata/SearchFrameResults-noResults.json";
 import testdataError from "./testdata/SearchFrameResults-error.json";
