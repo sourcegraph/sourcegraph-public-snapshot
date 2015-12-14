@@ -6,7 +6,8 @@
 <script ignore-csp>
 	window.preloadedRepo = {
 		"data": {{json .Repo}}
-	}
+	};
+	window.searchFrames = JSON.parse({{json platformSearchFrames}});
 </script>
 
 {{end}}

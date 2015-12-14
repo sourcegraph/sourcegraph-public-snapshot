@@ -30,7 +30,7 @@ class TokenSearchResultsView extends Component {
 		} else {
 			let s = this.state.results.length === 1 ? "" : "s";
 			summary = `${this.state.total} definition result${s} for "${this.state.query}"`;
-			if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
+			if (this.state.currentPage > 1) summary = `${summary} -- page ${this.state.currentPage}`;
 		}
 
 		return (

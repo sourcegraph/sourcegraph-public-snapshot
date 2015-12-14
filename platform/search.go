@@ -23,6 +23,10 @@ type SearchFrame struct {
 	// Handler is the HTTP handler that is responsible for
 	// returning search results specific to the SearchFrame.
 	Handler http.Handler
+
+	// PerPage indicates how many results the app wishes
+	// to return per page.
+	PerPage int
 }
 
 // ResponseJSON defines the expected format of the json response

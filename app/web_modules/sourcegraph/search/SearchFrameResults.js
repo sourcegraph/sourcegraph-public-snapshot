@@ -26,6 +26,7 @@ class SearchFrameResultsView extends Component {
 			summary = `No results found for "${this.state.query}"`;
 		} else {
 			summary = `${this.state.total} results for "${this.state.query}"`;
+			if (this.state.currentPage > 1) summary = `${summary} -- page ${this.state.currentPage}`;
 		}
 
 		return (

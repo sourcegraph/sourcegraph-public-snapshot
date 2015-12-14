@@ -225,6 +225,9 @@ var TemplateFunctions = htmpl.FuncMap{
 		}
 		return app.IconBadge(ctx)
 	},
+	"platformSearchFrames": func() map[string]platform.SearchFrame {
+		return platform.SearchFrames()
+	},
 	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 	"disableCloneURL":    func() bool { return appconf.Flags.DisableCloneURL },

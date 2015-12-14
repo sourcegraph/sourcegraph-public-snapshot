@@ -26,10 +26,12 @@ let resultTypes = [
 ];
 
 let searchFrames = window.searchFrames || {};
-Array.forEach(Object.keys(searchFrames), (current, i) => {
-	let frame = searchFrames[current];
-	resultTypes.push(new ResultType(frame.ID, frame.Name, 10, SearchFrameResults));
-});
+for (let key in searchFrames) {
+	if (searchFrames.hasOwnProperty(key)) {
+		let frame = searchFrames[key];
+		resultTypes.push(new ResultType(frame.ID, frame.Name, frame.PerPage, SearchFrameResults));
+	}
+}
 
 class SearchResultsContainer extends Container {
 	constructor(props) {
@@ -99,7 +101,8 @@ class SearchResultsContainer extends Container {
 							query={this.state.query}
 							page={this.state.page}
 							label={this.state.currentType.label}
-							resultData={currentResult} />
+							resultData={currentResult}
+							currentPage={this.state.page} />
 					}
 				</div>
 				{(currentResult && currentResult.Total) ?
