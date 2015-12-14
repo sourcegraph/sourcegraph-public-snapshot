@@ -251,7 +251,7 @@ func FlattenNameHTML(e *vcsclient.TreeEntry) template.HTML {
 // GetTreeEntryCommon returns common data specific to the UI requirements for
 // displaying a tree entry. It additionally returns information about the
 // repository, the revision and build based on the request and the passed options.
-// It may also return custom errors URLMovedError, RepoNotEnabledError, NoBuildError or
+// It may also return custom errors URLMovedError, RepoNotEnabledError, or
 // NoVCSDataError.
 func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (tc *TreeEntryCommon, rc *RepoCommon, vc *RepoRevCommon, bc RepoBuildCommon, err error) {
 	if opt == nil {
@@ -264,7 +264,7 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 
 	apiclient := APIClient(r)
 
-	bc, err = GetRepoBuildCommon(r, rc, vc, &GetRepoBuildCommonOpt{AllowUnbuilt: true})
+	bc, err = GetRepoBuildCommon(r, rc, vc, nil)
 	if err != nil {
 		return tc, rc, vc, bc, err
 	}
@@ -298,7 +298,7 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 
 // GetDefCommon returns common information about a definition, based on the request.
 // It additionally returns common build, repository and revision information. It may
-// also return custom errors URLMovedError, RepoNotEnabledError, NoBuildError or NoVCSDataError.
+// also return custom errors URLMovedError, RepoNotEnabledError, or NoVCSDataError.
 //
 // dc.Def.DefKey will be set to the def specification based on the request when getting actual def fails.
 func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads.DefCommon, bc RepoBuildCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {

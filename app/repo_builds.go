@@ -61,13 +61,6 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveRepoNoBuildError(w http.ResponseWriter, r *http.Request, err *handlerutil.NoBuildError) error {
-	return tmpl.Exec(r, w, "repo/no_build.html", http.StatusOK, nil, &struct {
-		*handlerutil.NoBuildError
-		tmpl.Common
-	}{NoBuildError: err})
-}
-
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)

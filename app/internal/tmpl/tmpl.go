@@ -88,7 +88,6 @@ func repoTemplates() error {
 		{"repo/tags.html"},
 		{"repo/compare.html", "repo/commit.inc.html"},
 		{"repo/no_vcs_data.html"},
-		{"repo/no_build.html"},
 
 		{"def/share.html", "def/def.html"},
 		{"def/examples.html", "def/examples.inc.html", "def/snippet.inc.html", "def/def.html"},

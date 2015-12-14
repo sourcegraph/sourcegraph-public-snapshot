@@ -19,12 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
-
-func init() {
-	handlerutil.AllowBrowsingUnbuiltRepo = func(*sourcegraph.Repo) bool { return false }
-}
 
 func treeEntryFixture(sourceContents []string) *sourcegraph.TreeEntry {
 	entry := &sourcegraph.TreeEntry{
@@ -115,7 +110,7 @@ func TestSourceboxDef_unbuiltDisplayEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(b), "Not built.") {
+	if strings.TrimSpace(string(b)) != "" {
 		t.Errorf("got non-empty body %q", b)
 	}
 

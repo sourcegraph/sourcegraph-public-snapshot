@@ -20,6 +20,8 @@ func TestRepo_unbuilt(t *testing.T) {
 	calledGetConfig := mockEnabledRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	calledBuildsGetRepoBuildInfo := mockNoRepoBuild(mock)
+	calledGetReadme := mockNoRepoReadme(mock)
+	calledRepoTreeGet := mockEmptyTreeEntry(mock)
 
 	if _, err := c.GetOK(router.Rel.URLToRepo("my/repo").String()); err != nil {
 		t.Fatal(err)
@@ -35,6 +37,12 @@ func TestRepo_unbuilt(t *testing.T) {
 	}
 	if !*calledBuildsGetRepoBuildInfo {
 		t.Error("!calledBuildsGetRepoBuildInfo")
+	}
+	if !*calledGetReadme {
+		t.Error("!calledGetReadme")
+	}
+	if !*calledRepoTreeGet {
+		t.Error("!calledRepoTreeGet")
 	}
 }
 

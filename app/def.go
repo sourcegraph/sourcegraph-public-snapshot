@@ -125,7 +125,7 @@ func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
 		// Temporarily StatusNotFound with empty body will be returned.
 		switch e := err.(type) {
 		case *handlerutil.URLMovedError, *handlerutil.RepoNotEnabledError,
-			*handlerutil.NoVCSDataError, *handlerutil.NoBuildError:
+			*handlerutil.NoVCSDataError:
 			http.Error(w, fmt.Sprintf("Not found (%#v)", e), http.StatusNotFound)
 			return nil
 		}

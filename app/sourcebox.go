@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	htmpl "html/template"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
@@ -28,21 +28,9 @@ func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 
 	dc, bc, _, _, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {
-		// TODO(gbbr): Set up custom error pages and responses for these errors
-		// for the sourcebox?
-		// All of the below errors will cause full page HTML pages or redirects, if
-		// bubbled up the chain, so we return nil and handle them separately.
-		// Temporarily StatusFound will be returned with the custom error.
-		switch e := err.(type) {
-		case *handlerutil.URLMovedError, *handlerutil.RepoNotEnabledError, *handlerutil.NoVCSDataError:
-			http.Error(w, fmt.Sprintf("%#v", e), http.StatusNotFound)
-			return nil
-
-		case *handlerutil.NoBuildError:
-			http.Error(w, "Not built.", http.StatusNotFound)
-			return nil
-		}
-		return err
+		// Avoid writing a full response, or else the sourcebox will mess with the surrounding page it's embedded in.
+		http.Error(w, "", errcode.HTTP(err))
+		return nil
 	}
 
 	entrySpec := sourcegraph.TreeEntrySpec{RepoRev: bc.BestRevSpec, Path: dc.Def.File}

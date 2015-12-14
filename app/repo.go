@@ -42,10 +42,6 @@ func init() {
 	internal.RegisterErrorHandlerForType(&handlerutil.NoVCSDataError{}, func(w http.ResponseWriter, r *http.Request, err error) error {
 		return renderRepoNoVCSDataTemplate(w, r, err.(*handlerutil.NoVCSDataError).RepoCommon)
 	})
-
-	internal.RegisterErrorHandlerForType(&handlerutil.NoBuildError{}, func(w http.ResponseWriter, r *http.Request, err error) error {
-		return serveRepoNoBuildError(w, r, err.(*handlerutil.NoBuildError))
-	})
 }
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {

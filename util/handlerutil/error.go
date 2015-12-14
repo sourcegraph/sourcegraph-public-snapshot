@@ -1,24 +1,5 @@
 package handlerutil
 
-import (
-	"fmt"
-
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-)
-
-// NoBuildError is returned whenever a build is requested for an unbuilt repo.
-type NoBuildError struct {
-	RepoCommon
-	RepoRevCommon
-	NeedsLogin bool
-	Build      *sourcegraph.Build
-}
-
-func (e *NoBuildError) Error() string {
-	spec := e.RepoRevCommon.RepoRevSpec
-	return fmt.Sprintf("No build for repo %s@%s", spec.URI, spec.CommitID)
-}
-
 // NoVCSDataError may be returned when VCS data is not available for a requested
 // resource.
 type NoVCSDataError struct {
