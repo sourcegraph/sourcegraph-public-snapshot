@@ -9,6 +9,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 const (
@@ -16,10 +17,12 @@ const (
 )
 
 func init() {
-	// If we're updating repos in the background, kick off the updates initially.
-	if !appconf.Flags.MirrorRepoBackgroundUpdate {
-		events.RegisterListener(&repoAutoCloner{})
-	}
+	sgxcli.ServeInit = append(sgxcli.ServeInit, func() {
+		// If we're updating repos in the background, kick off the updates initially.
+		if !appconf.Flags.NoMirrorRepoBackgroundUpdate {
+			events.RegisterListener(&repoAutoCloner{})
+		}
+	})
 }
 
 type repoAutoCloner struct{}
@@ -83,7 +86,7 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 	// Skip if recently updated.
 	if _, recent := ru.recent[repo.RepoSpec()]; recent {
 		// Enqueue the repo again at a later time if desired.
-		if appconf.Flags.MirrorRepoBackgroundUpdate {
+		if !appconf.Flags.NoMirrorRepoBackgroundUpdate {
 			go ru.enqueueLater(repo)
 		}
 		return
@@ -97,7 +100,7 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 	}
 
 	// Enqueue the repo again at a later time if desired.
-	if appconf.Flags.MirrorRepoBackgroundUpdate {
+	if !appconf.Flags.NoMirrorRepoBackgroundUpdate {
 		go ru.enqueueLater(repo)
 	}
 }
