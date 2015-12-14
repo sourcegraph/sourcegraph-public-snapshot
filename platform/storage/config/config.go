@@ -34,6 +34,8 @@
 package config
 
 import (
+	"os"
+
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 )
@@ -54,7 +56,14 @@ func Open(ctx context.Context, appName, repo string) (*Store, error) {
 // OpenWith opens a configuration store with the storage system.
 func OpenWith(sys storage.System) (*Store, error) {
 	s := &Store{sys: sys}
-	return s, storage.GetJSON(sys, bucket, key, &s.Data)
+	err := storage.GetJSON(sys, bucket, key, &s.Data)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	if s.Data == nil {
+		s.Data = make(map[string]interface{})
+	}
+	return s, nil
 }
 
 // Store represents a storage for keys and values.
