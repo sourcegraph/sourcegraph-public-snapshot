@@ -8,7 +8,6 @@ var DeltaDefsContainer = require("./components/DeltaDefsContainer");
 var DeltaImpactContainer = require("./components/DeltaImpactContainer");
 var MarkdownView = require("./components/MarkdownView");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
-var RepoBuildStatus = require("./components/RepoBuildStatus");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
 var RepoCloneBox = require("./components/RepoCloneBox");
 var TreeEntryDefs = require("./components/TreeEntryDefs");
@@ -126,10 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				Buildable={el2.dataset.buildable === "true"} />,
 			el2
 		);
-	});
-
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildStatus]"), []).map(function(el2) {
-		ReactDOM.render(<RepoBuildStatus Repo={{URI: el2.dataset.repo}} Rev={el2.dataset.rev}/>, el2);
 	});
 
 	el = document.querySelector("[data-react=RepoRevSwitcher]");
