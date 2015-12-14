@@ -337,6 +337,18 @@ func newChangesetInEditor(origTitle, path string) (title, description string, er
 		return "", "", err
 	}
 
+	title, description = parseMessage(txt)
+	if title == "" {
+		return "", "", errors.New("aborting changeset due to empty title")
+	}
+
+	return
+}
+
+// parseMessage will take a message for a changeset and split it into the
+// title and body section. This uses similar rules to git's commit message
+// editor.
+func parseMessage(txt []byte) (title string, description string) {
 	lines := bytes.Split(txt, []byte("\n"))
 	hasTitle := false
 	for _, line := range lines {
@@ -350,13 +362,7 @@ func newChangesetInEditor(origTitle, path string) (title, description string, er
 		}
 		description += string(line) + "\n"
 	}
-	description = strings.TrimSpace(description)
-
-	if title == "" {
-		return "", "", errors.New("aborting changeset due to empty title")
-	}
-
-	return
+	return title, strings.TrimSpace(description)
 }
 
 func changesetMessagePath() string {
