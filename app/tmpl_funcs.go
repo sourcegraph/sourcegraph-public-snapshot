@@ -139,7 +139,6 @@ var TemplateFunctions = htmpl.FuncMap{
 		}
 		page, _ := strconv.Atoi(pageField[0])
 		values["Page"] = []string{strconv.Itoa(page + inc)}
-		delete(values, "_pjax")
 
 		return "?" + values.Encode()
 	},

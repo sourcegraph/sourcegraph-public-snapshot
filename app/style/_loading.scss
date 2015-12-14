@@ -32,9 +32,6 @@
 		-webkit-animation: loading-indicator-animation 4s infinite linear;
 	}
 }
-[data-pjax-container].pjax-loading {
-	opacity: 0.3;
-}
 
 $asterisk-from-color: lighten($sg-blue-color, 55%);
 $asterisk-to-color: lighten($sg-blue-color, 15%);

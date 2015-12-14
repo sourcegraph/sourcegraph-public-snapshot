@@ -43,7 +43,6 @@ require("./history");
 require("./input");
 require("./keyboard_shortcuts");
 require("./links");
-require("./pjax");
 require("./tooltip");
 require("./syntax-highlight");
 
