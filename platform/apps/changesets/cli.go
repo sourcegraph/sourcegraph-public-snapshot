@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/url"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -211,8 +214,9 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 	}
 
 	var (
-		par      = parallel.NewRun(3)
-		authInfo *sourcegraph.AuthInfo
+		par         = parallel.NewRun(4)
+		authInfo    *sourcegraph.AuthInfo
+		messagePath string
 	)
 	par.Do(func() error {
 		if c.Base == "" {
@@ -257,6 +261,10 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		authInfo, err = sg.Auth.Identify(cliCtx, &pbtypes.Void{})
 		return err
 	})
+	par.Do(func() error {
+		messagePath = changesetMessagePath()
+		return nil
+	})
 	err = par.Wait()
 	if err != nil {
 		return err
@@ -266,7 +274,7 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
 	}
 
-	title, description, err := newChangesetInEditor(c.Title)
+	title, description, err := newChangesetInEditor(c.Title, messagePath)
 	if err != nil {
 		return err
 	}
@@ -304,17 +312,27 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 	log.Println(baseURL.ResolveReference(&url.URL{Path: relURL.Path[1:]}))
+	os.Remove(messagePath)
 	return nil
 }
 
-func newChangesetInEditor(origTitle string) (title, description string, err error) {
-	contents := origTitle + `
+func newChangesetInEditor(origTitle, path string) (title, description string, err error) {
+	var contents string
+	if b, err := ioutil.ReadFile(path); err != nil || os.IsNotExist(err) {
+		contents = origTitle + `
 # Please enter the changeset title (in the first line) and description
 # (in the subsequent lines). Lines starting with '#' will be ignored,
 # and an empty message aborts the changeset.
 `
+	} else if err != nil {
+		return "", "", err
+	} else {
+		contents = fmt.Sprintf(`%s
+# Found existing description at %s
+`, string(b), path)
+	}
 
-	txt, err := tempedit.Edit([]byte(contents))
+	txt, err := tempedit.Edit([]byte(contents), path)
 	if err != nil {
 		return "", "", err
 	}
@@ -339,6 +357,14 @@ func newChangesetInEditor(origTitle string) (title, description string, err erro
 	}
 
 	return
+}
+
+func changesetMessagePath() string {
+	root, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil || len(root) == 0 {
+		return ""
+	}
+	return filepath.Join(strings.TrimSpace(string(root)), ".git", "SRC_CHANGESET_EDITMSG")
 }
 
 type changesetUpdateCmdCommon struct {

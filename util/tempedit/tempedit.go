@@ -11,13 +11,22 @@ import (
 
 // Edit runs $EDITOR with a temp file that contains contents. It
 // returns the final contents of the file after editing.
-func Edit(contents []byte) ([]byte, error) {
-	f, err := ioutil.TempFile("", "src")
+func Edit(contents []byte, path string) ([]byte, error) {
+	var f *os.File
+	var err error
+	if path == "" {
+		f, err = ioutil.TempFile("", "src")
+	} else {
+		f, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+	}
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	defer os.Remove(f.Name())
+	if path == "" {
+		defer os.Remove(f.Name())
+	}
+
 	if _, err := f.Write(contents); err != nil {
 		return nil, err
 	}
