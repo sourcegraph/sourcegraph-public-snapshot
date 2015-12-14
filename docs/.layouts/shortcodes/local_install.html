@@ -2,7 +2,7 @@
 	<div class="col-md-6">
 		<form class="form-inline">
 			<label for="os-selector">Choose your operating system:</label>
-			<select class="form-control" onchange="refreshInstallInstructions()" id="os-selector" name="os-selector">
+			<select class="form-control os-selector" onchange="refreshInstallInstructions()" id="os-selector" name="os-selector">
 			  <option disabled selected>-- select an option --</option>
 			  <option value="mac">Mac OS X (10.8+)</option>
 			  <option value="ubuntu">Ubuntu (12.04 & 14.04)</option>
@@ -10,6 +10,15 @@
 			  <option value="redhat">RedHat (7.1)</option>
 			  <option value="source">install from source</option>
 			</select>
+		</form>
+	</div>
+</div>
+<div class="row" style="padding-top:10px;">
+	<div class="col-md-12">
+		<form class="form-inline" id="lang-selector" name="lang-selector">
+			<label for="lang-selector">Choose your programming language(s):</label>
+			<input class="lang-checkbox" type="checkbox" id="go" checked onclick="refreshInstallInstructions()"> Go
+			<input class="lang-checkbox" type="checkbox" id="java" onclick="refreshInstallInstructions()"> Java
 		</form>
 	</div>
 </div>
@@ -52,9 +61,27 @@ var refreshInstallInstructions = function () {
 	var debFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.deb", "src.deb (64-bit)"));
 	var rpmFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.rpm", "src.rpm (64-bit)"));
 
+	var langFlag = function() {
+		var langs = "";
+		["go", "java"].forEach(function(lang) {
+			var isChecked = document.getElementById(lang).checked;
+			if (isChecked) {
+				langs += lang + ","
+			}
+		});
+
+		if (langs != "") {
+			// Remove off-by-one comma.
+			langs = langs.substr(0, langs.length - 1)
+			// Add flagname.
+			return "--init-langs=" + langs
+		}
+
+		return "";
+	}
 
 	var runSrcServe = function(linuxFile) {
-		var str = h2("Run a local Sourcegraph server") + p(precode("src serve"));
+		var str = h2("Run a local Sourcegraph server") + p(precode("src serve " + langFlag()));
 		if (linuxFile) {
 			str += p("Or, if you installed using the " + code(linuxFile) + " and have upstart installed, your server will already be running:");
 			str += p(precode("sudo restart src"));
@@ -68,29 +95,41 @@ var refreshInstallInstructions = function () {
 		return p(precode(installScript) + "Direct downloads: " + downloadLinks);
 	}
 
-	var macInstructions = installOptions(curlInstall, macBinary) + runSrcServe() + visitLocalhost;
+	var macInstructions = function() {
+		return installOptions(curlInstall, macBinary) + runSrcServe() + visitLocalhost;
+	}
 
-	var ubuntuInstructions = installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(".deb") + visitLocalhost;
+	var ubuntuInstructions = function() {
+		return installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(".deb") + visitLocalhost;
+	}
 
-	var centosInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+	var centosInstructions = function() {
+		return installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+	}
 
-	var redhatInstructions = installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+	var redhatInstructions = function() {
+		return installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+	}
+
+	var sourceInstructions = function() {
+		return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README."))) + p("Linux (64-bit) pre-compiled binary: " + linuxBinary) + runSrcServe() + visitLocalhost
+	}
 
 	var instructions = function(os) {
 		if (os == "mac") {
-			return macInstructions;
+			return macInstructions();
 		}
 		if (os == "ubuntu") {
-			return ubuntuInstructions;
+			return ubuntuInstructions();
 		}
 		if (os == "centos") {
-			return centosInstructions;
+			return centosInstructions();
 		}
 		if (os == "redhat") {
-			return redhatInstructions;
+			return redhatInstructions();
 		}
 		if (os == "source") {
-			return p(strong(a("https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md", "Follow the developer README."))) + p("Linux (64-bit) pre-compiled binary: " + linuxBinary) + runSrcServe() + visitLocalhost;
+			return sourceInstructions();
 		}
 		return "";
 	}
