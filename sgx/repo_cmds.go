@@ -11,7 +11,6 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/textutil"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
@@ -328,9 +327,8 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 		}
 		b, err := cl.Builds.Create(cliCtx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Opt: &sourcegraph.BuildCreateOptions{
 			BuildConfig: sourcegraph.BuildConfig{
-				Import:   true,
-				Queue:    true,
-				Priority: int32(buildutil.DefaultPriority(repo.Private, 0) + 10),
+				Import: true,
+				Queue:  true,
 			},
 		}})
 

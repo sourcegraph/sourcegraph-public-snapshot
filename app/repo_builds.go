@@ -15,7 +15,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -73,9 +72,8 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	// Default options.
 	form := sourcegraph.BuildCreateOptions{
 		BuildConfig: sourcegraph.BuildConfig{
-			Import:   true,
-			Queue:    true,
-			Priority: int32(buildutil.DefaultPriority(rc.Repo.Private, buildutil.Manual)),
+			Import: true,
+			Queue:  true,
 		},
 		Force: true,
 	}

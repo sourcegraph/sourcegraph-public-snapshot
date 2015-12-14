@@ -24,7 +24,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -174,9 +173,8 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		if !appconf.Flags.NoUIBuild && !bc.Built {
 			form := sourcegraph.BuildCreateOptions{
 				BuildConfig: sourcegraph.BuildConfig{
-					Import:   true,
-					Queue:    true,
-					Priority: int32(buildutil.DefaultPriority(rc.Repo.Private, buildutil.Manual)),
+					Import: true,
+					Queue:  true,
 				},
 			}
 			commitID := bc.BestRevSpec.CommitID
