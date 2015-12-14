@@ -262,6 +262,10 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	}
 
+	if !authInfo.Write {
+		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
+	}
+
 	title, description, err := newChangesetInEditor(c.Title)
 	if err != nil {
 		return err
