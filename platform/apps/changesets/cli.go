@@ -1,6 +1,7 @@
 package changesets
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -349,18 +350,17 @@ func newChangesetInEditor(origTitle, path string) (title, description string, er
 // title and body section. This uses similar rules to git's commit message
 // editor.
 func parseMessage(txt []byte) (title string, description string) {
-	lines := bytes.Split(txt, []byte("\n"))
-	hasTitle := false
-	for _, line := range lines {
-		if bytes.HasPrefix(line, []byte("#")) {
+	scanner := bufio.NewScanner(bytes.NewBuffer(txt))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		if !hasTitle {
-			title = string(bytes.TrimSpace(line))
-			hasTitle = true
-			continue
+		if title == "" {
+			title = strings.TrimSpace(line)
+		} else {
+			description += line + "\n"
 		}
-		description += string(line) + "\n"
 	}
 	return title, strings.TrimSpace(description)
 }
