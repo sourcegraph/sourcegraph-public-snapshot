@@ -17,9 +17,6 @@ import (
 var Flags struct {
 	NoUIBuild bool `long:"app.no-ui-build" description:"disable manual building of repositories from the UI"`
 
-	// TODO(sqs!decouple-builds-from-code-intelligence): Remove this.
-	ShowLatestBuiltCommit bool `long:"app.show-latest-built-commit" description:"show the latest built commit instead of the HEAD commit on the default branch"`
-
 	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
 
 	DisableRepoTreeSearch bool `long:"app.disable-repo-tree-search" description:"do not show repo fulltext search results (only defs) (slower for large repos)"`

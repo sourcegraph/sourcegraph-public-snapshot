@@ -25,23 +25,8 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph
 
 	cacheOnCommitID(ctx, defSpec.CommitID)
 
-	// Ensure we have an absolute commit ID. If none is specified, get that of the latest build.
-	if len(defSpec.CommitID) != 40 {
-		repoRev := sourcegraph.RepoRevSpec{
-			RepoSpec: sourcegraph.RepoSpec{URI: defSpec.Repo},
-			Rev:      defSpec.CommitID,
-		}
-
-		buildInfo, err := svc.Builds(ctx).GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: repoRev})
-		if err != nil {
-			return nil, err
-		}
-		if buildInfo.LastSuccessful != nil {
-			defSpec.CommitID = buildInfo.LastSuccessful.CommitID
-		}
-		if len(defSpec.CommitID) != 40 {
-			return nil, grpc.Errorf(codes.NotFound, "no build found for %s@%s", defSpec.Repo, defSpec.CommitID)
-		}
+	if !isAbsCommitID(defSpec.CommitID) {
+		return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required (got %q)", defSpec.CommitID)
 	}
 
 	rawDef, err := s.get(ctx, defSpec)
@@ -99,42 +84,12 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 
 		// Determine the commit ID to use, if it wasn't specified or
 		// if it's a non-commit-ID revspec.
-		if len(commitID) != 40 {
-			rrspec := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repoURI}, Rev: commitID}
-
-			if rrspec.Rev == "" {
-				// Get default branch.
-				repo, err := svc.Repos(ctx).Get(ctx, &rrspec.RepoSpec)
-				if err != nil {
-					log.Printf("Warning: dropping repo rev %q from defs list because getting the repo failed: %s.", repoRev, err)
-					continue
-				}
-				rrspec.Rev = repo.DefaultBranch
-			}
-
-			buildInfo, err := svc.Builds(ctx).GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: rrspec})
-			if err != nil {
-				if grpc.Code(err) == codes.NotFound {
-					// Only log if there's an unexpected error; it'll
-					// be common that clients query for defs from
-					// repos with no build (e.g., when querying defs
-					// in all repos they own).
-					log.Printf("Warning: dropping repo rev %q from defs list because getting the associated build failed: %s.", repoRev, err)
-				}
-				continue
-			}
-			if buildInfo.LastSuccessful != nil {
-				commitID = buildInfo.LastSuccessful.CommitID
-				repoRev = repoURI + "@" + commitID
-			} else {
-				// No recent successful build; omit from results.
-				continue
-			}
-			//return nil, &sourcegraph.InvalidOptionsError{Reason: fmt.Sprintf("bad/missing commit ID %q for repo %q in Defs.List RepoRevs param (must be 40-char commit ID)", commitID, repoURI)}
+		if !isAbsCommitID(commitID) {
+			return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required for repo %q to list defs (got %q)", repoURI, commitID)
 		}
 
-		// The repo exists and the permission check passed, so include
-		// it in the query.
+		// The repo exists and the commit ID is valid, so include it
+		// in the query.
 		opt.RepoRevs = append(opt.RepoRevs, repoRev)
 	}
 	if len(origRepoRevs) > 0 && len(opt.RepoRevs) == 0 {

@@ -12,7 +12,7 @@ import (
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	e := json.NewEncoder(w)
-	tc, rc, vc, bc, err := handlerutil.GetTreeEntryCommon(r, &sourcegraph.RepoTreeGetOptions{TokenizedSource: true})
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, &sourcegraph.RepoTreeGetOptions{TokenizedSource: true})
 	if err != nil {
 		if urlErr, ok := err.(*handlerutil.URLMovedError); ok {
 			return e.Encode(urlErr)
@@ -30,11 +30,11 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return e.Encode(payloads.CodeFile{
-		Repo:          rc.Repo,
-		RepoCommit:    vc.RepoCommit,
-		EntrySpec:     tc.EntrySpec,
-		RepoBuildInfo: bc.RepoBuildInfo,
-		Entry:         tc.Entry,
+		Repo:              rc.Repo,
+		RepoCommit:        vc.RepoCommit,
+		EntrySpec:         tc.EntrySpec,
+		SrclibDataVersion: tc.SrclibDataVersion,
+		Entry:             tc.Entry,
 	})
 }
 

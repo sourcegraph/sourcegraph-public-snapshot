@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sitemap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
@@ -90,17 +92,9 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 
 	var sm sitemap.URLSet
 
-	bc, err := handlerutil.GetRepoBuildCommon(r, rc, vc, nil)
-	if err != nil {
-		return err
-	}
-	vc.RepoRevSpec = bc.BestRevSpec // Remove after getRepo refactor.
-
+	// TODO(sqs): add back the last-modified date (not sure how best
+	// to determine it).
 	var lastMod *time.Time
-	if bc.RepoBuildInfo != nil && bc.RepoBuildInfo.LastSuccessful != nil {
-		tmp := bc.RepoBuildInfo.LastSuccessful.EndedAt.Time()
-		lastMod = &tmp
-	}
 
 	const (
 		repoPriority  = 0.9
@@ -122,51 +116,57 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 		Priority:   repoPriority,
 	})
 
-	// Add defs.
-	seenDefs := map[graph.DefKey]bool{}
-	defs, err := apiclient.Defs.List(ctx, &sourcegraph.DefListOptions{
-		RepoRevs:    []string{rc.Repo.URI + "@" + vc.RepoRevSpec.CommitID},
-		Exported:    true,
-		IncludeTest: false,
-		Doc:         true,
-		ListOptions: sourcegraph.ListOptions{PerPage: sitemap.MaxURLs - 1},
-	})
-	if err != nil {
+	// Add defs if there is a valid srclib version.
+	dataVer, err := apiclient.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
 	}
-
-	for _, def := range defs.Defs {
-		// TODO(sqs): when can defs be repeated? probably only
-		// when srclib store pagination is faulty.
-		if seenDefs[def.DefKey] {
-			continue
-		}
-		seenDefs[def.DefKey] = true
-
-		if !defRobotsIndex(rc.Repo, def) {
-			continue
-		}
-
-		var pri float64
-		if len(def.Docs) == 0 {
-			pri = defLoPriority
-		} else {
-			pri = defHiPriority
-		}
-
-		url := conf.AppURL(ctx).ResolveReference(router.Rel.URLToDef(def.DefKey)).String()
-		if len(url) > 1000 {
-			// Google rejects long URLs >2000 chars, but let's limit
-			// them to 1000 just to be safe/sane.
-			continue
-		}
-
-		sm.URLs = append(sm.URLs, sitemap.URL{
-			Loc:        url,
-			LastMod:    lastMod,
-			ChangeFreq: chgFreq,
-			Priority:   pri,
+	if dataVer != nil {
+		seenDefs := map[graph.DefKey]bool{}
+		defs, err := apiclient.Defs.List(ctx, &sourcegraph.DefListOptions{
+			RepoRevs:    []string{rc.Repo.URI + "@" + dataVer.CommitID},
+			Exported:    true,
+			IncludeTest: false,
+			Doc:         true,
+			ListOptions: sourcegraph.ListOptions{PerPage: sitemap.MaxURLs - 1},
 		})
+		if err != nil {
+			return err
+		}
+
+		for _, def := range defs.Defs {
+			// TODO(sqs): when can defs be repeated? probably only
+			// when srclib store pagination is faulty.
+			if seenDefs[def.DefKey] {
+				continue
+			}
+			seenDefs[def.DefKey] = true
+
+			if !defRobotsIndex(rc.Repo, def) {
+				continue
+			}
+
+			var pri float64
+			if len(def.Docs) == 0 {
+				pri = defLoPriority
+			} else {
+				pri = defHiPriority
+			}
+
+			url := conf.AppURL(ctx).ResolveReference(router.Rel.URLToDef(def.DefKey)).String()
+			if len(url) > 1000 {
+				// Google rejects long URLs >2000 chars, but let's limit
+				// them to 1000 just to be safe/sane.
+				continue
+			}
+
+			sm.URLs = append(sm.URLs, sitemap.URL{
+				Loc:        url,
+				LastMod:    lastMod,
+				ChangeFreq: chgFreq,
+				Priority:   pri,
+			})
+		}
 	}
 
 	// Truncate to sitemaps limit.

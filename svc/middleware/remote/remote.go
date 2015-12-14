@@ -106,8 +106,8 @@ func (s remoteBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sour
 	return sourcegraph.NewClientFromContext(ctx).Builds.Get(ctx, v1)
 }
 
-func (s remoteBuilds) GetRepoBuildInfo(ctx context.Context, v1 *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
-	return sourcegraph.NewClientFromContext(ctx).Builds.GetRepoBuildInfo(ctx, v1)
+func (s remoteBuilds) GetRepoBuild(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
+	return sourcegraph.NewClientFromContext(ctx).Builds.GetRepoBuild(ctx, v1)
 }
 
 func (s remoteBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
@@ -448,6 +448,10 @@ func (s remoteRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTags
 
 func (s remoteRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
 	return sourcegraph.NewClientFromContext(ctx).Repos.ListCommitters(ctx, v1)
+}
+
+func (s remoteRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+	return sourcegraph.NewClientFromContext(ctx).Repos.GetSrclibDataVersionForPath(ctx, v1)
 }
 
 type remoteSearch struct{ sourcegraph.SearchServer }

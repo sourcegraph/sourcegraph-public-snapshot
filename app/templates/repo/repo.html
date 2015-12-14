@@ -11,28 +11,9 @@
 
 {{end}}
 
-{{define "RepoNotYetBuiltAlert"}}
-<div class="alert alert-warning"><strong>Repository not yet built.</strong> Sourcegraph must build this repository to show this page.</div>
-
-</div>
-{{end}}
-
 {{define "RepoRefreshButton"}}
 <form class="form refresh-button-form" action="{{urlToRepoSubroute "repo.refresh" .Repo.URI}}" method="post">
 	<button data-loading-text="Refreshing... (reload in a bit)" class="btn btn-default loading-indicator" type="submit"><i class="octicon octicon-sync"></i><span class="txt">Refresh</span></button>
 	<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 </form>
-{{end}}
-
-{{define "RepoBuildWarning"}}
-{{if .RepoBuildCommon.RepoBuildInfo}}
-{{if and (not .RepoBuildCommon.RepoBuildInfo.Exact) .RepoBuildCommon.RepoBuildInfo.LastSuccessful}}
-<div class="alert alert-warning">
-	<p>Code from {{.RepoBuildCommon.RepoBuildInfo.CommitsBehind}} commits behind
-		<a href="{{urlToRepoRev .Repo.URI (toString2 .RepoRevCommon.RepoCommit.ID)}}">head</a>
-		is shown.
-	</p>
-</div>
-{{end}}
-{{end}}
 {{end}}

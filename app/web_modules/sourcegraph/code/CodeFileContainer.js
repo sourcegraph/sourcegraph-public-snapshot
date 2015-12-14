@@ -10,7 +10,6 @@ import CodeListing from "sourcegraph/code/CodeListing";
 import DefPopup from "sourcegraph/def/DefPopup";
 import DefTooltip from "sourcegraph/def/DefTooltip";
 import IssueForm from "sourcegraph/issue/IssueForm";
-import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
 import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
@@ -140,14 +139,6 @@ class CodeFileContainer extends Container {
 				<div className="code-file-toolbar">
 					<div className="file">
 						<i className={this.state.file ? "fa fa-file" : "fa fa-spinner fa-spin"} />{breadcrumb}
-
-						{this.state.file &&
-							<RepoBuildIndicator
-								RepoURI={this.state.repo}
-								Rev={this.state.file.EntrySpec.RepoRev.CommitID}
-								btnSize="btn-xs"
-								tooltipPosition="bottom" />
-						}
 					</div>
 
 					<div className="actions">

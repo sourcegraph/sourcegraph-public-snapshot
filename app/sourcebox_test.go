@@ -57,7 +57,7 @@ func TestSourceboxDef(t *testing.T) {
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	calledDefsGet := mock.Defs.MockGet_Return(t, def)
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
-	mockCurrentRepoBuild(mock)
+	mockCurrentSrclibData(mock)
 	mockEnabledRepoConfig(mock)
 
 	resp, err := c.GetOK(router.Rel.URLToSourceboxDef(def.DefKey, "js").String())
@@ -95,7 +95,7 @@ func TestSourceboxDef_unbuiltDisplayEmpty(t *testing.T) {
 	mock.Defs.Get_ = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 		return nil, grpc.Errorf(codes.NotFound, "")
 	}
-	mockNoRepoBuild(mock)
+	mockNoSrclibData(mock)
 	mockEnabledRepoConfig(mock)
 
 	resp, err := c.Get(router.Rel.URLToSourceboxDef(graph.DefKey{Repo: "my/repo", UnitType: "GoPackage", Unit: "u", Path: "p"}, "js").String())
@@ -132,7 +132,7 @@ func TestSourceboxFile(t *testing.T) {
 	calledReposGet := mockRepoGet(mock, "my/repo")
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, vcs.CommitID(commitID))
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
-	mockSpecificRepoBuild(mock, commitID)
+	mockSpecificVersionSrclibData(mock, commitID)
 	mockEnabledRepoConfig(mock)
 
 	entrySpec := sourcegraph.TreeEntrySpec{
@@ -177,7 +177,7 @@ func TestSourceboxFile_unbuiltButStillDisplaysRawFile(t *testing.T) {
 	calledReposGet := mockRepoGet(mock, "my/repo")
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, vcs.CommitID(commitID))
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
-	mockNoRepoBuild(mock)
+	mockNoSrclibData(mock)
 	mockEnabledRepoConfig(mock)
 
 	entrySpec := sourcegraph.TreeEntrySpec{
@@ -222,7 +222,7 @@ func TestSourceboxFile_lineNumbersEnabled(t *testing.T) {
 	calledReposGet := mockRepoGet(mock, "my/repo")
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, vcs.CommitID(commitID))
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
-	mockNoRepoBuild(mock)
+	mockNoSrclibData(mock)
 	mockEnabledRepoConfig(mock)
 
 	entrySpec := sourcegraph.TreeEntrySpec{

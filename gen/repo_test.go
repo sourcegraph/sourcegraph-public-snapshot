@@ -13,7 +13,6 @@ func TestRepoURIExpr(t *testing.T) {
 	}{
 		{"*sourcegraph.RepoSpec", "x.URI"},
 		{"*sourcegraph.RepoRevSpec", "x.URI"},
-		{"*sourcegraph.BuildsGetRepoBuildInfoOp", "x.Repo.URI"},
 		{"*sourcegraph.BuildsCreateOp", "x.RepoRev.URI"},
 		{"*sourcegraph.RepoTreeGetOp", "x.Entry.RepoRev.URI"},
 		{"*sourcegraph.BuildsGetLogOp", "x.Build.Repo.URI"},

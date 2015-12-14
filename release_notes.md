@@ -1,5 +1,10 @@
 # dev
 
+- Remove the `--app.show-latest-built-commit`/`ShowLatestBuiltCommit`
+  configs. This functionality now occurs automatically without the
+  negative tradeoffs associated with the previous scheme. An old
+  file's contents are annotated with Code Intelligence if it has not
+  changed since the last build.
 - Eliminate the display of definition names on the repository
   directory view (beside directory entries). This feature was not very
   useful and removing it improves performance. This means the

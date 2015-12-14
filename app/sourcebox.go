@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/sourcegraph/mux"
 
@@ -26,14 +25,14 @@ func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	dc, bc, _, _, err := handlerutil.GetDefCommon(r, nil)
+	dc, _, vc, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {
 		// Avoid writing a full response, or else the sourcebox will mess with the surrounding page it's embedded in.
 		http.Error(w, "", errcode.HTTP(err))
 		return nil
 	}
 
-	entrySpec := sourcegraph.TreeEntrySpec{RepoRev: bc.BestRevSpec, Path: dc.Def.File}
+	entrySpec := sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: dc.Def.File}
 	opt := sourcegraph.RepoTreeGetOptions{
 		TokenizedSource: true,
 		GetFileOptions: vcsclient.GetFileOptions{
@@ -49,22 +48,22 @@ func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return renderSourcebox(r, w, entry, entrySpec, bc.RepoBuildInfo, dc.Def)
+	return renderSourcebox(r, w, entry, entrySpec, dc.Def)
 }
 
 func serveSourceboxFile(w http.ResponseWriter, r *http.Request) error {
 	opt := sourcegraph.RepoTreeGetOptions{
 		TokenizedSource: true,
 	}
-	tc, _, _, bc, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	tc, _, _, err := handlerutil.GetTreeEntryCommon(r, &opt)
 	if err != nil {
 		return err
 	}
 
-	return renderSourcebox(r, w, tc.Entry, tc.EntrySpec, bc.RepoBuildInfo, nil)
+	return renderSourcebox(r, w, tc.Entry, tc.EntrySpec, nil)
 }
 
-func renderSourcebox(r *http.Request, w http.ResponseWriter, entry *sourcegraph.TreeEntry, entrySpec sourcegraph.TreeEntrySpec, buildInfo *sourcegraph.RepoBuildInfo, def *sourcegraph.Def) error {
+func renderSourcebox(r *http.Request, w http.ResponseWriter, entry *sourcegraph.TreeEntry, entrySpec sourcegraph.TreeEntrySpec, def *sourcegraph.Def) error {
 	ctx := httpctx.FromRequest(r)
 
 	footerStyle := r.FormValue("FooterStyle")
@@ -110,12 +109,8 @@ func renderSourcebox(r *http.Request, w http.ResponseWriter, entry *sourcegraph.
 		return err
 	}
 
-	// Caching
-	if buildInfo != nil && buildInfo.LastSuccessful != nil && buildInfo.LastSuccessful.EndedAt != nil {
-		w.Header().Set("last-modified", buildInfo.LastSuccessful.EndedAt.Time().Round(time.Second).Format(http.TimeFormat))
-		// TODO(sqs): check client if-modified-since and short-circuit sooner to take better advantage of caching
-		w.Header().Set("cache-control", "private, max-age=600")
-	}
+	// TODO(sqs): add back caching
+	w.Header().Set("cache-control", "private, max-age=600")
 
 	sb := &sourcegraph.Sourcebox{
 		HTML:          template.HTML(buf.String()),

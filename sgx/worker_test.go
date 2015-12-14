@@ -83,11 +83,20 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 // per-source-unit import step and the index step run correctly. If
 // you just checked that specific defs exist, then the index creation
 // could fail (or have a bug) without you realizing it.
-func checkImport(t *testing.T, ctx context.Context, cl *sourcegraph.Client, repo string) {
+func checkImport(t *testing.T, ctx context.Context, cl *sourcegraph.Client, repo, commitID string) {
+	if len(commitID) != 40 {
+		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repo}, Rev: commitID}
+		commit, err := sourcegraph.NewClientFromContext(ctx).Repos.GetCommit(ctx, repoRev)
+		if err != nil {
+			t.Fatal(err)
+		}
+		commitID = string(commit.ID)
+	}
+
 	const n = 6 // hardcoded (must be same as the number of units srclib-sample produces)
 	var sampleDefs []sourcegraph.DefSpec
 	for i := 0; i < n; i++ {
-		sampleDefs = append(sampleDefs, sourcegraph.DefSpec{Repo: repo, UnitType: "sample", Unit: "myunit" + strconv.Itoa(i), Path: "mydef" + strconv.Itoa(i)})
+		sampleDefs = append(sampleDefs, sourcegraph.DefSpec{Repo: repo, CommitID: commitID, UnitType: "sample", Unit: "myunit" + strconv.Itoa(i), Path: "mydef" + strconv.Itoa(i)})
 	}
 
 	// Specific def lookup.
@@ -114,7 +123,7 @@ func checkImport(t *testing.T, ctx context.Context, cl *sourcegraph.Client, repo
 	for _, defSpec := range sampleDefs {
 		query := defSpec.Path + "x" // "x" suffix prevents undesired prefix matches
 		defs, err := cl.Defs.List(ctx, &sourcegraph.DefListOptions{
-			RepoRevs: []string{repo},
+			RepoRevs: []string{repo + "@" + commitID},
 			Query:    query,
 		})
 		if err != nil {
@@ -131,6 +140,10 @@ func checkImport(t *testing.T, ctx context.Context, cl *sourcegraph.Client, repo
 		// Not important to test; omitting this lets us not hardcode
 		// it in sampleDefs, which looks nicer.
 		def.CommitID = ""
+		defSpec.CommitID = ""
+		for _, def := range defs.Defs {
+			def.CommitID = ""
+		}
 
 		if name, want := def.Name, defSpec.Path+"x"; name != want {
 			t.Errorf("got def name %q, want %q", name, want)

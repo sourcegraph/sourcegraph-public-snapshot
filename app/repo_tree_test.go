@@ -19,7 +19,7 @@ func TestRepoTree(t *testing.T) {
 	mockRepoGet(mock, "my/repo")
 	mockEnabledRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	mockNoRepoBuild(mock)
+	mockNoSrclibData(mock)
 	calledRepoTreeGet := mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
 		SourceCode: &sourcegraph.SourceCode{
 			Lines: []*sourcegraph.SourceCodeLine{
@@ -59,7 +59,7 @@ func TestRepoTree_markdown(t *testing.T) {
 	mockRepoGet(mock, "my/repo")
 	mockEnabledRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	mockNoRepoBuild(mock)
+	mockNoSrclibData(mock)
 	mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
 		TreeEntry: &vcsclient.TreeEntry{
 			Contents: []byte(docSource),
@@ -87,7 +87,7 @@ func TestRepoTree_plaintext(t *testing.T) {
 	mockRepoGet(mock, "my/repo")
 	mockEnabledRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	mockNoRepoBuild(mock)
+	mockNoSrclibData(mock)
 	mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
 		SourceCode: &sourcegraph.SourceCode{
 			Lines: []*sourcegraph.SourceCodeLine{

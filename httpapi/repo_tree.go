@@ -14,7 +14,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tc, _, _, _, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	tc, _, _, err := handlerutil.GetTreeEntryCommon(r, &opt)
 	if err != nil {
 		return err
 	}

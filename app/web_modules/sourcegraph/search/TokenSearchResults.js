@@ -16,7 +16,7 @@ class TokenSearchResultsView extends Component {
 
 		state.results = props.resultData.Results;
 		state.total = props.resultData.Total;
-		state.buildInfo = props.resultData.BuildInfo;
+		state.srclibDataVersion = props.resultData.SrclibDataVersion;
 	}
 
 	render() {
@@ -35,14 +35,14 @@ class TokenSearchResultsView extends Component {
 
 		return (
 			<div className="token-search-results">
-				{!this.state.buildInfo &&
+				{!this.state.srclibDataVersion &&
 					<div className="alert alert-info">
 						<i className="fa fa-warning"></i>No Code Intelligence data for {this.state.repo}. <a href={helpDocURL}>See troubleshooting guide</a>.
 					</div>
 				}
-				{(this.state.buildInfo && !this.state.buildInfo.Exact) &&
+				{(this.state.srclibDataVersion && this.state.srclibDataVersion.CommitsBehind) &&
 					<div className="alert alert-info">
-						<i className="fa fa-warning"></i>Showing definition results from {this.state.buildInfo.CommitsBehind} commit{this.state.buildInfo.CommitsBehind === 1 ? "" : "s"} behind latest. Newer results are shown when available.
+						<i className="fa fa-warning"></i>Showing definition results from {this.state.srclibDataVersion.CommitsBehind} commit{this.state.srclibDataVersion.CommitsBehind === 1 ? "" : "s"} behind latest. Newer results are shown when available.
 					</div>
 				}
 				<p className="summary">{summary}</p>

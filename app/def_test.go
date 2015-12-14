@@ -48,7 +48,7 @@ func TestDefVirtual(t *testing.T) {
 	mock.Repos.GetCommit_ = func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 		return &vcs.Commit{ID: vcs.CommitID(wantDef.CommitID)}, nil
 	}
-	mockCurrentRepoBuild(mock)
+	mockCurrentSrclibData(mock)
 
 	resp, err := c.Get(router.Rel.URLToDef(wantDef.DefKey).String())
 	if err != nil {

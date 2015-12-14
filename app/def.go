@@ -25,18 +25,18 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	dc, bc, rc, vc, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
+	dc, rc, vc, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return err
 	}
 
 	if isVirtual(dc.Def.DefKey) {
-		return serveDefVirtual(w, r, dc, bc, rc, vc)
+		return serveDefVirtual(w, r, dc, rc, vc)
 	}
 
 	tc := &handlerutil.TreeEntryCommon{
 		EntrySpec: sourcegraph.TreeEntrySpec{
-			RepoRev: bc.BestRevSpec,
+			RepoRev: vc.RepoRevSpec,
 			Path:    dc.Def.File,
 		},
 	}
@@ -48,7 +48,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return serveRepoTreeEntry(w, r, tc, rc, vc, bc, dc)
+	return serveRepoTreeEntry(w, r, tc, rc, vc, dc)
 }
 
 func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
@@ -62,7 +62,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	apiclient := handlerutil.APIClient(r)
 
-	dc, bc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Highlight this def in examples.
-	u0 := router.Rel.URLToDefAtRev(dc.Def.DefKey, bc.BestRevSpec.CommitID) // internal
+	u0 := router.Rel.URLToDefAtRev(dc.Def.DefKey, vc.RepoRevSpec.CommitID) // internal
 	u1 := router.Rel.URLToDefAtRev(dc.Def.DefKey, "")                      // external
 	for _, x := range examples.Examples {
 		x.SrcHTML = strings.Replace(string(x.SrcHTML), u0.String()+`" class="`, u0.String()+`" class="highlight highlight-primary `, -1)
@@ -117,7 +117,7 @@ func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	dc, _, _, _, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
+	dc, _, _, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		// TODO(gbbr): Set up custom responses for each scenario.
 		// All of the below errors will cause full page HTML pages or redirects, if

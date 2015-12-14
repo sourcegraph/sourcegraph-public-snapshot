@@ -15,7 +15,7 @@ func TestDefPopover(t *testing.T) {
 	def := &sourcegraph.Def{Def: graph.Def{DefKey: graph.DefKey{Repo: "my/repo", UnitType: "GoPackage", Unit: "u", Path: "p"}}}
 
 	calledReposGet := mockRepoGet(mock, "my/repo")
-	mockCurrentRepoBuild(mock)
+	mockCurrentSrclibData(mock)
 	mockEnabledRepoConfig(mock)
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	calledDefsGet := mock.Defs.MockGet_Return(t, def)

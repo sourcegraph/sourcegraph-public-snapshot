@@ -39,12 +39,12 @@ func isVirtual(def graph.DefKey) bool {
 	return false
 }
 
-func serveDefVirtual(w http.ResponseWriter, r *http.Request, dc *payloads.DefCommon, bc handlerutil.RepoBuildCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
-	tc, err := virtualTreeEntry(dc.Def, bc)
+func serveDefVirtual(w http.ResponseWriter, r *http.Request, dc *payloads.DefCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
+	tc, err := virtualTreeEntry(dc.Def, vc.RepoRevSpec)
 	if err != nil {
 		return err
 	}
-	return serveRepoTreeEntry(w, r, tc, rc, vc, bc, dc)
+	return serveRepoTreeEntry(w, r, tc, rc, vc, dc)
 }
 
 var virtualFileTemplate = template.Must(template.New("").Parse(`
@@ -54,7 +54,7 @@ var virtualFileTemplate = template.Must(template.New("").Parse(`
 `))
 
 // virtualTreeEntry returns the fake source code for a virtual def.
-func virtualTreeEntry(def *sourcegraph.Def, bc handlerutil.RepoBuildCommon) (*handlerutil.TreeEntryCommon, error) {
+func virtualTreeEntry(def *sourcegraph.Def, rev sourcegraph.RepoRevSpec) (*handlerutil.TreeEntryCommon, error) {
 
 	var buf bytes.Buffer
 	err := virtualFileTemplate.Execute(&buf, def)
@@ -64,7 +64,7 @@ func virtualTreeEntry(def *sourcegraph.Def, bc handlerutil.RepoBuildCommon) (*ha
 	rawContents := buf.String()
 
 	entrySpec := sourcegraph.TreeEntrySpec{
-		RepoRev: bc.BestRevSpec,
+		RepoRev: rev,
 		Path:    def.File,
 	}
 

@@ -9,17 +9,17 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-func TestRepoBuildInfo(t *testing.T) {
+func TestRepoBuild(t *testing.T) {
 	c, mock := newTest()
 
-	wantBuildInfo := &sourcegraph.RepoBuildInfo{CommitsBehind: 3}
+	wantBuild := &sourcegraph.Build{Host: "abc"}
 
 	calledRepoGet := mock.Repos.MockGet(t, "r/r")
 	calledRepoGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	calledGetRepoBuildInfo := mock.Builds.MockGetRepoBuildInfo(t, wantBuildInfo)
+	calledGetRepoBuild := mock.Builds.MockGetRepoBuild(t, wantBuild)
 
-	var buildInfo *sourcegraph.RepoBuildInfo
-	if err := c.GetJSON("/repos/r/r@c/.build", &buildInfo); err != nil {
+	var build *sourcegraph.Build
+	if err := c.GetJSON("/repos/r/r@c/.build", &build); err != nil {
 		t.Fatal(err)
 	}
 	if !*calledRepoGet {
@@ -28,11 +28,11 @@ func TestRepoBuildInfo(t *testing.T) {
 	if !*calledRepoGetCommit {
 		t.Error("!calledRepoGetCommit")
 	}
-	if !*calledGetRepoBuildInfo {
-		t.Error("!calledGetRepoBuildInfo")
+	if !*calledGetRepoBuild {
+		t.Error("!calledGetRepoBuild")
 	}
-	if !reflect.DeepEqual(buildInfo, wantBuildInfo) {
-		t.Errorf("got %+v, want %+v", buildInfo, wantBuildInfo)
+	if !reflect.DeepEqual(build, wantBuild) {
+		t.Errorf("got %+v, want %+v", build, wantBuild)
 	}
 }
 

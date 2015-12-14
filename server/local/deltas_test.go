@@ -26,7 +26,7 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 
 	var calledGet int
 	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	mock.servers.Builds.MockGetRepoBuildInfo(t, &sourcegraph.RepoBuildInfo{})
+	mock.servers.Builds.MockGetRepoBuild(t, &sourcegraph.Build{})
 	mock.servers.Repos.Get_ = func(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledGet++
 		if calledGet == 2 {

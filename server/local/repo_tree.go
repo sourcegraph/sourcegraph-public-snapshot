@@ -168,17 +168,10 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 		return nil, &sourcegraph.NotImplementedError{What: "VCS searching"}
 	}
 
-	if repoRev.CommitID == "" {
-		buildInfo, err := svc.Builds(ctx).GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: repoRev})
-		if err == nil && buildInfo.LastSuccessful != nil {
-			repoRev.CommitID = buildInfo.LastSuccessful.CommitID
-		} else {
-			// Fall back to textual result (no build, so no formatting).
-			if err := (&repos{}).resolveRepoRev(ctx, &repoRev); err != nil {
-				return nil, err
-			}
-		}
+	if !isAbsCommitID(repoRev.CommitID) {
+		return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required (got %q)", repoRev.CommitID)
 	}
+
 	if repoRev.Rev == "" {
 		repoRev.Rev = repoRev.CommitID
 	}

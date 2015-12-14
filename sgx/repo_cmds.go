@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/rogpeppe/rog-go/parallel"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -313,29 +315,21 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 	repoRevSpec.CommitID = string(commit.ID)
 	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], repo.DefaultBranch, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
 
-	buildInfo, err := cl.Builds.GetRepoBuildInfo(cliCtx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: repoRevSpec, Opt: nil})
-	if err != nil {
-		return err
-	}
-	if buildInfo != nil && buildInfo.LastSuccessfulCommit != nil && buildInfo.LastSuccessfulCommit.ID == commit.ID {
-		log.Printf("Latest commit is already built.")
-	} else {
-		if buildInfo == nil || buildInfo.LastSuccessfulCommit == nil {
-			log.Printf("No builds found.")
-		} else if buildInfo.LastSuccessfulCommit != nil {
-			log.Printf("Most recent build was for commit %s (%s).", buildInfo.LastSuccessfulCommit.ID[:8], timeutil.TimeAgo(buildInfo.LastSuccessfulCommit.Author.Date))
-		}
+	if _, err := cl.Builds.GetRepoBuild(cliCtx, &repoRevSpec); grpc.Code(err) == codes.NotFound {
 		b, err := cl.Builds.Create(cliCtx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Opt: &sourcegraph.BuildCreateOptions{
 			BuildConfig: sourcegraph.BuildConfig{
 				Import: true,
 				Queue:  true,
 			},
 		}})
-
 		if err != nil {
 			return err
 		}
 		log.Printf("Created build #%s for commit %s.", b.Spec().IDString(), commit.ID[:8])
+	} else if err != nil {
+		return err
+	} else {
+		log.Printf("Latest commit is already built.")
 	}
 
 	return nil

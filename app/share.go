@@ -11,7 +11,7 @@ import (
 )
 
 func serveDefShare(w http.ResponseWriter, r *http.Request) error {
-	dc, bc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {
 		return err
 	}
@@ -19,19 +19,17 @@ func serveDefShare(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "def/share.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		handlerutil.RepoBuildCommon
 		payloads.DefCommon
 		tmpl.Common
 	}{
-		RepoCommon:      *rc,
-		RepoRevCommon:   *vc,
-		RepoBuildCommon: bc,
-		DefCommon:       *dc,
+		RepoCommon:    *rc,
+		RepoRevCommon: *vc,
+		DefCommon:     *dc,
 	})
 }
 
 func serveRepoTreeShare(w http.ResponseWriter, r *http.Request) error {
-	tc, rc, vc, bc, err := handlerutil.GetTreeEntryCommon(r, nil)
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, nil)
 	if err != nil {
 		return err
 	}
@@ -44,7 +42,6 @@ func serveRepoTreeShare(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "repo/tree/share.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		handlerutil.RepoBuildCommon
 		handlerutil.TreeEntryCommon
 		SourceboxURL     *url.URL
 		SourceboxJSONURL *url.URL
@@ -52,7 +49,6 @@ func serveRepoTreeShare(w http.ResponseWriter, r *http.Request) error {
 	}{
 		RepoCommon:       *rc,
 		RepoRevCommon:    *vc,
-		RepoBuildCommon:  bc,
 		TreeEntryCommon:  *tc,
 		SourceboxURL:     sourceboxURL,
 		SourceboxJSONURL: sourceboxJSONURL,

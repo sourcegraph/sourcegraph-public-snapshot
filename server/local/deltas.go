@@ -47,15 +47,12 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 		repoRevSpec.CommitID = string((*commit).ID)
 
 		// Get build.
-		buildInfo, err := svc.Builds(ctx).GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{
-			Repo: *repoRevSpec,
-			Opt:  &sourcegraph.BuildsGetRepoBuildInfoOptions{Exact: true},
-		})
+		build0, err := svc.Builds(ctx).GetRepoBuild(ctx, repoRevSpec)
 		if err != nil && grpc.Code(err) != codes.NotFound {
 			return err
 		}
-		if buildInfo != nil {
-			*build = buildInfo.Exact
+		if build0 != nil {
+			*build = build0
 		}
 
 		return nil

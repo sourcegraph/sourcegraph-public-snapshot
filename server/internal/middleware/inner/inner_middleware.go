@@ -458,14 +458,14 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 
 }
 
-func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, param *sourcegraph.BuildsGetRepoBuildInfoOp) (res *sourcegraph.RepoBuildInfo, err error) {
+func (s wrappedBuilds) GetRepoBuild(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *sourcegraph.Build, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "Builds", "GetRepoBuildInfo", param)
+	ctx = trace.Before(ctx, "Builds", "GetRepoBuild", param)
 	defer func() {
-		trace.After(ctx, "Builds", "GetRepoBuildInfo", param, err, time.Since(start))
+		trace.After(ctx, "Builds", "GetRepoBuild", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.GetRepoBuildInfo")
+	err = s.c.Authenticate(ctx, "Builds.GetRepoBuild")
 	if err != nil {
 		return
 	}
@@ -473,7 +473,7 @@ func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, param *sourcegraph.
 	target := local.Services.Builds
 
 	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
+	fedCtx, err = federated.RepoContext(ctx, &param.URI)
 	if err != nil {
 		return
 	}
@@ -482,7 +482,7 @@ func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, param *sourcegraph.
 		ctx = fedCtx
 	}
 
-	res, err = target.GetRepoBuildInfo(ctx, param)
+	res, err = target.GetRepoBuild(ctx, param)
 	return
 
 }
@@ -2373,6 +2373,35 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 	}
 
 	res, err = target.ListCommitters(ctx, param)
+	return
+
+}
+
+func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *sourcegraph.TreeEntrySpec) (res *sourcegraph.SrclibDataVersion, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "GetSrclibDataVersionForPath", param)
+	defer func() {
+		trace.After(ctx, "Repos", "GetSrclibDataVersionForPath", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Repos.GetSrclibDataVersionForPath")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Repos
+
+	var fedCtx context.Context
+	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
+	if err != nil {
+		return
+	}
+	if fedCtx != nil {
+		target = svc.Repos(fedCtx)
+		ctx = fedCtx
+	}
+
+	res, err = target.GetSrclibDataVersionForPath(ctx, param)
 	return
 
 }

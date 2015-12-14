@@ -241,3 +241,5 @@ func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCom
 	cacheFor(ctx, maxMutableVCSAge)
 	return &sourcegraph.CommitterList{Committers: committers}, nil
 }
+
+func isAbsCommitID(commitID string) bool { return len(commitID) == 40 }

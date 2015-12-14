@@ -533,6 +533,27 @@ service Repos {
 	// ListCommitters returns the list of authors who have contributed
 	// to the main branch of the repo.
 	rpc ListCommitters(ReposListCommittersOp) returns (CommitterList);
+
+	// GetSrclibDataVersionForPath searches for the newest commit
+	// built by srclib for the given path and commit. If the
+	// TreeEntrySpec's Path field refers to a file or directory, the
+	// commit log for that path will be consulted and only srclib data
+	// versions will be returned that are after the most recent change
+	// affecting the path. If the TreeEntrySpec's path is empty (""),
+	// the most recently built commit on the TreeEntrySpec's branch
+	// (rev) is returned, subject to an implementation-defined maximum
+	// depth.
+	//
+	// Defining this method separately from the methods on Builds let
+	// us have this specific behavior and makes it easier to supply
+	// srclib data for older versions that is still accurate.
+	rpc GetSrclibDataVersionForPath(TreeEntrySpec) returns (SrclibDataVersion);
+}
+
+// SrclibDataVersion specifies a srclib store version.
+message SrclibDataVersion {
+	string commit_id = 1 [(gogoproto.customname) = "CommitID"];
+	int32 commits_behind = 2;
 }
 
 // StorageBucket represents the location where keys are stored.
@@ -1140,34 +1161,6 @@ message BuildUpdate {
 	int32 priority = 9;
 }
 
-// BuildsGetRepoBuildInfoOptions sets options for the Repos.GetBuild call.
-message BuildsGetRepoBuildInfoOptions {
-	// Exact is whether only a build whose commit ID exactly matches the revspec should
-	// be returned. (For non-full-commit ID revspecs, such as branches, tags, and
-	// partial commit IDs, this means that the build's commit ID matches the resolved
-	// revspec's commit ID.)
-	//
-	// If Exact is false, then builds for older commits that are reachable from the
-	// revspec may also be returned. For example, if there's a build for master~1 but
-	// no build for master, and your revspec is master, using Exact=false will return
-	// the build for master~1.
-	//
-	// Using Exact=true is faster as the commit and build history never needs to be
-	// searched. If the exact build is not found, or the exact build was found but it
-	// failed, LastSuccessful and LastSuccessfulCommit for RepoBuildInfo will be nil.
-	bool exact = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// IncludeVCSMetadata is whether the returned RepoBuildInfo should
-	// set the VCS-related fields (CommitsBehind, LastSuccessfulCommit).
-	// These require an extra VCS lookup operation to compute.
-	bool include_vcs_metadata = 2 [(gogoproto.moretags) = "url:\",omitempty\"", (gogoproto.customname) = "IncludeVCSMetadata"];
-}
-
-message BuildsGetRepoBuildInfoOp {
-	RepoRevSpec repo = 1 [(gogoproto.nullable) = false];
-	BuildsGetRepoBuildInfoOptions opt = 2;
-}
-
 message BuildList {
 	repeated Build builds = 1;
 	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
@@ -1306,16 +1299,6 @@ message PersonSpec {
 	int32 uid = 3 [(gogoproto.customname) = "UID"];
 }
 
-// RepoBuildInfo holds a repository build (if one exists for the originally
-// specified revspec) and additional information. It is returned by
-// Repos.GetRepoBuildInfo.
-message RepoBuildInfo {
-	Build exact = 1;
-	Build last_successful = 2;
-	int32 commits_behind = 3;
-	vcs.Commit last_successful_commit = 4;
-}
-
 message TaskSpec {
 	BuildSpec build_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 	int64 task_id = 2 [(gogoproto.customname) = "TaskID"];
@@ -1425,13 +1408,16 @@ service Builds {
 		};
 	};
 
-	// GetRepoBuildInfo gets the best-match build for a specific repo revspec. It
-	// returns additional information about the build, such as whether it is exactly
-	// up-to-date with the revspec or a few commits behind the revspec. The opt param
-	// controls what is returned in this case.
-	rpc GetRepoBuildInfo(BuildsGetRepoBuildInfoOp) returns (RepoBuildInfo) {
+	// GetRepoBuild returns the build for the repo at the given exact
+	// commit or branch head commit.
+	//
+	// NOTE: Previously, this method looked at the build and commit
+	// history to find the "best recent build." This method no longer
+	// implements that functionality. Refer to
+	// Repos.GetSrclibDataVersionForPath.
+	rpc GetRepoBuild(RepoRevSpec) returns (Build) {
 		option (google.api.http) = {
-			get: "/builds/get_repo_build_info"
+			get: "/builds/get_repo_build"
 		};
 	};
 

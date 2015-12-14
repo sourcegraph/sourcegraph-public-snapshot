@@ -28,7 +28,6 @@ type repoTreeTemplate struct {
 	*handlerutil.RepoCommon
 	*handlerutil.RepoRevCommon
 	*handlerutil.TreeEntryCommon
-	handlerutil.RepoBuildCommon
 	tmpl.Common `json:"-"`
 
 	Definition      *payloads.DefCommon
@@ -51,7 +50,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 			RecurseSingleSubfolderLimit: 200,
 		},
 	}
-	tc, rc, vc, bc, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, &opt)
 	if err != nil {
 		return err
 	}
@@ -69,14 +68,14 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 
 	switch tc.Entry.Type {
 	case vcsclient.DirEntry:
-		return serveRepoTreeDir(w, r, tc, rc, vc, bc)
+		return serveRepoTreeDir(w, r, tc, rc, vc)
 	case vcsclient.FileEntry:
-		return serveRepoTreeEntry(w, r, tc, rc, vc, bc, nil)
+		return serveRepoTreeEntry(w, r, tc, rc, vc, nil)
 	}
 	return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("unrecognized tree entry type")}
 }
 
-func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, bc handlerutil.RepoBuildCommon) error {
+func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 	go cacheutil.PrecacheTreeEntry(apiclient, ctx, tc.Entry, tc.EntrySpec)
@@ -85,12 +84,11 @@ func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.Tr
 		TreeEntryCommon: tc,
 		RepoCommon:      rc,
 		RepoRevCommon:   vc,
-		RepoBuildCommon: bc,
 		EntryPath:       tc.EntrySpec.Path,
 	})
 }
 
-func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, bc handlerutil.RepoBuildCommon, dc *payloads.DefCommon) error {
+func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, dc *payloads.DefCommon) error {
 	var (
 		templateFile string
 		docs         string
@@ -126,7 +124,6 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		TreeEntryCommon: tc,
 		RepoCommon:      rc,
 		RepoRevCommon:   vc,
-		RepoBuildCommon: bc,
 		Documentation:   docs,
 		EntryPath:       tc.EntrySpec.Path,
 	})

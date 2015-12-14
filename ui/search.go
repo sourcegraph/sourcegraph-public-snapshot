@@ -33,6 +33,12 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 		Rev:      mux.Vars(r)["Rev"],
 	}
 
+	resolvedRev, dataVer, err := handlerutil.ResolveSrclibDataVersion(ctx, apiclient, sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev})
+	if err != nil {
+		return err
+	}
+	opt.RepoRev = resolvedRev
+
 	defList, err := apiclient.Search.SearchTokens(ctx, &opt)
 	if err != nil {
 		return err
@@ -50,16 +56,14 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	buildInfo, err := apiclient.Builds.GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: opt.RepoRev})
-
 	return e.Encode(&struct {
-		Total     int32
-		Results   []payloads.TokenSearchResult
-		BuildInfo *sourcegraph.RepoBuildInfo
+		Total             int32
+		Results           []payloads.TokenSearchResult
+		SrclibDataVersion *sourcegraph.SrclibDataVersion
 	}{
-		Total:     defList.Total,
-		Results:   results,
-		BuildInfo: buildInfo,
+		Total:             defList.Total,
+		Results:           results,
+		SrclibDataVersion: dataVer,
 	})
 }
 
@@ -74,10 +78,11 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	opt.RepoRev = sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: mux.Vars(r)["Repo"]},
-		Rev:      mux.Vars(r)["Rev"],
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, apiclient.Repos)
+	if err != nil {
+		return err
 	}
+	opt.RepoRev = repoRev
 
 	vcsEntryList, err := apiclient.Search.SearchText(ctx, &opt)
 	if err != nil {

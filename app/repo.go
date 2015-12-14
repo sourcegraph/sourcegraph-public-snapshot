@@ -157,22 +157,14 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var bc handlerutil.RepoBuildCommon
 	var readme *sourcegraph.Readme
 	var tree *sourcegraph.TreeEntry
 	var treeEntrySpec sourcegraph.TreeEntrySpec
-	var exactBuild *sourcegraph.Build
 	if vc.RepoCommit != nil {
-		var err error
-		bc, err = handlerutil.GetRepoBuildCommon(r, rc, vc, nil)
-		if err != nil {
-			return err
-		}
-
-		treeEntrySpec = sourcegraph.TreeEntrySpec{RepoRev: bc.BestRevSpec, Path: "."}
-		run := parallel.NewRun(7)
+		treeEntrySpec = sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: "."}
+		run := parallel.NewRun(2)
 		run.Do(func() (err error) {
-			readme, err = apiclient.Repos.GetReadme(ctx, &bc.BestRevSpec)
+			readme, err = apiclient.Repos.GetReadme(ctx, &vc.RepoRevSpec)
 			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 				// Lack of a readme is not a fatal error.
 				err = nil
@@ -195,19 +187,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		if err := run.Wait(); err != nil {
 			return err
 		}
-
-		build, err := handlerutil.APIClient(r).Builds.GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{
-			Repo: vc.RepoRevSpec,
-			Opt: &sourcegraph.BuildsGetRepoBuildInfoOptions{
-				Exact: true,
-			},
-		})
-		if err != nil && !errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
-			return err
-		}
-		if err == nil {
-			exactBuild = build.Exact
-		}
 	}
 
 	// The canonical URL for the repo's default branch is the URL
@@ -224,26 +203,22 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "repo/main.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		handlerutil.RepoBuildCommon
-		ExactBuild *sourcegraph.Build
-		Readme     *sourcegraph.Readme
-		EntryPath  string
-		Entry      *sourcegraph.TreeEntry
-		EntrySpec  sourcegraph.TreeEntrySpec
+		Readme    *sourcegraph.Readme
+		EntryPath string
+		Entry     *sourcegraph.TreeEntry
+		EntrySpec sourcegraph.TreeEntrySpec
 
 		HasVCSData bool
 
 		RobotsIndex bool
 		tmpl.Common
 	}{
-		RepoCommon:      *rc,
-		RepoRevCommon:   *vc,
-		RepoBuildCommon: bc,
-		ExactBuild:      exactBuild,
-		Readme:          readme,
-		EntryPath:       ".",
-		Entry:           tree,
-		EntrySpec:       treeEntrySpec,
+		RepoCommon:    *rc,
+		RepoRevCommon: *vc,
+		Readme:        readme,
+		EntryPath:     ".",
+		Entry:         tree,
+		EntrySpec:     treeEntrySpec,
 
 		HasVCSData: vc.RepoCommit != nil,
 

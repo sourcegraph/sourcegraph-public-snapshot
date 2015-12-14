@@ -24,7 +24,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	dc, _, _, _, err := handlerutil.GetDefCommon(r, nil)
+	dc, _, _, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {
 		return err
 	}

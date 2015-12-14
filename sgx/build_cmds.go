@@ -1,6 +1,7 @@
 package sgx
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -153,25 +154,21 @@ func (c *buildsGetRepoBuildInfoCmd) Execute(args []string) error {
 
 	for _, repo := range c.Args.Repo {
 		repo, rev := sourcegraph.ParseRepoAndCommitID(repo)
-		buildInfo, err := cl.Builds.GetRepoBuildInfo(cliCtx, &sourcegraph.BuildsGetRepoBuildInfoOp{
-			Repo: sourcegraph.RepoRevSpec{
+		build, err := cl.Builds.GetRepoBuild(cliCtx,
+			&sourcegraph.RepoRevSpec{
 				RepoSpec: sourcegraph.RepoSpec{URI: repo},
 				Rev:      rev,
 			},
-		})
+		)
 		if err != nil {
 			return err
 		}
 		fmt.Println(repo)
-		if buildInfo.Exact != nil {
-			fmt.Printf("\texact:           %s\n", buildInfo.Exact.CommitID)
+		b, err := json.MarshalIndent(build, "\t", "  ")
+		if err != nil {
+			return err
 		}
-		if buildInfo.LastSuccessful != nil {
-			fmt.Printf("\tlast successful: %s\n", buildInfo.LastSuccessful.CommitID)
-		}
-		if buildInfo.CommitsBehind != 0 {
-			fmt.Printf("\tcommits behind: %d\n", buildInfo.CommitsBehind)
-		}
+		fmt.Println(string(b))
 	}
 
 	return nil

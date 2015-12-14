@@ -20,7 +20,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	e := json.NewEncoder(w)
 
-	dc, _, rc, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {
 		if urlErr, ok := err.(*handlerutil.URLMovedError); ok {
 			return e.Encode(urlErr)
@@ -76,20 +76,16 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		if entry.Type == vcsclient.DirEntry {
 			return e.Encode(&handlerutil.URLMovedError{NewURL: d.URL})
 		}
-		bc, err := handlerutil.GetRepoBuildCommon(r, rc, vc, nil)
-		if err != nil {
-			return err
-		}
 		return e.Encode(&struct {
 			*payloads.CodeFile
 			Model *payloads.DefCommon
 		}{
 			CodeFile: &payloads.CodeFile{
-				Repo:          rc.Repo,
-				RepoCommit:    vc.RepoCommit,
-				EntrySpec:     entrySpec,
-				RepoBuildInfo: bc.RepoBuildInfo,
-				Entry:         entry,
+				Repo:              rc.Repo,
+				RepoCommit:        vc.RepoCommit,
+				EntrySpec:         entrySpec,
+				SrclibDataVersion: &sourcegraph.SrclibDataVersion{CommitID: vc.RepoRevSpec.CommitID},
+				Entry:             entry,
 			},
 			Model: &d,
 		})

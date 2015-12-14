@@ -31,39 +31,28 @@ func mockRepoGet(c *httptestutil.MockClients, wantRepo string) (called *bool) {
 	return called
 }
 
-func mockNoRepoBuild(c *httptestutil.MockClients) (called *bool) {
+func mockNoSrclibData(c *httptestutil.MockClients) (called *bool) {
 	called = new(bool)
-	c.Builds.GetRepoBuildInfo_ = func(context.Context, *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
+	c.Repos.GetSrclibDataVersionForPath_ = func(context.Context, *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
 		*called = true
 		return nil, grpc.Errorf(codes.NotFound, "")
-	}
-	c.Builds.Create_ = func(context.Context, *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
-		return &sourcegraph.Build{}, nil
 	}
 	return called
 }
 
-func mockCurrentRepoBuild(c *httptestutil.MockClients) (called *bool) {
+func mockCurrentSrclibData(c *httptestutil.MockClients) (called *bool) {
 	called = new(bool)
-	c.Builds.GetRepoBuildInfo_ = func(context.Context, *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
+	c.Repos.GetSrclibDataVersionForPath_ = func(context.Context, *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
 		*called = true
-		return &sourcegraph.RepoBuildInfo{
-			Exact:                &sourcegraph.Build{},
-			LastSuccessful:       &sourcegraph.Build{},
-			LastSuccessfulCommit: &vcs.Commit{},
-		}, nil
+		return &sourcegraph.SrclibDataVersion{}, nil
 	}
 	return called
 }
-func mockSpecificRepoBuild(c *httptestutil.MockClients, commitID string) (called *bool) {
+func mockSpecificVersionSrclibData(c *httptestutil.MockClients, commitID string) (called *bool) {
 	called = new(bool)
-	c.Builds.GetRepoBuildInfo_ = func(context.Context, *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
+	c.Repos.GetSrclibDataVersionForPath_ = func(context.Context, *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
 		*called = true
-		return &sourcegraph.RepoBuildInfo{
-			Exact:                &sourcegraph.Build{CommitID: commitID},
-			LastSuccessful:       &sourcegraph.Build{CommitID: commitID},
-			LastSuccessfulCommit: &vcs.Commit{ID: vcs.CommitID(commitID)},
-		}, nil
+		return &sourcegraph.SrclibDataVersion{CommitID: commitID}, nil
 	}
 	return called
 }
@@ -123,7 +112,7 @@ func mockBasicRepoMainPage(c *httptestutil.MockClients) {
 	mockEmptyTreeEntry(c)
 	mockEnabledRepoConfig(c)
 	mockNoRepoReadme(c)
-	mockCurrentRepoBuild(c)
+	mockCurrentSrclibData(c)
 }
 
 // func mockEmptyRepoList(c *httptestutil.MockClients) {

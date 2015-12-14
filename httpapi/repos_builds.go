@@ -11,22 +11,16 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
-func serveRepoBuildInfo(w http.ResponseWriter, r *http.Request) error {
+func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	s := handlerutil.APIClient(r)
-
-	var opt sourcegraph.BuildsGetRepoBuildInfoOptions
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
 
 	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, s.Repos)
 	if err != nil {
 		return err
 	}
 
-	buildInfo, err := s.Builds.GetRepoBuildInfo(ctx, &sourcegraph.BuildsGetRepoBuildInfoOp{Repo: repoRevSpec, Opt: &opt})
+	build, err := s.Builds.GetRepoBuild(ctx, &repoRevSpec)
 	if err != nil {
 		return err
 	}
@@ -35,7 +29,7 @@ func serveRepoBuildInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, buildInfo)
+	return writeJSON(w, build)
 }
 
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {

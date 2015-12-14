@@ -92,20 +92,21 @@ func (s *RepoStatusesServer) Create(v0 context.Context, v1 *sourcegraph.RepoStat
 var _ sourcegraph.RepoStatusesServer = (*RepoStatusesServer)(nil)
 
 type ReposClient struct {
-	Get_            func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
-	List_           func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	Create_         func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
-	Update_         func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
-	Delete_         func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	GetReadme_      func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
-	Enable_         func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	Disable_        func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	GetConfig_      func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
-	GetCommit_      func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
-	ListCommits_    func(ctx context.Context, in *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
-	ListBranches_   func(ctx context.Context, in *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
-	ListTags_       func(ctx context.Context, in *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
-	ListCommitters_ func(ctx context.Context, in *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	Get_                         func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	List_                        func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	Create_                      func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
+	Update_                      func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
+	Delete_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
+	GetReadme_                   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
+	Enable_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
+	Disable_                     func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
+	GetConfig_                   func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
+	GetCommit_                   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ListCommits_                 func(ctx context.Context, in *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
+	ListBranches_                func(ctx context.Context, in *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
+	ListTags_                    func(ctx context.Context, in *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
+	ListCommitters_              func(ctx context.Context, in *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 }
 
 func (s *ReposClient) Get(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -164,23 +165,28 @@ func (s *ReposClient) ListCommitters(ctx context.Context, in *sourcegraph.ReposL
 	return s.ListCommitters_(ctx, in)
 }
 
+func (s *ReposClient) GetSrclibDataVersionForPath(ctx context.Context, in *sourcegraph.TreeEntrySpec, opts ...grpc.CallOption) (*sourcegraph.SrclibDataVersion, error) {
+	return s.GetSrclibDataVersionForPath_(ctx, in)
+}
+
 var _ sourcegraph.ReposClient = (*ReposClient)(nil)
 
 type ReposServer struct {
-	Get_            func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
-	List_           func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	Create_         func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
-	Update_         func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
-	Delete_         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	GetReadme_      func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
-	Enable_         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	Disable_        func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	GetConfig_      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
-	GetCommit_      func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
-	ListCommits_    func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
-	ListBranches_   func(v0 context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
-	ListTags_       func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
-	ListCommitters_ func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	Get_                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	List_                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	Create_                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
+	Update_                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
+	Delete_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
+	GetReadme_                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
+	Enable_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
+	Disable_                     func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
+	GetConfig_                   func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
+	GetCommit_                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ListCommits_                 func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
+	ListBranches_                func(v0 context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
+	ListTags_                    func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
+	ListCommitters_              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 }
 
 func (s *ReposServer) Get(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
@@ -237,6 +243,10 @@ func (s *ReposServer) ListTags(v0 context.Context, v1 *sourcegraph.ReposListTags
 
 func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
 	return s.ListCommitters_(v0, v1)
+}
+
+func (s *ReposServer) GetSrclibDataVersionForPath(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+	return s.GetSrclibDataVersionForPath_(v0, v1)
 }
 
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)
@@ -472,25 +482,25 @@ func (s *MirroredRepoSSHKeysServer) Delete(v0 context.Context, v1 *sourcegraph.R
 var _ sourcegraph.MirroredRepoSSHKeysServer = (*MirroredRepoSSHKeysServer)(nil)
 
 type BuildsClient struct {
-	Get_              func(ctx context.Context, in *sourcegraph.BuildSpec) (*sourcegraph.Build, error)
-	GetRepoBuildInfo_ func(ctx context.Context, in *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error)
-	List_             func(ctx context.Context, in *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error)
-	Create_           func(ctx context.Context, in *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error)
-	Update_           func(ctx context.Context, in *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error)
-	ListBuildTasks_   func(ctx context.Context, in *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error)
-	CreateTasks_      func(ctx context.Context, in *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error)
-	UpdateTask_       func(ctx context.Context, in *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error)
-	GetLog_           func(ctx context.Context, in *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error)
-	GetTaskLog_       func(ctx context.Context, in *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error)
-	DequeueNext_      func(ctx context.Context, in *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error)
+	Get_            func(ctx context.Context, in *sourcegraph.BuildSpec) (*sourcegraph.Build, error)
+	GetRepoBuild_   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error)
+	List_           func(ctx context.Context, in *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error)
+	Create_         func(ctx context.Context, in *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error)
+	Update_         func(ctx context.Context, in *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error)
+	ListBuildTasks_ func(ctx context.Context, in *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error)
+	CreateTasks_    func(ctx context.Context, in *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error)
+	UpdateTask_     func(ctx context.Context, in *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error)
+	GetLog_         func(ctx context.Context, in *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error)
+	GetTaskLog_     func(ctx context.Context, in *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error)
+	DequeueNext_    func(ctx context.Context, in *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error)
 }
 
 func (s *BuildsClient) Get(ctx context.Context, in *sourcegraph.BuildSpec, opts ...grpc.CallOption) (*sourcegraph.Build, error) {
 	return s.Get_(ctx, in)
 }
 
-func (s *BuildsClient) GetRepoBuildInfo(ctx context.Context, in *sourcegraph.BuildsGetRepoBuildInfoOp, opts ...grpc.CallOption) (*sourcegraph.RepoBuildInfo, error) {
-	return s.GetRepoBuildInfo_(ctx, in)
+func (s *BuildsClient) GetRepoBuild(ctx context.Context, in *sourcegraph.RepoRevSpec, opts ...grpc.CallOption) (*sourcegraph.Build, error) {
+	return s.GetRepoBuild_(ctx, in)
 }
 
 func (s *BuildsClient) List(ctx context.Context, in *sourcegraph.BuildListOptions, opts ...grpc.CallOption) (*sourcegraph.BuildList, error) {
@@ -532,25 +542,25 @@ func (s *BuildsClient) DequeueNext(ctx context.Context, in *sourcegraph.BuildsDe
 var _ sourcegraph.BuildsClient = (*BuildsClient)(nil)
 
 type BuildsServer struct {
-	Get_              func(v0 context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error)
-	GetRepoBuildInfo_ func(v0 context.Context, v1 *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error)
-	List_             func(v0 context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error)
-	Create_           func(v0 context.Context, v1 *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error)
-	Update_           func(v0 context.Context, v1 *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error)
-	ListBuildTasks_   func(v0 context.Context, v1 *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error)
-	CreateTasks_      func(v0 context.Context, v1 *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error)
-	UpdateTask_       func(v0 context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error)
-	GetLog_           func(v0 context.Context, v1 *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error)
-	GetTaskLog_       func(v0 context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error)
-	DequeueNext_      func(v0 context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error)
+	Get_            func(v0 context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error)
+	GetRepoBuild_   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error)
+	List_           func(v0 context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error)
+	Create_         func(v0 context.Context, v1 *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error)
+	Update_         func(v0 context.Context, v1 *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error)
+	ListBuildTasks_ func(v0 context.Context, v1 *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error)
+	CreateTasks_    func(v0 context.Context, v1 *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error)
+	UpdateTask_     func(v0 context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error)
+	GetLog_         func(v0 context.Context, v1 *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error)
+	GetTaskLog_     func(v0 context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error)
+	DequeueNext_    func(v0 context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error)
 }
 
 func (s *BuildsServer) Get(v0 context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	return s.Get_(v0, v1)
 }
 
-func (s *BuildsServer) GetRepoBuildInfo(v0 context.Context, v1 *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
-	return s.GetRepoBuildInfo_(v0, v1)
+func (s *BuildsServer) GetRepoBuild(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
+	return s.GetRepoBuild_(v0, v1)
 }
 
 func (s *BuildsServer) List(v0 context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {

@@ -13,13 +13,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-func TestRepo_unbuilt(t *testing.T) {
+func TestRepo(t *testing.T) {
 	c, mock := apptest.New()
 
 	calledGet := mockRepoGet(mock, "my/repo")
 	calledGetConfig := mockEnabledRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	calledBuildsGetRepoBuildInfo := mockNoRepoBuild(mock)
 	calledGetReadme := mockNoRepoReadme(mock)
 	calledRepoTreeGet := mockEmptyTreeEntry(mock)
 
@@ -34,42 +33,6 @@ func TestRepo_unbuilt(t *testing.T) {
 	}
 	if !*calledGetCommit {
 		t.Error("!calledGetCommit")
-	}
-	if !*calledBuildsGetRepoBuildInfo {
-		t.Error("!calledBuildsGetRepoBuildInfo")
-	}
-	if !*calledGetReadme {
-		t.Error("!calledGetReadme")
-	}
-	if !*calledRepoTreeGet {
-		t.Error("!calledRepoTreeGet")
-	}
-}
-
-func TestRepo_built(t *testing.T) {
-	c, mock := apptest.New()
-
-	calledGet := mockRepoGet(mock, "my/repo")
-	calledGetConfig := mockEnabledRepoConfig(mock)
-	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	calledBuildsGetRepoBuildInfo := mockCurrentRepoBuild(mock)
-	calledGetReadme := mockNoRepoReadme(mock)
-	calledRepoTreeGet := mockEmptyTreeEntry(mock)
-
-	if _, err := c.GetOK(router.Rel.URLToRepo("my/repo").String()); err != nil {
-		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
-	}
-	if !*calledGetConfig {
-		t.Error("!calledGetConfig")
-	}
-	if !*calledGetCommit {
-		t.Error("!calledGetCommit")
-	}
-	if !*calledBuildsGetRepoBuildInfo {
-		t.Error("!calledBuildsGetRepoBuildInfo")
 	}
 	if !*calledGetReadme {
 		t.Error("!calledGetReadme")
@@ -85,7 +48,7 @@ func TestRepo_branchWithSlashes(t *testing.T) {
 	calledGet := mockRepoGet(mock, "my/repo")
 	mockEnabledRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	mockCurrentRepoBuild(mock)
+	mockCurrentSrclibData(mock)
 	mockNoRepoReadme(mock)
 	mockEmptyTreeEntry(mock)
 
@@ -110,7 +73,7 @@ func TestRepo_defaultBranchWithSlashes(t *testing.T) {
 	})
 	mockEnabledRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	mockCurrentRepoBuild(mock)
+	mockCurrentSrclibData(mock)
 	mockNoRepoReadme(mock)
 	mockEmptyTreeEntry(mock)
 

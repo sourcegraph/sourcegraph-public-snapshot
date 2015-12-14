@@ -28,11 +28,11 @@ func (s *BuildsClient) MockGet_Return(t *testing.T, want *sourcegraph.Build) (ca
 	return
 }
 
-func (s *BuildsClient) MockGetRepoBuildInfo(t *testing.T, info *sourcegraph.RepoBuildInfo) (called *bool) {
+func (s *BuildsClient) MockGetRepoBuild(t *testing.T, build *sourcegraph.Build) (called *bool) {
 	called = new(bool)
-	s.GetRepoBuildInfo_ = func(ctx context.Context, op *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
+	s.GetRepoBuild_ = func(ctx context.Context, rev *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
 		*called = true
-		return info, nil
+		return build, nil
 	}
 	return
 }

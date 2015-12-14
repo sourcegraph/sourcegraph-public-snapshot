@@ -42,7 +42,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 		t.Fatalf("build %s failed", build.Spec().IDString())
 	}
 
-	checkImport(t, ctx, a.Client, "r/r")
+	checkImport(t, ctx, a.Client, "r/r", commitID)
 }
 
 func TestBuildRepo_push_hosted_lg(t *testing.T) {
@@ -77,5 +77,5 @@ func TestBuildRepo_push_hosted_lg(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	checkImport(t, ctx, a.Client, "r/rr")
+	checkImport(t, ctx, a.Client, "r/rr", "")
 }

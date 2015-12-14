@@ -374,10 +374,10 @@ func (s *CachedBuildsClient) Get(ctx context.Context, in *BuildSpec, opts ...grp
 	return result, nil
 }
 
-func (s *CachedBuildsClient) GetRepoBuildInfo(ctx context.Context, in *BuildsGetRepoBuildInfoOp, opts ...grpc.CallOption) (*RepoBuildInfo, error) {
+func (s *CachedBuildsClient) GetRepoBuild(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Build, error) {
 	if s.Cache != nil {
-		var cachedResult RepoBuildInfo
-		cached, err := s.Cache.Get(ctx, "Builds.GetRepoBuildInfo", in, &cachedResult)
+		var cachedResult Build
+		cached, err := s.Cache.Get(ctx, "Builds.GetRepoBuild", in, &cachedResult)
 		if err != nil {
 			return nil, err
 		}
@@ -388,12 +388,12 @@ func (s *CachedBuildsClient) GetRepoBuildInfo(ctx context.Context, in *BuildsGet
 
 	var trailer metadata.MD
 
-	result, err := s.BuildsClient.GetRepoBuildInfo(ctx, in, grpc.Trailer(&trailer))
+	result, err := s.BuildsClient.GetRepoBuild(ctx, in, grpc.Trailer(&trailer))
 	if err != nil {
 		return nil, err
 	}
 	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Builds.GetRepoBuildInfo", in, result, trailer); err != nil {
+		if err := s.Cache.Store(ctx, "Builds.GetRepoBuild", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}
@@ -2450,6 +2450,32 @@ func (s *CachedReposClient) ListCommitters(ctx context.Context, in *ReposListCom
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Repos.ListCommitters", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedReposClient) GetSrclibDataVersionForPath(ctx context.Context, in *TreeEntrySpec, opts ...grpc.CallOption) (*SrclibDataVersion, error) {
+	if s.Cache != nil {
+		var cachedResult SrclibDataVersion
+		cached, err := s.Cache.Get(ctx, "Repos.GetSrclibDataVersionForPath", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.ReposClient.GetSrclibDataVersionForPath(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Repos.GetSrclibDataVersionForPath", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

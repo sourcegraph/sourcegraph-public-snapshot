@@ -295,7 +295,7 @@ func fetchCodeSnippet(ctx context.Context, spec sourcegraph.TreeEntrySpec, fileR
 // linkBaseAndHead applies syntax highlight and linking to both revisions in a hunk,
 // if they are considered to be code and have successful builds.
 func linkBaseAndHead(ctx context.Context, delta *sourcegraph.Delta, fd *sourcegraph.FileDiff, hunk *sourcegraph.Hunk) {
-	if fd.OrigName != "/dev/null" && sourcecode.IsLikelyCodeFile(fd.OrigName) && delta.BaseBuild != nil && delta.BaseBuild.Success {
+	if fd.OrigName != "/dev/null" {
 		fileRange := vcsclient.FileRange{
 			StartLine: int64(hunk.OrigStartLine),
 			EndLine:   int64(hunk.OrigStartLine + hunk.OrigLines - 1),
@@ -315,7 +315,7 @@ func linkBaseAndHead(ctx context.Context, delta *sourcegraph.Delta, fd *sourcegr
 			}
 		}
 	}
-	if fd.NewName != "/dev/null" && sourcecode.IsLikelyCodeFile(fd.NewName) && delta.HeadBuild != nil && delta.HeadBuild.Success {
+	if fd.NewName != "/dev/null" {
 		fileRange := vcsclient.FileRange{
 			StartLine: int64(hunk.NewStartLine),
 			EndLine:   int64(hunk.NewStartLine + hunk.NewLines - 1),

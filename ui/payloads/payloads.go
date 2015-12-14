@@ -72,8 +72,9 @@ type CodeFile struct {
 	// RepoCommit is the commit that the file belongs to.
 	RepoCommit *AugmentedCommit
 
-	// RepoBuildInfo contains information about the build status of this commit.
-	RepoBuildInfo *sourcegraph.RepoBuildInfo
+	// SrclibDataVersion contains information about this file's srclib
+	// analysis.
+	SrclibDataVersion *sourcegraph.SrclibDataVersion
 
 	// Entry is the actual file data.
 	Entry *sourcegraph.TreeEntry

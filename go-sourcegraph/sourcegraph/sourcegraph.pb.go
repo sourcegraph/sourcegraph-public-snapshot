@@ -34,6 +34,7 @@ It has these top-level messages:
 	RepoStatus
 	RepoStatusesCreateOp
 	RepoList
+	SrclibDataVersion
 	StorageBucket
 	StorageKey
 	StorageValue
@@ -75,8 +76,6 @@ It has these top-level messages:
 	BuildTask
 	BuildTaskListOptions
 	BuildUpdate
-	BuildsGetRepoBuildInfoOptions
-	BuildsGetRepoBuildInfoOp
 	BuildList
 	BuildsCreateOp
 	BuildsUpdateOp
@@ -100,7 +99,6 @@ It has these top-level messages:
 	UserCount
 	Person
 	PersonSpec
-	RepoBuildInfo
 	TaskSpec
 	TaskUpdate
 	User
@@ -728,6 +726,16 @@ func (m *RepoList) Reset()         { *m = RepoList{} }
 func (m *RepoList) String() string { return proto.CompactTextString(m) }
 func (*RepoList) ProtoMessage()    {}
 
+// SrclibDataVersion specifies a srclib store version.
+type SrclibDataVersion struct {
+	CommitID      string `protobuf:"bytes,1,opt,name=commit_id,proto3" json:",omitempty"`
+	CommitsBehind int32  `protobuf:"varint,2,opt,name=commits_behind,proto3" json:",omitempty"`
+}
+
+func (m *SrclibDataVersion) Reset()         { *m = SrclibDataVersion{} }
+func (m *SrclibDataVersion) String() string { return proto.CompactTextString(m) }
+func (*SrclibDataVersion) ProtoMessage()    {}
+
 // StorageBucket represents the location where keys are stored.
 //
 // Understanding the name-spacing of storage objects is often helped by
@@ -1315,41 +1323,6 @@ func (m *BuildUpdate) Reset()         { *m = BuildUpdate{} }
 func (m *BuildUpdate) String() string { return proto.CompactTextString(m) }
 func (*BuildUpdate) ProtoMessage()    {}
 
-// BuildsGetRepoBuildInfoOptions sets options for the Repos.GetBuild call.
-type BuildsGetRepoBuildInfoOptions struct {
-	// Exact is whether only a build whose commit ID exactly matches the revspec should
-	// be returned. (For non-full-commit ID revspecs, such as branches, tags, and
-	// partial commit IDs, this means that the build's commit ID matches the resolved
-	// revspec's commit ID.)
-	//
-	// If Exact is false, then builds for older commits that are reachable from the
-	// revspec may also be returned. For example, if there's a build for master~1 but
-	// no build for master, and your revspec is master, using Exact=false will return
-	// the build for master~1.
-	//
-	// Using Exact=true is faster as the commit and build history never needs to be
-	// searched. If the exact build is not found, or the exact build was found but it
-	// failed, LastSuccessful and LastSuccessfulCommit for RepoBuildInfo will be nil.
-	Exact bool `protobuf:"varint,1,opt,name=exact,proto3" json:",omitempty" url:",omitempty"`
-	// IncludeVCSMetadata is whether the returned RepoBuildInfo should
-	// set the VCS-related fields (CommitsBehind, LastSuccessfulCommit).
-	// These require an extra VCS lookup operation to compute.
-	IncludeVCSMetadata bool `protobuf:"varint,2,opt,name=include_vcs_metadata,proto3" json:",omitempty" url:",omitempty"`
-}
-
-func (m *BuildsGetRepoBuildInfoOptions) Reset()         { *m = BuildsGetRepoBuildInfoOptions{} }
-func (m *BuildsGetRepoBuildInfoOptions) String() string { return proto.CompactTextString(m) }
-func (*BuildsGetRepoBuildInfoOptions) ProtoMessage()    {}
-
-type BuildsGetRepoBuildInfoOp struct {
-	Repo RepoRevSpec                    `protobuf:"bytes,1,opt,name=repo" `
-	Opt  *BuildsGetRepoBuildInfoOptions `protobuf:"bytes,2,opt,name=opt" json:",omitempty"`
-}
-
-func (m *BuildsGetRepoBuildInfoOp) Reset()         { *m = BuildsGetRepoBuildInfoOp{} }
-func (m *BuildsGetRepoBuildInfoOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsGetRepoBuildInfoOp) ProtoMessage()    {}
-
 type BuildList struct {
 	Builds         []*Build `protobuf:"bytes,1,rep,name=builds" json:",omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=stream_response,embedded=stream_response" `
@@ -1571,20 +1544,6 @@ type PersonSpec struct {
 func (m *PersonSpec) Reset()         { *m = PersonSpec{} }
 func (m *PersonSpec) String() string { return proto.CompactTextString(m) }
 func (*PersonSpec) ProtoMessage()    {}
-
-// RepoBuildInfo holds a repository build (if one exists for the originally
-// specified revspec) and additional information. It is returned by
-// Repos.GetRepoBuildInfo.
-type RepoBuildInfo struct {
-	Exact                *Build      `protobuf:"bytes,1,opt,name=exact" json:",omitempty"`
-	LastSuccessful       *Build      `protobuf:"bytes,2,opt,name=last_successful" json:",omitempty"`
-	CommitsBehind        int32       `protobuf:"varint,3,opt,name=commits_behind,proto3" json:",omitempty"`
-	LastSuccessfulCommit *vcs.Commit `protobuf:"bytes,4,opt,name=last_successful_commit" json:",omitempty"`
-}
-
-func (m *RepoBuildInfo) Reset()         { *m = RepoBuildInfo{} }
-func (m *RepoBuildInfo) String() string { return proto.CompactTextString(m) }
-func (*RepoBuildInfo) ProtoMessage()    {}
 
 type TaskSpec struct {
 	BuildSpec `protobuf:"bytes,1,opt,name=build_spec,embedded=build_spec" `
@@ -3463,6 +3422,20 @@ type ReposClient interface {
 	// ListCommitters returns the list of authors who have contributed
 	// to the main branch of the repo.
 	ListCommitters(ctx context.Context, in *ReposListCommittersOp, opts ...grpc.CallOption) (*CommitterList, error)
+	// GetSrclibDataVersionForPath searches for the newest commit
+	// built by srclib for the given path and commit. If the
+	// TreeEntrySpec's Path field refers to a file or directory, the
+	// commit log for that path will be consulted and only srclib data
+	// versions will be returned that are after the most recent change
+	// affecting the path. If the TreeEntrySpec's path is empty (""),
+	// the most recently built commit on the TreeEntrySpec's branch
+	// (rev) is returned, subject to an implementation-defined maximum
+	// depth.
+	//
+	// Defining this method separately from the methods on Builds let
+	// us have this specific behavior and makes it easier to supply
+	// srclib data for older versions that is still accurate.
+	GetSrclibDataVersionForPath(ctx context.Context, in *TreeEntrySpec, opts ...grpc.CallOption) (*SrclibDataVersion, error)
 }
 
 type reposClient struct {
@@ -3599,6 +3572,15 @@ func (c *reposClient) ListCommitters(ctx context.Context, in *ReposListCommitter
 	return out, nil
 }
 
+func (c *reposClient) GetSrclibDataVersionForPath(ctx context.Context, in *TreeEntrySpec, opts ...grpc.CallOption) (*SrclibDataVersion, error) {
+	out := new(SrclibDataVersion)
+	err := grpc.Invoke(ctx, "/sourcegraph.Repos/GetSrclibDataVersionForPath", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Repos service
 
 type ReposServer interface {
@@ -3635,6 +3617,20 @@ type ReposServer interface {
 	// ListCommitters returns the list of authors who have contributed
 	// to the main branch of the repo.
 	ListCommitters(context.Context, *ReposListCommittersOp) (*CommitterList, error)
+	// GetSrclibDataVersionForPath searches for the newest commit
+	// built by srclib for the given path and commit. If the
+	// TreeEntrySpec's Path field refers to a file or directory, the
+	// commit log for that path will be consulted and only srclib data
+	// versions will be returned that are after the most recent change
+	// affecting the path. If the TreeEntrySpec's path is empty (""),
+	// the most recently built commit on the TreeEntrySpec's branch
+	// (rev) is returned, subject to an implementation-defined maximum
+	// depth.
+	//
+	// Defining this method separately from the methods on Builds let
+	// us have this specific behavior and makes it easier to supply
+	// srclib data for older versions that is still accurate.
+	GetSrclibDataVersionForPath(context.Context, *TreeEntrySpec) (*SrclibDataVersion, error)
 }
 
 func RegisterReposServer(s *grpc.Server, srv ReposServer) {
@@ -3809,6 +3805,18 @@ func _Repos_ListCommitters_Handler(srv interface{}, ctx context.Context, dec fun
 	return out, nil
 }
 
+func _Repos_GetSrclibDataVersionForPath_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(TreeEntrySpec)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ReposServer).GetSrclibDataVersionForPath(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Repos_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Repos",
 	HandlerType: (*ReposServer)(nil),
@@ -3868,6 +3876,10 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListCommitters",
 			Handler:    _Repos_ListCommitters_Handler,
+		},
+		{
+			MethodName: "GetSrclibDataVersionForPath",
+			Handler:    _Repos_GetSrclibDataVersionForPath_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -4583,11 +4595,14 @@ var _MirroredRepoSSHKeys_serviceDesc = grpc.ServiceDesc{
 type BuildsClient interface {
 	// Get fetches a build.
 	Get(ctx context.Context, in *BuildSpec, opts ...grpc.CallOption) (*Build, error)
-	// GetRepoBuildInfo gets the best-match build for a specific repo revspec. It
-	// returns additional information about the build, such as whether it is exactly
-	// up-to-date with the revspec or a few commits behind the revspec. The opt param
-	// controls what is returned in this case.
-	GetRepoBuildInfo(ctx context.Context, in *BuildsGetRepoBuildInfoOp, opts ...grpc.CallOption) (*RepoBuildInfo, error)
+	// GetRepoBuild returns the build for the repo at the given exact
+	// commit or branch head commit.
+	//
+	// NOTE: Previously, this method looked at the build and commit
+	// history to find the "best recent build." This method no longer
+	// implements that functionality. Refer to
+	// Repos.GetSrclibDataVersionForPath.
+	GetRepoBuild(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Build, error)
 	// List builds.
 	List(ctx context.Context, in *BuildListOptions, opts ...grpc.CallOption) (*BuildList, error)
 	// Create a new build. The build will run asynchronously (Create does not wait for
@@ -4630,9 +4645,9 @@ func (c *buildsClient) Get(ctx context.Context, in *BuildSpec, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *buildsClient) GetRepoBuildInfo(ctx context.Context, in *BuildsGetRepoBuildInfoOp, opts ...grpc.CallOption) (*RepoBuildInfo, error) {
-	out := new(RepoBuildInfo)
-	err := grpc.Invoke(ctx, "/sourcegraph.Builds/GetRepoBuildInfo", in, out, c.cc, opts...)
+func (c *buildsClient) GetRepoBuild(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Build, error) {
+	out := new(Build)
+	err := grpc.Invoke(ctx, "/sourcegraph.Builds/GetRepoBuild", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4725,11 +4740,14 @@ func (c *buildsClient) DequeueNext(ctx context.Context, in *BuildsDequeueNextOp,
 type BuildsServer interface {
 	// Get fetches a build.
 	Get(context.Context, *BuildSpec) (*Build, error)
-	// GetRepoBuildInfo gets the best-match build for a specific repo revspec. It
-	// returns additional information about the build, such as whether it is exactly
-	// up-to-date with the revspec or a few commits behind the revspec. The opt param
-	// controls what is returned in this case.
-	GetRepoBuildInfo(context.Context, *BuildsGetRepoBuildInfoOp) (*RepoBuildInfo, error)
+	// GetRepoBuild returns the build for the repo at the given exact
+	// commit or branch head commit.
+	//
+	// NOTE: Previously, this method looked at the build and commit
+	// history to find the "best recent build." This method no longer
+	// implements that functionality. Refer to
+	// Repos.GetSrclibDataVersionForPath.
+	GetRepoBuild(context.Context, *RepoRevSpec) (*Build, error)
 	// List builds.
 	List(context.Context, *BuildListOptions) (*BuildList, error)
 	// Create a new build. The build will run asynchronously (Create does not wait for
@@ -4771,12 +4789,12 @@ func _Builds_Get_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return out, nil
 }
 
-func _Builds_GetRepoBuildInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(BuildsGetRepoBuildInfoOp)
+func _Builds_GetRepoBuild_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(RepoRevSpec)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BuildsServer).GetRepoBuildInfo(ctx, in)
+	out, err := srv.(BuildsServer).GetRepoBuild(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -4900,8 +4918,8 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Builds_Get_Handler,
 		},
 		{
-			MethodName: "GetRepoBuildInfo",
-			Handler:    _Builds_GetRepoBuildInfo_Handler,
+			MethodName: "GetRepoBuild",
+			Handler:    _Builds_GetRepoBuild_Handler,
 		},
 		{
 			MethodName: "List",

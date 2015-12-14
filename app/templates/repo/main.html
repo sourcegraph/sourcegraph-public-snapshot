@@ -8,8 +8,6 @@
 
 {{define "RepoBody"}}
 
-{{template "RepoBuildWarning" $}}
-
 {{if or (or .Repo.Description .Repo.HomepageURL) (not disableCloneURL)}}
 	<div class="repo-meta row">
 		<p class="description col-sm-9">

@@ -29,7 +29,7 @@ type serviceMocker struct {
 type mockPayload struct {
 	Repo          *sourcegraph.Repo          `json:",omitempty"`
 	Commit        *vcs.Commit                `json:",omitempty"`
-	RepoBuildInfo *sourcegraph.RepoBuildInfo `json:",omitempty"`
+	RepoBuildInfo *sourcegraph.Build `json:",omitempty"`
 	RepoConfig    *sourcegraph.RepoConfig    `json:",omitempty"`
 	TreeEntry     *sourcegraph.TreeEntry     `json:",omitempty"`
 	Def           *sourcegraph.Def           `json:",omitempty"`
@@ -129,20 +129,10 @@ func (sm *serviceMocker) Mock(r *http.Request) error {
 	}
 
 	// BuildsService
-	mocks.Builds.GetRepoBuildInfo_ = func(ctx context.Context, op *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
-		defaultLast := &sourcegraph.Build{
+	mocks.Builds.GetRepoBuild_ = func(ctx context.Context, rev *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
+		return &sourcegraph.Build{
 			CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		}
-		buildInfo := &sourcegraph.RepoBuildInfo{LastSuccessful: defaultLast}
-		if mock.RepoBuildInfo != nil {
-			buildInfo = mock.RepoBuildInfo
-			if buildInfo.LastSuccessful == nil {
-				buildInfo.LastSuccessful = defaultLast
-			} else if buildInfo.LastSuccessful.CommitID == "" {
-				buildInfo.LastSuccessful.CommitID = defaultLast.CommitID
-			}
-		}
-		return buildInfo, nil
+		}, nil
 	}
 
 	// RepoTreeService

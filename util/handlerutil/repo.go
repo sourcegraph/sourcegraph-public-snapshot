@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 
 	"github.com/sourcegraph/mux"
@@ -225,8 +228,9 @@ func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI str
 // that pages rendered are also provided with repoCommon and
 // repoRevCommon template data.
 type TreeEntryCommon struct {
-	EntrySpec sourcegraph.TreeEntrySpec
-	Entry     *sourcegraph.TreeEntry
+	EntrySpec         sourcegraph.TreeEntrySpec
+	Entry             *sourcegraph.TreeEntry
+	SrclibDataVersion *sourcegraph.SrclibDataVersion
 }
 
 // FlattenName flattens a nested TreeEntry name, joining with slashes.
@@ -248,33 +252,45 @@ func FlattenNameHTML(e *vcsclient.TreeEntry) template.HTML {
 	}
 }
 
+func ResolveSrclibDataVersion(ctx context.Context, cl *sourcegraph.Client, entry sourcegraph.TreeEntrySpec) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
+	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &entry)
+	if err == nil {
+		entry.RepoRev.CommitID = dataVer.CommitID
+	} else if grpc.Code(err) == codes.NotFound {
+		err = nil
+	}
+	return entry.RepoRev, dataVer, err
+}
+
 // GetTreeEntryCommon returns common data specific to the UI requirements for
 // displaying a tree entry. It additionally returns information about the
 // repository, the revision and build based on the request and the passed options.
 // It may also return custom errors URLMovedError, RepoNotEnabledError, or
 // NoVCSDataError.
-func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (tc *TreeEntryCommon, rc *RepoCommon, vc *RepoRevCommon, bc RepoBuildCommon, err error) {
+func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (tc *TreeEntryCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
 	if opt == nil {
 		opt = new(sourcegraph.RepoTreeGetOptions)
 	}
 	rc, vc, err = GetRepoAndRevCommon(r, nil)
 	if err != nil {
-		return tc, rc, vc, bc, err
+		return tc, rc, vc, err
 	}
 
-	apiclient := APIClient(r)
+	cl := APIClient(r)
+	ctx := httpctx.FromRequest(r)
 
-	bc, err = GetRepoBuildCommon(r, rc, vc, nil)
+	tc = &TreeEntryCommon{}
+	tc.EntrySpec = sourcegraph.TreeEntrySpec{
+		RepoRev: vc.RepoRevSpec,
+		Path:    mux.Vars(r)["Path"],
+	}
+
+	resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, cl, tc.EntrySpec)
 	if err != nil {
-		return tc, rc, vc, bc, err
+		return tc, rc, vc, err
 	}
-	v := mux.Vars(r)
-	tc = &TreeEntryCommon{
-		EntrySpec: sourcegraph.TreeEntrySpec{
-			RepoRev: bc.BestRevSpec,
-			Path:    v["Path"],
-		},
-	}
+	tc.EntrySpec.RepoRev = resolvedRev
+	tc.SrclibDataVersion = dataVer
 
 	// Only request code formatting if it's likely to be a code file.
 	if err = schemaDecoder.Decode(opt, r.URL.Query()); err != nil {
@@ -287,8 +303,7 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 		opt.TokenizedSource = r.Header.Get("Content-Type") == "application/json"
 	}
 
-	ctx := httpctx.FromRequest(r)
-	tc.Entry, err = apiclient.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: opt})
+	tc.Entry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: opt})
 	if err != nil {
 		return
 	}
@@ -297,11 +312,11 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 }
 
 // GetDefCommon returns common information about a definition, based on the request.
-// It additionally returns common build, repository and revision information. It may
+// It additionally returns common repository and revision information. It may
 // also return custom errors URLMovedError, RepoNotEnabledError, or NoVCSDataError.
 //
 // dc.Def.DefKey will be set to the def specification based on the request when getting actual def fails.
-func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads.DefCommon, bc RepoBuildCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
+func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads.DefCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
 	v := mux.Vars(r)
 	defSpec := sourcegraph.DefSpec{
 		Repo:     v["Repo"],
@@ -325,30 +340,28 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 
 	rc, vc, err = GetRepoAndRevCommon(r, nil)
 	if err != nil {
-		return dc, bc, rc, vc, err
-	}
-	bc, err = GetRepoBuildCommon(r, rc, vc, &GetRepoBuildCommonOpt{
-		// If the user didn't specify a revision for the definition, then we use
-		// inexact matching for the build data. This means we can use the build data
-		// from e.g. just a few commits behind HEAD if HEAD hasn't been built yet or
-		// had a build failure.
-		Inexact: len(v["Rev"]) == 0,
-	})
-	if err != nil {
-		return dc, bc, rc, vc, err
+		return dc, rc, vc, err
 	}
 
 	cl := APIClient(r)
+	ctx := httpctx.FromRequest(r)
 
-	vc.RepoRevSpec = bc.BestRevSpec // Remove after getRepo refactor.
-	defSpec.CommitID = bc.BestRevSpec.CommitID
+	// Use most recent build to fetch def for a branch/non-absolute-commit.
+	if len(vc.RepoRevSpec.Rev) != 40 {
+		resolvedRev, _, err := ResolveSrclibDataVersion(ctx, cl, sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+		if err != nil {
+			return dc, rc, vc, err
+		}
+		vc.RepoRevSpec.CommitID = resolvedRev.CommitID
+		defSpec.CommitID = resolvedRev.CommitID
+	}
 
 	// Insert additional available information into the def.
 	dc.Def.Def.DefKey.CommitID = defSpec.CommitID
 
-	def, err := cl.Defs.Get(httpctx.FromRequest(r), &sourcegraph.DefsGetOp{Def: defSpec, Opt: opt})
+	def, err := cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: opt})
 	if err != nil {
-		return dc, bc, rc, vc, err
+		return dc, rc, vc, err
 	}
 
 	// this can not be moved to svc/local, because HTML sanitation needs to
@@ -381,7 +394,7 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 		ByteEndPosition:   def.DefEnd,
 		Found:             true,
 	}
-	return dc, bc, rc, vc, nil
+	return dc, rc, vc, nil
 }
 
 func GetRepoTreeListCommon(r *http.Request) (*sourcegraph.RepoTreeListResult, error) {

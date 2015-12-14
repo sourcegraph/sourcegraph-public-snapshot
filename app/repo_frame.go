@@ -81,12 +81,6 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		return renderRepoNoVCSDataTemplate(w, r, rc)
 	}
 
-	bc, err := handlerutil.GetRepoBuildCommon(r, rc, vc, nil)
-	if err != nil {
-		return err
-	}
-	vc.RepoRevSpec = bc.BestRevSpec
-
 	// TODO(beyang): think of more robust way of isolating apps to
 	// prevent shared mutable state (e.g., modifying http.Requests) to
 	// prevent inter-app interference
@@ -143,9 +137,6 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "repo/frame.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		handlerutil.RepoBuildCommon
-
-		RepoIsBuilt bool
 
 		AppSubtitle string
 		AppTitle    string
@@ -155,11 +146,8 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		RobotsIndex bool
 		tmpl.Common
 	}{
-		RepoCommon:      *rc,
-		RepoRevCommon:   *vc,
-		RepoBuildCommon: bc,
-
-		RepoIsBuilt: bc.RepoBuildInfo != nil && bc.RepoBuildInfo.LastSuccessful != nil,
+		RepoCommon:    *rc,
+		RepoRevCommon: *vc,
 
 		AppSubtitle: appSubtitle,
 		AppTitle:    app.Title,

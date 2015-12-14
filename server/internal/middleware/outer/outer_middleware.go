@@ -605,7 +605,7 @@ func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sou
 	return rv, nil
 }
 
-func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, v1 *sourcegraph.BuildsGetRepoBuildInfoOp) (*sourcegraph.RepoBuildInfo, error) {
+func (s wrappedBuilds) GetRepoBuild(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -620,7 +620,7 @@ func (s wrappedBuilds) GetRepoBuildInfo(ctx context.Context, v1 *sourcegraph.Bui
 		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
 	}
 
-	rv, err := innerSvc.GetRepoBuildInfo(ctx, v1)
+	rv, err := innerSvc.GetRepoBuild(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -2905,6 +2905,35 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposL
 	}
 
 	rv, err := innerSvc.ListCommitters(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
+func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+
+	rv, err := innerSvc.GetSrclibDataVersionForPath(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

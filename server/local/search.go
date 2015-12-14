@@ -16,7 +16,7 @@ var _ sourcegraph.SearchServer = (*search)(nil)
 func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
 	defListOpts := &sourcegraph.DefListOptions{
 		Query:       opt.Query,
-		RepoRevs:    []string{opt.RepoRev.URI},
+		RepoRevs:    []string{opt.RepoRev.URI + "@" + opt.RepoRev.CommitID},
 		ListOptions: opt.ListOptions,
 		Nonlocal:    true,
 		Doc:         true,
