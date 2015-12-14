@@ -2,8 +2,8 @@ package app
 
 import (
 	"errors"
+
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -167,26 +167,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		bc, err = handlerutil.GetRepoBuildCommon(r, rc, vc, nil)
 		if err != nil {
 			return err
-		}
-
-		// If we have never built this repo, build it.
-		if !appconf.Flags.NoUIBuild && !bc.Built {
-			form := sourcegraph.BuildCreateOptions{
-				BuildConfig: sourcegraph.BuildConfig{
-					Import: true,
-					Queue:  true,
-				},
-			}
-			commitID := bc.BestRevSpec.CommitID
-			repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: rc.Repo.RepoSpec(), Rev: commitID, CommitID: commitID}
-			_, err := apiclient.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Opt: &form})
-			if err != nil {
-				if grpc.Code(err) == codes.PermissionDenied || grpc.Code(err) == codes.Unauthenticated {
-					log.Printf("cannot create build: %v\n", err)
-				} else {
-					return err
-				}
-			}
 		}
 
 		treeEntrySpec = sourcegraph.TreeEntrySpec{RepoRev: bc.BestRevSpec, Path: "."}
