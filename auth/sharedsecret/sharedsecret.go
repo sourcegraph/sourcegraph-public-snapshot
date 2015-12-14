@@ -81,7 +81,7 @@ func (s *defensiveReuseTokenSource) Token() (*oauth2.Token, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.Valid() {
+	if s.valid() {
 		return s.t, nil
 	}
 	t, err := s.new.Token()
@@ -92,9 +92,9 @@ func (s *defensiveReuseTokenSource) Token() (*oauth2.Token, error) {
 	return t, nil
 }
 
-// Valid reports whether s.t is non-nil, has an AccessToken, and is not
+// valid reports whether s.t is non-nil, has an AccessToken, and is not
 // set to expire within defensiveExpiry time.
-func (s *defensiveReuseTokenSource) Valid() bool {
+func (s *defensiveReuseTokenSource) valid() bool {
 	if s.t == nil || s.t.AccessToken == "" || s.t.Expiry.IsZero() {
 		return false
 	}
