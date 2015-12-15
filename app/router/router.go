@@ -98,7 +98,7 @@ const (
 	RepoPlatformSearch = "repo.platformsearch"
 
 	// TODO: Cleanup.
-	AppGlobalNotificationCenter = "appglobal.notificationcenter"
+	AppGlobalNotificationCenter = "appglobal.notifications"
 )
 
 // Router is an app URL router.

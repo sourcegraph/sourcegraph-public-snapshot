@@ -106,6 +106,7 @@ var TemplateFunctions = htmpl.FuncMap{
 	"urlToWithReturnTo":          urlToWithReturnTo,
 	"urlToRepoBuildSubroute":     router.Rel.URLToRepoBuildSubroute,
 	"urlToRepoBuildTaskSubroute": router.Rel.URLToRepoBuildTaskSubroute,
+	"urlToGlobalApp":             router.Rel.URLToGlobalApp,
 
 	"fileToBreadcrumb":       FileToBreadcrumb,
 	"fileLinesToBreadcrumb":  FileLinesToBreadcrumb,
@@ -220,6 +221,13 @@ var TemplateFunctions = htmpl.FuncMap{
 			orderedFrames[i] = frames[id]
 		}
 		return orderedFrames
+	},
+	"orderedEnabledGlobalApps": platform.OrderedEnabledGlobalApps,
+	"iconBadge": func(ctx context.Context, app platform.GlobalApp) (bool, error) {
+		if app.IconBadge == nil {
+			return false, nil
+		}
+		return app.IconBadge(ctx)
 	},
 	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },

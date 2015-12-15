@@ -3,6 +3,8 @@ package platform
 import (
 	"fmt"
 	"net/http"
+
+	"golang.org/x/net/context"
 )
 
 type GlobalApp struct {
@@ -17,6 +19,10 @@ type GlobalApp struct {
 	// icon.
 	Icon string
 
+	// IconBadge, if not nil, is called with a per-user context
+	// to determine if there should be a badge dispayed over app icon.
+	IconBadge func(ctx context.Context) (bool, error)
+
 	// Handler is the HTTP handler that should return the HTML that
 	// should be injected into the main repository page area.
 	Handler http.Handler
@@ -30,4 +36,14 @@ func RegisterGlobalApp(app GlobalApp) {
 		panic(fmt.Sprintf("Global App with ID %s already exists", app.ID))
 	}
 	GlobalApps[app.ID] = app
+}
+
+// OrderedEnabledGlobalApps returns an ordered list of global apps.
+func OrderedEnabledGlobalApps() []GlobalApp {
+	var apps []GlobalApp
+	// There's at most 1 global app in the map at this time. Will need to sort in some way once there's more.
+	for _, app := range GlobalApps {
+		apps = append(apps, app)
+	}
+	return apps
 }

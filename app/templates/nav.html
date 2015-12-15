@@ -33,13 +33,17 @@
 						</a>
 					</li>
 
-					{{if .Features.NotificationCenter}}
+					{{range orderedEnabledGlobalApps}}
 					<li>
-						{{/* TODO: Loop over multiple global apps, once there's more than 1. */}}
-						{{/* TODO: Proper route. */}}
-						<a href="{{urlTo "appglobal.notificationcenter"}}">
-							<i class="octicon octicon-inbox"></i>
-							<span class="hidden-sm hidden-md hidden-lg">Notification Center</span>
+						<a href="{{urlToGlobalApp .ID}}">
+							<span style="position: relative; display: inline-block; width: 16px; height: 16px; text-align: center;">
+								<i class="octicon octicon-{{.Icon}}">
+								{{if iconBadge $.Ctx .}}
+									{{template "iconBadge"}}
+								{{end}}
+								</i>
+							</span>
+							<span class="hidden-sm hidden-md hidden-lg">{{.Title}}</span>
 						</a>
 					</li>
 					{{end}}
@@ -82,4 +86,8 @@
 		</div>
 	</div>
 </nav>
+{{end}}
+
+{{define "iconBadge"}}
+<div style="position: absolute; right: -3px; top: -2px; background-color: red; width: 10px; height: 10px; border-radius: 50%;"></div>
 {{end}}
