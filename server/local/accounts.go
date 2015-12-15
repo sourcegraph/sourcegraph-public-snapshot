@@ -24,6 +24,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
 var Accounts sourcegraph.AccountsServer = &accounts{mu: &sync.Mutex{}}
@@ -56,7 +57,22 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		return nil, grpc.Errorf(codes.PermissionDenied, "cannot sign up without an invite")
 	}
 
-	return s.createWithPermissions(ctx, newAcct, write, admin)
+	user, err := s.createWithPermissions(ctx, newAcct, write, admin)
+	if err != nil {
+		return nil, err
+	}
+
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:    "notif",
+		UID:     user.UID,
+		Service: "new_user",
+		Method:  "Accounts.Create",
+		Result:  user.Login,
+		URL:     newAcct.Email,
+		Message: fmt.Sprintf("write:%v admin:%v", write, admin),
+	})
+
+	return user, err
 }
 
 func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.UserSpec, error) {
@@ -182,6 +198,14 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		return nil, err
 	}
 
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:    "notif",
+		Service: "user_invite",
+		Method:  "Accounts.Invite",
+		URL:     invite.Email,
+		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
+	})
+
 	u := conf.AppURL(ctx).ResolveReference(app_router.Rel.URLTo(app_router.SignUp))
 	v := url.Values{}
 	v.Set("email", invite.Email)
@@ -236,6 +260,16 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 		invitesStore.MarkUnused(ctx, invite.Email)
 		return nil, err
 	}
+
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:    "notif",
+		UID:     userSpec.UID,
+		Service: "new_user",
+		Method:  "Accounts.AcceptInvite",
+		Result:  userSpec.Login,
+		URL:     invite.Email,
+		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
+	})
 
 	if err := invitesStore.Delete(ctx, acceptedInvite.Token); err != nil {
 		return nil, err
