@@ -51,7 +51,7 @@ func init() {
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	vals := r.Form["repo-name"]
 	if len(vals) != 1 {
-		log15.Error("Bad form submission: too many URIs", vals)
+		log15.Warn("Bad form submission: too many URIs", "form values", vals)
 	}
 	repoURI := vals[0]
 	if repoURI == "" {
@@ -66,10 +66,10 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if _, err := apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI}); grpc.Code(err) != codes.NotFound {
 		switch err {
 		case nil:
-			log15.Warn("repo", repoURI, "already exists. ctx: %+v", ctx)
+			log15.Warn("repo already exists", "repoURI", repoURI)
 			return fmt.Errorf("Repo %s already exists", repoURI)
 		default:
-			log15.Warn("problem fetching repository", err)
+			log15.Warn("problem fetching repository", "error", err)
 			return fmt.Errorf("Problem fetching repository: %s", err)
 		}
 	}
@@ -78,7 +78,8 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	cloneURL := fmt.Sprintf("https://%s/%s.git", u.Host, repoURI)
 
 	if _, err := url.Parse(cloneURL); err != nil {
-		return fmt.Errorf("Failed to generate a valid clone URL: %s", cloneURL)
+		log15.Warn("failed to parse cloneURL", "error", err)
+		return fmt.Errorf("failed to generate a valid clone URL: %s", cloneURL)
 	}
 
 	_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
@@ -89,10 +90,12 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		Private:  false,
 	})
 	if err != nil {
+		log15.Error("failed to create repo", "error", err)
 		return err
 	}
 
 	if _, err := apiclient.Repos.Enable(ctx, &sourcegraph.RepoSpec{URI: repoURI}); err != nil {
+		log15.Error("failed to enable repo", "error", err)
 		return err
 	}
 
