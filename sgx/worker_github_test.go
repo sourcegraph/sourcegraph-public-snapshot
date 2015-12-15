@@ -11,8 +11,6 @@ import (
 )
 
 func TestBuildRepo_serverside_github_lg(t *testing.T) {
-	t.Skip("flaky") // https://magnum.travis-ci.com/sourcegraph/sourcegraph/jobs/21544094
-
 	t.Parallel()
 
 	a, ctx := testserver.NewServer()
@@ -104,8 +102,6 @@ func TestBuildRepo_serverside_github_lg(t *testing.T) {
 // }
 
 func TestBuildRepo_push_github_lg(t *testing.T) {
-	t.Skip("flaky") // https://magnum.travis-ci.com/sourcegraph/sourcegraph/jobs/21564920
-
 	t.Parallel()
 
 	a, ctx := testserver.NewServer()

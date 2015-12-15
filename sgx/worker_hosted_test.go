@@ -3,7 +3,6 @@
 package sgx_test
 
 import (
-	"os"
 	"testing"
 
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -15,11 +14,6 @@ import (
 )
 
 func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		// TODO(sqs): Disabled flaky test.
-		t.Skip()
-	}
-
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
@@ -89,8 +83,6 @@ func TestBuildRepo_push_hosted_lg(t *testing.T) {
 }
 
 func TestBuildRepo_serverside_hosted_authRequired_lg(t *testing.T) {
-	t.Skip("TODO: flaky test")
-
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
@@ -138,8 +130,6 @@ func TestBuildRepo_serverside_hosted_authRequired_lg(t *testing.T) {
 }
 
 func TestBuildRepo_push_hosted_authRequired_lg(t *testing.T) {
-	t.Skip("TODO: flaky test")
-
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
