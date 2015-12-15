@@ -49,6 +49,7 @@ const (
 	RepoBadges       = "repo.badges"
 	RepoCounter      = "repo.counter"
 	RepoCounters     = "repo.counters"
+	RepoCreate       = "repo.create"
 	RepoBuilds       = "repo.builds"
 	RepoBuild        = "repo.build"
 	RepoBuildUpdate  = "repo.build.update"
@@ -149,6 +150,8 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/.markdown").Methods("POST").Name(Markdown)
 
+	base.Path("/.create-repo").Methods("POST").Name(RepoCreate)
+
 	// User routes begin with tilde (~).
 	userPath := `/~` + routevar.User
 	user := base.PathPrefix(userPath).Subrouter()
@@ -199,6 +202,7 @@ func New(base *mux.Router) *Router {
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
 
 	repoRev.Path("/.counters").Methods("GET").Name(RepoCounters)
+
 	repoRev.Path("/.counters/{Counter}.{Format}").Methods("GET").Name(RepoCounter)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
 

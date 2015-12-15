@@ -18,9 +18,20 @@
 					</p>
 				{{else}}
 					<h3>Nothing here yet.</h3>
+
+					<h4>You can either</h4>
+
 					<hr>
 
-					<h4>Create a new repository</h4>
+					<h4>...push an existing repository</h4>
+					<pre>
+git remote add origin {{.Repo.HTTPCloneURL}}
+git push -u origin master
+					</pre>
+
+					<hr>
+
+					<h4>...or create a new repository</h4>
 					<pre>
 echo "# {{.Repo.Name}}" >> README.md
 git init
@@ -30,12 +41,6 @@ git remote add origin {{.Repo.HTTPCloneURL}}
 git push -u origin master
 					</pre>
 
-					<h4>Push an existing repository</h4>
-					<pre>
-git remote rm origin
-git remote add origin {{.Repo.HTTPCloneURL}}
-git push -u origin master
-					</pre>
 				{{end}}
 			</div>
 		</div>

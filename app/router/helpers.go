@@ -32,6 +32,10 @@ func (r *Router) URLToRepo(uri string) *url.URL {
 	return r.URLToRepoSubroute(Repo, uri)
 }
 
+func (r *Router) URLToRepoCreate() *url.URL {
+	return r.URLTo(RepoCreate)
+}
+
 func (r *Router) URLToRepoRev(repoURI string, rev string) (*url.URL, error) {
 	return r.URLToRepoSubrouteRev(Repo, repoURI, rev)
 }

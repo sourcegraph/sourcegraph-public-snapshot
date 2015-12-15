@@ -20,12 +20,11 @@
 		</h3>
 		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
 			<div class="well">
-				<p>
-					<strong>Create a repository</strong> with the
-					{{if not .DisableExternalLinks}}<a href="https://src.sourcegraph.com/sourcegraph/.docs/install/" target="_blank">{{end}}
-						<code><strong>src</strong></code> CLI tool{{if not .DisableExternalLinks}}</a>{{end}}:
-				</p>
-				<pre>src --endpoint={{.AppURL}} repo create <em>NAME</em></pre>
+				<form action={{router.URLToRepoCreate}} method="post">
+				  <strong>Create a repository:</strong> <input type="text" name="repo-name"> &nbsp;&nbsp;&nbsp;<input class="btn btn-sgblue" type="submit" value="Create">
+				<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+				</form>
+				<br>
 			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
 				<p>
 					Or <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">import private repositories from GitHub</a>.

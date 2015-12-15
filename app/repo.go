@@ -2,11 +2,14 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -43,6 +46,50 @@ func init() {
 	internal.RegisterErrorHandlerForType(&handlerutil.NoBuildError{}, func(w http.ResponseWriter, r *http.Request, err error) error {
 		return serveRepoNoBuildError(w, r, err.(*handlerutil.NoBuildError))
 	})
+}
+
+func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
+	vals := r.Form["repo-name"]
+	if len(vals) != 1 {
+		log15.Error("Bad form submission: too many URIs", vals)
+	}
+	repoURI := vals[0]
+	if repoURI == "" {
+		log15.Warn("No repository URI provided with repo create request")
+		return errors.New("Must provide a repository name")
+	}
+
+	ctx := httpctx.FromRequest(r)
+	apiclient := handlerutil.APIClient(r)
+
+	if _, err := apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI}); grpc.Code(err) != codes.NotFound {
+		switch err {
+		case nil:
+			log15.Warn("repo", repoURI, "already exists. ctx: %+v", ctx)
+			return fmt.Errorf("Repo %s already exists", repoURI)
+		default:
+			log15.Warn("problem fetching repository", err)
+			return fmt.Errorf("Problem fetching repository: %s", err)
+		}
+	}
+
+	_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+		URI:      repoURI,
+		VCS:      "git",
+		CloneURL: "https://" + repoURI + ".git",
+		Mirror:   false,
+		Private:  false,
+	})
+	if err != nil {
+		return err
+	}
+
+	if _, err := apiclient.Repos.Enable(ctx, &sourcegraph.RepoSpec{URI: repoURI}); err != nil {
+		return err
+	}
+
+	http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
+	return nil
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
