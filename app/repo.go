@@ -60,6 +60,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	ctx := httpctx.FromRequest(r)
+
 	apiclient := handlerutil.APIClient(r)
 
 	if _, err := apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI}); grpc.Code(err) != codes.NotFound {
@@ -73,10 +74,17 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
+	u := conf.AppURL(ctx)
+	cloneURL := fmt.Sprintf("https://%s/%s.git", u.Host, repoURI)
+
+	if _, err := url.Parse(cloneURL); err != nil {
+		return fmt.Errorf("Failed to generate a valid clone URL: %s", cloneURL)
+	}
+
 	_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 		URI:      repoURI,
 		VCS:      "git",
-		CloneURL: "https://" + repoURI + ".git",
+		CloneURL: cloneURL,
 		Mirror:   false,
 		Private:  false,
 	})
