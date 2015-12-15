@@ -9,17 +9,35 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 )
 
+type stubReadSeek struct{}
+
+func (r stubReadSeek) Read(p []byte) (n int, err error) {
+	panic("fs_util: Read not implemented")
+}
+func (r stubReadSeek) Seek(offset int64, whence int) (int64, error) {
+	panic("fs_util: Seek not implemented")
+}
+func (r stubReadSeek) Close() error { return nil }
+
 // aferoVFS is a VFS-to-afero-VFS adapter for filesystems.
 type aferoVFS struct{ vfs.FileSystem }
 
 func trim(path string) string { return strings.TrimPrefix(path, "/") }
 
 func (fs aferoVFS) Open(name string) (afero.File, error) {
-	f, err := fs.FileSystem.Open(trim(name))
+	trimmed := trim(name)
+
+	// Detect if it's a directory, otherwise FileSystem.Open will fail.
+	if fi, err := fs.Stat(trimmed); err == nil && fi.IsDir() {
+		// Look at how aferoFile.Readdir is implemented to see why this works.
+		return aferoFile{fs, trimmed, stubReadSeek{}}, nil
+	}
+
+	f, err := fs.FileSystem.Open(trimmed)
 	if err != nil {
 		return nil, err
 	}
-	return aferoFile{fs, trim(name), f}, nil
+	return aferoFile{fs, trimmed, f}, nil
 }
 
 func (aferoVFS) Name() string                                 { return "aferoVFS" }
