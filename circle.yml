@@ -89,17 +89,6 @@ deployment:
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
 
-      # Push to sourcegraph-release bucket on s3
-      - gem install fpm
-      - sudo pip install awscli
-      - sudo apt-get install -y rpm
-      - cp ~/daemonize/daemonize ${REPO}/package/linux/bin
-      - cp ${REPO}/release/$(cat ~/VERSION)/linux-amd64 ${REPO}/package/linux/bin/src
-      - make VERSION=$(cat ~/VERSION) DIST=../dist:
-          pwd: $REPO/package/linux
-      - sgtool -v release --skip-package --skip-dist-package --s3-dir continuous $(cat ~/VERSION):
-          pwd: $REPO
-
       # Push to Docker registry
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
       - docker build -t sourcegraph/sourcegraph:$CIRCLE_SHA1 .:
