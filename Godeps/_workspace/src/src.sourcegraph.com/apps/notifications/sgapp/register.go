@@ -80,9 +80,16 @@ func (sgapp) Start(ctx context.Context) {
 	handler := notificationsapp.New(service, opt)
 
 	platform.RegisterGlobalApp(platform.GlobalApp{
-		ID:      "notifications",
-		Title:   "Notification Center",
-		Icon:    "TODO",
+		ID:    "notifications",
+		Title: "Notification Center",
+		Icon:  "inbox",
+		IconBadge: func(ctx context.Context) (bool, error) {
+			n, err := service.Count(ctx, nil)
+			if err != nil {
+				return false, err
+			}
+			return n != 0, nil
+		},
 		Handler: handler,
 	})
 }

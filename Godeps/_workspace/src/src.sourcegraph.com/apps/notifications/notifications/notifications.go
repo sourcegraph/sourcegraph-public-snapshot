@@ -15,6 +15,7 @@ type Service interface {
 
 type InternalService interface {
 	List(ctx context.Context, opt interface{}) (Notifications, error)
+	Count(ctx context.Context, opt interface{}) (uint64, error)
 }
 
 type ExternalService interface {

@@ -70,6 +70,21 @@ func (s service) List(ctx context.Context, opt interface{}) (notifications.Notif
 	return ns, nil
 }
 
+func (s service) Count(ctx context.Context, opt interface{}) (uint64, error) {
+	currentUser := putil.UserFromContext(ctx)
+	if currentUser == nil {
+		return 0, os.ErrPermission
+	}
+
+	userKV := storage.Namespace(s.appCtx, s.appName, "")
+
+	notifications, err := userKV.List(formatUint64(uint64(currentUser.UID)))
+	if err != nil {
+		return 0, err
+	}
+	return uint64(len(notifications)), nil
+}
+
 func (s service) Notify(ctx context.Context, appID string, repo issues.RepoSpec, threadID uint64, op notifications.Notification) error {
 	currentUser := putil.UserFromContext(ctx)
 
