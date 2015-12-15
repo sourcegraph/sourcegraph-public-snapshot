@@ -51,7 +51,13 @@ exports.builds = builds;
 
 function createInvite(email, perms, cb) {
 	return $.ajax({
-		url: `/.ui/.invite?Email=${encodeURIComponent(email)}&Permission=${perms}`,
+		url: "/.ui/.invite",
+		method: "post",
+		beforeSend(xhr) { xhr.setRequestHeader("X-Csrf-Token", window._csrfToken); },
+		data: JSON.stringify({
+			Email: email,
+			Permission: perms,
+		}),
 		success: cb.success,
 		error: cb.error,
 	});

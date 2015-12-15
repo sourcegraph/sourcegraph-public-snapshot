@@ -25,10 +25,10 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 		Email      string
 		Permission string
 	}{}
-	err := schemaDecoder.Decode(&query, r.URL.Query())
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&query); err != nil {
 		return err
 	}
+	defer r.Body.Close()
 
 	if query.Email == "" {
 		return fmt.Errorf("no email specified")

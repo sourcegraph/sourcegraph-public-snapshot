@@ -101,7 +101,7 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Name(UserContentUpload)
 
 	base.Path("/.invite").
-		Methods(m("GET")...).
+		Methods(m("POST")...).
 		Name(UserInvite)
 
 	return base
