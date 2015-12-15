@@ -53,7 +53,9 @@ function createInvite(email, perms, cb) {
 	return $.ajax({
 		url: "/.ui/.invite",
 		method: "post",
-		beforeSend(xhr) { xhr.setRequestHeader("X-Csrf-Token", window._csrfToken); },
+		headers: {
+			"X-Csrf-Token": window._csrfToken,
+		},
 		data: JSON.stringify({
 			Email: email,
 			Permission: perms,
