@@ -35,6 +35,10 @@
 			"Rev": "d69616f51cdfcd7514d6a380847a152dfc2a749d"
 		},
 		{
+			"ImportPath": "github.com/Unknwon/cae",
+			"Rev": "7f5e046bc8a6c3cde743c233b96ee4fd84ee6ecd"
+		},
+		{
 			"ImportPath": "github.com/alecthomas/binary",
 			"Rev": "21c37b530bec7c512af0208bfb15f34400301682"
 		},
@@ -324,6 +328,10 @@
 		{
 			"ImportPath": "github.com/sergi/go-diff/diffmatchpatch",
 			"Rev": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7"
+		},
+		{
+			"ImportPath": "github.com/shazow/go-git",
+			"Rev": "30bfce69173a3a649b3efdc80906125f92a86037"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/github_flavored_markdown",
@@ -695,7 +703,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
-			"Rev": "d02844aa473ff2f36ac3db9b42d7c7bcedb0266f"
+			"Rev": "d92ffef80cd5506f4dbebecc642905c524df31d4"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",

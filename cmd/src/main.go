@@ -34,6 +34,9 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/changesets"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
+
+	// VCS
+	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/git"
 )
 
 func init() {
