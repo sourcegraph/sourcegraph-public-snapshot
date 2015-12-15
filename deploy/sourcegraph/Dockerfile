@@ -1,4 +1,4 @@
-FROM sourcegraph/srclib-base
+FROM sourcegraph/srclib-base:latest
 
 ENV STATIC_SITE_VERSION 64df72271be077a0a9542d24dd40e22c68aa494d
 ENV STATIC_SITE_URL https://s3-us-west-2.amazonaws.com/sourcegraph-site/sourcegraph-site-$STATIC_SITE_VERSION.tar
