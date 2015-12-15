@@ -178,4 +178,21 @@ header.page-header {
 			background-color: $off-white;
 		}
 	}
+
+	.icon-container {
+		position: relative;
+		display: inline-block;
+		width: 16px;
+		height: 16px;
+		text-align: center;
+	}
+	.icon-badge {
+		position: absolute;
+		right: -3px;
+		top: -2px;
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background-color: red;
+	}
 }
