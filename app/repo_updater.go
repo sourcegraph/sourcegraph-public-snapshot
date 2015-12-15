@@ -19,7 +19,7 @@ const (
 func init() {
 	sgxcli.ServeInit = append(sgxcli.ServeInit, func() {
 		// If we're updating repos in the background, kick off the updates initially.
-		if !appconf.Flags.NoMirrorRepoBackgroundUpdate {
+		if !appconf.Flags.DisableMirrorRepoBackgroundUpdate {
 			events.RegisterListener(&repoAutoCloner{})
 		}
 	})
@@ -86,7 +86,7 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 	// Skip if recently updated.
 	if _, recent := ru.recent[repo.RepoSpec()]; recent {
 		// Enqueue the repo again at a later time if desired.
-		if !appconf.Flags.NoMirrorRepoBackgroundUpdate {
+		if !appconf.Flags.DisableMirrorRepoBackgroundUpdate {
 			go ru.enqueueLater(repo)
 		}
 		return
@@ -100,7 +100,7 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 	}
 
 	// Enqueue the repo again at a later time if desired.
-	if !appconf.Flags.NoMirrorRepoBackgroundUpdate {
+	if !appconf.Flags.DisableMirrorRepoBackgroundUpdate {
 		go ru.enqueueLater(repo)
 	}
 }
