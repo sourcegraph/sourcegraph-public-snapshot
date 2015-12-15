@@ -1,7 +1,9 @@
 .emoji-menu {
+	$border-color: transparentize(#000, 0.85);
+	@include z-index(modal);
 	position: fixed;
-	z-index: 9000; // TODO Fix this
 	border-radius: 4px;
+	box-shadow: 0 5px 10px rgba(0, 0, 0, .12);
 
 	.emoji-list {
 		overflow-y: scroll;
@@ -28,7 +30,7 @@
 		position: relative;
 		top: 0;
 		background-color: #f7f7f7;
-		border: solid grey 1px;
+		border: solid $border-color 1px;
 		border-radius: 0 0 4px 4px;
 
 		.emoji {
@@ -41,10 +43,69 @@
 		}
 	}
 }
+
+.reaction-list {
+	.reaction-list-item {
+		height: 30px;
+		display: inline-block;
+		padding: 3px 5px;
+		margin-right: 6px;
+		color: #aaaaaa;
+		font-size: 22px;
+		border-radius: 4px;
+		border: solid #e0e0e0 1px;
 		cursor: pointer;
+		vertical-align: top;
 
 		&:hover {
-			background-color: #b5e0fe;
+			border: solid darken($light-blue, 35%) 1px;
+			color: darken($light-blue, 25%);
 		}
+	}
+
+	.reactions {
+		display: inline-block;
+
+		.reaction {
+			font-size: 14px;
+
+			&.user-reacted {
+				background-color: $light-blue;
+				color: darken($light-blue, 25%);
+				border: solid darken($light-blue, 15%) 1px;
+			}
+			
+			.emoji {
+				width: 22px;
+				margin-right: 2px;
+				vertical-align: middle;
+			}
+
+			.tooltip-inner {
+				color: $subtle-silver;
+				b {
+					font-weight: normal;
+					color: $white;
+				}
+			}
+		}
+	}
+
+	.add-reaction {
+		font-size: 19px;
+		opacity: 0;
+
+		@include transition(opacity);
+		transition-delay: 100ms;
+
+		&:hover {
+			opacity: 1;
+			border: solid darken($light-blue, 35%) 1px;
+			color: darken(#ffd06d, 25%);
+		}
+	}
+
+	&:hover .add-reaction {
+		opacity: 1;
 	}
 }

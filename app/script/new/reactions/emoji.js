@@ -689,7 +689,6 @@ codeMap = {
 	"shell": "1f41a",
 	"ship": "1f6a2",
 	"shirt": "1f455",
-	"shit": "1f4a9",
 	"shoe": "1f45e",
 	"shower": "1f6bf",
 	"signal_strength": "1f4f6",
