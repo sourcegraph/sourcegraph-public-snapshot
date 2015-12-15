@@ -91,9 +91,10 @@ deployment:
 
       # Push to Docker registry
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - docker pull sourcegraph/sourcegraph:latest
       - docker build -t sourcegraph/sourcegraph:$CIRCLE_SHA1 .:
           pwd: $REPO
       - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
-      - docker tag sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
+      - docker tag -f sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
       - docker push sourcegraph/sourcegraph:latest
       - echo $CIRCLE_SHA1 | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
