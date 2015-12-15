@@ -98,8 +98,10 @@ func (r *localGitTransport) servicePack(ctx context.Context, service string, dat
 		return nil, nil, fmt.Errorf("unrecognized git service: %q", service)
 	}
 
+	var errw bytes.Buffer
 	cmd := exec.Command("git", service, "--stateless-rpc", ".")
 	cmd.Dir = r.dir
+	cmd.Stderr = &errw
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, nil, err
@@ -124,6 +126,17 @@ func (r *localGitTransport) servicePack(ctx context.Context, service string, dat
 		return nil, nil, err
 	}
 
+	if service == "upload-pack" {
+		// HACK: Support shallow clones. Closing stdin and setting a
+		// timeout ensures that the upload-pack command exits. If it
+		// doesn't exit, then the following ReadAll call hangs forever
+		// when the `--depth` flag is passed to git clone/fetch.
+		cmd.Args = append(cmd.Args, "--timeout=1")
+		if err := stdin.Close(); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	// Write git binary's output to http response
 	out, err = ioutil.ReadAll(stdout)
 	if err != nil {
@@ -131,9 +144,8 @@ func (r *localGitTransport) servicePack(ctx context.Context, service string, dat
 	}
 
 	// Wait till command has completed
-	err = cmd.Wait()
-	if err != nil {
-		return nil, nil, err
+	if err := cmd.Wait(); err != nil && !strings.Contains(errw.String(), "The remote end hung up unexpectedly") {
+		return nil, nil, fmt.Errorf("git-%s failed (%s); output was:\n%s", service, err, errw.String())
 	}
 	return out, rpcReader.Events, nil
 }
