@@ -15,9 +15,10 @@ var TreeEntrySearch = require("./components/TreeEntrySearch");
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 var AlertView = require("./components/AlertView");
 var CodeFileRange = require("./components/CodeFileRange");
-var CodeFileRouter = require("sourcegraph/code/CodeFileRouter").default;
-var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
-var SearchBar = require("sourcegraph/search/SearchBar").default;
+var CodeFileRouter = require("./new/code/CodeFileRouter").default;
+var LocationAdaptor = require("./new/LocationAdaptor").default;
+var SearchBar = require("./new/search/SearchBar").default;
+var UserSSHKeys = require("./components/UserSSHKeys");
 
 // Application-specific JS
 //
@@ -187,5 +188,13 @@ document.addEventListener("DOMContentLoaded", () => {
 					hasCookie={element.dataset.hasCookie === "true"} />, element
 			);
 		});
+	}
+
+	el = document.querySelector("[data-react=UserSSHKeys]");
+	if (el) {
+		ReactDOM.render(
+			<UserSSHKeys
+				keys={el.dataset.keys} />, el
+		);
 	}
 });

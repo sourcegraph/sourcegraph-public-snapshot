@@ -1,0 +1,12 @@
+{{define "Head"}}<title>Manage SSH Keys - {{.User.Login|personLabel}} - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "PersonSettingsBody"}}
+<div class="panel panel-default panel-main person-settings">
+	<div class="panel-heading">SSH Keys</div>
+	<div class="panel-body">
+		<div data-react="UserSSHKeys"></div>
+	</div>
+</div>
+{{end}}

@@ -43,6 +43,11 @@
 					Emails
 				</li>
 			</a>
+			<a href="{{urlToUserSubroute "person.settings.keys" .Login}}">
+				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.keys" .Login).String)}}active{{end}}">
+					Keys
+				</li>
+			</a>
 			{{end}}
 		</ul>
 		{{end}}
