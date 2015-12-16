@@ -21,7 +21,7 @@
 		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
 			<div class="well">
 				<form action={{router.URLToRepoCreate}} method="post">
-				  <strong>Create a repository:</strong> <input type="text" name="repo-name"> &nbsp;&nbsp;&nbsp;<input class="btn btn-sgblue" type="submit" value="Create">
+				  <strong>Create a repository:</strong> <input type="text" name="repo-name" placeholder="e.g. my-project"> &nbsp;&nbsp;&nbsp;<input class="btn btn-sgblue" type="submit" value="Create">
 				<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 				</form>
 				<br>

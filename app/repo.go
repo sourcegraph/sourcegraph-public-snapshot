@@ -49,11 +49,7 @@ func init() {
 }
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	vals := r.Form["repo-name"]
-	if len(vals) != 1 {
-		log15.Warn("Bad form submission: too many URIs", "form values", vals)
-	}
-	repoURI := vals[0]
+	repoURI := r.PostFormValue("repo-name")
 	if repoURI == "" {
 		log15.Warn("No repository URI provided with repo create request")
 		return errors.New("Must provide a repository name")
@@ -74,28 +70,12 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	u := conf.AppURL(ctx)
-	cloneURL := fmt.Sprintf("https://%s/%s.git", u.Host, repoURI)
-
-	if _, err := url.Parse(cloneURL); err != nil {
-		log15.Warn("failed to parse cloneURL", "error", err)
-		return fmt.Errorf("failed to generate a valid clone URL: %s", cloneURL)
-	}
-
 	_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-		URI:      repoURI,
-		VCS:      "git",
-		CloneURL: cloneURL,
-		Mirror:   false,
-		Private:  false,
+		URI: repoURI,
+		VCS: "git",
 	})
 	if err != nil {
 		log15.Error("failed to create repo", "error", err)
-		return err
-	}
-
-	if _, err := apiclient.Repos.Enable(ctx, &sourcegraph.RepoSpec{URI: repoURI}); err != nil {
-		log15.Error("failed to enable repo", "error", err)
 		return err
 	}
 

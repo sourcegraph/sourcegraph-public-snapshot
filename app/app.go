@@ -103,6 +103,7 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
 	r.Get(router.Download).Handler(internal.Handler(serveDownload))
 	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))
+	r.Get(router.RepoCreate).Handler(internal.Handler(serveRepoCreate))
 
 	r.Get(router.SitemapIndex).Handler(internal.Handler(serveSitemapIndex))
 
@@ -153,7 +154,6 @@ func NewHandler(r *router.Router) http.Handler {
 		r.Get(router.RepoCounter).Handler(internal.Handler(serveRepoCounter))
 		r.Get(router.RepoCounters).Handler(internal.Handler(serveRepoCounters))
 	}
-	r.Get(router.RepoCreate).Handler(internal.Handler(serveRepoCreate))
 
 	r.Get(router.RepoCommit).Handler(internal.Handler(serveRepoCommit))
 	r.Get(router.RepoRevCommits).Handler(internal.Handler(serveRepoCommits))

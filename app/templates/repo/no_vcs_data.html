@@ -19,12 +19,13 @@
 				{{else}}
 					<h3>Nothing here yet.</h3>
 
-					<h4>You can either</h4>
+					<h4>You can do one of the following...</h4>
 
 					<hr>
 
 					<h4>...push an existing repository</h4>
 					<pre>
+git remote rm origin
 git remote add origin {{.Repo.HTTPCloneURL}}
 git push -u origin master
 					</pre>
@@ -41,6 +42,12 @@ git remote add origin {{.Repo.HTTPCloneURL}}
 git push -u origin master
 					</pre>
 
+					<hr>
+
+					<h4>...or clone this empty repository</h4>
+					<pre>
+git clone {{.Repo.HTTPCloneURL}}
+					</pre>
 				{{end}}
 			</div>
 		</div>
