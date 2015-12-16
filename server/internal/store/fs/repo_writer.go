@@ -22,8 +22,6 @@ var (
 	RefCommitter = RefAuthor
 )
 
-const RefCodeReview = "refs/src/review"
-
 // RepoStage manages the staging area of a repository's ref and allows committing
 // into it. Once initialized, it is possible to consequently stage & commit files.
 // When the operation is completed, it is recommended that the Free() method be
@@ -96,52 +94,6 @@ func NewRepoStage(repoPath, refName string, password string) (rs *RepoStage, err
 	}
 
 	return rs, nil
-}
-
-// Add adds a new file to the index (in the staging repository). The
-// file will be located at the specified path. This path does not need
-// to exist in the repository and will be created automatically. The
-// contents of the file will match the passed argument.
-func (rs *RepoStage) Add(path string, contents []byte) error {
-	if err := checkGitArgSafety(path); err != nil {
-		return err
-	}
-
-	fullPath := filepath.Join(rs.stagingDir, path)
-
-	if err := os.MkdirAll(filepath.Dir(fullPath), 0700); err != nil {
-		return err
-	}
-
-	// (Over)write file.
-	if err := ioutil.WriteFile(fullPath, contents, 0600); err != nil {
-		return err
-	}
-
-	// Add to index.
-	cmd := exec.Command("git", "add", "-f", path)
-	cmd.Dir = rs.stagingDir
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
-	}
-
-	return nil
-}
-
-// RemoveAll removes an existing file or directory from the index (in the
-// staging repository).
-func (rs *RepoStage) RemoveAll(path string) error {
-	if strings.HasPrefix(path, "-") {
-		return fmt.Errorf("attempted to add invalid (unsafe) file %q", path)
-	}
-
-	// Remove from index.
-	cmd := exec.Command("git", "rm", "-rf", path)
-	cmd.Dir = rs.stagingDir
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
-	}
-	return nil
 }
 
 // Commit commits the staged files into the specified ref. It also
@@ -228,30 +180,6 @@ func (rs *RepoStage) getEnviron() []string {
 func (rs *RepoStage) Free() error {
 	os.RemoveAll(rs.gitPassHelperDir)
 	return os.RemoveAll(rs.stagingDir)
-}
-
-type GitRefStore interface {
-	UpdateRef(ref, val string) error
-}
-
-type localGitRefStore struct {
-	dir string
-}
-
-func (s *localGitRefStore) UpdateRef(ref, val string) error {
-	cmd := exec.Command("git", "update-ref", ref, val)
-	cmd.Dir = s.dir
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("exec %v: %s (output follows)\n\n%s", cmd.Args, err, out)
-	}
-	return nil
-}
-
-type noopGitRefStore struct {
-}
-
-func (_ *noopGitRefStore) UpdateRef(_, _ string) error {
-	return nil
 }
 
 // checkGitArgSafety returns a non-nil error if a user-supplied arg beigins
