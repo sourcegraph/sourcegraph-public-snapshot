@@ -97,10 +97,13 @@ func (c *EndpointOpts) URLOrDefault() *url.URL {
 // CredentialOpts sets the authentication credentials to use when
 // contacting the Sourcegraph server's API.
 type CredentialOpts struct {
-	AccessToken string `long:"token" description:"access token (OAuth2)" env:"SRC_TOKEN"`
-	AuthFile    string `long:"auth-file" description:"path to .src-auth" default:"$HOME/.src-auth" env:"SRC_AUTH_FILE"`
+	AuthFile string `long:"auth-file" description:"path to .src-auth" default:"$HOME/.src-auth" env:"SRC_AUTH_FILE"`
 
 	mu sync.RWMutex
+
+	// AccessToken should be accessed via the GetAccessToken and SetAccessToken
+	// methods which synchronize access to this value.
+	AccessToken string `long:"token" description:"access token (OAuth2)" env:"SRC_TOKEN"`
 }
 
 var Credentials CredentialOpts
