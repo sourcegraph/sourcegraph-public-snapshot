@@ -43,7 +43,7 @@ func BuildRepoAndWait(t *testing.T, ctx context.Context, repo string, commitID s
 
 	// Wait for the build to complete.
 	buildSpec := b.Spec()
-	start, waitStart, waitEnd := time.Now(), 2*time.Second*ciFactor, 6*time.Second*ciFactor
+	start, waitStart, waitEnd := time.Now(), 2*time.Second*ciFactor, 10*time.Second*ciFactor
 	for {
 		elapsed := time.Since(start)
 		if elapsed > waitEnd {
