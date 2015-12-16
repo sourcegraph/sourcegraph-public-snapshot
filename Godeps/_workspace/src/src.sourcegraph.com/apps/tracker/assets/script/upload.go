@@ -31,7 +31,14 @@ func PasteHandler(e dom.Event) {
 	go func() {
 		b := blobToBytes(file)
 
-		resp, err := http.Post("/.ui/.usercontent", "image/png", bytes.NewReader(b))
+		req, err := http.NewRequest("POST", "/.ui/.usercontent", bytes.NewReader(b))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		req.Header.Set("Content-Type", "image/png")
+		req.Header.Set("X-Csrf-Token", state.CSRFToken)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Println(err)
 			return

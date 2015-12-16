@@ -793,7 +793,7 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/tracker",
-			"Rev": "713e0b4bcea3fda0d85847e6c1a2b914f56d3e49"
+			"Rev": "6cc63669f6b44a6b351d0fa60ac1e2d2c3113401"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",
