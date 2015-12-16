@@ -250,7 +250,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	// app, git, and HTTP API would all inherit the process's owner's
 	// current auth. This is undesirable, unexpected, and could lead
 	// to unintentionally leaking private info.
-	Credentials.AccessToken = ""
+	Credentials.SetAccessToken("")
 	Credentials.AuthFile = ""
 
 	c.GraphStoreOpts.expandEnv()
@@ -689,14 +689,13 @@ func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey
 
 // updateGlobalTokenSource updates Credentials.AccessToken with the
 // newest access token each time it is refreshed.
-//
-// TODO(sqs): synchronize access to Credentials.AccessToken.
 type updateGlobalTokenSource struct{ oauth2.TokenSource }
 
 func (ts updateGlobalTokenSource) Token() (*oauth2.Token, error) {
 	tok, err := ts.TokenSource.Token()
-	if tok != nil && tok.AccessToken != Credentials.AccessToken {
-		Credentials.AccessToken = tok.AccessToken
+	currTok := Credentials.GetAccessToken()
+	if tok != nil && tok.AccessToken != currTok {
+		Credentials.SetAccessToken(tok.AccessToken)
 	}
 	return tok, err
 }

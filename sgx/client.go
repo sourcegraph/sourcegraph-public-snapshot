@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"sync"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -98,13 +99,16 @@ func (c *EndpointOpts) URLOrDefault() *url.URL {
 type CredentialOpts struct {
 	AccessToken string `long:"token" description:"access token (OAuth2)" env:"SRC_TOKEN"`
 	AuthFile    string `long:"auth-file" description:"path to .src-auth" default:"$HOME/.src-auth" env:"SRC_AUTH_FILE"`
+
+	mu sync.RWMutex
 }
 
 var Credentials CredentialOpts
 
 // WithCredentials sets the HTTP and gRPC credentials in the context.
 func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, error) {
-	if c.AccessToken == "" && c.AuthFile != "" { // AccessToken takes precedence over AuthFile
+	token := c.GetAccessToken()
+	if token == "" && c.AuthFile != "" { // AccessToken takes precedence over AuthFile
 		userAuth, err := userauth.Read(c.AuthFile)
 		if err != nil {
 			return nil, err
@@ -112,15 +116,36 @@ func (c *CredentialOpts) WithCredentials(ctx context.Context) (context.Context, 
 
 		ua := userAuth[Endpoint.URLOrDefault().String()]
 		if ua != nil {
-			c.AccessToken = ua.AccessToken
+			c.SetAccessToken(ua.AccessToken)
 		}
 	}
 
-	if c.AccessToken != "" {
-		ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: c.AccessToken}))
+	token = c.GetAccessToken()
+	if token != "" {
+		ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: token}))
 	}
 
 	return ctx, nil
+}
+
+// GetAccessToken returns the currently set AccessToken.
+//
+// It synchronizes access to the token by acquiring a read lock.
+func (c *CredentialOpts) GetAccessToken() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.AccessToken
+}
+
+// SetAccessToken sets a new access token.
+//
+// It synchronizes access to the token by acquiring a write lock.
+func (c *CredentialOpts) SetAccessToken(token string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.AccessToken = token
 }
 
 func init() {

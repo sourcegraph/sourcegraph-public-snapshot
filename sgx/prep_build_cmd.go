@@ -82,9 +82,10 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		// different server but still have this if-condition hold,
 		// then we could leak the user's credentials.
 		if repo.Origin == "" && !repo.Mirror {
-			if Credentials.AccessToken != "" {
+			token := Credentials.GetAccessToken()
+			if token != "" {
 				username = "x-oauth-basic"
-				password = Credentials.AccessToken
+				password = token
 				if len(password) > 255 {
 					// This should not occur anymore, but it is very
 					// difficult to debug if it does, so log it
