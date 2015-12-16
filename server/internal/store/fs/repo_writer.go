@@ -15,18 +15,18 @@ import (
 )
 
 var (
-	RefAuthor = vcs.Signature{
+	changesetsRefAuthor = vcs.Signature{
 		Name:  "Sourcegraph",
 		Email: "noreply@sourcegraph.com",
 	}
-	RefCommitter = RefAuthor
+	changesetsRefCommitter = changesetsRefAuthor
 )
 
-// RepoStage manages the staging area of a repository's ref and allows committing
+// changesetsRepoStage manages the staging area of a repository's ref and allows committing
 // into it. Once initialized, it is possible to consequently stage & commit files.
 // When the operation is completed, it is recommended that the Free() method be
 // called.
-type RepoStage struct {
+type changesetsRepoStage struct {
 	// stagingDir is a temp dir containing the repo's clone. In this
 	// dir we stage and commit the changes, which is then `git push`'d
 	// to the original repo. Using a temp staging repo dir lets us
@@ -44,20 +44,20 @@ type RepoStage struct {
 	gitPassHelperDir string
 }
 
-// NewRepoStage creates a new RepoStage to stage & commit into the
+// changesetsNewRepoStage creates a new changesetsRepoStage to stage & commit into the
 // repository located at the given repoPath at the ref specified by
 // refName. It creates a staging repo in a temp dir to create the git
 // index, commit it, and push to the original repo. This lets it avoid
 // concurrency conflicts.
 //
-// When done, you MUST call the RepoStage's Free to remove the temp
+// When done, you MUST call the changesetsRepoStage's Free to remove the temp
 // dir it creates.
-func NewRepoStage(repoPath, refName string, password string) (rs *RepoStage, err error) {
+func changesetsNewRepoStage(repoPath, refName string, password string) (rs *changesetsRepoStage, err error) {
 	if err := checkGitArgSafety(repoPath); err != nil {
 		return nil, err
 	}
 
-	rs = &RepoStage{
+	rs = &changesetsRepoStage{
 		repoDir: repoPath,
 		refName: refName,
 	}
@@ -96,10 +96,10 @@ func NewRepoStage(repoPath, refName string, password string) (rs *RepoStage, err
 	return rs, nil
 }
 
-// Commit commits the staged files into the specified ref. It also
+// commit commits the staged files into the specified ref. It also
 // pushes from the staging repo to the original repo, so that the
 // commit is available to future readers.
-func (rs *RepoStage) Commit(author, committer vcs.Signature, message string) error {
+func (rs *changesetsRepoStage) commit(author, committer vcs.Signature, message string) error {
 	// Create commit in staging repo.
 	authorStr := fmt.Sprintf("%s <%s>", author.Name, author.Email)
 	cmd := exec.Command(
@@ -132,10 +132,10 @@ func (rs *RepoStage) Commit(author, committer vcs.Signature, message string) err
 	return nil
 }
 
-// Pull pulls the specified head branch into the current branch. The resulting
-// changes will only be staged, so you must call RepoStage.Commit if you want
+// pull pulls the specified head branch into the current branch. The resulting
+// changes will only be staged, so you must call changesetsRepoStage.commit if you want
 // to commit merged changes.
-func (rs *RepoStage) Pull(head string, squash bool) error {
+func (rs *changesetsRepoStage) pull(head string, squash bool) error {
 	if err := checkGitArgSafety(head); err != nil {
 		return err
 	}
@@ -154,8 +154,8 @@ func (rs *RepoStage) Pull(head string, squash bool) error {
 	// Git requires you to configure a name and email to use "git pull", even if
 	// you aren't committing anything.
 	cmd.Env = append(env,
-		"GIT_COMMITTER_NAME="+RefCommitter.Name,
-		"GIT_COMMITTER_EMAIL="+RefCommitter.Email,
+		"GIT_COMMITTER_NAME="+changesetsRefCommitter.Name,
+		"GIT_COMMITTER_EMAIL="+changesetsRefCommitter.Email,
 	)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -165,7 +165,7 @@ func (rs *RepoStage) Pull(head string, squash bool) error {
 	return nil
 }
 
-func (rs *RepoStage) getEnviron() []string {
+func (rs *changesetsRepoStage) getEnviron() []string {
 	env := environ(os.Environ())
 
 	if rs.gitPassHelper != "" {
@@ -176,8 +176,8 @@ func (rs *RepoStage) getEnviron() []string {
 	return env
 }
 
-// Free frees up the resources used by the allocated repository and index.
-func (rs *RepoStage) Free() error {
+// free frees up the resources used by the allocated repository and index.
+func (rs *changesetsRepoStage) free() error {
 	os.RemoveAll(rs.gitPassHelperDir)
 	return os.RemoveAll(rs.stagingDir)
 }
@@ -200,7 +200,7 @@ func execError(args []string, err error, out []byte) error {
 // writeFileWithPermissions, environ.Unset), are copied from
 // go-vcs/vcs/gitcmd/repo.go to aid in securely providing a password for git
 // operations. Eventually when we remove support for Changeset persistence
-// using refs, we can refactor RepoStage to use go-vcs and remove these
+// using refs, we can refactor changesetsRepoStage to use go-vcs and remove these
 // methods.
 func makeGitPassHelper(pass string) (passHelper string, tempDir string, err error) {
 	tmpFile, dir, err := scriptFile("repo-stage-gitcmd-ask")

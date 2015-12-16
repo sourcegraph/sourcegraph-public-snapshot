@@ -287,11 +287,11 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		repoPath = absolutePathForRepo(ctx, repo.URI)
 	}
 
-	rs, err := NewRepoStage(repoPath, base, auth)
+	rs, err := changesetsNewRepoStage(repoPath, base, auth)
 	if err != nil {
 		return err
 	}
-	defer rs.Free()
+	defer rs.free()
 
 	p := notif.PersonFromContext(ctx)
 	if err != nil {
@@ -303,10 +303,10 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		Date:  pbtypes.NewTimestamp(time.Now()),
 	}
 
-	if err := rs.Pull(head, opt.Squash); err != nil {
+	if err := rs.pull(head, opt.Squash); err != nil {
 		return err
 	}
-	if err := rs.Commit(merger, merger, msg); err != nil {
+	if err := rs.commit(merger, merger, msg); err != nil {
 		return err
 	}
 
