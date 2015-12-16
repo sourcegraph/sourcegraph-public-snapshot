@@ -10,7 +10,7 @@ import (
 
 	"github.com/satori/go.uuid"
 	"sourcegraph.com/sourcegraph/rwvfs"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/usercontent"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -24,10 +24,12 @@ var allowedMimeTypes = map[string]struct{}{
 func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 	const maxSizeBytes = 10 * 1024 * 1024
 
-	// TODO we should be doing gRPC calls for storing content, and keep
-	// the webserver stateless
-	if err := accesscontrol.VerifyUserHasWriteAccess(httpctx.FromRequest(req), "Content.Upload"); err != nil {
-		return err
+	// TODO: We should be doing gRPC calls for storing content, and keep
+	//       the webserver stateless.
+
+	actor := auth.ActorFromContext(httpctx.FromRequest(req))
+	if !actor.HasWriteAccess() {
+		return fmt.Errorf("actor (uid=%v, domain=%v) doesn't have write access", actor.UID, actor.Domain)
 	}
 
 	if usercontent.Store == nil {
