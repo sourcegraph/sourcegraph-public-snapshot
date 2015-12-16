@@ -751,7 +751,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-java/java_def",
-			"Rev": "b562a32537bac7c2b21e48d90b43f77f0c3a8f23"
+			"Rev": "5c60cce8df5e8ea2510ba07f576f1a60b34c1d2b"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-javascript/javascript_def",
