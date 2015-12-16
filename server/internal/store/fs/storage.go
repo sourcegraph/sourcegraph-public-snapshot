@@ -133,15 +133,42 @@ func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 	if err != nil {
 		return &pbtypes.Void{}, err
 	}
+
+	var keys *sourcegraph.StorageList
+	if opt.Key == "" {
+		keys, err = s.List(ctx, opt)
+		if err != nil {
+			return &pbtypes.Void{}, err
+		}
+	}
+
 	s.fs.Lock()
 	defer s.fs.Unlock()
 
 	// Delete the file or directory.
 	//
-	// TODO(slimsag): need a RemoveAll implementation here.
-	err = appStorageVFS(ctx).Remove(path)
-	if err != nil && os.IsNotExist(err) {
+	// TODO(slimsag): need a better RemoveAll implementation here.
+
+	if opt.Key == "" {
+		for _, key := range keys.Keys {
+			opt.Key = key
+			path, err := storageKeyPath(ctx, opt)
+			if err != nil {
+				return &pbtypes.Void{}, err
+			}
+
+			err = appStorageVFS(ctx).Remove(path)
+			if err != nil {
+				return &pbtypes.Void{}, err
+			}
+		}
+
 		return &pbtypes.Void{}, nil
+	} else {
+		err = appStorageVFS(ctx).Remove(path)
+		if os.IsNotExist(err) {
+			return &pbtypes.Void{}, nil
+		}
 	}
 
 	// TODO(slimsag): consider automatic cleanup of directories here.
