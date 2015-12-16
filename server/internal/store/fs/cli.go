@@ -28,7 +28,6 @@ var Stores = store.Stores{
 	RepoVCS:           &RepoVCS{},
 	Repos:             &Repos{},
 	Users:             &Users{},
-	UserKeys:          NewUserKeys(),
 	Changesets:        &Changesets{},
 	Storage:           NewStorage(),
 	Invites:           &Invites{},

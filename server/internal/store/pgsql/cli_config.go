@@ -27,7 +27,6 @@ var Stores = &store.Stores{
 	RepoStatuses:        &RepoStatuses{},
 	UserPermissions:     &UserPermissions{},
 	Users:               &Users{},
-	UserKeys:            fs.NewUserKeys(),
 	Changesets:          &fs.Changesets{},
 	Invites:             &Invites{},
 }
