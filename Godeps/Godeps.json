@@ -739,11 +739,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-go/gog/definfo",
-			"Rev": "e54631de896b38ea4d5d76fdff18d2b6a77a1fb7"
+			"Rev": "ae09e1348e9369ed6edc5d08115f163f13ca4404"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-go/golang_def",
-			"Rev": "e54631de896b38ea4d5d76fdff18d2b6a77a1fb7"
+			"Rev": "ae09e1348e9369ed6edc5d08115f163f13ca4404"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-haskell/haskell",
