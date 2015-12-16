@@ -125,6 +125,9 @@ var MarkdownTextarea = React.createClass({
 			url: "/.ui/.usercontent",
 			method: "POST",
 			contentType: item.type,
+			headers: {
+				"X-Csrf-Token": window._csrfToken,
+			},
 			accepts: "json",
 			data: item.getAsFile(),
 			processData: false,
