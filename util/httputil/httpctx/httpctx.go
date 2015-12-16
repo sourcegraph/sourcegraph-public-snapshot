@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	gcontext "github.com/gorilla/context"
 	"github.com/sourcegraph/mux"
+	"golang.org/x/net/context"
 )
 
 type key int

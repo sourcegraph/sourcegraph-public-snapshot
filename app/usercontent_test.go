@@ -3,12 +3,11 @@ package app_test
 import (
 	"bytes"
 	"encoding/json"
+	"image"
 	"image/png"
 	"io/ioutil"
 	"net/http"
 	"testing"
-
-	"image"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"

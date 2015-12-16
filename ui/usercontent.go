@@ -15,7 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
-var allowedMimeTypes = map[string]struct{}{
+var allowedMIMETypes = map[string]struct{}{
 	"image/png":  {},
 	"image/jpeg": {},
 	"image/gif":  {},
@@ -42,7 +42,7 @@ func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 	}
 
 	mimeType := http.DetectContentType(body)
-	_, ok := allowedMimeTypes[mimeType]
+	_, ok := allowedMIMETypes[mimeType]
 	if !ok {
 		return fmt.Errorf("unsupported mime type: %v", mimeType)
 	}

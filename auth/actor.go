@@ -31,7 +31,7 @@ type Actor struct {
 	// server executing the operation.
 	ClientID string `json:",omitempty"`
 
-	// Scope is a map of authorized scopes that the actor has
+	// Scope is a set of authorized scopes that the actor has
 	// access to on the given server.
 	Scope map[string]bool `json:",omitempty"`
 }
