@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/ui"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
 	"src.sourcegraph.com/sourcegraph/usercontent"
@@ -31,7 +32,13 @@ func TestUserContent(t *testing.T) {
 	var name string
 
 	{
-		uic, _ := httptestutil.NewTest(ui.NewHandler(nil, false))
+		uic, mocks := httptestutil.NewTest(ui.NewHandler(nil, false))
+		mocks.Ctx = auth.WithActor(mocks.Ctx, auth.Actor{ // UserContentUpload endpoint checks for write access, so provide it via mocks.
+			UID: 1,
+			Scope: map[string]bool{
+				"user:write": true,
+			},
+		})
 
 		req, err := http.NewRequest("POST", ui_router.Rel.URLTo(ui_router.UserContentUpload).String(), content)
 		if err != nil {
