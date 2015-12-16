@@ -1733,6 +1733,10 @@ service Users {
 	};
 }
 
+message SSHKeyList {
+	repeated SSHPublicKey ssh_keys = 1 [(gogoproto.nullable) = false, (gogoproto.customname) = "SSHKeys"];
+}
+
 // UserKeys manages SSH public keys per user.
 service UserKeys {
 	// AddKey adds an SSH public key for the user, enabling them to use git over SSH.
@@ -1742,7 +1746,13 @@ service UserKeys {
 	rpc LookupUser(SSHPublicKey) returns (UserSpec);
 
 	// DeleteKey deletes the user's SSH public key.
-	rpc DeleteKey(pbtypes.Void) returns (pbtypes.Void);
+	rpc DeleteKey(SSHPublicKey) returns (pbtypes.Void);
+
+	// ListKeys lists the user's SSH public keys
+	rpc ListKeys(pbtypes.Void) returns (SSHKeyList);
+
+	// ClearKeys delets all of the user's SSH public keys
+	rpc ClearKeys(pbtypes.Void) returns (pbtypes.Void);
 }
 
 // Auth manages authentication and authorization (via OAuth2).
@@ -1781,6 +1791,8 @@ service Auth {
 message SSHPublicKey {
 	// Key is the serialized key data in SSH wire format, with the name prefix.
 	bytes key = 1;
+	string name = 2; // optional
+	uint64 id = 3; // optional
 }
 
 // AuthorizationCodeRequest: see
