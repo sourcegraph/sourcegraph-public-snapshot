@@ -47,7 +47,7 @@ var (
 	// CLI flag.
 	Store = getTestStore()
 
-	waitServerStart = flag.Duration("testapp.wait", 5*time.Second, "max time to wait for server to start")
+	waitServerStart = flag.Duration("testapp.wait", 10*time.Second, "max time to wait for server to start")
 )
 
 func getTestStore() string {
