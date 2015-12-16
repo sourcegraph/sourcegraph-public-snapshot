@@ -21,8 +21,13 @@
 		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
 			<div class="well">
 				<form action={{router.URLToRepoCreate}} method="post">
-				  <strong>Create a repository:</strong> <input type="text" name="repo-name" placeholder="e.g. my-project"> &nbsp;&nbsp;&nbsp;<input class="btn btn-sgblue" type="submit" value="Create">
-				<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+					<div class="form-group">
+						<label for="repo-name-input">Create a repository:</label> <input type="text" name="repo-name" id="repo-name-input" placeholder="e.g. my-project" class="form-control">
+					</div>
+					<div class="form-group">
+						<button type="submit" class="btn btn-sgblue">Create</button>
+					</div>
+					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 				</form>
 				<br>
 			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
