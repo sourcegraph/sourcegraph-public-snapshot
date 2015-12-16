@@ -13,8 +13,6 @@ import (
 )
 
 func TestRepoTree_Search_lg(t *testing.T) {
-	t.Skip("flaky") // see https://circleci.com/gh/sourcegraph/sourcegraph/5670
-
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
