@@ -31,7 +31,7 @@ class EmojiMenu extends Component {
 	}
 
 	_close() {
-		if (this.state.onClose) this.state.onClose();
+		this.state.onClose();
 	}
 
 	_onKeyDown(event) {
@@ -91,7 +91,10 @@ class EmojiMenu extends Component {
 }
 
 EmojiMenu.propTypes = {
-	// TODO
+	x: React.PropTypes.number.isRequired,
+	y: React.PropTypes.number.isRequired,
+	onClose: React.PropTypes.func.isRequired,
+	onSelect: React.PropTypes.func.isRequired,
 };
 
 export default EmojiMenu;

@@ -1,7 +1,9 @@
 export let codeMap;
 
 export function url(name) {
-	/* "Twemoji" by Twitter Inc. and other contributors is licensed under CC-BY */
+	// "Twemoji" by Twitter Inc. and other contributors is licensed under CC-BY.
+	//
+	// TODO Utilize spritesheets to improve rendering perf.
 	return `https://twemoji.maxcdn.com/72x72/${codeMap[name]}.png`;
 }
 
@@ -9,6 +11,7 @@ export function list() {
 	return Object.keys(codeMap).sort();
 }
 
+// Source: www.emoji-cheat-sheet.com
 codeMap = {
 	"+1": "1f44d",
 	"-1": "1f44e",

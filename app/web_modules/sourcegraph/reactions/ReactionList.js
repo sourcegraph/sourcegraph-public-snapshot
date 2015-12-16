@@ -27,11 +27,15 @@ class ReactionList extends Component {
 
 	_onSelect(reaction) {
 		this.state.onSelect(reaction);
-		// TODO A regular call to setState here does not work. React buffers calls to setState
+		// TODO A normal call to setState here does not work due to side-effects
+		// of React's buffered updates to this.state and the behavior of
+		// Component._updateState.
 		this.setState({}, () => this.setState({menu: null}));
 	}
 
 	render() {
+		if (this.state.reactions.length === 0) return null;
+
 		return (
 			<div className="reaction-list">
 				<div className="reactions">
@@ -67,7 +71,16 @@ class ReactionList extends Component {
 }
 
 ReactionList.propTypes = {
-	// TODO
+	reactions: React.PropTypes.arrayOf(React.PropTypes.shape({
+		Reaction: React.PropTypes.string,
+		Users: React.PropTypes.arrayOf(React.PropTypes.shape({
+			Login: React.PropTypes.string,
+		})),
+	})).isRequired,
+	currentUser: React.PropTypes.shape({
+		Login: React.PropTypes.string,
+	}).isRequired,
+	onSelect: React.PropTypes.func.isRequired,
 };
 
 export default ReactionList;

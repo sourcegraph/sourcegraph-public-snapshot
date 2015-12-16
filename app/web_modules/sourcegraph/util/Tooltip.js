@@ -3,7 +3,7 @@ import React from "react";
 import Component from "sourcegraph/Component";
 
 import ReactDOM from "react-dom";
-import ReactCSSTransitionGroup from "react-addons-css-transition-group";
+import ReactCSSTransitionGroup from "react/lib/ReactCSSTransitionGroup";
 
 
 // Note: for this tooltip to appear correctly, its parent element must have position

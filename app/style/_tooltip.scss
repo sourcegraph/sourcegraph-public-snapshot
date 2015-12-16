@@ -12,14 +12,14 @@
 
 	&:after {
 		position: absolute;
-    left: 50%;
-    bottom: -6px;
-    content: '';
-    width: 0;
-    height: 0;
-    margin: -6px;
-    border: 6px solid transparent;	
-    border-top-color: #000;
+		left: 50%;
+		bottom: -6px;
+		content: '';
+		width: 0;
+		height: 0;
+		margin: -6px;
+		border: 6px solid transparent;
+		border-top-color: #000;
 	}
 
 	.tooltip-inner {
