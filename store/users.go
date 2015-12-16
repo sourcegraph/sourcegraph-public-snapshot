@@ -71,6 +71,7 @@ type UserKeys interface {
 	LookupUser(ctx context.Context, key sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
 
 	DeleteKey(ctx context.Context, uid int32) error
+	ListKeys(ctx context.Context, uid uint32) ([]sourcegraph.SSHPublicKey, error)
 }
 
 // ExternalAuthTokens manages per-user authentication tokens used to

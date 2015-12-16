@@ -507,8 +507,16 @@ func (s remoteUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPubli
 	return sourcegraph.NewClientFromContext(ctx).UserKeys.LookupUser(ctx, v1)
 }
 
-func (s remoteUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+func (s remoteUserKeys) DeleteKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
 	return sourcegraph.NewClientFromContext(ctx).UserKeys.DeleteKey(ctx, v1)
+}
+
+func (s remoteUserKeys) ListKeys(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.ListKeys(ctx, v1)
+}
+
+func (s remoteUserKeys) ClearKeys(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.ClearKeys(ctx, v1)
 }
 
 type remoteUsers struct{ sourcegraph.UsersServer }
