@@ -32,8 +32,6 @@ func TestServer(t *testing.T) {
 
 // Test that spawning one TLS server works.
 func TestServerTLS(t *testing.T) {
-	t.Skip("flaky") // https://circleci.com/gh/sourcegraph/sourcegraph/9549
-
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	defer func() {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = false
