@@ -1,9 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import Component from "../Component";
+import Component from "sourcegraph/Component";
 
-import * as emoji from "./emoji";
+import * as emoji from "sourcegraph/reactions/emoji";
 
 class EmojiMenu extends Component {
 	constructor(props) {

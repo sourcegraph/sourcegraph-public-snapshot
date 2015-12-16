@@ -1,9 +1,9 @@
 import React from "react";
 
-import Component from "../Component";
-import EmojiMenu from "./EmojiMenu";
-import Tooltip from "../util/Tooltip";
-import * as emoji from "./emoji";
+import Component from "sourcegraph/Component";
+import EmojiMenu from "sourcegraph/reactions/EmojiMenu";
+import Tooltip from "sourcegraph/util/Tooltip";
+import * as emoji from "sourcegraph/reactions/emoji";
 
 import classNames from "classnames";
 

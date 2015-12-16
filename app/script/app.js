@@ -52,4 +52,5 @@ require("./TwitterButton");
 require("../style/web.scss");
 
 require("sourcegraph/util/actionLogger");
-require("./new/platform/api");
+
+window.Sourcegraph = require("sourcegraph/platform/api").default;

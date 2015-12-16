@@ -1,10 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import EmojiMenu from "../reactions/EmojiMenu";
-import ReactionList from "../reactions/ReactionList";
+import EmojiMenu from "sourcegraph/reactions/EmojiMenu";
+import ReactionList from "sourcegraph/reactions/ReactionList";
 
-window.Sourcegraph = {
+let sourcegraph = {
 	Components: {
 		emojiMenu(element, options) {
 			ReactDOM.render(<EmojiMenu x={options.x} y={options.y} onSelect={options.onSelect} onClose={options.onClose}/>, element);
@@ -17,3 +17,5 @@ window.Sourcegraph = {
 		},
 	},
 };
+
+export default sourcegraph;

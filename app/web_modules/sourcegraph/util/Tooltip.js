@@ -1,6 +1,6 @@
 import React from "react";
 
-import Component from "../Component";
+import Component from "sourcegraph/Component";
 
 import ReactDOM from "react-dom";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
