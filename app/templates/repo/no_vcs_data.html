@@ -25,8 +25,7 @@
 
 					<h4>...push an existing repository</h4>
 					<pre>
-git remote rm origin
-git remote add origin {{.Repo.HTTPCloneURL}}
+git remote set-url origin {{.Repo.HTTPCloneURL}}
 git push -u origin master
 					</pre>
 
@@ -47,6 +46,10 @@ git push -u origin master
 					<h4>...or clone this empty repository</h4>
 					<pre>
 git clone {{.Repo.HTTPCloneURL}}
+echo "# {{.Repo.Name}}" >> README.md
+git add README.md
+git commit -m "add readme"
+git push origin master
 					</pre>
 				{{end}}
 			</div>
