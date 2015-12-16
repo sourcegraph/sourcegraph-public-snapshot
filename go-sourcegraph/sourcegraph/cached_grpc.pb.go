@@ -2789,7 +2789,7 @@ func (s *CachedUserKeysClient) LookupUser(ctx context.Context, in *SSHPublicKey,
 	return result, nil
 }
 
-func (s *CachedUserKeysClient) DeleteKey(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+func (s *CachedUserKeysClient) DeleteKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	if s.Cache != nil {
 		var cachedResult pbtypes.Void
 		cached, err := s.Cache.Get(ctx, "UserKeys.DeleteKey", in, &cachedResult)
@@ -2809,6 +2809,58 @@ func (s *CachedUserKeysClient) DeleteKey(ctx context.Context, in *pbtypes.Void, 
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "UserKeys.DeleteKey", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedUserKeysClient) ListKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*SSHKeyList, error) {
+	if s.Cache != nil {
+		var cachedResult SSHKeyList
+		cached, err := s.Cache.Get(ctx, "UserKeys.ListKeys", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.ListKeys(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.ListKeys", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedUserKeysClient) ClearKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "UserKeys.ClearKeys", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.UserKeysClient.ClearKeys(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.ClearKeys", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

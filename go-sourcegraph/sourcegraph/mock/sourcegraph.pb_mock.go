@@ -815,7 +815,9 @@ var _ sourcegraph.UsersServer = (*UsersServer)(nil)
 type UserKeysClient struct {
 	AddKey_     func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
 	LookupUser_ func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
-	DeleteKey_  func(ctx context.Context, in *pbtypes.Void) (*pbtypes.Void, error)
+	DeleteKey_  func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
+	ListKeys_   func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.SSHKeyList, error)
+	ClearKeys_  func(ctx context.Context, in *pbtypes.Void) (*pbtypes.Void, error)
 }
 
 func (s *UserKeysClient) AddKey(ctx context.Context, in *sourcegraph.SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
@@ -826,8 +828,16 @@ func (s *UserKeysClient) LookupUser(ctx context.Context, in *sourcegraph.SSHPubl
 	return s.LookupUser_(ctx, in)
 }
 
-func (s *UserKeysClient) DeleteKey(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+func (s *UserKeysClient) DeleteKey(ctx context.Context, in *sourcegraph.SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.DeleteKey_(ctx, in)
+}
+
+func (s *UserKeysClient) ListKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.SSHKeyList, error) {
+	return s.ListKeys_(ctx, in)
+}
+
+func (s *UserKeysClient) ClearKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.ClearKeys_(ctx, in)
 }
 
 var _ sourcegraph.UserKeysClient = (*UserKeysClient)(nil)
@@ -835,7 +845,9 @@ var _ sourcegraph.UserKeysClient = (*UserKeysClient)(nil)
 type UserKeysServer struct {
 	AddKey_     func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
 	LookupUser_ func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
-	DeleteKey_  func(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error)
+	DeleteKey_  func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
+	ListKeys_   func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.SSHKeyList, error)
+	ClearKeys_  func(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error)
 }
 
 func (s *UserKeysServer) AddKey(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
@@ -846,8 +858,16 @@ func (s *UserKeysServer) LookupUser(v0 context.Context, v1 *sourcegraph.SSHPubli
 	return s.LookupUser_(v0, v1)
 }
 
-func (s *UserKeysServer) DeleteKey(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+func (s *UserKeysServer) DeleteKey(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
 	return s.DeleteKey_(v0, v1)
+}
+
+func (s *UserKeysServer) ListKeys(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
+	return s.ListKeys_(v0, v1)
+}
+
+func (s *UserKeysServer) ClearKeys(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	return s.ClearKeys_(v0, v1)
 }
 
 var _ sourcegraph.UserKeysServer = (*UserKeysServer)(nil)

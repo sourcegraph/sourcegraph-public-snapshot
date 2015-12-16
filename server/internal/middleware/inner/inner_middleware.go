@@ -2975,7 +2975,7 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHP
 	return
 }
 
-func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
+func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *sourcegraph.SSHPublicKey) (res *pbtypes.Void, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "UserKeys", "DeleteKey", param)
 	defer func() {
@@ -2995,6 +2995,44 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *pbtypes.Void) (re
 		err = grpc.Errorf(codes.Internal, "UserKeys.DeleteKey returned nil, nil")
 	}
 	return
+}
+
+func (s wrappedUserKeys) ListKeys(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.SSHKeyList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "UserKeys", "ListKeys", param)
+	defer func() {
+		trace.After(ctx, "UserKeys", "ListKeys", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "UserKeys.ListKeys")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.UserKeys
+
+	res, err = target.ListKeys(ctx, param)
+	return
+
+}
+
+func (s wrappedUserKeys) ClearKeys(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "UserKeys", "ClearKeys", param)
+	defer func() {
+		trace.After(ctx, "UserKeys", "ClearKeys", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "UserKeys.ClearKeys")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.UserKeys
+
+	res, err = target.ClearKeys(ctx, param)
+	return
+
 }
 
 type wrappedUsers struct {

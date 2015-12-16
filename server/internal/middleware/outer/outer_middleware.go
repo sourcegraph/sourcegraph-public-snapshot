@@ -3287,7 +3287,7 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPubl
 	return rv, nil
 }
 
-func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3303,6 +3303,64 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *pbtypes.Void) (*pbty
 	}
 
 	rv, err := innerSvc.DeleteKey(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
+func (s wrappedUserKeys) ListKeys(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.UserKeysOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+
+	rv, err := innerSvc.ListKeys(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
+func (s wrappedUserKeys) ClearKeys(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.UserKeysOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
+	}
+
+	rv, err := innerSvc.ClearKeys(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

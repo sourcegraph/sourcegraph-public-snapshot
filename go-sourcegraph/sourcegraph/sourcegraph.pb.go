@@ -115,6 +115,7 @@ It has these top-level messages:
 	PendingInvite
 	AccountInviteList
 	AcceptedInvite
+	SSHKeyList
 	SSHPublicKey
 	AuthorizationCodeRequest
 	AuthorizationCode
@@ -1781,10 +1782,20 @@ func (m *AcceptedInvite) Reset()         { *m = AcceptedInvite{} }
 func (m *AcceptedInvite) String() string { return proto.CompactTextString(m) }
 func (*AcceptedInvite) ProtoMessage()    {}
 
+type SSHKeyList struct {
+	SSHKeys []SSHPublicKey `protobuf:"bytes,1,rep,name=ssh_keys" `
+}
+
+func (m *SSHKeyList) Reset()         { *m = SSHKeyList{} }
+func (m *SSHKeyList) String() string { return proto.CompactTextString(m) }
+func (*SSHKeyList) ProtoMessage()    {}
+
 // SSHPublicKey that users to authenticate with for SSH git access.
 type SSHPublicKey struct {
 	// Key is the serialized key data in SSH wire format, with the name prefix.
-	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:",omitempty"`
+	Key  []byte `protobuf:"bytes,1,opt,name=key,proto3" json:",omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:",omitempty"`
+	Id   uint64 `protobuf:"varint,3,opt,name=id,proto3" json:",omitempty"`
 }
 
 func (m *SSHPublicKey) Reset()         { *m = SSHPublicKey{} }
@@ -5598,7 +5609,11 @@ type UserKeysClient interface {
 	// LookupUser looks up a user based on the given public key.
 	LookupUser(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*UserSpec, error)
 	// DeleteKey deletes the user's SSH public key.
-	DeleteKey(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	DeleteKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// ListKeys lists the user's SSH public keys
+	ListKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*SSHKeyList, error)
+	// ClearKeys delets all of the user's SSH public keys
+	ClearKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
 
 type userKeysClient struct {
@@ -5627,9 +5642,27 @@ func (c *userKeysClient) LookupUser(ctx context.Context, in *SSHPublicKey, opts 
 	return out, nil
 }
 
-func (c *userKeysClient) DeleteKey(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+func (c *userKeysClient) DeleteKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
 	out := new(pbtypes1.Void)
 	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/DeleteKey", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userKeysClient) ListKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*SSHKeyList, error) {
+	out := new(SSHKeyList)
+	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/ListKeys", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userKeysClient) ClearKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/ClearKeys", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5644,7 +5677,11 @@ type UserKeysServer interface {
 	// LookupUser looks up a user based on the given public key.
 	LookupUser(context.Context, *SSHPublicKey) (*UserSpec, error)
 	// DeleteKey deletes the user's SSH public key.
-	DeleteKey(context.Context, *pbtypes1.Void) (*pbtypes1.Void, error)
+	DeleteKey(context.Context, *SSHPublicKey) (*pbtypes1.Void, error)
+	// ListKeys lists the user's SSH public keys
+	ListKeys(context.Context, *pbtypes1.Void) (*SSHKeyList, error)
+	// ClearKeys delets all of the user's SSH public keys
+	ClearKeys(context.Context, *pbtypes1.Void) (*pbtypes1.Void, error)
 }
 
 func RegisterUserKeysServer(s *grpc.Server, srv UserKeysServer) {
@@ -5676,11 +5713,35 @@ func _UserKeys_LookupUser_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _UserKeys_DeleteKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(pbtypes1.Void)
+	in := new(SSHPublicKey)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(UserKeysServer).DeleteKey(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _UserKeys_ListKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(pbtypes1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(UserKeysServer).ListKeys(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _UserKeys_ClearKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(pbtypes1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(UserKeysServer).ClearKeys(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -5702,6 +5763,14 @@ var _UserKeys_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteKey",
 			Handler:    _UserKeys_DeleteKey_Handler,
+		},
+		{
+			MethodName: "ListKeys",
+			Handler:    _UserKeys_ListKeys_Handler,
+		},
+		{
+			MethodName: "ClearKeys",
+			Handler:    _UserKeys_ClearKeys_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
