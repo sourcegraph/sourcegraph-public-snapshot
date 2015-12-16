@@ -110,3 +110,8 @@ type TextSearchResult struct {
 	StartLine uint32
 	EndLine   uint32
 }
+
+type UserKeysResult struct {
+	Key, Name string
+	Id        int
+}

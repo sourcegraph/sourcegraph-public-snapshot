@@ -76,6 +76,9 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 	}
 
 	r.Get(ui_router.UserInvite).Handler(p.handler(serveUserInvite))
+	r.Get(ui_router.UserKeys).Handler(p.handler(serveUserKeys))
+	r.Get(ui_router.UserKeysDelete).Handler(p.handler(serveUserKeys))
+
 
 	return handlerutil.WithMiddleware(r, mw...)
 }

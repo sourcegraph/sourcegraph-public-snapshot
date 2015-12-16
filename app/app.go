@@ -121,6 +121,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.UserSettingsProfile).Handler(internal.Handler(serveUserSettingsProfile))
 	r.Get(router.UserSettingsEmails).Handler(internal.Handler(serveUserSettingsEmails))
+	r.Get(router.UserSettingsKeys).Handler(internal.Handler(serveUserSettingsKeys))
 	if !appconf.Flags.DisableIntegrations {
 		r.Get(router.UserSettingsIntegrations).Handler(internal.Handler(serveUserSettingsIntegrations))
 		r.Get(router.UserSettingsIntegrationsUpdate).Handler(internal.Handler(serveUserSettingsIntegrationsUpdate))
