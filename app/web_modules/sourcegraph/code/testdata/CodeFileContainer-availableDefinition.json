@@ -46,16 +46,6 @@
 													}
 												]
 											}
-										},
-										{
-											"type": "",
-											"props": {
-												"RepoURI": "aRepo",
-												"Rev": "123abc",
-												"btnSize": "btn-xs",
-												"tooltipPosition": "bottom",
-												"Buildable": false
-											}
 										}
 									]
 								}

@@ -11,7 +11,6 @@
 		<input type="hidden" name="Import" value="{{.Build.Import}}">
 		<input type="hidden" name="Queue" value="true">
 		<input type="hidden" name="UseCache" value="{{.Build.UseCache}}">
-		<input type="hidden" name="Priority" value="{{.Build.Priority}}">
 		<input type="hidden" name="Force" value="true">
 		<button
 		{{if not .Commit}}disabled{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}disabled{{end}}
@@ -41,19 +40,6 @@
 					{{if not .Build.EndedAt}}<tr><th>Started</th><td>{{template "TimeAgo" .Build.StartedAt}}</td></tr>{{end}}
 					{{if .Build.EndedAt}}<tr><th>Ended</th><td>{{template "TimeAgo" .Build.EndedAt}}</td></tr>{{end}}
 					{{if .Build.StartedAt}}<tr><th>Elapsed</th><td>{{duration .Build.StartedAt (minTime .Build.EndedAt now)}}</td></tr>{{end}}
-					<tr>
-						<th>Priority</th>
-						<td>
-							{{.Build.Priority}}
-							{{if and .CurrentUser (not .Build.StartedAt)}}
-							<form method="post" class="build-priority pull-right">
-								<button type="submit" class="btn btn-default btn-xs" name="Priority" value="{{add32 .Build.Priority 1}}" data-tooltip title="Increase build priority by 1">+1</button>
-								<button type="submit" class="btn btn-default btn-xs" name="Priority" value="{{add32 .Build.Priority 5}}" data-tooltip title="Increase build priority by 5">+5</button>
-								<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-							</form>
-							{{end}}
-						</td>
-					</tr>
 				</table>
 			</div>
 		</div>

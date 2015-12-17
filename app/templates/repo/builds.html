@@ -19,7 +19,6 @@
 		<th><a href="{{urlToRepoBuild .Repo .CommitID .Attempt}}">{{.Attempt}}</a></th>
 		<td>
 			{{buildStatus .}}
-			{{template "BuildPriorityLabel" .}}
 		</td>
 		<td>{{template "TimeAgo" .StartedAt}}</td>
 		<td>{{template "TimeAgo" .EndedAt}}</td>

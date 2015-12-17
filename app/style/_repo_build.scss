@@ -16,16 +16,6 @@ header.repo-build {
 
 table.repo-build {
 	th { width: 80px; }
-
-	form.build-priority {
-		.btn {
-			font-weight: bold;
-			color: $gray-light;
-			font-size: 0.8em;
-		}
-		padding-left: 15px;
-		display: inline-block;
-	}
 }
 
 .commit.repo-build {

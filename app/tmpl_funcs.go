@@ -61,7 +61,6 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"pluralize": pluralize,
 	"add":       func(a, b int) int { return a + b },
-	"add32":     func(a, b int32) int32 { return a + b },
 	"min": func(a, b int) int {
 		if a < b {
 			return a
