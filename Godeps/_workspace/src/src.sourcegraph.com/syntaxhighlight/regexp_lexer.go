@@ -1,5 +1,8 @@
 package syntaxhighlight
 
+// Callback invoked after lexer's initialization
+type InitCallback func(self *RegexpLexer, source []byte)
+
 // Lexer that uses mostly RE to produce tokens
 type RegexpLexer struct {
 	// map of rules to produce tokens in form state => []rule
@@ -14,6 +17,8 @@ type RegexpLexer struct {
 	pos int
 	// tokens cache
 	cache []Token
+	// initialization callback
+	initCallback InitCallback
 }
 
 // Registers new RE-based lexer
@@ -21,10 +26,19 @@ type RegexpLexer struct {
 // - mimeTypes - list of supported MIME types (for example, text/x-java)
 // - rules - map(state => array) of lexer rules
 func NewRegexpLexer(extensions []string, mimeTypes []string, rules map[string][]RegexpRule) {
+	NewRegexpLexerWithCallback(extensions, mimeTypes, rules, nil)
+}
+
+// Registers new RE-based lexer with init callback
+// - extensions - list of extensions supported by a given lexer (in form .java, .exe and so on)
+// - mimeTypes - list of supported MIME types (for example, text/x-java)
+// - rules - map(state => array) of lexer rules
+// - initCallback - function to be called at init phase (if not nil)
+func NewRegexpLexerWithCallback(extensions []string, mimeTypes []string, rules map[string][]RegexpRule, initCallback InitCallback) {
 	defs := processTokenDefs(rules)
 	register(extensions, mimeTypes, func() Lexer {
 		var ret Lexer
-		ret = &RegexpLexer{rules: defs}
+		ret = &RegexpLexer{rules: defs, initCallback: initCallback}
 		return ret
 	})
 }
@@ -35,6 +49,9 @@ func (self *RegexpLexer) Init(source []byte) {
 	self.statestack = []string{`root`}
 	self.pos = 0
 	self.cache = make([]Token, 0, 10)
+	if self.initCallback != nil {
+		self.initCallback(self, source)
+	}
 }
 
 // Produces tokens using RE
