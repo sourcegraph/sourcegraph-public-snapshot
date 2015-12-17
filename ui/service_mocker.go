@@ -27,14 +27,14 @@ type serviceMocker struct {
 // the asked for mock data will be decoded. Wherever matched, those values will
 // be used as mock data for any function that returns them.
 type mockPayload struct {
-	Repo          *sourcegraph.Repo          `json:",omitempty"`
-	Commit        *vcs.Commit                `json:",omitempty"`
-	RepoBuildInfo *sourcegraph.Build `json:",omitempty"`
-	RepoConfig    *sourcegraph.RepoConfig    `json:",omitempty"`
-	TreeEntry     *sourcegraph.TreeEntry     `json:",omitempty"`
-	Def           *sourcegraph.Def           `json:",omitempty"`
-	DefList       *sourcegraph.DefList       `json:",omitempty"`
-	Examples      *sourcegraph.ExampleList   `json:",omitempty"`
+	Repo          *sourcegraph.Repo        `json:",omitempty"`
+	Commit        *vcs.Commit              `json:",omitempty"`
+	RepoBuildInfo *sourcegraph.Build       `json:",omitempty"`
+	RepoConfig    *sourcegraph.RepoConfig  `json:",omitempty"`
+	TreeEntry     *sourcegraph.TreeEntry   `json:",omitempty"`
+	Def           *sourcegraph.Def         `json:",omitempty"`
+	DefList       *sourcegraph.DefList     `json:",omitempty"`
+	Examples      *sourcegraph.ExampleList `json:",omitempty"`
 }
 
 // Mock sets the services and the API client to their mock implementation, as well
