@@ -86,7 +86,7 @@ spec:
           mountPath: /home/sourcegraph/.sourcegraph
         ports:
         - containerPort: 3080
-        protocol: TCP
+          protocol: TCP
         ports:
         - containerPort: 3443
           protocol: TCP
@@ -100,7 +100,6 @@ spec:
           pdName: sourcegraph-config
           fsType: "ext4"
       restartPolicy: Always
-      pullPolicy: Always
 ```
 
 Then, create your Replication Controller:
