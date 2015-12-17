@@ -59,7 +59,6 @@ pre code, .line-numbered-code td {
 		margin: 0 -1.7px;
 		text-decoration: none;
 		border-radius: 2px;
-		border: solid 1px transparent;
 		display: inline-block;
 
 		&.highlight, &.highlight-primary, &.highlight-mainbox-primary {
@@ -67,7 +66,7 @@ pre code, .line-numbered-code td {
 				background-color: $highlight-ref-bg !important;
 			}
 			background: $highlight-ref-bg;
-			border: $highlight-ref-border;
+			box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
 			-webkit-filter: brightness(0.9) contrast(1.55);
 		}
 		&.highlight-secondary, &.highlight-mainbox-secondary {
@@ -75,7 +74,7 @@ pre code, .line-numbered-code td {
 				background-color: $highlight-ref-secondary-bg !important;
 			}
 			background: $highlight-ref-secondary-bg;
-			border: $highlight-ref-secondary-border;
+			box-shadow: inset 0px 0px 0px 1px $highlight-ref-secondary-border;
 			-webkit-filter: brightness(1.0) contrast(1.2);
 		}
 
@@ -212,7 +211,7 @@ pre code, .line-numbered-code td {
 		a.ref {
 			&:hover {
 				background: $highlight-ref-bg;
-				border: $highlight-ref-border;
+				box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
 				-webkit-filter: brightness(0.9) contrast(1.55);
 			}
 		}

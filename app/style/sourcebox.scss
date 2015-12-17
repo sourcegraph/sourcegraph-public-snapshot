@@ -100,7 +100,7 @@ $line-number-width: 40px;
 @-webkit-keyframes yellow-fade {
 	0% {
 		background: $highlight-ref-bg;
-		border: $highlight-ref-border;
+		box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
 	}
 }
 
@@ -108,6 +108,6 @@ $line-number-width: 40px;
 @keyframes yellow-fade {
 	0% {
 		background: $highlight-ref-bg;
-		border: $highlight-ref-border;
+		box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
 	}
 }
