@@ -1,0 +1,193 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "reaction-list",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "reactions",
+						"children": [
+							{
+								"type": "div",
+								"key": "+1",
+								"props": {
+									"className": "reaction reaction-list-item user-reacted",
+									"style": {
+										"position": "relative"
+									},
+									"children": [
+										{
+											"type": "Tooltip",
+											"props": {
+												"children": [
+													{
+														"type": "b",
+														"props": {
+															"children": [
+																"user1"
+															]
+														}
+													},
+													" reacted with ",
+													{
+														"type": "b",
+														"props": {
+															"children": [
+																"+1"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "img",
+											"props": {
+												"className": "emoji",
+												"src": "https://twemoji.maxcdn.com/72x72/1f44d.png"
+											}
+										},
+										{
+											"type": "b",
+											"props": {
+												"children": [
+													"1"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": "rocket",
+								"props": {
+									"className": "reaction reaction-list-item",
+									"style": {
+										"position": "relative"
+									},
+									"children": [
+										{
+											"type": "Tooltip",
+											"props": {
+												"children": [
+													{
+														"type": "b",
+														"props": {
+															"children": [
+																"user2"
+															]
+														}
+													},
+													" reacted with ",
+													{
+														"type": "b",
+														"props": {
+															"children": [
+																"rocket"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "img",
+											"props": {
+												"className": "emoji",
+												"src": "https://twemoji.maxcdn.com/72x72/1f680.png"
+											}
+										},
+										{
+											"type": "b",
+											"props": {
+												"children": [
+													"1"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": "whale",
+								"props": {
+									"className": "reaction reaction-list-item user-reacted",
+									"style": {
+										"position": "relative"
+									},
+									"children": [
+										{
+											"type": "Tooltip",
+											"props": {
+												"children": [
+													{
+														"type": "b",
+														"props": {
+															"children": [
+																"user1, and user2"
+															]
+														}
+													},
+													" reacted with ",
+													{
+														"type": "b",
+														"props": {
+															"children": [
+																"whale"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "img",
+											"props": {
+												"className": "emoji",
+												"src": "https://twemoji.maxcdn.com/72x72/1f433.png"
+											}
+										},
+										{
+											"type": "b",
+											"props": {
+												"children": [
+													"2"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "reaction-list-item add-reaction",
+						"children": [
+							{
+								"type": "i",
+								"props": {
+									"className": "fa fa-smile-o"
+								}
+							},
+							{
+								"type": "sup",
+								"props": {
+									"children": [
+										"+"
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}
