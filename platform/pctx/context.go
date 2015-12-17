@@ -63,12 +63,17 @@ func WithRepoFrameInfo(ctx context.Context, r *http.Request) (context.Context, e
 // - CSRF Token
 // - BaseURI
 func WithRepoSearchInfo(ctx context.Context, r *http.Request) (context.Context, error) {
+	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+	if err != nil {
+		return nil, err
+	}
 	baseURI, err := repoSearchBaseURI(ctx, r)
 	if err != nil {
 		return nil, err
 	}
 
 	ctx = context.WithValue(ctx, csrfTokenKey, nosurf.Token(r))
+	ctx = context.WithValue(ctx, repoRevSpecKey, repoRevSpec)
 	ctx = context.WithValue(ctx, baseURIKey, baseURI)
 	return ctx, nil
 }
@@ -112,10 +117,16 @@ func repoSearchBaseURI(ctx context.Context, r *http.Request) (string, error) {
 
 	urlVars := []string{
 		"Repo", vars["Repo"],
-		"AppID", vars["AppID"],
+		"App", vars["AppID"],
+		"AppPath", "",
+	}
+	if resolvedRev, exists := vars["ResolvedRev"]; exists {
+		urlVars = append(urlVars, "ResolvedRev", resolvedRev)
+	} else {
+		urlVars = append(urlVars, "Rev", vars["Rev"], "CommitID", vars["CommitID"])
 	}
 
-	baseURI, err := approuter.New(nil).Get(approuter.RepoPlatformSearch).URLPath(urlVars...)
+	baseURI, err := approuter.New(nil).Get(approuter.RepoAppFrame).URLPath(urlVars...)
 	if err != nil {
 		return "", fmt.Errorf("could not produce base URL for search request url %s: %s", r.URL, err)
 	}
