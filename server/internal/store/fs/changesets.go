@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -19,7 +16,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
-	"golang.org/x/tools/godoc/vfs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
@@ -50,7 +46,6 @@ type Changesets struct {
 }
 
 func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegraph.Changeset) error {
-	s.migrate(ctx, repoPath)
 	fs := s.storage(ctx, repoPath)
 	repoVCS, err := store.RepoVCSFromContext(ctx).Open(ctx, repoPath)
 	if err != nil {
@@ -71,24 +66,12 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	}
 	cs.DeltaSpec.Head.CommitID = string(head)
 
-	refStore := s.GitRefStoreFromContext(ctx, repoPath)
-	if err = refStore.UpdateRef("refs/changesets/"+id+"/head", string(head)); err != nil {
-		return err
-	}
 	err = storage.PutJSON(fs, id, changesetMetadataFile, cs)
 	if err == nil {
 		// Update the index with the changeset's current state.
 		s.updateIndex(ctx, fs, cs.ID, true)
 	}
 	return err
-}
-
-func (s *Changesets) GitRefStoreFromContext(ctx context.Context, repo string) GitRefStore {
-	dir := absolutePathForRepo(ctx, repo)
-	if _, err := os.Stat(dir); err != nil {
-		return &noopGitRefStore{}
-	}
-	return &localGitRefStore{dir: dir}
 }
 
 func claimNextChangesetID(sys storage.System) (int64, error) {
@@ -130,7 +113,6 @@ func resolveNextChangesetID(fs storage.System) (int64, error) {
 }
 
 func (s *Changesets) Get(ctx context.Context, repoPath string, ID int64) (*sourcegraph.Changeset, error) {
-	s.migrate(ctx, repoPath)
 	fs := s.storage(ctx, repoPath)
 	cs := &sourcegraph.Changeset{}
 	err := s.unmarshal(fs, ID, changesetMetadataFile, cs)
@@ -138,7 +120,6 @@ func (s *Changesets) Get(ctx context.Context, repoPath string, ID int64) (*sourc
 }
 
 func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changesetID int64, newReview *sourcegraph.ChangesetReview) (*sourcegraph.ChangesetReview, error) {
-	s.migrate(ctx, repoPath)
 	s.fsLock.Lock()
 	defer s.fsLock.Unlock()
 	fs := s.storage(ctx, repoPath)
@@ -159,7 +140,6 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 }
 
 func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID int64) (*sourcegraph.ChangesetReviewList, error) {
-	s.migrate(ctx, repo)
 	fs := s.storage(ctx, repo)
 
 	list := &sourcegraph.ChangesetReviewList{Reviews: []*sourcegraph.ChangesetReview{}}
@@ -178,7 +158,6 @@ func (s *Changesets) unmarshal(fs storage.System, changesetID int64, filename st
 var errInvalidUpdateOp = errors.New("invalid update operation")
 
 func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	s.migrate(ctx, opt.Op.Repo.URI)
 	fs := s.storage(ctx, opt.Op.Repo.URI)
 
 	op := opt.Op
@@ -210,19 +189,12 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	}
 
 	id := strconv.FormatInt(current.ID, 10)
-	refStore := s.GitRefStoreFromContext(ctx, opt.Op.Repo.URI)
 	if opt.Head != "" {
 		// We need to track the tip of this branch so that we can access its
 		// data even after a potential deletion or merge.
-		if err := refStore.UpdateRef("refs/changesets/"+id+"/head", opt.Head); err != nil {
-			return nil, err
-		}
 		after.DeltaSpec.Head.CommitID = opt.Head
 	}
 	if opt.Base != "" {
-		if err := refStore.UpdateRef("refs/changesets/"+id+"/base", opt.Base); err != nil {
-			return nil, err
-		}
 		after.DeltaSpec.Base.CommitID = opt.Base
 	}
 
@@ -267,7 +239,6 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 }
 
 func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeOp) error {
-	s.migrate(ctx, opt.Repo.URI)
 	cs, _ := s.Get(ctx, opt.Repo.URI, opt.ID)
 	base, head := cs.DeltaSpec.Base.Rev, cs.DeltaSpec.Head.Rev
 	if cs.Merged {
@@ -316,11 +287,11 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		repoPath = absolutePathForRepo(ctx, repo.URI)
 	}
 
-	rs, err := NewRepoStage(repoPath, base, auth)
+	rs, err := changesetsNewRepoStage(repoPath, base, auth)
 	if err != nil {
 		return err
 	}
-	defer rs.Free()
+	defer rs.free()
 
 	p := notif.PersonFromContext(ctx)
 	if err != nil {
@@ -332,10 +303,10 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		Date:  pbtypes.NewTimestamp(time.Now()),
 	}
 
-	if err := rs.Pull(head, opt.Squash); err != nil {
+	if err := rs.pull(head, opt.Squash); err != nil {
 		return err
 	}
-	if err := rs.Commit(merger, merger, msg); err != nil {
+	if err := rs.commit(merger, merger, msg); err != nil {
 		return err
 	}
 
@@ -365,7 +336,6 @@ func shouldRegisterEvent(op *sourcegraph.ChangesetUpdateOp) bool {
 }
 
 func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
-	s.migrate(ctx, op.Repo)
 	fs := s.storage(ctx, op.Repo)
 
 	list := sourcegraph.ChangesetList{Changesets: []*sourcegraph.Changeset{}}
@@ -462,7 +432,6 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 }
 
 func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
-	s.migrate(ctx, spec.Repo.URI)
 	fs := s.storage(ctx, spec.Repo.URI)
 	list := sourcegraph.ChangesetEventList{Events: []*sourcegraph.ChangesetEvent{}}
 	err := s.unmarshal(fs, spec.ID, changesetEventsFile, &list.Events)
@@ -564,129 +533,4 @@ func (s *Changesets) indexHas(ctx context.Context, fs storage.System, cid int64,
 
 func (s *Changesets) storage(ctx context.Context, repoPath string) storage.System {
 	return storage.Namespace(ctx, "changesets", repoPath)
-}
-
-var (
-	csMigrateMusMu sync.Mutex
-	csMigrateMus   map[string]*sync.Once
-)
-
-func csGetMigrateOnce(repo string) *sync.Once {
-	csMigrateMusMu.Lock()
-	defer csMigrateMusMu.Unlock()
-	if csMigrateMus == nil {
-		csMigrateMus = map[string]*sync.Once{}
-	}
-	if once, ok := csMigrateMus[repo]; ok {
-		return once
-	}
-	once := &sync.Once{}
-	csMigrateMus[repo] = once
-	return once
-}
-
-func (s *Changesets) migrate(ctx context.Context, repoPath string) {
-	once := csGetMigrateOnce(repoPath)
-	once.Do(func() {
-		system := s.storage(ctx, repoPath)
-		exists, err := system.Exists("meta", "version")
-		if err != nil {
-			log15.Error("Changesets.migrate checking for meta version got", err)
-			return
-		}
-		if exists {
-			// Migration has already happened
-			return
-		}
-		err = s.doMigration(ctx, repoPath, system)
-		if err != nil {
-			log15.Info("Changesets Migration failed", "repo", repoPath, "error", err)
-		}
-	})
-}
-
-func vfsRecursiveCopy(from vfs.FileSystem, to storage.System, dir string) error {
-	children, err := from.ReadDir(dir)
-	if err != nil {
-		return err
-	}
-	bucket := strings.Replace(strings.Trim(dir, "/"), "/", "_", -1)
-	for _, c := range children {
-		p := filepath.Join(dir, c.Name())
-		if c.IsDir() {
-			err = vfsRecursiveCopy(from, to, p)
-			if err != nil {
-				return err
-			}
-			if _, err := strconv.Atoi(c.Name()); err == nil && bucket == "" {
-				// Top-level directories we need to remember
-				// since they are changesets
-				err = to.Put(changesetIndexAllDir, c.Name(), []byte{})
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			if bucket == "" {
-				// We ignore top-level files
-				continue
-			}
-			src, err := from.Open(p)
-			if err != nil {
-				return err
-			}
-			b, err := ioutil.ReadAll(src)
-			src.Close()
-			if err != nil {
-				return err
-			}
-			err = to.Put(bucket, c.Name(), b)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-type refResolver interface {
-	ResolveRef(name string) (vcs.CommitID, error)
-}
-
-func getOldChangesets(ctx context.Context, repo string) (vfs.FileSystem, error) {
-	dir := absolutePathForRepo(ctx, repo)
-	r, err := vcs.Open("git", dir)
-	if err != nil {
-		return nil, err
-	}
-	refResolver, ok := r.(refResolver)
-	if !ok {
-		return nil, os.ErrNotExist
-	}
-	cid, err := refResolver.ResolveRef("refs/src/review")
-	if err == vcs.ErrRefNotFound {
-		return nil, os.ErrNotExist
-	}
-	return r.FileSystem(cid)
-}
-
-func (s *Changesets) doMigration(ctx context.Context, repo string, to storage.System) error {
-	from, err := getOldChangesets(ctx, repo)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-		// Changesets is empty, no migration necessary
-	} else {
-		log15.Info("Starting migration of Changesets to Platform Storage", "repo", repo)
-		err = vfsRecursiveCopy(from, to, "/")
-		if err != nil {
-			return err
-		}
-		log15.Info("Finished migration of Changesets to Platform Storage", "repo", repo)
-	}
-	version := struct {
-		Version int
-	}{1}
-	return storage.PutJSON(to, "meta", "version", version)
 }
