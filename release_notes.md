@@ -1,3 +1,11 @@
+# dev
+
+- Eliminate the display of definition names on the repository
+  directory view (beside directory entries). This feature was not very
+  useful and removing it improves performance. This means the
+  `--app.disable-dir-defs` and `DisableDirDefs` configs no longer
+  exist.
+
 # 0.8.15
 
 - Change user authentication to be managed locally (not via OAuth2 to Sourcegraph.com)

@@ -522,16 +522,8 @@ var _ interface {
 func newIndexedUnitStore(fs rwvfs.FileSystem, label string) UnitStoreImporter {
 	return &indexedUnitStore{
 		indexes: map[string]Index{
-			"path_to_def":  &defPathIndex{},
-			"file_to_refs": &refFileIndex{},
-			"file_to_7_exported_non_local_defs": &defFilesIndex{
-				filters: []DefFilter{
-					DefFilterFunc(func(def *graph.Def) bool {
-						return def.Exported || !def.Local
-					}),
-				},
-				perFile: 7,
-			},
+			"path_to_def":      &defPathIndex{},
+			"file_to_refs":     &refFileIndex{},
 			defToRefsIndexName: &defRefsIndex{},
 			defQueryIndexName:  &defQueryIndex{f: defQueryFilter},
 		},

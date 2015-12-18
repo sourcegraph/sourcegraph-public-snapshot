@@ -10,7 +10,6 @@ var MarkdownView = require("./components/MarkdownView");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
 var RepoCloneBox = require("./components/RepoCloneBox");
-var TreeEntryDefs = require("./components/TreeEntryDefs");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var AlertView = require("./components/AlertView");
 var CodeFileRange = require("./components/CodeFileRange");
@@ -146,19 +145,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				HTTPCloneURL={el.dataset.httpCloneUrl}/>, el
 		);
 	}
-
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryDefs]"), [])
-	.forEach(function(e) {
-		ReactDOM.render(
-			<TreeEntryDefs
-				repo={e.dataset.repo}
-				commit={e.dataset.commit}
-				rev={e.dataset.rev}
-				path={e.dataset.path}
-				isFile={e.dataset.isDir !== "true"} />,
-			e
-		);
-	});
 
 	el = document.querySelector("[data-react=TreeEntrySearch]");
 	if (el) {

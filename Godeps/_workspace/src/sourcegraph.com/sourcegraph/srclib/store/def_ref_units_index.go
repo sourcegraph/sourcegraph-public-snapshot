@@ -13,7 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
-// NOTE(sqs): There is a lot of duplication here with defFilesIndex and unitFilesIndex.
+// NOTE(sqs): There is a lot of duplication here with unitFilesIndex.
 
 // defRefUnitsIndex makes it fast to determine which source units
 // contain refs to a def.

@@ -219,23 +219,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 		overflow: hidden;
 	}
 
-	ul.defs {
-		white-space: nowrap;
-		overflow: hidden;
-		margin: 0;
-		li {
-			padding: 0 2px;
-			&, a {
-				font-family: $font-family-monospace;
-				color: $gray;
-				font-size: 12px;
-			}
-			&::after { content: ","; }
-			.more::after, &:last-child::after { content: ""; }
-			code { padding: 0; }
-		}
-	}
-
 	span.dim {
 		color: $gray-light;
 	}
@@ -248,10 +231,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 	tbody > tr > td {
 		border-top: 1px solid #eee;
-	}
-
-	td.name-thin {
-			width: 250px;
 	}
 
 	margin-bottom: 30px;

@@ -12,8 +12,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/util"
 )
 
-// NOTE(sqs): There is a lot of duplication here with defFilesIndex.
-
 // unitFilesIndex makes it fast to determine which source units
 // contain a file (or files in a dir).
 type unitFilesIndex struct {

@@ -59,19 +59,9 @@
 		{{$isDir := eq .Type.String "DirEntry"}}
 		<tr class="entry">
 			<td class="icon"><i class="fa {{if eq .Type.String "FileEntry"}}fa-file-text-o{{else if eq .Type.String "DirEntry"}}fa-folder{{else}}fa-file-o{{end}}"></i></td>
-			<td class="name {{if not appconf.DisableDirDefs}}name-thin{{end}}">
+			<td class="name">
 				<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
 			</td>
-			{{if not appconf.DisableDirDefs}}
-			<td class="defs">
-				<div data-react="TreeEntryDefs"
-					data-repo="{{$repo.URI}}"
-					data-rev="{{$repoRevSpec.Rev}}"
-					data-commit="{{$repoRevSpec.CommitID}}"
-					data-path="{{$fullPath}}"
-					data-is-dir="{{$isDir}}"></div>
-			</td>
-			{{end}}
 		</tr>
 	{{end}}
 	</table>
