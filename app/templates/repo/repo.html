@@ -1,6 +1,6 @@
 {{define "Body"}}
 
-<div class="repo-body {{if hasField . "FullWidth"}}{{if .FullWidth}}repo-body-full-width{{end}}{{end}}" data-pjax-container id="repo-pjax-container">
+<div class="repo-body {{if hasField . "FullWidth"}}{{if .FullWidth}}repo-body-full-width{{end}}{{end}}">
 	{{template "RepoBody" $}}
 </div>
 <script ignore-csp>
@@ -9,10 +9,6 @@
 	}
 </script>
 
-{{end}}
-
-{{define "RepoPJAX"}}
-{{template "RepoBody" $}}
 {{end}}
 
 {{define "RepoNotYetBuiltAlert"}}

@@ -233,16 +233,10 @@ type Common struct {
 	HideMOTD bool
 }
 
-func executeTemplateBase(w http.ResponseWriter, templateName, templateSubName string, data interface{}) error {
+func executeTemplateBase(w http.ResponseWriter, templateName string, data interface{}) error {
 	t := Get(templateName)
 	if t == nil {
 		return fmt.Errorf("Template %s not found", templateName)
-	}
-	if templateSubName != "" {
-		t = t.Lookup(templateSubName)
-		if t == nil {
-			return fmt.Errorf("Template %s %s not found", templateName, templateSubName)
-		}
 	}
 	return t.Execute(w, data)
 }
@@ -352,20 +346,12 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		bw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	}
 
-	// Cache pjax and normal responses separately.
-	bw.Header().Add("vary", "X-Pjax")
-
 	bw.WriteHeader(status)
 	if status == http.StatusNotModified {
 		return nil
 	}
 
-	templateSubName := ""
-	if usePJAX, tmplName := checkPJAX(req); usePJAX {
-		templateSubName = tmplName
-	}
-
-	if err := executeTemplateBase(&bw, name, templateSubName, data); err != nil {
+	if err := executeTemplateBase(&bw, name, data); err != nil {
 		return err
 	}
 
@@ -421,24 +407,3 @@ func parseHTMLTemplates(sets [][]string, layout []string) error {
 
 // FuncMap is the template func map passed to each template.
 var FuncMap htmpl.FuncMap
-
-// checkPJAX returns whether the request is for a partial PJAX page,
-// and which PJAX html/template to use (default is "PJAX").
-func checkPJAX(r *http.Request) (usePJAX bool, tmplName string) {
-	v := r.Header.Get("x-pjax-container")
-	if v == "" {
-		return false, ""
-	}
-	if tmplName, ok := pjaxDOMIDToTemplate[v]; ok {
-		return true, tmplName
-	}
-	return true, "PJAX"
-}
-
-// pjaxDOMIDToTemplate maps PJAX container names in the DOM (e.g.,
-// #repo-pjax-container) to the html/template name that should replace
-// that DOM element (e.g., RepoPJAX). If none is specified for a DOM
-// ID, the default template name is "PJAX".
-var pjaxDOMIDToTemplate = map[string]string{
-	"#repo-pjax-container": "RepoPJAX",
-}
