@@ -26,11 +26,10 @@ class ReactionList extends Component {
 	}
 
 	_onSelect(reaction) {
-		this.state.onSelect(reaction);
 		// TODO A normal call to setState here does not work due to side-effects
 		// of React's buffered updates to this.state and the behavior of
 		// Component._updateState.
-		this.setState({}, () => this.setState({menu: null}));
+		this.setState({menu: null}, () => { this.state.onSelect(reaction); });
 	}
 
 	render() {
