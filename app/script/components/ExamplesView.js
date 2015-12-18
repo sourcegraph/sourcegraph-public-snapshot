@@ -132,7 +132,7 @@ function SnippetToBreadcrumb(repo, rev, path, startLine, endLine, defURL, cb) {
 		var linktext = segs[i];
 		if (i === segs.length - 1 && startLine !== 0) {
 			linktext += endLine !== 0 ? `:${startLine}-${endLine}` : `:${startLine}`;
-			var href = `${router.fileURL(repo, rev, path)}#startline=${startLine}&endline=${endLine}&defUrl=${defURL}`;
+			var href = `${router.fileURL(repo, rev, path)}?startline=${startLine}&endline=${endLine}&defUrl=${defURL}`;
 
 			breadcrumb.push(
 				<a key={repo+rev+path+defURL+linktext}
