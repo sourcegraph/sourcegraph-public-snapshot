@@ -118,7 +118,12 @@ func (s *Invites) Delete(ctx context.Context, token string) error {
 }
 
 func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
-	_, err := dbh(ctx).Exec(`DELETE FROM invites WHERE "email" = $1;`, email)
+	res, err := dbh(ctx).Exec(`DELETE FROM invites WHERE "email" = $1;`, email)
+	if n, err := res.RowsAffected(); err != nil {
+		return err
+	} else if n == 0 {
+		return errors.New("not found")
+	}
 	return err
 }
 
