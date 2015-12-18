@@ -77,7 +77,16 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 		if len(lastPathCommit.Commits) != 1 {
 			return nil, grpc.Errorf(codes.NotFound, "no commits found for path %q in repo %v", entry.Path, entry.RepoRev)
 		}
-		base = string(lastPathCommit.Commits[0].ID) + "~1" // make it inclusive of the base
+		lastPathCommitID := string(lastPathCommit.Commits[0].ID)
+		if entry.RepoRev.CommitID == lastPathCommitID {
+			// We have already looked checked if we have a build
+			// for entry.RepoRev.CommitID, so there is no hope to
+			// finding an earlier srclib-built commit that we can
+			// use.
+			return nil, grpc.Errorf(codes.NotFound, "no srclib data version found for head commit %v (can't look-back because path  was last modified by head commit)", entry.RepoRev)
+
+		}
+		base = lastPathCommitID + "~1" // make it inclusive of the base
 	}
 
 	// TODO(beyang): move clcache flag into lookbackLimit flag
