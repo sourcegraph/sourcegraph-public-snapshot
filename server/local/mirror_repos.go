@@ -107,12 +107,14 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		return err
 	}
 
-	if gitRepo, ok := vcsRepo.(*gitcmd.Repository); ok && len(updateResult.Changes) > 0 {
+	// TODO(slimsag): instead of using CrossRepo here; add a vcs.Cleaner interface
+	// which invokes 'git gc' or relevant cousin depending on vcs backend.
+	if gitRepo, ok := vcsRepo.(gitcmd.CrossRepo); ok && len(updateResult.Changes) > 0 {
 		go func() {
 			activeGitGC.Inc()
 			defer activeGitGC.Dec()
 			gcCmd := exec.Command("git", "gc")
-			gcCmd.Dir = gitRepo.RepoDir()
+			gcCmd.Dir = gitRepo.GitRootDir()
 			gcCmd.Run() // ignore error
 		}()
 	}
