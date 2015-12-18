@@ -166,17 +166,3 @@ function listAffectedClients(routeVars, opt) {
 	});
 }
 exports.listAffectedClients = listAffectedClients;
-
-function renderMarkdown(markdown, checkboxes, cb) {
-	return $.ajax({
-		url: "/.api/markdown",
-		method: "post",
-		data: JSON.stringify({
-			Markdown: markdown,
-			RenderCheckboxes: checkboxes,
-		}),
-		success: cb.success,
-		error: cb.error,
-	});
-}
-exports.renderMarkdown = renderMarkdown;
