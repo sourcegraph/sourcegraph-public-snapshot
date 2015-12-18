@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
+	appconf "src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -27,17 +28,18 @@ func (g *gitHookListener) Scopes() []string {
 }
 
 func (g *gitHookListener) Start(ctx context.Context) {
-	notifyCallback := func(id events.EventID, p events.GitPayload) {
-		notifyGitEvent(ctx, id, p)
+	if !appconf.Flags.DisableGitNotify {
+		notifyCallback := func(id events.EventID, p events.GitPayload) {
+			notifyGitEvent(ctx, id, p)
+		}
+		events.Subscribe(events.GitPushEvent, notifyCallback)
+		events.Subscribe(events.GitCreateBranchEvent, notifyCallback)
+		events.Subscribe(events.GitDeleteBranchEvent, notifyCallback)
 	}
+
 	buildCallback := func(id events.EventID, p events.GitPayload) {
 		buildHook(ctx, id, p)
 	}
-
-	events.Subscribe(events.GitPushEvent, notifyCallback)
-	events.Subscribe(events.GitCreateBranchEvent, notifyCallback)
-	events.Subscribe(events.GitDeleteBranchEvent, notifyCallback)
-
 	events.Subscribe(events.GitPushEvent, buildCallback)
 	events.Subscribe(events.GitCreateBranchEvent, buildCallback)
 }
