@@ -50,6 +50,10 @@ type Invites interface {
 	// created from this invite, to prevent creation of multiple accounts.
 	Delete(ctx context.Context, token string) error
 
+	// DeleteByEmail removes the invite for the given email. If no
+	// such invite exists, an error is returned.
+	DeleteByEmail(ctx context.Context, email string) error
+
 	// List fetches all pending invites on this server.
 	List(ctx context.Context) ([]*sourcegraph.AccountInvite, error)
 }

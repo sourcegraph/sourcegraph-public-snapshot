@@ -78,6 +78,7 @@ type Invites struct {
 	Retrieve_       func(ctx context.Context, token string) (*sourcegraph.AccountInvite, error)
 	MarkUnused_     func(ctx context.Context, token string) error
 	Delete_         func(ctx context.Context, token string) error
+	DeleteByEmail_  func(ctx context.Context, email string) error
 	List_           func(ctx context.Context) ([]*sourcegraph.AccountInvite, error)
 }
 
@@ -94,6 +95,10 @@ func (s *Invites) MarkUnused(ctx context.Context, token string) error {
 }
 
 func (s *Invites) Delete(ctx context.Context, token string) error { return s.Delete_(ctx, token) }
+
+func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
+	return s.DeleteByEmail_(ctx, email)
+}
 
 func (s *Invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) { return s.List_(ctx) }
 

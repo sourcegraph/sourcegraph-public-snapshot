@@ -208,6 +208,32 @@ func (s *CachedAccountsClient) ListInvites(ctx context.Context, in *pbtypes.Void
 	return result, nil
 }
 
+func (s *CachedAccountsClient) DeleteInvite(ctx context.Context, in *InviteSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "Accounts.DeleteInvite", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.AccountsClient.DeleteInvite(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Accounts.DeleteInvite", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 func (s *CachedAccountsClient) Delete(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	if s.Cache != nil {
 		var cachedResult pbtypes.Void

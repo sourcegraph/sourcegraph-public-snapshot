@@ -299,6 +299,25 @@ func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegra
 	return &sourcegraph.AccountInviteList{Invites: invites}, err
 }
 
+func (s *accounts) DeleteInvite(ctx context.Context, inviteSpec *sourcegraph.InviteSpec) (*pbtypes.Void, error) {
+	defer noCache(ctx)
+
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.DeleteInvite"); err != nil {
+		return nil, err
+	}
+
+	invitesStore := store.InvitesFromContextOrNil(ctx)
+	if invitesStore == nil {
+		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+	}
+
+	if err := invitesStore.DeleteByEmail(ctx, inviteSpec.Email); err != nil {
+		return nil, err
+	}
+
+	return &pbtypes.Void{}, nil
+}
+
 var validLoginRE = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 
 func isValidLogin(login string) bool {

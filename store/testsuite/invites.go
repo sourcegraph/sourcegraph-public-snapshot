@@ -76,4 +76,19 @@ func Invites_test(ctx context.Context, t *testing.T, s store.Invites) {
 	if err == nil {
 		t.Errorf("expected error with invalid access, got nil")
 	}
+
+	// Recreate to test DeleteByEmail.
+	token, err = s.CreateOrUpdate(ctx, &sourcegraph.AccountInvite{Email: "u@d.com", Write: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteByEmail(ctx, "u@d.com"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Retrieve(ctx, token); err == nil {
+		t.Errorf("expected error retrieving deleted token, got nil")
+	}
+	if err := s.DeleteByEmail(ctx, "u@d.com"); err == nil {
+		t.Errorf("expected error deleting already deleted token, got nil")
+	}
 }

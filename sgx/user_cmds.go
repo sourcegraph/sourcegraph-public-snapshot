@@ -44,6 +44,15 @@ func init() {
 		log.Fatal(err)
 	}
 
+	_, err = userGroup.AddCommand("rm-invite",
+		"remove an existing, not-yet-accepted invite",
+		"Remove an existing, not-yet-accepted invite.",
+		&userRmInviteCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	listCmd, err := userGroup.AddCommand("list",
 		"list users",
 		"List users.",
@@ -175,6 +184,30 @@ func (c *userInviteCmd) Execute(args []string) error {
 
 	if success {
 		fmt.Println("# Share the above link with the user(s) to accept the invite")
+	}
+
+	return nil
+}
+
+type userRmInviteCmd struct {
+	Args struct {
+		Emails []string `value-name:"EMAILS" description:"user emails"`
+	} `positional-args:"yes"`
+}
+
+func (c *userRmInviteCmd) Execute(args []string) error {
+	cl := Client()
+
+	if len(c.Args.Emails) == 0 {
+		return fmt.Errorf(`Must specify at least one email (e.g. "src user rm-invite EMAIL")`)
+	}
+
+	for _, email := range c.Args.Emails {
+		_, err := cl.Accounts.DeleteInvite(cliCtx, &sourcegraph.InviteSpec{Email: email})
+		if err != nil {
+			return fmt.Errorf("deleting invite for %s: %s", email, err)
+		}
+		log.Printf("%s: deleted invite", email)
 	}
 
 	return nil

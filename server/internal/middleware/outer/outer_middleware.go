@@ -421,6 +421,35 @@ func (s wrappedAccounts) ListInvites(ctx context.Context, v1 *pbtypes.Void) (*so
 	return rv, nil
 }
 
+func (s wrappedAccounts) DeleteInvite(ctx context.Context, v1 *sourcegraph.InviteSpec) (*pbtypes.Void, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AccountsOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Accounts")
+	}
+
+	rv, err := innerSvc.DeleteInvite(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
 func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)

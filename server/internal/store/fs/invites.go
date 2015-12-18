@@ -186,6 +186,26 @@ func (s *Invites) Delete(ctx context.Context, token string) error {
 	return errors.New("not found")
 }
 
+func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
+	invites, err := readInvitesDB(ctx)
+	if err != nil {
+		return err
+	}
+
+	var keepInvites []*dbInvites
+	for _, invite := range invites {
+		if invite.Email == email {
+			continue // skip
+		}
+		keepInvites = append(keepInvites, invite)
+	}
+
+	if len(keepInvites) == len(invites) {
+		return errors.New("not found")
+	}
+	return writeInvitesDB(ctx, keepInvites)
+}
+
 func (s *Invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
 	accountInvites := make([]*sourcegraph.AccountInvite, 0)
 	invitesList, err := readInvitesDB(ctx)

@@ -114,6 +114,7 @@ It has these top-level messages:
 	NewPassword
 	NewAccount
 	AccountInvite
+	InviteSpec
 	PendingInvite
 	AccountInviteList
 	AcceptedInvite
@@ -1768,6 +1769,16 @@ type AccountInvite struct {
 func (m *AccountInvite) Reset()         { *m = AccountInvite{} }
 func (m *AccountInvite) String() string { return proto.CompactTextString(m) }
 func (*AccountInvite) ProtoMessage()    {}
+
+// An InviteSpec specifies an existing invite.
+type InviteSpec struct {
+	// Email is the email address for which the invite was generated.
+	Email string `protobuf:"bytes,1,opt,name=email,proto3" json:",omitempty"`
+}
+
+func (m *InviteSpec) Reset()         { *m = InviteSpec{} }
+func (m *InviteSpec) String() string { return proto.CompactTextString(m) }
+func (*InviteSpec) ProtoMessage()    {}
 
 type PendingInvite struct {
 	// Link is the URL for signing up using this invite.
@@ -5130,6 +5141,8 @@ type AccountsClient interface {
 	AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error)
 	// ListInvites lists the pending invites on this server.
 	ListInvites(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AccountInviteList, error)
+	// DeleteInvite deletes an existing invite.
+	DeleteInvite(ctx context.Context, in *InviteSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Delete deletes a user account from this server.
 	Delete(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
@@ -5205,6 +5218,15 @@ func (c *accountsClient) ListInvites(ctx context.Context, in *pbtypes1.Void, opt
 	return out, nil
 }
 
+func (c *accountsClient) DeleteInvite(ctx context.Context, in *InviteSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/DeleteInvite", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *accountsClient) Delete(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
 	out := new(pbtypes1.Void)
 	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/Delete", in, out, c.cc, opts...)
@@ -5232,6 +5254,8 @@ type AccountsServer interface {
 	AcceptInvite(context.Context, *AcceptedInvite) (*UserSpec, error)
 	// ListInvites lists the pending invites on this server.
 	ListInvites(context.Context, *pbtypes1.Void) (*AccountInviteList, error)
+	// DeleteInvite deletes an existing invite.
+	DeleteInvite(context.Context, *InviteSpec) (*pbtypes1.Void, error)
 	// Delete deletes a user account from this server.
 	Delete(context.Context, *PersonSpec) (*pbtypes1.Void, error)
 }
@@ -5324,6 +5348,18 @@ func _Accounts_ListInvites_Handler(srv interface{}, ctx context.Context, dec fun
 	return out, nil
 }
 
+func _Accounts_DeleteInvite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(InviteSpec)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AccountsServer).DeleteInvite(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func _Accounts_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(PersonSpec)
 	if err := dec(in); err != nil {
@@ -5367,6 +5403,10 @@ var _Accounts_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListInvites",
 			Handler:    _Accounts_ListInvites_Handler,
+		},
+		{
+			MethodName: "DeleteInvite",
+			Handler:    _Accounts_DeleteInvite_Handler,
 		},
 		{
 			MethodName: "Delete",

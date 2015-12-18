@@ -117,6 +117,11 @@ func (s *Invites) Delete(ctx context.Context, token string) error {
 	return err
 }
 
+func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
+	_, err := dbh(ctx).Exec(`DELETE FROM invites WHERE "email" = $1;`, email)
+	return err
+}
+
 func (s *Invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
 	var invites []*dbInvites
 	err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`)

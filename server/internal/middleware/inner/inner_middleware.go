@@ -326,6 +326,25 @@ func (s wrappedAccounts) ListInvites(ctx context.Context, param *pbtypes.Void) (
 
 }
 
+func (s wrappedAccounts) DeleteInvite(ctx context.Context, param *sourcegraph.InviteSpec) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Accounts", "DeleteInvite", param)
+	defer func() {
+		trace.After(ctx, "Accounts", "DeleteInvite", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Accounts.DeleteInvite")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Accounts
+
+	res, err = target.DeleteInvite(ctx, param)
+	return
+
+}
+
 func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSpec) (res *pbtypes.Void, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Delete", param)

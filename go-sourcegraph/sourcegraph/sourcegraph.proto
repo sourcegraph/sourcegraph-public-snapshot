@@ -1600,6 +1600,13 @@ service Accounts {
 		};
 	};
 
+	// DeleteInvite deletes an existing invite.
+	rpc DeleteInvite(InviteSpec) returns (pbtypes.Void) {
+		option (google.api.http) = {
+			post: "/accounts/delete_invite"
+		};
+	};
+
 	// Delete deletes a user account from this server.
 	rpc Delete(PersonSpec) returns (pbtypes.Void) {
 		option (google.api.http) = {
@@ -1664,6 +1671,12 @@ message AccountInvite {
 
 	// Admin, if set, will grant admin access to the user.
 	bool admin = 3;
+}
+
+// An InviteSpec specifies an existing invite.
+message InviteSpec {
+	// Email is the email address for which the invite was generated.
+	string email = 1;
 }
 
 message PendingInvite {
