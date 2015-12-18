@@ -33,7 +33,7 @@ type logger struct {
 	*log.Logger
 	io.Writer
 	Destination string
-	cMu         sync.Mutex
+	mutex       sync.Mutex
 	c           []io.Closer
 }
 
@@ -44,9 +44,15 @@ type LogWriter interface {
 
 func (x *logger) String() string { return x.Destination }
 
+func (x *logger) Write(p []byte) (n int, err error) {
+	x.mutex.Lock()
+	defer x.mutex.Unlock()
+	return x.Writer.Write(p)
+}
+
 func (x *logger) Close() error {
-	x.cMu.Lock()
-	defer x.cMu.Unlock()
+	x.mutex.Lock()
+	defer x.mutex.Unlock()
 	if len(x.c) == 0 {
 		return nil
 	}
