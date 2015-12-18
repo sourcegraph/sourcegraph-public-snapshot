@@ -15,7 +15,7 @@ var globalOpt struct {
 	Config     func(s string) error `long:"config" description:"INI config file" no-ini:"true"`
 	Verbose    bool                 `short:"v" description:"show verbose output (same as --log-level=dbug)"`
 	VerbosePkg string               `long:"verbose-pkg" description:"if set, only log output from specified package"`
-	LogLevel   string               `long:"log-level" description:"upper log level to restrict log output to (dbug, info, warn, error, crit)" default:"info"`
+	LogLevel   string               `long:"log-level" description:"upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)" default:"info"`
 }
 
 func SetVerbose(v bool) {

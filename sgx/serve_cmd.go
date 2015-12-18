@@ -226,6 +226,13 @@ func (c *ServeCmd) Execute(args []string) error {
 		logHandler = log15.MatchFilterHandler("pkg", globalOpt.VerbosePkg, log15.StderrHandler)
 	}
 
+	// We have some noisey debug logs, so to aid development we have a
+	// special dbug level which excludes the noisey logs
+	if globalOpt.LogLevel == "dbug-dev" {
+		globalOpt.LogLevel = "dbug"
+		logHandler = log15.FilterHandler(noiseyLogFilter, logHandler)
+	}
+
 	// Filter log output by level.
 	lvl, err := log15.LvlFromString(globalOpt.LogLevel)
 	if err != nil {
@@ -1055,4 +1062,17 @@ func serverContextWithStore(serverCtxFunc func(context.Context) context.Context)
 		}
 	}
 	return ctx, nil
+}
+
+func noiseyLogFilter(r *log15.Record) bool {
+	if r.Lvl != log15.LvlDebug {
+		return true
+	}
+	noiseyPrefixes := []string{"gRPC Builds.DequeueNext", "gRPC MirrorRepos.RefreshVCS"}
+	for _, prefix := range noiseyPrefixes {
+		if strings.HasPrefix(r.Msg, prefix) {
+			return false
+		}
+	}
+	return true
 }
