@@ -71,6 +71,9 @@ function createRepoBuild(repoURI, rev) {
 	return $.ajax({
 		url: `/.api/repos/${repoURI}@${rev}/.builds`,
 		method: "post",
+		headers: {
+			"X-Csrf-Token": window._csrfToken,
+		},
 		data: JSON.stringify({
 			Import: true,
 			Queue: true,
