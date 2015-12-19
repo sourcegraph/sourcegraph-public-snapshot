@@ -104,7 +104,8 @@ func (c *WorkCmd) Execute(args []string) error {
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(c.DequeueMsec)))
 				return nil
 			}
-			log.Fatalln("Error dequeuing build: ", err)
+			log.Println("Error dequeuing build: ", err)
+			return nil
 		}
 
 		return build
@@ -178,7 +179,7 @@ func (c *WorkCmd) Execute(args []string) error {
 					if _, in := blacklistedRepos[build.Repo]; in {
 						blog.Printf("Builds for %s are temporarily disabled. Marking as failed and skipping.", build.Repo)
 						if _, err := cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{Build: build.Spec(), Info: sourcegraph.BuildUpdate{Failure: true}}); err != nil {
-							blog.Fatal("Error updating build: ", err)
+							blog.Println("Error updating build: ", err)
 						}
 						return
 					}
@@ -194,7 +195,8 @@ func (c *WorkCmd) Execute(args []string) error {
 						}})
 
 					if err != nil {
-						blog.Fatal("Error updating build: ", err)
+						blog.Println("Error updating build: ", err)
+						return
 					}
 
 					// Run the build (prepare the build directory, run toolchains,
@@ -238,7 +240,7 @@ func (c *WorkCmd) Execute(args []string) error {
 					endUpdate.EndedAt = &now
 					build, err = cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{Build: build.Spec(), Info: endUpdate})
 					if err != nil {
-						blog.Fatal("Error updating build: ", err)
+						blog.Println("Error updating build: ", err)
 					}
 				}()
 			}
