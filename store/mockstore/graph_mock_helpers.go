@@ -32,3 +32,43 @@ func GraphMockUnits(m *store.MockMultiRepoStore, wantUnits ...*unit.SourceUnit) 
 	}
 	return
 }
+
+func GraphMockVersions(m *store.MockMultiRepoStore, wantVersions ...*store.Version) (called *bool) {
+	called = new(bool)
+	m.Versions_ = func(...store.VersionFilter) ([]*store.Version, error) {
+		*called = true
+		return wantVersions, nil
+	}
+	return
+}
+
+// GraphMockVersionsFiltered mocks m.Versions to make it behave as
+// though its underlying storage contains all versions listed in
+// wantVersions. When m.Versions is called with filters, those filters
+// are applied to limit the results to only those versions that match
+// the filters (unlike GraphMockVersions, which ignores the filters).
+func GraphMockVersionsFiltered(m *store.MockMultiRepoStore, wantVersions ...*store.Version) (called *bool) {
+	called = new(bool)
+	m.Versions_ = func(fs ...store.VersionFilter) ([]*store.Version, error) {
+		var vers []*store.Version
+		for _, ver := range wantVersions {
+			if versionFilters(fs).SelectVersion(ver) {
+				vers = append(vers, ver)
+			}
+		}
+		*called = true
+		return vers, nil
+	}
+	return
+}
+
+type versionFilters []store.VersionFilter
+
+func (fs versionFilters) SelectVersion(version *store.Version) bool {
+	for _, f := range fs {
+		if !f.SelectVersion(version) {
+			return false
+		}
+	}
+	return true
+}
