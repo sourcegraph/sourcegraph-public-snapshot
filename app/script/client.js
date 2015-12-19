@@ -71,6 +71,9 @@ function createRepoBuild(repoURI, rev) {
 	return $.ajax({
 		url: `/.api/repos/${repoURI}@${rev}/.builds`,
 		method: "post",
+		headers: {
+			"X-Csrf-Token": window._csrfToken,
+		},
 		data: JSON.stringify({
 			Import: true,
 			Queue: true,
@@ -163,17 +166,3 @@ function listAffectedClients(routeVars, opt) {
 	});
 }
 exports.listAffectedClients = listAffectedClients;
-
-function renderMarkdown(markdown, checkboxes, cb) {
-	return $.ajax({
-		url: "/.api/markdown",
-		method: "post",
-		data: JSON.stringify({
-			Markdown: markdown,
-			RenderCheckboxes: checkboxes,
-		}),
-		success: cb.success,
-		error: cb.error,
-	});
-}
-exports.renderMarkdown = renderMarkdown;
