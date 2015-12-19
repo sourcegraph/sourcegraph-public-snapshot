@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -96,7 +97,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 			return nil, grpc.Errorf(codes.NotFound, "no srclib data version found for head commit %v (can't look-back because path  was last modified by head commit)", entry.RepoRev)
 
 		}
-		base = lastPathCommitID + "~1" // make it inclusive of the base
+		base = lastPathCommitID
 	}
 
 	// TODO(beyang): move clcache flag into lookbackLimit flag
@@ -123,6 +124,14 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	// If we had a base, then the candidateCommits list will exclude
+	// the base (by the specification of git ranges; see `man
+	// gitrevision`). But we want to include the base commit when
+	// searching for versions, so add it back.
+	if base != "" {
+		candidateCommits.Commits = append(candidateCommits.Commits, &vcs.Commit{ID: vcs.CommitID(base)})
 	}
 
 	// Get all srclib built data versions.
