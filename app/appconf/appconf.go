@@ -67,6 +67,8 @@ var Flags struct {
 
 	MirrorRepoUpdateRate              time.Duration `long:"app.mirror-repo-update-rate" description:"rate at which to update mirrored repositories" default:"3s"`
 	DisableMirrorRepoBackgroundUpdate bool          `long:"app.disable-mirror-repo-bg-update" description:"disable updating mirrored repos in the background"`
+
+	DisableGitNotify bool `long:"app.disable-git-notify" description:"disable git notifications"`
 }
 
 func init() {
