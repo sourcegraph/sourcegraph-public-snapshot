@@ -1,10 +1,14 @@
 package local
 
 import (
+	"fmt"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -29,21 +33,27 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		if wasAbs {
 			veryShortCache(ctx)
 		}
+		log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "exact match")
 		return &sourcegraph.SrclibDataVersion{CommitID: vers[0].CommitID, CommitsBehind: 0}, nil
 	}
 
 	if entry.Path == "." {
 		// All commits affect the root, so there is no hope of finding
 		// an earlier srclib-built commit that we can use.
+		log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "no version for root")
 		return nil, grpc.Errorf(codes.NotFound, "no srclib data version found for head commit %v (can't look-back because path is root)", entry.RepoRev)
 	}
 
 	// Do expensive search backwards through history.
 	info, err := s.getSrclibDataVersionForPathLookback(ctx, entry)
 	if err != nil {
+		if errcode.GRPC(err) == codes.NotFound {
+			log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "not found: "+err.Error())
+		}
 		return nil, err
 	}
 	veryShortCache(ctx)
+	log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", fmt.Sprintf("lookback match %+v", info))
 	return info, nil
 }
 
