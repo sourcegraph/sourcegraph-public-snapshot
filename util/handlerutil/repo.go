@@ -346,15 +346,12 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 	cl := APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	// Use most recent build to fetch def for a branch/non-absolute-commit.
-	if len(vc.RepoRevSpec.Rev) != 40 {
-		resolvedRev, _, err := ResolveSrclibDataVersion(ctx, cl, sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
-		if err != nil {
-			return dc, rc, vc, err
-		}
-		vc.RepoRevSpec.CommitID = resolvedRev.CommitID
-		defSpec.CommitID = resolvedRev.CommitID
+	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, cl, sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+	if err != nil {
+		return dc, rc, vc, err
 	}
+	vc.RepoRevSpec.CommitID = resolvedRev.CommitID
+	defSpec.CommitID = resolvedRev.CommitID
 
 	// Insert additional available information into the def.
 	dc.Def.Def.DefKey.CommitID = defSpec.CommitID
