@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	$(document).on("keydown", null, "/", function(e) {
 		if ($(e.target).is("input")) return;
 		setTimeout(function() {
-			$("#nav .tt-input").focus();
+			$("#nav input.search-input").focus();
 		});
 	});
 
