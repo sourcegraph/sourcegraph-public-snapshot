@@ -71,18 +71,18 @@
 						</a>
 					</li>
 					{{end}}
-					{{if not (isOAuthInitPage .TemplateName)}}
 					<li class="sign-in">
 						<a class="sign-in" href="{{urlToWithReturnTo "log-in" .ReturnTo}}">
 							Sign in
 						</a>
 					</li>
-					{{end}}
 				{{end}}
 				{{end}}
 			</ul>
 
-			<div id="SearchBar" class="search-bar"></div>
+			{{if (showSearchForm .Common)}}
+				<div id="SearchBar" class="search-bar"></div>
+			{{end}}
 		</div>
 	</div>
 </nav>
