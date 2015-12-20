@@ -2290,8 +2290,6 @@ type Delta struct {
 	HeadCommit *vcs.Commit `protobuf:"bytes,4,opt,name=head_commit" json:",omitempty"`
 	BaseRepo   *Repo       `protobuf:"bytes,5,opt,name=base_repo" json:",omitempty"`
 	HeadRepo   *Repo       `protobuf:"bytes,6,opt,name=head_repo" json:",omitempty"`
-	BaseBuild  *Build      `protobuf:"bytes,7,opt,name=base_build" json:",omitempty"`
-	HeadBuild  *Build      `protobuf:"bytes,8,opt,name=head_build" json:",omitempty"`
 }
 
 func (m *Delta) Reset()         { *m = Delta{} }

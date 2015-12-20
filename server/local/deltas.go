@@ -3,7 +3,6 @@ package local
 import (
 	"log"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"strings"
@@ -34,7 +33,7 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 		Head: ds.Head,
 	}
 
-	get := func(repo **sourcegraph.Repo, repoRevSpec *sourcegraph.RepoRevSpec, commit **vcs.Commit, build **sourcegraph.Build) error {
+	get := func(repo **sourcegraph.Repo, repoRevSpec *sourcegraph.RepoRevSpec, commit **vcs.Commit) error {
 		var err error
 		*repo, err = svc.Repos(ctx).Get(ctx, &ds.Base.RepoSpec)
 		if err != nil {
@@ -45,23 +44,13 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 			return err
 		}
 		repoRevSpec.CommitID = string((*commit).ID)
-
-		// Get build.
-		build0, err := svc.Builds(ctx).GetRepoBuild(ctx, repoRevSpec)
-		if err != nil && grpc.Code(err) != codes.NotFound {
-			return err
-		}
-		if build0 != nil {
-			*build = build0
-		}
-
 		return nil
 	}
 
-	if err := get(&d.BaseRepo, &d.Base, &d.BaseCommit, &d.BaseBuild); err != nil {
+	if err := get(&d.BaseRepo, &d.Base, &d.BaseCommit); err != nil {
 		return d, err
 	}
-	if err := get(&d.HeadRepo, &d.Head, &d.HeadCommit, &d.HeadBuild); err != nil {
+	if err := get(&d.HeadRepo, &d.Head, &d.HeadCommit); err != nil {
 		return d, err
 	}
 

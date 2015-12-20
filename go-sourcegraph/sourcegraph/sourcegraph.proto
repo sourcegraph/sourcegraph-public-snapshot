@@ -2095,8 +2095,6 @@ message Delta {
 	vcs.Commit head_commit = 4;
 	Repo base_repo = 5;
 	Repo head_repo = 6;
-	Build base_build = 7;
-	Build head_build = 8;
 }
 
 // DeltaAffectedPerson describes a person (registered user or committer email

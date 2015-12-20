@@ -73,12 +73,6 @@ func (d *Delta) DeltaSpec() DeltaSpec {
 	}
 }
 
-// BaseAndHeadBuildsSuccessful returns true iff both the base and head
-// builds are present and ended successfully.
-func (d *Delta) BaseAndHeadBuildsSuccessful() bool {
-	return d.BaseBuild != nil && d.BaseBuild.Success && d.HeadBuild != nil && d.HeadBuild.Success
-}
-
 // Added is whether this represents an added source unit (not present
 // in base, present in head).
 func (ud UnitDelta) Added() bool { return ud.Base == nil && ud.Head != nil }
