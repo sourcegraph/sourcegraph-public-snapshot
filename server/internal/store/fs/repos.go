@@ -204,6 +204,11 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	if dir == absolutePathForRepo(ctx, "") {
 		return nil, errors.New("Repos.Create needs at least one path element")
 	}
+
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		return nil, errors.New("repository already exists")
+	}
+
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return nil, err
 	}
