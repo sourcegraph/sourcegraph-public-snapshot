@@ -31,12 +31,6 @@
 
 				{{if .Repo.GitHub}}
 					<li class="github navbar-right">
-						<a target="_blank" href="{{.Repo.GitHubHTMLURL}}"
-							data-tooltip title="GitHub" data-placement="bottom">
-							<i class="octicon octicon-mark-github"></i><span class="hidden-sm hidden-md hidden-lg">GitHub</span>
-						</a>
-					</li>
-					<li class="github navbar-right">
 						<a target="_blank" href="{{.Repo.GitHubHTMLURL}}/stargazers"
 							data-tooltip title="Stargazers" data-placement="bottom">
 							<i class="octicon octicon-star"></i><span class="txt">{{.Repo.GitHub.Stars}} </span><span class="hidden-sm hidden-md hidden-lg">Stargazers</span>
