@@ -39,9 +39,14 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 	}
 	opt.RepoRev = resolvedRev
 
-	defList, err := apiclient.Search.SearchTokens(ctx, &opt)
-	if err != nil {
-		return err
+	defList := &sourcegraph.DefList{}
+	if dataVer != nil {
+		// Only search if there is a srclib data version (otherwise
+		// there will be no token results).
+		defList, err = apiclient.Search.SearchTokens(ctx, &opt)
+		if err != nil {
+			return err
+		}
 	}
 
 	results := make([]payloads.TokenSearchResult, len(defList.Defs))
