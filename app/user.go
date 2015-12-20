@@ -29,7 +29,7 @@ func serveUser(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	p, spec, err := getUser(r)
+	p, spec, err := getUser(ctx, r)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func serveUserOrgs(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	apiclient := handlerutil.APIClient(r)
 
-	p, spec, err := getUser(r)
+	p, spec, err := getUser(ctx, r)
 	if err != nil {
 		return err
 	}

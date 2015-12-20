@@ -21,7 +21,7 @@ func serveOrgMembers(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	apiclient := handlerutil.APIClient(r)
 
-	p, spec, err := getUser(r)
+	p, spec, err := getUser(ctx, r)
 	if err != nil {
 		return err
 	}
