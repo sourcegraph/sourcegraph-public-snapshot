@@ -3,21 +3,13 @@
 {{end}}
 
 {{define "RepoBody"}}
-<table class="table">
+<table class="table builds">
 	<thead>
-		<tr><th>#</th><th>Commit</th><th>Status</th><th>Started</th><th>Ended</th><th>Elapsed</th></tr>
+		<tr><th>#</th><th>Commit</th><th>Status</th><th>Elapsed</th></tr>
 	</thead>
 	{{range .Builds}}
-	<tr class="{{buildClass .}}">
-		<th><a href="{{urlToRepoBuild .Repo .ID}}">#{{.ID}}</a></th>
-		<td><a href="{{urlToRepoCommit .Repo .CommitID}}"><tt>{{truncateCommitID .CommitID}}</tt></a></td>
-		<td>
-			{{buildStatus .}}
-		</td>
-		<td>{{template "TimeAgo" .StartedAt}}</td>
-		<td>{{template "TimeAgo" .EndedAt}}</td>
-		<td>{{duration .StartedAt (minTime .EndedAt now)}}</td>
-		{{template "BuildLinkCells" .}}
+	<tr class="{{buildClass .}} build" data-href="{{urlToRepoBuild .Repo .ID}}">
+		{{template "BuildCells" .}}
 	</tr>
 	{{end}}
 </table>
