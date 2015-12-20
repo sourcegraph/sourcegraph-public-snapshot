@@ -18,10 +18,24 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
+
+// prepareArg prepares the gRPC method arg for logging/tracing. For
+// example, it does not log/trace arg if it is a very long byte slice
+// (as it often is for git transport ops).
+func prepareArg(server, method string, arg interface{}) interface{} {
+	switch arg := arg.(type) {
+	case *gitpb.ReceivePackOp:
+		return &gitpb.ReceivePackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
+	case *gitpb.UploadPackOp:
+		return &gitpb.UploadPackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
+	}
+	return arg
+}
 
 // Before is called before a method executes and is passed the server
 // and method name and the argument. The returned context is passed
@@ -39,7 +53,7 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 	ctx, span := tg_context.StartSpan(ctx)
 	span.SetName(fmt.Sprintf("%s/%s", server, method))
 	if arg != nil {
-		span.Log(instrument.Printf("%s arg", method).Payload(arg))
+		span.Log(instrument.Printf("%s arg", method).Payload(prepareArg(server, method, arg)))
 	}
 	span.Log(instrument.EventName("appdash_span_id").Payload(spanID))
 	span.AddTraceJoinId("appdash_trace_id", spanID.Trace)
@@ -94,7 +108,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	call := &traceutil.GRPCCall{
 		Server:     server,
 		Method:     method,
-		Arg:        fmt.Sprintf("%#v", arg),
+		Arg:        fmt.Sprintf("%#v", prepareArg(server, method, arg)),
 		ArgType:    fmt.Sprintf("%T", arg),
 		ServerRecv: sr,
 		ServerSend: time.Now(),
