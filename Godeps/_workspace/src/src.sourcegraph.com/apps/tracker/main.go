@@ -64,6 +64,7 @@ func New(service issues.Service, opt Options) http.Handler {
 	r.HandleFunc("/{id:[0-9]+}/edit", postEditIssueHandler).Methods("POST")
 	r.HandleFunc("/{id:[0-9]+}/comment", postCommentHandler).Methods("POST")
 	r.HandleFunc("/{id:[0-9]+}/comment/{commentID:[0-9]+}", postEditCommentHandler).Methods("POST")
+	r.HandleFunc("/{id:[0-9]+}/comment/{commentID:[0-9]+}/reaction", postToggleReactionHandler).Methods("POST")
 	r.HandleFunc("/new", createIssueHandler).Methods("GET")
 	r.HandleFunc("/new", postCreateIssueHandler).Methods("POST")
 	router.Router = r // TODO: Make this nicer.
@@ -117,8 +118,6 @@ type BaseState struct {
 
 	repoSpec issues.RepoSpec
 	HeadPre  template.HTML
-
-	CurrentUser *issues.User
 
 	common.State
 }
@@ -455,12 +454,42 @@ func postEditCommentHandler(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	repoSpec := globalHandler.RepoSpec(req)
 
-	comment := issues.Comment{
+	body := req.PostForm.Get("value")
+	cr := issues.CommentRequest{
 		ID:   uint64(mustAtoi(vars["commentID"])),
-		Body: req.PostForm.Get("value"),
+		Body: &body,
 	}
 
-	_, err := is.EditComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), comment)
+	_, err := is.EditComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), cr)
+	if err != nil {
+		log.Println("is.EditComment:", err)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+		return
+	}
+}
+
+func postToggleReactionHandler(w http.ResponseWriter, req *http.Request) {
+	if globalHandler.Verbatim != nil {
+		globalHandler.Verbatim(w)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		log.Println("req.ParseForm:", err)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	ctx := globalHandler.Context(req)
+	vars := mux.Vars(req)
+	repoSpec := globalHandler.RepoSpec(req)
+
+	reaction := issues.EmojiID(req.PostForm.Get("reaction"))
+	cr := issues.CommentRequest{
+		ID:       uint64(mustAtoi(vars["commentID"])),
+		Reaction: &reaction,
+	}
+
+	_, err := is.EditComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), cr)
 	if err != nil {
 		log.Println("is.EditComment:", err)
 		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)

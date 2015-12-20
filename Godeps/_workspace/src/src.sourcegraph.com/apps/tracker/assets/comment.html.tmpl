@@ -21,6 +21,7 @@
 			<div class="list-entry-container list-entry-border">
 				<div class="list-entry-header" style="display: flex;">
 					<span class="content">{{template "user" .User}} commented <a href="#comment-{{.ID}}" onclick="AnchorScroll(this, event);">{{template "time" .CreatedAt}}</a></span>
+					<span class="right-icon"><a href="javascript:" onclick="OpenReactionMenu(this, {{.ID}});"><i class="fa fa-smile-o" style="font-size: 16px;"><sup>+</sup></i></a></span>
 					{{if .Editable}}<span class="right-icon"><a href="javascript:" onclick="EditComment({{`edit` | json}}, this);"><span class="octicon octicon-pencil"></span></a></span>{{end}}
 				</div>
 				<div class="list-entry-body">
@@ -38,6 +39,7 @@
 	<div style="display: none;">
 		{{template "edit-comment" .}}
 	</div>
+	<div class="comment-reactions-container" data-id="{{.ID}}" data-reactions="{{.Reactions | json}}"></div>
 </div>
 {{end}}
 

@@ -29,6 +29,13 @@ type comment struct {
 	AuthorUID int32
 	CreatedAt time.Time
 	Body      string
+	Reactions []reaction `json:",omitempty"`
+}
+
+// reaction is an on-disk representation of a reaction.
+type reaction struct {
+	EmojiID    issues.EmojiID
+	AuthorUIDs []int32 // Order does not matter; this would be better represented as a set like map[int32]struct{}, but we're using JSON and it doesn't support that.
 }
 
 // event is an on-disk representation of an event.

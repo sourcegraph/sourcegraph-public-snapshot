@@ -32,6 +32,8 @@ func main() {
 	js.Global.Set("ToggleIssueState", ToggleIssueState)
 	js.Global.Set("PostComment", PostComment)
 	js.Global.Set("EditComment", jsutil.Wrap(EditComment))
+	js.Global.Set("OpenReactionMenu", jsutil.Wrap(OpenReactionMenu))
+	js.Global.Set("RenderReactionList", jsutil.Wrap(RenderReactionList))
 
 	stateJSON := js.Global.Get("State").String()
 	err := json.Unmarshal([]byte(stateJSON), &state)
@@ -46,6 +48,7 @@ func main() {
 
 func setup() {
 	setupIssueToggleButton()
+	setupReactions()
 
 	if createIssueButton, ok := document.GetElementByID("create-issue-button").(dom.HTMLElement); ok {
 		titleEditor := document.GetElementByID("title-editor").(*dom.HTMLInputElement)
@@ -254,6 +257,27 @@ func editComment(commentEditor *dom.HTMLTextAreaElement) error {
 	}
 
 	resp, err := http.PostForm(state.BaseURI+state.ReqPath+"/comment/"+commentID, url.Values{"csrf_token": {state.CSRFToken}, "value": {value}})
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("got reply: %v\n", resp.Status)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("did not get acceptable status code: %v", resp.Status)
+	}
+}
+
+func toggleReaction(commentID string, reaction issues.EmojiID) error {
+	resp, err := http.PostForm(state.BaseURI+state.ReqPath+"/comment/"+commentID+"/reaction", url.Values{"csrf_token": {state.CSRFToken}, "reaction": {string(reaction)}})
 	if err != nil {
 		return err
 	}

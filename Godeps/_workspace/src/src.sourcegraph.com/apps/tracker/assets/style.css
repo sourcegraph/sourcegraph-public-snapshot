@@ -18,7 +18,6 @@ a.black:hover {
 
 div.list-entry {
 	margin-top: 12px;
-	margin-bottom: 12px;
 }
 div.list-entry-container {
 	flex: 1;
@@ -206,4 +205,9 @@ nav .selected {
 	line-height: 24px;
 	color: #bfbfbf;
 	padding-right: 10px;
+}
+
+div.comment-reactions-container {
+	margin-top: 6px;
+	margin-left: 58px;
 }

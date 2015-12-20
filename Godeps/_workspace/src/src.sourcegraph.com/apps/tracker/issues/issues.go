@@ -30,7 +30,7 @@ type Service interface {
 	CreateComment(ctx context.Context, repo RepoSpec, id uint64, comment Comment) (Comment, error)
 
 	Edit(ctx context.Context, repo RepoSpec, id uint64, ir IssueRequest) (Issue, error)
-	EditComment(ctx context.Context, repo RepoSpec, id uint64, comment Comment) (Comment, error)
+	EditComment(ctx context.Context, repo RepoSpec, id uint64, cr CommentRequest) (Comment, error)
 
 	// TODO: This doesn't belong here, does it?
 	CurrentUser(ctx context.Context) (*User, error)
@@ -56,7 +56,14 @@ type Comment struct {
 	User      User
 	CreatedAt time.Time
 	Body      string
+	Reactions []Reaction
 	Editable  bool // Editable represents whether the current user (if any) can perform edit operations on this comment (or the encompassing issue).
+}
+
+// Reaction represents a single reaction to a comment, backed by 1 or more users.
+type Reaction struct {
+	Reaction EmojiID
+	Users    []User // Length is 1 or more.
 }
 
 type UserSpec struct {
@@ -77,6 +84,16 @@ type User struct {
 type IssueRequest struct {
 	State *State
 	Title *string
+}
+
+// EmojiID is the id of a reaction. For example, "+1".
+type EmojiID string
+
+// CommentRequest is a request to edit a comment.
+type CommentRequest struct {
+	ID       uint64
+	Body     *string  // If not nil, set the body.
+	Reaction *EmojiID // If not nil, toggle this reaction.
 }
 
 // State represents the issue state.
@@ -121,4 +138,23 @@ func (c Comment) Validate() error {
 		return fmt.Errorf("comment body can't be blank or all whitespace")
 	}
 	return nil
+}
+
+// Validate validates the comment edit request, returning an non-nil error if it's invalid.
+// Returned requiresEdit is true if the edit request needs edit rights, and false if it can be done by anyone that can react.
+func (cr CommentRequest) Validate() (requiresEdit bool, err error) {
+	if cr.Body != nil {
+		requiresEdit = true
+
+		// TODO: Issue descriptions can have blank bodies, support that (primarily for editing comments).
+		if strings.TrimSpace(*cr.Body) == "" {
+			return requiresEdit, fmt.Errorf("comment body can't be blank or all whitespace")
+		}
+	}
+	if cr.Reaction != nil {
+		// TODO: Maybe validate that the emojiID is one of supported ones.
+		//       Or maybe not (unsupported ones can be handled by frontend component).
+		//       That way custom emoji can be added/removed, etc. Figure out what the best thing to do is and do it.
+	}
+	return requiresEdit, nil
 }
