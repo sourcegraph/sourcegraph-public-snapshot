@@ -1,9 +1,11 @@
 import defaultXhr from "xhr";
 
+import context from "sourcegraph/context";
+
 export default function(options, callback) {
 	let defaultOptions = {
 		headers: {
-			"X-Csrf-Token": window._csrfToken,
+			"X-Csrf-Token": context.csrfToken,
 		},
 	};
 	if (window.hasOwnProperty("_cacheControl")) {

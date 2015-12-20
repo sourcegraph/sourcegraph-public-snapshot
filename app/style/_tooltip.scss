@@ -1,0 +1,40 @@
+.tooltip-sg {
+	$tooltip-max-width: 250px;
+	@include z-index(tooltip);
+	width: $tooltip-max-width;
+	position: absolute;
+	top: auto;
+	bottom: 100%;
+	left: 50%;
+	margin: 8px 0;
+	transform: translateX(-50%);
+	border-radius: 4px;
+
+	&:after {
+		position: absolute;
+		left: 50%;
+		bottom: -6px;
+		content: '';
+		width: 0;
+		height: 0;
+		margin: -6px;
+		border: 6px solid transparent;
+		border-top-color: #000;
+	}
+
+	.tooltip-inner {
+		padding: $line-height-computed/2 8px;
+		margin: 0 auto;
+		background-color: transparentize(#141414, .10);
+	}
+}
+
+.fade-enter {
+	opacity: 0;
+}
+
+.fade-enter.fade-enter-active {
+	opacity: 1;
+	@include transition(opacity 100ms ease-in);
+	transition-delay: 500ms;
+}

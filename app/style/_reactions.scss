@@ -1,0 +1,129 @@
+.emoji-menu {
+	$border-color: transparentize(#000, 0.85);
+	@include z-index(modal);
+	position: fixed;
+	border-radius: $border-radius-base;
+	box-shadow: 0 5px 10px rgba(0, 0, 0, .12);
+
+	.emoji-list {
+		overflow-y: scroll;
+		padding: 6px;
+		border: solid $border-color 1px;
+		border-bottom: none;
+		background-color: $white;
+		border-radius: 4px 4px 0 0;
+
+		.emoji {
+			width: percentage(1/9);
+			padding: 6px;
+			border-radius: 6px;
+			cursor: pointer;
+
+			&:hover {
+				background-color: #b5e0fe;
+			}
+		}
+	}
+
+	.emoji-footer {
+		width: 100%;
+		position: relative;
+		top: 0;
+		background-color: #f7f7f7;
+		border: solid $border-color 1px;
+		border-radius: 0 0 4px 4px;
+
+		.emoji {
+			height: 100%;
+			padding: 8px;
+		}
+
+		b {
+			font-size: 18px;
+		}
+	}
+
+	.login-prompt {
+		border-radius: $border-radius-base;
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		z-index: 1;
+		background-color: transparentize($night-black, 0.10);
+		color: $white;
+		a {
+			color: $light-blue;
+			text-decoration: underline;
+		}
+	}
+}
+
+.reaction-list {
+	.reaction-list-item {
+		height: 30px;
+		display: inline-block;
+		padding: 3px 5px;
+		margin-right: 6px;
+		color: #aaaaaa;
+		font-size: 22px;
+		border-radius: 4px;
+		border: solid #e0e0e0 1px;
+		cursor: pointer;
+		vertical-align: top;
+
+		&:hover {
+			border: solid darken($light-blue, 35%) 1px;
+			color: darken($light-blue, 25%);
+		}
+	}
+
+	.reactions {
+		display: inline-block;
+
+		.reaction {
+			font-size: 14px;
+
+			&.user-reacted {
+				background-color: $light-blue;
+				color: darken($light-blue, 25%);
+				border: solid darken($light-blue, 15%) 1px;
+			}
+
+			.emoji {
+				width: 22px;
+				margin-right: 2px;
+				vertical-align: middle;
+			}
+
+			.tooltip-inner {
+				color: $subtle-silver;
+				b {
+					font-weight: normal;
+					color: $white;
+				}
+			}
+		}
+	}
+
+	.add-reaction {
+		font-size: 19px;
+		opacity: 0;
+
+		@include transition(opacity);
+		transition-delay: 100ms;
+
+		&:hover {
+			opacity: 1;
+			border: solid darken($light-blue, 35%) 1px;
+			color: darken(#ffd06d, 25%);
+		}
+	}
+
+	&:hover .add-reaction {
+		opacity: 1;
+	}
+}

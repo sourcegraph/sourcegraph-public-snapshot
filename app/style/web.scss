@@ -53,6 +53,7 @@ $fa-font-path: "/assets/font/font-awesome";
 @import "_person_settings";
 @import "_person_sidebar";
 @import "_plain_file";
+@import "_reactions";
 @import "_repo";
 @import "_repo_branches";
 @import "_repo_build";
@@ -73,6 +74,7 @@ $fa-font-path: "/assets/font/font-awesome";
 @import "_def_popover";
 @import "_theme_default";
 @import "_theme_sunburst";
+@import "_tooltip";
 @import "_vcs";
 
 // Application-specific SCSS
