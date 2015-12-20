@@ -8,7 +8,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -29,6 +28,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
+	"src.sourcegraph.com/sourcegraph/util/executil"
 )
 
 func init() {
@@ -225,10 +225,10 @@ func (c *WorkCmd) Execute(args []string) error {
 						blog.Printf("Build #%s (%s) failed to start: %s.", build.Spec().IDString(), build.Repo, err)
 						endUpdate.Success, endUpdate.Failure = false, false
 					}
-					if err := cmdWaitWithTimeout(cmdTimeout, cmd); err == nil {
+					if err := executil.CmdWaitWithTimeout(cmdTimeout, cmd); err == nil {
 						blog.Printf("Build #%s (%s) succeeded in %s.", build.Spec().IDString(), build.Repo, time.Since(build.StartedAt.Time()))
 						endUpdate.Success, endUpdate.Failure = true, false
-					} else if err == errCmdTimeout {
+					} else if err == executil.ErrCmdTimeout {
 						blog.Printf("Build #%s (%s) timed out after %s.", build.Spec().IDString(), build.Repo, cmdTimeout)
 						endUpdate.Success, endUpdate.Failure = false, true
 					} else {
@@ -273,23 +273,6 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 	// Authenticate future requests.
 	cliCtx = sourcegraph.WithCredentials(cliCtx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
-}
-
-var errCmdTimeout = errors.New("command timed out")
-
-func cmdWaitWithTimeout(timeout time.Duration, cmd *exec.Cmd) error {
-	errc := make(chan error, 1)
-	go func() {
-		errc <- cmd.Wait()
-	}()
-	var err error
-	select {
-	case <-time.After(timeout):
-		cmd.Process.Kill()
-		return errCmdTimeout
-	case err = <-errc:
-	}
-	return err
 }
 
 // TODO(beyang): remove this once standard lib is supported again
