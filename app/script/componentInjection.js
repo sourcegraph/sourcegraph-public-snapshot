@@ -11,6 +11,7 @@ var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
 var RepoCloneBox = require("./components/RepoCloneBox");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
+var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 var AlertView = require("./components/AlertView");
 var CodeFileRange = require("./components/CodeFileRange");
 var CodeFileRouter = require("sourcegraph/code/CodeFileRouter").default;
@@ -122,6 +123,16 @@ document.addEventListener("DOMContentLoaded", () => {
 				SuccessReload={el2.dataset.successReload}
 				Label={el2.dataset.label}
 				Buildable={el2.dataset.buildable === "true"} />,
+			el2
+		);
+	});
+
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=TreeEntryCommit]"), []).map((el2) => {
+		ReactDOM.render(
+				<TreeEntryCommit
+					repo={el2.dataset.repo}
+					rev={el2.dataset.rev}
+					path={el2.dataset.path} />,
 			el2
 		);
 	});

@@ -207,6 +207,8 @@ $panel-repo-tree-padding-horizontal: 9px;
 	}
 
 	td.name {
+		width: 190px;
+		max-width: 190px;
 		margin-left: 5px;
 		padding: 0;
 		a {
@@ -217,6 +219,20 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 		white-space: nowrap;
 		overflow: hidden;
+	}
+
+	td.commit {
+		&, a { color: $gray-mid; }
+		time {
+			float: right;
+			padding-left: 25px;
+			min-width: 80px;
+		}
+		.message {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
 	}
 
 	span.dim {

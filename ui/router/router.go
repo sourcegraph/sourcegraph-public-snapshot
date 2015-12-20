@@ -16,6 +16,8 @@ const (
 	DefPopover  = "def.popover"
 	DefExamples = "def.examples"
 
+	RepoCommits = "repo.commits"
+
 	SearchTokens = "search.tokens"
 	SearchText   = "search.text"
 
@@ -91,6 +93,12 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 	repoRev.Path("/.search/text").
 		Methods(m("GET")...).
 		Name(SearchText)
+
+	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
+
+	repo.Path("/.commits").
+		Methods(m("GET")...).
+		Name(RepoCommits)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods(m("POST")...).

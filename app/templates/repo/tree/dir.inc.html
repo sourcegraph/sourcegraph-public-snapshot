@@ -62,6 +62,13 @@
 			<td class="name">
 				<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
 			</td>
+			{{if appconf.DisableTreeEntryCommits}}
+				<td></td>
+			{{else}}
+				<td class="commit">
+					<div data-react="TreeEntryCommit" data-repo="{{$repo.URI}}" data-rev="{{$repoRevSpec.CommitID}}" data-path="{{$fullPath}}"></div>
+				</td>
+			{{end}}
 		</tr>
 	{{end}}
 	</table>

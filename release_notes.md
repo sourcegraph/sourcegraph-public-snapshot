@@ -1,6 +1,11 @@
 # dev
 
-- Perform an inventory of repositories to determine what languages,
+- Display the latest commit that touched each file and directory on
+  the repository tree listing. This may cause degraded performance on
+  extremely large Git repositories; use the
+  `--app.disable-tree-entry-commits`/`DisableTreeEntryCommits` config
+  to disable this feature.
+  - Perform an inventory of repositories to determine what languages,
   etc., are in use, by walking their directory tree. This occurs after
   each push. This operation may be slow for extremely large
   repositories; use the

@@ -17,6 +17,11 @@ import (
 var Flags struct {
 	NoUIBuild bool `long:"app.no-ui-build" description:"disable manual building of repositories from the UI"`
 
+	// DisableTreeEntryCommits is sometimes necessary for extremely
+	// large Git repositories when `git log -- PATH` takes a very long
+	// time.
+	DisableTreeEntryCommits bool `long:"app.disable-tree-entry-commits" description:"do not show the latest commit for tree files/dirs"`
+
 	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
 
 	DisableRepoTreeSearch bool `long:"app.disable-repo-tree-search" description:"do not show repo fulltext search results (only defs) (slower for large repos)"`
