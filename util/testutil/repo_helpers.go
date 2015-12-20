@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	storecli "src.sourcegraph.com/sourcegraph/store/cli"
+	"src.sourcegraph.com/sourcegraph/util/executil"
 )
 
 func EnsureRepoExists(t *testing.T, ctx context.Context, repoURI string) {
@@ -199,7 +200,7 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo) (commit
 	return string(commit.ID), nil
 }
 
-func CloneRepo(t *testing.T, cloneURL, dir string) (err error) {
+func CloneRepo(t *testing.T, cloneURL, dir string, args []string) (err error) {
 	if dir == "" {
 		var err error
 		dir, err = ioutil.TempDir("", "")
@@ -209,7 +210,9 @@ func CloneRepo(t *testing.T, cloneURL, dir string) (err error) {
 		defer os.RemoveAll(dir)
 	}
 
-	cmd := exec.Command("git", "clone", cloneURL)
+	cmd := exec.Command("git", "clone")
+	cmd.Args = append(cmd.Args, args...)
+	cmd.Args = append(cmd.Args, cloneURL)
 	cmd.Env = append(os.Environ(), "GIT_ASKPASS=true") // disable password prompt
 	cmd.Dir = dir
 
@@ -238,7 +241,7 @@ func CloneRepo(t *testing.T, cloneURL, dir string) (err error) {
 		return err
 	}
 
-	if err := cmd.Wait(); err != nil {
+	if err := executil.CmdWaitWithTimeout(5*time.Second, cmd); err != nil {
 		return err
 	}
 	return nil
