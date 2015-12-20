@@ -18,7 +18,7 @@
 			</div>
 			<div class="modal-body">
 				<table>
-					{{if (showSearchForm .Ctx .CurrentQuery)}}
+					{{if not appconf.DisableSearch}}
 						<tr><th><span class="shortcut-key">/</span></th><td>focus search field</td></tr>
 						<tr><th>
 								<span class="shortcut-key">o</span> or <span class="shortcut-key">Enter</span></th><td>

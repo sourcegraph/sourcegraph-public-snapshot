@@ -230,6 +230,10 @@ type Common struct {
 	// HideMOTD, if true, prevents the MOTD (message of the day) from
 	// being displayed at the top of the template.
 	HideMOTD bool
+
+	// HideSearch, if set, hides the search bar from the top
+	// navigation bar.
+	HideSearch bool
 }
 
 func executeTemplateBase(w http.ResponseWriter, templateName string, data interface{}) error {

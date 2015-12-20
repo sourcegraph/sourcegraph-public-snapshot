@@ -120,8 +120,6 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"schemaMatchesExceptListAndSortOptions": schemautil.SchemaMatchesExceptListAndSortOptions,
 
-	"isOAuthInitPage": func(tmplName string) bool { return tmplName == "oauth-client/initiate.html" },
-
 	"classForRoute": func(route string) string {
 		parts := strings.Split(route, ".")
 		classes := make([]string, len(parts))

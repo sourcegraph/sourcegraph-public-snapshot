@@ -1,18 +1,11 @@
 package app
 
 import (
-	"net/url"
-
-	"golang.org/x/net/context"
-
 	"src.sourcegraph.com/sourcegraph/app/appconf"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 )
 
-func showSearchForm(ctx context.Context, query url.Values) bool {
-	if _, ok := query["EnableSearch"]; ok {
-		return true
-	}
-
+func showSearchForm(tmpl *tmpl.Common) bool {
 	if appconf.Flags.DisableSearch {
 		return false
 	}
@@ -21,5 +14,5 @@ func showSearchForm(ctx context.Context, query url.Values) bool {
 		return false
 	}
 
-	return false
+	return tmpl.TemplateName != "error/error.html" && tmpl.CurrentRouteVars["Repo"] != ""
 }
