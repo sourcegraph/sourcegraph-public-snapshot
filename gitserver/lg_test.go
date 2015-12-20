@@ -13,7 +13,15 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
-func TestGitClone(t *testing.T) {
+func TestGitClone_noAuth(t *testing.T) {
+	testGitClone_noAuth_withCloneArgs(t, nil)
+}
+
+func TestGitClone_noAuth_shallowClone(t *testing.T) {
+	testGitClone_noAuth_withCloneArgs(t, []string{"--depth=1"})
+}
+
+func testGitClone_noAuth_withCloneArgs(t *testing.T, cloneArgs []string) {
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
@@ -29,23 +37,19 @@ func TestGitClone(t *testing.T) {
 	}
 	defer a.Close()
 
-	_, done, err := testutil.CreateRepo(t, ctx, "myrepo")
+	_, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer done()
+
 	repo, err := a.Client.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: "myrepo"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := testutil.PushRepo(t, ctx, repo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Can clone if authed.
-	if err := testutil.CloneRepo(t, repo.HTTPCloneURL, ""); err != nil {
-		t.Fatalf("git clone %s: %s", repo.HTTPCloneURL, err)
+	if err := testutil.CloneRepo(t, repo.HTTPCloneURL, "", cloneArgs); err != nil {
+		t.Fatalf("git clone %v %s: %s", cloneArgs, repo.HTTPCloneURL, err)
 	}
 }
 
@@ -96,12 +100,12 @@ func TestGitClone_authRequired(t *testing.T) {
 	}
 
 	// Can't clone if unauthed.
-	if err := testutil.CloneRepo(t, unauthedCloneURL, ""); err == nil {
+	if err := testutil.CloneRepo(t, unauthedCloneURL, "", nil); err == nil {
 		t.Fatalf("git clone %s: err == nil, wanted auth denied", unauthedCloneURL)
 	}
 
 	// Can clone if authed.
-	if err := testutil.CloneRepo(t, authedCloneURL.String(), ""); err != nil {
+	if err := testutil.CloneRepo(t, authedCloneURL.String(), "", nil); err != nil {
 		t.Fatalf("git clone %s: %s", authedCloneURL, err)
 	}
 }
