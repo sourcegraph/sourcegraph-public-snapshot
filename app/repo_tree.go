@@ -42,9 +42,7 @@ type repoTreeTemplate struct {
 // about the requested tree entry.
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	opt := sourcegraph.RepoTreeGetOptions{
-		// If the file is a formattable doc file format, render it as
-		// HTML instead of source code.
-		TokenizedSource: !doc.IsFormattableDocFile(mux.Vars(r)["Path"]),
+		TokenizedSource: !doc.IsFormattableDocFile(mux.Vars(r)["Path"]) || router.IsRaw(r.URL),
 
 		GetFileOptions: vcsclient.GetFileOptions{
 			RecurseSingleSubfolderLimit: 200,
@@ -100,7 +98,10 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		treeURL := router.Rel.URLToRepoTreeEntrySpec(tc.EntrySpec).String()
 		http.Redirect(w, r, treeURL, http.StatusFound)
 		return nil
-	case doc.IsFormattableDocFile(tc.EntrySpec.Path):
+	case tc.Entry.SourceCode != nil:
+		fullWidth = true
+		templateFile = "repo/tree/file.html"
+	default:
 		if tc.Entry.Contents == nil {
 			panic("Entry.Contents is nil")
 		}
@@ -110,12 +111,6 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		}
 		docs = string(formatted)
 		templateFile = "repo/tree/doc.html"
-	default:
-		if tc.Entry.SourceCode == nil {
-			panic("Entry.SourceCode is nil")
-		}
-		fullWidth = true
-		templateFile = "repo/tree/file.html"
 	}
 
 	return tmpl.Exec(r, w, templateFile, http.StatusOK, nil, &repoTreeTemplate{

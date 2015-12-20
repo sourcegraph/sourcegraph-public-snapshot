@@ -6,6 +6,9 @@
 {{if .Documentation}}
 <div class="plain-file readme panel panel-default">
 	<div class="panel-heading readme-file">
+		<div class="btn-group pull-right">
+			<a href="{{router.URLToRepoTreeEntryRaw .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path}}">View source</a>
+		</div>
 		<i class="fa fa-book"></i> {{template "Breadcrumb" (fileToBreadcrumb .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path)}}
 	</div>
 	<div class="panel-body theme-default repo-doc-body">

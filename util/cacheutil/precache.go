@@ -9,7 +9,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sourcecode"
 )
 
 var Precache = true
@@ -29,9 +28,7 @@ func PrecacheTreeEntry(cl *sourcegraph.Client, ctx context.Context, entry *sourc
 			RepoRev: entrySpec.RepoRev,
 			Path:    filepath.Join(entrySpec.Path, child.Name),
 		}
-		opt := &sourcegraph.RepoTreeGetOptions{
-			TokenizedSource: sourcecode.IsLikelyCodeFile(childSpec.Path),
-		}
+		opt := &sourcegraph.RepoTreeGetOptions{TokenizedSource: true}
 
 		go func() {
 			log15.Info("prefetching tree entry", "path", childSpec.Path)
