@@ -261,9 +261,6 @@ func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		default:
 			return "", nil, &sourcegraph.InvalidOptionsError{Reason: "invalid state"}
 		}
-		if opt.BuiltOnly {
-			conds = append(conds, "EXISTS (SELECT NULL FROM repo_build WHERE success AND repo_build.repo=repo.uri AND NOT purged)")
-		}
 		if opt.Owner != "" {
 			return "", nil, errOptionsSpecifyEmptyResult
 		}
