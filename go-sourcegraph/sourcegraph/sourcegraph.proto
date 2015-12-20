@@ -272,8 +272,6 @@ message Repo {
 	RepoPermissions permissions = 18;
 
 	GitHubRepo github = 19 [(gogoproto.customname) = "GitHub"];
-
-	RepoConfig config = 20;
 }
 
 message BadgeList {

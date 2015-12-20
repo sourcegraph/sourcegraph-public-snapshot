@@ -551,7 +551,6 @@ type Repo struct {
 	// if there is no current user) is granted to this repository.
 	Permissions *RepoPermissions `protobuf:"bytes,18,opt,name=permissions" json:",omitempty"`
 	GitHub      *GitHubRepo      `protobuf:"bytes,19,opt,name=github" json:",omitempty"`
-	Config      *RepoConfig      `protobuf:"bytes,20,opt,name=config" json:",omitempty"`
 }
 
 func (m *Repo) Reset()         { *m = Repo{} }
