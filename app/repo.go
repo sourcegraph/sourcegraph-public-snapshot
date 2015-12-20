@@ -65,7 +65,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+	repo, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 		URI: repoURI,
 		VCS: "git",
 	})
@@ -74,7 +74,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
+	http.Redirect(w, r, router.Rel.URLToRepo(repo.URI).String(), http.StatusSeeOther)
 	return nil
 }
 
