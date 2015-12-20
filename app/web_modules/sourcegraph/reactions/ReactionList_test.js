@@ -20,7 +20,7 @@ describe("ReactionList", () => {
 				{Reaction: "+1", Users: [{Login: "user1"}]},
 				{Reaction: "rocket", Users: [{Login: "user2"}]},
 				{Reaction: "whale", Users: [{Login: "user1"}, {Login: "user2"}]},
-			]} onSelect={() => null} currentUser={{Login: "user1"}}/>
+			]} onSelect={() => null} />
 		);
 	});
 });

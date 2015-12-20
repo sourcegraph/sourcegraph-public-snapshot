@@ -13,7 +13,7 @@
 								"type": "div",
 								"key": "+1",
 								"props": {
-									"className": "reaction reaction-list-item user-reacted",
+									"className": "reaction reaction-list-item",
 									"style": {
 										"position": "relative"
 									},
@@ -115,7 +115,7 @@
 								"type": "div",
 								"key": "whale",
 								"props": {
-									"className": "reaction reaction-list-item user-reacted",
+									"className": "reaction reaction-list-item",
 									"style": {
 										"position": "relative"
 									},

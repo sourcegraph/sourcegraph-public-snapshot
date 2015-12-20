@@ -45,16 +45,16 @@
 
 	.login-prompt {
 		border-radius: $border-radius-base;
-    width: 100%;
-    height: 100%;
+		width: 100%;
+		height: 100%;
 		position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
 		z-index: 1;
-    background-color: transparentize($night-black, 0.10);
-    color: $white;
+		background-color: transparentize($night-black, 0.10);
+		color: $white;
 		a {
 			color: $light-blue;
 			text-decoration: underline;
