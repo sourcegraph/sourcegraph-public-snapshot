@@ -30,7 +30,6 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 	)
 	for page := 1; page < maxPages && time.Since(start) < time.Second*20 || len(si.Sitemaps) < maxRepos; page++ {
 		repos, err := apiclient.Repos.List(ctx, &sourcegraph.RepoListOptions{
-			BuiltOnly: true,
 			NoFork:    true,
 			Sort:      "updated",
 			Type:      "public",

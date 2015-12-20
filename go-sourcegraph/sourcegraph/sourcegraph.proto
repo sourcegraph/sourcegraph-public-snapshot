@@ -318,7 +318,6 @@ message RepoListOptions {
 	string query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	repeated string uri_s = 3 [(gogoproto.customname) = "URIs", (gogoproto.moretags) = "url:\",comma,omitempty\""];
-	bool built_only = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string sort = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string direction = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool no_fork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];

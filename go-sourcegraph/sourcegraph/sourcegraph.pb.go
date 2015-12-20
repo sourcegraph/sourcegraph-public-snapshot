@@ -614,7 +614,6 @@ type RepoListOptions struct {
 	// Direction options are ignored
 	Query       string   `protobuf:"bytes,2,opt,name=query,proto3" json:",omitempty" url:",omitempty"`
 	URIs        []string `protobuf:"bytes,3,rep,name=uri_s" json:",omitempty" url:",comma,omitempty"`
-	BuiltOnly   bool     `protobuf:"varint,4,opt,name=built_only,proto3" json:",omitempty" url:",omitempty"`
 	Sort        string   `protobuf:"bytes,5,opt,name=sort,proto3" json:",omitempty" url:",omitempty"`
 	Direction   string   `protobuf:"bytes,6,opt,name=direction,proto3" json:",omitempty" url:",omitempty"`
 	NoFork      bool     `protobuf:"varint,7,opt,name=no_fork,proto3" json:",omitempty" url:",omitempty"`
