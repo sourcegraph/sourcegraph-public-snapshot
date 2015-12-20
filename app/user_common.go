@@ -6,15 +6,14 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/mux"
+	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
-func getUser(r *http.Request) (*sourcegraph.User, *sourcegraph.UserSpec, error) {
-	ctx := httpctx.FromRequest(r)
+func getUser(ctx context.Context, r *http.Request) (*sourcegraph.User, *sourcegraph.UserSpec, error) {
 	apiclient := handlerutil.APIClient(r)
 	v := mux.Vars(r)
 
