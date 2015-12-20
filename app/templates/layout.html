@@ -66,7 +66,6 @@
 	<body class="{{classForRoute .CurrentRoute}}{{if $motd}} has-motd{{end}}{{if hasField . "Repo"}} with-fixed-subnav{{end}}"
 		{{if hasField . "Repo"}}
 			data-current-repo-url="{{(urlToRepo .Repo.URI).String}}"
-			data-current-repo-builds-url="{{(urlToRepoSubroute "repo.builds" .Repo.URI).String}}"
 		{{end}}
 		{{if fileSearchDisabled}}
 			data-file-search-disabled="true"
