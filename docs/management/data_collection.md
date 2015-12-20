@@ -25,9 +25,8 @@ We collect the following types of information to make Sourcegraph
 better.
 
 * **Information you give us:** For example, when you sign up for an
-  account on Sourcegraph.com, we ask for information such as your name
-  and email address. When you register a new Sourcegraph server, we
-  collect your email address.
+  account on Sourcegraph.com or set up a new Sourcegraph server, we
+  ask for information such as your email address.
 * **Information we get from your use of Sourcegraph:** To give you the
   best and most reliable features, we collect statistics about how you
   use Sourcegraph. This consists of metadata about user and server
