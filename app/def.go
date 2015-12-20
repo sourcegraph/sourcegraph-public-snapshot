@@ -68,17 +68,23 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Get actual list of examples
-	examples, err := apiclient.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{Def: dc.Def.DefSpec(), Opt: &opt})
+	examples, err := apiclient.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
+		Def: dc.Def.DefSpec(),
+		Rev: vc.RepoRevSpec.Rev,
+		Opt: &opt,
+	})
 	if err != nil {
 		return err
 	}
 
 	// Highlight this def in examples.
 	u0 := router.Rel.URLToDefAtRev(dc.Def.DefKey, vc.RepoRevSpec.CommitID) // internal
-	u1 := router.Rel.URLToDefAtRev(dc.Def.DefKey, "")                      // external
+	u1 := router.Rel.URLToDefAtRev(dc.Def.DefKey, vc.RepoRevSpec.Rev)      // internal
+	u2 := router.Rel.URLToDefAtRev(dc.Def.DefKey, "")                      // external
 	for _, x := range examples.Examples {
 		x.SrcHTML = strings.Replace(string(x.SrcHTML), u0.String()+`" class="`, u0.String()+`" class="highlight highlight-primary `, -1)
 		x.SrcHTML = strings.Replace(string(x.SrcHTML), u1.String()+`" class="`, u1.String()+`" class="highlight highlight-primary `, -1)
+		x.SrcHTML = strings.Replace(string(x.SrcHTML), u2.String()+`" class="`, u2.String()+`" class="highlight highlight-primary `, -1)
 		x.SrcHTML = strings.Replace(string(x.SrcHTML), "class=\"", "class=\"defn-popover ", -1)
 	}
 
