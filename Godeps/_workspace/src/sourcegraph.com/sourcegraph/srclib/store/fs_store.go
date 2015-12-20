@@ -149,7 +149,7 @@ func (s *fsMultiRepoStore) Repos(f ...RepoFilter) ([]string, error) {
 
 func (s *fsMultiRepoStore) openRepoStore(repo string) RepoStore {
 	subpath := s.fs.Join(s.RepoToPath(repo)...)
-	return NewFSRepoStore(rwvfs.Sub(s.fs, subpath))
+	return NewFSRepoStore(rwvfs.Walkable(rwvfs.Sub(s.fs, subpath)))
 }
 
 func (s *fsMultiRepoStore) openAllRepoStores() (map[string]RepoStore, error) {
@@ -190,7 +190,7 @@ func (s *fsMultiRepoStore) String() string { return "fsMultiRepoStore" }
 
 // A fsRepoStore is a RepoStore that stores data on a VFS.
 type fsRepoStore struct {
-	fs rwvfs.FileSystem
+	fs rwvfs.WalkableFileSystem
 	treeStores
 }
 
@@ -199,7 +199,7 @@ const SrclibStoreDir = ".srclib-store"
 
 // NewFSRepoStore creates a new repository store (that can be
 // imported into) that is backed by files on a filesystem.
-func NewFSRepoStore(fs rwvfs.FileSystem) RepoStoreImporter {
+func NewFSRepoStore(fs rwvfs.WalkableFileSystem) RepoStoreImporter {
 	setCreateParentDirs(fs)
 	rs := &fsRepoStore{fs: fs}
 	rs.treeStores = treeStores{rs}
@@ -207,14 +207,14 @@ func NewFSRepoStore(fs rwvfs.FileSystem) RepoStoreImporter {
 }
 
 func (s *fsRepoStore) Versions(f ...VersionFilter) ([]*Version, error) {
-	versionDirs, err := s.versionDirs()
+	allVersions, err := s.listAllVersions()
 	if err != nil {
 		return nil, err
 	}
 
 	var versions []*Version
-	for _, dir := range versionDirs {
-		version := &Version{CommitID: path.Base(dir)}
+	for _, v := range allVersions {
+		version := &Version{CommitID: path.Base(v)}
 		if versionFilters(f).SelectVersion(version) {
 			versions = append(versions, version)
 		}
@@ -222,8 +222,19 @@ func (s *fsRepoStore) Versions(f ...VersionFilter) ([]*Version, error) {
 	return versions, nil
 }
 
-func (s *fsRepoStore) versionDirs() ([]string, error) {
-	entries, err := s.fs.ReadDir(".")
+const (
+	versionsDir = "__versions"
+
+	// We can remove version migration in a few months (from 2015 Dec
+	// 10).
+	enableMigrateVersions = true
+)
+
+func (s *fsRepoStore) listAllVersions() ([]string, error) {
+	entries, err := s.fs.ReadDir(versionsDir)
+	if (os.IsNotExist(err) || (err == nil && len(entries) == 0)) && enableMigrateVersions {
+		return s.migrateVersions()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -234,12 +245,85 @@ func (s *fsRepoStore) versionDirs() ([]string, error) {
 	return dirs, nil
 }
 
+// migrateVersions is a temporary function that migrates versions from
+// being encoded as the dir names under the root, to being encoded as
+// the names of empty files in a __versions dir.
+//
+// migrateVersions returns the list of versions so that listing them
+// does not require another operation.
+func (s *fsRepoStore) migrateVersions() ([]string, error) {
+	versions, err := s.listAllVersions_old()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.fs.Mkdir(versionsDir); err != nil && !os.IsExist(err) {
+		return nil, err
+	}
+
+	writeEmptyVersionFile := func(version string) error {
+		f, err := s.fs.Create(s.fs.Join(versionsDir, version))
+		if err != nil {
+			return err
+		}
+		f.Write(nil)
+		return f.Close()
+	}
+	for _, v := range versions {
+		if err := writeEmptyVersionFile(v); err != nil {
+			return nil, fmt.Errorf("during versions migration: %s (migration could not be rolled back, versions list will be incomplete!)", err)
+		}
+	}
+
+	return versions, nil
+}
+
+// listAllVersions_old is the old way of listing versions, where the
+// versions were the names of directories. When the storage backend
+// was S3 or Google Cloud Storage, this translated into listing key
+// prefixes, which is an extremely slow operation. This method is kept
+// around to aid in migration.
+func (s *fsRepoStore) listAllVersions_old() ([]string, error) {
+	entries, err := s.fs.ReadDir(".")
+	if err != nil {
+		return nil, err
+	}
+	dirs := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if e.Name() == versionsDir {
+			continue
+		}
+		dirs = append(dirs, e.Name())
+	}
+	return dirs, nil
+}
+
 func (s *fsRepoStore) Import(commitID string, unit *unit.SourceUnit, data graph.Output) error {
 	if unit != nil {
 		cleanForImport(&data, "", unit.Type, unit.Name)
 	}
 	ts := s.newTreeStore(commitID)
-	return ts.Import(unit, data)
+	if err := ts.Import(unit, data); err != nil {
+		return err
+	}
+
+	if err := s.createVersion(commitID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *fsRepoStore) createVersion(commitID string) error {
+	if err := s.fs.Mkdir(versionsDir); err != nil && !os.IsExist(err) {
+		return err
+	}
+	f, err := s.fs.Create(s.fs.Join(versionsDir, commitID))
+	if err != nil {
+		return err
+	}
+	f.Write(nil)
+	return f.Close()
 }
 
 func (s *fsRepoStore) Index(commitID string) error {
@@ -267,13 +351,13 @@ func (s *fsRepoStore) openTreeStore(commitID string) TreeStore {
 }
 
 func (s *fsRepoStore) openAllTreeStores() (map[string]TreeStore, error) {
-	versionDirs, err := s.versionDirs()
+	versions, err := s.listAllVersions()
 	if err != nil {
 		return nil, err
 	}
 
-	tss := make(map[string]TreeStore, len(versionDirs))
-	for _, dir := range versionDirs {
+	tss := make(map[string]TreeStore, len(versions))
+	for _, dir := range versions {
 		commitID := path.Base(dir)
 		tss[commitID] = s.openTreeStore(commitID)
 	}

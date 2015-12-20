@@ -163,7 +163,7 @@ func (c *StoreCmd) store() (interface{}, error) {
 
 	switch c.Type {
 	case "RepoStore":
-		return store.NewFSRepoStore(fs), nil
+		return store.NewFSRepoStore(rwvfs.Walkable(fs)), nil
 	case "MultiRepoStore":
 		return store.NewFSMultiRepoStore(rwvfs.Walkable(fs), nil), nil
 	default:
