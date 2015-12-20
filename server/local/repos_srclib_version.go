@@ -134,8 +134,16 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 		candidateCommits.Commits = append(candidateCommits.Commits, &vcs.Commit{ID: vcs.CommitID(base)})
 	}
 
+	candidateCommitIDs := make([]string, len(candidateCommits.Commits))
+	for i, c := range candidateCommits.Commits {
+		candidateCommitIDs[i] = string(c.ID)
+	}
+
 	// Get all srclib built data versions.
-	vers, err := store.GraphFromContext(ctx).Versions(srclibstore.ByRepos(entry.RepoRev.URI))
+	vers, err := store.GraphFromContext(ctx).Versions(
+		srclibstore.ByRepos(entry.RepoRev.URI),
+		srclibstore.ByCommitIDs(candidateCommitIDs...),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -144,9 +152,9 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 		verMap[ver.CommitID] = struct{}{}
 	}
 
-	for i, cc := range candidateCommits.Commits {
-		if _, present := verMap[string(cc.ID)]; present {
-			return &sourcegraph.SrclibDataVersion{CommitID: string(cc.ID), CommitsBehind: int32(i)}, nil
+	for i, cc := range candidateCommitIDs {
+		if _, present := verMap[cc]; present {
+			return &sourcegraph.SrclibDataVersion{CommitID: cc, CommitsBehind: int32(i)}, nil
 		}
 	}
 
