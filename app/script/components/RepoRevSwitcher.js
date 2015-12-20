@@ -155,7 +155,7 @@ var RepoRevSwitcher = React.createClass({
 		return (
 			<div className="btn-group repo-rev-switcher">
 				<button type="button" className="button btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" onClick={this._onToggleDropdown}>
-					<i className="octicon octicon-git-branch"></i> {this.props.label ? <span className="label">{this.props.label}</span> : null} {this.props.rev} <span className="caret"></span>
+					<i className="octicon octicon-git-branch"></i> {this.props.label ? <span className="label">{this.props.label}</span> : null} {abbrevRev(this.props.rev)} <span className="caret"></span>
 				</button>
 				<ul className={this.props.alignRight ? "dropdown-menu dropdown-menu-right" : "dropdown-menu"} role="menu">
 					<li className="search-section">
@@ -174,5 +174,11 @@ var RepoRevSwitcher = React.createClass({
 		);
 	},
 });
+
+// abbrevRev shortens rev if it is an absolute commit ID.
+function abbrevRev(rev) {
+	if (rev.length === 40) return rev.substring(0, 6);
+	return rev;
+}
 
 module.exports = RepoRevSwitcher;
