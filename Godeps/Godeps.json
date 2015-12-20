@@ -723,7 +723,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/rwvfs",
-			"Rev": "08d8bb227da7544d3d7ab7e40225e72d5505c6f3"
+			"Rev": "22b5bc3bc4d486b48f75cf78b7c1e8e1204c3521"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/s3vfs",

@@ -186,20 +186,32 @@ func (fs *cloudStorageVFS) ReadDir(path string) ([]os.FileInfo, error) {
 	if path != "" {
 		path += "/"
 	}
-	objs, err := fs.service.Objects.List(fs.bucket).Prefix(path).Delimiter("/").Do()
-	if err != nil {
-		return nil, err
-	}
+
 	var infos []os.FileInfo
-	for _, obj := range objs.Items {
-		obj.Name = strings.TrimPrefix(obj.Name, path)
-		infos = append(infos, fileInfo{obj})
-	}
-	for _, prefix := range objs.Prefixes {
-		infos = append(infos, fileInfo{&storage.Object{
-			Name: strings.TrimPrefix(prefix, path),
-			Kind: dirKind,
-		}})
+	var nextPageToken string
+	for {
+		call := fs.service.Objects.List(fs.bucket).Prefix(path).Delimiter("/")
+		if nextPageToken != "" {
+			call = call.PageToken(nextPageToken)
+		}
+		objs, err := call.Do()
+		if err != nil {
+			return nil, err
+		}
+		for _, obj := range objs.Items {
+			obj.Name = strings.TrimPrefix(obj.Name, path)
+			infos = append(infos, fileInfo{obj})
+		}
+		for _, prefix := range objs.Prefixes {
+			infos = append(infos, fileInfo{&storage.Object{
+				Name: strings.TrimPrefix(prefix, path),
+				Kind: dirKind,
+			}})
+		}
+		if objs.NextPageToken == "" {
+			break
+		}
+		nextPageToken = objs.NextPageToken
 	}
 	return infos, nil
 }
