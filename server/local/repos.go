@@ -5,13 +5,17 @@ import (
 	"log"
 	"time"
 
+	"strings"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/doc"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -136,10 +140,6 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 // consulting its VCS data). If no rev is specified, the repo's
 // default branch is used.
 func (s *repos) resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
-	if repoRev.Resolved() {
-		return nil
-	}
-
 	if err := s.resolveRepoRevBranch(ctx, repoRev); err != nil {
 		return err
 	}
@@ -168,6 +168,23 @@ func (s *repos) resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.R
 		}
 		repoRev.Rev = defBr
 	}
+
+	const srclibRevTag = "^{srclib}" // REV^{srclib} refers to the newest srclib version from REV
+	if strings.HasSuffix(repoRev.Rev, srclibRevTag) {
+		origRev := repoRev.Rev
+		repoRev.Rev = strings.TrimSuffix(repoRev.Rev, srclibRevTag)
+		dataVer, err := svc.Repos(ctx).GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
+		if err == nil {
+			repoRev.Rev = dataVer.CommitID
+		} else if errcode.GRPC(err) == codes.NotFound {
+			// Ignore NotFound as otherwise the user might not even be
+			// able to access the repository homepage.
+			log15.Warn("Failed to resolve to commit with srclib Code Intelligence data; will proceed by resolving to commit with no Code Intelligence data instead", "rev", origRev, "fallback", repoRev.Rev, "error", err)
+		} else if err != nil {
+			return grpc.Errorf(errcode.GRPC(err), "while resolving rev %q: %s", repoRev.Rev, err)
+		}
+	}
+
 	return nil
 }
 

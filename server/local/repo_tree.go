@@ -12,6 +12,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -60,7 +61,7 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 			// TODO(slimsag): write a test exactly for this case.
 			unresolvedRev := entrySpec.RepoRev
 			unresolvedRev.CommitID = ""
-			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); err == vcs.ErrRevisionNotFound {
+			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); errcode.GRPC(err) == codes.NotFound {
 				// Rev no longer exists, so fallback to the CommitID instead. This is a
 				// last-ditch effort to ensure tokenized source displays well in diffs
 				// that are very old / have had one or more of their revs/branches

@@ -1,10 +1,14 @@
 # dev
 
+- Add a new revision syntax `REV^{srclib}`, which refers to the the
+  nearest ancestor to REV that has srclib Code Intelligence data.
 - Remove the `--app.show-latest-built-commit`/`ShowLatestBuiltCommit`
   configs. This functionality now occurs automatically without the
   negative tradeoffs associated with the previous scheme. An old
   file's contents are annotated with Code Intelligence if it has not
-  changed since the last build.
+  changed since the last build. See docs/config/repos.md for
+  information on obtaining the old ShowLatestBuiltCommit behavior by
+  using `REV^{srclib}` as a repo's default branch.
 - Eliminate the display of definition names on the repository
   directory view (beside directory entries). This feature was not very
   useful and removing it improves performance. This means the

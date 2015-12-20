@@ -29,7 +29,7 @@ class CodeFileRouter extends Component {
 		let pathParts = state.uri.path.substr(1).split("/.");
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0];
-		state.rev = repoParts[1] || "master";
+		state.rev = decodeURIComponent(repoParts[1]) || "master";
 
 		// We split the URI path based on `/.` because that usually denotes an
 		// operation, but in the case of the tree operation consider this path:
