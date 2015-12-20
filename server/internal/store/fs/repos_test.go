@@ -85,6 +85,12 @@ func TestRepos_Create(t *testing.T) {
 	testsuite.Repos_Create(ctx, t, &Repos{}, preCreateRepo)
 }
 
+func TestRepos_Create_dupe(t *testing.T) {
+	ctx, done := testContext()
+	defer done()
+	testsuite.Repos_Create_dupe(ctx, t, &Repos{}, preCreateRepo)
+}
+
 func TestRepos_Update_Description(t *testing.T) {
 	ctx, done := testContext()
 	defer done()

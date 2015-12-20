@@ -141,6 +141,21 @@ func Repos_Create(ctx context.Context, t *testing.T, s store.Repos, preCreate Pr
 	}
 }
 
+func Repos_Create_dupe(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+	tm := time.Now().Round(time.Second)
+	ts := pbtypes.NewTimestamp(tm)
+
+	// Add a repo.
+	if _, err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b", CreatedAt: &ts})); err != nil {
+		t.Fatal(err)
+	}
+
+	// Add another repo with the same name.
+	if _, err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b", CreatedAt: &ts})); err == nil {
+		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
+	}
+}
+
 // Repos_Update_Description tests the behavior of Repos.Update to
 // update a repo's description.
 func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
