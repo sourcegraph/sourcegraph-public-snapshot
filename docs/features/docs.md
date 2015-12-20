@@ -3,24 +3,35 @@ title = "Documentation on Sourcegraph"
 linktitle = "Documentation"
 +++
 
-Sourcegraph embeds a static site generator you may use to serve documentation
-(or any other type of static site) for your repository. Your site is generated and
-served inside Sourcegraph directly from the repository source code.
+# Static doc generation (Hugo)
 
-To create a static site for your repository,
-[follow these instructions](https://src.sourcegraph.com/sourcegraph/.tree/platform/apps/docs/README.md).
+Sourcegraph embeds a [Hugo static site generator](https://gohugo.io/)
+that can serve documentation (or any other type of static site) for
+your repository. Your site is generated and served inside Sourcegraph
+directly from the repository source code (at any version).
 
-## godoc
+If you're reading these docs on
+[Sourcegraph's official doc site](https://src.sourcegraph.com/sourcegraph/.docs),
+you using this app now.
 
-In addition to embedding a static site engine, Sourcegraph can also run `godoc` on your
-Go source. To enable `godoc`, simply set the `--lang` option on any Go repository as follows:
+To create a static site for your repository:
+
+1. Create a Hugo static site within your repository by following the
+   [docs usage instructions](https://src.sourcegraph.com/sourcegraph/.tree/platform/apps/docs/README.md).
+1. Enable the Hugo docs app by running: `src repo config app MY/REPO docs --enable` (where `MY/REPO` is your repository).
+
+# godoc
+
+In addition to embedding a static site engine, Sourcegraph can also
+run `godoc` on your Go source. It uses the same code that powers
+[godoc.org](https://godoc.org/).
+
+To enable `godoc` on a repository named `MY/REPO`:
 
 ```
-src repo update my/repo --lang go
+src repo config app MY/REPO godoc --enable
 ```
 
 Then open the repository's page in your browser and use the "godoc"
 navigation bar link to see godoc-generated package, function, and type
 documentation.
-
-**Note:** you may need to hard refresh your browser to see the `godoc` tab.

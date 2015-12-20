@@ -446,6 +446,10 @@ func (s remoteRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *source
 	return sourcegraph.NewClientFromContext(ctx).Repos.GetSrclibDataVersionForPath(ctx, v1)
 }
 
+func (s remoteRepos) ConfigureApp(ctx context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).Repos.ConfigureApp(ctx, v1)
+}
+
 type remoteSearch struct{ sourcegraph.SearchServer }
 
 func (s remoteSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {

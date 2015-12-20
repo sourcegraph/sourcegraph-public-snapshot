@@ -23,9 +23,15 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
+// Until we have a more advanced repo config scheme, always enable
+// these in a hard-coded fashion.
+func isAlwaysEnabledApp(app string) bool {
+	return app == "tracker" || app == "changes"
+}
+
 // orderedRepoEnabledFrames returns apps that are enabled for the given repo. Key of frames map is the app ID.
 // It also returns a slice of app IDs that defines the order in which they should be displayed.
-func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platform.RepoFrame, orderedIDs []string) {
+func orderedRepoEnabledFrames(repo *sourcegraph.Repo, repoConf *sourcegraph.RepoConfig) (frames map[string]platform.RepoFrame, orderedIDs []string) {
 	if appconf.Flags.DisableApps {
 		return nil, nil
 	}
@@ -37,7 +43,7 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platfor
 
 	frames = make(map[string]platform.RepoFrame)
 	for _, frame := range platform.Frames() {
-		if frame.Enable == nil || frame.Enable(repo) {
+		if isAlwaysEnabledApp(frame.ID) || repoConf.IsAppEnabled(frame.ID) || (frame.Enable != nil && frame.Enable(repo)) {
 			frames[frame.ID] = frame
 			orderedIDs = append(orderedIDs, frame.ID)
 		}
@@ -57,7 +63,9 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platfor
 		case "tracker":
 			orderedIDs[0], orderedIDs[i] = orderedIDs[i], orderedIDs[0]
 		case "changes":
-			orderedIDs[1], orderedIDs[i] = orderedIDs[i], orderedIDs[1]
+			if len(orderedIDs) >= 1 {
+				orderedIDs[1], orderedIDs[i] = orderedIDs[i], orderedIDs[1]
+			}
 		}
 	}
 
@@ -71,7 +79,7 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	appID := mux.Vars(r)["App"]
-	frames, _ := orderedRepoEnabledFrames(rc.Repo)
+	frames, _ := orderedRepoEnabledFrames(rc.Repo, rc.RepoConfig)
 	app, ok := frames[appID]
 	if !ok {
 		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("not a valid app")}

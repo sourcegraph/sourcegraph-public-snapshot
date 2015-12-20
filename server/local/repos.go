@@ -7,6 +7,8 @@ import (
 
 	"strings"
 
+	"sort"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,6 +20,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -42,7 +45,7 @@ func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegra
 	if err := s.setRepoOtherFields(ctx, r); err != nil {
 		return nil, err
 	}
-	shortCache(ctx)
+	veryShortCache(ctx)
 	return r, nil
 }
 
@@ -284,4 +287,54 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 		conf = &sourcegraph.RepoConfig{}
 	}
 	return conf, nil
+}
+
+func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
+	defer noCache(ctx)
+
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Repos.ConfigureApp"); err != nil {
+		return nil, err
+	}
+
+	store := store.RepoConfigsFromContextOrNil(ctx)
+	if store == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "RepoConfigs is not implemented")
+	}
+
+	if op.Enable {
+		// Check that app ID is a valid app. Allow disabling invalid
+		// apps so that obsolete apps can always be removed.
+		if _, present := platform.Frames()[op.App]; !present {
+			return nil, grpc.Errorf(codes.InvalidArgument, "app %q is not a valid app ID", op.App)
+		}
+	}
+
+	conf, err := store.Get(ctx, op.Repo.URI)
+	if err != nil {
+		return nil, err
+	}
+	if conf == nil {
+		conf = &sourcegraph.RepoConfig{}
+	}
+
+	// Make apps list unique and add/remove the new app.
+	apps := make(map[string]struct{}, len(conf.Apps))
+	for _, app := range conf.Apps {
+		apps[app] = struct{}{}
+	}
+	if op.Enable {
+		apps[op.App] = struct{}{}
+	} else {
+		delete(apps, op.App)
+	}
+	conf.Apps = make([]string, 0, len(apps))
+	for app := range apps {
+		conf.Apps = append(conf.Apps, app)
+	}
+	sort.Strings(conf.Apps)
+
+	if err := store.Update(ctx, op.Repo.URI, *conf); err != nil {
+		return nil, err
+	}
+	return &pbtypes.Void{}, nil
 }

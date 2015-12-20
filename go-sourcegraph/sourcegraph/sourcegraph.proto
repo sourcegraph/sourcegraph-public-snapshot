@@ -192,6 +192,9 @@ message GitHubRepo {
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
 message RepoConfig {
+	// Apps is a list of app IDs denoting the applications that are
+	// enabled for this repository.
+	repeated string apps = 1;
 }
 
 // Repo represents a source code repository.
@@ -511,12 +514,27 @@ service Repos {
 	// us have this specific behavior and makes it easier to supply
 	// srclib data for older versions that is still accurate.
 	rpc GetSrclibDataVersionForPath(TreeEntrySpec) returns (SrclibDataVersion);
+
+	// ConfigureApp configures an application for a repository.
+	rpc ConfigureApp(RepoConfigureAppOp) returns (pbtypes.Void);
 }
 
 // SrclibDataVersion specifies a srclib store version.
 message SrclibDataVersion {
 	string commit_id = 1 [(gogoproto.customname) = "CommitID"];
 	int32 commits_behind = 2;
+}
+
+message RepoConfigureAppOp {
+	// Repo is the repository whose applications are being configured.
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// App is the app ID to enable or disable.
+	string app = 2;
+
+	// Enable is true if the app should be enabled and false if it
+	// should be disabled.
+	bool enable = 3;
 }
 
 // StorageBucket represents the location where keys are stored.

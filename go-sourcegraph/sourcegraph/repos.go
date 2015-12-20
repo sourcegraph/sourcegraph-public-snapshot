@@ -124,3 +124,14 @@ func UnmarshalRepoRevSpec(routeVars map[string]string) (RepoRevSpec, error) {
 	}
 	return rrspec, err
 }
+
+// IsAppEnabled returns a boolean indicating whether the given app is
+// configured to be enabled.
+func (c *RepoConfig) IsAppEnabled(app string) bool {
+	for _, app2 := range c.Apps {
+		if app2 == app {
+			return true
+		}
+	}
+	return false
+}

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
 
 	"strings"
@@ -12,6 +13,7 @@ import (
 	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/platform"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -205,5 +207,99 @@ func TestReposService_GetReadme(t *testing.T) {
 	}
 	if !reflect.DeepEqual(readme, wantReadme) {
 		t.Errorf("got %+v, want %+v", readme, wantReadme)
+	}
+}
+
+func TestReposService_GetConfig(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	wantRepoConfig := &sourcegraph.RepoConfig{
+		Apps: []string{"a", "b"},
+	}
+
+	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", wantRepoConfig)
+
+	conf, err := s.GetConfig(ctx, &sourcegraph.RepoSpec{URI: "r"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledConfigsGet {
+		t.Error("!calledConfigsGet")
+	}
+	if !reflect.DeepEqual(conf, wantRepoConfig) {
+		t.Errorf("got %+v, want %+v", conf, wantRepoConfig)
+	}
+}
+
+func TestReposService_ConfigureApp_Enable(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	// Add dummy app.
+	platform.Frames()["b"] = platform.RepoFrame{}
+	defer func() {
+		delete(platform.Frames(), "b")
+	}()
+
+	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", &sourcegraph.RepoConfig{Apps: []string{"a"}})
+	var calledConfigsUpdate bool
+	mock.stores.RepoConfigs.Update_ = func(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+		if want := []string{"a", "b"}; !reflect.DeepEqual(conf.Apps, want) {
+			t.Errorf("got %#v, want Apps %v", conf, want)
+		}
+		calledConfigsUpdate = true
+		return nil
+	}
+
+	_, err := s.ConfigureApp(ctx, &sourcegraph.RepoConfigureAppOp{
+		Repo:   sourcegraph.RepoSpec{URI: "r"},
+		App:    "b",
+		Enable: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledConfigsGet {
+		t.Error("!calledConfigsGet")
+	}
+	if !calledConfigsUpdate {
+		t.Error("!calledConfigsUpdate")
+	}
+}
+
+func TestReposService_ConfigureApp_Disable(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	// Add dummy app.
+	platform.Frames()["b"] = platform.RepoFrame{}
+	defer func() {
+		delete(platform.Frames(), "b")
+	}()
+
+	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", &sourcegraph.RepoConfig{Apps: []string{"a", "b"}})
+	var calledConfigsUpdate bool
+	mock.stores.RepoConfigs.Update_ = func(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+		if want := []string{"a"}; !reflect.DeepEqual(conf.Apps, want) {
+			t.Errorf("got %#v, want Apps %v", conf, want)
+		}
+		calledConfigsUpdate = true
+		return nil
+	}
+
+	_, err := s.ConfigureApp(ctx, &sourcegraph.RepoConfigureAppOp{
+		Repo:   sourcegraph.RepoSpec{URI: "r"},
+		App:    "b",
+		Enable: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledConfigsGet {
+		t.Error("!calledConfigsGet")
+	}
+	if !calledConfigsUpdate {
+		t.Error("!calledConfigsUpdate")
 	}
 }
