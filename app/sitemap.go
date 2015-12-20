@@ -52,7 +52,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 		for _, repo := range repos.Repos {
 			if repo.Language == "Java" || repo.Language == "Go" || repo.Language == "Python" {
 				var lastMod *time.Time
-				if repo.UpdatedAt.Time().IsZero() {
+				if repo.UpdatedAt != nil && repo.UpdatedAt.Time().IsZero() {
 					tmp := repo.UpdatedAt.Time()
 					lastMod = &tmp
 				}
