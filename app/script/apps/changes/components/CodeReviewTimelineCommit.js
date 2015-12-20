@@ -21,7 +21,7 @@ var CodeReviewTimelineCommit = React.createClass({
 					<span className="octicon octicon-git-commit"></span>
 				</td>
 
-				<td colSpan="3">
+				<td>
 					<div className="header">
 						<b>{this.state.Author.Name}</b> committed <a className="commit-id" href={url}>{this.state.ID.substring(0, 7)}</a> <span className="date">{moment(this.state.Author.Date).fromNow()}</span>
 					</div>
