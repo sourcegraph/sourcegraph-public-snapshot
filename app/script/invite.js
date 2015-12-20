@@ -10,13 +10,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function addInviteClickListener(element) {
 	element.addEventListener("click", function(e) {
+		if (!document.getElementById("user-invite-email").checkValidity()) return;
 		var email = document.getElementById("user-invite-email").value;
-
-		if (email.indexOf("@") === -1) {
-			// Bad email address
-			alert("Please enter a valid email address");
-			return;
-		}
 
 		var permsSelect = document.getElementById("user-invite-perms");
 		var perms = permsSelect.options[permsSelect.selectedIndex].value;
