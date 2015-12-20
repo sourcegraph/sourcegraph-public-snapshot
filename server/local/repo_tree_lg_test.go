@@ -27,13 +27,13 @@ func TestRepoTree_Search_lg(t *testing.T) {
 	}
 	defer a.Close()
 
-	_, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
+	commitID, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer done()
 
-	repoRev := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "myrepo"}, Rev: "master"}
+	repoRev := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "myrepo"}, Rev: "master", CommitID: commitID}
 	_, err = a.Client.RepoTree.Search(ctx, &sourcegraph.RepoTreeSearchOp{
 		Rev: repoRev,
 		Opt: &sourcegraph.RepoTreeSearchOptions{
