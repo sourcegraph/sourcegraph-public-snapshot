@@ -23,7 +23,7 @@
 
 					<hr>
 
-					<h4>...push an existing repository</h4>
+					<h4>Push an existing repository</h4>
 					<pre>
 git remote set-url origin {{.Repo.HTTPCloneURL}}
 git push -u origin master
@@ -31,7 +31,7 @@ git push -u origin master
 
 					<hr>
 
-					<h4>...or create a new repository</h4>
+					<h4>Create a new repository</h4>
 					<pre>
 echo "# {{.Repo.Name}}" >> README.md
 git init
@@ -43,7 +43,7 @@ git push -u origin master
 
 					<hr>
 
-					<h4>...or clone this empty repository</h4>
+					<h4>Clone this empty repository</h4>
 					<pre>
 git clone {{.Repo.HTTPCloneURL}}
 echo "# {{.Repo.Name}}" >> README.md
