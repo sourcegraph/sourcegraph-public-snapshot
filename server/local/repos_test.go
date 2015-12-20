@@ -18,7 +18,11 @@ func TestReposService_Get(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()
 
-	wantRepo := &sourcegraph.Repo{URI: "r", Permissions: &sourcegraph.RepoPermissions{Read: true}}
+	wantRepo := &sourcegraph.Repo{
+		URI:         "r",
+		HTMLURL:     "http://example.com/r",
+		Permissions: &sourcegraph.RepoPermissions{Read: true},
+	}
 
 	calledGet := mock.stores.Repos.MockGet(t, "r")
 	calledGetPerms := mock.stores.Repos.MockGetPerms_Read()
@@ -44,8 +48,8 @@ func TestReposService_List(t *testing.T) {
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{
-			{URI: "r1", Permissions: &sourcegraph.RepoPermissions{Read: true}},
-			{URI: "r2", Permissions: &sourcegraph.RepoPermissions{Read: true}},
+			{URI: "r1", HTMLURL: "http://example.com/r1", Permissions: &sourcegraph.RepoPermissions{Read: true}},
+			{URI: "r2", HTMLURL: "http://example.com/r2", Permissions: &sourcegraph.RepoPermissions{Read: true}},
 		},
 	}
 

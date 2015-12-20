@@ -13,6 +13,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
+	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -35,6 +37,9 @@ func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegra
 		return nil, err
 	}
 	if err := s.setRepoPermissions(ctx, r); err != nil {
+		return nil, err
+	}
+	if err := s.setRepoOtherFields(ctx, r); err != nil {
 		return nil, err
 	}
 	shortCache(ctx)
@@ -70,6 +75,9 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	if err := s.setRepoPermissions(ctx, repos...); err != nil {
 		return nil, err
 	}
+	if err := s.setRepoOtherFields(ctx, repos...); err != nil {
+		return nil, err
+	}
 	veryShortCache(ctx)
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
@@ -85,6 +93,14 @@ func (s *repos) setRepoPermissions(ctx context.Context, repos ...*sourcegraph.Re
 			}
 			repo.Permissions = perms
 		}
+	}
+	return nil
+}
+
+func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Repo) error {
+	appURL := conf.AppURL(ctx)
+	for _, repo := range repos {
+		repo.HTMLURL = appURL.ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
 	}
 	return nil
 }
@@ -105,10 +121,12 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		Language:     op.Language,
 		CreatedAt:    &ts,
 	}
-	if _, err := store.ReposFromContextOrNil(ctx).Create(ctx, repo); err != nil {
+	repo, err := store.ReposFromContextOrNil(ctx).Create(ctx, repo)
+	if err != nil {
 		return nil, err
 	}
-	return store.ReposFromContext(ctx).Get(ctx, op.URI)
+	repoSpec := repo.RepoSpec()
+	return s.Get(ctx, &repoSpec)
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
@@ -121,7 +139,7 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
 		return nil, err
 	}
-	return s.get(ctx, op.Repo.URI)
+	return s.Get(ctx, &op.Repo)
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
