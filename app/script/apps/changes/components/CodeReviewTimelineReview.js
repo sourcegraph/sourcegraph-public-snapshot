@@ -61,7 +61,7 @@ var CodeReviewTimelineReview = React.createClass({
 				<td className="changeset-timeline-icon">
 					<span className="octicon octicon-comment"></span>
 				</td>
-				<td colSpan="3" className="timeline-header-message">
+				<td className="timeline-header-message">
 					<b>{this.state.Author.Login}</b> reviewed<span className="date">{moment(this.state.CreatedAt).fromNow()}</span>
 					<MarkdownView content={this.state.Body} />
 					{this._commentsByFile(this.state.Comments)}

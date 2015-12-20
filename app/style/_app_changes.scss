@@ -229,9 +229,9 @@ h1.changeset-title {
 		.changeset-timeline-block {
 			position: relative;
 			table-layout: fixed;
+			width: 100%;
 
 			.changeset-timeline-icon {
-				position: absolute;
 				left: -28px;
 				background: #fff;
 			}
@@ -331,9 +331,9 @@ h1.changeset-title {
 			}
 
 			.changeset-timeline-icon {
-				left: -38px;
 				margin-top: 9px;
 				padding-top: 0;
+				width: 5px;
 
 				span {
 					&:before {
@@ -354,6 +354,9 @@ h1.changeset-title {
 						left: 10px;
 					}
 
+					display: block;
+					margin-left: -38px;
+					margin-top: 9px;
 					color: #999;
 					border-radius: 24px;
 					width: 34px;
@@ -375,6 +378,7 @@ h1.changeset-title {
 			color: #cacaca;
 			line-height: 12px;
 			padding-top: 3px;
+			vertical-align: top;
 
 			span {
 				line-height: 12px;
@@ -693,6 +697,12 @@ h1.changeset-title {
 	white-space: normal;
 	min-height: 20px;
 	padding: 10px;
+
+	pre {
+		overflow: auto;
+		word-wrap: normal;
+		white-space: pre;
+	}
 
 	img {
 		max-width: 100%;

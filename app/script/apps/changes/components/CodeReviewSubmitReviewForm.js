@@ -61,7 +61,7 @@ var CodeReviewSubmitReviewForm = React.createClass({
 				<tbody>
 					{this.props.visible ? (
 						<tr className="changeset-review-submit-form">
-							<td colSpan={2}>
+							<td colSpan="2">
 								<MarkdownTextarea ref="formBody" placeholder="Enter a description..." autoFocus={true} />
 								<div className="actions">
 									<i className="pull-left">Includes {this.props.drafts.length} inline comments.</i>
@@ -77,7 +77,7 @@ var CodeReviewSubmitReviewForm = React.createClass({
 									<span className="octicon octicon-plus"></span>
 								</a>
 							</td>
-							<td colSpan="3" className="timeline-header-message">
+							<td className="timeline-header-message">
 								Submit your review
 							</td>
 						</tr>

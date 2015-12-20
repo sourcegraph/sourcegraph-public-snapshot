@@ -114,7 +114,7 @@ var CodeReviewTimeline = React.createClass({
 							<td className="changeset-timeline-icon">
 								<span className="fa fa-flag"></span>
 							</td>
-							<td colSpan="3" className="timeline-header-message">
+							<td className="timeline-header-message">
 								<b>{this.props.changeset.Author.Login}</b> started this changeset<span className="date">{moment(this.props.changeset.CreatedAt).fromNow()}</span>
 								<br /><MarkdownView content={this.props.changeset.Description} />
 							</td>
