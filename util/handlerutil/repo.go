@@ -292,17 +292,6 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 	tc.EntrySpec.RepoRev = resolvedRev
 	tc.SrclibDataVersion = dataVer
 
-	// Only request code formatting if it's likely to be a code file.
-	if err = schemaDecoder.Decode(opt, r.URL.Query()); err != nil {
-		return
-	}
-	if !opt.Formatted && !opt.TokenizedSource {
-		opt.Formatted = sourcecode.IsLikelyCodeFile(tc.EntrySpec.Path)
-	}
-	if !opt.TokenizedSource {
-		opt.TokenizedSource = r.Header.Get("Content-Type") == "application/json"
-	}
-
 	tc.Entry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: opt})
 	if err != nil {
 		return

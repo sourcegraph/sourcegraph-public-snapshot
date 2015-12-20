@@ -18,12 +18,7 @@ func Parse(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *vcsc
 		return nil, err
 	}
 
-	var sourceCode *sourcegraph.SourceCode
-	if IsLikelyCodeFile(entrySpec.Path) {
-		sourceCode = Tokenize(entry)
-	} else {
-		sourceCode = TokenizePlain(entry)
-	}
+	sourceCode := Tokenize(entry)
 	refs, err := entryRefs(ctx, entrySpec, entry)
 	if err != nil {
 		return nil, err

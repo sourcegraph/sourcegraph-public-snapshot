@@ -3,7 +3,6 @@ package sourcecode
 import (
 	"fmt"
 	"html/template"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -52,45 +51,3 @@ func DefNameFromSpec(defSpec *sourcegraph.DefSpec) template.HTML {
 	wrappedName := fmt.Sprintf(`<wbr><span class="name">%s</span>`, escapedName)
 	return template.HTML(wrappedName)
 }
-
-// IsLikelyCodeFile returns whether the given path is likely a source code file
-// that Sourcegraph might have processed.
-func IsLikelyCodeFile(path string) bool {
-	base := filepath.Base(strings.ToLower(path))
-	if _, ok := exceptions[base]; ok {
-		return true
-	}
-	if strings.HasPrefix(base, ".") {
-		return false
-	}
-	if _, ok := nonCodeNames[base]; ok {
-		return false
-	}
-	if _, ok := nonCodeExts[filepath.Ext(base)]; ok {
-		return false
-	}
-	return true
-}
-
-var (
-	nonCodeNames = map[string]struct{}{
-		"readme":       {},
-		"license":      {},
-		"authors":      {},
-		"contributors": {},
-		"changelog":    {},
-		"install":      {},
-	}
-	nonCodeExts = map[string]struct{}{
-		".md":       {},
-		".txt":      {},
-		".rst":      {},
-		".mdown":    {},
-		".markdown": {},
-		".ascii":    {},
-		".rdoc":     {},
-	}
-	exceptions = map[string]struct{}{
-		".aurora": {},
-	}
-)

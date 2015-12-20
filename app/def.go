@@ -11,7 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -41,7 +40,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		},
 	}
 	tc.Entry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: &sourcegraph.RepoTreeGetOptions{
-		TokenizedSource: sourcecode.IsLikelyCodeFile(tc.EntrySpec.Path),
+		TokenizedSource: true,
 	}})
 
 	if err != nil {

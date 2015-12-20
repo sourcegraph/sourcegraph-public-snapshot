@@ -260,15 +260,9 @@ func tokenizeHunkBody(fd *sourcegraph.FileDiff, hunk *sourcegraph.Hunk) {
 		fileName = fd.OrigName
 	}
 	file.Name = fileName
-	var code *sourcegraph.SourceCode
-	if sourcecode.IsLikelyCodeFile(fileName) {
-		code = sourcecode.Tokenize(&file)
-	} else {
-		code = sourcecode.TokenizePlain(&file)
-	}
 
 	hunk.Body = nil
-	hunk.BodySource = code
+	hunk.BodySource = sourcecode.Tokenize(&file)
 	// compute word-diff
 	wordDiff(hunk)
 }

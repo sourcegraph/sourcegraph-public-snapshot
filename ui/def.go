@@ -67,7 +67,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		// but also for the file containing it (ie. navigating to a definition in a
 		// different file).
 		entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &sourcegraph.RepoTreeGetOptions{
-			TokenizedSource: sourcecode.IsLikelyCodeFile(entrySpec.Path),
+			TokenizedSource: true,
 		}})
 
 		if err != nil {
