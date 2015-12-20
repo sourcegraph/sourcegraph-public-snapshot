@@ -25,12 +25,9 @@ installed Sourcegraph on a Linux server, it may be running as user
 
 1. Source code repositories are standard git repositories and are located at
    `$SGPATH/repos`.
-1. Changesets, code discussions, issues, etc. are all stored inside the Git
-   repository itself (see the `refs/src/*` and `refs/changesets/*` Git refs).
-1. User accounts are OAuth2 accounts and are stored on Sourcegraph.com, so you
-   never need to worry about backing these up.
+1. Changesets, issues, user accounts, etc., are all also stored inside `$SGPATH`.
 1. Your local machine's authentication info (i.e., your `src login`) is stored in
    `~/.src-auth`. This is your personal login information, not server-wide user
    data.
 1. srclib build caches and language toolchains are in `~/.srclib`,
-   but you should never need to backup these as they contain no user data.
+   but you should never need to back up these as they contain no user data.

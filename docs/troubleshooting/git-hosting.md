@@ -28,7 +28,7 @@ git push -u origin master
 ## Login credentials
 
 When prompted by git to provide your username/password,
-use your Sourcegraph.com credentials.
+use your credentials for your Sourcegraph server.
 
 ### Invalid credentials
 
