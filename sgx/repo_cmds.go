@@ -212,7 +212,8 @@ func (c *repoCreateCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("# created: %s", repo.URI)
+
+	fmt.Println(repo.HTMLURL)
 	return nil
 }
 

@@ -226,6 +226,10 @@ message Repo {
 	// HomepageURL is the URL to the repository's homepage, if any.
 	string homepage_url = 7 [(gogoproto.customname) = "HomepageURL"];
 
+	// HTMLURL is the URL to the repository's main page on the
+	// Sourcegraph server.
+	string html_url = 22 [(gogoproto.customname) = "HTMLURL"];
+
 	// DefaultBranch is the default VCS branch used (typically "master" for git
 	// repositories and "default" for hg repositories).
 	string default_branch = 8;

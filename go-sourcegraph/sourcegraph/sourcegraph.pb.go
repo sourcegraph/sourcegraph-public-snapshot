@@ -517,6 +517,9 @@ type Repo struct {
 	SSHCloneURL string `protobuf:"bytes,6,opt,name=ssh_clone_url,proto3" json:",omitempty"`
 	// HomepageURL is the URL to the repository's homepage, if any.
 	HomepageURL string `protobuf:"bytes,7,opt,name=homepage_url,proto3" json:",omitempty"`
+	// HTMLURL is the URL to the repository's main page on the
+	// Sourcegraph server.
+	HTMLURL string `protobuf:"bytes,22,opt,name=html_url,proto3" json:",omitempty"`
 	// DefaultBranch is the default VCS branch used (typically "master" for git
 	// repositories and "default" for hg repositories).
 	DefaultBranch string `protobuf:"bytes,8,opt,name=default_branch,proto3" json:",omitempty"`

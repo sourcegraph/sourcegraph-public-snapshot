@@ -1,7 +1,10 @@
 package local
 
 import (
+	"net/url"
+
 	"golang.org/x/net/context"
+	"src.sourcegraph.com/sourcegraph/conf"
 	gitmock "src.sourcegraph.com/sourcegraph/gitserver/gitpb/mock"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -16,6 +19,7 @@ func testContext() (context.Context, *mocks) {
 	ctx := NewContext(context.Background(), Config{})
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
+	ctx = conf.WithAppURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	return ctx, &m
 }
 
