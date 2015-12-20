@@ -66,8 +66,6 @@ var RepoRevSwitcher = React.createClass({
 				</a>
 			</li>
 		);
-		// TODO(sqs): add back the build indicator here. the css was tough to get right in the dropdown.
-		// <RepoBuildIndicator RepoURI={this.props.repoSpec} Rev={commitID}/>
 	},
 
 	// Filter the branches or tags that will be shown in the menu via fuzzy search.
