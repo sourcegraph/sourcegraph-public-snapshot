@@ -33,6 +33,7 @@
 		<script ignore-csp>
 			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
 			window._csrfToken = "{{.CSRFToken}}";
+			window._currentUser = JSON.parse({{.CurrentUser|json}});
 			{{if .CacheControl}}window._cacheControl = "{{.CacheControl}}";{{end}}
 		</script>
 

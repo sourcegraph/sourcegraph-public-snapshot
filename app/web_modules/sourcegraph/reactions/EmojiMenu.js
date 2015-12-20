@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 
 import Component from "sourcegraph/Component";
+import context from "sourcegraph/context";
 
 import * as emoji from "sourcegraph/reactions/emoji";
 
@@ -69,6 +70,11 @@ class EmojiMenu extends Component {
 
 		return (
 			<div className="emoji-menu" style={menuStyle}>
+				{!context.currentUser &&
+					<div className="login-prompt">
+						<p><a href="/join">Sign up</a> or <a href="/login">sign in</a> to add a reaction</p>
+					</div>
+				}
 				<div className="emoji-list" style={{height: listHeight}}>
 					{emoji.list().map((name) => <img
 						key={name}

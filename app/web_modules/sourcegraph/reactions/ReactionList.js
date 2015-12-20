@@ -3,6 +3,7 @@ import React from "react";
 import Component from "sourcegraph/Component";
 import EmojiMenu from "sourcegraph/reactions/EmojiMenu";
 import Tooltip from "sourcegraph/util/Tooltip";
+import context from "sourcegraph/context";
 import * as emoji from "sourcegraph/reactions/emoji";
 
 import classNames from "classnames";
@@ -42,7 +43,7 @@ class ReactionList extends Component {
 						let classes = classNames({
 							"reaction": true,
 							"reaction-list-item": true,
-							"user-reacted": reaction.Users.some((user) => user.Login === this.state.currentUser.Login),
+							"user-reacted": reaction.Users.some((user) => context.currentUser && user.Login === context.currentUser.Login),
 						});
 						let usernames = reaction.Users.map((user) => user.Login);
 						if (usernames.length > 1) usernames[usernames.length-1] = `and ${usernames[usernames.length-1]}`;
@@ -76,9 +77,6 @@ ReactionList.propTypes = {
 			Login: React.PropTypes.string,
 		})),
 	})).isRequired,
-	currentUser: React.PropTypes.shape({
-		Login: React.PropTypes.string,
-	}).isRequired,
 	onSelect: React.PropTypes.func.isRequired,
 };
 
