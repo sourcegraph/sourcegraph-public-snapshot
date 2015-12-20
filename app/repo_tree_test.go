@@ -17,7 +17,7 @@ func TestRepoTree(t *testing.T) {
 	const expectedHTML = source
 
 	mockRepoGet(mock, "my/repo")
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockNoSrclibData(mock)
 	calledRepoTreeGet := mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
@@ -57,7 +57,7 @@ func TestRepoTree_markdown(t *testing.T) {
 	const expectedHTML = "<h1>Milton</h1>"
 
 	mockRepoGet(mock, "my/repo")
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockNoSrclibData(mock)
 	mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
@@ -85,7 +85,7 @@ func TestRepoTree_plaintext(t *testing.T) {
 	const expectedHTML = source
 
 	mockRepoGet(mock, "my/repo")
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockNoSrclibData(mock)
 	mockTreeEntryGet(mock, &sourcegraph.TreeEntry{

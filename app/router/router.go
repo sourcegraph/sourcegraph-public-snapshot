@@ -63,8 +63,6 @@ const (
 	RepoCompare      = "repo.compare"
 	RepoCompareAll   = "repo.compare.all"
 
-	RepoEnable = "repo.enable"
-
 	RepoRevCommits = "repo.rev.commits"
 	RepoCommit     = "repo.commit"
 	RepoTags       = "repo.tags"
@@ -209,8 +207,6 @@ func New(base *mux.Router) *Router {
 	headVar := "{Head:" + routevar.NamedToNonCapturingGroups(spec.RevPattern) + "}"
 	repoRev.Path("/.compare/" + headVar).Methods("GET").Name(RepoCompare)
 	repoRev.Path("/.compare/" + headVar + "/.all").Methods("GET").Name(RepoCompareAll)
-
-	repo.Path("/.enable").Methods("GET", "POST", "DELETE").Name(RepoEnable)
 
 	repo.Path("/.commits/{Rev:" + spec.PathNoLeadingDotComponentPattern + "}").Methods("GET").Name(RepoCommit)
 	repo.Path("/.branches").Methods("GET").Name(RepoBranches)

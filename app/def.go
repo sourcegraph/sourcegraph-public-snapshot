@@ -128,10 +128,9 @@ func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
 		// All of the below errors will cause full page HTML pages or redirects, if
 		// bubbled up the chain, so we return nil instead.
 		// Temporarily StatusNotFound with empty body will be returned.
-		switch e := err.(type) {
-		case *handlerutil.URLMovedError, *handlerutil.RepoNotEnabledError,
-			*handlerutil.NoVCSDataError:
-			http.Error(w, fmt.Sprintf("Not found (%#v)", e), http.StatusNotFound)
+		switch err.(type) {
+		case *handlerutil.URLMovedError, *handlerutil.NoVCSDataError:
+			http.Error(w, "", http.StatusNotFound)
 			return nil
 		}
 		return err

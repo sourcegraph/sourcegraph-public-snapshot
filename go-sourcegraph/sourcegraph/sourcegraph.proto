@@ -191,28 +191,7 @@ message GitHubRepo {
 
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
-//
-// Note: See the RepoOrigins doc for more information on the split
-// between Sourcegraph-specific data and origin-specific data.
 message RepoConfig {
-	// Enabled is whether this repository has been enabled for use on
-	// Sourcegraph by a repository owner or a site admin.
-	bool enabled = 1;
-
-	// LastAdminUID is the UID of the last repo admin user to modify
-	// this repo's settings (for mirrored repos only). When
-	// Sourcegraph needs to perform actions on mirrored GitHub repos
-	// that require OAuth authorization outside of an authorized API
-	// request (e.g., during builds or asynchronous operations), it
-	// consults the repo's LastAdminUID to determine whose identity it
-	// should assume to perform the operation.
-	//
-	// If the LastAdminUID refers to a user who no longer has
-	// permissions to perform the action, GitHub will refuse to
-	// perform the operation. In that case, another admin of the
-	// repository needs to update the settings so that she will become
-	// the new LastAdminUID.
-	int32 last_admin_uid = 2 [(gogoproto.customname) = "LastAdminUID"];
 }
 
 // Repo represents a source code repository.
@@ -322,7 +301,6 @@ message RepoListOptions {
 	string direction = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool no_fork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string state = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions list_options = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
@@ -495,23 +473,7 @@ service Repos {
 		};
 	};
 
-	// Enable enables the specified repository.
-	rpc Enable(RepoSpec) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			put: "/repos/enable"
-		};
-	};
-
-	// Disable disables the specified repository.
-	rpc Disable(RepoSpec) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			put: "/repos/disable"
-		};
-	};
-
-	// GetConfig retrieves the configuration for a repository. To
-	// update the config, use Enable or Disable (direct updating is
-	// not currently supported).
+	// GetConfig retrieves the configuration for a repository.
 	rpc GetConfig(RepoSpec) returns (RepoConfig) {
 		option (google.api.http) = {
 			get: "/repos/get_config"

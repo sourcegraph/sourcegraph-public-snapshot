@@ -25,7 +25,7 @@ func TestDefExamples(t *testing.T) {
 	calledReposGet := mockRepoGet(mock, "my/repo")
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockSpecificVersionSrclibData(mock, "c")
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	calledDefsGet := mock.Defs.MockGet_Return(t, def)
 
 	var calledDefsListExamples bool

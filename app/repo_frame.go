@@ -65,7 +65,7 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo) (frames map[string]platfor
 }
 
 func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
 		return err
 	}

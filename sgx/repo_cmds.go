@@ -298,15 +298,6 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 		return err
 	}
 
-	conf, err := cl.Repos.GetConfig(cliCtx, &repoSpec)
-	if err != nil {
-		return err
-	}
-
-	if !conf.Enabled {
-		return fmt.Errorf("repo %s is not enabled", repoURI)
-	}
-
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: repo.DefaultBranch}
 	commit, err := cl.Repos.GetCommit(cliCtx, &repoRevSpec)
 	if err != nil {

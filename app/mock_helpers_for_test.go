@@ -93,15 +93,6 @@ func mockEmptyRepoConfig(c *httptestutil.MockClients) (called *bool) {
 	return called
 }
 
-func mockEnabledRepoConfig(c *httptestutil.MockClients) (called *bool) {
-	called = new(bool)
-	c.Repos.GetConfig_ = func(_ context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
-		*called = true
-		return &sourcegraph.RepoConfig{Enabled: true}, nil
-	}
-	return called
-}
-
 // func mockRepoCommit(c *httptestutil.MockClients, commit *vcs.Commit) {
 // 	c.Repos.GetCommit_ = func(_ context.Context,_ sourcegraph.RepoRevSpec, _ *sourcegraph.RepoGetCommitOptions) (*vcs.Commit, error) {
 // 		return commit, nil, nil
@@ -110,7 +101,7 @@ func mockEnabledRepoConfig(c *httptestutil.MockClients) (called *bool) {
 
 func mockBasicRepoMainPage(c *httptestutil.MockClients) {
 	mockEmptyTreeEntry(c)
-	mockEnabledRepoConfig(c)
+	mockEmptyRepoConfig(c)
 	mockNoRepoReadme(c)
 	mockCurrentSrclibData(c)
 }

@@ -17,7 +17,7 @@ func TestRepoCommit_root(t *testing.T) {
 
 	mockRepoGet(mock, "my/repo")
 	mockCurrentSrclibData(mock)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{
 		ID:      commitID("a"),
 		Parents: nil, // be explicit about this commit being a root commit
@@ -34,7 +34,7 @@ func TestRepoCommit_general(t *testing.T) {
 	var calledDeltasGet bool
 	mockRepoGet(mock, "my/repo")
 	mockCurrentSrclibData(mock)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{
 		ID:      commitID("a"),
 		Parents: []vcs.CommitID{commitID("b")},

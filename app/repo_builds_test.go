@@ -18,7 +18,7 @@ func TestRepoBuild(t *testing.T) {
 	c, mock := apptest.New()
 
 	calledGet := mockRepoGet(mock, "my/repo")
-	calledGetConfig := mockEnabledRepoConfig(mock)
+	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, fakeCommitID)
 	calledBuildsGet := mock.Builds.MockGet_Return(t,
 		&sourcegraph.Build{Attempt: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
@@ -51,7 +51,7 @@ func TestRepoBuilds(t *testing.T) {
 	c, mock := apptest.New()
 
 	calledGet := mockRepoGet(mock, "my/repo")
-	calledGetConfig := mockEnabledRepoConfig(mock)
+	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledBuildsList := mock.Builds.MockList(t,
 		&sourcegraph.Build{Attempt: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
 	)
@@ -74,7 +74,7 @@ func TestRepoBuildsCreate(t *testing.T) {
 	c, mock := apptest.New()
 
 	calledGet := mockRepoGet(mock, "my/repo")
-	calledGetConfig := mockEnabledRepoConfig(mock)
+	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	var calledBuildsCreate bool
 	mock.Builds.Create_ = func(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {

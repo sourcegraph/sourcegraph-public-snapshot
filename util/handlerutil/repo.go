@@ -44,26 +44,12 @@ type RepoRevCommon struct {
 	RepoCommit  *payloads.AugmentedCommit
 }
 
-// GetRepoCommonOpt values configure calls to GetRepoCommon.
-type GetRepoCommonOpt struct {
-	// AllowNonEnabledRepos causes GetRepoCommon to NOT display the "repo
-	// must be enabled" interstitial for repos that are not enabled.
-	AllowNonEnabledRepos bool
-}
-
-// GetRepoAndRevCommon returns the repository and RepoRevSpec
-// based on the request URL. It may also return custom error types URLMovedError,
-// RepoNotEnabledError and NoVCSDataError, which callers should ideally check for.
-//
-// If no repo is found, it is attempted to be fetched automatically
-// (e.g., from the GitHub API if it's a "github.com/user/repo"-style
-// repo URI).
-func GetRepoAndRevCommon(r *http.Request, opts *GetRepoCommonOpt) (rc *RepoCommon, vc *RepoRevCommon, err error) {
-	if opts == nil {
-		opts = new(GetRepoCommonOpt)
-	}
-
-	rc, err = GetRepoCommon(r, nil)
+// GetRepoAndRevCommon returns the repository and RepoRevSpec based on
+// the request URL. It may also return custom error types
+// URLMovedError, NoVCSDataError, which callers should ideally check
+// for.
+func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, err error) {
+	rc, err = GetRepoCommon(r)
 	if err != nil {
 		return
 	}
@@ -118,15 +104,8 @@ func IsRepoNoVCSDataError(err error) bool {
 }
 
 // GetRepoCommon returns the repository and RepoSpec based on the request URL.
-// Callers should ideally handle custom error types URLMovedError or RepoNotEnabledError.
-//
-// If no repo is found, it is attempted to be fetched automatically (e.g., from
-// the GitHub API if it's a "github.com/user/repo"-style repo URI).
-func GetRepoCommon(r *http.Request, opts *GetRepoCommonOpt) (rc *RepoCommon, err error) {
-	if opts == nil {
-		opts = new(GetRepoCommonOpt)
-	}
-
+// Callers should ideally handle the custom error type URLMovedError.
+func GetRepoCommon(r *http.Request) (rc *RepoCommon, err error) {
 	apiclient := APIClient(r)
 
 	rc = &RepoCommon{}
@@ -138,13 +117,6 @@ func GetRepoCommon(r *http.Request, opts *GetRepoCommonOpt) (rc *RepoCommon, err
 	ctx := httpctx.FromRequest(r)
 	repoSpec := rc.Repo.RepoSpec()
 	rc.RepoConfig, err = apiclient.Repos.GetConfig(ctx, &repoSpec)
-	if err != nil {
-		return
-	}
-	if !opts.AllowNonEnabledRepos && !rc.RepoConfig.Enabled {
-		return nil, &RepoNotEnabledError{rc}
-	}
-
 	return
 }
 
@@ -262,16 +234,16 @@ func ResolveSrclibDataVersion(ctx context.Context, cl *sourcegraph.Client, entry
 	return entry.RepoRev, dataVer, err
 }
 
-// GetTreeEntryCommon returns common data specific to the UI requirements for
-// displaying a tree entry. It additionally returns information about the
-// repository, the revision and build based on the request and the passed options.
-// It may also return custom errors URLMovedError, RepoNotEnabledError, or
-// NoVCSDataError.
+// GetTreeEntryCommon returns common data specific to the UI
+// requirements for displaying a tree entry. It additionally returns
+// information about the repository, the revision and build based on
+// the request and the passed options.  It may also return custom
+// errors URLMovedError, or NoVCSDataError.
 func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (tc *TreeEntryCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
 	if opt == nil {
 		opt = new(sourcegraph.RepoTreeGetOptions)
 	}
-	rc, vc, err = GetRepoAndRevCommon(r, nil)
+	rc, vc, err = GetRepoAndRevCommon(r)
 	if err != nil {
 		return tc, rc, vc, err
 	}
@@ -302,7 +274,7 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 
 // GetDefCommon returns common information about a definition, based on the request.
 // It additionally returns common repository and revision information. It may
-// also return custom errors URLMovedError, RepoNotEnabledError, or NoVCSDataError.
+// also return custom errors URLMovedError, or NoVCSDataError.
 //
 // dc.Def.DefKey will be set to the def specification based on the request when getting actual def fails.
 func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads.DefCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
@@ -327,7 +299,7 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 		},
 	}
 
-	rc, vc, err = GetRepoAndRevCommon(r, nil)
+	rc, vc, err = GetRepoAndRevCommon(r)
 	if err != nil {
 		return dc, rc, vc, err
 	}

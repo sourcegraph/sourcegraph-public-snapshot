@@ -10,16 +10,6 @@ func (e *NoVCSDataError) Error() string {
 	return "No VCS data found for " + e.RepoCommon.Repo.URI
 }
 
-// RepoNotEnabledError may be returned when the requested repository has not yet
-// been enabled on Sourcegraph.
-type RepoNotEnabledError struct {
-	RepoCommon *RepoCommon
-}
-
-func (e *RepoNotEnabledError) Error() string {
-	return "Repo " + e.RepoCommon.Repo.URI + " not enabled."
-}
-
 // URLMovedError should be returned when a requested resource has moved to a new
 // address.
 type URLMovedError struct {

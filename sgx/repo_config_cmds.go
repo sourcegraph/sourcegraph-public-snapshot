@@ -5,11 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-
 	"sourcegraph.com/sourcegraph/go-flags"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -27,24 +23,6 @@ func initRepoConfigCmds(repoGroup *flags.Command) {
 		"get a repo's config",
 		"The get subcommand gets a repository's configuration.",
 		&repoConfigGetCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = g.AddCommand("enable",
-		"enable a repo",
-		"The enable subcommand enables a repository.",
-		&repoConfigEnableCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = g.AddCommand("disable",
-		"disable a repo",
-		"The disable subcommand disables a repository.",
-		&repoConfigDisableCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -76,43 +54,5 @@ func (c *repoConfigGetCmd) Execute(args []string) error {
 	}
 	fmt.Println(string(b))
 
-	return nil
-}
-
-type repoConfigEnableCmd struct {
-	Args struct {
-		URI string `name:"REPO-URI" description:"repository URI (e.g., host.com/myrepo)"`
-	} `positional-args:"yes" required:"yes" count:"1"`
-}
-
-func (c *repoConfigEnableCmd) Execute(args []string) error {
-	return repoConfigEnableOrDisable(c.Args.URI, true)
-}
-
-type repoConfigDisableCmd struct {
-	Args struct {
-		URI string `name:"REPO-URI" description:"repository URI (e.g., host.com/myrepo)"`
-	} `positional-args:"yes" required:"yes" count:"1"`
-}
-
-func (c *repoConfigDisableCmd) Execute(args []string) error {
-	return repoConfigEnableOrDisable(c.Args.URI, false)
-}
-
-func repoConfigEnableOrDisable(repoURI string, enable bool) error {
-	cl := Client()
-
-	repoSpec := &sourcegraph.RepoSpec{URI: repoURI}
-
-	var meth func(context.Context, *sourcegraph.RepoSpec, ...grpc.CallOption) (*pbtypes.Void, error)
-	if enable {
-		meth = cl.Repos.Enable
-	} else {
-		meth = cl.Repos.Disable
-	}
-
-	if _, err := meth(cliCtx, repoSpec); err != nil {
-		return err
-	}
 	return nil
 }

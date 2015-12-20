@@ -16,7 +16,7 @@ func TestDefPopover(t *testing.T) {
 
 	calledReposGet := mockRepoGet(mock, "my/repo")
 	mockCurrentSrclibData(mock)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	calledDefsGet := mock.Defs.MockGet_Return(t, def)
 

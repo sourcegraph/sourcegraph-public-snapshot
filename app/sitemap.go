@@ -84,7 +84,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	apiclient := handlerutil.APIClient(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
 		return err
 	}
