@@ -14,24 +14,14 @@ func init() {
 type dbRepoConfig struct {
 	// Repo is the URI of the repository that this config is for.
 	Repo string
-
-	// The following fields should match the fields of
-	// sourcegraph.RepoConfig.
-	Enabled      bool
-	LastAdminUID int32 `db:"admin_uid"`
 }
 
 func (c *dbRepoConfig) toRepoConfig() *sourcegraph.RepoConfig {
-	return &sourcegraph.RepoConfig{
-		Enabled:      c.Enabled,
-		LastAdminUID: c.LastAdminUID,
-	}
+	return &sourcegraph.RepoConfig{}
 }
 
 func (c *dbRepoConfig) fromRepoConfig(repo string, c2 *sourcegraph.RepoConfig) {
 	c.Repo = repo
-	c.Enabled = c2.Enabled
-	c.LastAdminUID = c2.LastAdminUID
 }
 
 // RepoConfigs is a DB-backed implementation of the RepoConfigs store.

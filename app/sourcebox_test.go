@@ -58,7 +58,7 @@ func TestSourceboxDef(t *testing.T) {
 	calledDefsGet := mock.Defs.MockGet_Return(t, def)
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
 	mockCurrentSrclibData(mock)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	resp, err := c.GetOK(router.Rel.URLToSourceboxDef(def.DefKey, "js").String())
 	if err != nil {
@@ -96,7 +96,7 @@ func TestSourceboxDef_unbuiltDisplayEmpty(t *testing.T) {
 		return nil, grpc.Errorf(codes.NotFound, "")
 	}
 	mockNoSrclibData(mock)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	resp, err := c.Get(router.Rel.URLToSourceboxDef(graph.DefKey{Repo: "my/repo", UnitType: "GoPackage", Unit: "u", Path: "p"}, "js").String())
 	if err != nil {
@@ -133,7 +133,7 @@ func TestSourceboxFile(t *testing.T) {
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, vcs.CommitID(commitID))
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
 	mockSpecificVersionSrclibData(mock, commitID)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: sourcegraph.RepoRevSpec{
@@ -178,7 +178,7 @@ func TestSourceboxFile_unbuiltButStillDisplaysRawFile(t *testing.T) {
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, vcs.CommitID(commitID))
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
 	mockNoSrclibData(mock)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: sourcegraph.RepoRevSpec{
@@ -223,7 +223,7 @@ func TestSourceboxFile_lineNumbersEnabled(t *testing.T) {
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, vcs.CommitID(commitID))
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
 	mockNoSrclibData(mock)
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: sourcegraph.RepoRevSpec{

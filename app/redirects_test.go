@@ -29,7 +29,7 @@ func TestRepoMain_redirectToNewURI(t *testing.T) {
 		}
 		return &sourcegraph.Repo{URI: newURI, DefaultBranch: "master"}, nil
 	}
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	err := checkRedirection(c,
 		router.Rel.URLToRepo("old/repo").String(),
@@ -60,7 +60,7 @@ func TestRepoSubroute_redirectToNewURI(t *testing.T) {
 		}
 		return &sourcegraph.Repo{URI: newURI, DefaultBranch: "master"}, nil
 	}
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	err := checkRedirection(c,
 		router.Rel.URLToRepoSubroute(router.RepoBranches, "old/repo").String(),
@@ -91,7 +91,7 @@ func TestDef_redirectToNewURI(t *testing.T) {
 		}
 		return &sourcegraph.Repo{URI: newURI, DefaultBranch: "master"}, nil
 	}
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 
 	oldDefKey := graph.DefKey{Repo: oldURI, UnitType: "t", Unit: "u", Path: "p"}
 	newDefKey := graph.DefKey{Repo: newURI, UnitType: "t", Unit: "u", Path: "p"}

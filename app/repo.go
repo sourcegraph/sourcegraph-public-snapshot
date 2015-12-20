@@ -34,10 +34,6 @@ func init() {
 		return handlerutil.RedirectToNewRepoURI(w, r, err.(*handlerutil.URLMovedError).NewURL)
 	})
 
-	internal.RegisterErrorHandlerForType(&handlerutil.RepoNotEnabledError{}, func(w http.ResponseWriter, r *http.Request, err error) error {
-		return renderRepoNotEnabledTemplate(w, r, err.(*handlerutil.RepoNotEnabledError).RepoCommon)
-	})
-
 	internal.RegisterErrorHandlerForType(&handlerutil.NoVCSDataError{}, func(w http.ResponseWriter, r *http.Request, err error) error {
 		return renderRepoNoVCSDataTemplate(w, r, err.(*handlerutil.NoVCSDataError).RepoCommon)
 	})
@@ -82,7 +78,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	apiclient := handlerutil.APIClient(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, nil)
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -152,7 +148,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
 		return err
 	}
@@ -231,7 +227,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
 		return err
 	}
@@ -248,15 +244,6 @@ func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
 
 func renderRepoNoVCSDataTemplate(w http.ResponseWriter, r *http.Request, rc *handlerutil.RepoCommon) error {
 	return tmpl.Exec(r, w, "repo/no_vcs_data.html", http.StatusOK, nil, &struct {
-		handlerutil.RepoCommon
-		tmpl.Common
-	}{
-		RepoCommon: *rc,
-	})
-}
-
-func renderRepoNotEnabledTemplate(w http.ResponseWriter, r *http.Request, rc *handlerutil.RepoCommon) error {
-	return tmpl.Exec(r, w, "repo/not_enabled.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		tmpl.Common
 	}{

@@ -19,7 +19,7 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	cl := handlerutil.APIClient(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, nil)
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, nil)
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}

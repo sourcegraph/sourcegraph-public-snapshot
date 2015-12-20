@@ -116,8 +116,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"flattenName":     handlerutil.FlattenName,
 	"flattenNameHTML": handlerutil.FlattenNameHTML,
 
-	"repoMaybeUnsupported": repoMaybeUnsupported,
-
 	"schemaMatchesExceptListAndSortOptions": schemautil.SchemaMatchesExceptListAndSortOptions,
 
 	"classForRoute": func(route string) string {
@@ -236,17 +234,6 @@ var TemplateFunctions = htmpl.FuncMap{
 		infos, err := toolchain.List()
 		// note: err != nil if e.g. $SRCLIBPATH is not a directory.
 		return err == nil && len(infos) > 0
-	},
-
-	"repoEnabled": func(c *sourcegraph.RepoConfig) bool {
-		return c != nil && c.Enabled
-	},
-
-	"repoPerms": func(p *sourcegraph.RepoPermissions) sourcegraph.RepoPermissions {
-		if p == nil {
-			return sourcegraph.RepoPermissions{}
-		}
-		return *p
 	},
 
 	"isAdmin": func(ctx context.Context, method string) bool {

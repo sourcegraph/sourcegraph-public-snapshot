@@ -17,7 +17,7 @@ func TestRepo(t *testing.T) {
 	c, mock := apptest.New()
 
 	calledGet := mockRepoGet(mock, "my/repo")
-	calledGetConfig := mockEnabledRepoConfig(mock)
+	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	calledGetReadme := mockNoRepoReadme(mock)
 	calledRepoTreeGet := mockEmptyTreeEntry(mock)
@@ -46,7 +46,7 @@ func TestRepo_branchWithSlashes(t *testing.T) {
 	c, mock := apptest.New()
 
 	calledGet := mockRepoGet(mock, "my/repo")
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockCurrentSrclibData(mock)
 	mockNoRepoReadme(mock)
@@ -71,7 +71,7 @@ func TestRepo_defaultBranchWithSlashes(t *testing.T) {
 		URI:           "my/repo",
 		DefaultBranch: "some/branch",
 	})
-	mockEnabledRepoConfig(mock)
+	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockCurrentSrclibData(mock)
 	mockNoRepoReadme(mock)

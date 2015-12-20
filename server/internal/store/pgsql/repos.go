@@ -250,17 +250,6 @@ func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		default:
 			return "", nil, &sourcegraph.InvalidOptionsError{Reason: "invalid state"}
 		}
-		switch opt.State {
-		case "enabled", "disabled":
-			sql := `EXISTS (SELECT NULL FROM repo_config rc WHERE rc.repo=repo.uri AND enabled='true')`
-			if opt.State == "disabled" {
-				sql = "NOT " + sql
-			}
-			conds = append(conds, sql)
-		case "", "all":
-		default:
-			return "", nil, &sourcegraph.InvalidOptionsError{Reason: "invalid state"}
-		}
 		if opt.Owner != "" {
 			return "", nil, errOptionsSpecifyEmptyResult
 		}

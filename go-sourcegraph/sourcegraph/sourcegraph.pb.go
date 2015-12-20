@@ -486,27 +486,7 @@ func (*GitHubRepo) ProtoMessage()    {}
 
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
-//
-// Note: See the RepoOrigins doc for more information on the split
-// between Sourcegraph-specific data and origin-specific data.
 type RepoConfig struct {
-	// Enabled is whether this repository has been enabled for use on
-	// Sourcegraph by a repository owner or a site admin.
-	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:",omitempty"`
-	// LastAdminUID is the UID of the last repo admin user to modify
-	// this repo's settings (for mirrored repos only). When
-	// Sourcegraph needs to perform actions on mirrored GitHub repos
-	// that require OAuth authorization outside of an authorized API
-	// request (e.g., during builds or asynchronous operations), it
-	// consults the repo's LastAdminUID to determine whose identity it
-	// should assume to perform the operation.
-	//
-	// If the LastAdminUID refers to a user who no longer has
-	// permissions to perform the action, GitHub will refuse to
-	// perform the operation. In that case, another admin of the
-	// repository needs to update the settings so that she will become
-	// the new LastAdminUID.
-	LastAdminUID int32 `protobuf:"varint,2,opt,name=last_admin_uid,proto3" json:",omitempty"`
 }
 
 func (m *RepoConfig) Reset()         { *m = RepoConfig{} }
@@ -618,7 +598,6 @@ type RepoListOptions struct {
 	Direction   string   `protobuf:"bytes,6,opt,name=direction,proto3" json:",omitempty" url:",omitempty"`
 	NoFork      bool     `protobuf:"varint,7,opt,name=no_fork,proto3" json:",omitempty" url:",omitempty"`
 	Type        string   `protobuf:"bytes,8,opt,name=type,proto3" json:",omitempty" url:",omitempty"`
-	State       string   `protobuf:"bytes,9,opt,name=state,proto3" json:",omitempty" url:",omitempty"`
 	Owner       string   `protobuf:"bytes,10,opt,name=owner,proto3" json:",omitempty" url:",omitempty"`
 	ListOptions `protobuf:"bytes,11,opt,name=list_options,embedded=list_options" `
 }
@@ -3398,13 +3377,7 @@ type ReposClient interface {
 	Delete(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// GetReadme fetches the formatted README file for a repository.
 	GetReadme(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Readme, error)
-	// Enable enables the specified repository.
-	Enable(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// Disable disables the specified repository.
-	Disable(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// GetConfig retrieves the configuration for a repository. To
-	// update the config, use Enable or Disable (direct updating is
-	// not currently supported).
+	// GetConfig retrieves the configuration for a repository.
 	GetConfig(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*RepoConfig, error)
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
 	// TODO(slimsag): add google.api.http annotations to these once moved
@@ -3497,24 +3470,6 @@ func (c *reposClient) GetReadme(ctx context.Context, in *RepoRevSpec, opts ...gr
 	return out, nil
 }
 
-func (c *reposClient) Enable(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.Repos/Enable", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reposClient) Disable(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.Repos/Disable", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *reposClient) GetConfig(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*RepoConfig, error) {
 	out := new(RepoConfig)
 	err := grpc.Invoke(ctx, "/sourcegraph.Repos/GetConfig", in, out, c.cc, opts...)
@@ -3593,13 +3548,7 @@ type ReposServer interface {
 	Delete(context.Context, *RepoSpec) (*pbtypes1.Void, error)
 	// GetReadme fetches the formatted README file for a repository.
 	GetReadme(context.Context, *RepoRevSpec) (*Readme, error)
-	// Enable enables the specified repository.
-	Enable(context.Context, *RepoSpec) (*pbtypes1.Void, error)
-	// Disable disables the specified repository.
-	Disable(context.Context, *RepoSpec) (*pbtypes1.Void, error)
-	// GetConfig retrieves the configuration for a repository. To
-	// update the config, use Enable or Disable (direct updating is
-	// not currently supported).
+	// GetConfig retrieves the configuration for a repository.
 	GetConfig(context.Context, *RepoSpec) (*RepoConfig, error)
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
 	// TODO(slimsag): add google.api.http annotations to these once moved
@@ -3700,30 +3649,6 @@ func _Repos_GetReadme_Handler(srv interface{}, ctx context.Context, dec func(int
 		return nil, err
 	}
 	out, err := srv.(ReposServer).GetReadme(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Repos_Enable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RepoSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(ReposServer).Enable(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Repos_Disable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RepoSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(ReposServer).Disable(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -3841,14 +3766,6 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetReadme",
 			Handler:    _Repos_GetReadme_Handler,
-		},
-		{
-			MethodName: "Enable",
-			Handler:    _Repos_Enable_Handler,
-		},
-		{
-			MethodName: "Disable",
-			Handler:    _Repos_Disable_Handler,
 		},
 		{
 			MethodName: "GetConfig",

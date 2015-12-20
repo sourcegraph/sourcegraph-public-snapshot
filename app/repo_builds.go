@@ -29,7 +29,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, &handlerutil.GetRepoCommonOpt{AllowNonEnabledRepos: true})
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, nil)
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, &handlerutil.GetRepoCommonOpt{AllowNonEnabledRepos: true})
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	apiclient := handlerutil.APIClient(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, nil)
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func serveRepoBuildLog(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	rc, err := handlerutil.GetRepoCommon(r, &handlerutil.GetRepoCommonOpt{AllowNonEnabledRepos: true})
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	rc, err := handlerutil.GetRepoCommon(r, &handlerutil.GetRepoCommonOpt{AllowNonEnabledRepos: true})
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}

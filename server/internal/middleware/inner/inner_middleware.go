@@ -2145,64 +2145,6 @@ func (s wrappedRepos) GetReadme(ctx context.Context, param *sourcegraph.RepoRevS
 
 }
 
-func (s wrappedRepos) Enable(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "Enable", param)
-	defer func() {
-		trace.After(ctx, "Repos", "Enable", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Repos.Enable")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Enable(ctx, param)
-	return
-
-}
-
-func (s wrappedRepos) Disable(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "Disable", param)
-	defer func() {
-		trace.After(ctx, "Repos", "Disable", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Repos.Disable")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Disable(ctx, param)
-	return
-
-}
-
 func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetConfig", param)

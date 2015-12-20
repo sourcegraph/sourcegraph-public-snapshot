@@ -13,7 +13,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -253,67 +252,10 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 	return readme, nil
 }
 
-func (s *repos) Enable(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return &pbtypes.Void{}, s.enableOrDisable(ctx, *repo, true)
-}
-
-func (s *repos) Disable(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return &pbtypes.Void{}, s.enableOrDisable(ctx, *repo, false)
-}
-
-// enableOrDisable updates a repo's config to be either enabled or
-// disabled. It also triggers hooks that must run after the config
-// changes (and it diffs the new settings from the current to only
-// trigger hooks when a config property actually changes).
-func (s *repos) enableOrDisable(ctx context.Context, repo sourcegraph.RepoSpec, enable bool) error {
-	defer noCache(ctx)
-
-	// Get current config.
-	cur, err := svc.Repos(ctx).GetConfig(ctx, &repo)
-	if err != nil {
-		return err
-	}
-
-	store := store.RepoConfigsFromContextOrNil(ctx)
-	if store == nil {
-		return &sourcegraph.NotImplementedError{What: "RepoConfigs"}
-	}
-
-	// We might need to fetch the repo to perform the config update.
-	var r *sourcegraph.Repo
-
-	// Compute the updated config.
-	updated := *cur
-	updated.Enabled = enable
-	if a := authpkg.ActorFromContext(ctx); a.IsAuthenticated() {
-		cur.LastAdminUID = int32(a.UID)
-	}
-
-	// Execute hooks before updating the config, in case a hook fails
-	// (so the config doesn't erroneously reflect the desired final
-	// state).
-	if updated.Enabled != cur.Enabled {
-		// Fetch repo if haven't already.
-		if r == nil {
-			var err error
-			r, err = s.get(ctx, repo.URI)
-			if err != nil {
-				return err
-			}
-		}
-		if err := s.changedConfig_Enabled(ctx, r, updated.Enabled); err != nil {
-			return err
-		}
-	}
-
-	return store.Update(ctx, repo.URI, updated)
-}
-
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
 	repoConfigsStore := store.RepoConfigsFromContextOrNil(ctx)
 	if repoConfigsStore == nil {
-		// Reasonable default.
-		return &sourcegraph.RepoConfig{Enabled: true}, nil
+		return nil, grpc.Errorf(codes.Unimplemented, "RepoConfigs is not implemented")
 	}
 
 	conf, err := repoConfigsStore.Get(ctx, repo.URI)

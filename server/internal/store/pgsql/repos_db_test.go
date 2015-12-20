@@ -36,63 +36,6 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
-// Test the State option to Repos.List.
-func TestRepos_List_stateOption(t *testing.T) {
-	t.Parallel()
-
-	r1 := &sourcegraph.Repo{URI: "r1"} // enabled because public and Enabled
-	c1 := &sourcegraph.RepoConfig{Enabled: true}
-
-	r2 := &sourcegraph.Repo{URI: "r2"} // disabled because public and Enabled==false
-	c2 := &sourcegraph.RepoConfig{Enabled: false}
-
-	r3 := &sourcegraph.Repo{URI: "r3"} // disabled because public and no conf exist
-	c3 := (*sourcegraph.RepoConfig)(nil)
-
-	var s Repos
-	ctx, done := testContext()
-	defer done()
-
-	insertRepoAndConf := func(repo *sourcegraph.Repo, conf *sourcegraph.RepoConfig) {
-		s.mustCreate(ctx, t, repo)
-		if conf != nil {
-			if err := (&RepoConfigs{}).Update(ctx, repo.URI, *conf); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	insertRepoAndConf(r1, c1)
-	insertRepoAndConf(r2, c2)
-	insertRepoAndConf(r3, c3)
-
-	getRepoURIsByState := func(state string) []string {
-		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{State: state})
-		if err != nil {
-			t.Fatal(err)
-		}
-		uris := make([]string, len(repos))
-		for i, repo := range repos {
-			uris[i] = repo.URI
-		}
-		sort.Strings(uris)
-		return uris
-	}
-
-	if got, want := getRepoURIsByState("enabled"), []string{"r1"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("state %s: got %v, want %v", "enabled", got, want)
-	}
-	if got, want := getRepoURIsByState("disabled"), []string{"r2", "r3"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("state %s: got %v, want %v", "disabled", got, want)
-	}
-	all := []string{"r1", "r2", "r3"}
-	if got := getRepoURIsByState("all"); !reflect.DeepEqual(got, all) {
-		t.Errorf("state %s: got %v, want %v", "all", got, all)
-	}
-	if got := getRepoURIsByState(""); !reflect.DeepEqual(got, all) {
-		t.Errorf("state %s: got %v, want %v", "empty", got, all)
-	}
-}
-
 func TestRepos_List_type(t *testing.T) {
 	t.Parallel()
 

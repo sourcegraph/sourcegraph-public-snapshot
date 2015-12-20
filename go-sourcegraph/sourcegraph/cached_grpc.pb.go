@@ -2248,58 +2248,6 @@ func (s *CachedReposClient) GetReadme(ctx context.Context, in *RepoRevSpec, opts
 	return result, nil
 }
 
-func (s *CachedReposClient) Enable(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	if s.Cache != nil {
-		var cachedResult pbtypes.Void
-		cached, err := s.Cache.Get(ctx, "Repos.Enable", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.ReposClient.Enable(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Repos.Enable", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func (s *CachedReposClient) Disable(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	if s.Cache != nil {
-		var cachedResult pbtypes.Void
-		cached, err := s.Cache.Get(ctx, "Repos.Disable", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.ReposClient.Disable(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Repos.Disable", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
 func (s *CachedReposClient) GetConfig(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*RepoConfig, error) {
 	if s.Cache != nil {
 		var cachedResult RepoConfig

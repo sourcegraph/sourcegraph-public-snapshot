@@ -18,7 +18,7 @@ func serveRepoCompare(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	cl := handlerutil.APIClient(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r, nil)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
 		return err
 	}

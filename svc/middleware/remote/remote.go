@@ -418,14 +418,6 @@ func (s remoteRepos) GetReadme(ctx context.Context, v1 *sourcegraph.RepoRevSpec)
 	return sourcegraph.NewClientFromContext(ctx).Repos.GetReadme(ctx, v1)
 }
 
-func (s remoteRepos) Enable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return sourcegraph.NewClientFromContext(ctx).Repos.Enable(ctx, v1)
-}
-
-func (s remoteRepos) Disable(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return sourcegraph.NewClientFromContext(ctx).Repos.Disable(ctx, v1)
-}
-
 func (s remoteRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
 	return sourcegraph.NewClientFromContext(ctx).Repos.GetConfig(ctx, v1)
 }

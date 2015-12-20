@@ -43,7 +43,7 @@ func TestDefVirtual(t *testing.T) {
 	}
 	mockRepoGet(mock, "my/repo")
 	mock.Repos.GetConfig_ = func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
-		return &sourcegraph.RepoConfig{Enabled: true}, nil
+		return &sourcegraph.RepoConfig{}, nil
 	}
 	mock.Repos.GetCommit_ = func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 		return &vcs.Commit{ID: vcs.CommitID(wantDef.CommitID)}, nil

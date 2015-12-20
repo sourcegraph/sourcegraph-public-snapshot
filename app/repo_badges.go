@@ -20,7 +20,7 @@ func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, nil)
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	apiclient := handlerutil.APIClient(r)
 
-	rc, err := handlerutil.GetRepoCommon(r, nil)
+	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
 		return err
 	}

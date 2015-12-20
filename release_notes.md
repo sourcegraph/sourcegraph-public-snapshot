@@ -1,5 +1,9 @@
 # dev
 
+- Remove the concept of enabling/disabling a repository, which was no
+  longer used. **PostgreSQL backend:** Run `alter table repo_config
+  drop column enabled; alter table repo_config drop column admin_uid;`
+  to perform this migration.
 - Add a new revision syntax `REV^{srclib}`, which refers to the the
   nearest ancestor to REV that has srclib Code Intelligence data.
 - Remove the `--app.show-latest-built-commit`/`ShowLatestBuiltCommit`
