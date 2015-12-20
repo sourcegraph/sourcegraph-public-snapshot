@@ -40,7 +40,6 @@ require("./debounce");
 require("./defn-popover");
 require("./feedback-form");
 require("./history");
-require("./input");
 require("./keyboard_shortcuts");
 require("./links");
 require("./tooltip");
