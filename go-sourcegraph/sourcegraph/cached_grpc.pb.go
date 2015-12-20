@@ -2430,6 +2430,32 @@ func (s *CachedReposClient) GetSrclibDataVersionForPath(ctx context.Context, in 
 	return result, nil
 }
 
+func (s *CachedReposClient) ConfigureApp(ctx context.Context, in *RepoConfigureAppOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "Repos.ConfigureApp", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.ReposClient.ConfigureApp(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Repos.ConfigureApp", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 type CachedSearchClient struct {
 	SearchClient
 	Cache *grpccache.Cache

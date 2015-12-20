@@ -2348,6 +2348,35 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 
 }
 
+func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoConfigureAppOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "ConfigureApp", param)
+	defer func() {
+		trace.After(ctx, "Repos", "ConfigureApp", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Repos.ConfigureApp")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Repos
+
+	var fedCtx context.Context
+	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
+	if err != nil {
+		return
+	}
+	if fedCtx != nil {
+		target = svc.Repos(fedCtx)
+		ctx = fedCtx
+	}
+
+	res, err = target.ConfigureApp(ctx, param)
+	return
+
+}
+
 type wrappedSearch struct {
 	c *auth.Config
 }

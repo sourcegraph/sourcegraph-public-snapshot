@@ -105,6 +105,7 @@ type ReposClient struct {
 	ListTags_                    func(ctx context.Context, in *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
 	ListCommitters_              func(ctx context.Context, in *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
+	ConfigureApp_                func(ctx context.Context, in *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 }
 
 func (s *ReposClient) Get(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -159,6 +160,10 @@ func (s *ReposClient) GetSrclibDataVersionForPath(ctx context.Context, in *sourc
 	return s.GetSrclibDataVersionForPath_(ctx, in)
 }
 
+func (s *ReposClient) ConfigureApp(ctx context.Context, in *sourcegraph.RepoConfigureAppOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.ConfigureApp_(ctx, in)
+}
+
 var _ sourcegraph.ReposClient = (*ReposClient)(nil)
 
 type ReposServer struct {
@@ -175,6 +180,7 @@ type ReposServer struct {
 	ListTags_                    func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
 	ListCommitters_              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
+	ConfigureApp_                func(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 }
 
 func (s *ReposServer) Get(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
@@ -227,6 +233,10 @@ func (s *ReposServer) ListCommitters(v0 context.Context, v1 *sourcegraph.ReposLi
 
 func (s *ReposServer) GetSrclibDataVersionForPath(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
 	return s.GetSrclibDataVersionForPath_(v0, v1)
+}
+
+func (s *ReposServer) ConfigureApp(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
+	return s.ConfigureApp_(v0, v1)
 }
 
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)

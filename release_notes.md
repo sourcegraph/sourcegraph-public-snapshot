@@ -1,5 +1,8 @@
 # dev
 
+- Allow enabling/disabling apps on a per-repository basis (with `src
+  repo config app`). **PostgreSQL backend:** Run `alter table
+  repo_config add column apps text[];` to perform this migration.
 - Remove the concept of enabling/disabling a repository, which was no
   longer used. **PostgreSQL backend:** Run `alter table repo_config
   drop column enabled; alter table repo_config drop column admin_uid;`

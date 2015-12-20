@@ -27,8 +27,10 @@ type RepoFrame struct {
 	// should be injected into the main repository page area.
 	Handler http.Handler
 
-	// Enable is called to determine whether the frame should be
-	// enabled for a given repo. If nil, it is enabled for all repos.
+	// Enable, if set, is called to determine whether the frame should
+	// be enabled for a given repo. A frame is enabled for a repo if
+	// EITHER its Enable func returns true OR if the repo config
+	// specifies the app as being enabled.
 	//
 	// The Enable func, if provided, should not rely on external
 	// resources or heavy computation, as it is called on every repo

@@ -210,8 +210,8 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 
-	"orderedRepoEnabledFrames": func(repo *sourcegraph.Repo) []platform.RepoFrame {
-		frames, orderedIDs := orderedRepoEnabledFrames(repo)
+	"orderedRepoEnabledFrames": func(repo *sourcegraph.Repo, repoConf *sourcegraph.RepoConfig) []platform.RepoFrame {
+		frames, orderedIDs := orderedRepoEnabledFrames(repo, repoConf)
 		orderedFrames := make([]platform.RepoFrame, len(orderedIDs))
 		for i, id := range orderedIDs {
 			orderedFrames[i] = frames[id]

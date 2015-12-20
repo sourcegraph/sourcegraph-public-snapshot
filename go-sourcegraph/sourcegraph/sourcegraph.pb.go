@@ -35,6 +35,7 @@ It has these top-level messages:
 	RepoStatusesCreateOp
 	RepoList
 	SrclibDataVersion
+	RepoConfigureAppOp
 	StorageBucket
 	StorageKey
 	StorageValue
@@ -487,6 +488,9 @@ func (*GitHubRepo) ProtoMessage()    {}
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
 type RepoConfig struct {
+	// Apps is a list of app IDs denoting the applications that are
+	// enabled for this repository.
+	Apps []string `protobuf:"bytes,1,rep,name=apps" json:",omitempty"`
 }
 
 func (m *RepoConfig) Reset()         { *m = RepoConfig{} }
@@ -551,7 +555,6 @@ type Repo struct {
 	// if there is no current user) is granted to this repository.
 	Permissions *RepoPermissions `protobuf:"bytes,18,opt,name=permissions" json:",omitempty"`
 	GitHub      *GitHubRepo      `protobuf:"bytes,19,opt,name=github" json:",omitempty"`
-	Config      *RepoConfig      `protobuf:"bytes,20,opt,name=config" json:",omitempty"`
 }
 
 func (m *Repo) Reset()         { *m = Repo{} }
@@ -716,6 +719,20 @@ type SrclibDataVersion struct {
 func (m *SrclibDataVersion) Reset()         { *m = SrclibDataVersion{} }
 func (m *SrclibDataVersion) String() string { return proto.CompactTextString(m) }
 func (*SrclibDataVersion) ProtoMessage()    {}
+
+type RepoConfigureAppOp struct {
+	// Repo is the repository whose applications are being configured.
+	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
+	// App is the app ID to enable or disable.
+	App string `protobuf:"bytes,2,opt,name=app,proto3" json:",omitempty"`
+	// Enable is true if the app should be enabled and false if it
+	// should be disabled.
+	Enable bool `protobuf:"varint,3,opt,name=enable,proto3" json:",omitempty"`
+}
+
+func (m *RepoConfigureAppOp) Reset()         { *m = RepoConfigureAppOp{} }
+func (m *RepoConfigureAppOp) String() string { return proto.CompactTextString(m) }
+func (*RepoConfigureAppOp) ProtoMessage()    {}
 
 // StorageBucket represents the location where keys are stored.
 //
@@ -3409,6 +3426,8 @@ type ReposClient interface {
 	// us have this specific behavior and makes it easier to supply
 	// srclib data for older versions that is still accurate.
 	GetSrclibDataVersionForPath(ctx context.Context, in *TreeEntrySpec, opts ...grpc.CallOption) (*SrclibDataVersion, error)
+	// ConfigureApp configures an application for a repository.
+	ConfigureApp(ctx context.Context, in *RepoConfigureAppOp, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
 
 type reposClient struct {
@@ -3536,6 +3555,15 @@ func (c *reposClient) GetSrclibDataVersionForPath(ctx context.Context, in *TreeE
 	return out, nil
 }
 
+func (c *reposClient) ConfigureApp(ctx context.Context, in *RepoConfigureAppOp, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.Repos/ConfigureApp", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Repos service
 
 type ReposServer interface {
@@ -3580,6 +3608,8 @@ type ReposServer interface {
 	// us have this specific behavior and makes it easier to supply
 	// srclib data for older versions that is still accurate.
 	GetSrclibDataVersionForPath(context.Context, *TreeEntrySpec) (*SrclibDataVersion, error)
+	// ConfigureApp configures an application for a repository.
+	ConfigureApp(context.Context, *RepoConfigureAppOp) (*pbtypes1.Void, error)
 }
 
 func RegisterReposServer(s *grpc.Server, srv ReposServer) {
@@ -3742,6 +3772,18 @@ func _Repos_GetSrclibDataVersionForPath_Handler(srv interface{}, ctx context.Con
 	return out, nil
 }
 
+func _Repos_ConfigureApp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(RepoConfigureAppOp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ReposServer).ConfigureApp(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Repos_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Repos",
 	HandlerType: (*ReposServer)(nil),
@@ -3797,6 +3839,10 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSrclibDataVersionForPath",
 			Handler:    _Repos_GetSrclibDataVersionForPath_Handler,
+		},
+		{
+			MethodName: "ConfigureApp",
+			Handler:    _Repos_ConfigureApp_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
