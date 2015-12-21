@@ -86,7 +86,7 @@ Starts an HTTP server serving the app and API.
           --test-ui                              starts the UI test server which causes all UI endpoints to return mock data
           --tls-cert=                            certificate file (for TLS)
           --tls-key=                             key file (for TLS)
-      -i, --id-key=                              identity key file ($SGPATH/id.pem) [$SRC_ID_KEY_FILE]
+      -i, --id-key=                              identity key file ($SGPATH/appdata/global/core.serve/auth/id.pem)
           --id-key-data=                         identity key file data (overrides -i/--id-key) [$SRC_ID_KEY_DATA]
           --dequeue-msec=                        if no builds are dequeued, sleep up to this many msec before trying again (1000)
       -n, --num-workers=                         number of parallel workers (1) [$SG_NUM_WORKERS]
@@ -156,7 +156,7 @@ type ServeCmdPrivate struct {
 	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
 	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
 
-	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" env:"SRC_ID_KEY_FILE"`
+	IDKeyFile string `short:"i" long:"id-key" description:"identity key file"`
 	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
 }
 
