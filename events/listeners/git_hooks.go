@@ -42,6 +42,12 @@ func (g *gitHookListener) Start(ctx context.Context) {
 	}
 	events.Subscribe(events.GitPushEvent, buildCallback)
 	events.Subscribe(events.GitCreateBranchEvent, buildCallback)
+
+	inventoryCallback := func(id events.EventID, p events.GitPayload) {
+		inventoryHook(ctx, id, p)
+	}
+	events.Subscribe(events.GitPushEvent, inventoryCallback)
+	events.Subscribe(events.GitCreateBranchEvent, inventoryCallback)
 }
 
 func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPayload) {
@@ -131,5 +137,21 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 			return
 		}
 		log15.Debug("postPushHook: build created", "repo", repo.URI, "branch", event.Branch, "commit", event.Commit)
+	}
+}
+
+// inventoryHook triggers a Repos.GetInventory call that computes the
+// repo's inventory and caches it in a commit status. Then it is
+// available immediately for future callers (which generally expect
+// that operation to be fast).
+func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+	event := payload.Event
+	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
+		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: payload.Repo, Rev: event.Commit, CommitID: event.Commit}
+		_, err := cl.Repos.GetInventory(ctx, repoRev)
+		if err != nil {
+			log15.Warn("inventoryHook: call to Repos.GetInventory failed", "err", err, "repoRev", repoRev)
+		}
 	}
 }
