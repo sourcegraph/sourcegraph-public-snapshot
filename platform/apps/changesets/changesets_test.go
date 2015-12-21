@@ -104,6 +104,9 @@ func (ts *testSuite) prepRepo() error {
 			return err
 		}
 
+		// Yield for repo creation to complete.
+		time.Sleep(1 * time.Second)
+
 		// Build and set repo URI.
 		mirrorRepoURI := "github.com/" + ts.mirrorOrganization + "/" + ts.mirrorRepoName
 		setRepoURI(mirrorRepoURI)
