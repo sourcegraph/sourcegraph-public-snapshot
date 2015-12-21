@@ -121,15 +121,18 @@ func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (commi
 		return "", nil, err
 	}
 
-	commitID, err = PushRepo(t, ctx, repo)
+	commitID, err = PushRepo(t, ctx, repo, nil)
 	if err != nil {
 		return "", nil, err
 	}
 	return commitID, done, nil
 }
 
-// PushRepo pushes sample commits to a repo.
-func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo) (commitID string, err error) {
+// PushRepo pushes sample commits to a repo. If files is specified, it
+// is treated as a map of filenames to file contents. If files is nil,
+// a default set of some text files is used. All files are committed
+// in the same commit.
+func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files map[string]string) (commitID string, err error) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	tmpDir, err := ioutil.TempDir("", "")
@@ -166,15 +169,24 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo) (commit
 	}
 	repoDir := filepath.Join(tmpDir, repo.Name)
 
-	// Add a file and make a commit.
-	if err := ioutil.WriteFile(filepath.Join(repoDir, "myfile.txt"), []byte("a"), 0700); err != nil {
-		return "", err
+	// Add files and make a commit.
+	if files == nil {
+		files = map[string]string{"myfile.txt": "a"}
 	}
-	cmd = exec.Command("git", "add", "myfile.txt")
-	cmd.Dir = repoDir
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+	for path, data := range files {
+		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+			return "", err
+		}
+		if err := ioutil.WriteFile(filepath.Join(repoDir, path), []byte(data), 0700); err != nil {
+			return "", err
+		}
+		cmd = exec.Command("git", "add", path)
+		cmd.Dir = repoDir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+		}
 	}
+
 	cmd = exec.Command("git", "commit", "-m", "hello", "--author", "a <a@a.com>", "--date", "2006-01-02T15:04:05Z")
 	//cmd.Env = append(os.Environ(), "GIT_COMMITTER_NAME=a", "GIT_COMMITTER_EMAIL=a@a.com", "GIT_COMMITTER_DATE=2006-01-02T15:04:05Z")
 	cmd.Dir = repoDir
