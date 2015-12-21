@@ -97,12 +97,9 @@ func (s *repos) listCommitsCached(ctx context.Context, repoRev sourcegraph.RepoR
 	}
 
 	var commitList sourcegraph.CommitList
-	for _, status := range cmbStatus.Statuses {
-		if status.Context == "graph_data_commit" {
-			if err := json.Unmarshal([]byte(status.Description), &commitList); err != nil {
-				return nil, err
-			}
-			break
+	if status := cmbStatus.GetStatus("graph_data_commit"); status != nil {
+		if err := json.Unmarshal([]byte(status.Description), &commitList); err != nil {
+			return nil, err
 		}
 	}
 	if commitList.Commits == nil {
