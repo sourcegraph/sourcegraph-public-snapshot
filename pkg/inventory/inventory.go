@@ -101,6 +101,16 @@ func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
 	return &inv, err
 }
 
+// PrimaryLanguage returns the primary language discovered in the
+// inventory (the language with the most non-vendored/non-skipped
+// bytes of code). If there is none, the empty string is returned.
+func (inv *Inventory) PrimaryLanguage() string {
+	if len(inv.Languages) == 0 {
+		return ""
+	}
+	return inv.Languages[0].Name
+}
+
 type langsByTotalBytes []*Lang
 
 func (v langsByTotalBytes) Len() int           { return len(v) }

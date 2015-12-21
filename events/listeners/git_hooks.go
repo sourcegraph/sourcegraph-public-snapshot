@@ -141,7 +141,8 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 }
 
 // inventoryHook triggers a Repos.GetInventory call that computes the
-// repo's inventory and caches it in a commit status. Then it is
+// repo's inventory and caches it in a commit status (and saves it to
+// the repo's Language field for default branch pushes). Then it is
 // available immediately for future callers (which generally expect
 // that operation to be fast).
 func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
@@ -149,9 +150,26 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 	event := payload.Event
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
 		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: payload.Repo, Rev: event.Commit, CommitID: event.Commit}
-		_, err := cl.Repos.GetInventory(ctx, repoRev)
+		// Trigger a call to Repos.GetInventory so the inventory is
+		// cached for subsequent calls.
+		inv, err := cl.Repos.GetInventory(ctx, repoRev)
 		if err != nil {
 			log15.Warn("inventoryHook: call to Repos.GetInventory failed", "err", err, "repoRev", repoRev)
+			return
+		}
+
+		// If this push is to the default branch, update the repo's
+		// Language field with the primary language.
+		repo, err := cl.Repos.Get(ctx, &repoRev.RepoSpec)
+		if err != nil {
+			log15.Warn("inventoryHook: call to Repos.Get failed", "err", err, "repoRev", repoRev)
+			return
+		}
+		if event.Branch == repo.DefaultBranch {
+			lang := inv.PrimaryLanguage()
+			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.RepoSpec(), Language: lang}); err != nil {
+				log15.Warn("inventoryHook: call to Repos.Update to set language failed", "err", err, "repoRev", repoRev, "language", lang)
+			}
 		}
 	}
 }
