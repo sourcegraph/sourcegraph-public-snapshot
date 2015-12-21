@@ -26,6 +26,14 @@ func TestScan(t *testing.T) {
 			fs:   walkableFileSystem{mapfs.New(map[string]string{"a": ""})},
 			want: &Inventory{},
 		},
+		"excludes": {
+			fs: walkableFileSystem{mapfs.New(map[string]string{
+				"a.min.js":                     "a",
+				"node_modules/a/b.js":          "a",
+				"Godeps/_workspace/src/a/b.go": "a",
+			})},
+			want: &Inventory{},
+		},
 		"java": {
 			fs: walkableFileSystem{mapfs.New(map[string]string{"a.java": "a"})},
 			want: &Inventory{

@@ -5,6 +5,7 @@ package inventory
 import (
 	"path"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/kr/fs"
@@ -22,6 +23,28 @@ var extLangs = map[string]string{
 	".scala": "Scala",
 	".js":    "JavaScript",
 	".c":     "C",
+}
+
+var skipExts = []string{
+	".min.js",
+	".min.css",
+}
+
+func skipExt(filename string) bool {
+	for _, ext := range skipExts {
+		if strings.HasSuffix(filename, ext) {
+			return true
+		}
+	}
+	return false
+}
+
+var skipDirs = map[string]struct{}{
+	"node_modules":     struct{}{},
+	"bower_components": struct{}{},
+	"vendor":           struct{}{},
+	"Godeps":           struct{}{},
+	"third_party":      struct{}{},
 }
 
 // Scan performs an inventory of the tree at fs.
@@ -49,11 +72,23 @@ func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
 		if err := w.Err(); err != nil {
 			return nil, err
 		}
+
 		fi := w.Stat()
-		if fi.Mode().IsRegular() {
-			ext := path.Ext(fi.Name())
-			if lang := extLangs[ext]; lang != "" {
+		name := fi.Name()
+		mode := fi.Mode()
+		switch {
+		case mode.IsRegular():
+			if skipExt(name) {
+				continue
+			}
+
+			if lang := extLangs[path.Ext(name)]; lang != "" {
 				langs[lang] += uint64(fi.Size())
+			}
+
+		case mode.IsDir():
+			if _, skipDir := skipDirs[name]; skipDir {
+				w.SkipDir()
 			}
 		}
 	}
