@@ -1,0 +1,24 @@
+syntax = "proto3";
+package inventory;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Inventory summarizes a tree's contents (e.g., which programming
+// languages are used).
+message Inventory {
+	// Languages are the programming languages used in the tree.
+	repeated Lang languages = 1;
+}
+
+// Lang represents a programming language used in a directory tree.
+message Lang {
+	// Name is the name of a programming language (e.g., "Go" or
+	// "Java").
+	string name = 1;
+
+	// TotalBytes is the total number of bytes of code written in the
+	// programming language.
+	uint64 total_bytes = 2;
+}
