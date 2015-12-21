@@ -702,10 +702,9 @@ type ByFilesFilter interface {
 // empty, or if the file path has not been cleaned (i.e., if file !=
 // path.Clean(file)).
 //
-// If specific == true, then only the specific files are accepted (i.e. a
-// directory path will not include all files in that directory as it would
-// normally).
-func ByFiles(specific bool, files ...string) interface {
+// If exact == true, then only the exact files are accepted (i.e. a directory
+// path will not include all files in that directory as it would normally).
+func ByFiles(exact bool, files ...string) interface {
 	DefFilter
 	RefFilter
 	UnitFilter
@@ -719,21 +718,21 @@ func ByFiles(specific bool, files ...string) interface {
 			panic("file: not cleaned (file != path.Clean(file))")
 		}
 	}
-	return byFilesFilter{files: files, specific: specific}
+	return byFilesFilter{files: files, exact: exact}
 }
 
 type byFilesFilter struct {
-	files    []string
-	specific bool
+	files []string
+	exact bool
 }
 
 func (f byFilesFilter) String() string {
-	return fmt.Sprintf("ByFiles(%v, specific=%t)", ([]string)(f.files), f.specific)
+	return fmt.Sprintf("ByFiles(%v, exact=%t)", ([]string)(f.files), f.exact)
 }
 func (f byFilesFilter) ByFiles() []string { return f.files }
 func (f byFilesFilter) SelectDef(def *graph.Def) bool {
 	for _, ff := range f.files {
-		if def.File == ff || (!f.specific && strings.HasPrefix(def.File, ff+"/")) {
+		if def.File == ff || (!f.exact && strings.HasPrefix(def.File, ff+"/")) {
 			return true
 		}
 	}
@@ -741,7 +740,7 @@ func (f byFilesFilter) SelectDef(def *graph.Def) bool {
 }
 func (f byFilesFilter) SelectRef(ref *graph.Ref) bool {
 	for _, ff := range f.files {
-		if ref.File == ff || (!f.specific && strings.HasPrefix(ref.File, ff+"/")) {
+		if ref.File == ff || (!f.exact && strings.HasPrefix(ref.File, ff+"/")) {
 			return true
 		}
 	}
@@ -750,7 +749,7 @@ func (f byFilesFilter) SelectRef(ref *graph.Ref) bool {
 func (f byFilesFilter) SelectUnit(unit *unit.SourceUnit) bool {
 	for _, unitFile := range unit.Files {
 		for _, ff := range f.files {
-			if ff == unitFile || (!f.specific && strings.HasPrefix(unitFile, ff+"/")) {
+			if ff == unitFile || (!f.exact && strings.HasPrefix(unitFile, ff+"/")) {
 				return true
 			}
 		}

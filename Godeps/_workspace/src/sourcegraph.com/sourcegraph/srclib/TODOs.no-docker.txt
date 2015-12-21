@@ -1,0 +1,1 @@
+* remove dependency on `git`, don't require knowing the commit ID

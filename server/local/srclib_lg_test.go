@@ -88,12 +88,12 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 
 	// Push the repo.
 	if asUser != "" {
-		cmd, err = a.CmdAs(asUser, []string{"push"})
+		cmd, err = a.CmdAs(asUser, []string{"push", "--repo", repo.URI})
 		if err != nil {
 			return err
 		}
 	} else {
-		cmd, err = a.CmdAsSystem([]string{"push"})
+		cmd, err = a.CmdAsSystem([]string{"push", "--repo", repo.URI})
 		if err != nil {
 			return err
 		}

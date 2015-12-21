@@ -18,6 +18,9 @@
   removed. **PostgreSQL backend:** Run `alter table repo_build drop
   column "import"; alter table repo_build drop column usecache;` to
   perform this migration.
+- The `src push` command no longer guesses the current repository. You
+  must specify it with `src push --repo my/repo`.
+
 
 # 0.9.0
 

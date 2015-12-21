@@ -77,9 +77,6 @@ func (c *WorkCmd) Execute(args []string) error {
 
 	cl := cli.Client()
 
-	// Check for Docker and fail if it's required but unavailable.
-	srclibUseDockerExeMethod()
-
 	// TODO(sqs): make this slightly less than the server's
 	// BuildTimeout (need to add a way for the worker client to
 	// determine the BuildTimeout value).

@@ -13,7 +13,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
-	"sourcegraph.com/sourcegraph/srclib/config"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -32,21 +31,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 		return err
 	}
 
-	execOpt := srclib.ToolchainExecOpt{}
-	if srclibUseDockerExeMethod() {
-		execOpt.ExeMethods = "docker"
-	} else {
-		execOpt.ExeMethods = "program"
-	}
-
-	if err := os.Setenv("SRCLIB_FETCH_DEPS", "t"); err != nil {
-		return err
-	}
-
-	configCmd := &srclib.ConfigCmd{
-		Options:          config.Options{Repo: repo.URI, Subdir: "."},
-		ToolchainExecOpt: execOpt,
-	}
+	configCmd := &srclib.ConfigCmd{}
 	if err := configCmd.Execute(nil); err != nil {
 		return err
 	}
@@ -54,7 +39,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 	makex.Default.ParallelJobs = 1
 	makex.Default.Verbose = true
 
-	mf, err := srclib.CreateMakefile(execOpt, false)
+	mf, err := srclib.CreateMakefile()
 	if err != nil {
 		return err
 	}

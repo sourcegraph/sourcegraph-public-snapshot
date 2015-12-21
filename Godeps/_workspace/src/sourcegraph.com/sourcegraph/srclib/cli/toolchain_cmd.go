@@ -96,25 +96,6 @@ func (t ToolchainPath) Complete(match string) []flags.Completion {
 	return comps
 }
 
-type ToolchainExecOpt struct {
-	ExeMethods string `short:"m" long:"methods" default:"program,docker" description:"toolchain execution methods" value-name:"METHODS"`
-}
-
-func (o *ToolchainExecOpt) ToolchainMode() toolchain.Mode {
-	// TODO(sqs): make this a go-flags type
-	methods := strings.Split(o.ExeMethods, ",")
-	var mode toolchain.Mode
-	for _, method := range methods {
-		if method == "program" {
-			mode |= toolchain.AsProgram
-		}
-		if method == "docker" {
-			mode |= toolchain.AsDockerContainer
-		}
-	}
-	return mode
-}
-
 type ToolchainCmd struct{}
 
 var toolchainCmd ToolchainCmd
@@ -131,18 +112,8 @@ func (c *ToolchainListCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	fmtStr := "%-40s  %s\n"
-	colorable.Printf(fmtStr, "PATH", "TYPE")
 	for _, t := range toolchains {
-		var exes []string
-		if t.Program != "" {
-			exes = append(exes, "program")
-		}
-		if t.Dockerfile != "" {
-			exes = append(exes, "docker")
-		}
-		colorable.Printf(fmtStr, t.Path, strings.Join(exes, ", "))
+		fmt.Println(t.Path)
 	}
 	return nil
 }

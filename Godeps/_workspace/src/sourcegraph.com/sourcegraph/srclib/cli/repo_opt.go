@@ -1,12 +1,6 @@
 package cli
 
-import (
-	"log"
-	"os"
-	"path/filepath"
-
-	"sourcegraph.com/sourcegraph/go-flags"
-)
+import "sourcegraph.com/sourcegraph/go-flags"
 
 var (
 	localRepo    *Repo
@@ -34,32 +28,11 @@ func OpenLocalRepo() (*Repo, error) {
 	return localRepo, localRepoErr
 }
 
-func SetDefaultRepoOpt(c *flags.Command) {
-	OpenLocalRepo()
-	if localRepo != nil {
-		if localRepo.CloneURL != "" {
-			SetOptionDefaultValue(c.Group, "repo", localRepo.URI())
-		}
-	}
-}
-
 func SetDefaultCommitIDOpt(c *flags.Command) {
 	OpenLocalRepo()
 	if localRepo != nil {
 		if localRepo.CommitID != "" {
 			SetOptionDefaultValue(c.Group, "commit", localRepo.CommitID)
 		}
-	}
-}
-
-func setDefaultRepoSubdirOpt(c *flags.Command) {
-	OpenLocalRepo()
-	if localRepo != nil {
-		absDir, err := os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-		}
-		subdir, _ := filepath.Rel(localRepo.RootDir, absDir)
-		SetOptionDefaultValue(c.Group, "subdir", subdir)
 	}
 }

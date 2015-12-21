@@ -26,7 +26,7 @@
 //   type pip struct {}
 //
 //   func (p *pip) List(dir string, unit unit.SourceUnit, c *config.Repository) ([]*dep.RawDependency, error) {
-//     // return each line in requirements.txt, perhaps (or do something more robust in Docker)
+//     // return each line in requirements.txt, perhaps
 //     // return something like:
 //     return []*dep.RawDependency{{TargetType: "pip-package", Target: "Django==1.6"}}, nil
 //   }

@@ -116,12 +116,6 @@ func (s *Server) allEnvConfig() []string {
 func (s *Server) srclibEnvConfig() []string {
 	return []string{
 		"SRCLIBPATH=" + getSRCLIBPATHWithSampleToolchain(),
-
-		// Force no Docker so the test doesn't have to worry about
-		// building the Docker image for the srclib-sample
-		// toolchain.
-		"SG_SRCLIB_ENABLE_DOCKER=f",
-
 		"SG_BUILD_LOG_DIR=" + filepath.Join(s.SGPATH, "build-logs"),
 	}
 }
@@ -558,9 +552,7 @@ func bareEnvConfig() []string {
 }
 
 // getSRCLIBPATHWithSampleToolchain returns a SRCLIBPATH env var value
-// that has only the srclib-sample toolchain installed. Note that it
-// doesn't build the toolchain's Docker image, so it must be run as a
-// program (not via Docker).
+// that has only the srclib-sample toolchain installed.
 //
 // This func assumes that the sample toolchain has been vendored in
 // the sourcegraph repo at

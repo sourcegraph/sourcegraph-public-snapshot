@@ -1,11 +1,12 @@
 package cli
 
 import (
+	"errors"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
+	"runtime"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
 	"sourcegraph.com/sourcegraph/go-flags"
@@ -14,13 +15,12 @@ import (
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	"sourcegraph.com/sourcegraph/srclib/config"
-	"sourcegraph.com/sourcegraph/srclib/flagutil"
 	"sourcegraph.com/sourcegraph/srclib/plan"
 )
 
 func init() {
 	cliInit = append(cliInit, func(cli *flags.Command) {
-		c, err := cli.AddCommand("make",
+		_, err := cli.AddCommand("make",
 			"plans and executes plan",
 			`Generates a plan (in Makefile form, in memory) for analyzing the tree and executes the plan. `,
 			&makeCmd,
@@ -28,20 +28,14 @@ func init() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		SetDefaultRepoOpt(c)
-		setDefaultRepoSubdirOpt(c)
 	})
 }
 
 type MakeCmd struct {
-	config.Options
+	Quiet  bool `short:"q" long:"quiet" description:"silence all output"`
+	DryRun bool `short:"n" long:"dry-run" description:"print what would be done and exit"`
 
-	ToolchainExecOpt `group:"execution"`
-
-	Quiet   bool `short:"q" long:"quiet" description:"silence all output"`
-	Verbose bool `short:"v" long:"verbose" description:"show more verbose output"`
-	DryRun  bool `short:"n" long:"dry-run" description:"print what would be done and exit"`
+	Parallel int `short:"j" long:"jobs" description:"allow N parallel jobs" value-name:"N" default-mask:"GOMAXPROCS"`
 
 	Dir Directory `short:"C" long:"directory" description:"change to DIR before doing anything" value-name:"DIR"`
 
@@ -53,13 +47,20 @@ type MakeCmd struct {
 var makeCmd MakeCmd
 
 func (c *MakeCmd) Execute(args []string) error {
+	if c.Parallel == 0 {
+		c.Parallel = runtime.GOMAXPROCS(0)
+	}
+	if c.Parallel <= 0 {
+		return errors.New("-j/--jobs (parallelism) must be > 0")
+	}
+
 	if c.Dir != "" {
 		if err := os.Chdir(c.Dir.String()); err != nil {
 			return err
 		}
 	}
 
-	mf, err := CreateMakefile(c.ToolchainExecOpt, c.Verbose)
+	mf, err := CreateMakefile()
 	if err != nil {
 		return err
 	}
@@ -72,8 +73,9 @@ func (c *MakeCmd) Execute(args []string) error {
 	}
 
 	mkConf := &makex.Default
+	mkConf.ParallelJobs = c.Parallel
 	mk := mkConf.NewMaker(mf, goals...)
-	mk.Verbose = c.Verbose
+	mk.Verbose = GlobalOpt.Verbose
 
 	if c.Quiet {
 		mk.RuleOutput = func(r makex.Rule) (out io.WriteCloser, err io.WriteCloser, logger *log.Logger) {
@@ -100,7 +102,7 @@ func (c *MakeCmd) Execute(args []string) error {
 // CreateMakefile creates a Makefile to build a tree. The cwd should
 // be the root of the tree you want to make (due to some probably
 // unnecessary assumptions that CreateMaker makes).
-func CreateMakefile(execOpt ToolchainExecOpt, verbose bool) (*makex.Makefile, error) {
+func CreateMakefile() (*makex.Makefile, error) {
 	localRepo, err := OpenRepo(".")
 	if err != nil {
 		return nil, err
@@ -118,17 +120,9 @@ func CreateMakefile(execOpt ToolchainExecOpt, verbose bool) (*makex.Makefile, er
 		log.Printf("No source unit files found. Did you mean to run `%s config`? (This is not an error; it just means that srclib didn't find anything to build or analyze here.)", srclib.CommandName)
 	}
 
-	toolchainExecOptArgs, err := flagutil.MarshalArgs(&execOpt)
-	if err != nil {
-		return nil, err
-	}
-
 	// TODO(sqs): buildDataDir is hardcoded.
 	buildDataDir := filepath.Join(buildstore.BuildDataDirName, localRepo.CommitID)
-	mf, err := plan.CreateMakefile(buildDataDir, buildStore, localRepo.VCSType, treeConfig, plan.Options{
-		ToolchainExecOpt: strings.Join(toolchainExecOptArgs, " "),
-		Verbose:          verbose,
-	})
+	mf, err := plan.CreateMakefile(buildDataDir, buildStore, localRepo.VCSType, treeConfig)
 	if err != nil {
 		return nil, err
 	}

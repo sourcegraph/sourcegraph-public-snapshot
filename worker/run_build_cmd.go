@@ -3,15 +3,12 @@ package worker
 import (
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"golang.org/x/net/context"
-
-	"strings"
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -45,21 +42,6 @@ func (c *runBuildCmd) Execute(args []string) error {
 	}
 
 	if c.Clean {
-		if srclibUseDockerExeMethod() {
-			// Must use Docker to remove directory contents because if any
-			// files were created in the PreConfigCmds, they will be owned
-			// by root and the current user can't necessarily delete them.
-			if strings.Contains(c.BuildDir, ":") {
-				panic("BuildDir contains ':': " + c.BuildDir + " (could be misinterpreted in docker run --volume)")
-			}
-			cmd := exec.Command("docker", "run", "--volume="+filepath.Dir(c.BuildDir)+":/tmp/build-dir-parent", "--rm", "--entrypoint=/bin/rm", "ubuntu:14.04", "-rf", "--one-file-system", filepath.Join("/tmp/build-dir-parent", filepath.Base(c.BuildDir)))
-			cmd.Stdout = os.Stderr
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				return err
-			}
-
-		}
 		if err := os.RemoveAll(c.BuildDir); err != nil {
 			return err
 		}
