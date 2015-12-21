@@ -66,6 +66,8 @@ func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
 	for w.Step() {
 		if hasDeadline && deadline.Sub(time.Now()) < finishTime {
 			err = context.Canceled
+			// Carry through this error to the final "return"
+			// statement, so that we return a partial result.
 			break
 		}
 
