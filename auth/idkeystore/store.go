@@ -45,6 +45,12 @@ func GenerateOrGetIDKey(ctx context.Context, idKeyData string, idKeyFile string)
 		p = fileStore
 	}
 	err = p.Put(k)
+
+	if err != nil && idKeyFile == "" && grpc.Code(err) == codes.AlreadyExists {
+		log15.Info("Key generation race detected. Falling back to first generated ID key")
+		return platformStore.Get()
+	}
+
 	return k, err
 }
 
