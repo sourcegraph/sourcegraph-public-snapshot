@@ -227,6 +227,7 @@ import vcsclient "sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 import pbtypes "sourcegraph.com/sqs/pbtypes"
 import pbtypes1 "sourcegraph.com/sqs/pbtypes"
 import pbtypes2 "sourcegraph.com/sqs/pbtypes"
+import inventory "src.sourcegraph.com/sourcegraph/pkg/inventory"
 
 // discarding unused import google_api1 "google/api"
 
@@ -3428,6 +3429,11 @@ type ReposClient interface {
 	GetSrclibDataVersionForPath(ctx context.Context, in *TreeEntrySpec, opts ...grpc.CallOption) (*SrclibDataVersion, error)
 	// ConfigureApp configures an application for a repository.
 	ConfigureApp(ctx context.Context, in *RepoConfigureAppOp, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// GetInventory performs an inventory of the repository's contents
+	// at a specific commit. It returns a summary of the programming
+	// languages, etc., used by the repository, as evidenced by the
+	// repository's files.
+	GetInventory(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*inventory.Inventory, error)
 }
 
 type reposClient struct {
@@ -3564,6 +3570,15 @@ func (c *reposClient) ConfigureApp(ctx context.Context, in *RepoConfigureAppOp, 
 	return out, nil
 }
 
+func (c *reposClient) GetInventory(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*inventory.Inventory, error) {
+	out := new(inventory.Inventory)
+	err := grpc.Invoke(ctx, "/sourcegraph.Repos/GetInventory", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Repos service
 
 type ReposServer interface {
@@ -3610,6 +3625,11 @@ type ReposServer interface {
 	GetSrclibDataVersionForPath(context.Context, *TreeEntrySpec) (*SrclibDataVersion, error)
 	// ConfigureApp configures an application for a repository.
 	ConfigureApp(context.Context, *RepoConfigureAppOp) (*pbtypes1.Void, error)
+	// GetInventory performs an inventory of the repository's contents
+	// at a specific commit. It returns a summary of the programming
+	// languages, etc., used by the repository, as evidenced by the
+	// repository's files.
+	GetInventory(context.Context, *RepoRevSpec) (*inventory.Inventory, error)
 }
 
 func RegisterReposServer(s *grpc.Server, srv ReposServer) {
@@ -3784,6 +3804,18 @@ func _Repos_ConfigureApp_Handler(srv interface{}, ctx context.Context, dec func(
 	return out, nil
 }
 
+func _Repos_GetInventory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(RepoRevSpec)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ReposServer).GetInventory(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Repos_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Repos",
 	HandlerType: (*ReposServer)(nil),
@@ -3843,6 +3875,10 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConfigureApp",
 			Handler:    _Repos_ConfigureApp_Handler,
+		},
+		{
+			MethodName: "GetInventory",
+			Handler:    _Repos_GetInventory_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

@@ -82,17 +82,18 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/federated"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/trace"
 	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"sourcegraph.com/sourcegraph/srclib/unit"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 // Services returns the local services wrapped with auth, federation, etc.

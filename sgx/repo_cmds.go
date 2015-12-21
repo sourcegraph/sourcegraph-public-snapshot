@@ -107,6 +107,15 @@ Same as above, but for a deployed site:
 		log.Fatal(err)
 	}
 
+	_, err = reposGroup.AddCommand("inventory",
+		"list inventory of a repo",
+		"The 'src repo inventory' command lists the inventory of a repository at a specific commit (e.g., which programming languages are used).",
+		&repoInventoryCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	initRepoConfigCmds(reposGroup)
 }
 
@@ -362,5 +371,32 @@ func (c *repoRefreshVCSCmd) Execute(args []string) error {
 			log.Printf("%s: updated latest commit on %s: %s %s (was %s %s)", repo.URI, repo.DefaultBranch, postCommit.ID, timeutil.TimeAgo(postCommit.Author.Date), preCommit.ID, timeutil.TimeAgo(preCommit.Author.Date))
 		}
 	}
+	return nil
+}
+
+type repoInventoryCmd struct {
+	Args struct {
+		Repo string `name:"REPO" description:"repository URI (e.g., host.com/myrepo)"`
+	} `positional-args:"yes" required:"yes"`
+
+	Rev string `long:"rev" description:"revision (if unset, uses default branch)"`
+}
+
+func (c *repoInventoryCmd) Execute(args []string) error {
+	cl := Client()
+
+	inv, err := cl.Repos.GetInventory(cliCtx, &sourcegraph.RepoRevSpec{
+		RepoSpec: sourcegraph.RepoSpec{URI: c.Args.Repo},
+		Rev:      c.Rev,
+	})
+	if err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(inv, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
 	return nil
 }

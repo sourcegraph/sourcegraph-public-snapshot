@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -448,6 +449,10 @@ func (s remoteRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *source
 
 func (s remoteRepos) ConfigureApp(ctx context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
 	return sourcegraph.NewClientFromContext(ctx).Repos.ConfigureApp(ctx, v1)
+}
+
+func (s remoteRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	return sourcegraph.NewClientFromContext(ctx).Repos.GetInventory(ctx, v1)
 }
 
 type remoteSearch struct{ sourcegraph.SearchServer }

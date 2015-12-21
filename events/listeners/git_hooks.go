@@ -42,6 +42,12 @@ func (g *gitHookListener) Start(ctx context.Context) {
 	}
 	events.Subscribe(events.GitPushEvent, buildCallback)
 	events.Subscribe(events.GitCreateBranchEvent, buildCallback)
+
+	inventoryCallback := func(id events.EventID, p events.GitPayload) {
+		inventoryHook(ctx, id, p)
+	}
+	events.Subscribe(events.GitPushEvent, inventoryCallback)
+	events.Subscribe(events.GitCreateBranchEvent, inventoryCallback)
 }
 
 func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPayload) {
@@ -131,5 +137,39 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 			return
 		}
 		log15.Debug("postPushHook: build created", "repo", repo.URI, "branch", event.Branch, "commit", event.Commit)
+	}
+}
+
+// inventoryHook triggers a Repos.GetInventory call that computes the
+// repo's inventory and caches it in a commit status (and saves it to
+// the repo's Language field for default branch pushes). Then it is
+// available immediately for future callers (which generally expect
+// that operation to be fast).
+func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+	event := payload.Event
+	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
+		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: payload.Repo, Rev: event.Commit, CommitID: event.Commit}
+		// Trigger a call to Repos.GetInventory so the inventory is
+		// cached for subsequent calls.
+		inv, err := cl.Repos.GetInventory(ctx, repoRev)
+		if err != nil {
+			log15.Warn("inventoryHook: call to Repos.GetInventory failed", "err", err, "repoRev", repoRev)
+			return
+		}
+
+		// If this push is to the default branch, update the repo's
+		// Language field with the primary language.
+		repo, err := cl.Repos.Get(ctx, &repoRev.RepoSpec)
+		if err != nil {
+			log15.Warn("inventoryHook: call to Repos.Get failed", "err", err, "repoRev", repoRev)
+			return
+		}
+		if event.Branch == repo.DefaultBranch {
+			lang := inv.PrimaryLanguage()
+			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.RepoSpec(), Language: lang}); err != nil {
+				log15.Warn("inventoryHook: call to Repos.Update to set language failed", "err", err, "repoRev", repoRev, "language", lang)
+			}
+		}
 	}
 }

@@ -95,7 +95,7 @@ func TestGitClone_authRequired(t *testing.T) {
 	unauthedCloneURL := repo.HTTPCloneURL
 	repo.HTTPCloneURL = authedCloneURL.String()
 
-	if _, err := testutil.PushRepo(t, authedCtx, repo); err != nil {
+	if _, err := testutil.PushRepo(t, authedCtx, repo, nil); err != nil {
 		t.Fatal(err)
 	}
 

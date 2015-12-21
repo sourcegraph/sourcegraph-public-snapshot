@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/federated"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/trace"
@@ -2373,6 +2374,35 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoC
 	}
 
 	res, err = target.ConfigureApp(ctx, param)
+	return
+
+}
+
+func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "GetInventory", param)
+	defer func() {
+		trace.After(ctx, "Repos", "GetInventory", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Repos.GetInventory")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Repos
+
+	var fedCtx context.Context
+	fedCtx, err = federated.RepoContext(ctx, &param.URI)
+	if err != nil {
+		return
+	}
+	if fedCtx != nil {
+		target = svc.Repos(fedCtx)
+		ctx = fedCtx
+	}
+
+	res, err = target.GetInventory(ctx, param)
 	return
 
 }
