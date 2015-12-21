@@ -43,7 +43,9 @@ func (r *repoAutoCloner) Start(ctx context.Context) {
 			return
 		}
 		for _, repo := range repos.Repos {
-			RepoUpdater.enqueue(repo)
+			if repo.Mirror {
+				RepoUpdater.enqueue(repo)
+			}
 		}
 	}()
 }
