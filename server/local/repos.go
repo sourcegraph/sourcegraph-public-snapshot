@@ -1,6 +1,7 @@
 package local
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	pathpkg "path"
@@ -16,6 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -349,6 +351,53 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 		return nil, err
 	}
 
+	// Consult the commit status "cache" for a cached inventory result.
+	//
+	// We cache inventory result on the commit status. This lets us
+	// populate the cache by calling this method from anywhere (e.g.,
+	// after a git push). Just using grpccache would only cache the
+	// result in that particular client.
+	const statusContext = "cache:repo.inventory"
+	statusRev := sourcegraph.RepoRevSpec{RepoSpec: repoRev.RepoSpec, CommitID: repoRev.CommitID}
+	statuses, err := svc.RepoStatuses(ctx).GetCombined(ctx, &statusRev)
+	if err != nil {
+		return nil, err
+	}
+	if status := statuses.GetStatus(statusContext); status != nil {
+		var inv inventory.Inventory
+		if err := json.Unmarshal([]byte(status.Description), &inv); err == nil {
+			if grpccache.GetNoCache(ctx) {
+				// Warn because debugging caching issues can be hard.
+				log15.Info("Repos.GetInventory is using cached inventory despite gRPC set to no-cache because inventory can be very slow (remove the commit status from the cache if needed)", "repoRev", statusRev)
+			}
+			return &inv, nil
+		}
+		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repoRev", statusRev, "err", err)
+	}
+
+	// Not found in the cache, so compute it.
+	inv, err := s.getInventoryUncached(ctx, repoRev)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store inventory in cache.
+	jsonData, err := json.Marshal(inv)
+	if err != nil {
+		return nil, err
+	}
+	_, err = svc.RepoStatuses(ctx).Create(ctx, &sourcegraph.RepoStatusesCreateOp{
+		Repo:   statusRev,
+		Status: sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return inv, nil
+}
+
+func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
 	if err != nil {
 		return nil, err
