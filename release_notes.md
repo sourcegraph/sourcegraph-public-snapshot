@@ -1,5 +1,11 @@
 # dev
 
+- Perform an inventory of repositories to determine what languages,
+  etc., are in use, by walking their directory tree. This occurs after
+  each push. This operation may be slow for extremely large
+  repositories; use the
+  `--local.disable-repo-inventory`/`DisableRepoInventory` configs to
+  disable this functionality.
 - Allow enabling/disabling apps on a per-repository basis (with `src
   repo config app`). **PostgreSQL backend:** Run `alter table
   repo_config add column apps text[];` to perform this migration.

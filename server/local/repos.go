@@ -27,6 +27,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
+	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -345,6 +346,10 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 }
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	if localcli.Flags.DisableRepoInventory {
+		return nil, grpc.Errorf(codes.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
+	}
+
 	defer cacheOnCommitID(ctx, repoRev.CommitID)
 
 	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
