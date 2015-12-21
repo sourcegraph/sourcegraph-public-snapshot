@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -2905,6 +2906,35 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, v1 *sourcegraph.RepoConf
 	}
 
 	rv, err := innerSvc.ConfigureApp(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
+func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+
+	rv, err := innerSvc.GetInventory(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

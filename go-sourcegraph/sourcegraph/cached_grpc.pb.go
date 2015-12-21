@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 )
 
 type CachedAccountsClient struct {
@@ -2450,6 +2451,32 @@ func (s *CachedReposClient) ConfigureApp(ctx context.Context, in *RepoConfigureA
 	}
 	if s.Cache != nil {
 		if err := s.Cache.Store(ctx, "Repos.ConfigureApp", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedReposClient) GetInventory(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*inventory.Inventory, error) {
+	if s.Cache != nil {
+		var cachedResult inventory.Inventory
+		cached, err := s.Cache.Get(ctx, "Repos.GetInventory", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.ReposClient.GetInventory(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Repos.GetInventory", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

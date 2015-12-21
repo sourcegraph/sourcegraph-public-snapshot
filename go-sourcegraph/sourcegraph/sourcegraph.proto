@@ -11,6 +11,7 @@ import "sourcegraph.com/sourcegraph/vcsstore/vcsclient/vcsclient.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 import "sourcegraph.com/sqs/pbtypes/void.proto";
 import "sourcegraph.com/sqs/pbtypes/html.proto";
+import "src.sourcegraph.com/sourcegraph/pkg/inventory/inventory.proto";
 import "google/api/annotations.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -517,6 +518,12 @@ service Repos {
 
 	// ConfigureApp configures an application for a repository.
 	rpc ConfigureApp(RepoConfigureAppOp) returns (pbtypes.Void);
+
+	// GetInventory performs an inventory of the repository's contents
+	// at a specific commit. It returns a summary of the programming
+	// languages, etc., used by the repository, as evidenced by the
+	// repository's files.
+	rpc GetInventory(RepoRevSpec) returns (inventory.Inventory);
 }
 
 // SrclibDataVersion specifies a srclib store version.

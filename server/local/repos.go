@@ -3,6 +3,7 @@ package local
 import (
 	"io/ioutil"
 	"log"
+	pathpkg "path"
 	"time"
 
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"sort"
 
 	"golang.org/x/net/context"
+	"golang.org/x/tools/godoc/vfs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -20,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -338,3 +341,31 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 	}
 	return &pbtypes.Void{}, nil
 }
+
+func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	defer cacheOnCommitID(ctx, repoRev.CommitID)
+
+	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
+		return nil, err
+	}
+
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
+	if err != nil {
+		return nil, err
+	}
+
+	fs, err := vcsrepo.FileSystem(vcs.CommitID(repoRev.CommitID))
+	if err != nil {
+		return nil, err
+	}
+
+	inv, err := inventory.Scan(ctx, walkableFileSystem{fs})
+	if err != nil {
+		return nil, err
+	}
+	return inv, nil
+}
+
+type walkableFileSystem struct{ vfs.FileSystem }
+
+func (walkableFileSystem) Join(path ...string) string { return pathpkg.Join(path...) }
