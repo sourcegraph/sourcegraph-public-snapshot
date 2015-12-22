@@ -1006,6 +1006,7 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 	}
 
 	// Merge head branch (feature-branch) into base branch (master) and push.
+	csBeforeMerge := cs
 	err = ts.cmds([][]string{
 		{"git", "checkout", csBaseRev},
 		{"git", "merge", csHeadRev},
@@ -1046,7 +1047,7 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 
 	// Confirm that we have exactly one merge event.
 	ev := events.Events[0]
-	if err := ts.changesetEqual(ev.Before, cs); err != nil {
+	if err := ts.changesetEqual(ev.Before, csBeforeMerge); err != nil {
 		t.Fatal(err)
 	}
 	afterCS := *cs
@@ -1208,6 +1209,7 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
 	}
 
+	csBeforeMerge := cs
 	if cli {
 		// Merge the CS as if via the CLI tool.
 		// TODO(slimsag): validate the returned ChangesetEvent too?
@@ -1264,7 +1266,7 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 
 	// Confirm that we have exactly one merge event.
 	ev := events.Events[0]
-	if err := ts.changesetEqual(ev.Before, cs); err != nil {
+	if err := ts.changesetEqual(ev.Before, csBeforeMerge); err != nil {
 		t.Fatal(err)
 	}
 	afterCS := *cs
