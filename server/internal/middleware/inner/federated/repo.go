@@ -65,18 +65,19 @@ func CustomReposCreate(ctx context.Context, op *sourcegraph.ReposCreateOp, s sou
 }
 
 // Get sets repo.Origin on repos that originated from a remote server.
-func CustomReposGet(ctx context.Context, v1 *sourcegraph.RepoSpec, s sourcegraph.ReposServer) (*sourcegraph.Repo, error) {
-	repoCtx, info, err := lookupRepo(ctx, &v1.URI)
+func CustomReposGet(ctx context.Context, param *sourcegraph.RepoSpec, target sourcegraph.ReposServer) (*sourcegraph.Repo, error) {
+	//	return s.Get(ctx, param)
+	fedCtx, info, err := lookupRepo(ctx, &param.URI)
 	if err != nil {
 		return nil, err
 	}
-	if repoCtx == nil {
-		return s.Get(ctx, v1)
+	if fedCtx != nil {
+		target = svc.Repos(fedCtx)
+		ctx = fedCtx
 	}
-	ctx = repoCtx
-	repo, err := svc.Repos(ctx).Get(ctx, v1)
-	if repo != nil && info != nil {
-		repo.Origin = info.String()
+	res, err := target.Get(ctx, param)
+	if res != nil && info != nil {
+		res.Origin = info.String()
 	}
-	return repo, err
+	return res, err
 }
