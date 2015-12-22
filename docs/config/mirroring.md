@@ -7,6 +7,59 @@ Sourcegraph works great as the system of record, but there are some situations i
 
 Likewise, there are situations in which you will want to to mirror your externally hosted Git repositories on Sourcegraph. With this configuration, Sourcegraph will poll the external repository for changes on a short interval.
 
+# Mirroring *from* externally hosted repositories
+
+## Public repository
+
+Let's say you have a repository hosted on an `host.com/my/repo` and with public read access and want to
+have this repository automatically mirrored on your Sourcegraph server. Use the `src` CLI to create
+the mirror:
+
+```
+src repo create -m --clone-url=http://host.com/my/repo <repo-name>
+```
+
+## Private repository
+
+## 1. Authenticating with SSH keys
+
+GitHub, Bitbucket, and other git hosting services often allow users to configure their hosts to authenticate using SSH keys (See [here](https://help.github.com/articles/generating-ssh-keys/) for GitHub's instructions, and [here](https://confluence.atlassian.com/bitbucket/set-up-ssh-for-git-728138079.html) for Bitbucket's instructions on how to set this up).
+
+Determine the SSH link for the private repository you would like to clone. It typically has the form of `git@bitbucket.org:userorganization/test_repository.git`, and can be accessed on your GitHub or Bitbucket repository page (you may have to select SSH from the standard clone widget, HTTPS is selected by default).
+
+
+First, check that the git clone command functions with this SSH git clone URL:
+```
+git clone git@bitbucket.org:userorganization/test_repository.git
+```
+
+Ensure that the clone command completely successfully (you can remove the directory now). You can now configure Sourcegraph to mirror your private repository:
+```
+src repo create -m --clone-url=git@bitbucket.org:userorganization/test_repository.git <repo-name>
+```
+
+## 2. Authenticating over HTTPS
+
+Alternatively, you can mirror a private repository by using an HTTPS git clone link. GitHub and Bitbucket make these links available on repository pages, they typically look like this:
+`https://user@bitbucket.org/userorganization/test_repository.git`.
+
+First, append your password to your username in the link, such as: `https://user:password@bitbucket.org/userorganization/test_repository.git`.
+
+Next, check that the git clone command functions with this URL:
+```
+git clone https://user:password@bitbucket.org/userorganization/test_repository.git
+```
+
+Ensure that the clone command completely successfully (you can remove the directory now). You can now configure Sourcegraph to mirror your private repository:
+```
+src repo create -m --clone-url=https://user:password@bitbucket.org/userorganization/test_repository.git <repo-name>
+```
+
+## 3. Using GitHub access tokens
+Sourcegraph currently supports importing private repositories from GitHub.com and GitHub Enterprise.
+Follow instructions for [GitHub.com]({{< relref "integrations/GitHub.md" >}}) or
+[GitHub Enterprise]({{< relref "integrations/GitHub_Enterprise.md" >}}).
+
 # Mirroring *to* externally hosted repositories
 
 Let's say you have a repository hosted on Sourcegraph (`src.example.com/my/repo`) and want to have this repository automatically mirrored on `github.com/my/repo`. Here's what you need to do:
@@ -50,21 +103,3 @@ sudo restart src
 ## 4. Test it out!
 
 Now that everything is configured, simply push any change to your Sourcegraph repository and watch as it is mirrored to the remote Git URL you specified!
-
-# Mirroring *from* externally hosted repositories
-
-## Public repository
-
-Let's say you have a repository hosted on an `host.com/my/repo` and with public read access and want to
-have this repository automatically mirrored on your Sourcegraph server. Use the `src` CLI to create
-the mirror:
-
-```
-src repo create -m --clone-url=http://host.com/my/repo <repo-name>
-```
-
-## Private repository
-
-Sourcegraph currently supports importing private repositories from GitHub.com and GitHub Enterprise.
-Follow instructions for [GitHub.com]({{< relref "integrations/GitHub.md" >}}) or
-[GitHub Enterprise]({{< relref "integrations/GitHub_Enterprise.md" >}}).
