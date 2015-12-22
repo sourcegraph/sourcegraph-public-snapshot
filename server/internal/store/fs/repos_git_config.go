@@ -48,6 +48,7 @@ func (s *Repos) setGitConfig(ctx context.Context, dir, name, value string) error
 		if err != nil {
 			fmt.Printf("set git config %q %q failed with %s\n%s", name, value, err, out)
 		}
+		return nil
 	}
 	return err
 }
