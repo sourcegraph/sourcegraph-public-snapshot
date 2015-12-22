@@ -37,13 +37,19 @@ func (s *Repos) setGitConfig(ctx context.Context, dir, name, value string) error
 		return err
 	}
 
-	cmd := exec.Command("git", "config", name, value)
-	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("set git config %q %q failed with %s\n%s", name, value, err, out)
+	var (
+		err error
+		out []byte
+	)
+	for attempt := 0; attempt < 3; attempt++ {
+		cmd := exec.Command("git", "config", name, value)
+		cmd.Dir = dir
+		out, err = cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("set git config %q %q failed with %s\n%s", name, value, err, out)
+		}
 	}
-	return nil
+	return err
 }
 
 func (s *Repos) getGitConfig(ctx context.Context, fs vfs.FileSystem, dir string) (*repoGitConfig, error) {
