@@ -313,16 +313,14 @@ func (c *ServeCmd) Execute(args []string) error {
 		ctx = conf.WithAppURL(ctx, appURL)
 		return ctx
 	}
-
-	clientCtx := func(ctx context.Context) context.Context {
+	clientCtxFunc := func(ctx context.Context) context.Context {
 		ctx = sharedCtxFunc(ctx)
 		for _, f := range clientCtxFuncs {
 			ctx = f(ctx)
 		}
 		ctx = WithClientContext(ctx)
 		return ctx
-	}(context.Background())
-
+	}
 	serverCtxFunc := func(ctx context.Context) context.Context {
 		ctx = sharedCtxFunc(ctx)
 		for _, f := range serverCtxFuncs {
@@ -374,6 +372,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
 		return sourcegraph.WithCredentials(ctx, sharedSecretToken)
 	})
+
+	clientCtx := clientCtxFunc(context.Background())
 
 	if fed.Config.IsRoot {
 		// Listen for events and flush them to elasticsearch
