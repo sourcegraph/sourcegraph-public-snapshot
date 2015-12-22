@@ -9,7 +9,7 @@ import TokenSearchResults from "sourcegraph/search/TokenSearchResults";
 import TextSearchResults from "sourcegraph/search/TextSearchResults";
 import SearchFrameResults from "sourcegraph/search/SearchFrameResults";
 
-import "./SearchBackend";
+import "sourcegraph/search/SearchBackend";
 
 class ResultType {
 	constructor(label, name, perPage, component) {
@@ -26,12 +26,10 @@ let resultTypes = [
 ];
 
 let searchFrames = window.searchFrames || {};
-for (let key in searchFrames) {
-	if (searchFrames.hasOwnProperty(key)) {
-		let frame = searchFrames[key];
-		resultTypes.push(new ResultType(frame.ID, frame.Name, frame.PerPage, SearchFrameResults));
-	}
-}
+Object.getOwnPropertyNames(searchFrames).forEach((key) => {
+	let frame = searchFrames[key];
+	resultTypes.push(new ResultType(frame.ID, frame.Name, frame.PerPage, SearchFrameResults));
+});
 
 class SearchResultsContainer extends Container {
 	constructor(props) {

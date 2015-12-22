@@ -1,6 +1,6 @@
 import React from "react";
 
-import Component from "../Component";
+import Component from "sourcegraph/Component";
 
 class SearchFrameResultsView extends Component {
 
@@ -11,7 +11,7 @@ class SearchFrameResultsView extends Component {
 			return;
 
 		}
-		state.__html = props.resultData.HTML;
+		state.html = props.resultData.HTML;
 		state.total = props.resultData.Total;
 
 	}
@@ -32,9 +32,9 @@ class SearchFrameResultsView extends Component {
 		return (
 			<div className={`${this.state.label}-search-results`}>
 				<p className="summary">{summary}</p>
-				<div dangerouslySetInnerHTML={{__html: this.state.__html}} />
+				<div dangerouslySetInnerHTML={{__html: this.state.html}} />
 			</div>
-		);
+			);
 	}
 }
 

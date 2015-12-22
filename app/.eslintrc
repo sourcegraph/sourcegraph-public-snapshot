@@ -111,7 +111,7 @@
 		"object-shorthand": [1, "methods"],
 		"operator-assignment": [1, "always"],
 		"operator-linebreak": [1, "after"],
-		"prefer-reflect": 1,
+		"prefer-reflect": 0,
 		"prefer-template": 1,
 		"quote-props": [1, "consistent-as-needed"],
 		"quotes": [1, "double"],
