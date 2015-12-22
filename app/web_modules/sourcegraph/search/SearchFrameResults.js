@@ -13,7 +13,6 @@ class SearchFrameResultsView extends Component {
 		}
 		state.html = props.resultData.HTML;
 		state.total = props.resultData.Total;
-
 	}
 
 	render() {
@@ -25,8 +24,9 @@ class SearchFrameResultsView extends Component {
 		if (this.state.total === 0) {
 			summary = `No results found for "${this.state.query}"`;
 		} else {
-			summary = `${this.state.total} results for "${this.state.query}"`;
-			if (this.state.currentPage > 1) summary = `${summary} -- page ${this.state.currentPage}`;
+			let s = this.state.total === 1 ? "" : "s";
+			summary = `${this.state.total} result${s} for "${this.state.query}"`;
+			if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 		}
 
 		return (

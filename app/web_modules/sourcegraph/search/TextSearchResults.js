@@ -27,7 +27,7 @@ class TextSearchResults extends Component {
 		}
 		let s = this.state.results.length === 1 ? "" : "s";
 		let summary = `${this.state.total} text result${s} for "${this.state.query}"`;
-		if (this.state.currentPage > 1) summary = `${summary} -- page ${this.state.currentPage}`;
+		if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 
 		let currentFile, header;
 		return (
