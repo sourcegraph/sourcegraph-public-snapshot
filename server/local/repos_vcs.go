@@ -44,6 +44,9 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 	log15.Debug("svc.local.repos.ListCommits", "op", op)
 	veryShortCache(ctx)
 
+	if op.Opt == nil {
+		op.Opt = &sourcegraph.RepoListCommitsOptions{}
+	}
 	if op.Opt.PerPage == 0 {
 		op.Opt.PerPage = 20
 	}
