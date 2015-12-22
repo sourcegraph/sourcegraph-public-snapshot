@@ -15,19 +15,18 @@ import (
 
 	"sourcegraph.com/sqs/pbtypes"
 
+	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 )
 
 // Here we test critical functionality of the Changesets app at the gRPC API
 // level (i.e. a high level).
-
-const (
-	repoName = "changesets-test"
-)
 
 var (
 	basicRepo = sourcegraph.RepoSpec{URI: "changesets-test"}
@@ -42,6 +41,12 @@ var (
 	}
 )
 
+func setRepoURI(uri string) {
+	basicRepo.URI = uri
+	basicCS.DeltaSpec.Base.RepoSpec = basicRepo
+	basicCS.DeltaSpec.Head.RepoSpec = basicRepo
+}
+
 // TODO(slimsag): probably using go-vcs for some of the git functionality here
 // would be easier.
 
@@ -51,24 +56,95 @@ type testSuite struct {
 	server  *testserver.Server
 	workDir string
 	t       *testing.T
+
+	mirror                             bool
+	mirrorOrganization, mirrorRepoName string
+	github                             *github.Client
 }
 
-// prepRepo creates a new repository named repoName, adds one file, commits and
-// pushes it.
+// prepRepo creates a new repository, adds one file, commits and pushes it.
 func (ts *testSuite) prepRepo() error {
 	// Create the repository
-	ts.t.Log("$ src repo create", repoName)
-	repo, err := ts.server.Client.Repos.Create(ts.ctx, &sourcegraph.ReposCreateOp{
-		URI: repoName,
-		VCS: "git",
-	})
-	if err != nil {
-		return err
-	}
+	if ts.mirror {
+		// Parse environment variables so we can exit early.
+		personalAccessToken := os.Getenv("CS_PERSONAL_ACCESS_TOKEN")
+		if personalAccessToken == "" {
+			ts.t.Skip("CS_PERSONAL_ACCESS_TOKEN is not set; please set it to run mirrored repo tests")
+			return nil
+		}
+		ts.mirrorOrganization = os.Getenv("CS_ORGANIZATION")
+		if ts.mirrorOrganization == "" {
+			ts.t.Skip("CS_ORGANIZATION is not set; please set it to run mirrored repo tests")
+			return nil
+		}
 
-	// Clone the repository.
-	if err := ts.cmd("git", "clone", repo.CloneURL().String(), ts.workDir); err != nil {
-		return err
+		// Add the token to the auth store so that RefreshVCS operations succeed.
+		authStore := ext.AuthStore{}
+		err := authStore.Set(ts.ctx, "github.com", ext.Credentials{Token: personalAccessToken})
+		if err != nil {
+			return err
+		}
+
+		// Create an authenticated GitHub client.
+		tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: personalAccessToken})
+		tokenClient := oauth2.NewClient(oauth2.NoContext, tokenSource)
+		ts.github = github.NewClient(tokenClient)
+
+		// Determine new private repo name. We prefix a timestamp in the form of
+		// dd-mm-yy-hr-min-sec to avoid collisions with other pending CI builds.
+		ts.mirrorRepoName = "changesets-test-" + time.Now().Format("2-1-06-15-04-05")
+
+		// Create private repository.
+		_, _, err = ts.github.Repositories.Create(ts.mirrorOrganization, &github.Repository{
+			Name:     &ts.mirrorRepoName,
+			Private:  github.Bool(true),
+			AutoInit: github.Bool(true),
+		})
+		if err != nil {
+			return err
+		}
+
+		// Yield for repo creation to complete.
+		time.Sleep(1 * time.Second)
+
+		// Build and set repo URI.
+		mirrorRepoURI := "github.com/" + ts.mirrorOrganization + "/" + ts.mirrorRepoName
+		setRepoURI(mirrorRepoURI)
+
+		// Clone the repository.
+		cloneURL := fmt.Sprintf("https://%s@%s", personalAccessToken, mirrorRepoURI)
+		if err := ts.cmd("git", "clone", cloneURL, ts.workDir); err != nil {
+			return err
+		}
+
+		// Create the repo locally.
+		_, err = ts.server.Client.Repos.Create(ts.ctx, &sourcegraph.ReposCreateOp{
+			URI:      basicRepo.URI,
+			VCS:      "git",
+			CloneURL: cloneURL,
+			Mirror:   true,
+			Private:  true,
+		})
+		if err != nil {
+			return err
+		}
+
+		ts.refreshVCS()
+
+	} else {
+		ts.t.Log("$ src repo create", basicRepo.URI)
+		repo, err := ts.server.Client.Repos.Create(ts.ctx, &sourcegraph.ReposCreateOp{
+			URI: basicRepo.URI,
+			VCS: "git",
+		})
+		if err != nil {
+			return err
+		}
+
+		// Clone the repository.
+		if err := ts.cmd("git", "clone", repo.CloneURL().String(), ts.workDir); err != nil {
+			return err
+		}
 	}
 
 	// Add a file.
@@ -81,6 +157,22 @@ func (ts *testSuite) prepRepo() error {
 		{"git", "commit", "-m", "add first file"},
 		{"git", "push", "--set-upstream", "origin", "master"},
 	})
+}
+
+// refreshVCS causes a VCS refresh on mirrored repos, if this is a mirror repo
+// test.
+func (ts *testSuite) refreshVCS() {
+	if !ts.mirror {
+		return
+	}
+
+	// Refresh the VCS.
+	_, err := ts.server.Client.MirrorRepos.RefreshVCS(ts.ctx, &sourcegraph.MirrorReposRefreshVCSOp{
+		Repo: basicRepo,
+	})
+	if err != nil {
+		ts.t.Fatal(err)
+	}
 }
 
 func (ts *testSuite) gitRevParse(target string) (string, error) {
@@ -128,6 +220,11 @@ func (ts *testSuite) addFile(name, contents string) error {
 
 // close closes the test suite, and must be called when finished.
 func (ts *testSuite) close() {
+	if ts.mirror {
+		if _, err := ts.github.Repositories.Delete(ts.mirrorOrganization, ts.mirrorRepoName); err != nil {
+			ts.t.Log(err)
+		}
+	}
 	if err := os.RemoveAll(ts.workDir); err != nil {
 		ts.t.Log(err)
 	}
@@ -168,6 +265,8 @@ func (ts *testSuite) createBasicChangeset() (*sourcegraph.Changeset, error) {
 			return nil, err
 		}
 	}
+
+	ts.refreshVCS()
 
 	// Create a new changeset.
 	cs, err := ts.server.Client.Changesets.Create(ts.ctx, &sourcegraph.ChangesetCreateOp{
@@ -333,7 +432,7 @@ func TestChangesets_List(t *testing.T) {
 
 	// Verify that List returns both open changesets.
 	list, err := ts.server.Client.Changesets.List(ts.ctx, &sourcegraph.ChangesetListOp{
-		Repo: repoName,
+		Repo: basicRepo.URI,
 		Open: true,
 	})
 	if err != nil {
@@ -401,49 +500,6 @@ func TestChangesets_Update(t *testing.T) {
 
 	// TODO(slimsag): test valid changes to e.g. Description, Open, Close.
 	// TODO(slimsag): test invalid changes to e.g. Merged and Author.
-}
-
-// TestChangesets_Merge tests that creating a changeset and then merging it
-// works.
-func TestChangesets_Merge(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
-	// Create a new test suite.
-	ts, err := newTestSuite(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer ts.close()
-
-	// Create a basic changeset.
-	cs, err := ts.createBasicChangeset()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Merge the changeset.
-	event, err := ts.server.Client.Changesets.Merge(ts.ctx, &sourcegraph.ChangesetMergeOp{
-		Repo:    basicRepo,
-		ID:      cs.ID,
-		Message: "{{.ID}} {{.Title}} {{.Description}} {{.Author}} {{.DeltaSpec}} {{.Merged}} {{.CreatedAt}} {{.ClosedAt}}",
-	})
-
-	// TODO(slimsag): test Squash option.
-	// TODO(slimsag): verify merge actually worked.
-	// TODO(slimsag): verify commit message correctness.
-
-	// Confirm changeset event.
-	if err := ts.changesetEqual(event.Before, cs); err != nil {
-		t.Fatal(err)
-	}
-	wantCS := *cs
-	wantCS.Merged = true
-	wantCS.ClosedAt = &pbtypes.Timestamp{}
-	if err := ts.changesetEqual(event.After, &wantCS); err != nil {
-		t.Fatal(err)
-	}
 }
 
 // TestChangesets_CreateReview tests that creating a changeset and then
@@ -585,10 +641,24 @@ func TestChangesets_ListReviews(t *testing.T) {
 	}
 }
 
-// TestChangesets_ListEvents tests that creating a changeset with a few events
-// and listing them works.
+// TestChangesets_ListEvents runs the ListEvents test on a hosted repository.
 func TestChangesets_ListEvents(t *testing.T) {
-	if testserver.Store == "pgsql" {
+	testChangesets_ListEvents(t, false)
+}
+
+// TestChangesets_MirroredListEvents runs the ListEvents test on a mirrored
+// GitHub repository.
+func TestChangesets_MirroredListEvents(t *testing.T) {
+	testChangesets_ListEvents(t, true)
+}
+
+// testChangesets_ListEvents tests that creating a changeset with a few events
+// and listing them works.
+//
+// It takes a single parameter, which is whether or not the test should be
+// performed on a mirrored GitHub repo or not.
+func testChangesets_ListEvents(t *testing.T, mirror bool) {
+	if !mirror && testserver.Store == "pgsql" {
 		t.Skip("pgsql local store can only create mirror repos")
 	}
 
@@ -597,6 +667,7 @@ func TestChangesets_ListEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.mirror = mirror
 	defer ts.close()
 
 	// Create a basic changeset.
@@ -653,11 +724,26 @@ func TestChangesets_ListEvents(t *testing.T) {
 	}
 }
 
-// TestChangesets_BackgroundBaseCommits tests that commits to the base branch
+// TestChangesets_BackgroundBaseCommits runs the BackgroundBaseEvents test on a
+// hosted repository.
+func TestChangesets_BackgroundBaseCommits(t *testing.T) {
+	testChangesets_BackgroundBaseCommits(t, false)
+}
+
+// TestChangesets_MirroredBackgroundBaseCommits runs the BackgroundBaseEvents
+// test on a mirrored GitHub repository.
+func TestChangesets_MirroredBackgroundBaseCommits(t *testing.T) {
+	testChangesets_BackgroundBaseCommits(t, true)
+}
+
+// testChangesets_BackgroundBaseCommits tests that commits to the base branch
 // (e.g. master) do not show up in a changeset's event stream after creating a
 // CS.
-func TestChangesets_BackgroundBaseCommits(t *testing.T) {
-	if testserver.Store == "pgsql" {
+//
+// It takes a single parameter, which is whether or not the test should be
+// performed on a mirrored GitHub repo or not.
+func testChangesets_BackgroundBaseCommits(t *testing.T, mirror bool) {
+	if !mirror && testserver.Store == "pgsql" {
 		t.Skip("pgsql local store can only create mirror repos")
 	}
 
@@ -666,6 +752,7 @@ func TestChangesets_BackgroundBaseCommits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.mirror = mirror
 	defer ts.close()
 
 	// Create a basic changeset.
@@ -786,11 +873,25 @@ func TestChangesets_BackgroundBaseCommits(t *testing.T) {
 	}
 }
 
-// TestChangesets_RebaseFlow tests that a basic rebase workflow works. i.e. that
+// TestChangesets_RebaseFlow runs the RebaseFlow test on a hosted repository.
+func TestChangesets_RebaseFlow(t *testing.T) {
+	testChangesets_RebaseFlow(t, false)
+}
+
+// TestChangesets_MirroredRebaseFlow runs the RebaseFlow test on a mirrored
+// GitHub repository.
+func TestChangesets_MirroredRebaseFlow(t *testing.T) {
+	testChangesets_RebaseFlow(t, true)
+}
+
+// testChangesets_RebaseFlow tests that a basic rebase workflow works. i.e. that
 // three commits -> background master changes -> rebase -> force push -> merge
 // works as expected.
-func TestChangesets_RebaseFlow(t *testing.T) {
-	if testserver.Store == "pgsql" {
+//
+// It takes a single parameter, which is whether or not the test should be
+// performed on a mirrored GitHub repo or not.
+func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
+	if !mirror && testserver.Store == "pgsql" {
 		t.Skip("pgsql local store can only create mirror repos")
 	}
 
@@ -799,6 +900,7 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.mirror = mirror
 	defer ts.close()
 
 	// Create a basic changeset.
@@ -871,6 +973,8 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.refreshVCS()
+	time.Sleep(500 * time.Millisecond)
 
 	// Grab the current HEAD of the head branch (feature-branch) -- this is the
 	// commit ID of the last commit to our feature branch. From this point on, our
@@ -895,8 +999,6 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != "" && gotHead != wantHeadCommitID {
-		t.Skip("BUG: currently failing!")
-		return
 		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
 	}
 	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != "" && gotBase != wantBaseCommitID {
@@ -904,6 +1006,7 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 	}
 
 	// Merge head branch (feature-branch) into base branch (master) and push.
+	csBeforeMerge := cs
 	err = ts.cmds([][]string{
 		{"git", "checkout", csBaseRev},
 		{"git", "merge", csHeadRev},
@@ -912,6 +1015,7 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.refreshVCS()
 
 	// Verify the current DeltaSpec of the changeset.
 	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
@@ -943,7 +1047,7 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 
 	// Confirm that we have exactly one merge event.
 	ev := events.Events[0]
-	if err := ts.changesetEqual(ev.Before, cs); err != nil {
+	if err := ts.changesetEqual(ev.Before, csBeforeMerge); err != nil {
 		t.Fatal(err)
 	}
 	afterCS := *cs
@@ -973,10 +1077,38 @@ func TestChangesets_RebaseFlow(t *testing.T) {
 	}
 }
 
-// TestChangesets_MergeFlow tests that a basic merge workflow works. i.e. that
-// three commits -> master changes -> merge works as expected.
+// TestChangesets_MergeFlow runs the MergeFlow test on a hosted repository.
 func TestChangesets_MergeFlow(t *testing.T) {
-	if testserver.Store == "pgsql" {
+	testChangesets_MergeFlow(t, false, false)
+}
+
+// TestChangesets_CLIMergeFlow runs the CLIMergeFlow test on a hosted
+// repository.
+func TestChangesets_CLIMergeFlow(t *testing.T) {
+	t.Skip("BUG: hosted repos do not emit githook events on merge")
+	return
+	testChangesets_MergeFlow(t, false, true)
+}
+
+// TestChangesets_MirroredMergeFlow runs the MergeFlow test on a mirrored
+// GitHub repository.
+func TestChangesets_MirroredMergeFlow(t *testing.T) {
+	testChangesets_MergeFlow(t, true, false)
+}
+
+// TestChangesets_MirroredCLIMergeFlow runs the CLIMergeFlow test on a mirrored
+// GitHub repository.
+func TestChangesets_MirroredCLIMergeFlow(t *testing.T) {
+	testChangesets_MergeFlow(t, true, true)
+}
+
+// testChangesets_MergeFlow tests that a basic merge workflow works. i.e. that
+// three commits -> master changes -> merge works as expected.
+//
+// It takes a single parameter, which is whether or not the test should be
+// performed on a mirrored GitHub repo or not.
+func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
+	if !mirror && testserver.Store == "pgsql" {
 		t.Skip("pgsql local store can only create mirror repos")
 	}
 
@@ -985,6 +1117,7 @@ func TestChangesets_MergeFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ts.mirror = mirror
 	defer ts.close()
 
 	// Create a basic changeset.
@@ -1011,6 +1144,8 @@ func TestChangesets_MergeFlow(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
+	ts.refreshVCS()
 
 	// Grab the current HEAD of the head branch (feature-branch) -- this is the
 	// commit ID of the last commit to our feature branch. From this point on, our
@@ -1049,6 +1184,8 @@ func TestChangesets_MergeFlow(t *testing.T) {
 		}
 	}
 
+	ts.refreshVCS()
+
 	// Grab the current HEAD of the base branch (master) -- this is the commit ID
 	// our branch will be based on after the rebase below.
 	wantBaseCommitID, err := ts.gitRevParse("HEAD")
@@ -1072,15 +1209,32 @@ func TestChangesets_MergeFlow(t *testing.T) {
 		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
 	}
 
-	// Merge head branch (feature-branch) into base branch (master) and push.
-	err = ts.cmds([][]string{
-		{"git", "checkout", csBaseRev},
-		{"git", "merge", csHeadRev},
-		{"git", "push"},
-	})
-	if err != nil {
-		t.Fatal(err)
+	csBeforeMerge := cs
+	if cli {
+		// Merge the CS as if via the CLI tool.
+		// TODO(slimsag): validate the returned ChangesetEvent too?
+		_, err := ts.server.Client.Changesets.Merge(ts.ctx, &sourcegraph.ChangesetMergeOp{
+			Repo:    basicRepo,
+			ID:      cs.ID,
+			Message: "Custom changeset merge message.",
+			Squash:  false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		// Merge head branch (feature-branch) into base branch (master) and push.
+		err = ts.cmds([][]string{
+			{"git", "checkout", csBaseRev},
+			{"git", "merge", csHeadRev},
+			{"git", "push"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
+
+	ts.refreshVCS()
 
 	// Verify the current DeltaSpec of the changeset.
 	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
@@ -1112,7 +1266,7 @@ func TestChangesets_MergeFlow(t *testing.T) {
 
 	// Confirm that we have exactly one merge event.
 	ev := events.Events[0]
-	if err := ts.changesetEqual(ev.Before, cs); err != nil {
+	if err := ts.changesetEqual(ev.Before, csBeforeMerge); err != nil {
 		t.Fatal(err)
 	}
 	afterCS := *cs
@@ -1140,25 +1294,4 @@ func TestChangesets_MergeFlow(t *testing.T) {
 	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != wantBaseCommitID {
 		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
 	}
-}
-
-// TestChangesets_MirroredListEvents is identical to the ListEvents test, except
-// it operates on a mirrored GitHub repository.
-func TestChangesets_MirroredListEvents(t *testing.T) {
-	// TODO: implement this
-	t.Skip("not implemented")
-}
-
-// TestChangesets_MirroredRebaseFlow is identical to the RebaseFlow test, except
-// it operates on a mirrored GitHub repository.
-func TestChangesets_MirroredRebaseFlow(t *testing.T) {
-	// TODO: implement this
-	t.Skip("not implemented")
-}
-
-// TestChangesets_MirroredMergeFlow is identical to the MergeFlow test, except
-// it operates on a mirrored GitHub repository.
-func TestChangesets_MirroredMergeFlow(t *testing.T) {
-	// TODO: implement this
-	t.Skip("not implemented")
 }

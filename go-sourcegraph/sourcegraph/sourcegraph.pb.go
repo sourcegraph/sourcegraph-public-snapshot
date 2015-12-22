@@ -1043,6 +1043,8 @@ type ChangesetUpdateAffectedOp struct {
 	Last string `protobuf:"bytes,3,opt,name=last,proto3" json:",omitempty"`
 	// Commit is the SHA1 of the tip of the newly pushed commits on the branch.
 	Commit string `protobuf:"bytes,4,opt,name=commit,proto3" json:",omitempty"`
+	// ForcePush is whether or not the branch was force pushed to.
+	ForcePush bool `protobuf:"varint,5,opt,name=force_push,proto3" json:",omitempty"`
 }
 
 func (m *ChangesetUpdateAffectedOp) Reset()         { *m = ChangesetUpdateAffectedOp{} }

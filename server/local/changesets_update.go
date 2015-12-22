@@ -126,6 +126,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 	// For changesets with affected BASE:
 	// - If the branch was deleted, close the changesets and save the last commit.
 	// - If the branch contained the merge of the changeset, mark it as merged.
+	// - If the branch was force-pushed, save the BASE commit.
 	mergedBranches := make(branchMap)
 	isMerged := func(b string) bool { _, ok := mergedBranches[b]; return ok }
 	if !isBranchDeleted {
@@ -149,7 +150,14 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 			updateOp.Op.Merged = true
 			updateOp.Head = string(head)
 		}
-		if isBranchDeleted || isBranchMerged {
+
+		// Handle the case where the branch was force-pushed to.
+		if op.ForcePush && !isBranchDeleted && !isBranchMerged {
+			updateOp.Base = op.Commit
+			updateOp.Op.Close = false
+		}
+
+		if isBranchDeleted || isBranchMerged || op.ForcePush {
 			updates = append(updates, &updateOp)
 		}
 	}

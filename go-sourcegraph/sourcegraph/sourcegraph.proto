@@ -876,6 +876,9 @@ message ChangesetUpdateAffectedOp {
 
 	// Commit is the SHA1 of the tip of the newly pushed commits on the branch.
 	string commit = 4;
+
+	// ForcePush is whether or not the branch was force pushed to.
+	bool force_push = 5;
 }
 
 message RepoListTagsOptions {
