@@ -37,7 +37,13 @@ import (
 
 	// VCS
 	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/git"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
 )
+
+func init() {
+	// Getting ModTime for directories with many files is slow, so avoid doing it since we don't need results.
+	gitcmd.SetModTime = false
+}
 
 func init() {
 	// Log OS signals that the process receives. Note that when a

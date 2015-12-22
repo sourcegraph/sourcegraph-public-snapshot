@@ -12,18 +12,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
-	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/hgcmd"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util"
 )
-
-func init() {
-	// Getting ModTime for directories with many files is slow, so avoid doing it since we don't need results.
-	gitcmd.SetModTime = false
-}
 
 type prepBuildCmd struct {
 	Attempt  uint32 `long:"attempt" description:"ID of build to run" required:"yes" value-name:"Attempt"`
