@@ -111,7 +111,8 @@
 									"label": "text",
 									"resultData": {
 										"Total": 42
-									}
+									},
+									"currentPage": 1
 								}
 							}
 						]
