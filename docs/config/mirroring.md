@@ -33,7 +33,7 @@ First, check that the git clone command functions with this SSH git clone URL:
 git clone git@bitbucket.org:userorganization/test_repository.git
 ```
 
-Ensure that the clone command completely successfully. You can now configure Sourcegraph to mirror your private repository:
+Ensure that the clone command completely successfully (you can remove the directory now). You can now configure Sourcegraph to mirror your private repository:
 ```
 src repo create -m --clone-url=git@bitbucket.org:userorganization/test_repository.git <repo-name>
 ```
@@ -43,14 +43,14 @@ src repo create -m --clone-url=git@bitbucket.org:userorganization/test_repositor
 Alternatively, you can mirror a private repository by using an HTTPS git clone link. GitHub and Bitbucket make these links available on repository pages, they typically look like this:
 `https://user@bitbucket.org/userorganization/test_repository.git`.
 
-First, append your password to the link, such as: `https://user:password@bitbucket.org/userorganization/test_repository.git`.
+First, append your password to your username in the link, such as: `https://user:password@bitbucket.org/userorganization/test_repository.git`.
 
 Next, check that the git clone command functions with this URL:
 ```
 git clone https://user:password@bitbucket.org/userorganization/test_repository.git
 ```
 
-Ensure that the clone command completely successfully. You can now configure Sourcegraph to mirror your private repository:
+Ensure that the clone command completely successfully (you can remove the directory now). You can now configure Sourcegraph to mirror your private repository:
 ```
 src repo create -m --clone-url=https://user:password@bitbucket.org/userorganization/test_repository.git <repo-name>
 ```
