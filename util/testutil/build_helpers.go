@@ -41,26 +41,33 @@ func BuildRepoAndWait(t *testing.T, ctx context.Context, repo string, commitID s
 	}
 	t.Logf("created build %s; waiting for it to complete", b.Spec().IDString())
 
-	// Wait for the build to complete.
 	buildSpec := b.Spec()
+	b, err = WaitForBuild(t, ctx, buildSpec)
+	return b, &buildSpec, err
+}
+
+func WaitForBuild(t *testing.T, ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+
+	// Wait for the build to complete.
 	start, waitStart, waitEnd := time.Now(), 5*time.Second*ciFactor, 10*time.Second*ciFactor
 	for {
 		elapsed := time.Since(start)
 		if elapsed > waitEnd {
-			return nil, nil, fmt.Errorf("build did not complete within %s", waitEnd)
+			return nil, fmt.Errorf("build did not complete within %s", waitEnd)
 		}
 
 		b, err := cl.Builds.Get(grpccache.NoCache(ctx), &buildSpec)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		if b.StartedAt == nil && elapsed > waitStart {
-			return nil, nil, fmt.Errorf("build did not start within %s", waitStart)
+			return nil, fmt.Errorf("build did not start within %s", waitStart)
 		}
 
 		if b.EndedAt != nil {
-			return b, &buildSpec, nil
+			return b, nil
 		}
 
 		time.Sleep(250 * time.Millisecond)

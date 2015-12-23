@@ -33,8 +33,8 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 	}
 	defer close()
 
-	// Build the repo.
-	build, _, err := testutil.BuildRepoAndWait(t, ctx, "r/r", commitID)
+	// Pushing triggers a build; wait for it to finish.
+	build, err := testutil.WaitForBuild(t, ctx, sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r/r"}, CommitID: commitID, Attempt: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
