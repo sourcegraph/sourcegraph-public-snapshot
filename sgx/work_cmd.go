@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
@@ -30,10 +29,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/executil"
 )
-
-func init() {
-	srclib.CacheLocalRepo = false
-}
 
 func init() {
 	_, err := cli.CLI.AddCommand("work",

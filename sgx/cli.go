@@ -28,6 +28,10 @@ func init() {
 	cli.CLI.AddGroup("Global options", "", &globalOpt)
 }
 
+func init() {
+	srclib.CacheLocalRepo = false
+}
+
 func Main() error {
 	log.SetFlags(0)
 	log.SetPrefix("")
