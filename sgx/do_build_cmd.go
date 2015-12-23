@@ -27,7 +27,7 @@ type doBuildCmd struct {
 }
 
 func (c *doBuildCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	build, repo, err := getBuild(c.Repo, c.CommitID, c.Attempt)
 	if err != nil {

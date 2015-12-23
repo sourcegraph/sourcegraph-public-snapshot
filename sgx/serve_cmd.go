@@ -778,7 +778,7 @@ func goGetHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 	}
 
 	ctx := httpctx.FromRequest(r)
-	cl := Client()
+	cl := cli.Client()
 
 	// The user may be requesting a subpackage, e.g. "src.example.com/my/repo/sub/pkg"
 	// so we must find the right repo ("src.example.com/my/repo") by walking up
@@ -953,7 +953,7 @@ func (c *ServeCmd) repoStatusCommitLogCacheRefresher() {
 	}
 	log15.Debug("commit-log-cache", "refresh-period", localcli.Flags.CommitLogCachePeriod)
 
-	cl := Client()
+	cl := cli.Client()
 Outer:
 	for {
 		var allRepos []*sourcegraph.Repo

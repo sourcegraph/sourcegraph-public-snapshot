@@ -34,7 +34,7 @@ type pushCmd struct {
 }
 
 func (c *pushCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	rrepo, err := getRemoteRepo(cl)
 	if err != nil {
@@ -73,7 +73,7 @@ func (c *pushCmd) Execute(args []string) error {
 }
 
 func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (err error) {
-	cl := Client()
+	cl := cli.Client()
 
 	// Resolve to the full commit ID, and ensure that the remote
 	// server knows about the commit.

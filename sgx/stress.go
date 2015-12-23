@@ -67,7 +67,7 @@ func (c *stressCmd) quiet() bool { return !c.Log }
 
 func (c *stressCmd) Execute(args []string) error {
 	ctx := cli.Ctx
-	cl := Client()
+	cl := cli.Client()
 
 	allOps := !(c.Git || c.RepoPage || c.FilePage)
 
@@ -231,7 +231,7 @@ func humanizeByteDelta(pre, post uint64, iters int) string {
 }
 
 func (c *stressCmd) fetchRepos(ctx context.Context) error {
-	cl := Client()
+	cl := cli.Client()
 	if c.Repo == "" {
 		allRepos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			ListOptions: sourcegraph.ListOptions{PerPage: 20},
@@ -251,7 +251,7 @@ func (c *stressCmd) fetchRepos(ctx context.Context) error {
 }
 
 func (c *stressCmd) fetchFiles(ctx context.Context) error {
-	cl := Client()
+	cl := cli.Client()
 	c.files = make(map[string]string, len(c.repos))
 	if c.File == "" {
 		for _, repo := range c.repos {

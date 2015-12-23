@@ -82,7 +82,7 @@ type regClientsListCmd struct {
 }
 
 func (c *regClientsListCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	opt := sourcegraph.RegisteredClientListOptions{
 		ListOptions: sourcegraph.ListOptions{Page: 1},
@@ -117,7 +117,7 @@ type regClientsCreateCmd struct {
 }
 
 func (c *regClientsCreateCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	typ, ok := sourcegraph.RegisteredClientType_value[c.Type]
 	if !ok {
@@ -164,7 +164,7 @@ func (c *regClientsCreateCmd) Execute(args []string) error {
 type regClientsCurrentCmd struct{}
 
 func (c *regClientsCurrentCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	client, err := cl.RegisteredClients.GetCurrent(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
@@ -196,7 +196,7 @@ type regClientsUpdateCmd struct {
 }
 
 func (c *regClientsUpdateCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	rc, err := cl.RegisteredClients.Get(cli.Ctx, &sourcegraph.RegisteredClientSpec{ID: c.Args.ClientID})
 	if err != nil {
@@ -242,7 +242,7 @@ type regClientsDeleteCmd struct {
 }
 
 func (c *regClientsDeleteCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	for _, clientID := range c.Args.ClientIDs {
 		fmt.Print(clientID, ": ")

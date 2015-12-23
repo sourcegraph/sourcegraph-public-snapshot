@@ -58,7 +58,7 @@ func (c *authCmd) Execute(args []string) error { return nil }
 type authIdentifyCmd struct{}
 
 func (c *authIdentifyCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err

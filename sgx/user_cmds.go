@@ -137,7 +137,7 @@ type userCreateCmd struct {
 }
 
 func (c *userCreateCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	user, err := cl.Accounts.Create(cli.Ctx, &sourcegraph.NewAccount{Login: c.Args.Login, Password: c.Args.Password})
 	if err != nil {
@@ -157,7 +157,7 @@ type userInviteCmd struct {
 }
 
 func (c *userInviteCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	if len(c.Args.Emails) == 0 {
 		return fmt.Errorf(`Must specify at least one email to invite (e.g. "src user invite EMAIL")`)
@@ -196,7 +196,7 @@ type userRmInviteCmd struct {
 }
 
 func (c *userRmInviteCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	if len(c.Args.Emails) == 0 {
 		return fmt.Errorf(`Must specify at least one email (e.g. "src user rm-invite EMAIL")`)
@@ -220,7 +220,7 @@ type userListCmd struct {
 }
 
 func (c *userListCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	for page := 1; ; page++ {
 		users, err := cl.Users.List(cli.Ctx, &sourcegraph.UsersListOptions{
@@ -248,7 +248,7 @@ type userGetCmd struct {
 }
 
 func (c *userGetCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	userSpec, err := sourcegraph.ParseUserSpec(c.Args.User)
 	if err != nil {
@@ -290,7 +290,7 @@ type userUpdateCmd struct {
 }
 
 func (c *userUpdateCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	userSpec, err := sourcegraph.ParseUserSpec(c.Args.User)
 	if err != nil {
@@ -331,7 +331,7 @@ type userResetPasswordCmd struct {
 }
 
 func (c *userResetPasswordCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	person := &sourcegraph.PersonSpec{}
 	var identifier string
@@ -375,7 +375,7 @@ type userDeleteCmd struct {
 }
 
 func (c *userDeleteCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
@@ -421,7 +421,7 @@ type userKeysAddCmd struct {
 }
 
 func (c *userKeysAddCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	// Get the SSH public key.
 	keyBytes, err := ioutil.ReadFile(c.Args.PublicKeyPath)
@@ -452,7 +452,7 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 type userKeysDeleteCmd struct{}
 
 func (c *userKeysDeleteCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	// Get user info for output message.
 	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})

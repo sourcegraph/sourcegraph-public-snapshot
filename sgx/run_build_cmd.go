@@ -74,7 +74,7 @@ func (c *runBuildCmd) Execute(args []string) error {
 // attempts to checkout all repos on the host to the default branch in build
 // dir, to make them available on the GOPATH
 func (c *runBuildCmd) prepOtherRepos() {
-	cl := Client()
+	cl := cli.Client()
 	maxRepoPrep := 50
 	repos, err := cl.Repos.List(cli.Ctx, &sourcegraph.RepoListOptions{
 		Sort:        "pushed",

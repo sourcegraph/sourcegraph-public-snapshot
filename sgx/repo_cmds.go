@@ -132,7 +132,7 @@ type repoGetCmd struct {
 }
 
 func (c *repoGetCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	repoSpec := &sourcegraph.RepoSpec{URI: c.Args.URI}
 
@@ -172,7 +172,7 @@ type repoListCmd struct {
 }
 
 func (c *repoListCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	for page := 1; ; page++ {
 		repos, err := cl.Repos.List(cli.Ctx, &sourcegraph.RepoListOptions{
@@ -208,7 +208,7 @@ type repoCreateCmd struct {
 }
 
 func (c *repoCreateCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	repo, err := cl.Repos.Create(cli.Ctx, &sourcegraph.ReposCreateOp{
 		URI:         c.Args.URI,
@@ -235,7 +235,7 @@ type repoUpdateCmd struct {
 }
 
 func (c *repoUpdateCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	repo, err := cl.Repos.Update(cli.Ctx, &sourcegraph.ReposUpdateOp{
 		Repo:        sourcegraph.RepoSpec{URI: c.Args.URI},
@@ -256,7 +256,7 @@ type repoDeleteCmd struct {
 }
 
 func (c *repoDeleteCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	for _, uri := range c.Args.URIs {
 		if _, err := cl.Repos.Delete(cli.Ctx, &sourcegraph.RepoSpec{URI: uri}); err != nil {
@@ -299,7 +299,7 @@ func (c *repoSyncCmd) Execute(args []string) error {
 func (c *repoSyncCmd) sync(repoURI string) error {
 	log := log.New(os.Stderr, cyan(strings.TrimPrefix(strings.TrimPrefix(repoURI+": ", "github.com/"), "sourcegraph.com/")), 0)
 
-	cl := Client()
+	cl := cli.Client()
 
 	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
 
@@ -343,7 +343,7 @@ type repoRefreshVCSCmd struct {
 }
 
 func (c *repoRefreshVCSCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 	for _, repoURI := range c.Args.URIs {
 		repo, err := cl.Repos.Get(cli.Ctx, &sourcegraph.RepoSpec{URI: repoURI})
 		if err != nil {
@@ -383,7 +383,7 @@ type repoInventoryCmd struct {
 }
 
 func (c *repoInventoryCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	inv, err := cl.Repos.GetInventory(cli.Ctx, &sourcegraph.RepoRevSpec{
 		RepoSpec: sourcegraph.RepoSpec{URI: c.Args.Repo},

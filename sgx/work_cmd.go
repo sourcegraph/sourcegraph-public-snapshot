@@ -72,7 +72,7 @@ func (c *WorkCmd) Execute(args []string) error {
 		}
 	}
 
-	cl := Client()
+	cl := cli.Client()
 
 	if dontRunWorker, _ := strconv.ParseBool(os.Getenv("SG_DONT_RUN_WORKER")); dontRunWorker {
 		log.Println("Not running worker because SG_DONT_RUN_WORKER is true.")
@@ -139,7 +139,7 @@ func (c *WorkCmd) Execute(args []string) error {
 						return
 					}
 
-					cl := Client()
+					cl := cli.Client()
 					ctx := cli.Ctx
 
 					quitCh := make(chan struct{})

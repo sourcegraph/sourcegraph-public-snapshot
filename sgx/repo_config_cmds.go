@@ -51,7 +51,7 @@ type repoConfigGetCmd struct {
 }
 
 func (c *repoConfigGetCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	repoSpec := &sourcegraph.RepoSpec{URI: c.Args.URI}
 
@@ -79,7 +79,7 @@ type repoConfigAppCmd struct {
 }
 
 func (c *repoConfigAppCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	if (!c.Enable && !c.Disable) || (c.Enable && c.Disable) {
 		return errors.New("exactly one of --enable and --disable must be specified")

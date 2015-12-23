@@ -59,12 +59,6 @@ func init() {
 	}
 }
 
-// Client returns a Sourcegraph API client configured to use the
-// specified endpoints and authentication info.
-func Client() *sourcegraph.Client {
-	return sourcegraph.NewClientFromContext(cli.Ctx)
-}
-
 func init() {
 	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
 		// The "src version" command does not need a cli context at all.

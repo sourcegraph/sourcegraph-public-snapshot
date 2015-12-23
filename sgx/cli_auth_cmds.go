@@ -165,7 +165,7 @@ func (c *whoamiCmd) Execute(args []string) error {
 		log.Fatalf("# No authentication info set for %s (use `%s login` to authenticate)", endpointURL, sgxcmd.Name)
 	}
 
-	cl := Client()
+	cl := cli.Client()
 
 	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
 	if err != nil {

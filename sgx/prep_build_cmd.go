@@ -29,7 +29,7 @@ type prepBuildCmd struct {
 }
 
 func (c *prepBuildCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	var (
 		build *sourcegraph.Build
@@ -211,7 +211,7 @@ func CheckCommitIDResolution(vcsType, cloneDir, commitID string) {
 // forcePrepBuild fakes a build for the latest commit so Prep can checkout the
 // repo
 func forcePrepBuild(repoURI string) (*sourcegraph.Build, *sourcegraph.Repo, error) {
-	cl := Client()
+	cl := cli.Client()
 
 	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
 	repo, err := cl.Repos.Get(cli.Ctx, &repoSpec)

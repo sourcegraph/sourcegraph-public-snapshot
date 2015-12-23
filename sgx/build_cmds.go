@@ -109,7 +109,7 @@ type buildsListCmd struct {
 }
 
 func (c *buildsListCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	opt := &sourcegraph.BuildListOptions{
 		Repo:        c.Repo,
@@ -150,7 +150,7 @@ type buildsGetRepoBuildInfoCmd struct {
 }
 
 func (c *buildsGetRepoBuildInfoCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	for _, repo := range c.Args.Repo {
 		repo, rev := sourcegraph.ParseRepoAndCommitID(repo)
@@ -183,7 +183,7 @@ func ago(t time.Time) string {
 type buildsStatsCmd struct{}
 
 func (c *buildsStatsCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 
 	numBuilds, err := statsutil.ComputeBuildStats(cl, cli.Ctx)
 	if err != nil {

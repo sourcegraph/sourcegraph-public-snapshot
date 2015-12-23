@@ -11,7 +11,7 @@ import (
 )
 
 func getBuild(repoURI string, commitID string, attempt uint32) (*sourcegraph.Build, *sourcegraph.Repo, error) {
-	cl := Client()
+	cl := cli.Client()
 
 	build, err := cl.Builds.Get(cli.Ctx, &sourcegraph.BuildSpec{
 		Attempt:  attempt,

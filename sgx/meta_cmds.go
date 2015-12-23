@@ -45,7 +45,7 @@ func (c *metaCmd) Execute(args []string) error { return nil }
 type metaStatusCmd struct{}
 
 func (c *metaStatusCmd) Execute(args []string) error {
-	cl := Client()
+	cl := cli.Client()
 	status, err := cl.Meta.Status(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ type metaConfigCmd struct{}
 
 func (c *metaConfigCmd) Execute(args []string) error {
 	log.Println("#", cli.Endpoint.URLOrDefault())
-	cl := Client()
+	cl := cli.Client()
 	config, err := cl.Meta.Config(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (c *metaConfigCmd) Execute(args []string) error {
 // getRemoteAppURL returns the parsed AppURL of the remote Sourcegraph
 // server configured in ctx.
 func getRemoteAppURL(ctx context.Context) (*url.URL, error) {
-	conf, err := Client().Meta.Config(ctx, &pbtypes.Void{})
+	conf, err := cli.Client().Meta.Config(ctx, &pbtypes.Void{})
 	if err != nil {
 		return nil, err
 	}
