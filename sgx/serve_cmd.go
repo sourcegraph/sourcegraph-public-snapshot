@@ -206,8 +206,8 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	}
 
 	// Endpoint defaults to the AppURL.
-	if Endpoint.URL == "" {
-		Endpoint.URL = appURL.String()
+	if cli.Endpoint.URL == "" {
+		cli.Endpoint.URL = appURL.String()
 
 		// Reset cli.Ctx to use new endpoint.
 		cli.Ctx = WithClientContext(context.Background())
@@ -250,8 +250,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	// app, git, and HTTP API would all inherit the process's owner's
 	// current auth. This is undesirable, unexpected, and could lead
 	// to unintentionally leaking private info.
-	Credentials.SetAccessToken("")
-	Credentials.AuthFile = ""
+	cli.Credentials.SetAccessToken("")
+	cli.Credentials.AuthFile = ""
 
 	c.GraphStoreOpts.expandEnv()
 	log15.Debug("GraphStore", "at", c.GraphStoreOpts.Root)
@@ -327,7 +327,7 @@ func (c *ServeCmd) Execute(args []string) error {
 			ctx = f(ctx)
 		}
 
-		ctx = Endpoint.NewContext(ctx)
+		ctx = cli.Endpoint.NewContext(ctx)
 
 		for _, f := range ServerContextFuncs {
 			var err error
@@ -669,9 +669,9 @@ func (ts updateGlobalTokenSource) Token() (*oauth2.Token, error) {
 	// an atomic "compare and swap" operation, but that is expensive
 	// as every goroutine must acquire a read+write lock in every call
 	// to this function.
-	currTok := Credentials.GetAccessToken()
+	currTok := cli.Credentials.GetAccessToken()
 	if tok != nil && tok.AccessToken != currTok {
-		Credentials.SetAccessToken(tok.AccessToken)
+		cli.Credentials.SetAccessToken(tok.AccessToken)
 	}
 	return tok, err
 }

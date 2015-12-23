@@ -50,7 +50,7 @@ type loginCmd struct {
 // getSavedToken checks if we already have a token for an endpoint, and
 // validates that it still works.
 func getSavedToken(endpointURL *url.URL) string {
-	a, err := userauth.Read(Credentials.AuthFile)
+	a, err := userauth.Read(cli.Credentials.AuthFile)
 	if err != nil || a == nil {
 		return ""
 	}
@@ -113,7 +113,7 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return "", fmt.Errorf("authenticating to %s: %s", endpointURL, err)
 	}
 
-	if err := userauth.SaveCredentials(Credentials.AuthFile, endpointURL, tok.AccessToken, false); err != nil {
+	if err := userauth.SaveCredentials(cli.Credentials.AuthFile, endpointURL, tok.AccessToken, false); err != nil {
 		log.Printf("warning: failed to save credentials: %s.", err)
 	}
 	return tok.AccessToken, nil
@@ -126,7 +126,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	// Check if parseable, before attempting authentication
-	_, err := userauth.Read(Credentials.AuthFile)
+	_, err := userauth.Read(cli.Credentials.AuthFile)
 	if err != nil {
 		return err
 	}
@@ -134,16 +134,16 @@ func (c *loginCmd) Execute(args []string) error {
 	// We allow the endpoint URL to be passed in as an argument as a
 	// convenience to --endpoint
 	if c.Args.EndpointURL != "" {
-		Endpoint.URL = c.Args.EndpointURL
+		cli.Endpoint.URL = c.Args.EndpointURL
 	}
 
-	endpointURL := Endpoint.URLOrDefault()
+	endpointURL := cli.Endpoint.URLOrDefault()
 	accessTok, err := c.getAccessToken(endpointURL)
 	if err != nil {
 		return err
 	}
 
-	err = userauth.SaveCredentials(Credentials.AuthFile, endpointURL, accessTok, true)
+	err = userauth.SaveCredentials(cli.Credentials.AuthFile, endpointURL, accessTok, true)
 	if err != nil {
 		return err
 	}
@@ -155,11 +155,11 @@ type whoamiCmd struct {
 }
 
 func (c *whoamiCmd) Execute(args []string) error {
-	a, err := userauth.Read(Credentials.AuthFile)
+	a, err := userauth.Read(cli.Credentials.AuthFile)
 	if err != nil {
 		return err
 	}
-	endpointURL := Endpoint.URLOrDefault()
+	endpointURL := cli.Endpoint.URLOrDefault()
 	ua := a[endpointURL.String()]
 	if ua == nil {
 		log.Fatalf("# No authentication info set for %s (use `%s login` to authenticate)", endpointURL, sgxcmd.Name)

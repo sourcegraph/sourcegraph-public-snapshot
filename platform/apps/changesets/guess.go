@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"src.sourcegraph.com/sourcegraph/auth/userauth"
-	"src.sourcegraph.com/sourcegraph/sgx"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 // guessRepo uses the git remote origin url to guess the repo URI
@@ -19,7 +19,7 @@ func guessRepo() (string, error) {
 	if origin == nil {
 		return "", nil
 	}
-	userAuth, err := userauth.Read(sgx.Credentials.AuthFile)
+	userAuth, err := userauth.Read(cli.Credentials.AuthFile)
 	if err != nil {
 		return "", err
 	}

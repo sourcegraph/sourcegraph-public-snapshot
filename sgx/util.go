@@ -20,7 +20,7 @@ import (
 // values to args and then returns a command that executes the
 // Sourcegraph program with those options and args.
 func cmdWithClientArgs(args ...string) *exec.Cmd {
-	endpointArgs, err := flagutil.MarshalArgs(&Endpoint)
+	endpointArgs, err := flagutil.MarshalArgs(&cli.Endpoint)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func cmdWithClientArgs(args ...string) *exec.Cmd {
 		}
 	}
 
-	credsArgs, err := flagutil.MarshalArgs(&Credentials)
+	credsArgs, err := flagutil.MarshalArgs(&cli.Credentials)
 	if err != nil {
 		log.Fatal(err)
 	}
