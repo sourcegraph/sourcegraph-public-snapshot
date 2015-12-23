@@ -1,12 +1,14 @@
 import React from "react";
+import classNames from "classnames";
 
 import * as BuildActions from "sourcegraph/build/BuildActions";
+import {elapsed, panelClass, taskClass} from "sourcegraph/build/Build";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 
 const updateLogIntervalMsec = 1500;
 
-class BuildTask extends Component {
+class Step extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -18,7 +20,7 @@ class BuildTask extends Component {
 
 	componentWillUnmount() {
 		this._stopUpdateLog();
-		super.componentWillUnmount();
+		if (super.componentWillUnmount) super.componentWillUnmount();
 	}
 
 	_startUpdateLog() {
@@ -71,17 +73,41 @@ class BuildTask extends Component {
 	}
 
 	render() {
+		let panelCls = classNames(panelClass(this.state.task), "step");
+		let bodyClass = classNames({
+			"panel-collapse": true,
+			"collapse": true,
+			"in": (typeof this.state.expanded !== "undefined" && this.state.expanded) || (typeof this.state.expanded === "undefined" && !this.state.task.Success),
+		});
+
+		let headerID = `T${this.state.task.ID}`;
+		let bodyID = `T${this.state.task.ID}-log-body`;
+
 		return (
-			<div>
-				{this.state.log ? <pre className="build-log">{this.state.log.log}</pre> : null}
+			<div className={panelCls}>
+				<div className="panel-heading" role="tab" id={headerID}>
+					<div className="pull-right">{elapsed(this.state.task)}</div>
+					<h5 className="panel-title">
+						<a role="button" data-toggle="collapse"
+							onClick={() => this.setState({expanded: !this.state.expanded})}
+							data-parent={`task-${this.state.task.ParentID}-subtasks`} href={bodyID}>
+							<span className={taskClass(this.state.task).text}><i className={taskClass(this.state.task).icon}></i> {this.state.task.Label}</span>
+						</a>
+					</h5>
+				</div>
+				<div id={bodyID} className={bodyClass} role="tabpanel" aria-labelledby={headerID}>
+					<div className="panel-body">
+						{this.state.log ? <pre className="build-log">{this.state.log.log}</pre> : null}
+					</div>
+				</div>
 			</div>
 		);
 	}
 }
 
-BuildTask.propTypes = {
+Step.propTypes = {
 	task: React.PropTypes.object.isRequired,
 	logs: React.PropTypes.object.isRequired,
 };
 
-export default BuildTask;
+export default Step;

@@ -1258,6 +1258,10 @@ type BuildTask struct {
 	ID uint64 `protobuf:"varint,1,opt,name=id,proto3" json:",omitempty"`
 	// Build specifies the build associated with this task.
 	Build BuildSpec `protobuf:"bytes,2,opt,name=build" `
+	// ParentID, if non-zero, indicates that this task's parent is the
+	// task (in the same build) with the given ID. A ParentID of zero
+	// means that this is a top-level task.
+	ParentID uint64 `protobuf:"varint,3,opt,name=parent_id,proto3" json:",omitempty"`
 	// Label describes the task (e.g., Code Intelligence).
 	Label string `protobuf:"bytes,4,opt,name=label,proto3" json:",omitempty"`
 	// CreatedAt is when this task was initially created.

@@ -134,7 +134,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.Repo).Handler(internal.Handler(serveRepo))
 	r.Get(router.RepoBuild).Handler(internal.Handler(serveRepoBuild))
 	r.Get(router.RepoBuildUpdate).Handler(internal.Handler(serveRepoBuildUpdate))
-	r.Get(router.RepoBuildLog).Handler(internal.Handler(serveRepoBuildLog))
 	r.Get(router.RepoBuildTaskLog).Handler(internal.Handler(serveRepoBuildTaskLog))
 	r.Get(router.RepoBuilds).Handler(internal.Handler(serveRepoBuilds))
 	r.Get(router.RepoBuildsCreate).Handler(internal.Handler(serveRepoBuildsCreate))

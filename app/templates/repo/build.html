@@ -5,7 +5,6 @@
 {{define "RepoBody"}}
 <nav class="page-actions">
 	<a class="btn btn-default btn-sm" href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">&laquo; View all builds</a>
-	<a class="btn btn-default btn-sm" href="{{urlToRepoBuildSubroute "repo.build.log" .Repo.URI .Build.ID}}" target="_blank"><i class="fa fa-file-text"></i>&nbsp; Download logs</a>
 	<form action="{{urlToRepoSubroute "repo.builds.create" .Repo.URI}}" method="post" class="form-inline">
 		<input type="hidden" name="CommitID" value="{{.Build.CommitID}}">
 		<input type="hidden" name="Branch" value="{{.Build.Branch}}">
@@ -23,7 +22,7 @@
 	</form>
 </nav>
 
-<div id="BuildView"
+<div id="BuildContainer"
 	data-build="{{json .Build}}"
 	data-commit="{{json .Commit}}"></div>
 

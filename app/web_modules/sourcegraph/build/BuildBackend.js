@@ -46,15 +46,7 @@ const BuildBackend = {
 					minID = log.maxID;
 				}
 
-				if (!BuildBackend.nativeCIEnabled) {
-					minID = 0;
-				}
-
-				let url = `/${action.repo}/.builds/${action.buildID}`;
-				if (action.taskID) {
-					url += `/tasks/${action.taskID}`;
-				}
-				url += "/log";
+				let url = `/${action.repo}/.builds/${action.buildID}/tasks/${action.taskID}/log`;
 				if (minID) {
 					url += `?MinID=${minID}`;
 				}

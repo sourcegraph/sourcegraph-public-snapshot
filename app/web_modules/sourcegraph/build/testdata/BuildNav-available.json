@@ -1,0 +1,86 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "build-nav",
+			"children": [
+				{
+					"type": "ol",
+					"props": {
+						"className": "list-unstyled",
+						"children": [
+							{
+								"type": "li",
+								"key": "456",
+								"props": {
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"className": "",
+												"href": "#T456",
+												"children": [
+													{
+														"type": "i",
+														"props": {
+															"className": "fa fa-circle-o-notch"
+														}
+													},
+													" ",
+													{
+														"type": "strong",
+														"props": {}
+													}
+												]
+											}
+										},
+										{
+											"type": "ol",
+											"props": {
+												"className": "list-unstyled"
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "li",
+								"key": "567",
+								"props": {
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"className": "",
+												"href": "#T567",
+												"children": [
+													{
+														"type": "i",
+														"props": {
+															"className": "fa fa-circle-o-notch"
+														}
+													},
+													" ",
+													{
+														"type": "strong",
+														"props": {}
+													}
+												]
+											}
+										},
+										{
+											"type": "ol",
+											"props": {
+												"className": "list-unstyled"
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

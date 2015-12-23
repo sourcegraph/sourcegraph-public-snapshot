@@ -54,6 +54,8 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	ioutil.WriteFile("/tmp/srclib.zip", body, 0600)
+
 	// It's safe to construct the zip.ReadCloser without its private
 	// *os.File field. If package zipfs's implementation changes in
 	// such a way that makes this assumption false, our tests will
@@ -67,7 +69,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) error {
 	importOpt := srclib.ImportOpt{
 		Repo:     repoRev.URI,
 		CommitID: repoRev.CommitID,
-		Verbose:  false,
+		Verbose:  true,
 	}
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
 		return fmt.Errorf("srclib import of %s failed: %s", repoRev, err)

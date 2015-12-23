@@ -1,18 +1,10 @@
-FROM busybox
+FROM alpine:3.2
 
-RUN echo
+RUN apk --update add git curl bash
 
-# Add this toolchain
-ADD . /srclib/srclib-sample/
-WORKDIR /srclib/srclib-sample
-ENV PATH /srclib/srclib-sample/.bin:$PATH
+ENV SRCLIBPATH /srclib
+ADD . /srclib/sourcegraph.com/sourcegraph/srclib-sample
 
-# Add srclib (unprivileged) user
-RUN adduser -D -s /bin/bash srclib
-RUN mkdir /src
-RUN chown -R srclib /src /srclib
-USER srclib
+RUN curl -Lo /tmp/srclib.gz https://srclib-release.s3.amazonaws.com/srclib/0.1.1-no-docker4/linux-amd64/srclib.gz && cd /tmp && gunzip -f srclib.gz && chmod +x srclib && mv srclib /bin/srclib
 
-WORKDIR /src
-
-ENTRYPOINT ["srclib-sample"]
+ENTRYPOINT srclib config && srclib make

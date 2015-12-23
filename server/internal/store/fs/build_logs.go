@@ -57,14 +57,7 @@ func (s *BuildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minIDStr
 // logFilePath returns the filename to use for the log file for the
 // given task.
 func logFilePath(task sourcegraph.TaskSpec) string {
-	var tag string
-	if task.ID == 0 {
-		tag = task.Build.IDString()
-	} else {
-		tag = task.IDString()
-	}
-
-	p := tag + ".log"
+	p := task.IDString() + ".log"
 
 	// Clean the path of any relative parts so that we refuse to read files
 	// outside the build log dir.

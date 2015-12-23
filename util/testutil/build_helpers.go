@@ -46,7 +46,7 @@ func WaitForBuild(t *testing.T, ctx context.Context, buildSpec sourcegraph.Build
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	// Wait for the build to complete.
-	start, waitStart, waitEnd := time.Now(), 5*time.Second*ciFactor, 10*time.Second*ciFactor
+	start, waitStart, waitEnd := time.Now(), 5*time.Second*ciFactor, 20*time.Second*ciFactor
 	for {
 		elapsed := time.Since(start)
 		if elapsed > waitEnd {

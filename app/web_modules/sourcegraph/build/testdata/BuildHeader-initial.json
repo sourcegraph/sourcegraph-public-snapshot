@@ -1,197 +1,41 @@
 {
 	"renderOutput": {
-		"type": "div",
+		"type": "header",
 		"props": {
+			"className": "repo-build",
 			"children": [
 				{
-					"type": "div",
+					"type": "h1",
 					"props": {
-						"className": "commit single media repo-build",
+						"className": "label label-default",
 						"children": [
 							{
-								"type": "a",
+								"type": "div",
 								"props": {
-									"className": "pull-left",
+									"className": "number",
 									"children": [
-										{
-											"type": "img",
-											"props": {
-												"className": "media-object avatar img-rounded",
-												"src": "http://example.com/avatar.png"
-											}
-										}
+										"#123"
 									]
 								}
 							},
 							{
 								"type": "div",
 								"props": {
-									"className": "media-body",
+									"className": "status",
 									"children": [
-										{
-											"type": "h4",
-											"props": {
-												"className": "media-heading commit-title",
-												"children": [
-													{
-														"type": "a",
-														"props": {
-															"href": "/undefined/.commits/abc",
-															"children": [
-																"msg"
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"className": "author committer",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "date",
-															"children": [
-																"authored ",
-																{
-																	"type": "TimeAgo",
-																	"props": {
-																		"time": ""
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "a",
-														"props": {
-															"href": "/undefined/.commits/abc",
-															"children": [
-																{
-																	"type": "tt",
-																	"props": {
-																		"className": "commit-id pull-right",
-																		"children": [
-																			"abc"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										}
+										"Queued"
 									]
 								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"props": {
-						"className": "row",
-						"children": [
+							},
 							{
 								"type": "div",
 								"props": {
-									"className": "col-md-12",
+									"className": "date",
 									"children": [
 										{
-											"type": "div",
+											"type": "TimeAgo",
 											"props": {
-												"className": "media",
-												"children": [
-													{
-														"type": "header",
-														"props": {
-															"className": "repo-build pull-left",
-															"children": [
-																{
-																	"type": "h1",
-																	"props": {
-																		"className": "label label-info",
-																		"children": [
-																			{
-																				"type": "span",
-																				"props": {
-																					"className": "number",
-																					"children": [
-																						"#123"
-																					]
-																				}
-																			},
-																			{
-																				"type": "span",
-																				"props": {
-																					"className": "status",
-																					"children": [
-																						"In progress"
-																					]
-																				}
-																			}
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "div",
-														"props": {
-															"className": "media-body",
-															"children": [
-																{
-																	"type": "table",
-																	"props": {
-																		"className": "table repo-build table-condensed",
-																		"children": [
-																			{
-																				"type": "tbody",
-																				"props": {
-																					"children": [
-																						{
-																							"type": "tr",
-																							"props": {
-																								"children": [
-																									{
-																										"type": "th",
-																										"props": {
-																											"children": [
-																												"Created"
-																											]
-																										}
-																									},
-																									{
-																										"type": "td",
-																										"props": {
-																											"children": [
-																												{
-																													"type": "TimeAgo",
-																													"props": {
-																														"time": ""
-																													}
-																												}
-																											]
-																										}
-																									}
-																								]
-																							}
-																						}
-																					]
-																				}
-																			}
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
+												"time": ""
 											}
 										}
 									]

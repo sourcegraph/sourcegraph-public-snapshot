@@ -18,7 +18,7 @@ import (
 // goroutine by itself.
 func buildReaper(ctx context.Context) {
 	// Add margin for clock skew.
-	const heartbeatTimeout = hardcodedServerHeartbeatTimeout_hack + 2*time.Minute
+	const heartbeatTimeout = serverHeartbeatInterval + 2*time.Minute
 
 	listAllHeartbeatExpiredBuilds := func(ctx context.Context) ([]*sourcegraph.Build, error) {
 		var expired []*sourcegraph.Build

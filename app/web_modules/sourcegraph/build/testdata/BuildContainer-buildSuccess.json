@@ -1,0 +1,85 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "row build-container",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "col-md-3 col-lg-2",
+						"children": [
+							{
+								"type": "BuildHeader",
+								"props": {
+									"build": {
+										"ID": 456,
+										"Success": true
+									},
+									"commit": {
+										"ID": "abc"
+									}
+								}
+							},
+							{
+								"type": "BuildNav",
+								"props": {
+									"build": {
+										"ID": 456,
+										"Success": true
+									},
+									"tasks": [
+										{
+											"ID": 456
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "col-md-9 col-lg-10",
+						"children": [
+							{
+								"type": "Commit",
+								"props": {
+									"commit": {
+										"ID": "abc"
+									}
+								}
+							},
+							{
+								"type": "BuildTasks",
+								"props": {
+									"tasks": [
+										{
+											"ID": 456
+										}
+									],
+									"logs": {
+										"content": {}
+									}
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantBuild",
+			"repo": "aRepo",
+			"buildID": 123
+		},
+		{
+			"$constructor": "WantTasks",
+			"repo": "aRepo",
+			"buildID": 123
+		}
+	]
+}

@@ -131,6 +131,7 @@ type dbBuildTask struct {
 	ID        uint64
 	Repo      string
 	BuildID   uint64 `db:"build_id"`
+	ParentID  uint64 `db:"parent_id"`
 	Label     string
 	CreatedAt time.Time  `db:"created_at"`
 	StartedAt *time.Time `db:"started_at"`
@@ -143,6 +144,7 @@ func (t *dbBuildTask) toBuildTask() *sourcegraph.BuildTask {
 	return &sourcegraph.BuildTask{
 		ID:        t.ID,
 		Build:     sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: t.Repo}, ID: t.BuildID},
+		ParentID:  t.ParentID,
 		Label:     t.Label,
 		CreatedAt: pbtypes.NewTimestamp(t.CreatedAt),
 		StartedAt: ts(t.StartedAt),
@@ -156,6 +158,7 @@ func (t *dbBuildTask) fromBuildTask(t2 *sourcegraph.BuildTask) {
 	t.ID = t2.ID
 	t.Repo = t2.Build.Repo.URI
 	t.BuildID = t2.Build.ID
+	t.ParentID = t2.ParentID
 	t.Label = t2.Label
 	t.CreatedAt = t2.CreatedAt.Time()
 	t.StartedAt = tm(t2.StartedAt)
@@ -413,8 +416,8 @@ func (s *Builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 		// Construct SQL manually so we can retrieve the id # from
 		// the DB trigger.
 		t := created[i] // shorter alias
-		sql := `INSERT INTO repo_build_task(id, repo, build_id, label, created_at, started_at, ended_at, success, failure)
-            VALUES(` + arg(t.ID) + `, ` + arg(t.Repo) + `, ` + arg(t.BuildID) + `, ` + arg(t.Label) + `, ` + arg(t.CreatedAt) + `, ` + arg(t.StartedAt) + `,` + arg(t.EndedAt) + `,` + arg(t.Success) + `, ` + arg(t.Failure) + `)
+		sql := `INSERT INTO repo_build_task(id, repo, build_id, parent_id, label, created_at, started_at, ended_at, success, failure)
+            VALUES(` + arg(t.ID) + `, ` + arg(t.Repo) + `, ` + arg(t.BuildID) + `, ` + arg(t.ParentID) + `, ` + arg(t.Label) + `, ` + arg(t.CreatedAt) + `, ` + arg(t.StartedAt) + `,` + arg(t.EndedAt) + `,` + arg(t.Success) + `, ` + arg(t.Failure) + `)
             RETURNING id;`
 		id, err := dbutil.SelectInt(dbh(ctx), sql, args...)
 		if err != nil {

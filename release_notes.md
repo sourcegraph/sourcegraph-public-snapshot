@@ -1,5 +1,9 @@
 # dev
 
+- Build tasks now have a new field, `ParentID`. **PostgreSQL
+  backend:** Run `alter table repo_build_task add column parent_id
+  bigint default 0;` to perform this migration.
+
 # 0.11.0
 
 - Alongside Tracker and Changes applications now sits a new "API Docs" tab which

@@ -12,6 +12,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
+	"src.sourcegraph.com/sourcegraph/util/executil"
 	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
@@ -70,23 +72,24 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 	}
 	repoDir := filepath.Join(tmpDir, repo.Name)
 
-	// Fix up the remote so the URI is "r/r". (HACK)
-	cmd := exec.Command("git", "remote", "add", "srclib", "http://"+repo.URI)
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
-		return err
+	_, srclibpath, _ := testserver.SrclibSampleToolchain(false)
+	srclibCmd := func(args ...string) *exec.Cmd {
+		cmd := exec.Command(sgxcmd.Path, "srclib")
+		cmd.Args = append(cmd.Args, args...)
+		executil.OverrideEnv(cmd, "SRCLIBPATH", srclibpath)
+		return cmd
 	}
 
 	// Build the repo.
-	cmd = a.SrclibCmd(nil, []string{"config"})
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
+	if err := testutil.RunCmd(srclibCmd("config"), repoDir); err != nil {
 		return err
 	}
-	cmd = a.SrclibCmd(nil, []string{"make"})
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
+	if err := testutil.RunCmd(srclibCmd("make"), repoDir); err != nil {
 		return err
 	}
 
 	// Push the repo.
+	var cmd *exec.Cmd
 	if asUser != "" {
 		cmd, err = a.CmdAs(asUser, []string{"push", "--repo", repo.URI})
 		if err != nil {

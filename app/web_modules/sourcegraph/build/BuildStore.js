@@ -61,7 +61,7 @@ export class BuildStore extends Store {
 					content: Object.assign({}, this.logs.content, {
 						[keyFor(action.repo, action.buildID, action.taskID)]: {
 							maxID: action.maxID,
-							log: (action.minID ? existingLog.log : "") + (action.log === null ? "" : action.log),
+							log: existingLog.log + (action.log === null ? "" : action.log),
 						},
 					}),
 				}));
@@ -69,6 +69,7 @@ export class BuildStore extends Store {
 			}
 
 		case BuildActions.TasksFetched:
+			if (JSON.stringify(action.tasks) === JSON.stringify(this.tasks.get(action.repo, action.buildID))) return;
 			this.tasks = deepFreeze(Object.assign({}, this.tasks, {
 				content: Object.assign({}, this.tasks.content, {
 					[keyFor(action.repo, action.buildID)]: action.tasks,

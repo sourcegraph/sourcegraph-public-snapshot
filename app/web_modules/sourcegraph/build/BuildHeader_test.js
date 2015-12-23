@@ -11,19 +11,10 @@ const sampleBuild = {
 	CreatedAt: "",
 };
 
-const sampleCommit = {
-	ID: "abc",
-	Message: "msg",
-	Author: {Date: ""},
-	AuthorPerson: {AvatarURL: "http://example.com/avatar.png"},
-};
-
 describe("BuildHeader", () => {
 	it("should render", () => {
 		autotest(testdataInitial, `${__dirname}/testdata/BuildHeader-initial.json`,
-			<BuildHeader
-				build={sampleBuild}
-				commit={sampleCommit} />
+			<BuildHeader build={sampleBuild} />
 		);
 	});
 });

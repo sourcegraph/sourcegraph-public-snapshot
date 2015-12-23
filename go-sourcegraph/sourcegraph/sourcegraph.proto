@@ -1094,6 +1094,11 @@ message BuildTask {
 	// Build specifies the build associated with this task.
 	BuildSpec build = 2 [(gogoproto.nullable) = false];
 
+	// ParentID, if non-zero, indicates that this task's parent is the
+	// task (in the same build) with the given ID. A ParentID of zero
+	// means that this is a top-level task.
+	uint64 parent_id = 3 [(gogoproto.customname) = "ParentID"];
+	
 	// Label describes the task (e.g., Code Intelligence).
 	string label = 4;
 
