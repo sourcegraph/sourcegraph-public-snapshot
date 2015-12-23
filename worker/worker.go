@@ -72,11 +72,6 @@ func (c *WorkCmd) Execute(args []string) error {
 
 	cl := cli.Client()
 
-	if dontRunWorker, _ := strconv.ParseBool(os.Getenv("SG_DONT_RUN_WORKER")); dontRunWorker {
-		log.Println("Not running worker because SG_DONT_RUN_WORKER is true.")
-		return nil
-	}
-
 	// Check for Docker and fail if it's required but unavailable.
 	srclibUseDockerExeMethod()
 
