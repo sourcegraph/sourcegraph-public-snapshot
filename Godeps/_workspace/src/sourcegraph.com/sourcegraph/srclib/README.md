@@ -69,9 +69,8 @@ instructions.
 
 ## srclib binary release process
 
-`srclib` uses [equinox.io](https://equinox.io/) to maintain and update
-binary versions. Contributors with deploy privileges can update the
-official binaries via these instructions:
+Contributors with deploy privileges can update the official binaries
+via these instructions:
 
 1. `go install github.com/laxer/goxc`
 1. Ensure you have the AWS credentials set so that the AWS CLI (`aws`) can write to the `srclib-release` S3 bucket.

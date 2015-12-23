@@ -52,10 +52,6 @@ type DefFilterFunc func(*graph.Def) bool
 func (f DefFilterFunc) SelectDef(def *graph.Def) bool { return f(def) }
 func (f DefFilterFunc) String() string                { return "DefFilterFunc" }
 
-func defPathFilter(path string) DefFilter {
-	return DefFilterFunc(func(def *graph.Def) bool { return def.Path == path })
-}
-
 // A RefFilter filters a set of refs to only those for which SelectRef
 // returns true.
 type RefFilter interface {

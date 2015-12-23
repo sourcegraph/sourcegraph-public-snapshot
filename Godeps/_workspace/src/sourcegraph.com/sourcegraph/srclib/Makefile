@@ -15,7 +15,7 @@ endif
 
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: default install srclib release upload-release check-release install-all-toolchains test-all-toolchains
+.PHONY: default install srclib release upload-release check-release
 
 default: install
 
@@ -47,20 +47,3 @@ check-release:
 	/tmp/srclib-$(V) version
 	echo; echo
 	@echo Released srclib $(V)
-
-install-all-toolchains:
-	srclib toolchain install go python javascript java
-
-toolchains ?= go javascript python java
-
-test-all-toolchains:
-	@echo Checking that all standard toolchains are installed
-	for lang in $(toolchains); do echo $$lang; srclib toolchain list | grep srclib-$$lang; done
-
-	@echo
-	@echo
-	@echo Testing installation of standard toolchains in Docker if Docker is running
-	(docker info && make -C integration test) || echo Docker is not running...skipping integration tests.
-
-regen-all-toolchain-tests:
-	for lang in $(toolchains); do echo $$lang; cd ~/.srclib/sourcegraph.com/sourcegraph/srclib-$$lang; srclib test --gen; done

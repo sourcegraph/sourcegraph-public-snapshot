@@ -119,6 +119,7 @@ func Clone(url, dir string, opt vcs.CloneOpt) (*Repository, error) {
 		if gitPassHelperDir != "" {
 			defer os.RemoveAll(gitPassHelperDir)
 		}
+		env.Unset("GIT_ASKPASS")
 		env = append(env, "GIT_ASKPASS="+gitPassHelper)
 
 		cmd.Env = env
@@ -621,9 +622,6 @@ func (r *Repository) fetchRemote(repoDir string) error {
 }
 
 func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
-	// TODO(sqs): this lock is different from libgit2's lock, but
-	// libgit2 Repositories call this method because of
-	// embedding. Therefore there could be a race condition.
 	r.editLock.Lock()
 	defer r.editLock.Unlock()
 
@@ -820,7 +818,7 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 }
 
 func (r *Repository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository, b vcs.CommitID) (vcs.CommitID, error) {
-	// libgit2 Repository inherits GitRootDir and CrossRepo from its
+	// git.Repository inherits GitRootDir and CrossRepo from its
 	// embedded gitcmd.Repository.
 
 	var repoBDir string // path to head repo on local filesystem

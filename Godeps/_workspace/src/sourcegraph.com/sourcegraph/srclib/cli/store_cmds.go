@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -234,7 +233,7 @@ func Import(buildDataFS vfs.FileSystem, stor interface{}, opt ImportOpt) error {
 	if err != nil {
 		return fmt.Errorf("error calling config.ReadCached: %s", err)
 	}
-	mf, err := plan.CreateMakefile(".", nil, "", treeConfig, plan.Options{NoCache: true})
+	mf, err := plan.CreateMakefile(".", nil, "", treeConfig, plan.Options{})
 	if err != nil {
 		return fmt.Errorf("error calling plan.Makefile: %s", err)
 	}
@@ -556,16 +555,6 @@ func (c *StoreImportCmd) sample(s interface{}) error {
 
 // countingWriter wraps an io.Writer, counting the number of bytes
 // written.
-type countingWriter struct {
-	io.Writer
-	n uint64
-}
-
-func (cr *countingWriter) Write(p []byte) (n int, err error) {
-	n, err = cr.Writer.Write(p)
-	cr.n += uint64(n)
-	return
-}
 
 type storeIndexCriteria struct {
 	Repo     string `long:"repo" description:"only indexes for this repo"`

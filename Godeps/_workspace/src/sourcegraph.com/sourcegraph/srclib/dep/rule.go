@@ -36,7 +36,7 @@ func makeDepRules(c *config.Tree, dataDir string, existing []makex.Rule, opt pla
 		}
 
 		rules = append(rules, &ResolveDepsRule{dataDir, u, toolRef, opt})
-		if opt.Verbose {
+		if toolRef != nil && opt.Verbose {
 			log.Printf("Created %v rule for %v %v", depresolveOp, toolRef.Toolchain, u.ID())
 		}
 	}
@@ -59,6 +59,9 @@ func (r *ResolveDepsRule) Prereqs() []string {
 }
 
 func (r *ResolveDepsRule) Recipes() []string {
+	if r.Tool == nil {
+		return nil
+	}
 	return []string{
 		fmt.Sprintf("%s tool %s %q %q < $^ 1> $@", util.SafeCommandName(srclib.CommandName), r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd),
 	}

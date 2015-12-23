@@ -61,6 +61,9 @@ And the actual test output is written to:
 		"display semantic diff of two output files",
 		"Displays easier-to-read diff of two srclib output files. Intended for debugging use when developing srclib toolchains",
 		&diffCmd)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type TestCmd struct {
@@ -297,7 +300,7 @@ func (c *DiffCmd) Execute(args []string) error {
 	}
 	colorable.Println("\nThe following defs differed:")
 	for _, defKey := range differingDefs {
-		colorable.Println("  %v\n", defKey)
+		colorable.Printf("  %v\n", defKey)
 	}
 
 	return fmt.Errorf("expected and actual output differ")

@@ -57,7 +57,7 @@ func (e *ErrType) Error() string {
 }
 
 func (a *Ann) sortKey() string {
-	return strings.Join([]string{a.Repo, a.CommitID, a.UnitType, a.Unit, a.Type, a.File, strconv.Itoa(int(a.Start)), strconv.Itoa(int(a.End))}, ":")
+	return strings.Join([]string{a.Repo, a.CommitID, a.UnitType, a.Unit, a.Type, a.File, strconv.Itoa(int(a.StartLine)), strconv.Itoa(int(a.EndLine))}, ":")
 }
 
 // Sorting

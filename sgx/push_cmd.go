@@ -8,7 +8,6 @@ import (
 
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"sourcegraph.com/sourcegraph/srclib/toolchain"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -95,10 +94,6 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 	if err != nil {
 		return fmt.Errorf("getting local build data FS for %s@%s: %s", repoRevSpec.URI, repoRevSpec.CommitID, err)
 	}
-
-	// Importing doesn't require actual toolchains to be present (or
-	// any toolchain-specific logic).
-	toolchain.NoToolchains = true
 
 	importOpt := srclib.ImportOpt{
 		Repo:     repoRevSpec.URI,

@@ -38,10 +38,9 @@ func makeGraphRules(c *config.Tree, dataDir string, existing []makex.Rule, opt p
 		}
 
 		rules = append(rules, &GraphUnitRule{dataDir, u, toolRef, opt})
-		if opt.Verbose {
+		if toolRef != nil && opt.Verbose {
 			log.Printf("Created %v rule for %v %v", graphOp, toolRef.Toolchain, u.ID())
 		}
-
 	}
 	return rules, nil
 }
@@ -70,6 +69,9 @@ func (r *GraphUnitRule) Prereqs() []string {
 }
 
 func (r *GraphUnitRule) Recipes() []string {
+	if r.Tool == nil {
+		return nil
+	}
 	safeCommand := util.SafeCommandName(srclib.CommandName)
 	return []string{
 		fmt.Sprintf("%s tool %s %q %q < $< | %s internal normalize-graph-data --unit-type %q --dir . 1> $@", safeCommand, r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd, safeCommand, r.Unit.Type),

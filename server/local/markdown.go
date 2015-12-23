@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/srclib/doc"
+	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 

@@ -29,7 +29,7 @@ var _ = math.Inf
 // An Ann is a source code annotation.
 //
 // Annotations are unique on (Repo, CommitID, UnitType, Unit, File,
-// Start, End, Type).
+// StartLine, EndLine, Type).
 type Ann struct {
 	// Repo is the VCS repository in which this ann exists.
 	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"Repo,omitempty"`
@@ -47,10 +47,12 @@ type Ann struct {
 	Unit string `protobuf:"bytes,4,opt,name=unit,proto3" json:"Unit,omitempty"`
 	// File is the filename in which this Ann exists.
 	File string `protobuf:"bytes,5,opt,name=file,proto3" json:"File,omitempty"`
-	// Start is the byte offset of this ann's first byte in File.
-	Start uint32 `protobuf:"varint,6,opt,name=start,proto3" json:"Start"`
-	// End is the byte offset of this ann's last byte in File.
-	End uint32 `protobuf:"varint,7,opt,name=end,proto3" json:"End"`
+	// StartLine is the line number (inclusive, 1-indexed) of the
+	// beginning of the annotation.
+	StartLine uint32 `protobuf:"varint,6,opt,name=start_line,proto3" json:"StartLine"`
+	// EndLine is the line number (inclusive, 1-indexed) of the end of
+	// the annotation.
+	EndLine uint32 `protobuf:"varint,7,opt,name=end_line,proto3" json:"EndLine"`
 	// Type is the type of the annotation. See this package's type
 	// constants for a list of possible types.
 	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"Type"`

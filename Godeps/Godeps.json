@@ -11,11 +11,6 @@
 			"Rev": "8961c3750a47b8c0b3e118d52513b97adf85a7e8"
 		},
 		{
-			"ImportPath": "bitbucket.org/ww/goautoneg",
-			"Comment": "null-5",
-			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
-		},
-		{
 			"ImportPath": "github.com/AaronO/go-git-http",
 			"Rev": "b05ba080e2aba78d8b03ae1fe01d7c1b7fecc734"
 		},
@@ -48,7 +43,7 @@
 		},
 		{
 			"ImportPath": "github.com/alexsaveliev/go-colorable-wrapper",
-			"Rev": "32a2486bdc0de89379a23673af82bd61f5c7c5cd"
+			"Rev": "99a0af7e4f8cb31ba0cbecd070648a1f3f7c4c33"
 		},
 		{
 			"ImportPath": "github.com/andybalholm/cascadia",
@@ -243,7 +238,11 @@
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
-			"Rev": "d67e0b7d1797975196499f79bcc322c08b9f218b"
+			"Rev": "3dac7b4f76f6e17fb39b768b89e3783d16e237fe"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
 		},
 		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
@@ -271,20 +270,17 @@
 			"Rev": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587"
 		},
 		{
-			"ImportPath": "github.com/peterh/liner",
-			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
-		},
-		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
 			"Comment": "0.7.0-68-g67994f1",
 			"Rev": "67994f177195311c3ea3d4407ed0175e34a4256f"
 		},
 		{
-			"ImportPath": "github.com/prometheus/common/expfmt",
-			"Rev": "5cb53e5c863aca6e2b8ec958d16d9a93753ecea6"
+			"ImportPath": "github.com/prometheus/client_model/go",
+			"Comment": "model-0.0.2-12-gfa8ad6f",
+			"Rev": "fa8ad6fec33561be4280a8f0514318c79d7f6cb6"
 		},
 		{
-			"ImportPath": "github.com/prometheus/common/model",
+			"ImportPath": "github.com/prometheus/common/expfmt",
 			"Rev": "5cb53e5c863aca6e2b8ec958d16d9a93753ecea6"
 		},
 		{
@@ -292,9 +288,8 @@
 			"Rev": "5cb53e5c863aca6e2b8ec958d16d9a93753ecea6"
 		},
 		{
-			"ImportPath": "github.com/prometheus/client_model/go",
-			"Comment": "model-0.0.2-12-gfa8ad6f",
-			"Rev": "fa8ad6fec33561be4280a8f0514318c79d7f6cb6"
+			"ImportPath": "github.com/prometheus/common/model",
+			"Rev": "5cb53e5c863aca6e2b8ec958d16d9a93753ecea6"
 		},
 		{
 			"ImportPath": "github.com/prometheus/procfs",
@@ -339,40 +334,40 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go-goon",
-			"Comment": "experiment-with-bypass_alt-16-gadb0068",
-			"Rev": "adb0068563cf869f1b4b7c57b83a293064b45145"
+			"Comment": "experiment-with-bypass_alt-18-gba57724",
+			"Rev": "ba57724c4f5117dc5ec4fabac854b2b073eac5e4"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist5258650",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist5639599",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist5707298",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6418290",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6418462",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6433744",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6445065",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gzip_file_server",
-			"Rev": "a10c166f9d9522b5622ff702ce49953b7aebb3e5"
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/highlight_diff",
@@ -619,7 +614,11 @@
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
-			"Rev": "2fbf3d7329d847b125188ad64b68cfb1f548938a"
+			"Rev": "2baa8a1b9338cf13d9eeb27696d761155fa480be"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "b4e289961544fc90f340c908c3460ceae6a2202a"
 		},
 		{
 			"ImportPath": "golang.org/x/text/transform",
@@ -631,7 +630,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/tools/godoc/vfs",
-			"Rev": "458cff5230751b488dc6eb6d2adb799ff544f6be"
+			"Rev": "d6e83e534da905609e21e4086a0fbaed33f88d07"
 		},
 		{
 			"ImportPath": "google.golang.org/api/googleapi",
@@ -703,7 +702,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
-			"Rev": "d92ffef80cd5506f4dbebecc642905c524df31d4"
+			"Rev": "3dd19c54e26c5eec3ad03f1d430b045cf1501378"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
@@ -731,8 +730,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.5-c-226-g10830ea",
-			"Rev": "10830ea17a7322f82a8fc2438b5e2cc7c1ed0414"
+			"Comment": "v0.1.0-20-gf5ed4a3",
+			"Rev": "f5ed4a39b0c733b15277d8c40c7716954bbe8915"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -777,11 +776,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/git",
-			"Rev": "393b99ede34745ffb063dd59ef4331e246781d09"
+			"Rev": "9f883a819cde603e757872453b2589b165683257"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/vcsclient",
-			"Rev": "393b99ede34745ffb063dd59ef4331e246781d09"
+			"Rev": "9f883a819cde603e757872453b2589b165683257"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",

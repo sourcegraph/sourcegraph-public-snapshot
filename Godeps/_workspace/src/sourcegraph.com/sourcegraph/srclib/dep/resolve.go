@@ -60,13 +60,3 @@ func (r *Resolution) RawKeyId() (string, error) {
 	}
 	return string(b), nil
 }
-
-// Command for dep resolution has no options.
-type Command struct{}
-
-type resolvedDeps []*ResolvedDep
-
-func (d *ResolvedDep) sortKey() string    { b, _ := json.Marshal(d); return string(b) }
-func (l resolvedDeps) Len() int           { return len(l) }
-func (l resolvedDeps) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
-func (l resolvedDeps) Less(i, j int) bool { return l[i].sortKey() < l[j].sortKey() }

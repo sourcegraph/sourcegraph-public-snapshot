@@ -293,12 +293,6 @@ func (v unitID2s) Less(i, j int) bool {
 	return v[i].Name < v[j].Name || (v[i].Name == v[j].Name && v[i].Type < v[j].Type)
 }
 
-type int64Slice []int64
-
-func (v int64Slice) Len() int           { return len(v) }
-func (v int64Slice) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
-func (v int64Slice) Less(i, j int) bool { return v[i] < v[j] }
-
 // A mafsaUnitTable like a mafsaTable but stores unitOffsets not
 // byteOffsets.
 type mafsaUnitTable struct {

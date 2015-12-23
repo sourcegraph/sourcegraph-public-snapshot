@@ -1045,16 +1045,6 @@ func (s *fsUnitStore) String() string { return fmt.Sprintf("fsUnitStore(%v)", s.
 
 // countingWriter wraps an io.Writer, counting the number of bytes
 // written.
-type countingWriter struct {
-	io.Writer
-	n int64
-}
-
-func (cr *countingWriter) Write(p []byte) (n int, err error) {
-	n, err = cr.Writer.Write(p)
-	cr.n += int64(n)
-	return
-}
 
 func setCreateParentDirs(fs rwvfs.FileSystem) {
 	type createParents interface {

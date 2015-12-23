@@ -13,5 +13,8 @@
 			"Version": "sourcegraph.com/sourcegraph/srclib/cli.Version"
 		},
 		"ExtraArgs": "-a"
-	}
+	},
+	"Env": [
+		"CGO_ENABLED=0"
+	]
 }

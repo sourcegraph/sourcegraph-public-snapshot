@@ -75,9 +75,6 @@ func ensureOffsetsAreByteOffsets(dir string, output *graph.Output) {
 	for _, d := range output.Docs {
 		fix(d.File, &d.Start, &d.End)
 	}
-	for _, a := range output.Anns {
-		fix(a.File, &a.Start, &a.End)
-	}
 }
 
 func sortedOutput(o *graph.Output) *graph.Output {

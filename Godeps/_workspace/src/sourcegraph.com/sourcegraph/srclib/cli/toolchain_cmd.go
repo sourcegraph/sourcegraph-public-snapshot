@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 
 	"strings"
-	"sync"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
 
@@ -50,24 +49,6 @@ func init() {
 		log.Fatal(err)
 	}
 
-	_, err = c.AddCommand("build",
-		"build a toolchain",
-		"Build a toolchain's Docker image.",
-		&toolchainBuildCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = c.AddCommand("get",
-		"download a toolchain",
-		"Download a toolchain's repository to the SRCLIBPATH.",
-		&toolchainGetCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	_, err = c.AddCommand("bundle",
 		"bundle a toolchain",
 		"The bundle subcommand builds and archives toolchain bundles (.tar.gz files, one per toolchain variant). Bundles contain prebuilt toolchains and allow people to use srclib toolchains without needing to compile them on their own system.",
@@ -81,15 +62,6 @@ func init() {
 		"unbundle a toolchain",
 		"The unbundle subcommand unarchives a toolchain bundle (previously created with the 'bundle' subcommand). It allows people to download and use prebuilt toolchains without needing to compile them on their system.",
 		&toolchainUnbundleCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = c.AddCommand("add",
-		"add a local toolchain",
-		"Add a local directory as a toolchain in SRCLIBPATH.",
-		&toolchainAddCmd,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -232,55 +204,6 @@ func (c *ToolchainListToolsCmd) Execute(args []string) error {
 	return nil
 }
 
-type ToolchainBuildCmd struct {
-	Args struct {
-		Toolchains []ToolchainPath `name:"TOOLCHAINS" description:"toolchain paths of toolchains to build"`
-	} `positional-args:"yes" required:"yes"`
-}
-
-var toolchainBuildCmd ToolchainBuildCmd
-
-func (c *ToolchainBuildCmd) Execute(args []string) error {
-	var wg sync.WaitGroup
-	for _, tc := range c.Args.Toolchains {
-		tc, err := toolchain.Open(string(tc), toolchain.AsDockerContainer)
-		if err != nil {
-			log.Fatal(err)
-		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := tc.Build(); err != nil {
-				log.Fatal(err)
-			}
-		}()
-	}
-	wg.Wait()
-	return nil
-}
-
-type ToolchainGetCmd struct {
-	Update bool `short:"u" long:"update" description:"use the network to update the toolchain"`
-	Args   struct {
-		Toolchains []ToolchainPath `name:"TOOLCHAINS" description:"toolchain paths of toolchains to get"`
-	} `positional-args:"yes" required:"yes"`
-}
-
-var toolchainGetCmd ToolchainGetCmd
-
-func (c *ToolchainGetCmd) Execute(args []string) error {
-	for _, tc := range c.Args.Toolchains {
-		if GlobalOpt.Verbose {
-			colorable.Println(tc)
-		}
-		_, err := toolchain.CloneOrUpdate(string(tc), c.Update)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 type ToolchainBundleCmd struct {
 	Variant string `long:"variant" description:"only produce a bundle for the given variant (default is all variants)"`
 	DryRun  bool   `short:"n" long:"dry-run" description:"don't do anything, but print what would be done"`
@@ -349,20 +272,6 @@ func (c *ToolchainUnbundleCmd) Execute(args []string) error {
 	}
 	defer f.Close()
 	return toolchain.Unbundle(c.Args.Toolchain, c.Args.BundleFile, f)
-}
-
-type ToolchainAddCmd struct {
-	Dir   string `long:"dir" default:"." description:"directory containing toolchain to add" value-name:"DIR"`
-	Force bool   `short:"f" long:"force" description:"(dangerous) force add, overwrite existing toolchain"`
-	Args  struct {
-		ToolchainPath string `name:"TOOLCHAIN" default:"." description:"toolchain path to use for toolchain directory"`
-	} `positional-args:"yes" required:"yes"`
-}
-
-var toolchainAddCmd ToolchainAddCmd
-
-func (c *ToolchainAddCmd) Execute(args []string) error {
-	return toolchain.Add(c.Dir, c.Args.ToolchainPath, &toolchain.AddOpt{Force: c.Force})
 }
 
 type toolchainInstaller struct {
@@ -456,13 +365,13 @@ run this command again.`)
 		return err
 	}
 
-	log.Println("Downloading or updating Go toolchain in", srclibpathDir)
-	if err := execSrcCmd("toolchain", "get", "-u", toolchain); err != nil {
+	log.Println("Downloading Go toolchain")
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
 		return err
 	}
 
 	log.Println("Building Go toolchain program")
-	if err := execCmd("make", "-C", srclibpathDir); err != nil {
+	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
 		return err
 	}
 
@@ -488,13 +397,13 @@ func installRubyToolchain() error {
 		return err
 	}
 
-	log.Println("Downloading or updating Ruby toolchain in", srclibpathDir)
-	if err := execSrcCmd("toolchain", "get", "-u", toolchain); err != nil {
+	log.Println("Downloading Ruby toolchain in", srclibpathDir)
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
 		return err
 	}
 
 	log.Println("Installing deps for Ruby toolchain in", srclibpathDir)
-	if err := execCmd("make", "-C", srclibpathDir); err != nil {
+	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
 		return fmt.Errorf("%s\n\nTip: If you are using a version of Ruby other than 2.1.2 (the default for srclib), or if you are using your system Ruby, try using a Ruby version manager (such as https://rvm.io) to install a more standard Ruby, and try Ruby 2.1.2.\n\nIf you are still having problems, post an issue at https://github.com/sourcegraph/srclib-ruby/issues with the full log output and information about your OS and Ruby version.\n\n`.", err)
 	}
 
@@ -513,8 +422,8 @@ func installJavaScriptToolchain() error {
 		return fmt.Errorf("no `npm` in PATH; JavaScript toolchain requires npm")
 	}
 
-	log.Println("Downloading or updating JavaScript toolchain in", srclibpathDir)
-	if err := execSrcCmd("toolchain", "get", "-u", toolchain); err != nil {
+	log.Println("Downloading JavaScript toolchain in", srclibpathDir)
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
 		return err
 	}
 
@@ -537,8 +446,8 @@ func installPythonToolchain() error {
 	}
 
 	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	log.Println("Downloading or updating Python toolchain in", srclibpathDir)
-	if err := execSrcCmd("toolchain", "get", "-u", toolchain); err != nil {
+	log.Println("Downloading Python toolchain in", srclibpathDir)
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
 		return err
 	}
 
@@ -548,7 +457,7 @@ func installPythonToolchain() error {
 	}
 
 	log.Println("Installing deps for Python toolchain in", srclibpathDir)
-	if err := execCmd("make", "-C", srclibpathDir, "install"); err != nil {
+	if err := execCmdInDir(srclibpathDir, "make", "install"); err != nil {
 		return err
 	}
 
@@ -575,16 +484,37 @@ Refusing to install Java toolchain because %s is not installed or is not on the 
 		return err
 	}
 
-	log.Println("Downloading or updating Java toolchain in", srclibpathDir)
-	if err := execSrcCmd("toolchain", "get", "-u", toolchain); err != nil {
+	log.Println("Downloading Java toolchain in", srclibpathDir)
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
 		return err
 	}
 
 	log.Println("Building Java toolchain program")
-	if err := execCmd("make", "-C", srclibpathDir); err != nil {
+	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func cloneToolchain(dest, toolchain string) error {
+	if fi, err := os.Stat(dest); os.IsNotExist(err) {
+		// Clone
+		if err := os.MkdirAll(filepath.Dir(dest), 0700); err != nil {
+			return err
+		}
+
+		cmd := exec.Command("git", "clone", "https://"+toolchain)
+		cmd.Dir = filepath.Dir(dest)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	} else if err != nil {
+		return err
+	} else if !fi.Mode().IsDir() {
+		return fmt.Errorf("not a directory: %s", dest)
+	}
+	log.Printf("Toolchain directory %q already exists, using existing version.", dest)
 	return nil
 }
 

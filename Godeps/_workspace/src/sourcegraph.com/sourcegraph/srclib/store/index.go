@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
@@ -74,55 +73,6 @@ func (v *byteOffsets) UnmarshalBinary(b []byte) error {
 		}
 		if n < 0 {
 			return errors.New("bad varint")
-		}
-		*v = append(*v, ofs)
-		b = b[n:]
-	}
-	return nil
-}
-
-// byteOffsetsDeltaEncoded holds byte offsets, just like
-// byteOffsets. The only difference is that byteOffsetsDeltaEncoded is
-// binary-encoded using delta encoding (storing the diffs between
-// numbers instead of the full numbers). The Go values are the same
-// (byteOffsetsDeltaEncoded is delta-decoded when
-// unmarshaled). Because it uses delta encoding, its elements must be
-// sorted from smallest to largest.
-type byteOffsetsDeltaEncoded []int64
-
-func (v byteOffsetsDeltaEncoded) MarshalBinary() ([]byte, error) {
-	bb := make([]byte, len(v)*binary.MaxVarintLen64)
-	b := bb
-	for i, ofs := range v {
-		if i != 0 {
-			// Delta encoding.
-			ofs -= v[i-1]
-			if ofs < 0 {
-				log.Println("AA", v)
-				panic("unitOffsets: byte offsets must be sorted from smallest to largest")
-			}
-		}
-		n := binary.PutVarint(b, ofs)
-		b = b[n:]
-	}
-	return bb[:len(bb)-len(b)], nil
-}
-
-func (v *byteOffsetsDeltaEncoded) UnmarshalBinary(b []byte) error {
-	for {
-		if len(b) == 0 {
-			break
-		}
-		ofs, n := binary.Varint(b)
-		if n == 0 {
-			return io.ErrShortBuffer
-		}
-		if n < 0 {
-			return errors.New("bad varint")
-		}
-		if len(*v) > 0 {
-			// Delta encoding.
-			ofs += (*v)[len(*v)-1]
 		}
 		*v = append(*v, ofs)
 		b = b[n:]
@@ -216,10 +166,6 @@ func (b byteRanges) MarshalBinary() ([]byte, error) {
 // start is the offset of the first byte of the first object, relative
 // to the beginning of the file.
 func (br byteRanges) start() int64 { return br[0] }
-
-// byteRange's first element is the byte offset within a file, and its
-// second element is number of bytes in the range.
-type byteRange [2]int64
 
 // refsByFileStartEnd sorts refs by (file, start, end).
 type refsByFileStartEnd []*graph.Ref
