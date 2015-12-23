@@ -30,12 +30,12 @@ Determine the SSH link for the private repository you would like to clone. It ty
 
 First, check that the git clone command functions with this SSH git clone URL:
 ```
-git clone git@bitbucket.org:userorganization/test_repository.git
+git ls-remote git@bitbucket.org/userorganization/test_repository.git
 ```
 
-Ensure that the clone command completely successfully (you can remove the directory now). You can now configure Sourcegraph to mirror your private repository:
+Ensure that the clone command completely successfully. You can now configure Sourcegraph to mirror your private repository:
 ```
-src repo create -m --clone-url=git@bitbucket.org:userorganization/test_repository.git <repo-name>
+src repo create -m --clone-url=git@bitbucket.org/userorganization/test_repository.git <repo-name>
 ```
 
 ## 2. Authenticating over HTTPS
@@ -47,16 +47,16 @@ First, append your password to your username in the link, such as: `https://user
 
 Next, check that the git clone command functions with this URL:
 ```
-git clone https://user:password@bitbucket.org/userorganization/test_repository.git
+git ls-remote https://user:password@bitbucket.org/userorganization/test_repository.git
 ```
 
-Ensure that the clone command completely successfully (you can remove the directory now). You can now configure Sourcegraph to mirror your private repository:
+Ensure that the ls-remote command completely successfully. You can now configure Sourcegraph to mirror your private repository:
 ```
 src repo create -m --clone-url=https://user:password@bitbucket.org/userorganization/test_repository.git <repo-name>
 ```
 
 ## 3. Using GitHub access tokens
-Sourcegraph currently supports importing private repositories from GitHub.com and GitHub Enterprise.
+Sourcegraph currently supports importing private repositories from GitHub.com and GitHub Enterprise via GitHub personal access tokens.
 Follow instructions for [GitHub.com]({{< relref "integrations/GitHub.md" >}}) or
 [GitHub Enterprise]({{< relref "integrations/GitHub_Enterprise.md" >}}).
 
