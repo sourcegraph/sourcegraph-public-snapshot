@@ -139,7 +139,7 @@ type userCreateCmd struct {
 func (c *userCreateCmd) Execute(args []string) error {
 	cl := Client()
 
-	user, err := cl.Accounts.Create(cliCtx, &sourcegraph.NewAccount{Login: c.Args.Login, Password: c.Args.Password})
+	user, err := cl.Accounts.Create(cli.Ctx, &sourcegraph.NewAccount{Login: c.Args.Login, Password: c.Args.Password})
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (c *userInviteCmd) Execute(args []string) error {
 
 	var success bool
 	for _, email := range c.Args.Emails {
-		pendingInvite, err := cl.Accounts.Invite(cliCtx, &sourcegraph.AccountInvite{
+		pendingInvite, err := cl.Accounts.Invite(cli.Ctx, &sourcegraph.AccountInvite{
 			Email: email,
 			Write: c.Write || c.Admin,
 			Admin: c.Admin,
@@ -203,7 +203,7 @@ func (c *userRmInviteCmd) Execute(args []string) error {
 	}
 
 	for _, email := range c.Args.Emails {
-		_, err := cl.Accounts.DeleteInvite(cliCtx, &sourcegraph.InviteSpec{Email: email})
+		_, err := cl.Accounts.DeleteInvite(cli.Ctx, &sourcegraph.InviteSpec{Email: email})
 		if err != nil {
 			return fmt.Errorf("deleting invite for %s: %s", email, err)
 		}
@@ -223,7 +223,7 @@ func (c *userListCmd) Execute(args []string) error {
 	cl := Client()
 
 	for page := 1; ; page++ {
-		users, err := cl.Users.List(cliCtx, &sourcegraph.UsersListOptions{
+		users, err := cl.Users.List(cli.Ctx, &sourcegraph.UsersListOptions{
 			Query:       c.Args.Query,
 			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
 		})
@@ -254,7 +254,7 @@ func (c *userGetCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	user, err := cl.Users.Get(cliCtx, &userSpec)
+	user, err := cl.Users.Get(cli.Ctx, &userSpec)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (c *userGetCmd) Execute(args []string) error {
 
 	fmt.Println("# Emails")
 	userSpec2 := user.Spec()
-	emails, err := cl.Users.ListEmails(cliCtx, &userSpec2)
+	emails, err := cl.Users.ListEmails(cli.Ctx, &userSpec2)
 	if err != nil {
 		if grpc.Code(err) == codes.PermissionDenied {
 			fmt.Println("# (permission denied)")
@@ -296,7 +296,7 @@ func (c *userUpdateCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	user, err := cl.Users.Get(cliCtx, &userSpec)
+	user, err := cl.Users.Get(cli.Ctx, &userSpec)
 	if err != nil {
 		return err
 	}
@@ -316,7 +316,7 @@ func (c *userUpdateCmd) Execute(args []string) error {
 			return fmt.Errorf("access level not recognized (should be one of read/write/admin): %s", c.Access)
 		}
 
-		if _, err := cl.Accounts.Update(cliCtx, user); err != nil {
+		if _, err := cl.Accounts.Update(cli.Ctx, user); err != nil {
 			return err
 		}
 		fmt.Printf("# updated access level for user %s to %s\n", user.Login, c.Access)
@@ -345,7 +345,7 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 		return fmt.Errorf("need to specify either email or login of the user account")
 	}
 
-	pendingReset, err := cl.Accounts.RequestPasswordReset(cliCtx, person)
+	pendingReset, err := cl.Accounts.RequestPasswordReset(cli.Ctx, person)
 	if err != nil {
 		return err
 	}
@@ -377,7 +377,7 @@ type userDeleteCmd struct {
 func (c *userDeleteCmd) Execute(args []string) error {
 	cl := Client()
 
-	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -400,7 +400,7 @@ func (c *userDeleteCmd) Execute(args []string) error {
 		return fmt.Errorf("need to specify email, login or UID of the user account")
 	}
 
-	_, err = cl.Accounts.Delete(cliCtx, person)
+	_, err = cl.Accounts.Delete(cli.Ctx, person)
 	if err != nil {
 		return err
 	}
@@ -434,13 +434,13 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 	}
 
 	// Get user info for output message.
-	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
 
 	// Add key.
-	_, err = cl.UserKeys.AddKey(cliCtx, &sourcegraph.SSHPublicKey{Key: key.Marshal()})
+	_, err = cl.UserKeys.AddKey(cli.Ctx, &sourcegraph.SSHPublicKey{Key: key.Marshal()})
 	if err != nil {
 		return err
 	}
@@ -455,13 +455,13 @@ func (c *userKeysDeleteCmd) Execute(args []string) error {
 	cl := Client()
 
 	// Get user info for output message.
-	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
 
 	// Delete key.
-	_, err = cl.UserKeys.DeleteKey(cliCtx, &pbtypes.Void{})
+	_, err = cl.UserKeys.DeleteKey(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}

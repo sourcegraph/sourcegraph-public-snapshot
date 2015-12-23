@@ -54,12 +54,12 @@ func (c *pushCmd) Execute(args []string) error {
 	repoSpec := sourcegraph.RepoSpec{URI: rrepo.URI}
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: commitID}
 
-	appURL, err := getRemoteAppURL(cliCtx)
+	appURL, err := getRemoteAppURL(cli.Ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := c.do(cliCtx, repoRevSpec); err != nil {
+	if err := c.do(cli.Ctx, repoRevSpec); err != nil {
 		return err
 	}
 
@@ -105,7 +105,7 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 	}
 
 	// Precache root dir
-	appURL, err := getRemoteAppURL(cliCtx)
+	appURL, err := getRemoteAppURL(cli.Ctx)
 	if err != nil {
 		return err
 	}

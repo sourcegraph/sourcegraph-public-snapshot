@@ -15,6 +15,7 @@ import (
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 type runBuildCmd struct {
@@ -75,7 +76,7 @@ func (c *runBuildCmd) Execute(args []string) error {
 func (c *runBuildCmd) prepOtherRepos() {
 	cl := Client()
 	maxRepoPrep := 50
-	repos, err := cl.Repos.List(cliCtx, &sourcegraph.RepoListOptions{
+	repos, err := cl.Repos.List(cli.Ctx, &sourcegraph.RepoListOptions{
 		Sort:        "pushed",
 		Direction:   "desc",
 		ListOptions: sourcegraph.ListOptions{PerPage: int32(maxRepoPrep)},

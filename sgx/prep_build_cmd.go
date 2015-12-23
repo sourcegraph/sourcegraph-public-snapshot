@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util"
 )
 
@@ -49,7 +50,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 	if repo.Private {
 		// Get repo settings and (if it exists) private key.
 		repoSpec := repo.RepoSpec()
-		key, err := cl.MirroredRepoSSHKeys.Get(cliCtx, &repoSpec)
+		key, err := cl.MirroredRepoSSHKeys.Get(cli.Ctx, &repoSpec)
 		if err != nil && grpc.Code(err) != codes.NotFound && grpc.Code(err) != codes.Unimplemented {
 			return err
 		} else if key != nil {
@@ -91,7 +92,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		if repo.Private && repo.Mirror {
 			host := util.RepoURIHost(repo.URI)
 			authStore := ext.AuthStore{}
-			cred, err := authStore.Get(cliCtx, host)
+			cred, err := authStore.Get(cli.Ctx, host)
 			if err != nil {
 				return fmt.Errorf("unable to fetch credentials for host %q: %v", host, err)
 			}
@@ -213,7 +214,7 @@ func forcePrepBuild(repoURI string) (*sourcegraph.Build, *sourcegraph.Repo, erro
 	cl := Client()
 
 	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
-	repo, err := cl.Repos.Get(cliCtx, &repoSpec)
+	repo, err := cl.Repos.Get(cli.Ctx, &repoSpec)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting repository %q: %s", repoURI, err)
 	}
@@ -228,7 +229,7 @@ func forcePrepBuild(repoURI string) (*sourcegraph.Build, *sourcegraph.Repo, erro
 		RepoSpec: repoSpec,
 		Rev:      repo.DefaultBranch,
 	}
-	commit, err := cl.Repos.GetCommit(cliCtx, &repoRevSpec)
+	commit, err := cl.Repos.GetCommit(cli.Ctx, &repoRevSpec)
 	if err != nil {
 		return nil, nil, err
 	}

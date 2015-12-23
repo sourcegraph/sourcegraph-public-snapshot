@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/makex"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/buildutil"
 
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
@@ -133,7 +134,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 		allTasks = append(allTasks, importTask)
 	}
 
-	createdTasks, err := cl.Builds.CreateTasks(cliCtx, &sourcegraph.BuildsCreateTasksOp{Build: build.Spec(), Tasks: allTasks})
+	createdTasks, err := cl.Builds.CreateTasks(cli.Ctx, &sourcegraph.BuildsCreateTasksOp{Build: build.Spec(), Tasks: allTasks})
 	if err != nil {
 		log.Fatalf("Error creating tasks for build %v: %s.", build, err)
 	}
@@ -218,7 +219,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 		}
 
 		// Import and index over gRPC to the server.
-		remoteStore := pb.Client(cliCtx, pb.NewMultiRepoImporterClient(cl.Conn))
+		remoteStore := pb.Client(cli.Ctx, pb.NewMultiRepoImporterClient(cl.Conn))
 
 		importOpt := srclib.ImportOpt{
 			Repo:     repo.URI,
@@ -239,28 +240,28 @@ func (c *doBuildCmd) Execute(args []string) error {
 
 func setTaskStarted(cl *sourcegraph.Client, t *sourcegraph.BuildTask) {
 	now := pbtypes.NewTimestamp(time.Now())
-	if _, err := cl.Builds.UpdateTask(cliCtx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: sourcegraph.TaskUpdate{StartedAt: &now}}); err != nil {
+	if _, err := cl.Builds.UpdateTask(cli.Ctx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: sourcegraph.TaskUpdate{StartedAt: &now}}); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func setTaskEnded(cl *sourcegraph.Client, t *sourcegraph.BuildTask) {
 	now := pbtypes.NewTimestamp(time.Now())
-	if _, err := cl.Builds.UpdateTask(cliCtx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: sourcegraph.TaskUpdate{EndedAt: &now}}); err != nil {
+	if _, err := cl.Builds.UpdateTask(cli.Ctx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: sourcegraph.TaskUpdate{EndedAt: &now}}); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func setTaskSucceeded(cl *sourcegraph.Client, t *sourcegraph.BuildTask) {
 	u := sourcegraph.TaskUpdate{Success: true, Failure: false}
-	if _, err := cl.Builds.UpdateTask(cliCtx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: u}); err != nil {
+	if _, err := cl.Builds.UpdateTask(cli.Ctx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: u}); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func setTaskFailed(cl *sourcegraph.Client, t *sourcegraph.BuildTask) {
 	u := sourcegraph.TaskUpdate{Success: false, Failure: true}
-	if _, err := cl.Builds.UpdateTask(cliCtx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: u}); err != nil {
+	if _, err := cl.Builds.UpdateTask(cli.Ctx, &sourcegraph.BuildsUpdateTaskOp{Task: t.Spec(), Info: u}); err != nil {
 		log.Fatal(err)
 	}
 }

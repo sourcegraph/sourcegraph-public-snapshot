@@ -7,12 +7,13 @@ import (
 	"strings"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func getBuild(repoURI string, commitID string, attempt uint32) (*sourcegraph.Build, *sourcegraph.Repo, error) {
 	cl := Client()
 
-	build, err := cl.Builds.Get(cliCtx, &sourcegraph.BuildSpec{
+	build, err := cl.Builds.Get(cli.Ctx, &sourcegraph.BuildSpec{
 		Attempt:  attempt,
 		CommitID: commitID,
 		Repo:     sourcegraph.RepoSpec{URI: repoURI},
@@ -21,7 +22,7 @@ func getBuild(repoURI string, commitID string, attempt uint32) (*sourcegraph.Bui
 		return nil, nil, fmt.Errorf("getting build: %s", err)
 	}
 
-	repo, err := cl.Repos.Get(cliCtx, &sourcegraph.RepoSpec{URI: build.Repo})
+	repo, err := cl.Repos.Get(cli.Ctx, &sourcegraph.RepoSpec{URI: build.Repo})
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting repository %q: %s", build.Repo, err)
 	}

@@ -25,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/expvarutil"
 )
 
@@ -65,7 +66,7 @@ type stressCmd struct {
 func (c *stressCmd) quiet() bool { return !c.Log }
 
 func (c *stressCmd) Execute(args []string) error {
-	ctx := cliCtx
+	ctx := cli.Ctx
 	cl := Client()
 
 	allOps := !(c.Git || c.RepoPage || c.FilePage)

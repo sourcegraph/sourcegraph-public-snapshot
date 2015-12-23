@@ -122,7 +122,7 @@ func (c *buildsListCmd) Execute(args []string) error {
 		Direction:   c.Direction,
 		ListOptions: sourcegraph.ListOptions{PerPage: int32(c.N)},
 	}
-	builds, err := cl.Builds.List(cliCtx, opt)
+	builds, err := cl.Builds.List(cli.Ctx, opt)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (c *buildsGetRepoBuildInfoCmd) Execute(args []string) error {
 
 	for _, repo := range c.Args.Repo {
 		repo, rev := sourcegraph.ParseRepoAndCommitID(repo)
-		build, err := cl.Builds.GetRepoBuild(cliCtx,
+		build, err := cl.Builds.GetRepoBuild(cli.Ctx,
 			&sourcegraph.RepoRevSpec{
 				RepoSpec: sourcegraph.RepoSpec{URI: repo},
 				Rev:      rev,
@@ -185,7 +185,7 @@ type buildsStatsCmd struct{}
 func (c *buildsStatsCmd) Execute(args []string) error {
 	cl := Client()
 
-	numBuilds, err := statsutil.ComputeBuildStats(cl, cliCtx)
+	numBuilds, err := statsutil.ComputeBuildStats(cl, cli.Ctx)
 	if err != nil {
 		return err
 	}

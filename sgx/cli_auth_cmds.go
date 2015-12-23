@@ -61,7 +61,7 @@ func getSavedToken(endpointURL *url.URL) string {
 	}
 	accessToken = e.AccessToken
 
-	ctx := sourcegraph.WithCredentials(cliCtx,
+	ctx := sourcegraph.WithCredentials(cli.Ctx,
 		oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}),
 	)
 	ctx = fed.NewRemoteContext(ctx, endpointURL)
@@ -80,7 +80,7 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return savedToken, nil
 	}
 
-	unauthedCtx := sourcegraph.WithCredentials(cliCtx, nil)
+	unauthedCtx := sourcegraph.WithCredentials(cli.Ctx, nil)
 	cl := sourcegraph.NewClientFromContext(unauthedCtx)
 
 	var username, password string
@@ -167,7 +167,7 @@ func (c *whoamiCmd) Execute(args []string) error {
 
 	cl := Client()
 
-	authInfo, err := cl.Auth.Identify(cliCtx, &pbtypes.Void{})
+	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		log.Fatalf("Error verifying auth credentials with endpoint %s: %s.", endpointURL, err)
 	}

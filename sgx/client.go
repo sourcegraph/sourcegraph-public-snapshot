@@ -196,12 +196,8 @@ func init() {
 // Client returns a Sourcegraph API client configured to use the
 // specified endpoints and authentication info.
 func Client() *sourcegraph.Client {
-	return sourcegraph.NewClientFromContext(cliCtx)
+	return sourcegraph.NewClientFromContext(cli.Ctx)
 }
-
-// cliCtx is a context that accesses the configured
-// Sourcegraph endpoint with the configured credentials.
-var cliCtx context.Context
 
 func init() {
 	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
@@ -209,7 +205,7 @@ func init() {
 		if cli.CLI.Active != nil && cli.CLI.Active.Name == "version" {
 			return
 		}
-		cliCtx = WithClientContext(context.Background())
+		cli.Ctx = WithClientContext(context.Background())
 	})
 }
 

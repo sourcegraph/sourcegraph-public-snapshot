@@ -209,8 +209,8 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	if Endpoint.URL == "" {
 		Endpoint.URL = appURL.String()
 
-		// Reset cliCtx to use new endpoint.
-		cliCtx = WithClientContext(context.Background())
+		// Reset cli.Ctx to use new endpoint.
+		cli.Ctx = WithClientContext(context.Background())
 	}
 
 	return appURL, nil
@@ -467,10 +467,10 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 
 		// Start background repo updater worker.
-		app.RepoUpdater.Start(cliCtx)
+		app.RepoUpdater.Start(cli.Ctx)
 
 		// Start event listeners.
-		c.initializeEventListeners(cliCtx, idKey, appURL)
+		c.initializeEventListeners(cli.Ctx, idKey, appURL)
 	}
 
 	serveHTTP := func(l net.Listener, srv http.Server, addr string, tls bool) {
@@ -566,7 +566,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 		// create a context with regular (non self-signed) tokens that
 		// are valid on the federation root server.
-		ctx, err := c.authenticateScopedContext(cliCtx, idKey, []string{"internal:sshgit"})
+		ctx, err := c.authenticateScopedContext(cli.Ctx, idKey, []string{"internal:sshgit"})
 		if err != nil {
 			return err
 		}
@@ -590,7 +590,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		statsInterval = 10 * time.Minute
 	}
 
-	go statsutil.ComputeUsageStats(cliCtx, statsInterval)
+	go statsutil.ComputeUsageStats(cli.Ctx, statsInterval)
 
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
@@ -608,9 +608,9 @@ func (c *ServeCmd) Execute(args []string) error {
 }
 
 // authenticateCLIContext adds a "service account" access token to
-// cliCtx and to the global CLI flags (which are effectively inherited
-// by subcommands run with cmdWithClientArgs). The server uses this to
-// run privileged in-process workers.
+// cli.Ctx and to the global CLI flags (which are effectively
+// inherited by subcommands run with cmdWithClientArgs). The server
+// uses this to run privileged in-process workers.
 //
 // In general, when running the worker or other CLI commands, if the
 // server requires auth, then the user needs to specify auth on the
@@ -629,7 +629,7 @@ func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
 		return err
 	}
 
-	cliCtx = sourcegraph.WithCredentials(cliCtx, sharedsecret.DefensiveReuseTokenSource(tok, src))
+	cli.Ctx = sourcegraph.WithCredentials(cli.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
 }
 
@@ -721,7 +721,7 @@ func (c *ServeCmd) checkReachability() {
 	}
 
 	// Check internal gRPC endpoint.
-	doCheck(cliCtx, true)
+	doCheck(cli.Ctx, true)
 
 	// Check external gRPC endpoint if it differs from the internal
 	// endpoint.
@@ -729,8 +729,8 @@ func (c *ServeCmd) checkReachability() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(cliCtx).String() {
-		doCheck(sourcegraph.WithGRPCEndpoint(cliCtx, extEndpoint), false)
+	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(cli.Ctx).String() {
+		doCheck(sourcegraph.WithGRPCEndpoint(cli.Ctx, extEndpoint), false)
 	}
 }
 
@@ -958,7 +958,7 @@ Outer:
 	for {
 		var allRepos []*sourcegraph.Repo
 		for page := int32(1); ; page++ {
-			repos, err := cl.Repos.List(cliCtx, &sourcegraph.RepoListOptions{
+			repos, err := cl.Repos.List(cli.Ctx, &sourcegraph.RepoListOptions{
 				ListOptions: sourcegraph.ListOptions{Page: page},
 			})
 			if err != nil {
@@ -973,7 +973,7 @@ Outer:
 		}
 
 		for _, repo := range allRepos {
-			_, err := cl.Repos.ListCommits(cliCtx, &sourcegraph.ReposListCommitsOp{
+			_, err := cl.Repos.ListCommits(cli.Ctx, &sourcegraph.ReposListCommitsOp{
 				Repo: sourcegraph.RepoSpec{URI: repo.URI},
 				Opt: &sourcegraph.RepoListCommitsOptions{
 					Head:         repo.DefaultBranch,

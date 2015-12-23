@@ -46,7 +46,7 @@ type metaStatusCmd struct{}
 
 func (c *metaStatusCmd) Execute(args []string) error {
 	cl := Client()
-	status, err := cl.Meta.Status(cliCtx, &pbtypes.Void{})
+	status, err := cl.Meta.Status(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ type metaConfigCmd struct{}
 func (c *metaConfigCmd) Execute(args []string) error {
 	log.Println("#", Endpoint.URLOrDefault())
 	cl := Client()
-	config, err := cl.Meta.Config(cliCtx, &pbtypes.Void{})
+	config, err := cl.Meta.Config(cli.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}

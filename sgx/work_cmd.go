@@ -93,7 +93,7 @@ func (c *WorkCmd) Execute(args []string) error {
 		dequeueMu.Lock()
 		defer dequeueMu.Unlock()
 
-		build, err := cl.Builds.DequeueNext(cliCtx, &sourcegraph.BuildsDequeueNextOp{})
+		build, err := cl.Builds.DequeueNext(cli.Ctx, &sourcegraph.BuildsDequeueNextOp{})
 		if err != nil {
 			if grpc.Code(err) == codes.NotFound {
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(c.DequeueMsec)))
@@ -140,7 +140,7 @@ func (c *WorkCmd) Execute(args []string) error {
 					}
 
 					cl := Client()
-					ctx := cliCtx
+					ctx := cli.Ctx
 
 					quitCh := make(chan struct{})
 					defer func() {
@@ -258,6 +258,6 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 	}
 
 	// Authenticate future requests.
-	cliCtx = sourcegraph.WithCredentials(cliCtx, sharedsecret.DefensiveReuseTokenSource(tok, src))
+	cli.Ctx = sourcegraph.WithCredentials(cli.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
 }
