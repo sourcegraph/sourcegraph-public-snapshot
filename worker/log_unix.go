@@ -1,6 +1,6 @@
 // +build !windows,!nacl,!plan9
 
-package sgx
+package worker
 
 import (
 	"log/syslog"

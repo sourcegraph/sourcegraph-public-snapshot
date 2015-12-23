@@ -31,48 +31,6 @@ func init() {
 		log.Fatal(err)
 	}
 
-	_, err = buildsGroup.AddCommand("prep",
-		"(internal) prepare a build dir",
-		`
-Prepares a build directory at BUILD-DIR for the repository build with the
-specified build ID. This involves cloning the repository and fetching cached
-build data (if any).
-
-This is an internal sub-command that is not typically invoked directly.
-`,
-		&prepBuildCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = buildsGroup.AddCommand("run",
-		"invoke 'build prep' and 'build do'",
-		`
-Runs a build (specified by BUILD-ID) in BUILD-DIR. This command simply invokes
-"sourcegraph 'build prep'" and "sourcegraph 'build do'".
-
-This is an internal sub-command that is not typically invoked directly.`,
-		&runBuildCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = buildsGroup.AddCommand("do",
-		"(internal) run a build",
-		`Runs the repository build with the specified build ID in the current directory.
-
-This is an internal sub-command that is not typically invoked directly. If you
-invoke it directly, it will create build tasks in the DB but will not update the
-build itself, so the build will still appear uncompleted. The worker (not this
-subcommand) is responsible for updating the build.`,
-		&doBuildCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	_, err = buildsGroup.AddCommand("repo",
 		"get repo build info",
 		"The get-repo subcommand gets the latest repo build.",

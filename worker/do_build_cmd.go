@@ -1,4 +1,4 @@
-package sgx
+package worker
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 	makex.Default.ParallelJobs = 1
 	makex.Default.Verbose = true
 
-	mf, err := srclib.CreateMakefile(execOpt, globalOpt.Verbose)
+	mf, err := srclib.CreateMakefile(execOpt, false)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func (c *doBuildCmd) Execute(args []string) error {
 		importOpt := srclib.ImportOpt{
 			Repo:     repo.URI,
 			CommitID: build.CommitID,
-			Verbose:  globalOpt.Verbose,
+			Verbose:  true,
 		}
 		if err := srclib.Import(bdfs, remoteStore, importOpt); err != nil {
 			setTaskEnded(cl, importTask)

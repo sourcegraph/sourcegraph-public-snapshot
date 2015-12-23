@@ -1,4 +1,4 @@
-package sgx
+package worker
 
 import (
 	"fmt"
@@ -111,9 +111,7 @@ func (c *prepBuildCmd) Execute(args []string) error {
 		}
 	}
 
-	if globalOpt.Verbose {
-		log.Printf("Build directory ready: %s", c.BuildDir)
-	}
+	log.Printf("Build directory ready: %s", c.BuildDir)
 
 	return nil
 }
@@ -139,9 +137,7 @@ func PrepBuildDir(vcsType, unauthedCloneURL, username, password, dir, commitID s
 	start := time.Now()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		// Clone repo.
-		if globalOpt.Verbose {
-			log.Printf("Creating and preparing build directory at %s for repository %s commit %s", dir, unauthedCloneURL, commitID)
-		}
+		log.Printf("Creating and preparing build directory at %s for repository %s commit %s", dir, unauthedCloneURL, commitID)
 		if err := os.MkdirAll(filepath.Dir(dir), 0700); err != nil {
 			return err
 		}
@@ -150,10 +146,8 @@ func PrepBuildDir(vcsType, unauthedCloneURL, username, password, dir, commitID s
 		}
 	} else {
 		// Update repo.
-		if globalOpt.Verbose {
-			log.Printf("Updating %s rev %q in %s", unauthedCloneURL, commitID, dir)
-			log.Printf("NOTE: You should only use an existing build directory when you can guarantee nobody else will try to use them. If another worker checks out a different commit while you're building, your build will be inconsistent.")
-		}
+		log.Printf("Updating %s rev %q in %s", unauthedCloneURL, commitID, dir)
+		log.Printf("NOTE: You should only use an existing build directory when you can guarantee nobody else will try to use them. If another worker checks out a different commit while you're building, your build will be inconsistent.")
 		r, err := vcs.Open(vcsType, dir)
 		if err != nil {
 			return err
@@ -184,9 +178,7 @@ func PrepBuildDir(vcsType, unauthedCloneURL, username, password, dir, commitID s
 	}
 	CheckCommitIDResolution(vcsType, dir, commitID)
 
-	if globalOpt.Verbose {
-		log.Printf("Finished clone/fetch of %s in %s", unauthedCloneURL, time.Since(start))
-	}
+	log.Printf("Finished clone/fetch of %s in %s", unauthedCloneURL, time.Since(start))
 	return nil
 }
 

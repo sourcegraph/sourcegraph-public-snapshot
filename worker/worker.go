@@ -1,4 +1,4 @@
-package sgx
+package worker
 
 import (
 	"errors"
@@ -14,11 +14,9 @@ import (
 	"time"
 
 	"github.com/keegancsmith/tmpfriend"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
-
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
@@ -178,7 +176,6 @@ func (c *WorkCmd) Execute(args []string) error {
 						Build: build.Spec(),
 						Info: sourcegraph.BuildUpdate{
 							StartedAt: &now,
-							Host:      hostname,
 						}})
 
 					if err != nil {
@@ -190,7 +187,7 @@ func (c *WorkCmd) Execute(args []string) error {
 					// and import data into the DB).
 					cmd := cmdWithClientArgs(
 						sgxcmd.Path,
-						"-v", "build", "run",
+						"-v", "internal-build", "run",
 						"--build-dir", buildDir,
 						"--commit-id", build.CommitID,
 						"--repo", build.Repo,
@@ -251,7 +248,7 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 		return err
 	}
 
-	src := updateGlobalTokenSource{sharedsecret.ShortTokenSource(k, "worker:build")}
+	src := cli.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "worker:build")}
 	tok, err := src.Token()
 	if err != nil {
 		return err

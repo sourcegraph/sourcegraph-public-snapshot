@@ -37,6 +37,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 	appdashcli "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
+	"src.sourcegraph.com/sourcegraph/worker"
 )
 
 var (
@@ -449,7 +450,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Config.Serve.GraphStoreOpts.Root = reposDir
 
 	// Worker
-	s.Config.Serve.WorkCmd = sgx.WorkCmd{
+	s.Config.Serve.WorkCmd = worker.WorkCmd{
 		NumWorkers:  1,
 		DequeueMsec: 100,
 		BuildRoot:   filepath.Join(sgpath, "builds"),

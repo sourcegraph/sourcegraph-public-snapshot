@@ -1,4 +1,4 @@
-package sgx_test
+package worker_test
 
 import (
 	"io/ioutil"
@@ -13,6 +13,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/testutil"
+	"src.sourcegraph.com/sourcegraph/worker"
 )
 
 func init() {
@@ -48,13 +49,13 @@ func TestPrepBuildDir_sshGitRepo_md(t *testing.T) {
 	defer os.RemoveAll(cloneParentDir)
 	cloneDir := filepath.Join(cloneParentDir, "clonedir")
 
-	if err := sgx.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, *remoteOpts); err != nil {
+	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, *remoteOpts); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgx.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, *remoteOpts); err != nil {
+	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, *remoteOpts); err != nil {
 		t.Fatal(err)
 	}
-	sgx.CheckCommitIDResolution("git", cloneDir, commitID)
+	worker.CheckCommitIDResolution("git", cloneDir, commitID)
 }
 
 func TestPrepBuildDir_httpGitRepo_lg(t *testing.T) {
@@ -73,13 +74,13 @@ func TestPrepBuildDir_httpGitRepo_lg(t *testing.T) {
 	defer os.RemoveAll(cloneParentDir)
 	cloneDir := filepath.Join(cloneParentDir, "clonedir")
 
-	if err := sgx.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
+	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgx.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
+	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	sgx.CheckCommitIDResolution("git", cloneDir, commitID)
+	worker.CheckCommitIDResolution("git", cloneDir, commitID)
 }
 
 func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
@@ -106,7 +107,7 @@ func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
 	if err := os.Setenv("GIT_ASKPASS", "/bin/echo"); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgx.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
+	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
 		t.Fatal("succeeded without auth")
 	}
 	if err := os.Unsetenv("GIT_ASKPASS"); err != nil {
@@ -114,24 +115,24 @@ func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
 	}
 
 	// Bad credentials should fail.
-	if err := sgx.PrepBuildDir("git", gitURL, "baduser", "badpw", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
+	if err := worker.PrepBuildDir("git", gitURL, "baduser", "badpw", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
 		t.Fatal("succeeded with bad auth")
 	}
 
 	// Succeeds with correct auth.
-	if err := sgx.PrepBuildDir("git", gitURL, "u", "p", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
+	if err := worker.PrepBuildDir("git", gitURL, "u", "p", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgx.PrepBuildDir("git", gitURL, "u", "p", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
+	if err := worker.PrepBuildDir("git", gitURL, "u", "p", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	sgx.CheckCommitIDResolution("git", cloneDir, commitID)
+	worker.CheckCommitIDResolution("git", cloneDir, commitID)
 
 	// No credentials should fail (after prepping with correct auth).
 	if err := os.Setenv("GIT_ASKPASS", "/bin/echo"); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgx.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
+	if err := worker.PrepBuildDir("git", gitURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
 		t.Fatal("succeeded without auth after prepping with correct auth")
 	}
 	if err := os.Unsetenv("GIT_ASKPASS"); err != nil {
@@ -139,7 +140,7 @@ func TestPrepBuildDir_httpBasicAuthGitRepo_lg(t *testing.T) {
 	}
 
 	// Bad credentials should fail even after prepping with correct auth.
-	if err := sgx.PrepBuildDir("git", gitURL, "baduser", "badpw", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
+	if err := worker.PrepBuildDir("git", gitURL, "baduser", "badpw", cloneDir, commitID, vcs.RemoteOpts{}); err == nil {
 		t.Fatal("succeeded with bad auth after prepping with correct auth")
 	}
 }
@@ -161,11 +162,11 @@ func TestPrepBuildDir_httpsHgRepo_lg(t *testing.T) {
 	defer os.RemoveAll(cloneParentDir)
 	cloneDir := filepath.Join(cloneParentDir, "clonedir")
 
-	if err := sgx.PrepBuildDir("hg", hgURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
+	if err := worker.PrepBuildDir("hg", hgURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgx.PrepBuildDir("hg", hgURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
+	if err := worker.PrepBuildDir("hg", hgURL, "", "", cloneDir, commitID, vcs.RemoteOpts{}); err != nil {
 		t.Fatal(err)
 	}
-	sgx.CheckCommitIDResolution("hg", cloneDir, commitID)
+	worker.CheckCommitIDResolution("hg", cloneDir, commitID)
 }

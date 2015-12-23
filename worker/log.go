@@ -1,4 +1,4 @@
-package sgx
+package worker
 
 import (
 	"fmt"

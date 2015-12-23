@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"src.sourcegraph.com/sourcegraph/sgx"
+	"src.sourcegraph.com/sourcegraph/worker"
 
 	// App
 	_ "src.sourcegraph.com/sourcegraph/app/cmd"
@@ -61,7 +62,7 @@ func init() {
 
 func main() {
 	err := sgx.Main()
-	sgx.CloseLogs()
+	worker.CloseLogs()
 	if err != nil {
 		os.Exit(1)
 	}

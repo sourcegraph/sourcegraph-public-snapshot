@@ -66,6 +66,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/statsutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	"src.sourcegraph.com/sourcegraph/worker"
 )
 
 // Stripped down help message presented to most users (full help message can be
@@ -182,7 +183,7 @@ type ServeCmd struct {
 
 	Prefetch bool `long:"prefetch" description:"prefetch directory children"`
 
-	WorkCmd
+	worker.WorkCmd
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 }
@@ -621,7 +622,7 @@ func (c *ServeCmd) Execute(args []string) error {
 // obviously know the server's secrets, so we can use them to
 // authenticate the in-process worker and other CLI commands.
 func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
-	src := updateGlobalTokenSource{sharedsecret.ShortTokenSource(k, "internal:cli")}
+	src := cli.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "internal:cli")}
 
 	// Call it once to set Credentials.AccessToken immediately.
 	tok, err := src.Token()
@@ -648,32 +649,6 @@ func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey
 
 	ctx = sourcegraph.WithCredentials(ctx, oauth2.ReuseTokenSource(tok, src))
 	return ctx, nil
-}
-
-// updateGlobalTokenSource updates Credentials.AccessToken with the
-// newest access token each time it is refreshed.
-type updateGlobalTokenSource struct{ oauth2.TokenSource }
-
-func (ts updateGlobalTokenSource) Token() (*oauth2.Token, error) {
-	tok, err := ts.TokenSource.Token()
-
-	// Compare the token returned by TokenSource with the currently
-	// set token. If the token had expired, the new token must be
-	// set in the global Credentials for future use.
-	//
-	// Potentially, another goroutine might execute this same code
-	// concurrently, in which case it will generate a different valid
-	// token and the goroutine that calls SetAccessToken() last will
-	// set its token for future use. This is fine as every goroutine
-	// would still use a valid token. The alternative is to make this
-	// an atomic "compare and swap" operation, but that is expensive
-	// as every goroutine must acquire a read+write lock in every call
-	// to this function.
-	currTok := cli.Credentials.GetAccessToken()
-	if tok != nil && tok.AccessToken != currTok {
-		cli.Credentials.SetAccessToken(tok.AccessToken)
-	}
-	return tok, err
 }
 
 // initializeEventListeners creates special scoped contexts and passes them to

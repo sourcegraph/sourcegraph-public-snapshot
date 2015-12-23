@@ -1,6 +1,6 @@
 // +build exectest,buildtest
 
-package sgx_test
+package worker_test
 
 import (
 	"testing"
