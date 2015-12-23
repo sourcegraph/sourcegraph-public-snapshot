@@ -474,7 +474,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		c.initializeEventListeners(cli.Ctx, idKey, appURL)
 	}
 
-	serveHTTP := func(l net.Listener, srv http.Server, addr string, tls bool) {
+	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
 		lmux := cmux.New(l)
 		grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
 		anyListener := lmux.Match(cmux.Any())
@@ -509,7 +509,7 @@ func (c *ServeCmd) Execute(args []string) error {
 			return err
 		}
 		l = tcpKeepAliveListener{l.(*net.TCPListener)}
-		serveHTTP(l, http.Server{}, c.HTTPAddr, false)
+		serveHTTP(l, &http.Server{}, c.HTTPAddr, false)
 	}
 
 	// Start HTTPS server.
@@ -538,7 +538,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		srv.TLSConfig = config
 		l = tls.NewListener(l, srv.TLSConfig)
 
-		serveHTTP(l, srv, c.HTTPSAddr, true)
+		serveHTTP(l, &srv, c.HTTPSAddr, true)
 	}
 
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
