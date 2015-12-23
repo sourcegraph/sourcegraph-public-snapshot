@@ -24,6 +24,10 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.StrictSlash(true)
 
 	mw := []handlerutil.Middleware{
+		// SECURITY NOTE: The HTTP API should not accept cookies as
+		// authentication. Doing so would open it up to CSRF
+		// attacks. By requiring users use HTTP Basic authentication,
+		// we mitigate the risk of CSRF.
 		handlerutil.CacheMiddleware,
 		httpapiauth.PasswordMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,

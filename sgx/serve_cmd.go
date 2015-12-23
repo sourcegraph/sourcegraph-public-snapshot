@@ -410,7 +410,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		router.KeepContext = true
 		return router
 	}
-	sm.Handle("/.api/", app.NewHandlerWithCSRFProtection(httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/"))))))
+	sm.Handle("/.api/", httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/")))))
 	sm.Handle("/.ui/", app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI)))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter()))))
 
