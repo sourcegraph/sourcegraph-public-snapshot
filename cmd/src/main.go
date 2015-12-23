@@ -39,6 +39,7 @@ import (
 	// VCS
 	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/git"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
+	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/hgcmd"
 )
 
 func init() {
