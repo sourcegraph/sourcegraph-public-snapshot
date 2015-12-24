@@ -31,7 +31,7 @@ type SearchFrame struct {
 
 // ResponseJSON defines the expected format of the json response
 // body expected to be returned from any app SearchFrame.
-
+//
 // SearchFrameResponse should be imported by SearchFrame
 // applications and used to serialize responses to search requests
 // against the SearchFrame.
