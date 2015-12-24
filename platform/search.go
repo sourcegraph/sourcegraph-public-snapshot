@@ -36,14 +36,14 @@ type SearchFrame struct {
 // applications and used to serialize responses to search requests
 // against the SearchFrame.
 type SearchFrameResponse struct {
-	// Html is raw html to be rendered as search results
+	// HTML is raw html to be rendered as search results
 	// on the front end. This contract allows for simplicty
 	// of implementation and flexibility in the rendered format.
 	HTML template.HTML `json:"HTML"`
 
-	// TotalResults is the total number of results for the given
+	// Total is the total number of results for the given
 	// query.
-	TotalResults int32 `json:"Total"`
+	Total uint64 `json:"Total"`
 }
 
 // SearchFrameErrorResponse should be marshalled as a response on any error
@@ -56,9 +56,9 @@ type SearchFrameErrorResponse struct {
 }
 
 type SearchOptions struct {
-	Query   string
-	PerPage int32
-	Page    int32
+	Query   string `json:"q"`
+	PerPage int
+	Page    int
 }
 
 var appSearchFrames = map[string]SearchFrame{}
