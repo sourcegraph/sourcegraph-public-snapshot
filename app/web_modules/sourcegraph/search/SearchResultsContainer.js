@@ -12,23 +12,24 @@ import SearchFrameResults from "sourcegraph/search/SearchFrameResults";
 import "sourcegraph/search/SearchBackend";
 
 class ResultType {
-	constructor(label, name, perPage, component) {
+	constructor(label, name, icon, perPage, component) {
 		this.label = label;
 		this.name = name;
+		this.icon = icon;
 		this.perPage = perPage;
 		this.component = component;
 	}
 }
 
 let resultTypes = [
-	new ResultType("tokens", "Definitions", 50, TokenSearchResults),
-	new ResultType("text", "Text", 10, TextSearchResults),
+	new ResultType("tokens", "Definitions", "asterisk", 50, TokenSearchResults),
+	new ResultType("text", "Text", "code", 10, TextSearchResults),
 ];
 
 let searchFrames = window.searchFrames || {};
 Object.getOwnPropertyNames(searchFrames).forEach((key) => {
 	let frame = searchFrames[key];
-	resultTypes.push(new ResultType(frame.ID, frame.Name, frame.PerPage, SearchFrameResults));
+	resultTypes.push(new ResultType(frame.ID, frame.Name, frame.Icon, frame.PerPage, SearchFrameResults));
 });
 
 class SearchResultsContainer extends Container {
@@ -86,7 +87,7 @@ class SearchResultsContainer extends Container {
 									<a onClick={() => {
 										Dispatcher.dispatch(new SearchActions.SelectResultType(type.label));
 									}}>
-										<i className="fa fa-asterisk"></i> {type.name} <span className="badge">{results ? results.Total : <i className="fa fa-circle-o-notch fa-spin"></i>}</span>
+										<i className={`fa fa-${type.icon}`}></i> {type.name} <span className="badge">{results ? results.Total : <i className="fa fa-circle-o-notch fa-spin"></i>}</span>
 									</a>
 								</li>
 							);
