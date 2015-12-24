@@ -29,11 +29,9 @@ type SearchFrame struct {
 	PerPage int
 }
 
-// ResponseJSON defines the expected format of the json response
-// body expected to be returned from any app SearchFrame.
-//
-// SearchFrameResponse should be imported by SearchFrame
-// applications and used to serialize responses to search requests
+// SearchFrameResponse defines the expected format of the json response body
+// expected to be returned from any app SearchFrame. It should be imported by
+// SearchFrame applications and used to serialize responses to search requests
 // against the SearchFrame.
 type SearchFrameResponse struct {
 	// HTML is raw html to be rendered as search results
