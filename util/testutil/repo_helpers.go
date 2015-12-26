@@ -174,7 +174,7 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 		files = map[string]string{"myfile.txt": "a"}
 	}
 	for path, data := range files {
-		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(repoDir, path)), 0700); err != nil {
 			return "", err
 		}
 		if err := ioutil.WriteFile(filepath.Join(repoDir, path), []byte(data), 0700); err != nil {
