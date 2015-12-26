@@ -42,40 +42,5 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 		t.Fatalf("build %s failed", build.Spec().IDString())
 	}
 
-	checkImport(t, ctx, a.Client, "r/r", commitID)
-}
-
-func TestBuildRepo_push_hosted_lg(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
-
-	t.Parallel()
-
-	a, ctx := testserver.NewUnstartedServer()
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
-	)
-	if err := a.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer a.Close()
-
-	_, close, err := testutil.CreateAndPushRepo(t, ctx, "r/rr")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer close()
-
-	repo, err := a.Client.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: "r/rr"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Clone and build the repo locally.
-	if err := cloneAndLocallyBuildRepo(t, a, repo, ""); err != nil {
-		t.Fatal(err)
-	}
-
-	checkImport(t, ctx, a.Client, "r/rr", "")
+	testutil.CheckImport(t, ctx, "r/r", commitID)
 }

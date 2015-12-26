@@ -1,92 +1,29 @@
-// +build exectest,buildtest
-
-package worker_test
+package testutil
 
 import (
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"golang.org/x/net/context"
-
-	"strconv"
-
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/testserver"
-	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
-func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegraph.Repo, asUser string) (err error) {
-	tmpDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// Add auth to HTTP clone URL so that `git clone`, `git push`,
-	// etc., commands are authenticated.
-	authedCloneURL, err := testutil.AddSystemAuthToURL(a.Ctx, repo.HTTPCloneURL)
-	if err != nil {
-		return err
-	}
-
-	// Clone the repo locally.
-	if err := testutil.CloneRepo(t, authedCloneURL, tmpDir, nil); err != nil {
-		t.Fatal(err)
-	}
-	repoDir := filepath.Join(tmpDir, repo.Name)
-
-	// Fix up the remote so the URI is "r/r". (HACK)
-	cmd := exec.Command("git", "remote", "add", "srclib", "http://"+repo.URI)
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
-		return err
-	}
-
-	// Build the repo.
-	cmd = a.SrclibCmd(nil, []string{"config"})
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
-		return err
-	}
-	cmd = a.SrclibCmd(nil, []string{"make"})
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
-		return err
-	}
-
-	// Push the repo.
-	if asUser != "" {
-		cmd, err = a.CmdAs(asUser, []string{"push"})
-		if err != nil {
-			return err
-		}
-	} else {
-		cmd, err = a.CmdAsSystem([]string{"push"})
-		if err != nil {
-			return err
-		}
-	}
-	if err := testutil.RunCmd(cmd, repoDir); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// checkImport checks whether the defs produced by the srclib-sample
+// CheckImport checks whether the defs produced by the srclib-sample
 // toolchain have been imported. It is hardcoded dependent on the
 // vendored srclib-sample toolchain in
 // util/testutil/testdata/srclibpath.
 //
-// It's important to call checkImport because it ensures that both the
+// It's important to call CheckImport because it ensures that both the
 // per-source-unit import step and the index step run correctly. If
 // you just checked that specific defs exist, then the index creation
 // could fail (or have a bug) without you realizing it.
-func checkImport(t *testing.T, ctx context.Context, cl *sourcegraph.Client, repo, commitID string) {
+func CheckImport(t *testing.T, ctx context.Context, repo, commitID string) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+
 	if len(commitID) != 40 {
 		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repo}, Rev: commitID}
-		commit, err := sourcegraph.NewClientFromContext(ctx).Repos.GetCommit(ctx, repoRev)
+		commit, err := cl.Repos.GetCommit(ctx, repoRev)
 		if err != nil {
 			t.Fatal(err)
 		}
