@@ -13,7 +13,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util/buildutil"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
@@ -380,41 +379,16 @@ func (s *builds) UpdateTask(ctx context.Context, op *sourcegraph.BuildsUpdateTas
 	return t, nil
 }
 
-func (s *builds) GetLog(ctx context.Context, op *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error) {
-	build := op.Build
-	return s.getLog(ctx, buildutil.BuildTag(build), build, op.Opt)
-}
-
+// GetTaskLog gets the logs for a task.
+//
+// The build is fetched using the task's key (IDString) and its
+// StartedAt/EndedAt fields are used to set the start/end times for
+// the log entry search, which speeds up the operation significantly
+// for the Papertrail backend.
 func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {
 	task := op.Task
-	return s.getLog(ctx, buildutil.TaskTag(task), task.BuildSpec, op.Opt)
-}
+	opt := op.Opt
 
-func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.DequeueNext"); err != nil {
-		return nil, err
-	}
-
-	nextBuild, err := store.BuildsFromContext(ctx).DequeueNext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if nextBuild == nil {
-		return nil, grpc.Errorf(codes.NotFound, "build queue is empty")
-	}
-	return nextBuild, nil
-}
-
-// getLog gets the logs for either a task or build, depending on the tag (which
-// comes from the IDString() method of a BuildSpec or TaskSpec). Regardless of
-// whether the caller wants logs for a task or a build, the buildSpec must be passed
-// in (if the caller wants logs for a task, buildSpec should be the task's
-// build's BuildSpec).
-//
-// The build is fetched using the buildSpec and its StartedAt/EndedAt fields are
-// used to set the start/end times for the log entry search, which speeds it up
-// by a lot.
-func (s *builds) getLog(ctx context.Context, tag string, buildSpec sourcegraph.BuildSpec, opt *sourcegraph.BuildGetLogOptions) (*sourcegraph.LogEntries, error) {
 	if opt == nil {
 		opt = &sourcegraph.BuildGetLogOptions{}
 	}
@@ -427,7 +401,7 @@ func (s *builds) getLog(ctx context.Context, tag string, buildSpec sourcegraph.B
 	var minID string
 	var minTime, maxTime time.Time
 
-	build, err := store.BuildsFromContext(ctx).Get(ctx, buildSpec)
+	build, err := store.BuildsFromContext(ctx).Get(ctx, task.BuildSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -444,5 +418,20 @@ func (s *builds) getLog(ctx context.Context, tag string, buildSpec sourcegraph.B
 		minID = opt.MinID
 	}
 
-	return buildLogs.Get(ctx, buildSpec, tag, minID, minTime, maxTime)
+	return buildLogs.Get(ctx, task, minID, minTime, maxTime)
+}
+
+func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.DequeueNext"); err != nil {
+		return nil, err
+	}
+
+	nextBuild, err := store.BuildsFromContext(ctx).DequeueNext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if nextBuild == nil {
+		return nil, grpc.Errorf(codes.NotFound, "build queue is empty")
+	}
+	return nextBuild, nil
 }

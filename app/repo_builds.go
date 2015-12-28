@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
@@ -217,12 +218,51 @@ func serveRepoBuildLog(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	entries, err := apiclient.Builds.GetLog(ctx, &sourcegraph.BuildsGetLogOp{Build: buildSpec, Opt: &opt})
-	if err != nil {
-		return err
+	// HACK: Papertrail makes it efficient to fetch all task logs for
+	// a build by specifying a task ID of 0. It is extremely slow to
+	// iterate over all of the tasks and fetch logs individually in
+	// Papertrail, though.
+	//
+	// We'll be getting rid of the "list logs for all tasks"
+	// functionality soon, so this is temporary.
+	var entries sourcegraph.LogEntries
+	if v, _ := strconv.ParseBool(os.Getenv("SG_USE_PAPERTRAIL")); v {
+		// Fast-path for Papertrail.
+		allTaskEntries, err := apiclient.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{
+			Task: sourcegraph.TaskSpec{BuildSpec: buildSpec},
+			Opt:  &opt,
+		})
+		if err != nil {
+			return err
+		}
+		entries = *allTaskEntries
+	} else {
+		// Iterate over all tasks for non-Papertrail.
+		tasks, err := apiclient.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{Build: buildSpec})
+		if err != nil {
+			return err
+		}
+
+		// Prepend the build (non-task-specific) log.
+		tasks.BuildTasks = append(
+			[]*sourcegraph.BuildTask{
+				{Repo: buildSpec.Repo.URI, CommitID: buildSpec.CommitID, Attempt: buildSpec.Attempt, Op: "main"},
+			},
+			tasks.BuildTasks...,
+		)
+
+		for _, task := range tasks.BuildTasks {
+			taskEntries, err := apiclient.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{Task: task.Spec()})
+			if err != nil {
+				return err
+			}
+
+			entries.Entries = append(entries.Entries, "", fmt.Sprintf("=== %s %s %s ===", task.Op, task.UnitType, task.Unit))
+			entries.Entries = append(entries.Entries, taskEntries.Entries...)
+		}
 	}
 
-	return writePlainLogEntries(w, entries)
+	return writePlainLogEntries(w, &entries)
 }
 
 func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
@@ -308,7 +348,9 @@ func getBuildTaskSpec(r *http.Request) (sourcegraph.TaskSpec, error) {
 
 func writePlainLogEntries(w http.ResponseWriter, entries *sourcegraph.LogEntries) error {
 	w.Header().Add("content-type", "text/plain; charset=utf-8")
-	w.Header().Add("x-sourcegraph-log-max-id", entries.MaxID)
+	if entries.MaxID != "" {
+		w.Header().Add("x-sourcegraph-log-max-id", entries.MaxID)
+	}
 
 	printFunc := fmt.Fprintln
 	for i, e := range entries.Entries {

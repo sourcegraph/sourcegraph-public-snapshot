@@ -557,32 +557,6 @@ func (s *CachedBuildsClient) UpdateTask(ctx context.Context, in *BuildsUpdateTas
 	return result, nil
 }
 
-func (s *CachedBuildsClient) GetLog(ctx context.Context, in *BuildsGetLogOp, opts ...grpc.CallOption) (*LogEntries, error) {
-	if s.Cache != nil {
-		var cachedResult LogEntries
-		cached, err := s.Cache.Get(ctx, "Builds.GetLog", in, &cachedResult)
-		if err != nil {
-			return nil, err
-		}
-		if cached {
-			return &cachedResult, nil
-		}
-	}
-
-	var trailer metadata.MD
-
-	result, err := s.BuildsClient.GetLog(ctx, in, grpc.Trailer(&trailer))
-	if err != nil {
-		return nil, err
-	}
-	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "Builds.GetLog", in, result, trailer); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
 func (s *CachedBuildsClient) GetTaskLog(ctx context.Context, in *BuildsGetTaskLogOp, opts ...grpc.CallOption) (*LogEntries, error) {
 	if s.Cache != nil {
 		var cachedResult LogEntries

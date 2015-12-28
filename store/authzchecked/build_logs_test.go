@@ -15,13 +15,13 @@ func TestBuildLogs_Get(t *testing.T) {
 
 	var calledGet bool
 	s := BuildLogs(&mockstore.BuildLogs{
-		Get_: func(ctx context.Context, build sourcegraph.BuildSpec, tag, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
+		Get_: func(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
 			calledGet = true
 			return nil, nil
 		},
 	})
 
-	if _, err := s.Get(ctx, sourcegraph.BuildSpec{}, "", "", time.Time{}, time.Time{}); err != nil {
+	if _, err := s.Get(ctx, sourcegraph.TaskSpec{}, "", time.Time{}, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	if !calledGet {

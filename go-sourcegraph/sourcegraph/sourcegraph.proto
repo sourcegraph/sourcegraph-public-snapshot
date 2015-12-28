@@ -1198,11 +1198,6 @@ message BuildsUpdateTaskOp {
 	TaskUpdate info = 2 [(gogoproto.nullable) = false];
 }
 
-message BuildsGetLogOp {
-	BuildSpec build = 1 [(gogoproto.nullable) = false];
-	BuildGetLogOptions opt = 2;
-}
-
 message BuildsGetTaskLogOp {
 	TaskSpec task = 1 [(gogoproto.nullable) = false];
 	BuildGetLogOptions opt = 2;
@@ -1454,13 +1449,6 @@ service Builds {
 	rpc UpdateTask(BuildsUpdateTaskOp) returns (BuildTask) {
 		option (google.api.http) = {
 			put: "/builds/update_task"
-		};
-	};
-
-	// GetLog gets log entries associated with a build.
-	rpc GetLog(BuildsGetLogOp) returns (LogEntries) {
-		option (google.api.http) = {
-			get: "/builds/get_log"
 		};
 	};
 

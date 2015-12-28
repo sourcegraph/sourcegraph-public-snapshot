@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/buildutil"
 )
 
 // buildLogs is a Papertrail-backed implementation of the build logs
@@ -17,7 +18,18 @@ type buildLogs struct{}
 
 var _ store.BuildLogs = (*buildLogs)(nil)
 
-func (s *buildLogs) Get(ctx context.Context, build sourcegraph.BuildSpec, tag, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
+func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
+	// If the task ID is 0, pull all of the logs for all of the
+	// builds. This behavior only occurs on the Papertrail store (this
+	// one) and is not expected behavior for other BuildLogs
+	// implementations.
+	var tag string
+	if task.TaskID == 0 {
+		tag = buildutil.BuildTag(task.BuildSpec)
+	} else {
+		tag = buildutil.TaskTag(task)
+	}
+
 	pOpt := papertrail.SearchOptions{
 		Query:   "program:" + tag,
 		MinID:   minID,
@@ -34,7 +46,7 @@ func (s *buildLogs) Get(ctx context.Context, build sourcegraph.BuildSpec, tag, m
 	start := time.Now()
 	for {
 		if time.Since(start) > maxDuration {
-			log.Printf("Truncated log fetch for tag %q after %s (%d lines)", tag, maxDuration, len(allEvents))
+			log.Printf("Truncated log fetch for build logs for %s after %s (%d lines)", task.IDString(), maxDuration, len(allEvents))
 			allEvents = append(allEvents, &papertrail.Event{Message: fmt.Sprintf("*******************************************************\n\n*** NOTE: log truncated to newest %d lines (fetching stopped after %s); older log lines will not be visible ***\n*******************************************************\n", len(allEvents), maxDuration)})
 			break
 		}
@@ -48,6 +60,13 @@ func (s *buildLogs) Get(ctx context.Context, build sourcegraph.BuildSpec, tag, m
 		// *backwards* in time and will have responses with lower max_id values
 		if maxID == "" {
 			maxID = e0s.MaxID
+		}
+
+		if len(e0s.Events) == 1 && pOpt.MaxID == e0s.MinID {
+			// Papertrail seems to not set reached_beginning reliably
+			// and returns the same log line repeatedly; detect that
+			// case and break here.
+			break
 		}
 
 		// append in reverse

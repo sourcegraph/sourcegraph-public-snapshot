@@ -135,10 +135,6 @@ func (s remoteBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpda
 	return sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, v1)
 }
 
-func (s remoteBuilds) GetLog(ctx context.Context, v1 *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error) {
-	return sourcegraph.NewClientFromContext(ctx).Builds.GetLog(ctx, v1)
-}
-
 func (s remoteBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {
 	return sourcegraph.NewClientFromContext(ctx).Builds.GetTaskLog(ctx, v1)
 }

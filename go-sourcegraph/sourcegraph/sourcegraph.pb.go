@@ -87,7 +87,6 @@ It has these top-level messages:
 	ChangesetEventList
 	BuildsCreateTasksOp
 	BuildsUpdateTaskOp
-	BuildsGetLogOp
 	BuildsGetTaskLogOp
 	BuildsDequeueNextOp
 	EmailAddr
@@ -1409,15 +1408,6 @@ type BuildsUpdateTaskOp struct {
 func (m *BuildsUpdateTaskOp) Reset()         { *m = BuildsUpdateTaskOp{} }
 func (m *BuildsUpdateTaskOp) String() string { return proto.CompactTextString(m) }
 func (*BuildsUpdateTaskOp) ProtoMessage()    {}
-
-type BuildsGetLogOp struct {
-	Build BuildSpec           `protobuf:"bytes,1,opt,name=build" `
-	Opt   *BuildGetLogOptions `protobuf:"bytes,2,opt,name=opt" json:",omitempty"`
-}
-
-func (m *BuildsGetLogOp) Reset()         { *m = BuildsGetLogOp{} }
-func (m *BuildsGetLogOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsGetLogOp) ProtoMessage()    {}
 
 type BuildsGetTaskLogOp struct {
 	Task TaskSpec            `protobuf:"bytes,1,opt,name=task" `
@@ -4619,8 +4609,6 @@ type BuildsClient interface {
 	CreateTasks(ctx context.Context, in *BuildsCreateTasksOp, opts ...grpc.CallOption) (*BuildTaskList, error)
 	// UpdateTask updates a task associated with a build.
 	UpdateTask(ctx context.Context, in *BuildsUpdateTaskOp, opts ...grpc.CallOption) (*BuildTask, error)
-	// GetLog gets log entries associated with a build.
-	GetLog(ctx context.Context, in *BuildsGetLogOp, opts ...grpc.CallOption) (*LogEntries, error)
 	// GetTaskLog gets log entries associated with a task.
 	GetTaskLog(ctx context.Context, in *BuildsGetTaskLogOp, opts ...grpc.CallOption) (*LogEntries, error)
 	// DequeueNext returns the next queued build and marks it as
@@ -4709,15 +4697,6 @@ func (c *buildsClient) UpdateTask(ctx context.Context, in *BuildsUpdateTaskOp, o
 	return out, nil
 }
 
-func (c *buildsClient) GetLog(ctx context.Context, in *BuildsGetLogOp, opts ...grpc.CallOption) (*LogEntries, error) {
-	out := new(LogEntries)
-	err := grpc.Invoke(ctx, "/sourcegraph.Builds/GetLog", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *buildsClient) GetTaskLog(ctx context.Context, in *BuildsGetTaskLogOp, opts ...grpc.CallOption) (*LogEntries, error) {
 	out := new(LogEntries)
 	err := grpc.Invoke(ctx, "/sourcegraph.Builds/GetTaskLog", in, out, c.cc, opts...)
@@ -4764,8 +4743,6 @@ type BuildsServer interface {
 	CreateTasks(context.Context, *BuildsCreateTasksOp) (*BuildTaskList, error)
 	// UpdateTask updates a task associated with a build.
 	UpdateTask(context.Context, *BuildsUpdateTaskOp) (*BuildTask, error)
-	// GetLog gets log entries associated with a build.
-	GetLog(context.Context, *BuildsGetLogOp) (*LogEntries, error)
 	// GetTaskLog gets log entries associated with a task.
 	GetTaskLog(context.Context, *BuildsGetTaskLogOp) (*LogEntries, error)
 	// DequeueNext returns the next queued build and marks it as
@@ -4874,18 +4851,6 @@ func _Builds_UpdateTask_Handler(srv interface{}, ctx context.Context, dec func(i
 	return out, nil
 }
 
-func _Builds_GetLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(BuildsGetLogOp)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(BuildsServer).GetLog(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func _Builds_GetTaskLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(BuildsGetTaskLogOp)
 	if err := dec(in); err != nil {
@@ -4945,10 +4910,6 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateTask",
 			Handler:    _Builds_UpdateTask_Handler,
-		},
-		{
-			MethodName: "GetLog",
-			Handler:    _Builds_GetLog_Handler,
 		},
 		{
 			MethodName: "GetTaskLog",

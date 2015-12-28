@@ -32,7 +32,7 @@ type Builds interface {
 }
 
 type BuildLogs interface {
-	Get(ctx context.Context, build sourcegraph.BuildSpec, tag, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error)
+	Get(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error)
 }
 
 // SortAndPaginateBuilds sorts and paginates a list of builds

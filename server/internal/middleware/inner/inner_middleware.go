@@ -650,35 +650,6 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 
 }
 
-func (s wrappedBuilds) GetLog(ctx context.Context, param *sourcegraph.BuildsGetLogOp) (res *sourcegraph.LogEntries, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Builds", "GetLog", param)
-	defer func() {
-		trace.After(ctx, "Builds", "GetLog", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Builds.GetLog")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetLog(ctx, param)
-	return
-
-}
-
 func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.BuildsGetTaskLogOp) (res *sourcegraph.LogEntries, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "GetTaskLog", param)

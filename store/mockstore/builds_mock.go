@@ -66,11 +66,11 @@ func (s *Builds) GetTask(ctx context.Context, task sourcegraph.TaskSpec) (*sourc
 var _ store.Builds = (*Builds)(nil)
 
 type BuildLogs struct {
-	Get_ func(ctx context.Context, build sourcegraph.BuildSpec, tag, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error)
+	Get_ func(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error)
 }
 
-func (s *BuildLogs) Get(ctx context.Context, build sourcegraph.BuildSpec, tag, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
-	return s.Get_(ctx, build, tag, minID, minTime, maxTime)
+func (s *BuildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
+	return s.Get_(ctx, task, minID, minTime, maxTime)
 }
 
 var _ store.BuildLogs = (*BuildLogs)(nil)

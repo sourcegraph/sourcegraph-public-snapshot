@@ -491,7 +491,6 @@ type BuildsClient struct {
 	ListBuildTasks_ func(ctx context.Context, in *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error)
 	CreateTasks_    func(ctx context.Context, in *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error)
 	UpdateTask_     func(ctx context.Context, in *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error)
-	GetLog_         func(ctx context.Context, in *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error)
 	GetTaskLog_     func(ctx context.Context, in *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error)
 	DequeueNext_    func(ctx context.Context, in *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error)
 }
@@ -528,10 +527,6 @@ func (s *BuildsClient) UpdateTask(ctx context.Context, in *sourcegraph.BuildsUpd
 	return s.UpdateTask_(ctx, in)
 }
 
-func (s *BuildsClient) GetLog(ctx context.Context, in *sourcegraph.BuildsGetLogOp, opts ...grpc.CallOption) (*sourcegraph.LogEntries, error) {
-	return s.GetLog_(ctx, in)
-}
-
 func (s *BuildsClient) GetTaskLog(ctx context.Context, in *sourcegraph.BuildsGetTaskLogOp, opts ...grpc.CallOption) (*sourcegraph.LogEntries, error) {
 	return s.GetTaskLog_(ctx, in)
 }
@@ -551,7 +546,6 @@ type BuildsServer struct {
 	ListBuildTasks_ func(v0 context.Context, v1 *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error)
 	CreateTasks_    func(v0 context.Context, v1 *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error)
 	UpdateTask_     func(v0 context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error)
-	GetLog_         func(v0 context.Context, v1 *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error)
 	GetTaskLog_     func(v0 context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error)
 	DequeueNext_    func(v0 context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error)
 }
@@ -586,10 +580,6 @@ func (s *BuildsServer) CreateTasks(v0 context.Context, v1 *sourcegraph.BuildsCre
 
 func (s *BuildsServer) UpdateTask(v0 context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error) {
 	return s.UpdateTask_(v0, v1)
-}
-
-func (s *BuildsServer) GetLog(v0 context.Context, v1 *sourcegraph.BuildsGetLogOp) (*sourcegraph.LogEntries, error) {
-	return s.GetLog_(v0, v1)
 }
 
 func (s *BuildsServer) GetTaskLog(v0 context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {

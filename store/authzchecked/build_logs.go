@@ -20,9 +20,9 @@ type buildLogs struct {
 
 var _ store.BuildLogs = (*buildLogs)(nil)
 
-func (s *buildLogs) Get(ctx context.Context, build sourcegraph.BuildSpec, tag, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
-	if err := checkBuild(ctx, build, auth.Read); err != nil {
+func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
+	if err := checkTask(ctx, task, auth.Read); err != nil {
 		return nil, err
 	}
-	return s.noauthz.Get(ctx, build, tag, minID, minTime, maxTime)
+	return s.noauthz.Get(ctx, task, minID, minTime, maxTime)
 }
