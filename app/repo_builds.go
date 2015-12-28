@@ -310,8 +310,14 @@ func writePlainLogEntries(w http.ResponseWriter, entries *sourcegraph.LogEntries
 	w.Header().Add("content-type", "text/plain; charset=utf-8")
 	w.Header().Add("x-sourcegraph-log-max-id", entries.MaxID)
 
-	for _, e := range entries.Entries {
-		if _, err := fmt.Fprintln(w, e); err != nil {
+	printFunc := fmt.Fprintln
+	for i, e := range entries.Entries {
+		// Don't print an artificial trailing newline.
+		if i == len(entries.Entries)-1 {
+			printFunc = fmt.Fprint
+		}
+
+		if _, err := printFunc(w, e); err != nil {
 			return err
 		}
 	}
