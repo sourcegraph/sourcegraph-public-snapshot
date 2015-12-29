@@ -114,7 +114,7 @@ func (b *builder) exec(ctx context.Context) error {
 	ctx = conf.WithAppURL(ctx, containerAppURL)
 
 	// Generate the test plan.
-	config, axes, err := plan.Create(ctx, b.repoRev)
+	config, axes, err := plan.CreateServer(ctx, b.repoRev)
 	if err != nil {
 		// TODO(native-ci): Support a build status that means "unable
 		// to automatically configure a build." This does not fit
