@@ -75,9 +75,6 @@ func (c *ReleaseCmd) Execute(args []string) error {
 	if err := execCmd(exec.Command("cp", distDir+"/src.deb", distDir+"/src.rpm", selfupdateDir+"/"+c.Args.Version+"/linux-amd64/")); err != nil {
 		return err
 	}
-	if err := execCmd(exec.Command("cp", distDir+"/src-docker.deb", selfupdateDir+"/"+c.Args.Version+"/linux-amd64/")); err != nil {
-		return err
-	}
 
 	// Versions like "10.3.100" are considered public by default, while ones with
 	// a dash suffix like "10.3.101-hack" are considered private by default.
