@@ -45,3 +45,22 @@ func TestBuilds(t *testing.T) {
 		t.Error("!calledList")
 	}
 }
+
+func TestBuildTasks(t *testing.T) {
+	c, mock := newTest()
+
+	wantTasks := &sourcegraph.BuildTaskList{BuildTasks: []*sourcegraph.BuildTask{{TaskID: 123}}}
+
+	calledListBuildTasks := mock.Builds.MockListBuildTasks(t, wantTasks.BuildTasks...)
+
+	var tasks *sourcegraph.BuildTaskList
+	if err := c.GetJSON("/repos/r/.builds/abc/123/.tasks", &tasks); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(tasks, wantTasks) {
+		t.Errorf("got %+v, want %+v", tasks, wantTasks)
+	}
+	if !*calledListBuildTasks {
+		t.Error("!calledListBuildTasks")
+	}
+}

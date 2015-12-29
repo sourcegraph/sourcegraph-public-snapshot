@@ -29,6 +29,31 @@ func serveBuild(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, build)
 }
 
+func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
+	ctx := httpctx.FromRequest(r)
+	s := handlerutil.APIClient(r)
+
+	buildSpec, err := getBuildSpec(r)
+	if err != nil {
+		return err
+	}
+
+	var opt sourcegraph.BuildTaskListOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	tasks, err := s.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{
+		Build: *buildSpec,
+		Opt:   &opt,
+	})
+	if err != nil {
+		return err
+	}
+
+	return writeJSON(w, tasks)
+}
+
 func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	s := handlerutil.APIClient(r)
