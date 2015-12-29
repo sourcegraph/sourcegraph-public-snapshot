@@ -29,5 +29,3 @@ installed Sourcegraph on a Linux server, it may be running as user
 1. Your local machine's authentication info (i.e., your `src login`) is stored in
    `~/.src-auth`. This is your personal login information, not server-wide user
    data.
-1. srclib build caches and language toolchains are in `~/.srclib`,
-   but you should never need to back up these as they contain no user data.

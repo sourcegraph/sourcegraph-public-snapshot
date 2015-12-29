@@ -13,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/srclib/toolchain"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 
@@ -229,13 +228,6 @@ var TemplateFunctions = htmpl.FuncMap{
 	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 	"disableCloneURL":    func() bool { return appconf.Flags.DisableCloneURL },
-
-	// Returns whether or not any srclib toolchains are installed.
-	"haveToolchain": func() bool {
-		infos, err := toolchain.List()
-		// note: err != nil if e.g. $SRCLIBPATH is not a directory.
-		return err == nil && len(infos) > 0
-	},
 
 	"isAdmin": func(ctx context.Context, method string) bool {
 		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil

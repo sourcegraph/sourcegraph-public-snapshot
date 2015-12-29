@@ -14,10 +14,6 @@ Sourcegraph in an all-in-one binary (`src`) which includes:
 
 {{< local_install >}}
 
-# Add Code Intelligence
-
-{{< toolchain_install >}}
-
 # Invite teammates
 
 {{< cloud_cta >}} will deploy Sourcegraph on **AWS**, **DigitalOcean**, or **Google Cloud Platform** in minutes.

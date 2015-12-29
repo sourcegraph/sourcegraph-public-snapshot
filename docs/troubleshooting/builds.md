@@ -16,10 +16,6 @@ Building is a complex process, and sometimes builds fail or lack 100%
 coverage of your code. The most common reasons for builds to fail or
 be incomplete are:
 
-## Missing Language Support
-
-You may not have the necessary [srclib](https://srclib.org) language support toolchains installed. See [language support]({{< relref "config/toolchains.md" >}}).
-
 ## Non-Standard build process
 
 Srclib toolchains generally assume the language standard for build process and directory structure. If your project uses a non-standard process, it is possible the toolchain doesn't understand your project.
@@ -31,10 +27,6 @@ Srclib toolchains generally assume the language standard for build process and d
   [srclib-go README](https://sourcegraph.com/sourcegraph/srclib-go)
   and
   [srclib-java README](https://sourcegraph.com/sourcegraph/srclib-java).
-
-## Incompatible system programs/libraries
-
-It is possible that the server you're running Sourcegraph on has system programs or libraries that are incompatible. Toolchains try to be as robust as possible to differences between operating systems, compiler/interpreter versions, etc., but sometimes there are incompatibilities. Please check the logs (see below) and report the issue.
 
 ## Insufficient RAM
 

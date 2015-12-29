@@ -86,21 +86,6 @@
 			</div>
 		</header>
 
-		{{if not $.DisableExternalLinks}}
-			{{if eq $.TemplateName "home/dashboard.html"}}
-				<div class="container{{if .FullWidth}}-fluid{{end}}">
-					{{if not haveToolchain}}
-						<div
-							data-react="AlertView"
-							data-html="
-								<strong>Sourcegraph is running without support for your language!</strong> <a href='https://src.sourcegraph.com/sourcegraph/.docs/config/toolchains/'>Please troubleshoot this issue!</a>
-							">
-						</div>
-					{{end}}
-				</div>
-			{{end}}
-		{{end}}
-
 		<div class="container{{if .FullWidth}}-fluid{{end}} body" id="main">
 			{{template "Body" $}}
 		</div>

@@ -1,4 +1,7 @@
-FROM sourcegraph/srclib-base:latest
+FROM alpine:3.2
+MAINTAINER Sourcegraph Team <help@sourcegraph.com>
+
+RUN apk add --update git mailcap && rm -rf /var/cache/apk/* # install mailcap for /etc/mime.types, needed by HTTP server
 
 ENV STATIC_SITE_VERSION 7fc2fba9d768b29f6768175ad255415137a9b5db
 ENV STATIC_SITE_URL https://s3-us-west-2.amazonaws.com/sourcegraph-site/sourcegraph-site-$STATIC_SITE_VERSION.tar

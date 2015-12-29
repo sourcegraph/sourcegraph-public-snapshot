@@ -12,6 +12,7 @@ development environment. Here's what you need:
 - [Go](https://golang.org/doc/install) (v1.5.0 or higher)
 - [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
+- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
 
 If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html)
 (a directory which contains all your projects).

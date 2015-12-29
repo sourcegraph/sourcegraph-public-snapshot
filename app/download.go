@@ -111,6 +111,9 @@ is_cloud_install() {
 cloud_pre() {
 	apt-get update -y
 	apt-get install -y libcap2-bin curl
+
+	# Install Docker
+	curl -sSL https://get.docker.com/ | sh
 }
 
 cloud_post() {
@@ -128,18 +131,6 @@ cloud_post() {
 	echo 'http-addr = :80' >> /etc/sourcegraph/config.ini
 	restart src || echo ok
 	# TODO: set up self-signed TLS certs
-
-	if [ "$SRC_LANGUAGE_GO" == "1" ]; then
-		apt-get install -y make
-		curl -L https://golang.org/dl/go1.5.1.linux-amd64.tar.gz | sudo tar zx -C /usr/local/
-		echo 'export PATH="$PATH:/usr/local/go/bin"' >> /etc/profile
-		source /etc/profile
-		sudo -iu sourcegraph GOPATH=/tmp sh -c 'src srclib toolchain install go'
-	fi
-
-	if [ "$SRC_LANGUAGE_JAVA" == "1" ]; then
-		sudo -iu sourcegraph sh -c 'src srclib toolchain install java'
-	fi
 }
 
 do_install() {

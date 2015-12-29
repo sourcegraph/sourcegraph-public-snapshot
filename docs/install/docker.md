@@ -14,17 +14,22 @@ To run Sourcegraph in a Docker container:
 docker run \
   --name src \
   --detach \
-  --hostname src.example.com \
-  --publish 80:3080 \
-  --publish 443:3443 \
+  --publish 80:80 \
+  --publish 443:443 \
   --restart on-failure:10 \
   --volume /etc/sourcegraph:/etc/sourcegraph \
-  --volume /var/lib/sourcegraph:/home/sourcegraph/.sourcegraph \
+  --volume /var/lib/sourcegraph:/root/.sourcegraph \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
   sourcegraph/sourcegraph:latest
 ```
 
 This will download and run Sourcegraph. Once started, you can access
 your Sourcegraph server on the host's HTTP port (80).
+
+Note that Sourcegraph requires the ability to run Docker
+containers. If you're unable to mount `/var/run/docker.sock` (as in
+the command above), you may pass the Docker host address with (for
+example) `--env DOCKER_HOST=tcp://1.2.3.4:2376`.
 
 
 ## Storage
