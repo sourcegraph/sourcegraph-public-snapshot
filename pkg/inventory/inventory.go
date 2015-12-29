@@ -3,6 +3,7 @@
 package inventory
 
 import (
+	"os"
 	"path"
 	"sort"
 	"strings"
@@ -72,6 +73,9 @@ func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
 		}
 
 		if err := w.Err(); err != nil {
+			if w.Path() != "/" && (os.IsNotExist(err) || os.IsPermission(err)) {
+				continue
+			}
 			return nil, err
 		}
 
