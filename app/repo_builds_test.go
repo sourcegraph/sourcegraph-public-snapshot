@@ -23,9 +23,6 @@ func TestRepoBuild(t *testing.T) {
 	calledBuildsGet := mock.Builds.MockGet_Return(t,
 		&sourcegraph.Build{ID: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
 	)
-	calledBuildsListBuildTasks := mock.Builds.MockListBuildTasks(t,
-		&sourcegraph.BuildTask{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "my/repo"}}},
-	)
 
 	if _, err := c.GetOK(router.Rel.URLToRepoBuild("my/repo", 1).String()); err != nil {
 		t.Fatal(err)
@@ -41,9 +38,6 @@ func TestRepoBuild(t *testing.T) {
 	}
 	if !*calledBuildsGet {
 		t.Error("!calledBuildsGet")
-	}
-	if !*calledBuildsListBuildTasks {
-		t.Error("!calledBuildsListBuildTasks")
 	}
 }
 

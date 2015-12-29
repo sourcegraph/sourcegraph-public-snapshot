@@ -1,0 +1,46 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "BuildHeader",
+					"props": {
+						"build": {
+							"ID": 123,
+							"Repo": "aRepo"
+						},
+						"commit": {
+							"ID": "abc"
+						}
+					}
+				},
+				{
+					"type": "LocationAdaptor",
+					"props": {
+						"tasks": [
+							{
+								"ID": 456
+							}
+						],
+						"logs": {
+							"content": {}
+						}
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantBuild",
+			"repo": "aRepo",
+			"buildID": 123
+		},
+		{
+			"$constructor": "WantTasks",
+			"repo": "aRepo",
+			"buildID": 123
+		}
+	]
+}

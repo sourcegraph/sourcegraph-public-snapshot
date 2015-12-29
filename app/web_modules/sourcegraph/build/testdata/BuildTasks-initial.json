@@ -1,0 +1,118 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "ul",
+					"props": {
+						"className": "nav nav-tabs",
+						"role": "tablist",
+						"children": [
+							{
+								"type": "li",
+								"key": "456",
+								"props": {
+									"role": "presentation",
+									"className": "active",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"role": "tab",
+												"href": "#T456",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "text-default",
+															"children": [
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-circle-o-notch"
+																	}
+																},
+																" "
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "li",
+								"key": "567",
+								"props": {
+									"role": "presentation",
+									"className": "",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"role": "tab",
+												"href": "#T567",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "text-default",
+															"children": [
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-circle-o-notch"
+																	}
+																},
+																" "
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "tab-content",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"role": "tabpanel",
+									"className": "tab-pane active",
+									"children": [
+										{
+											"type": "BuildTask",
+											"props": {
+												"task": {
+													"ID": 456,
+													"Build": {
+														"Repo": {
+															"URI": "aRepo"
+														},
+														"ID": 123
+													}
+												},
+												"logs": {}
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

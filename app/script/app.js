@@ -5,6 +5,7 @@ require("babel-polyfill");
 window.jQuery = window.$ = require("jquery");
 
 require("jquery.hotkeys/jquery.hotkeys");
+require("bootstrap-sass/assets/javascripts/bootstrap/tab.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/tooltip.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/transition.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/collapse.js");
@@ -34,7 +35,6 @@ require("./stores/collections/CodeTokenCollection");
 require("./componentInjection");
 
 require("./activateDefnPopovers");
-require("./build_log");
 require("./buttons");
 require("./debounce");
 require("./defn-popover");

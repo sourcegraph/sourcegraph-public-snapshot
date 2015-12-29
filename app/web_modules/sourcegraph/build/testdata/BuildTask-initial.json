@@ -1,0 +1,14 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantLog",
+			"repo": "aRepo",
+			"buildID": 123,
+			"taskID": 456
+		}
+	]
+}

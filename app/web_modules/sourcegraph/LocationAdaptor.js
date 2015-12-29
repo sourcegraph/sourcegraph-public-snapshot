@@ -18,12 +18,14 @@ class LocationAdaptor extends React.Component {
 	}
 
 	render() {
+		let other = Object.assign({}, this.props);
+		delete other.component;
 		return (
-			<this.props.component location={window.location.href} navigate={(uri) => {
-				window.history.pushState(null, "", uri);
-				let event = new CustomEvent(pushstateEvent);
-				window.dispatchEvent(event);
-			}} />
+				<this.props.component location={window.location.href} navigate={(uri) => {
+					window.history.pushState(null, "", uri);
+					let event = new CustomEvent(pushstateEvent);
+					window.dispatchEvent(event);
+				}} {...other} />
 		);
 	}
 }

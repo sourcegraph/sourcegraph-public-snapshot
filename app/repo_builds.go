@@ -118,20 +118,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	build, buildSpec, err := getRepoBuild(r, rc.Repo)
-	if err != nil {
-		return err
-	}
-
-	tasks, err := apiclient.Builds.ListBuildTasks(
-		ctx,
-		&sourcegraph.BuildsListBuildTasksOp{
-			Build: buildSpec,
-			Opt: &sourcegraph.BuildTaskListOptions{
-				ListOptions: sourcegraph.ListOptions{PerPage: 99999},
-			},
-		},
-	)
+	build, _, err := getRepoBuild(r, rc.Repo)
 	if err != nil {
 		return err
 	}
@@ -156,14 +143,12 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 		handlerutil.RepoCommon
 		Build  *sourcegraph.Build
 		Commit *payloads.AugmentedCommit
-		Tasks  []*sourcegraph.BuildTask
 
 		tmpl.Common
 	}{
 		RepoCommon: *rc,
 		Build:      build,
 		Commit:     commit,
-		Tasks:      tasks.BuildTasks,
 	})
 }
 

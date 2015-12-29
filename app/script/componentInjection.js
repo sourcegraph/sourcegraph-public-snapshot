@@ -2,6 +2,7 @@ var $ = require("jquery");
 var React = require("react");
 var ReactDOM = require("react-dom");
 
+var BuildView = require("sourcegraph/build/BuildView").default;
 var CloseChangesetButton = require("./components/CloseChangesetButton");
 var CompareView = require("./components/CompareView");
 var DeltaDefsContainer = require("./components/DeltaDefsContainer");
@@ -56,6 +57,16 @@ document.addEventListener("DOMContentLoaded", () => {
 				startLine={reference.StartLine}
 				endLine={reference.EndLine}
 				lines={lines} />,
+			el[0]
+		);
+	}
+
+	el = $("#BuildView");
+	if (el.length > 0) {
+		ReactDOM.render(
+			<BuildView
+				build={JSON.parse(el[0].dataset.build)}
+				commit={JSON.parse(el[0].dataset.commit)} />,
 			el[0]
 		);
 	}

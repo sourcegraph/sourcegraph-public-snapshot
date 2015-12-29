@@ -22,55 +22,8 @@
 	</form>
 </nav>
 
-<div class="row">
-	<div class="col-md-4 col-sm-4">
-		<div class="media">
-			<header class="repo-build pull-left">
-				<h1 class="label label-{{buildClass .Build}}">
-					<span class="number">#{{.Build.ID}}</span>
-					<span class="status">{{buildStatus .Build}}</span>
-				</h1>
-			</header>
-			<div class="media-body">
-				<table class="table repo-build table-condensed">
-					{{if not .Build.StartedAt}}<tr><th>Created</th><td>{{template "TimeAgo" .Build.CreatedAt}}</td></tr>{{end}}
-					{{if not .Build.EndedAt}}<tr><th>Started</th><td>{{template "TimeAgo" .Build.StartedAt}}</td></tr>{{end}}
-					{{if .Build.EndedAt}}<tr><th>Ended</th><td>{{template "TimeAgo" .Build.EndedAt}}</td></tr>{{end}}
-					{{if .Build.StartedAt}}<tr><th>Elapsed</th><td>{{duration .Build.StartedAt (minTime .Build.EndedAt now)}}</td></tr>{{end}}
-				</table>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-8 col-lg-6">
-		{{with .Commit}}
-		<div class="commit single media repo-build">
-			{{template "Commit" .}}
-			{{$commitRest := commitRestOfMessage .Message}}
-			{{if $commitRest}}
-			<pre class="commit-rest">{{$commitRest}}</pre>
-			{{end}}
-		</div>
-	{{else}}
-		<p>Commit: <code>{{.Build.CommitID}}</code></p>
-		<div class="alert alert-warning">Unable to retrieve commit</div>
-		{{end}}
-	</div>
-
-</div>
-
-{{if .Build.Failure}}
-<div class="alert alert-danger">
-{{if .DisableExternalLinks}}
-	<strong>Build failed.</strong> Check the logs for more information about why
-	this failed.
-{{else}}
-	<strong>Build failed.</strong> Please see the <a href="https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/">troubleshooting guide</a> or <a href="mailto:help@sourcegraph.com">contact us</a> for help.
-{{end}}
-</div>
-{{end}}
-
-{{$repo := .Repo}}
-<pre id="build-log" data-src="{{urlToRepoBuildSubroute "repo.build.log" $repo.URI .Build.ID}}">
-</pre>
+<div id="BuildView"
+	data-build="{{json .Build}}"
+	data-commit="{{json .Commit}}"></div>
 
 {{end}}
