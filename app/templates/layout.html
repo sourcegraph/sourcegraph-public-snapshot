@@ -86,6 +86,22 @@
 			</div>
 		</header>
 
+		{{if not $.DisableExternalLinks}}
+			<div class="container{{if .FullWidth}}-fluid{{end}}">
+				{{range checkSysReq .Ctx}}
+					{{if not .OK}}
+						<div
+							data-react="AlertView"
+							data-closeable="true"
+							data-hasCookie="true"
+							data-label="sysreq"
+							data-content="{{.Name}}: {{with .Problem}}{{.}}{{end}} {{with .Fix}}Possible fix: {{.}}{{end}} {{with .Err}}Server admin: run `src info` on the server for the full error message.{{end}}">
+						</div>
+					{{end}}
+				{{end}}
+			</div>
+		{{end}}
+
 		<div class="container{{if .FullWidth}}-fluid{{end}} body" id="main">
 			{{template "Body" $}}
 		</div>

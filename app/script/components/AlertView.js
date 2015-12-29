@@ -67,14 +67,16 @@ var AlertView = React.createClass({
 	render() {
 		var cx = classNames({
 			"alert-view": true,
+			"alert": true,
+			"alert-danger": true,
 			"closed": this.state.closed,
 		});
 
 		var text;
 		if (this.props.html) {
-			text = <td className="text" dangerouslySetInnerHTML={{__html: this.props.html}}></td>;
+			text = <span className="text" dangerouslySetInnerHTML={{__html: this.props.html}}></span>;
 		} else {
-			text = <td className="text">{this.props.content}</td>;
+			text = <span className="text">{this.props.content}</span>;
 		}
 
 		var icon = this.props.icon ? this.props.icon : "fa-warning";
@@ -82,12 +84,8 @@ var AlertView = React.createClass({
 		return (
 			<div className={cx}>
 				{this.props.closeable ? <div className="btn-close" onClick={this._close}>×</div> : null}
-				<table className="over-threshold-warning">
-					<tbody>
-						<td className="icon"><i className={`fa fa-icon ${icon}`} /></td>
-						{text}
-					</tbody>
-				</table>
+				<span className="icon pull-left"><i className={`fa fa-icon ${icon}`} /></span>&nbsp;
+				{text}
 			</div>
 		);
 	},

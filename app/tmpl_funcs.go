@@ -22,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/pkg/sysreq"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
@@ -253,4 +254,10 @@ var TemplateFunctions = htmpl.FuncMap{
 
 	"buildvar":        func() buildvar.Vars { return buildvar.All },
 	"updateAvailable": updateAvailable,
+
+	"checkSysReq": func(ctx context.Context) []sysreq.Status {
+		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		return sysreq.CheckOnce(ctx)
+	},
 }
