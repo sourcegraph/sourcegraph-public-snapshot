@@ -28,7 +28,7 @@ GitHub, Bitbucket, and other git hosting services often allow users to configure
 Determine the SSH link for the private repository you would like to clone. It typically has the form of `git@bitbucket.org:userorganization/test_repository.git`, and can be accessed on your GitHub or Bitbucket repository page (you may have to select SSH from the standard clone widget, HTTPS is selected by default).
 
 
-First, check that the git clone command functions with this SSH git clone URL:
+First, check that the git clone command functions with this SSH git clone URL. **On Linux distributions, make sure to run this command as the `sourcegraph` user that was created at installation, otherwise the `sourcegraph` known_hosts file will not contain your git server!**:
 ```
 git ls-remote git@bitbucket.org/userorganization/test_repository.git
 ```
@@ -45,7 +45,7 @@ Alternatively, you can mirror a private repository by using an HTTPS git clone l
 
 First, append your password to your username in the link, such as: `https://user:password@bitbucket.org/userorganization/test_repository.git`.
 
-Next, check that the git clone command functions with this URL:
+Next, check that the git clone command functions with this URL. **On Linux distributions, make sure to run this command as the `sourcegraph` user that was created at installation, otherwise the `sourcegraph` known_hosts file will not contain your git server!** 
 ```
 git ls-remote https://user:password@bitbucket.org/userorganization/test_repository.git
 ```
