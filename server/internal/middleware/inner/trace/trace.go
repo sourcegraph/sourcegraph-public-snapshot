@@ -58,6 +58,8 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 	span.Log(instrument.EventName("appdash_span_id").Payload(spanID))
 	span.AddTraceJoinId("appdash_trace_id", spanID.Trace)
 
+	log15.Debug("gRPC "+server+"."+method+" before", "spanID", spanID)
+
 	return ctx
 }
 
