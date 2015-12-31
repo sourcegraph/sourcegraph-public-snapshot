@@ -21,7 +21,7 @@ src repo create -m --clone-url=http://host.com/my/repo <repo-name>
 
 ## Private repository
 
-## 1. Authenticating with SSH keys
+### 1. Authenticating with SSH keys
 
 GitHub, Bitbucket, and other git hosting services often allow users to configure their hosts to authenticate using SSH keys (See [here](https://help.github.com/articles/generating-ssh-keys/) for GitHub's instructions, and [here](https://confluence.atlassian.com/bitbucket/set-up-ssh-for-git-728138079.html) for Bitbucket's instructions on how to set this up).
 
@@ -38,14 +38,14 @@ Ensure that the clone command completely successfully. You can now configure Sou
 src repo create -m --clone-url=git@bitbucket.org/userorganization/test_repository.git <repo-name>
 ```
 
-## 2. Authenticating over HTTPS
+### 2. Authenticating over HTTPS
 
 Alternatively, you can mirror a private repository by using an HTTPS git clone link. GitHub and Bitbucket make these links available on repository pages, they typically look like this:
 `https://user@bitbucket.org/userorganization/test_repository.git`.
 
 First, append your password to your username in the link, such as: `https://user:password@bitbucket.org/userorganization/test_repository.git`.
 
-Next, check that the git clone command functions with this URL. **On Linux distributions, make sure to run this command as the `sourcegraph` user that was created at installation, otherwise the `sourcegraph` known_hosts file will not contain your git server!** 
+Next, check that the git clone command functions with this URL. **On Linux distributions, make sure to run this command as the `sourcegraph` user that was created at installation, otherwise the `sourcegraph` known_hosts file will not contain your git server!**
 ```
 git ls-remote https://user:password@bitbucket.org/userorganization/test_repository.git
 ```
