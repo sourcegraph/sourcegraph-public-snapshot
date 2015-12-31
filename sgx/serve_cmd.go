@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -215,6 +216,34 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	return appURL, nil
 }
 
+func (c *ServeCmd) configureSSHURL(appURL *url.URL) (*url.URL, error) {
+	if c.SSHAddr != "" {
+		urlRegexp, err := regexp.Compile(`http(s)?://([^:])*(.)*`)
+		if err != nil {
+			return nil, err
+		}
+
+		groups := urlRegexp.FindStringSubmatch(appURL.String())
+		domain := ""
+		if groups[1] != "" {
+			domain = groups[1]
+		} else {
+			domain = "localhost"
+		}
+		port := ""
+		if c.SSHAddr != ":22" {
+			port = c.SSHAddr
+		}
+
+		sshURL, err := url.Parse(fmt.Sprintf("ssh://git@%s%s", domain, port))
+		if err != nil {
+			return nil, err
+		}
+		return sshURL, nil
+	}
+	return nil, nil
+}
+
 func (c *ServeCmd) Execute(args []string) error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
@@ -316,13 +345,17 @@ func (c *ServeCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
+	sshURL, err := c.configureSSHURL(appURL)
+	if err != nil {
+		return err
+	}
 
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
 		for _, f := range sharedCtxFuncs {
 			ctx = f(ctx)
 		}
-		ctx = conf.WithAppURL(ctx, appURL)
+		ctx = conf.WithURL(ctx, appURL, sshURL)
 		return ctx
 	}
 	clientCtxFunc := func(ctx context.Context) context.Context {
@@ -482,7 +515,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		repoupdater.RepoUpdater.Start(cli.Ctx)
 
 		// Start event listeners.
-		c.initializeEventListeners(cli.Ctx, idKey, appURL)
+		c.initializeEventListeners(cli.Ctx, idKey, appURL, sshURL)
 	}
 
 	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
@@ -663,8 +696,8 @@ func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey
 
 // initializeEventListeners creates special scoped contexts and passes them to
 // event listeners.
-func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL) {
-	ctx := conf.WithAppURL(parent, appURL)
+func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL, sshURL *url.URL) {
+	ctx := conf.WithURL(parent, appURL, sshURL)
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{ClientID: k.ID})
 	// Mask out the server's private key from the context passed to the listener
 	ctx = idkey.NewContext(ctx, nil)

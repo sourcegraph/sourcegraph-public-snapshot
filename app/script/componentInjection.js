@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (el) {
 		ReactDOM.render(
 			<RepoCloneBox
-				SSHCloneURL={el.dataset.sshCloneUrl}
+				SSHCloneURL={el.dataset.ssh}
 				HTTPCloneURL={el.dataset.httpCloneUrl}/>, el
 		);
 	}

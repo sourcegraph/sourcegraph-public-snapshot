@@ -165,6 +165,7 @@ func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, err
 	if !repo.Mirror {
 		// The clone URL for a repo stored locally is set to the repo's path at the current host.
 		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepo(uri)).String()
+		repo.SSHCloneURL = fmt.Sprintf("%s/%s", conf.SSHURL(ctx).String(), uri)
 	}
 
 	return repo, nil
