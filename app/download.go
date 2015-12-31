@@ -124,8 +124,8 @@ cloud_post() {
 		export SRC_HOSTNAME=$(curl -H 'Metadata-Flavor: Google' -fs http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
 	fi
 
-	sed -i 's|^;AppURL =.*|AppURL = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
-	echo 'HTTPAddr = :80' >> /etc/sourcegraph/config.ini
+	sed -i 's|^;app-url =.*|app-url = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
+	echo 'http-addr = :80' >> /etc/sourcegraph/config.ini
 	restart src || echo ok
 	# TODO: set up self-signed TLS certs
 

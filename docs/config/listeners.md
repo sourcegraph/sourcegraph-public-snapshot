@@ -21,11 +21,11 @@ to avoid leaking credentials on the wire.
 
 # Listen ports
 
-You can configure the HTTP listener with:
+You can set the HTTP listener address with the `--http-addr` flag:
 
 ```
-[serve]
-HTTPAddr = :3080
+src serve --http-addr=:3080
+src serve --http-addr=1.2.3.4:3080
 ```
 
 The port can have the following formats:
@@ -49,17 +49,13 @@ sudo setcap cap_net_bind_service=+ep /usr/bin/src
 Then you can configure the listeners as follows:
 
 ```
-[serve]
-HTTPAddr = :80
+src serve --http-addr=:80
 ```
 
 Or, if [using TLS]({{< relref "config/https.md" >}}):
 
 ```
-[serve]
-HTTPSAddr = :443
-CertFile = my.crt
-KeyFile = my.key
+src serve --https-addr=:443 --tls-cert=my.crt --tls-key=my.key
 ```
 
 Note: This is not supported on all Linux systems and may introduce

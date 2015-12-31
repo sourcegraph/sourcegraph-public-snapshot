@@ -14,11 +14,11 @@ With this configuration Sourcegraph will store all user data, Tracker threads, C
 
 ## Enable PostgreSQL Backend
 
-In order to use the `pgsql` backend you will need to use the `src serve --local-store=pgsql` CLI option or add the following to your configuration file:
+To use the `pgsql` backend, use the `src serve --local-store=pgsql` CLI option or add the following to your configuration file:
 
 ```
-[serve.Local store]
-Store = pgsql
+[serve]
+local-store = pgsql
 ```
 
 Note: If you installed Sourcegraph using one of the standard distribution or cloud provider packages,
@@ -50,7 +50,8 @@ The `src pgsql` command provides subcommands to drop, reset and truncate the dat
 To use S3 as a storage backend for `srclib` Code Intelligence data, set the `graphstore.root` option:
 
 ```
---graphstore.root=s3://bucketname
+[serve]
+graphstore.root = s3://bucketname
 ```
 
 Tell `src` how to find and authenticate to your S3 bucket by setting environment variables:

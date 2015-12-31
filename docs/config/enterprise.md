@@ -19,8 +19,8 @@ follow the [LDAP configuration instructions]({{< relref "config/authentication.m
 To airgap your Sourcegraph server from Sourcegraph.com, add the following to your `config.ini`:
 
 ```
-[serve.Federation]
-IsRoot = true
+[serve]
+fed.is-root = true
 ```
 
 [Read more about Sourcegraph data collection.]({{< relref "management/data_collection.md" >}})

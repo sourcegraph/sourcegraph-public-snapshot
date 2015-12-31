@@ -77,8 +77,8 @@ First, get shell access to your Sourcegraph server (`src.example.com`) and ensur
 Now you'll need to either use the `src serve --fs.git-repo-mirror` CLI flag or add this to your configuration file:
 
 ```
-[serve.Local filesystem storage (fs store)]
-GitRepoMirror = <LocalRepoURI>:<GitRemoteURL>
+[serve]
+fs.git-repo-mirror = <LocalRepoURI>:<GitRemoteURL>
 ```
 
 - More than one repo can be mirrored by simply adding a comma.
@@ -88,8 +88,8 @@ Sourcegraph will run with configuration found at `/etc/sourcegraph/config.ini`.
 Example:
 
 ```
-[serve.Local filesystem storage (fs store)]
-GitRepoMirror = my/repo:git@github.com:my/repo,other/hacks:git@github.com:me/hacks
+[serve]
+fs.git-repo-mirror = my/repo:git@github.com:my/repo,other/hacks:git@github.com:me/hacks
 ```
 
 Would cause any pushes to `src.example.com/my/repo` to be mirrored to `git@github.com/my/repo` and likewise any changes to `src.example.com/other/hacks` would be mirrored to `git@github.com:me/hacks`.

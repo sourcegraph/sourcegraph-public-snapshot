@@ -13,22 +13,22 @@ Sourcegraph to use a TLS (SSL) certificate and key as follows.
 ```
 [serve]
 ; Points to a TLS certificate and key.
-CertFile = /path/to/cert.pem
-KeyFile = /path/to/key.pem
+tls-cert = /path/to/cert.pem
+tls-key = /path/to/key.pem
 
 ; Sets the ports for the Web app, REST API, and gRPC API.
-HTTPSAddr = :3443
+https-addr = :3443
 
-; Be sure that your AppURL is "https://...".
+; Be sure that your app-url is "https://...".
 ;
 ; This also assumes that you have a proxy that forwards
 ; example.com:443 to the server's port 3443.
 ; If you would like to use a non-standard port for https,
 ; you will need to specify the port in AppURL.
-AppURL = https://example.com:3443
+app-url = https://example.com:3443
 
 ; Redirect "http://..." requests to "https://...".
-RedirectToHTTPS = true
+app.redirect-to-https = true
 ```
 
 

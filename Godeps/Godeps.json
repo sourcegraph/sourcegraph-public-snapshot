@@ -698,7 +698,7 @@
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
 			"Comment": "v1-331-g6042383",
-			"Rev": "6042383cab1badb14f240685a0a4c0dc9f3796fe"
+			"Rev": "dace7e122742808bf6016bdc6510649d84f2a31e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",

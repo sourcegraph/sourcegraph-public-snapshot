@@ -26,5 +26,5 @@ the `--ssh-addr` flag or update your `config.ini` file:
 
 ```
 [serve]
-SSHAddr = :22
+ssh-addr = :22
 ```

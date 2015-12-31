@@ -139,27 +139,29 @@ func (g *Group) optionByName(name string, namematch func(*Option, string) bool) 
 	prio := 0
 	var retopt *Option
 
-	for _, opt := range g.options {
-		if namematch != nil && namematch(opt, name) && prio < 4 {
-			retopt = opt
-			prio = 4
-		}
+	g.eachGroup(func(g *Group) {
+		for _, opt := range g.options {
+			if namematch != nil && namematch(opt, name) && prio < 4 {
+				retopt = opt
+				prio = 4
+			}
 
-		if name == opt.field.Name && prio < 3 {
-			retopt = opt
-			prio = 3
-		}
+			if name == opt.field.Name && prio < 3 {
+				retopt = opt
+				prio = 3
+			}
 
-		if name == opt.LongNameWithNamespace() && prio < 2 {
-			retopt = opt
-			prio = 2
-		}
+			if name == opt.LongNameWithNamespace() && prio < 2 {
+				retopt = opt
+				prio = 2
+			}
 
-		if opt.ShortName != 0 && name == string(opt.ShortName) && prio < 1 {
-			retopt = opt
-			prio = 1
+			if opt.ShortName != 0 && name == string(opt.ShortName) && prio < 1 {
+				retopt = opt
+				prio = 1
+			}
 		}
-	}
+	})
 
 	return retopt
 }
