@@ -25,6 +25,8 @@ src repo create -m --clone-url=http://host.com/my/repo <repo-name>
 
 GitHub, Bitbucket, and other git hosting services often allow users to configure their hosts to authenticate using SSH keys (See [here](https://help.github.com/articles/generating-ssh-keys/) for GitHub's instructions, and [here](https://confluence.atlassian.com/bitbucket/set-up-ssh-for-git-728138079.html) for Bitbucket's instructions on how to set this up).
 
+**Note: For Linux distribution installations of Sourcegraph, a `sourcegraph` user is created and Sourcegraph is run from this user. If setting up SSH mirroring on a Linux installation, be sure to generate an SSH key from this `sourcegraph` user, and use *this* SSH public key with your git hosting service.**
+
 Determine the SSH link for the private repository you would like to clone. It typically has the form of `git@bitbucket.org:userorganization/test_repository.git`, and can be accessed on your GitHub or Bitbucket repository page (you may have to select SSH from the standard clone widget, HTTPS is selected by default).
 
 
