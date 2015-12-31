@@ -12,6 +12,7 @@ import (
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
 	"github.com/kr/fs"
+	"sourcegraph.com/sourcegraph/go-flags"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"sourcegraph.com/sourcegraph/srclib"
@@ -24,70 +25,72 @@ import (
 )
 
 func init() {
-	c, err := CLI.AddCommand("api",
-		"API",
-		"",
-		&apiCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		c, err := cli.AddCommand("api",
+			"API",
+			"",
+			&apiCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	/* START APIDescribeCmdDoc OMIT
-	This command is used by editor plugins to retrieve information about
-	the identifier at a specific position in a file.
+		/* START APIDescribeCmdDoc OMIT
+		This command is used by editor plugins to retrieve information about
+		the identifier at a specific position in a file.
 
-	It will hit Sourcegraph's API to get a definition's examples. With the
-	flag `--no-examples`, this command does not hit Sourcegraph's API.
-		END APIDescribeCmdDoc OMIT */
-	_, err = c.AddCommand("describe",
-		"display documentation for the def under the cursor",
-		"Returns information about the definition referred to by the cursor's current position in a file.",
-		&apiDescribeCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		It will hit Sourcegraph's API to get a definition's examples. With the
+		flag `--no-examples`, this command does not hit Sourcegraph's API.
+			END APIDescribeCmdDoc OMIT */
+		_, err = c.AddCommand("describe",
+			"display documentation for the def under the cursor",
+			"Returns information about the definition referred to by the cursor's current position in a file.",
+			&apiDescribeCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	/* START APIListCmdDoc OMIT
-	This command will return a list of all the definitions,
-	references, and docs in a file. It can be used for finding all
-	uses of a reference in a file.
-	END APIListCmdDoc OMIT */
-	_, err = c.AddCommand("list",
-		"list all defs, refs, and docs in a given file",
-		"Return a list of all definitions, references, and docs that are in the current file.",
-		&apiListCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		/* START APIListCmdDoc OMIT
+		This command will return a list of all the definitions,
+		references, and docs in a file. It can be used for finding all
+		uses of a reference in a file.
+		END APIListCmdDoc OMIT */
+		_, err = c.AddCommand("list",
+			"list all defs, refs, and docs in a given file",
+			"Return a list of all definitions, references, and docs that are in the current file.",
+			&apiListCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	/* START APIDepsCmdDoc OMIT
-	This command returns a list of all resolved and unresolved
-	dependencies for the current repository.
-		END APIDepsCmdDoc OMIT */
-	_, err = c.AddCommand("deps",
-		"list all resolved and unresolved dependencies",
-		`Return a list of all resolved and unresolved dependencies that are in the current repository.`,
-		&apiDepsCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		/* START APIDepsCmdDoc OMIT
+		This command returns a list of all resolved and unresolved
+		dependencies for the current repository.
+			END APIDepsCmdDoc OMIT */
+		_, err = c.AddCommand("deps",
+			"list all resolved and unresolved dependencies",
+			`Return a list of all resolved and unresolved dependencies that are in the current repository.`,
+			&apiDepsCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	/* START APIUnitsCmdDoc OMIT
-	This command returns a list of all of the source units in the current
-	repository.
-		END APIUnitsCmdDoc OMIT */
-	_, err = c.AddCommand("units",
-		"list all source unit information",
-		"Return a list of all source units that are in the current repository.",
-		&apiUnitsCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		/* START APIUnitsCmdDoc OMIT
+		This command returns a list of all of the source units in the current
+		repository.
+			END APIUnitsCmdDoc OMIT */
+		_, err = c.AddCommand("units",
+			"list all source unit information",
+			"Return a list of all source units that are in the current repository.",
+			&apiUnitsCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type APICmd struct{}

@@ -14,15 +14,17 @@ import (
 )
 
 func init() {
-	c, err := CLI.AddCommand("tool",
-		"run a tool",
-		"Run a srclib tool with the specified arguments.",
-		&toolCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	c.ArgsRequired = true
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		c, err := cli.AddCommand("tool",
+			"run a tool",
+			"Run a srclib tool with the specified arguments.",
+			&toolCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.ArgsRequired = true
+	})
 }
 
 type ToolCmd struct {

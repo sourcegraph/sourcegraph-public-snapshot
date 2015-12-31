@@ -4,18 +4,22 @@ import (
 	"log"
 	"os"
 
+	"sourcegraph.com/sourcegraph/go-flags"
+
 	"sourcegraph.com/sourcegraph/makex"
 )
 
 func init() {
-	_, err := CLI.AddCommand("makefile",
-		"prints the Makefile that the `make` subcommand executes",
-		"The makefile command prints the Makefile that the `make` subcommand will execute.",
-		&makefileCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		_, err := cli.AddCommand("makefile",
+			"prints the Makefile that the `make` subcommand executes",
+			"The makefile command prints the Makefile that the `make` subcommand will execute.",
+			&makefileCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type MakefileCmd struct {

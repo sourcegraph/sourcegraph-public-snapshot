@@ -134,11 +134,11 @@ cloud_post() {
 		curl -L https://golang.org/dl/go1.5.1.linux-amd64.tar.gz | sudo tar zx -C /usr/local/
 		echo 'export PATH="$PATH:/usr/local/go/bin"' >> /etc/profile
 		source /etc/profile
-		sudo -iu sourcegraph GOPATH=/tmp sh -c 'src toolchain install go'
+		sudo -iu sourcegraph GOPATH=/tmp sh -c 'src srclib toolchain install go'
 	fi
 
 	if [ "$SRC_LANGUAGE_JAVA" == "1" ]; then
-		sudo -iu sourcegraph sh -c 'src toolchain install java'
+		sudo -iu sourcegraph sh -c 'src srclib toolchain install java'
 	fi
 }
 

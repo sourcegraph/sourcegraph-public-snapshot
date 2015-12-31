@@ -4,17 +4,20 @@ import (
 	"log"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
+	"sourcegraph.com/sourcegraph/go-flags"
 )
 
 func init() {
-	_, err := CLI.AddCommand("repo",
-		"display current repo info",
-		"The repo subcommand displays autodetected info about the current repo.",
-		&repoCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		_, err := cli.AddCommand("repo",
+			"display current repo info",
+			"The repo subcommand displays autodetected info about the current repo.",
+			&repoCmd{},
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type repoCmd struct{}

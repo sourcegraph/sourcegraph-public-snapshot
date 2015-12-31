@@ -6,17 +6,20 @@ import (
 	"sourcegraph.com/sourcegraph/srclib"
 
 	"github.com/sqs/go-selfupdate/selfupdate"
+	"sourcegraph.com/sourcegraph/go-flags"
 )
 
 func init() {
-	_, err := CLI.AddCommand("selfupdate",
-		"update this program",
-		"The selfupdate command updates the srclib binary.",
-		&selfUpdateCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		_, err := cli.AddCommand("selfupdate",
+			"update this program",
+			"The selfupdate command updates the srclib binary.",
+			&selfUpdateCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 var selfUpdateCmd SelfUpdateCmd

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
+	"sourcegraph.com/sourcegraph/go-flags"
 
 	"sourcegraph.com/sourcegraph/makex"
 	"sourcegraph.com/sourcegraph/srclib"
@@ -18,17 +19,19 @@ import (
 )
 
 func init() {
-	c, err := CLI.AddCommand("make",
-		"plans and executes plan",
-		`Generates a plan (in Makefile form, in memory) for analyzing the tree and executes the plan. `,
-		&makeCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		c, err := cli.AddCommand("make",
+			"plans and executes plan",
+			`Generates a plan (in Makefile form, in memory) for analyzing the tree and executes the plan. `,
+			&makeCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	SetDefaultRepoOpt(c)
-	setDefaultRepoSubdirOpt(c)
+		SetDefaultRepoOpt(c)
+		setDefaultRepoSubdirOpt(c)
+	})
 }
 
 type MakeCmd struct {

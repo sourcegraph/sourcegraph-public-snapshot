@@ -34,27 +34,29 @@ import (
 )
 
 func init() {
-	storeC, err := CLI.AddCommand("store",
-		"graph store commands",
-		"",
-		&storeCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	lrepo, _ := OpenLocalRepo()
-	if lrepo != nil && lrepo.RootDir != "" {
-		absDir, err := os.Getwd()
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		storeC, err := cli.AddCommand("store",
+			"graph store commands",
+			"",
+			&storeCmd,
+		)
 		if err != nil {
 			log.Fatal(err)
 		}
-		relDir, err := filepath.Rel(absDir, lrepo.RootDir)
-		if err == nil {
-			SetOptionDefaultValue(storeC.Group, "root", filepath.Join(relDir, store.SrclibStoreDir))
+		lrepo, _ := OpenLocalRepo()
+		if lrepo != nil && lrepo.RootDir != "" {
+			absDir, err := os.Getwd()
+			if err != nil {
+				log.Fatal(err)
+			}
+			relDir, err := filepath.Rel(absDir, lrepo.RootDir)
+			if err == nil {
+				SetOptionDefaultValue(storeC.Group, "root", filepath.Join(relDir, store.SrclibStoreDir))
+			}
 		}
-	}
 
-	InitStoreCmds(storeC)
+		InitStoreCmds(storeC)
+	})
 }
 
 func InitStoreCmds(c *flags.Command) {

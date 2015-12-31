@@ -21,60 +21,62 @@ import (
 )
 
 func init() {
-	c, err := CLI.AddCommand("toolchain",
-		"manage toolchains",
-		"Manage srclib toolchains.",
-		&toolchainCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	c.Aliases = []string{"tc"}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		c, err := cli.AddCommand("toolchain",
+			"manage toolchains",
+			"Manage srclib toolchains.",
+			&toolchainCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.Aliases = []string{"tc"}
 
-	_, err = c.AddCommand("list",
-		"list available toolchains",
-		"List available toolchains.",
-		&toolchainListCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		_, err = c.AddCommand("list",
+			"list available toolchains",
+			"List available toolchains.",
+			&toolchainListCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	_, err = c.AddCommand("list-tools",
-		"list tools in toolchains",
-		"List available tools in all toolchains.",
-		&toolchainListToolsCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		_, err = c.AddCommand("list-tools",
+			"list tools in toolchains",
+			"List available tools in all toolchains.",
+			&toolchainListToolsCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	_, err = c.AddCommand("bundle",
-		"bundle a toolchain",
-		"The bundle subcommand builds and archives toolchain bundles (.tar.gz files, one per toolchain variant). Bundles contain prebuilt toolchains and allow people to use srclib toolchains without needing to compile them on their own system.",
-		&toolchainBundleCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		_, err = c.AddCommand("bundle",
+			"bundle a toolchain",
+			"The bundle subcommand builds and archives toolchain bundles (.tar.gz files, one per toolchain variant). Bundles contain prebuilt toolchains and allow people to use srclib toolchains without needing to compile them on their own system.",
+			&toolchainBundleCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	_, err = c.AddCommand("unbundle",
-		"unbundle a toolchain",
-		"The unbundle subcommand unarchives a toolchain bundle (previously created with the 'bundle' subcommand). It allows people to download and use prebuilt toolchains without needing to compile them on their system.",
-		&toolchainUnbundleCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		_, err = c.AddCommand("unbundle",
+			"unbundle a toolchain",
+			"The unbundle subcommand unarchives a toolchain bundle (previously created with the 'bundle' subcommand). It allows people to download and use prebuilt toolchains without needing to compile them on their system.",
+			&toolchainUnbundleCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	_, err = c.AddCommand("install",
-		"install toolchains",
-		"Download and install toolchains",
-		&toolchainInstallCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		_, err = c.AddCommand("install",
+			"install toolchains",
+			"Download and install toolchains",
+			&toolchainInstallCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type ToolchainPath string
@@ -287,6 +289,7 @@ var stdToolchains = toolchainMap{
 	"ruby":       toolchainInstaller{"Ruby (sourcegraph.com/sourcegraph/srclib-ruby)", installRubyToolchain},
 	"javascript": toolchainInstaller{"JavaScript (sourcegraph.com/sourcegraph/srclib-javascript)", installJavaScriptToolchain},
 	"java":       toolchainInstaller{"Java (sourcegraph.com/sourcegraph/srclib-java)", installJavaToolchain},
+	"basic":      toolchainInstaller{"PHP, Objective-C (sourcegraph.com/sourcegraph/srclib-basic)", installBasicToolchain},
 }
 
 func (m toolchainMap) listKeys() string {
@@ -490,6 +493,39 @@ Refusing to install Java toolchain because %s is not installed or is not on the 
 	}
 
 	log.Println("Building Java toolchain program")
+	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func installBasicToolchain() error {
+	const toolchain = "sourcegraph.com/sourcegraph/srclib-basic"
+
+	reqCmds := []string{"java"}
+	for _, cmd := range reqCmds {
+		if _, err := exec.LookPath(cmd); isExecErrNotFound(err) {
+			return fmt.Errorf(`
+Refusing to install Basic toolchain because %s is not installed or is not on the system path.
+
+-> Please install %s and run this command again`, cmd, cmd)
+		} else if err != nil {
+			return err
+		}
+	}
+
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+		return err
+	}
+
+	log.Println("Downloading Basic toolchain in", srclibpathDir)
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+		return err
+	}
+
+	log.Println("Building Basic toolchain program")
 	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
 		return err
 	}

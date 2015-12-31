@@ -4,22 +4,26 @@ import (
 	"log"
 	"os"
 
+	"sourcegraph.com/sourcegraph/go-flags"
+
 	"sourcegraph.com/sourcegraph/srclib/config"
 )
 
 func init() {
-	// TODO(sqs): "do-all" is a stupid name
-	c, err := CLI.AddCommand("do-all",
-		"fully process (config, plan, execute, and import)",
-		`Fully processes a tree: configures it, plans the execution, executes all analysis steps, and imports the data.`,
-		&doAllCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		// TODO(sqs): "do-all" is a stupid name
+		c, err := cli.AddCommand("do-all",
+			"fully process (config, plan, execute, and import)",
+			`Fully processes a tree: configures it, plans the execution, executes all analysis steps, and imports the data.`,
+			&doAllCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	SetDefaultRepoOpt(c)
-	setDefaultRepoSubdirOpt(c)
+		SetDefaultRepoOpt(c)
+		setDefaultRepoSubdirOpt(c)
+	})
 }
 
 type DoAllCmd struct {

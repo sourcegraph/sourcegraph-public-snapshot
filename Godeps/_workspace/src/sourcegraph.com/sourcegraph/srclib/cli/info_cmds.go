@@ -3,20 +3,24 @@ package cli
 import (
 	"log"
 
+	"sourcegraph.com/sourcegraph/go-flags"
+
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
 	"sourcegraph.com/sourcegraph/srclib/plan"
 )
 
 func init() {
-	_, err := CLI.AddCommand("info",
-		"show info about enabled capabilities",
-		"Shows information about enabled capabilities in this tool as well as system information.",
-		&infoCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		_, err := cli.AddCommand("info",
+			"show info about enabled capabilities",
+			"Shows information about enabled capabilities in this tool as well as system information.",
+			&infoCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type InfoCmd struct{}

@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
+	"sourcegraph.com/sourcegraph/go-flags"
 )
 
 // Version of srclib.
@@ -13,14 +14,16 @@ import (
 var Version = "dev"
 
 func init() {
-	_, err := CLI.AddCommand("version",
-		"show version",
-		"The version subcommand displays the current version of this srclib program.",
-		&versionCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		_, err := cli.AddCommand("version",
+			"show version",
+			"The version subcommand displays the current version of this srclib program.",
+			&versionCmd{},
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type versionCmd struct{}

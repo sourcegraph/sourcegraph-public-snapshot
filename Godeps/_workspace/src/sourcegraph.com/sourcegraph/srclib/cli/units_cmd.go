@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
+	"sourcegraph.com/sourcegraph/go-flags"
 
 	"sourcegraph.com/sourcegraph/srclib/config"
 	"sourcegraph.com/sourcegraph/srclib/scan"
@@ -15,17 +16,19 @@ import (
 )
 
 func init() {
-	c, err := CLI.AddCommand("units",
-		"lists source units",
-		`Lists source units in the repository or directory tree rooted at DIR (or the current directory if DIR is not specified).`,
-		&unitsCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		c, err := cli.AddCommand("units",
+			"lists source units",
+			`Lists source units in the repository or directory tree rooted at DIR (or the current directory if DIR is not specified).`,
+			&unitsCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	SetDefaultRepoOpt(c)
-	setDefaultRepoSubdirOpt(c)
+		SetDefaultRepoOpt(c)
+		setDefaultRepoSubdirOpt(c)
+	})
 }
 
 // scanUnitsIntoConfig uses cfg to scan for source units. It modifies

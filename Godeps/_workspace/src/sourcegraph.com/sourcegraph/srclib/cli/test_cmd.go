@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
+	"sourcegraph.com/sourcegraph/go-flags"
 
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
@@ -22,9 +23,10 @@ import (
 )
 
 func init() {
-	_, err := CLI.AddCommand("test",
-		"run test cases",
-		`Tests a tool. If no TREEs are specified, all directories in testdata/case relative to the current directory are
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		_, err := cli.AddCommand("test",
+			"run test cases",
+			`Tests a tool. If no TREEs are specified, all directories in testdata/case relative to the current directory are
 used (except those whose name begins with "_").
 
 Expected and actual outputs for a tree are stored in TREE/../../{expected,actual}/TREEBASE, respectively, where TREEBASE is the basename of TREE.
@@ -51,19 +53,20 @@ And the actual test output is written to:
 
   testdata/actual/foo/*
 `,
-		&testCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+			&testCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	_, err = CLI.AddCommand("diff",
-		"display semantic diff of two output files",
-		"Displays easier-to-read diff of two srclib output files. Intended for debugging use when developing srclib toolchains",
-		&diffCmd)
-	if err != nil {
-		log.Fatal(err)
-	}
+		_, err = cli.AddCommand("diff",
+			"display semantic diff of two output files",
+			"Displays easier-to-read diff of two srclib output files. Intended for debugging use when developing srclib toolchains",
+			&diffCmd)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type TestCmd struct {

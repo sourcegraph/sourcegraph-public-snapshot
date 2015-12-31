@@ -5,20 +5,24 @@ import (
 	"log"
 	"os"
 
+	"sourcegraph.com/sourcegraph/go-flags"
+
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/grapher"
 )
 
 func init() {
-	c, err := CLI.AddCommand("internal", "(internal subcommands - do not use)", "Internal subcommands. Do not use.", &struct{}{})
-	if err != nil {
-		log.Fatal(err)
-	}
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		c, err := cli.AddCommand("internal", "(internal subcommands - do not use)", "Internal subcommands. Do not use.", &struct{}{})
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	_, err = c.AddCommand("normalize-graph-data", "", "", &normalizeGraphDataCmd)
-	if err != nil {
-		log.Fatal(err)
-	}
+		_, err = c.AddCommand("normalize-graph-data", "", "", &normalizeGraphDataCmd)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 type NormalizeGraphDataCmd struct {

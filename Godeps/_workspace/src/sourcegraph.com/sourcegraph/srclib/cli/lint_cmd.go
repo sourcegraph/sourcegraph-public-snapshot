@@ -17,12 +17,14 @@ import (
 
 	"github.com/alexsaveliev/go-colorable-wrapper"
 	"github.com/kr/fs"
+	"sourcegraph.com/sourcegraph/go-flags"
 )
 
 func init() {
-	c, err := CLI.AddCommand("lint",
-		"detect common issues in srclib output data",
-		`The lint command checks srclib output files (*.graph.json, *.unit.json, *.depresolve.json, etc.) for common data integrity and correctness issues:
+	cliInit = append(cliInit, func(cli *flags.Command) {
+		c, err := cli.AddCommand("lint",
+			"detect common issues in srclib output data",
+			`The lint command checks srclib output files (*.graph.json, *.unit.json, *.depresolve.json, etc.) for common data integrity and correctness issues:
 
 * Refs that point to nonexistent defs in the same source unit
 
@@ -34,13 +36,14 @@ If no PATHs are specified, the current directory is used. If a PATH is a directo
 
 To suppress specific kinds of warnings, or to include only specific kinds of warnings, pipe the output of the lint command through grep.
 `,
-		&lintCmd,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+			&lintCmd,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	SetDefaultRepoOpt(c)
+		SetDefaultRepoOpt(c)
+	})
 }
 
 type LintCmd struct {
