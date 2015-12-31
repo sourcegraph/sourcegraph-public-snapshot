@@ -65,11 +65,4 @@ The Docker image is built from the
 docker build -t sourcegraph/sourcegraph:latest .
 ```
 
-
-# Known issues
-
-* The Sourcegraph server version is not set correctly in the Docker
-  image. As a result, the Web app erroneously displays a message in
-  the footer about upgrading.
-
 {{< ads_conversion >}}
