@@ -3,9 +3,9 @@ title = "Git mirroring"
 description = "Make Sourcegraph read from or write to an external repository"
 +++
 
-Sourcegraph works great as the system of record, but there are some situations in which you will want to mirror your repositories hosted on Sourcegraph to a Git repository hosted somewhere else. With configuration, Sourcegraph can automatically push changes to an external code host each time someone pushes changes to Sourcegraph.
+Sourcegraph is designed to work as a standalone git server, but there are some situations in which you will want to mirror your repositories hosted on Sourcegraph to a git repository hosted somewhere else. With configuration, Sourcegraph can automatically push changes to an external code host each time someone pushes changes to Sourcegraph.
 
-Likewise, there are situations in which you will want to to mirror your externally hosted Git repositories on Sourcegraph. With this configuration, Sourcegraph will poll the external repository for changes on a short interval.
+Likewise, there are situations in which you will want to to mirror your externally hosted git repositories on Sourcegraph. With this configuration, Sourcegraph will poll the external repository for changes on a short interval.
 
 # Mirroring *from* externally hosted repositories
 
@@ -102,4 +102,4 @@ sudo restart src
 
 ## 4. Test it out!
 
-Now that everything is configured, simply push any change to your Sourcegraph repository and watch as it is mirrored to the remote Git URL you specified!
+Now that everything is configured, simply push any change to your Sourcegraph repository and watch as it is mirrored to the remote git URL you specified!
