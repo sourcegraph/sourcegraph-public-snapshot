@@ -218,7 +218,7 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 
 func (c *ServeCmd) configureSSHURL(appURL *url.URL) (*url.URL, error) {
 	if c.SSHAddr != "" {
-		urlRegexp, err := regexp.Compile(`http(s)?://([^:])*(.)*`)
+		urlRegexp, err := regexp.Compile(`https?://([^:]*)(.*)`)
 		if err != nil {
 			return nil, err
 		}
