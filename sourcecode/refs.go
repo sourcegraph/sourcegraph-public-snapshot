@@ -2,6 +2,7 @@ package sourcecode
 
 import (
 	"errors"
+	"fmt"
 	"path"
 	"sort"
 
@@ -47,7 +48,7 @@ func sanitizeEntry(entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWit
 		return ErrIsNotFile
 	}
 	if entrySpec.RepoRev.CommitID == "" {
-		panic("assumes that CommitID has been resolved and stored, but it is empty (in the func that calls get, resolve the CommitID from the Rev and store it in the entrySpec's RepoRevSpec before calling get")
+		return fmt.Errorf("CommitID has not been resolved and stored (it is empty). The CommitID should be resolved from Rev and stored in the entrySpec's RepoRevSpec before calling the caller of this method.")
 	}
 	if entry.EndByte == 0 {
 		entry.EndByte = int64(len(entry.Contents))
