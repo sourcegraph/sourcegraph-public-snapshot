@@ -148,6 +148,7 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 		ClientID: client.ID,
 		Service:  "RegisteredClients",
 		Method:   "Create",
+		URL:      client.ClientName,
 		Result:   "success",
 	})
 
@@ -160,10 +161,8 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 }
 
 func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
-	if isAdmin, err := s.checkCtxUserIsAdmin(ctx, client.ID); err != nil {
-		return nil, err
-	} else if !isAdmin {
-		return nil, grpc.Errorf(codes.PermissionDenied, "RegisteredClients.Update: need admin access on client to complete this operation")
+	if authpkg.ActorFromContext(ctx).ClientID != client.ID {
+		return nil, grpc.Errorf(codes.PermissionDenied, "RegisteredClients.Update: need to be authenticated as the client to complete this operation")
 	}
 
 	store, err := registeredClientsOrError(ctx)
@@ -184,6 +183,16 @@ func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.Regi
 	if err := store.Update(ctx, *client); err != nil {
 		return nil, err
 	}
+
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:     "notif",
+		ClientID: client.ID,
+		Service:  "RegisteredClients",
+		Method:   "Update",
+		URL:      client.ClientName,
+		Result:   "success",
+	})
+
 	events.Publish(events.ClientUpdateEvent, events.ClientPayload{
 		Actor:    authpkg.UserSpecFromContext(ctx),
 		ClientID: client.ID,

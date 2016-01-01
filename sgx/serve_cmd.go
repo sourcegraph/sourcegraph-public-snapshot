@@ -897,6 +897,7 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey, r
 			log15.Error("Could not fetch client from root", "error", err, "retries_left", retries)
 			time.Sleep(2 * time.Second)
 			c.registerClientWithRoot(appURL, idKey, retries)
+			return
 		} else {
 			log.Fatalf("Could not contact root server at %v, please email help@sourcegraph.com", fed.Config.RootURLStr)
 		}
