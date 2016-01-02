@@ -3,6 +3,7 @@ package local
 import (
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/AaronO/go-git-http"
 	"github.com/prometheus/client_golang/prometheus"
@@ -123,6 +124,17 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	for _, change := range updateResult.Changes {
 		switch change.Op {
 		case vcs.NewOp, vcs.ForceUpdatedOp:
+			// Skip refs that aren't branches, such as GitHub
+			// "refs/pull/123/head" and "refs/pull/123/merge" refs
+			// that are created for each pull request. In the future
+			// we may want to handle these, but skipping them for now
+			// is good because otherwise when we add a new mirror
+			// repo, builds and notifications are triggered for all
+			// historical PRs.
+			if repo.VCS == "git" && strings.HasPrefix(change.Branch, "refs/") {
+				continue
+			}
+
 			// Determine the event type, and if it's a force push mark for later to
 			// avoid additional work.
 			eventType := events.GitCreateBranchEvent
