@@ -1,5 +1,7 @@
 # dev
 
+# 0.9.0
+
 - Display the latest commit that touched each file and directory on
   the repository tree listing. This may cause degraded performance on
   extremely large Git repositories; use the
