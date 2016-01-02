@@ -191,6 +191,7 @@ func (tt *changesetUpdateTester) withChangesets(changesets ...*sourcegraph.Chang
 // into a buffer.
 func (tt *changesetUpdateTester) run(ops []sourcegraph.ChangesetUpdateAffectedOp) {
 	var c changesets
+	tt.configServices()
 	tt.configRepoStore()
 	tt.configChangesetStore()
 
@@ -221,6 +222,12 @@ outer:
 		}
 		tt.t.Errorf("ops mismatch error\n\nGOT:\n\n%# v\n\nEXPECTED:\n\n%# v\n", p(tt.out), p(ops))
 		break
+	}
+}
+
+func (tt *changesetUpdateTester) configServices() {
+	tt.mock.servers.Deltas.Get_ = func(ctx context.Context, spec *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
+		return &sourcegraph.Delta{}, nil
 	}
 }
 

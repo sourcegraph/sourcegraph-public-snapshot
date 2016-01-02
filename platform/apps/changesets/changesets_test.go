@@ -332,6 +332,7 @@ func (ts *testSuite) changesetEqual(got, want *sourcegraph.Changeset) error {
 func newTestSuite(t *testing.T) (*testSuite, error) {
 	// Spawn a test server.
 	server, ctx := testserver.NewUnstartedServer()
+	server.Config.Serve.NoWorker = true
 	server.Config.ServeFlags = append(server.Config.ServeFlags,
 		&authutil.Flags{DisableAccessControl: true},
 	)
@@ -998,10 +999,10 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != "" && gotHead != wantHeadCommitID {
+	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != wantHeadCommitID {
 		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
 	}
-	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != "" && gotBase != wantBaseCommitID {
+	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != wantBaseCommitID {
 		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
 	}
 
