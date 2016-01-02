@@ -1,5 +1,7 @@
 # dev
 
+# 0.10.0
+
 - Builds are now identified by a numeric build ID, instead of by
   commit ID. After this update, build metadata from pre-update builds
   will not be available, but build results (source code analysis) will
