@@ -48,7 +48,7 @@
 							{
 								"type": "a",
 								"props": {
-									"href": "/someRepo@undefined/.tree/foo.go?startline=3&endline=7&seldef=/someURL",
+									"href": "/someRepo/.tree/foo.go?startline=3&endline=7&seldef=/someURL",
 									"onClick": {
 										"defaultPrevented": true,
 										"dispatched": [

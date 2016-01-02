@@ -29,7 +29,7 @@ class CodeFileRouter extends Component {
 		let pathParts = state.uri.path.substr(1).split("/.");
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0];
-		state.rev = decodeURIComponent(repoParts[1]) || "master";
+		state.rev = decodeURIComponent(repoParts[1] || "");
 
 		// We split the URI path based on `/.` because that usually denotes an
 		// operation, but in the case of the tree operation consider this path:
@@ -61,7 +61,9 @@ class CodeFileRouter extends Component {
 		state.endLine = vars["endline"] ? parseInt(vars["endline"], 10) : null;
 		state.selectedDef = vars["seldef"] || null;
 
-		state.def = vars["def"] ? `/${state.repo}@${state.rev}/.${keys[0]}/${vars[keys[0]]}/.def/${vars["def"]}` : null;
+		let revPart = state.rev ? `@${state.rev}` : "";
+
+		state.def = vars["def"] ? `/${state.repo}${revPart}/.${keys[0]}/${vars[keys[0]]}/.def/${vars["def"]}` : null;
 	}
 
 	_navigate(path, query) {
@@ -104,7 +106,8 @@ class CodeFileRouter extends Component {
 
 	_filePath() {
 		let tree = this.state.tree || DefStore.defs.get(this.state.def).File.Path;
-		return `/${this.state.repo}@${this.state.rev}/.tree/${tree}`;
+		let revPart = this.state.rev ? `@${this.state.rev}` : "";
+		return `/${this.state.repo}${revPart}/.tree/${tree}`;
 	}
 
 	render() {

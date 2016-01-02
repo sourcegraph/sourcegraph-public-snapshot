@@ -59,7 +59,8 @@ class SearchResultsRouter extends Component {
 	}
 
 	_searchPath() {
-		return `/${this.state.repo}@${this.state.rev}/.search`;
+		let revPart = this.state.rev ? `@${this.state.rev}` : "";
+		return `/${this.state.repo}${revPart}/.search`;
 	}
 
 	render() {

@@ -49,7 +49,7 @@ func treeEntryFixture(sourceContents []string) *sourcegraph.TreeEntry {
 func TestSourceboxDef(t *testing.T) {
 	c, mock := apptest.New()
 
-	def := &sourcegraph.Def{Def: graph.Def{DefKey: graph.DefKey{Repo: "my/repo", UnitType: "GoPackage", Unit: "u", Path: "p"}}}
+	def := &sourcegraph.Def{Def: graph.Def{DefKey: graph.DefKey{Repo: "my/repo", CommitID: "c", UnitType: "GoPackage", Unit: "u", Path: "p"}}}
 
 	entry := treeEntryFixture([]string{"foo1234"})
 
@@ -57,7 +57,7 @@ func TestSourceboxDef(t *testing.T) {
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	calledDefsGet := mock.Defs.MockGet_Return(t, def)
 	calledRepoTreeGet := mockTreeEntryGet(mock, entry)
-	mockCurrentSrclibData(mock)
+	mockSpecificVersionSrclibData(mock, "c")
 	mockEmptyRepoConfig(mock)
 
 	resp, err := c.GetOK(router.Rel.URLToSourceboxDef(def.DefKey, "js").String())

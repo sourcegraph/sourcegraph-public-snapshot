@@ -118,7 +118,8 @@ class CodeFileContainer extends Container {
 		}
 
 		// TODO replace with proper shared component
-		let basePath = `/${this.state.repo}@${this.state.rev}/.tree`;
+		let revPart = this.state.rev ? `@${this.state.rev}` : "";
+		let basePath = `/${this.state.repo}${revPart}/.tree`;
 		let repoSegs = this.state.repo.split("/");
 		let breadcrumb = [<a key="base" href={basePath}>{repoSegs[repoSegs.length-1]}</a>];
 		this.state.tree.split("/").forEach((seg, i) => {
@@ -127,7 +128,7 @@ class CodeFileContainer extends Container {
 		});
 
 
-		let embedLink = `/${this.state.repo}@${this.state.rev}/.tree/${this.state.tree}/.share`;
+		let embedLink = `/${this.state.repo}${revPart}/.tree/${this.state.tree}/.share`;
 		if (this.state.startLine && this.state.endLine) {
 			embedLink += `?StartLine=${this.state.startLine}&EndLine=${this.state.endLine}`;
 		}

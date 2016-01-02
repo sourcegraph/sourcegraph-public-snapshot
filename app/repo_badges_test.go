@@ -27,7 +27,7 @@ func TestRepoBadge(t *testing.T) {
 
 	want := "https://img.shields.io/badge/Sourcegraph-Status-blue.svg"
 
-	u := router.Rel.URLTo(router.RepoBadge, "Repo", "my/repo", "Badge", "status", "Format", "svg")
+	u := router.Rel.URLTo(router.RepoBadge, "Repo", "my/repo", "Rev", "master", "Badge", "status", "Format", "svg")
 	resp, err := c.GetNoFollowRedirects(u.String())
 	if err != nil {
 		t.Fatal(err)
