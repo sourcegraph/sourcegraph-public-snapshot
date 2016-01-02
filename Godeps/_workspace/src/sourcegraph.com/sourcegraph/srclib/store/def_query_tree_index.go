@@ -138,9 +138,9 @@ func (x *defQueryTreeIndex) Build(xs map[unit.ID2]*defQueryIndex) (err error) {
 
 	termToUOffs := make(map[string][]unitOffsets)
 
-	var traverse func(term string, unit uint16, node *mafsa.MinTreeNode)
 	for u, qx := range xs {
 		i := 0
+		var traverse func(term string, unit uint16, node *mafsa.MinTreeNode)
 		traverse = func(term string, unit uint16, node *mafsa.MinTreeNode) {
 			if node == nil {
 				return
