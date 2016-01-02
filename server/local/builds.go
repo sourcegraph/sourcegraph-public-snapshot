@@ -54,12 +54,11 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) (*
 func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
 	defer noCache(ctx)
 
-	repoRevSpec := op.RepoRev
-	if len(repoRevSpec.CommitID) != 40 {
+	if len(op.CommitID) != 40 {
 		return nil, &sourcegraph.InvalidOptionsError{Reason: "Builds.Create requires full commit ID"}
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &repoRevSpec.RepoSpec)
+	repo, err := svc.Repos(ctx).Get(ctx, &op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +71,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	if err = accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.Create"); err != nil {
 		successful, err := s.List(ctx, &sourcegraph.BuildListOptions{
 			Repo:      repo.URI,
-			CommitID:  repoRevSpec.CommitID,
+			CommitID:  op.CommitID,
 			Succeeded: true,
 			ListOptions: sourcegraph.ListOptions{
 				PerPage: 1,
@@ -84,9 +83,15 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		}
 	}
 
+	if op.Branch != "" && op.Tag != "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "at most one of Branch and Tag may be specified when creating a build (repo %s commit %q)", op.Repo.URI, op.CommitID)
+	}
+
 	b := &sourcegraph.Build{
 		Repo:        repo.URI,
-		CommitID:    repoRevSpec.CommitID,
+		CommitID:    op.CommitID,
+		Branch:      op.Branch,
+		Tag:         op.Tag,
 		CreatedAt:   pbtypes.NewTimestamp(time.Now()),
 		BuildConfig: op.Config,
 	}

@@ -9,7 +9,7 @@
 	{{$repoURI := .Repo.URI}}
 	{{range .Branches}}
 	<li class="list-group-item branch">
-		<div class="pull-right" data-react="RepoBuildIndicator" data-uri="{{$repoURI}}" data-rev="{{.Head}}" data-buildable="{{uiBuild}}"></div>
+		<div class="pull-right" data-react="RepoBuildIndicator" data-uri="{{$repoURI}}" data-commit-id="{{.Head}}" data-branch="{{.Name}}" data-buildable="{{uiBuild}}"></div>
 		{{if (eq .Name $.BehindAheadBranch)}}
 			{{template "DefaultLabel"}}
 		{{else}}

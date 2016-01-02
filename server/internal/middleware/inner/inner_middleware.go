@@ -520,7 +520,7 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 	target := local.Services.Builds
 
 	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
+	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
 	if err != nil {
 		return
 	}

@@ -1137,8 +1137,21 @@ message BuildList {
 }
 
 message BuildsCreateOp {
-	RepoRevSpec repo_rev = 1 [(gogoproto.nullable) = false];
-	BuildConfig config = 2 [(gogoproto.nullable) = false];
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// CommitID is the full commit ID of the commit to build. It is
+	// required.
+	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
+
+	// Branch, if specified, indicates that this build's commit is on
+	// the given branch. If Branch is set, Tag must be empty.
+	string branch = 3;
+
+	// Tag, if specified, indicates that this build's commit has the
+	// given tag. If Tag is set, Branch must be empty.
+	string tag = 4;
+
+	BuildConfig config = 5 [(gogoproto.nullable) = false];
 }
 
 message BuildsUpdateOp {

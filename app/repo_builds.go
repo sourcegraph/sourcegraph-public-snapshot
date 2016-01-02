@@ -79,26 +79,10 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
-
-	commitID := r.PostForm.Get("CommitID")
-	// Resolve revspec to full commit ID. (This allows them to specify
-	// a revspec in the CommitID field and have it resolved here.)
-	if commitID == "" {
-		commitID = rc.Repo.DefaultBranch
-	}
-
-	commit, err := apiclient.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{RepoSpec: rc.Repo.RepoSpec(), Rev: commitID})
-	if err != nil {
-		return err
-	}
-	commitID = string(commit.ID)
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: rc.Repo.RepoSpec(), Rev: commitID, CommitID: commitID}
-	delete(r.PostForm, "CommitID")
-
 	if err := schemautil.Decode(&op, r.PostForm); err != nil {
 		return err
 	}
-	op.RepoRev = repoRevSpec
+	op.Repo = rc.Repo.RepoSpec()
 
 	build, err := apiclient.Builds.Create(ctx, &op)
 	if err != nil {

@@ -24,6 +24,13 @@ func (b *Build) Spec() BuildSpec {
 	}
 }
 
+func (b *Build) BranchOrTag() string {
+	if b.Branch != "" {
+		return b.Branch
+	}
+	return b.Tag
+}
+
 // IDString returns a succinct string that uniquely identifies this build.
 func (b BuildSpec) IDString() string {
 	return fmt.Sprintf("%s#%d", b.Repo.URI, b.ID)

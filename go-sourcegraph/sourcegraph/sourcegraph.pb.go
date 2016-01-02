@@ -1312,8 +1312,17 @@ func (m *BuildList) String() string { return proto.CompactTextString(m) }
 func (*BuildList) ProtoMessage()    {}
 
 type BuildsCreateOp struct {
-	RepoRev RepoRevSpec `protobuf:"bytes,1,opt,name=repo_rev" `
-	Config  BuildConfig `protobuf:"bytes,2,opt,name=config" `
+	Repo RepoSpec `protobuf:"bytes,1,opt,name=repo" `
+	// CommitID is the full commit ID of the commit to build. It is
+	// required.
+	CommitID string `protobuf:"bytes,2,opt,name=commit_id,proto3" json:",omitempty"`
+	// Branch, if specified, indicates that this build's commit is on
+	// the given branch. If Branch is set, Tag must be empty.
+	Branch string `protobuf:"bytes,3,opt,name=branch,proto3" json:",omitempty"`
+	// Tag, if specified, indicates that this build's commit has the
+	// given tag. If Tag is set, Branch must be empty.
+	Tag    string      `protobuf:"bytes,4,opt,name=tag,proto3" json:",omitempty"`
+	Config BuildConfig `protobuf:"bytes,5,opt,name=config" `
 }
 
 func (m *BuildsCreateOp) Reset()         { *m = BuildsCreateOp{} }

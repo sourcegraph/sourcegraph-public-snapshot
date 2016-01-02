@@ -145,7 +145,7 @@ var CodeReviewHeader = React.createClass({
 						{this.props.changeset.DeltaSpec.Head.Rev}
 						<RepoBuildIndicator
 							RepoURI={this.props.delta.HeadRepo.URI}
-							Rev={this.props.delta.HeadCommit.ID}
+							CommitID={this.props.delta.HeadCommit.ID}
 							btnSize="btn-xs"
 							Buildable={true} />
 					</div>
@@ -154,7 +154,7 @@ var CodeReviewHeader = React.createClass({
 						{this.props.changeset.DeltaSpec.Base.Rev}
 						<RepoBuildIndicator
 							RepoURI={this.props.delta.BaseRepo.URI}
-							Rev={this.props.delta.BaseCommit.ID}
+							CommitID={this.props.delta.BaseCommit.ID}
 							btnSize="btn-xs" label="no"
 							Buildable={true} />
 					</div>

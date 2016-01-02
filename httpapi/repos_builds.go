@@ -42,12 +42,12 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, s.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(r, s.Repos)
 	if err != nil {
 		return err
 	}
 
-	op.RepoRev = repoRevSpec
+	op.Repo = repoSpec
 	build, err := s.Builds.Create(ctx, &op)
 	if err != nil {
 		return err

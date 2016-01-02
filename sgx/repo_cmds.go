@@ -317,7 +317,11 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], repo.DefaultBranch, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
 
 	if _, err := cl.Builds.GetRepoBuild(cli.Ctx, &repoRevSpec); grpc.Code(err) == codes.NotFound {
-		b, err := cl.Builds.Create(cli.Ctx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Config: sourcegraph.BuildConfig{Queue: true}})
+		b, err := cl.Builds.Create(cli.Ctx, &sourcegraph.BuildsCreateOp{
+			Repo:     repoRevSpec.RepoSpec,
+			CommitID: repoRevSpec.CommitID,
+			Config:   sourcegraph.BuildConfig{Queue: true},
+		})
 		if err != nil {
 			return err
 		}

@@ -69,11 +69,10 @@ func TestRepoBuildsCreate(t *testing.T) {
 
 	calledGet := mockRepoGet(mock, "my/repo")
 	calledGetConfig := mockEmptyRepoConfig(mock)
-	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	var calledBuildsCreate bool
 	mock.Builds.Create_ = func(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
-		if want := "c"; op.RepoRev.CommitID != want {
-			t.Errorf("got CommitID == %q, want %q", op.RepoRev.CommitID, want)
+		if want := "c"; op.CommitID != want {
+			t.Errorf("got CommitID == %q, want %q", op.CommitID, want)
 		}
 		calledBuildsCreate = true
 		return &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("a", 40), Repo: "my/repo"}, nil
@@ -99,9 +98,6 @@ func TestRepoBuildsCreate(t *testing.T) {
 	}
 	if !*calledGetConfig {
 		t.Error("!calledGetConfig")
-	}
-	if !*calledGetCommit {
-		t.Error("!calledGetCommit")
 	}
 	if !calledBuildsCreate {
 		t.Error("!calledBuildsCreate")

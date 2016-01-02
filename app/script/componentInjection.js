@@ -118,7 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			<RepoBuildIndicator
 				btnSize="btn-xs"
 				RepoURI={el2.dataset.uri}
-				Rev={el2.dataset.rev}
+				CommitID={el2.dataset.commitId}
+				Branch={el2.dataset.branch}
 				SuccessReload={el2.dataset.successReload}
 				Label={el2.dataset.label}
 				Buildable={el2.dataset.buildable === "true"} />,
@@ -130,7 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			<RepoBuildIndicator
 				btnSize="btn-md"
 				RepoURI={el2.dataset.uri}
-				Rev={el2.dataset.rev}
+				CommitID={el2.dataset.commitId}
+				Branch={el2.dataset.branch}
 				SuccessReload={el2.dataset.successReload}
 				Label={el2.dataset.label}
 				Buildable={el2.dataset.buildable === "true"} />,

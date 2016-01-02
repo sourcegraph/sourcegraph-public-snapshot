@@ -24,13 +24,14 @@ import (
 // actual caller, not to this helper func.) This means you probably
 // should check the error value returned by this func in your test.
 func BuildRepoAndWait(t *testing.T, ctx context.Context, repo string, commitID string) (*sourcegraph.Build, *sourcegraph.BuildSpec, error) {
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repo}, Rev: commitID, CommitID: commitID}
-
 	cl := sourcegraph.NewClientFromContext(ctx)
 
 	// Create the build.
-	b, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Config: sourcegraph.BuildConfig{Queue: true}})
-
+	b, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
+		Repo:     sourcegraph.RepoSpec{URI: repo},
+		CommitID: commitID,
+		Config:   sourcegraph.BuildConfig{Queue: true},
+	})
 	if err != nil {
 		return nil, nil, err
 	}
