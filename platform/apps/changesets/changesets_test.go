@@ -332,6 +332,7 @@ func (ts *testSuite) changesetEqual(got, want *sourcegraph.Changeset) error {
 func newTestSuite(t *testing.T) (*testSuite, error) {
 	// Spawn a test server.
 	server, ctx := testserver.NewUnstartedServer()
+	server.Config.Serve.NoWorker = true
 	server.Config.ServeFlags = append(server.Config.ServeFlags,
 		&authutil.Flags{DisableAccessControl: true},
 	)
