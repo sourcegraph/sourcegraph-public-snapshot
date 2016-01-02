@@ -40,7 +40,7 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 			rev.CommitID = string(commit.ID)
 			_, err = svc.Builds(ctx).Create(ctx, &sourcegraph.BuildsCreateOp{
 				RepoRev: rev,
-				Opt:     &sourcegraph.BuildCreateOptions{BuildConfig: sourcegraph.BuildConfig{Queue: true}},
+				Config:  sourcegraph.BuildConfig{Queue: true},
 			})
 			return err
 		}

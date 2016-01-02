@@ -54,33 +54,9 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) (*
 func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
 	defer noCache(ctx)
 
-	if op.Opt == nil {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "options must be specified when creating a build"}
-	}
-
 	repoRevSpec := op.RepoRev
 	if len(repoRevSpec.CommitID) != 40 {
 		return nil, &sourcegraph.InvalidOptionsError{Reason: "Builds.Create requires full commit ID"}
-	}
-
-	if !op.Opt.Force {
-		// Return an existing build if a build exists for this commit
-		// ID.
-		builds, err := store.BuildsFromContext(ctx).List(ctx, &sourcegraph.BuildListOptions{
-			Repo:      repoRevSpec.URI,
-			CommitID:  repoRevSpec.CommitID,
-			Sort:      "ended_at",
-			Direction: "desc",
-			ListOptions: sourcegraph.ListOptions{
-				PerPage: 1,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if len(builds) > 0 {
-			return builds[0], nil
-		}
 	}
 
 	repo, err := svc.Repos(ctx).Get(ctx, &repoRevSpec.RepoSpec)
@@ -112,7 +88,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		Repo:        repo.URI,
 		CommitID:    repoRevSpec.CommitID,
 		CreatedAt:   pbtypes.NewTimestamp(time.Now()),
-		BuildConfig: op.Opt.BuildConfig,
+		BuildConfig: op.Config,
 	}
 
 	b, err = store.BuildsFromContext(ctx).Create(ctx, b)

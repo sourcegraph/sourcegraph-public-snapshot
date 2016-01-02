@@ -9,7 +9,6 @@
 	<form action="{{urlToRepoSubroute "repo.builds.create" .Repo.URI}}" method="post" class="form-inline">
 		<input type="hidden" name="CommitID" value="{{.Build.CommitID}}">
 		<input type="hidden" name="Queue" value="true">
-		<input type="hidden" name="Force" value="true">
 		<button
 		{{if not .Commit}}disabled{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}disabled{{end}}
 		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Rebuild</button>

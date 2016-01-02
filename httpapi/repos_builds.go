@@ -36,8 +36,8 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	s := handlerutil.APIClient(r)
 
-	var opt sourcegraph.BuildCreateOptions
-	err := json.NewDecoder(r.Body).Decode(&opt)
+	var op sourcegraph.BuildsCreateOp
+	err := json.NewDecoder(r.Body).Decode(&op)
 	if err != nil {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
@@ -47,7 +47,8 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	build, err := s.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Opt: &opt})
+	op.RepoRev = repoRevSpec
+	build, err := s.Builds.Create(ctx, &op)
 	if err != nil {
 		return err
 	}

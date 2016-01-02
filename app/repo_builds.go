@@ -71,11 +71,10 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Default options.
-	form := sourcegraph.BuildCreateOptions{
-		BuildConfig: sourcegraph.BuildConfig{
+	op := sourcegraph.BuildsCreateOp{
+		Config: sourcegraph.BuildConfig{
 			Queue: true,
 		},
-		Force: true,
 	}
 	if err := r.ParseForm(); err != nil {
 		return err
@@ -96,11 +95,12 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: rc.Repo.RepoSpec(), Rev: commitID, CommitID: commitID}
 	delete(r.PostForm, "CommitID")
 
-	if err := schemautil.Decode(&form, r.PostForm); err != nil {
+	if err := schemautil.Decode(&op, r.PostForm); err != nil {
 		return err
 	}
+	op.RepoRev = repoRevSpec
 
-	build, err := apiclient.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{RepoRev: repoRevSpec, Opt: &form})
+	build, err := apiclient.Builds.Create(ctx, &op)
 	if err != nil {
 		return err
 	}
