@@ -59,7 +59,7 @@ class ExampleView extends Component {
 						<a className={`fa fa-chevron-circle-left btnNav ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}></a>
 						<a className={`fa fa-chevron-circle-right btnNav ${this.state.selectedIndex >= this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}></a>
 					</nav>
-					{example && <a href={`/${example.Repo}@${example.Rev}/.tree/${example.File}?startline=${example.StartLine}&endline=${example.EndLine}&seldef=${this.state.defURL}`} onClick={hotLink}>{example.File}:{example.StartLine}-{example.EndLine}</a>}
+					{example && <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}?startline=${example.StartLine}&endline=${example.EndLine}&seldef=${this.state.defURL}`} onClick={hotLink}>{example.File}:{example.StartLine}-{example.EndLine}</a>}
 					{loading && <i className="fa fa-spinner fa-spin"></i>}
 					{this.state.count === 0 && "No examples available"}
 				</header>

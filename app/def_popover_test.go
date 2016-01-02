@@ -12,10 +12,10 @@ import (
 func TestDefPopover(t *testing.T) {
 	c, mock := apptest.New()
 
-	def := &sourcegraph.Def{Def: graph.Def{DefKey: graph.DefKey{Repo: "my/repo", UnitType: "GoPackage", Unit: "u", Path: "p"}}}
+	def := &sourcegraph.Def{Def: graph.Def{DefKey: graph.DefKey{Repo: "my/repo", CommitID: "c", UnitType: "GoPackage", Unit: "u", Path: "p"}}}
 
 	calledReposGet := mockRepoGet(mock, "my/repo")
-	mockCurrentSrclibData(mock)
+	mockSpecificVersionSrclibData(mock, "c")
 	mockEmptyRepoConfig(mock)
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	calledDefsGet := mock.Defs.MockGet_Return(t, def)

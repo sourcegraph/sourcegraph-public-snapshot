@@ -11,6 +11,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 
 	"github.com/sourcegraph/mux"
@@ -161,6 +163,17 @@ func GetRepoRev(r *http.Request, reposSvc sourcegraph.ReposClient, repo *sourceg
 
 	if repoRev.Rev == "" {
 		repoRev.Rev = repo.DefaultBranch
+
+		if repo.DefaultBranch == "" {
+			log15.Warn("GetRepoRev: no rev specified and repo has no default branch", "repo", repoRev.URI)
+		}
+	}
+
+	if repoRev.Rev == "" {
+		panic("empty Rev on repo " + repoRev.URI)
+	}
+	if repoRev.CommitID == "" {
+		panic("empty CommitID on repo " + repoRev.URI + " rev " + repoRev.Rev)
 	}
 
 	return repoRev, commit, nil
@@ -224,12 +237,13 @@ func FlattenNameHTML(e *vcsclient.TreeEntry) template.HTML {
 	}
 }
 
+// ResolveSrclibDataVersion calls Repos.GetSrclibDataVersionForPath on
+// the given entry spec. If a srclib data version exists,
+// entry.RepoRev.CommitID is set to the version's commit ID.
 func ResolveSrclibDataVersion(ctx context.Context, cl *sourcegraph.Client, entry sourcegraph.TreeEntrySpec) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
 	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &entry)
 	if err == nil {
 		entry.RepoRev.CommitID = dataVer.CommitID
-	} else if grpc.Code(err) == codes.NotFound {
-		err = nil
 	}
 	return entry.RepoRev, dataVer, err
 }
@@ -257,12 +271,20 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 		Path:    mux.Vars(r)["Path"],
 	}
 
-	resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, cl, tc.EntrySpec)
-	if err != nil {
+	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, cl, tc.EntrySpec); err == nil {
+		tc.EntrySpec.RepoRev = resolvedRev
+		tc.SrclibDataVersion = dataVer
+	} else if err != nil && grpc.Code(err) != codes.NotFound {
+		// Continue with existing rev and commit ID even if there's no srclib data.
 		return tc, rc, vc, err
 	}
-	tc.EntrySpec.RepoRev = resolvedRev
-	tc.SrclibDataVersion = dataVer
+
+	if tc.EntrySpec.RepoRev.Rev == "" {
+		panic("empty Rev for repo " + tc.EntrySpec.RepoRev.URI)
+	}
+	if tc.EntrySpec.RepoRev.CommitID == "" {
+		panic("empty CommitID for repo " + tc.EntrySpec.RepoRev.URI + " rev " + tc.EntrySpec.RepoRev.Rev)
+	}
 
 	tc.Entry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: opt})
 	if err != nil {
@@ -313,6 +335,13 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 	}
 	vc.RepoRevSpec.CommitID = resolvedRev.CommitID
 	defSpec.CommitID = resolvedRev.CommitID
+
+	if vc.RepoRevSpec.Rev == "" {
+		panic("empty Rev for repo " + vc.RepoRevSpec.URI)
+	}
+	if vc.RepoRevSpec.CommitID == "" {
+		panic("empty CommitID for repo " + vc.RepoRevSpec.URI + " rev " + vc.RepoRevSpec.Rev)
+	}
 
 	// Insert additional available information into the def.
 	dc.Def.Def.DefKey.CommitID = defSpec.CommitID

@@ -2,8 +2,11 @@ package sourcecode
 
 import (
 	"errors"
+	"fmt"
 	"path"
 	"sort"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -47,7 +50,8 @@ func sanitizeEntry(entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWit
 		return ErrIsNotFile
 	}
 	if entrySpec.RepoRev.CommitID == "" {
-		panic("assumes that CommitID has been resolved and stored, but it is empty (in the func that calls get, resolve the CommitID from the Rev and store it in the entrySpec's RepoRevSpec before calling get")
+		log15.Error("sanitizeEntry saw a RepoRevSpec with no CommitID", "entrySpec", entrySpec)
+		return fmt.Errorf("sourcecode: refusing to handle entry with no CommitID (entrySpec: %+v)", entrySpec)
 	}
 	if entry.EndByte == 0 {
 		entry.EndByte = int64(len(entry.Contents))

@@ -68,8 +68,9 @@ function createInvite(email, perms, cb) {
 exports.createInvite = createInvite;
 
 function createRepoBuild(repoURI, rev) {
+	var revPart = rev ? `@${rev}` : "";
 	return $.ajax({
-		url: `/.api/repos/${repoURI}@${rev}/.builds`,
+		url: `/.api/repos/${repoURI}${revPart}/.builds`,
 		method: "post",
 		headers: {
 			"X-Csrf-Token": window._csrfToken,
