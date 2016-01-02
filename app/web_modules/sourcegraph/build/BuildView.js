@@ -89,7 +89,7 @@ class BuildView extends Container {
 		}
 
 		if (!nativeCIEnabled) {
-			fakeTask.Build = {Repo: {URI: "spans"}, ID: this.state.build.ID};
+			fakeTask.Build = {Repo: {URI: this.state.build.Repo}, ID: this.state.build.ID};
 			fakeTask.StartedAt = build.StartedAt;
 			fakeTask.EndedAt = build.EndedAt;
 			fakeTask.Success = build.Success;
