@@ -13,8 +13,11 @@ var RepoBuildIndicator = React.createClass({
 		// build data for.
 		RepoURI: React.PropTypes.string,
 
-		// Rev sets the revision for which we are checking build information.
-		Rev: React.PropTypes.string,
+		// CommitID sets the revision for which we are checking build information.
+		CommitID: React.PropTypes.string,
+
+		// Branch sets the branch for newly created builds.
+		Branch: React.PropTypes.string,
 
 		// Buildable is whether or not the RepoBuildIndicator will let the
 		// user trigger a build if a build does not exist.
@@ -103,7 +106,7 @@ var RepoBuildIndicator = React.createClass({
 	},
 
 	checkBuildStatus() {
-		client.builds(this.props.RepoURI, this.props.Rev, this.state.noCache)
+		client.builds(this.props.RepoURI, this.props.CommitID, this.state.noCache)
 			.then(
 				data => this._updateBuildData(data && data.Builds ? data.Builds[0] : null),
 				this._updateBuildDataError
@@ -112,7 +115,7 @@ var RepoBuildIndicator = React.createClass({
 
 	triggerBuild(ev) {
 		this.setState({noCache: true}); // Otherwise after creating the build, API responses still show the prior state.
-		client.createRepoBuild(this.props.RepoURI, this.props.Rev)
+		client.createRepoBuild(this.props.RepoURI, this.props.CommitID, this.props.Branch)
 			.then(this._updateBuildData, this._updateBuildDataError);
 	},
 

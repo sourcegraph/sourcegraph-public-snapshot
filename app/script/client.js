@@ -67,17 +67,20 @@ function createInvite(email, perms, cb) {
 
 exports.createInvite = createInvite;
 
-function createRepoBuild(repoURI, rev) {
-	var revPart = rev ? `@${rev}` : "";
+function createRepoBuild(repoURI, commitID, branch) {
 	return $.ajax({
-		url: `/.api/repos/${repoURI}${revPart}/.builds`,
+		url: `/.api/repos/${repoURI}/.builds`,
 		method: "post",
 		headers: {
 			"X-Csrf-Token": window._csrfToken,
 		},
 		data: JSON.stringify({
-			Import: true,
-			Queue: true,
+			CommitID: commitID,
+			Branch: branch,
+			Config: {
+				Import: true,
+				Queue: true,
+			},
 		}),
 	});
 }

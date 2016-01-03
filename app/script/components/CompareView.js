@@ -122,7 +122,7 @@ var CompareView = React.createClass({
 
 						<RepoBuildIndicator
 							RepoURI={this.state.DiffData.Delta.Base.URI}
-							Rev={this.state.DiffData.Delta.BaseCommit.ID}
+							CommitID={this.state.DiffData.Delta.BaseCommit.ID}
 							btnSize="btn-xs" />
 
 						<span className="separator">...</span>
@@ -135,7 +135,7 @@ var CompareView = React.createClass({
 
 						<RepoBuildIndicator
 							RepoURI={this.state.DiffData.Delta.Head.URI}
-							Rev={this.state.DiffData.Delta.HeadCommit.ID}
+							CommitID={this.state.DiffData.Delta.HeadCommit.ID}
 							btnSize="btn-xs" />
 
 						{CurrentUser !== null && this.state.fileDiffs.length && !this.state.proposingChange ? (

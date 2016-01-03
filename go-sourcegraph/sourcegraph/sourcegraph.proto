@@ -12,7 +12,7 @@ import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 import "sourcegraph.com/sqs/pbtypes/void.proto";
 import "sourcegraph.com/sqs/pbtypes/html.proto";
 import "src.sourcegraph.com/sourcegraph/pkg/inventory/inventory.proto";
-import "google/api/annotations.proto";
+import "github.com/gengo/grpc-gateway/third_party/googleapis/google/api/annotations.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -1027,16 +1027,6 @@ message BuildConfig {
 	int32 priority = 4;
 }
 
-message BuildCreateOptions {
-	BuildConfig build_config = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-
-	// Force creation of build. If false, the build will not be created if a build for
-	// the same repository and with the same BuildConfig exists.
-	//
-	// TODO(bliu): test this
-	bool force = 2;
-}
-
 // BuildGetLogOptions specifies options for build log API methods.
 message BuildGetLogOptions {
 	// MinID indicates that only log entries whose monotonically increasing ID is
@@ -1147,8 +1137,21 @@ message BuildList {
 }
 
 message BuildsCreateOp {
-	RepoRevSpec repo_rev = 1 [(gogoproto.nullable) = false];
-	BuildCreateOptions opt = 2;
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// CommitID is the full commit ID of the commit to build. It is
+	// required.
+	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
+
+	// Branch, if specified, indicates that this build's commit is on
+	// the given branch. If Branch is set, Tag must be empty.
+	string branch = 3;
+
+	// Tag, if specified, indicates that this build's commit has the
+	// given tag. If Tag is set, Branch must be empty.
+	string tag = 4;
+
+	BuildConfig config = 5 [(gogoproto.nullable) = false];
 }
 
 message BuildsUpdateOp {

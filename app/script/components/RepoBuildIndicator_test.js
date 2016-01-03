@@ -61,7 +61,7 @@ describe("RepoBuildIndicator", () => {
 			sandbox.stub(client, "builds", () => $.Deferred().resolve({Builds: [test]}).promise());
 
 			var component = sandbox.renderComponent(
-				<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+				<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 			);
 			var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
 			var $node = $(ReactDOM.findDOMNode(tag));
@@ -83,7 +83,7 @@ describe("RepoBuildIndicator", () => {
 		});
 
 		var component = sandbox.renderComponent(
-			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" Buildable="true" />
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" commitID="test-rev" Buildable="true" />
 		);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
@@ -97,7 +97,7 @@ describe("RepoBuildIndicator", () => {
 		});
 
 		var component = sandbox.renderComponent(
-			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 
 		var tag = TestUtils.findRenderedDOMComponentWithTag(component, "a");
@@ -110,7 +110,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.stub(client, "createRepoBuild", () => $.Deferred().resolve([]).promise());
 
 		var component = sandbox.renderComponent(
-			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" Buildable={true} />
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" commitID="test-rev" Buildable={true} />
 		);
 		expect(component.state.status).to.be(component.BuildStatus.NA);
 
@@ -123,7 +123,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.stub(client, "builds", () => $.Deferred().reject().promise());
 
 		var component = sandbox.renderComponent(
-			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 		expect(component.state.status).to.be(component.BuildStatus.ERROR);
 
@@ -137,7 +137,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.stub(client, "builds");
 
 		sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.FAILURE} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator LastBuild={renderTests.FAILURE} btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 
 		expect(client.builds.callCount).to.be(0);
@@ -148,7 +148,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.stub(global, "setInterval");
 
 		sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 
 		expect(clearInterval.callCount).to.be(1);
@@ -160,7 +160,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.stub(global, "setInterval");
 
 		sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.BUILT} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator LastBuild={renderTests.BUILT} btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 
 		expect(clearInterval.callCount).to.be(1);
@@ -173,7 +173,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.spy(global, "setInterval");
 
 		sandbox.renderComponent(
-			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 
 		expect(client.builds.callCount).to.be(1);
@@ -192,7 +192,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.spy(global, "setInterval");
 
 		sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 
 		expect(client.builds.callCount).to.be(0);
@@ -212,7 +212,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.useFakeTimers();
 
 		sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" rev="test-rev" SuccessReload="on" />
+			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" commitID="test-rev" SuccessReload="on" />
 		);
 
 		sandbox.clock.tick(5000);
@@ -226,7 +226,7 @@ describe("RepoBuildIndicator", () => {
 		sandbox.useFakeTimers();
 
 		sandbox.renderComponent(
-			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" rev="test-rev" />
+			<RepoBuildIndicator LastBuild={renderTests.STARTED} btnSize="test-size" RepoURI="test-uri" commitID="test-rev" />
 		);
 
 		sandbox.clock.tick(5000);

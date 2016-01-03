@@ -8,8 +8,9 @@
 	<a class="btn btn-default btn-sm" href="{{urlToRepoBuildSubroute "repo.build.log" .Repo.URI .Build.ID}}" target="_blank"><i class="fa fa-file-text"></i>&nbsp; Download logs</a>
 	<form action="{{urlToRepoSubroute "repo.builds.create" .Repo.URI}}" method="post" class="form-inline">
 		<input type="hidden" name="CommitID" value="{{.Build.CommitID}}">
+		<input type="hidden" name="Branch" value="{{.Build.Branch}}">
+		<input type="hidden" name="Tag" value="{{.Build.Tag}}">
 		<input type="hidden" name="Queue" value="true">
-		<input type="hidden" name="Force" value="true">
 		<button
 		{{if not .Commit}}disabled{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}disabled{{end}}
 		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Rebuild</button>
