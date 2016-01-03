@@ -55,9 +55,9 @@ type buildsCmd struct{}
 func (c *buildsCmd) Execute(args []string) error { return nil }
 
 type buildsListCmd struct {
-	N         int    `short:"n" description:"number of builds to show" default:"5"`
 	Repo      string `long:"repo" description:"repo URI"`
 	CommitID  string `long:"commit" description:"filter builds by commit ID"`
+	Active    bool   `long:"active"`
 	Queued    bool   `long:"queued"`
 	Succeeded bool   `long:"succeeded"`
 	Ended     bool   `long:"ended"`
@@ -72,30 +72,39 @@ func (c *buildsListCmd) Execute(args []string) error {
 	opt := &sourcegraph.BuildListOptions{
 		Repo:        c.Repo,
 		CommitID:    c.CommitID,
+		Active:      c.Active,
 		Queued:      c.Queued,
 		Succeeded:   c.Succeeded,
 		Ended:       c.Ended,
 		Failed:      c.Failed,
 		Sort:        c.Sort,
 		Direction:   c.Direction,
-		ListOptions: sourcegraph.ListOptions{PerPage: int32(c.N)},
-	}
-	builds, err := cl.Builds.List(cli.Ctx, opt)
-	if err != nil {
-		return err
+		ListOptions: sourcegraph.ListOptions{PerPage: 100},
 	}
 
-	for _, b := range builds.Builds {
-		if b.Success {
-			fmt.Printf(green("#%s")+" succeeded % 9s ago", b.Spec().IDString(), ago(b.EndedAt.Time()))
-		} else if b.Failure {
-			fmt.Printf(red("#%s")+" failed % 9s ago", b.Spec().IDString(), ago(b.EndedAt.Time()))
-		} else if b.StartedAt != nil {
-			fmt.Printf(cyan("#%s")+" started % 9s ago", b.Spec().IDString(), ago(b.StartedAt.Time()))
-		} else {
-			fmt.Printf(gray("#%s")+" queued % 9s ago", b.Spec().IDString(), ago(b.CreatedAt.Time()))
+	for page := int32(1); ; page++ {
+		opt.ListOptions.Page = page
+		builds, err := cl.Builds.List(cli.Ctx, opt)
+		if err != nil {
+			return err
 		}
-		fmt.Printf("\t%s\n", b.CommitID)
+
+		if len(builds.Builds) == 0 {
+			break
+		}
+
+		for _, b := range builds.Builds {
+			if b.Success {
+				fmt.Printf(green("#%s")+" succeeded % 9s ago", b.Spec().IDString(), ago(b.EndedAt.Time()))
+			} else if b.Failure {
+				fmt.Printf(red("#%s")+" failed % 9s ago", b.Spec().IDString(), ago(b.EndedAt.Time()))
+			} else if b.StartedAt != nil {
+				fmt.Printf(cyan("#%s")+" started % 9s ago", b.Spec().IDString(), ago(b.StartedAt.Time()))
+			} else {
+				fmt.Printf(gray("#%s")+" queued % 9s ago", b.Spec().IDString(), ago(b.CreatedAt.Time()))
+			}
+			fmt.Printf("\t%s\n", b.CommitID)
+		}
 	}
 
 	return nil

@@ -50,6 +50,12 @@ type WorkCmd struct {
 
 var cleanBuildData bool
 
+// TODO(sqs): add a way for the worker client to
+// determine the server's heartbeat timeout - this
+// value is hardcoded here and this will break if
+// the server heartbeat timeout is shorter.
+const hardcodedServerHeartbeatTimeout_hack = 30 * time.Second
+
 func (c *WorkCmd) Execute(args []string) error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
@@ -78,6 +84,8 @@ func (c *WorkCmd) Execute(args []string) error {
 	// BuildTimeout (need to add a way for the worker client to
 	// determine the BuildTimeout value).
 	cmdTimeout := 89 * time.Minute
+
+	go buildReaper(cli.Ctx)
 
 	var dequeueMu sync.Mutex
 	// dequeueNext returns the next build in the queue.
@@ -138,11 +146,6 @@ func (c *WorkCmd) Execute(args []string) error {
 					defer func() {
 						close(quitCh)
 					}()
-					// TODO(sqs): add a way for the worker client to
-					// determine the server's heartbeat timeout - this
-					// value is hardcoded here and this will break if
-					// the server heartbeat timeout is shorter.
-					const hardcodedServerHeartbeatTimeout_hack = 30 * time.Second
 					go workerHeartbeat(ctx, cl.Builds, (hardcodedServerHeartbeatTimeout_hack / 2), build.Spec(), quitCh)
 
 					buildDir := filepath.Join(c.BuildRoot, build.Repo)
