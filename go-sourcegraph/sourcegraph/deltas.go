@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
 )
@@ -96,13 +95,6 @@ func (v UnitDeltas) Less(i, j int) bool {
 
 func deltaUnitLess(a, b *unit.RepoSourceUnit) bool {
 	return a.UnitType < b.UnitType || (a.UnitType == b.UnitType && a.Unit < b.Unit)
-}
-
-func (f DeltaFilter) DefFilters() []store.DefFilter {
-	if f.UnitType != "" && f.Unit != "" {
-		return []store.DefFilter{store.ByUnits(unit.ID2{Type: f.UnitType, Name: f.Unit})}
-	}
-	return nil
 }
 
 // Added is whether this represents an added def (not present in base,

@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -39,13 +40,13 @@ func (s *deltas) ListDefs(ctx context.Context, op *sourcegraph.DeltasListDefsOp)
 
 	// Support using different base/head source unit names for Go
 	// packages, whose unit name is often prefixed with the repo.
-	baseFilters = append(baseFilters, opt.DefFilters()...)
+	baseFilters = append(baseFilters, deltaListDefsFilters(opt.DeltaFilter)...)
 	if strings.HasPrefix(opt.Unit, ds.Base.RepoSpec.URI) && ds.Base.RepoSpec.URI != ds.Head.RepoSpec.URI {
 		opt2 := *opt
 		opt2.Unit = ds.Head.RepoSpec.URI + strings.TrimPrefix(opt.Unit, ds.Base.RepoSpec.URI)
-		headFilters = append(headFilters, opt2.DefFilters()...)
+		headFilters = append(headFilters, deltaListDefsFilters(opt2.DeltaFilter)...)
 	} else {
-		headFilters = append(headFilters, opt.DefFilters()...)
+		headFilters = append(headFilters, deltaListDefsFilters(opt.DeltaFilter)...)
 	}
 
 	par := parallel.NewRun(2)
@@ -168,4 +169,11 @@ func baseDefsChangedAndRemoved(dd *sourcegraph.DeltaDefs) []*sourcegraph.Def {
 		}
 	}
 	return defsChangedRemoved
+}
+
+func deltaListDefsFilters(f sourcegraph.DeltaFilter) []srcstore.DefFilter {
+	if f.UnitType != "" && f.Unit != "" {
+		return []srcstore.DefFilter{srcstore.ByUnits(unit.ID2{Type: f.UnitType, Name: f.Unit})}
+	}
+	return nil
 }

@@ -2,12 +2,14 @@ package local
 
 import (
 	"log"
+	"path"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -105,7 +107,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	// 	return &sourcegraph.DefList{}, nil
 	// }
 
-	fs := opt.DefFilters()
+	fs := defListOptionsFilters(opt)
 	fs = append(fs, srcstore.DefsSortByKey{})
 	defs0, err := store.GraphFromContext(ctx).Defs(fs...)
 	if err != nil {
@@ -140,6 +142,90 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 			Total: int32(total),
 		},
 	}, nil
+}
+
+func defListOptionsFilters(o *sourcegraph.DefListOptions) []srcstore.DefFilter {
+	var fs []srcstore.DefFilter
+	if o.DefKeys != nil {
+		fs = append(fs, srcstore.DefFilterFunc(func(def *graph.Def) bool {
+			for _, dk := range o.DefKeys {
+				if (def.Repo == "" || def.Repo == dk.Repo) && (def.CommitID == "" || def.CommitID == dk.CommitID) &&
+					(def.UnitType == "" || def.UnitType == dk.UnitType) && (def.Unit == "" || def.Unit == dk.Unit) &&
+					def.Path == dk.Path {
+					return true
+				}
+			}
+			return false
+		}))
+	}
+	if o.Name != "" {
+		fs = append(fs, srcstore.DefFilterFunc(func(def *graph.Def) bool {
+			return def.Name == o.Name
+		}))
+	}
+	if o.ByteEnd != 0 {
+		fs = append(fs, srcstore.DefFilterFunc(func(d *graph.Def) bool {
+			return d.DefStart == o.ByteStart && d.DefEnd == o.ByteEnd
+		}))
+	}
+	if o.Query != "" {
+		fs = append(fs, srcstore.ByDefQuery(o.Query))
+	}
+	if len(o.RepoRevs) > 0 {
+		vs := make([]srcstore.Version, len(o.RepoRevs))
+		for i, repoRev := range o.RepoRevs {
+			repo, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
+			if len(commitID) != 40 {
+				log.Printf("WARNING: In DefListOptions.DefFilters, o.RepoRevs[%d]==%q has no commit ID or a non-absolute commit ID. No defs will match it.", i, repoRev)
+			}
+			vs[i] = srcstore.Version{Repo: repo, CommitID: commitID}
+		}
+		fs = append(fs, srcstore.ByRepoCommitIDs(vs...))
+	}
+	if o.Unit != "" && o.UnitType != "" {
+		fs = append(fs, srcstore.ByUnits(unit.ID2{Type: o.UnitType, Name: o.Unit}))
+	}
+	if (o.UnitType != "" && o.Unit == "") || (o.UnitType == "" && o.Unit != "") {
+		log.Println("WARNING: DefListOptions.DefFilter: must specify either both or neither of --type and --name (to filter by source unit)")
+	}
+	if o.File != "" {
+		fs = append(fs, srcstore.ByFiles(path.Clean(o.File)))
+	}
+	if o.FilePathPrefix != "" {
+		fs = append(fs, srcstore.ByFiles(path.Clean(o.FilePathPrefix)))
+	}
+	if len(o.Kinds) > 0 {
+		fs = append(fs, srcstore.DefFilterFunc(func(def *graph.Def) bool {
+			for _, kind := range o.Kinds {
+				if def.Kind == kind {
+					return true
+				}
+			}
+			return false
+		}))
+	}
+	if o.Exported {
+		fs = append(fs, srcstore.DefFilterFunc(func(def *graph.Def) bool {
+			return def.Exported
+		}))
+	}
+	if o.Nonlocal {
+		fs = append(fs, srcstore.DefFilterFunc(func(def *graph.Def) bool {
+			return !def.Local
+		}))
+	}
+	if !o.IncludeTest {
+		fs = append(fs, srcstore.DefFilterFunc(func(def *graph.Def) bool {
+			return !def.Test
+		}))
+	}
+	switch o.Sort {
+	case "key":
+		fs = append(fs, srcstore.DefsSortByKey{})
+	case "name":
+		fs = append(fs, srcstore.DefsSortByName{})
+	}
+	return fs
 }
 
 func populateDefFormatStrings(def *sourcegraph.Def) {
