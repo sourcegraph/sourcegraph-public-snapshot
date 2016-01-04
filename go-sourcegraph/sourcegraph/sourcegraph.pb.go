@@ -1275,6 +1275,12 @@ type BuildTask struct {
 	Success bool `protobuf:"varint,8,opt,name=success,proto3" json:",omitempty"`
 	// Failure is whether this task's execution failed.
 	Failure bool `protobuf:"varint,9,opt,name=failure,proto3" json:",omitempty"`
+	// Skipped is whether this task's execution was skipped.
+	Skipped bool `protobuf:"varint,10,opt,name=skipped,proto3" json:",omitempty"`
+	// Warnings is whether this task produced warnings. Tasks with
+	// warnings are not displayed as "green". The warnings are
+	// contained in the task logs.
+	Warnings bool `protobuf:"varint,11,opt,name=warnings,proto3" json:",omitempty"`
 }
 
 func (m *BuildTask) Reset()         { *m = BuildTask{} }
@@ -1543,6 +1549,8 @@ type TaskUpdate struct {
 	EndedAt   *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=ended_at" json:",omitempty"`
 	Success   bool               `protobuf:"varint,3,opt,name=success,proto3" json:",omitempty"`
 	Failure   bool               `protobuf:"varint,4,opt,name=failure,proto3" json:",omitempty"`
+	Skipped   bool               `protobuf:"varint,5,opt,name=skipped,proto3" json:",omitempty"`
+	Warnings  bool               `protobuf:"varint,6,opt,name=warnings,proto3" json:",omitempty"`
 }
 
 func (m *TaskUpdate) Reset()         { *m = TaskUpdate{} }

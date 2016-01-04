@@ -221,6 +221,15 @@ func (b *builder) execAxis(ctx context.Context, axis matrix.Axis, taskState buil
 			log15.Error("Creating subtask failed", "task", taskState.task, "err", err)
 			return noopMonitor{}
 		}
+
+		// Currently the only way to mark a task as having warnings is
+		// if the label contains the string "warning".
+		if strings.Contains(strings.ToLower(label), "warning") {
+			if err := subtaskState.warnings(ctx); err != nil {
+				log15.Error("Marking subtask as having warnings failed", "subtask", subtaskState.task, "err", err)
+			}
+		}
+
 		return taskMonitor{ctx: ctx, s: subtaskState}
 	}
 
@@ -240,7 +249,7 @@ func (m taskMonitor) Start() {
 }
 
 func (m taskMonitor) Skip() {
-	if err := m.s.end(m.ctx, errors.New("skipped")); err != nil {
+	if err := m.s.skip(m.ctx); err != nil {
 		log15.Error("Error marking monitored task as skipped", "task", m.s.task, "err", err)
 	}
 }

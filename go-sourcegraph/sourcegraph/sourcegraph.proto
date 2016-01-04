@@ -1117,6 +1117,14 @@ message BuildTask {
 
 	// Failure is whether this task's execution failed.
 	bool failure = 9;
+
+	// Skipped is whether this task's execution was skipped.
+	bool skipped = 10;
+
+	// Warnings is whether this task produced warnings. Tasks with
+	// warnings are not displayed as "green". The warnings are
+	// contained in the task logs.
+	bool warnings = 11;
 }
 
 message BuildTaskListOptions {
@@ -1293,6 +1301,8 @@ message TaskUpdate {
 	pbtypes.Timestamp ended_at = 2;
 	bool success = 3;
 	bool failure = 4;
+	bool skipped = 5;
+	bool warnings = 6;
 }
 
 // User represents a registered user.

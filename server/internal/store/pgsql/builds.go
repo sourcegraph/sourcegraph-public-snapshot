@@ -138,6 +138,8 @@ type dbBuildTask struct {
 	EndedAt   *time.Time `db:"ended_at"`
 	Success   bool
 	Failure   bool
+	Skipped   bool
+	Warnings  bool
 }
 
 func (t *dbBuildTask) toBuildTask() *sourcegraph.BuildTask {
@@ -151,6 +153,8 @@ func (t *dbBuildTask) toBuildTask() *sourcegraph.BuildTask {
 		EndedAt:   ts(t.EndedAt),
 		Success:   t.Success,
 		Failure:   t.Failure,
+		Skipped:   t.Skipped,
+		Warnings:  t.Warnings,
 	}
 }
 
@@ -165,6 +169,8 @@ func (t *dbBuildTask) fromBuildTask(t2 *sourcegraph.BuildTask) {
 	t.EndedAt = tm(t2.EndedAt)
 	t.Success = t2.Success
 	t.Failure = t2.Failure
+	t.Skipped = t2.Skipped
+	t.Warnings = t2.Warnings
 }
 
 func toBuildTasks(ts []*dbBuildTask) []*sourcegraph.BuildTask {
@@ -416,8 +422,8 @@ func (s *Builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 		// Construct SQL manually so we can retrieve the id # from
 		// the DB trigger.
 		t := created[i] // shorter alias
-		sql := `INSERT INTO repo_build_task(id, repo, build_id, parent_id, label, created_at, started_at, ended_at, success, failure)
-            VALUES(` + arg(t.ID) + `, ` + arg(t.Repo) + `, ` + arg(t.BuildID) + `, ` + arg(t.ParentID) + `, ` + arg(t.Label) + `, ` + arg(t.CreatedAt) + `, ` + arg(t.StartedAt) + `,` + arg(t.EndedAt) + `,` + arg(t.Success) + `, ` + arg(t.Failure) + `)
+		sql := `INSERT INTO repo_build_task(id, repo, build_id, parent_id, label, created_at, started_at, ended_at, success, failure, skipped, warnings)
+            VALUES(` + arg(t.ID) + `, ` + arg(t.Repo) + `, ` + arg(t.BuildID) + `, ` + arg(t.ParentID) + `, ` + arg(t.Label) + `, ` + arg(t.CreatedAt) + `, ` + arg(t.StartedAt) + `,` + arg(t.EndedAt) + `,` + arg(t.Success) + `, ` + arg(t.Failure) + `, ` + arg(t.Skipped) + `, ` + arg(t.Warnings) + `)
             RETURNING id;`
 		id, err := dbutil.SelectInt(dbh(ctx), sql, args...)
 		if err != nil {
@@ -447,6 +453,12 @@ func (s *Builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	}
 	if info.Failure {
 		updates = append(updates, "failure="+arg(info.Failure))
+	}
+	if info.Skipped {
+		updates = append(updates, "skipped="+arg(info.Skipped))
+	}
+	if info.Warnings {
+		updates = append(updates, "warnings="+arg(info.Warnings))
 	}
 
 	if len(updates) != 0 {

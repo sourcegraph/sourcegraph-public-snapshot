@@ -88,6 +88,33 @@ func (s buildTaskState) start(ctx context.Context) error {
 	return err
 }
 
+// skip marks the task as having been skipped.
+func (s buildTaskState) skip(ctx context.Context) error {
+	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
+		Task: s.task,
+		Info: sourcegraph.TaskUpdate{
+			Skipped: true,
+			EndedAt: now(),
+		},
+	})
+	if err != nil {
+		fmt.Fprintf(s.log, "Error marking task as skipped: %s\n", err)
+	}
+	return err
+}
+
+// warnings marks the task as having warnings.
+func (s buildTaskState) warnings(ctx context.Context) error {
+	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
+		Task: s.task,
+		Info: sourcegraph.TaskUpdate{Warnings: true},
+	})
+	if err != nil {
+		fmt.Fprintf(s.log, "Error marking task as having warnings: %s\n", err)
+	}
+	return err
+}
+
 // end updates the task's final state.
 func (s buildTaskState) end(ctx context.Context, execErr error) error {
 	defer s.log.Close()

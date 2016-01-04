@@ -385,6 +385,12 @@ func (s *Builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, 
 	if info.Failure {
 		t.Failure = true
 	}
+	if info.Skipped {
+		t.Skipped = true
+	}
+	if info.Warnings {
+		t.Warnings = true
+	}
 
 	return s.updateTask(ctx, t)
 }

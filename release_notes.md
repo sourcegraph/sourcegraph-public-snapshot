@@ -1,5 +1,10 @@
 # dev
 
+- Build tasks have another 2 additional fields: `Skipped` and
+  `Warnings`.  **PostgreSQL backend:** Run `alter table
+  repo_build_task add column skipped bool default false; alter table
+  repo_build_task add column warnings bool default false;` to perform
+  this migration.
 - Build tasks now have a new field, `ParentID`. **PostgreSQL
   backend:** Run `alter table repo_build_task add column parent_id
   bigint default 0;` to perform this migration.
