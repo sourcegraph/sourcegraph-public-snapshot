@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
@@ -106,8 +108,11 @@ func (s wrappedGitTransport) InfoRefs(ctx context.Context, param *gitpb.InfoRefs
 	target := local.Services.GitTransport
 
 	res, err = target.InfoRefs(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "GitTransport.InfoRefs returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedGitTransport) ReceivePack(ctx context.Context, param *gitpb.ReceivePackOp) (res *gitpb.Packet, err error) {
@@ -125,8 +130,11 @@ func (s wrappedGitTransport) ReceivePack(ctx context.Context, param *gitpb.Recei
 	target := local.Services.GitTransport
 
 	res, err = target.ReceivePack(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "GitTransport.ReceivePack returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.UploadPackOp) (res *gitpb.Packet, err error) {
@@ -144,8 +152,11 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.Upload
 	target := local.Services.GitTransport
 
 	res, err = target.UploadPack(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "GitTransport.UploadPack returned nil, nil")
+	}
+	return
 }
 
 type wrappedMultiRepoImporter struct {
@@ -167,8 +178,11 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 	target := local.Services.MultiRepoImporter
 
 	res, err = target.Import(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Import returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) (res *pbtypes.Void, err error) {
@@ -186,8 +200,11 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 	target := local.Services.MultiRepoImporter
 
 	res, err = target.Index(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Index returned nil, nil")
+	}
+	return
 }
 
 type wrappedAccounts struct {
@@ -209,8 +226,11 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 	target := local.Services.Accounts
 
 	res, err = target.Create(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *sourcegraph.PersonSpec) (res *sourcegraph.PendingPasswordReset, err error) {
@@ -228,8 +248,11 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 	target := local.Services.Accounts
 
 	res, err = target.RequestPasswordReset(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.NewPassword) (res *pbtypes.Void, err error) {
@@ -247,8 +270,11 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.N
 	target := local.Services.Accounts
 
 	res, err = target.ResetPassword(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (res *pbtypes.Void, err error) {
@@ -266,8 +292,11 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 	target := local.Services.Accounts
 
 	res, err = target.Update(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountInvite) (res *sourcegraph.PendingInvite, err error) {
@@ -285,8 +314,11 @@ func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountI
 	target := local.Services.Accounts
 
 	res, err = target.Invite(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.Invite returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) AcceptInvite(ctx context.Context, param *sourcegraph.AcceptedInvite) (res *sourcegraph.UserSpec, err error) {
@@ -304,8 +336,11 @@ func (s wrappedAccounts) AcceptInvite(ctx context.Context, param *sourcegraph.Ac
 	target := local.Services.Accounts
 
 	res, err = target.AcceptInvite(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.AcceptInvite returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) ListInvites(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.AccountInviteList, err error) {
@@ -323,8 +358,11 @@ func (s wrappedAccounts) ListInvites(ctx context.Context, param *pbtypes.Void) (
 	target := local.Services.Accounts
 
 	res, err = target.ListInvites(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.ListInvites returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) DeleteInvite(ctx context.Context, param *sourcegraph.InviteSpec) (res *pbtypes.Void, err error) {
@@ -342,8 +380,11 @@ func (s wrappedAccounts) DeleteInvite(ctx context.Context, param *sourcegraph.In
 	target := local.Services.Accounts
 
 	res, err = target.DeleteInvite(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.DeleteInvite returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSpec) (res *pbtypes.Void, err error) {
@@ -361,8 +402,11 @@ func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSp
 	target := local.Services.Accounts
 
 	res, err = target.Delete(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
+	}
+	return
 }
 
 type wrappedAuth struct {
@@ -384,8 +428,11 @@ func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, param *sourcegrap
 	target := local.Services.Auth
 
 	res, err = target.GetAuthorizationCode(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.GetAuthorizationCode returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.AccessTokenRequest) (res *sourcegraph.AccessTokenResponse, err error) {
@@ -403,8 +450,11 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 	target := local.Services.Auth
 
 	res, err = target.GetAccessToken(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.AuthInfo, err error) {
@@ -422,8 +472,11 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 	target := local.Services.Auth
 
 	res, err = target.Identify(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
+	}
+	return
 }
 
 type wrappedBuilds struct {
@@ -455,8 +508,11 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 	}
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) GetRepoBuild(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *sourcegraph.Build, err error) {
@@ -484,8 +540,11 @@ func (s wrappedBuilds) GetRepoBuild(ctx context.Context, param *sourcegraph.Repo
 	}
 
 	res, err = target.GetRepoBuild(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.GetRepoBuild returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOptions) (res *sourcegraph.BuildList, err error) {
@@ -501,8 +560,11 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 	}
 
 	res, err = federated.CustomBuildsList(ctx, param, local.Services.Builds)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.List returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCreateOp) (res *sourcegraph.Build, err error) {
@@ -530,8 +592,11 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 	}
 
 	res, err = target.Create(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.Create returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpdateOp) (res *sourcegraph.Build, err error) {
@@ -559,8 +624,11 @@ func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpda
 	}
 
 	res, err = target.Update(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.Update returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.BuildsListBuildTasksOp) (res *sourcegraph.BuildTaskList, err error) {
@@ -588,8 +656,11 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.Bu
 	}
 
 	res, err = target.ListBuildTasks(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.ListBuildTasks returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.BuildsCreateTasksOp) (res *sourcegraph.BuildTaskList, err error) {
@@ -617,8 +688,11 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.Build
 	}
 
 	res, err = target.CreateTasks(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.CreateTasks returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.BuildsUpdateTaskOp) (res *sourcegraph.BuildTask, err error) {
@@ -646,8 +720,11 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 	}
 
 	res, err = target.UpdateTask(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.UpdateTask returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.BuildsGetTaskLogOp) (res *sourcegraph.LogEntries, err error) {
@@ -675,8 +752,11 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 	}
 
 	res, err = target.GetTaskLog(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.GetTaskLog returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.BuildsDequeueNextOp) (res *sourcegraph.Build, err error) {
@@ -694,8 +774,11 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 	target := local.Services.Builds
 
 	res, err = target.DequeueNext(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
+	}
+	return
 }
 
 type wrappedChangesets struct {
@@ -717,8 +800,11 @@ func (s wrappedChangesets) Create(ctx context.Context, param *sourcegraph.Change
 	target := local.Services.Changesets
 
 	res, err = target.Create(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.Create returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.ChangesetSpec) (res *sourcegraph.Changeset, err error) {
@@ -736,8 +822,11 @@ func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.Changeset
 	target := local.Services.Changesets
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) List(ctx context.Context, param *sourcegraph.ChangesetListOp) (res *sourcegraph.ChangesetList, err error) {
@@ -755,8 +844,11 @@ func (s wrappedChangesets) List(ctx context.Context, param *sourcegraph.Changese
 	target := local.Services.Changesets
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.List returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.ChangesetUpdateOp) (res *sourcegraph.ChangesetEvent, err error) {
@@ -774,8 +866,11 @@ func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.Change
 	target := local.Services.Changesets
 
 	res, err = target.Update(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.Update returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.ChangesetMergeOp) (res *sourcegraph.ChangesetEvent, err error) {
@@ -793,8 +888,11 @@ func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.Changes
 	target := local.Services.Changesets
 
 	res, err = target.Merge(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.Merge returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) UpdateAffected(ctx context.Context, param *sourcegraph.ChangesetUpdateAffectedOp) (res *sourcegraph.ChangesetEventList, err error) {
@@ -812,8 +910,11 @@ func (s wrappedChangesets) UpdateAffected(ctx context.Context, param *sourcegrap
 	target := local.Services.Changesets
 
 	res, err = target.UpdateAffected(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.UpdateAffected returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) CreateReview(ctx context.Context, param *sourcegraph.ChangesetCreateReviewOp) (res *sourcegraph.ChangesetReview, err error) {
@@ -831,8 +932,11 @@ func (s wrappedChangesets) CreateReview(ctx context.Context, param *sourcegraph.
 	target := local.Services.Changesets
 
 	res, err = target.CreateReview(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.CreateReview returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) ListReviews(ctx context.Context, param *sourcegraph.ChangesetListReviewsOp) (res *sourcegraph.ChangesetReviewList, err error) {
@@ -850,8 +954,11 @@ func (s wrappedChangesets) ListReviews(ctx context.Context, param *sourcegraph.C
 	target := local.Services.Changesets
 
 	res, err = target.ListReviews(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.ListReviews returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedChangesets) ListEvents(ctx context.Context, param *sourcegraph.ChangesetSpec) (res *sourcegraph.ChangesetEventList, err error) {
@@ -869,8 +976,11 @@ func (s wrappedChangesets) ListEvents(ctx context.Context, param *sourcegraph.Ch
 	target := local.Services.Changesets
 
 	res, err = target.ListEvents(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Changesets.ListEvents returned nil, nil")
+	}
+	return
 }
 
 type wrappedDefs struct {
@@ -902,8 +1012,11 @@ func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res
 	}
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions) (res *sourcegraph.DefList, err error) {
@@ -919,8 +1032,11 @@ func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions
 	}
 
 	res, err = federated.CustomDefsList(ctx, param, local.Services.Defs)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.List returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRefsOp) (res *sourcegraph.RefList, err error) {
@@ -948,8 +1064,11 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 	}
 
 	res, err = target.ListRefs(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListRefs returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.ExampleList, err error) {
@@ -977,8 +1096,11 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 	}
 
 	res, err = target.ListExamples(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsListAuthorsOp) (res *sourcegraph.DefAuthorList, err error) {
@@ -1006,8 +1128,11 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 	}
 
 	res, err = target.ListAuthors(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDefs) ListClients(ctx context.Context, param *sourcegraph.DefsListClientsOp) (res *sourcegraph.DefClientList, err error) {
@@ -1035,8 +1160,11 @@ func (s wrappedDefs) ListClients(ctx context.Context, param *sourcegraph.DefsLis
 	}
 
 	res, err = target.ListClients(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListClients returned nil, nil")
+	}
+	return
 }
 
 type wrappedDeltas struct {
@@ -1068,8 +1196,11 @@ func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (r
 	}
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDeltas) ListUnits(ctx context.Context, param *sourcegraph.DeltasListUnitsOp) (res *sourcegraph.UnitDeltaList, err error) {
@@ -1097,8 +1228,11 @@ func (s wrappedDeltas) ListUnits(ctx context.Context, param *sourcegraph.DeltasL
 	}
 
 	res, err = target.ListUnits(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.ListUnits returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDeltas) ListDefs(ctx context.Context, param *sourcegraph.DeltasListDefsOp) (res *sourcegraph.DeltaDefs, err error) {
@@ -1126,8 +1260,11 @@ func (s wrappedDeltas) ListDefs(ctx context.Context, param *sourcegraph.DeltasLi
 	}
 
 	res, err = target.ListDefs(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.ListDefs returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasListFilesOp) (res *sourcegraph.DeltaFiles, err error) {
@@ -1155,8 +1292,11 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 	}
 
 	res, err = target.ListFiles(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, param *sourcegraph.DeltasListAffectedAuthorsOp) (res *sourcegraph.DeltaAffectedPersonList, err error) {
@@ -1184,8 +1324,11 @@ func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, param *sourcegra
 	}
 
 	res, err = target.ListAffectedAuthors(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.ListAffectedAuthors returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegraph.DeltasListAffectedClientsOp) (res *sourcegraph.DeltaAffectedPersonList, err error) {
@@ -1213,8 +1356,11 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegra
 	}
 
 	res, err = target.ListAffectedClients(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Deltas.ListAffectedClients returned nil, nil")
+	}
+	return
 }
 
 type wrappedGraphUplink struct {
@@ -1236,8 +1382,11 @@ func (s wrappedGraphUplink) Push(ctx context.Context, param *sourcegraph.Metrics
 	target := local.Services.GraphUplink
 
 	res, err = target.Push(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "GraphUplink.Push returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.UserEventList) (res *pbtypes.Void, err error) {
@@ -1255,8 +1404,11 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.U
 	target := local.Services.GraphUplink
 
 	res, err = target.PushEvents(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "GraphUplink.PushEvents returned nil, nil")
+	}
+	return
 }
 
 type wrappedMarkdown struct {
@@ -1278,8 +1430,11 @@ func (s wrappedMarkdown) Render(ctx context.Context, param *sourcegraph.Markdown
 	target := local.Services.Markdown
 
 	res, err = target.Render(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Markdown.Render returned nil, nil")
+	}
+	return
 }
 
 type wrappedMeta struct {
@@ -1301,8 +1456,11 @@ func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sour
 	target := local.Services.Meta
 
 	res, err = target.Status(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.ServerConfig, err error) {
@@ -1320,8 +1478,11 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 	target := local.Services.Meta
 
 	res, err = target.Config(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Meta.Config returned nil, nil")
+	}
+	return
 }
 
 type wrappedMirrorRepos struct {
@@ -1353,8 +1514,11 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 	}
 
 	res, err = target.RefreshVCS(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MirrorRepos.RefreshVCS returned nil, nil")
+	}
+	return
 }
 
 type wrappedMirroredRepoSSHKeys struct {
@@ -1376,8 +1540,11 @@ func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, param *sourcegra
 	target := local.Services.MirroredRepoSSHKeys
 
 	res, err = target.Create(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MirroredRepoSSHKeys.Create returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.SSHPrivateKey, err error) {
@@ -1395,8 +1562,11 @@ func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, param *sourcegraph.
 	target := local.Services.MirroredRepoSSHKeys
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MirroredRepoSSHKeys.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
@@ -1414,8 +1584,11 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, param *sourcegra
 	target := local.Services.MirroredRepoSSHKeys
 
 	res, err = target.Delete(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MirroredRepoSSHKeys.Delete returned nil, nil")
+	}
+	return
 }
 
 type wrappedNotify struct {
@@ -1437,8 +1610,11 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 	target := local.Services.Notify
 
 	res, err = target.GenericEvent(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
+	}
+	return
 }
 
 type wrappedOrgs struct {
@@ -1460,8 +1636,11 @@ func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *
 	target := local.Services.Orgs
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Orgs.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (res *sourcegraph.OrgList, err error) {
@@ -1479,8 +1658,11 @@ func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (r
 	target := local.Services.Orgs
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Orgs.List returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsListMembersOp) (res *sourcegraph.UserList, err error) {
@@ -1498,8 +1680,11 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 	target := local.Services.Orgs
 
 	res, err = target.ListMembers(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Orgs.ListMembers returned nil, nil")
+	}
+	return
 }
 
 type wrappedPeople struct {
@@ -1521,8 +1706,11 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 	target := local.Services.People
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
+	}
+	return
 }
 
 type wrappedRegisteredClients struct {
@@ -1544,8 +1732,11 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, param *sourcegraph.Re
 	target := local.Services.RegisteredClients
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.RegisteredClient, err error) {
@@ -1563,8 +1754,11 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes
 	target := local.Services.RegisteredClients
 
 	res, err = target.GetCurrent(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.GetCurrent returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph.RegisteredClient) (res *sourcegraph.RegisteredClient, err error) {
@@ -1582,8 +1776,11 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph
 	target := local.Services.RegisteredClients
 
 	res, err = target.Create(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.Create returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph.RegisteredClient) (res *pbtypes.Void, err error) {
@@ -1601,8 +1798,11 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph
 	target := local.Services.RegisteredClients
 
 	res, err = target.Update(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.Update returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph.RegisteredClientSpec) (res *pbtypes.Void, err error) {
@@ -1620,8 +1820,11 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph
 	target := local.Services.RegisteredClients
 
 	res, err = target.Delete(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.Delete returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.RegisteredClientListOptions) (res *sourcegraph.RegisteredClientList, err error) {
@@ -1639,8 +1842,11 @@ func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.R
 	target := local.Services.RegisteredClients
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.List returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, param *sourcegraph.UserPermissionsOptions) (res *sourcegraph.UserPermissions, err error) {
@@ -1658,8 +1864,11 @@ func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, param 
 	target := local.Services.RegisteredClients
 
 	res, err = target.GetUserPermissions(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.GetUserPermissions returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, param *sourcegraph.UserPermissions) (res *pbtypes.Void, err error) {
@@ -1677,8 +1886,11 @@ func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, param 
 	target := local.Services.RegisteredClients
 
 	res, err = target.SetUserPermissions(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.SetUserPermissions returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, param *sourcegraph.RegisteredClientSpec) (res *sourcegraph.UserPermissionsList, err error) {
@@ -1696,8 +1908,11 @@ func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, param
 	target := local.Services.RegisteredClients
 
 	res, err = target.ListUserPermissions(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RegisteredClients.ListUserPermissions returned nil, nil")
+	}
+	return
 }
 
 type wrappedRepoBadges struct {
@@ -1729,8 +1944,11 @@ func (s wrappedRepoBadges) ListBadges(ctx context.Context, param *sourcegraph.Re
 	}
 
 	res, err = target.ListBadges(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoBadges.ListBadges returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepoBadges) ListCounters(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.CounterList, err error) {
@@ -1758,8 +1976,11 @@ func (s wrappedRepoBadges) ListCounters(ctx context.Context, param *sourcegraph.
 	}
 
 	res, err = target.ListCounters(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoBadges.ListCounters returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepoBadges) RecordHit(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
@@ -1787,8 +2008,11 @@ func (s wrappedRepoBadges) RecordHit(ctx context.Context, param *sourcegraph.Rep
 	}
 
 	res, err = target.RecordHit(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoBadges.RecordHit returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepoBadges) CountHits(ctx context.Context, param *sourcegraph.RepoBadgesCountHitsOp) (res *sourcegraph.RepoBadgesCountHitsResult, err error) {
@@ -1816,8 +2040,11 @@ func (s wrappedRepoBadges) CountHits(ctx context.Context, param *sourcegraph.Rep
 	}
 
 	res, err = target.CountHits(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoBadges.CountHits returned nil, nil")
+	}
+	return
 }
 
 type wrappedRepoStatuses struct {
@@ -1849,8 +2076,11 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 	}
 
 	res, err = target.GetCombined(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCombined returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.RepoStatusesCreateOp) (res *sourcegraph.RepoStatus, err error) {
@@ -1878,8 +2108,11 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 	}
 
 	res, err = target.Create(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoStatuses.Create returned nil, nil")
+	}
+	return
 }
 
 type wrappedRepoTree struct {
@@ -1911,8 +2144,11 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 	}
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoTree.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTreeSearchOp) (res *sourcegraph.VCSSearchResultList, err error) {
@@ -1940,8 +2176,11 @@ func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTree
 	}
 
 	res, err = target.Search(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeListOp) (res *sourcegraph.RepoTreeListResult, err error) {
@@ -1969,8 +2208,11 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 	}
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoTree.List returned nil, nil")
+	}
+	return
 }
 
 type wrappedRepos struct {
@@ -1990,8 +2232,11 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 	}
 
 	res, err = federated.CustomReposGet(ctx, param, local.Services.Repos)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptions) (res *sourcegraph.RepoList, err error) {
@@ -2009,8 +2254,11 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 	target := local.Services.Repos
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreateOp) (res *sourcegraph.Repo, err error) {
@@ -2026,8 +2274,11 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 	}
 
 	res, err = federated.CustomReposCreate(ctx, param, local.Services.Repos)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Create returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdateOp) (res *sourcegraph.Repo, err error) {
@@ -2055,8 +2306,11 @@ func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdate
 	}
 
 	res, err = target.Update(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Update returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
@@ -2084,8 +2338,11 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 	}
 
 	res, err = target.Delete(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Delete returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) GetReadme(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *sourcegraph.Readme, err error) {
@@ -2113,8 +2370,11 @@ func (s wrappedRepos) GetReadme(ctx context.Context, param *sourcegraph.RepoRevS
 	}
 
 	res, err = target.GetReadme(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetReadme returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
@@ -2142,8 +2402,11 @@ func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec
 	}
 
 	res, err = target.GetConfig(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetConfig returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *vcs.Commit, err error) {
@@ -2171,8 +2434,11 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 	}
 
 	res, err = target.GetCommit(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetCommit returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposListCommitsOp) (res *sourcegraph.CommitList, err error) {
@@ -2200,8 +2466,11 @@ func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposL
 	}
 
 	res, err = target.ListCommits(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListCommits returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.ReposListBranchesOp) (res *sourcegraph.BranchList, err error) {
@@ -2229,8 +2498,11 @@ func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.Repos
 	}
 
 	res, err = target.ListBranches(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListBranches returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposListTagsOp) (res *sourcegraph.TagList, err error) {
@@ -2258,8 +2530,11 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 	}
 
 	res, err = target.ListTags(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListTags returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.ReposListCommittersOp) (res *sourcegraph.CommitterList, err error) {
@@ -2287,8 +2562,11 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 	}
 
 	res, err = target.ListCommitters(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListCommitters returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *sourcegraph.TreeEntrySpec) (res *sourcegraph.SrclibDataVersion, err error) {
@@ -2316,8 +2594,11 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 	}
 
 	res, err = target.GetSrclibDataVersionForPath(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoConfigureAppOp) (res *pbtypes.Void, err error) {
@@ -2345,8 +2626,11 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoC
 	}
 
 	res, err = target.ConfigureApp(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ConfigureApp returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
@@ -2374,8 +2658,11 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 	}
 
 	res, err = target.GetInventory(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
+	}
+	return
 }
 
 type wrappedSearch struct {
@@ -2407,8 +2694,11 @@ func (s wrappedSearch) SearchTokens(ctx context.Context, param *sourcegraph.Toke
 	}
 
 	res, err = target.SearchTokens(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Search.SearchTokens returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSearchOptions) (res *sourcegraph.VCSSearchResultList, err error) {
@@ -2436,8 +2726,11 @@ func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSe
 	}
 
 	res, err = target.SearchText(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Search.SearchText returned nil, nil")
+	}
+	return
 }
 
 type wrappedStorage struct {
@@ -2459,8 +2752,11 @@ func (s wrappedStorage) Get(ctx context.Context, param *sourcegraph.StorageKey) 
 	target := local.Services.Storage
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Storage.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp) (res *pbtypes.Void, err error) {
@@ -2478,8 +2774,11 @@ func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp
 	target := local.Services.Storage
 
 	res, err = target.Put(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Storage.Put returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.StoragePutOp) (res *pbtypes.Void, err error) {
@@ -2497,8 +2796,11 @@ func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.S
 	target := local.Services.Storage
 
 	res, err = target.PutNoOverwrite(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Storage.PutNoOverwrite returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKey) (res *pbtypes.Void, err error) {
@@ -2516,8 +2818,11 @@ func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKe
 	target := local.Services.Storage
 
 	res, err = target.Delete(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Storage.Delete returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedStorage) Exists(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageExists, err error) {
@@ -2535,8 +2840,11 @@ func (s wrappedStorage) Exists(ctx context.Context, param *sourcegraph.StorageKe
 	target := local.Services.Storage
 
 	res, err = target.Exists(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Storage.Exists returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageList, err error) {
@@ -2554,8 +2862,11 @@ func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey)
 	target := local.Services.Storage
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Storage.List returned nil, nil")
+	}
+	return
 }
 
 type wrappedUnits struct {
@@ -2587,8 +2898,11 @@ func (s wrappedUnits) Get(ctx context.Context, param *sourcegraph.UnitSpec) (res
 	}
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Units.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptions) (res *sourcegraph.RepoSourceUnitList, err error) {
@@ -2606,8 +2920,11 @@ func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptio
 	target := local.Services.Units
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Units.List returned nil, nil")
+	}
+	return
 }
 
 type wrappedUserKeys struct {
@@ -2629,8 +2946,11 @@ func (s wrappedUserKeys) AddKey(ctx context.Context, param *sourcegraph.SSHPubli
 	target := local.Services.UserKeys
 
 	res, err = target.AddKey(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "UserKeys.AddKey returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHPublicKey) (res *sourcegraph.UserSpec, err error) {
@@ -2648,8 +2968,11 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHP
 	target := local.Services.UserKeys
 
 	res, err = target.LookupUser(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "UserKeys.LookupUser returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
@@ -2667,8 +2990,11 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *pbtypes.Void) (re
 	target := local.Services.UserKeys
 
 	res, err = target.DeleteKey(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "UserKeys.DeleteKey returned nil, nil")
+	}
+	return
 }
 
 type wrappedUsers struct {
@@ -2690,8 +3016,11 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 	target := local.Services.Users
 
 	res, err = target.Get(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.EmailAddr) (res *sourcegraph.User, err error) {
@@ -2709,8 +3038,11 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.Email
 	target := local.Services.Users
 
 	res, err = target.GetWithEmail(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.EmailAddrList, err error) {
@@ -2728,8 +3060,11 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 	target := local.Services.Users
 
 	res, err = target.ListEmails(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOptions) (res *sourcegraph.UserList, err error) {
@@ -2747,8 +3082,11 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	target := local.Services.Users
 
 	res, err = target.List(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserCount, err error) {
@@ -2766,6 +3104,9 @@ func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sour
 	target := local.Services.Users
 
 	res, err = target.Count(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.Count returned nil, nil")
+	}
+	return
 }

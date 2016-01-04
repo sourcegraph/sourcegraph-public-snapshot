@@ -82,6 +82,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
@@ -126,7 +128,6 @@ func Services(c *auth.Config) svc.Services {
 
 			<<<if methodHasCustomFederation $service .Name>>>
 				res, err = federated.Custom<<<$service.Name>>><<<.Name>>>(ctx, param, local.Services.<<<$service.Name>>>)
-				return
 			<<<else>>>
 				target := local.Services.<<<$service.Name>>>
 				<<<$repoURIExpr := repoURIExpr .>>>
@@ -144,8 +145,11 @@ func Services(c *auth.Config) svc.Services {
 				<<<end>>>
 
 				res, err = target.<<<.Name>>>(ctx, param)
-				return
 			<<<end>>>
+			if res == nil && err == nil {
+				err = grpc.Errorf(codes.Internal, "<<<$service.Name>>>.<<<.Name>>> returned nil, nil")
+			}
+			return
 		}
 	<<<end>>>
 <<<end>>>
