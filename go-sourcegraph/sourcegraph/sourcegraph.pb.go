@@ -1176,6 +1176,12 @@ type BuildConfig struct {
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
 	Priority int32 `protobuf:"varint,4,opt,name=priority,proto3" json:",omitempty"`
+	// BuilderConfig is the actual .drone.yml config file that was
+	// used to run this build in CI. It reflects all automatic
+	// additions/changes made by the worker (i.e., it is not
+	// necessarily the same .drone.yml config file as the one in the
+	// repository).
+	BuilderConfig string `protobuf:"bytes,16,opt,name=builder_config,proto3" json:",omitempty"`
 }
 
 func (m *BuildConfig) Reset()         { *m = BuildConfig{} }
@@ -1297,15 +1303,16 @@ func (*BuildTaskListOptions) ProtoMessage()    {}
 
 // A BuildUpdate contains updated information to update on an existing build.
 type BuildUpdate struct {
-	StartedAt   *pbtypes.Timestamp `protobuf:"bytes,1,opt,name=started_at" json:",omitempty"`
-	EndedAt     *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=ended_at" json:",omitempty"`
-	HeartbeatAt *pbtypes.Timestamp `protobuf:"bytes,3,opt,name=heartbeat_at" json:",omitempty"`
-	Host        string             `protobuf:"bytes,4,opt,name=host,proto3" json:",omitempty"`
-	Success     bool               `protobuf:"varint,5,opt,name=success,proto3" json:",omitempty"`
-	Purged      bool               `protobuf:"varint,6,opt,name=purged,proto3" json:",omitempty"`
-	Failure     bool               `protobuf:"varint,7,opt,name=failure,proto3" json:",omitempty"`
-	Killed      bool               `protobuf:"varint,8,opt,name=killed,proto3" json:",omitempty"`
-	Priority    int32              `protobuf:"varint,9,opt,name=priority,proto3" json:",omitempty"`
+	StartedAt     *pbtypes.Timestamp `protobuf:"bytes,1,opt,name=started_at" json:",omitempty"`
+	EndedAt       *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=ended_at" json:",omitempty"`
+	HeartbeatAt   *pbtypes.Timestamp `protobuf:"bytes,3,opt,name=heartbeat_at" json:",omitempty"`
+	Host          string             `protobuf:"bytes,4,opt,name=host,proto3" json:",omitempty"`
+	Success       bool               `protobuf:"varint,5,opt,name=success,proto3" json:",omitempty"`
+	Purged        bool               `protobuf:"varint,6,opt,name=purged,proto3" json:",omitempty"`
+	Failure       bool               `protobuf:"varint,7,opt,name=failure,proto3" json:",omitempty"`
+	Killed        bool               `protobuf:"varint,8,opt,name=killed,proto3" json:",omitempty"`
+	Priority      int32              `protobuf:"varint,9,opt,name=priority,proto3" json:",omitempty"`
+	BuilderConfig string             `protobuf:"bytes,10,opt,name=builder_config,proto3" json:",omitempty"`
 }
 
 func (m *BuildUpdate) Reset()         { *m = BuildUpdate{} }

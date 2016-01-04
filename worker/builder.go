@@ -123,6 +123,15 @@ func (b *builder) exec(ctx context.Context) error {
 	}
 	b.config = *config
 
+	// Save config as BuilderConfig on the build.
+	configYAML, err := marshalConfigWithMatrix(b.config, axes)
+	if err != nil {
+		return err
+	}
+	if _, err := b.cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{Build: b.build.Spec(), Info: sourcegraph.BuildUpdate{BuilderConfig: string(configYAML)}}); err != nil {
+		return err
+	}
+
 	if err := b.prepare(ctx); err != nil {
 		return err
 	}

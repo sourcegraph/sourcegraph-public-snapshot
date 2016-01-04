@@ -20,6 +20,7 @@ func init() {
 		`ALTER TABLE repo_build ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build ALTER COLUMN ended_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build ALTER COLUMN heartbeat_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
+		`ALTER TABLE repo_build ALTER COLUMN builder_config TYPE text;`,
 		`CREATE INDEX repo_build_repo ON repo_build(repo);`,
 		`CREATE INDEX repo_build_priority ON repo_build(priority);`,
 		`create index repo_build_created_at on repo_build(created_at desc nulls last);`,
@@ -58,22 +59,23 @@ func init() {
 
 // dbBuild DB-maps a sourcegraph.Build object.
 type dbBuild struct {
-	ID          uint64
-	Repo        string
-	CommitID    string `db:"commit_id"`
-	Branch      string
-	Tag         string
-	CreatedAt   time.Time  `db:"created_at"`
-	StartedAt   *time.Time `db:"started_at"`
-	EndedAt     *time.Time `db:"ended_at"`
-	HeartbeatAt *time.Time `db:"heartbeat_at"`
-	Success     bool
-	Failure     bool
-	Killed      bool
-	Host        string
-	Purged      bool
-	Queue       bool
-	Priority    int
+	ID            uint64
+	Repo          string
+	CommitID      string `db:"commit_id"`
+	Branch        string
+	Tag           string
+	CreatedAt     time.Time  `db:"created_at"`
+	StartedAt     *time.Time `db:"started_at"`
+	EndedAt       *time.Time `db:"ended_at"`
+	HeartbeatAt   *time.Time `db:"heartbeat_at"`
+	Success       bool
+	Failure       bool
+	Killed        bool
+	Host          string
+	Purged        bool
+	Queue         bool
+	Priority      int
+	BuilderConfig string `db:"builder_config"`
 }
 
 func (b *dbBuild) toBuild() *sourcegraph.Build {
@@ -93,8 +95,9 @@ func (b *dbBuild) toBuild() *sourcegraph.Build {
 		Host:        b.Host,
 		Purged:      b.Purged,
 		BuildConfig: sourcegraph.BuildConfig{
-			Queue:    b.Queue,
-			Priority: int32(b.Priority),
+			Queue:         b.Queue,
+			Priority:      int32(b.Priority),
+			BuilderConfig: b.BuilderConfig,
 		},
 	}
 }
@@ -116,6 +119,7 @@ func (b *dbBuild) fromBuild(b2 *sourcegraph.Build) {
 	b.Purged = b2.Purged
 	b.Queue = b2.Queue
 	b.Priority = int(b2.Priority)
+	b.BuilderConfig = b2.BuilderConfig
 }
 
 func toBuilds(bs []*dbBuild) []*sourcegraph.Build {
@@ -359,10 +363,10 @@ func (s *Builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 	// Construct SQL manually so we can retrieve the id # from
 	// the DB trigger.
 	sql := `INSERT INTO repo_build(id, repo, commit_id, branch, tag, created_at, started_at, ended_at, heartbeat_at,
-                                   success, failure, killed, host, purged, queue, priority)
+                                   success, failure, killed, host, purged, queue, priority, builder_config)
             VALUES(` + arg(b.ID) + `, ` + arg(b.Repo) + `, ` + arg(b.CommitID) + `, ` + arg(b.Branch) + `, ` + arg(b.Tag) + `, ` + arg(b.CreatedAt) + `, ` + arg(b.StartedAt) + `,` +
 		arg(b.EndedAt) + `,` + arg(b.HeartbeatAt) + `, ` + arg(b.Success) + `, ` + arg(b.Failure) + `, ` + arg(b.Killed) + `, ` +
-		arg(b.Host) + `, ` + arg(b.Purged) + `, ` + arg(b.Queue) + `, ` + arg(b.Priority) + `)
+		arg(b.Host) + `, ` + arg(b.Purged) + `, ` + arg(b.Queue) + `, ` + arg(b.Priority) + `, ` + arg(b.BuilderConfig) + `)
             RETURNING id;`
 	id, err := dbutil.SelectInt(dbh(ctx), sql, args...)
 	if err != nil {

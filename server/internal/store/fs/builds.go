@@ -303,6 +303,7 @@ func (s *Builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info so
 	b.Failure = info.Failure
 	b.Priority = info.Priority
 	b.Killed = info.Killed
+	b.BuilderConfig = info.BuilderConfig
 
 	return s.create(ctx, b)
 }

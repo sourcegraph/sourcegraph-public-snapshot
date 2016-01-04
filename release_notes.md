@@ -1,5 +1,8 @@
 # dev
 
+- Builds have a new build: `BuilderConfig`. **PostgreSQL backend:**
+  Run `alter table repo_build add column builder_config text default
+  '';` to perform this migration.
 - Build tasks have another 2 additional fields: `Skipped` and
   `Warnings`.  **PostgreSQL backend:** Run `alter table
   repo_build_task add column skipped bool default false; alter table

@@ -1025,6 +1025,13 @@ message BuildConfig {
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
 	int32 priority = 4;
+
+	// BuilderConfig is the actual .drone.yml config file that was
+	// used to run this build in CI. It reflects all automatic
+	// additions/changes made by the worker (i.e., it is not
+	// necessarily the same .drone.yml config file as the one in the
+	// repository).
+	string builder_config = 16 [(gogoproto.customname) = "BuilderConfig"];
 }
 
 // BuildGetLogOptions specifies options for build log API methods.
@@ -1142,6 +1149,7 @@ message BuildUpdate {
 	bool failure = 7;
 	bool killed = 8;
 	int32 priority = 9;
+	string builder_config = 10;
 }
 
 message BuildList {
