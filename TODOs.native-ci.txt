@@ -1,0 +1,230 @@
+# Native CI TODOs
+
+Note: To avoid confusion, in this document "CI" refers to continuous
+integration, not Code Intelligence. We will use "srclib," "analysis,"
+and "Code Intelligence" to refer to srclib Code Intelligence.
+
+## Documentation
+
+Much of the documentation that's now irrelevant has been removed on
+the `native-ci` branch, but not all. And the documentation does not
+explain how to install Docker, etc. The product will pop up an alert
+if the user doesn't have Docker installed, but it is not a very clear
+alert (and there are a million ways to misconfigure Docker, especially
+on OS X).
+
+Let's try to keep as much of the installation process inside the app
+itself where we can intelligently detect (and fix) configuration
+issues, instead of in separate documentation that's out-of-band and
+that can easily fall out of date.
+
+Also document `src check` (runs CI locally, woo!).
+
+
+## Docker GCing
+
+We don't use Docker volumes, only containers, so there is no
+dependency on the host machine (the `DOCKER_HOST` can be any remote
+machine). But we should check that old containers are being killed
+properly to avoid exhausting system resources. Once a build is
+completed, all of its Docker containers can be 100% wiped out.
+
+
+## Sourcegraph.com deployment
+
+We no longer need separate `src` workers, since the worker is now
+extremely lightweight (it just sends stuff off to a Docker host). So,
+the app servers can also be the workers. In lieu of the worker
+cluster, we do need a Docker cluster. Since there is no dependency on
+the host machine, the Docker host can be remote, or a cluster, or a
+load balancer, etc.
+
+Note that the infrastructure repo is not updated to work with
+native-ci.
+
+
+## Handling unsupported scenarios
+
+There are a few ways Sourcegraph can break now:
+
+* Invalid .drone.yml: The repo has a .drone.yml file, but it is
+  invalid (e.g., syntax error).
+* Unable to auto-generate CI config: The repo has no .drone.yml file,
+  and we can detect some languages in use (using `pkg/inventory`), but
+  we don't know how to generate a .drone.yml file to build code in
+  those languages.
+* CI auto-generation fail: The repo has no .drone.yml file, we detect
+  recognized languages in use, and we generate a .drone.yml file, but
+  our auto-generated .drone.yml file is wrong (e.g., tries to run `npm
+  test` in the root directory, but the package.json is at
+  `app/package.json`). The issue is not discovered until the build
+  executes.
+* Conflict between auto-generated CI config and user-supplied CI
+  config: The repo has a .drone.yml file, and we attempt to splice in
+  additional build steps for (e.g.) some JavaScript files found in the
+  repo. Those build steps interfere with the user-supplied JavaScript
+  build by either adding noise to the output or by actually changing
+  files on disk (e.g., by running `npm install`).
+* CI build failure: The .drone.yml file (whether user-supplied or
+  auto-generated) leads to a failed build (e.g., because a test
+  failed).
+* No supported languages for srclib analysis: The repo uses languages
+  (as detected by `pkg/inventory`) that srclib does not support, and
+  therefore it can't auto-generate .drone.yml build entries to analyze
+  those languages.
+* Auto-generate an incorrect srclib analysis plan: The repo uses
+  srclib-supported languages, but it uses them in an
+  unexpected/unrecognized way (e.g., using an Eclipse project instead
+  of a Maven `pom.xml` file). Because srclib-java is different from
+  `pkg/inventory`, there is a disconnect between what `pkg/inventory`
+  thinks srclib-java can handle and what srclib-java can actually
+  handle.
+* Conflict between auto-generated srclib config and user-supplied
+  srclib config: The repo has a .drone.yml file that runs srclib-go
+  with some custom parameters, and Sourcegraph tries to automatically
+  add a srclib-go step because it didn't realize that the user already
+  had one set up. As a result, the auto-generated srclib-go step
+  produces bad output or fails, leading to confusion and possibly bad
+  Code Intelligence data.
+
+We need to handle all of these well. As a first step, it's most
+important to make the problem apparent and debuggable by a reasonably
+motivated developer.
+
+@mattfs has some good ideas about how to accomplish this.
+
+
+## Build UI
+
+The build UI has some issues:
+
+* Slow when there are lots of logs
+* Is not smart enough about when to update the data from the network
+* Very visually noisy
+* Does not save state (e.g., if you are looking at a specific task log and want to share the URL)
+* Offers no way of seeing the .drone.yml file that was used
+* Does not have any good way of helping users troubleshoot issues that come up
+
+
+## Changes vs. Drone upstream
+
+The github.com/sqs/drone-exec `dev` branch has some changes that
+should be merged into upstream Drone:
+
+* https://github.com/drone/drone-exec/pull/17
+* https://github.com/drone/drone-exec/pull/13 (see `TODO` comments about this in the drone-exec `dev` branch)
+* https://github.com/drone/drone-exec/pull/12 (this also requires changes to `drone-git`, `drone-plugin-go`, and some other repos, I think)
+
+The following 3 commits should also be submitted as 2 PRs. First, the
+bottom 2 commits should be submitted as a PR. Then the top one should
+be submitted as its own PR.
+
+```
+commit 4bba35ff1d1eaf5874f21c9a2161970969b992d1
+Author: Quinn Slack <qslack@qslack.com>
+Date:   Sun Jan 3 10:14:23 2016 -0800
+
+    enable monitoring of individual steps
+
+commit 9c93bd4215482335c199ee4d973d239c2153fbae
+Author: Quinn Slack <qslack@qslack.com>
+Date:   Sun Jan 3 17:12:39 2016 -0800
+
+    pass section names and keys to the runner
+
+commit 776f9b393a2aab86131fbebd3eb6440a331d0b0b
+Author: Quinn Slack <qslack@qslack.com>
+Date:   Sun Jan 3 05:39:30 2016 -0800
+
+    yaml: factor out YAML ordered map helpers, export full types API
+```
+
+
+## Security
+
+* What should we advise users about Docker security for their own Sourcegraph Server installations?
+* What about the security of Docker on src.sourcegraph.com?
+* What are the security implications we run CI for the world on Sourcegraph.com?
+* Have any protobuf API changes affected security?
+
+
+## Migrations
+
+Note that there are some required migrations mentioned in
+`release_notes.md.`
+
+
+## srclib no-docker branch
+
+The native-ci branch uses the srclib `no-docker` branch, which is
+dramatically simplified. With this branch, srclib no longer supports
+Docker as a first-class execution method (because it's always run
+inside Docker anyway). The `no-docker` branch of srclib should be
+merged (@beyang can review). See the open PR at
+https://github.com/sourcegraph/srclib/pull/229.
+
+
+## srclib toolchains in CI
+
+To run srclib toolchains, we need to wrap the toolchain's own Docker
+image in another Docker image that has the `srclib` program
+installed. Then the Docker container runs `srclib config && srclib
+make` in the project dir.
+
+This means that for every srclib toolchain, we'll probably have 2
+Docker images: `srclib/srclib-LANG` and
+`srclib/drone-srclib-LANG`. This is a bit clunky. Is there a better
+way?
+
+See https://src.sourcegraph.com/srclib.org/plugin/drone-srclib@dev for
+where these `srclib/drone-srclib-LANG` Docker images are created (see
+`toolchains/**/Makefile`).
+
+
+## CI integration with changesets
+
+We want to see the CI build status in changesets to see if tests pass,
+etc.
+
+What's the best way to do this? Should builds write a commit status
+(similar to GitHub)? Or should the changesets app directly fetch the
+build for the head and merge commits?
+
+Either way, this should be added to the UI.
+
+
+## Repo inventory
+
+The repo inventory process (in `pkg/inventory`) is how we know what
+languages a repo has. It uses a super primitive scheme now (it just
+looks for file extensions). We should use github.com/github/linguist's
+data to do a better job of language detection. The Go library
+https://github.com/generaltso/linguist seems decent.
+
+Having more languages recognized is a big win even if we don't have
+the CI build steps or srclib analysis steps to auto-generate. We can
+still display messages to the user telling them that we detected their
+language and explain why it will not have Code Intelligence. This sets
+expectations correctly (rather than leading the user to think
+everything works 100% all of the time).
+
+
+## Switch to our own CI
+
+There's a tiny demo .drone.yml file in the sourcegraph repo native-ci
+branch. We should move everything over from circle.yml to .drone.yml
+so we can dogfood it. And, plus, it could end up speeding up our
+builds since we can run src.sourcegraph.com on a beefy machine.
+
+
+## Other TODOs
+
+* If a Go repo needs to `go get` private repos, does it work? (It
+  should, since there's a netrc in the Docker container with the
+  GitHub credentials from the server, if they have been saved.)
+* Do SSH repos work? I don't think that SSH keys are written to the
+  Docker image nor available when drone-git clones the repo. This is
+  just an oversight; see `worker/builder_prepare.go` where we make the
+  OAuth2 creds available for a starting point to fix this issue.
+
+Check the source code for `TODO(native-ci)` and `TODO(sqs!native-ci)`.
