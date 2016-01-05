@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -254,7 +255,18 @@ func (b *builder) execAxis(ctx context.Context, axis matrix.Axis, taskState buil
 		return taskMonitor{ctx: ctx, s: subtaskState}
 	}
 
-	return droneexec.Exec(axisPayload, opt)
+	return ignoreBtrfsCircleCIError(droneexec.Exec(axisPayload, opt))
+}
+
+// Ignores errors due to CircleCI forbidding certain operations inside
+// their unprivileged lxc containers. See
+// https://discuss.circleci.com/t/docker-error-removing-intermediate-container/70.
+func ignoreBtrfsCircleCIError(err error) error {
+	const msg = "Failed to destroy btrfs snapshot: operation not permitted"
+	if os.Getenv("CIRCLECI") != "" && strings.Contains(err.Error(), msg) {
+		return nil
+	}
+	return err
 }
 
 // taskMonitor is a Drone task monitor.
