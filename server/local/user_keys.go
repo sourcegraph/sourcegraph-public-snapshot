@@ -2,6 +2,7 @@ package local
 
 import (
 	"encoding/base64"
+	"errors"
 	"os"
 	"strconv"
 
@@ -62,9 +63,8 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
 	defer noCache(ctx)
 
-	//TODO: Implement
-	userSpec := sourcegraph.UserSpec{}
-	return &userSpec, nil
+	// TODO(slimsag): implement this
+	return &sourcegraph.UserSpec{}, errors.New("LookupUser not implemented")
 }
 
 func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
