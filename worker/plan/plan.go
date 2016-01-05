@@ -105,7 +105,25 @@ func Create(config *droneyaml.Config, axes []matrix.Axis, foundYAML bool, inv *i
 		return nil, nil, err
 	}
 
+	if err := setCloneCompleteHistory(config); err != nil {
+		return nil, nil, err
+	}
+
 	return config, axes, nil
+}
+
+// setCloneCompleteHistory sets the clone step to NOT use a shallow clone so
+// that all of the refspec's commits get fetched. This is necessary
+// for us to build the 2000th-old commit on a branch, for example (git
+// fetch --depth 50, which is Drone CI's drone-git's default, would
+// always omit it).
+func setCloneCompleteHistory(config *droneyaml.Config) error {
+	if config.Clone.Vargs == nil {
+		config.Clone.Vargs = droneyaml.Vargs{}
+	}
+
+	config.Clone.Vargs["complete"] = true
+	return nil
 }
 
 // readExistingConfig reads the repo's existing .drone.yml

@@ -36,14 +36,26 @@ func (b *builder) prepare(ctx context.Context) error {
 		return err
 	}
 
+	droneBuild := plugin.Build{
+		Commit: b.build.CommitID,
+		Branch: b.build.Branch,
+	}
+	switch {
+	case b.build.Branch != "":
+		droneBuild.Ref = "refs/heads/" + b.build.Branch
+	case b.build.Tag != "":
+		droneBuild.Ref = "refs/tags/" + b.build.Tag
+	default:
+		// We need to fetch all branches to find the commit (git
+		// doesn't let you just fetch a single commit; see the docs on
+		// Build.Branch in sourcegraph.proto for an explanation).
+		droneBuild.Ref = "refs/heads/*:refs/remotes/origin/*"
+	}
+
 	b.payload = droneexec.Payload{
 		Workspace: &plugin.Workspace{},
-		Build: &plugin.Build{
-			Commit: b.build.CommitID,
-			Branch: b.build.Branch,
-			Ref:    b.build.BranchOrTag(),
-		},
-		Job: &plugin.Job{},
+		Build:     &droneBuild,
+		Job:       &plugin.Job{},
 		System: &plugin.System{
 			Plugins: []string{
 				"plugins/*",

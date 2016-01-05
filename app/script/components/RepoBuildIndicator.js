@@ -16,7 +16,9 @@ var RepoBuildIndicator = React.createClass({
 		// CommitID sets the revision for which we are checking build information.
 		CommitID: React.PropTypes.string,
 
-		// Branch sets the branch for newly created builds.
+		// Branch sets the branch for newly created builds. It is
+		// recommended to set when creating builds, See the docs on
+		// the Build.Branch field (in sourcegraph.proto) for why.
 		Branch: React.PropTypes.string,
 
 		// Buildable is whether or not the RepoBuildIndicator will let the

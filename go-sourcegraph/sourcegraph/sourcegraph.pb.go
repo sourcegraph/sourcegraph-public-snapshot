@@ -1141,6 +1141,18 @@ type Build struct {
 	// different ways depending on the branch the build was started on
 	// (e.g., a release branch may trigger additional deployment
 	// actions). A single commit can exist on any number of branches.
+	//
+	// A build is recommended to be associated with either a branch or
+	// a tag because it is not generally possible to fetch a specific
+	// commit from a Git repository; you can only fetch a refspec
+	// (branch, tag, etc.). During CI we want to avoid needing to
+	// clone *all* branches just to find the specific commit we
+	// need. If the branch or tag is specified, we can do a fetch of a
+	// specific refspec; otherwise we need to fetch all branches,
+	// which makes CI much slower. And Git servers do not let you
+	// request a single commit (although this is changing; see
+	// http://stackoverflow.com/a/30701724, but it is still disabled
+	// by default for apparently good reasons).
 	Branch string `protobuf:"bytes,14,opt,name=branch,proto3" json:",omitempty"`
 	// Tag, if set, is the name of the VCS tag associated with this
 	// commit. See Branch for more information. A single commit can

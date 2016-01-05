@@ -107,7 +107,6 @@ The build UI has some issues:
 * Does not have any good way of helping users troubleshoot issues that come up
 * Does not have a way or explanation text for starting a build when you go to the builds page - it is just blank
 * If there is a single build with no label, it looks empty
-* Clicking the BuildIndicator does not associate the build with the right branch, so the build's Ref is empty, therefore no branches may be manually built
 * When a build is reaped, its tasks are not marked as ended - this makes the build UI confusing
 * If a Docker image for a build step does not exist and the `docker pull` fails, there is no log output shown
 * If there is no log output (e.g., for a skipped task), it shows a single empty line of logs
@@ -279,5 +278,9 @@ builds since we can run src.sourcegraph.com on a beefy machine.
   Docker image nor available when drone-git clones the repo. This is
   just an oversight; see `worker/builder_prepare.go` where we make the
   OAuth2 creds available for a starting point to fix this issue.
+
+* Add the Deploy, Notify, etc., options to BuildConfig. And if a build
+  is not of a branch head, or has no branch altogether, set them as
+  false.
 
 Check the source code for `TODO(native-ci)` and `TODO(sqs!native-ci)`.
