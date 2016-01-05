@@ -515,8 +515,8 @@ func (s remoteUserKeys) ListKeys(ctx context.Context, v1 *pbtypes.Void) (*source
 	return sourcegraph.NewClientFromContext(ctx).UserKeys.ListKeys(ctx, v1)
 }
 
-func (s remoteUserKeys) ClearKeys(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
-	return sourcegraph.NewClientFromContext(ctx).UserKeys.ClearKeys(ctx, v1)
+func (s remoteUserKeys) DeleteAllKeys(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+	return sourcegraph.NewClientFromContext(ctx).UserKeys.DeleteAllKeys(ctx, v1)
 }
 
 type remoteUsers struct{ sourcegraph.UsersServer }

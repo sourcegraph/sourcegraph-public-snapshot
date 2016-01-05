@@ -1117,7 +1117,7 @@ message BuildTask {
 	// task (in the same build) with the given ID. A ParentID of zero
 	// means that this is a top-level task.
 	uint64 parent_id = 3 [(gogoproto.customname) = "ParentID"];
-	
+
 	// Label describes the task (e.g., Code Intelligence).
 	string label = 4;
 
@@ -1751,8 +1751,8 @@ service UserKeys {
 	// ListKeys lists the user's SSH public keys
 	rpc ListKeys(pbtypes.Void) returns (SSHKeyList);
 
-	// ClearKeys delets all of the user's SSH public keys
-	rpc ClearKeys(pbtypes.Void) returns (pbtypes.Void);
+	// DeleteAllKeys delets all of the user's SSH public keys
+	rpc DeleteAllKeys(pbtypes.Void) returns (pbtypes.Void);
 }
 
 // Auth manages authentication and authorization (via OAuth2).

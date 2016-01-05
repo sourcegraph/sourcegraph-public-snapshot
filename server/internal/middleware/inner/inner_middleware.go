@@ -3016,21 +3016,21 @@ func (s wrappedUserKeys) ListKeys(ctx context.Context, param *pbtypes.Void) (res
 
 }
 
-func (s wrappedUserKeys) ClearKeys(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
+func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
 	start := time.Now()
-	ctx = trace.Before(ctx, "UserKeys", "ClearKeys", param)
+	ctx = trace.Before(ctx, "UserKeys", "DeleteAllKeys", param)
 	defer func() {
-		trace.After(ctx, "UserKeys", "ClearKeys", param, err, time.Since(start))
+		trace.After(ctx, "UserKeys", "DeleteAllKeys", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "UserKeys.ClearKeys")
+	err = s.c.Authenticate(ctx, "UserKeys.DeleteAllKeys")
 	if err != nil {
 		return
 	}
 
 	target := local.Services.UserKeys
 
-	res, err = target.ClearKeys(ctx, param)
+	res, err = target.DeleteAllKeys(ctx, param)
 	return
 
 }

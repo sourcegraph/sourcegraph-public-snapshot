@@ -3345,7 +3345,7 @@ func (s wrappedUserKeys) ListKeys(ctx context.Context, v1 *pbtypes.Void) (*sourc
 	return rv, nil
 }
 
-func (s wrappedUserKeys) ClearKeys(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
+func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -3360,7 +3360,7 @@ func (s wrappedUserKeys) ClearKeys(ctx context.Context, v1 *pbtypes.Void) (*pbty
 		return nil, grpc.Errorf(codes.Unimplemented, "UserKeys")
 	}
 
-	rv, err := innerSvc.ClearKeys(ctx, v1)
+	rv, err := innerSvc.DeleteAllKeys(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

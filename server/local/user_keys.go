@@ -148,7 +148,7 @@ func (s *userKeys) getSSHKey(userKV pstorage.System, actor authpkg.Actor, key st
 	}, nil
 }
 
-func (s *userKeys) ClearKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Void, error) {
+func (s *userKeys) DeleteAllKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Void, error) {
 	defer noCache(ctx)
 	actor := authpkg.ActorFromContext(ctx)
 

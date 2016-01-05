@@ -2841,10 +2841,10 @@ func (s *CachedUserKeysClient) ListKeys(ctx context.Context, in *pbtypes.Void, o
 	return result, nil
 }
 
-func (s *CachedUserKeysClient) ClearKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+func (s *CachedUserKeysClient) DeleteAllKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	if s.Cache != nil {
 		var cachedResult pbtypes.Void
-		cached, err := s.Cache.Get(ctx, "UserKeys.ClearKeys", in, &cachedResult)
+		cached, err := s.Cache.Get(ctx, "UserKeys.DeleteAllKeys", in, &cachedResult)
 		if err != nil {
 			return nil, err
 		}
@@ -2855,12 +2855,12 @@ func (s *CachedUserKeysClient) ClearKeys(ctx context.Context, in *pbtypes.Void, 
 
 	var trailer metadata.MD
 
-	result, err := s.UserKeysClient.ClearKeys(ctx, in, grpc.Trailer(&trailer))
+	result, err := s.UserKeysClient.DeleteAllKeys(ctx, in, grpc.Trailer(&trailer))
 	if err != nil {
 		return nil, err
 	}
 	if s.Cache != nil {
-		if err := s.Cache.Store(ctx, "UserKeys.ClearKeys", in, result, trailer); err != nil {
+		if err := s.Cache.Store(ctx, "UserKeys.DeleteAllKeys", in, result, trailer); err != nil {
 			return nil, err
 		}
 	}

@@ -5612,8 +5612,8 @@ type UserKeysClient interface {
 	DeleteKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// ListKeys lists the user's SSH public keys
 	ListKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*SSHKeyList, error)
-	// ClearKeys delets all of the user's SSH public keys
-	ClearKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+	// DeleteAllKeys delets all of the user's SSH public keys
+	DeleteAllKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
 
 type userKeysClient struct {
@@ -5660,9 +5660,9 @@ func (c *userKeysClient) ListKeys(ctx context.Context, in *pbtypes1.Void, opts .
 	return out, nil
 }
 
-func (c *userKeysClient) ClearKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+func (c *userKeysClient) DeleteAllKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
 	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/ClearKeys", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/sourcegraph.UserKeys/DeleteAllKeys", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5680,8 +5680,8 @@ type UserKeysServer interface {
 	DeleteKey(context.Context, *SSHPublicKey) (*pbtypes1.Void, error)
 	// ListKeys lists the user's SSH public keys
 	ListKeys(context.Context, *pbtypes1.Void) (*SSHKeyList, error)
-	// ClearKeys delets all of the user's SSH public keys
-	ClearKeys(context.Context, *pbtypes1.Void) (*pbtypes1.Void, error)
+	// DeleteAllKeys delets all of the user's SSH public keys
+	DeleteAllKeys(context.Context, *pbtypes1.Void) (*pbtypes1.Void, error)
 }
 
 func RegisterUserKeysServer(s *grpc.Server, srv UserKeysServer) {
@@ -5736,12 +5736,12 @@ func _UserKeys_ListKeys_Handler(srv interface{}, ctx context.Context, dec func(i
 	return out, nil
 }
 
-func _UserKeys_ClearKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _UserKeys_DeleteAllKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(pbtypes1.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(UserKeysServer).ClearKeys(ctx, in)
+	out, err := srv.(UserKeysServer).DeleteAllKeys(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -5769,8 +5769,8 @@ var _UserKeys_serviceDesc = grpc.ServiceDesc{
 			Handler:    _UserKeys_ListKeys_Handler,
 		},
 		{
-			MethodName: "ClearKeys",
-			Handler:    _UserKeys_ClearKeys_Handler,
+			MethodName: "DeleteAllKeys",
+			Handler:    _UserKeys_DeleteAllKeys_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
