@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 
 	droneexec "github.com/drone/drone-exec/exec"
@@ -18,34 +19,41 @@ type Status struct {
 	Problem string // if non-empty, a description of the problem
 	Fix     string // if non-empty, how to fix the problem
 	Err     error  // if non-nil, the error encountered
+	Skipped bool   // if true, indicates this check was skipped
 }
 
-// OK is whether the component is present and has no errors.
+// OK is whether the component is present, has no errors, and was not
+// skipped.
 func (s *Status) OK() bool {
-	return s.Problem == "" && s.Fix == "" && s.Err == nil
+	return s.Problem == "" && s.Fix == "" && s.Err == nil && !s.Skipped
 }
 
-// CheckOnce calls Check once per process. It saves the results for
-// the rest of the process's lifetime.
-func CheckOnce(ctx context.Context) []Status {
-	checkOnce.Do(func() {
-		checkOnceResult = Check(ctx)
-	})
-	return checkOnceResult
-}
-
-var (
-	checkOnce       sync.Once
-	checkOnceResult []Status
-)
+func (s *Status) Failed() bool { return s.Problem != "" || s.Err != nil }
 
 // Check checks for the presence of system requirements, such as
-// Docker and Git.
-func Check(ctx context.Context) []Status {
+// Docker and Git. The skip list contains case-insensitive names of
+// requirement checks (such as "Docker" and "Git") that should be
+// skipped.
+func Check(ctx context.Context, skip []string) []Status {
+	shouldSkip := func(name string) bool {
+		for _, v := range skip {
+			if strings.EqualFold(name, v) {
+				return true
+			}
+		}
+		return false
+	}
+
 	statuses := make([]Status, len(checks))
 	var wg sync.WaitGroup
 	for i, c := range checks {
 		statuses[i].Name = c.name
+
+		if shouldSkip(c.name) {
+			statuses[i].Skipped = true
+			continue
+		}
+
 		wg.Add(1)
 		go func(i int, c check) {
 			defer wg.Done()

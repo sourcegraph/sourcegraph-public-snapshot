@@ -285,8 +285,3 @@ builds since we can run src.sourcegraph.com on a beefy machine.
   OAuth2 creds available for a starting point to fix this issue.
 
 Check the source code for `TODO(native-ci)` and `TODO(sqs!native-ci)`.
-
-
-## Onboarding
-
-Don't show UI alert if no Docker, just fail to start the process.

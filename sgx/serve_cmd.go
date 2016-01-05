@@ -241,6 +241,12 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
 
+	// Don't proceed if system requirements are missing, to avoid
+	// presenting users with a half-working experience.
+	if err := checkSysReqs(cli.Ctx, os.Stderr); err != nil {
+		return err
+	}
+
 	if len(os.Getenv("SG_TRACEGUIDE_ACCESS_TOKEN")) > 0 {
 		options := &tg_client.Options{
 			AccessToken: os.Getenv("SG_TRACEGUIDE_ACCESS_TOKEN"),
