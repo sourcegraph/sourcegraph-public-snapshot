@@ -164,6 +164,17 @@ Date:   Mon Jan 4 22:17:08 2016 -0800
     return error if destroying docker containers fails
 ```
 
+This commit should also be a PR:
+
+```
+commit 8f8d931e26826c39f7cd8a4da9ce1ba3c0c7d213
+Author: Quinn Slack <qslack@qslack.com>
+Date:   Mon Jan 4 22:53:30 2016 -0800
+
+    add "allow_failure" key to build, continue after these failures
+```
+
+
 The following improvements to Drone are needed:
 
 * drone-exec/exec/exec.go should never call os.Exit. It would
@@ -210,11 +221,6 @@ way?
 See https://src.sourcegraph.com/srclib.org/plugin/drone-srclib@dev for
 where these `srclib/drone-srclib-LANG` Docker images are created (see
 `toolchains/**/Makefile`).
-
-## JavaScript
-
-* `npm install -v` is very noisy, consider omitting the `-v`
-* `NODE_VERSION=5-slim` seems to fail a lot
 
 ## Go
 

@@ -272,14 +272,19 @@ func (m taskMonitor) Skip() {
 	}
 }
 
-func (m taskMonitor) End(ok bool) {
-	var execErr error
-	if !ok {
-		execErr = errors.New("failed")
-	}
-
-	if err := m.s.end(m.ctx, execErr); err != nil {
-		log15.Error("Error marking monitored task as ended", "task", m.s.task, "err", err)
+func (m taskMonitor) End(ok, allowFailure bool) {
+	if !ok && allowFailure {
+		if err := m.s.warnings(m.ctx); err != nil {
+			log15.Error("Error marking monitored task as ended (with allowable failure)", "task", m.s.task, "err", err)
+		}
+	} else {
+		var execErr error
+		if !ok {
+			execErr = errors.New("failed")
+		}
+		if err := m.s.end(m.ctx, execErr); err != nil {
+			log15.Error("Error marking monitored task as ended", "task", m.s.task, "err", err)
+		}
 	}
 }
 
@@ -296,7 +301,7 @@ func (noopMonitor) Start() {}
 
 func (noopMonitor) Skip() {}
 
-func (noopMonitor) End(ok bool) {}
+func (noopMonitor) End(ok, allowFailure bool) {}
 
 func (noopMonitor) Logger() (stdout, stderr io.Writer) { return ioutil.Discard, ioutil.Discard }
 

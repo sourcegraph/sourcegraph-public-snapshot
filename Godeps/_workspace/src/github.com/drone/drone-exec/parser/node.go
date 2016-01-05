@@ -67,6 +67,8 @@ type DockerNode struct {
 	Net         string
 	AuthConfig  yaml.AuthConfig
 	Vargs       map[string]interface{}
+
+	AllowFailure bool
 }
 
 func newDockerNode(typ NodeType, c yaml.Container) *DockerNode {
@@ -94,6 +96,7 @@ func newPluginNode(typ NodeType, p yaml.Plugin) *DockerNode {
 func newBuildNode(typ NodeType, b yaml.Build) *DockerNode {
 	node := newDockerNode(typ, b.Container)
 	node.Commands = b.Commands
+	node.AllowFailure = b.AllowFailure
 	return node
 }
 

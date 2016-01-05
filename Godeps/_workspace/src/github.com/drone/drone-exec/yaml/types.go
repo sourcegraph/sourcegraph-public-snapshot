@@ -35,6 +35,8 @@ type Build struct {
 
 	Commands []string `yaml:",omitempty"`
 	Filter   Filter   `yaml:"when,omitempty"`
+
+	AllowFailure bool `yaml:"allow_failure,omitempty"`
 }
 
 // Auth for Docker Image Registry

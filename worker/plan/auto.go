@@ -61,6 +61,7 @@ var langConfigs = map[string]struct {
 					Commands: []string{
 						"go test -v ./...",
 					},
+					AllowFailure: true,
 				},
 			},
 		},
@@ -84,6 +85,7 @@ var langConfigs = map[string]struct {
 					Commands: []string{
 						"npm run test",
 					},
+					AllowFailure: true,
 				},
 			},
 		},

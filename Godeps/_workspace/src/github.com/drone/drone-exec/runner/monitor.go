@@ -27,7 +27,10 @@ type Monitor interface {
 
 	// End is called after the given step has ended. If ok is true,
 	// the step succeeded; if ok is false, it failed.
-	End(ok bool)
+	//
+	// If allowFailure is true, then this build step is allowed to
+	// fail without failing the whole build.
+	End(ok, allowFailure bool)
 
 	// Logger is called to retrieve the destinations to write logs to
 	// during execution of the given step.

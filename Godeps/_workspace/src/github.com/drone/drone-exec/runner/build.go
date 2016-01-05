@@ -76,8 +76,17 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 		// Set up monitor.
 		mon := state.Monitor(string(node.Type()), key, node)
 		outw, errw := mon.Logger()
+
+		// Record the final state.
+		var allowableFailure bool
 		defer func() {
-			mon.End(!state.Failed())
+			failed := state.Failed()
+			if allowableFailure {
+				// Not recorded in state because state can't
+				// transition from failure back to non-failure.
+				failed = true
+			}
+			mon.End(!failed, node.AllowFailure)
 		}()
 
 		switch node.Type() {
@@ -102,11 +111,19 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 				script.Encode(nil, conf, node)
 			}
 
+			recordExitCode := func(code int) {
+				if code != 0 && node.AllowFailure {
+					allowableFailure = true
+				} else {
+					state.Exit(code)
+				}
+			}
+
 			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw)
 			if err != nil {
-				state.Exit(255)
+				recordExitCode(255)
 			} else if info.State.ExitCode != 0 {
-				state.Exit(info.State.ExitCode)
+				recordExitCode(info.State.ExitCode)
 			}
 
 		case parser.NodeCompose:

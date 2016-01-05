@@ -316,6 +316,6 @@ func (defaultMonitor) Start() {}
 
 func (defaultMonitor) Skip() {}
 
-func (defaultMonitor) End(ok bool) {}
+func (defaultMonitor) End(ok, allowFailure bool) {}
 
 func (defaultMonitor) Logger() (stdout, stderr io.Writer) { return os.Stdout, os.Stdout }
