@@ -31,31 +31,6 @@ Users also often need to set `ulimit -n` or sysctl `nofile` to
 something higher than 1024, or else they run out of fds.
 
 
-## Docker GCing
-
-We don't use Docker volumes, only containers, so there is no
-dependency on the host machine (the `DOCKER_HOST` can be any remote
-machine). But we should check that old containers are being killed
-properly to avoid exhausting system resources. Once a build is
-completed, all of its Docker containers can be 100% wiped out.
-
-The Drone ambassador containers do not seem to be removed. Is this
-because we are using drone-exec as a Go library? For example, after
-running some builds that have long since finished, I see:
-
-```
-ubuntu@ip-10-0-1-72:/data/home/ubuntu$ docker ps
-CONTAINER ID        IMAGE                   COMMAND                  CREATED             STATUS              PORTS               NAMES
-9f01ca34551f        golang:1.5              "/bin/sh -e -c 'echo "   12 seconds ago      Up 11 seconds                           goofy_meitner
-d83cacd2c047        gliderlabs/alpine:3.1   "/bin/sleep 86400"       17 seconds ago      Up 16 seconds                           condescending_franklin
-4fdf6bf6b638        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            thirsty_liskov
-5e141db2b98e        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            loving_lalande
-6bd854b69fa6        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            tender_franklin
-388447b6dee2        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            modest_mayer
-ff26d10ad782        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes
-```
-
-
 ## Sourcegraph.com deployment
 
 We no longer need separate `src` workers, since the worker is now

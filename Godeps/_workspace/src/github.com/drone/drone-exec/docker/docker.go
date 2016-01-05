@@ -1,6 +1,10 @@
 package docker
 
-import "github.com/samalba/dockerclient"
+import (
+	"fmt"
+
+	"github.com/samalba/dockerclient"
+)
 
 // Client is a wrapper around the default Docker client
 // that tracks all created containers ensures some default
@@ -54,10 +58,28 @@ func (c *Client) StartContainer(id string, conf *dockerclient.HostConfig) error 
 // Destroy will terminate and destroy all containers that
 // were created by this client.
 func (c *Client) Destroy() error {
+	var errs []error
 	for _, id := range c.names {
-		c.Client.KillContainer(id, "9")
-		c.Client.RemoveContainer(id, true, true)
+		if err := c.Client.KillContainer(id, "9"); err != nil {
+			errs = append(errs, err)
+		}
+		if err := c.Client.RemoveContainer(id, true, true); err != nil {
+			errs = append(errs, err)
+		}
 	}
-	c.Client.KillContainer(c.info.Id, "9")
-	return c.Client.RemoveContainer(c.info.Id, true, true)
+	if err := c.Client.KillContainer(c.info.Id, "9"); err != nil {
+		errs = append(errs, err)
+	}
+	if err := c.Client.RemoveContainer(c.info.Id, true, true); err != nil {
+		errs = append(errs, err)
+	}
+
+	switch len(errs) {
+	case 0:
+		return nil
+	case 1:
+		return errs[0]
+	default:
+		return fmt.Errorf("multiple errors destroying Docker containers: %v", errs)
+	}
 }

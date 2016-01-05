@@ -65,7 +65,7 @@ func (e *Error) Error() string { return fmt.Sprintf("build failed (exit code %d)
 
 // Exec executes a build with the given payload and options. If the
 // build fails, an *Error is returned.
-func Exec(payload Payload, opt Options) error {
+func Exec(payload Payload, opt Options) (err error) {
 	var sec *secure.Secure
 	if payload.Keys != nil && len(payload.YamlEnc) != 0 {
 		var err error
@@ -201,7 +201,15 @@ func Exec(payload Payload, opt Options) error {
 	if err != nil {
 		return fmt.Errorf("creating docker ambassador container: %s", err)
 	}
-	defer controller.Destroy()
+	defer func() {
+		if err2 := controller.Destroy(); err2 != nil {
+			if err == nil {
+				err = err2
+			} else {
+				log.Debugf("Failed to destroy containers: %s", err)
+			}
+		}
+	}()
 
 	// watch for sigkill (timeout or cancel build)
 	killc := make(chan os.Signal, 1)
@@ -294,7 +302,6 @@ func Exec(payload Payload, opt Options) error {
 	}
 
 	if state.Failed() {
-		controller.Destroy()
 		return &Error{ExitCode: state.ExitCode()}
 	}
 
