@@ -2,7 +2,6 @@ package local
 
 import (
 	"encoding/base64"
-	"log"
 	"os"
 	"strconv"
 
@@ -45,7 +44,6 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 	}
 
 	key.Id = uint64(keyID)
-	log.Printf("Bucket: %s Key.Id: %d Adding: %#v", strconv.FormatInt(int64(actor.UID), 10), keyID, key)
 	err = pstorage.PutJSON(userKV, strconv.FormatInt(int64(actor.UID), 10), strconv.FormatInt(keyID, 10), key)
 	if err != nil {
 		return nil, err
