@@ -103,7 +103,6 @@ The build UI has some issues:
 * No way to automatically keep scrolling down to tail logs
 * Is not smart enough about when to update the data from the network
 * Very visually noisy
-* Does not save state (e.g., if you are looking at a specific task log and want to share the URL)
 * Offers no way of seeing the .drone.yml file that was used
 * Does not have any good way of helping users troubleshoot issues that come up
 * Does not have a way or explanation text for starting a build when you go to the builds page - it is just blank
