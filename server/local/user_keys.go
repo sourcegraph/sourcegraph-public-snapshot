@@ -1,13 +1,12 @@
 package local
 
 import (
+	"crypto/sha1"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
 	"strconv"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
@@ -59,6 +58,11 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 		return nil, err
 	}
 
+	// Add the key to the lookup_user index.
+	if err := s.addLookupIndex(ctx, key.Key, actor.UID); err != nil {
+		return nil, err
+	}
+
 	return &pbtypes.Void{}, nil
 }
 
@@ -66,8 +70,18 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
 	defer noCache(ctx)
 
-	// TODO(slimsag): implement this
-	return &sourcegraph.UserSpec{}, errors.New("LookupUser not implemented")
+	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
+	var keysToUID map[string]int32
+	keyHash := publicKeyToHash(key.Key)
+	err := pstorage.GetJSON(userKV, "lookup_user", keyHash, &keysToUID)
+	if err != nil {
+		return nil, err
+	}
+	uid, ok := keysToUID[base64.RawURLEncoding.EncodeToString(key.Key)]
+	if !ok {
+		return nil, errors.New("no such public key")
+	}
+	return &sourcegraph.UserSpec{UID: int32(uid)}, nil
 }
 
 func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
@@ -94,37 +108,40 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 			continue
 		}
 
-		var data = struct {
-			Key, Name string
-			Id        uint64
-		}{}
-
-		if err := pstorage.GetJSON(userKV, strconv.FormatInt(int64(actor.UID), 10), key, &data); err != nil {
+		sshKey, err := s.getSSHKey(userKV, actor, key)
+		if err != nil {
 			return nil, err
 		}
+		sshKeyList[x] = *sshKey
+	}
+	return &sourcegraph.SSHKeyList{SSHKeys: sshKeyList}, nil
+}
 
-		sshKeyList[x] = sourcegraph.SSHPublicKey{
-			Name: data.Name,
-			Id:   data.Id,
-		}
+func (s *userKeys) getSSHKey(userKV pstorage.System, actor authpkg.Actor, key string) (*sourcegraph.SSHPublicKey, error) {
+	var data = struct {
+		Key, Name string
+		Id        uint64
+	}{}
 
-		keyBytes, err := base64.StdEncoding.DecodeString(data.Key)
-		if err != nil {
-			log15.Error("Failed to base64 decode user ssh key", err)
-			continue
-		}
-
-		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(keyBytes))
-		if err != nil {
-			log15.Error("Failed to parse user ssh key", err)
-			continue
-		}
-
-		tmpKey := ssh.MarshalAuthorizedKey(pubKey)
-		sshKeyList[x].Key = tmpKey
+	if err := pstorage.GetJSON(userKV, strconv.FormatInt(int64(actor.UID), 10), key, &data); err != nil {
+		return nil, err
 	}
 
-	return &sourcegraph.SSHKeyList{SSHKeys: sshKeyList}, nil
+	keyBytes, err := base64.StdEncoding.DecodeString(data.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(keyBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	return &sourcegraph.SSHPublicKey{
+		Name: data.Name,
+		Id:   data.Id,
+		Key:  ssh.MarshalAuthorizedKey(pubKey),
+	}, nil
 }
 
 func (s *userKeys) ClearKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Void, error) {
@@ -136,11 +153,27 @@ func (s *userKeys) ClearKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Voi
 	}
 
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
-	err := userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), "")
+
+	// Delete each key.
+	keys, err := userKV.List(strconv.FormatInt(int64(actor.UID), 10))
 	if err != nil {
 		return nil, err
 	}
-
+	for _, key := range keys {
+		if key == "current_index" {
+			continue
+		}
+		keyID, err := strconv.ParseUint(key, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		_, err = s.DeleteKey(ctx, &sourcegraph.SSHPublicKey{
+			Id: keyID,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &pbtypes.Void{}, nil
 }
 
@@ -174,10 +207,65 @@ func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey)
 	}
 
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
-	err := userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), strconv.FormatInt(int64(key.Id), 10))
+	storageKey := strconv.FormatInt(int64(key.Id), 10)
+
+	// Remove the key from the lookup_user index.
+	fullKey, err := s.getSSHKey(userKV, actor, storageKey)
 	if err != nil {
 		return nil, err
 	}
+	if err := s.removeLookupIndex(ctx, fullKey.Key); err != nil {
+		return nil, err
+	}
 
-	return &pbtypes.Void{}, nil
+	err = userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), storageKey)
+	return &pbtypes.Void{}, err
+}
+
+type keyToUID map[string]int32
+
+func (s *userKeys) addLookupIndex(ctx context.Context, key []byte, uid int) error {
+	// Marshal key into network format.
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey(key)
+	if err != nil {
+		return err
+	}
+	key = pubKey.Marshal()
+
+	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
+	keysToUID := make(map[string]int32)
+	keyHash := publicKeyToHash(key)
+	err = pstorage.GetJSON(userKV, "lookup_user", keyHash, &keysToUID)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	keysToUID[base64.RawURLEncoding.EncodeToString(key)] = int32(uid)
+	return pstorage.PutJSON(userKV, "lookup_user", keyHash, keysToUID)
+}
+
+func (s *userKeys) removeLookupIndex(ctx context.Context, key []byte) error {
+	// Marshal key into network format.
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey(key)
+	if err != nil {
+		return err
+	}
+	key = pubKey.Marshal()
+
+	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
+	var keysToUID map[string]int32
+	keyHash := publicKeyToHash(key)
+	err = pstorage.GetJSON(userKV, "lookup_user", keyHash, &keysToUID)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	delete(keysToUID, base64.RawURLEncoding.EncodeToString(key))
+	return pstorage.PutJSON(userKV, "lookup_user", keyHash, keysToUID)
+}
+
+func publicKeyToHash(key []byte) string {
+	sum := sha1.Sum(key)
+	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
