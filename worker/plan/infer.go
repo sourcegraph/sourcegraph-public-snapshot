@@ -8,12 +8,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 )
 
-// autogenerateConfig consults a repo's inventory (of programming
-// languages used) and generates a .drone.yml file that will build the
+// inferConfig consults a repo's inventory (of programming languages
+// used) and generates a .drone.yml file that will build the
 // repo. This is not guaranteed to be correct. The primary purpose of
-// this auto-generated config is to fetch the project dependencies and
+// this inferred config is to fetch the project dependencies and
 // compile the project to prepare for the srclib analysis step.
-func autogenerateConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, error) {
+func inferConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, error) {
 	// Merge the default configs for all of the languages we detect.
 	var config droneyaml.Config
 	matrix := matrix.Matrix{}

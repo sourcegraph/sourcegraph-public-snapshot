@@ -2,7 +2,6 @@
 package plan
 
 import (
-	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -18,11 +17,6 @@ import (
 	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 )
-
-// ErrNoPlan indicates that it was not possible to create a test plan
-// because the repo did not have a .drone.yml file or any code files
-// that this package knows how to auto-generate a plan for.
-var ErrNoPlan = errors.New("missing .drone.yml file and unable to auto-generate test plan")
 
 // CreateServer calls Create with information about the repository
 // fetched from the server. It is separate from Create so that Create
@@ -94,7 +88,7 @@ func Create(config *droneyaml.Config, axes []matrix.Axis, foundYAML bool, inv *i
 	if !foundYAML {
 		// Generate a reasonable default configuration.
 		var err error
-		config, axes, err = autogenerateConfig(inv)
+		config, axes, err = inferConfig(inv)
 		if err != nil {
 			return nil, nil, err
 		}

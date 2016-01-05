@@ -76,7 +76,7 @@ type builder struct {
 	repoRev sourcegraph.RepoRevSpec
 	repo    *sourcegraph.Repo
 
-	config droneyaml.Config // the .drone.yml config (possibly auto-generated)
+	config droneyaml.Config // the .drone.yml config (possibly inferred)
 
 	opt     droneexec.Options
 	payload droneexec.Payload
