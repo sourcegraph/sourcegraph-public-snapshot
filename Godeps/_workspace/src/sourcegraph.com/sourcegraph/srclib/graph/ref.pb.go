@@ -19,32 +19,32 @@ var _ = math.Inf
 type Ref struct {
 	// DefRepo is the repository URI of the Def that this Ref refers
 	// to.
-	DefRepo string `protobuf:"bytes,1,opt,name=def_repo,proto3" json:",omitempty"`
+	DefRepo string `protobuf:"bytes,1,opt,name=def_repo,proto3" json:"DefRepo,omitempty"`
 	// DefUnitType is the source unit type of the Def that this Ref refers to.
-	DefUnitType string `protobuf:"bytes,3,opt,name=def_unit_type,proto3" json:",omitempty"`
+	DefUnitType string `protobuf:"bytes,3,opt,name=def_unit_type,proto3" json:"DefUnitType,omitempty"`
 	// DefUnit is the name of the source unit that this ref exists in.
-	DefUnit string `protobuf:"bytes,4,opt,name=def_unit,proto3" json:",omitempty"`
+	DefUnit string `protobuf:"bytes,4,opt,name=def_unit,proto3" json:"DefUnit,omitempty"`
 	// Path is the path of the Def that this ref refers to.
-	DefPath string `protobuf:"bytes,5,opt,name=def_path,proto3" `
+	DefPath string `protobuf:"bytes,5,opt,name=def_path,proto3" json:"DefPath"`
 	// Repo is the VCS repository in which this ref exists.
-	Repo string `protobuf:"bytes,6,opt,name=repo,proto3" json:",omitempty"`
+	Repo string `protobuf:"bytes,6,opt,name=repo,proto3" json:"Repo,omitempty"`
 	// CommitID is the ID of the VCS commit that this ref exists
 	// in. The CommitID is always a full commit ID (40 hexadecimal
 	// characters for git and hg), never a branch or tag name.
-	CommitID string `protobuf:"bytes,7,opt,name=commit_id,proto3" json:",omitempty"`
+	CommitID string `protobuf:"bytes,7,opt,name=commit_id,proto3" json:"CommitID,omitempty"`
 	// UnitType is the type name of the source unit that this ref
 	// exists in.
-	UnitType string `protobuf:"bytes,8,opt,name=unit_type,proto3" json:",omitempty"`
+	UnitType string `protobuf:"bytes,8,opt,name=unit_type,proto3" json:"UnitType,omitempty"`
 	// Unit is the name of the source unit that this ref exists in.
-	Unit string `protobuf:"bytes,9,opt,name=unit,proto3" json:",omitempty"`
+	Unit string `protobuf:"bytes,9,opt,name=unit,proto3" json:"Unit,omitempty"`
 	// Def is true if this Ref spans the name of the Def it points to.
-	Def bool `protobuf:"varint,17,opt,name=def,proto3" json:",omitempty"`
+	Def bool `protobuf:"varint,17,opt,name=def,proto3" json:"Def,omitempty"`
 	// File is the filename in which this Ref exists.
-	File string `protobuf:"bytes,10,opt,name=file,proto3" json:",omitempty"`
+	File string `protobuf:"bytes,10,opt,name=file,proto3" json:"File,omitempty"`
 	// Start is the byte offset of this ref's first byte in File.
-	Start uint32 `protobuf:"varint,11,opt,name=start,proto3" `
+	Start uint32 `protobuf:"varint,11,opt,name=start,proto3" json:"Start"`
 	// End is the byte offset of this ref's last byte in File.
-	End uint32 `protobuf:"varint,12,opt,name=end,proto3" `
+	End uint32 `protobuf:"varint,12,opt,name=end,proto3" json:"End"`
 }
 
 func (m *Ref) Reset()         { *m = Ref{} }
@@ -52,10 +52,10 @@ func (m *Ref) String() string { return proto.CompactTextString(m) }
 func (*Ref) ProtoMessage()    {}
 
 type RefDefKey struct {
-	DefRepo     string `protobuf:"bytes,1,opt,name=def_repo,proto3" json:",omitempty"`
-	DefUnitType string `protobuf:"bytes,3,opt,name=def_unit_type,proto3" json:",omitempty"`
-	DefUnit     string `protobuf:"bytes,4,opt,name=def_unit,proto3" json:",omitempty"`
-	DefPath     string `protobuf:"bytes,5,opt,name=def_path,proto3" `
+	DefRepo     string `protobuf:"bytes,1,opt,name=def_repo,proto3" json:"DefRepo,omitempty"`
+	DefUnitType string `protobuf:"bytes,3,opt,name=def_unit_type,proto3" json:"DefUnitType,omitempty"`
+	DefUnit     string `protobuf:"bytes,4,opt,name=def_unit,proto3" json:"DefUnit,omitempty"`
+	DefPath     string `protobuf:"bytes,5,opt,name=def_path,proto3" json:"DefPath"`
 }
 
 func (m *RefDefKey) Reset()         { *m = RefDefKey{} }

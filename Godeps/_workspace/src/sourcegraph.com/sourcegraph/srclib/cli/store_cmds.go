@@ -865,7 +865,7 @@ func (c *StoreUnitsCmd) filters() []store.UnitFilter {
 		fs = append(fs, makeRepoCommitIDsFilter(c.RepoCommitIDs))
 	}
 	if c.File != "" {
-		fs = append(fs, store.ByFiles(path.Clean(c.File)))
+		fs = append(fs, store.ByFiles(false, path.Clean(c.File)))
 	}
 	return fs
 }
@@ -932,7 +932,7 @@ func (c *StoreDefsCmd) filters() []store.DefFilter {
 		fs = append(fs, store.ByDefPath(c.Path))
 	}
 	if c.File != "" {
-		fs = append(fs, store.ByFiles(path.Clean(c.File)))
+		fs = append(fs, store.ByFiles(false, path.Clean(c.File)))
 	}
 	if c.Query != "" {
 		fs = append(fs, store.ByDefQuery(c.Query))
@@ -1019,7 +1019,7 @@ func (c *StoreRefsCmd) filters() []store.RefFilter {
 		fs = append(fs, makeRepoCommitIDsFilter(c.RepoCommitIDs))
 	}
 	if c.File != "" {
-		fs = append(fs, store.ByFiles(path.Clean(c.File)))
+		fs = append(fs, store.ByFiles(false, path.Clean(c.File)))
 	}
 	if c.Start != 0 {
 		fs = append(fs, store.RefFilterFunc(func(ref *graph.Ref) bool {
