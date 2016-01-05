@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strconv"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -119,6 +120,14 @@ func init() {
 		"delete the SSH public key",
 		"Delete the SSH public key for a user.",
 		&userKeysDeleteCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = userKeysGroup.AddCommand("list",
+		"list SSH public keys",
+		"List the SSH public keys for a user.",
+		&userKeysListCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -449,10 +458,18 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 	return nil
 }
 
-type userKeysDeleteCmd struct{}
+type userKeysDeleteCmd struct {
+	ID   string `long:"id" description:"ID of the key to delete"`
+	Name string `long:"name" description:"name of the key to delete"`
+}
 
 func (c *userKeysDeleteCmd) Execute(args []string) error {
 	cl := cli.Client()
+
+	if c.ID == "" && c.Name == "" {
+		log.Fatal("Must specify either --id or --name of key to delete.")
+	}
+	id, _ := strconv.ParseUint(c.ID, 10, 64)
 
 	// Get user info for output message.
 	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
@@ -461,11 +478,42 @@ func (c *userKeysDeleteCmd) Execute(args []string) error {
 	}
 
 	// Delete key.
-	_, err = cl.UserKeys.DeleteKey(cli.Ctx, &pbtypes.Void{})
+	_, err = cl.UserKeys.DeleteKey(cli.Ctx, &sourcegraph.SSHPublicKey{
+		Id:   id,
+		Name: c.Name,
+	})
 	if err != nil {
 		return err
 	}
 
 	log.Printf("# Deleted SSH public key for user %q\n", authInfo.Login)
+	return nil
+}
+
+type userKeysListCmd struct{}
+
+func (c *userKeysListCmd) Execute(args []string) error {
+	cl := cli.Client()
+
+	// Get user info for output message.
+	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	// List keys.
+	keys, err := cl.UserKeys.ListKeys(cli.Ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	if len(keys.SSHKeys) == 0 {
+		log.Printf("User %q has no SSH public keys.\n", authInfo.Login)
+	} else {
+		log.Printf("SSH public keys for user %q:\n", authInfo.Login)
+		for _, k := range keys.SSHKeys {
+			log.Printf("%d. %q\n", k.Id, k.Name)
+		}
+	}
 	return nil
 }
