@@ -11,3 +11,5 @@ Sourcegraph in an all-in-one binary (`src`) which includes:
 # Install Sourcegraph
 
 {{< local_install >}}
+
+{{< ads_conversion >}}

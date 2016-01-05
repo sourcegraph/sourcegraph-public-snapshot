@@ -1,24 +1,4 @@
-<pre><code id="userdata"></code></pre>
+#!/bin/bash
 
-<script>
-var userdata = function() {
-	// The template identifies the cloud provider, one of:
-	//    SRC_DIGITAL_OCEAN
-	//    SRC_AMAZON_EC2
-	//    SRC_GOOGLE_COMPUTE_ENGINE
-	// It is passed as an argument to the shortcode.
-	var str = "#!/bin/bash\n\nexport {{ .Get 0 }}=1\n";
-	str += "wget -O - https://sourcegraph.com/.download/install.sh | bash";
-	return str;
-}
-
-var setUserdata = function(userdata) {
-	document.getElementById("userdata").textContent = userdata;
-}
-
-var refreshUserdata = function() {
-	setUserdata(userdata());
-}
-
-refreshUserdata() // initialization
-</script>
+export {{ .Get 0 }}=1
+wget -O - https://sourcegraph.com/.download/install.sh | bash
