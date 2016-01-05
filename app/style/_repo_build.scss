@@ -54,6 +54,7 @@ header.repo-build {
 	.top-level-task {
 		& > .panel-heading {
 			padding: $padding-base-vertical $padding-small-horizontal;
+
 			border-bottom: solid 2px;
 			h4 {
 				font-size: $font-size-large*1.2;
@@ -81,7 +82,11 @@ header.repo-build {
 			}
 		}
 		.panel-heading {
-			padding: $padding-large-vertical*1.25 $padding-small-horizontal $padding-base-vertical;
+			// Make clickable link area bigger.
+			padding: 0;
+			a {
+				padding: $padding-large-vertical*1.25 $padding-small-horizontal $padding-base-vertical;
+			}
 		}
 	}
 
