@@ -51,6 +51,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/server/serverctx"
@@ -475,7 +476,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 
 		// Start background repo updater worker.
-		app.RepoUpdater.Start(cli.Ctx)
+		repoupdater.RepoUpdater.Start(cli.Ctx)
 
 		// Start event listeners.
 		c.initializeEventListeners(cli.Ctx, idKey, appURL)

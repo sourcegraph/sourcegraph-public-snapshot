@@ -155,8 +155,9 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// Publish the event.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(eventType, events.GitPayload{
-				Actor: authpkg.UserSpecFromContext(ctx),
-				Repo:  repo.RepoSpec(),
+				Actor:       authpkg.UserSpecFromContext(ctx),
+				Repo:        repo.RepoSpec(),
+				IgnoreBuild: change.Branch != repo.DefaultBranch,
 				Event: githttp.Event{
 					Type:   gitEventType,
 					Commit: string(head),

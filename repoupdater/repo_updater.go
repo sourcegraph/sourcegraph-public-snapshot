@@ -1,4 +1,4 @@
-package app
+package repoupdater
 
 import (
 	"sync"
@@ -26,6 +26,10 @@ func init() {
 }
 
 type repoAutoCloner struct{}
+
+func Enqueue(repo *sourcegraph.Repo) {
+	RepoUpdater.enqueue(repo)
+}
 
 func (r *repoAutoCloner) Scopes() []string {
 	return []string{"app:repo-auto-cloner"}

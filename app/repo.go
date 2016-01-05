@@ -25,6 +25,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/platform"
+	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -194,7 +195,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if rc.Repo.Mirror {
-		RepoUpdater.enqueue(rc.Repo)
+		repoupdater.Enqueue(rc.Repo)
 	}
 
 	return tmpl.Exec(r, w, "repo/main.html", http.StatusOK, nil, &struct {

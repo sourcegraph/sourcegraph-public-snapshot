@@ -127,6 +127,11 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 	cl := sourcegraph.NewClientFromContext(ctx)
 	repo := payload.Repo
 	event := payload.Event
+
+	if payload.IgnoreBuild {
+		return
+	}
+
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
 		_, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
 			Repo:     repo,

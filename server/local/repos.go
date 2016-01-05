@@ -26,6 +26,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/platform"
+	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -134,6 +135,9 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 	if err != nil {
 		return nil, err
 	}
+
+	repoupdater.Enqueue(repo)
+
 	repoSpec := repo.RepoSpec()
 	return s.Get(ctx, &repoSpec)
 }
