@@ -49,7 +49,7 @@ func (b *builder) prepare(ctx context.Context) error {
 		// We need to fetch all branches to find the commit (git
 		// doesn't let you just fetch a single commit; see the docs on
 		// Build.Branch in sourcegraph.proto for an explanation).
-		droneBuild.Ref = "refs/heads/*:refs/remotes/origin/*"
+		droneBuild.Ref = "" // fetches all branches from the remote
 	}
 
 	b.payload = droneexec.Payload{
