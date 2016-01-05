@@ -18,6 +18,8 @@ import (
 	pstorage "src.sourcegraph.com/sourcegraph/platform/storage"
 )
 
+const sshKeysAppName = "core.ssh-keys"
+
 var UserKeys sourcegraph.UserKeysServer = &userKeys{}
 
 type userKeys struct{}
@@ -33,7 +35,7 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 	}
 
 	keyID := int64(0)
-	userKV := pstorage.Namespace(ctx, "core.ssh-keys", "")
+	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	data, err := userKV.Get(strconv.FormatInt(int64(actor.UID), 10), "current_index")
 	if err == nil {
 		keyID, err = strconv.ParseInt(string(data), 10, 64)
@@ -75,7 +77,7 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 		return nil, grpc.Errorf(codes.PermissionDenied, "no authenticated user in context")
 	}
 
-	userKV := pstorage.Namespace(ctx, "core.ssh-keys", "")
+	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	keys, err := userKV.List(strconv.FormatInt(int64(actor.UID), 10))
 	if err != nil {
 		return nil, err
@@ -131,7 +133,7 @@ func (s *userKeys) ClearKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Voi
 		return nil, grpc.Errorf(codes.PermissionDenied, "no authenticated user in context")
 	}
 
-	userKV := pstorage.Namespace(ctx, "core.ssh-keys", "")
+	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	err := userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), "")
 	if err != nil {
 		return nil, err
@@ -148,7 +150,7 @@ func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey)
 		return nil, grpc.Errorf(codes.PermissionDenied, "no authenticated user in context")
 	}
 
-	userKV := pstorage.Namespace(ctx, "core.ssh-keys", "")
+	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	err := userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), string(key.Id))
 	if err != nil {
 		return nil, err
