@@ -179,6 +179,22 @@ Date:   Sun Jan 3 05:39:30 2016 -0800
     yaml: factor out YAML ordered map helpers, export full types API
 ```
 
+Also, this commit should be a PR:
+
+```
+commit 203a30b51ac8f1a28e6f6ddfdcaf1bf6e2dd39f3
+Author: Quinn Slack <qslack@qslack.com>
+Date:   Mon Jan 4 22:17:08 2016 -0800
+
+    return error if destroying docker containers fails
+```
+
+The following improvements to Drone are needed:
+
+* drone-exec/exec/exec.go should never call os.Exit. It would
+  currently (e.g.) take down the entire worker process if a single
+  build times out.
+
 
 ## Security
 
