@@ -23,7 +23,7 @@ var UserSSHKeys = React.createClass({
 	onDelete(key) {
 		$.ajax({
 			method: "DELETE",
-			url: "/.ui/.user/keys?ID=" + key.Id,
+			url: `/.ui/.user/keys?ID=${key.Id}`,
 			headers: {
 				"X-CSRF-Token": globals.CsrfToken,
 			},
