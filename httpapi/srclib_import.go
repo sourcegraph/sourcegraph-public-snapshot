@@ -69,7 +69,6 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) error {
 	importOpt := srclib.ImportOpt{
 		Repo:     repoRev.URI,
 		CommitID: repoRev.CommitID,
-		Verbose:  true,
 	}
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
 		return fmt.Errorf("srclib import of %s failed: %s", repoRev, err)
