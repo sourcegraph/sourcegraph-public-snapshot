@@ -21,6 +21,16 @@ that can easily fall out of date.
 Also document `src check` (runs CI locally, woo!).
 
 
+# Standalone server ops
+
+It is easy to overflow the local disk with Docker images - srclib-go
+alone requires 1-2GB. We should check that there is disk space. Users
+should put their Docker `docker daemon --graph` dir on a large FS.
+
+Users also often need to set `ulimit -n` or sysctl `nofile` to
+something higher than 1024, or else they run out of fds.
+
+
 ## Docker GCing
 
 We don't use Docker volumes, only containers, so there is no
@@ -28,6 +38,22 @@ dependency on the host machine (the `DOCKER_HOST` can be any remote
 machine). But we should check that old containers are being killed
 properly to avoid exhausting system resources. Once a build is
 completed, all of its Docker containers can be 100% wiped out.
+
+The Drone ambassador containers do not seem to be removed. Is this
+because we are using drone-exec as a Go library? For example, after
+running some builds that have long since finished, I see:
+
+```
+ubuntu@ip-10-0-1-72:/data/home/ubuntu$ docker ps
+CONTAINER ID        IMAGE                   COMMAND                  CREATED             STATUS              PORTS               NAMES
+9f01ca34551f        golang:1.5              "/bin/sh -e -c 'echo "   12 seconds ago      Up 11 seconds                           goofy_meitner
+d83cacd2c047        gliderlabs/alpine:3.1   "/bin/sleep 86400"       17 seconds ago      Up 16 seconds                           condescending_franklin
+4fdf6bf6b638        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            thirsty_liskov
+5e141db2b98e        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            loving_lalande
+6bd854b69fa6        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            tender_franklin
+388447b6dee2        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes                            modest_mayer
+ff26d10ad782        gliderlabs/alpine:3.1   "/bin/sleep 86400"       9 minutes ago       Up 9 minutes
+```
 
 
 ## Sourcegraph.com deployment
@@ -99,11 +125,25 @@ motivated developer.
 The build UI has some issues:
 
 * Slow when there are lots of logs
+* No way to automatically keep scrolling down to tail logs
 * Is not smart enough about when to update the data from the network
 * Very visually noisy
 * Does not save state (e.g., if you are looking at a specific task log and want to share the URL)
 * Offers no way of seeing the .drone.yml file that was used
 * Does not have any good way of helping users troubleshoot issues that come up
+* Does not have a way or explanation text for starting a build when you go to the builds page - it is just blank
+* If there is a single build with no label, it looks empty
+* Clicking the BuildIndicator does not associate the build with the right branch, so the build's Ref is empty, therefore no branches may be manually built
+* When a build is reaped, its tasks are not marked as ended - this makes the build UI confusing
+* If a Docker image for a build step does not exist and the `docker pull` fails, there is no log output shown
+* If there is no log output (e.g., for a skipped task), it shows a single empty line of logs
+* The bottom of the page should show a success so that if you are scrolled all the way down, you see when it succeeds
+* The touch targets on the step panel headers are extremely short (considering the height of the panel-heading element)
+
+Others:
+
+* Show on a file when there is no Code Intelligence
+
 
 
 ## Changes vs. Drone upstream
@@ -180,6 +220,23 @@ See https://src.sourcegraph.com/srclib.org/plugin/drone-srclib@dev for
 where these `srclib/drone-srclib-LANG` Docker images are created (see
 `toolchains/**/Makefile`).
 
+## JavaScript
+
+* `npm install -v` is very noisy, consider omitting the `-v`
+* `NODE_VERSION=5-slim` seems to fail a lot
+
+## Go
+
+Noisy log lines should be removed from srclib-go: `no node found for
+scope (giving a dummy label); scope is: function scope 0xc82963fe00
+{}`.
+
+
+## srclib analysis perf
+
+It seems slow running srclib analysis on the sourcegraph repo. It
+seems to be serial, not parallel.
+
 
 ## CI integration with changesets
 
@@ -228,3 +285,8 @@ builds since we can run src.sourcegraph.com on a beefy machine.
   OAuth2 creds available for a starting point to fix this issue.
 
 Check the source code for `TODO(native-ci)` and `TODO(sqs!native-ci)`.
+
+
+## Onboarding
+
+Don't show UI alert if no Docker, just fail to start the process.
