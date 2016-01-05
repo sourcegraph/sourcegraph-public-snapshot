@@ -22,7 +22,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("user not found")
 	}
 
-	// Handle adding a key
+	// Handle adding a key.
 	if r.Method == "POST" {
 		var data = struct {
 			Key, Name string
@@ -45,7 +45,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	// Handle deleting a key
+	// Handle deleting a key.
 	if r.Method == "DELETE" {
 		// Decode query parameters.
 		ev := struct {
@@ -64,7 +64,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	// Then return the current key list
+	// Then return the current key list.
 	keys, err := apiclient.UserKeys.ListKeys(ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
