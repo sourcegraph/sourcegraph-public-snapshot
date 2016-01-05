@@ -18,7 +18,11 @@ import (
 	pstorage "src.sourcegraph.com/sourcegraph/platform/storage"
 )
 
-const sshKeysAppName = "core.ssh-keys"
+const (
+	sshKeysAppName          = "core.ssh-keys"
+	sshKeysLookupUserBucket = "lookup_user"
+	sshKeysCurrentIndexKey  = "current_index"
+)
 
 var UserKeys sourcegraph.UserKeysServer = &userKeys{}
 
@@ -36,7 +40,7 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 
 	keyID := int64(0)
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
-	data, err := userKV.Get(s.actorStr(actor), "current_index")
+	data, err := userKV.Get(s.actorStr(actor), sshKeysCurrentIndexKey)
 	if err == nil {
 		keyID, err = strconv.ParseInt(string(data), 10, 64)
 		if err != nil {
@@ -53,7 +57,7 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 	}
 
 	// Increment the start index to ensure sequential SSHKey IDs
-	err = userKV.Put(s.actorStr(actor), "current_index", []byte(strconv.FormatInt(keyID+1, 10)))
+	err = userKV.Put(s.actorStr(actor), sshKeysCurrentIndexKey, []byte(strconv.FormatInt(keyID+1, 10)))
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +77,7 @@ func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	var keysToUID map[string]int32
 	keyHash := publicKeyToHash(key.Key)
-	err := pstorage.GetJSON(userKV, "lookup_user", keyHash, &keysToUID)
+	err := pstorage.GetJSON(userKV, sshKeysLookupUserBucket, keyHash, &keysToUID)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +108,7 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 
 	sshKeyList := make([]sourcegraph.SSHPublicKey, len(keys)-1)
 	for x, key := range keys {
-		if key == "current_index" {
+		if key == sshKeysCurrentIndexKey {
 			continue
 		}
 
@@ -160,7 +164,7 @@ func (s *userKeys) ClearKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Voi
 		return nil, err
 	}
 	for _, key := range keys {
-		if key == "current_index" {
+		if key == sshKeysCurrentIndexKey {
 			continue
 		}
 		keyID, err := strconv.ParseUint(key, 10, 64)
@@ -235,12 +239,12 @@ func (s *userKeys) addLookupIndex(ctx context.Context, key []byte, uid int) erro
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	keysToUID := make(map[string]int32)
 	keyHash := publicKeyToHash(key)
-	err = pstorage.GetJSON(userKV, "lookup_user", keyHash, &keysToUID)
+	err = pstorage.GetJSON(userKV, sshKeysLookupUserBucket, keyHash, &keysToUID)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	keysToUID[base64.RawURLEncoding.EncodeToString(key)] = int32(uid)
-	return pstorage.PutJSON(userKV, "lookup_user", keyHash, keysToUID)
+	return pstorage.PutJSON(userKV, sshKeysLookupUserBucket, keyHash, keysToUID)
 }
 
 func (s *userKeys) removeLookupIndex(ctx context.Context, key []byte) error {
@@ -254,7 +258,7 @@ func (s *userKeys) removeLookupIndex(ctx context.Context, key []byte) error {
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	var keysToUID map[string]int32
 	keyHash := publicKeyToHash(key)
-	err = pstorage.GetJSON(userKV, "lookup_user", keyHash, &keysToUID)
+	err = pstorage.GetJSON(userKV, sshKeysLookupUserBucket, keyHash, &keysToUID)
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -262,7 +266,7 @@ func (s *userKeys) removeLookupIndex(ctx context.Context, key []byte) error {
 		return err
 	}
 	delete(keysToUID, base64.RawURLEncoding.EncodeToString(key))
-	return pstorage.PutJSON(userKV, "lookup_user", keyHash, keysToUID)
+	return pstorage.PutJSON(userKV, sshKeysLookupUserBucket, keyHash, keysToUID)
 }
 
 // actorStr returns actor.UID as a string.
