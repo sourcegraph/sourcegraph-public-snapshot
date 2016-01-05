@@ -50,7 +50,7 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 		return nil, err
 	}
 
-	key.Id = uint64(keyID)
+	key.ID = uint64(keyID)
 	err = pstorage.PutJSON(userKV, s.actorStr(actor), strconv.FormatInt(keyID, 10), key)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 func (s *userKeys) getSSHKey(userKV pstorage.System, actor authpkg.Actor, key string) (*sourcegraph.SSHPublicKey, error) {
 	var data = struct {
 		Key, Name string
-		Id        uint64
+		ID        uint64
 	}{}
 
 	if err := pstorage.GetJSON(userKV, s.actorStr(actor), key, &data); err != nil {
@@ -143,7 +143,7 @@ func (s *userKeys) getSSHKey(userKV pstorage.System, actor authpkg.Actor, key st
 
 	return &sourcegraph.SSHPublicKey{
 		Name: data.Name,
-		Id:   data.Id,
+		ID:   data.ID,
 		Key:  ssh.MarshalAuthorizedKey(pubKey),
 	}, nil
 }
@@ -172,7 +172,7 @@ func (s *userKeys) DeleteAllKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes
 			return nil, err
 		}
 		_, err = s.DeleteKey(ctx, &sourcegraph.SSHPublicKey{
-			Id: keyID,
+			ID: keyID,
 		})
 		if err != nil {
 			return nil, err
@@ -201,7 +201,7 @@ func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey)
 		found := false
 		for _, listedKey := range list.SSHKeys {
 			if listedKey.Name == key.Name {
-				key.Id = listedKey.Id
+				key.ID = listedKey.ID
 				found = true
 			}
 		}
@@ -211,7 +211,7 @@ func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey)
 	}
 
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
-	storageKey := strconv.FormatInt(int64(key.Id), 10)
+	storageKey := strconv.FormatInt(int64(key.ID), 10)
 
 	// Remove the key from the lookup_user index.
 	fullKey, err := s.getSSHKey(userKV, actor, storageKey)

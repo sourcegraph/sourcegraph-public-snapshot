@@ -479,7 +479,7 @@ func (c *userKeysDeleteCmd) Execute(args []string) error {
 
 	// Delete key.
 	_, err = cl.UserKeys.DeleteKey(cli.Ctx, &sourcegraph.SSHPublicKey{
-		Id:   id,
+		ID:   id,
 		Name: c.Name,
 	})
 	if err != nil {
@@ -512,7 +512,7 @@ func (c *userKeysListCmd) Execute(args []string) error {
 	} else {
 		log.Printf("SSH public keys for user %q:\n", authInfo.Login)
 		for _, k := range keys.SSHKeys {
-			log.Printf("%d. %q\n", k.Id, k.Name)
+			log.Printf("%d. %q\n", k.ID, k.Name)
 		}
 	}
 	return nil

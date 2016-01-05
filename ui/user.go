@@ -57,7 +57,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 
 		// Delete the key.
 		_, err := apiclient.UserKeys.DeleteKey(ctx, &sourcegraph.SSHPublicKey{
-			Id: ev.ID,
+			ID: ev.ID,
 		})
 		if err != nil {
 			return err
@@ -75,7 +75,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 		output[x] = payloads.UserKeysResult{
 			Key:  string(key.Key),
 			Name: key.Name,
-			Id:   int(key.Id),
+			ID:   int(key.ID),
 		}
 	}
 

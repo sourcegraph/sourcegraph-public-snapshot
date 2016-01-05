@@ -3,7 +3,7 @@ var React = require("react");
 var UserSSHKey = React.createClass({
 	propTypes: {
 		SSHKey: React.PropTypes.shape({
-			Id: React.PropTypes.number.isRequired,
+			ID: React.PropTypes.number.isRequired,
 			Key: React.PropTypes.string.isRequired,
 			Name: React.PropTypes.string.isRequired,
 		}),

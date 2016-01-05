@@ -113,5 +113,5 @@ type TextSearchResult struct {
 
 type UserKeysResult struct {
 	Key, Name string
-	Id        int
+	ID        int
 }

@@ -1793,9 +1793,11 @@ func (*SSHKeyList) ProtoMessage()    {}
 // SSHPublicKey that users to authenticate with for SSH git access.
 type SSHPublicKey struct {
 	// Key is the serialized key data in SSH wire format, with the name prefix.
-	Key  []byte `protobuf:"bytes,1,opt,name=key,proto3" json:",omitempty"`
+	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:",omitempty"`
+	// Name is the name of the SSH key.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:",omitempty"`
-	Id   uint64 `protobuf:"varint,3,opt,name=id,proto3" json:",omitempty"`
+	// ID is the ID of the SSH key.
+	ID uint64 `protobuf:"varint,3,opt,name=id,proto3" json:",omitempty"`
 }
 
 func (m *SSHPublicKey) Reset()         { *m = SSHPublicKey{} }
@@ -5605,10 +5607,14 @@ var _Users_serviceDesc = grpc.ServiceDesc{
 
 type UserKeysClient interface {
 	// AddKey adds an SSH public key for the user, enabling them to use git over SSH.
+	//
+	// The ID field of SSHPublicKey will be ignored by this method.
 	AddKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// LookupUser looks up a user based on the given public key.
+	//
+	// The ID and Name fields of SSHPublicKey will be ignored by this method.
 	LookupUser(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*UserSpec, error)
-	// DeleteKey deletes the user's SSH public key.
+	// DeleteKey deletes the user's SSH public key given an ID or name.
 	DeleteKey(ctx context.Context, in *SSHPublicKey, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// ListKeys lists the user's SSH public keys
 	ListKeys(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*SSHKeyList, error)
@@ -5673,10 +5679,14 @@ func (c *userKeysClient) DeleteAllKeys(ctx context.Context, in *pbtypes1.Void, o
 
 type UserKeysServer interface {
 	// AddKey adds an SSH public key for the user, enabling them to use git over SSH.
+	//
+	// The ID field of SSHPublicKey will be ignored by this method.
 	AddKey(context.Context, *SSHPublicKey) (*pbtypes1.Void, error)
 	// LookupUser looks up a user based on the given public key.
+	//
+	// The ID and Name fields of SSHPublicKey will be ignored by this method.
 	LookupUser(context.Context, *SSHPublicKey) (*UserSpec, error)
-	// DeleteKey deletes the user's SSH public key.
+	// DeleteKey deletes the user's SSH public key given an ID or name.
 	DeleteKey(context.Context, *SSHPublicKey) (*pbtypes1.Void, error)
 	// ListKeys lists the user's SSH public keys
 	ListKeys(context.Context, *pbtypes1.Void) (*SSHKeyList, error)
