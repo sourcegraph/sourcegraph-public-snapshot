@@ -220,12 +220,6 @@ where these `srclib/drone-srclib-LANG` Docker images are created (see
 `toolchains/**/Makefile`).
 
 
-## srclib analysis perf
-
-It seems slow running srclib analysis on the sourcegraph repo. It
-seems to be serial, not parallel.
-
-
 ## CI integration with changesets
 
 We want to see the CI build status in changesets to see if tests pass,

@@ -70,7 +70,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Go (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-go@sha256:3377712e4d55e618974384e24b7faaee4cee38f974cd5c5521eb3bfd6d6580b5",
+				Image: "srclib/drone-srclib-go@sha256:3c7ea130a31efd438d7b93d89eda63085d656aea93efc26cd34b698c877cf413",
 			},
 			Commands: srclibBuildCommands,
 		},
@@ -79,7 +79,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "JavaScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-javascript@sha256:084d89a0df9487d2d706e87009587cb80c20868f16d5a745b2f76123ab0254d3",
+				Image: "srclib/drone-srclib-javascript@sha256:d02d302667c4cd8efa998b82ec95643c5924d774e247a77649aa7618d45a46cf",
 			},
 			Commands: srclibBuildCommands,
 		},
