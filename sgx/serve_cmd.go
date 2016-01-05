@@ -91,9 +91,6 @@ Starts an HTTP server serving the app and API.
       -i, --id-key=                              identity key file ($SGPATH/appdata/global/core.serve/auth/id.pem)
           --id-key-data=                         identity key file data (overrides -i/--id-key) [$SRC_ID_KEY_DATA]
           --dequeue-msec=                        if no builds are dequeued, sleep up to this many msec before trying again (1000)
-      -n, --num-workers=                         number of parallel workers (1) [$SG_NUM_WORKERS]
-          --build-root=                          root of dir tree in which to perform builds ($SGPATH/builds)
-          --clean                                remove temp dirs and build data when the worker starts and after builds complete
 
     Help Options:
       -h, --help                                 Show common serve flags

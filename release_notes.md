@@ -1,5 +1,12 @@
 # dev
 
+- CI is now integrated into Sourcegraph with drone.io. Docker is now a
+  dependency for a working environment. Run `src info` to check your system
+  requirements.
+- Several flags related to workers have been removed:
+  `-n`/`--num-workers`/`NumWorkers`, `--build-root`/`BuildRoot`,
+  `--clean`/`Clean`. They are no longer relevant due to relying on docker. To
+  control build concurrency specify `--parallel`.
 - Builds have a new build: `BuilderConfig`. **PostgreSQL backend:**
   Run `alter table repo_build add column builder_config text default
   '';` to perform this migration.
