@@ -275,4 +275,7 @@ builds since we can run src.sourcegraph.com on a beefy machine.
   branches before merging those branches into master (e.g.,
   srclib-java has some new TODOs).
 
+* Still need to update the python and ruby srclib toolchains to work
+  with native CI; see the worker/plan/srclib.md doc for instructions.
+
 Check the source code for `TODO(native-ci)` and `TODO(sqs!native-ci)`.
