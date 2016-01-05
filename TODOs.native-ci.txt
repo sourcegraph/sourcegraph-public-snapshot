@@ -108,6 +108,7 @@ The build UI has some issues:
 * Does not have a way or explanation text for starting a build when you go to the builds page - it is just blank
 * If there is no log output (e.g., for a skipped task), it shows a single empty line of logs
 * The bottom of the page should show a success so that if you are scrolled all the way down, you see when it succeeds
+* When a big Docker image needs to be pulled (like for a java build), the terminal shows the "Docker pulling image" log but the web UI does not. This can take 5-10 min sometimes (java is like 500MB).
 
 Others:
 
@@ -266,5 +267,7 @@ builds since we can run src.sourcegraph.com on a beefy machine.
 * Add the Deploy, Notify, etc., options to BuildConfig. And if a build
   is not of a branch head, or has no branch altogether, set them as
   false.
+
+* builds of gradle projects are failing in srclib-java in the new srclib/drone-srclib-java toolchain with an NPE in GradleProject.go getSourcePaths. Test repro: clone the github.com/sgtest/srclib-gradle-sample repo. Run `srclib config && srclib make` with srclib-java@no-docker locally; it works. Run `src check --debug`; it fails.
 
 Check the source code for `TODO(native-ci)` and `TODO(sqs!native-ci)`.
