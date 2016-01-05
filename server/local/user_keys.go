@@ -36,7 +36,7 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 
 	keyID := int64(0)
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
-	data, err := userKV.Get(strconv.FormatInt(int64(actor.UID), 10), "current_index")
+	data, err := userKV.Get(s.actorStr(actor), "current_index")
 	if err == nil {
 		keyID, err = strconv.ParseInt(string(data), 10, 64)
 		if err != nil {
@@ -47,13 +47,13 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 	}
 
 	key.Id = uint64(keyID)
-	err = pstorage.PutJSON(userKV, strconv.FormatInt(int64(actor.UID), 10), strconv.FormatInt(keyID, 10), key)
+	err = pstorage.PutJSON(userKV, s.actorStr(actor), strconv.FormatInt(keyID, 10), key)
 	if err != nil {
 		return nil, err
 	}
 
 	// Increment the start index to ensure sequential SSHKey IDs
-	err = userKV.Put(strconv.FormatInt(int64(actor.UID), 10), "current_index", []byte(strconv.FormatInt(keyID+1, 10)))
+	err = userKV.Put(s.actorStr(actor), "current_index", []byte(strconv.FormatInt(keyID+1, 10)))
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 	}
 
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
-	keys, err := userKV.List(strconv.FormatInt(int64(actor.UID), 10))
+	keys, err := userKV.List(s.actorStr(actor))
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (s *userKeys) getSSHKey(userKV pstorage.System, actor authpkg.Actor, key st
 		Id        uint64
 	}{}
 
-	if err := pstorage.GetJSON(userKV, strconv.FormatInt(int64(actor.UID), 10), key, &data); err != nil {
+	if err := pstorage.GetJSON(userKV, s.actorStr(actor), key, &data); err != nil {
 		return nil, err
 	}
 
@@ -155,7 +155,7 @@ func (s *userKeys) ClearKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Voi
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 
 	// Delete each key.
-	keys, err := userKV.List(strconv.FormatInt(int64(actor.UID), 10))
+	keys, err := userKV.List(s.actorStr(actor))
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey)
 		return nil, err
 	}
 
-	err = userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), storageKey)
+	err = userKV.Delete(s.actorStr(actor), storageKey)
 	return &pbtypes.Void{}, err
 }
 
@@ -263,6 +263,11 @@ func (s *userKeys) removeLookupIndex(ctx context.Context, key []byte) error {
 	}
 	delete(keysToUID, base64.RawURLEncoding.EncodeToString(key))
 	return pstorage.PutJSON(userKV, "lookup_user", keyHash, keysToUID)
+}
+
+// actorStr returns actor.UID as a string.
+func (s *userKeys) actorStr(actor authpkg.Actor) string {
+	return strconv.Itoa(int(actor.UID))
 }
 
 func publicKeyToHash(key []byte) string {
