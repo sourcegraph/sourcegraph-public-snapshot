@@ -21,7 +21,7 @@ func autogenerateConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.A
 		c, ok := langConfigs[lang.Name]
 		if !ok {
 			c.builds = []droneyaml.BuildItem{
-				buildLogMsg(fmt.Sprintf("automatic CI config does not yet support %s", lang.Name)),
+				buildLogMsg(fmt.Sprintf("Can't automatically generate CI build config for %s; please create a .drone.yml file", lang.Name), fmt.Sprintf("automatic CI config does not yet support %s", lang.Name)),
 			}
 		}
 
@@ -32,7 +32,7 @@ func autogenerateConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.A
 	}
 
 	if len(config.Build) == 0 {
-		config.Build = append(config.Build, buildLogMsg("no supported programming languages were auto-detected"))
+		config.Build = append(config.Build, buildLogMsg("Couldn't infer CI build config; please create a .drone.yml file", "no supported programming languages were auto-detected"))
 	}
 
 	return &config, calcMatrix(matrix), nil

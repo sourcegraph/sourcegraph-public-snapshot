@@ -4,9 +4,9 @@ import droneyaml "github.com/drone/drone-exec/yaml"
 
 // buildLogMsg generates an empty CI test plan that prints msg to the
 // build log.
-func buildLogMsg(msg string) droneyaml.BuildItem {
+func buildLogMsg(title, msg string) droneyaml.BuildItem {
 	return droneyaml.BuildItem{
-		Key: "Warning",
+		Key: "Warning: " + title,
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image:       "library/alpine:3.2",
