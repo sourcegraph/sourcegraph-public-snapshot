@@ -17,7 +17,7 @@ var UserSSHKey = React.createClass({
 		var k = this.props.SSHKey;
 		return (
 			<div className="list-group-item">
-					<a className="remove octicon octicon-x" onClick={this.onClick} style={{position: "absolute", right: "15px"}}></a>
+					<a className="remove octicon octicon-x" onClick={this.onClick} style={{position: "absolute", right: "15px", cursor: "pointer"}}></a>
 					<h5>{k.Name}</h5>
 					<p style={{wordWrap: "break-word"}}>
 						{k.Key}
