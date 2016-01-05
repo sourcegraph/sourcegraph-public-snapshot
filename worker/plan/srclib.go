@@ -60,12 +60,17 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	return nil
 }
 
+// Note: If you push new Docker images for the srclib build steps, you
+// MUST update the SHA256 digest, or else users will continue using
+// the old Docker image. Also ensure you `docker push` the new Docker
+// images, or else users' builds will fail because the required image
+// is not available on the Docker Hub.
 var langSrclibConfigs = map[string]droneyaml.BuildItem{
 	"Go": droneyaml.BuildItem{
 		Key: "Go (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-go",
+				Image: "srclib/drone-srclib-go@sha256:3377712e4d55e618974384e24b7faaee4cee38f974cd5c5521eb3bfd6d6580b5",
 			},
 			Commands: srclibBuildCommands,
 		},
@@ -74,7 +79,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "JavaScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-javascript",
+				Image: "srclib/drone-srclib-javascript@sha256:084d89a0df9487d2d706e87009587cb80c20868f16d5a745b2f76123ab0254d3",
 			},
 			Commands: srclibBuildCommands,
 		},
