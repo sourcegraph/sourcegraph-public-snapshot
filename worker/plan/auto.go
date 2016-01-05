@@ -52,6 +52,7 @@ var langConfigs = map[string]struct {
 						"go get -t ./...",
 						"go build ./...",
 					},
+					AllowFailure: true,
 				},
 			},
 			{
@@ -76,6 +77,7 @@ var langConfigs = map[string]struct {
 					Commands: []string{
 						"npm install --quiet",
 					},
+					AllowFailure: true,
 				},
 			},
 			{
