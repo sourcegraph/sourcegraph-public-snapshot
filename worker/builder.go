@@ -141,6 +141,9 @@ func (b *builder) exec(ctx context.Context) error {
 		s := fmt.Sprintf("%v", axis)
 		s = strings.TrimPrefix(s, "[")
 		s = strings.TrimSuffix(s, "]")
+		if s == "" {
+			s = "Build"
+		}
 		taskLabels[i] = s
 	}
 	taskStates, err := b.state.createTasks(ctx, taskLabels...)
@@ -225,7 +228,7 @@ func (b *builder) execAxis(ctx context.Context, axis matrix.Axis, taskState buil
 
 		var label string
 		if section == "build" && (key == "build" || key == "") {
-			label = "build"
+			label = "Build"
 		} else if section == "build" {
 			label = key
 		} else if section != "" && key != "" {
