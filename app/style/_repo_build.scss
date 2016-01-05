@@ -86,6 +86,7 @@ header.repo-build {
 			padding: 0;
 			a {
 				padding: $padding-large-vertical*1.25 $padding-small-horizontal $padding-base-vertical;
+				.elapsed { font-weight: normal; }
 			}
 		}
 	}

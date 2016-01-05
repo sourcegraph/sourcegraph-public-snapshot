@@ -12,12 +12,6 @@
 						"id": "T456",
 						"children": [
 							{
-								"type": "div",
-								"props": {
-									"className": "pull-right"
-								}
-							},
-							{
 								"type": "h5",
 								"props": {
 									"className": "panel-title",
@@ -35,6 +29,12 @@
 														"props": {
 															"className": "",
 															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "pull-right"
+																	}
+																},
 																{
 																	"type": "i",
 																	"props": {

@@ -89,12 +89,14 @@ class Step extends Component {
 		return (
 			<div className={panelCls}>
 				<div className="panel-heading" role="tab" id={headerID}>
-					<div className="pull-right">{elapsed(this.state.task)}</div>
 					<h5 className="panel-title">
 						<a role="button" data-toggle="collapse"
 							onClick={() => this.setState({expanded: !expanded})}
 							data-parent={`task-${this.state.task.ParentID}-subtasks`} href={bodyID}>
-							<span className={taskClass(this.state.task).text}><i className={taskClass(this.state.task).icon}></i> {this.state.task.Label}</span>
+							<span className={taskClass(this.state.task).text}>
+								<span className="pull-right">{elapsed(this.state.task)}</span>
+								<i className={taskClass(this.state.task).icon}></i> {this.state.task.Label}
+							</span>
 						</a>
 					</h5>
 				</div>
