@@ -25,9 +25,8 @@ const (
 
 	UserContentUpload = "usercontent.upload"
 
-	UserInvite     = "user.invite"
-	UserKeys       = "user.keys"
-	UserKeysDelete = "user.keys.delete"
+	UserInvite = "user.invite"
+	UserKeys   = "user.keys"
 )
 
 func New(base *mux.Router, isTest bool) *mux.Router {
@@ -115,12 +114,8 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Name(UserInvite)
 
 	base.Path("/.user/keys").
-		Methods(m("POST", "GET")...).
+		Methods(m("POST", "GET", "DELETE")...).
 		Name(UserKeys)
-
-	base.Path("/.user/keys/{id}").
-		Methods(m("DELETE")...).
-		Name(UserKeysDelete)
 
 	return base
 }

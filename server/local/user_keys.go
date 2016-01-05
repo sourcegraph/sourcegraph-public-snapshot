@@ -3,6 +3,7 @@ package local
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -102,9 +103,10 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 			return nil, err
 		}
 
-		sshKeyList[x].Name = data.Name
-		sshKeyList[x].Id = data.Id
-		sshKeyList[x].Key = []byte{}
+		sshKeyList[x] = sourcegraph.SSHPublicKey{
+			Name: data.Name,
+			Id:   data.Id,
+		}
 
 		keyBytes, err := base64.StdEncoding.DecodeString(data.Key)
 		if err != nil {
@@ -150,8 +152,29 @@ func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey)
 		return nil, grpc.Errorf(codes.PermissionDenied, "no authenticated user in context")
 	}
 
+	if key.Name != "" {
+		// List the keys to find the ID.
+		//
+		// TODO(slimsag): implement this more efficiently -- not super important
+		// because users are not expected to have many SSH keys.
+		list, err := s.ListKeys(ctx, &pbtypes.Void{})
+		if err != nil {
+			return nil, err
+		}
+		found := false
+		for _, listedKey := range list.SSHKeys {
+			if listedKey.Name == key.Name {
+				key.Id = listedKey.Id
+				found = true
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("no such key with name %q", key.Name)
+		}
+	}
+
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
-	err := userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), string(key.Id))
+	err := userKV.Delete(strconv.FormatInt(int64(actor.UID), 10), strconv.FormatInt(int64(key.Id), 10))
 	if err != nil {
 		return nil, err
 	}

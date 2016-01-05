@@ -23,7 +23,7 @@ var UserSSHKeys = React.createClass({
 	onDelete(key) {
 		$.ajax({
 			method: "DELETE",
-			url: "/.ui/.user/keys/" + key.Id,
+			url: "/.ui/.user/keys?ID=" + key.Id,
 			headers: {
 				"X-CSRF-Token": globals.CsrfToken,
 			},
@@ -31,7 +31,7 @@ var UserSSHKeys = React.createClass({
 	},
 
 	handleResponse(data) {
-		if (data.Results && data.Results.length) {
+		if (data.Results) {
 			this.setState({
 				keys: data.Results,
 			});
@@ -84,13 +84,13 @@ var UserSSHKeys = React.createClass({
 	render() {
 		return (
 			<div className="list-group">
-				<h4>Authorized Keys</h4>
 				{
 					this.state.keys.map(function(k) {
 						return <UserSSHKey key={k.Id} onDelete={this.onDelete} SSHKey={k} />;
 					}.bind(this))
 				}
 
+				<br/>
 				<form role="form" method="post">
 					<h4>Add a new key</h4>
 
