@@ -52,7 +52,7 @@ var langConfigs = map[string]struct {
 				},
 			},
 		},
-		matrix: map[string][]string{"GO_VERSION": []string{"1.4", "1.5", "1.6"}},
+		matrix: map[string][]string{"GO_VERSION": []string{"1.5"}},
 	},
 	"JavaScript": {
 		build: droneyaml.BuildItem{
@@ -65,6 +65,6 @@ var langConfigs = map[string]struct {
 				},
 			},
 		},
-		matrix: map[string][]string{"NODE_VERSION": []string{"5-slim", "4-slim", "0-slim"}},
+		matrix: map[string][]string{"NODE_VERSION": []string{"4"}},
 	},
 }
