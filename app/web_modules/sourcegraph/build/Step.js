@@ -74,10 +74,13 @@ class Step extends Component {
 
 	render() {
 		let panelCls = classNames(panelClass(this.state.task), "step");
+
+		let explicitlyInteracted = typeof this.state.expanded !== "undefined";
+		let expanded = (explicitlyInteracted && this.state.expanded) || (!explicitlyInteracted && !this.state.task.Success);
 		let bodyClass = classNames({
 			"panel-collapse": true,
 			"collapse": true,
-			"in": (typeof this.state.expanded !== "undefined" && this.state.expanded) || (typeof this.state.expanded === "undefined" && !this.state.task.Success),
+			"in": expanded,
 		});
 
 		let headerID = `T${this.state.task.ID}`;
@@ -89,7 +92,7 @@ class Step extends Component {
 					<div className="pull-right">{elapsed(this.state.task)}</div>
 					<h5 className="panel-title">
 						<a role="button" data-toggle="collapse"
-							onClick={() => this.setState({expanded: !this.state.expanded})}
+							onClick={() => this.setState({expanded: !expanded})}
 							data-parent={`task-${this.state.task.ParentID}-subtasks`} href={bodyID}>
 							<span className={taskClass(this.state.task).text}><i className={taskClass(this.state.task).icon}></i> {this.state.task.Label}</span>
 						</a>
