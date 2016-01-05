@@ -270,4 +270,9 @@ builds since we can run src.sourcegraph.com on a beefy machine.
 
 * builds of gradle projects are failing in srclib-java in the new srclib/drone-srclib-java toolchain with an NPE in GradleProject.go getSourcePaths. Test repro: clone the github.com/sgtest/srclib-gradle-sample repo. Run `srclib config && srclib make` with srclib-java@no-docker locally; it works. Run `src check --debug`; it fails.
 
+* the no-docker branches of srclib-{java,go,javascript,python} need to
+  be merged into master. And address any new TODOs added in the
+  branches before merging those branches into master (e.g.,
+  srclib-java has some new TODOs).
+
 Check the source code for `TODO(native-ci)` and `TODO(sqs!native-ci)`.
