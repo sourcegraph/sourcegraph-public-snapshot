@@ -2,6 +2,7 @@ package runner
 
 import (
 	"errors"
+	"fmt"
 
 	// log "github.com/Sirupsen/logrus"
 	"github.com/drone/drone-exec/docker"
@@ -122,6 +123,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw)
 			if err != nil {
 				recordExitCode(255)
+				fmt.Fprintln(errw, err)
 			} else if info.State.ExitCode != 0 {
 				recordExitCode(info.State.ExitCode)
 			}
@@ -132,6 +134,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 			conf := toContainerConfig(node)
 			_, err := docker.Start(state.Client, conf, auth, node.Pull)
 			if err != nil {
+				fmt.Fprintln(errw, err)
 				state.Exit(255)
 			}
 
@@ -143,6 +146,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw)
 			if err != nil {
 				state.Exit(255)
+				fmt.Fprintln(errw, err)
 			} else if info.State.ExitCode != 0 {
 				state.Exit(info.State.ExitCode)
 			}

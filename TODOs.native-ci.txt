@@ -106,7 +106,6 @@ The build UI has some issues:
 * Offers no way of seeing the .drone.yml file that was used
 * Does not have any good way of helping users troubleshoot issues that come up
 * Does not have a way or explanation text for starting a build when you go to the builds page - it is just blank
-* If a Docker image for a build step does not exist and the `docker pull` fails, there is no log output shown
 * If there is no log output (e.g., for a skipped task), it shows a single empty line of logs
 * The bottom of the page should show a success so that if you are scrolled all the way down, you see when it succeeds
 * The touch targets on the step panel headers are extremely short (considering the height of the panel-heading element)
