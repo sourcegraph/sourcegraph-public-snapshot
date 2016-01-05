@@ -219,12 +219,6 @@ See https://src.sourcegraph.com/srclib.org/plugin/drone-srclib@dev for
 where these `srclib/drone-srclib-LANG` Docker images are created (see
 `toolchains/**/Makefile`).
 
-## Go
-
-Noisy log lines should be removed from srclib-go: `no node found for
-scope (giving a dummy label); scope is: function scope 0xc82963fe00
-{}`.
-
 
 ## srclib analysis perf
 
