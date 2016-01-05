@@ -3,9 +3,7 @@ package apidocs
 import (
 	"path"
 	"strings"
-	"sync"
 
-	"code.google.com/p/rog-go/parallel"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
@@ -16,6 +14,12 @@ import (
 func defsForDir(ctx context.Context, rev sourcegraph.RepoRevSpec, dir string) (defs []*sourcegraph.Def, err error) {
 	cl := sourcegraph.NewClientFromContext(ctx)
 
+	// Resolve the rev if not already, this is required for Defs.List below to
+	// succeed.
+	if err := resolveRevSpec(ctx, &rev); err != nil {
+		return nil, err
+	}
+
 	// TODO(slimsag): We only need files from a specific directory, but List
 	// returns all files in the entire repository. Room for optimization here too.
 	list, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{
@@ -25,40 +29,26 @@ func defsForDir(ctx context.Context, rev sourcegraph.RepoRevSpec, dir string) (d
 		return nil, err
 	}
 
-	// Now for each file in the directory, list it's defs and accumulate them. We
-	// do this in parallel.
-	run := parallel.NewRun(8)
-	appension := &sync.Mutex{}
+	// Now for each file in the directory, list it's defs.
+	var files []string
 	for _, f := range list.Files {
 		// Check that the file is in the requested directory.
 		if path.Dir(f) != dir {
 			continue
 		}
-
-		f := f // copy to avoid data race
-		run.Do(func() error {
-			fileDefs, err := cl.Defs.List(ctx, &sourcegraph.DefListOptions{
-				RepoRevs:    []string{rev.RepoSpec.SpecString()},
-				Exported:    true,
-				File:        f,
-				Doc:         true,
-				ListOptions: sourcegraph.ListOptions{PerPage: 10000},
-			})
-			if err != nil {
-				return err
-			}
-
-			// Append to defs list.
-			appension.Lock()
-			defs = append(defs, fileDefs.Defs...)
-			appension.Unlock()
-			return nil
-		})
+		files = append(files, f)
 	}
-	if err := run.Wait(); err != nil {
+	filesDefs, err := cl.Defs.List(ctx, &sourcegraph.DefListOptions{
+		RepoRevs:    []string{rev.RepoSpec.SpecString() + "@" + rev.CommitID},
+		Exported:    true,
+		Files:       files,
+		Doc:         true,
+		ListOptions: sourcegraph.ListOptions{PerPage: 10000},
+	})
+	if err != nil {
 		return nil, err
 	}
-	return defs, nil
+	return filesDefs.Defs, nil
 }
 
 // subDirsForDir returns the subdirectores for the given directory.
@@ -113,4 +103,20 @@ func countElements(path string) (count int) {
 		}
 	}
 	return
+}
+
+// resolveRevSpec resolves the RepoRevSpec if it is not already.
+func resolveRevSpec(ctx context.Context, rev *sourcegraph.RepoRevSpec) error {
+	cl := sourcegraph.NewClientFromContext(ctx)
+	if rev.Rev == "" {
+		rev.Rev = "master"
+	}
+	if !rev.Resolved() {
+		commit, err := cl.Repos.GetCommit(ctx, rev)
+		if err != nil {
+			return err
+		}
+		rev.CommitID = string(commit.ID)
+	}
+	return nil
 }
