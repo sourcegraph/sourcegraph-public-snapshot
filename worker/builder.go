@@ -216,13 +216,22 @@ func (b *builder) execAxis(ctx context.Context, axis matrix.Axis, taskState buil
 
 	opt := b.opt // copy
 	opt.Monitor = func(section, key string, node droneparser.Node) dronerunner.Monitor {
+		capFirst := func(s string) string {
+			if s == "" {
+				return s
+			}
+			return strings.ToUpper(s[0:1]) + s[1:]
+		}
+
 		var label string
 		if section == "build" && (key == "build" || key == "") {
 			label = "build"
+		} else if section == "build" {
+			label = key
 		} else if section != "" && key != "" {
-			label = section + ": " + key
+			label = capFirst(section) + ": " + key
 		} else {
-			label = section + key
+			label = capFirst(section) + key
 		}
 
 		subtaskState, err := taskState.createSubtask(ctx, label)

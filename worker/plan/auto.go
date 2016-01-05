@@ -20,10 +20,12 @@ func autogenerateConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.A
 	for _, lang := range inv.Languages {
 		c, ok := langConfigs[lang.Name]
 		if !ok {
-			c.build = buildLogMsg(fmt.Sprintf("automatic CI config does not yet support %s", lang.Name))
+			c.builds = []droneyaml.BuildItem{
+				buildLogMsg(fmt.Sprintf("automatic CI config does not yet support %s", lang.Name)),
+			}
 		}
 
-		config.Build = append(config.Build, c.build)
+		config.Build = append(config.Build, c.builds...)
 		for key, vals := range c.matrix {
 			matrix[key] = append(matrix[key], vals...)
 		}
@@ -37,31 +39,51 @@ func autogenerateConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.A
 }
 
 var langConfigs = map[string]struct {
-	build  droneyaml.BuildItem
+	builds []droneyaml.BuildItem
 	matrix map[string][]string
 }{
 	"Go": {
-		build: droneyaml.BuildItem{
-			Key: "Go $$GO_VERSION",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "golang:$$GO_VERSION"},
-				Commands: []string{
-					"go get -t ./...",
-					"go build ./...",
-					"go test -v ./...",
+		builds: []droneyaml.BuildItem{
+			{
+				Key: "Go $$GO_VERSION build",
+				Build: droneyaml.Build{
+					Container: droneyaml.Container{Image: "golang:$$GO_VERSION"},
+					Commands: []string{
+						"go get -t ./...",
+						"go build ./...",
+					},
+				},
+			},
+			{
+				Key: "Go $$GO_VERSION test",
+				Build: droneyaml.Build{
+					Container: droneyaml.Container{Image: "golang:$$GO_VERSION"},
+					Commands: []string{
+						"go test -v ./...",
+					},
 				},
 			},
 		},
 		matrix: map[string][]string{"GO_VERSION": []string{"1.5"}},
 	},
 	"JavaScript": {
-		build: droneyaml.BuildItem{
-			Key: "JavaScript (node $$NODE_VERSION)",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "node:$$NODE_VERSION"},
-				Commands: []string{
-					"npm install",
-					"npm run test",
+		builds: []droneyaml.BuildItem{
+			{
+				Key: "JavaScript deps (node v$$NODE_VERSION)",
+				Build: droneyaml.Build{
+					Container: droneyaml.Container{Image: "node:$$NODE_VERSION"},
+					Commands: []string{
+						"npm install --quiet",
+					},
+				},
+			},
+			{
+				Key: "JavaScript test (node v$$NODE_VERSION)",
+				Build: droneyaml.Build{
+					Container: droneyaml.Container{Image: "node:$$NODE_VERSION"},
+					Commands: []string{
+						"npm run test",
+					},
 				},
 			},
 		},
