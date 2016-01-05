@@ -132,18 +132,19 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 		return
 	}
 
-	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
+	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE || event.Type == githttp.TAG {
 		_, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
 			Repo:     repo,
 			CommitID: event.Commit,
+			Tag:      event.Tag,
 			Branch:   event.Branch,
 			Config:   sourcegraph.BuildConfig{Queue: true},
 		})
 		if err != nil {
-			log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo.URI, "commit", event.Commit, "branch", event.Branch)
+			log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo.URI, "commit", event.Commit, "branch", event.Branch, "tag", event.Tag)
 			return
 		}
-		log15.Debug("postPushHook: build created", "repo", repo.URI, "branch", event.Branch, "commit", event.Commit)
+		log15.Debug("postPushHook: build created", "repo", repo.URI, "branch", event.Branch, "tag", event.Tag, "commit", event.Commit, "event type", event.Type)
 	}
 }
 

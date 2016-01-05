@@ -250,7 +250,7 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 				events.Publish(events.GitCreateBranchEvent, payload)
 			} else if e.Commit == emptyCommitID {
 				events.Publish(events.GitDeleteBranchEvent, payload)
-			} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE {
+			} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE || e.Type == githttp.TAG {
 				events.Publish(events.GitPushEvent, payload)
 			}
 		}
