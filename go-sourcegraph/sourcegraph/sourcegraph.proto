@@ -1093,7 +1093,7 @@ message BuildTask {
 
 	// Build specifies the build associated with this task.
 	BuildSpec build = 2 [(gogoproto.nullable) = false];
-	
+
 	// Label describes the task (e.g., Code Intelligence).
 	string label = 4;
 
@@ -1970,9 +1970,9 @@ message DefListOptions {
 	string unit = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string path = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// File, if specified, will restrict the results to only defs defined in the
+	// Files, if specified, will restrict the results to only defs defined in the
 	// specified file.
-	string file = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated string files = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// FilePathPrefix, if specified, will restrict the results to only defs defined in
 	// files whose path is underneath the specified prefix.
