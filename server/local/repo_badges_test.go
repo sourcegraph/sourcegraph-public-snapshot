@@ -11,7 +11,7 @@ import (
 func TestReposService_ListBadges(t *testing.T) {
 	var s repoBadges
 	ctx, mock := testContext()
-	ctx = conf.WithAppURL(ctx, &url.URL{})
+	ctx = conf.WithURL(ctx, &url.URL{}, nil)
 
 	calledReposGet := mock.stores.Repos.MockGet(t, "r/r")
 
@@ -30,7 +30,7 @@ func TestReposService_ListBadges(t *testing.T) {
 func TestReposService_ListCounters(t *testing.T) {
 	var s repoBadges
 	ctx, mock := testContext()
-	ctx = conf.WithAppURL(ctx, &url.URL{})
+	ctx = conf.WithURL(ctx, &url.URL{}, nil)
 
 	calledReposGet := mock.stores.Repos.MockGet(t, "r/r")
 

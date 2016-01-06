@@ -24,15 +24,19 @@ var RepoCloneBox = React.createClass({
 		}
 	},
 
-	_toggleType(type) {
-		this.setState({
-			type: type,
-		});
+	_toggleType(type, sshAvailable) {
+		if (sshAvailable) {
+			this.setState({
+				type: type,
+			});
+		}
 	},
 
 	render() {
 		var url 		 = this.props.HTTPCloneURL,
 			nextType	 = this.state.type === "SSH" ? "HTTP" : "SSH";
+
+		var sshAvailable = this.props.SSHCloneURL.length !== 0;
 
 		if (this.state.type === "SSH") {
 			url = this.props.SSHCloneURL;
@@ -42,8 +46,10 @@ var RepoCloneBox = React.createClass({
 			<div className="clone-url-wrap input-group input-group-sm pull-right">
 				<div className="input-group-btn">
 					<button className="btn btn-primary clone-url-toggle clone-type"
-						onClick={this._toggleType.bind(this, nextType)}
-						disabled={this.props.SSHCloneURL.length ? null : "true"}>
+						onClick={this._toggleType.bind(this, nextType, sshAvailable)}
+						title={sshAvailable ? null : "SSH unavailable"}
+						data-tooltip={sshAvailable ? null : "true"}
+						data-placement={sshAvailable ? null : "bottom"}>
 							{this.state.type + (url.indexOf("https://") > -1 ? "S" : "")}
 					</button>
 				</div>

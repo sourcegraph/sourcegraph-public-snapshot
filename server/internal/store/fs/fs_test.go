@@ -32,7 +32,7 @@ func testContext() (ctx context.Context, done func()) {
 	ctx = WithBuildStoreVFS(ctx, rwvfs.Walkable(rwvfs.OS(filepath.Join(tmpDir, "builds"))))
 	ctx = WithDBVFS(ctx, rwvfs.Map(map[string]string{}))
 	ctx = WithAppStorageVFS(ctx, rwvfs.Walkable(rwvfs.OS(appdata)))
-	ctx = conf.WithAppURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
+	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, nil)
 	return ctx, func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
 			log.Fatalf("Warning: failed to remove fs store temp dir %q: %s.", tmpDir, err)

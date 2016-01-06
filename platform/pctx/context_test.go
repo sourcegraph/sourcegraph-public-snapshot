@@ -42,7 +42,7 @@ func Test_repoFrameBaseURI(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	ctx := conf.WithAppURL(context.Background(), appURL)
+	ctx := conf.WithURL(context.Background(), appURL, nil)
 	rtr := router.New(nil)
 	for _, test := range tests {
 		var prefix string

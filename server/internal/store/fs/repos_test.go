@@ -48,8 +48,9 @@ func TestRepos_Get_local(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = conf.WithAppURL(ctx, &url.URL{Scheme: "http", Host: host})
+	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: host}, &url.URL{Scheme: "ssh", Host: host, User: url.User("git")})
 	expectedCloneURL := fmt.Sprintf("http://%s/%s", host, repoName)
+	expectedSSHCloneURL := fmt.Sprintf("ssh://git@%s/%s", host, repoName)
 
 	s := &Repos{}
 	repo, err := s.Get(ctx, repoName)
@@ -59,6 +60,10 @@ func TestRepos_Get_local(t *testing.T) {
 	// The host of the clone URL should match the app's host.
 	if repo.HTTPCloneURL != expectedCloneURL {
 		t.Errorf("got HTTP Clone URL %q, want %q", repo.HTTPCloneURL, expectedCloneURL)
+	}
+	// The host of the clone SSH URL should match the app's host.
+	if repo.SSHCloneURL != expectedSSHCloneURL {
+		t.Errorf("got SSH Clone URL %q, want %q", repo.SSHCloneURL, expectedSSHCloneURL)
 	}
 }
 

@@ -19,7 +19,7 @@ func testContext() (context.Context, *mocks) {
 	ctx := NewContext(context.Background(), Config{})
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
-	ctx = conf.WithAppURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
+	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, nil)
 	return ctx, &m
 }
 

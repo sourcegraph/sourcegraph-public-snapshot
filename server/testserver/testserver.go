@@ -440,7 +440,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	s.Ctx = context.Background()
 	s.Ctx = s.Config.Endpoint.NewContext(s.Ctx)
-	s.Ctx = conf.WithAppURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
+	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL), nil)
 
 	// ID key
 	idkey.SetTestEnvironment()
