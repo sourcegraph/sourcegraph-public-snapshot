@@ -53,6 +53,10 @@ func (f defFormatter) DefKeyword() string {
 		return "type"
 	case definfo.Package:
 		return "package"
+	case definfo.Interface:
+		return "interface"
+	case definfo.Const:
+		return "const"
 	}
 	return ""
 }

@@ -227,7 +227,7 @@ import pbtypes1 "sourcegraph.com/sqs/pbtypes"
 import pbtypes2 "sourcegraph.com/sqs/pbtypes"
 import inventory "src.sourcegraph.com/sourcegraph/pkg/inventory"
 
-// discarding unused import google_api1 "google/api"
+// discarding unused import google_api1 "github.com/gengo/grpc-gateway/third_party/googleapis/google/api"
 
 import (
 	context "golang.org/x/net/context"
@@ -2137,9 +2137,9 @@ type DefListOptions struct {
 	UnitType string   `protobuf:"bytes,7,opt,name=unit_type,proto3" json:",omitempty" url:",omitempty"`
 	Unit     string   `protobuf:"bytes,8,opt,name=unit,proto3" json:",omitempty" url:",omitempty"`
 	Path     string   `protobuf:"bytes,9,opt,name=path,proto3" json:",omitempty" url:",omitempty"`
-	// File, if specified, will restrict the results to only defs defined in the
+	// Files, if specified, will restrict the results to only defs defined in the
 	// specified file.
-	File string `protobuf:"bytes,10,opt,name=file,proto3" json:",omitempty" url:",omitempty"`
+	Files []string `protobuf:"bytes,10,rep,name=files" json:",omitempty" url:",omitempty"`
 	// FilePathPrefix, if specified, will restrict the results to only defs defined in
 	// files whose path is underneath the specified prefix.
 	FilePathPrefix string   `protobuf:"bytes,11,opt,name=file_path_prefix,proto3" json:",omitempty" url:",omitempty"`

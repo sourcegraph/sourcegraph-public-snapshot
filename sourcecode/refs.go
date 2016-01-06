@@ -30,7 +30,7 @@ func entryRefs(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *
 	refFilters := []srcstore.RefFilter{
 		srcstore.ByRepos(entrySpec.RepoRev.RepoSpec.URI),
 		srcstore.ByCommitIDs(entrySpec.RepoRev.CommitID),
-		srcstore.ByFiles(path.Clean(entrySpec.Path)),
+		srcstore.ByFiles(false, path.Clean(entrySpec.Path)),
 		srcstore.RefFilterFunc(func(ref *graph.Ref) bool {
 			return ref.Start >= uint32(entry.StartByte) && ref.End <= uint32(entry.EndByte)
 		}),

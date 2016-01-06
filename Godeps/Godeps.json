@@ -1,6 +1,6 @@
 {
 	"ImportPath": "src.sourcegraph.com/sourcegraph",
-	"GoVersion": "go1.5.1",
+	"GoVersion": "go1.5.2",
 	"Packages": [
 		"./..."
 	],
@@ -9,6 +9,11 @@
 			"ImportPath": "bitbucket.org/pkg/inflect",
 			"Comment": "go.r60-12",
 			"Rev": "8961c3750a47b8c0b3e118d52513b97adf85a7e8"
+		},
+		{
+			"ImportPath": "code.google.com/p/rog-go/parallel",
+			"Comment": "null-250",
+			"Rev": "e7ca3a2567b8ad482fef7b1aa1a258aa00c82772"
 		},
 		{
 			"ImportPath": "github.com/AaronO/go-git-http",
@@ -241,10 +246,6 @@
 			"Rev": "3dac7b4f76f6e17fb39b768b89e3783d16e237fe"
 		},
 		{
-			"ImportPath": "github.com/mattn/go-isatty",
-			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
-		},
-		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
 		},
@@ -268,6 +269,10 @@
 		{
 			"ImportPath": "github.com/opennota/urlesc",
 			"Rev": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587"
+		},
+		{
+			"ImportPath": "github.com/peterh/liner",
+			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
@@ -617,10 +622,6 @@
 			"Rev": "2baa8a1b9338cf13d9eeb27696d761155fa480be"
 		},
 		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "b4e289961544fc90f340c908c3460ceae6a2202a"
-		},
-		{
 			"ImportPath": "golang.org/x/text/transform",
 			"Rev": "3eb7007b740b66a77f3c85f2660a0240b284115a"
 		},
@@ -730,8 +731,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.1.0-27-g8f426a5",
-			"Rev": "cfd1f8811ef46db7d43ce2a4c6dbd9f6a2842483"
+			"Comment": "v0.1.0-30-g43fe10d",
+			"Rev": "43fe10d7058936f083cd4643d5fca44f0dde0f9e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -739,11 +740,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-go/gog/definfo",
-			"Rev": "e54631de896b38ea4d5d76fdff18d2b6a77a1fb7"
+			"Rev": "ae09e1348e9369ed6edc5d08115f163f13ca4404"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-go/golang_def",
-			"Rev": "e54631de896b38ea4d5d76fdff18d2b6a77a1fb7"
+			"Rev": "ae09e1348e9369ed6edc5d08115f163f13ca4404"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-haskell/haskell",
@@ -751,7 +752,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-java/java_def",
-			"Rev": "b562a32537bac7c2b21e48d90b43f77f0c3a8f23"
+			"Rev": "5c60cce8df5e8ea2510ba07f576f1a60b34c1d2b"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-javascript/javascript_def",
@@ -785,6 +786,10 @@
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",
 			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
+		},
+		{
+			"ImportPath": "src.sourcegraph.com/apps/apidocs",
+			"Rev": "5e750eb2178ddb60fa1b2704398447844cd3c7b1"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications",

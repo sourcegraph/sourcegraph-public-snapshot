@@ -188,11 +188,19 @@ func defListOptionsFilters(o *sourcegraph.DefListOptions) []srcstore.DefFilter {
 	if (o.UnitType != "" && o.Unit == "") || (o.UnitType == "" && o.Unit != "") {
 		log.Println("WARNING: DefListOptions.DefFilter: must specify either both or neither of --type and --name (to filter by source unit)")
 	}
-	if o.File != "" {
-		fs = append(fs, srcstore.ByFiles(path.Clean(o.File)))
+
+	var files []string
+	for _, f := range o.Files {
+		if f != "" {
+			files = append(files, path.Clean(f))
+		}
 	}
+	if len(files) > 0 {
+		fs = append(fs, srcstore.ByFiles(true, files...))
+	}
+
 	if o.FilePathPrefix != "" {
-		fs = append(fs, srcstore.ByFiles(path.Clean(o.FilePathPrefix)))
+		fs = append(fs, srcstore.ByFiles(false, path.Clean(o.FilePathPrefix)))
 	}
 	if len(o.Kinds) > 0 {
 		fs = append(fs, srcstore.DefFilterFunc(func(def *graph.Def) bool {

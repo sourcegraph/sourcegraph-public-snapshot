@@ -1,0 +1,138 @@
+<style>
+a.anchor {
+    display: block;
+    position: relative;
+    top: 0px;
+    visibility: hidden;
+}
+
+span.jumptodef {
+  font-size: 14px;
+  display: inline-block;
+  position: relative;
+  top: -3px;
+}
+</style>
+
+<h1>{{.FullPath}}</h1>
+
+<h2>Index</h2>
+  <!-- Constants Index -->
+  {{with kinds "const" $.Defs $.URL.Path}}
+    <h3><a href="#const">Constants</a></h3>
+    <div>
+      {{range .}}
+        <span style="padding-left: 3em; min-width: 33%; display: inline-block;"><a href="#{{.DefKey.Path}}">{{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}}</a></span>
+      {{end}}
+    </div>
+  {{end}}
+
+  <!-- Variables Index -->
+  {{with kinds "var" $.Defs $.URL.Path}}
+    <h3><a href="#vars">Variables</a></h3>
+    <div>
+      {{range .}}
+        <span style="padding-left: 3em; min-width: 33%; display: inline-block;"><a href="#{{.DefKey.Path}}">{{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}}</a></span>
+      {{end}}
+    </div>
+  {{end}}
+
+  <!-- Types Index -->
+  {{with kinds "type" $.Defs $.URL.Path}}
+    <h3><a href="#type">Types</a></h3>
+    <div>
+      {{range .}}
+        <span style="padding-left: 3em; min-width: 33%; display: inline-block;"><a href="#{{.DefKey.Path}}">{{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}}</a></span>
+      {{end}}
+    </div>
+  {{end}}
+
+  <!-- Functions Index -->
+  {{with kinds "func" $.Defs $.URL.Path}}
+    <h3><a href="#func">Functions</a></h3>
+    <div>
+      {{range .}}
+        <span style="padding-left: 3em; min-width: 33%; display: inline-block;"><a href="#{{.DefKey.Path}}">{{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}}</a></span>
+      {{end}}
+    </div>
+  {{end}}
+
+  <!-- Subdirectory Index -->
+  {{with .SubDirs}}
+    <h3>Subdirectories</h3>
+    <ul>
+      {{range .}}
+        <li><a href="{{$.BaseURI}}/{{.}}">{{.}}</a></li>
+      {{end}}
+    </ul>
+  {{end}}
+
+<!-- Constants -->
+{{with kinds "const" $.Defs $.URL.Path}}
+  <h2 id="const"><a href="#const"><span class="octicon octicon-link"></span></a> Constants</h2>
+  {{range .}}
+    <a class="anchor" id="{{.DefKey.Path}}"></a>
+    <h3><a href="#{{.DefKey.Path}}"><span class="octicon octicon-link"></span></a> {{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}} <span class="jumptodef">(<a href="{{call $.URLToDef .}}" target="_blank">jump to definition</a>)</span></h3>
+    <div class="well well-sm">
+      {{if .Def.Docs}}
+        {{html .DocHTML}}
+      {{else}}
+        No documentation found.
+      {{end}}
+    </div>
+  {{end}}
+{{end}}
+
+
+<!-- Variables -->
+{{with kinds "var" $.Defs $.URL.Path}}
+  <a class="anchor" id="var"></a>
+  <h2><a href="#var"><span class="octicon octicon-link"></span></a> Variables</h2>
+  {{range .}}
+    <a class="anchor" id="{{.DefKey.Path}}"></a>
+    <h3><a href="#{{.DefKey.Path}}"><span class="octicon octicon-link"></span></a> {{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}} <span class="jumptodef">(<a href="{{call $.URLToDef .}}" target="_blank">jump to definition</a>)</span></h3>
+    <div class="well well-sm">
+      {{if .Def.Docs}}
+        {{html .DocHTML}}
+      {{else}}
+        No documentation found.
+      {{end}}
+    </div>
+  {{end}}
+{{end}}
+
+
+<!-- Types -->
+{{with kinds "type" $.Defs $.URL.Path}}
+  <a class="anchor" id="type"></a>
+  <h2><a href="#type"><span class="octicon octicon-link"></span></a> Types</h2>
+  {{range .}}
+    <a class="anchor" id="{{.DefKey.Path}}"></a>
+    <h3><a href="#{{.DefKey.Path}}"><span class="octicon octicon-link"></span></a> {{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}} <span class="jumptodef">(<a href="{{call $.URLToDef .}}" target="_blank">jump to definition</a>)</span></h3>
+    <div class="well well-sm">
+      {{if .Def.Docs}}
+        {{html .DocHTML}}
+      {{else}}
+        No documentation found.
+      {{end}}
+    </div>
+  {{end}}
+{{end}}
+
+
+<!-- Functions -->
+{{with kinds "func" $.Defs $.URL.Path}}
+  <a class="anchor" id="func"></a>
+  <h2><a href="#func"><span class="octicon octicon-link"></span></a> Functions</h2>
+  {{range .}}
+    <a class="anchor" id="{{.DefKey.Path}}"></a>
+    <h3><a href="#{{.DefKey.Path}}"><span class="octicon octicon-link"></span></a> {{.FmtStrings.DefKeyword}} {{.FmtStrings.Name.ScopeQualified}} <span class="jumptodef">(<a href="{{call $.URLToDef .}}" target="_blank">jump to definition</a>)</span></h3>
+    <div class="well well-sm">
+      {{if .Def.Docs}}
+        {{html .DocHTML}}
+      {{else}}
+        No documentation found.
+      {{end}}
+    </div>
+  {{end}}
+{{end}}

@@ -1,5 +1,11 @@
 # dev
 
+# 0.11.0
+
+- Alongside Tracker and Changes applications now sits a new "API Docs" tab which
+  automatically generates an API documentation overview for a given directory of
+  code.
+
 # 0.10.0
 
 - Builds are now identified by a numeric build ID, instead of by
