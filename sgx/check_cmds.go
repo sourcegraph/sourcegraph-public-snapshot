@@ -2,22 +2,23 @@ package sgx
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	droneexec "github.com/drone/drone-exec/exec"
-	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone-plugin-go/plugin"
-	"github.com/drone/drone/yaml/matrix"
+	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
 
 	"strings"
 
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
-	"src.sourcegraph.com/sourcegraph/worker/plan"
+	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
 func init() {
@@ -48,72 +49,39 @@ func (c *checkCmd) Execute(args []string) error {
 		return err
 	}
 
-	config, axes, err := plan.CreateLocal(cli.Ctx, vfs.OS(c.Dir))
+	builder, err := c.configureBuilder(cli.Ctx)
 	if err != nil {
 		return err
 	}
 
-	if c.Debug || c.ShowConfig {
-		yamlBytes, err := yaml.Marshal(config)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintln(os.Stderr, "# .drone.yml file:")
-		fmt.Fprintln(os.Stderr, string(yamlBytes))
-		if len(axes) > 1 || len(axes[0]) > 0 {
-			fmt.Fprintln(os.Stderr, "# Build matrix:")
-			for _, axis := range axes {
-				fmt.Fprintf(os.Stderr, " - %s\n", axis)
-			}
-		}
-		fmt.Fprintln(os.Stderr)
+	if err := builder.Exec(cli.Ctx); err != nil {
+		fmt.Println(red("FAIL"))
+		return err
 	}
-	if c.ShowConfig {
-		return nil
-	}
-
-	success := true
-	for i, axis := range axes {
-		if len(axis) > 0 {
-			fmt.Printf(cyan("# %v\n"), axis)
-		}
-		if err := c.execAxis(config, axis); err != nil {
-			fmt.Println(red("FAIL"))
-			success = false
-		} else {
-			fmt.Println(green("PASS"))
-		}
-		if i != len(axes)-1 {
-			fmt.Println()
-		}
-	}
-
-	if !success {
-		if len(axes) > 1 {
-			fmt.Println()
-			fmt.Println(red("OVERALL: FAIL"))
-		}
-		os.Exit(1)
-	}
+	fmt.Println(green("PASS"))
 	return nil
 }
 
-func (c *checkCmd) execAxis(config *droneyaml.Config, axis matrix.Axis) error {
-	opt := droneexec.Options{
-		Cache:  c.Cache,
-		Build:  true,
-		Deploy: c.Deploy,
-		Notify: c.Notify,
-		Debug:  c.Debug,
-		Mount:  c.Dir,
+func (c *checkCmd) configureBuilder(ctx context.Context) (*builder.Builder, error) {
+	var b builder.Builder
+	fs := vfs.OS(c.Dir)
+
+	guessPath := func(dir string) string {
+		path := filepath.Join(os.Getenv("GOPATH"), "src")
+		if filepath.HasPrefix(dir, path) {
+			return strings.TrimPrefix(dir, path+string(os.PathSeparator))
+		}
+
+		parts := strings.Split(dir, string(os.PathSeparator)+"src"+string(os.PathSeparator))
+		if len(parts) > 1 {
+			path := parts[len(parts)-1]
+			return strings.TrimPrefix(path, string(os.PathSeparator))
+		}
+		return filepath.Base(dir)
 	}
 
-	yamlBytes, err := yaml.Marshal(config)
-	if err != nil {
-		return err
-	}
-
-	payload := droneexec.Payload{
+	// Drone payload
+	b.Payload = droneexec.Payload{
 		Repo: &plugin.Repo{
 			IsPrivate: true,
 			IsTrusted: true,
@@ -125,29 +93,124 @@ func (c *checkCmd) execAxis(config *droneyaml.Config, axis matrix.Axis) error {
 			Commit: "0000000000",
 		},
 		Job: &plugin.Job{
-			Status:      plugin.StateRunning,
-			Environment: axis,
+			Status: plugin.StateRunning,
 		},
 		System: &plugin.System{
 			Globals: []string{},
 			Plugins: []string{"plugins/*", "*/*"},
 		},
-		Yaml: string(yamlBytes),
 	}
 
-	return droneexec.Exec(payload, opt)
+	// .drone.yml
+	yamlBytes, err := vfs.ReadFile(fs, ".drone.yml")
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	} else if err == nil {
+		b.Payload.Yaml = string(yamlBytes)
+		b.DroneYMLFileExists = true
+	}
+
+	// Drone options
+	b.Options = droneexec.Options{
+		Cache:  c.Cache,
+		Build:  true,
+		Deploy: c.Deploy,
+		Notify: c.Notify,
+		Debug:  c.Debug,
+		Mount:  c.Dir,
+	}
+
+	// Inventory
+	b.Inventory = func(ctx context.Context) (*inventory.Inventory, error) {
+		return inventory.Scan(ctx, walkableFileSystem{fs})
+	}
+
+	// CreateTasks
+	b.CreateTasks = func(ctx context.Context, labels []string) ([]builder.TaskState, error) {
+		states := make([]builder.TaskState, len(labels))
+		for i, label := range labels {
+			states[i] = &taskState{
+				label: label,
+				log:   nopWriteCloser{os.Stderr},
+			}
+		}
+		return states, nil
+	}
+
+	// FinalBuildConfig
+	b.FinalBuildConfig = func(ctx context.Context, configYAML string) error {
+		if c.Debug || c.ShowConfig {
+			fmt.Fprintln(os.Stderr, "# .drone.yml file:")
+			fmt.Fprintln(os.Stderr, configYAML)
+			fmt.Fprintln(os.Stderr)
+		}
+		if c.ShowConfig {
+			os.Exit(0)
+		}
+
+		return nil
+	}
+
+	return &b, nil
 }
 
-func guessPath(dir string) string {
-	path := filepath.Join(os.Getenv("GOPATH"), "src")
-	if filepath.HasPrefix(dir, path) {
-		return strings.TrimPrefix(dir, path+string(os.PathSeparator))
-	}
+// taskState manages the state of a task running via `src check`. It
+// implements builder.TaskState.
+type taskState struct {
+	label string
 
-	parts := strings.Split(dir, string(os.PathSeparator)+"src"+string(os.PathSeparator))
-	if len(parts) > 1 {
-		path := parts[len(parts)-1]
-		return strings.TrimPrefix(path, string(os.PathSeparator))
-	}
-	return filepath.Base(dir)
+	// log is where task logs are written. Internal errors
+	// encountered by the builder are not written to w but are
+	// returned as errors from its methods.
+	log io.WriteCloser
 }
+
+// Start implements builder.TaskState.
+func (s taskState) Start(ctx context.Context) error {
+	log15.Info("START", "task", s)
+	return nil
+}
+
+// Skip implements builder.TaskState.
+func (s taskState) Skip(ctx context.Context) error {
+	log15.Info("SKIP", "task", s)
+	return nil
+}
+
+// Warnings implements builder.TaskState.
+func (s taskState) Warnings(ctx context.Context) error {
+	log15.Warn("WARNINGS", "task", s)
+	return nil
+}
+
+// End implements builder.TaskState.
+func (s taskState) End(ctx context.Context, execErr error) error {
+	defer s.log.Close()
+
+	if execErr == nil {
+		log15.Info("PASS", "task", s)
+	} else {
+		log15.Error("FAIL", "task", s, "err", execErr)
+	}
+	return nil
+}
+
+// CreateSubtask implements builder.TaskState.
+func (s taskState) CreateSubtask(ctx context.Context, label string) (builder.TaskState, error) {
+	return &taskState{
+		label: label,
+		log:   s.log,
+	}, nil
+}
+
+func (s taskState) Log() io.Writer { return s.log }
+
+func (s taskState) String() string { return s.label }
+
+type walkableFileSystem struct{ vfs.FileSystem }
+
+func (walkableFileSystem) Join(path ...string) string { return filepath.Join(path...) }
+
+type nopWriteCloser struct{ io.Writer }
+
+func (nopWriteCloser) Close() error { return nil }

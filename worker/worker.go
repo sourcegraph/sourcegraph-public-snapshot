@@ -8,10 +8,9 @@ import (
 	"os"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"

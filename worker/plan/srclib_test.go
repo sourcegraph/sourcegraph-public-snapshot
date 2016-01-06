@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"gopkg.in/yaml.v2"
+
 	"strings"
 
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
@@ -188,4 +190,12 @@ matrix:
 			t.Errorf("%s: YAML mismatch\n\n### GOT\n%+v\n\n### WANT\n%+v", label, cfg, wantCfg)
 		}
 	}
+}
+
+func config2yaml(c droneyaml.Config) string {
+	b, err := yaml.Marshal(c)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }

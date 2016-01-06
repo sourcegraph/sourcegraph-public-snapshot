@@ -3,69 +3,65 @@ package worker
 import (
 	"fmt"
 	"io"
+	"time"
+
+	"sourcegraph.com/sqs/pbtypes"
 
 	"golang.org/x/net/context"
+	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
-type buildState struct {
-	build sourcegraph.BuildSpec
-}
+// startBuild starts and monitors a single build. It manages the
+// build's state on the Sourcegraph server.
+func startBuild(ctx context.Context, build *sourcegraph.Build) {
+	done := startHeartbeat(ctx, build.Spec())
+	defer done()
 
-// newBuildState creates a new buildState object. It must be closed by
-// calling end (to close the log file).
-func newBuildState(build sourcegraph.BuildSpec) buildState {
-	return buildState{
-		build: build,
-	}
-}
+	start := time.Now()
 
-// start marks the build as started.
-func (s buildState) start(ctx context.Context) error {
+	log15.Info("Starting build", "build", build.Spec().IDString())
 	_, err := sourcegraph.NewClientFromContext(ctx).Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
-		Build: s.build,
+		Build: build.Spec(),
 		Info:  sourcegraph.BuildUpdate{StartedAt: now()},
 	})
-	return err
-}
+	if err != nil {
+		log15.Error("Updating build starting state failed", "build", build.Spec(), "err", err)
+		return
+	}
 
-// end updates the build's final state.
-func (s buildState) end(ctx context.Context, execErr error) error {
-	_, err := sourcegraph.NewClientFromContext(ctx).Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
-		Build: s.build,
+	// Configure build.
+	builder, err := configureBuild(ctx, build)
+	if err != nil {
+		log15.Error("Configuring build failed", "build", build.Spec(), "err", err)
+		return
+	}
+
+	// Run build.
+	execErr := builder.Exec(ctx)
+	if execErr == nil {
+		log15.Info("Build succeeded", "build", build.Spec().IDString(), "time", time.Since(start))
+	} else {
+		log15.Info("Build failed", "build", build.Spec().IDString(), "time", time.Since(start), "err", execErr)
+	}
+
+	_, err = sourcegraph.NewClientFromContext(ctx).Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
+		Build: build.Spec(),
 		Info: sourcegraph.BuildUpdate{
 			Success: execErr == nil,
 			Failure: execErr != nil,
 			EndedAt: now(),
 		},
 	})
-	return err
-}
-
-// createTasks creates new tasks.
-func (s buildState) createTasks(ctx context.Context, labels ...string) ([]buildTaskState, error) {
-	tasks := make([]*sourcegraph.BuildTask, len(labels))
-	for i, label := range labels {
-		tasks[i] = &sourcegraph.BuildTask{Label: label}
-	}
-	createdTasks, err := sourcegraph.NewClientFromContext(ctx).Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
-		Build: s.build,
-		Tasks: tasks,
-	})
 	if err != nil {
-		return nil, err
+		log15.Error("Updating build final state failed", "build", build.Spec(), "err", err)
 	}
-	states := make([]buildTaskState, len(createdTasks.BuildTasks))
-	for i, task := range createdTasks.BuildTasks {
-		states[i] = buildTaskState{
-			task: task.Spec(),
-			log:  newLogger(task.Spec()),
-		}
-	}
-	return states, nil
 }
 
-type buildTaskState struct {
+// taskState manages the state of a task stored on the Sourcegraph
+// server. It implements builder.TaskState.
+type taskState struct {
 	task sourcegraph.TaskSpec
 
 	// log is where task logs are written. Internal errors
@@ -74,8 +70,8 @@ type buildTaskState struct {
 	log io.WriteCloser
 }
 
-// start marks the task as having started.
-func (s buildTaskState) start(ctx context.Context) error {
+// Start implements builder.TaskState.
+func (s taskState) Start(ctx context.Context) error {
 	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
 		Task: s.task,
 		Info: sourcegraph.TaskUpdate{
@@ -88,8 +84,8 @@ func (s buildTaskState) start(ctx context.Context) error {
 	return err
 }
 
-// skip marks the task as having been skipped.
-func (s buildTaskState) skip(ctx context.Context) error {
+// Skip implements builder.TaskState.
+func (s taskState) Skip(ctx context.Context) error {
 	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
 		Task: s.task,
 		Info: sourcegraph.TaskUpdate{
@@ -103,8 +99,8 @@ func (s buildTaskState) skip(ctx context.Context) error {
 	return err
 }
 
-// warnings marks the task as having warnings.
-func (s buildTaskState) warnings(ctx context.Context) error {
+// Warnings implements builder.TaskState.
+func (s taskState) Warnings(ctx context.Context) error {
 	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
 		Task: s.task,
 		Info: sourcegraph.TaskUpdate{Warnings: true},
@@ -115,8 +111,8 @@ func (s buildTaskState) warnings(ctx context.Context) error {
 	return err
 }
 
-// end updates the task's final state.
-func (s buildTaskState) end(ctx context.Context, execErr error) error {
+// End implements builder.TaskState.
+func (s taskState) End(ctx context.Context, execErr error) error {
 	defer s.log.Close()
 
 	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
@@ -133,7 +129,8 @@ func (s buildTaskState) end(ctx context.Context, execErr error) error {
 	return err
 }
 
-func (s buildTaskState) createSubtask(ctx context.Context, label string) (*buildTaskState, error) {
+// CreateSubtask implements builder.TaskState.
+func (s taskState) CreateSubtask(ctx context.Context, label string) (builder.TaskState, error) {
 	tasks, err := sourcegraph.NewClientFromContext(ctx).Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
 		Build: s.task.Build,
 		Tasks: []*sourcegraph.BuildTask{
@@ -145,8 +142,17 @@ func (s buildTaskState) createSubtask(ctx context.Context, label string) (*build
 		return nil, err
 	}
 	subtask := tasks.BuildTasks[0].Spec()
-	return &buildTaskState{
+	return &taskState{
 		task: subtask,
 		log:  newLogger(subtask),
 	}, nil
+}
+
+func (s taskState) Log() io.Writer { return s.log }
+
+func (s taskState) String() string { return s.task.IDString() }
+
+func now() *pbtypes.Timestamp {
+	now := pbtypes.NewTimestamp(time.Now())
+	return &now
 }

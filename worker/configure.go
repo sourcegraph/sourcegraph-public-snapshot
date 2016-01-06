@@ -9,83 +9,84 @@ import (
 	"runtime"
 	"strings"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	droneexec "github.com/drone/drone-exec/exec"
 	"github.com/drone/drone-plugin-go/plugin"
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/yaml.v2"
-	"src.sourcegraph.com/sourcegraph/conf"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
-// prepare prepares internal server configuration for the build axes
-// and build nodes.
-func (b *builder) prepare(ctx context.Context) error {
-	b.opt = droneexec.Options{
-		Cache:  true,
-		Clone:  true,
-		Build:  true,
-		Deploy: true,
-		Notify: true,
-		Debug:  true,
-	}
+func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Builder, error) {
+	var b builder.Builder
 
-	yamlBytes, err := yaml.Marshal(b.config)
+	cl := sourcegraph.NewClientFromContext(ctx)
+
+	repoSpec := sourcegraph.RepoSpec{URI: build.Repo}
+	repoRev := sourcegraph.RepoRevSpec{
+		RepoSpec: repoSpec,
+		Rev:      build.CommitID,
+		CommitID: build.CommitID,
+	}
+	repo, err := cl.Repos.Get(ctx, &repoRev.RepoSpec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	droneBuild := plugin.Build{
-		Commit: b.build.CommitID,
-		Branch: b.build.Branch,
+	// Read existing .drone.yml file.
+	file, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: ".drone.yml"},
+	})
+	if err != nil && grpc.Code(err) != codes.NotFound {
+		return nil, err
+	} else if err == nil {
+		b.Payload.Yaml = string(file.Contents)
+		b.DroneYMLFileExists = true
+	}
+
+	// Drone build
+	b.Payload.Build = &plugin.Build{
+		Commit: build.CommitID,
+		Branch: build.Branch,
 	}
 	switch {
-	case b.build.Branch != "":
-		droneBuild.Ref = "refs/heads/" + b.build.Branch
-	case b.build.Tag != "":
-		droneBuild.Ref = "refs/tags/" + b.build.Tag
+	case build.Branch != "":
+		b.Payload.Build.Ref = "refs/heads/" + build.Branch
+	case build.Tag != "":
+		b.Payload.Build.Ref = "refs/tags/" + build.Tag
 	default:
 		// We need to fetch all branches to find the commit (git
 		// doesn't let you just fetch a single commit; see the docs on
 		// Build.Branch in sourcegraph.proto for an explanation).
-		droneBuild.Ref = "" // fetches all branches from the remote
+		b.Payload.Build.Ref = "" // fetches all branches from the remote
 	}
 
-	b.payload = droneexec.Payload{
-		Workspace: &plugin.Workspace{},
-		Build:     &droneBuild,
-		Job:       &plugin.Job{},
-		System: &plugin.System{
-			Plugins: []string{
-				"plugins/*",
-				// Whitelist our internal plugins.
-				"srclib/*",
-				"sourcegraph/*",
-				"sourcegraph-test/*",
-				"library/alpine:*",
-			},
-		},
-		Yaml: string(yamlBytes),
-	}
-
-	cloneURL, cloneNetrc, err := b.getCloneURLAndAuthForBuild(ctx)
+	// Drone repo
+	cloneURL, cloneNetrc, err := getCloneURLAndAuthForBuild(ctx, repo)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	repoLink, err := droneRepoLink(b.repo.HTTPCloneURL)
+	repoLink, err := droneRepoLink(repo.HTTPCloneURL)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	b.payload.Repo = &plugin.Repo{
-		FullName:  b.repo.URI,
+	b.Payload.Repo = &plugin.Repo{
+		FullName:  build.Repo,
 		Clone:     cloneURL,
 		Link:      repoLink,
 		IsPrivate: true,
 		IsTrusted: true,
 	}
 	if cloneNetrc != nil {
-		b.payload.Netrc = append(b.payload.Netrc, cloneNetrc)
+		b.Payload.Netrc = append(b.Payload.Netrc, cloneNetrc)
 	}
 
 	// Get the netrc entry we need for srclib-importing (and otherwise
@@ -93,13 +94,119 @@ func (b *builder) prepare(ctx context.Context) error {
 	// may be the same credentials as the clone netrc credentials, but
 	// that's not true in all cases (e.g., clone credentials could be
 	// for GitHub).
-	hostNetrc, err := b.getHostNetrcEntry(ctx)
+	hostNetrc, err := getHostNetrcEntry(ctx)
 	if err != nil {
+		return nil, err
+	}
+	b.Payload.Netrc = append(b.Payload.Netrc, hostNetrc)
+
+	// Drone other payload settings
+	b.Payload.Workspace = &plugin.Workspace{}
+	b.Payload.Job = &plugin.Job{}
+	b.Payload.System = &plugin.System{
+		Plugins: []string{
+			"plugins/*",
+			// Whitelist our internal plugins.
+			"srclib/*",
+			"sourcegraph/*",
+			"sourcegraph-test/*",
+			"library/alpine:*",
+		},
+	}
+
+	// Drone options
+	//
+	// TODO(sqs): add these fields to the Sourcegraph build's
+	// BuildConfig and use those values instead of always setting
+	// true.
+	b.Options = droneexec.Options{
+		Cache:  true,
+		Clone:  true,
+		Build:  true,
+		Deploy: false,
+		Notify: true,
+		Debug:  true,
+	}
+
+	// SrclibImportURL
+	srclibImportURL, err := getSrclibImportURL(ctx, repoRev)
+	if err != nil {
+		return nil, err
+	}
+	b.SrclibImportURL = srclibImportURL
+
+	// Inventory
+	b.Inventory = func(ctx context.Context) (*inventory.Inventory, error) {
+		return cl.Repos.GetInventory(ctx, &repoRev)
+	}
+
+	// CreateTasks
+	b.CreateTasks = func(ctx context.Context, labels []string) ([]builder.TaskState, error) {
+		tasks := make([]*sourcegraph.BuildTask, len(labels))
+		for i, label := range labels {
+			tasks[i] = &sourcegraph.BuildTask{Label: label}
+		}
+		createdTasks, err := sourcegraph.NewClientFromContext(ctx).Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
+			Build: build.Spec(),
+			Tasks: tasks,
+		})
+		if err != nil {
+			return nil, err
+		}
+		states := make([]builder.TaskState, len(createdTasks.BuildTasks))
+		for i, task := range createdTasks.BuildTasks {
+			states[i] = &taskState{
+				task: task.Spec(),
+				log:  newLogger(task.Spec()),
+			}
+		}
+		return states, nil
+	}
+
+	// FinalBuildConfig: Save config as BuilderConfig on the build.
+	b.FinalBuildConfig = func(ctx context.Context, configYAML string) error {
+		_, err := sourcegraph.NewClientFromContext(ctx).Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
+			Build: build.Spec(),
+			Info:  sourcegraph.BuildUpdate{BuilderConfig: string(configYAML)},
+		})
 		return err
 	}
-	b.payload.Netrc = append(b.payload.Netrc, hostNetrc)
 
-	return nil
+	return &b, nil
+}
+
+// getContainerAppURL gets the Sourcegraph server's app URL from the
+// POV of the Docker containers.
+func getContainerAppURL(ctx context.Context) (*url.URL, error) {
+	cl := sourcegraph.NewClientFromContext(ctx)
+
+	// Get the app URL from the POV of the Docker containers.
+	serverConf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
+	if err != nil {
+		return nil, err
+	}
+	_, containerAppURLStr, err := containerAddrForHost(serverConf.AppURL)
+	if err != nil {
+		return nil, err
+	}
+	return url.Parse(containerAppURLStr)
+}
+
+// getSrclibImportURL constructs the srclib import URL to POST srclib
+// data to, after the srclib build steps complete.
+func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*url.URL, error) {
+	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, repoRev.RouteVars())
+	if err != nil {
+		return nil, err
+	}
+	srclibImportURL.Path = "/.api" + srclibImportURL.Path
+
+	containerAppURL, err := getContainerAppURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return containerAppURL.ResolveReference(srclibImportURL), nil
 }
 
 // getCloneURLAndAuthForBuild returns the information necessary to
@@ -111,16 +218,16 @@ func (b *builder) prepare(ctx context.Context) error {
 //
 // TODO(native-ci): look up and use SSH keys as well (e.g., with
 // MirroredRepoSSHKeys.Get), not just HTTP clone credentials.
-func (b *builder) getCloneURLAndAuthForBuild(ctx context.Context) (cloneURL string, netrc *plugin.NetrcEntry, err error) {
-	cloneURL = b.repo.HTTPCloneURL
+func getCloneURLAndAuthForBuild(ctx context.Context, repo *sourcegraph.Repo) (cloneURL string, netrc *plugin.NetrcEntry, err error) {
+	cloneURL = repo.HTTPCloneURL
 	host, err := urlHostNoPort(cloneURL)
 	if err != nil {
 		return
 	}
 
 	switch {
-	case b.repo.Mirror: // Mirror repos that live elsewhere.
-		if b.repo.Private {
+	case repo.Mirror: // Mirror repos that live elsewhere.
+		if repo.Private {
 			// Fetch auth to external server (e.g., GitHub.com
 			// credentials).
 			//
@@ -139,13 +246,13 @@ func (b *builder) getCloneURLAndAuthForBuild(ctx context.Context) (cloneURL stri
 			}
 		}
 
-	case b.repo.Origin == "": // Repos hosted on this server.
+	case repo.Origin == "": // Repos hosted on this server.
 		// NOTE: This assumes that if the if-condition below
 		// holds, the repo's HTTPCloneURL is on the trusted server. If
 		// it's ever possible for the HTTPCloneURL to be on a
 		// different server but still have this if-condition hold,
 		// then we could leak the user's credentials.
-		netrc, err = b.getHostNetrcEntry(ctx)
+		netrc, err = getHostNetrcEntry(ctx)
 		if err != nil {
 			return
 		}
@@ -153,7 +260,7 @@ func (b *builder) getCloneURLAndAuthForBuild(ctx context.Context) (cloneURL stri
 			// This should not occur anymore, but it is very
 			// difficult to debug if it does, so log it
 			// anyway.
-			log15.Warn("warning: Long repository password is incompatible with git < 2.0. If you see git authentication errors, upgrade to git 2.0+.", "repo", b.repo.URI, "password length", len(netrc.Password))
+			log15.Warn("warning: Long repository password is incompatible with git < 2.0. If you see git authentication errors, upgrade to git 2.0+.", "repo", repo.URI, "password length", len(netrc.Password))
 		}
 	}
 
@@ -173,12 +280,17 @@ func (b *builder) getCloneURLAndAuthForBuild(ctx context.Context) (cloneURL stri
 
 // getHostNetrcEntry creates a netrc entry that authorizes access to
 // the Sourcegraph server.
-func (b *builder) getHostNetrcEntry(ctx context.Context) (*plugin.NetrcEntry, error) {
+func getHostNetrcEntry(ctx context.Context) (*plugin.NetrcEntry, error) {
+	containerAppURL, err := getContainerAppURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	token := cli.Credentials.GetAccessToken()
 	if token == "" {
 		return nil, errors.New("can't generate local netrc entry: token is empty")
 	}
-	host, _, err := containerAddrForHost(conf.AppURL(ctx).String())
+	host, _, err := containerAddrForHost(containerAppURL.String())
 	if err != nil {
 		return nil, err
 	}

@@ -3,107 +3,51 @@ package plan
 
 import (
 	"net/url"
-	"os"
-	"path/filepath"
 
 	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
-	"golang.org/x/net/context"
-	"golang.org/x/tools/godoc/vfs"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 )
 
-// CreateServer calls Create with information about the repository
-// fetched from the server. It is separate from Create so that Create
-// can be called locally against a local filesystem (without needing
-// to hit the server).
-func CreateServer(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*droneyaml.Config, []matrix.Axis, error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
-
-	// Read the existing .drone.yml file in the repo, if any.
-	config, axes, found, err := readExistingConfig(ctx, repoRev)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Fetch the repo inventory to see what languages are in use.
-	inv, err := cl.Repos.GetInventory(ctx, &repoRev)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Construct the srclib import URL.
-	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, repoRev.RouteVars())
-	if err != nil {
-		return nil, nil, err
-	}
-	srclibImportURL.Path = "/.api" + srclibImportURL.Path
-	if appURL := conf.AppURL(ctx); appURL == nil {
-		panic("no AppURL in context (required to construct srclib import URL)")
-	} else if appURL.Scheme == "" || appURL.Host == "" {
-		panic("AppURL in context has no scheme or host: " + appURL.String())
-	}
-	srclibImportURL = conf.AppURL(ctx).ResolveReference(srclibImportURL)
-
-	return Create(config, axes, found, inv, srclibImportURL)
-}
-
-// CreateLocal calls Create with information about the repository
-// gathered from the local filesystem.
-func CreateLocal(ctx context.Context, fs vfs.FileSystem) (*droneyaml.Config, []matrix.Axis, error) {
-	inv, err := inventory.Scan(ctx, walkableFileSystem{fs})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	yamlBytes, err := vfs.ReadFile(fs, ".drone.yml")
-	if err != nil && !os.IsNotExist(err) {
-		return nil, nil, err
-	}
-
-	axes, err := parseMatrix(string(yamlBytes))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	config, err := droneyaml.Parse(yamlBytes)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return Create(config, axes, yamlBytes != nil, inv, nil)
-}
-
-// Create creates a CI test plan. It modifies config (which may be
-// provided if a partial/full config already exists).
+// Create creates a CI test plan, given a .drone.yml file. It returns
+// the final .drone.yml to use, after adding inferred build steps,
+// srclib analysis, srclib import, etc.
 //
 // Create should execute very quickly and must not make any server API
 // calls, since it can be run locally.
-func Create(config *droneyaml.Config, axes []matrix.Axis, foundYAML bool, inv *inventory.Inventory, srclibImportURL *url.URL) (*droneyaml.Config, []matrix.Axis, error) {
-	if !foundYAML {
+func Create(configYAML string, droneYMLFileExists bool, inv *inventory.Inventory, srclibImportURL *url.URL) (string, []matrix.Axis, error) {
+	config, err := droneyaml.Parse([]byte(configYAML))
+	if err != nil {
+		return "", nil, err
+	}
+	axes, err := parseMatrix(configYAML)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if !droneYMLFileExists {
 		// Generate a reasonable default configuration.
 		var err error
 		config, axes, err = inferConfig(inv)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 	}
 
 	// Add the srclib analysis steps to the CI test plan.
 	if err := configureSrclib(inv, config, axes, srclibImportURL); err != nil {
-		return nil, nil, err
+		return "", nil, err
 	}
 
 	if err := setCloneCompleteHistory(config); err != nil {
-		return nil, nil, err
+		return "", nil, err
 	}
 
-	return config, axes, nil
+	finalConfigYAML, err := marshalConfigWithMatrix(*config, axes)
+	if err != nil {
+		return "", nil, err
+	}
+	return string(finalConfigYAML), axes, nil
 }
 
 // setCloneCompleteHistory sets the clone step to NOT use a shallow clone so
@@ -119,52 +63,3 @@ func setCloneCompleteHistory(config *droneyaml.Config) error {
 	config.Clone.Vargs["complete"] = true
 	return nil
 }
-
-// readExistingConfig reads the repo's existing .drone.yml
-// file, if any. If no .drone.yml file is found, found is false and
-// error is nil.
-func readExistingConfig(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (config *droneyaml.Config, axes []matrix.Axis, found bool, err error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
-	file, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: ".drone.yml"},
-	})
-	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
-			err = nil
-		}
-		return
-	}
-
-	found = true
-
-	config, err = droneyaml.Parse(file.Contents)
-	if err != nil {
-		return
-	}
-
-	axes, err = parseMatrix(string(file.Contents))
-	return
-}
-
-func parseMatrix(yaml string) ([]matrix.Axis, error) {
-	axes, err := matrix.Parse(yaml)
-	if err != nil {
-		return nil, err
-	}
-	if len(axes) == 0 {
-		axes = append(axes, matrix.Axis{})
-	}
-	return axes, nil
-}
-
-func calcMatrix(m matrix.Matrix) []matrix.Axis {
-	axes := matrix.Calc(m)
-	if len(axes) == 0 {
-		axes = append(axes, matrix.Axis{})
-	}
-	return axes
-}
-
-type walkableFileSystem struct{ vfs.FileSystem }
-
-func (walkableFileSystem) Join(path ...string) string { return filepath.Join(path...) }
