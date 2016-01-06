@@ -139,11 +139,6 @@ func (c *checkCmd) configureBuilder(ctx context.Context) (*builder.Builder, erro
 
 	// FinalBuildConfig
 	b.FinalBuildConfig = func(ctx context.Context, configYAML string) error {
-		if c.Debug || c.ShowConfig {
-			fmt.Fprintln(os.Stderr, "# .drone.yml file:")
-			fmt.Fprintln(os.Stderr, configYAML)
-			fmt.Fprintln(os.Stderr)
-		}
 		if c.ShowConfig {
 			os.Exit(0)
 		}

@@ -16,6 +16,7 @@ import (
 	dronerunner "github.com/drone/drone-exec/runner"
 	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
+	"github.com/kr/text"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
@@ -90,21 +91,9 @@ type TaskState interface {
 
 // Exec starts executing a build.
 func (b *Builder) Exec(ctx context.Context) error {
-	// Get the repo inventory.
-	inv, err := b.Inventory(ctx)
+	finalConfig, axes, err := b.plan(ctx)
 	if err != nil {
 		return err
-	}
-
-	// Infer/augment the planned build config.
-	finalConfig, axes, err := plan.Create(b.Payload.Yaml, b.DroneYMLFileExists, inv, b.SrclibImportURL)
-	if err != nil {
-		return err
-	}
-	if b.FinalBuildConfig != nil {
-		if err := b.FinalBuildConfig(ctx, finalConfig); err != nil {
-			return err
-		}
 	}
 	b.Payload.Yaml = finalConfig
 
@@ -166,6 +155,133 @@ func (b *Builder) Exec(ctx context.Context) error {
 		return fmt.Errorf("%d/%d failed: %s", len(msgs), len(axes), strings.Join(msgs, ", "))
 	}
 	return nil
+}
+
+func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.Axis, err error) {
+	tasks, err := b.CreateTasks(ctx, []string{"Configure build"})
+	if err != nil {
+		return "", nil, err
+	}
+	task := tasks[0]
+
+	defer func() {
+		if err2 := task.End(ctx, err); err2 != nil {
+			if err == nil {
+				err = err2
+				return
+			}
+			log15.Error("Error marking plan task as ended", "task", task, "err", err2)
+		}
+	}()
+	if err := task.Start(ctx); err != nil {
+		return "", nil, err
+	}
+
+	var planLabel string
+	if b.DroneYMLFileExists {
+		planLabel = "Add srclib Code Intelligence indexing steps to existing .drone.yml"
+	} else {
+		planLabel = "Infer build & test configuration"
+	}
+
+	// Assigned by the subtaskFuncs fn funcs below.
+	var inv *inventory.Inventory
+
+	subtaskFuncs := []struct {
+		label string
+		fn    func(ctx context.Context, state TaskState) error
+	}{
+		{
+			label: "Detect projects",
+			fn: func(ctx context.Context, state TaskState) error {
+				var err error
+				inv, err = b.Inventory(ctx)
+				if err == nil {
+					w := state.Log()
+					if len(inv.Languages) == 0 {
+						if !b.DroneYMLFileExists {
+							fmt.Fprintln(w, "No recognized programming languages were detected in this repository.")
+						}
+					} else {
+						fmt.Fprintf(w, "Detected %d programming languages in use by this repository:\n", len(inv.Languages))
+						for _, lang := range inv.Languages {
+							fmt.Fprintf(w, " - %s\n", lang.Name)
+						}
+					}
+				}
+				return err
+			},
+		},
+		{
+			label: planLabel,
+			fn: func(ctx context.Context, state TaskState) error {
+				finalConfig, axes, err = plan.Create(b.Payload.Yaml, b.DroneYMLFileExists, inv, b.SrclibImportURL)
+				if err != nil {
+					return err
+				}
+
+				w := text.NewIndentWriter(state.Log(), []byte("# "))
+				if b.DroneYMLFileExists {
+					fmt.Fprintln(w, "Using .drone.yml file with srclib Code Intelligence indexing steps added.")
+				} else {
+					fmt.Fprintln(w, "Because this repository has no .drone.yml file, Sourcegraph attempted to infer this repository's build and test configuration.")
+					fmt.Fprintln(w)
+					fmt.Fprintln(w, "If this configuration is incorrect or incomplete, add a .drone.yml file to your repository (using this as a starter) with the correct configuration. See http://readme.drone.io/usage/overview/ for instructions.")
+					fmt.Fprintln(w)
+					fmt.Fprintln(w, "Tip: You can test your .drone.yml locally by running `src check` in your repository, after downloading the src CLI tool at https://src.sourcegraph.com/sourcegraph/.docs/install/CLI/.")
+				}
+
+				fmt.Fprintln(state.Log())
+				fmt.Fprintf(state.Log(), finalConfig)
+
+				if b.FinalBuildConfig != nil {
+					if err := b.FinalBuildConfig(ctx, finalConfig); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
+	}
+
+	for _, stf := range subtaskFuncs {
+		err2 := func() (err error) {
+			// Run in closure so we can use defer and so we can treat
+			// this body's returned error different from the outer
+			// func's.
+
+			subtask, err := task.CreateSubtask(ctx, stf.label)
+			if err != nil {
+				return err
+			}
+
+			defer func() {
+				if err != nil {
+					fmt.Fprintln(subtask.Log(), "FAIL:", err)
+				}
+				if err2 := subtask.End(ctx, err); err2 != nil {
+					if err == nil {
+						err = err2
+						return
+					}
+					log15.Error("Error marking plan subtask as ended", "task", task, "err", err2)
+				}
+			}()
+			if err := subtask.Start(ctx); err != nil {
+				return err
+			}
+
+			return stf.fn(ctx, subtask)
+		}()
+		if err2 != nil {
+			// Use a different error to avoid confusion that would
+			// arise if the subtask and the parent task ended with the
+			// same error.
+			return "", nil, fmt.Errorf("plan subtask failed: %q", stf.label)
+		}
+	}
+
+	return
 }
 
 // execAxis executes one axis of a build. (An axis is one combination
