@@ -12,7 +12,6 @@ import (
 )
 
 func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
-	t.Skip("flaky")
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
