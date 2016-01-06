@@ -21,4 +21,8 @@ message Lang {
 	// TotalBytes is the total number of bytes of code written in the
 	// programming language.
 	uint64 total_bytes = 2;
+
+	// Type is either "data", "programming", "markup", "prose", or
+	// empty.
+	string type = 3;
 }

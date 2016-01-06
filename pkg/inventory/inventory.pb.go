@@ -44,6 +44,9 @@ type Lang struct {
 	// TotalBytes is the total number of bytes of code written in the
 	// programming language.
 	TotalBytes uint64 `protobuf:"varint,2,opt,name=total_bytes,proto3" json:",omitempty"`
+	// Type is either "data", "programming", "markup", "prose", or
+	// empty.
+	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:",omitempty"`
 }
 
 func (m *Lang) Reset()         { *m = Lang{} }

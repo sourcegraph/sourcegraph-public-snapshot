@@ -196,6 +196,7 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 			fn: func(ctx context.Context, state TaskState) error {
 				var err error
 				inv, err = b.Inventory(ctx)
+
 				if err == nil {
 					w := state.Log()
 					if len(inv.Languages) == 0 {
@@ -208,6 +209,9 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 							fmt.Fprintf(w, " - %s\n", lang.Name)
 						}
 					}
+
+					// Filter to sane list of languages after printing everything.
+					inv.Languages = filterToRealProgrammingLangs(inv.Languages)
 				}
 				return err
 			},
@@ -404,3 +408,23 @@ func (noopMonitor) Skip() {}
 func (noopMonitor) End(ok, allowFailure bool) {}
 
 func (noopMonitor) Logger() (stdout, stderr io.Writer) { return ioutil.Discard, ioutil.Discard }
+
+var skipLangs = map[string]struct{}{
+	"Shell":     struct{}{},
+	"Makefile":  struct{}{},
+	"Batchfile": struct{}{},
+	"fish":      struct{}{},
+	"Tcsh":      struct{}{},
+}
+
+func filterToRealProgrammingLangs(langs []*inventory.Lang) []*inventory.Lang {
+	langs = inventory.ProgrammingLangsOnly(langs)
+	var real []*inventory.Lang
+	for _, lang := range langs {
+		if _, skip := skipLangs[lang.Name]; skip {
+			continue
+		}
+		real = append(real, lang)
+	}
+	return real
+}

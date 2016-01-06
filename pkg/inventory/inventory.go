@@ -4,49 +4,14 @@ package inventory
 
 import (
 	"os"
-	"path"
 	"sort"
-	"strings"
 	"time"
+
+	"src.sourcegraph.com/sourcegraph/pkg/inventory/filelang"
 
 	"github.com/kr/fs"
 	"golang.org/x/net/context"
 )
-
-// TODO(sqs): Expand detection capabilities by using
-// github.com/petermattis/linguist,
-// https://godoc.org/github.com/sevki/goeylinguine or similar.
-var extLangs = map[string]string{
-	".go":    "Go",
-	".java":  "Java",
-	".py":    "Python",
-	".rb":    "Ruby",
-	".scala": "Scala",
-	".js":    "JavaScript",
-	".c":     "C",
-}
-
-var skipExts = []string{
-	".min.js",
-	".min.css",
-}
-
-func skipExt(filename string) bool {
-	for _, ext := range skipExts {
-		if strings.HasSuffix(filename, ext) {
-			return true
-		}
-	}
-	return false
-}
-
-var skipDirs = map[string]struct{}{
-	"node_modules":     struct{}{},
-	"bower_components": struct{}{},
-	"vendor":           struct{}{},
-	"Godeps":           struct{}{},
-	"third_party":      struct{}{},
-}
 
 // Scan performs an inventory of the tree at fs.
 //
@@ -80,21 +45,14 @@ func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
 		}
 
 		fi := w.Stat()
-		name := fi.Name()
-		mode := fi.Mode()
-		switch {
-		case mode.IsRegular():
-			if skipExt(name) {
-				continue
-			}
-
-			if lang := extLangs[path.Ext(name)]; lang != "" {
-				langs[lang] += uint64(fi.Size())
-			}
-
-		case mode.IsDir():
-			if _, skipDir := skipDirs[name]; skipDir {
-				w.SkipDir()
+		if filelang.IsVendored(w.Path(), w.Stat().Mode().IsDir()) {
+			w.SkipDir()
+			continue
+		}
+		if fi.Mode().IsRegular() {
+			matchedLangs := filelang.Langs.ByFilename(fi.Name())
+			if len(matchedLangs) > 0 {
+				langs[matchedLangs[0].Name] += uint64(fi.Size())
 			}
 		}
 	}
@@ -104,6 +62,17 @@ func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
 		inv.Languages = append(inv.Languages, &Lang{Name: lang, TotalBytes: totalBytes})
 	}
 	sort.Sort(sort.Reverse(langsByTotalBytes(inv.Languages)))
+
+	// Set Type field.
+	for _, il := range inv.Languages {
+		for _, l := range filelang.Langs {
+			if il.Name == l.Name {
+				il.Type = l.Type
+				break
+			}
+		}
+	}
+
 	return &inv, err
 }
 
@@ -122,3 +91,21 @@ type langsByTotalBytes []*Lang
 func (v langsByTotalBytes) Len() int           { return len(v) }
 func (v langsByTotalBytes) Less(i, j int) bool { return v[i].TotalBytes < v[j].TotalBytes }
 func (v langsByTotalBytes) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+
+// LangsOfType returns only langs of the given type (matching the Type
+// field).
+func LangsOfType(langs []*Lang, typ string) []*Lang {
+	var langs2 []*Lang
+	for _, l := range langs {
+		if l.Type == typ {
+			langs2 = append(langs2, l)
+		}
+	}
+	return langs2
+}
+
+// ProgrammingLangsOnly returns the subset of langs whose Type is
+// "programming" (e.g., not "prose", "markup", etc.).
+func ProgrammingLangsOnly(langs []*Lang) []*Lang {
+	return LangsOfType(langs, "programming")
+}

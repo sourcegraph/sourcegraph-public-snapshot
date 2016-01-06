@@ -1,0 +1,304 @@
+# Vendored files and directories are excluded from language
+# statistics.
+#
+# Lines in this file are Regexps that are matched against the file
+# pathname.
+#
+# Please add additional test coverage to
+# `test/test_blob.rb#test_vendored` if you make any changes.
+
+## Vendor Conventions ##
+
+# Caches
+- (^|/)cache/
+
+# Dependencies
+- ^[Dd]ependencies/
+
+# C deps
+#  https://github.com/joyent/node
+- ^deps/
+- ^tools/
+- (^|/)configure$
+- (^|/)configure.ac$
+- (^|/)config.guess$
+- (^|/)config.sub$
+
+# Linters
+- cpplint.py
+
+# Node dependencies
+- node_modules/
+
+# Bower Components
+- bower_components/
+
+# Erlang bundles
+- ^rebar$
+- erlang.mk
+
+# Go dependencies
+- Godeps/_workspace/
+
+# Minified JavaScript and CSS
+- (\.|-)min\.(js|css)$
+
+# Stylesheets imported from packages
+- ([^\s]*)import\.(css|less|scss|styl)$
+
+# Bootstrap css and js
+- (^|/)bootstrap([^.]*)\.(js|css|less|scss|styl)$
+- (^|/)custom\.bootstrap([^\s]*)(js|css|less|scss|styl)$
+
+# Font Awesome
+- (^|/)font-awesome\.(css|less|scss|styl)$
+
+# Foundation css
+- (^|/)foundation\.(css|less|scss|styl)$
+
+# Normalize.css
+- (^|/)normalize\.(css|less|scss|styl)$
+
+# Bourbon css
+- (^|/)[Bb]ourbon/.*\.(css|less|scss|styl)$
+
+# Animate.css
+- (^|/)animate\.(css|less|scss|styl)$
+
+# Vendored dependencies
+- third[-_]?party/
+- 3rd[-_]?party/
+- vendors?/
+- extern(al)?/
+- (^|/)[Vv]+endor/
+
+# Debian packaging
+- ^debian/
+
+# Haxelib projects often contain a neko bytecode file named run.n
+- run.n$
+
+# Bootstrap Datepicker
+- bootstrap-datepicker/
+
+## Commonly Bundled JavaScript frameworks ##
+
+# jQuery
+- (^|/)jquery([^.]*)\.js$
+- (^|/)jquery\-\d\.\d+(\.\d+)?\.js$
+
+# jQuery UI
+- (^|/)jquery\-ui(\-\d\.\d+(\.\d+)?)?(\.\w+)?\.(js|css)$
+- (^|/)jquery\.(ui|effects)\.([^.]*)\.(js|css)$
+
+# jQuery Gantt
+- jquery.fn.gantt.js
+
+# jQuery fancyBox
+- jquery.fancybox.(js|css)
+
+# Fuel UX
+- fuelux.js
+
+# jQuery File Upload
+- (^|/)jquery\.fileupload(-\w+)?\.js$
+
+# Slick
+- (^|/)slick\.\w+.js$
+
+# Leaflet plugins
+- (^|/)Leaflet\.Coordinates-\d+\.\d+\.\d+\.src\.js$
+- leaflet.draw-src.js
+- leaflet.draw.css
+- Control.FullScreen.css
+- Control.FullScreen.js
+- leaflet.spin.js
+- wicket-leaflet.js
+
+# Sublime Text workspace files
+- .sublime-project
+- .sublime-workspace
+
+# Prototype
+- (^|/)prototype(.*)\.js$
+- (^|/)effects\.js$
+- (^|/)controls\.js$
+- (^|/)dragdrop\.js$
+
+# Typescript definition files
+- (.*?)\.d\.ts$
+
+# MooTools
+- (^|/)mootools([^.]*)\d+\.\d+.\d+([^.]*)\.js$
+
+# Dojo
+- (^|/)dojo\.js$
+
+# MochiKit
+- (^|/)MochiKit\.js$
+
+# YUI
+- (^|/)yahoo-([^.]*)\.js$
+- (^|/)yui([^.]*)\.js$
+
+# WYS editors
+- (^|/)ckeditor\.js$
+- (^|/)tiny_mce([^.]*)\.js$
+- (^|/)tiny_mce/(langs|plugins|themes|utils)
+
+# MathJax
+- (^|/)MathJax/
+
+# Chart.js
+- (^|/)Chart\.js$
+
+# Codemirror
+- (^|/)[Cc]ode[Mm]irror/(\d+\.\d+/)?(lib|mode|theme|addon|keymap|demo)
+
+# SyntaxHighlighter - http://alexgorbatchev.com/
+- (^|/)shBrush([^.]*)\.js$
+- (^|/)shCore\.js$
+- (^|/)shLegacy\.js$
+
+# AngularJS
+- (^|/)angular([^.]*)\.js$
+
+# D3.js
+- (^|\/)d3(\.v\d+)?([^.]*)\.js$
+
+# React
+- (^|/)react(-[^.]*)?\.js$
+
+# Modernizr
+- (^|/)modernizr\-\d\.\d+(\.\d+)?\.js$
+- (^|/)modernizr\.custom\.\d+\.js$
+
+# Knockout
+- (^|/)knockout-(\d+\.){3}(debug\.)?js$
+
+## Python ##
+
+# Sphinx
+- (^|/)docs?/_?(build|themes?|templates?|static)/
+
+# django
+- (^|/)admin_media/
+
+# Fabric
+- ^fabfile\.py$
+
+# WAF
+- ^waf$
+
+# .osx
+- ^.osx$
+
+## Obj-C ##
+
+# Xcode
+
+- \.xctemplate/
+- \.imageset/
+
+# Carthage
+- ^Carthage/
+
+# Cocoapods
+- ^Pods/
+
+# Sparkle
+- (^|/)Sparkle/
+
+# Crashlytics
+- Crashlytics.framework/
+
+# Fabric
+- Fabric.framework/
+
+# git config files
+- gitattributes$
+- gitignore$
+- gitmodules$
+
+## Groovy ##
+
+# Gradle
+- (^|/)gradlew$
+- (^|/)gradlew\.bat$
+- (^|/)gradle/wrapper/
+
+## .NET ##
+
+# Visual Studio IntelliSense
+- -vsdoc\.js$
+- \.intellisense\.js$
+
+# jQuery validation plugin (MS bundles this with asp.net mvc)
+- (^|/)jquery([^.]*)\.validate(\.unobtrusive)?\.js$
+- (^|/)jquery([^.]*)\.unobtrusive\-ajax\.js$
+
+# Microsoft Ajax
+- (^|/)[Mm]icrosoft([Mm]vc)?([Aa]jax|[Vv]alidation)(\.debug)?\.js$
+
+# NuGet
+- ^[Pp]ackages\/.+\.\d+\/
+
+# ExtJS
+- (^|/)extjs/.*?\.js$
+- (^|/)extjs/.*?\.xml$
+- (^|/)extjs/.*?\.txt$
+- (^|/)extjs/.*?\.html$
+- (^|/)extjs/.*?\.properties$
+- (^|/)extjs/.sencha/
+- (^|/)extjs/docs/
+- (^|/)extjs/builds/
+- (^|/)extjs/cmd/
+- (^|/)extjs/examples/
+- (^|/)extjs/locale/
+- (^|/)extjs/packages/
+- (^|/)extjs/plugins/
+- (^|/)extjs/resources/
+- (^|/)extjs/src/
+- (^|/)extjs/welcome/
+
+# Html5shiv
+- (^|/)html5shiv\.js$
+
+# Test fixtures
+- ^[Tt]ests?/fixtures/
+- ^[Ss]pecs?/fixtures/
+
+# PhoneGap/Cordova
+- (^|/)cordova([^.]*)\.js$
+- (^|/)cordova\-\d\.\d(\.\d)?\.js$
+
+# Foundation js
+- foundation(\..*)?\.js$
+
+# Vagrant
+- ^Vagrantfile$
+
+# .DS_Stores
+- .[Dd][Ss]_[Ss]tore$
+
+# R packages
+- ^vignettes/
+- ^inst/extdata/
+
+# Octicons
+- octicons.css
+- sprockets-octicons.scss
+
+# Typesafe Activator
+- (^|/)activator$
+- (^|/)activator\.bat$
+
+# ProGuard
+- proguard.pro
+- proguard-rules.pro
+
+# PuPHPet
+- ^puphpet/
+
+# Android Google APIs
+- (^|/)\.google_apis/

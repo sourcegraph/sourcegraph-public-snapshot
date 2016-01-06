@@ -38,7 +38,7 @@ func TestScan(t *testing.T) {
 			fs: walkableFileSystem{mapfs.New(map[string]string{"a.java": "a"})},
 			want: &Inventory{
 				Languages: []*Lang{
-					{Name: "Java", TotalBytes: 1},
+					{Name: "Java", TotalBytes: 1, Type: "programming"},
 				},
 			},
 		},
@@ -46,7 +46,7 @@ func TestScan(t *testing.T) {
 			fs: walkableFileSystem{mapfs.New(map[string]string{"a.go": "a"})},
 			want: &Inventory{
 				Languages: []*Lang{
-					{Name: "Go", TotalBytes: 1},
+					{Name: "Go", TotalBytes: 1, Type: "programming"},
 				},
 			},
 		},
@@ -54,8 +54,8 @@ func TestScan(t *testing.T) {
 			fs: walkableFileSystem{mapfs.New(map[string]string{"a.java": "aa", "a.go": "a"})},
 			want: &Inventory{
 				Languages: []*Lang{
-					{Name: "Java", TotalBytes: 2},
-					{Name: "Go", TotalBytes: 1},
+					{Name: "Java", TotalBytes: 2, Type: "programming"},
+					{Name: "Go", TotalBytes: 1, Type: "programming"},
 				},
 			},
 		},
@@ -69,8 +69,9 @@ func TestScan(t *testing.T) {
 			})},
 			want: &Inventory{
 				Languages: []*Lang{
-					{Name: "Java", TotalBytes: 16},
-					{Name: "Go", TotalBytes: 8},
+					{Name: "Java", TotalBytes: 16, Type: "programming"},
+					{Name: "Go", TotalBytes: 8, Type: "programming"},
+					{Name: "Text", TotalBytes: 5, Type: "prose"},
 				},
 			},
 		},
