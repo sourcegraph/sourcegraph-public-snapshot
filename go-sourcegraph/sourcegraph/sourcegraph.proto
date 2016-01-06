@@ -3013,6 +3013,31 @@ service GraphUplink {
 	rpc PushEvents(UserEventList) returns (pbtypes.Void);
 }
 
+// Event is any event logged on a Sourcegraph instance.
+message Event {
+	string type = 1;
+
+	string user_id = 2 [(gogoproto.customname) = "UserID"];
+
+	string client_id = 3 [(gogoproto.customname) = "ClientID"];
+
+	pbtypes.Timestamp timestamp = 4;
+
+	map<string, string> user_properties = 5;
+
+	map<string, string> event_properties = 6;
+}
+
+message EventList {
+	repeated Event events = 1;
+
+	// Version holds the release version of the Sourcegraph binary.
+	string version = 2;
+
+	// AppURL holds the base URL of the Sourcegraph app.
+	string app_url = 3 [(gogoproto.customname) = "AppURL"];
+}
+
 // NotifyGenericEvent describes an action being done against an object. For
 // example reviewing a changeset.
 message NotifyGenericEvent {
