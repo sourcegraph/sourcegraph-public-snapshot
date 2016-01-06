@@ -69,7 +69,7 @@ test:
 
 deployment:
   registry:
-    branch: native-ci
+    branch: master
     commands:
       # Build linux dist
       # Version format: {date}-{build_num}-{short_git_sha1}
@@ -85,16 +85,16 @@ deployment:
       - gcloud auth activate-service-account --key-file gcloud-service-account.json
       - gcloud config set project sourcegraph-dev
       - docker build -t us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 $REPO/deploy/sourcegraph
-      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 us.gcr.io/sourcegraph-dev/sourcegraph:native-ci-latest
+      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1
-      - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:native-ci-latest
+      - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
 
       # Push to Docker registry
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
-      - docker pull sourcegraph/sourcegraph:native-ci-latest || true
+      - docker pull sourcegraph/sourcegraph:latest
       - docker build -t sourcegraph/sourcegraph:$CIRCLE_SHA1 .:
           pwd: $REPO
       - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
-      - docker tag -f sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:native-ci-latest
-      - docker push sourcegraph/sourcegraph:native-ci-latest
-      - echo $CIRCLE_SHA1 | gsutil cp - gs://sourcegraph-metadata/latest-successful-build-native-ci
+      - docker tag -f sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
+      - docker push sourcegraph/sourcegraph:latest
+      - echo $CIRCLE_SHA1 | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
