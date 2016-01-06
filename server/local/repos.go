@@ -136,9 +136,32 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, err
 	}
 
-	repoupdater.Enqueue(repo)
-
 	repoSpec := repo.RepoSpec()
+	if op.Mirror {
+		repoupdater.Enqueue(repo)
+	} else if op.CloneURL != "" {
+		vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
+		if err != nil {
+			return nil, err
+		}
+
+		cid, err := vcsRepo.ResolveBranch("master")
+		if err != nil {
+			return nil, err
+		}
+
+		cl := sourcegraph.NewClientFromContext(ctx)
+		_, err = cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
+			Repo:     repoSpec,
+			CommitID: string(cid),
+			Config:   sourcegraph.BuildConfig{Queue: true},
+		})
+		if err != nil {
+			log15.Warn("Queuing build failed", "err", err, "repo", repo.URI, "commit", string(cid))
+			return nil, err
+		}
+	}
+
 	return s.Get(ctx, &repoSpec)
 }
 

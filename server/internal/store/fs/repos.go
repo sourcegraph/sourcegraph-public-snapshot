@@ -217,6 +217,8 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	}
 
 	if repo.HTTPCloneURL != "" && repo.Mirror == false {
+		// Clone some repo from an external host (and block until complete).
+		// NOTE: this will circumvent the RefreshVCS code path.
 		url := repo.CloneURL().String()
 		cmd := exec.Command("git", "clone", url, ".")
 		cmd.Dir = dir
