@@ -55,7 +55,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 	}
 
 	// Check that repo.Language was automatically set.
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 	repo, err = cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repo.URI})
 	if err != nil {
 		t.Fatal(err)
