@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/buildstore"
-	"sourcegraph.com/sourcegraph/srclib/config"
 	"sourcegraph.com/sourcegraph/srclib/dep"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/plan"
@@ -198,23 +197,13 @@ func prepareCommandContext(file string) (commandContext, error) {
 
 // ensureBuild invokes the build process on the given repository
 func ensureBuild(buildStore buildstore.RepoBuildStore, repo *Repo) error {
-	configOpt := config.Options{
-		Repo:   repo.URI(),
-		Subdir: ".",
-	}
-	toolchainExecOpt := ToolchainExecOpt{ExeMethods: "program"}
-
 	// Config repository if not yet built.
 	exists, err := buildstore.BuildDataExistsForCommit(buildStore, repo.CommitID)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		configCmd := &ConfigCmd{
-			Options:          configOpt,
-			ToolchainExecOpt: toolchainExecOpt,
-			Quiet:            true,
-		}
+		configCmd := &ConfigCmd{Quiet: true}
 		if err := configCmd.Execute(nil); err != nil {
 			return err
 		}
@@ -223,22 +212,15 @@ func ensureBuild(buildStore buildstore.RepoBuildStore, repo *Repo) error {
 	// Always re-make.
 	//
 	// TODO(sqs): optimize this
-	makeCmd := &MakeCmd{
-		Options:          configOpt,
-		ToolchainExecOpt: toolchainExecOpt,
-		Quiet:            true,
-	}
+	makeCmd := &MakeCmd{Quiet: true}
 	if err := makeCmd.Execute(nil); err != nil {
 		return err
 	}
 
 	// Always re-import.
 	i := &StoreImportCmd{
-		ImportOpt: ImportOpt{
-			Repo:     repo.CloneURL,
-			CommitID: repo.CommitID,
-		},
-		Quiet: true,
+		ImportOpt: ImportOpt{CommitID: repo.CommitID},
+		Quiet:     true,
 	}
 	if err := i.Execute(nil); err != nil {
 		return err
@@ -489,17 +471,10 @@ OuterLoop:
 		return nil
 	}
 
-	// ref.DefRepo is *not* guaranteed to be non-empty, as
-	// repo.URI() will return the empty string if the repo's
-	// CloneURL is empty or malformed.
-	if ref.DefRepo == "" {
-		ref.DefRepo = context.repo.URI()
-	}
-
 	var resp apiDescribeCmdOutput
 	// Now find the def for this ref.
 
-	defInCurrentRepo := ref.DefRepo == context.repo.URI()
+	defInCurrentRepo := ref.DefRepo == ""
 	if defInCurrentRepo {
 		// Def is in the current repo.
 		var g graph.Output

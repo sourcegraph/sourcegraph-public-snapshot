@@ -22,7 +22,7 @@ import (
 
 func init() {
 	cliInit = append(cliInit, func(cli *flags.Command) {
-		c, err := cli.AddCommand("lint",
+		_, err := cli.AddCommand("lint",
 			"detect common issues in srclib output data",
 			`The lint command checks srclib output files (*.graph.json, *.unit.json, *.depresolve.json, etc.) for common data integrity and correctness issues:
 
@@ -41,8 +41,6 @@ To suppress specific kinds of warnings, or to include only specific kinds of war
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		SetDefaultRepoOpt(c)
 	})
 }
 

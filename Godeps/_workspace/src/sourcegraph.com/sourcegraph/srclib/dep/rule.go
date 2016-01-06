@@ -2,7 +2,6 @@ package dep
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 
 	"sourcegraph.com/sourcegraph/makex"
@@ -22,7 +21,7 @@ func init() {
 	buildstore.RegisterDataType("depresolve", []*ResolvedDep{})
 }
 
-func makeDepRules(c *config.Tree, dataDir string, existing []makex.Rule, opt plan.Options) ([]makex.Rule, error) {
+func makeDepRules(c *config.Tree, dataDir string, existing []makex.Rule) ([]makex.Rule, error) {
 	const op = depresolveOp
 	var rules []makex.Rule
 	for _, u := range c.SourceUnits {
@@ -35,10 +34,7 @@ func makeDepRules(c *config.Tree, dataDir string, existing []makex.Rule, opt pla
 			toolRef = choice
 		}
 
-		rules = append(rules, &ResolveDepsRule{dataDir, u, toolRef, opt})
-		if toolRef != nil && opt.Verbose {
-			log.Printf("Created %v rule for %v %v", depresolveOp, toolRef.Toolchain, u.ID())
-		}
+		rules = append(rules, &ResolveDepsRule{dataDir, u, toolRef})
 	}
 	return rules, nil
 }
@@ -47,7 +43,6 @@ type ResolveDepsRule struct {
 	dataDir string
 	Unit    *unit.SourceUnit
 	Tool    *srclib.ToolRef
-	opt     plan.Options
 }
 
 func (r *ResolveDepsRule) Target() string {
@@ -63,7 +58,7 @@ func (r *ResolveDepsRule) Recipes() []string {
 		return nil
 	}
 	return []string{
-		fmt.Sprintf("%s tool %s %q %q < $^ 1> $@", util.SafeCommandName(srclib.CommandName), r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd),
+		fmt.Sprintf("%s tool %q %q < $^ 1> $@", util.SafeCommandName(srclib.CommandName), r.Tool.Toolchain, r.Tool.Subcmd),
 	}
 }
 

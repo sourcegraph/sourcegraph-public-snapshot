@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
@@ -133,6 +132,8 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 		RepoCommon: *rc,
 		Build:      build,
 		Commit:     commit,
+
+		Common: tmpl.Common{FullWidth: true},
 	})
 }
 
@@ -165,72 +166,6 @@ func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
 
 	http.Redirect(w, r, router.Rel.URLToRepoBuild(rc.Repo.URI, buildSpec.ID).String(), http.StatusSeeOther)
 	return nil
-}
-
-func serveRepoBuildLog(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
-
-	var opt sourcegraph.BuildGetLogOptions
-	if err := schemautil.Decode(&opt, r.URL.Query()); err != nil {
-		return err
-	}
-
-	rc, err := handlerutil.GetRepoCommon(r)
-	if err != nil {
-		return err
-	}
-
-	_, buildSpec, err := getRepoBuild(r, rc.Repo)
-	if err != nil {
-		return err
-	}
-
-	// HACK: Papertrail makes it efficient to fetch all task logs for
-	// a build by specifying a task ID of 0. It is extremely slow to
-	// iterate over all of the tasks and fetch logs individually in
-	// Papertrail, though.
-	//
-	// We'll be getting rid of the "list logs for all tasks"
-	// functionality soon, so this is temporary.
-	var entries sourcegraph.LogEntries
-	if v, _ := strconv.ParseBool(os.Getenv("SG_USE_PAPERTRAIL")); v {
-		// Fast-path for Papertrail.
-		allTaskEntries, err := apiclient.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{
-			Task: sourcegraph.TaskSpec{Build: buildSpec},
-			Opt:  &opt,
-		})
-		if err != nil {
-			return err
-		}
-		entries = *allTaskEntries
-	} else {
-		// Iterate over all tasks for non-Papertrail.
-		tasks, err := apiclient.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{Build: buildSpec})
-		if err != nil {
-			return err
-		}
-
-		// Prepend the build (non-task-specific) log.
-		tasks.BuildTasks = append(
-			[]*sourcegraph.BuildTask{
-				{Build: buildSpec, Label: "main"},
-			},
-			tasks.BuildTasks...,
-		)
-
-		for _, task := range tasks.BuildTasks {
-			taskEntries, err := apiclient.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{Task: task.Spec()})
-			if err != nil {
-				return err
-			}
-
-			entries.Entries = append(entries.Entries, "", fmt.Sprintf("=== %s ===", task.Label))
-			entries.Entries = append(entries.Entries, taskEntries.Entries...)
-		}
-	}
-
-	return writePlainLogEntries(w, &entries)
 }
 
 func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {

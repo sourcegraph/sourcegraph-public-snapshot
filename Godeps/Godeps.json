@@ -35,6 +35,11 @@
 			"Rev": "d69616f51cdfcd7514d6a380847a152dfc2a749d"
 		},
 		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.7-53-g446d1c1",
+			"Rev": "446d1c146faa8ed3f4218f056fcd165f6bcfda81"
+		},
+		{
 			"ImportPath": "github.com/Unknwon/cae",
 			"Rev": "7f5e046bc8a6c3cde743c233b96ee4fd84ee6ecd"
 		},
@@ -85,6 +90,40 @@
 			"Rev": "acc5a5f31e3493f1992315fd85aa49226372b810"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/units",
+			"Comment": "v1.4.1-8449-g8d36f09",
+			"Rev": "8d36f097cfe8fd3a4e6bed6123fb1fea24889c7b"
+		},
+		{
+			"ImportPath": "github.com/drone/drone-exec/docker",
+			"Rev": "4729dcc00a29652c81a9d3b71b4bf63ae92b043f"
+		},
+		{
+			"ImportPath": "github.com/drone/drone-exec/exec",
+			"Rev": "4729dcc00a29652c81a9d3b71b4bf63ae92b043f"
+		},
+		{
+			"ImportPath": "github.com/drone/drone-exec/parser",
+			"Rev": "4729dcc00a29652c81a9d3b71b4bf63ae92b043f"
+		},
+		{
+			"ImportPath": "github.com/drone/drone-exec/runner",
+			"Rev": "4729dcc00a29652c81a9d3b71b4bf63ae92b043f"
+		},
+		{
+			"ImportPath": "github.com/drone/drone-exec/yaml",
+			"Rev": "4729dcc00a29652c81a9d3b71b4bf63ae92b043f"
+		},
+		{
+			"ImportPath": "github.com/drone/drone-plugin-go/plugin",
+			"Rev": "1e1bfa15e9a1f0cd063b00abb992a24ef94a0e9f"
+		},
+		{
+			"ImportPath": "github.com/drone/drone/yaml/matrix",
+			"Comment": "v0.4.0-121-gd9296c0",
+			"Rev": "d9296c0453db090a5cec2364c443b595e91f4620"
+		},
+		{
 			"ImportPath": "github.com/dustin/go-humanize",
 			"Rev": "152bd44907e2ce04ecfb87d783ebf98160ada012"
 		},
@@ -93,12 +132,12 @@
 			"Rev": "ee5a5b8364bb73899fdd529d23af6ad9230f8a06"
 		},
 		{
-			"ImportPath": "github.com/flynn/go-shlex",
-			"Rev": "362b626337a53744d1f571d5d70d66294c82d429"
+			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
+			"Rev": "d5cac425555ca5cf00694df246e04f05e6a55150"
 		},
 		{
-			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "4ebe9fc43840fefb355b61300580e34130d99f6e"
+			"ImportPath": "github.com/flynn/go-shlex",
+			"Rev": "362b626337a53744d1f571d5d70d66294c82d429"
 		},
 		{
 			"ImportPath": "github.com/gengo/grpc-gateway/internal",
@@ -119,6 +158,10 @@
 		{
 			"ImportPath": "github.com/getsentry/raven-go",
 			"Rev": "3fd636ed242c26c0f55bc9ee1fe47e1d6d2d77f7"
+		},
+		{
+			"ImportPath": "github.com/ghodss/yaml",
+			"Rev": "73d445a93680fa1a78ae23a5839bad48f32ba1ee"
 		},
 		{
 			"ImportPath": "github.com/go-ldap/ldap",
@@ -174,6 +217,10 @@
 		{
 			"ImportPath": "github.com/hashicorp/go-version",
 			"Rev": "2b9865f60ce11e527bd1255ba82036d465570aa3"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl",
+			"Rev": "197e8d3cf42199cfd53cd775deb37f3637234635"
 		},
 		{
 			"ImportPath": "github.com/howeyc/gopass",
@@ -320,6 +367,10 @@
 			"ImportPath": "github.com/russross/blackfriday",
 			"Comment": "v1.3",
 			"Rev": "8cec3a854e68dba10faabbe31c089abf4a3e57a6"
+		},
+		{
+			"ImportPath": "github.com/samalba/dockerclient",
+			"Rev": "4656b1bc6cbc06b75d65983475e4809cbd53ebb5"
 		},
 		{
 			"ImportPath": "github.com/satori/go.uuid",
@@ -731,8 +782,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.1.0-30-g43fe10d",
-			"Rev": "43fe10d7058936f083cd4643d5fca44f0dde0f9e"
+			"Comment": "v0.1.0-39-g586e0d0",
+			"Rev": "586e0d031e58373afbbcdecb6022b302fed7517e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",

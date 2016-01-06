@@ -11,7 +11,9 @@ To set up Sourcegraph on a new [Digital Ocean](https://www.digitalocean.com/) cl
 * **Select Image:** Select the Ubuntu 14.04 x64 image.
 * **Available Settings:** Check the **User Data** box and paste in the following:
 
-{{< userdata SRC_DIGITAL_OCEAN >}}
+```
+{{% userdata SRC_DIGITAL_OCEAN %}}
+```
 
 * Click **Create Droplet**.
 * In 3-4 minutes, your Sourcegraph server should be available at `http://<ip-address>`

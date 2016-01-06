@@ -30,17 +30,11 @@ func init() {
 }
 
 type pushCmd struct {
+	Repo     string `long:"repo" description:"repo URI (on server) to import into"`
 	CommitID string `long:"commit" description:"commit ID of data to import"`
 }
 
 func (c *pushCmd) Execute(args []string) error {
-	cl := cli.Client()
-
-	rrepo, err := getRemoteRepo(cl)
-	if err != nil {
-		return err
-	}
-
 	lrepo, err := srclib.OpenLocalRepo()
 	if err != nil {
 		return err
@@ -51,7 +45,7 @@ func (c *pushCmd) Execute(args []string) error {
 		commitID = c.CommitID
 	}
 
-	repoSpec := sourcegraph.RepoSpec{URI: rrepo.URI}
+	repoSpec := sourcegraph.RepoSpec{URI: c.Repo}
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: commitID}
 
 	appURL, err := getRemoteAppURL(cli.Ctx)

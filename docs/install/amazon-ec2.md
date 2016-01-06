@@ -10,7 +10,9 @@ To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instanc
 * **Choose an Instance Type:** Any instance with at least 2 GB of RAM (t2.small or better)
 * **Configure Instance Details:** Expand **Edit instance details** then **Advanced details** and set the following **User data**:
 
-{{< userdata SRC_AMAZON_EC2 >}}
+```
+{{% userdata SRC_AMAZON_EC2 %}}
+```
 
 * **Configure Security Group:** Allow external access to the following ports (or just choose All TCP).
   * Port 22 (for server administration via SSH)

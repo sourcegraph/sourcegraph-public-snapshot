@@ -40,11 +40,7 @@ func (c *NormalizeGraphDataCmd) Execute(args []string) error {
 		return err
 	}
 
-	localRepo, err := OpenRepo(".")
-	if err != nil {
-		return err
-	}
-	if err := grapher.NormalizeData(localRepo.URI(), c.UnitType, c.Dir, o); err != nil {
+	if err := grapher.NormalizeData(c.UnitType, c.Dir, o); err != nil {
 		return err
 	}
 

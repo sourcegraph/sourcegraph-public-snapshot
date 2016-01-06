@@ -18,14 +18,14 @@ var globalOpt struct {
 	LogLevel   string               `long:"log-level" description:"upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)" default:"info"`
 }
 
-func SetVerbose(v bool) {
-	globalOpt.Verbose = v
-	srclib.GlobalOpt.Verbose = v
-}
-
 func init() {
 	cli.CLI.LongDescription = "src runs and manages a Sourcegraph instance."
 	cli.CLI.AddGroup("Global options", "", &globalOpt)
+
+	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
+		srclib.GlobalOpt.Verbose = globalOpt.Verbose
+		srclib.GlobalOpt.Verbose = true
+	})
 }
 
 func init() {

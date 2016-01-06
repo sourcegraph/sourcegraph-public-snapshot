@@ -149,13 +149,6 @@ func List() ([]*Info, error) {
 }
 
 func newInfo(toolchainPath, dir, configFile string) (*Info, error) {
-	dockerfile := "Dockerfile"
-	if _, err := os.Stat(filepath.Join(dir, dockerfile)); os.IsNotExist(err) {
-		dockerfile = ""
-	} else if err != nil {
-		return nil, err
-	}
-
 	prog := filepath.Join(".bin", filepath.Base(toolchainPath))
 	if runtime.GOOS == "windows" {
 		prog = winExe(dir, prog)
@@ -177,7 +170,6 @@ func newInfo(toolchainPath, dir, configFile string) (*Info, error) {
 		Dir:        dir,
 		ConfigFile: configFile,
 		Program:    prog,
-		Dockerfile: dockerfile,
 	}, nil
 }
 

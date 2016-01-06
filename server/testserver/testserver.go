@@ -115,13 +115,6 @@ func (s *Server) allEnvConfig() []string {
 
 func (s *Server) srclibEnvConfig() []string {
 	return []string{
-		"SRCLIBPATH=" + getSRCLIBPATHWithSampleToolchain(),
-
-		// Force no Docker so the test doesn't have to worry about
-		// building the Docker image for the srclib-sample
-		// toolchain.
-		"SG_SRCLIB_ENABLE_DOCKER=f",
-
 		"SG_BUILD_LOG_DIR=" + filepath.Join(s.SGPATH, "build-logs"),
 	}
 }
@@ -185,18 +178,6 @@ func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 		log.Printf("# test server cmd: %v", cmd.Args)
 	}
 
-	return cmd
-}
-
-func (s *Server) SrclibCmd(env []string, args []string) *exec.Cmd {
-	cmd := exec.Command(sgxcmd.Path, "srclib")
-	cmd.Args = append(cmd.Args, args...)
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
-	cmd.Env = []string{"USER=" + os.Getenv("USER"), "PATH=" + os.Getenv("PATH")}
-	cmd.Env = append(cmd.Env, s.srclibEnvConfig()...)
-	cmd.Env = append(cmd.Env, env...)
-	cmd.Env = append(cmd.Env, "GOPATH="+os.Getenv("GOPATH")) // for app templates (defaultBase func)
 	return cmd
 }
 
@@ -453,9 +434,8 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// Worker
 	s.Config.Serve.WorkCmd = worker.WorkCmd{
-		NumWorkers:  1,
 		DequeueMsec: 100,
-		BuildRoot:   filepath.Join(sgpath, "builds"),
+		Parallel:    2,
 	}
 
 	s.Ctx = context.Background()
@@ -557,10 +537,12 @@ func bareEnvConfig() []string {
 	return env
 }
 
-// getSRCLIBPATHWithSampleToolchain returns a SRCLIBPATH env var value
-// that has only the srclib-sample toolchain installed. Note that it
-// doesn't build the toolchain's Docker image, so it must be run as a
-// program (not via Docker).
+// SrclibSampleToolchain returns the dir and the SRCLIBPATH for the
+// included srclib-sample toolchain.
+//
+// If buildDocker is true, its corresponding Docker image is also
+// built. The dockerImage is the Docker image tag to use, and it is
+// only returned if buildDocker is true.
 //
 // This func assumes that the sample toolchain has been vendored in
 // the sourcegraph repo at
@@ -570,17 +552,27 @@ func bareEnvConfig() []string {
 // update this yet because it's probably an infrequent
 // occurrence). Note that you should delete srclib-sample's .git and
 // testdata dirs and NOT check them into the sourcegraph repo.
-func getSRCLIBPATHWithSampleToolchain() (srclibpath string) {
+func SrclibSampleToolchain(buildDocker bool) (dir, srclibpath, dockerImage string) {
 	p, err := build.Default.Import("src.sourcegraph.com/sourcegraph/util/testutil", "", build.FindOnly)
 	if err != nil {
 		log.Fatal("Couldn't find testutil package (while getting SRCLIBPATH for test app):", err)
 	}
 	srclibpath = filepath.Join(p.Dir, "testdata/srclibpath")
-	sampleDir := filepath.Join(p.Dir, "testdata/srclibpath/sourcegraph.com/sourcegraph/srclib-sample")
-	if fi, err := os.Stat(sampleDir); err != nil || !fi.Mode().IsDir() {
+	dir = filepath.Join(p.Dir, "testdata/srclibpath/sourcegraph.com/sourcegraph/srclib-sample")
+	if fi, err := os.Stat(dir); err != nil || !fi.Mode().IsDir() {
 		log.Fatalf("Failed to locate srclib-sample dir in SRCLIBPATH for test app: error %v, IsDir=%v", err, fi.Mode().IsDir())
 	}
-	return srclibpath
+
+	if buildDocker {
+		dockerImage = "sourcegraph-test/srclib-sample"
+		cmd := exec.Command("docker", "build", "-t", dockerImage, ".")
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			log.Fatalf("Error building srclib sample toolchain in %s.\n\n%s", dir, out)
+		}
+	}
+
+	return
 }
 
 // makeCommandLineArgs takes a list of EITHER (1) flag structs (like

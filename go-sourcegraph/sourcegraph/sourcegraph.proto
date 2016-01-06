@@ -988,6 +988,18 @@ message Build {
 	// different ways depending on the branch the build was started on
 	// (e.g., a release branch may trigger additional deployment
 	// actions). A single commit can exist on any number of branches.
+	//
+	// A build is recommended to be associated with either a branch or
+	// a tag because it is not generally possible to fetch a specific
+	// commit from a Git repository; you can only fetch a refspec
+	// (branch, tag, etc.). During CI we want to avoid needing to
+	// clone *all* branches just to find the specific commit we
+	// need. If the branch or tag is specified, we can do a fetch of a
+	// specific refspec; otherwise we need to fetch all branches,
+	// which makes CI much slower. And Git servers do not let you
+	// request a single commit (although this is changing; see
+	// http://stackoverflow.com/a/30701724, but it is still disabled
+	// by default for apparently good reasons).
 	string branch = 14;
 
 	// Tag, if set, is the name of the VCS tag associated with this
@@ -1025,6 +1037,13 @@ message BuildConfig {
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
 	int32 priority = 4;
+
+	// BuilderConfig is the actual .drone.yml config file that was
+	// used to run this build in CI. It reflects all automatic
+	// additions/changes made by the worker (i.e., it is not
+	// necessarily the same .drone.yml config file as the one in the
+	// repository).
+	string builder_config = 16 [(gogoproto.customname) = "BuilderConfig"];
 }
 
 // BuildGetLogOptions specifies options for build log API methods.
@@ -1094,6 +1113,11 @@ message BuildTask {
 	// Build specifies the build associated with this task.
 	BuildSpec build = 2 [(gogoproto.nullable) = false];
 
+	// ParentID, if non-zero, indicates that this task's parent is the
+	// task (in the same build) with the given ID. A ParentID of zero
+	// means that this is a top-level task.
+	uint64 parent_id = 3 [(gogoproto.customname) = "ParentID"];
+	
 	// Label describes the task (e.g., Code Intelligence).
 	string label = 4;
 
@@ -1112,6 +1136,14 @@ message BuildTask {
 
 	// Failure is whether this task's execution failed.
 	bool failure = 9;
+
+	// Skipped is whether this task's execution was skipped.
+	bool skipped = 10;
+
+	// Warnings is whether this task produced warnings. Tasks with
+	// warnings are not displayed as "green". The warnings are
+	// contained in the task logs.
+	bool warnings = 11;
 }
 
 message BuildTaskListOptions {
@@ -1129,6 +1161,7 @@ message BuildUpdate {
 	bool failure = 7;
 	bool killed = 8;
 	int32 priority = 9;
+	string builder_config = 10;
 }
 
 message BuildList {
@@ -1288,6 +1321,8 @@ message TaskUpdate {
 	pbtypes.Timestamp ended_at = 2;
 	bool success = 3;
 	bool failure = 4;
+	bool skipped = 5;
+	bool warnings = 6;
 }
 
 // User represents a registered user.

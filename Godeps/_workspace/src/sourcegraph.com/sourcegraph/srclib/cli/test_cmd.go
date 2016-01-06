@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -72,8 +71,6 @@ And the actual test output is written to:
 type TestCmd struct {
 	GenerateExpected bool `long:"gen" description:"(re)generate expected output for all test cases and exit"`
 
-	ToolchainExecOpt
-
 	Args struct {
 		Trees []Directory `name:"TREES" description:"trees to treat as test cases"`
 	} `positional-args:"yes"`
@@ -82,47 +79,36 @@ type TestCmd struct {
 var testCmd TestCmd
 
 func (c *TestCmd) Execute(args []string) error {
-	exeMethods := strings.Split(c.ExeMethods, ",")
-	if len(exeMethods) == 0 {
-		return errors.New("At least one toolchain execution method must be specified (with -m or --methods).")
+	var trees []string
+	if len(c.Args.Trees) > 0 {
+		for _, tree := range c.Args.Trees {
+			trees = append(trees, string(tree))
+		}
+	} else {
+		entries, err := ioutil.ReadDir("testdata/case")
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), "_") {
+				continue
+			}
+			trees = append(trees, filepath.Join("testdata/case", e.Name()))
+		}
 	}
 
-	for _, exeMethod := range exeMethods {
+	if GlobalOpt.Verbose {
+		log.Printf("Testing trees: %v", trees)
+	}
+
+	for _, tree := range trees {
 		if GlobalOpt.Verbose {
-			log.Printf("Executing tests using method: %s", exeMethod)
+			log.Printf("Testing tree %v...", tree)
 		}
-
-		var trees []string
-		if len(c.Args.Trees) > 0 {
-			for _, tree := range c.Args.Trees {
-				trees = append(trees, string(tree))
-			}
-		} else {
-			entries, err := ioutil.ReadDir("testdata/case")
-			if err != nil {
-				return err
-			}
-			for _, e := range entries {
-				if strings.HasPrefix(e.Name(), "_") {
-					continue
-				}
-				trees = append(trees, filepath.Join("testdata/case", e.Name()))
-			}
-		}
-
-		if GlobalOpt.Verbose {
-			log.Printf("Testing trees: %v", trees)
-		}
-
-		for _, tree := range trees {
-			if GlobalOpt.Verbose {
-				log.Printf("Testing tree %v...", tree)
-			}
-			expectedDir := filepath.Join(tree, "../../expected", exeMethod, filepath.Base(tree))
-			actualDir := filepath.Join(tree, "../../actual", exeMethod, filepath.Base(tree))
-			if err := testTree(tree, expectedDir, actualDir, exeMethod, c.GenerateExpected); err != nil {
-				return fmt.Errorf("testing tree %q: %s", tree, err)
-			}
+		expectedDir := filepath.Join(tree, "../../expected", filepath.Base(tree))
+		actualDir := filepath.Join(tree, "../../actual", filepath.Base(tree))
+		if err := testTree(tree, expectedDir, actualDir, c.GenerateExpected); err != nil {
+			return fmt.Errorf("testing tree %q: %s", tree, err)
 		}
 	}
 
@@ -133,7 +119,7 @@ func (c *TestCmd) Execute(args []string) error {
 	return nil
 }
 
-func testTree(treeDir, expectedDir, actualDir string, exeMethod string, generateExpected bool) error {
+func testTree(treeDir, expectedDir, actualDir string, generateExpected bool) error {
 	treeName := filepath.Base(treeDir)
 	if treeName == "." {
 		absTreeDir, err := filepath.Abs(treeDir)
@@ -191,7 +177,7 @@ func testTree(treeDir, expectedDir, actualDir string, exeMethod string, generate
 		w = &buf
 	}
 	// srclib might be embbeded as a sub-command in a host, such as the Sourcegraph app.
-	c := append(strings.Split(srclib.CommandName, " "), []string{"-v", "do-all", "-m", exeMethod}...)
+	c := append(strings.Split(srclib.CommandName, " "), []string{"-v", "do-all"}...)
 	cmd := exec.Command(c[0], c[1:]...)
 	cmd.Dir = treeDir
 	cmd.Stderr, cmd.Stdout = w, w

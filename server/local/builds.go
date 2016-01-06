@@ -154,6 +154,9 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 		b.Killed = info.Killed
 		updateRepoStatus = true
 	}
+	if info.BuilderConfig != "" {
+		b.BuilderConfig = info.BuilderConfig
+	}
 
 	if err := store.BuildsFromContext(ctx).Update(ctx, b.Spec(), info); err != nil {
 		return nil, err

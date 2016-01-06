@@ -2,8 +2,8 @@ package httpapi
 
 import (
 	"archive/zip"
-	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -25,7 +25,7 @@ var newSrclibStoreClient = pb.Client // mockable for testing
 // serveSrclibImport accepts a zip archive of a .srclib-cache
 // directory and runs an import of the data into the repo rev
 // specified in the URL route.
-func serveSrclibImport(w http.ResponseWriter, r *http.Request) error {
+func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	// Check allowable content types and encodings.
 	const allowedContentTypes = "|application/x-zip-compressed|application/x-zip|application/zip|application/octet-stream|"
 	if ct := r.Header.Get("content-type"); !strings.Contains(allowedContentTypes, ct) || strings.Contains(ct, "|") {
@@ -45,11 +45,29 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	// Buffer the file to disk so we can provide zip.NewReader with a
+	// io.ReaderAt.
+	f, err := ioutil.TempFile("", "srclib-import")
 	if err != nil {
 		return err
 	}
-	zipR, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	defer func() {
+		if err2 := f.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+		if err2 := os.Remove(f.Name()); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
+	contentLength, err := io.Copy(f, r.Body)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Seek(0, os.SEEK_SET); err != nil {
+		return err
+	}
+
+	zipR, err := zip.NewReader(f, contentLength)
 	if err != nil {
 		return err
 	}
@@ -67,7 +85,6 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) error {
 	importOpt := srclib.ImportOpt{
 		Repo:     repoRev.URI,
 		CommitID: repoRev.CommitID,
-		Verbose:  false,
 	}
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
 		return fmt.Errorf("srclib import of %s failed: %s", repoRev, err)

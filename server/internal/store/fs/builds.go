@@ -303,6 +303,7 @@ func (s *Builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info so
 	b.Failure = info.Failure
 	b.Priority = info.Priority
 	b.Killed = info.Killed
+	b.BuilderConfig = info.BuilderConfig
 
 	return s.create(ctx, b)
 }
@@ -384,6 +385,12 @@ func (s *Builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, 
 	}
 	if info.Failure {
 		t.Failure = true
+	}
+	if info.Skipped {
+		t.Skipped = true
+	}
+	if info.Warnings {
+		t.Warnings = true
 	}
 
 	return s.updateTask(ctx, t)

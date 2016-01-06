@@ -22,15 +22,12 @@ func init() {
 	})
 }
 
-type MakefileCmd struct {
-	ToolchainExecOpt `group:"execution"`
-	Verbose          bool `short:"v" long:"verbose" description:"show more verbose output"`
-}
+type MakefileCmd struct{}
 
 var makefileCmd MakefileCmd
 
 func (c *MakefileCmd) Execute(args []string) error {
-	mf, err := CreateMakefile(c.ToolchainExecOpt, c.Verbose)
+	mf, err := CreateMakefile()
 	if err != nil {
 		return err
 	}

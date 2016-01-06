@@ -2,7 +2,6 @@ package grapher
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -24,7 +23,7 @@ func init() {
 	buildstore.RegisterDataType("graph", &graph.Output{})
 }
 
-func makeGraphRules(c *config.Tree, dataDir string, existing []makex.Rule, opt plan.Options) ([]makex.Rule, error) {
+func makeGraphRules(c *config.Tree, dataDir string, existing []makex.Rule) ([]makex.Rule, error) {
 	const op = graphOp
 	var rules []makex.Rule
 	for _, u := range c.SourceUnits {
@@ -37,10 +36,7 @@ func makeGraphRules(c *config.Tree, dataDir string, existing []makex.Rule, opt p
 			toolRef = choice
 		}
 
-		rules = append(rules, &GraphUnitRule{dataDir, u, toolRef, opt})
-		if toolRef != nil && opt.Verbose {
-			log.Printf("Created %v rule for %v %v", graphOp, toolRef.Toolchain, u.ID())
-		}
+		rules = append(rules, &GraphUnitRule{dataDir, u, toolRef})
 	}
 	return rules, nil
 }
@@ -49,7 +45,6 @@ type GraphUnitRule struct {
 	dataDir string
 	Unit    *unit.SourceUnit
 	Tool    *srclib.ToolRef
-	opt     plan.Options
 }
 
 func (r *GraphUnitRule) Target() string {
@@ -74,7 +69,7 @@ func (r *GraphUnitRule) Recipes() []string {
 	}
 	safeCommand := util.SafeCommandName(srclib.CommandName)
 	return []string{
-		fmt.Sprintf("%s tool %s %q %q < $< | %s internal normalize-graph-data --unit-type %q --dir . 1> $@", safeCommand, r.opt.ToolchainExecOpt, r.Tool.Toolchain, r.Tool.Subcmd, safeCommand, r.Unit.Type),
+		fmt.Sprintf("%s tool %q %q < $< | %s internal normalize-graph-data --unit-type %q --dir . 1> $@", safeCommand, r.Tool.Toolchain, r.Tool.Subcmd, safeCommand, r.Unit.Type),
 	}
 }
 

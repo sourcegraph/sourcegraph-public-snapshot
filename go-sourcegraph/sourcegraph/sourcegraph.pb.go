@@ -1141,6 +1141,18 @@ type Build struct {
 	// different ways depending on the branch the build was started on
 	// (e.g., a release branch may trigger additional deployment
 	// actions). A single commit can exist on any number of branches.
+	//
+	// A build is recommended to be associated with either a branch or
+	// a tag because it is not generally possible to fetch a specific
+	// commit from a Git repository; you can only fetch a refspec
+	// (branch, tag, etc.). During CI we want to avoid needing to
+	// clone *all* branches just to find the specific commit we
+	// need. If the branch or tag is specified, we can do a fetch of a
+	// specific refspec; otherwise we need to fetch all branches,
+	// which makes CI much slower. And Git servers do not let you
+	// request a single commit (although this is changing; see
+	// http://stackoverflow.com/a/30701724, but it is still disabled
+	// by default for apparently good reasons).
 	Branch string `protobuf:"bytes,14,opt,name=branch,proto3" json:",omitempty"`
 	// Tag, if set, is the name of the VCS tag associated with this
 	// commit. See Branch for more information. A single commit can
@@ -1176,6 +1188,12 @@ type BuildConfig struct {
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
 	Priority int32 `protobuf:"varint,4,opt,name=priority,proto3" json:",omitempty"`
+	// BuilderConfig is the actual .drone.yml config file that was
+	// used to run this build in CI. It reflects all automatic
+	// additions/changes made by the worker (i.e., it is not
+	// necessarily the same .drone.yml config file as the one in the
+	// repository).
+	BuilderConfig string `protobuf:"bytes,16,opt,name=builder_config,proto3" json:",omitempty"`
 }
 
 func (m *BuildConfig) Reset()         { *m = BuildConfig{} }
@@ -1258,6 +1276,10 @@ type BuildTask struct {
 	ID uint64 `protobuf:"varint,1,opt,name=id,proto3" json:",omitempty"`
 	// Build specifies the build associated with this task.
 	Build BuildSpec `protobuf:"bytes,2,opt,name=build" `
+	// ParentID, if non-zero, indicates that this task's parent is the
+	// task (in the same build) with the given ID. A ParentID of zero
+	// means that this is a top-level task.
+	ParentID uint64 `protobuf:"varint,3,opt,name=parent_id,proto3" json:",omitempty"`
 	// Label describes the task (e.g., Code Intelligence).
 	Label string `protobuf:"bytes,4,opt,name=label,proto3" json:",omitempty"`
 	// CreatedAt is when this task was initially created.
@@ -1271,6 +1293,12 @@ type BuildTask struct {
 	Success bool `protobuf:"varint,8,opt,name=success,proto3" json:",omitempty"`
 	// Failure is whether this task's execution failed.
 	Failure bool `protobuf:"varint,9,opt,name=failure,proto3" json:",omitempty"`
+	// Skipped is whether this task's execution was skipped.
+	Skipped bool `protobuf:"varint,10,opt,name=skipped,proto3" json:",omitempty"`
+	// Warnings is whether this task produced warnings. Tasks with
+	// warnings are not displayed as "green". The warnings are
+	// contained in the task logs.
+	Warnings bool `protobuf:"varint,11,opt,name=warnings,proto3" json:",omitempty"`
 }
 
 func (m *BuildTask) Reset()         { *m = BuildTask{} }
@@ -1287,15 +1315,16 @@ func (*BuildTaskListOptions) ProtoMessage()    {}
 
 // A BuildUpdate contains updated information to update on an existing build.
 type BuildUpdate struct {
-	StartedAt   *pbtypes.Timestamp `protobuf:"bytes,1,opt,name=started_at" json:",omitempty"`
-	EndedAt     *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=ended_at" json:",omitempty"`
-	HeartbeatAt *pbtypes.Timestamp `protobuf:"bytes,3,opt,name=heartbeat_at" json:",omitempty"`
-	Host        string             `protobuf:"bytes,4,opt,name=host,proto3" json:",omitempty"`
-	Success     bool               `protobuf:"varint,5,opt,name=success,proto3" json:",omitempty"`
-	Purged      bool               `protobuf:"varint,6,opt,name=purged,proto3" json:",omitempty"`
-	Failure     bool               `protobuf:"varint,7,opt,name=failure,proto3" json:",omitempty"`
-	Killed      bool               `protobuf:"varint,8,opt,name=killed,proto3" json:",omitempty"`
-	Priority    int32              `protobuf:"varint,9,opt,name=priority,proto3" json:",omitempty"`
+	StartedAt     *pbtypes.Timestamp `protobuf:"bytes,1,opt,name=started_at" json:",omitempty"`
+	EndedAt       *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=ended_at" json:",omitempty"`
+	HeartbeatAt   *pbtypes.Timestamp `protobuf:"bytes,3,opt,name=heartbeat_at" json:",omitempty"`
+	Host          string             `protobuf:"bytes,4,opt,name=host,proto3" json:",omitempty"`
+	Success       bool               `protobuf:"varint,5,opt,name=success,proto3" json:",omitempty"`
+	Purged        bool               `protobuf:"varint,6,opt,name=purged,proto3" json:",omitempty"`
+	Failure       bool               `protobuf:"varint,7,opt,name=failure,proto3" json:",omitempty"`
+	Killed        bool               `protobuf:"varint,8,opt,name=killed,proto3" json:",omitempty"`
+	Priority      int32              `protobuf:"varint,9,opt,name=priority,proto3" json:",omitempty"`
+	BuilderConfig string             `protobuf:"bytes,10,opt,name=builder_config,proto3" json:",omitempty"`
 }
 
 func (m *BuildUpdate) Reset()         { *m = BuildUpdate{} }
@@ -1539,6 +1568,8 @@ type TaskUpdate struct {
 	EndedAt   *pbtypes.Timestamp `protobuf:"bytes,2,opt,name=ended_at" json:",omitempty"`
 	Success   bool               `protobuf:"varint,3,opt,name=success,proto3" json:",omitempty"`
 	Failure   bool               `protobuf:"varint,4,opt,name=failure,proto3" json:",omitempty"`
+	Skipped   bool               `protobuf:"varint,5,opt,name=skipped,proto3" json:",omitempty"`
+	Warnings  bool               `protobuf:"varint,6,opt,name=warnings,proto3" json:",omitempty"`
 }
 
 func (m *TaskUpdate) Reset()         { *m = TaskUpdate{} }

@@ -53,7 +53,6 @@ const (
 	RepoBuilds       = "repo.builds"
 	RepoBuild        = "repo.build"
 	RepoBuildUpdate  = "repo.build.update"
-	RepoBuildLog     = "repo.build.log"
 	RepoBuildTaskLog = "repo.build.task.log"
 	RepoBuildsCreate = "repo.builds.create"
 	RepoSearch       = "repo.search"
@@ -219,7 +218,6 @@ func New(base *mux.Router) *Router {
 	repo.Path(repoBuildPath).Methods("GET").Name(RepoBuild)
 	repo.Path(repoBuildPath).Methods("POST").Name(RepoBuildUpdate)
 	repoBuild := repo.PathPrefix(repoBuildPath).Subrouter()
-	repoBuild.Path("/log").Methods("GET").Name(RepoBuildLog)
 	repoBuild.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(RepoBuildTaskLog)
 
 	// This route dispatches to all SearchFrames that were registered through

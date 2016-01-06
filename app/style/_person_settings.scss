@@ -103,13 +103,6 @@
 			margin-bottom: $padding-large-vertical*2;
 		}
 
-		&.srclib {
-			.panel-heading { font-size: 1.8em; }
-			img.srclib-logo {
-				width: 45px;
-				height: 45px;
-			}
-		}
 		&.github {
 			h3 {
 				font-size: $font-size-large;

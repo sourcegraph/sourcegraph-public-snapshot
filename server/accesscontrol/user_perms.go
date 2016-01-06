@@ -180,6 +180,9 @@ func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method st
 			if strings.HasPrefix(method, "Builds.") {
 				return true
 			}
+			if method == "RepoStatuses.Create" {
+				return true
+			}
 
 		case strings.HasPrefix(scope, "app:"):
 			// all apps have default write access.

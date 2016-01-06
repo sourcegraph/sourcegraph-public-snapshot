@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 var (
@@ -84,9 +85,12 @@ func createPath(path string) (LogWriter, error) {
 	return os.Create(path)
 }
 
-// newLogger creates a new logger that writes to Papertrail (remote
-// syslog) and local files. Call CloseLogs before the program exits.
-func newLogger(tag string) *logger {
+// newLogger creates a new logger for a build task that writes to
+// Papertrail (remote syslog) and/or local files. Call CloseLogs
+// before the program exits.
+func newLogger(task sourcegraph.TaskSpec) *logger {
+	tag := task.IDString()
+
 	var dests []string
 	var ws []io.Writer
 	var cs []io.Closer

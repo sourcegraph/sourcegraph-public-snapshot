@@ -2,19 +2,14 @@ package cli
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"log"
 	"path/filepath"
-
-	"github.com/rogpeppe/rog-go/parallel"
 
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 
-	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/util"
 )
 
@@ -22,14 +17,6 @@ type Repo struct {
 	RootDir  string // Root directory containing repository being analyzed
 	VCSType  string // VCS type (git or hg)
 	CommitID string // CommitID of current working directory
-	CloneURL string // CloneURL of repo.
-}
-
-// URI returns the Repo's URI. It returns the empty string if the
-// Repo's CloneURL is malformed or empty.
-func (c *Repo) URI() string {
-	uri, _ := graph.TryMakeURI(c.CloneURL)
-	return uri
 }
 
 func OpenRepo(dir string) (*Repo, error) {
@@ -49,19 +36,12 @@ func OpenRepo(dir string) (*Repo, error) {
 		return nil, fmt.Errorf("no git/hg repository found in or above %s", dir)
 	}
 
-	par := parallel.NewRun(4)
-	par.Do(func() error {
-		// Current commit ID
-		var err error
-		rc.CommitID, err = resolveWorkingTreeRevision(rc.VCSType, rc.RootDir)
-		return err
-	})
-	par.Do(func() error {
-		// Get repo URI from clone URL.
-		rc.CloneURL = getVCSCloneURL(rc.VCSType, rc.RootDir)
-		return nil
-	})
-	return rc, par.Wait()
+	rc.CommitID, err = resolveWorkingTreeRevision(rc.VCSType, rc.RootDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return rc, nil
 }
 
 func resolveWorkingTreeRevision(vcsType string, dir string) (string, error) {
@@ -104,57 +84,6 @@ func getRootDir(dir string) (rootDir string, vcsType string, err error) {
 	}
 	return "", "", nil
 }
-
-// getVCSCloneURL gets the primary remote url. getVCSCloneURL returns
-// the empty string if it fails or if there is no primary remote.
-func getVCSCloneURL(vcsType string, repoDir string) string {
-	logWarning := func(err error) {
-		if GlobalOpt.Verbose {
-			log.Printf("Warning: getVCSCloneURL: %s", err)
-		}
-	}
-	run := func(args ...string) (string, error) {
-		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Dir = repoDir
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			return "", err
-		}
-		cloneURL := strings.TrimSpace(string(out))
-		return cloneURL, nil
-	}
-	switch vcsType {
-	case "git":
-		// Try to get the "srclib" remote first.
-		url, err := run("git", "config", "remote.srclib.url")
-		if err == nil {
-			return url
-		}
-
-		url, err = run("git", "config", "remote.origin.url")
-		if code, _ := exitStatus(err); code == 1 {
-			// `git config --get` returns exit code 1 if the config key doesn't exist.
-			logWarning(ErrNoVCSCloneURL)
-			return ""
-		} else if err != nil {
-			logWarning(ErrNoVCSCloneURL)
-			return ""
-		}
-		return url
-	case "hg":
-		cloneURL, err := run("hg", "--config", "trusted.users=root", "paths", "default")
-		if err != nil {
-			logWarning(err)
-			return ""
-		}
-		return cloneURL
-	default:
-		logWarning(fmt.Errorf("unrecognized VCS %v", vcsType))
-		return ""
-	}
-}
-
-var ErrNoVCSCloneURL = errors.New("Could not determine remote clone URL for the current repository. For git repositories, srclib checks for remotes named 'srclib' or 'origin' (in that order). Run 'git remote add NAME URL' to add a remote, where NAME is either 'srclib' or 'origin' and URL is a git clone URL (e.g. https://example.com/repo.git).' to add a remote. For hg repositories, srclib checks the 'default' remote.")
 
 func exitStatus(err error) (uint32, error) {
 	if err != nil {

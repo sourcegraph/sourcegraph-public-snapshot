@@ -1,0 +1,85 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "panel panel-default panel-info step",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "panel-heading",
+						"role": "tab",
+						"id": "T456",
+						"children": [
+							{
+								"type": "h5",
+								"props": {
+									"className": "panel-title",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"role": "button",
+												"data-toggle": "collapse",
+												"data-parent": "task-undefined-subtasks",
+												"href": "T456-log-body",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "pull-right"
+																	}
+																},
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-circle-o-notch"
+																	}
+																},
+																" "
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"id": "T456-log-body",
+						"className": "panel-collapse collapse in",
+						"role": "tabpanel",
+						"aria-labelledby": "T456",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "panel-body"
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantLog",
+			"repo": "aRepo",
+			"buildID": 123,
+			"taskID": 456
+		}
+	]
+}

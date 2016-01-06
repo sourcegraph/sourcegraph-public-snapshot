@@ -18,19 +18,8 @@ type buildLogs struct{}
 var _ store.BuildLogs = (*buildLogs)(nil)
 
 func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
-	// If the task ID is 0, pull all of the logs for all of the
-	// builds. This behavior only occurs on the Papertrail store (this
-	// one) and is not expected behavior for other BuildLogs
-	// implementations.
-	var tag string
-	if task.ID == 0 {
-		tag = task.Build.IDString()
-	} else {
-		tag = task.IDString()
-	}
-
 	pOpt := papertrail.SearchOptions{
-		Query:   "program:" + tag,
+		Query:   "program:" + task.IDString(),
 		MinID:   minID,
 		MinTime: minTime,
 		MaxTime: maxTime,

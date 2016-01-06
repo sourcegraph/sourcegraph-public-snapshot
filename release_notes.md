@@ -1,5 +1,24 @@
 # dev
 
+- CI is now integrated into Sourcegraph with drone.io. Docker is now a
+  dependency for a working environment. Run `src info` to check your system
+  requirements.
+- Several flags related to workers have been removed:
+  `-n`/`--num-workers`/`NumWorkers`, `--build-root`/`BuildRoot`,
+  `--clean`/`Clean`. They are no longer relevant due to relying on docker. To
+  control build concurrency specify `--parallel`.
+- Builds have a new build: `BuilderConfig`. **PostgreSQL backend:**
+  Run `alter table repo_build add column builder_config text default
+  '';` to perform this migration.
+- Build tasks have another 2 additional fields: `Skipped` and
+  `Warnings`.  **PostgreSQL backend:** Run `alter table
+  repo_build_task add column skipped bool default false; alter table
+  repo_build_task add column warnings bool default false;` to perform
+  this migration.
+- Build tasks now have a new field, `ParentID`. **PostgreSQL
+  backend:** Run `alter table repo_build_task add column parent_id
+  bigint default 0;` to perform this migration.
+
 # 0.11.0
 
 - Alongside Tracker and Changes applications now sits a new "API Docs" tab which
@@ -18,6 +37,9 @@
   removed. **PostgreSQL backend:** Run `alter table repo_build drop
   column "import"; alter table repo_build drop column usecache;` to
   perform this migration.
+- The `src push` command no longer guesses the current repository. You
+  must specify it with `src push --repo my/repo`.
+
 
 # 0.9.0
 
