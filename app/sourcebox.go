@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
@@ -52,9 +53,12 @@ func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSourceboxFile(w http.ResponseWriter, r *http.Request) error {
-	opt := sourcegraph.RepoTreeGetOptions{
-		TokenizedSource: true,
+	var opt sourcegraph.RepoTreeGetOptions
+	if err := schemautil.Decode(&opt, r.URL.Query()); err != nil {
+		return err
 	}
+
+	opt.TokenizedSource = true
 	tc, _, _, err := handlerutil.GetTreeEntryCommon(r, &opt)
 	if err != nil {
 		return err
