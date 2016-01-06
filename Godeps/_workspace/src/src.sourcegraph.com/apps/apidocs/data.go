@@ -109,7 +109,12 @@ func countElements(path string) (count int) {
 func resolveRevSpec(ctx context.Context, rev *sourcegraph.RepoRevSpec) error {
 	cl := sourcegraph.NewClientFromContext(ctx)
 	if rev.Rev == "" {
-		rev.Rev = "master"
+		// Determine default branch.
+		repo, err := cl.Repos.Get(ctx, &rev.RepoSpec)
+		if err != nil {
+			return err
+		}
+		rev.Rev = repo.DefaultBranch
 	}
 	if !rev.Resolved() {
 		commit, err := cl.Repos.GetCommit(ctx, rev)

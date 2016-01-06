@@ -789,7 +789,7 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/apidocs",
-			"Rev": "d330c95ae34033fbd09a2528d40debdc26c0e0d1"
+			"Rev": "5e750eb2178ddb60fa1b2704398447844cd3c7b1"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications",

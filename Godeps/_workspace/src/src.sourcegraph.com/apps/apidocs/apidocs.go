@@ -2,12 +2,10 @@ package apidocs
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -62,20 +60,16 @@ func handler(w http.ResponseWriter, r *http.Request) error {
 	fullPath := path.Join(repoRevSpec.URI, r.URL.Path)
 
 	// Grab all the definitions for the requested directory.
-	start := time.Now()
 	defs, err := defsForDir(ctx, repoRevSpec, requestDir)
 	if err != nil {
 		return err
 	}
-	log.Println("found", len(defs), "definitions in", fullPath, time.Since(start))
 
 	// Find the subdirectories for the requested directory.
-	start = time.Now()
 	subDirs, err := subDirsForDir(ctx, repoRevSpec, requestDir)
 	if err != nil {
 		return err
 	}
-	log.Println("found", len(subDirs), "subdirs in", fullPath, time.Since(start))
 
 	// urlToDef generates a URL to a definition at whichever revision the user is
 	// browsing at.
