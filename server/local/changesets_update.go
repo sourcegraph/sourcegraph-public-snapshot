@@ -10,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/svc"
 
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -121,22 +120,6 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 			updateOp.Op.Close = true
 			updateOp.Head = op.Last
 		}
-
-		{
-			// Find the new merge base (using the base rev, not base abs commit ID).
-			//
-			// TODO(sqs): This only needs to run on force-push, but we
-			// currently have no way of detecting a force-push.
-			d, err := svc.Deltas(ctx).Get(ctx, &sourcegraph.DeltaSpec{
-				Base: sourcegraph.RepoRevSpec{RepoSpec: cs.DeltaSpec.Base.RepoSpec, Rev: cs.DeltaSpec.Base.Rev},
-				Head: sourcegraph.RepoRevSpec{RepoSpec: cs.DeltaSpec.Head.RepoSpec, Rev: cs.DeltaSpec.Head.Rev, CommitID: op.Commit},
-			})
-			if err != nil {
-				return nil, grpc.Errorf(codes.Internal, "cannot determine merge-base after force-push to head: %v", err)
-			}
-			updateOp.Base = d.Base.CommitID
-		}
-
 		updates = append(updates, &updateOp)
 	}
 
