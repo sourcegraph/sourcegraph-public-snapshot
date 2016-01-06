@@ -19,6 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -360,7 +361,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 				return err
 			}
 
-			RepoUpdater.enqueue(&sourcegraph.Repo{URI: repoURI})
+			repoupdater.Enqueue(&sourcegraph.Repo{URI: repoURI})
 		}
 	}
 

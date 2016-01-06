@@ -15,6 +15,7 @@ type GitPayload struct {
 	Actor           sourcegraph.UserSpec
 	Repo            sourcegraph.RepoSpec
 	ContentEncoding string
+	IgnoreBuild     bool
 	Event           githttp.Event
 }
 
