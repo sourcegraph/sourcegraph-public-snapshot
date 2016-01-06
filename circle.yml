@@ -68,33 +68,31 @@ test:
     - cp $REPO/app/artifacts/* $CIRCLE_ARTIFACTS
 
 deployment:
-  registry:
+  master-branch:
     branch: master
     commands:
-      # Build linux dist
-      # Version format: {date}-{build_num}-{short_git_sha1}
-      - echo $(date +"%y%m%d")-${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7} > ~/VERSION:
+      - ./circle-build-docker-image.sh:
           pwd: $REPO
-      - cat ~/VERSION
-      - make dist PACKAGEFLAGS=$(cat ~/VERSION):
-          pwd: $REPO
-
-      # Push to gcloud docker registry
-      - cp $REPO/release/$(cat ~/VERSION)/linux-amd64 $REPO/deploy/sourcegraph/src
-      - echo $GCLOUD_SERVICE_ACCOUNT | base64 --decode > gcloud-service-account.json
-      - gcloud auth activate-service-account --key-file gcloud-service-account.json
-      - gcloud config set project sourcegraph-dev
-      - docker build -t us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 $REPO/deploy/sourcegraph
-      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 us.gcr.io/sourcegraph-dev/sourcegraph:latest
-      - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1
-      - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
-
-      # Push to Docker registry
-      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
-      - docker pull sourcegraph/sourcegraph:latest
-      - docker build -t sourcegraph/sourcegraph:$CIRCLE_SHA1 .:
-          pwd: $REPO
-      - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
-      - docker tag -f sourcegraph/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
-      - docker push sourcegraph/sourcegraph:latest
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=master&tag=$CIRCLE_SHA1"
       - echo $CIRCLE_SHA1 | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
+
+      # # push to Docker Hub
+      # - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
+      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:$CIRCLE_SHA1
+      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
+      # - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
+      # - docker push sourcegraph/sourcegraph:latest
+
+  next-branch:
+    branch: next
+    commands:
+      - ./circle-build-docker-image.sh:
+          pwd: $REPO
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=next&tag=$CIRCLE_SHA1"
+
+  release-branch:
+    branch: release
+    commands:
+      - ./circle-build-docker-image.sh:
+          pwd: $REPO
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&tag=$CIRCLE_SHA1"
