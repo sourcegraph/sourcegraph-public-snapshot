@@ -37,6 +37,8 @@ type checkCmd struct {
 	Notify bool   `long:"notify" description:"execute notify steps"`
 	Debug  bool   `long:"debug" description:"execute the build in debug mode"`
 	Dir    string `long:"dir" description:"directory tree to check" default:"."`
+
+	ShowConfig bool `long:"show-config" description:"show .drone.yml config file (with inference & srclib additions) and exit"`
 }
 
 func (c *checkCmd) Execute(args []string) error {
@@ -51,18 +53,23 @@ func (c *checkCmd) Execute(args []string) error {
 		return err
 	}
 
-	if c.Debug {
+	if c.Debug || c.ShowConfig {
 		yamlBytes, err := yaml.Marshal(config)
 		if err != nil {
 			return err
 		}
 		fmt.Fprintln(os.Stderr, "# .drone.yml file:")
 		fmt.Fprintln(os.Stderr, string(yamlBytes))
-		fmt.Fprintln(os.Stderr, "# Build matrix:")
-		for _, axis := range axes {
-			fmt.Fprintf(os.Stderr, " - %s\n", axis)
+		if len(axes) > 1 || len(axes[0]) > 0 {
+			fmt.Fprintln(os.Stderr, "# Build matrix:")
+			for _, axis := range axes {
+				fmt.Fprintf(os.Stderr, " - %s\n", axis)
+			}
 		}
 		fmt.Fprintln(os.Stderr)
+	}
+	if c.ShowConfig {
+		return nil
 	}
 
 	success := true
