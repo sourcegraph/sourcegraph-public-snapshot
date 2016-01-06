@@ -1,4 +1,4 @@
-// +build exectest,DISABLED_DUE_TO_FLAKINESS
+// +build exectest
 
 package changesets_test
 
