@@ -49,7 +49,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Go", TotalBytes: 1}}}
+	want := &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Go", TotalBytes: 1, Type: "programming"}}}
 	if !reflect.DeepEqual(inv, want) {
 		t.Errorf("got inventory %+v, want %+v", inv, want)
 	}
