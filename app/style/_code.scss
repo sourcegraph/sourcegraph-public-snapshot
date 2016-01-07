@@ -113,13 +113,10 @@ pre code, .line-numbered-code td {
 	table-layout: fixed;
 	border-collapse: separate;
 
-	.line {
-		&:not(.main-byte-range)
-			.line-number:hover, .btn-inline:hover {
-				.btn-inline {
-					display: inline-block;
-				}
-			}
+	.line:hover {
+		.btn-inline {
+			display: inline-block;
+		}
 	}
 
 	.line-number {
