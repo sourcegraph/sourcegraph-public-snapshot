@@ -6,11 +6,14 @@ import (
 	"runtime"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -26,6 +29,38 @@ const defaultMaxDiffSize = 350 * 1024 // 350 KB
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	ds := op.Ds
 	opt := op.Opt
+
+	// Make sure we've fully resolved the RepoRevSpecs. If we haven't,
+	// then they will need to be re-resolved in each call to
+	// RepoTree.Get that we issue, which will seriously degrade
+	// performance.
+	resolveRepoRevAndBranchExistence := func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
+		if repoRev.Resolved() {
+			// The repo rev appears resolved already -- but it might have been
+			// deleted, thus making any URLs we would emit for Rev instead of CommitID
+			// invalid. Check if the rev/branch was deleted:
+			//
+			// TODO(slimsag): write a test exactly for this case.
+			unresolvedRev := *repoRev
+			unresolvedRev.CommitID = ""
+			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); errcode.GRPC(err) == codes.NotFound {
+				// Rev no longer exists, so fallback to the CommitID instead. This is a
+				// last-ditch effort to ensure tokenized source displays well in diffs
+				// that are very old / have had one or more of their revs/branches
+				// deleted.
+				repoRev.Rev = repoRev.CommitID
+			} else if err != nil {
+				return err
+			}
+		}
+		return (&repos{}).resolveRepoRev(ctx, repoRev)
+	}
+	if err := resolveRepoRevAndBranchExistence(ctx, &ds.Base); err != nil {
+		return nil, err
+	}
+	if err := resolveRepoRevAndBranchExistence(ctx, &ds.Head); err != nil {
+		return nil, err
+	}
 
 	if opt == nil {
 		opt = &sourcegraph.DeltaListFilesOptions{}
