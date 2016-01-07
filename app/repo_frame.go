@@ -26,7 +26,7 @@ import (
 // Until we have a more advanced repo config scheme, always enable
 // these in a hard-coded fashion.
 func isAlwaysEnabledApp(app string) bool {
-	return app == "tracker" || app == "changes" || app == "apidocs"
+	return app == "tracker" || app == "changes"
 }
 
 // orderedRepoEnabledFrames returns apps that are enabled for the given repo. Key of frames map is the app ID.
