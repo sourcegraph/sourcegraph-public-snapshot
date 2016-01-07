@@ -11,6 +11,7 @@ import DefPopup from "sourcegraph/def/DefPopup";
 import DefTooltip from "sourcegraph/def/DefTooltip";
 import IssueForm from "sourcegraph/issue/IssueForm";
 import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
+import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
 
@@ -143,6 +144,8 @@ class CodeFileContainer extends Container {
 					</div>
 
 					<div className="actions">
+						<RepoBuildIndicator btnSize="btn-sm" RepoURI={this.state.repo} commitID={this.state.rev} />
+
 						<RepoRevSwitcher repoSpec={this.state.repo}
 							rev={this.state.rev}
 							path={this.state.tree}
