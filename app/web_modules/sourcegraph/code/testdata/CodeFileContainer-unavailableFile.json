@@ -58,6 +58,16 @@
 										{
 											"type": "",
 											"props": {
+												"btnSize": "btn-sm",
+												"RepoURI": "aRepo",
+												"commitID": "aRev",
+												"tooltipPosition": "top",
+												"Buildable": false
+											}
+										},
+										{
+											"type": "",
+											"props": {
 												"repoSpec": "aRepo",
 												"rev": "aRev",
 												"path": "aTree",
