@@ -267,8 +267,9 @@ type RepoLink struct {
 // conf.AppURL).
 func absRepoLink(appURL *url.URL, repoURI string) *RepoLink {
 	parts := strings.Split(repoURI, "/")
-	parts[0] = strings.ToLower(parts[0])
-	if (parts[0] == "github.com" || parts[0] == "sourcegraph.com") && len(parts) == 3 {
+
+	if maybeHost := strings.ToLower(parts[0]); (maybeHost == "github.com" || maybeHost == "sourcegraph.com") && len(parts) == 3 {
+		// Chop off "github.com" or "sourcegraph.com" prefix.
 		parts = parts[1:]
 	}
 	return &RepoLink{
