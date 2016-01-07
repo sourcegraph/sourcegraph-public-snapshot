@@ -14,9 +14,13 @@ import (
 var Features = struct {
 	Discussions        bool
 	NotificationCenter bool
+	// Note: Tracker search is in beta, and will not work on Sourcegraph clusters
+	// with more than one instance.
+	TrackerSearch bool
 }{
 	Discussions:        false,
 	NotificationCenter: false,
+	TrackerSearch:      false,
 }
 
 func init() {
