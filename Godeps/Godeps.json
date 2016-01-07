@@ -777,8 +777,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.1.0-39-g586e0d0",
-			"Rev": "586e0d031e58373afbbcdecb6022b302fed7517e"
+			"Comment": "v0.1.0-40-g4758dab",
+			"Rev": "4758dabebc5638ee41f70e7ed1d1448f6b9c4e0f"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -831,7 +831,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",
-			"Rev": "f9723c82c63b3c4a70b38b9655dd86ee14dfdc77"
+			"Rev": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/apidocs",

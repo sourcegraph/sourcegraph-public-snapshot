@@ -3,6 +3,11 @@ package unit;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
 // A RepoSourceUnit is the "concrete" form of SourceUnit that includes
 // information about which repository (and commit) the source unit
 // exists in. In general, type SourceUnit is used during analysis of a

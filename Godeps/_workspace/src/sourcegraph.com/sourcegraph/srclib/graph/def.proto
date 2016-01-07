@@ -4,6 +4,9 @@ package graph;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
 
 // DefKey specifies a definition, either concretely or abstractly. A concrete
 // definition key has a non-empty CommitID and refers to a definition defined in a
@@ -84,7 +87,7 @@ message Def {
     // Data contains additional language- and toolchain-specific information
     // about the def. Data is used to construct function signatures,
     // import/require statements, language-specific type descriptions, etc.
-    bytes data = 10 [(gogoproto.customtype) = "sourcegraph.com/sqs/pbtypes.RawMessage", (gogoproto.jsontag) = "Data,omitempty"];
+    bytes data = 10 [(gogoproto.casttype) = "sourcegraph.com/sqs/pbtypes.RawMessage", (gogoproto.jsontag) = "Data,omitempty"];
 
     // Docs are docstrings for this Def. This field is not set in the
     // Defs produced by graphers; they should emit docs in the
