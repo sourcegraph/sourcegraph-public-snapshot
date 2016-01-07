@@ -24,11 +24,11 @@ func (s *repoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	return s.noauthz.Open(ctx, repo)
 }
 
-func (s *repoVCS) Clone(ctx context.Context, repo string, info *vcsclient.CloneInfo) error {
+func (s *repoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *vcsclient.CloneInfo) error {
 	if err := auth.CheckRepo(ctx, repo, auth.Write); err != nil {
 		return err
 	}
-	return s.noauthz.Clone(ctx, repo, info)
+	return s.noauthz.Clone(ctx, repo, bare, mirror, info)
 }
 
 func (s *repoVCS) OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error) {
