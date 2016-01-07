@@ -39,6 +39,8 @@ func init() {
 }
 
 func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String())
+
 	start := time.Now()
 	rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
 	next(rwIntercept, r)
@@ -62,7 +64,7 @@ func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFu
 	requestDuration.With(labels).Observe(duration.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-	log15.Debug("HTTP Request", "method", r.Method, "URL", r.URL.String(), "routename", name, "duration", duration, "code", code)
+	log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "duration", duration, "code", code)
 }
 
 // ResponseWriterStatusIntercept implements the http.ResponseWriter interface
