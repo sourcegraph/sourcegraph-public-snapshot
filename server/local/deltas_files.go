@@ -16,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
-	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -34,7 +33,15 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 	// then they will need to be re-resolved in each call to
 	// RepoTree.Get that we issue, which will seriously degrade
 	// performance.
-	resolveRepoRevAndBranchExistence := func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
+	resolveAndCacheRepoRevAndBranchExistence := func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (context.Context, error) {
+		// Cache repo so that our repeated calls to RepoTree.Get do
+		// not need to repeatedly call RepoVCS.Open.
+		vcsRepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
+		if err != nil {
+			return nil, err
+		}
+		ctx = withCachedRepo(ctx, repoRev.URI, vcsRepo)
+
 		if repoRev.Resolved() {
 			// The repo rev appears resolved already -- but it might have been
 			// deleted, thus making any URLs we would emit for Rev instead of CommitID
@@ -50,15 +57,17 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 				// deleted.
 				repoRev.Rev = repoRev.CommitID
 			} else if err != nil {
-				return err
+				return nil, err
 			}
 		}
-		return (&repos{}).resolveRepoRev(ctx, repoRev)
+		return ctx, (&repos{}).resolveRepoRev(ctx, repoRev)
 	}
-	if err := resolveRepoRevAndBranchExistence(ctx, &ds.Base); err != nil {
+	ctx, err := resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Base)
+	if err != nil {
 		return nil, err
 	}
-	if err := resolveRepoRevAndBranchExistence(ctx, &ds.Head); err != nil {
+	ctx, err = resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Head)
+	if err != nil {
 		return nil, err
 	}
 
@@ -117,7 +126,7 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	}
 	ds = delta.DeltaSpec()
 
-	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, delta.BaseRepo.URI)
+	baseVCSRepo, err := cachedRepoVCSOpen(ctx, delta.BaseRepo.URI)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -128,7 +137,7 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 		headVCSRepo = baseVCSRepo
 	} else {
 		var err error
-		headVCSRepo, err = store.RepoVCSFromContext(ctx).Open(ctx, delta.HeadRepo.URI)
+		headVCSRepo, err = cachedRepoVCSOpen(ctx, delta.HeadRepo.URI)
 		if err != nil {
 			return nil, nil, err
 		}

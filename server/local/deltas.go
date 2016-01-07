@@ -13,7 +13,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/emailaddrs"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -55,7 +54,7 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 	}
 
 	// Try to compute merge-base.
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.BaseRepo.URI)
+	vcsrepo, err := cachedRepoVCSOpen(ctx, d.BaseRepo.URI)
 	if err != nil {
 		return d, err
 	}
@@ -82,7 +81,7 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 		var crmBaser CrossRepoMergeBaser
 		crmBaser, ok = vcsrepo.(CrossRepoMergeBaser)
 		if ok {
-			hrp, err := store.RepoVCSFromContext(ctx).Open(ctx, d.HeadRepo.URI)
+			hrp, err := cachedRepoVCSOpen(ctx, d.HeadRepo.URI)
 			if err != nil {
 				return d, err
 			}

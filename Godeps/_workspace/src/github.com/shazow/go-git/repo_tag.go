@@ -48,6 +48,9 @@ func (repo *Repository) GetTag(tagName string) (*Tag, error) {
 }
 
 func (repo *Repository) getTag(id sha1) (*Tag, error) {
+	repo.tagCacheMu.Lock()
+	defer repo.tagCacheMu.Unlock()
+
 	if repo.tagCache != nil {
 		if c, ok := repo.tagCache[id]; ok {
 			return c, nil

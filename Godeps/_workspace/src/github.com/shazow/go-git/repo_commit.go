@@ -119,6 +119,9 @@ func (repo *Repository) GetCommit(commitId string) (*Commit, error) {
 }
 
 func (repo *Repository) getCommit(id sha1) (*Commit, error) {
+	repo.commitCacheMu.Lock()
+	defer repo.commitCacheMu.Unlock()
+
 	if repo.commitCache != nil {
 		if c, ok := repo.commitCache[id]; ok {
 			return c, nil

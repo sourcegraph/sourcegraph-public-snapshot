@@ -71,7 +71,7 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 }
 
 func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetUpdateAffectedOp) ([]*store.ChangesetUpdateOp, error) {
-	repoVCS, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
+	repoVCS, err := cachedRepoVCSOpen(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "cannot open repo vcs %v: %v", op.Repo.URI, err)
 	}

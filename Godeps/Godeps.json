@@ -377,7 +377,7 @@
 		},
 		{
 			"ImportPath": "github.com/shazow/go-git",
-			"Rev": "30bfce69173a3a649b3efdc80906125f92a86037"
+			"Rev": "7e372a7f9d864f6ed7a4c1bdb3872e60a961ebb8"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/github_flavored_markdown",
