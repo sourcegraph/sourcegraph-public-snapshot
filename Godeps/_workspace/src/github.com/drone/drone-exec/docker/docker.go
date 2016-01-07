@@ -26,7 +26,7 @@ func NewClient(docker dockerclient.Client) (*Client, error) {
 	conf.Image = "gliderlabs/alpine:3.1"
 	conf.Volumes = map[string]struct{}{}
 	conf.Volumes["/drone"] = struct{}{}
-	info, err := Start(docker, conf, nil, false)
+	info, err := Start(docker, conf, nil, false, nil)
 	if err != nil {
 		return nil, err
 	}

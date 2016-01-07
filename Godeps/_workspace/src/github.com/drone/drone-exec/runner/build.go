@@ -120,7 +120,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 				}
 			}
 
-			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw)
+			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw, errw)
 			if err != nil {
 				recordExitCode(255)
 				fmt.Fprintln(errw, err)
@@ -132,7 +132,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 			mon.Start()
 
 			conf := toContainerConfig(node)
-			_, err := docker.Start(state.Client, conf, auth, node.Pull)
+			_, err := docker.Start(state.Client, conf, auth, node.Pull, errw)
 			if err != nil {
 				fmt.Fprintln(errw, err)
 				state.Exit(255)
@@ -143,7 +143,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 
 			conf := toContainerConfig(node)
 			conf.Cmd = toCommand(state, node)
-			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw)
+			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw, errw)
 			if err != nil {
 				state.Exit(255)
 				fmt.Fprintln(errw, err)

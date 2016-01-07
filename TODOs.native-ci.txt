@@ -169,6 +169,18 @@ Date:   Mon Jan 4 22:53:30 2016 -0800
     add "allow_failure" key to build, continue after these failures
 ```
 
+This commit as well:
+
+```
+commit d48da85e0e04d87ce177fc4e35d33ceb77e3b23c
+Author: Quinn Slack <qslack@qslack.com>
+Date:   Wed Jan 6 20:26:56 2016 -0800
+
+    allow callers of docker.Run to capture "Pulling image" logs
+    
+    Explains to callers why it is taking a long time with no log output
+```
+
 
 The following improvements to Drone are needed:
 
