@@ -42,7 +42,6 @@ func TestAddKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("%#v len: %d", keyList.SSHKeys, len(keyList.SSHKeys))
 	keys := keyList.SSHKeys
 	if len(keys) != 1 {
 		t.Fatal("Invalid key count")
