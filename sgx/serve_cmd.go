@@ -707,7 +707,7 @@ func (c *ServeCmd) initializeStarterRepos() error {
 			return "https://src.sourcegraph.com/lib/annotate", nil
 		case "java":
 			// TODO(rothfels): create our own Java starter repo.
-			return "https://github.com/JodaOrg/joda-time.git", nil
+			return "https://src.sourcegraph.com/sample/matrix-ops", nil
 		default:
 			return "", fmt.Errorf("Unrecognized language %s", lang)
 		}
