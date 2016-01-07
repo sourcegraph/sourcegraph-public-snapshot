@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"testing"
 
-	"golang.org/x/crypto/ssh"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -24,16 +23,15 @@ func TestAddKey(t *testing.T) {
 	}
 	defer a.Close()
 
-	_, err := a.Client.UserKeys.ClearKeys(ctx, &pbtypes.Void{})
+	_, err := a.Client.UserKeys.DeleteAllKeys(ctx, &pbtypes.Void{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	keyBytes := []byte("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCmrKBS1TCw8RVW4WKeBg9tabk0QjxqW5YB5xQJzLEhBRrIQ7nrFX2D9LfBwbJ0m+0Lc5u9Fpbf8J8QPMlulQB0E573euMP1S/NLCuzao1PenPlUH/Jv5pIIALsMKcgz7jrJ3PLTC+IjD9pXerEN90m4hKVDOwg+GcznzRH4WWLEBa8nJzY2rP78EGE937xLapEp5mPGlHGNzloQcsYJ7fCZf0M0ncc6IrubSTIVwzacDXbUJKvs9T8Vfu3D7WYjj6ed11vwcDvjYIP7sgPfdwhHbTBJzf1walDb8zy0RJX8BLbhFm55zXyI2xDETsxAXPIjOAFN9GzaKi7UB0O/95B m@rtin.so")
-	key, _, _, _, err := ssh.ParseAuthorizedKey(keyBytes)
 
 	// Add a key
-	_, err = a.Client.UserKeys.AddKey(ctx, &sourcegraph.SSHPublicKey{Key: key.Marshal(), Name: "test key"})
+	_, err = a.Client.UserKeys.AddKey(ctx, &sourcegraph.SSHPublicKey{Key: keyBytes, Name: "test key"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +49,7 @@ func TestAddKey(t *testing.T) {
 	}
 
 	for _, key := range keys {
-		if key.Id != 0 {
+		if key.ID != 0 {
 			t.Fatal("invalid key id")
 		}
 
