@@ -17,7 +17,7 @@ func (repo *Repository) TagPath(tagName string) string {
 
 // GetTags returns all tags of given repository.
 func (repo *Repository) GetTags() ([]string, error) {
-	return repo.readRefDir("refs/tags", "")
+	return repo.listRefs("refs/tags/")
 }
 
 func (repo *Repository) CreateTag(tagName, idStr string) error {

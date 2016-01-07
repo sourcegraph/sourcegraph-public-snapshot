@@ -4,6 +4,11 @@ package diff;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
 // A FileDiff represents a unified diff for a single file.
 // 
 // A file unified diff has a header that resembles the following:

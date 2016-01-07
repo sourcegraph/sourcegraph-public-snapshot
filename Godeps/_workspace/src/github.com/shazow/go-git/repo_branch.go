@@ -1,8 +1,10 @@
 package git
 
 import (
+	"bytes"
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +25,7 @@ func (repo *Repository) IsBranchExist(branchName string) bool {
 }
 
 func (repo *Repository) GetBranches() ([]string, error) {
-	return repo.readRefDir("refs/heads", "")
+	return repo.listRefs("refs/heads/")
 }
 
 func (repo *Repository) CreateBranch(branchName, idStr string) error {
@@ -52,39 +54,69 @@ func (repo *Repository) createRef(head, branchName, idStr string) error {
 	return err
 }
 
-func (repo *Repository) readRefDir(prefix, relPath string) ([]string, error) {
-	dirPath := filepath.Join(repo.Path, prefix, relPath)
-	f, err := os.Open(dirPath)
+// listRefs returns a list of refs that begin with prefix. The prefix
+// has been trimmed from the refs that are returned (e.g., "mybranch"
+// not "refs/heads/mybranch").
+func (repo *Repository) listRefs(prefix string) ([]string, error) {
+	var refs []string
+
+	dir := filepath.Join(repo.Path, prefix)
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Name() == ".DS_Store" {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		ref, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		refs = append(refs, ref)
+		return nil
+	})
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	// Refs can also be packed refs.
+	packedRefs, err := repo.listPackedRefs(prefix)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	refs = append(refs, packedRefs...)
+	return refs, nil
+}
 
-	fis, err := f.Readdir(0)
-	if err != nil {
+func (repo *Repository) listPackedRefs(prefix string) (refs []string, err error) {
+	packedRefs, err := ioutil.ReadFile(filepath.Join(repo.Path, "packed-refs"))
+	if os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 
-	names := make([]string, 0, len(fis))
-	for _, fi := range fis {
-		if strings.Contains(fi.Name(), ".DS_Store") {
+	for _, line := range bytes.Split(packedRefs, []byte("\n")) {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 || bytes.HasPrefix(line, []byte("#")) {
 			continue
 		}
 
-		relFileName := filepath.Join(relPath, fi.Name())
-		if fi.IsDir() {
-			subnames, err := repo.readRefDir(prefix, relFileName)
-			if err != nil {
-				return nil, err
-			}
-			names = append(names, subnames...)
+		// Line format example: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8 refs/heads/b0"
+		parts := bytes.SplitN(line, []byte(" "), 2)
+		if len(parts) != 2 {
 			continue
 		}
-
-		names = append(names, relFileName)
+		ref := string(parts[1])
+		if strings.HasPrefix(ref, prefix) {
+			refs = append(refs, strings.TrimPrefix(ref, prefix))
+		}
 	}
-
-	return names, nil
+	return
 }
 
 func CreateBranch(repoPath, branchName, id string) error {

@@ -252,7 +252,7 @@ func singleSubDir(entries []os.FileInfo) bool {
 func newTreeEntry(fi os.FileInfo) *TreeEntry {
 	e := &TreeEntry{
 		Name:    fi.Name(),
-		Size:    fi.Size(),
+		Size_:   fi.Size(),
 		ModTime: pbtypes.NewTimestamp(fi.ModTime()),
 	}
 	if fi.Mode().IsDir() {

@@ -4,6 +4,11 @@ package vcs;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
 message Commit {
 	string id = 1 [(gogoproto.customname) = "ID", (gogoproto.customtype) = "CommitID"];
 	Signature author = 2 [(gogoproto.nullable) = false];
