@@ -50,15 +50,17 @@ var refreshInstallInstructions = function () {
 		return "<a href=\"" + href + "\">" + text + "</a>";
 	}
 
-
 	var installURL = "https://sourcegraph.com/.download/install.sh";
-	var curlInstall = code("curl -sSL " + installURL + " | bash");
-	var wgetInstall = code("wget -O - " + installURL + " | bash");
 
-	var macBinary = strong(a("https://sourcegraph.com/.download/latest/darwin-amd64/src.gz", "src.gz"));
-	var linuxBinary = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.gz", "src.gz"));
-	var debFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.deb", "src.deb (64-bit)"));
-	var rpmFile = strong(a("https://sourcegraph.com/.download/latest/linux-amd64/src.rpm", "src.rpm (64-bit)"));
+	var macBinaryUrl = "https://sourcegraph.com/.download/latest/darwin-amd64/src.gz";
+	var debBinaryUrl = "https://sourcegraph.com/.download/latest/linux-amd64/src.deb";
+	var linuxBinaryUrl = "https://sourcegraph.com/.download/latest/linux-amd64/src.gz";
+	var rpmFileUrl = "https://sourcegraph.com/.download/latest/linux-amd64/src.rpm";
+
+	var macBinary = strong(a(macBinaryUrl, "src.gz"));
+	var linuxBinary = strong(a(linuxBinaryUrl, "src.gz"));
+	var debFile = strong(a(debBinaryUrl, "src.deb (64-bit)"));
+	var rpmFile = strong(a(rpmFileUrl, "src.rpm (64-bit)"));
 
 	var initReposFlag = function() {
 		var isChecked = document.getElementById("initialize-starter-project").checked;
@@ -76,6 +78,10 @@ var refreshInstallInstructions = function () {
 		}
 		return str;
 	}
+	var runSrcServeMac = function(){
+		var str = h2("Run a local Sourcegraph server") + p(precode("./src serve " + initReposFlag()));
+		return str;
+	}
 
 	var visitLocalhost = h2("Visit " + a("http://localhost:3080", "http://localhost:3080") + " to create an admin acccount") + p("");
 
@@ -83,20 +89,24 @@ var refreshInstallInstructions = function () {
 		return p(precode(installScript) + "Direct downloads: " + downloadLinks);
 	}
 
+	var macInstall = code("curl -O -L " + macBinaryUrl+"> src.gz && gunzip src.gz\nchmod +x src");
+	var ubuntuInstall = code("wget " + debBinaryUrl+"\nsudo apt-get install -y git\nsudo dpkg -i src.deb");
+	var rpmInstall = code("curl -O -L " + rpmFileUrl+"\nsudo yum -y install git\nsudo yum -y install src.rpm");
+
 	var macInstructions = function() {
-		return installOptions(curlInstall, macBinary) + runSrcServe() + visitLocalhost;
+		return installOptions(macInstall, macBinary)  + runSrcServeMac() + visitLocalhost;
 	}
 
 	var ubuntuInstructions = function() {
-		return installOptions(wgetInstall, debFile + " or " + linuxBinary) + runSrcServe(".deb") + visitLocalhost;
+		return installOptions(ubuntuInstall, debFile + " or " + linuxBinary) + runSrcServe(".deb") + visitLocalhost;
 	}
 
 	var centosInstructions = function() {
-		return installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+		return installOptions(rpmInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
 	}
 
 	var redhatInstructions = function() {
-		return installOptions(curlInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
+		return installOptions(rpmInstall, rpmFile + " or " + linuxBinary) + runSrcServe(".rpm") + visitLocalhost;
 	}
 
 	var sourceInstructions = function() {
