@@ -3012,8 +3012,11 @@ func (s wrappedUserKeys) ListKeys(ctx context.Context, param *pbtypes.Void) (res
 	target := local.Services.UserKeys
 
 	res, err = target.ListKeys(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "UserKeys.ListKeys returned nil, nil")
+	}
+	return
 }
 
 func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
@@ -3031,8 +3034,11 @@ func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, param *pbtypes.Void)
 	target := local.Services.UserKeys
 
 	res, err = target.DeleteAllKeys(ctx, param)
-	return
 
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "UserKeys.DeleteAllKeys returned nil, nil")
+	}
+	return
 }
 
 type wrappedUsers struct {
