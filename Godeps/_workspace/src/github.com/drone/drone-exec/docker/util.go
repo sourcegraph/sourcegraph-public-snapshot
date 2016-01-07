@@ -2,6 +2,7 @@ package docker
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	// "strings"
@@ -31,7 +32,7 @@ var (
 	}
 )
 
-func Run(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *dockerclient.AuthConfig, pull bool, outw, errw io.Writer) (*dockerclient.ContainerInfo, error) {
+func Run(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *dockerclient.AuthConfig, pull bool, outw, errw, logw io.Writer) (*dockerclient.ContainerInfo, error) {
 	if outw == nil {
 		outw = os.Stdout
 	}
@@ -40,7 +41,7 @@ func Run(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *d
 	}
 
 	// fetches the container information.
-	info, err := Start(client, conf, auth, pull)
+	info, err := Start(client, conf, auth, pull, logw)
 	if err != nil {
 		return nil, err
 	}
@@ -88,18 +89,21 @@ func Run(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *d
 	}
 }
 
-func Start(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *dockerclient.AuthConfig, pull bool) (*dockerclient.ContainerInfo, error) {
+func Start(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *dockerclient.AuthConfig, pull bool, logw io.Writer) (*dockerclient.ContainerInfo, error) {
+	if logw == nil {
+		logw = os.Stderr
+	}
 
 	// force-pull the image if specified.
 	if pull {
-		log.Printf("Pulling image %s", conf.Image)
+		fmt.Fprintf(logw, "Pulling image %s\n", conf.Image)
 		client.PullImage(conf.Image, auth)
 	}
 
 	// attempts to create the contianer
 	id, err := client.CreateContainer(conf, "", auth)
 	if err != nil {
-		log.Printf("Pulling image %s", conf.Image)
+		fmt.Fprintf(logw, "Pulling image %s\n", conf.Image)
 
 		// and pull the image and re-create if that fails
 		err = client.PullImage(conf.Image, auth)
