@@ -71,7 +71,7 @@ type RepoCounters interface {
 
 type RepoVCS interface {
 	Open(ctx context.Context, repo string) (vcs.Repository, error)
-	Clone(ctx context.Context, repo string, info *vcsclient.CloneInfo) error
+	Clone(ctx context.Context, repo string, bare, mirror bool, info *vcsclient.CloneInfo) error
 	OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error)
 }
 

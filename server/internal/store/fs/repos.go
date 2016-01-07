@@ -16,12 +16,18 @@ import (
 	"github.com/kr/fs"
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/rwvfs"
+	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util"
 )
 
 // Repos is a local filesystem-backed implementation of the
@@ -219,12 +225,27 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	if repo.HTTPCloneURL != "" && repo.Mirror == false {
 		// Clone some repo from an external host (and block until complete).
 		// NOTE: this will circumvent the RefreshVCS code path.
-		url := repo.CloneURL().String()
-		cmd := exec.Command("git", "clone", url, ".")
-		cmd.Dir = dir
-		out, err := cmd.CombinedOutput()
+
+		remoteOpts := vcs.RemoteOpts{}
+		host := util.RepoURIHost(repo.URI)
+		authStore := ext.AuthStore{}
+		cred, err := authStore.Get(ctx, host)
 		if err != nil {
-			return nil, fmt.Errorf("cloning %s repository %s failed with output:\n%s", repo.VCS, url, string(out))
+			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", host, err)
+		}
+
+		remoteOpts.HTTPS = &vcs.HTTPSConfig{
+			Pass: cred.Token,
+		}
+
+		err = store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, false, &vcsclient.CloneInfo{
+			VCS:        repo.VCS,
+			CloneURL:   repo.HTTPCloneURL,
+			RemoteOpts: remoteOpts,
+		})
+
+		if err != nil {
+			return nil, err
 		}
 		return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master"}, nil
 	}
@@ -283,7 +304,7 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 		}
 	}
 
-	return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master"}, nil
+	return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master", Mirror: repo.Mirror}, nil
 }
 
 func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {

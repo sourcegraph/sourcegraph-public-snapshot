@@ -201,7 +201,7 @@ type repoCreateCmd struct {
 		URI string `name:"REPO-URI" description:"desired repository URI (e.g., host.com/myrepo)"`
 	} `positional-args:"yes" required:"yes" count:"1"`
 	VCS         string `long:"vcs" description:"git or hg" default:"git" required:"yes"`
-	CloneURL    string `short:"u" long:"clone-url" description:"clone URL of existing repo (if this repo is a mirror)"`
+	CloneURL    string `short:"u" long:"clone-url" description:"clone URL of existing repo"`
 	Mirror      bool   `short:"m" long:"mirror" description:"create the repo as a mirror"`
 	Description string `short:"d" long:"description" description:"repo description"`
 	Language    string `short:"l" long:"lang" description:"primary programming language"`

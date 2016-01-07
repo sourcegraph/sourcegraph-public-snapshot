@@ -32,15 +32,15 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	return tracer.Wrap(r, traceutil.Recorder(ctx)), nil
 }
 
-func (s *RepoVCS) Clone(ctx context.Context, repo string, info *vcsclient.CloneInfo) error {
+func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *vcsclient.CloneInfo) error {
 	dir := absolutePathForRepo(ctx, repo)
 	if err := os.MkdirAll(filepath.Dir(dir), 0700); err != nil {
 		return err
 	}
 
 	_, err := vcs.Clone(info.VCS, info.CloneURL, dir, vcs.CloneOpt{
-		Bare:       true,
-		Mirror:     true,
+		Bare:       bare,
+		Mirror:     mirror,
 		RemoteOpts: info.RemoteOpts,
 	})
 	return err

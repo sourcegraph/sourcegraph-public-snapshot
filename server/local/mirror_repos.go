@@ -80,7 +80,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
-	return store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, &vcsclient.CloneInfo{
+	return store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &vcsclient.CloneInfo{
 		VCS:        repo.VCS,
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
