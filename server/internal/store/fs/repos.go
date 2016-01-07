@@ -243,7 +243,6 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 			CloneURL:   repo.HTTPCloneURL,
 			RemoteOpts: remoteOpts,
 		})
-
 		if err != nil {
 			return nil, err
 		}

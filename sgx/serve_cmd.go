@@ -188,7 +188,7 @@ type ServeCmd struct {
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
-	InitRepos string `long:"init-repos" description:"initialize Sourcegraph with starter repositories (tutorial); provide comma-separated list of languages"`
+	InitRepos string `long:"init-repos" description:"initialize Sourcegraph with demo repositories; provide comma-separated list of languages"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -706,7 +706,6 @@ func (c *ServeCmd) initializeStarterRepos() error {
 		case "go":
 			return "https://src.sourcegraph.com/lib/annotate", nil
 		case "java":
-			// TODO(rothfels): create our own Java starter repo.
 			return "https://src.sourcegraph.com/sample/matrix-ops", nil
 		default:
 			return "", fmt.Errorf("Unrecognized language %s", lang)
