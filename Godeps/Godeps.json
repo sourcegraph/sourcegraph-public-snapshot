@@ -11,11 +11,6 @@
 			"Rev": "8961c3750a47b8c0b3e118d52513b97adf85a7e8"
 		},
 		{
-			"ImportPath": "code.google.com/p/rog-go/parallel",
-			"Comment": "null-250",
-			"Rev": "e7ca3a2567b8ad482fef7b1aa1a258aa00c82772"
-		},
-		{
 			"ImportPath": "github.com/AaronO/go-git-http",
 			"Rev": "b05ba080e2aba78d8b03ae1fe01d7c1b7fecc734"
 		},
