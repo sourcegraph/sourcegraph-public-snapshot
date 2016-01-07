@@ -6,14 +6,16 @@ import (
 	"runtime"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
-	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -26,6 +28,48 @@ const defaultMaxDiffSize = 350 * 1024 // 350 KB
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	ds := op.Ds
 	opt := op.Opt
+
+	// Make sure we've fully resolved the RepoRevSpecs. If we haven't,
+	// then they will need to be re-resolved in each call to
+	// RepoTree.Get that we issue, which will seriously degrade
+	// performance.
+	resolveAndCacheRepoRevAndBranchExistence := func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (context.Context, error) {
+		// Cache repo so that our repeated calls to RepoTree.Get do
+		// not need to repeatedly call RepoVCS.Open.
+		vcsRepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
+		if err != nil {
+			return nil, err
+		}
+		ctx = withCachedRepo(ctx, repoRev.URI, vcsRepo)
+
+		if repoRev.Resolved() {
+			// The repo rev appears resolved already -- but it might have been
+			// deleted, thus making any URLs we would emit for Rev instead of CommitID
+			// invalid. Check if the rev/branch was deleted:
+			//
+			// TODO(slimsag): write a test exactly for this case.
+			unresolvedRev := *repoRev
+			unresolvedRev.CommitID = ""
+			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); errcode.GRPC(err) == codes.NotFound {
+				// Rev no longer exists, so fallback to the CommitID instead. This is a
+				// last-ditch effort to ensure tokenized source displays well in diffs
+				// that are very old / have had one or more of their revs/branches
+				// deleted.
+				repoRev.Rev = repoRev.CommitID
+			} else if err != nil {
+				return nil, err
+			}
+		}
+		return ctx, (&repos{}).resolveRepoRev(ctx, repoRev)
+	}
+	ctx, err := resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Base)
+	if err != nil {
+		return nil, err
+	}
+	ctx, err = resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Head)
+	if err != nil {
+		return nil, err
+	}
 
 	if opt == nil {
 		opt = &sourcegraph.DeltaListFilesOptions{}
@@ -82,7 +126,7 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	}
 	ds = delta.DeltaSpec()
 
-	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, delta.BaseRepo.URI)
+	baseVCSRepo, err := cachedRepoVCSOpen(ctx, delta.BaseRepo.URI)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -93,7 +137,7 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 		headVCSRepo = baseVCSRepo
 	} else {
 		var err error
-		headVCSRepo, err = store.RepoVCSFromContext(ctx).Open(ctx, delta.HeadRepo.URI)
+		headVCSRepo, err = cachedRepoVCSOpen(ctx, delta.HeadRepo.URI)
 		if err != nil {
 			return nil, nil, err
 		}

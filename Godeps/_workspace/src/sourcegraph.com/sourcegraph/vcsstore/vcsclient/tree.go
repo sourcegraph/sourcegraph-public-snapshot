@@ -22,7 +22,7 @@ func (e *TreeEntry) Stat() (os.FileInfo, error) {
 	return &fileInfo{
 		name:  e.Name,
 		mode:  mode,
-		size:  int64(e.Size),
+		size:  int64(e.Size_),
 		mtime: e.ModTime.Time(),
 	}, nil
 }

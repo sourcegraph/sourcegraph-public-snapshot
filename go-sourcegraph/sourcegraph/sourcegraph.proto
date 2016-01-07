@@ -15,6 +15,9 @@ import "src.sourcegraph.com/sourcegraph/pkg/inventory/inventory.proto";
 import "github.com/gengo/grpc-gateway/third_party/googleapis/google/api/annotations.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
 
 message Badge {
 	string name = 1;

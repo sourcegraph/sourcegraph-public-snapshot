@@ -4,6 +4,9 @@ package ann;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
 
 // An Ann is a source code annotation.
 //
@@ -47,5 +50,5 @@ message Ann {
 
     // Data contains arbitrary JSON data that is specific to this
     // annotation type (e.g., the link URL for Link annotations).
-    bytes data = 9 [(gogoproto.customtype) = "sourcegraph.com/sqs/pbtypes.RawMessage", (gogoproto.jsontag) = "Data,omitempty"];
+    bytes data = 9 [(gogoproto.casttype) = "sourcegraph.com/sqs/pbtypes.RawMessage", (gogoproto.jsontag) = "Data,omitempty"];
 };

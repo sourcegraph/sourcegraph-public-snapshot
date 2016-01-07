@@ -16,7 +16,7 @@ import (
 // all mockstores instantiated.
 func testContext() (context.Context, *mocks) {
 	var m mocks
-	ctx := NewContext(context.Background(), Config{})
+	ctx := context.Background()
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, nil)

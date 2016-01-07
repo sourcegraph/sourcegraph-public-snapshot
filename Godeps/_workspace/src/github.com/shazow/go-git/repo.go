@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 // idx-file
@@ -47,8 +48,11 @@ type Repository struct {
 	Path       string
 	indexfiles map[string]*idxFile
 
-	commitCache map[sha1]*Commit
-	tagCache    map[sha1]*Tag
+	commitCacheMu sync.Mutex
+	commitCache   map[sha1]*Commit
+
+	tagCacheMu sync.Mutex
+	tagCache   map[sha1]*Tag
 }
 
 // Open the repository at the given path.

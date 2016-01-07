@@ -4,6 +4,11 @@ package vcsclient;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
 // FileRange is a line and byte range in a file.
 message FileRange {
 	// start of line range

@@ -8,6 +8,9 @@ import "ref.proto";
 import "sourcegraph.com/sourcegraph/srclib/ann/ann.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
 
 message Output {
     repeated Def defs = 1 [(gogoproto.jsontag) = "Defs,omitempty"];

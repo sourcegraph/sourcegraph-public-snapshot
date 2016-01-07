@@ -12,10 +12,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
-	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
-	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -53,25 +51,6 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 		return nil, &sourcegraph.InvalidOptionsError{Reason: "at most one of TokenizedSource and Formatted may be specified"}
 
 	case opt.TokenizedSource:
-		if entrySpec.RepoRev.Resolved() {
-			// The repo rev appears resolved already -- but it might have been
-			// deleted, thus making any URLs we would emit for Rev instead of CommitID
-			// invalid. Check if the rev/branch was deleted:
-			//
-			// TODO(slimsag): write a test exactly for this case.
-			unresolvedRev := entrySpec.RepoRev
-			unresolvedRev.CommitID = ""
-			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); errcode.GRPC(err) == codes.NotFound {
-				// Rev no longer exists, so fallback to the CommitID instead. This is a
-				// last-ditch effort to ensure tokenized source displays well in diffs
-				// that are very old / have had one or more of their revs/branches
-				// deleted.
-				entrySpec.RepoRev.Rev = ""
-			} else if err != nil {
-				return nil, err
-			}
-		}
-
 		sourceCode, err := sourcecode.Parse(ctx, entrySpec, entry0)
 		if err == nil {
 			entry.Contents = nil
@@ -111,7 +90,7 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 		return nil, err
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, entrySpec.RepoRev.URI)
+	vcsrepo, err := cachedRepoVCSOpen(ctx, entrySpec.RepoRev.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +112,7 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, err
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRevSpec.URI)
+	vcsrepo, err := cachedRepoVCSOpen(ctx, repoRevSpec.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +137,7 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 
 	cacheOnCommitID(ctx, repoRev.CommitID)
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
+	vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
 	if err != nil {
 		return nil, err
 	}

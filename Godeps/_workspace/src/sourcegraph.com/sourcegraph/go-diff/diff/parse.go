@@ -55,19 +55,12 @@ func (r *MultiFileDiffReader) ReadFile() (*FileDiff, error) {
 
 	d, err := fr.ReadAllHeaders()
 	if err != nil {
-		switch e := err.(type) {
-		case *ParseError:
-			if e.Err == ErrNoFileHeader || e.Err == ErrExtendedHeadersEOF {
+		if e0, ok := err.(*ParseError); ok {
+			if e0.Err == ErrNoFileHeader || e0.Err == ErrExtendedHeadersEOF {
 				return nil, io.EOF
 			}
-
-		case OverflowError:
-			r.nextFileFirstLine = []byte(e)
-			return d, nil
-
-		default:
-			return nil, err
 		}
+		return nil, err
 	}
 
 	// Before reading hunks, check to see if there are any. If there
@@ -178,7 +171,7 @@ func (r *FileDiffReader) ReadAllHeaders() (*FileDiff, error) {
 
 	fd.Extended, err = r.ReadExtendedHeaders()
 	if err != nil {
-		return fd, err
+		return nil, err
 	}
 
 	var origTime, newTime *time.Time
@@ -267,20 +260,13 @@ func (r *FileDiffReader) readOneFileHeader(prefix []byte) (filename string, time
 	return filename, timestamp, err
 }
 
-// OverflowError is returned when we have overflowed into the start
-// of the next file while reading extended headers.
-type OverflowError string
-
-func (e OverflowError) Error() string {
-	return fmt.Sprintf("overflowed into next file: %s", e)
-}
+var i = 0
 
 // ReadExtendedHeaders reads the extended header lines, if any, from a
 // unified diff file (e.g., git's "diff --git a/foo.go b/foo.go", "new
 // mode <mode>", "rename from <path>", etc.).
 func (r *FileDiffReader) ReadExtendedHeaders() ([]string, error) {
 	var xheaders []string
-	firstLine := true
 	for {
 		var line []byte
 		if r.fileHeaderLine == nil {
@@ -296,13 +282,6 @@ func (r *FileDiffReader) ReadExtendedHeaders() ([]string, error) {
 			r.fileHeaderLine = nil
 		}
 
-		if bytes.HasPrefix(line, []byte("diff --git")) {
-			if firstLine {
-				firstLine = false
-			} else {
-				return xheaders, OverflowError(line)
-			}
-		}
 		if bytes.HasPrefix(line, []byte("--- ")) {
 			// We've reached the file header.
 			r.fileHeaderLine = line // pass to readOneFileHeader (see fileHeaderLine field doc)
@@ -386,7 +365,6 @@ func (r *HunksReader) ReadHunk() (*Hunk, error) {
 		if r.hunk == nil {
 			// Check for presence of hunk header.
 			if !bytes.HasPrefix(line, hunkPrefix) {
-				panic("X")
 				return nil, &ParseError{r.line, r.offset, ErrNoHunkHeader}
 			}
 
@@ -457,12 +435,6 @@ func (r *HunksReader) ReadHunk() (*Hunk, error) {
 			r.hunk.Body = append(r.hunk.Body, '\n')
 		}
 	}
-
-	// Final hunk is complete. But if we never saw a hunk in this call to ReadHunk, then it means we hit EOF.
-	if r.hunk != nil {
-		return r.hunk, nil
-	}
-	return nil, io.EOF
 }
 
 const noNewlineMessage = `\ No newline at end of file`

@@ -4,6 +4,9 @@ package inventory;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
 
 // Inventory summarizes a tree's contents (e.g., which programming
 // languages are used).

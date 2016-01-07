@@ -17,7 +17,7 @@ func (repo *Repository) TagPath(tagName string) string {
 
 // GetTags returns all tags of given repository.
 func (repo *Repository) GetTags() ([]string, error) {
-	return repo.readRefDir("refs/tags", "")
+	return repo.listRefs("refs/tags/")
 }
 
 func (repo *Repository) CreateTag(tagName, idStr string) error {
@@ -48,6 +48,9 @@ func (repo *Repository) GetTag(tagName string) (*Tag, error) {
 }
 
 func (repo *Repository) getTag(id sha1) (*Tag, error) {
+	repo.tagCacheMu.Lock()
+	defer repo.tagCacheMu.Unlock()
+
 	if repo.tagCache != nil {
 		if c, ok := repo.tagCache[id]; ok {
 			return c, nil

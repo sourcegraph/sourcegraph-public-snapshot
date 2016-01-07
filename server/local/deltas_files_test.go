@@ -8,16 +8,18 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestDeltasService_ListFiles(t *testing.T) {
 	var s deltas
-	ctx, _ := testContext()
+	ctx, mock := testContext()
 
 	ds := sourcegraph.DeltaSpec{
-		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "github.com/base/repo"}, Rev: "baserev", CommitID: "basecommit"},
-		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "github.com/head/repo"}, Rev: "headrev", CommitID: "headcommit"},
+		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, Rev: "baserev", CommitID: "basecommit"},
+		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, Rev: "headrev", CommitID: "headcommit"},
 	}
 
 	fdiffs := []*diff.FileDiff{
@@ -46,6 +48,11 @@ func TestDeltasService_ListFiles(t *testing.T) {
 		calledDiff = true
 		return fdiffs, nil, nil
 	}
+	calledVCSRepoResolveRevision := mock.stores.RepoVCS.MockOpen_NoCheck(t, vcstesting.MockRepository{
+		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
+			return "c", nil
+		},
+	})
 
 	dfs, err := s.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{Ds: ds, Opt: &sourcegraph.DeltaListFilesOptions{Formatted: false}})
 	if err != nil {
@@ -61,15 +68,18 @@ func TestDeltasService_ListFiles(t *testing.T) {
 	if !calledDiff {
 		t.Error("!calledDiff")
 	}
+	if !*calledVCSRepoResolveRevision {
+		t.Error("!calledVCSRepoResolveRevision")
+	}
 }
 
 func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 	var s deltas
-	ctx, _ := testContext()
+	ctx, mock := testContext()
 
 	ds := sourcegraph.DeltaSpec{
-		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "github.com/base/repo"}, Rev: "baserev", CommitID: "basecommit"},
-		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "github.com/head/repo"}, Rev: "headrev", CommitID: "headcommit"},
+		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, Rev: "baserev", CommitID: "basecommit"},
+		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, Rev: "headrev", CommitID: "headcommit"},
 	}
 
 	fdiffs := []*diff.FileDiff{
@@ -98,6 +108,11 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 		calledDiff = true
 		return fdiffs, nil, nil
 	}
+	calledVCSRepoResolveRevision := mock.stores.RepoVCS.MockOpen_NoCheck(t, vcstesting.MockRepository{
+		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
+			return "c", nil
+		},
+	})
 
 	dfs, err := s.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{Ds: ds, Opt: &sourcegraph.DeltaListFilesOptions{Formatted: false}})
 	if err != nil {
@@ -112,5 +127,8 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 
 	if !calledDiff {
 		t.Error("!calledDiff")
+	}
+	if !*calledVCSRepoResolveRevision {
+		t.Error("!calledVCSRepoResolveRevision")
 	}
 }

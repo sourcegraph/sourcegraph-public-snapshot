@@ -175,7 +175,7 @@ func (s *repos) resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRev
 	}
 
 	if repoRev.CommitID == "" {
-		vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
+		vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,8 @@ func (s *repos) resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.R
 		repoRev.Rev = strings.TrimSuffix(repoRev.Rev, srclibRevTag)
 		dataVer, err := svc.Repos(ctx).GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
 		if err == nil {
-			repoRev.Rev = dataVer.CommitID
+			// TODO(sqs): check this
+			repoRev.CommitID = dataVer.CommitID
 		} else if errcode.GRPC(err) == codes.NotFound {
 			// Ignore NotFound as otherwise the user might not even be
 			// able to access the repository homepage.
@@ -240,7 +241,7 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, err
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
+	vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +408,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
+	vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
 	if err != nil {
 		return nil, err
 	}

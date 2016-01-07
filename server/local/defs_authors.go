@@ -10,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -26,7 +25,7 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 	}
 
 	// Blame file to determine VCS authors.
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, def.Repo)
+	vcsrepo, err := cachedRepoVCSOpen(ctx, def.Repo)
 	if err != nil {
 		return nil, err
 	}

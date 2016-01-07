@@ -72,7 +72,7 @@ func virtualTreeEntry(def *sourcegraph.Def, rev sourcegraph.RepoRevSpec) (*handl
 		TreeEntry: &vcsclient.TreeEntry{
 			Name:     filepath.Base(def.File),
 			Type:     vcsclient.FileEntry,
-			Size:     int64(len(rawContents)),
+			Size_:    int64(len(rawContents)),
 			Contents: []byte(rawContents),
 		},
 		FileRange: vcsclient.FileRange{
