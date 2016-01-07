@@ -18,6 +18,10 @@
 - Build tasks now have a new field, `ParentID`. **PostgreSQL
   backend:** Run `alter table repo_build_task add column parent_id
   bigint default 0;` to perform this migration.
+- A new UI to add and remove multiple SSH public keys is provided under the user
+  settings page. Users will need to re-add their SSH public key (via UI or CLI)
+  once more after upgrading due to a change in the storage backend, this is a
+  one-time process.
 
 # 0.11.0
 
