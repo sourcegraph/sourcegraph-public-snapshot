@@ -236,14 +236,16 @@ func (r *Repository) vcsCommit(commit *git.Commit) *vcs.Commit {
 		parents = nil
 	}
 
+	var author vcs.Signature
+	if commit.Author != nil {
+		author.Name = commit.Author.Name
+		author.Email = commit.Author.Email
+		author.Date = pbtypes.NewTimestamp(commit.Author.When)
+	}
+
 	return &vcs.Commit{
-		ID: vcs.CommitID(commit.Id.String()),
-		// TODO: Check nil on commit.Author?
-		Author: vcs.Signature{
-			Name:  commit.Author.Name,
-			Email: commit.Author.Email,
-			Date:  pbtypes.NewTimestamp(commit.Author.When),
-		},
+		ID:        vcs.CommitID(commit.Id.String()),
+		Author:    author,
 		Committer: committer,
 		Message:   strings.TrimSuffix(commit.Message(), "\n"),
 		Parents:   parents,
