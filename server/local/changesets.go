@@ -80,9 +80,9 @@ func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp
 		return nil, err
 	}
 
-	// The git server has fired off hook events, wait for ourselves to handle them
-	// in changesets_update.go and mark the CS as merged, this way we can return
-	// the new CS to the user (which the frontend renders for immediate feedback).
+	// The git server has fired off hook events, wait to handle them in
+	// changesets_update.go and mark the CS as merged, this way we can return the
+	// new CS to the user (which the frontend renders for immediate feedback).
 	timeout := time.After(10 * time.Second)
 	for {
 		// List the events.
