@@ -1092,8 +1092,6 @@ func TestChangesets_MergeFlow(t *testing.T) {
 // TestChangesets_CLIMergeFlow runs the CLIMergeFlow test on a hosted
 // repository.
 func TestChangesets_CLIMergeFlow(t *testing.T) {
-	t.Skip("BUG: hosted repos do not emit githook events on merge")
-	return
 	testChangesets_MergeFlow(t, false, true)
 }
 
