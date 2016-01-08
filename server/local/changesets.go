@@ -1,6 +1,9 @@
 package local
 
 import (
+	"errors"
+	"time"
+
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -77,8 +80,33 @@ func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp
 		return nil, err
 	}
 
-	// TODO(slimsag): use pbtypes.Void instead
-	return &sourcegraph.ChangesetEvent{}, nil
+	// The git server has fired off hook events, wait for ourselves to handle them
+	// in changesets_update.go and mark the CS as merged, this way we can return
+	// the new CS to the user (which the frontend renders for immediate feedback).
+	timeout := time.After(10 * time.Second)
+	for {
+		// List the events.
+		events, err := store.ChangesetsFromContext(ctx).ListEvents(ctx, &sourcegraph.ChangesetSpec{
+			ID:   op.ID,
+			Repo: op.Repo,
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, ev := range events.Events {
+			if ev.After.Merged {
+				return ev, nil
+			}
+		}
+
+		select {
+		case <-timeout:
+			return nil, errors.New("timeout while waiting for changeset merged event")
+		default:
+			// Wait while the event is handled.
+			time.Sleep(200 * time.Millisecond)
+		}
+	}
 }
 
 func (s *changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
