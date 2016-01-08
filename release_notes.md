@@ -1,5 +1,7 @@
 # dev
 
+# 0.11.3
+
 - CI is now integrated into Sourcegraph with drone.io. Docker is now a
   dependency for a working environment. Run `src info` to check your system
   requirements.
