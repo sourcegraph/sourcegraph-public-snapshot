@@ -166,6 +166,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 			}
 			updateOp.Op.Merged = true
 			updateOp.Head = string(head)
+			updateOp.Base = ""
 		}
 
 		// Handle the case where the branch was force-pushed to.
