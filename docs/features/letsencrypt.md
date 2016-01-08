@@ -1,6 +1,6 @@
-# LetsEncrypt + Sourcegraph
+# Using Let's Encrypt with Sourcegraph
 
-The following instructions describe how to use [LetsEncrypt](https://letsencrypt.org) with Sourcegraph.
+The following instructions describe how to use [Let's Encrypt](https://letsencrypt.org) with Sourcegraph.
 
 ## Generate Certificate
 
@@ -9,7 +9,7 @@ The following instructions describe how to use [LetsEncrypt](https://letsencrypt
 1. `git clone https://github.com/letsencrypt/letsencrypt`
 1. `cd letsencrypt`
 1. `./letsencrypt-auto certonly --standalone --agree-tos --email admin@mysite.com -d src.mysite.com`
-  - Note: LetsEncrypt certificates expire after 90 days, it is advised that you re-run the above commands every 60 days.
+  - Note: Let's Encrypt certificates expire after 90 days, it is advised that you re-run the above commands every 60 days.
 
 ## Configuring Sourcegraph
 
@@ -33,7 +33,7 @@ RedirectToHTTPS = true
 
 You will need to install the proper Root CA certificate onto your server in order
 for the Sourcegraph frontend to connect to itself via SSL. In the case of
-LetsEncrypt, this is the IdenTrust CA as [they cross-sign all LetsEncrypt certs](https://letsencrypt.org/certificates/).
+Let's Encrypt, this is the IdenTrust CA as [they cross-sign all Let's Encrypt certs](https://letsencrypt.org/certificates/).
 
 1. (Docker-only): use `docker exec -it src bash` to get a shell.
 1. `vi /usr/local/share/ca-certificates/identrust.crt`
@@ -61,14 +61,14 @@ which files you should copy: `ls -l /etc/letsencrypt/live/mysite.com`.
 
 ### Error "Failed to connect to host for DVSNI challenge"
 
-LetsEncrypt tries to verify your ownership of the server via ports :80 and :443,
+Let's Encrypt tries to verify your ownership of the server via ports :80 and :443,
 so confirm that your DNS settings correctly point to your server and that you
-are not being routed through e.g. Cloudflare or other HTTPS middleware
+are not being routed through e.g. CloudFlare or other HTTPS middleware
 providers while running the above commands.
 
 ## Known Issues
 
-In the future, Sourcegraph will seamlessly integrate with LetsEncrypt in order
+In the future, Sourcegraph will seamlessly integrate with Let's Encrypt in order
 to automatically renew certificates for you. Until then, you'll need to rerun
 the above `./letsencrypt-auto certonly` step to renew your certificate at least
 every 90 days to avoid your HTTPS service being interrupted.
