@@ -1,5 +1,16 @@
 # dev
 
+- Merging a changeset via the web UI or CLI with the squash option on a
+  Sourcegraph-hosted or GitHub mirror repository will now correctly mark the
+  changeset as merged and automatically close it.
+- Clicking the "Merge changeset" button will now correctly show users the
+  updated changeset instead of a blank page.
+- Merging a changeset on a Sourcegraph-hosted repository via the web UI or src
+  CLI will now properly mark the changeset as merged and automatically close it.
+- Merging a changeset on a Sourcegraph-hosted repository via the web UI or src
+  CLI will now cause the changeset to properly persist and not lose it's commit
+  history / reviews.
+
 # 0.11.6
 
 - Fixes panic on empty commit author.
