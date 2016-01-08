@@ -16,12 +16,14 @@ type RpcReader struct {
 	// List of events RpcReader has picked up through scanning
 	// these events do not contain the "Dir" attribute
 	Events []Event
+
+	pktLineParser pktLineParser
 }
 
 // Regexes to detect types of actions (fetch, push, etc ...)
 var (
-	receivePackRegex = regexp.MustCompile("([0-9a-fA-F]{40}) ([0-9a-fA-F]{40}) refs\\/(heads|tags)\\/(.*?)( |00|\u0000)|^(0000)$")
-	uploadPackRegex  = regexp.MustCompile("^\\S+ ([0-9a-fA-F]{40})")
+	receivePackRegex = regexp.MustCompile("([0-9a-fA-F]{40}) ([0-9a-fA-F]{40}) refs\\/(heads|tags)\\/(.*?)( |00|\x00)")
+	uploadPackRegex  = regexp.MustCompile(`^want ([0-9a-fA-F]{40})`)
 )
 
 // Implement the io.Reader interface
@@ -30,37 +32,47 @@ func (r *RpcReader) Read(p []byte) (n int, err error) {
 	n, err = r.Reader.Read(p)
 
 	// Scan for events
-	if err == nil || err == io.EOF {
-		r.scan(p)
+	if n > 0 {
+		r.scan(p[:n])
 	}
 
 	return n, err
 }
 
-func (r *RpcReader) scan(p []byte) {
-	events := []Event{}
-
-	switch r.Rpc {
-	case "receive-pack":
-		events = scanPush(p)
-	case "upload-pack":
-		events = scanFetch(p)
+func (r *RpcReader) scan(data []byte) {
+	if r.pktLineParser.state == done {
+		return
 	}
 
-	// Add new events
-	if len(events) > 0 {
+	r.pktLineParser.Feed(data)
+
+	// If parsing has just finished, process its output once.
+	if r.pktLineParser.state == done {
+		if r.pktLineParser.Error != nil {
+			return
+		}
+
+		// When we get here, we're done collecting all pkt-lines successfully
+		// and can now extract relevant events.
+		var events []Event
+		switch r.Rpc {
+		case "receive-pack":
+			events = scanPush(r.pktLineParser.Total)
+		case "upload-pack":
+			events = scanFetch(r.pktLineParser.Total)
+		}
 		r.Events = append(r.Events, events...)
 	}
 }
 
 func scanFetch(data []byte) []Event {
-	matches := uploadPackRegex.FindAllStringSubmatch(string(data[:]), -1)
+	matches := uploadPackRegex.FindAllStringSubmatch(string(data), -1)
 
 	if matches == nil {
-		return []Event{}
+		return nil
 	}
 
-	events := []Event{}
+	var events []Event
 	for _, m := range matches {
 		events = append(events, Event{
 			Type:   FETCH,
@@ -72,13 +84,13 @@ func scanFetch(data []byte) []Event {
 }
 
 func scanPush(data []byte) []Event {
-	matches := receivePackRegex.FindAllStringSubmatch(string(data[:]), -1)
+	matches := receivePackRegex.FindAllStringSubmatch(string(data), -1)
 
 	if matches == nil {
-		return []Event{}
+		return nil
 	}
 
-	events := []Event{}
+	var events []Event
 	for _, m := range matches {
 		e := Event{
 			Last:   m[1],

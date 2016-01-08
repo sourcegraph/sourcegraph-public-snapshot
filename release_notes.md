@@ -1,5 +1,7 @@
 # dev
 
+- Improve git event parser to be significantly faster and correct for large git pushes.
+
 # 0.11.3
 
 - CI is now integrated into Sourcegraph with drone.io. Docker is now a
