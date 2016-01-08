@@ -24,6 +24,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
 	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util"
@@ -276,16 +277,19 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 			return fmt.Errorf("unable to fetch git credentials for host %q: %v", gitHost, err)
 		}
 		auth = cred.Token
-
-		cloneURL, err := url.Parse(repo.HTTPCloneURL)
-		if err != nil {
-			return err
-		}
-		cloneURL.User = url.User("x-oauth-basic")
-		repoPath = cloneURL.String()
 	} else {
-		repoPath = absolutePathForRepo(ctx, repo.URI)
+		auth = client.Credentials.GetAccessToken()
+		if auth == "" {
+			return errors.New("can't generate local access token: token is empty")
+		}
 	}
+
+	cloneURL, err := url.Parse(repo.HTTPCloneURL)
+	if err != nil {
+		return err
+	}
+	cloneURL.User = url.User("x-oauth-basic")
+	repoPath = cloneURL.String()
 
 	rs, err := changesetsNewRepoStage(repoPath, base, auth)
 	if err != nil {
