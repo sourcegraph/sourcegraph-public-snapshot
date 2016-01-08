@@ -1178,6 +1178,14 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 	if err := ts.cmd("git", "checkout", csBaseRev); err != nil {
 		t.Fatal(err)
 	}
+
+	// Grab the current HEAD of the base branch (master) -- this is the commit ID
+	// our branch will be based on after the rebase below.
+	wantBaseCommitID, err := ts.gitRevParse("HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	files = [][2]string{
 		{"base-third", "third file contents"},
 		{"base-fourth", "fourth file contents"},
@@ -1199,13 +1207,6 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 
 	ts.refreshVCS()
 
-	// Grab the current HEAD of the base branch (master) -- this is the commit ID
-	// our branch will be based on after the rebase below.
-	wantBaseCommitID, err := ts.gitRevParse("HEAD")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Verify the current DeltaSpec of the changeset. We do this once prior to
 	// merge; and also after merge (below).
 	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
@@ -1215,10 +1216,10 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != "" && gotHead != wantHeadCommitID {
+	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != wantHeadCommitID {
 		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
 	}
-	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != "" && gotBase != wantBaseCommitID {
+	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != wantBaseCommitID {
 		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
 	}
 
@@ -1257,10 +1258,10 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != "" && gotHead != wantHeadCommitID {
+	if gotHead := cs.DeltaSpec.Head.CommitID; gotHead != wantHeadCommitID {
 		t.Fatalf("wrong Head.CommitID, got %q want %q", gotHead, wantHeadCommitID)
 	}
-	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != "" && gotBase != wantBaseCommitID {
+	if gotBase := cs.DeltaSpec.Base.CommitID; gotBase != wantBaseCommitID {
 		t.Fatalf("wrong Base.CommitID, got %q want %q", gotBase, wantBaseCommitID)
 	}
 
