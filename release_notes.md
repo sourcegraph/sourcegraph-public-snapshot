@@ -1,6 +1,10 @@
 # dev
 
+# 0.11.4
+
 - Improve git event parser to be significantly faster and correct for large git pushes.
+- Fixed a regression that prevented users from being able to add new SSH keys
+  via the CLI or new web UI altogether.
 
 # 0.11.3
 
