@@ -67,6 +67,24 @@
 			"Rev": "d0e59c22a56e8dadfed24f74f452cea5a52722d2"
 		},
 		{
+			"ImportPath": "github.com/blevesearch/bleve",
+			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
+		},
+		{
+			"ImportPath": "github.com/blevesearch/go-porterstemmer",
+			"Comment": "v1.0.1-9-g23a2c8e",
+			"Rev": "23a2c8e5cf1f380f27722c6d2ae8896431dc7d0e"
+		},
+		{
+			"ImportPath": "github.com/blevesearch/segment",
+			"Rev": "db70c57796cc8c310613541dfade3dce627d09c7"
+		},
+		{
+			"ImportPath": "github.com/boltdb/bolt",
+			"Comment": "v1.1.0-40-g34a0fa5",
+			"Rev": "34a0fa5307f7562980fb8e7ff4723f7987edf49b"
+		},
+		{
 			"ImportPath": "github.com/cpuguy83/go-md2man/md2man",
 			"Comment": "v1.0.4",
 			"Rev": "71acacd42f85e5e82f70a55327789582a5200a90"
@@ -127,12 +145,12 @@
 			"Rev": "ee5a5b8364bb73899fdd529d23af6ad9230f8a06"
 		},
 		{
-			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
-			"Rev": "d5cac425555ca5cf00694df246e04f05e6a55150"
-		},
-		{
 			"ImportPath": "github.com/flynn/go-shlex",
 			"Rev": "362b626337a53744d1f571d5d70d66294c82d429"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Rev": "299d728486342c894e7fafd68e3a4b89623bef1d"
 		},
 		{
 			"ImportPath": "github.com/gengo/grpc-gateway/internal",
@@ -316,10 +334,6 @@
 		{
 			"ImportPath": "github.com/opennota/urlesc",
 			"Rev": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587"
-		},
-		{
-			"ImportPath": "github.com/peterh/liner",
-			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
@@ -632,6 +646,15 @@
 			"Rev": "eebdfd0eb1ce4783c8fbe22b305eef7cda0b6c7e"
 		},
 		{
+			"ImportPath": "github.com/steveyen/gtreap",
+			"Rev": "0abe01ef9be25c4aedc174758ec2d917314d6d70"
+		},
+		{
+			"ImportPath": "github.com/willf/bitset",
+			"Comment": "v1.0.0-21-g40860d6",
+			"Rev": "40860d631a7cda5964b942da95bf80dd788e770f"
+		},
+		{
 			"ImportPath": "github.com/yosssi/ace",
 			"Comment": "v0.0.4-41-g78e48a2",
 			"Rev": "78e48a2f0ac5fb5a642585f96b03a5f47f7775f5"
@@ -848,7 +871,7 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/tracker",
-			"Rev": "f708deee93a662881d010d126e50d27f535d71b2"
+			"Rev": "e0c0838822cd813c47d7433cfff50ecfed922267"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",

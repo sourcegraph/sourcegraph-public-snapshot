@@ -45,3 +45,22 @@
 {{define "reopen-button"}}
 <button id="issue-toggle-button" class="btn btn-neutral btn-small" data-1-action="Reopen Thread" data-2-actions="Reopen and comment" onclick="ToggleIssueState('open');" tabindex=1>Reopen Thread</button>
 {{end}}
+
+{{/* TODO: Try to use issues.OpenState and issues.ClosedState constants. */}}
+{{define "state-icon"}}
+	{{if eq . "open"}}
+		{{template "open-icon"}}
+	{{else if eq . "closed"}}
+		{{template "closed-icon"}}
+	{{else}}
+		{{.}}
+	{{end}}
+{{end}}
+
+{{define "open-icon"}}
+<span class="octicon octicon-issue-opened" style="color: #6cc644"></span>
+{{end}}
+
+{{define "closed-icon"}}
+<span class="octicon octicon-issue-closed" style="color: #bd2c00"></span>
+{{end}}

@@ -16,6 +16,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 	"github.com/shurcooL/github_flavored_markdown"
 	"github.com/shurcooL/go-goon"
 	"github.com/shurcooL/go/gzip_file_server"
@@ -24,6 +25,7 @@ import (
 	"src.sourcegraph.com/apps/tracker/common"
 	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/apps/tracker/router"
+	"src.sourcegraph.com/sourcegraph/platform"
 )
 
 type Options struct {
@@ -45,7 +47,7 @@ type handler struct {
 }
 
 // New returns an issues app http.Handler using given service and options.
-func New(service issues.Service, opt Options) http.Handler {
+func New(service issues.Service, opt Options) (appHandler http.Handler, searchHandler http.Handler) {
 	err := loadTemplates()
 	if err != nil {
 		log.Fatalln("loadTemplates:", err)
@@ -80,11 +82,21 @@ func New(service issues.Service, opt Options) http.Handler {
 		Options: opt,
 		Handler: h,
 	}
-	return globalHandler
+
+	sh := http.NewServeMux()
+	sh.HandleFunc("/", searchQueryHandler)
+
+	globalSearchHandler = &handler{
+		Options: opt,
+		Handler: sh,
+	}
+
+	return globalHandler, globalSearchHandler
 }
 
-// TODO: Refactor to avoid global.
+// TODO: Refactor to avoid globals.
 var globalHandler *handler
+var globalSearchHandler *handler
 
 var t *template.Template
 
@@ -424,7 +436,8 @@ func postCommentHandler(w http.ResponseWriter, req *http.Request) {
 		Body: req.PostForm.Get("value"),
 	}
 
-	comment, err := is.CreateComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), comment)
+	issueID := uint64(mustAtoi(vars["id"]))
+	comment, err := is.CreateComment(ctx, repoSpec, issueID, comment)
 	if err != nil {
 		log.Println("is.CreateComment:", err)
 		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
@@ -489,10 +502,75 @@ func postToggleReactionHandler(w http.ResponseWriter, req *http.Request) {
 		Reaction: &reaction,
 	}
 
-	_, err := is.EditComment(ctx, repoSpec, uint64(mustAtoi(vars["id"])), cr)
+	issueID := uint64(mustAtoi(vars["id"]))
+	_, err := is.EditComment(ctx, repoSpec, issueID, cr)
 	if err != nil {
 		log.Println("is.EditComment:", err)
 		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
 	}
+}
+
+func searchQueryHandler(w http.ResponseWriter, req *http.Request) {
+	var opt platform.SearchOptions
+	decoder := schema.NewDecoder()
+	decoder.SetAliasTag("json")
+	err := decoder.Decode(&opt, req.URL.Query())
+	if err != nil {
+		searchError(w, err, http.StatusInternalServerError)
+		return
+	}
+	if opt.Query == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	baseState, err := baseState(req)
+	if err != nil {
+		searchError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	r, err := is.Search(baseState.ctx, issues.SearchOptions{
+		Repo:    globalSearchHandler.RepoSpec(req),
+		Query:   opt.Query,
+		Page:    opt.Page,
+		PerPage: opt.PerPage,
+	})
+	if err != nil {
+		searchError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	var html bytes.Buffer
+	err = t.ExecuteTemplate(&html, "search.html.tmpl", struct {
+		State   BaseState
+		Query   string
+		Results []issues.SearchResult
+	}{
+		State:   baseState,
+		Query:   opt.Query,
+		Results: r.Results,
+	})
+
+	resp := platform.SearchFrameResponse{
+		HTML:  template.HTML(html.String()),
+		Total: r.Total,
+	}
+	js, err := json.Marshal(resp)
+	if err != nil {
+		searchError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+func searchError(w http.ResponseWriter, err error, code int) {
+	js, err := json.Marshal(platform.SearchFrameErrorResponse{
+		Error: err.Error(),
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(js)
 }

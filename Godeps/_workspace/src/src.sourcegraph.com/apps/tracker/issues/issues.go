@@ -32,6 +32,8 @@ type Service interface {
 	Edit(ctx context.Context, repo RepoSpec, id uint64, ir IssueRequest) (Issue, error)
 	EditComment(ctx context.Context, repo RepoSpec, id uint64, cr CommentRequest) (Comment, error)
 
+	Search(ctx context.Context, opt SearchOptions) (SearchResponse, error)
+
 	// TODO: This doesn't belong here, does it?
 	CurrentUser(ctx context.Context) (*User, error)
 }
@@ -103,6 +105,27 @@ const (
 	OpenState   State = "open"
 	ClosedState State = "closed"
 )
+
+type SearchOptions struct {
+	Query   string
+	Repo    RepoSpec
+	Page    int
+	PerPage int
+}
+
+type SearchResult struct {
+	ID        string
+	Title     template.HTML
+	Comment   template.HTML
+	User      User
+	CreatedAt time.Time
+	State     State
+}
+
+type SearchResponse struct {
+	Results []SearchResult
+	Total   uint64
+}
 
 func (i Issue) Validate() error {
 	if strings.TrimSpace(i.Title) == "" {

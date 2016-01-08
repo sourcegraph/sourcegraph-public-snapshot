@@ -7,6 +7,7 @@ import (
 	issuesapp "src.sourcegraph.com/apps/tracker"
 	"src.sourcegraph.com/apps/tracker/common"
 	"src.sourcegraph.com/apps/tracker/issues"
+	"src.sourcegraph.com/sourcegraph/conf/feature"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
@@ -73,7 +74,7 @@ func (sgapp) Start(ctx context.Context) {
 	}
 </style>`,
 	}
-	handler := issuesapp.New(service, opt)
+	appHandler, searchHandler := issuesapp.New(service, opt)
 
 	// TODO: Maybe move this to kv (aka Sourcegraph) service?
 	/*{
@@ -92,8 +93,18 @@ func (sgapp) Start(ctx context.Context) {
 		ID:      "tracker",
 		Title:   "Tracker",
 		Icon:    "issue-opened",
-		Handler: handler,
+		Handler: appHandler,
 	})
+
+	if feature.Features.TrackerSearch {
+		platform.RegisterSearchFrame(platform.SearchFrame{
+			ID:      "tracker",
+			Name:    "Threads",
+			Icon:    "comments-o",
+			PerPage: 10,
+			Handler: searchHandler,
+		})
+	}
 }
 
 // TODO.

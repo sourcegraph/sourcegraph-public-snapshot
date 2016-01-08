@@ -1,0 +1,16 @@
+<link href="{{$.State.BaseURI}}/assets/style.css" rel="stylesheet" type="text/css"/>
+
+<div class="list-entry">
+	{{range .Results}}
+	<div class="list-entry-body search-list-entry">
+		<div class="thread-list-item">
+			<span class="id">#{{.ID}}</span>
+			<div style="flex-grow: 1;">
+				<div class="title"><a href="{{$.State.BaseURI}}/{{.ID}}">{{.Title}}</a></div>
+				{{if ne .Comment ""}}<blockquote>{{.Comment}}</blockquote>{{end}}
+				<div class="subtitle">{{template "state-icon" (print .State)}} opened {{template "time" .CreatedAt}} by <a href="{{.User.HTMLURL}}">{{.User.Login}}</a></div>
+			</div>
+		</div>
+	</div>
+	{{end}}
+</div>

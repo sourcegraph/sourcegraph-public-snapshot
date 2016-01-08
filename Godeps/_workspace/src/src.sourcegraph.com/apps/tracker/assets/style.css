@@ -201,7 +201,8 @@ nav .selected {
 	font-style: italic;
 }
 .thread-list-item .id {
-	font-size: 21px;
+	min-width: 45px;
+	font-size: 19px;
 	line-height: 24px;
 	color: #bfbfbf;
 	padding-right: 10px;
@@ -210,4 +211,9 @@ nav .selected {
 div.comment-reactions-container {
 	margin-top: 6px;
 	margin-left: 58px;
+}
+
+div.search-list-entry:not(:first-child) {
+	border: 0px solid #ddd;
+	border-top-width: 1px;
 }
