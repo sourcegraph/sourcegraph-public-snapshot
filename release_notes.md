@@ -1,5 +1,9 @@
 # dev
 
+- Users may now commit a `.sourcegraph-merge-template` file to their repository
+  root which will be used to generate the merge commit message when merging a
+  changeset via the web UI or src CLI. See [the docs](https://src.sourcegraph.com/sourcegraph/.docs/features/custom_merge_template)
+  for more info.
 - Merging a changeset via the web UI or CLI with the squash option on a
   Sourcegraph-hosted or GitHub mirror repository will now correctly mark the
   changeset as merged and automatically close it.
