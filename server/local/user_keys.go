@@ -117,9 +117,9 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 		sshKey, err := s.getSSHKey(userKV, actor, key)
 		if err != nil {
 			log15.Warn("Found invalid SSH public key in storage", "error", err)
-		} else {
-			sshKeyList = append(sshKeyList, *sshKey)
+			continue
 		}
+		sshKeyList = append(sshKeyList, *sshKey)
 	}
 	return &sourcegraph.SSHKeyList{SSHKeys: sshKeyList}, nil
 }
