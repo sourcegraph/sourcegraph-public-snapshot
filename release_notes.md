@@ -8,8 +8,7 @@
 - Merging a changeset on a Sourcegraph-hosted repository via the web UI or src
   CLI will now properly mark the changeset as merged and automatically close it.
 - Merging a changeset on a Sourcegraph-hosted repository via the web UI or src
-  CLI will now cause the changeset to properly persist and not lose it's commit
-  history / reviews.
+  CLI will now cause the changeset to properly persist and not lose its data.
 
 # 0.11.6
 
