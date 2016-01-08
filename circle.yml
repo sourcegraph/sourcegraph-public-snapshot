@@ -76,13 +76,6 @@ deployment:
       - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=master&tag=$CIRCLE_SHA1"
       - echo $CIRCLE_SHA1 | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
 
-      # # push to Docker Hub
-      # - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
-      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:$CIRCLE_SHA1
-      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
-      # - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
-      # - docker push sourcegraph/sourcegraph:latest
-
   next-branch:
     branch: next
     commands:
@@ -96,3 +89,10 @@ deployment:
       - ./circle-build-docker-image.sh:
           pwd: $REPO
       - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&tag=$CIRCLE_SHA1"
+
+      # # push to Docker Hub
+      # - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
+      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:$CIRCLE_SHA1
+      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
+      # - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
+      # - docker push sourcegraph/sourcegraph:latest
