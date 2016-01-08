@@ -10,6 +10,7 @@ machine:
     PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
     LD_LIBRARY_PATH: $HOME/protobuf/lib
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
+    LONG_VERSION: $(date +"%y%m%d")-$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:7}
 
     # Don't block on `git diff` invocations of `less`.
     GIT_PAGER:
@@ -71,28 +72,31 @@ deployment:
   master-branch:
     branch: master
     commands:
-      - ./circle-build-docker-image.sh:
+      - ./circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=master&tag=$CIRCLE_SHA1"
-      - echo $CIRCLE_SHA1 | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
+      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION us.gcr.io/sourcegraph-dev/sourcegraph:latest
+      - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=master&tag=$LONG_VERSION"
+      - echo $LONG_VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
 
   next-branch:
     branch: next
     commands:
-      - ./circle-build-docker-image.sh:
+      - ./circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=next&tag=$CIRCLE_SHA1"
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=next&tag=$LONG_VERSION"
 
-  release-branch:
-    branch: release
+  release-tag:
+    tag: /[0-9]+\.[0-9]+\.[0-9]+/
     commands:
-      - ./circle-build-docker-image.sh:
+      - grep "# $VERSION" release_notes.md # fail if version is not mentioned in release notes
+      - ./circle-build-docker-image.sh $CIRCLE_TAG:
           pwd: $REPO
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&tag=$CIRCLE_SHA1"
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&tag=$CIRCLE_TAG"
 
       # # push to Docker Hub
       # - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
-      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:$CIRCLE_SHA1
-      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_SHA1 sourcegraph/sourcegraph:latest
-      # - docker push sourcegraph/sourcegraph:$CIRCLE_SHA1
+      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:$CIRCLE_TAG
+      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:latest
+      # - docker push sourcegraph/sourcegraph:$CIRCLE_TAG
       # - docker push sourcegraph/sourcegraph:latest
