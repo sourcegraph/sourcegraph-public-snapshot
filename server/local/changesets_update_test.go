@@ -63,7 +63,6 @@ func TestChangesets_getAffected(t *testing.T) {
 				Close:  true,
 				Merged: true,
 			},
-			Base: fakeCommit("old(master)"),
 			Head: fakeCommit("feature"),
 		}, {
 			// (2)
