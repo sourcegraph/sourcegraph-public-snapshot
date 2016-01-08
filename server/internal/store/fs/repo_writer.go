@@ -96,6 +96,11 @@ func changesetsNewRepoStage(repoPath, refName string, password string) (rs *chan
 	return rs, nil
 }
 
+// readFile reads the specified file from the specified ref.
+func (rs *changesetsRepoStage) readFile(relPath string) ([]byte, error) {
+	return ioutil.ReadFile(filepath.Join(rs.stagingDir, relPath))
+}
+
 // commit commits the staged files into the specified ref. It also
 // pushes from the staging repo to the original repo, so that the
 // commit is available to future readers.

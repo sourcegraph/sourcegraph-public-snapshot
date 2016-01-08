@@ -20,6 +20,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
+	approuter "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
@@ -256,17 +258,6 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		return err
 	}
 
-	var msgTmpl string
-	if opt.Message != "" {
-		msgTmpl = opt.Message
-	} else {
-		msgTmpl = defaultCommitMessageTmpl
-	}
-	msg, err := mergeCommitMessage(cs, msgTmpl)
-	if err != nil {
-		return err
-	}
-
 	var repoPath string
 	var auth string
 	if repo.Mirror {
@@ -310,6 +301,26 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	}
 	defer rs.free()
 
+	// Determine the commit message template.
+	msgTmpl := opt.Message
+	if msgTmpl == "" {
+		// Caller didn't specify a template to use, so check the repository for one.
+		data, err := rs.readFile(".sourcegraph-merge-template")
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		msgTmpl = string(data)
+	}
+	if msgTmpl == "" {
+		// Caller didn't specify the template, and the repository doesn't have one,
+		// so fallback to the default template.
+		msgTmpl = defaultCommitMessageTmpl
+	}
+	msg, err := mergeCommitMessage(ctx, cs, msgTmpl)
+	if err != nil {
+		return err
+	}
+
 	if err := rs.pull(head, opt.Squash); err != nil {
 		return err
 	}
@@ -338,14 +349,46 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	return nil
 }
 
-func mergeCommitMessage(cs *sourcegraph.Changeset, msgTmpl string) (string, error) {
+// mergeCommitMessage takes a user-provided commit message template and renders
+// it. The returned string should be treated as arbitrary user input, and e.g.
+// sanitized before display as it may contain HTML.
+//
+// The following fields are usable within the template:
+//
+//  "{{.ID}}" -> Replaced with the Changeset ID number.
+//  "{{.Title}}" -> Replaced with the Changeset Title string.
+//  "{{.Description}}" -> Replaced with the Changeset description string.
+//  "{{.URL}}" -> Replaced with the URL to the Changeset on Sourcegraph.
+//  "{{.Author}}" -> Replaced with the login name of the Changeset author.
+//
+func mergeCommitMessage(ctx context.Context, cs *sourcegraph.Changeset, msgTmpl string) (string, error) {
 	t, err := template.New("commit message").Parse(msgTmpl)
 	if err != nil {
 		return "", err
 	}
 
+	// Hack to construct the URL to the changeset, not perfect but we don't have
+	// a better way just yet.
+	//
+	// TODO(slimsag): clean this up.
+	url := fmt.Sprintf("%s%s/.changes/%d", conf.AppURL(ctx).String(), approuter.Rel.URLToRepo(cs.DeltaSpec.Base.RepoSpec.URI).String(), cs.ID)
+
+	data := &struct {
+		ID          int64
+		Title       string
+		Description string
+		Author      string
+		URL         string
+	}{
+		ID:          cs.ID,
+		Title:       cs.Title,
+		Description: cs.Description,
+		Author:      cs.Author.Login,
+		URL:         url,
+	}
+
 	var b bytes.Buffer
-	err = t.Execute(&b, cs)
+	err = t.Execute(&b, data)
 	if err != nil {
 		return "", err
 	}
