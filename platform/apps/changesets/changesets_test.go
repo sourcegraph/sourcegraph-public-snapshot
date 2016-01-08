@@ -1086,8 +1086,6 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 
 // TestChangesets_MergeFlow runs the MergeFlow test on a hosted repository.
 func TestChangesets_MergeFlow(t *testing.T) {
-	t.Skip("BUG: merged changesets not marked as such")
-	return
 	testChangesets_MergeFlow(t, false, false)
 }
 
