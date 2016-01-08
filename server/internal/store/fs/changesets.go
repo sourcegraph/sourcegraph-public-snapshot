@@ -284,19 +284,7 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		}
 	}
 
-	cloneURL, err := url.Parse(repo.HTTPCloneURL)
-	if err != nil {
-		return err
-	}
-	cloneURL.User = url.User("x-oauth-basic")
-	repoPath = cloneURL.String()
-
-	rs, err := changesetsNewRepoStage(repoPath, base, auth)
-	if err != nil {
-		return err
-	}
-	defer rs.free()
-
+	// Determine the person who is merging.
 	p := notif.PersonFromContext(ctx)
 	if err != nil {
 		return err
@@ -307,6 +295,21 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		Date:  pbtypes.NewTimestamp(time.Now()),
 	}
 
+	// Determine the clone URL.
+	cloneURL, err := url.Parse(repo.HTTPCloneURL)
+	if err != nil {
+		return err
+	}
+	cloneURL.User = url.User("x-oauth-basic")
+	repoPath = cloneURL.String()
+
+	// Create a repo stage to perform the merge operation.
+	rs, err := changesetsNewRepoStage(repoPath, base, auth)
+	if err != nil {
+		return err
+	}
+	defer rs.free()
+
 	if err := rs.pull(head, opt.Squash); err != nil {
 		return err
 	}
@@ -314,6 +317,24 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		return err
 	}
 
+	// If this was a squash, then we do not push the squash commit back into the
+	// HEAD repo (or else the githooks would detect this and the CS would only
+	// show the single "Merge changeset #33" commit message). Instead, we just
+	// mark the CS as merged here and confirm it has a resolved Base/Head for
+	// persistence after the branch has been deleted.
+	if opt.Squash {
+		_, err = s.Update(ctx, &store.ChangesetUpdateOp{
+			Op: &sourcegraph.ChangesetUpdateOp{
+				Repo:   opt.Repo,
+				ID:     opt.ID,
+				Merged: true,
+				Close:  true,
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
