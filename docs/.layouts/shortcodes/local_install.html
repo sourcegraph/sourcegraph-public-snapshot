@@ -89,7 +89,7 @@ var refreshInstallInstructions = function () {
 		return p(precode(installScript) + "Direct downloads: " + downloadLinks);
 	}
 
-	var macInstall = code("curl -O -L " + macBinaryUrl+"> src.gz && gunzip src.gz\nchmod +x src");
+	var macInstall = code("curl -O -L " + macBinaryUrl+" src.gz && gunzip src.gz\nchmod +x src");
 	var ubuntuInstall = code("wget " + debBinaryUrl+"\nsudo apt-get install -y git\nsudo dpkg -i src.deb");
 	var rpmInstall = code("curl -O -L " + rpmFileUrl+"\nsudo yum -y install git\nsudo yum -y install src.rpm");
 
