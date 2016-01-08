@@ -3019,13 +3019,15 @@ message Event {
 
 	string user_id = 2 [(gogoproto.customname) = "UserID"];
 
-	string client_id = 3 [(gogoproto.customname) = "ClientID"];
+	string device_id = 3 [(gogoproto.customname) = "DeviceID"];
 
-	pbtypes.Timestamp timestamp = 4;
+	string client_id = 4 [(gogoproto.customname) = "ClientID"];
 
-	map<string, string> user_properties = 5;
+	pbtypes.Timestamp timestamp = 5;
 
-	map<string, string> event_properties = 6;
+	map<string, string> user_properties = 6;
+
+	map<string, string> event_properties = 7;
 }
 
 message EventList {

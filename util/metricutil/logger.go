@@ -45,7 +45,7 @@ func (w *Worker) Work() {
 			case "flush":
 				w.Flush()
 			default:
-				log15.Debug("EventLogger got unknown command", "command", event.Method)
+				log15.Debug("Metrics logger got unknown command", "command", event.Method)
 			}
 			continue
 		}
@@ -93,7 +93,7 @@ func (w *Worker) Flush() error {
 	} else {
 		if !w.RootAvailable {
 			if err := w.LocateRootInstance(); err != nil {
-				log15.Error("EventLogger flush failed to locate root instance", "error", err)
+				log15.Error("Metrics logger flush failed to locate root instance", "error", err)
 				return err
 			}
 		}
@@ -128,7 +128,7 @@ func (l *logger) Log(ctx context.Context, event *sourcegraph.UserEvent) {
 	case l.Channel <- event:
 	case <-time.After(10 * time.Millisecond):
 		// Discard log message
-		log15.Debug("EventLogger discarding log event: buffer full")
+		log15.Debug("Metrics logger discarding log event: buffer full")
 	}
 }
 
@@ -207,7 +207,7 @@ func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int
 
 	go activeLogger.Uploader(ctx, flushInterval)
 
-	log15.Debug("EventLogger initialized")
+	log15.Debug("Metrics logger initialized")
 }
 
 // LogEvent adds a sourcegraph.UserEvent to the local log buffer, which

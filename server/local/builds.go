@@ -13,6 +13,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
@@ -182,6 +183,7 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 			Result:  Result,
 		})
 	}
+	eventsutil.LogBuildRepo(ctx, Result)
 
 	return b, nil
 }

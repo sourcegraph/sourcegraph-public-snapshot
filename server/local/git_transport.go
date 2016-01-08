@@ -17,6 +17,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
 // emptyGitCommitID is used in githttp.Event objects in the Last (or
@@ -96,6 +97,8 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 			events.Publish(events.GitPushEvent, payload)
 		}
 	}
+
+	eventsutil.LogHTTPGitPush(ctx)
 
 	if err := updateRepoPushedAt(ctx, op.Repo); err != nil {
 		return nil, err

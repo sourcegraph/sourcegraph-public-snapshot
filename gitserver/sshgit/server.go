@@ -25,6 +25,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
 const (
@@ -260,6 +261,9 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 				events.Publish(events.GitPushEvent, payload)
 			}
 		}
+	}
+	if op == "git-receive-pack" {
+		eventsutil.LogSSHGitPush(s.clientID, userLogin)	
 	}
 	_, err = ch.SendRequest("exit-status", false, ssh.Marshal(cmdExitStatus))
 	if err != nil {

@@ -3,16 +3,16 @@
 // DO NOT EDIT!
 
 /*
-Package gitpb is a generated protocol buffer package.
+	Package gitpb is a generated protocol buffer package.
 
-It is generated from these files:
-	git_transport.proto
+	It is generated from these files:
+		git_transport.proto
 
-It has these top-level messages:
-	InfoRefsOp
-	ReceivePackOp
-	UploadPackOp
-	Packet
+	It has these top-level messages:
+		InfoRefsOp
+		ReceivePackOp
+		UploadPackOp
+		Packet
 */
 package gitpb
 

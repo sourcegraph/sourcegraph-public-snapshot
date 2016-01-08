@@ -76,6 +76,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		if entry.Type == vcsclient.DirEntry {
 			return e.Encode(&handlerutil.URLMovedError{NewURL: d.URL})
 		}
+
 		return e.Encode(&struct {
 			*payloads.CodeFile
 			Model *payloads.DefCommon

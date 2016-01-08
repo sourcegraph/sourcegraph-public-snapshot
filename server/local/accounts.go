@@ -27,6 +27,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
@@ -74,6 +75,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		URL:     newAcct.Email,
 		Message: fmt.Sprintf("write:%v admin:%v", write, admin),
 	})
+	eventsutil.LogCreateAccount(ctx, newAcct, admin, write, numUsers == 0, "")
 
 	// Update the registered client's name if this is the first user account
 	// created on this server.
@@ -92,6 +94,8 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 			_, err := rcl.RegisteredClients.Update(rctx, rc)
 			if err != nil {
 				log15.Debug("Could not update registered client", "id", clientID, "error", err)
+			} else {
+				eventsutil.LogRegisterServer(clientID, rc.ClientName)
 			}
 		}
 	}
@@ -222,14 +226,6 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		return nil, err
 	}
 
-	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
-		Type:    "notif",
-		Service: "user_invite",
-		Method:  "Accounts.Invite",
-		URL:     invite.Email,
-		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
-	})
-
 	u := conf.AppURL(ctx).ResolveReference(app_router.Rel.URLTo(app_router.SignUp))
 	v := url.Values{}
 	v.Set("email", invite.Email)
@@ -245,6 +241,15 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 			return nil, grpc.Errorf(codes.Internal, "Error sending email: %s", err)
 		}
 	}
+
+	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
+		Type:    "notif",
+		Service: "user_invite",
+		Method:  "Accounts.Invite",
+		URL:     invite.Email,
+		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
+	})
+	eventsutil.LogSendInvite(ctx, user, invite.Email, token[:5], invite.Admin, invite.Write)
 
 	return &sourcegraph.PendingInvite{
 		Link:      u.String(),
@@ -294,6 +299,8 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 		URL:     invite.Email,
 		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
 	})
+
+	eventsutil.LogCreateAccount(ctx, acceptedInvite.Account, invite.Admin, invite.Write, false, acceptedInvite.Token[:5])
 
 	if err := invitesStore.Delete(ctx, acceptedInvite.Token); err != nil {
 		return nil, err

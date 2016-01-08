@@ -3139,10 +3139,11 @@ func (*UserEventList) ProtoMessage()    {}
 type Event struct {
 	Type            string             `protobuf:"bytes,1,opt,name=type,proto3" json:",omitempty"`
 	UserID          string             `protobuf:"bytes,2,opt,name=user_id,proto3" json:",omitempty"`
-	ClientID        string             `protobuf:"bytes,3,opt,name=client_id,proto3" json:",omitempty"`
-	Timestamp       *pbtypes.Timestamp `protobuf:"bytes,4,opt,name=timestamp" json:",omitempty"`
-	UserProperties  map[string]string  `protobuf:"bytes,5,rep,name=user_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	EventProperties map[string]string  `protobuf:"bytes,6,rep,name=event_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	DeviceID        string             `protobuf:"bytes,3,opt,name=device_id,proto3" json:",omitempty"`
+	ClientID        string             `protobuf:"bytes,4,opt,name=client_id,proto3" json:",omitempty"`
+	Timestamp       *pbtypes.Timestamp `protobuf:"bytes,5,opt,name=timestamp" json:",omitempty"`
+	UserProperties  map[string]string  `protobuf:"bytes,6,rep,name=user_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	EventProperties map[string]string  `protobuf:"bytes,7,rep,name=event_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *Event) Reset()         { *m = Event{} }
@@ -15927,14 +15928,20 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.UserID)))
 		i += copy(data[i:], m.UserID)
 	}
-	if len(m.ClientID) > 0 {
+	if len(m.DeviceID) > 0 {
 		data[i] = 0x1a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.DeviceID)))
+		i += copy(data[i:], m.DeviceID)
+	}
+	if len(m.ClientID) > 0 {
+		data[i] = 0x22
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientID)))
 		i += copy(data[i:], m.ClientID)
 	}
 	if m.Timestamp != nil {
-		data[i] = 0x22
+		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Timestamp.Size()))
 		n207, err := m.Timestamp.MarshalTo(data[i:])
@@ -15950,7 +15957,7 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		}
 		github_com_gogo_protobuf_sortkeys.Strings(keysForUserProperties)
 		for _, k := range keysForUserProperties {
-			data[i] = 0x2a
+			data[i] = 0x32
 			i++
 			v := m.UserProperties[k]
 			mapSize := 1 + len(k) + sovSourcegraph(uint64(len(k))) + 1 + len(v) + sovSourcegraph(uint64(len(v)))
@@ -15972,7 +15979,7 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		}
 		github_com_gogo_protobuf_sortkeys.Strings(keysForEventProperties)
 		for _, k := range keysForEventProperties {
-			data[i] = 0x32
+			data[i] = 0x3a
 			i++
 			v := m.EventProperties[k]
 			mapSize := 1 + len(k) + sovSourcegraph(uint64(len(k))) + 1 + len(v) + sovSourcegraph(uint64(len(v)))
@@ -19598,6 +19605,10 @@ func (m *Event) Size() (n int) {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	l = len(m.UserID)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.DeviceID)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
@@ -46958,6 +46969,35 @@ func (m *Event) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeviceID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DeviceID = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ClientID", wireType)
 			}
 			var stringLen uint64
@@ -46985,7 +47025,7 @@ func (m *Event) Unmarshal(data []byte) error {
 			}
 			m.ClientID = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
 			}
@@ -47018,7 +47058,7 @@ func (m *Event) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UserProperties", wireType)
 			}
@@ -47129,7 +47169,7 @@ func (m *Event) Unmarshal(data []byte) error {
 			}
 			m.UserProperties[mapkey] = mapvalue
 			iNdEx = postIndex
-		case 6:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field EventProperties", wireType)
 			}

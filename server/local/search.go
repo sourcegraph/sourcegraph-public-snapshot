@@ -5,6 +5,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
 var Search sourcegraph.SearchServer = &search{}
@@ -27,6 +28,8 @@ func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchO
 		return nil, err
 	}
 
+	eventsutil.LogSearchQuery(ctx, "TokenSearch", defList.Total)
+
 	return defList, nil
 }
 
@@ -46,6 +49,8 @@ func (s *search) SearchText(ctx context.Context, opt *sourcegraph.TextSearchOpti
 	if err != nil {
 		return nil, err
 	}
+
+	eventsutil.LogSearchQuery(ctx, "TextSearch", results.Total)
 
 	return results, nil
 }

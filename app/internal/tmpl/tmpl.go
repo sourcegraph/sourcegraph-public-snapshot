@@ -27,6 +27,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/conf/feature"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -331,6 +332,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 	}
 
 	metricutil.LogEvent(ctx, appEvent)
+	eventsutil.LogPageView(ctx, currentUser, httpctx.RouteName(req))
 
 	// Buffer HTTP response so that if the template execution returns
 	// an error (e.g., a template calls a template func that panics or

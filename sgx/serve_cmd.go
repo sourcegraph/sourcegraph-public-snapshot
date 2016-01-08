@@ -65,6 +65,7 @@ import (
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
 	"src.sourcegraph.com/sourcegraph/usercontent"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/expvarutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	httputil2 "src.sourcegraph.com/sourcegraph/util/httputil"
@@ -431,6 +432,12 @@ func (c *ServeCmd) Execute(args []string) error {
 		Result:   "success",
 	})
 	metricutil.LogConfig(clientCtx, idKey.ID, c.safeConfigFlags())
+
+	if c.GraphUplinkPeriod != 0 {
+		// Listen for events and periodically push them to analytics gateway.
+		eventsutil.StartEventLogger(clientCtx, 10*4096, 256, 10*time.Minute)
+		eventsutil.LogStartServer(idKey.ID)
+	}
 
 	sm := http.NewServeMux()
 	for _, f := range cli.ServeMuxFuncs {
@@ -1000,9 +1007,10 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 			continue
 		}
 
+		clientName := fmt.Sprintf("Client #%s", shortClientID)
 		_, err = cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
 			ID:         idKey.ID,
-			ClientName: fmt.Sprintf("Client #%s", shortClientID),
+			ClientName: clientName,
 			ClientURI:  appURL.String(),
 			JWKS:       string(jwks),
 		})
@@ -1011,6 +1019,7 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 			time.Sleep(10 * time.Minute)
 			continue
 		}
+		eventsutil.LogRegisterServer(idKey.ID, clientName)
 		log15.Debug("Registered as client of root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
 		return
 	}

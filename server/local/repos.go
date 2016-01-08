@@ -31,6 +31,7 @@ import (
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
 var Repos sourcegraph.ReposServer = &repos{}
@@ -140,6 +141,8 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 	if op.Mirror {
 		repoupdater.Enqueue(repo)
 	}
+
+	eventsutil.LogAddRepo(ctx, op.CloneURL, op.Language, op.Mirror, op.Private)
 
 	return s.Get(ctx, &repoSpec)
 }
