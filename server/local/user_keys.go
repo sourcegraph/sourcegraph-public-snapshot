@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -106,17 +108,18 @@ func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.
 		return &sourcegraph.SSHKeyList{}, nil
 	}
 
-	sshKeyList := make([]sourcegraph.SSHPublicKey, len(keys)-1)
-	for x, key := range keys {
+	var sshKeyList []sourcegraph.SSHPublicKey
+	for _, key := range keys {
 		if key == sshKeysCurrentIndexKey {
 			continue
 		}
 
 		sshKey, err := s.getSSHKey(userKV, actor, key)
 		if err != nil {
-			return nil, err
+			log15.Warn("Found invalid SSH public key in storage", "error", err)
+			continue
 		}
-		sshKeyList[x] = *sshKey
+		sshKeyList = append(sshKeyList, *sshKey)
 	}
 	return &sourcegraph.SSHKeyList{SSHKeys: sshKeyList}, nil
 }

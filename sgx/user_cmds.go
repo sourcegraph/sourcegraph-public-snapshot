@@ -437,7 +437,7 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read SSH public key: %v", err)
 	}
-	key, _, _, _, err := ssh.ParseAuthorizedKey(keyBytes)
+	_, _, _, _, err = ssh.ParseAuthorizedKey(keyBytes)
 	if err != nil {
 		return fmt.Errorf("failed to parse SSH public key: %v\n\nAre you sure you provided a SSH public key?", err)
 	}
@@ -449,7 +449,7 @@ func (c *userKeysAddCmd) Execute(args []string) error {
 	}
 
 	// Add key.
-	_, err = cl.UserKeys.AddKey(cli.Ctx, &sourcegraph.SSHPublicKey{Key: key.Marshal()})
+	_, err = cl.UserKeys.AddKey(cli.Ctx, &sourcegraph.SSHPublicKey{Key: keyBytes})
 	if err != nil {
 		return err
 	}
