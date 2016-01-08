@@ -10,6 +10,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -73,6 +74,8 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+
+		eventsutil.LogViewDef(ctx, "GoToDefinition")
 		if entry.Type == vcsclient.DirEntry {
 			return e.Encode(&handlerutil.URLMovedError{NewURL: d.URL})
 		}
@@ -91,5 +94,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 			Model: &d,
 		})
 	}
+
+	eventsutil.LogViewDef(ctx, "ViewDefPopup")
 	return e.Encode(d)
 }

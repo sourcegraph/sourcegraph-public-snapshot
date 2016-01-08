@@ -23,6 +23,8 @@ import (
 const AnalyticsAPIEndpoint = "http://analytics.sourcegraph.com/events"
 const MaxRetries = 5
 
+var sourcegraphClientID string
+
 type Worker struct {
 	Buffer   []*sourcegraph.Event
 	Position int
@@ -165,7 +167,10 @@ var ActiveLogger *Logger
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
 // maximum number of buffered events after which the worker will flush the buffer upstream to
 // the federation root via graph uplink.
-func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
+func StartEventLogger(ctx context.Context, clientID string, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
+	// Save this server's client ID for use in all Log calls.
+	sourcegraphClientID = clientID
+
 	ActiveLogger = &Logger{
 		Channel: make(chan *sourcegraph.Event, channelCapacity),
 	}
@@ -188,6 +193,10 @@ func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int
 // will be periodically flushed upstream.
 func Log(event *sourcegraph.Event) {
 	if ActiveLogger != nil {
+		if event.ClientID == "" {
+			event.ClientID = sourcegraphClientID
+		}
+
 		if event.Timestamp == nil {
 			ts := pbtypes.NewTimestamp(time.Now().UTC())
 			event.Timestamp = &ts

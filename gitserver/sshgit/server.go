@@ -263,7 +263,7 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		}
 	}
 	if op == "git-receive-pack" {
-		eventsutil.LogSSHGitPush(s.clientID, userLogin)	
+		eventsutil.LogSSHGitPush(s.clientID, userLogin)
 	}
 	_, err = ch.SendRequest("exit-status", false, ssh.Marshal(cmdExitStatus))
 	if err != nil {

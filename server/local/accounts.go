@@ -95,7 +95,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 			if err != nil {
 				log15.Debug("Could not update registered client", "id", clientID, "error", err)
 			} else {
-				eventsutil.LogRegisterServer(clientID, rc.ClientName)
+				eventsutil.LogRegisterServer(rc.ClientName)
 			}
 		}
 	}
@@ -249,7 +249,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		URL:     invite.Email,
 		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
 	})
-	eventsutil.LogSendInvite(ctx, user, invite.Email, token[:5], invite.Admin, invite.Write)
+	eventsutil.LogSendInvite(user, invite.Email, token[:5], invite.Admin, invite.Write)
 
 	return &sourcegraph.PendingInvite{
 		Link:      u.String(),
