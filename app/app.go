@@ -193,14 +193,6 @@ var cspConfig = csp.Config{
 	},
 }
 
-func init() {
-	if UseWebpackDevServer {
-		cspConfig.PolicyReportOnly.ScriptSrc = append(cspConfig.PolicyReportOnly.ScriptSrc, "localhost:8080")
-		cspConfig.PolicyReportOnly.FontSrc = append(cspConfig.PolicyReportOnly.FontSrc, "localhost:8080")
-		cspConfig.PolicyReportOnly.ConnectSrc = append(cspConfig.PolicyReportOnly.ConnectSrc, "localhost:3080", "localhost:8080", "ws://localhost:8080")
-	}
-}
-
 func tmplReloadMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	if appconf.Flags.ReloadAssets {
 		tmpl.Load()

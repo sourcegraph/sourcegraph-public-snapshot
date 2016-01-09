@@ -58,13 +58,13 @@ dep: dist-dep app-dep
 app-dep:
 	cd app && $(NPM_RUN_DEP)
 
+WEBPACK_DEV_SERVER_URL ?= http://localhost:8080
 SERVEFLAGS ?=
-SG_USE_WEBPACK_DEV_SERVER ?= t
 serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
 	@echo
 	@# specify any Godeps-vendored pkg in -p to work around the issue where stale vendored pkgs are not rebuilt (see https://github.com/tools/godep/issues/45#issuecomment-73411554)
-	DEBUG=t SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) $(GODEP) rego $(GORACE) -tags="$(GOTAGS)" -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload $(SERVEFLAGS) # -n 0
+	DEBUG=t $(GODEP) rego $(GORACE) -tags="$(GOTAGS)" -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) $(SERVEFLAGS)
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
@@ -110,7 +110,7 @@ serve-metrics-dev:
 serve-dep:
 	go get sourcegraph.com/sqs/rego
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 5000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 16384\n\nOn OS X you may need to first run\n\n  sudo launchctl limit maxfiles 16384\n" 1>&2; exit 1)
-	@[ $(SG_USE_WEBPACK_DEV_SERVER) = t ] && curl -Ss -o /dev/null http://localhost:8080 || (cd app && npm start &)
+	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" npm start &)) || echo Serving bundled assets, not using Webpack.
 
 smoke:
 	godep go run ./smoke/basicgit/basicgit.go
@@ -164,7 +164,7 @@ test: check
 	$(MAKE) go-test
 
 go-test: src
-	SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) SG_PEM_ENCRYPTION_PASSWORD=a SG_TICKET_SIGNING_KEY=a $(GODEP) go test $(GORACE) ${GOFLAGS} ${TESTPKGS} ${TESTFLAGS}
+	SG_PEM_ENCRYPTION_PASSWORD=a SG_TICKET_SIGNING_KEY=a $(GODEP) go test $(GORACE) ${GOFLAGS} ${TESTPKGS} ${TESTFLAGS}
 
 smtest:
 	$(MAKE) go-test GOFLAGS=""

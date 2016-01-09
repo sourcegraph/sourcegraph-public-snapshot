@@ -72,6 +72,8 @@ var Flags struct {
 	DisableMirrorRepoBackgroundUpdate bool          `long:"app.disable-mirror-repo-bg-update" description:"disable updating mirrored repos in the background"`
 
 	DisableGitNotify bool `long:"app.disable-git-notify" description:"disable git notifications"`
+
+	WebpackDevServerURL string `long:"app.webpack-dev-server" description:"serve frontend assets (JS, CSS, etc.) from this Webpack dev server" value-name:"URL"`
 }
 
 func init() {

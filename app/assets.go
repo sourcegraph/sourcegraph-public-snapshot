@@ -1,15 +1,16 @@
 package app
 
 import (
+	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
-	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"golang.org/x/net/context"
 
+	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
@@ -17,32 +18,14 @@ import (
 )
 
 var (
-	// UseWebpackDevServer is whether to route asset requests through the
-	// Webpack development server, which automatically rebuilds assets
-	// when underlying SCSS/JS/etc. files change and autoreloads the
-	// browser.
-	UseWebpackDevServer, _ = strconv.ParseBool(os.Getenv("SG_USE_WEBPACK_DEV_SERVER"))
-
-	// AssetsBasePath is the url path prefix for short term cached assets
-	AssetsBasePath = "/assets/"
-
-	// VersionedAssetsBasePath is the url path prefix for long term cached assets
-	VersionedAssetsBasePath = "/versioned-assets/" + buildvar.Version + "/"
+	// versionedAssetsBasePath is the url path prefix for long term cached assets
+	versionedAssetsBasePath = "/versioned-assets/" + buildvar.Version + "/"
 )
 
 // assetURL returns a URL, possibly relative, to the asset at path
 // p. If you need an absolute URL, use assetAbsURL.
 func assetURL(p string) *url.URL {
-	var base url.URL
-	var basePath string
-	if UseWebpackDevServer && !strings.Contains(p, "woff") {
-		base.Scheme = "http"
-		base.Host = "localhost:8080"
-		basePath = AssetsBasePath
-	} else {
-		basePath = VersionedAssetsBasePath
-	}
-	return base.ResolveReference(&url.URL{Path: path.Join(basePath, p)})
+	return &url.URL{Path: path.Join(versionedAssetsBasePath, p)}
 }
 
 // assetAbsURL returns an absolute URL to the asset at path p.
@@ -56,17 +39,43 @@ func assetAbsURL(ctx context.Context, p string) *url.URL {
 }
 
 func AssetsMiddleware() func(http.ResponseWriter, *http.Request, http.HandlerFunc) {
+	var assetHandler http.Handler
+	if urlStr := appconf.Flags.WebpackDevServerURL; urlStr != "" {
+		url, err := url.Parse(urlStr)
+		if err != nil {
+			log.Fatalf("Error parsing Webpack dev server URL %q: %s.", urlStr, err)
+		}
+
+		// Dev: proxy asset requests to Webpack
+		proxy := httputil.NewSingleHostReverseProxy(url)
+		origDirector := proxy.Director
+		proxy.Director = func(r *http.Request) {
+			r.URL.Path = path.Join("/assets", r.URL.Path)
+			origDirector(r)
+		}
+		assetHandler = proxy
+	} else {
+		// Production: serve assets directly from bundled assets
+		assetHandler = assets.AssetFS(assets.LongTermCache)
+	}
+
 	handlers := []struct {
 		PathPrefix string
 		Handler    http.Handler
 	}{
 		{
-			AssetsBasePath,
-			http.StripPrefix(AssetsBasePath, assets.AssetFS(assets.ShortTermCache)),
+			// Fonts are fetched from /assets/... paths, not
+			// /versioned-assets/... paths, for two reasons: (1) their
+			// paths are defined in SCSS not Go templates, which makes
+			// it harder to change their paths from Go code; (2) they
+			// change very frequently, so we actually prefer to cache
+			// them across version upgrades.
+			"/assets/",
+			http.StripPrefix("/assets/", assetHandler),
 		},
 		{
-			VersionedAssetsBasePath,
-			http.StripPrefix(VersionedAssetsBasePath, assets.AssetFS(assets.LongTermCache)),
+			versionedAssetsBasePath,
+			http.StripPrefix(versionedAssetsBasePath, assetHandler),
 		},
 		{
 			"/versioned-assets/",
@@ -79,7 +88,7 @@ func AssetsMiddleware() func(http.ResponseWriter, *http.Request, http.HandlerFun
 				// We require len(p) == 4 since that implies we have something
 				// after the version part of the path
 				if len(p) >= 3 {
-					http.Redirect(w, req, VersionedAssetsBasePath+p[len(p)-1], 303)
+					http.Redirect(w, req, versionedAssetsBasePath+p[len(p)-1], 303)
 				} else {
 					http.NotFound(w, req)
 				}

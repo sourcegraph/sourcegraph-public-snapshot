@@ -11,11 +11,7 @@ phantomjs`. You may have to prefix that with `sudo`. Afterwards,
 `phantomjs` should be in your `$PATH`.
 
 By default, you also need to be running the webpack dev server (`cd
-app && npm start` in a separate window). To run tests using prebuilt
-production assets (built with `cd app && npm run build`), you can quit
-the webpack dev server and set the env var
-`SG_USE_WEBPACK_DEV_SERVER=false` in the shell where you run `make
-test`.
+app && npm start` in a separate window).
 
 The Makefile defines 4 test targets:
 

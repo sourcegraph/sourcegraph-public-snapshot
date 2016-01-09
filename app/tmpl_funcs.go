@@ -249,8 +249,6 @@ var TemplateFunctions = htmpl.FuncMap{
 		})
 	},
 
-	"useWebpackDevServer": func() bool { return UseWebpackDevServer },
-
 	"buildvar":        func() buildvar.Vars { return buildvar.All },
 	"updateAvailable": updateAvailable,
 }

@@ -25,6 +25,13 @@ if (process.env.NODE_ENV === "production") {
 	);
 }
 
+var webpackDevServerPort = 8080;
+if (process.env.WEBPACK_DEV_SERVER_URL) {
+	var urijs = require("urijs");
+	var uri = urijs.parse(process.env.WEBPACK_DEV_SERVER_URL);
+	webpackDevServerPort = uri.port;
+}
+
 module.exports = {
 	cache: true,
 	context: __dirname,
@@ -91,6 +98,7 @@ module.exports = {
 	plugins: plugins,
 
 	devServer: {
+		port: webpackDevServerPort,
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
 	},

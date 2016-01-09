@@ -488,9 +488,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
 		mw = append(mw, traceMiddleware)
 	}
-	if app.UseWebpackDevServer {
-		mw = append(mw, webpackDevServerHandler)
-	}
 	// TODO: if we keep this old behavior of `go get` cloning GH repos, do it
 	// under a better-named environment variable.
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GO_GET")); v {
@@ -1000,12 +997,6 @@ func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc
 }
 
 // webpackDevServerHandler sets a CORS header if you are running with Webpack in local dev.
-func webpackDevServerHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if w.Header().Get("access-control-allow-origin") == "" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-	}
-	next(w, r)
-}
 
 // registerClientWithRoot registers a local Sourcegraph instance as a client
 // of its root instance.

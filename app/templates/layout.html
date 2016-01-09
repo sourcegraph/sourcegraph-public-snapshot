@@ -113,8 +113,8 @@
 
 		{{template "KeyboardShortcutsHelp" $}}
 
-		{{if useWebpackDevServer}}
-		<script src="http://localhost:8080/webpack-dev-server.js"></script>
+		{{with appconf.WebpackDevServerURL}}
+			<script src="{{.}}/webpack-dev-server.js"></script>
 		{{end}}
 
 		<script src="{{assetURL "/bundle.js"}}"></script>
