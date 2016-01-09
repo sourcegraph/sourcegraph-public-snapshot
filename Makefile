@@ -63,8 +63,7 @@ SERVEFLAGS ?=
 serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
 	@echo
-	@# specify any Godeps-vendored pkg in -p to work around the issue where stale vendored pkgs are not rebuilt (see https://github.com/tools/godep/issues/45#issuecomment-73411554)
-	DEBUG=t $(GODEP) rego $(GORACE) -tags="$(GOTAGS)" -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) $(SERVEFLAGS)
+	DEBUG=t $(GODEP) rego $(GORACE) -tags="$(GOTAGS)" src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) $(SERVEFLAGS)
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
