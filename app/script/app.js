@@ -45,8 +45,6 @@ require("./links");
 require("./tooltip");
 require("./syntax-highlight");
 
-require("./TwitterButton");
-
 require("../style/web.scss");
 
 require("sourcegraph/util/actionLogger");

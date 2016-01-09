@@ -21,21 +21,22 @@
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="twitter:widgets:csp" content="on">
 		<link rel="search" type="application/opensearchdescription+xml" href="{{assetURL "/misc/opensearch.xml"}}" title="Sourcegraph" />
 		<link href="{{urlToBlogAtomFeed}}" type="application/atom+xml" rel="alternate" title="The Sourcegraph Blog">
 		<link rel="shortcut icon" href="{{assetURL "/img/favicon.png"}}">
 
-		<link href="{{assetURL "/bundle.css"}}" rel="stylesheet">
-		<link href="{{assetURL "/sourcebox.css"}}" rel="stylesheet">
-		<link href="{{assetURL "/font/octicons/octicons.css"}}" rel="stylesheet">
-
-		<script ignore-csp>
+		{{/* Insert this inline script before any resources to allow parallel resource fetches. */}}
+		<script ignore-csp type="text/javascript">
 			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
 			window._csrfToken = "{{.CSRFToken}}";
 			window._currentUser = JSON.parse({{.CurrentUser|json}});
 			{{if .CacheControl}}window._cacheControl = "{{.CacheControl}}";{{end}}
 		</script>
+
+
+		<link href="{{assetURL "/bundle.css"}}" rel="stylesheet">
+		<link href="{{assetURL "/sourcebox.css"}}" rel="stylesheet">
+		<link href="{{assetURL "/font/octicons/octicons.css"}}" rel="stylesheet">
 
 		<script src="{{assetURL "/analytics.js"}}"></script>
 
