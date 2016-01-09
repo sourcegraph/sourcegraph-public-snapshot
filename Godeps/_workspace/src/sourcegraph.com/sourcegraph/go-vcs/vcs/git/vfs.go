@@ -2,6 +2,7 @@ package git
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -134,6 +135,13 @@ func (fs *filesystem) getModTime() (time.Time, error) {
 	commit, err := fs.repo.GetCommit(fs.oid)
 	if err != nil {
 		return time.Time{}, err
+	}
+
+	if commit.Author == nil {
+		// TODO: Figure out if this is a normal expected situation, or
+		// something that should never happen. If the latter, fix that and
+		// remove this (see https://github.com/sourcegraph/go-vcs/issues/92).
+		return time.Time{}, errors.New("commit.Author was nil, which may be unexpected")
 	}
 	return commit.Author.When, nil
 }
