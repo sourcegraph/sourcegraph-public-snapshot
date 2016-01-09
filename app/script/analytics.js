@@ -49,12 +49,6 @@ function setupHeapAnalytics() {
 					properties.statusCode = statusCodeElem.html();
 				}
 
-				if (routeName === "search" || routeName.indexOf("search.") === 0) {
-					if ($(".no-results-found").size() >= 1) {
-						properties.noSearchResults = true;
-					}
-				}
-
 				window.heap.track(`Page(route): ${routeName}`, properties);
 			});
 		}

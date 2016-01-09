@@ -148,30 +148,6 @@ header.page-header {
 		font-weight: bold;
 	}
 
-	.search-form.navbar-form {
-		display: none;
-		float: left;
-		margin-bottom: 0;
-		padding-top: 0;
-		padding-bottom: 0;
-		border: none;
-		@include box-shadow(none);
-
-		@media (min-width: $grid-float-breakpoint) {
-			padding-left: 0;
-			padding-right: 0;
-
-			$minw: 280px;
-			$maxw: 400px;
-			min-width: $minw;
-			max-width: $maxw;
-			.input-group {
-				min-width: $minw;
-				max-width: $maxw;
-			}
-		}
-	}
-
 	.navbar-toggle {
 		border: 1px solid $off-white;
 		.icon-bar {

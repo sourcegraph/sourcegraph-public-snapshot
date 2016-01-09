@@ -39,7 +39,6 @@
     "sass-loader": "2.0.1",
     "sinon": "1.15.4",
     "style-loader": "0.12.3",
-    "typeahead.js": "sqs/typeahead.js#sourcegraph-0.11.0",
     "webpack": "1.12.2",
     "webpack-dev-server": "1.11.0"
   },
