@@ -29,23 +29,9 @@ const (
 	UserKeys   = "user.keys"
 )
 
-func New(base *mux.Router, isTest bool) *mux.Router {
+func New(base *mux.Router) *mux.Router {
 	if base == nil {
 		base = mux.NewRouter()
-	}
-
-	// m augments a list of HTTP request methods with an additional "POST" method
-	// (in case it doesn't already exist) for testing.
-	m := func(methods ...string) []string {
-		if !isTest {
-			return methods
-		}
-		for _, mm := range methods {
-			if mm == "POST" {
-				return methods
-			}
-		}
-		return append(methods, "POST")
 	}
 
 	base.StrictSlash(true)
@@ -57,19 +43,19 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Subrouter()
 
 	repoRev.Path("/.tree" + routevar.TreeEntryPath).
-		Methods(m("GET")...).
+		Methods("GET").
 		PostMatchFunc(routevar.FixTreeEntryVars).
 		BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).
 		Name(RepoTree)
 
 	repoRev.Path("/.filefinder").
-		Methods(m("GET")...).
+		Methods("GET").
 		Name(RepoFileFinder)
 
 	defPath := "/" + routevar.Def
 
 	repoRev.Path(defPath).
-		Methods(m("GET")...).
+		Methods("GET").
 		PostMatchFunc(routevar.FixDefUnitVars).
 		BuildVarsFunc(routevar.PrepareDefRouteVars).
 		Name(Definition)
@@ -80,45 +66,45 @@ func New(base *mux.Router, isTest bool) *mux.Router {
 		Subrouter()
 
 	def.Path("/.examples").
-		Methods(m("GET")...).
+		Methods("GET").
 		Name(DefExamples)
 
 	def.Path("/.popover").
-		Methods(m("GET")...).
+		Methods("GET").
 		Name(DefPopover)
 
 	repoRev.Path("/.search/tokens").
-		Methods(m("GET")...).
+		Methods("GET").
 		Name(SearchTokens)
 
 	repoRev.Path("/.search/text").
-		Methods(m("GET")...).
+		Methods("GET").
 		Name(SearchText)
 
 	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
 
 	repo.Path("/.commits").
-		Methods(m("GET")...).
+		Methods("GET").
 		Name(RepoCommits)
 
 	base.Path("/.appdash/upload-page-load").
-		Methods(m("POST")...).
+		Methods("POST").
 		Name(AppdashUploadPageLoad)
 
 	base.Path("/.usercontent").
-		Methods(m("POST")...).
+		Methods("POST").
 		Name(UserContentUpload)
 
 	base.Path("/.invite").
-		Methods(m("POST")...).
+		Methods("POST").
 		Name(UserInvite)
 
 	base.Path("/.user/keys").
-		Methods(m("POST", "GET", "DELETE")...).
+		Methods("POST", "GET", "DELETE").
 		Name(UserKeys)
 
 	return base
 }
 
 // Rel is a relative url router, used for tests.
-var Rel = app_router.Router{Router: *New(nil, false)}
+var Rel = app_router.Router{Router: *New(nil)}

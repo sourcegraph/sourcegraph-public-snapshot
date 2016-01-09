@@ -41,10 +41,8 @@ func init() {
 }
 
 // NewHandler creates a new http.Handler for all UI endpoints, optionally using
-// the provided router as a base. The second argument, if set to true, will enable
-// testing endpoints and allow the mocking of any used services or API calls during
-// the processing of this request.
-func NewHandler(r *mux.Router, isTest bool) http.Handler {
+// the provided router as a base.
+func NewHandler(r *mux.Router) http.Handler {
 	mw := []handlerutil.Middleware{
 		handlerutil.CacheMiddleware,
 		appauth.CookieMiddleware,
@@ -52,69 +50,43 @@ func NewHandler(r *mux.Router, isTest bool) http.Handler {
 	}
 
 	if r == nil {
-		r = ui_router.New(nil, isTest)
+		r = ui_router.New(nil)
 	}
 
-	p := payloadHandler{TestEnvironment: isTest}
+	r.Get(ui_router.RepoTree).Handler(handler(serveRepoTree))
 
-	r.Get(ui_router.RepoTree).Handler(p.handler(serveRepoTree))
+	r.Get(ui_router.RepoFileFinder).Handler(handler(serveRepoFileFinder))
 
-	r.Get(ui_router.RepoFileFinder).Handler(p.handler(serveRepoFileFinder))
+	r.Get(ui_router.Definition).Handler(handler(serveDef))
+	r.Get(ui_router.DefExamples).Handler(handler(serveDefExamples))
 
-	r.Get(ui_router.Definition).Handler(p.handler(serveDef))
-	r.Get(ui_router.DefExamples).Handler(p.handler(serveDefExamples))
+	r.Get(ui_router.RepoCommits).Handler(handler(serveRepoCommits))
 
-	r.Get(ui_router.RepoCommits).Handler(p.handler(serveRepoCommits))
+	r.Get(ui_router.SearchTokens).Handler(handler(serveTokenSearch))
+	r.Get(ui_router.SearchText).Handler(handler(serveTextSearch))
 
-	r.Get(ui_router.SearchTokens).Handler(p.handler(serveTokenSearch))
-	r.Get(ui_router.SearchText).Handler(p.handler(serveTextSearch))
-
-	r.Get(ui_router.AppdashUploadPageLoad).Handler(p.handler(serveAppdashUploadPageLoad))
+	r.Get(ui_router.AppdashUploadPageLoad).Handler(handler(serveAppdashUploadPageLoad))
 
 	if !appconf.Flags.DisableUserContent {
-		r.Get(ui_router.UserContentUpload).Handler(p.handler(serveUserContentUpload))
+		r.Get(ui_router.UserContentUpload).Handler(handler(serveUserContentUpload))
 	}
 
-	r.Get(ui_router.UserInvite).Handler(p.handler(serveUserInvite))
-	r.Get(ui_router.UserKeys).Handler(p.handler(serveUserKeys))
+	r.Get(ui_router.UserInvite).Handler(handler(serveUserInvite))
+	r.Get(ui_router.UserKeys).Handler(handler(serveUserKeys))
 
 	return handlerutil.WithMiddleware(r, mw...)
 }
 
-// payloadHandler provides methods that return an http.Handler which is able to
-// handle error returns and respond to them as JSON, as well as configure mock
-// data for a test environment.
-type payloadHandler struct {
-	// TestEnvironment will cause the endpoints served by the handler to return
-	// mock data, if set to true.
-	TestEnvironment bool
-}
-
-func (h *payloadHandler) handler(fn func(w http.ResponseWriter, r *http.Request) error) http.Handler {
+func handler(fn func(w http.ResponseWriter, r *http.Request) error) http.Handler {
 	return handlerutil.Handler(handlerutil.HandlerWithErrorReturn{
-		Handler: h.serveHandler(fn),
-		Error:   h.serveError,
+		Handler: fn,
+		Error:   serveError,
 	})
-}
-
-// serveHandler additionally augments the passed in handler with correct headers
-// for JSON responses and enables mocking if this is a test environment.
-func (h *payloadHandler) serveHandler(fn func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		w.Header().Set("Content-Type", "application/json")
-		if h.TestEnvironment && r.Method == "POST" && r.Header.Get("X-Mock-Response") == "yes" {
-			m := new(serviceMocker)
-			if err := m.Mock(r); err != nil {
-				return err
-			}
-		}
-		return fn(w, r)
-	}
 }
 
 // serveError responds to the client by sending any error that might have occurred
 // when processing a request.
-func (h *payloadHandler) serveError(w http.ResponseWriter, req *http.Request, status int, err error) {
+func serveError(w http.ResponseWriter, req *http.Request, status int, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	msg := err.Error() + " (Code: " + strconv.Itoa(status) + ")"

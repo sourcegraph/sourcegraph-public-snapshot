@@ -32,7 +32,7 @@ func TestUserContent(t *testing.T) {
 	var name string
 
 	{
-		uic, mocks := httptestutil.NewTest(ui.NewHandler(nil, false))
+		uic, mocks := httptestutil.NewTest(ui.NewHandler(nil))
 		mocks.Ctx = auth.WithActor(mocks.Ctx, auth.Actor{ // UserContentUpload endpoint checks for write access, so provide it via mocks.
 			UID: 1,
 			Scope: map[string]bool{
