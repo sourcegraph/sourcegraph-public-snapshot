@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -118,8 +119,8 @@ func renderSourcebox(r *http.Request, w http.ResponseWriter, entry *sourcegraph.
 
 	sb := &sourcegraph.Sourcebox{
 		HTML:          template.HTML(buf.String()),
-		StylesheetURL: assetAbsURL(ctx, "sourcebox.css").String(),
-		ScriptURL:     assetAbsURL(ctx, "sourcebox.js").String(),
+		StylesheetURL: assets.AbsURL(ctx, "sourcebox.css").String(),
+		ScriptURL:     assets.AbsURL(ctx, "sourcebox.js").String(),
 	}
 
 	// Render either JS (document.write(...)) or JSON.

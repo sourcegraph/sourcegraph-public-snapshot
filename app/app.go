@@ -59,7 +59,6 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	mw := []handlerutil.Middleware{
-		AssetsMiddleware(),
 		handlerutil.CacheMiddleware,
 		appauth.CookieMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
@@ -162,6 +161,9 @@ func NewHandler(r *router.Router) http.Handler {
 
 	// This route dispatches to registered SearchFrames.
 	r.Get(router.RepoPlatformSearch).Handler(internal.Handler(serveRepoPlatformSearchResults))
+
+	r.Path("/robots.txt").Methods("GET").HandlerFunc(robotsTxt)
+	r.Path("/favicon.ico").Methods("GET").HandlerFunc(favicon)
 
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(internal.Handler(handlerFunc))
