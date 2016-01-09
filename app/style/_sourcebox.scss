@@ -1,0 +1,116 @@
+// Common sourcebox CSS that is included in both the main and
+// sourcebox-only CSS bundles.
+
+@import "~bootstrap-sass/assets/stylesheets/bootstrap/variables";
+@import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins";
+
+@import "_mixins";
+@import "_vars";
+@import "_code";
+
+@import "_theme_default";
+@import "_theme_sunburst";
+
+$border-color: #dadada;
+$footer-color: lighten($border-color, 9%);
+$padding-base-horizontal: 10px;
+$padding-base-vertical: 6px;
+$muted-color: #777;
+$font-size: $code-font-size;
+$code-line-height: 1.26em;
+$line-number-width: 40px;
+
+@import "_def_popover";
+
+.sourcegraph-sourcebox {
+	border: solid 1px $border-color;
+	border-radius: $border-radius-base;
+	clear: both;
+
+	margin: 15px 0;
+
+	a {
+		text-decoration: none;
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	.line-numbered-code {
+		td {
+			line-height: $code-line-height;
+		}
+		.line-number {
+			padding: 0;
+			width: $line-number-width;
+			a {
+				display: block;
+				padding: $line-number-padding;
+				color: inherit;
+				&:hover {
+					background-color: $light-blue;
+					color: $mid-blue;
+				}
+			}
+		}
+	}
+
+	&:hover .defn-popover {
+		-webkit-animation: yellow-fade 0.6s ease-in-out 1;
+		animation: yellow-fade 0.6s ease-in-out 1;
+		background: linear-gradient(to bottom, rgba(0,0,0,0.01) 0%,rgba(0,0,0,0.03) 100%);
+		border: solid 1px #ececec;
+	}
+
+	.sourcegraph-footer {
+		background-color: $footer-color;
+		border-top: solid 1px lighten($border-color, 5%);
+		font-family: $font-family-sans-serif;
+		padding: $padding-base-vertical $padding-base-horizontal;
+		font-size: $font-size !important;
+
+		a {
+			color: #444;
+		}
+
+		.hosted {
+			color: $muted-color;
+			.brand {
+				font-weight: bold;
+			}
+		}
+
+		.view {
+			float: right;
+			a {
+				font-weight: bold;
+				color: $muted-color;
+			}
+		}
+
+		.defn {
+			.name {
+				font-weight: bold;
+			}
+		}
+
+		.in {
+			color: $muted-color;
+		}
+	}
+}
+
+@-webkit-keyframes yellow-fade {
+	0% {
+		background: $highlight-ref-bg;
+		box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
+	}
+}
+
+
+@keyframes yellow-fade {
+	0% {
+		background: $highlight-ref-bg;
+		box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
+	}
+}
