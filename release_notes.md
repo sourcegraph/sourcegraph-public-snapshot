@@ -1,5 +1,10 @@
 # dev
 
+# 0.11.5
+
+- Fix cloud install automation by providing appropriate default config.ini
+to Linux .deb and .rpm packages.
+
 # 0.11.4
 
 - Improve git event parser to be significantly faster and correct for large git pushes.
