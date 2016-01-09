@@ -88,7 +88,6 @@ Starts an HTTP server serving the app and API.
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
           --reload                               reload templates, blog posts, etc. on each request (dev mode)
           --no-worker                            do not start background worker
-          --test-ui                              starts the UI test server which causes all UI endpoints to return mock data
           --tls-cert=                            certificate file (for TLS)
           --tls-key=                             key file (for TLS)
       -i, --id-key=                              identity key file ($SGPATH/appdata/global/core.serve/auth/id.pem)
@@ -176,7 +175,6 @@ type ServeCmd struct {
 	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
 
 	NoWorker          bool          `long:"no-worker" description:"do not start background worker"`
-	TestUI            bool          `long:"test-ui" description:"starts the UI test server which causes all UI endpoints to return mock data"`
 	GraphUplinkPeriod time.Duration `long:"graphuplink" default:"10m" description:"how often to communicate back to the mothership; if 0, then no periodic communication occurs"`
 
 	// Flags containing sensitive information must be added to this struct.
@@ -459,7 +457,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		return router
 	}
 	sm.Handle("/.api/", httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/")))))
-	sm.Handle("/.ui/", app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")), c.TestUI), c.TestUI)))
+	sm.Handle("/.ui/", app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/"))))))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter()))))
 
 	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {

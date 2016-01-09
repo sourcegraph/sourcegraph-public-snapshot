@@ -100,17 +100,6 @@ serve-beyang-dev:
 --fed.is-root \
 $(SERVEFLAGS)"
 
-serve-test-ui: serve-dep
-	@echo Starting UI test server\; will recompile and restart when source files change
-	@echo ==========================================================
-	@echo WARNING: All UI endpoints are exposing mock data via POST.
-	@echo This mode should only be used to allow running integration
-	@echo tests and should not be used in production.
-	@echo ==========================================================
-	@echo
-	@# specify any Godeps-vendored pkg in -p to work around the issue where stale vendored pkgs are not rebuilt (see https://github.com/tools/godep/issues/45#issuecomment-73411554)
-	DEBUG=t SG_USE_WEBPACK_DEV_SERVER=$(SG_USE_WEBPACK_DEV_SERVER) $(GODEP) rego $(GORACE) -p sourcegraph.com/sourcegraph/srclib src.sourcegraph.com/sourcegraph/cmd/src serve --reload $(SERVEFLAGS) --test-ui -n 0
-
 PROMETHEUS_STORAGE ?= $(shell eval `src config` && echo $${SGPATH}/prometheus)
 serve-metrics-dev:
 	@# Assumes your src is listening on the default address (localhost:3080)
@@ -168,7 +157,7 @@ drop-test-dbs:
 
 # GOFLAGS is all test build tags (use smtest/mdtest/lgtest targets to
 # execute common subsets of tests).
-GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest uitest'
+GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest'
 PGUSER ?= $(USER)
 TESTPKGS ?= ./...
 test: check
@@ -181,8 +170,6 @@ smtest:
 	$(MAKE) go-test GOFLAGS=""
 
 mdtest:
-# TODO(sqs!nodb): add back 'uitest' to this, CodeTokenModel is currently failing
-#
 # Note: we go install srclib so that stale Godeps pkgs get rebuilt as
 # well (srclib could be any other pkg in Godeps). This will no longer
 # be necessary in Go 1.5.
