@@ -39,6 +39,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
+	"src.sourcegraph.com/sourcegraph/app/assets"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -458,6 +459,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	sm.Handle("/.api/", httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/")))))
 	sm.Handle("/.ui/", app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/"))))))
+	sm.Handle(assets.URLPathPrefix+"/", http.StripPrefix(assets.URLPathPrefix, assets.NewHandler(newRouter())))
 	sm.Handle("/", app.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter()))))
 
 	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {
@@ -487,9 +489,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	mw = append(mw, metricutil.HTTPMiddleware)
 	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
 		mw = append(mw, traceMiddleware)
-	}
-	if app.UseWebpackDevServer {
-		mw = append(mw, webpackDevServerHandler)
 	}
 	// TODO: if we keep this old behavior of `go get` cloning GH repos, do it
 	// under a better-named environment variable.
@@ -1000,12 +999,6 @@ func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc
 }
 
 // webpackDevServerHandler sets a CORS header if you are running with Webpack in local dev.
-func webpackDevServerHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if w.Header().Get("access-control-allow-origin") == "" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-	}
-	next(w, r)
-}
 
 // registerClientWithRoot registers a local Sourcegraph instance as a client
 // of its root instance.

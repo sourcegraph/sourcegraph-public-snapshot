@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -28,5 +29,5 @@ func robotsTxt(w http.ResponseWriter, r *http.Request) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, assetURL("/favicon.png").String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, assets.URL("/favicon.png").String(), http.StatusMovedPermanently)
 }

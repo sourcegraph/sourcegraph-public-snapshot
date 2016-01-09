@@ -17,6 +17,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 
 	"src.sourcegraph.com/sourcegraph/app/appconf"
+	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -188,7 +189,7 @@ var TemplateFunctions = htmpl.FuncMap{
 		return strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(urlStr, "https://"), "http://"), "/")
 	},
 
-	"assetURL": assetURL,
+	"assetURL": assets.URL,
 
 	"hasField": hasStructField,
 
@@ -248,8 +249,6 @@ var TemplateFunctions = htmpl.FuncMap{
 			Path: fmt.Sprintf("/traces/%v", trace),
 		})
 	},
-
-	"useWebpackDevServer": func() bool { return UseWebpackDevServer },
 
 	"buildvar":        func() buildvar.Vars { return buildvar.All },
 	"updateAvailable": updateAvailable,

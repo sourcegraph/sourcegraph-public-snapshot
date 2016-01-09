@@ -59,7 +59,6 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	mw := []handlerutil.Middleware{
-		AssetsMiddleware(),
 		handlerutil.CacheMiddleware,
 		appauth.CookieMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
@@ -163,6 +162,9 @@ func NewHandler(r *router.Router) http.Handler {
 	// This route dispatches to registered SearchFrames.
 	r.Get(router.RepoPlatformSearch).Handler(internal.Handler(serveRepoPlatformSearchResults))
 
+	r.Path("/robots.txt").Methods("GET").HandlerFunc(robotsTxt)
+	r.Path("/favicon.ico").Methods("GET").HandlerFunc(favicon)
+
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(internal.Handler(handlerFunc))
 	}
@@ -191,14 +193,6 @@ var cspConfig = csp.Config{
 		ConnectSrc: []string{fmt.Sprintf("%s:9997", os.Getenv("SG_TRACEGUIDE_SERVICE_HOST"))},
 		ReportURI:  "/.csp-report",
 	},
-}
-
-func init() {
-	if UseWebpackDevServer {
-		cspConfig.PolicyReportOnly.ScriptSrc = append(cspConfig.PolicyReportOnly.ScriptSrc, "localhost:8080")
-		cspConfig.PolicyReportOnly.FontSrc = append(cspConfig.PolicyReportOnly.FontSrc, "localhost:8080")
-		cspConfig.PolicyReportOnly.ConnectSrc = append(cspConfig.PolicyReportOnly.ConnectSrc, "localhost:3080", "localhost:8080", "ws://localhost:8080")
-	}
 }
 
 func tmplReloadMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
