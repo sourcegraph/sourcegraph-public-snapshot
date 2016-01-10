@@ -16,11 +16,14 @@ func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegr
 		repo.Mirror = true
 		repo.HTTPCloneURL = "http://example.com/dummy.git"
 
-		createdRepo, err := s.Create(ctx, repo)
+		if err := s.Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+		repo, err := s.Get(ctx, repo.URI)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdRepos = append(createdRepos, createdRepo)
+		createdRepos = append(createdRepos, repo)
 	}
 	return createdRepos
 }

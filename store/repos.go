@@ -26,7 +26,7 @@ type Repos interface {
 	List(context.Context, *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
 
 	// Create creates a repository.
-	Create(context.Context, *sourcegraph.Repo) (*sourcegraph.Repo, error)
+	Create(context.Context, *sourcegraph.Repo) error
 
 	// Update updates a repository.
 	Update(context.Context, *RepoUpdate) error

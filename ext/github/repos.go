@@ -240,8 +240,8 @@ func (s *Repos) ListPrivate(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	return repos, nil
 }
 
-func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
-	return nil, errors.New("GitHub repo creation is not implemented")
+func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
+	return errors.New("GitHub repo creation is not implemented")
 }
 
 func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {

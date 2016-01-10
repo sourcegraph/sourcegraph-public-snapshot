@@ -198,28 +198,28 @@ func readGitDefaultBranch(fs vfs.FileSystem, dir string) (string, error) {
 	return string(data), nil
 }
 
-func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) error {
 	if repo.VCS != "git" {
-		return nil, grpc.Errorf(codes.Unimplemented, "only git is supported in Repos.Create")
+		return grpc.Errorf(codes.Unimplemented, "only git is supported in Repos.Create")
 	}
 
 	if repo.Mirror {
 		if repo.HTTPCloneURL == "" && repo.SSHCloneURL == "" {
-			return nil, store.ErrRepoNeedsCloneURL
+			return store.ErrRepoNeedsCloneURL
 		}
 	}
 
 	dir := absolutePathForRepo(ctx, repo.URI)
 	if dir == absolutePathForRepo(ctx, "") {
-		return nil, errors.New("Repos.Create needs at least one path element")
+		return errors.New("Repos.Create needs at least one path element")
 	}
 
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
-		return nil, errors.New("repository already exists")
+		return errors.New("repository already exists")
 	}
 
 	if err := os.MkdirAll(dir, 0700); err != nil {
-		return nil, err
+		return err
 	}
 
 	if repo.HTTPCloneURL != "" && repo.Mirror == false {
@@ -231,7 +231,7 @@ func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 		authStore := ext.AuthStore{}
 		cred, err := authStore.Get(ctx, host)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", host, err)
+			return grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", host, err)
 		}
 
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
@@ -244,9 +244,9 @@ func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 			RemoteOpts: remoteOpts,
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master"}, nil
+		return nil
 	}
 
 	// TODO: Doing this `git init --bare` followed by a later RefreshVCS results in non-standard default branches
@@ -256,30 +256,30 @@ func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("creating %s repository %s failed with output:\n%s", repo.VCS, repo.URI, string(out))
+		return fmt.Errorf("creating %s repository %s failed with output:\n%s", repo.VCS, repo.URI, string(out))
 	}
 
 	if repo.Private {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.private", "true"); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	if repo.Description != "" {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.description", repo.Description); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	if repo.Language != "" {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", repo.Language); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	if repo.CreatedAt != nil {
 		if err := s.setGitConfig(ctx, dir, "sourcegraph.createdat", repo.CreatedAt.Time().Format(timeFormat)); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
@@ -298,12 +298,12 @@ func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 			cmd.Dir = dir
 			out, err := cmd.CombinedOutput()
 			if err != nil {
-				return nil, fmt.Errorf("configuring mirrored %s repository %s (origin clone URL %s) failed with %v:\n%s", repo.VCS, repo.URI, repo.CloneURL(), err, string(out))
+				return fmt.Errorf("configuring mirrored %s repository %s (origin clone URL %s) failed with %v:\n%s", repo.VCS, repo.URI, repo.CloneURL(), err, string(out))
 			}
 		}
 	}
 
-	return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master", Mirror: repo.Mirror}, nil
+	return nil
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
