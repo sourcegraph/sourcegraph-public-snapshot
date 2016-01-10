@@ -140,7 +140,7 @@ var CodeReviewHeader = React.createClass({
 
 				<div className="changeset-subtitle">
 					{changesetStatus}
-					<b>{this.props.changeset.Author.Login}</b> wants to merge {this.props.commits.models.length} commits from
+					<b>{this.props.changeset.Author.Login || "A user"}</b> wants to merge {this.props.commits.models.length} commits from
 					<div className="branch">
 						{this.props.changeset.DeltaSpec.Head.Rev}
 						<RepoBuildIndicator

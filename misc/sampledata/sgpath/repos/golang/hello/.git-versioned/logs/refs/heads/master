@@ -1,0 +1,13 @@
+0000000000000000000000000000000000000000 da72949508feeb89e8f8c5364984c93f6c1f7493 Quinn Slack <qslack@qslack.com> 1452414447 -0800	commit (initial): hello: add World and Name greeting funcs
+da72949508feeb89e8f8c5364984c93f6c1f7493 0b2717e58911214d8b762732d743963118f94a2c Quinn Slack <qslack@qslack.com> 1452420553 -0800	commit: add README
+0b2717e58911214d8b762732d743963118f94a2c b81f694174e2b75f49f38da0a273135603f13f0e Quinn Slack <qslack@qslack.com> 1452424518 -0800	commit: add ParallelGreet func
+b81f694174e2b75f49f38da0a273135603f13f0e 1da75805512710cbf77895363d5b0cb84de6c719 Quinn Slack <qslack@qslack.com> 1452429297 -0800	commit: readme
+1da75805512710cbf77895363d5b0cb84de6c719 6c253ef29b8bdf7cd3c01bc1011d0ffbe2f0e644 Quinn Slack <qslack@qslack.com> 1452429307 -0800	rebase -i (finish): refs/heads/master onto 0b2717e58911214d8b762732d743963118f94a2c
+6c253ef29b8bdf7cd3c01bc1011d0ffbe2f0e644 85850002c3baee386f611fd4a8c46751919f82a8 Quinn Slack <qslack@qslack.com> 1452430059 -0800	cherry-pick: x
+85850002c3baee386f611fd4a8c46751919f82a8 762cc7b01b13b6de1f955c12640891e0499d61b4 Quinn Slack <qslack@qslack.com> 1452430070 -0800	rebase -i (finish): refs/heads/master onto 3941e36707fb802bb6f3d475c7bd7d43e3a011e2
+762cc7b01b13b6de1f955c12640891e0499d61b4 fe5ceda889ecc9e7be60d50352b6cbcf879a59af Quinn Slack <qslack@qslack.com> 1452579364 -0800	reset: moving to fe5ceda889ecc9e7be60d50352b6cbcf879a59af
+fe5ceda889ecc9e7be60d50352b6cbcf879a59af a7a31193a202db3d73610f7ef57371a97c979dd6 Quinn Slack <qslack@qslack.com> 1452579464 -0800	commit (amend): add README
+a7a31193a202db3d73610f7ef57371a97c979dd6 283c2cd710996d178156841a89b5856546d5c8f6 Quinn Slack <qslack@qslack.com> 1452579464 -0800	filter-branch: rewrite
+283c2cd710996d178156841a89b5856546d5c8f6 bd25ac50a79da4f469ec24d1121e4a196cfce284 Quinn Slack <qslack@qslack.com> 1452579738 -0800	commit (amend): add README
+bd25ac50a79da4f469ec24d1121e4a196cfce284 a618919f0cb76bcd8683fd61f360cb1a69d70fea Quinn Slack <qslack@qslack.com> 1452580035 -0800	commit (amend): add README
+a618919f0cb76bcd8683fd61f360cb1a69d70fea 8b9f26f68b66ef6c854abb8c84496f8413871885 Sourcegraph Demo <demo@sourcegraph.com> 1452580258 -0800	commit (amend): add README

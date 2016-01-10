@@ -61,7 +61,7 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 
 	// Add auth to HTTP clone URL so that `git clone`, `git push`,
 	// etc., commands are authenticated.
-	authedCloneURL, err := testutil.AddSystemAuthToURL(a.Ctx, repo.HTTPCloneURL)
+	authedCloneURL, err := authutil.AddSystemAuthToURL(a.Ctx, "", repo.HTTPCloneURL)
 	if err != nil {
 		return err
 	}
