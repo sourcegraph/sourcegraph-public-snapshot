@@ -94,23 +94,25 @@ func buildUpdatedAt(b *sourcegraph.Build) time.Time {
 }
 
 func SortAndPaginateTasks(tasks []*sourcegraph.BuildTask, opt *sourcegraph.BuildTaskListOptions) []*sourcegraph.BuildTask {
-	if opt != nil {
-		// Sort.
-		v := tasksSorter{tasks: tasks}
-		v.less = func(a, b *sourcegraph.BuildTask) bool {
-			return a.ID < b.ID
-		}
-		sort.Sort(v)
+	if opt == nil {
+		opt = &sourcegraph.BuildTaskListOptions{}
+	}
 
-		// Paginate.
-		offset, limit := opt.ListOptions.Offset(), opt.ListOptions.Limit()
-		if offset > len(tasks) {
-			offset = len(tasks)
-		}
-		tasks = tasks[offset:]
-		if len(tasks) > limit {
-			tasks = tasks[:limit]
-		}
+	// Sort.
+	v := tasksSorter{tasks: tasks}
+	v.less = func(a, b *sourcegraph.BuildTask) bool {
+		return a.ID < b.ID
+	}
+	sort.Sort(v)
+
+	// Paginate.
+	offset, limit := opt.ListOptions.Offset(), opt.ListOptions.Limit()
+	if offset > len(tasks) {
+		offset = len(tasks)
+	}
+	tasks = tasks[offset:]
+	if len(tasks) > limit {
+		tasks = tasks[:limit]
 	}
 
 	return tasks
