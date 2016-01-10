@@ -11,7 +11,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	"src.sourcegraph.com/sourcegraph/server/serverctx"
-	"src.sourcegraph.com/sourcegraph/sgx"
 	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
@@ -35,7 +34,7 @@ func initClient() {
 			return
 		}
 		serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) { return f(ctx), nil })
-		sgx.ClientContextFuncs = append(sgx.ClientContextFuncs, f)
+		sgxcli.ClientContext = append(sgxcli.ClientContext, f)
 	})
 }
 

@@ -40,6 +40,13 @@ var (
 	// External packages should append to the list at init time if
 	// they need to store information in the server's context.
 	ServerContext []func(context.Context) context.Context
+
+	// ClientContext is a list of funcs that are run to initialize the
+	// client's context before each request is handled.
+	//
+	// External packages should append to the list at init time if
+	// they need to store information in the client's context.
+	ClientContext []func(context.Context) context.Context
 )
 
 // Ctx is a context that accesses the configured Sourcegraph endpoint

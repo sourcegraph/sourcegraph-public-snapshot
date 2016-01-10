@@ -326,8 +326,8 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	var (
 		sharedCtxFuncs []func(context.Context) context.Context
-		serverCtxFuncs []func(context.Context) context.Context
-		clientCtxFuncs []func(context.Context) context.Context = ClientContextFuncs
+		serverCtxFuncs []func(context.Context) context.Context = cli.ServerContext
+		clientCtxFuncs []func(context.Context) context.Context = cli.ClientContext
 	)
 
 	// graphstore
@@ -374,17 +374,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		for _, f := range serverCtxFuncs {
 			ctx = f(ctx)
 		}
-
 		ctx = cli.Endpoint.NewContext(ctx)
-
-		for _, f := range ServerContextFuncs {
-			var err error
-			ctx, err = f(ctx)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
 		return ctx
 	}
 

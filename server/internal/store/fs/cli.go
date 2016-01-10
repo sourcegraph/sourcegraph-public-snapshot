@@ -12,8 +12,6 @@ import (
 	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/cli"
-
-	_ "src.sourcegraph.com/sourcegraph/sgx"
 )
 
 var Stores = store.Stores{

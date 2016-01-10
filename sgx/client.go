@@ -15,8 +15,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
-var ClientContextFuncs []func(context.Context) context.Context
-
 func init() {
 	sourcegraph.Cache = &grpccache.Cache{
 		MaxSize: 150 * (1024 * 1024), // 150 MB
