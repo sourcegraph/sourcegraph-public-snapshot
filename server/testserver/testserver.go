@@ -32,7 +32,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/wellknown"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
 	"src.sourcegraph.com/sourcegraph/sgx"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 	appdashcli "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
@@ -91,7 +91,7 @@ type Server struct {
 
 type Config struct {
 	Flags      []interface{} // flags to `src`
-	Endpoint   cli.EndpointOpts
+	Endpoint   client.EndpointOpts
 	Serve      sgx.ServeCmd
 	ServeFlags []interface{} // flags to `src serve`
 }
@@ -558,7 +558,7 @@ func SrclibSampleToolchain(buildDocker bool) (dir, srclibpath, dockerImage strin
 }
 
 // makeCommandLineArgs takes a list of EITHER (1) flag structs (like
-// cli.CredentialsOpts) or (2) strings (which denote subcommands) and
+// client.CredentialsOpts) or (2) strings (which denote subcommands) and
 // converts them into command-line arguments.
 func makeCommandLineArgs(flagsAndSubcommands ...interface{}) ([]string, error) {
 	var args []string

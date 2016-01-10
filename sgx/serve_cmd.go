@@ -60,6 +60,7 @@ import (
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/server/serverctx"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/ui"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
 	"src.sourcegraph.com/sourcegraph/usercontent"
@@ -209,11 +210,11 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	}
 
 	// Endpoint defaults to the AppURL.
-	if cli.Endpoint.URL == "" {
-		cli.Endpoint.URL = appURL.String()
+	if client.Endpoint.URL == "" {
+		client.Endpoint.URL = appURL.String()
 
-		// Reset cli.Ctx to use new endpoint.
-		cli.Ctx = WithClientContext(context.Background())
+		// Reset client.Ctx to use new endpoint.
+		client.Ctx = WithClientContext(context.Background())
 	}
 
 	return appURL, nil
@@ -272,7 +273,7 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
-	if err := checkSysReqs(cli.Ctx, os.Stderr); err != nil {
+	if err := checkSysReqs(client.Ctx, os.Stderr); err != nil {
 		return err
 	}
 
@@ -294,8 +295,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	// app, git, and HTTP API would all inherit the process's owner's
 	// current auth. This is undesirable, unexpected, and could lead
 	// to unintentionally leaking private info.
-	cli.Credentials.SetAccessToken("")
-	cli.Credentials.AuthFile = ""
+	client.Credentials.SetAccessToken("")
+	client.Credentials.AuthFile = ""
 
 	c.GraphStoreOpts.expandEnv()
 	log15.Debug("GraphStore", "at", c.GraphStoreOpts.Root)
@@ -374,7 +375,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		for _, f := range serverCtxFuncs {
 			ctx = f(ctx)
 		}
-		ctx = cli.Endpoint.NewContext(ctx)
+		ctx = client.Endpoint.NewContext(ctx)
 		return ctx
 	}
 
@@ -503,10 +504,10 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 
 		// Start background repo updater worker.
-		repoupdater.RepoUpdater.Start(cli.Ctx)
+		repoupdater.RepoUpdater.Start(client.Ctx)
 
 		// Start event listeners.
-		c.initializeEventListeners(cli.Ctx, idKey, appURL, sshURL)
+		c.initializeEventListeners(client.Ctx, idKey, appURL, sshURL)
 	}
 
 	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
@@ -602,7 +603,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 		// create a context with regular (non self-signed) tokens that
 		// are valid on the federation root server.
-		ctx, err := c.authenticateScopedContext(cli.Ctx, idKey, []string{"internal:sshgit"})
+		ctx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:sshgit"})
 		if err != nil {
 			return err
 		}
@@ -625,7 +626,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		statsInterval = 10 * time.Minute
 	}
 
-	go statsutil.ComputeUsageStats(cli.Ctx, statsInterval)
+	go statsutil.ComputeUsageStats(client.Ctx, statsInterval)
 
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
@@ -686,7 +687,7 @@ func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
 }
 
 func (c *ServeCmd) initializeStarterRepos() error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	starterRepoURL := func(lang string) (string, error) {
 		switch lang {
@@ -707,7 +708,7 @@ func (c *ServeCmd) initializeStarterRepos() error {
 		}
 
 		log15.Info(fmt.Sprintf("Creating starter repo for %s...", lang))
-		repo, err := cl.Repos.Create(cli.Ctx, &sourcegraph.ReposCreateOp{
+		repo, err := cl.Repos.Create(client.Ctx, &sourcegraph.ReposCreateOp{
 			VCS:         "git",
 			URI:         fmt.Sprintf("sourcegraph-starter/%s", lang),
 			CloneURL:    url,
@@ -731,7 +732,7 @@ func (c *ServeCmd) initializeStarterRepos() error {
 }
 
 // authenticateCLIContext adds a "service account" access token to
-// cli.Ctx and to the global CLI flags (which are effectively
+// client.Ctx and to the global CLI flags (which are effectively
 // inherited by subcommands run with cmdWithClientArgs). The server
 // uses this to run privileged in-process workers.
 //
@@ -744,7 +745,7 @@ func (c *ServeCmd) initializeStarterRepos() error {
 // obviously know the server's secrets, so we can use them to
 // authenticate the in-process worker and other CLI commands.
 func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
-	src := cli.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "internal:cli")}
+	src := client.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "internal:cli")}
 
 	// Call it once to set Credentials.AccessToken immediately.
 	tok, err := src.Token()
@@ -752,7 +753,7 @@ func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
 		return err
 	}
 
-	cli.Ctx = sourcegraph.WithCredentials(cli.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
+	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
 }
 
@@ -818,7 +819,7 @@ func (c *ServeCmd) checkReachability() {
 	}
 
 	// Check internal gRPC endpoint.
-	doCheck(cli.Ctx, true)
+	doCheck(client.Ctx, true)
 
 	// Check external gRPC endpoint if it differs from the internal
 	// endpoint.
@@ -826,8 +827,8 @@ func (c *ServeCmd) checkReachability() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(cli.Ctx).String() {
-		doCheck(sourcegraph.WithGRPCEndpoint(cli.Ctx, extEndpoint), false)
+	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(client.Ctx).String() {
+		doCheck(sourcegraph.WithGRPCEndpoint(client.Ctx, extEndpoint), false)
 	}
 }
 
@@ -875,7 +876,7 @@ func goGetHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 	}
 
 	ctx := httpctx.FromRequest(r)
-	cl := cli.Client()
+	cl := client.Client()
 
 	// The user may be requesting a subpackage, e.g. "src.example.com/my/repo/sub/pkg"
 	// so we must find the right repo ("src.example.com/my/repo") by walking up
@@ -1049,12 +1050,12 @@ func (c *ServeCmd) repoStatusCommitLogCacheRefresher() {
 	}
 	log15.Debug("commit-log-cache", "refresh-period", localcli.Flags.CommitLogCachePeriod)
 
-	cl := cli.Client()
+	cl := client.Client()
 Outer:
 	for {
 		var allRepos []*sourcegraph.Repo
 		for page := int32(1); ; page++ {
-			repos, err := cl.Repos.List(cli.Ctx, &sourcegraph.RepoListOptions{
+			repos, err := cl.Repos.List(client.Ctx, &sourcegraph.RepoListOptions{
 				ListOptions: sourcegraph.ListOptions{Page: page},
 			})
 			if err != nil {
@@ -1069,7 +1070,7 @@ Outer:
 		}
 
 		for _, repo := range allRepos {
-			_, err := cl.Repos.ListCommits(cli.Ctx, &sourcegraph.ReposListCommitsOp{
+			_, err := cl.Repos.ListCommits(client.Ctx, &sourcegraph.ReposListCommitsOp{
 				Repo: sourcegraph.RepoSpec{URI: repo.URI},
 				Opt: &sourcegraph.RepoListCommitsOptions{
 					Head:         repo.DefaultBranch,

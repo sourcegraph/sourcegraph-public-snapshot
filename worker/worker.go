@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 )
 
 func init() {
@@ -46,9 +47,9 @@ func (c *WorkCmd) Execute(args []string) error {
 		}
 	}
 
-	cl := cli.Client()
+	cl := client.Client()
 
-	go buildReaper(cli.Ctx)
+	go buildReaper(client.Ctx)
 
 	builders := make(chan struct{}, c.Parallel)
 	for i := 0; i < c.Parallel; i++ {
@@ -56,7 +57,7 @@ func (c *WorkCmd) Execute(args []string) error {
 	}
 
 	for range builders {
-		build, err := cl.Builds.DequeueNext(cli.Ctx, &sourcegraph.BuildsDequeueNextOp{})
+		build, err := cl.Builds.DequeueNext(client.Ctx, &sourcegraph.BuildsDequeueNextOp{})
 		if err != nil {
 			if grpc.Code(err) == codes.NotFound {
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(c.DequeueMsec)))
@@ -69,7 +70,7 @@ func (c *WorkCmd) Execute(args []string) error {
 		}
 
 		go func() {
-			startBuild(cli.Ctx, build)
+			startBuild(client.Ctx, build)
 			builders <- struct{}{}
 		}()
 	}
@@ -90,13 +91,13 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 		return err
 	}
 
-	src := cli.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "worker:build")}
+	src := client.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "worker:build")}
 	tok, err := src.Token()
 	if err != nil {
 		return err
 	}
 
 	// Authenticate future requests.
-	cli.Ctx = sourcegraph.WithCredentials(cli.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
+	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
 }

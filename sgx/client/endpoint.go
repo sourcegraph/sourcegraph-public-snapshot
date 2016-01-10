@@ -1,4 +1,4 @@
-package cli
+package client
 
 import (
 	"log"
@@ -7,12 +7,13 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/auth/userauth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 var Endpoint EndpointOpts
 
 func init() {
-	CLI.AddGroup("Client API endpoint", "", &Endpoint)
+	sgxcli.CLI.AddGroup("Client API endpoint", "", &Endpoint)
 }
 
 // EndpointOpts sets the URL to use when contacting the Sourcegraph

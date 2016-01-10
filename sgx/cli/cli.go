@@ -48,8 +48,3 @@ var (
 	// they need to store information in the client's context.
 	ClientContext []func(context.Context) context.Context
 )
-
-// Ctx is a context that accesses the configured Sourcegraph endpoint
-// with the configured credentials. It should be used for all CLI
-// operations.
-var Ctx context.Context

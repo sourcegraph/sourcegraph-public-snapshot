@@ -68,7 +68,7 @@ type userEndpointAuth struct {
 // Read attempts to read a UserAuth struct from the userAuthFile.
 // It is not considered an error if the userAuthFile doesn't exist; in that
 // case, an empty UserAuth and a nil error is returned.
-// Typically path is cli.Credentials.Auth
+// Typically path is client.Credentials.Auth
 func Read(path string) (UserAuth, error) {
 	if path == "/dev/null" {
 		return UserAuth{}, nil

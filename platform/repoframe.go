@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 // A RepoFrame is platform plugin point that allows an application to
@@ -43,7 +43,7 @@ var repoFrames = map[string]RepoFrame{}
 
 // CLI exposes the command line interface to platform applications. Applications
 // may add their own CLI commands during initialization.
-var CLI = cli.CLI
+var CLI = sgxcli.CLI
 
 // RegisterFrame is the function that applications should call to
 // add a frame to the repository page menu. This will panic if another

@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 

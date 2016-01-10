@@ -11,13 +11,14 @@ import (
 
 	droneexec "github.com/drone/drone-exec/exec"
 	"github.com/drone/drone-plugin-go/plugin"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
 
 	"strings"
 
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
@@ -49,12 +50,12 @@ func (c *checkCmd) Execute(args []string) error {
 		return err
 	}
 
-	builder, err := c.configureBuilder(cli.Ctx)
+	builder, err := c.configureBuilder(client.Ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := builder.Exec(cli.Ctx); err != nil {
+	if err := builder.Exec(client.Ctx); err != nil {
 		fmt.Println(red("FAIL"))
 		return err
 	}

@@ -3,9 +3,10 @@ package sgx
 import (
 	"log"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	srclibpkg "sourcegraph.com/sourcegraph/srclib"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 

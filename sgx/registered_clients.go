@@ -7,10 +7,12 @@ import (
 	"log"
 	"os"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 
@@ -82,13 +84,13 @@ type regClientsListCmd struct {
 }
 
 func (c *regClientsListCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	opt := sourcegraph.RegisteredClientListOptions{
 		ListOptions: sourcegraph.ListOptions{Page: 1},
 	}
 	for {
-		clients, err := cl.RegisteredClients.List(cli.Ctx, &opt)
+		clients, err := cl.RegisteredClients.List(client.Ctx, &opt)
 		if err != nil {
 			return err
 		}
@@ -117,7 +119,7 @@ type regClientsCreateCmd struct {
 }
 
 func (c *regClientsCreateCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	typ, ok := sourcegraph.RegisteredClientType_value[c.Type]
 	if !ok {
@@ -151,7 +153,7 @@ func (c *regClientsCreateCmd) Execute(args []string) error {
 		regClient.RedirectURIs = []string{c.RedirectURI}
 	}
 
-	regClient, err = cl.RegisteredClients.Create(cli.Ctx, regClient)
+	regClient, err = cl.RegisteredClients.Create(client.Ctx, regClient)
 	if err != nil {
 		return err
 	}
@@ -164,9 +166,9 @@ func (c *regClientsCreateCmd) Execute(args []string) error {
 type regClientsCurrentCmd struct{}
 
 func (c *regClientsCurrentCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
-	client, err := cl.RegisteredClients.GetCurrent(cli.Ctx, &pbtypes.Void{})
+	client, err := cl.RegisteredClients.GetCurrent(client.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -196,9 +198,9 @@ type regClientsUpdateCmd struct {
 }
 
 func (c *regClientsUpdateCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
-	rc, err := cl.RegisteredClients.Get(cli.Ctx, &sourcegraph.RegisteredClientSpec{ID: c.Args.ClientID})
+	rc, err := cl.RegisteredClients.Get(client.Ctx, &sourcegraph.RegisteredClientSpec{ID: c.Args.ClientID})
 	if err != nil {
 		return err
 	}
@@ -228,7 +230,7 @@ func (c *regClientsUpdateCmd) Execute(args []string) error {
 		}
 		rc.Meta["default-access"] = c.DefaultAccess
 	}
-	if _, err := cl.RegisteredClients.Update(cli.Ctx, rc); err != nil {
+	if _, err := cl.RegisteredClients.Update(client.Ctx, rc); err != nil {
 		return err
 	}
 	fmt.Println("updated")
@@ -242,11 +244,11 @@ type regClientsDeleteCmd struct {
 }
 
 func (c *regClientsDeleteCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	for _, clientID := range c.Args.ClientIDs {
 		fmt.Print(clientID, ": ")
-		if _, err := cl.RegisteredClients.Delete(cli.Ctx, &sourcegraph.RegisteredClientSpec{ID: clientID}); err != nil {
+		if _, err := cl.RegisteredClients.Delete(client.Ctx, &sourcegraph.RegisteredClientSpec{ID: clientID}); err != nil {
 			return err
 		}
 		fmt.Println("deleted")

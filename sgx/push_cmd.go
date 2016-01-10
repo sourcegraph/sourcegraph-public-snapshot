@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"log"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"golang.org/x/net/context"
 
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 )
 
@@ -48,12 +50,12 @@ func (c *pushCmd) Execute(args []string) error {
 	repoSpec := sourcegraph.RepoSpec{URI: c.Repo}
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: commitID}
 
-	appURL, err := getRemoteAppURL(cli.Ctx)
+	appURL, err := getRemoteAppURL(client.Ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := c.do(cli.Ctx, repoRevSpec); err != nil {
+	if err := c.do(client.Ctx, repoRevSpec); err != nil {
 		return err
 	}
 
@@ -67,7 +69,7 @@ func (c *pushCmd) Execute(args []string) error {
 }
 
 func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (err error) {
-	cl := cli.Client()
+	cl := client.Client()
 
 	// Resolve to the full commit ID, and ensure that the remote
 	// server knows about the commit.
@@ -99,7 +101,7 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 	}
 
 	// Precache root dir
-	appURL, err := getRemoteAppURL(cli.Ctx)
+	appURL, err := getRemoteAppURL(client.Ctx)
 	if err != nil {
 		return err
 	}

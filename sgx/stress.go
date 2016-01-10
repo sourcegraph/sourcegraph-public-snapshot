@@ -25,7 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/util/expvarutil"
 )
 
@@ -66,8 +66,8 @@ type stressCmd struct {
 func (c *stressCmd) quiet() bool { return !c.Log }
 
 func (c *stressCmd) Execute(args []string) error {
-	ctx := cli.Ctx
-	cl := cli.Client()
+	ctx := client.Ctx
+	cl := client.Client()
 
 	allOps := !(c.Git || c.RepoPage || c.FilePage)
 
@@ -231,7 +231,7 @@ func humanizeByteDelta(pre, post uint64, iters int) string {
 }
 
 func (c *stressCmd) fetchRepos(ctx context.Context) error {
-	cl := cli.Client()
+	cl := client.Client()
 	if c.Repo == "" {
 		allRepos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			ListOptions: sourcegraph.ListOptions{PerPage: 20},
@@ -251,7 +251,7 @@ func (c *stressCmd) fetchRepos(ctx context.Context) error {
 }
 
 func (c *stressCmd) fetchFiles(ctx context.Context) error {
-	cl := cli.Client()
+	cl := client.Client()
 	c.files = make(map[string]string, len(c.repos))
 	if c.File == "" {
 		for _, repo := range c.repos {

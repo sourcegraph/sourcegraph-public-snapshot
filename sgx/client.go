@@ -6,12 +6,14 @@ import (
 	"log"
 	"os"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
@@ -63,7 +65,7 @@ func init() {
 		if cli.CLI.Active != nil && cli.CLI.Active.Name == "version" {
 			return
 		}
-		cli.Ctx = WithClientContext(context.Background())
+		client.Ctx = WithClientContext(context.Background())
 	})
 }
 
@@ -74,10 +76,10 @@ func WithClientContext(parent context.Context) context.Context {
 	// must not have credentials set (because it is not a client
 	// command).
 	if cli.CLI.Active != nil && cli.CLI.Active.Name == "serve" {
-		cli.Credentials.AuthFile = ""
+		client.Credentials.AuthFile = ""
 	}
 	ctx := WithClientContextUnauthed(parent)
-	ctx, err := cli.Credentials.WithCredentials(ctx)
+	ctx, err := client.Credentials.WithCredentials(ctx)
 	if err != nil {
 		log.Fatalf("Error constructing API client credentials: %s.", err)
 	}
@@ -86,5 +88,5 @@ func WithClientContext(parent context.Context) context.Context {
 
 // WithClientContextUnauthed returns a copy of parent with client endpoint added.
 func WithClientContextUnauthed(parent context.Context) context.Context {
-	return cli.Endpoint.NewContext(parent)
+	return client.Endpoint.NewContext(parent)
 }

@@ -7,13 +7,14 @@ import (
 	"os"
 
 	"github.com/howeyc/gopass"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/userauth"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
@@ -50,7 +51,7 @@ type loginCmd struct {
 // getSavedToken checks if we already have a token for an endpoint, and
 // validates that it still works.
 func getSavedToken(endpointURL *url.URL) string {
-	a, err := userauth.Read(cli.Credentials.AuthFile)
+	a, err := userauth.Read(client.Credentials.AuthFile)
 	if err != nil || a == nil {
 		return ""
 	}
@@ -61,7 +62,7 @@ func getSavedToken(endpointURL *url.URL) string {
 	}
 	accessToken = e.AccessToken
 
-	ctx := sourcegraph.WithCredentials(cli.Ctx,
+	ctx := sourcegraph.WithCredentials(client.Ctx,
 		oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}),
 	)
 	ctx = fed.NewRemoteContext(ctx, endpointURL)
@@ -80,7 +81,7 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return savedToken, nil
 	}
 
-	unauthedCtx := sourcegraph.WithCredentials(cli.Ctx, nil)
+	unauthedCtx := sourcegraph.WithCredentials(client.Ctx, nil)
 	cl := sourcegraph.NewClientFromContext(unauthedCtx)
 
 	var username, password string
@@ -113,7 +114,7 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return "", fmt.Errorf("authenticating to %s: %s", endpointURL, err)
 	}
 
-	if err := userauth.SaveCredentials(cli.Credentials.AuthFile, endpointURL, tok.AccessToken, false); err != nil {
+	if err := userauth.SaveCredentials(client.Credentials.AuthFile, endpointURL, tok.AccessToken, false); err != nil {
 		log.Printf("warning: failed to save credentials: %s.", err)
 	}
 	return tok.AccessToken, nil
@@ -126,7 +127,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	// Check if parseable, before attempting authentication
-	_, err := userauth.Read(cli.Credentials.AuthFile)
+	_, err := userauth.Read(client.Credentials.AuthFile)
 	if err != nil {
 		return err
 	}
@@ -134,16 +135,16 @@ func (c *loginCmd) Execute(args []string) error {
 	// We allow the endpoint URL to be passed in as an argument as a
 	// convenience to --endpoint
 	if c.Args.EndpointURL != "" {
-		cli.Endpoint.URL = c.Args.EndpointURL
+		client.Endpoint.URL = c.Args.EndpointURL
 	}
 
-	endpointURL := cli.Endpoint.URLOrDefault()
+	endpointURL := client.Endpoint.URLOrDefault()
 	accessTok, err := c.getAccessToken(endpointURL)
 	if err != nil {
 		return err
 	}
 
-	err = userauth.SaveCredentials(cli.Credentials.AuthFile, endpointURL, accessTok, true)
+	err = userauth.SaveCredentials(client.Credentials.AuthFile, endpointURL, accessTok, true)
 	if err != nil {
 		return err
 	}
@@ -155,19 +156,19 @@ type whoamiCmd struct {
 }
 
 func (c *whoamiCmd) Execute(args []string) error {
-	a, err := userauth.Read(cli.Credentials.AuthFile)
+	a, err := userauth.Read(client.Credentials.AuthFile)
 	if err != nil {
 		return err
 	}
-	endpointURL := cli.Endpoint.URLOrDefault()
+	endpointURL := client.Endpoint.URLOrDefault()
 	ua := a[endpointURL.String()]
 	if ua == nil {
 		log.Fatalf("# No authentication info set for %s (use `%s login` to authenticate)", endpointURL, sgxcmd.Name)
 	}
 
-	cl := cli.Client()
+	cl := client.Client()
 
-	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
+	authInfo, err := cl.Auth.Identify(client.Ctx, &pbtypes.Void{})
 	if err != nil {
 		log.Fatalf("Error verifying auth credentials with endpoint %s: %s.", endpointURL, err)
 	}

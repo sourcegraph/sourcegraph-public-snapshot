@@ -3,11 +3,12 @@ package sgx
 import (
 	"log"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"bytes"
 
 	"sourcegraph.com/sourcegraph/go-flags"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 // globalOpt contains global options.

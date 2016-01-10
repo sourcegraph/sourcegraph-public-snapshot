@@ -9,7 +9,7 @@ import (
 	"github.com/kr/text"
 
 	"src.sourcegraph.com/sourcegraph/pkg/sysreq"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 
 	"golang.org/x/net/context"
 )
@@ -32,7 +32,7 @@ func checkSysReqs(ctx context.Context, w io.Writer) error {
 	}
 
 	var failed []string
-	for _, st := range sysreq.Check(cli.Ctx, skippedSysReqs()) {
+	for _, st := range sysreq.Check(client.Ctx, skippedSysReqs()) {
 		if st.Failed() {
 			failed = append(failed, st.Name)
 

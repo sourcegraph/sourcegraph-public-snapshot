@@ -6,8 +6,9 @@ import (
 	"os"
 	"path"
 
-	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
+	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"src.sourcegraph.com/sourcegraph/util/graphstoreutil"
 )
 

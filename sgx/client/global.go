@@ -1,4 +1,4 @@
-package cli
+package client
 
 import "golang.org/x/oauth2"
 
