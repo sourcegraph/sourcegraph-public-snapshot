@@ -31,43 +31,35 @@
  *
  */
 
-// Package naming defines the naming API and related data structures for gRPC.
-// The interface is EXPERIMENTAL and may be suject to change.
-package naming
+// Package peer defines various peer information associated with RPCs and
+// corresponding utils.
+package peer
 
-// Operation defines the corresponding operations for a name resolution change.
-type Operation uint8
+import (
+	"net"
 
-const (
-	// Add indicates a new address is added.
-	Add Operation = iota
-	// Delete indicates an exisiting address is deleted.
-	Delete
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/credentials"
 )
 
-// Update defines a name resolution update. Notice that it is not valid having both
-// empty string Addr and nil Metadata in an Update.
-type Update struct {
-	// Op indicates the operation of the update.
-	Op Operation
-	// Addr is the updated address. It is empty string if there is no address update.
-	Addr string
-	// Metadata is the updated metadata. It is nil if there is no metadata update.
-	// Metadata is not required for a custom naming implementation.
-	Metadata interface{}
+// Peer contains the information of the peer for an RPC.
+type Peer struct {
+	// Addr is the peer address.
+	Addr net.Addr
+	// AuthInfo is the authentication information of the transport.
+	// It is nil if there is no transport security being used.
+	AuthInfo credentials.AuthInfo
 }
 
-// Resolver creates a Watcher for a target to track its resolution changes.
-type Resolver interface {
-	// Resolve creates a Watcher for target.
-	Resolve(target string) (Watcher, error)
+type peerKey struct{}
+
+// NewContext creates a new context with peer information attached.
+func NewContext(ctx context.Context, p *Peer) context.Context {
+	return context.WithValue(ctx, peerKey{}, p)
 }
 
-// Watcher watches for the updates on the specified target.
-type Watcher interface {
-	// Next blocks until an update or error happens. It may return one or more
-	// updates. The first call should get the full set of the results.
-	Next() ([]*Update, error)
-	// Close closes the Watcher.
-	Close()
+// FromContext returns the peer information in ctx if it exists.
+func FromContext(ctx context.Context) (p *Peer, ok bool) {
+	p, ok = ctx.Value(peerKey{}).(*Peer)
+	return
 }

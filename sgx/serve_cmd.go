@@ -503,21 +503,19 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	h := handlerutil.WithMiddleware(sm, mw...)
 
+	if err := c.authenticateCLIContext(idKey); err != nil {
+		return err
+	}
+
 	// Start background workers that receive input from main app.
 	//
-	// It's safe (and better) to start them before starting the HTTP(S) web server to avoid
-	// a brief moment where the web server is started, but the background workers haven't yet.
-	{
-		if err := c.authenticateCLIContext(idKey); err != nil {
-			return err
-		}
-
-		// Start background repo updater worker.
-		repoupdater.RepoUpdater.Start(cli.Ctx)
-
-		// Start event listeners.
-		c.initializeEventListeners(cli.Ctx, idKey, appURL, sshURL)
-	}
+	// It's safe (and better) to start this before starting the
+	// HTTP(S) web server to avoid a brief moment where the web server
+	// is started, but the listeners haven't started yet.
+	//
+	//
+	// Start event listeners.
+	c.initializeEventListeners(cli.Ctx, idKey, appURL, sshURL)
 
 	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
 		lmux := cmux.New(l)
@@ -587,6 +585,9 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
+
+	// Start background repo updater worker.
+	repoupdater.RepoUpdater.Start(cli.Ctx)
 
 	if !c.NoWorker {
 		go func() {

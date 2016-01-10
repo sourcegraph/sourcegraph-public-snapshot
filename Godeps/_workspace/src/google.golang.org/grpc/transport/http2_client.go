@@ -50,6 +50,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 )
 
 // http2Client implements the ClientTransport interface with HTTP2.
@@ -238,10 +239,14 @@ func (t *http2Client) NewStream(ctx context.Context, callHdr *CallHdr) (_ *Strea
 			return nil, ContextErr(context.DeadlineExceeded)
 		}
 	}
+	pr := &peer.Peer{
+		Addr: t.conn.RemoteAddr(),
+	}
 	// Attach Auth info if there is any.
 	if t.authInfo != nil {
-		ctx = credentials.NewContext(ctx, t.authInfo)
+		pr.AuthInfo = t.authInfo
 	}
+	ctx = peer.NewContext(ctx, pr)
 	authData := make(map[string]string)
 	for _, c := range t.authCreds {
 		// Construct URI required to get auth request metadata.
@@ -646,7 +651,9 @@ func (t *http2Client) handleSettings(f *http2.SettingsFrame) {
 }
 
 func (t *http2Client) handlePing(f *http2.PingFrame) {
-	t.controlBuf.put(&ping{true})
+	pingAck := &ping{ack: true}
+	copy(pingAck.data[:], f.Data[:])
+	t.controlBuf.put(pingAck)
 }
 
 func (t *http2Client) handleGoAway(f *http2.GoAwayFrame) {
@@ -751,7 +758,7 @@ func (t *http2Client) reader() {
 			endStream := frame.Header().Flags.Has(http2.FlagHeadersEndStream)
 			curStream = t.operateHeaders(hDec, curStream, frame, endStream)
 		case *http2.ContinuationFrame:
-			curStream = t.operateHeaders(hDec, curStream, frame, false)
+			curStream = t.operateHeaders(hDec, curStream, frame, frame.HeadersEnded())
 		case *http2.DataFrame:
 			t.handleData(frame)
 		case *http2.RSTStreamFrame:
@@ -827,9 +834,7 @@ func (t *http2Client) controller() {
 				case *flushIO:
 					t.framer.flushWrite()
 				case *ping:
-					// TODO(zhaoq): Ack with all-0 data now. will change to some
-					// meaningful content when this is actually in use.
-					t.framer.writePing(true, i.ack, [8]byte{})
+					t.framer.writePing(true, i.ack, i.data)
 				default:
 					grpclog.Printf("transport: http2Client.controller got unexpected item type %v\n", i)
 				}
