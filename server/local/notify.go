@@ -57,6 +57,9 @@ func (s *notify) getPeople(ctx context.Context, users ...*sourcegraph.UserSpec) 
 	store := store.UsersFromContextOrNil(ctx)
 	for i, u := range users {
 		people[i] = notif.Person(ctx, u)
+		if people[i] == nil {
+			people[i] = &sourcegraph.Person{}
+		}
 		if people[i].Email == "" && store != nil {
 			// We directly query the user store, since the gRPC
 			// layer enforces that the actor can only query there

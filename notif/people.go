@@ -13,6 +13,10 @@ import (
 // Person will convert a UserSpec into a sourcegraph.Person with a best effort
 // approach.
 func Person(ctx context.Context, u *sourcegraph.UserSpec) *sourcegraph.Person {
+	if u.UID == 0 && u.Login == "" {
+		return nil
+	}
+
 	p := &sourcegraph.Person{
 		PersonSpec: sourcegraph.PersonSpec{
 			Login: u.Login,

@@ -4,7 +4,6 @@ package slack
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
@@ -27,7 +26,7 @@ type PostOpts struct {
 func PostMessage(opt PostOpts) {
 	webHookURL := Config.GetWebhookURLIfConfigured()
 	if webHookURL == "" {
-		log.Printf("Ignored Slack message: %q.", opt.Msg)
+		log15.Debug("Ignored Slack message", "msg", opt.Msg)
 		return
 	}
 
