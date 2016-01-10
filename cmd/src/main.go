@@ -20,7 +20,6 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/events/listeners"
 
 	// External services
-	_ "src.sourcegraph.com/sourcegraph/ext/aws"
 	_ "src.sourcegraph.com/sourcegraph/ext/github"
 	_ "src.sourcegraph.com/sourcegraph/ext/papertrail"
 
