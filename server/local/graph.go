@@ -2,9 +2,10 @@ package local
 
 import (
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -21,7 +22,7 @@ type graph_ struct{}
 func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, error) {
 	graphStore := store.GraphFromContextOrNil(ctx)
 	if graphStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "graph importing"}
+		return nil, grpc.Errorf(codes.Unimplemented, "graph importing")
 	}
 	return pb.Server(graphStore).Import(ctx, op)
 }
@@ -29,7 +30,7 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) (*pbtypes.Void, error) {
 	graphStore := store.GraphFromContextOrNil(ctx)
 	if graphStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "graph indexing"}
+		return nil, grpc.Errorf(codes.Unimplemented, "graph indexing")
 	}
 	return pb.Server(graphStore).Index(ctx, op)
 }

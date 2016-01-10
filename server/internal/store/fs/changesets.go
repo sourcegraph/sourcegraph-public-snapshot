@@ -23,7 +23,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
-	"src.sourcegraph.com/sourcegraph/platform/storage"
+	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util"
@@ -66,7 +66,7 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	}
 	cs.DeltaSpec.Head.CommitID = string(head)
 
-	err = storage.PutJSON(fs, id, changesetMetadataFile, cs)
+	err = platformstorage.PutJSON(fs, id, changesetMetadataFile, cs)
 	if err == nil {
 		// Update the index with the changeset's current state.
 		s.updateIndex(ctx, fs, cs.ID, true)
@@ -74,7 +74,7 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	return err
 }
 
-func claimNextChangesetID(sys storage.System) (int64, error) {
+func claimNextChangesetID(sys platformstorage.System) (int64, error) {
 	id, err := resolveNextChangesetID(sys)
 	if err != nil {
 		return 0, err
@@ -91,7 +91,7 @@ func claimNextChangesetID(sys storage.System) (int64, error) {
 	return id, err
 }
 
-func resolveNextChangesetID(fs storage.System) (int64, error) {
+func resolveNextChangesetID(fs platformstorage.System) (int64, error) {
 	fis, err := fs.List(changesetIndexAllDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -135,7 +135,7 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 	newReview.ID = int64(len(all.Reviews) + 1)
 	all.Reviews = append(all.Reviews, newReview)
 
-	err = storage.PutJSON(fs, strconv.FormatInt(changesetID, 10), changesetReviewsFile, all.Reviews)
+	err = platformstorage.PutJSON(fs, strconv.FormatInt(changesetID, 10), changesetReviewsFile, all.Reviews)
 	return newReview, err
 }
 
@@ -151,8 +151,8 @@ func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID i
 }
 
 // unmarshal JSON decodes the contents of the file for a changeset into v
-func (s *Changesets) unmarshal(fs storage.System, changesetID int64, filename string, v interface{}) error {
-	return storage.GetJSON(fs, strconv.FormatInt(changesetID, 10), filename, v)
+func (s *Changesets) unmarshal(fs platformstorage.System, changesetID int64, filename string, v interface{}) error {
+	return platformstorage.GetJSON(fs, strconv.FormatInt(changesetID, 10), filename, v)
 }
 
 var errInvalidUpdateOp = errors.New("invalid update operation")
@@ -209,7 +209,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	// changes to CS metadata should be exceedingly rare, and we do as
 	// little as possible between read and write. This is done in the vain
 	// of performance wins.
-	err = storage.PutJSON(fs, id, changesetMetadataFile, &after)
+	err = platformstorage.PutJSON(fs, id, changesetMetadataFile, &after)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			return nil, err
 		}
 		evts = append(evts, evt)
-		err = storage.PutJSON(fs, id, changesetEventsFile, evts)
+		err = platformstorage.PutJSON(fs, id, changesetEventsFile, evts)
 		return evt, err
 	}
 
@@ -403,7 +403,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 	skip := op.Offset()
 	for _, id := range ids {
 		var cs sourcegraph.Changeset
-		err = storage.GetJSON(fs, strconv.Itoa(id), changesetMetadataFile, &cs)
+		err = platformstorage.GetJSON(fs, strconv.Itoa(id), changesetMetadataFile, &cs)
 		if err != nil {
 			return nil, err
 		}
@@ -443,7 +443,7 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 
 // updateIndex updates the index with the given changeset state (whether or not
 // it is opened or closed).
-func (s *Changesets) updateIndex(ctx context.Context, fs storage.System, cid int64, open bool) error {
+func (s *Changesets) updateIndex(ctx context.Context, fs platformstorage.System, cid int64, open bool) error {
 	var adds, removes []string
 	if open {
 		// Changeset opened.
@@ -481,7 +481,7 @@ func (s *Changesets) updateIndex(ctx context.Context, fs storage.System, cid int
 // already exist.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) indexAdd(ctx context.Context, fs storage.System, cid int64, indexDir string) error {
+func (s *Changesets) indexAdd(ctx context.Context, fs platformstorage.System, cid int64, indexDir string) error {
 	// If the file exists nothing needs to be done.
 	if exists, err := s.indexHas(ctx, fs, cid, indexDir); err != nil {
 		return err
@@ -496,7 +496,7 @@ func (s *Changesets) indexAdd(ctx context.Context, fs storage.System, cid int64,
 // exists.
 //
 // Callers must guard by holding the s.fsLock lock.
-func (s *Changesets) indexRemove(ctx context.Context, fs storage.System, cid int64, indexDir string) error {
+func (s *Changesets) indexRemove(ctx context.Context, fs platformstorage.System, cid int64, indexDir string) error {
 	// If the file does not exist nothing needs to be done.
 	if exists, err := s.indexHas(ctx, fs, cid, indexDir); err != nil {
 		return err
@@ -507,7 +507,7 @@ func (s *Changesets) indexRemove(ctx context.Context, fs storage.System, cid int
 }
 
 // indexList returns a list of changeset IDs found in the given index directory.
-func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir string) (map[int64]bool, error) {
+func (s *Changesets) indexList(ctx context.Context, fs platformstorage.System, indexDir string) (map[int64]bool, error) {
 	infos, err := fs.List(indexDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -527,10 +527,10 @@ func (s *Changesets) indexList(ctx context.Context, fs storage.System, indexDir 
 }
 
 // indexHas stats the changeset ID in the given index directory.
-func (s *Changesets) indexHas(ctx context.Context, fs storage.System, cid int64, indexDir string) (bool, error) {
+func (s *Changesets) indexHas(ctx context.Context, fs platformstorage.System, cid int64, indexDir string) (bool, error) {
 	return fs.Exists(indexDir, strconv.FormatInt(cid, 10))
 }
 
-func (s *Changesets) storage(ctx context.Context, repoPath string) storage.System {
-	return storage.Namespace(ctx, "changesets", repoPath)
+func (s *Changesets) storage(ctx context.Context, repoPath string) platformstorage.System {
+	return platformstorage.Namespace(ctx, "changesets", repoPath)
 }

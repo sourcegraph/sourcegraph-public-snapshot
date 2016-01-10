@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 
-	"sourcegraph.com/sourcegraph/go-flags"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
+	"sourcegraph.com/sourcegraph/go-flags"
 )
 
 func init() {

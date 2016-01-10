@@ -9,10 +9,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Password is a pgsql backed implementation of the passwords store.
-type Password struct{}
+// password is a pgsql backed implementation of the passwords store.
+type password struct{}
 
-var _ store.Password = (*Password)(nil)
+var _ store.Password = (*password)(nil)
 
 type dbPassword struct {
 	UID            int32
@@ -28,7 +28,7 @@ func init() {
 
 // CheckUIDPassword returns an error if the password argument is not correct for
 // the user.
-func (p Password) CheckUIDPassword(ctx context.Context, UID int32, password string) error {
+func (p password) CheckUIDPassword(ctx context.Context, UID int32, password string) error {
 	var records [][]byte
 	err := dbh(ctx).Select(&records, "SELECT hashedpassword FROM passwords WHERE uid=$1;", UID)
 	if err != nil {
@@ -41,7 +41,7 @@ func (p Password) CheckUIDPassword(ctx context.Context, UID int32, password stri
 	return bcrypt.CompareHashAndPassword(hashed, []byte(password))
 }
 
-func (p Password) SetPassword(ctx context.Context, uid int32, password string) error {
+func (p password) SetPassword(ctx context.Context, uid int32, password string) error {
 	if password == "" {
 		return errors.New("password must not be empty")
 	}

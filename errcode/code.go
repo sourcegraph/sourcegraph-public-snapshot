@@ -8,10 +8,8 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 
 	"github.com/gorilla/schema"
@@ -32,7 +30,7 @@ func HTTP(err error) int {
 	}
 
 	switch err {
-	case graph.ErrDefNotExist, sourcegraph.ErrBuildNotFound, vcs.ErrRevisionNotFound, vcs.ErrCommitNotFound:
+	case vcs.ErrRevisionNotFound, vcs.ErrCommitNotFound:
 		return http.StatusNotFound
 	case auth.ErrNoExternalAuthToken:
 		return http.StatusUnauthorized
@@ -47,10 +45,6 @@ func HTTP(err error) int {
 	}
 
 	switch e := err.(type) {
-	case *sourcegraph.NotImplementedError:
-		// Ignore NotImplementedError's HTTPStatusCode method (which
-		// returns 404).
-		return http.StatusNotImplemented
 	case interface {
 		HTTPStatusCode() int
 	}:

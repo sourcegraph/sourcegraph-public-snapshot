@@ -255,7 +255,7 @@ func renderRepoNoVCSDataTemplate(w http.ResponseWriter, r *http.Request, rc *han
 	})
 }
 
-type RepoLink struct {
+type repoLinkInfo struct {
 	LeadingParts []string
 	NamePart     string
 	URL          *url.URL
@@ -265,14 +265,14 @@ type RepoLink struct {
 // absRepoLink produces a formatted link to a repo, and links to the
 // absolute URL to the repository on the current server (using
 // conf.AppURL).
-func absRepoLink(appURL *url.URL, repoURI string) *RepoLink {
+func absRepoLink(appURL *url.URL, repoURI string) *repoLinkInfo {
 	parts := strings.Split(repoURI, "/")
 
 	if maybeHost := strings.ToLower(parts[0]); (maybeHost == "github.com" || maybeHost == "sourcegraph.com") && len(parts) == 3 {
 		// Chop off "github.com" or "sourcegraph.com" prefix.
 		parts = parts[1:]
 	}
-	return &RepoLink{
+	return &repoLinkInfo{
 		LeadingParts: parts[:len(parts)-1],
 		NamePart:     parts[len(parts)-1],
 		URL:          appURL.ResolveReference(router.Rel.URLToRepo(repoURI)),
@@ -280,7 +280,7 @@ func absRepoLink(appURL *url.URL, repoURI string) *RepoLink {
 	}
 }
 
-func repoLink(repoURI string) *RepoLink {
+func repoLink(repoURI string) *repoLinkInfo {
 	return absRepoLink(&url.URL{}, repoURI)
 }
 
@@ -307,13 +307,6 @@ func repoBasename(repoURI string) string {
 	return filepath.Base(repoURI)
 }
 
-func repoStat(rp *sourcegraph.Repo, statType string) int {
-	// TODO(sqs): this is a stub to make templates and go code
-	// compile, it does not actually work - we need to reimplement repo
-	// stats for this to work.
-	return 0
-}
-
 // showRepoRevSwitcher returns whether the repo switcher (that lets you
 // choose branches/tags) should be displayed on pages generated for
 // this route. We only want to show it where it makes sense, when the
@@ -330,17 +323,4 @@ func showRepoRevSwitcher(routeName string) bool {
 		return true
 	}
 	return false
-}
-
-func repoMaybeUnsupported(repo *sourcegraph.Repo) bool {
-	if !repo.IsGitHubRepo() {
-		// assume all non-GitHub repos are supported, since we manually added them
-		return false
-	}
-	switch repo.Language {
-	case "Go", "JavaScript", "Python", "Ruby", "Java":
-		return false
-	default:
-		return true
-	}
 }

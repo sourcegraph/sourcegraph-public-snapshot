@@ -11,7 +11,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	"src.sourcegraph.com/sourcegraph/server/serverctx"
-	"src.sourcegraph.com/sourcegraph/sgx"
 	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
@@ -35,13 +34,13 @@ func initClient() {
 			return
 		}
 		serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) { return f(ctx), nil })
-		sgx.ClientContextFuncs = append(sgx.ClientContextFuncs, f)
+		sgxcli.ClientContext = append(sgxcli.ClientContext, f)
 	})
 }
 
-var clientFlags ClientFlags
+var clientFlags ClientConfig
 
-type ClientFlags struct {
+type ClientConfig struct {
 	Disable    bool   `long:"appdash.disable-client" description:"disable appdash client"`
 	URL        string `long:"appdash.url" description:"externally accessible URL for Appdash's web UI" default:"http://localhost:7800"`
 	RemoteAddr string `long:"appdash.remote-collector-addr" description:"collector addr for appdash client to send to"`
@@ -49,7 +48,7 @@ type ClientFlags struct {
 	Debug      bool   `long:"appdash.client-debug"`
 }
 
-func (f *ClientFlags) configure() (func(context.Context) context.Context, error) {
+func (f *ClientConfig) configure() (func(context.Context) context.Context, error) {
 	if f.Disable {
 		log15.Debug("Appdash client is disabled")
 		return nil, nil

@@ -10,7 +10,6 @@ import (
 	"go/build"
 	"go/format"
 	"go/parser"
-	"go/printer"
 	"go/token"
 	"io"
 	"log"
@@ -24,7 +23,6 @@ import (
 var (
 	storesFile     = flag.String("o1", "", "stores output file (default: stdout)")
 	mockstoresFile = flag.String("o2", "", "mock stores output file (default: stdout)")
-	cliFile        = flag.String("o3", "", "CLI config output file (default: stdout)")
 
 	fset = token.NewFileSet()
 )
@@ -117,15 +115,6 @@ func typeName(iface *ast.TypeSpec) string {
 	name := name(iface)
 	if name == "Graph" {
 		return "srcstore.MultiRepoStoreImporterIndexer"
-	}
-	return name
-}
-
-// xTypeName returns the type name when we're not in the "store" package.
-func xTypeName(iface *ast.TypeSpec) string {
-	name := typeName(iface)
-	if !strings.Contains(name, ".") {
-		return "store." + name
 	}
 	return name
 }
@@ -263,15 +252,4 @@ func writeMockStores(ifaces []*ast.TypeSpec, outPkgName string) ([]byte, error) 
 	fmt.Fprintln(&w, "}")
 
 	return format.Source(w.Bytes())
-}
-
-func astString(x ast.Expr) string {
-	if x == nil {
-		return ""
-	}
-	var buf bytes.Buffer
-	if err := printer.Fprint(&buf, fset, x); err != nil {
-		panic(err)
-	}
-	return buf.String()
 }

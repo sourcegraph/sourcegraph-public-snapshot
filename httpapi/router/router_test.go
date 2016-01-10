@@ -10,8 +10,6 @@ import (
 	"github.com/sourcegraph/mux"
 )
 
-const commitID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
 func TestRouter(t *testing.T) {
 	router := New(nil)
 	tests := []struct {

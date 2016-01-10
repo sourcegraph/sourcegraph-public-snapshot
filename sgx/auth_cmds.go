@@ -6,10 +6,12 @@ import (
 	"log"
 	"os"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 )
 
 func init() {
@@ -58,8 +60,8 @@ func (c *authCmd) Execute(args []string) error { return nil }
 type authIdentifyCmd struct{}
 
 func (c *authIdentifyCmd) Execute(args []string) error {
-	cl := cli.Client()
-	authInfo, err := cl.Auth.Identify(cli.Ctx, &pbtypes.Void{})
+	cl := client.Client()
+	authInfo, err := cl.Auth.Identify(client.Ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}

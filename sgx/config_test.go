@@ -4,8 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/go-flags"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
+	"sourcegraph.com/sourcegraph/go-flags"
 )
 
 // Test that we can specify CLI flag names as INI property names. This

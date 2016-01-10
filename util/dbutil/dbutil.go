@@ -1,12 +1,10 @@
 package dbutil
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"log"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/sqs/modl"
@@ -59,86 +57,6 @@ func Transact(dbh modl.SqlExecutor, fn func(dbh modl.SqlExecutor) error) (err er
 	}
 	return nil // don't commit the shared tx
 }
-
-func Explain(dbh modl.SqlExecutor, query string, args ...interface{}) error {
-	var explains []*struct {
-		Line string `db:"QUERY PLAN"`
-	}
-	err := dbh.Select(&explains, "explain "+query, args...)
-	if err != nil {
-		return err
-	}
-
-	for _, explain := range explains {
-		log.Println(explain.Line)
-	}
-	return nil
-}
-
-// ThreadSafeTx is a threadsafe transaction wrapper for tests. Typically, transactions should only be accessed on a single thread, but in many tests, transactions are
-// used as a generic SqlExecutor. This is not intended for use in non-test code.
-type ThreadSafeTx struct {
-	*modl.Transaction
-	mu sync.Mutex
-}
-
-func NewThreadSafeTx(dbmap *modl.DbMap) (*ThreadSafeTx, error) {
-	tx, err := dbmap.Begin()
-	if err != nil {
-		return nil, err
-	}
-	return &ThreadSafeTx{Transaction: tx}, nil
-}
-func (t *ThreadSafeTx) Get(i interface{}, keys ...interface{}) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Get(i, keys...)
-}
-func (t *ThreadSafeTx) Insert(list ...interface{}) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Insert(list...)
-}
-func (t *ThreadSafeTx) Update(list ...interface{}) (int64, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Update(list...)
-}
-func (t *ThreadSafeTx) Delete(list ...interface{}) (int64, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Delete(list...)
-}
-func (t *ThreadSafeTx) Exec(query string, args ...interface{}) (sql.Result, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Exec(query, args...)
-}
-func (t *ThreadSafeTx) Select(i interface{}, query string, args ...interface{}) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Select(i, query, args...)
-}
-func (t *ThreadSafeTx) Commit() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Commit()
-}
-func (t *ThreadSafeTx) Rollback() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Rollback()
-}
-func (t *ThreadSafeTx) Prepare(sql string) (*sql.Stmt, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Transaction.Tx.Prepare(sql)
-}
-func (t *ThreadSafeTx) UnderlyingSQLExecutor() modl.SqlExecutor {
-	return t.Transaction
-}
-
-var _ modl.SqlExecutor = &ThreadSafeTx{}
 
 // UnbindQuery interpolates the bind variables and returns the SQL query.
 //

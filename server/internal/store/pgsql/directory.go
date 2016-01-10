@@ -10,12 +10,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
 
-// Directory is a DB-backed implementation of the Directory store.
-type Directory struct{}
+// directory is a DB-backed implementation of the Directory store.
+type directory struct{}
 
-var _ store.Directory = (*Directory)(nil)
+var _ store.Directory = (*directory)(nil)
 
-func (s *Directory) GetUserByEmail(ctx context.Context, email string) (*sourcegraph.UserSpec, error) {
+func (s *directory) GetUserByEmail(ctx context.Context, email string) (*sourcegraph.UserSpec, error) {
 	q := `SELECT uid FROM user_email WHERE (NOT blacklisted) AND email=$1 ORDER BY uid ASC LIMIT 1`
 	uid, err := dbutil.SelectInt(dbh(ctx), q, email)
 	switch {

@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -77,12 +80,12 @@ func toUsers(us []*dbUser) []*sourcegraph.User {
 	return u2s
 }
 
-// Users is a DB-backed implementation of the Users store.
-type Users struct{}
+// users is a DB-backed implementation of the Users store.
+type users struct{}
 
-var _ store.Users = (*Users)(nil)
+var _ store.Users = (*users)(nil)
 
-func (s *Users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
+func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	var user *sourcegraph.User
 	var err error
 	if userSpec.UID != 0 && userSpec.Login != "" {
@@ -99,19 +102,19 @@ func (s *Users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 
 // getByUID returns the user with the given uid, if such a user
 // exists in the database.
-func (s *Users) getByUID(ctx context.Context, uid int) (*sourcegraph.User, error) {
+func (s *users) getByUID(ctx context.Context, uid int) (*sourcegraph.User, error) {
 	return s.getBySQL(ctx, "uid=$1", uid)
 }
 
 // getByLogin returns the user with the given login, if such a user
 // exists in the database.
-func (s *Users) getByLogin(ctx context.Context, login string) (*sourcegraph.User, error) {
+func (s *users) getByLogin(ctx context.Context, login string) (*sourcegraph.User, error) {
 	return s.getBySQL(ctx, "login=$1", login)
 }
 
 // getBySQL returns a user matching the SQL query (if any exists). A
 // "LIMIT 1" clause is appended to the query before it is executed.
-func (s *Users) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.User, error) {
+func (s *users) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.User, error) {
 	var users []*dbUser
 	err := dbh(ctx).Select(&users, "SELECT * FROM users WHERE ("+sql+") LIMIT 1", args...)
 	if err != nil {
@@ -129,7 +132,7 @@ var okUsersSorts = map[string]struct{}{
 	"uid":          struct{}{},
 }
 
-func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
+func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := modl.PostgresDialect{}.BindVar(len(args))
@@ -147,7 +150,7 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 		sort = "lower(login)"
 	}
 	if _, ok := okUsersSorts[sort]; !ok {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "invalid sort: " + sort}
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid sort: "+sort)
 	}
 
 	if direction == "" {
@@ -158,7 +161,7 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 		}
 	}
 	if direction != "asc" && direction != "desc" {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "invalid direction: " + direction}
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid direction: "+direction)
 	}
 
 	sql += fmt.Sprintf(" ORDER BY %s %s", sort, strings.ToUpper(direction))
@@ -172,7 +175,7 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 	return toUsers(users), nil
 }
 
-func (s *Users) Count(ctx context.Context) (int32, error) {
+func (s *users) Count(ctx context.Context) (int32, error) {
 	sql := "SELECT count(*) FROM users WHERE NOT disabled;"
 	var count []int
 	if err := dbh(ctx).Select(&count, sql); err != nil || len(count) == 0 {

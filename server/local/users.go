@@ -23,7 +23,7 @@ var _ sourcegraph.UsersServer = (*users)(nil)
 func (s *users) Get(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	store := store.UsersFromContextOrNil(ctx)
 	if store == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "Users"}
+		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 
 	shortCache(ctx)
@@ -33,7 +33,7 @@ func (s *users) Get(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegra
 func (s *users) GetWithEmail(ctx context.Context, emailAddr *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	store := store.UsersFromContextOrNil(ctx)
 	if store == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "Users"}
+		return nil, grpc.Errorf(codes.Unimplemented, "Users")
 	}
 
 	shortCache(ctx)

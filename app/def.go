@@ -1,12 +1,9 @@
 package app
 
 import (
-	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/srclib/graph"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -14,7 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-	"src.sourcegraph.com/sourcegraph/util/textutil"
 )
 
 // serveDef creates a new response for the code view that contains information
@@ -151,24 +147,6 @@ func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
 		CurrentRepo: opt.CurrentRepo,
 		CurrentFile: opt.CurrentFile,
 	})
-}
-
-func defMetaDescription(def *sourcegraph.Def) string {
-	docText := strings.TrimSpace(textutil.TextFromHTML(string(def.DocHTML.HTML)))
-	var desc string
-	if docText == "" {
-		desc += fmt.Sprintf("%s in %s", def.Fmt().Name(graph.ScopeQualified), repoBasename(def.Def.Repo))
-	} else {
-		desc += textutil.Truncate(300, collapseSpace(docText))
-	}
-
-	return desc
-}
-
-var spaceRE = regexp.MustCompile(`\s+`)
-
-func collapseSpace(s string) string {
-	return spaceRE.ReplaceAllString(s, " ")
 }
 
 // defRobotsIndex returns a boolean indicating whether the page

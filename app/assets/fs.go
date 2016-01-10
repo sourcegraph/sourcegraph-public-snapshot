@@ -10,13 +10,13 @@ import (
 type cacheStrategy uint
 
 const (
-	// ShortTermCache is a caching strategy that informs a client to
+	// shortTermCache is a caching strategy that informs a client to
 	// cache for a short amount of time
-	ShortTermCache cacheStrategy = iota
+	shortTermCache cacheStrategy = iota
 
-	// LongTermCache is a caching strategy that informs a client to cache
+	// longTermCache is a caching strategy that informs a client to cache
 	// for a long time
-	LongTermCache
+	longTermCache
 )
 
 func AssetFS(cacheStrategy cacheStrategy) http.Handler {
@@ -28,9 +28,9 @@ func AssetFS(cacheStrategy cacheStrategy) http.Handler {
 			w.Header().Set("Content-Type", "image/svg+xml")
 		}
 		switch cacheStrategy {
-		case ShortTermCache:
+		case shortTermCache:
 			w.Header().Set("Cache-Control", "max-age=300, public")
-		case LongTermCache:
+		case longTermCache:
 			w.Header().Set("Cache-Control", "max-age=31556926, public")
 		}
 		fs.ServeHTTP(w, r)

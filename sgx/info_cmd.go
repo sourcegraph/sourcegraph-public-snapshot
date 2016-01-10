@@ -6,10 +6,12 @@ import (
 	"log"
 	"time"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/pkg/sysreq"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 )
 
 func init() {
@@ -28,7 +30,7 @@ type infoCmd struct{}
 func (c *infoCmd) Execute(_ []string) error {
 	fmt.Println("# System requirements")
 
-	ctx, cancel := context.WithTimeout(cli.Ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(client.Ctx, 5*time.Second)
 	defer cancel()
 	hasErr := false
 	for _, st := range sysreq.Check(ctx, skippedSysReqs()) {

@@ -37,15 +37,15 @@ func init() {
 	)
 }
 
-// Storage is a DB-backed implementation of the Storage store.
-type Storage struct {
+// storage is a DB-backed implementation of the Storage store.
+type storage struct {
 	putNoOverwrite sync.Mutex
 }
 
-var _ store.Storage = (*Storage)(nil)
+var _ store.Storage = (*storage)(nil)
 
 // Get implements the store.Storage interface.
-func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
+func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageValue{}, errors.New("key must be specified")
@@ -70,7 +70,7 @@ func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 }
 
 // Put implements the store.Storage interface.
-func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key.Key == "" {
 		return &pbtypes.Void{}, errors.New("key must be specified")
@@ -91,7 +91,7 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 }
 
 // PutNoOverwrite implements the store.Storage interface.
-func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	// TODO(slimsag): this is a hack to prevent a race condition with multiple
 	// in-process calls to PutNoOverwrite. Although the advisory lock below does
 	// protect us against distributed race conditions (i.e. the case of multiple
@@ -146,7 +146,7 @@ func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePu
 }
 
 // Delete implements the store.Storage interface.
-func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
+func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
 	// Compose the bucket key.
 	bucket, err := bucketKey(opt.Bucket)
 	if err != nil {
@@ -165,7 +165,7 @@ func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 }
 
 // Exists implements the store.Storage interface.
-func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageExists{}, errors.New("key must be specified")
@@ -189,7 +189,7 @@ func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 }
 
 // List implements the store.Storage interface.
-func (s *Storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
+func (s *storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
 	// Compose the bucket key.
 	bucket, err := bucketKey(opt.Bucket)
 	if err != nil {

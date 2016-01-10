@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strings"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"github.com/sourcegraph/mux"
 
 	"gopkg.in/inconshreveable/log15.v2"
-
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 // flags are CLI flags exposed on the `src serve` subcommand.

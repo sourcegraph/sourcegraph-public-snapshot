@@ -25,12 +25,12 @@ func init() {
 	tbl.ColMap("PrivateKeyPEM").SetSqlType("text")
 }
 
-// MirroredRepoSSHKeys is a DB-backed implementation of the MirroredRepoSSHKeys store.
-type MirroredRepoSSHKeys struct{}
+// mirroredRepoSSHKeys is a DB-backed implementation of the MirroredRepoSSHKeys store.
+type mirroredRepoSSHKeys struct{}
 
-var _ store.MirroredRepoSSHKeys = (*MirroredRepoSSHKeys)(nil)
+var _ store.MirroredRepoSSHKeys = (*mirroredRepoSSHKeys)(nil)
 
-func (s *MirroredRepoSSHKeys) Create(ctx context.Context, repo string, privKey *rsa.PrivateKey) error {
+func (s *mirroredRepoSSHKeys) Create(ctx context.Context, repo string, privKey *rsa.PrivateKey) error {
 	block, err := x509.EncryptPEMBlock(rand.Reader, "RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(privKey), []byte(pemPassword), x509.PEMCipherAES128)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ WHERE NOT EXISTS (SELECT NULL FROM update_result);
 	return nil
 }
 
-func (s *MirroredRepoSSHKeys) GetPEM(ctx context.Context, repo string) ([]byte, error) {
+func (s *mirroredRepoSSHKeys) GetPEM(ctx context.Context, repo string) ([]byte, error) {
 	var k []*repoKey
 	if err := dbh(ctx).Select(&k, `SELECT * FROM repo_key WHERE repo=$1 LIMIT 1`, repo); err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (s *MirroredRepoSSHKeys) GetPEM(ctx context.Context, repo string) ([]byte, 
 	return pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: d}), nil
 }
 
-func (s *MirroredRepoSSHKeys) Delete(ctx context.Context, repo string) error {
+func (s *mirroredRepoSSHKeys) Delete(ctx context.Context, repo string) error {
 	_, err := dbh(ctx).Exec(`DELETE FROM repo_key WHERE repo=$1;`, repo)
 	return err
 }

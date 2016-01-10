@@ -20,7 +20,6 @@ type contextKey int
 
 const (
 	grpcEndpointKey contextKey = iota
-	httpEndpointKey
 	credentialsKey
 	clientMetadataKey
 )

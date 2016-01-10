@@ -6,8 +6,10 @@ import (
 	"log"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/util/statsutil"
 )
 
@@ -67,7 +69,7 @@ type buildsListCmd struct {
 }
 
 func (c *buildsListCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	opt := &sourcegraph.BuildListOptions{
 		Repo:        c.Repo,
@@ -84,7 +86,7 @@ func (c *buildsListCmd) Execute(args []string) error {
 
 	for page := int32(1); ; page++ {
 		opt.ListOptions.Page = page
-		builds, err := cl.Builds.List(cli.Ctx, opt)
+		builds, err := cl.Builds.List(client.Ctx, opt)
 		if err != nil {
 			return err
 		}
@@ -117,11 +119,11 @@ type buildsGetRepoBuildInfoCmd struct {
 }
 
 func (c *buildsGetRepoBuildInfoCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	for _, repo := range c.Args.Repo {
 		repo, rev := sourcegraph.ParseRepoAndCommitID(repo)
-		build, err := cl.Builds.GetRepoBuild(cli.Ctx,
+		build, err := cl.Builds.GetRepoBuild(client.Ctx,
 			&sourcegraph.RepoRevSpec{
 				RepoSpec: sourcegraph.RepoSpec{URI: repo},
 				Rev:      rev,
@@ -150,9 +152,9 @@ func ago(t time.Time) string {
 type buildsStatsCmd struct{}
 
 func (c *buildsStatsCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
-	numBuilds, err := statsutil.ComputeBuildStats(cl, cli.Ctx)
+	numBuilds, err := statsutil.ComputeBuildStats(cl, client.Ctx)
 	if err != nil {
 		return err
 	}

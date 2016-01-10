@@ -21,7 +21,7 @@ func preCreateRepo(repo *sourcegraph.Repo) *sourcegraph.Repo {
 func TestRepos_List(t *testing.T) {
 	t.Parallel()
 
-	var s Repos
+	var s repos
 	ctx, done := testContext()
 	defer done()
 
@@ -42,7 +42,7 @@ func TestRepos_List_type(t *testing.T) {
 	r1 := &sourcegraph.Repo{URI: "r1", Private: true}
 	r2 := &sourcegraph.Repo{URI: "r2"}
 
-	var s Repos
+	var s repos
 	ctx, done := testContext()
 	defer done()
 
@@ -80,47 +80,47 @@ func TestRepos_List_query(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_query(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_List_query(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_List_URIs(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_URIs(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_List_URIs(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Create(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Create(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Create_dupe(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create_dupe(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Create_dupe(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Update_Description(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_Description(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Update_Description(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Update_UpdatedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_UpdatedAt(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Update_UpdatedAt(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Update_PushedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_PushedAt(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Update_PushedAt(ctx, t, &repos{}, preCreateRepo)
 }

@@ -122,15 +122,3 @@ func wrapUnits(units []*unit.SourceUnit) []*unit.RepoSourceUnit {
 	}
 	return rsUnits
 }
-
-func unwrapUnits(rsUnits []*unit.RepoSourceUnit) []*unit.SourceUnit {
-	units := make([]*unit.SourceUnit, len(rsUnits))
-	for i, rsUnit := range rsUnits {
-		var err error
-		units[i], err = rsUnit.SourceUnit()
-		if err != nil {
-			panic(err)
-		}
-	}
-	return units
-}

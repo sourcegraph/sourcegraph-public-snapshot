@@ -229,8 +229,6 @@ func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey)
 	return &pbtypes.Void{}, err
 }
 
-type keyToUID map[string]int32
-
 func (s *userKeys) addLookupIndex(ctx context.Context, key []byte, uid int) error {
 	// Marshal key into network format.
 	pubKey, _, _, _, err := ssh.ParseAuthorizedKey(key)

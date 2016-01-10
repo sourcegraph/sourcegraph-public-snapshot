@@ -48,7 +48,7 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 
 	switch {
 	case opt.TokenizedSource && opt.Formatted:
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "at most one of TokenizedSource and Formatted may be specified"}
+		return nil, grpc.Errorf(codes.InvalidArgument, "at most one of TokenizedSource and Formatted may be specified")
 
 	case opt.TokenizedSource:
 		sourceCode, err := sourcecode.Parse(ctx, entrySpec, entry0)
@@ -132,7 +132,7 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 	repoRev := op.Rev
 	opt := op.Opt
 	if opt == nil || strings.TrimSpace(opt.Query) == "" {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "opt and opt.Query must be set"}
+		return nil, grpc.Errorf(codes.InvalidArgument, "opt and opt.Query must be set")
 	}
 
 	cacheOnCommitID(ctx, repoRev.CommitID)
@@ -145,7 +145,7 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 	rcs, ok := vcsrepo.(vcs.Searcher)
 	if !ok {
 		// Repo does not support tree searching.
-		return nil, &sourcegraph.NotImplementedError{What: "VCS searching"}
+		return nil, grpc.Errorf(codes.Unimplemented, "VCS searching")
 	}
 
 	if !isAbsCommitID(repoRev.CommitID) {

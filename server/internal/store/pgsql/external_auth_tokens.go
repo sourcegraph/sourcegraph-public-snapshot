@@ -17,12 +17,12 @@ func init() {
 	)
 }
 
-// ExternalAuthTokens is a DB-backed implementation of the ExternalAuthTokens store.
-type ExternalAuthTokens struct{}
+// externalAuthTokens is a DB-backed implementation of the ExternalAuthTokens store.
+type externalAuthTokens struct{}
 
-var _ store.ExternalAuthTokens = (*ExternalAuthTokens)(nil)
+var _ store.ExternalAuthTokens = (*externalAuthTokens)(nil)
 
-func (s *ExternalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error) {
+func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error) {
 	var toks []*auth.ExternalAuthToken
 	err := dbh(ctx).Select(&toks, `SELECT * FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3`, user, host, clientID)
 	if err != nil {
@@ -34,7 +34,7 @@ func (s *ExternalAuthTokens) GetUserToken(ctx context.Context, user int, host, c
 	return toks[0], nil
 }
 
-func (s *ExternalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
+func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
 	return dbutil.Transact(dbh(ctx), func(tx modl.SqlExecutor) error {
 		ctx = NewContext(ctx, tx)
 

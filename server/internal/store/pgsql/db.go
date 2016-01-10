@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	// Schema is the DB schema for the database used by this package.
+	// Schema is the DB Schema for the database used by this package.
 	Schema = dbutil2.Schema{
 		CreateSQL: []string{
 			`CREATE EXTENSION IF NOT EXISTS citext;`,

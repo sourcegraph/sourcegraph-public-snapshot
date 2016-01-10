@@ -12,29 +12,25 @@ import (
 	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/cli"
-
-	_ "src.sourcegraph.com/sourcegraph/sgx"
 )
 
-var Stores = store.Stores{
-	Accounts:          &Accounts{},
-	Authorizations:    &Authorizations{},
-	BuildLogs:         &BuildLogs{},
-	Builds:            NewBuildStore(),
-	RepoConfigs:       &RepoConfigs{},
-	Password:          &Password{},
-	RegisteredClients: &RegisteredClients{},
-	RepoStatuses:      &RepoStatuses{},
-	RepoVCS:           &RepoVCS{},
-	Repos:             &Repos{},
-	Users:             &Users{},
-	Changesets:        &Changesets{},
-	Storage:           NewStorage(),
-	Invites:           &Invites{},
-}
-
 func init() {
-	cli.RegisterStores("fs", &Stores)
+	cli.RegisterStores("fs", &store.Stores{
+		Accounts:          &accounts{},
+		Authorizations:    &authorizations{},
+		BuildLogs:         &buildLogs{},
+		Builds:            &builds{},
+		RepoConfigs:       &repoConfigs{},
+		Password:          &password{},
+		RegisteredClients: &registeredClients{},
+		RepoStatuses:      &repoStatuses{},
+		RepoVCS:           &RepoVCS{},
+		Repos:             &repos{},
+		Users:             &users{},
+		Changesets:        &Changesets{},
+		Storage:           &storage{},
+		Invites:           &invites{},
+	})
 }
 
 // newVFS creates a read-write VFS rooted at base, which can be either
@@ -78,24 +74,24 @@ func setCreateParentDirs(fs rwvfs.FileSystem) {
 
 func init() {
 	sgxcli.PostInit = append(sgxcli.PostInit, func() {
-		_, err := sgxcli.Serve.AddGroup("Local filesystem storage (fs store)", "Local filesystem storage", &ActiveFlags)
+		_, err := sgxcli.Serve.AddGroup("Local filesystem storage (fs store)", "Local filesystem storage", &activeFlags)
 		if err != nil {
 			log.Fatal(err)
 		}
 	})
 
 	sgxcli.ServeInit = append(sgxcli.ServeInit, func() {
-		ActiveFlags.Expand()
+		activeFlags.Expand()
 
 		// Construct filesystems once at init time so we can reuse
 		// HTTP clients backing HTTP VFSes and avoid needless garbage.
-		dbVFS := newVFS(ActiveFlags.DBDir)
-		buildStoreVFS := newVFS(ActiveFlags.BuildStoreDir)
-		repoStatusVFS := newVFS(ActiveFlags.RepoStatusDir)
-		appStorageVFS := newVFS(ActiveFlags.AppStorageDir)
+		dbVFS := newVFS(activeFlags.DBDir)
+		buildStoreVFS := newVFS(activeFlags.BuildStoreDir)
+		repoStatusVFS := newVFS(activeFlags.RepoStatusDir)
+		appStorageVFS := newVFS(activeFlags.AppStorageDir)
 
 		serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) {
-			if dir := ActiveFlags.ReposDir; dir != "" {
+			if dir := activeFlags.ReposDir; dir != "" {
 				ctx = WithReposVFS(ctx, filepath.Clean(dir))
 			}
 			ctx = WithBuildStoreVFS(ctx, buildStoreVFS)
@@ -116,7 +112,7 @@ type Flags struct {
 	GitRepoMirror string `long:"fs.git-repo-mirror" description:"comma-separated string map in the form '<LocalRepoURI>:<GitRemoteURL>' defining which repos to mirror on a remote host"`
 }
 
-var ActiveFlags Flags
+var activeFlags Flags
 
 func (f *Flags) Expand() {
 	f.ReposDir = os.ExpandEnv(f.ReposDir)

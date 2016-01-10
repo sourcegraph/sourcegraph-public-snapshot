@@ -28,26 +28,26 @@ func TestBuildLogs_Get_noErrorIfNotExist(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.BuildLogs_Get_noErrorIfNotExist(ctx, t, &BuildLogs{}, writeBuildLog)
+	testsuite.BuildLogs_Get_noErrorIfNotExist(ctx, t, &buildLogs{}, writeBuildLog)
 }
 
 func TestBuildLogs_Get_noErrorIfEmpty(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.BuildLogs_Get_noErrorIfEmpty(ctx, t, &BuildLogs{}, writeBuildLog)
+	testsuite.BuildLogs_Get_noErrorIfEmpty(ctx, t, &buildLogs{}, writeBuildLog)
 }
 
 func TestBuildLogs_Get_ok(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.BuildLogs_Get_ok(ctx, t, &BuildLogs{}, writeBuildLog)
+	testsuite.BuildLogs_Get_ok(ctx, t, &buildLogs{}, writeBuildLog)
 }
 
 func TestBuildLogs_Get_MinID(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.BuildLogs_Get_MinID(ctx, t, &BuildLogs{}, writeBuildLog)
+	testsuite.BuildLogs_Get_MinID(ctx, t, &buildLogs{}, writeBuildLog)
 }

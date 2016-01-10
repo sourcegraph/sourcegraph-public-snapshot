@@ -76,12 +76,12 @@ func writeAuthCodesDB(ctx context.Context, authCodes []*authCode) (err error) {
 	return err
 }
 
-// Authorizations is a FS-backed implementation of the Authorizations store.
-type Authorizations struct{}
+// authorizations is a FS-backed implementation of the Authorizations store.
+type authorizations struct{}
 
-var _ store.Authorizations = (*Authorizations)(nil)
+var _ store.Authorizations = (*authorizations)(nil)
 
-func (s *Authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.AuthorizationCodeRequest, expires time.Duration) (string, error) {
+func (s *authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.AuthorizationCodeRequest, expires time.Duration) (string, error) {
 	codes, err := readAuthCodesDB(ctx)
 	if err != nil {
 		return "", err
@@ -103,7 +103,7 @@ func (s *Authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.Au
 	return code.Code, nil
 }
 
-func (s *Authorizations) MarkExchanged(ctx context.Context, code *sourcegraph.AuthorizationCode, clientID string) (*sourcegraph.AuthorizationCodeRequest, error) {
+func (s *authorizations) MarkExchanged(ctx context.Context, code *sourcegraph.AuthorizationCode, clientID string) (*sourcegraph.AuthorizationCodeRequest, error) {
 	codes, err := readAuthCodesDB(ctx)
 	if err != nil {
 		return nil, err

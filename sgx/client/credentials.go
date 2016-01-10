@@ -1,4 +1,4 @@
-package cli
+package client
 
 import (
 	"sync"
@@ -7,12 +7,13 @@ import (
 	"golang.org/x/oauth2"
 	"src.sourcegraph.com/sourcegraph/auth/userauth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 var Credentials CredentialOpts
 
 func init() {
-	CLI.AddGroup("Client authentication", "", &Credentials)
+	sgxcli.CLI.AddGroup("Client authentication", "", &Credentials)
 }
 
 // CredentialOpts sets the authentication credentials to use when

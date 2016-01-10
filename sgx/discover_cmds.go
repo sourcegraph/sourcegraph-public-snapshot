@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log"
 
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
 func init() {

@@ -10,9 +10,10 @@ import (
 	"github.com/rogpeppe/rog-go/parallel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/util/textutil"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
@@ -132,11 +133,11 @@ type repoGetCmd struct {
 }
 
 func (c *repoGetCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	repoSpec := &sourcegraph.RepoSpec{URI: c.Args.URI}
 
-	repo, err := cl.Repos.Get(cli.Ctx, repoSpec)
+	repo, err := cl.Repos.Get(client.Ctx, repoSpec)
 	if err != nil {
 		return err
 	}
@@ -148,7 +149,7 @@ func (c *repoGetCmd) Execute(args []string) error {
 	fmt.Println(string(b))
 
 	if c.Config {
-		conf, err := cl.Repos.GetConfig(cli.Ctx, repoSpec)
+		conf, err := cl.Repos.GetConfig(client.Ctx, repoSpec)
 		if err != nil {
 			return err
 		}
@@ -172,10 +173,10 @@ type repoListCmd struct {
 }
 
 func (c *repoListCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	for page := 1; ; page++ {
-		repos, err := cl.Repos.List(cli.Ctx, &sourcegraph.RepoListOptions{
+		repos, err := cl.Repos.List(client.Ctx, &sourcegraph.RepoListOptions{
 			Owner:       c.Owner,
 			Query:       c.Query,
 			Sort:        c.Sort,
@@ -208,9 +209,9 @@ type repoCreateCmd struct {
 }
 
 func (c *repoCreateCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
-	repo, err := cl.Repos.Create(cli.Ctx, &sourcegraph.ReposCreateOp{
+	repo, err := cl.Repos.Create(client.Ctx, &sourcegraph.ReposCreateOp{
 		URI:         c.Args.URI,
 		VCS:         c.VCS,
 		CloneURL:    c.CloneURL,
@@ -235,9 +236,9 @@ type repoUpdateCmd struct {
 }
 
 func (c *repoUpdateCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
-	repo, err := cl.Repos.Update(cli.Ctx, &sourcegraph.ReposUpdateOp{
+	repo, err := cl.Repos.Update(client.Ctx, &sourcegraph.ReposUpdateOp{
 		Repo:        sourcegraph.RepoSpec{URI: c.Args.URI},
 		Description: c.Description,
 		Language:    c.Language,
@@ -256,10 +257,10 @@ type repoDeleteCmd struct {
 }
 
 func (c *repoDeleteCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
 	for _, uri := range c.Args.URIs {
-		if _, err := cl.Repos.Delete(cli.Ctx, &sourcegraph.RepoSpec{URI: uri}); err != nil {
+		if _, err := cl.Repos.Delete(client.Ctx, &sourcegraph.RepoSpec{URI: uri}); err != nil {
 			return err
 		}
 		log.Printf("# deleted: %s", uri)
@@ -299,25 +300,25 @@ func (c *repoSyncCmd) Execute(args []string) error {
 func (c *repoSyncCmd) sync(repoURI string) error {
 	log := log.New(os.Stderr, cyan(strings.TrimPrefix(strings.TrimPrefix(repoURI+": ", "github.com/"), "sourcegraph.com/")), 0)
 
-	cl := cli.Client()
+	cl := client.Client()
 
 	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
 
-	repo, err := cl.Repos.Get(cli.Ctx, &repoSpec)
+	repo, err := cl.Repos.Get(client.Ctx, &repoSpec)
 	if err != nil {
 		return err
 	}
 
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: repo.DefaultBranch}
-	commit, err := cl.Repos.GetCommit(cli.Ctx, &repoRevSpec)
+	commit, err := cl.Repos.GetCommit(client.Ctx, &repoRevSpec)
 	if err != nil {
 		return err
 	}
 	repoRevSpec.CommitID = string(commit.ID)
 	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], repo.DefaultBranch, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
 
-	if _, err := cl.Builds.GetRepoBuild(cli.Ctx, &repoRevSpec); grpc.Code(err) == codes.NotFound {
-		b, err := cl.Builds.Create(cli.Ctx, &sourcegraph.BuildsCreateOp{
+	if _, err := cl.Builds.GetRepoBuild(client.Ctx, &repoRevSpec); grpc.Code(err) == codes.NotFound {
+		b, err := cl.Builds.Create(client.Ctx, &sourcegraph.BuildsCreateOp{
 			Repo:     repoRevSpec.RepoSpec,
 			CommitID: repoRevSpec.CommitID,
 			Config:   sourcegraph.BuildConfig{Queue: true},
@@ -342,24 +343,24 @@ type repoRefreshVCSCmd struct {
 }
 
 func (c *repoRefreshVCSCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 	for _, repoURI := range c.Args.URIs {
-		repo, err := cl.Repos.Get(cli.Ctx, &sourcegraph.RepoSpec{URI: repoURI})
+		repo, err := cl.Repos.Get(client.Ctx, &sourcegraph.RepoSpec{URI: repoURI})
 		if err != nil {
 			return err
 		}
 
 		repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: repo.DefaultBranch}
-		preCommit, err := cl.Repos.GetCommit(cli.Ctx, &repoRevSpec)
+		preCommit, err := cl.Repos.GetCommit(client.Ctx, &repoRevSpec)
 		if err != nil {
 			return err
 		}
 
-		if _, err := cl.MirrorRepos.RefreshVCS(cli.Ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repoRevSpec.RepoSpec}); err != nil {
+		if _, err := cl.MirrorRepos.RefreshVCS(client.Ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repoRevSpec.RepoSpec}); err != nil {
 			return err
 		}
 
-		postCommit, err := cl.Repos.GetCommit(cli.Ctx, &repoRevSpec)
+		postCommit, err := cl.Repos.GetCommit(client.Ctx, &repoRevSpec)
 		if err != nil {
 			return err
 		}
@@ -382,9 +383,9 @@ type repoInventoryCmd struct {
 }
 
 func (c *repoInventoryCmd) Execute(args []string) error {
-	cl := cli.Client()
+	cl := client.Client()
 
-	inv, err := cl.Repos.GetInventory(cli.Ctx, &sourcegraph.RepoRevSpec{
+	inv, err := cl.Repos.GetInventory(client.Ctx, &sourcegraph.RepoRevSpec{
 		RepoSpec: sourcegraph.RepoSpec{URI: c.Args.Repo},
 		Rev:      c.Rev,
 	})

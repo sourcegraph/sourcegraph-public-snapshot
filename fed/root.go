@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/url"
 
-	"golang.org/x/net/context"
-
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
+	"golang.org/x/net/context"
 )
 
 // Flags defines settings (in the form of CLI flags) for federation.

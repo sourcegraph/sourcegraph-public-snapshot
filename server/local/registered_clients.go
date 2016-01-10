@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -136,8 +137,8 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 		}
 
 		if _, err := setPermissionsForUser(ctx, adminOpt); err != nil {
-			// if user permissions store is unavailable on the server, ignore and continue.
-			if _, ok := err.(*sourcegraph.NotImplementedError); !ok {
+			// ignore Unimplemented as the UserPermissionsStore is not implemented
+			if errcode.GRPC(err) != codes.Unimplemented {
 				return nil, err
 			}
 		}
@@ -373,7 +374,7 @@ func setPermissionsForUser(ctx context.Context, userPerms *sourcegraph.UserPermi
 func registeredClientsOrError(ctx context.Context) (store.RegisteredClients, error) {
 	s := store.RegisteredClientsFromContextOrNil(ctx)
 	if s == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "RegisteredClients"}
+		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
 	}
 	if !fed.Config.AllowsClientRegistration() {
 		return nil, grpc.Errorf(codes.Unimplemented, "server is not a federation root and therefore does not allow client registration")
@@ -384,7 +385,7 @@ func registeredClientsOrError(ctx context.Context) (store.RegisteredClients, err
 func userPermissionsOrError(ctx context.Context) (store.UserPermissions, error) {
 	s := store.UserPermissionsFromContextOrNil(ctx)
 	if s == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "UserPermissions"}
+		return nil, grpc.Errorf(codes.Unimplemented, "UserPermissions")
 	}
 	return s, nil
 }

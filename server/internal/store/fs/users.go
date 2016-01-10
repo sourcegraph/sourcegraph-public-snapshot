@@ -78,12 +78,12 @@ func writeUserDB(ctx context.Context, users []*userDBEntry) (err error) {
 	return err
 }
 
-// Users is an FS-backed implementation of the Users store.
-type Users struct{}
+// users is an FS-backed implementation of the Users store.
+type users struct{}
 
-var _ store.Users = (*Users)(nil)
+var _ store.Users = (*users)(nil)
 
-func (s *Users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
+func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
 	e, err := s.getDBEntry(ctx, userSpec)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (s *Users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 	return &e.User, nil
 }
 
-func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+func (s *users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	if emailAddr.Email == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "email address must not be empty")
 	}
@@ -113,7 +113,7 @@ func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAdd
 	return nil, &store.UserNotFoundError{Email: emailAddr.Email}
 }
 
-func (s *Users) getDBEntry(ctx context.Context, userSpec sourcegraph.UserSpec) (*userDBEntry, error) {
+func (s *users) getDBEntry(ctx context.Context, userSpec sourcegraph.UserSpec) (*userDBEntry, error) {
 	users, err := readUserDB(ctx)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (s *Users) getDBEntry(ctx context.Context, userSpec sourcegraph.UserSpec) (
 	return nil, &store.UserNotFoundError{Login: userSpec.Login, UID: int(userSpec.UID)}
 }
 
-func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
+func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
 	entries, err := readUserDB(ctx)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 	return users[low:high], nil
 }
 
-func (s *Users) Count(ctx context.Context) (int32, error) {
+func (s *users) Count(ctx context.Context) (int32, error) {
 	entries, err := readUserDB(ctx)
 	if err != nil {
 		return 0, err
@@ -183,7 +183,7 @@ func userMatchesQuery(user *sourcegraph.User, query string) bool {
 	return strings.HasPrefix(strings.ToLower(user.Login), strings.ToLower(query))
 }
 
-func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
+func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
 	e, err := s.getDBEntry(ctx, user)
 	if err != nil {
 		return nil, err

@@ -93,7 +93,7 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string) (repo *source
 	}
 
 	if storecli.ActiveFlags.Store == "pgsql" {
-		s := httptest.NewServer(TrivialGitRepoHandler)
+		s := httptest.NewServer(trivialGitRepoHandler)
 		op.CloneURL, done = s.URL, s.Close
 		op.Mirror = true
 	}

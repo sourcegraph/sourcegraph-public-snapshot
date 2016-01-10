@@ -15,7 +15,7 @@ import (
 
 type contextKey int
 
-const clientIDKey = iota
+const clientIDKey contextKey = iota
 
 // ClientIDFromContext retrieves the OAuth2 client ID in ctx that was
 // previously stored by WithClientID.

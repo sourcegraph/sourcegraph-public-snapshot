@@ -16,7 +16,7 @@ var tmpBuildStore = filepath.Join(os.TempDir(), "fs.builds.tests")
 
 // setBuilds creates a mock tasks based on the path deduced from the passed context.
 // This method also completely erases the contents of that path.
-func (s *Builds) setBuilds(ctx context.Context, t *testing.T, mockBuilds []*sourcegraph.Build) {
+func (s *builds) setBuilds(ctx context.Context, t *testing.T, mockBuilds []*sourcegraph.Build) {
 	if err := os.RemoveAll(tmpBuildStore); err != nil {
 		t.Fatalf("failed to reset test ground %s", err)
 	}
@@ -32,7 +32,7 @@ func (s *Builds) setBuilds(ctx context.Context, t *testing.T, mockBuilds []*sour
 
 // setTasks creates a mock tasks based on the path deduced from the passed context.
 // This method also completely erases the contents of that path.
-func (s *Builds) setTasks(ctx context.Context, t *testing.T, mockTasks []*sourcegraph.BuildTask) {
+func (s *builds) setTasks(ctx context.Context, t *testing.T, mockTasks []*sourcegraph.BuildTask) {
 	if err := os.RemoveAll(tmpBuildStore); err != nil {
 		t.Fatalf("failed to reset test ground %s", err)
 	}
@@ -48,7 +48,7 @@ func (s *Builds) setTasks(ctx context.Context, t *testing.T, mockTasks []*source
 }
 
 // queueEntryExists will validate whether the passed BuildSpec exists in the queue.
-func (s *Builds) queueEntryExists(ctx context.Context, want sourcegraph.BuildSpec, t *testing.T) bool {
+func (s *builds) queueEntryExists(ctx context.Context, want sourcegraph.BuildSpec, t *testing.T) bool {
 	var queue []sourcegraph.BuildSpec
 	if err := getQueue(ctx, buildQueueFilename, &queue); err != nil {
 		t.Fatalf("could not get queue: %#v", err)
@@ -79,91 +79,91 @@ func createTestContext(t *testing.T) context.Context {
 }
 
 func TestBuilds_GetFirstInCommitOrder_firstCommitIDMatch(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_GetFirstInCommitOrder_firstCommitIDMatch(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_GetFirstInCommitOrder_firstCommitIDMatch(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_GetFirstInCommitOrder_secondCommitIDMatch(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_GetFirstInCommitOrder_secondCommitIDMatch(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_GetFirstInCommitOrder_secondCommitIDMatch(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_GetFirstInCommitOrder_successfulOnly(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_GetFirstInCommitOrder_successfulOnly(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_GetFirstInCommitOrder_successfulOnly(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_GetFirstInCommitOrder_noneFound(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_GetFirstInCommitOrder_noneFound(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_GetFirstInCommitOrder_noneFound(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_GetFirstInCommitOrder_returnNewest(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_GetFirstInCommitOrder_returnNewest(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_GetFirstInCommitOrder_returnNewest(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_Get(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_Get(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_Get(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_List(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_List(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_List(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_List_byRepoAndCommitID(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_List_byRepoAndCommitID(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_Create(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_Create(createTestContext(t), t, s)
+	var s builds
+	testsuite.Builds_Create(createTestContext(t), t, &s)
 }
 
 func TestBuilds_Create_New(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_Create_New(createTestContext(t), t, s)
+	var s builds
+	testsuite.Builds_Create_New(createTestContext(t), t, &s)
 }
 
 func TestBuilds_Create_SequentialID(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_Create_SequentialID(createTestContext(t), t, s)
+	var s builds
+	testsuite.Builds_Create_SequentialID(createTestContext(t), t, &s)
 }
 
 func TestBuilds_Update(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_Update(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_Update(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_DequeueNext(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_DequeueNext(createTestContext(t), t, s, s.setBuilds)
+	var s builds
+	testsuite.Builds_DequeueNext(createTestContext(t), t, &s, s.setBuilds)
 }
 
 func TestBuilds_CreateTasks(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_CreateTasks(createTestContext(t), t, s, s.setTasks)
+	var s builds
+	testsuite.Builds_CreateTasks(createTestContext(t), t, &s, s.setTasks)
 }
 
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_CreateTasks_SequentialID(createTestContext(t), t, s)
+	var s builds
+	testsuite.Builds_CreateTasks_SequentialID(createTestContext(t), t, &s)
 }
 
 func TestBuilds_UpdateTask(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_UpdateTask(createTestContext(t), t, s, s.setTasks)
+	var s builds
+	testsuite.Builds_UpdateTask(createTestContext(t), t, &s, s.setTasks)
 }
 
 func TestBuilds_ListBuildTasks(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_ListBuildTasks(createTestContext(t), t, s, s.setTasks)
+	var s builds
+	testsuite.Builds_ListBuildTasks(createTestContext(t), t, &s, s.setTasks)
 }
 
 func TestBuilds_GetTask(t *testing.T) {
-	s := NewBuildStore()
-	testsuite.Builds_GetTask(createTestContext(t), t, s, s.setTasks)
+	var s builds
+	testsuite.Builds_GetTask(createTestContext(t), t, &s, s.setTasks)
 }

@@ -50,7 +50,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, &struct {
 		Repos  []*sourcegraph.Repo
 		SGPath string
-		Users  []*UserInfo
+		Users  []*userInfo
 		IsLDAP bool
 
 		RootURL *url.URL
@@ -66,15 +66,15 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-type UserInfo struct {
+type userInfo struct {
 	Identifier string
 	Write      bool
 	Admin      bool
 	Invite     bool
 }
 
-func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*UserInfo {
-	var users []*UserInfo
+func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*userInfo {
+	var users []*userInfo
 	ctxActor := auth.ActorFromContext(ctx)
 	if !ctxActor.HasAdminAccess() { // current user is not an admin of the instance
 		return users
@@ -84,7 +84,7 @@ func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*UserInfo
 	inviteList, err := cl.Accounts.ListInvites(ctx, &pbtypes.Void{})
 	if err == nil {
 		for _, invite := range inviteList.Invites {
-			users = append(users, &UserInfo{
+			users = append(users, &userInfo{
 				Identifier: invite.Email,
 				Write:      invite.Write,
 				Admin:      invite.Admin,
@@ -101,7 +101,7 @@ func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*UserInfo
 	})
 	if err == nil {
 		for _, user := range userList.Users {
-			users = append(users, &UserInfo{
+			users = append(users, &userInfo{
 				Identifier: user.Login,
 				Write:      user.Write,
 				Admin:      user.Admin,
@@ -109,10 +109,4 @@ func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*UserInfo
 		}
 	}
 	return users
-}
-
-func getInvites(ctx context.Context, cl *sourcegraph.Client) []string {
-	var invites []string
-
-	return invites
 }

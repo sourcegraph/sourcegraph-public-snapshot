@@ -21,7 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
@@ -286,7 +286,7 @@ func getHostNetrcEntry(ctx context.Context) (*plugin.NetrcEntry, error) {
 		return nil, err
 	}
 
-	token := cli.Credentials.GetAccessToken()
+	token := client.Credentials.GetAccessToken()
 	if token == "" {
 		return nil, errors.New("can't generate local netrc entry: token is empty")
 	}

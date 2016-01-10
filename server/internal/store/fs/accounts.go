@@ -8,6 +8,9 @@ import (
 	"log"
 	"os"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/rwvfs"
 
@@ -18,16 +21,16 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
-// Accounts is a FS-backed implementation of the Accounts store.
-type Accounts struct{}
+// accounts is a FS-backed implementation of the Accounts store.
+type accounts struct{}
 
-var _ store.Accounts = (*Accounts)(nil)
+var _ store.Accounts = (*accounts)(nil)
 
-func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {
-	return nil, &sourcegraph.NotImplementedError{What: "GetByGitHubID"}
+func (s *accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {
+	return nil, grpc.Errorf(codes.Unimplemented, "GetByGitHubID")
 }
 
-func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
+func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
 	if newUser.UID != 0 && !authutil.ActiveFlags.MigrateMode {
 		return nil, errors.New("uid already set")
 	}
@@ -64,7 +67,7 @@ func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 	return newUser, nil
 }
 
-func (s *Accounts) Update(ctx context.Context, modUser *sourcegraph.User) error {
+func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error {
 	users, err := readUserDB(ctx)
 	if err != nil {
 		return err
@@ -80,7 +83,7 @@ func (s *Accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 	return &store.UserNotFoundError{UID: int(modUser.UID)}
 }
 
-func (s *Accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
+func (s *accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
 	users, err := readUserDB(ctx)
 	if err != nil {
 		return err
@@ -96,7 +99,7 @@ func (s *Accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, 
 	return &store.UserNotFoundError{UID: int(user.UID)}
 }
 
-func (s *Accounts) Delete(ctx context.Context, uid int32) error {
+func (s *accounts) Delete(ctx context.Context, uid int32) error {
 	users, err := readUserDB(ctx)
 	if err != nil {
 		return err
@@ -167,7 +170,7 @@ func writePasswordResetDB(ctx context.Context, users []*passwordReset) (err erro
 	return err
 }
 
-func (s *Accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
+func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
 	const tokenLength = 44
 	if user.UID == 0 {
 		return nil, errors.New("UID must be set")
@@ -190,7 +193,7 @@ func (s *Accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 	return &sourcegraph.PasswordResetToken{Token: token}, nil
 }
 
-func (s *Accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
+func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
 	genericErr := errors.New("error reseting password") // don't need to reveal everything
 	requests, err := readPasswordResetDB(ctx)
 	if err != nil {
@@ -200,7 +203,7 @@ func (s *Accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 	for i := range requests {
 		if subtle.ConstantTimeCompare([]byte(newPass.Token.Token), []byte(requests[i].Token)) == 1 {
 			log15.Info("Resetting password", "store", "Accounts", "UID", requests[i].UID)
-			if err := (Password{}).SetPassword(ctx, requests[i].UID, newPass.Password); err != nil {
+			if err := (password{}).SetPassword(ctx, requests[i].UID, newPass.Password); err != nil {
 				return fmt.Errorf("Error changing password: %s", err)
 			}
 

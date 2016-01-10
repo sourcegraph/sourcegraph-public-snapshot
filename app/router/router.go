@@ -16,8 +16,6 @@ import (
 )
 
 const (
-	About = "about"
-
 	BlogIndex     = "blog"
 	BlogIndexAtom = "blog[.atom]"
 	BlogPost      = "blog.post"

@@ -82,12 +82,12 @@ func writeInvitesDB(ctx context.Context, invitesList []*dbInvites) (err error) {
 	return err
 }
 
-// Invites is a FS-backed implementation of the Invites store.
-type Invites struct{}
+// invites is a FS-backed implementation of the Invites store.
+type invites struct{}
 
-var _ store.Invites = (*Invites)(nil)
+var _ store.Invites = (*invites)(nil)
 
-func (s *Invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error) {
+func (s *invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error) {
 	invitesList, err := readInvitesDB(ctx)
 	if err != nil {
 		return "", err
@@ -121,7 +121,7 @@ func (s *Invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.Accoun
 	return newInvite.Token, nil
 }
 
-func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.AccountInvite, error) {
+func (s *invites) Retrieve(ctx context.Context, token string) (*sourcegraph.AccountInvite, error) {
 	invitesList, err := readInvitesDB(ctx)
 	if err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.Acco
 	return nil, errors.New("not found")
 }
 
-func (s *Invites) MarkUnused(ctx context.Context, token string) error {
+func (s *invites) MarkUnused(ctx context.Context, token string) error {
 	invitesList, err := readInvitesDB(ctx)
 	if err != nil {
 		return err
@@ -165,7 +165,7 @@ func (s *Invites) MarkUnused(ctx context.Context, token string) error {
 	return errors.New("not found")
 }
 
-func (s *Invites) Delete(ctx context.Context, token string) error {
+func (s *invites) Delete(ctx context.Context, token string) error {
 	invitesList, err := readInvitesDB(ctx)
 	if err != nil {
 		return err
@@ -186,7 +186,7 @@ func (s *Invites) Delete(ctx context.Context, token string) error {
 	return errors.New("not found")
 }
 
-func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
+func (s *invites) DeleteByEmail(ctx context.Context, email string) error {
 	invites, err := readInvitesDB(ctx)
 	if err != nil {
 		return err
@@ -206,7 +206,7 @@ func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
 	return writeInvitesDB(ctx, keepInvites)
 }
 
-func (s *Invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
+func (s *invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
 	accountInvites := make([]*sourcegraph.AccountInvite, 0)
 	invitesList, err := readInvitesDB(ctx)
 	if err != nil {

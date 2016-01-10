@@ -73,7 +73,7 @@ func newBlogPostMeta(p *Post) *blogPostMeta {
 	return m
 }
 
-var tumblrBlog = &Tumblr{
+var tumblrBlog = &tumblr{
 	Path:       "/blog",
 	Blog:       "sourcegraph-com.tumblr.com",
 	BlogTitle:  "Sourcegraph Blog",

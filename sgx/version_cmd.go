@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+
+	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
 
 func init() {

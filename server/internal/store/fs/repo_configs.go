@@ -5,17 +5,17 @@ import (
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/platform/storage"
+	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RepoConfigs is a FS-backed implementation of the RepoConfigs store.
+// repoConfigs is a FS-backed implementation of the RepoConfigs store.
 //
 // TODO(slimsag): consider replacing RepoConfigs entirely with just platform
 // storage.
-type RepoConfigs struct{}
+type repoConfigs struct{}
 
-var _ store.RepoConfigs = (*RepoConfigs)(nil)
+var _ store.RepoConfigs = (*repoConfigs)(nil)
 
 const (
 	repoConfigsAppName = "core.repo-configs"
@@ -23,10 +23,10 @@ const (
 	repoConfigsKey     = "config.json"
 )
 
-func (s *RepoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
-	sys := storage.Namespace(ctx, repoConfigsAppName, repo)
+func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
+	sys := platformstorage.Namespace(ctx, repoConfigsAppName, repo)
 	var conf sourcegraph.RepoConfig
-	if err := storage.GetJSON(sys, repoConfigsBucket, repoConfigsKey, &conf); err != nil {
+	if err := platformstorage.GetJSON(sys, repoConfigsBucket, repoConfigsKey, &conf); err != nil {
 		if os.IsNotExist(err) {
 			// By default, all repos are enabled on the fs backend.
 			return &conf, nil
@@ -36,7 +36,7 @@ func (s *RepoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 	return &conf, nil
 }
 
-func (s *RepoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
-	sys := storage.Namespace(ctx, repoConfigsAppName, repo)
-	return storage.PutJSON(sys, repoConfigsBucket, repoConfigsKey, &conf)
+func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+	sys := platformstorage.Namespace(ctx, repoConfigsAppName, repo)
+	return platformstorage.PutJSON(sys, repoConfigsBucket, repoConfigsKey, &conf)
 }

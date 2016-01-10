@@ -64,7 +64,7 @@ var (
 func defaultFilter(w http.ResponseWriter, r *http.Request) bool {
 	hdr := w.Header()
 	for _, tp := range defaultFilterTypes {
-		ok := HeaderMatch(hdr, "Content-Type", HmContains, tp)
+		ok := headerMatch(hdr, "Content-Type", hmContains, tp)
 		if ok {
 			return true
 		}
@@ -114,16 +114,16 @@ func Gzip(h http.Handler, filterFn func(http.ResponseWriter, *http.Request) bool
 
 // Add the vary by "accept-encoding" header if it is not already set.
 func setVaryHeader(hdr http.Header) {
-	if !HeaderMatch(hdr, "Vary", HmContains, "accept-encoding") {
+	if !headerMatch(hdr, "Vary", hmContains, "accept-encoding") {
 		hdr.Add("Vary", "Accept-Encoding")
 	}
 }
 
 // Checks if the client accepts GZIP-encoded responses.
 func acceptsGzip(hdr http.Header) bool {
-	ok := HeaderMatch(hdr, "Accept-Encoding", HmContains, "gzip")
+	ok := headerMatch(hdr, "Accept-Encoding", hmContains, "gzip")
 	if !ok {
-		ok = HeaderMatch(hdr, "Accept-Encoding", HmEquals, "*")
+		ok = headerMatch(hdr, "Accept-Encoding", hmEquals, "*")
 	}
 	return ok
 }

@@ -34,10 +34,6 @@ func NewTest(h http.Handler) (*Client, *MockClients) {
 	return &httpClient, &mocks
 }
 
-var (
-	origClientFromContext = sourcegraph.NewClientFromContext
-)
-
 // ResetGlobals resets the sourcegraph.NewClientFromContext var to
 // its original value (not the mocks set by NewTest).
 func ResetGlobals() {

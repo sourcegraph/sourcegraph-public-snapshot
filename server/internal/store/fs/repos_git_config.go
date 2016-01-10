@@ -29,7 +29,7 @@ type repoGitConfig struct {
 	}
 }
 
-func (s *Repos) setGitConfig(ctx context.Context, dir, name, value string) error {
+func (s *repos) setGitConfig(ctx context.Context, dir, name, value string) error {
 	if err := checkGitArg(name); err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (s *Repos) setGitConfig(ctx context.Context, dir, name, value string) error
 	return err
 }
 
-func (s *Repos) getGitConfig(ctx context.Context, fs vfs.FileSystem, dir string) (*repoGitConfig, error) {
+func (s *repos) getGitConfig(ctx context.Context, fs vfs.FileSystem, dir string) (*repoGitConfig, error) {
 	// TODO(sqs): Eliminate repetition: this next section of code is
 	// copied several times in this file.
 	var configPath string

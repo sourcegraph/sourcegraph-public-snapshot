@@ -8,7 +8,6 @@ import (
 	"go/build"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -33,7 +32,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/wellknown"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
 	"src.sourcegraph.com/sourcegraph/sgx"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 	appdashcli "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
@@ -92,7 +91,7 @@ type Server struct {
 
 type Config struct {
 	Flags      []interface{} // flags to `src`
-	Endpoint   cli.EndpointOpts
+	Endpoint   client.EndpointOpts
 	Serve      sgx.ServeCmd
 	ServeFlags []interface{} // flags to `src serve`
 }
@@ -244,23 +243,6 @@ func (s *Server) Close() {
 
 func (s *Server) AbsURL(rest string) string {
 	return strings.TrimSuffix(s.Config.Serve.AppURL, "/") + rest
-}
-
-var portRand = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-
-func randomPort() int {
-	for {
-		port := 10000 + portRand.Intn(40000)
-		c, err := net.DialTimeout("tcp4", fmt.Sprintf(":%d", port), time.Millisecond*50)
-		if e, ok := err.(net.Error); ok && !e.Temporary() {
-			return port
-		}
-		if err == nil {
-			if err := c.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
 }
 
 var (
@@ -422,10 +404,10 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	})
 
 	// Appdash
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerFlags{
+	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerConfig{
 		HTTPAddr: fmt.Sprintf(":%d", appdashHTTPPort),
 	})
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ClientFlags{
+	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ClientConfig{
 		URL: fmt.Sprintf("http://localhost:%d", appdashHTTPPort),
 	})
 
@@ -576,7 +558,7 @@ func SrclibSampleToolchain(buildDocker bool) (dir, srclibpath, dockerImage strin
 }
 
 // makeCommandLineArgs takes a list of EITHER (1) flag structs (like
-// cli.CredentialsOpts) or (2) strings (which denote subcommands) and
+// client.CredentialsOpts) or (2) strings (which denote subcommands) and
 // converts them into command-line arguments.
 func makeCommandLineArgs(flagsAndSubcommands ...interface{}) ([]string, error) {
 	var args []string

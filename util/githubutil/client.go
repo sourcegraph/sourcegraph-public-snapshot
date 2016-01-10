@@ -22,10 +22,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// RequestMaxPerPage is the maximum number of items the GitHub API
-// will list per page.
-const RequestMaxPerPage = 100
-
 // Config specifies configuration options for a GitHub API client used
 // by Sourcegraph code.
 type Config struct {
@@ -175,12 +171,3 @@ func NewTestClientServer() (client *github.Client, config *Config, mux *http.Ser
 	config = &Config{BaseURL: client.BaseURL}
 	return
 }
-
-// MaxPerPage is the standard maximum number of entries in a page that
-// the GitHub API will return. It applies to most endpoints. Search
-// and event endpoints have special limits.
-var MaxPerPage = 100
-
-// MaxPages is the maximum number of pages we will read from a GitHub
-// API resource.
-var MaxPages = 100

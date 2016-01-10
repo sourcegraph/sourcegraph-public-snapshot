@@ -36,7 +36,7 @@ func TestRepos_Get_existing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testsuite.Repos_Get_existing(ctx, t, &Repos{}, "repo")
+	testsuite.Repos_Get_existing(ctx, t, &repos{}, "repo")
 }
 
 func TestRepos_Get_local(t *testing.T) {
@@ -52,7 +52,7 @@ func TestRepos_Get_local(t *testing.T) {
 	expectedCloneURL := fmt.Sprintf("http://%s/%s", host, repoName)
 	expectedSSHCloneURL := fmt.Sprintf("ssh://git@%s/%s", host, repoName)
 
-	s := &Repos{}
+	s := &repos{}
 	repo, err := s.Get(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
@@ -69,47 +69,47 @@ func TestRepos_Get_local(t *testing.T) {
 
 func TestRepos_Get_nonexistent(t *testing.T) {
 	ctx := createTestContext(t)
-	testsuite.Repos_Get_nonexistent(ctx, t, &Repos{}, "owner/repo")
+	testsuite.Repos_Get_nonexistent(ctx, t, &repos{}, "owner/repo")
 }
 
 func TestRepos_List_query(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_query(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_List_query(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_List_URIs(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_URIs(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_List_URIs(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Create(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Create(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Create_dupe(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create_dupe(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Create_dupe(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Update_Description(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_Description(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Update_Description(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Update_UpdatedAt(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_UpdatedAt(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Update_UpdatedAt(ctx, t, &repos{}, preCreateRepo)
 }
 
 func TestRepos_Update_PushedAt(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_PushedAt(ctx, t, &Repos{}, preCreateRepo)
+	testsuite.Repos_Update_PushedAt(ctx, t, &repos{}, preCreateRepo)
 }

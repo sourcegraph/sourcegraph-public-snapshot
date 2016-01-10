@@ -7,18 +7,6 @@ import (
 	"github.com/sqs/modl"
 )
 
-// SelectBool executes the given query, which should be a SELECT statement for a single
-// int column, and returns the value of the first row returned.  If no rows are
-// found, zero is returned.
-func SelectBool(e modl.SqlExecutor, query string, args ...interface{}) (bool, error) {
-	var h bool
-	err := selectVal(e, &h, query, args...)
-	if err != nil {
-		return false, err
-	}
-	return h, nil
-}
-
 // SelectInt executes the given query, which should be a SELECT statement for a single
 // integer column, and returns the value of the first row returned.  If no rows are
 // found, sql.ErrNoRows is returned.

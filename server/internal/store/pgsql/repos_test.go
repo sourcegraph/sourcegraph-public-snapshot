@@ -8,7 +8,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-func (s *Repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
+func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
 	var createdRepos []*sourcegraph.Repo
 	for _, repo := range repos {
 		// All pgsql repos must be mirrors, so it's more efficient
@@ -26,7 +26,7 @@ func (s *Repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegr
 }
 
 func TestRepos_List_byOwner_empty(t *testing.T) {
-	var s Repos
+	var s repos
 
 	testUserSpec := sourcegraph.UserSpec{Login: "alice"}
 

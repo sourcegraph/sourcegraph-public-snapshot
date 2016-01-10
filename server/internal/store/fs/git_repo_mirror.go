@@ -59,12 +59,12 @@ func (g *gitMirrorListener) Start(ctx context.Context) {
 // parseMirrors parses and validates the GitRepoMirror CLI flag, storing it into
 // the g.mirrors map.
 func (g *gitMirrorListener) parseMirrors() error {
-	if ActiveFlags.GitRepoMirror == "" {
+	if activeFlags.GitRepoMirror == "" {
 		return nil
 	}
 
 	// First split the string, as it is comma-separated.
-	split := strings.Split(ActiveFlags.GitRepoMirror, ",")
+	split := strings.Split(activeFlags.GitRepoMirror, ",")
 	for _, pair := range split {
 		// Now split the pair, which is in the form of "<LocapRepoURI>:<GitRemoteURL>".
 		localAndRemote := strings.SplitN(pair, ":", 2)
@@ -99,7 +99,7 @@ func (g *gitMirrorListener) onGitEvent(id events.EventID, p events.GitPayload) {
 	}
 
 	// Find where the git repository is located on disk.
-	absRepoPath := filepath.Join(ActiveFlags.ReposDir, p.Repo.URI)
+	absRepoPath := filepath.Join(activeFlags.ReposDir, p.Repo.URI)
 
 	log15.Info(fmt.Sprintf("mirroring %q to %q", p.Repo.URI, gitRemoteURL))
 

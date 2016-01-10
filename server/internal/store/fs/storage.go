@@ -30,21 +30,16 @@ import (
 //
 // Identify why this is and fix it.
 
-// Storage implements the store.Storage interface on top of the OS FileSystem.
-type Storage struct {
+// storage implements the store.Storage interface on top of the OS FileSystem.
+type storage struct {
 	// TODO(slimsag): one lock per filepath instead of global lock.
 	fs sync.Mutex
 }
 
-var _ store.Storage = (*Storage)(nil)
-
-// NewStorage returns a new and initialized app storage store.
-func NewStorage() *Storage {
-	return &Storage{}
-}
+var _ store.Storage = (*storage)(nil)
 
 // Get implements the store.Storage interface.
-func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
+func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageValue{}, errors.New("key must be specified")
@@ -75,7 +70,7 @@ func (s *Storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 }
 
 // Put implements the store.Storage interface.
-func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	s.fs.Lock()
 	v, err := s.putNoLock(ctx, opt)
 	s.fs.Unlock()
@@ -83,7 +78,7 @@ func (s *Storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 }
 
 // putNoLock does not hold s.fs for writing.
-func (s *Storage) putNoLock(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+func (s *storage) putNoLock(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key.Key == "" {
 		return &pbtypes.Void{}, errors.New("key must be specified")
@@ -112,7 +107,7 @@ func (s *Storage) putNoLock(ctx context.Context, opt *sourcegraph.StoragePutOp) 
 }
 
 // PutNoOverwrite implements the store.Storage interface.
-func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
 	s.fs.Lock()
 	defer s.fs.Unlock()
 
@@ -127,7 +122,7 @@ func (s *Storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePu
 }
 
 // Delete implements the store.Storage interface.
-func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
+func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
 	// Parse the path and grab the lock.
 	path, err := storageKeyPath(ctx, opt)
 	if err != nil {
@@ -176,7 +171,7 @@ func (s *Storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 }
 
 // Exists implements the store.Storage interface.
-func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
 	s.fs.Lock()
 	v, err := s.existsNoLock(ctx, opt)
 	s.fs.Unlock()
@@ -184,7 +179,7 @@ func (s *Storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 }
 
 // existsNoLock does not hold s.fs for reading.
-func (s *Storage) existsNoLock(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+func (s *storage) existsNoLock(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageExists{}, errors.New("key must be specified")
@@ -212,7 +207,7 @@ func (s *Storage) existsNoLock(ctx context.Context, opt *sourcegraph.StorageKey)
 }
 
 // List implements the store.Storage interface.
-func (s *Storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
+func (s *storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
 	// Disregard the key field.
 	opt.Key = ""
 

@@ -32,12 +32,12 @@ type dbAuthCode struct {
 	Exchanged   bool
 }
 
-// Authorizations is a FS-backed implementation of the Authorizations store.
-type Authorizations struct{}
+// authorizations is a FS-backed implementation of the Authorizations store.
+type authorizations struct{}
 
-var _ store.Authorizations = (*Authorizations)(nil)
+var _ store.Authorizations = (*authorizations)(nil)
 
-func (s *Authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.AuthorizationCodeRequest, expires time.Duration) (string, error) {
+func (s *authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.AuthorizationCodeRequest, expires time.Duration) (string, error) {
 	code := &dbAuthCode{
 		Code:        randstring.NewLen(40),
 		ClientID:    req.ClientID,
@@ -59,7 +59,7 @@ func (s *Authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.Au
 	return code.Code, nil
 }
 
-func (s *Authorizations) MarkExchanged(ctx context.Context, code *sourcegraph.AuthorizationCode, clientID string) (*sourcegraph.AuthorizationCodeRequest, error) {
+func (s *authorizations) MarkExchanged(ctx context.Context, code *sourcegraph.AuthorizationCode, clientID string) (*sourcegraph.AuthorizationCodeRequest, error) {
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := modl.PostgresDialect{}.BindVar(len(args))
@@ -107,7 +107,7 @@ WHERE c.code=` + arg(code.Code) + ` AND c.redirect_uri=` + arg(code.RedirectURI)
 
 // removeExpiredAuthCodes is run when we write to the auth code DB, to
 // occasionally purge the DB of expired grants.
-func (s *Authorizations) removeExpiredAuthCodes(ctx context.Context) error {
+func (s *authorizations) removeExpiredAuthCodes(ctx context.Context) error {
 	_, err := dbh(ctx).Exec(`DELETE FROM oauth2_auth_code WHERE expires_at <= current_timestamp;`)
 	return err
 }

@@ -5,35 +5,6 @@ import (
 	"net/http"
 )
 
-// BasicAuthTransport is an HTTP transport that adds HTTP Basic
-// authentication headers to requests.
-type BasicAuthTransport struct {
-	Username, Password string // username and password to authenticate with
-
-	// Transport is the underlying HTTP transport to use when making
-	// requests.  It will default to http.DefaultTransport if nil.
-	Transport http.RoundTripper
-}
-
-// RoundTrip implements the RoundTripper interface.
-func (t *BasicAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	var transport http.RoundTripper
-	if t.Transport != nil {
-		transport = t.Transport
-	} else {
-		transport = http.DefaultTransport
-	}
-
-	// To set extra querystring params, we must make a copy of the Request so
-	// that we don't modify the Request we were given. This is required by the
-	// specification of http.RoundTripper.
-	req = CloneRequest(req)
-	req.SetBasicAuth(t.Username, t.Password)
-
-	// Make the HTTP request.
-	return transport.RoundTrip(req)
-}
-
 // BasicAuth wraps h, requiring HTTP Basic auth with the given
 // username and password.
 func BasicAuth(username, password string, noAuthStatus int, h http.Handler) http.Handler {

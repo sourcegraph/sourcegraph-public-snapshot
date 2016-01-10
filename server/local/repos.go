@@ -35,7 +35,7 @@ import (
 
 var Repos sourcegraph.ReposServer = &repos{}
 
-var errEmptyRepoURI = &sourcegraph.InvalidSpecError{Reason: "repo URI is empty"}
+var errEmptyRepoURI = grpc.Errorf(codes.InvalidArgument, "repo URI is empty")
 
 type repos struct{}
 

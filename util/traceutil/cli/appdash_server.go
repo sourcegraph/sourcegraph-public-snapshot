@@ -21,20 +21,20 @@ func init() {
 	_, err := sgxcli.Internal.AddCommand("serve-appdash",
 		"start appdash server",
 		"The serve-appdash command starts a standalone Appdash server.",
-		&cmdFlags,
+		&serverCmdFlags,
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	sgxcli.PostInit = append(sgxcli.PostInit, func() {
-		if _, err := sgxcli.Serve.AddGroup("Appdash server", "Appdash server", &groupFlags); err != nil {
+		if _, err := sgxcli.Serve.AddGroup("Appdash server", "Appdash server", &serverGroupFlags); err != nil {
 			log.Fatal(err)
 		}
 	})
 
 	sgxcli.ServeInit = append(sgxcli.ServeInit, func() {
-		if err := groupFlags.configureAndStart(true); err != nil {
+		if err := serverGroupFlags.configureAndStart(true); err != nil {
 			log.Fatal("Error configuring and starting appdash server:", err)
 		}
 	})
@@ -44,9 +44,9 @@ func init() {
 	initClient()
 }
 
-var cmdFlags, groupFlags ServerFlags
+var serverCmdFlags, serverGroupFlags ServerConfig
 
-type ServerFlags struct {
+type ServerConfig struct {
 	Disable bool `long:"appdash.disable-server" description:"don't run an appdash server (neither collector nor web UI)"`
 
 	HTTPAddr    string `long:"appdash.http-addr" description:"http bind address for background appdash" default:":7800"`
@@ -71,7 +71,7 @@ type ServerFlags struct {
 //
 // if serveInGoroutine is true then serving the Appdash UI will occur in a
 // separate goroutine (rather than blocking).
-func (f *ServerFlags) configureAndStart(serveInGoroutine bool) error {
+func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 	if f.Disable {
 		log15.Debug("Appdash server (collector and web UI) is disabled")
 		return nil
@@ -179,6 +179,6 @@ func (f *ServerFlags) configureAndStart(serveInGoroutine bool) error {
 // Execute treats these flags like a command so that `src internal serve-appdash <flags>`
 // works properly (such that Appdash can be ran independently from the rest of
 // the code in our binary).
-func (f *ServerFlags) Execute(args []string) error {
+func (f *ServerConfig) Execute(args []string) error {
 	return f.configureAndStart(false)
 }

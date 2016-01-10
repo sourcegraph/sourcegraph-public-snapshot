@@ -19,10 +19,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/tempedit"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )

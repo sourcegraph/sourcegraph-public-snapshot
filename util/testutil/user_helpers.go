@@ -9,7 +9,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-const Password = "pw"
+const password = "pw"
 
 func CreateAccount(t *testing.T, ctx context.Context, login string) (*sourcegraph.UserSpec, error) {
 	cl := sourcegraph.NewClientFromContext(ctx)
@@ -17,7 +17,7 @@ func CreateAccount(t *testing.T, ctx context.Context, login string) (*sourcegrap
 	user, err := cl.Accounts.Create(ctx, &sourcegraph.NewAccount{
 		Login:    login,
 		Email:    login + "@example.com",
-		Password: Password,
+		Password: password,
 	})
 	if err != nil {
 		return nil, err

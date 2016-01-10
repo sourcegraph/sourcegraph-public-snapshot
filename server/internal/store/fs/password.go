@@ -70,12 +70,12 @@ func writePasswordDB(ctx context.Context, pwmap passwordMap) (err error) {
 	return err
 }
 
-// Password is an FS-backed implementation of the Password store.
-type Password struct{}
+// password is an FS-backed implementation of the Password store.
+type password struct{}
 
-var _ store.Password = (*Password)(nil)
+var _ store.Password = (*password)(nil)
 
-func (p Password) CheckUIDPassword(ctx context.Context, uid int32, password string) error {
+func (p password) CheckUIDPassword(ctx context.Context, uid int32, password string) error {
 	pwmap, err := readPasswordDB(ctx)
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func (p Password) CheckUIDPassword(ctx context.Context, uid int32, password stri
 	return bcrypt.CompareHashAndPassword(hash, []byte(password))
 }
 
-func (p Password) SetPassword(ctx context.Context, uid int32, password string) error {
+func (p password) SetPassword(ctx context.Context, uid int32, password string) error {
 	if password == "" {
 		return errors.New("password must not be empty")
 	}

@@ -90,7 +90,7 @@ func getQueue(ctx context.Context, fileName string, v interface{}) error {
 		return err
 	}
 	defer func() {
-		var errors MultiError
+		var errors multiError
 		err = errors.verify(f.Close(), err)
 	}()
 	if err = json.NewDecoder(f).Decode(v); err != nil {
@@ -107,7 +107,7 @@ func replaceQueue(ctx context.Context, fileName string, v interface{}) error {
 		return err
 	}
 	defer func() {
-		var errors MultiError
+		var errors multiError
 		err = errors.verify(f.Close(), err)
 	}()
 	if err = json.NewEncoder(f).Encode(v); err != nil {

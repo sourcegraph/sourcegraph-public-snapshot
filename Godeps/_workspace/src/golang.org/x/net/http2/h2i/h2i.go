@@ -42,6 +42,7 @@ import (
 var (
 	flagNextProto = flag.String("nextproto", "h2,h2-14", "Comma-separated list of NPN/ALPN protocol names to negotiate.")
 	flagInsecure  = flag.Bool("insecure", false, "Whether to skip TLS cert validation")
+	flagSettings  = flag.String("settings", "empty", "comma-separated list of KEY=value settings for the initial SETTINGS frame. The magic value 'empty' sends an empty initial settings frame, and the magic value 'omit' causes no initial settings frame to be sent.")
 )
 
 type command struct {
@@ -239,6 +240,18 @@ func (app *h2i) logf(format string, args ...interface{}) {
 }
 
 func (app *h2i) readConsole() error {
+	if s := *flagSettings; s != "omit" {
+		var args []string
+		if s != "empty" {
+			args = strings.Split(s, ",")
+		}
+		_, c, ok := lookupCommand("settings")
+		if !ok {
+			panic("settings command not found")
+		}
+		c.run(app, args)
+	}
+
 	for {
 		line, err := app.term.ReadLine()
 		if err == io.EOF {

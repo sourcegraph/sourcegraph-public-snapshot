@@ -673,23 +673,23 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "e1a5816c9bfcaeceeaeb821e8eea1c61ecd3220e"
+			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",
-			"Rev": "e1a5816c9bfcaeceeaeb821e8eea1c61ecd3220e"
+			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2",
-			"Rev": "e1a5816c9bfcaeceeaeb821e8eea1c61ecd3220e"
+			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
 		},
 		{
 			"ImportPath": "golang.org/x/net/internal/timeseries",
-			"Rev": "e1a5816c9bfcaeceeaeb821e8eea1c61ecd3220e"
+			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
 		},
 		{
 			"ImportPath": "golang.org/x/net/trace",
-			"Rev": "e1a5816c9bfcaeceeaeb821e8eea1c61ecd3220e"
+			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",

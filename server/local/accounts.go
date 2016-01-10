@@ -42,7 +42,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 
 	usersStore := store.UsersFromContextOrNil(ctx)
 	if usersStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "users"}
+		return nil, grpc.Errorf(codes.Unimplemented, "users")
 	}
 
 	var write, admin bool
@@ -99,7 +99,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.UserSpec, error) {
 	accountsStore := store.AccountsFromContextOrNil(ctx)
 	if accountsStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
+		return nil, grpc.Errorf(codes.Unimplemented, "user accounts")
 	}
 
 	if !isValidLogin(newAcct.Login) {
@@ -112,7 +112,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 
 	usersStore := store.UsersFromContextOrNil(ctx)
 	if usersStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "users"}
+		return nil, grpc.Errorf(codes.Unimplemented, "users")
 	}
 
 	_, err := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: newAcct.Email})
@@ -146,7 +146,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 
 	passwordStore := store.PasswordFromContextOrNil(ctx)
 	if accountsStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "user passwords"}
+		return nil, grpc.Errorf(codes.Unimplemented, "user passwords")
 	}
 
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID)})
@@ -175,7 +175,7 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
 	if accountsStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
+		return nil, grpc.Errorf(codes.Unimplemented, "user accounts")
 	}
 
 	if (user.Admin != in.Admin) || (user.Write != in.Write) {
@@ -201,7 +201,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 
 	usersStore := store.UsersFromContextOrNil(ctx)
 	if usersStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "users"}
+		return nil, grpc.Errorf(codes.Unimplemented, "users")
 	}
 
 	user, _ := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: invite.Email})
@@ -211,7 +211,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+		return nil, grpc.Errorf(codes.Unimplemented, "invites")
 	}
 
 	token, err := invitesStore.CreateOrUpdate(ctx, invite)
@@ -261,7 +261,7 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+		return nil, grpc.Errorf(codes.Unimplemented, "invites")
 	}
 
 	invite, err := invitesStore.Retrieve(ctx, acceptedInvite.Token)
@@ -308,7 +308,7 @@ func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegra
 
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+		return nil, grpc.Errorf(codes.Unimplemented, "invites")
 	}
 
 	invites, err := invitesStore.List(ctx)
@@ -328,7 +328,7 @@ func (s *accounts) DeleteInvite(ctx context.Context, inviteSpec *sourcegraph.Inv
 
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "invites"}
+		return nil, grpc.Errorf(codes.Unimplemented, "invites")
 	}
 
 	if err := invitesStore.DeleteByEmail(ctx, inviteSpec.Email); err != nil {
@@ -361,12 +361,12 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
 	if accountsStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "user accounts"}
+		return nil, grpc.Errorf(codes.Unimplemented, "user accounts")
 	}
 
 	usersStore := store.UsersFromContextOrNil(ctx)
 	if usersStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "users"}
+		return nil, grpc.Errorf(codes.Unimplemented, "users")
 	}
 	var user *sourcegraph.User
 	var err error
@@ -438,7 +438,7 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
 	if accountsStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "user password reset"}
+		return nil, grpc.Errorf(codes.Unimplemented, "user password reset")
 	}
 	err := accountsStore.ResetPassword(ctx, newPass)
 	if err != nil {
@@ -456,12 +456,12 @@ func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (
 
 	usersStore := store.UsersFromContextOrNil(ctx)
 	if usersStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "users"}
+		return nil, grpc.Errorf(codes.Unimplemented, "users")
 	}
 
 	accountsStore := store.AccountsFromContextOrNil(ctx)
 	if accountsStore == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "accounts"}
+		return nil, grpc.Errorf(codes.Unimplemented, "accounts")
 	}
 
 	var uid int32
