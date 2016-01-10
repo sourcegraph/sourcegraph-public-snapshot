@@ -73,10 +73,10 @@ href="https://http2.github.io/">HTTP/2</a> demo & interop server.</p>
 
 <p>This server exists for others in the HTTP/2 community to test their HTTP/2 client implementations and point out flaws in our server.</p>
 
-<p> The code is currently at <a
-href="https://golang.org/x/net/http2">golang.org/x/net/http2</a>
-but will move to the Go standard library at some point in the future
-(enabled by default, without users needing to change their code).</p>
+<p>
+The code is at <a href="https://golang.org/x/net/http2">golang.org/x/net/http2</a> and
+is used transparently by the Go standard library from Go 1.6 and later.
+</p>
 
 <p>Contact info: <i>bradfitz@golang.org</i>, or <a
 href="https://golang.org/issues">file a bug</a>.</p>
@@ -91,6 +91,7 @@ href="https://golang.org/issues">file a bug</a>.</p>
   <li>GET <a href="/redirect">/redirect</a> to redirect back to / (this page)</li>
   <li>GET <a href="/goroutines">/goroutines</a> to see all active goroutines in this server</li>
   <li>PUT something to <a href="/crc32">/crc32</a> to get a count of number of bytes and its CRC-32</li>
+  <li>PUT something to <a href="/ECHO">/ECHO</a> and it will be streamed back to you capitalized</li>
 </ul>
 
 </body></html>`)
@@ -122,6 +123,40 @@ func crcHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprintf(w, "bytes=%d, CRC32=%x", n, crc.Sum(nil))
 	}
+}
+
+type capitalizeReader struct {
+	r io.Reader
+}
+
+func (cr capitalizeReader) Read(p []byte) (n int, err error) {
+	n, err = cr.r.Read(p)
+	for i, b := range p[:n] {
+		if b >= 'a' && b <= 'z' {
+			p[i] = b - ('a' - 'A')
+		}
+	}
+	return
+}
+
+type flushWriter struct {
+	w io.Writer
+}
+
+func (fw flushWriter) Write(p []byte) (n int, err error) {
+	n, err = fw.w.Write(p)
+	if f, ok := fw.w.(http.Flusher); ok {
+		f.Flush()
+	}
+	return
+}
+
+func echoCapitalHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		http.Error(w, "PUT required.", 400)
+		return
+	}
+	io.Copy(flushWriter{w}, capitalizeReader{r.Body})
 }
 
 var (
@@ -217,6 +252,7 @@ func registerHandlers() {
 	mux2.Handle("/file/go.src.tar.gz", fileServer("https://storage.googleapis.com/golang/go1.4.1.src.tar.gz"))
 	mux2.HandleFunc("/reqinfo", reqInfoHandler)
 	mux2.HandleFunc("/crc32", crcHandler)
+	mux2.HandleFunc("/ECHO", echoCapitalHandler)
 	mux2.HandleFunc("/clockstream", clockStreamHandler)
 	mux2.Handle("/gophertiles", tiles)
 	mux2.HandleFunc("/redirect", func(w http.ResponseWriter, r *http.Request) {

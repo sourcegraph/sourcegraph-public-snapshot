@@ -75,3 +75,16 @@ func (e StreamError) Error() string {
 type goAwayFlowError struct{}
 
 func (goAwayFlowError) Error() string { return "connection exceeded flow control window size" }
+
+// connErrorReason wraps a ConnectionError with an informative error about why it occurs.
+
+// Errors of this type are only returned by the frame parser functions
+// and converted into ConnectionError(ErrCodeProtocol).
+type connError struct {
+	Code   ErrCode
+	Reason string
+}
+
+func (e connError) Error() string {
+	return fmt.Sprintf("http2: connection error: %v: %v", e.Code, e.Reason)
+}
