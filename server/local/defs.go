@@ -50,15 +50,14 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph
 }
 
 // get returns the def with the given def key (and no additional
-// information, such as docs). If no such def exists, ErrDefNotExist
-// is returned.
+// information, such as docs).
 func (s *defs) get(ctx context.Context, def sourcegraph.DefSpec) (*graph.Def, error) {
 	d, err := store.GraphFromContext(ctx).Defs(srcstore.ByDefKey(def.DefKey()))
 	if err != nil {
 		return nil, err
 	}
 	if len(d) == 0 {
-		return nil, graph.ErrDefNotExist
+		return nil, grpc.Errorf(codes.NotFound, "def %v not found", def)
 	}
 	return d[0], nil
 }

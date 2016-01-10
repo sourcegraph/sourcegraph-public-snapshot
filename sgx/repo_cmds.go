@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"github.com/rogpeppe/rog-go/parallel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/client"

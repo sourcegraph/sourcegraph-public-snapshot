@@ -55,7 +55,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	defer noCache(ctx)
 
 	if len(op.CommitID) != 40 {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "Builds.Create requires full commit ID"}
+		return nil, grpc.Errorf(codes.InvalidArgument, "Builds.Create requires full commit ID")
 	}
 
 	repo, err := svc.Repos(ctx).Get(ctx, &op.Repo)

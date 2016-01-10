@@ -6,6 +6,9 @@ import (
 	"sort"
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -22,7 +25,7 @@ var _ sourcegraph.UnitsServer = (*units)(nil)
 
 func (s *units) Get(ctx context.Context, unitSpec *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
 	if unitSpec.RepoSpec.URI == "" || unitSpec.CommitID == "" {
-		return nil, &sourcegraph.InvalidSpecError{Reason: "UnitSpec URI and CommitID must be set"}
+		return nil, grpc.Errorf(codes.InvalidArgument, "UnitSpec URI and CommitID must be set")
 	}
 	us, err := store.GraphFromContext(ctx).Units(
 		srcstore.ByUnits(unit.ID2{Type: unitSpec.UnitType, Name: unitSpec.Unit}),
@@ -78,7 +81,7 @@ func (s *units) List(ctx context.Context, opt *sourcegraph.UnitListOptions) (*so
 		}
 	}
 	if !hasRepoRevFilter {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "Units.List requires at least 1 RepoRevs entry to narrow scope"}
+		return nil, grpc.Errorf(codes.InvalidArgument, "Units.List requires at least 1 RepoRevs entry to narrow scope")
 	}
 
 	units, err := store.GraphFromContext(ctx).Units(unitFilters...)

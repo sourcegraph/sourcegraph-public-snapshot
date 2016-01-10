@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
@@ -197,7 +200,7 @@ func (s *Builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sou
 		return nil, err
 	}
 	if len(builds) != 1 {
-		return nil, sourcegraph.ErrBuildNotFound
+		return nil, grpc.Errorf(codes.NotFound, "build %s not found", buildSpec.IDString())
 	}
 	return builds[0].toBuild(), nil
 }
@@ -270,10 +273,10 @@ func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	if sortCol, valid := sortKeyToCol[sort]; valid {
 		sort = sortCol
 	} else {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "invalid sort: " + sort}
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid sort: "+sort)
 	}
 	if direction != "asc" && direction != "desc" {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "invalid direction: " + direction}
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid direction: "+direction)
 	}
 
 	orderSQL := fmt.Sprintf(" ORDER BY %s", strings.Replace(sort, "%(direction)s", direction, -1))

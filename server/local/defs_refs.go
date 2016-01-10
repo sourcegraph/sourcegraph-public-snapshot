@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
@@ -27,7 +30,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		}
 	} else {
 		if defSpec.CommitID == "" {
-			return nil, &sourcegraph.InvalidSpecError{Reason: "ListRefs: CommitID is empty"}
+			return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID is empty")
 		}
 		repoFilters = []srcstore.RefFilter{
 			// TODO(sqs): don't restrict to same-commit
@@ -74,7 +77,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 				}
 				br, ok := vcsrepo.(vcs.Blamer)
 				if !ok {
-					return &sourcegraph.NotImplementedError{What: fmt.Sprintf("repository %T does not support blaming files", vcsrepo)}
+					return grpc.Errorf(codes.Unimplemented, fmt.Sprintf("repository %T does not support blaming files", vcsrepo))
 				}
 				hunks, err := blameFileByteRange(br, ref.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(ref.CommitID)}, int(ref.Start), int(ref.End))
 				if err != nil {

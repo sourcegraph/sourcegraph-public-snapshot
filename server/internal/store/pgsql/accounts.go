@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
@@ -20,7 +23,7 @@ type Accounts struct{}
 var _ store.Accounts = (*Accounts)(nil)
 
 func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {
-	return nil, &sourcegraph.NotImplementedError{What: "GetByGitHubID"}
+	return nil, grpc.Errorf(codes.Unimplemented, "GetByGitHubID")
 }
 
 func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {

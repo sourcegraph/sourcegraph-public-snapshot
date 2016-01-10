@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -147,7 +150,7 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 		sort = "lower(login)"
 	}
 	if _, ok := okUsersSorts[sort]; !ok {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "invalid sort: " + sort}
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid sort: "+sort)
 	}
 
 	if direction == "" {
@@ -158,7 +161,7 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 		}
 	}
 	if direction != "asc" && direction != "desc" {
-		return nil, &sourcegraph.InvalidOptionsError{Reason: "invalid direction: " + direction}
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid direction: "+direction)
 	}
 
 	sql += fmt.Sprintf(" ORDER BY %s %s", sort, strings.ToUpper(direction))

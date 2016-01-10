@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -16,7 +19,7 @@ func (s *Builds) MockGet(t *testing.T, wantBuild sourcegraph.BuildSpec) (called 
 		*called = true
 		if build != wantBuild {
 			t.Errorf("got build %q, want %q", build, wantBuild)
-			return nil, sourcegraph.ErrBuildNotFound
+			return nil, grpc.Errorf(codes.NotFound, "build %s not found", build.IDString())
 		}
 		return &sourcegraph.Build{ID: build.ID, Repo: build.Repo.URI}, nil
 	}
@@ -29,7 +32,7 @@ func (s *Builds) MockGet_Return(t *testing.T, returns *sourcegraph.Build) (calle
 		*called = true
 		if build != returns.Spec() {
 			t.Errorf("got build %q, want %q", build, returns.Spec())
-			return nil, sourcegraph.ErrBuildNotFound
+			return nil, grpc.Errorf(codes.NotFound, "build %s not found", build.IDString())
 		}
 		return returns, nil
 	}

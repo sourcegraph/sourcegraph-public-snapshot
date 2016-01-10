@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
@@ -248,7 +251,7 @@ func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 			conds = append(conds, `NOT private`)
 		case "", "all":
 		default:
-			return "", nil, &sourcegraph.InvalidOptionsError{Reason: "invalid state"}
+			return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid state")
 		}
 		if opt.Owner != "" {
 			return "", nil, errOptionsSpecifyEmptyResult
@@ -280,7 +283,7 @@ func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 	if sortCol, valid := sortKeyToCol[sort]; valid {
 		sort = sortCol
 	} else {
-		return "", nil, &sourcegraph.InvalidOptionsError{Reason: "invalid sort: " + sort}
+		return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid sort: "+sort)
 	}
 
 	direction := opt.Direction
@@ -288,7 +291,7 @@ func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		direction = "asc"
 	}
 	if direction != "asc" && direction != "desc" {
-		return "", nil, &sourcegraph.InvalidOptionsError{Reason: "invalid direction: " + direction}
+		return "", nil, grpc.Errorf(codes.InvalidArgument, "invalid direction: "+direction)
 	}
 	orderBySQL += fmt.Sprintf("%s %s NULLS LAST", sort, direction)
 

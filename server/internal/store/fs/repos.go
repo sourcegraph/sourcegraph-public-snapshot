@@ -200,7 +200,7 @@ func readGitDefaultBranch(fs vfs.FileSystem, dir string) (string, error) {
 
 func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
 	if repo.VCS != "git" {
-		return nil, &sourcegraph.NotImplementedError{What: "only git is supported in Repos.Create"}
+		return nil, grpc.Errorf(codes.Unimplemented, "only git is supported in Repos.Create")
 	}
 
 	if repo.Mirror {

@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/howeyc/gopass"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"golang.org/x/oauth2"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/userauth"

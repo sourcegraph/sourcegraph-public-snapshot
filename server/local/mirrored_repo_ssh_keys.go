@@ -35,7 +35,7 @@ func (s *mirroredRepoSSHKeys) Create(ctx context.Context, op *sourcegraph.Mirror
 
 	store := store.MirroredRepoSSHKeysFromContextOrNil(ctx)
 	if store == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "MirroredRepoSSHKeys"}
+		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 
 	if err := store.Create(ctx, repo.URI, key); err != nil {
@@ -47,7 +47,7 @@ func (s *mirroredRepoSSHKeys) Create(ctx context.Context, op *sourcegraph.Mirror
 func (s *mirroredRepoSSHKeys) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
 	store := store.MirroredRepoSSHKeysFromContextOrNil(ctx)
 	if store == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "MirroredRepoSSHKeys"}
+		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 
 	keyPEM, err := store.GetPEM(ctx, repo.URI)
@@ -67,7 +67,7 @@ func (s *mirroredRepoSSHKeys) Delete(ctx context.Context, repo *sourcegraph.Repo
 
 	store := store.MirroredRepoSSHKeysFromContextOrNil(ctx)
 	if store == nil {
-		return nil, &sourcegraph.NotImplementedError{What: "MirroredRepoSSHKeys"}
+		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
 	}
 
 	if err := store.Delete(ctx, repo.URI); err != nil {

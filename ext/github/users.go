@@ -3,6 +3,9 @@ package github
 import (
 	"net/http"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
@@ -93,25 +96,25 @@ func (s *Users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 }
 
 func (s *Users) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
-	return nil, &sourcegraph.NotImplementedError{What: "GitHub user creation"}
+	return nil, grpc.Errorf(codes.Unimplemented, "GitHub user creation")
 }
 
 func (s *Users) Update(ctx context.Context, modUser *sourcegraph.User) error {
-	return &sourcegraph.NotImplementedError{What: "GitHub user updating"}
+	return grpc.Errorf(codes.Unimplemented, "GitHub user updating")
 }
 
 func (s *Users) GetWithEmail(ctx context.Context, email sourcegraph.EmailAddr) (*sourcegraph.User, error) {
-	return nil, &sourcegraph.NotImplementedError{What: "GitHub user fetching by email"}
+	return nil, grpc.Errorf(codes.Unimplemented, "GitHub user fetching by email")
 }
 
 func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
-	return nil, &sourcegraph.NotImplementedError{What: "GitHub email listing"}
+	return nil, grpc.Errorf(codes.Unimplemented, "GitHub email listing")
 }
 
 func (s *Users) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
-	return &sourcegraph.NotImplementedError{What: "GitHub email updating"}
+	return grpc.Errorf(codes.Unimplemented, "GitHub email updating")
 }
 
 func (s *Users) Count(ctx context.Context) (int32, error) {
-	return 0, &sourcegraph.NotImplementedError{What: "GitHub user count"}
+	return 0, grpc.Errorf(codes.Unimplemented, "GitHub user count")
 }

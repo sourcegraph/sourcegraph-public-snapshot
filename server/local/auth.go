@@ -20,6 +20,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -317,8 +318,8 @@ func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegrap
 	var err error
 	userPerms, err = svc.RegisteredClients(ctx).GetUserPermissions(ctx, userPermsOpt)
 	if err != nil {
-		// ignore NotImplementedError as the UserPermissionsStore is not implemented
-		if _, ok := err.(*sourcegraph.NotImplementedError); !ok {
+		// ignore Unimplemented as the UserPermissionsStore is not implemented
+		if errcode.GRPC(err) != codes.Unimplemented {
 			return nil, err
 		}
 	}
@@ -340,8 +341,8 @@ func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegrap
 			// is not an admin on the client. Be careful about modifying this code as it can
 			// lead to security vulnerabilities.
 			if _, err := setPermissionsForUser(ctx, userPerms); err != nil {
-				// ignore NotImplementedError as the UserPermissionsStore is not implemented
-				if _, ok := err.(*sourcegraph.NotImplementedError); !ok {
+				// ignore Unimplemented as the UserPermissionsStore is not implemented
+				if errcode.GRPC(err) != codes.Unimplemented {
 					return nil, err
 				}
 			}

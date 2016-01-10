@@ -90,7 +90,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vcsRepo vcs.Repository, remoteOpts vcs.RemoteOpts) error {
 	ru, ok := vcsRepo.(vcs.RemoteUpdater)
 	if !ok {
-		return &sourcegraph.NotImplementedError{What: "MirrorRepos.RefreshVCS on hosted repo"}
+		return grpc.Errorf(codes.Unimplemented, "MirrorRepos.RefreshVCS on hosted repo")
 	}
 
 	// TODO: Need to detect new tags and copy git_transport.go in event publishing

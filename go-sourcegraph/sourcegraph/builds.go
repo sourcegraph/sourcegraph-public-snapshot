@@ -1,9 +1,6 @@
 package sourcegraph
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 func (s *BuildSpec) RouteVars() map[string]string {
 	m := s.Repo.RouteVars()
@@ -50,5 +47,3 @@ func (t *BuildTask) Spec() TaskSpec {
 func (t TaskSpec) IDString() string {
 	return fmt.Sprintf("%s.%d", t.Build.IDString(), t.ID)
 }
-
-var ErrBuildNotFound = errors.New("build not found")

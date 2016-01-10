@@ -11,9 +11,9 @@ import (
 
 	droneexec "github.com/drone/drone-exec/exec"
 	"github.com/drone/drone-plugin-go/plugin"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
+	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"strings"
 
