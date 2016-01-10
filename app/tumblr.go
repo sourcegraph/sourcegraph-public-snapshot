@@ -88,14 +88,7 @@ type PostsResponse struct {
 }
 
 const (
-	typeText   = "text"
-	typeQuote  = "quote"
-	typeLink   = "link"
-	typeAnswer = "answer"
-	typeVideo  = "video"
-	typeAudio  = "audio"
-	typePhoto  = "photo"
-	typeChat   = "chat"
+	typeText = "text"
 )
 
 type Post struct {
@@ -287,9 +280,6 @@ func (t *Tumblr) servePost(w http.ResponseWriter, r *http.Request) error {
 		Post:   resp.Posts[0],
 	})
 }
-
-var allowedTags = []string{"h1", "h2", "h3", "h4", "h5", "h6", "div", "span", "hr", "p", "br", "b", "i", "ol", "ul", "li", "a", "img", "em", "strong", "img", "tt", "code", "pre", "sourcebox"}
-var allowedAttrs = []string{"id", "class", "src", "href", "title", "alt", "name", "rel", "target"}
 
 var sourceboxRegexp = regexp.MustCompile(`<script type="text/javascript" src="(https://sourcegraph.com/[^"]*/\.sourcebox\.js)"></script>`)
 

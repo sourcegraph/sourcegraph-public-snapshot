@@ -7,8 +7,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-var noopRepoChecker RepoChecker = RepoCheckerFunc(func(context.Context, string, PermType) error { return nil })
-
 func TestRepoChecker_propagatesError(t *testing.T) {
 	wantErr := errors.New("x")
 	ctx := WithRepoChecker(context.Background(), RepoCheckerFunc(func(ctx context.Context, repo string, what PermType) error {

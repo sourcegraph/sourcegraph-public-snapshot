@@ -29,14 +29,6 @@ func TestDefsService_ListRefs(t *testing.T) {
 	}
 }
 
-func wrapRefs(refs []*graph.Ref) []*sourcegraph.Ref {
-	sgrefs := make([]*sourcegraph.Ref, len(refs))
-	for i, ref := range refs {
-		sgrefs[i] = &sourcegraph.Ref{Ref: *ref}
-	}
-	return sgrefs
-}
-
 func unwrapRefs(refs []*sourcegraph.Ref) []*graph.Ref {
 	grefs := make([]*graph.Ref, len(refs))
 	for i, ref := range refs {

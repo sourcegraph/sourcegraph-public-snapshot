@@ -3,7 +3,6 @@
 package fed_test
 
 import (
-	"net/url"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -69,18 +68,6 @@ func TestFederation(t *testing.T) {
 	testUserFederation(t, a1, ctx1, a2, ctx2)
 }
 
-func urlsEqualIgnoreRootSlash(a, b *url.URL) bool {
-	a2 := *a
-	b2 := *b
-	if a2.Path == "/" {
-		a2.Path = ""
-	}
-	if b2.Path == "/" {
-		b2.Path = ""
-	}
-	return a2 == b2
-}
-
 // testUserFederation tests that #2 serves #1's users to the client by
 // transparently communicating with #1.
 func testUserFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Context, a2 *testserver.Server, ctx2 context.Context) {
@@ -116,17 +103,4 @@ func testUserFederation(t *testing.T, a1 *testserver.Server, ctx1 context.Contex
 			t.Fatalf("got err == %v, want NotFound", err)
 		}
 	}
-}
-
-func listAllRepos(t *testing.T, ctx context.Context, label string) {
-	repos, err := sourcegraph.NewClientFromContext(ctx).Repos.List(ctx, &sourcegraph.RepoListOptions{})
-	if err == nil {
-		t.Logf("%s has %d repos", label, len(repos.Repos))
-		for _, repo := range repos.Repos {
-			t.Logf(" - %s", repo.URI)
-		}
-	} else {
-		t.Errorf("warning: listing repos on %s failed: %s", label, err)
-	}
-
 }

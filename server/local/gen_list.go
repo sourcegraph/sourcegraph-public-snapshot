@@ -109,14 +109,6 @@ func (s *serverImpl) serverName() string {
 	return strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(s.typeName(), "sourcegraph."), "pb."), "gitpb."), "Server")
 }
 
-func contextKey(iface *ast.TypeSpec) string {
-	return "_" + name(iface) + "Key"
-}
-
-func name(iface *ast.TypeSpec) string {
-	return strings.TrimSuffix(iface.Name.Name, "Server")
-}
-
 type serverImpls []*serverImpl
 
 func (v serverImpls) Len() int           { return len(v) }

@@ -307,13 +307,6 @@ func repoBasename(repoURI string) string {
 	return filepath.Base(repoURI)
 }
 
-func repoStat(rp *sourcegraph.Repo, statType string) int {
-	// TODO(sqs): this is a stub to make templates and go code
-	// compile, it does not actually work - we need to reimplement repo
-	// stats for this to work.
-	return 0
-}
-
 // showRepoRevSwitcher returns whether the repo switcher (that lets you
 // choose branches/tags) should be displayed on pages generated for
 // this route. We only want to show it where it makes sense, when the
@@ -330,17 +323,4 @@ func showRepoRevSwitcher(routeName string) bool {
 		return true
 	}
 	return false
-}
-
-func repoMaybeUnsupported(repo *sourcegraph.Repo) bool {
-	if !repo.IsGitHubRepo() {
-		// assume all non-GitHub repos are supported, since we manually added them
-		return false
-	}
-	switch repo.Language {
-	case "Go", "JavaScript", "Python", "Ruby", "Java":
-		return false
-	default:
-		return true
-	}
 }

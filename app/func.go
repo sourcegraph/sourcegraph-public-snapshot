@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
@@ -68,8 +67,6 @@ func roundToMsec(d time.Duration) time.Duration {
 	return (d / time.Millisecond) * time.Millisecond
 }
 
-func number(n int) string { return humanize.Comma(int64(n)) }
-
 // num abbreviates and rounds n. Examples: 150, 13.2K, 1.5K.
 func num(n int) string {
 	if n < 1000 {
@@ -111,14 +108,6 @@ func truncateCommitID(id interface{}) (string, error) {
 	return idStr[:6], nil
 }
 
-// capFirst capitalizes the first letter (if any) of s.
-func capFirst(s string) string {
-	if s == "" {
-		return ""
-	}
-	return strings.ToUpper(s[0:1]) + s[1:]
-}
-
 // commitSummary returns the git commit summary from the full commit.
 func commitSummary(message string) string {
 	summary, _ := splitCommitMessage(message)
@@ -140,13 +129,6 @@ func splitCommitMessage(message string) (summary, rest string) {
 		rest = parts[1]
 	}
 	return summary, rest
-}
-
-func joinEnglish(nouns []string) string {
-	if len(nouns) >= 2 {
-		return strings.Join(nouns[:len(nouns)-1], ", ") + " and " + nouns[len(nouns)-1]
-	}
-	return strings.Join(nouns, " and ")
 }
 
 // ifTemplate will look up the template name in the specified file, pass it

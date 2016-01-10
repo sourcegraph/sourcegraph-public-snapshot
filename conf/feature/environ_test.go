@@ -2,7 +2,7 @@ package feature
 
 import "testing"
 
-func testSetFeatures(t *testing.T) {
+func TestSetFeatures(t *testing.T) {
 	type mock struct {
 		FeatA bool
 		FeatB bool
@@ -20,9 +20,16 @@ func testSetFeatures(t *testing.T) {
 			false,
 		},
 
-		// Having an unexpected feature should error out
+		// Having an unexpected feature should not error out
 		{
 			[]string{"SG_FEATURE_UNEXPECTED=t"},
+			mock{},
+			false,
+		},
+
+		// Having an unexpected feature value should error out
+		{
+			[]string{"SG_FEATURE_FEATB=xyz"},
 			mock{},
 			true,
 		},

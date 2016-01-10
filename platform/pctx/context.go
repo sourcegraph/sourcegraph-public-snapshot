@@ -17,7 +17,7 @@ type contextKey int
 
 // Context item keys for data that platform applications have access to.
 const (
-	csrfTokenKey = iota
+	csrfTokenKey contextKey = iota
 	repoRevSpecKey
 	baseURIKey
 )

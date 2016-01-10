@@ -14,7 +14,6 @@ const (
 	ticketsKey
 	repoCheckerKey
 	repoCheckerStartedKey
-	oauth2ConfigKey
 )
 
 func ActorFromContext(ctx context.Context) Actor {

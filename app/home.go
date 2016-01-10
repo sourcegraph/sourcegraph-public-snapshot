@@ -110,9 +110,3 @@ func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*UserInfo
 	}
 	return users
 }
-
-func getInvites(ctx context.Context, cl *sourcegraph.Client) []string {
-	var invites []string
-
-	return invites
-}

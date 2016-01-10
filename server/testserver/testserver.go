@@ -8,7 +8,6 @@ import (
 	"go/build"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -244,23 +243,6 @@ func (s *Server) Close() {
 
 func (s *Server) AbsURL(rest string) string {
 	return strings.TrimSuffix(s.Config.Serve.AppURL, "/") + rest
-}
-
-var portRand = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-
-func randomPort() int {
-	for {
-		port := 10000 + portRand.Intn(40000)
-		c, err := net.DialTimeout("tcp4", fmt.Sprintf(":%d", port), time.Millisecond*50)
-		if e, ok := err.(net.Error); ok && !e.Temporary() {
-			return port
-		}
-		if err == nil {
-			if err := c.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
 }
 
 var (
