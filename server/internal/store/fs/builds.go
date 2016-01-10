@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 
@@ -396,12 +395,6 @@ func (s *Builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, 
 	return s.updateTask(ctx, t)
 }
 
-type byTaskID []*sourcegraph.BuildTask
-
-func (s byTaskID) Len() int           { return len(s) }
-func (s byTaskID) Less(i, j int) bool { return s[i].ID < s[j].ID }
-func (s byTaskID) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-
 func (s *Builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -432,8 +425,8 @@ func (s *Builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.Build
 	if err := w.Err(); err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
-	sort.Sort(byTaskID(tasks))
 
+	tasks = store.SortAndPaginateTasks(tasks, opt)
 	return tasks, nil
 }
 

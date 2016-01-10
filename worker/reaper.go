@@ -86,9 +86,10 @@ func buildReaper(ctx context.Context) {
 			}
 
 			// Mark all of the build's unfinished tasks as failed, too.
-			for page := 1; ; page++ {
+			for page := int32(1); ; page++ {
 				tasks, err := cl.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{
 					Build: b.Spec(),
+					Opt:   &sourcegraph.BuildTaskListOptions{ListOptions: sourcegraph.ListOptions{Page: page}},
 				})
 				if err != nil {
 					log15.Error("Error listing heartbeat-expired build tasks", "build", b.Spec(), "err", err)

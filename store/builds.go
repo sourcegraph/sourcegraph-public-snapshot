@@ -93,6 +93,38 @@ func buildUpdatedAt(b *sourcegraph.Build) time.Time {
 	return newestTime(&b.CreatedAt, b.StartedAt, b.EndedAt)
 }
 
+func SortAndPaginateTasks(tasks []*sourcegraph.BuildTask, opt *sourcegraph.BuildTaskListOptions) []*sourcegraph.BuildTask {
+	if opt != nil {
+		// Sort.
+		v := tasksSorter{tasks: tasks}
+		v.less = func(a, b *sourcegraph.BuildTask) bool {
+			return a.ID < b.ID
+		}
+		sort.Sort(v)
+
+		// Paginate.
+		offset, limit := opt.ListOptions.Offset(), opt.ListOptions.Limit()
+		if offset > len(tasks) {
+			offset = len(tasks)
+		}
+		tasks = tasks[offset:]
+		if len(tasks) > limit {
+			tasks = tasks[:limit]
+		}
+	}
+
+	return tasks
+}
+
+type tasksSorter struct {
+	tasks []*sourcegraph.BuildTask
+	less  func(a, b *sourcegraph.BuildTask) bool
+}
+
+func (bs tasksSorter) Len() int           { return len(bs.tasks) }
+func (bs tasksSorter) Swap(i, j int)      { bs.tasks[i], bs.tasks[j] = bs.tasks[j], bs.tasks[i] }
+func (bs tasksSorter) Less(i, j int) bool { return bs.less(bs.tasks[i], bs.tasks[j]) }
+
 // newestTime returns the newest time among all of the times
 // specified. If all times are zero or nil, time.Time{} is returned.
 func newestTime(pbtimes ...*pbtypes.Timestamp) time.Time {
