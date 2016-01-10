@@ -17,7 +17,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Builds is a local FS-backed implementation of the Builds store. It stores
+// builds is a local FS-backed implementation of the Builds store. It stores
 // Builds and BuildTasks in the filesystem (by default $SGPATH/buildstore, which
 // can be re-configured via CLI flags).
 //
@@ -35,37 +35,32 @@ import (
 // The Build FS is persistent both in terms of queue and data.
 //
 // TODO(sqs): Be clear about what concurrency guarantees we make.
-type Builds struct {
-	mu       sync.RWMutex                     // guards FS
-	imported map[sourcegraph.RepoRevSpec]bool // tracks which repos have already been imported
+type builds struct {
+	mu sync.RWMutex // guards FS
 }
 
-var _ store.Builds = (*Builds)(nil)
+var _ store.Builds = (*builds)(nil)
 
 const buildQueueFilename = "queue-builds.json"
 
-func NewBuildStore() *Builds {
-	return &Builds{imported: make(map[sourcegraph.RepoRevSpec]bool)}
-}
-
-func (s *Builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
+func (s *builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.get(ctx, buildSpec)
 }
 
-func (s *Builds) get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
+func (s *builds) get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	return s.getFromPath(ctx, filepath.Join(dirForBuild(buildSpec), "build.json"))
 }
 
-func (s *Builds) getFromPath(ctx context.Context, path string) (*sourcegraph.Build, error) {
+func (s *builds) getFromPath(ctx context.Context, path string) (*sourcegraph.Build, error) {
 	f, err := buildStoreVFS(ctx).Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		var errors MultiError
+		var errors multiError
 		err = errors.verify(f.Close(), err)
 	}()
 	var b sourcegraph.Build
@@ -75,7 +70,7 @@ func (s *Builds) getFromPath(ctx context.Context, path string) (*sourcegraph.Bui
 	return &b, nil
 }
 
-func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error) {
+func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -124,7 +119,7 @@ func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	return builds, nil
 }
 
-func (s *Builds) listBuildsIndexed(ctx context.Context, repo, commitID string, selectFn func(*sourcegraph.Build) bool) ([]*sourcegraph.Build, error) {
+func (s *builds) listBuildsIndexed(ctx context.Context, repo, commitID string, selectFn func(*sourcegraph.Build) bool) ([]*sourcegraph.Build, error) {
 	buildIdx, err := getRepoBuildIndex(ctx, repo)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -148,7 +143,7 @@ func (s *Builds) listBuildsIndexed(ctx context.Context, repo, commitID string, s
 	return builds, nil
 }
 
-func (s *Builds) listBuildsWalkFS(ctx context.Context, opt *sourcegraph.BuildListOptions, selectFn func(*sourcegraph.Build) bool) ([]*sourcegraph.Build, error) {
+func (s *builds) listBuildsWalkFS(ctx context.Context, opt *sourcegraph.BuildListOptions, selectFn func(*sourcegraph.Build) bool) ([]*sourcegraph.Build, error) {
 	root := "."
 	if opt.Repo != "" {
 		root = filepath.Join(root, opt.Repo)
@@ -192,7 +187,7 @@ func (s *Builds) listBuildsWalkFS(ctx context.Context, opt *sourcegraph.BuildLis
 	return builds, nil
 }
 
-func (s *Builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
+func (s *builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
 	log15.Debug("Finding first built commit in order", "pkg", "server/internal/store/fs", "repo", repo, "commit order", commitIDs, "successfulOnly", successfulOnly)
 
 	// TODO(gbbr): Get only commits in parameter, not all for the repo.
@@ -229,7 +224,7 @@ func (s *Builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitI
 	return nil, -1, nil
 }
 
-func (s *Builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
+func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -246,13 +241,13 @@ func (s *Builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 // for whatever reason (errors or server crashes), it is possible for the build
 // to show up in the list as "Queued" even though it is not part of the actual
 // queue.
-func (s *Builds) create(ctx context.Context, b *sourcegraph.Build) error {
+func (s *builds) create(ctx context.Context, b *sourcegraph.Build) error {
 	f, err := createBuildFile(ctx, b)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		var errors MultiError
+		var errors multiError
 		if err != nil {
 			errors.verify(buildStoreVFS(ctx).Remove(dirForBuild(b.Spec())))
 		}
@@ -269,7 +264,7 @@ func (s *Builds) create(ctx context.Context, b *sourcegraph.Build) error {
 	return nil
 }
 
-func (s *Builds) createAndUpdateIndex(ctx context.Context, b *sourcegraph.Build) error {
+func (s *builds) createAndUpdateIndex(ctx context.Context, b *sourcegraph.Build) error {
 	if err := s.create(ctx, b); err != nil {
 		return err
 	}
@@ -279,7 +274,7 @@ func (s *Builds) createAndUpdateIndex(ctx context.Context, b *sourcegraph.Build)
 	return nil
 }
 
-func (s *Builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error {
+func (s *builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -308,7 +303,7 @@ func (s *Builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info so
 	return s.create(ctx, b)
 }
 
-func (s *Builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
+func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -328,7 +323,7 @@ func (s *Builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 	return s.get(ctx, first)
 }
 
-func (s *Builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
+func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -347,13 +342,13 @@ func (s *Builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 // for whatever reason (errors or server crashes), it is possible for the build
 // to show up in the list as "Queued" even though it is not part of the actual
 // queue.
-func (s *Builds) updateTask(ctx context.Context, task *sourcegraph.BuildTask) error {
+func (s *builds) updateTask(ctx context.Context, task *sourcegraph.BuildTask) error {
 	f, err := createTaskFile(ctx, task)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		var errors MultiError
+		var errors multiError
 		if err != nil {
 			errors.verify(buildStoreVFS(ctx).Remove(filenameForTask(task.Spec())))
 		}
@@ -365,7 +360,7 @@ func (s *Builds) updateTask(ctx context.Context, task *sourcegraph.BuildTask) er
 	return nil
 }
 
-func (s *Builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
+func (s *builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -402,7 +397,7 @@ func (s byTaskID) Len() int           { return len(s) }
 func (s byTaskID) Less(i, j int) bool { return s[i].ID < s[j].ID }
 func (s byTaskID) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
-func (s *Builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
+func (s *builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -437,20 +432,20 @@ func (s *Builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.Build
 	return tasks, nil
 }
 
-func (s *Builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
+func (s *builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.getTask(ctx, taskSpec)
 }
 
-func (s *Builds) getTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
+func (s *builds) getTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
 	f, err := buildStoreVFS(ctx).Open(filenameForTask(taskSpec))
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		var errors MultiError
+		var errors multiError
 		err = errors.verify(f.Close(), err)
 	}()
 	var t sourcegraph.BuildTask
@@ -460,10 +455,10 @@ func (s *Builds) getTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*s
 	return &t, nil
 }
 
-// MultiError collects a slice of errors and implements the error interface.
-type MultiError struct{ Errs []error }
+// multiError collects a slice of errors and implements the error interface.
+type multiError struct{ Errs []error }
 
-func (e MultiError) Error() string {
+func (e multiError) Error() string {
 	switch len(e.Errs) {
 	case 0:
 		return "<nil>"
@@ -484,7 +479,7 @@ func (e MultiError) Error() string {
 // err returns different values based on the state of the collection.
 // If empty, it returns nil. If it contains one error, it returns it,
 // otherwise it returns itself.
-func (e MultiError) err() error {
+func (e multiError) err() error {
 	switch len(e.Errs) {
 	case 0:
 		return nil
@@ -497,7 +492,7 @@ func (e MultiError) err() error {
 
 // verify validates the passed error, and if it is non-nil it adds it to the
 // collection, returning the resulting error
-func (e *MultiError) verify(errs ...error) error {
+func (e *multiError) verify(errs ...error) error {
 	if e.Errs == nil {
 		e.Errs = make([]error, 0, len(errs))
 	}

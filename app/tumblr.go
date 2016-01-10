@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	RouteIndex = "index"
-	RoutePost  = "post"
+	routeIndex = "index"
+	routePost  = "post"
 )
 
-type Tumblr struct {
+type tumblr struct {
 	// Path is the path to this blog under the liveblog root
 	Path string
 
@@ -40,11 +40,11 @@ type Tumblr struct {
 }
 
 var (
-	TumblrAPIKey = os.Getenv("SG_TUMBLR_API_KEY")
-	TumblrHost   = "https://api.tumblr.com"
+	tumblrAPIKey = os.Getenv("SG_TUMBLR_API_KEY")
+	tumblrHost   = "https://api.tumblr.com"
 )
 
-var tumblrBlogs = []*Tumblr{{
+var tumblrBlogs = []*tumblr{{
 	Path:       "/blog/live/gopherconindia/",
 	Blog:       "gopherconindia.tumblr.com",
 	BlogTitle:  "GopherConIndia liveblog",
@@ -130,7 +130,7 @@ type PostsOpts struct {
 	ListOptions
 }
 
-func (t *Tumblr) Posts(opt PostsOpts) (*PostsResponse, error) {
+func (t *tumblr) Posts(opt PostsOpts) (*PostsResponse, error) {
 	query := make(url.Values)
 	if opt.PerPage != 0 {
 		query.Set("offset", strconv.Itoa(opt.PerPage*(opt.Page-1)))
@@ -141,12 +141,12 @@ func (t *Tumblr) Posts(opt PostsOpts) (*PostsResponse, error) {
 	if opt.ID != "" {
 		query.Set("id", opt.ID)
 	}
-	query.Set("api_key", TumblrAPIKey)
+	query.Set("api_key", tumblrAPIKey)
 	var u string
 	if opt.Type != "" {
-		u = fmt.Sprintf("%s/v2/blog/%s/posts/%s?%s", TumblrHost, t.Blog, opt.Type, url.Values(query).Encode())
+		u = fmt.Sprintf("%s/v2/blog/%s/posts/%s?%s", tumblrHost, t.Blog, opt.Type, url.Values(query).Encode())
 	} else {
-		u = fmt.Sprintf("%s/v2/blog/%s/posts?%s", TumblrHost, t.Blog, url.Values(query).Encode())
+		u = fmt.Sprintf("%s/v2/blog/%s/posts?%s", tumblrHost, t.Blog, url.Values(query).Encode())
 	}
 	resp, err := httputil.CachingClient.Get(u)
 	if err != nil {
@@ -200,13 +200,13 @@ func (t *Tumblr) Posts(opt PostsOpts) (*PostsResponse, error) {
 	return &postsResp, nil
 }
 
-func (t *Tumblr) NewRouter(r *mux.Router) *mux.Router {
-	r.Path("/").Methods("GET").Name(RouteIndex).Handler(internal.Handler(t.serveIndex))
-	r.Path("/{ID}").Methods("GET").Name(RoutePost).Handler(internal.Handler(t.servePost))
+func (t *tumblr) NewRouter(r *mux.Router) *mux.Router {
+	r.Path("/").Methods("GET").Name(routeIndex).Handler(internal.Handler(t.serveIndex))
+	r.Path("/{ID}").Methods("GET").Name(routePost).Handler(internal.Handler(t.servePost))
 	return r
 }
 
-func (t *Tumblr) serveIndex(w http.ResponseWriter, r *http.Request) error {
+func (t *tumblr) serveIndex(w http.ResponseWriter, r *http.Request) error {
 	var opt PostsOpts
 	if err := schema.NewDecoder().Decode(&opt, r.URL.Query()); err != nil {
 		return err
@@ -224,7 +224,7 @@ func (t *Tumblr) serveIndex(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return tmpl.Exec(r, w, "liveblog/index.html", http.StatusOK, nil, &struct {
-		*Tumblr
+		*tumblr
 		Response *PostsResponse
 
 		Limit  int
@@ -232,7 +232,7 @@ func (t *Tumblr) serveIndex(w http.ResponseWriter, r *http.Request) error {
 
 		tmpl.Common
 	}{
-		Tumblr:   t,
+		tumblr:   t,
 		Response: resp,
 
 		Limit:  opt.PerPage,
@@ -240,7 +240,7 @@ func (t *Tumblr) serveIndex(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func (t *Tumblr) servePost(w http.ResponseWriter, r *http.Request) error {
+func (t *tumblr) servePost(w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	// Redirect dead reddit post to the correct id for the
 	// bleve blog post:
@@ -254,7 +254,7 @@ func (t *Tumblr) servePost(w http.ResponseWriter, r *http.Request) error {
 			varsList[i*2+1] = val
 			i++
 		}
-		url, err := t.NewRouter(mux.NewRouter().PathPrefix(t.Path).Subrouter()).Get(RoutePost).URL(varsList...)
+		url, err := t.NewRouter(mux.NewRouter().PathPrefix(t.Path).Subrouter()).Get(routePost).URL(varsList...)
 		if err != nil {
 			return err
 		}
@@ -271,12 +271,12 @@ func (t *Tumblr) servePost(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return tmpl.Exec(r, w, "liveblog/post.html", http.StatusOK, nil, &struct {
-		*Tumblr
+		*tumblr
 		Post *Post
 
 		tmpl.Common
 	}{
-		Tumblr: t,
+		tumblr: t,
 		Post:   resp.Posts[0],
 	})
 }

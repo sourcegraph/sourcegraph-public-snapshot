@@ -24,12 +24,12 @@ func init() {
 	)
 }
 
-// UserPermissions is a DB-backed implementation of the UserPermissions store.
-type UserPermissions struct{}
+// userPermissions is a DB-backed implementation of the UserPermissions store.
+type userPermissions struct{}
 
-var _ store.UserPermissions = (*UserPermissions)(nil)
+var _ store.UserPermissions = (*userPermissions)(nil)
 
-func (s *UserPermissions) Get(ctx context.Context, opt *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
+func (s *userPermissions) Get(ctx context.Context, opt *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
 	var toks []*userPermission
 	err := dbh(ctx).Select(&toks, `SELECT * FROM user_permissions WHERE "uid"=$1 AND "client_id"=$2`, opt.UID, opt.ClientSpec.ID)
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *UserPermissions) Get(ctx context.Context, opt *sourcegraph.UserPermissi
 	}, nil
 }
 
-func (s *UserPermissions) Verify(ctx context.Context, perms *sourcegraph.UserPermissions) (bool, error) {
+func (s *userPermissions) Verify(ctx context.Context, perms *sourcegraph.UserPermissions) (bool, error) {
 	dbPerms, err := s.Get(ctx, &sourcegraph.UserPermissionsOptions{
 		UID:        perms.UID,
 		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: perms.ClientID},
@@ -64,7 +64,7 @@ func (s *UserPermissions) Verify(ctx context.Context, perms *sourcegraph.UserPer
 	return true, nil
 }
 
-func (s *UserPermissions) Set(ctx context.Context, perms *sourcegraph.UserPermissions) error {
+func (s *userPermissions) Set(ctx context.Context, perms *sourcegraph.UserPermissions) error {
 	newUser := &userPermission{
 		UID:      perms.UID,
 		ClientID: perms.ClientID,
@@ -89,7 +89,7 @@ func (s *UserPermissions) Set(ctx context.Context, perms *sourcegraph.UserPermis
 	})
 }
 
-func (s *UserPermissions) List(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
+func (s *userPermissions) List(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
 	var toks []*userPermission
 	err := dbh(ctx).Select(&toks, `SELECT * FROM user_permissions WHERE "client_id"=$1`, client.ID)
 	if err != nil {

@@ -12,8 +12,8 @@ import (
 func TestUsers_ListEmails(t *testing.T) {
 	t.Parallel()
 
-	var as Accounts
-	var us Users
+	var as accounts
+	var us users
 	ctx, done := testContext()
 	defer done()
 

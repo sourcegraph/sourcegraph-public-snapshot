@@ -21,8 +21,8 @@ type Session struct {
 	AccessToken string
 }
 
-// SessionCookieName is the name of the session cookie.
-const SessionCookieName = "session-oauth2-token"
+// sessionCookieName is the name of the session cookie.
+const sessionCookieName = "session-oauth2-token"
 
 // ErrNoSession indicates that there is no session cookie sent in the
 // HTTP request.
@@ -31,7 +31,7 @@ var ErrNoSession = errors.New("no session cookie")
 // ReadSessionCookie reads the session from the HTTP request. If there
 // is no session cookie, ErrNoSession is returned.
 func ReadSessionCookie(req *http.Request) (*Session, error) {
-	sessionCookie, err := req.Cookie(SessionCookieName)
+	sessionCookie, err := req.Cookie(sessionCookieName)
 	if err == http.ErrNoCookie {
 		return nil, ErrNoSession
 	}
@@ -45,7 +45,7 @@ func ReadSessionCookie(req *http.Request) (*Session, error) {
 // response. If there is no session cookie, ErrNoSession is returned.
 func ReadSessionCookieFromResponse(resp *http.Response) (*Session, error) {
 	for _, c := range resp.Cookies() {
-		if c.Name == SessionCookieName {
+		if c.Name == sessionCookieName {
 			return readSessionCookie(c)
 		}
 	}
@@ -73,7 +73,7 @@ func NewSessionCookie(s Session) (*http.Cookie, error) {
 		return nil, err
 	}
 	return &http.Cookie{
-		Name:     SessionCookieName,
+		Name:     sessionCookieName,
 		Value:    base64.StdEncoding.EncodeToString(encoded),
 		Path:     "/",
 		HttpOnly: true,
@@ -96,7 +96,7 @@ func WriteSessionCookie(w http.ResponseWriter, s Session) error {
 // the client.
 func DeleteSessionCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:   SessionCookieName,
+		Name:   sessionCookieName,
 		Path:   "/",
 		MaxAge: -1,
 	})

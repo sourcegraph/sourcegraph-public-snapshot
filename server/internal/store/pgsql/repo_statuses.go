@@ -6,16 +6,16 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-type RepoStatuses struct{}
+type repoStatuses struct{}
 
-var _ store.RepoStatuses = (*RepoStatuses)(nil)
+var _ store.RepoStatuses = (*repoStatuses)(nil)
 
-func (s *RepoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
+func (s *repoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
 	// Not yet implemented
 	return &sourcegraph.CombinedStatus{}, nil
 }
 
-func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error {
+func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error {
 	// Not yet implemented (no-op)
 	return nil
 }

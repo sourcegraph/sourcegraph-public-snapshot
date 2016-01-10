@@ -108,12 +108,12 @@ func (w *Worker) Flush() error {
 	return nil
 }
 
-type Logger struct {
+type logger struct {
 	Channel chan *sourcegraph.UserEvent
 	Worker  *Worker
 }
 
-func (l *Logger) Log(ctx context.Context, event *sourcegraph.UserEvent) {
+func (l *logger) Log(ctx context.Context, event *sourcegraph.UserEvent) {
 	if !l.Filter(ctx, event) {
 		return
 	}
@@ -126,7 +126,7 @@ func (l *Logger) Log(ctx context.Context, event *sourcegraph.UserEvent) {
 	}
 }
 
-func (l *Logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool {
+func (l *logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool {
 	// don't track grpc and app events on mothership
 	if fed.Config.IsRoot {
 		switch event.Type {
@@ -157,7 +157,7 @@ func (l *Logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool 
 	}
 }
 
-func (l *Logger) Uploader(ctx context.Context, flushInterval time.Duration) {
+func (l *logger) Uploader(ctx context.Context, flushInterval time.Duration) {
 	// For the first 60 minutes after boot up, flush log every minute
 	remainingMinutes := 60
 	if flushInterval <= time.Minute {
@@ -177,7 +177,7 @@ func (l *Logger) Uploader(ctx context.Context, flushInterval time.Duration) {
 	}
 }
 
-var ActiveLogger *Logger
+var activeLogger *logger
 
 // StartEventLogger sets up a buffered channel for posting events to, and workers that consume
 // event messages from that channel.
@@ -187,19 +187,19 @@ var ActiveLogger *Logger
 // maximum number of buffered events after which the worker will flush the buffer upstream to
 // the federation root via graph uplink.
 func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
-	ActiveLogger = &Logger{
+	activeLogger = &logger{
 		Channel: make(chan *sourcegraph.UserEvent, channelCapacity),
 	}
 
-	ActiveLogger.Worker = &Worker{
+	activeLogger.Worker = &Worker{
 		Buffer:  make([]*sourcegraph.UserEvent, workerBufferSize),
-		Channel: ActiveLogger.Channel,
+		Channel: activeLogger.Channel,
 		Ctx:     ctx,
 	}
 
-	go ActiveLogger.Worker.Work()
+	go activeLogger.Worker.Work()
 
-	go ActiveLogger.Uploader(ctx, flushInterval)
+	go activeLogger.Uploader(ctx, flushInterval)
 
 	log15.Debug("EventLogger initialized")
 }
@@ -207,7 +207,7 @@ func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int
 // LogEvent adds a sourcegraph.UserEvent to the local log buffer, which
 // will be periodically flushed upstream.
 func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
-	if ActiveLogger != nil {
+	if activeLogger != nil {
 		if event.UID == 0 {
 			event.UID = int32(authpkg.ActorFromContext(ctx).UID)
 		}
@@ -225,7 +225,7 @@ func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
 			event.Version = buildvar.Version
 		}
 
-		ActiveLogger.Log(ctx, event)
+		activeLogger.Log(ctx, event)
 	}
 }
 
@@ -240,7 +240,7 @@ func LogEvent(ctx context.Context, event *sourcegraph.UserEvent) {
 //
 // The flag data must be sanitized of secrets before passing in to this function.
 func LogConfig(ctx context.Context, clientID, flagsSafe string) {
-	if ActiveLogger != nil {
+	if activeLogger != nil {
 		LogEvent(ctx, &sourcegraph.UserEvent{
 			Type:     "notif",
 			ClientID: clientID,

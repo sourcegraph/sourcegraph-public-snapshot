@@ -30,15 +30,15 @@ import (
 	"src.sourcegraph.com/sourcegraph/util"
 )
 
-// Repos is a local filesystem-backed implementation of the
-// base Repos.
-type Repos struct{}
+// repos is a local filesystem-backed implementation of the Repos
+// store.
+type repos struct{}
 
-var _ store.Repos = (*Repos)(nil)
+var _ store.Repos = (*repos)(nil)
 
 const timeFormat = time.RFC3339Nano
 
-func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	dir := dirForRepo(repo)
 	reposVFS := rwvfs.OS(reposAbsPath(ctx))
 	if !isGitRepoDir(reposVFS, dir) {
@@ -47,11 +47,11 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	return s.newRepo(ctx, dir)
 }
 
-func (s *Repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
+func (s *repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
 	return &sourcegraph.RepoPermissions{Read: true, Write: true, Admin: true}, nil
 }
 
-func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
 	if opt == nil {
 		opt = &sourcegraph.RepoListOptions{}
 	}
@@ -102,7 +102,7 @@ func isGitRepoDir(reposVFS rwvfs.FileSystem, path string) bool {
 	return false
 }
 
-func (s *Repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, error) {
+func (s *repos) newRepo(ctx context.Context, dir string) (*sourcegraph.Repo, error) {
 	dir = strings.TrimPrefix(filepath.Clean(dir), string(filepath.Separator))
 	uri := repoForDir(dir)
 	repo := &sourcegraph.Repo{
@@ -198,7 +198,7 @@ func readGitDefaultBranch(fs vfs.FileSystem, dir string) (string, error) {
 	return string(data), nil
 }
 
-func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
 	if repo.VCS != "git" {
 		return nil, grpc.Errorf(codes.Unimplemented, "only git is supported in Repos.Create")
 	}
@@ -306,7 +306,7 @@ func (s *Repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 	return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master", Mirror: repo.Mirror}, nil
 }
 
-func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
+func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	dir := absolutePathForRepo(ctx, op.Repo.URI)
 
 	if op.Description != "" {
@@ -336,7 +336,7 @@ func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	return nil
 }
 
-func (s *Repos) Delete(ctx context.Context, repo string) error {
+func (s *repos) Delete(ctx context.Context, repo string) error {
 	dir := absolutePathForRepo(ctx, repo)
 	if dir == absolutePathForRepo(ctx, "") {
 		return errors.New("Repos.Delete needs at least one path element")

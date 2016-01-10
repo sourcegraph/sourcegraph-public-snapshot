@@ -188,12 +188,12 @@ func toBuildTasks(ts []*dbBuildTask) []*sourcegraph.BuildTask {
 	return t2s
 }
 
-// Builds is a DB-backed implementation of the Builds store.
-type Builds struct{}
+// builds is a DB-backed implementation of the Builds store.
+type builds struct{}
 
-var _ store.Builds = (*Builds)(nil)
+var _ store.Builds = (*builds)(nil)
 
-func (s *Builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
+func (s *builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	var builds []*dbBuild
 	err := dbh(ctx).Select(&builds, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
 	if err != nil {
@@ -205,7 +205,7 @@ func (s *Builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sou
 	return builds[0].toBuild(), nil
 }
 
-func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error) {
+func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error) {
 	if opt == nil {
 		opt = &sourcegraph.BuildListOptions{}
 	}
@@ -299,7 +299,7 @@ SELECT b.* FROM builds b
 	return toBuilds(builds), nil
 }
 
-func (s *Builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
+func (s *builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
 	if len(commitIDs) == 0 {
 		return nil, -1, nil
 	}
@@ -353,7 +353,7 @@ LIMIT 1
 	return nil, -1, nil
 }
 
-func (s *Builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
+func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
 	var b dbBuild
 	b.fromBuild(newBuild)
 
@@ -379,7 +379,7 @@ func (s *Builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 	return b.toBuild(), nil
 }
 
-func (s *Builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error {
+func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error {
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -414,7 +414,7 @@ func (s *Builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 	return nil
 }
 
-func (s *Builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
+func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
 	created := make([]*dbBuildTask, len(tasks))
 	for i, task := range tasks {
 		var args []interface{}
@@ -441,7 +441,7 @@ func (s *Builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 	return toBuildTasks(created), nil
 }
 
-func (s *Builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
+func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -478,7 +478,7 @@ func (s *Builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	return nil
 }
 
-func (s *Builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
+func (s *builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
 	if opt == nil {
 		opt = &sourcegraph.BuildTaskListOptions{}
 	}
@@ -504,7 +504,7 @@ LIMIT ` + arg(opt.Limit()) + ` OFFSET ` + arg(opt.Offset()) + `;`
 	return toBuildTasks(tasks), nil
 }
 
-func (s *Builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
+func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 	sql := `-- Builds.DequeueNext
 WITH
 to_dequeue AS (
@@ -530,7 +530,7 @@ RETURNING repo_build.*;
 	return nextBuilds[0].toBuild(), nil
 }
 
-func (s *Builds) GetTask(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
+func (s *builds) GetTask(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
 	var tasks []*dbBuildTask
 	sql := `SELECT * FROM repo_build_task WHERE repo=$1 AND build_id=$2 AND id=$3;`
 	if err := dbh(ctx).Select(&tasks, sql, task.Build.Repo.URI, task.Build.ID, task.ID); err != nil {

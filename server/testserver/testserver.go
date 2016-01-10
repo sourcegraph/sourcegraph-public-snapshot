@@ -404,10 +404,10 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	})
 
 	// Appdash
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerFlags{
+	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerConfig{
 		HTTPAddr: fmt.Sprintf(":%d", appdashHTTPPort),
 	})
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ClientFlags{
+	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ClientConfig{
 		URL: fmt.Sprintf("http://localhost:%d", appdashHTTPPort),
 	})
 

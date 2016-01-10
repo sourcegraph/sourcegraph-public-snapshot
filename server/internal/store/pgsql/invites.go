@@ -39,11 +39,11 @@ func toInvite(d *dbInvites) *sourcegraph.AccountInvite {
 }
 
 // Authorizations is a FS-backed implementation of the Authorizations store.
-type Invites struct{}
+type invites struct{}
 
-var _ store.Invites = (*Invites)(nil)
+var _ store.Invites = (*invites)(nil)
 
-func (s *Invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error) {
+func (s *invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error) {
 	dbInvite := &dbInvites{
 		Email:     invite.Email,
 		Token:     randstring.NewLen(20),
@@ -62,7 +62,7 @@ func (s *Invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.Accoun
 	return dbInvite.Token, nil
 }
 
-func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.AccountInvite, error) {
+func (s *invites) Retrieve(ctx context.Context, token string) (*sourcegraph.AccountInvite, error) {
 	dbInvite, err := s.get(ctx, token)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.Acco
 	return toInvite(dbInvite), nil
 }
 
-func (s *Invites) MarkUnused(ctx context.Context, token string) error {
+func (s *invites) MarkUnused(ctx context.Context, token string) error {
 	dbInvite, err := s.get(ctx, token)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (s *Invites) MarkUnused(ctx context.Context, token string) error {
 	return nil
 }
 
-func (s *Invites) get(ctx context.Context, token string) (*dbInvites, error) {
+func (s *invites) get(ctx context.Context, token string) (*dbInvites, error) {
 	var invites []*dbInvites
 	err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`)
 	if err != nil {
@@ -112,12 +112,12 @@ func (s *Invites) get(ctx context.Context, token string) (*dbInvites, error) {
 	return nil, errors.New("not found")
 }
 
-func (s *Invites) Delete(ctx context.Context, token string) error {
+func (s *invites) Delete(ctx context.Context, token string) error {
 	_, err := dbh(ctx).Exec(`DELETE FROM invites WHERE "token" = $1;`, token)
 	return err
 }
 
-func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
+func (s *invites) DeleteByEmail(ctx context.Context, email string) error {
 	res, err := dbh(ctx).Exec(`DELETE FROM invites WHERE "email" = $1;`, email)
 	if n, err := res.RowsAffected(); err != nil {
 		return err
@@ -127,7 +127,7 @@ func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
 	return err
 }
 
-func (s *Invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
+func (s *invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
 	var invites []*dbInvites
 	err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`)
 	if err != nil {

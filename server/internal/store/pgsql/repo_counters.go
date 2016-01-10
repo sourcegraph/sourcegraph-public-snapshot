@@ -22,16 +22,16 @@ type hit struct {
 	At   time.Time
 }
 
-// RepoCounters is a DB-backed implementation of the Repos store.
-type RepoCounters struct{}
+// repoCounters is a DB-backed implementation of the Repos store.
+type repoCounters struct{}
 
-var _ store.RepoCounters = (*RepoCounters)(nil)
+var _ store.RepoCounters = (*repoCounters)(nil)
 
-func (s *RepoCounters) RecordHit(ctx context.Context, repo string) error {
+func (s *repoCounters) RecordHit(ctx context.Context, repo string) error {
 	return dbh(ctx).Insert(&hit{Repo: repo, At: time.Now().In(time.UTC)})
 }
 
-func (s *RepoCounters) CountHits(ctx context.Context, repo string, since time.Time) (int, error) {
+func (s *repoCounters) CountHits(ctx context.Context, repo string, since time.Time) (int, error) {
 	sql := `SELECT COUNT(*) FROM "repo_hit" WHERE repo=$1`
 	args := []interface{}{repo}
 	if !since.IsZero() {

@@ -17,16 +17,16 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
-// Accounts is a DB-backed implementation of the Accounts store.
-type Accounts struct{}
+// accounts is a DB-backed implementation of the Accounts store.
+type accounts struct{}
 
-var _ store.Accounts = (*Accounts)(nil)
+var _ store.Accounts = (*accounts)(nil)
 
-func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {
+func (s *accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {
 	return nil, grpc.Errorf(codes.Unimplemented, "GetByGitHubID")
 }
 
-func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
+func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
 	if newUser.UID != 0 && !authutil.ActiveFlags.MigrateMode {
 		return nil, errors.New("uid already set")
 	}
@@ -57,7 +57,7 @@ func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 	return u.toUser(), nil
 }
 
-func (s *Accounts) Update(ctx context.Context, modUser *sourcegraph.User) error {
+func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error {
 	var u dbUser
 	u.fromUser(modUser)
 	if _, err := dbh(ctx).Update(&u); err != nil {
@@ -66,7 +66,7 @@ func (s *Accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 	return nil
 }
 
-func (s *Accounts) Delete(ctx context.Context, uid int32) error {
+func (s *accounts) Delete(ctx context.Context, uid int32) error {
 	dbUID := int(uid)
 	if _, err := dbh(ctx).Exec(`DELETE FROM users where uid=$1`, dbUID); err != nil {
 		return err
@@ -75,15 +75,15 @@ func (s *Accounts) Delete(ctx context.Context, uid int32) error {
 }
 
 func init() {
-	Schema.Map.AddTableWithName(PasswordResetRequest{}, "password_reset_requests").SetKeys(false, "Token")
+	Schema.Map.AddTableWithName(passwordResetRequest{}, "password_reset_requests").SetKeys(false, "Token")
 }
 
-type PasswordResetRequest struct {
+type passwordResetRequest struct {
 	Token string
 	UID   int32
 }
 
-func (s *Accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
+func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
 	// 62 characters in upper, lower, and decimal, 62^44 is slightly more than
 	// 2^256, so it's astronomically hard to guess, but doesn't take an excessive
 	// amount of space to store.
@@ -92,7 +92,7 @@ func (s *Accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 		return nil, errors.New("UID must be set")
 	}
 	token := randstring.NewLen(tokenLength)
-	req := PasswordResetRequest{
+	req := passwordResetRequest{
 		Token: token,
 		UID:   user.UID,
 	}
@@ -102,16 +102,16 @@ func (s *Accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 	return &sourcegraph.PasswordResetToken{Token: token}, nil
 }
 
-func (s *Accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
+func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
 	genericErr := errors.New("error reseting password") // don't need to reveal everything
-	req := make([]PasswordResetRequest, 0)
+	req := make([]passwordResetRequest, 0)
 	err := dbh(ctx).Select(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token)
 	if err != nil || len(req) != 1 {
 		log15.Warn("Token does not exist in password reset database", "store", "Accounts", "error", err)
 		return genericErr
 	}
 	log15.Info("Resetting password", "store", "Accounts", "UID", req[0].UID)
-	if err := (Password{}).SetPassword(ctx, req[0].UID, newPass.Password); err != nil {
+	if err := (password{}).SetPassword(ctx, req[0].UID, newPass.Password); err != nil {
 		return fmt.Errorf("Error changing password: %s", err)
 	}
 	_, err = dbh(ctx).Exec(`DELETE FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token)

@@ -63,12 +63,12 @@ func writeRegClientDB(ctx context.Context, regClients []*sourcegraph.RegisteredC
 	return err
 }
 
-// RegisteredClients is a FS-backed implementation of the RegisteredClients store.
-type RegisteredClients struct{}
+// registeredClients is a FS-backed implementation of the RegisteredClients store.
+type registeredClients struct{}
 
-var _ store.RegisteredClients = (*RegisteredClients)(nil)
+var _ store.RegisteredClients = (*registeredClients)(nil)
 
-func (s *RegisteredClients) Get(ctx context.Context, client sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
+func (s *registeredClients) Get(ctx context.Context, client sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
 	clients, err := readRegClientDB(ctx)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (s *RegisteredClients) Get(ctx context.Context, client sourcegraph.Register
 	return nil, &store.RegisteredClientNotFoundError{ID: client.ID}
 }
 
-func (s *RegisteredClients) GetByCredentials(ctx context.Context, cred sourcegraph.RegisteredClientCredentials) (*sourcegraph.RegisteredClient, error) {
+func (s *registeredClients) GetByCredentials(ctx context.Context, cred sourcegraph.RegisteredClientCredentials) (*sourcegraph.RegisteredClient, error) {
 	clients, err := readRegClientDB(ctx)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (s *RegisteredClients) GetByCredentials(ctx context.Context, cred sourcegra
 	return nil, &store.RegisteredClientNotFoundError{ID: cred.ID, Secret: cred.Secret}
 }
 
-func (s *RegisteredClients) Create(ctx context.Context, client sourcegraph.RegisteredClient) error {
+func (s *registeredClients) Create(ctx context.Context, client sourcegraph.RegisteredClient) error {
 	if client.ID == "" {
 		return fmt.Errorf("registered client ID must be set")
 	}
@@ -129,7 +129,7 @@ func (s *RegisteredClients) Create(ctx context.Context, client sourcegraph.Regis
 	return writeRegClientDB(ctx, clients)
 }
 
-func (s *RegisteredClients) Update(ctx context.Context, client sourcegraph.RegisteredClient) error {
+func (s *registeredClients) Update(ctx context.Context, client sourcegraph.RegisteredClient) error {
 	if client.ID == "" {
 		return fmt.Errorf("registered client ID must be set")
 	}
@@ -152,7 +152,7 @@ func (s *RegisteredClients) Update(ctx context.Context, client sourcegraph.Regis
 	return &store.RegisteredClientNotFoundError{ID: client.ID}
 }
 
-func (s *RegisteredClients) Delete(ctx context.Context, client sourcegraph.RegisteredClientSpec) error {
+func (s *registeredClients) Delete(ctx context.Context, client sourcegraph.RegisteredClientSpec) error {
 	clients, err := readRegClientDB(ctx)
 	if err != nil {
 		return err
@@ -172,7 +172,7 @@ func (s *RegisteredClients) Delete(ctx context.Context, client sourcegraph.Regis
 	return writeRegClientDB(ctx, keep)
 }
 
-func (s *RegisteredClients) List(ctx context.Context, opt sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
+func (s *registeredClients) List(ctx context.Context, opt sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
 	clients, err := readRegClientDB(ctx)
 	if err != nil {
 		return nil, err

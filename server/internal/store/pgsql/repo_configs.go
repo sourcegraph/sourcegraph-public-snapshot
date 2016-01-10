@@ -37,12 +37,12 @@ func (c *dbRepoConfig) fromRepoConfig(repo string, c2 *sourcegraph.RepoConfig) {
 	c.Apps = dbutil.NewSlice(c2.Apps)
 }
 
-// RepoConfigs is a DB-backed implementation of the RepoConfigs store.
-type RepoConfigs struct{}
+// repoConfigs is a DB-backed implementation of the RepoConfigs store.
+type repoConfigs struct{}
 
-var _ store.RepoConfigs = (*RepoConfigs)(nil)
+var _ store.RepoConfigs = (*repoConfigs)(nil)
 
-func (s *RepoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
+func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
 	var confRows []*dbRepoConfig
 	sql := `SELECT * FROM repo_config WHERE repo=$1;`
 	if err := dbh(ctx).Select(&confRows, sql, repo); err != nil {
@@ -54,7 +54,7 @@ func (s *RepoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 	return confRows[0].toRepoConfig(), nil
 }
 
-func (s *RepoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
 	var dbConf dbRepoConfig
 	dbConf.fromRepoConfig(repo, &conf)
 	n, err := dbh(ctx).Update(&dbConf)

@@ -255,7 +255,7 @@ func renderRepoNoVCSDataTemplate(w http.ResponseWriter, r *http.Request, rc *han
 	})
 }
 
-type RepoLink struct {
+type repoLinkInfo struct {
 	LeadingParts []string
 	NamePart     string
 	URL          *url.URL
@@ -265,14 +265,14 @@ type RepoLink struct {
 // absRepoLink produces a formatted link to a repo, and links to the
 // absolute URL to the repository on the current server (using
 // conf.AppURL).
-func absRepoLink(appURL *url.URL, repoURI string) *RepoLink {
+func absRepoLink(appURL *url.URL, repoURI string) *repoLinkInfo {
 	parts := strings.Split(repoURI, "/")
 
 	if maybeHost := strings.ToLower(parts[0]); (maybeHost == "github.com" || maybeHost == "sourcegraph.com") && len(parts) == 3 {
 		// Chop off "github.com" or "sourcegraph.com" prefix.
 		parts = parts[1:]
 	}
-	return &RepoLink{
+	return &repoLinkInfo{
 		LeadingParts: parts[:len(parts)-1],
 		NamePart:     parts[len(parts)-1],
 		URL:          appURL.ResolveReference(router.Rel.URLToRepo(repoURI)),
@@ -280,7 +280,7 @@ func absRepoLink(appURL *url.URL, repoURI string) *RepoLink {
 	}
 }
 
-func repoLink(repoURI string) *RepoLink {
+func repoLink(repoURI string) *repoLinkInfo {
 	return absRepoLink(&url.URL{}, repoURI)
 }
 

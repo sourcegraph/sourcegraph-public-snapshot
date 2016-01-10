@@ -38,9 +38,9 @@ func initClient() {
 	})
 }
 
-var clientFlags ClientFlags
+var clientFlags ClientConfig
 
-type ClientFlags struct {
+type ClientConfig struct {
 	Disable    bool   `long:"appdash.disable-client" description:"disable appdash client"`
 	URL        string `long:"appdash.url" description:"externally accessible URL for Appdash's web UI" default:"http://localhost:7800"`
 	RemoteAddr string `long:"appdash.remote-collector-addr" description:"collector addr for appdash client to send to"`
@@ -48,7 +48,7 @@ type ClientFlags struct {
 	Debug      bool   `long:"appdash.client-debug"`
 }
 
-func (f *ClientFlags) configure() (func(context.Context) context.Context, error) {
+func (f *ClientConfig) configure() (func(context.Context) context.Context, error) {
 	if f.Disable {
 		log15.Debug("Appdash client is disabled")
 		return nil, nil

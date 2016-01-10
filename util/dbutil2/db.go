@@ -201,14 +201,6 @@ func (h *Handle) configure() error {
 	return nil
 }
 
-// A SchemaCreateDropTruncater can create and drop a DB schema and can
-// truncate all of its tables.
-type SchemaCreateDropTruncater interface {
-	CreateSchema() error
-	DropSchema() error
-	TruncateAllTables() error
-}
-
 // A Handle is the interface to a database. It can safely be used by
 // concurrent goroutines.
 type Handle struct {
@@ -230,8 +222,6 @@ type Handle struct {
 	// field) so that Handle exports DbMap's methods.
 	*modl.DbMap
 }
-
-var _ SchemaCreateDropTruncater = &Handle{}
 
 // CreateUnloggedTables determines whether the PostgreSQL tables
 // should be created as unlogged. It is set to true during tests

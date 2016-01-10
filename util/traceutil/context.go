@@ -27,32 +27,32 @@ func SpanIDFromContext(ctx context.Context) appdash.SpanID {
 	return id
 }
 
-// Span is an HTTP transport and gRPC credential provider that
+// span is an HTTP transport and gRPC credential provider that
 // adds an Appdash span ID to outgoing requests.
-type Span struct {
-	SpanID appdash.SpanID
+type span struct {
+	spanID appdash.SpanID
 }
 
-func (t *Span) NewTransport(underlying http.RoundTripper) http.RoundTripper {
+func (t *span) NewTransport(underlying http.RoundTripper) http.RoundTripper {
 	if DefaultCollector == nil {
 		return underlying
 	}
 	return &httptrace.Transport{
-		Recorder:  appdash.NewRecorder(t.SpanID, DefaultCollector),
+		Recorder:  appdash.NewRecorder(t.spanID, DefaultCollector),
 		Transport: underlying,
 	}
 }
 
 // GetRequestMetadata implements gRPC's credentials.Credentials
 // interface.
-func (t *Span) GetRequestMetadata(ctx context.Context) (map[string]string, error) {
+func (t *span) GetRequestMetadata(ctx context.Context) (map[string]string, error) {
 	return t.Metadata(), nil
 }
 
 // Metadata returns the gRPC metadata identifying this span to
 // propagate it through a request tree.
-func (t *Span) Metadata() map[string]string {
-	return map[string]string{parentSpanMDKey: t.SpanID.String()}
+func (t *span) Metadata() map[string]string {
+	return map[string]string{parentSpanMDKey: t.spanID.String()}
 }
 
 func MiddlewareGRPC(ctx context.Context) (context.Context, error) {

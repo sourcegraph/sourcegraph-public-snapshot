@@ -34,10 +34,10 @@ import (
 )
 
 func init() {
-	tmpl.FuncMap = TemplateFunctions
+	tmpl.FuncMap = tmplFuncs
 }
 
-var TemplateFunctions = htmpl.FuncMap{
+var tmplFuncs = htmpl.FuncMap{
 	"personLabel":         personLabel,
 	"userMetaDescription": userMetaDescription,
 	"userStat":            userStat,

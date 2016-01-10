@@ -22,7 +22,7 @@ func init() {
 	)
 }
 
-func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+func (s *users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	var emailAddrRows []*userEmailAddrRow
 	sql := `SELECT * FROM user_email WHERE email=$1 AND "primary"=true`
 	if err := dbh(ctx).Select(&emailAddrRows, sql, emailAddr.Email); err != nil {
@@ -34,7 +34,7 @@ func (s *Users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAdd
 	return s.getByUID(ctx, emailAddrRows[0].UID)
 }
 
-func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
+func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
 	if user.UID == 0 {
 		return nil, &store.UserNotFoundError{UID: 0}
 	}
@@ -52,7 +52,7 @@ func (s *Users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*s
 	return emailAddrs, nil
 }
 
-func (s *Accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
+func (s *accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
 	if user.UID == 0 {
 		return &store.UserNotFoundError{UID: 0}
 	}

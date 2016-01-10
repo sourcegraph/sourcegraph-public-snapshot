@@ -25,7 +25,7 @@ func HTTPMiddleware() func(rw http.ResponseWriter, r *http.Request, next http.Ha
 
 			ctx := httpctx.FromRequest(r)
 			ctx = NewContext(ctx, id)
-			ctx = sourcegraph.WithClientMetadata(ctx, (&Span{SpanID: id}).Metadata())
+			ctx = sourcegraph.WithClientMetadata(ctx, (&span{spanID: id}).Metadata())
 			httpctx.SetForRequest(r, ctx)
 		},
 	}

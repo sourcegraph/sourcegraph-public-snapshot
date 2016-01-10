@@ -13,7 +13,7 @@ import (
 func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
 	t.Parallel()
 
-	var s ExternalAuthTokens
+	var s externalAuthTokens
 	ctx, done := testContext()
 	defer done()
 
@@ -38,7 +38,7 @@ func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
 func TestExternalAuthTokens_GetUserToken_notFound(t *testing.T) {
 	t.Parallel()
 
-	var s ExternalAuthTokens
+	var s externalAuthTokens
 	ctx, done := testContext()
 	defer done()
 
@@ -54,7 +54,7 @@ func TestExternalAuthTokens_GetUserToken_notFound(t *testing.T) {
 func TestExternalAuthTokens_SetUserToken_create(t *testing.T) {
 	t.Parallel()
 
-	var s ExternalAuthTokens
+	var s externalAuthTokens
 	ctx, done := testContext()
 	defer done()
 
@@ -82,7 +82,7 @@ func TestExternalAuthTokens_SetUserToken_create(t *testing.T) {
 func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 	t.Parallel()
 
-	var s ExternalAuthTokens
+	var s externalAuthTokens
 	ctx, done := testContext()
 	defer done()
 

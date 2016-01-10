@@ -18,7 +18,7 @@ import (
 func TestBuilds_Get(t *testing.T) {
 	t.Parallel()
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -40,7 +40,7 @@ func TestBuilds_List(t *testing.T) {
 	wantBuild := &sourcegraph.Build{Repo: "r"}
 	wantBuilds := []*sourcegraph.Build{wantBuild}
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -64,7 +64,7 @@ func TestBuilds_List(t *testing.T) {
 }
 
 func TestBuilds_List2(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -72,7 +72,7 @@ func TestBuilds_List2(t *testing.T) {
 }
 
 func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -80,7 +80,7 @@ func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
 }
 
 func TestBuilds_GetFirstInCommitOrder_firstCommitIDMatch(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -88,7 +88,7 @@ func TestBuilds_GetFirstInCommitOrder_firstCommitIDMatch(t *testing.T) {
 }
 
 func TestBuilds_GetFirstInCommitOrder_secondCommitIDMatch(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -96,7 +96,7 @@ func TestBuilds_GetFirstInCommitOrder_secondCommitIDMatch(t *testing.T) {
 }
 
 func TestBuilds_GetFirstInCommitOrder_successfulOnly(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -104,7 +104,7 @@ func TestBuilds_GetFirstInCommitOrder_successfulOnly(t *testing.T) {
 }
 
 func TestBuilds_GetFirstInCommitOrder_noneFound(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -112,7 +112,7 @@ func TestBuilds_GetFirstInCommitOrder_noneFound(t *testing.T) {
 }
 
 func TestBuilds_GetFirstInCommitOrder_returnNewest(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -122,7 +122,7 @@ func TestBuilds_GetFirstInCommitOrder_returnNewest(t *testing.T) {
 func TestBuilds_ListBuildTasks(t *testing.T) {
 	t.Parallel()
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -145,7 +145,7 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 func TestBuilds_Create(t *testing.T) {
 	t.Parallel()
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -160,7 +160,7 @@ func TestBuilds_Create(t *testing.T) {
 }
 
 func TestBuilds_Create_New(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -168,7 +168,7 @@ func TestBuilds_Create_New(t *testing.T) {
 }
 
 func TestBuilds_Create_SequentialID(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -178,7 +178,7 @@ func TestBuilds_Create_SequentialID(t *testing.T) {
 func TestBuilds_Update(t *testing.T) {
 	t.Parallel()
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -200,7 +200,7 @@ func TestBuilds_Update(t *testing.T) {
 func TestBuilds_CreateTasks(t *testing.T) {
 	t.Parallel()
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -223,7 +223,7 @@ func TestBuilds_CreateTasks(t *testing.T) {
 }
 
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -233,7 +233,7 @@ func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
 func TestBuilds_UpdateTask(t *testing.T) {
 	t.Parallel()
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -262,7 +262,7 @@ func TestBuilds_UpdateTask(t *testing.T) {
 func TestBuilds_DequeueNext(t *testing.T) {
 	t.Parallel()
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
@@ -315,20 +315,20 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 		nworkers = 30
 	)
 
-	var builds []*sourcegraph.Build
+	var allBuilds []*sourcegraph.Build
 	for i := 0; i < nbuilds; i++ {
-		builds = append(builds, &sourcegraph.Build{
+		allBuilds = append(allBuilds, &sourcegraph.Build{
 			Repo: "r", BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: int32(i)},
 			CommitID: strings.Repeat("a", 40),
 		})
 	}
 
-	var s Builds
+	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	for i, b := range builds {
-		builds[i] = s.mustCreate(ctx, t, b)
+	for i, b := range allBuilds {
+		allBuilds[i] = s.mustCreate(ctx, t, b)
 	}
 	t.Logf("enqueued %d builds", nbuilds)
 
@@ -363,7 +363,7 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 	}
 	wg.Wait()
 
-	for _, b := range builds {
+	for _, b := range allBuilds {
 		if !dq[b.ID] {
 			t.Errorf("build %d was never dequeued", b.ID)
 		}

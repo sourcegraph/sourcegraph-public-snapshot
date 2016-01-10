@@ -15,13 +15,13 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-type RepoStatuses struct {
+type repoStatuses struct {
 	mu sync.Mutex
 }
 
-var _ store.RepoStatuses = (*RepoStatuses)(nil)
+var _ store.RepoStatuses = (*repoStatuses)(nil)
 
-func (s *RepoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
+func (s *repoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (s *RepoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.Repo
 	return &cmbStatus, nil
 }
 
-func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) (err error) {
+func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

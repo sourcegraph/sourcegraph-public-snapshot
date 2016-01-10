@@ -17,13 +17,13 @@ package randstring
 
 import "crypto/rand"
 
-// StdChars is a set of standard characters allowed in the string.
-var StdChars = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
+// stdChars is a set of standard characters allowed in the string.
+var stdChars = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
 
 // NewLen returns a new random string of the provided length,
 // consisting of standard characters.
 func NewLen(length int) string {
-	return NewLenChars(length, StdChars)
+	return NewLenChars(length, stdChars)
 }
 
 // NewLenChars returns a new random string of the provided length,

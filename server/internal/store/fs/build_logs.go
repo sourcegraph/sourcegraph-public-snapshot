@@ -17,16 +17,16 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// BuildLogs is a local FS-backed implementation of the BuildLogs
+// buildLogs is a local FS-backed implementation of the BuildLogs
 // store.
 //
 // TODO(sqs): use the same dir as the other services? right now this
 // uses conf.BuildLogDir, which is weird and inconsistent.
-type BuildLogs struct{}
+type buildLogs struct{}
 
-var _ store.BuildLogs = (*BuildLogs)(nil)
+var _ store.BuildLogs = (*buildLogs)(nil)
 
-func (s *BuildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minIDStr string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
+func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minIDStr string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
 	// Read the log file.
 	b, err := ioutil.ReadFile(logFilePath(task))
 	if err != nil {

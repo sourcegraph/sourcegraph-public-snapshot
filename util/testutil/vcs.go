@@ -10,9 +10,12 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs/ssh"
 )
 
-// TrivialGitRepoHandler is an HTTP handler that serves a dummy git repo with
+// trivialGitRepoHandler is an HTTP handler that serves a dummy git repo with
 // a single commit (with no files and the message 'hello').
-var TrivialGitRepoHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//
+// Note: the head commit ID of the repo is
+// "bbf4e47c76299d42910d185c762a5b046299c651".
+var trivialGitRepoHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/info/refs":
 		fmt.Fprintln(w, "bbf4e47c76299d42910d185c762a5b046299c651\trefs/heads/master")
@@ -36,10 +39,6 @@ var TrivialGitRepoHandler http.Handler = http.HandlerFunc(func(w http.ResponseWr
 		w.Write(b)
 	}
 })
-
-// TrivialGitRepoHandlerHeadCommitID is the head commit ID of the repo
-// served by TrivialGitRepoHandler.
-const TrivialGitRepoHandlerHeadCommitID = "bbf4e47c76299d42910d185c762a5b046299c651"
 
 // NewGitSSHServer starts a git SSH server to serve the repo in the
 // given dir. Callers must call the server's Close() method when done
@@ -67,7 +66,7 @@ func NewGitSSHServer(dir string) (*ssh.Server, *vcs.RemoteOpts, error) {
 // commit ID of HEAD.
 //
 // Note: it is not intended to produce the exact same repo as that
-// returned by TrivialGitRepoHandler, even though they both have
+// returned by trivialGitRepoHandler, even though they both have
 // "trivial" in the name.
 func InitTrivialGitRepo(dir string) (headCommitID string, err error) {
 	err = runCmds(dir, []string{

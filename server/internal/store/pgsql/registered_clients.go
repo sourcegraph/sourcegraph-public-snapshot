@@ -83,12 +83,12 @@ func toRegisteredClients(us []*dbRegisteredClient) []*sourcegraph.RegisteredClie
 	return u2s
 }
 
-// RegisteredClients is a DB-backed implementation of the RegisteredClients store.
-type RegisteredClients struct{}
+// registeredClients is a DB-backed implementation of the RegisteredClients store.
+type registeredClients struct{}
 
-var _ store.RegisteredClients = (*RegisteredClients)(nil)
+var _ store.RegisteredClients = (*registeredClients)(nil)
 
-func (s *RegisteredClients) Get(ctx context.Context, client sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
+func (s *registeredClients) Get(ctx context.Context, client sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
 	regClient, err := s.getBySQL(ctx, "id=$1", client.ID)
 	if err, ok := err.(*store.RegisteredClientNotFoundError); ok {
 		err.ID = client.ID
@@ -96,7 +96,7 @@ func (s *RegisteredClients) Get(ctx context.Context, client sourcegraph.Register
 	return regClient, err
 }
 
-func (s *RegisteredClients) GetByCredentials(ctx context.Context, cred sourcegraph.RegisteredClientCredentials) (*sourcegraph.RegisteredClient, error) {
+func (s *registeredClients) GetByCredentials(ctx context.Context, cred sourcegraph.RegisteredClientCredentials) (*sourcegraph.RegisteredClient, error) {
 	secretSHA256 := sha256.Sum256([]byte(cred.Secret))
 	regClient, err := s.getBySQL(ctx, "id=$1 AND client_secret_sha256=$2", cred.ID, secretSHA256[:])
 	if err, ok := err.(*store.RegisteredClientNotFoundError); ok {
@@ -108,7 +108,7 @@ func (s *RegisteredClients) GetByCredentials(ctx context.Context, cred sourcegra
 
 // getBySQL returns a client matching the SQL query (if any exists). A
 // "LIMIT 1" clause is appended to the query before it is executed.
-func (s *RegisteredClients) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.RegisteredClient, error) {
+func (s *registeredClients) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.RegisteredClient, error) {
 	var clients []*dbRegisteredClient
 	err := dbh(ctx).Select(&clients, "SELECT * FROM reg_clients WHERE ("+sql+") LIMIT 1", args...)
 	if err != nil {
@@ -120,7 +120,7 @@ func (s *RegisteredClients) getBySQL(ctx context.Context, sql string, args ...in
 	return clients[0].toRegisteredClient(), nil
 }
 
-func (s *RegisteredClients) Create(ctx context.Context, client sourcegraph.RegisteredClient) error {
+func (s *registeredClients) Create(ctx context.Context, client sourcegraph.RegisteredClient) error {
 	if client.ID == "" {
 		return fmt.Errorf("registered client ID must be set")
 	}
@@ -139,7 +139,7 @@ func (s *RegisteredClients) Create(ctx context.Context, client sourcegraph.Regis
 	return nil
 }
 
-func (s *RegisteredClients) Update(ctx context.Context, client sourcegraph.RegisteredClient) error {
+func (s *registeredClients) Update(ctx context.Context, client sourcegraph.RegisteredClient) error {
 	if client.ID == "" {
 		return fmt.Errorf("registered client ID must be set")
 	}
@@ -178,7 +178,7 @@ WHERE id=` + arg(dbClient.ID)
 	return nil
 }
 
-func (s *RegisteredClients) Delete(ctx context.Context, client sourcegraph.RegisteredClientSpec) error {
+func (s *registeredClients) Delete(ctx context.Context, client sourcegraph.RegisteredClientSpec) error {
 	res, err := dbh(ctx).Exec(`DELETE FROM reg_clients WHERE id=$1;`, client.ID)
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func (s *RegisteredClients) Delete(ctx context.Context, client sourcegraph.Regis
 	return nil
 }
 
-func (s *RegisteredClients) List(ctx context.Context, opt sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
+func (s *registeredClients) List(ctx context.Context, opt sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := modl.PostgresDialect{}.BindVar(len(args))

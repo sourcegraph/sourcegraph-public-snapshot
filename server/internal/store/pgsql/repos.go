@@ -128,16 +128,16 @@ func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
 	return r2s
 }
 
-// Repos is a DB-backed implementation of the Repos store.
-type Repos struct{}
+// repos is a DB-backed implementation of the Repos store.
+type repos struct{}
 
-var _ store.Repos = (*Repos)(nil)
+var _ store.Repos = (*repos)(nil)
 
-func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	return s.getByURI(ctx, repo)
 }
 
-func (s *Repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	repo, err := s.getBySQL(ctx, "uri=$1", uri)
 	if err != nil {
 		if e, ok := err.(*store.RepoNotFoundError); ok {
@@ -150,7 +150,7 @@ func (s *Repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 // getBySQL returns a repository matching the SQL query, if any
 // exists. A "LIMIT 1" clause is appended to the query before it is
 // executed.
-func (s *Repos) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.Repo, error) {
+func (s *repos) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.Repo, error) {
 	var repos []*dbRepo
 	err := dbh(ctx).Select(&repos, "SELECT * FROM repo WHERE ("+sql+") LIMIT 1", args...)
 	if err != nil {
@@ -162,11 +162,11 @@ func (s *Repos) getBySQL(ctx context.Context, sql string, args ...interface{}) (
 	return repos[0].toRepo(), nil
 }
 
-func (s *Repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
+func (s *repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
 	return &sourcegraph.RepoPermissions{Read: true, Write: true, Admin: true}, nil
 }
 
-func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
 	if opt == nil {
 		opt = &sourcegraph.RepoListOptions{}
 	}
@@ -198,7 +198,7 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
-func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
+func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -300,7 +300,7 @@ func (s *Repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 	return sql, args, nil
 }
 
-func (s *Repos) query(ctx context.Context, sql string, args ...interface{}) ([]*sourcegraph.Repo, error) {
+func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*sourcegraph.Repo, error) {
 	var repos []*dbRepo
 	err := dbh(ctx).Select(&repos, sql, args...)
 	if err != nil {
@@ -309,7 +309,7 @@ func (s *Repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 	return toRepos(repos), nil
 }
 
-func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
 	// Explicitly created repos in the DB are mirrors because they
 	// don't have a corresponding VCS repository on the filesystem for
 	// them.
@@ -335,7 +335,7 @@ func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourceg
 	return r.toRepo(), nil
 }
 
-func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
+func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	if op.Description != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
 		if err != nil {
@@ -363,7 +363,7 @@ func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	return nil
 }
 
-func (s *Repos) Delete(ctx context.Context, repo string) error {
+func (s *repos) Delete(ctx context.Context, repo string) error {
 	_, err := dbh(ctx).Exec(`DELETE FROM repo WHERE uri=$1;`, repo)
 	return err
 }

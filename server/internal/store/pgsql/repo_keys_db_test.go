@@ -14,7 +14,7 @@ import (
 func TestRepos_CreateAndGetRemoteKey(t *testing.T) {
 	t.Parallel()
 
-	var s MirroredRepoSSHKeys
+	var s mirroredRepoSSHKeys
 	ctx, done := testContext()
 	defer done()
 
@@ -47,7 +47,7 @@ func TestRepos_CreateAndGetRemoteKey(t *testing.T) {
 func TestRepos_GetRemoteKey_none(t *testing.T) {
 	t.Parallel()
 
-	var s MirroredRepoSSHKeys
+	var s mirroredRepoSSHKeys
 	ctx, done := testContext()
 	defer done()
 

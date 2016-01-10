@@ -29,8 +29,6 @@ import (
 type userSettingsCommonData struct {
 	User        *sourcegraph.User
 	OrgsAndSelf []*sourcegraph.User
-
-	OrgMembershipPerms ExternalPerms // GitHub read:org perms for listing unpublicized org memberships
 }
 
 type privateRemoteRepo struct {
@@ -264,7 +262,6 @@ func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "user/settings/emails.html", http.StatusOK, nil, &struct {
 		userSettingsCommonData
 		EmailAddrs []*sourcegraph.EmailAddr
-		ExternalPerms
 		tmpl.Common
 	}{
 		userSettingsCommonData: *cd,

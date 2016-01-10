@@ -7,26 +7,24 @@ import (
 )
 
 func init() {
-	cli.RegisterStores("pgsql", Stores)
-}
-
-var Stores = &store.Stores{
-	Accounts:            &Accounts{},
-	Authorizations:      &Authorizations{},
-	Builds:              &Builds{},
-	Directory:           &Directory{},
-	ExternalAuthTokens:  &ExternalAuthTokens{},
-	RepoConfigs:         &RepoConfigs{},
-	RepoCounters:        &RepoCounters{},
-	MirroredRepoSSHKeys: &MirroredRepoSSHKeys{},
-	Password:            &Password{},
-	RegisteredClients:   &RegisteredClients{},
-	RepoVCS:             &fs.RepoVCS{},
-	Repos:               &Repos{},
-	Storage:             &Storage{},
-	RepoStatuses:        &RepoStatuses{},
-	UserPermissions:     &UserPermissions{},
-	Users:               &Users{},
-	Changesets:          &fs.Changesets{},
-	Invites:             &Invites{},
+	cli.RegisterStores("pgsql", &store.Stores{
+		Accounts:            &accounts{},
+		Authorizations:      &authorizations{},
+		Builds:              &builds{},
+		Directory:           &directory{},
+		ExternalAuthTokens:  &externalAuthTokens{},
+		RepoConfigs:         &repoConfigs{},
+		RepoCounters:        &repoCounters{},
+		MirroredRepoSSHKeys: &mirroredRepoSSHKeys{},
+		Password:            &password{},
+		RegisteredClients:   &registeredClients{},
+		RepoVCS:             &fs.RepoVCS{},
+		Repos:               &repos{},
+		Storage:             &storage{},
+		RepoStatuses:        &repoStatuses{},
+		UserPermissions:     &userPermissions{},
+		Users:               &users{},
+		Changesets:          &fs.Changesets{},
+		Invites:             &invites{},
+	})
 }
