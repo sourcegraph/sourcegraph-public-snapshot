@@ -1,7 +1,8 @@
-// Package github implements issues.Service using GitHub API client.
-package github
+// Package githubapi implements issues.Service using GitHub API client.
+package githubapi
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -13,18 +14,21 @@ import (
 
 	"github.com/google/go-github/github"
 	"golang.org/x/net/context"
+	"src.sourcegraph.com/apps/notifications/notifications"
 	"src.sourcegraph.com/apps/tracker/issues"
 )
 
-// NewService creates a GitHub-backed issues.Service using given GitHub client.
+// NewService creates a GitHub-backed issues.Service using given GitHub client,
+// and notifications for external API of Notifications Center app, if any.
 // At this time it infers the current user from the client (its authentication info), and cannot be used to serve multiple users.
-func NewService(client *github.Client) issues.Service {
+func NewService(client *github.Client, notifications notifications.ExternalService) issues.Service {
 	if client == nil {
 		client = github.NewClient(nil)
 	}
 
 	s := service{
-		cl: client,
+		cl:            client,
+		notifications: notifications,
 	}
 
 	if user, _, err := client.Users.Get(""); err == nil {
@@ -45,6 +49,10 @@ func NewService(client *github.Client) issues.Service {
 
 type service struct {
 	cl *github.Client
+
+	// notifications is the external API of Notifications Center app.
+	// Its value is nil if Notification Center app is not started.
+	notifications notifications.ExternalService
 
 	currentUser    *issues.User
 	currentUserErr error
@@ -186,36 +194,7 @@ func parseIssueSpec(issueAPIURL string) (issues.RepoSpec, int, error) {
 	return issues.RepoSpec{URI: e[len(e)-4] + "/" + e[len(e)-3]}, id, nil
 }
 
-// markRead marks the specified issue as read.
-func (s service) markRead(repo repoSpec, id uint64) error {
-	ns, _, err := s.cl.Activity.ListRepositoryNotifications(repo.Owner, repo.Repo, nil)
-	if err != nil {
-		return fmt.Errorf("failed to ListRepositoryNotifications: %v", err)
-	}
-
-	for _, n := range ns {
-		if *n.Subject.Type != "Issue" {
-			continue
-		}
-		_, issueID, err := parseIssueSpec(*n.Subject.URL)
-		if err != nil {
-			return fmt.Errorf("failed to parseIssueSpec: %v", err)
-		}
-		if uint64(issueID) != id {
-			continue
-		}
-
-		_, err = s.cl.Activity.MarkThreadRead(*n.ID)
-		if err != nil {
-			return fmt.Errorf("failed to MarkThreadRead: %v", err)
-		}
-		break
-	}
-
-	return nil
-}
-
-func (s service) Get(_ context.Context, rs issues.RepoSpec, id uint64) (issues.Issue, error) {
+func (s service) Get(ctx context.Context, rs issues.RepoSpec, id uint64) (issues.Issue, error) {
 	repo := ghRepoSpec(rs)
 	issue, _, err := s.cl.Issues.Get(repo.Owner, repo.Repo, int(id))
 	if err != nil {
@@ -224,7 +203,7 @@ func (s service) Get(_ context.Context, rs issues.RepoSpec, id uint64) (issues.I
 
 	if s.currentUser != nil {
 		// Mark as read.
-		err = s.markRead(repo, id)
+		err = s.markRead(ctx, rs, id)
 		if err != nil {
 			log.Println("service.Get: failed to markRead:", err)
 		}
@@ -388,17 +367,21 @@ func (s service) Edit(_ context.Context, rs issues.RepoSpec, id uint64, ir issue
 	}, nil
 }
 
-func (s service) EditComment(_ context.Context, rs issues.RepoSpec, id uint64, c issues.Comment) (issues.Comment, error) {
+func (s service) EditComment(_ context.Context, rs issues.RepoSpec, id uint64, cr issues.CommentRequest) (issues.Comment, error) {
 	// TODO: Why Validate here but not CreateComment, etc.? Figure this out. Might only be needed in fs implementation.
-	if err := c.Validate(); err != nil {
+	if _, err := cr.Validate(); err != nil {
 		return issues.Comment{}, err
 	}
 	repo := ghRepoSpec(rs)
 
-	if c.ID == issueDescriptionCommentID {
+	if cr.Body == nil {
+		return issues.Comment{}, errors.New("unsupported EditComment request")
+	}
+
+	if cr.ID == issueDescriptionCommentID {
 		// Use Issues.Edit() API to edit comment 0 (the issue description).
 		issue, _, err := s.cl.Issues.Edit(repo.Owner, repo.Repo, int(id), &github.IssueRequest{
-			Body: &c.Body,
+			Body: cr.Body,
 		})
 		if err != nil {
 			return issues.Comment{}, err
@@ -413,9 +396,9 @@ func (s service) EditComment(_ context.Context, rs issues.RepoSpec, id uint64, c
 		}, nil
 	}
 
-	// GitHub API uses comment ID and doesn't need issue ID. Comment IDs are unique per repo (not per issue).
-	comment, _, err := s.cl.Issues.EditComment(repo.Owner, repo.Repo, int(c.ID), &github.IssueComment{
-		Body: &c.Body,
+	// GitHub API uses comment ID and doesn't need issue ID. Comment IDs are unique per repo (rather than per issue).
+	comment, _, err := s.cl.Issues.EditComment(repo.Owner, repo.Repo, int(cr.ID), &github.IssueComment{
+		Body: cr.Body,
 	})
 	if err != nil {
 		return issues.Comment{}, err
@@ -428,6 +411,10 @@ func (s service) EditComment(_ context.Context, rs issues.RepoSpec, id uint64, c
 		Body:      *comment.Body,
 		Editable:  true, // You can always edit comments you've edited.
 	}, nil
+}
+
+func (s service) Search(_ context.Context, opt issues.SearchOptions) (issues.SearchResponse, error) {
+	return issues.SearchResponse{}, errors.New("Search endpoint not implemented in GitHub API service implementation")
 }
 
 func (s service) CurrentUser(_ context.Context) (*issues.User, error) {

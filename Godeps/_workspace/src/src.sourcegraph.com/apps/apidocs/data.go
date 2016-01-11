@@ -12,7 +12,10 @@ import (
 // directory. There is potential for a perf improvement here by instead adding
 // a specific flag for this in DefListOptions.
 func defsForDir(ctx context.Context, rev sourcegraph.RepoRevSpec, dir string) (defs []*sourcegraph.Def, err error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// Resolve the rev if not already, this is required for Defs.List below to
 	// succeed.
@@ -53,7 +56,10 @@ func defsForDir(ctx context.Context, rev sourcegraph.RepoRevSpec, dir string) (d
 
 // subDirsForDir returns the subdirectores for the given directory.
 func subDirsForDir(ctx context.Context, rev sourcegraph.RepoRevSpec, requestedDir string) (dirs []string, err error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// TODO(slimsag): We only need directories that are under a specific path
 	// prefix, but List doesn't allow this. Room for optimization here.
@@ -107,7 +113,10 @@ func countElements(path string) (count int) {
 
 // resolveRevSpec resolves the RepoRevSpec if it is not already.
 func resolveRevSpec(ctx context.Context, rev *sourcegraph.RepoRevSpec) error {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	if rev.Rev == "" {
 		// Determine default branch.
 		repo, err := cl.Repos.Get(ctx, &rev.RepoSpec)

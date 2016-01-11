@@ -863,7 +863,7 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/apidocs",
-			"Rev": "e59b60701099eac28b726eca470469c715a94b18"
+			"Rev": "3e894761c9f430f2c153ad08621147fb61704dff"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications",
@@ -871,7 +871,7 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/tracker",
-			"Rev": "e0c0838822cd813c47d7433cfff50ecfed922267"
+			"Rev": "59ec997cacaef78519d4276045af94c30d92e45c"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",

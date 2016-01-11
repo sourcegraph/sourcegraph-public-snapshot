@@ -164,7 +164,7 @@ func (c Comment) Validate() error {
 }
 
 // Validate validates the comment edit request, returning an non-nil error if it's invalid.
-// Returned requiresEdit is true if the edit request needs edit rights, and false if it can be done by anyone that can react.
+// requiresEdit reports if the edit request needs edit rights or if it can be done by anyone that can react.
 func (cr CommentRequest) Validate() (requiresEdit bool, err error) {
 	if cr.Body != nil {
 		requiresEdit = true
