@@ -49,7 +49,12 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 }
 
 func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.AuthInfo {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
+		appauth.DeleteSessionCookie(w)
+		return nil
+	}
 
 	// Call to Identify will be authenticated with the
 	// session's access token (because of previous middleware).

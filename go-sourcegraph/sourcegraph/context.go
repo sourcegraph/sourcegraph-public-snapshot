@@ -88,7 +88,7 @@ func clientMetadataFromContext(ctx context.Context) map[string]string {
 // NewClientFromContext returns a Sourcegraph API client that
 // communicates with the Sourcegraph gRPC endpoint in ctx (i.e.,
 // GRPCEndpoint(ctx)).
-func NewClientFromContext(ctx context.Context) *Client {
+func NewClientFromContext(ctx context.Context) (*Client, error) {
 	newClientFromContextMu.RLock()
 	f := newClientFromContext
 	newClientFromContextMu.RUnlock()
@@ -98,7 +98,7 @@ func NewClientFromContext(ctx context.Context) *Client {
 // MockNewClientFromContext allows a test to mock out the return value of
 // NewClientFromContext. Note that this is modifying global state, so if your
 // tests run in parallel you may get unexpected results
-func MockNewClientFromContext(f func(ctx context.Context) *Client) {
+func MockNewClientFromContext(f func(ctx context.Context) (*Client, error)) {
 	newClientFromContextMu.Lock()
 	newClientFromContext = f
 	newClientFromContextMu.Unlock()
@@ -117,7 +117,7 @@ var (
 	newClientFromContextMu sync.RWMutex
 	newClientFromContext   = realNewClientFromContext
 )
-var realNewClientFromContext = func(ctx context.Context) *Client {
+var realNewClientFromContext = func(ctx context.Context) (*Client, error) {
 	opts := []grpc.DialOption{
 		grpc.WithCodec(GRPCCodec),
 	}
@@ -150,10 +150,9 @@ var realNewClientFromContext = func(ctx context.Context) *Client {
 
 	conn, err := pooledGRPCDial(hostWithExplicitPort(grpcEndpoint), opts...)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	c := NewClient(conn)
-	return c
+	return NewClient(conn), nil
 }
 
 // hostWithExplicitPort returns u's host with an explicit port number

@@ -56,7 +56,10 @@ var (
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	ctx := httpctx.FromRequest(r)
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+	}
 
 	repoRev, exists := pctx.RepoRevSpec(ctx)
 	if !exists {
@@ -208,7 +211,10 @@ func build(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, erro
 // findHugoDataDir determines the Hugo data directory (the one
 // containing the config.toml file).
 func findHugoDataDir(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (dir string, err error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 
 	// HACK: Look in a hacky config file called ".sourcegraph" for the
 	// dir.

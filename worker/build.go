@@ -16,13 +16,22 @@ import (
 // startBuild starts and monitors a single build. It manages the
 // build's state on the Sourcegraph server.
 func startBuild(ctx context.Context, build *sourcegraph.Build) {
-	done := startHeartbeat(ctx, build.Spec())
+	done, err := startHeartbeat(ctx, build.Spec())
+	if err != nil {
+		log15.Error("Updating build starting state failed", "build", build.Spec(), "err", err)
+		return
+	}
 	defer done()
 
 	start := time.Now()
 
 	log15.Info("Starting build", "build", build.Spec().IDString())
-	_, err := sourcegraph.NewClientFromContext(ctx).Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("Updating build starting state failed", "build", build.Spec(), "err", err)
+		return
+	}
+	_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
 		Build: build.Spec(),
 		Info:  sourcegraph.BuildUpdate{StartedAt: now()},
 	})
@@ -46,7 +55,7 @@ func startBuild(ctx context.Context, build *sourcegraph.Build) {
 		log15.Info("Build failed", "build", build.Spec().IDString(), "time", time.Since(start), "err", execErr)
 	}
 
-	_, err = sourcegraph.NewClientFromContext(ctx).Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
+	_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
 		Build: build.Spec(),
 		Info: sourcegraph.BuildUpdate{
 			Success: execErr == nil,
@@ -72,7 +81,11 @@ type taskState struct {
 
 // Start implements builder.TaskState.
 func (s taskState) Start(ctx context.Context) error {
-	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = c.Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
 		Task: s.task,
 		Info: sourcegraph.TaskUpdate{
 			StartedAt: now(),
@@ -86,7 +99,11 @@ func (s taskState) Start(ctx context.Context) error {
 
 // Skip implements builder.TaskState.
 func (s taskState) Skip(ctx context.Context) error {
-	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = c.Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
 		Task: s.task,
 		Info: sourcegraph.TaskUpdate{
 			Skipped: true,
@@ -101,7 +118,11 @@ func (s taskState) Skip(ctx context.Context) error {
 
 // Warnings implements builder.TaskState.
 func (s taskState) Warnings(ctx context.Context) error {
-	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = c.Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
 		Task: s.task,
 		Info: sourcegraph.TaskUpdate{Warnings: true},
 	})
@@ -115,7 +136,11 @@ func (s taskState) Warnings(ctx context.Context) error {
 func (s taskState) End(ctx context.Context, execErr error) error {
 	defer s.log.Close()
 
-	_, err := sourcegraph.NewClientFromContext(ctx).Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = c.Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
 		Task: s.task,
 		Info: sourcegraph.TaskUpdate{
 			Success: execErr == nil,
@@ -131,7 +156,11 @@ func (s taskState) End(ctx context.Context, execErr error) error {
 
 // CreateSubtask implements builder.TaskState.
 func (s taskState) CreateSubtask(ctx context.Context, label string) (builder.TaskState, error) {
-	tasks, err := sourcegraph.NewClientFromContext(ctx).Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tasks, err := c.Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
 		Build: s.task.Build,
 		Tasks: []*sourcegraph.BuildTask{
 			{Label: label, ParentID: s.task.ID},

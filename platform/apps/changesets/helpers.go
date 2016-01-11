@@ -26,7 +26,10 @@ import (
 // revision and build status.
 func GetRepoAndRevCommon(r *http.Request) (rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, err error) {
 	ctx := putil.Context(r)
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	rc = new(handlerutil.RepoCommon)
 	rrs, ok := pctx.RepoRevSpec(ctx)

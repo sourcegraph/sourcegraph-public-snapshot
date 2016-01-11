@@ -18,7 +18,10 @@ import (
 
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 
 	conf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
 	if err != nil {

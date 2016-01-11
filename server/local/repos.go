@@ -150,7 +150,10 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 			return nil, err
 		}
 
-		cl := sourcegraph.NewClientFromContext(ctx)
+		cl, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
 		_, err = cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
 			Repo:     repoSpec,
 			CommitID: string(cid),

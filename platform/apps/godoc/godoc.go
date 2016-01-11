@@ -37,7 +37,10 @@ func init() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	ctx := httpctx.FromRequest(r)
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+	}
 
 	repoRev, exists := pctx.RepoRevSpec(ctx)
 	if !exists {
@@ -114,7 +117,10 @@ var funcMap = template.FuncMap{
 }
 
 func build(ctx context.Context, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec, path string) (*doc.Package, []*godocsupport.Package, *godocsupport.TDoc, error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	dir, err := getGodocDir(ctx, cl, repo, repoRev, path)
 	if err != nil {

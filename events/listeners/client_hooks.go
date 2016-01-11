@@ -37,7 +37,11 @@ func (g *clientListener) Start(ctx context.Context) {
 }
 
 func notifyClientEvent(ctx context.Context, id events.EventID, payload events.ClientPayload) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("ClientHook: ignoring event", "event", id, "error", fmt.Sprintf("could not create client: %s", err))
+		return
+	}
 
 	if payload.ClientID == "" {
 		log15.Warn("ClientHook: ignoring event", "event", id, "error", "client id not set in payload")

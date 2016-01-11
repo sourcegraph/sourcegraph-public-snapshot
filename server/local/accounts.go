@@ -79,7 +79,10 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	// created on this server.
 	if numUsers == 0 && !fed.Config.IsRoot {
 		rctx := fed.Config.NewRemoteContext(ctx)
-		rcl := sourcegraph.NewClientFromContext(rctx)
+		rcl, err := sourcegraph.NewClientFromContext(rctx)
+		if err != nil {
+			return nil, err
+		}
 		clientID := idkey.FromContext(ctx).ID
 
 		if rc, err := rcl.RegisteredClients.Get(rctx, &sourcegraph.RegisteredClientSpec{ID: clientID}); err != nil {

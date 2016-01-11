@@ -1,6 +1,7 @@
 package statsutil
 
 import (
+	"fmt"
 	"os/exec"
 	"time"
 
@@ -66,9 +67,9 @@ func init() {
 // ComputeUsageStats takes a daily snapshot of the basic statistics of all
 // local repos.
 func ComputeUsageStats(ctx context.Context, interval time.Duration) {
-	cl := sourcegraph.NewClientFromContext(ctx)
-	if cl == nil {
-		log15.Warn("ComputeUsageStats: could not construct client, usage stats will not be computed")
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Warn(fmt.Sprintf("ComputeUsageStats: could not construct client, usage stats will not be computed: %s", err))
 		return
 	}
 	for {

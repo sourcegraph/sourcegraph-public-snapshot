@@ -23,7 +23,10 @@ func buildReaper(ctx context.Context) {
 	listAllHeartbeatExpiredBuilds := func(ctx context.Context) ([]*sourcegraph.Build, error) {
 		var expired []*sourcegraph.Build
 
-		cl := sourcegraph.NewClientFromContext(ctx)
+		cl, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
 		for page := int32(1); ; page++ {
 			builds, err := cl.Builds.List(grpccache.NoCache(ctx), &sourcegraph.BuildListOptions{
 				Active:      true,
@@ -62,11 +65,16 @@ func buildReaper(ctx context.Context) {
 		return expired, nil
 	}
 
-	// Random sleep to avoid thundering herd.
-	time.Sleep(time.Second * time.Duration(3+rand.Intn(5)))
-
 	for {
-		cl := sourcegraph.NewClientFromContext(ctx)
+		// Random sleep to avoid thundering herd.
+		time.Sleep(time.Minute * time.Duration(3+rand.Intn(5)))
+
+		cl, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			log15.Error("Build reaper failed to create client", "err", err)
+			continue
+		}
+
 		expiredBuilds, err := listAllHeartbeatExpiredBuilds(ctx)
 		if err != nil {
 			log15.Error("Error listing all heartbeat-expired builds", "err", err)
@@ -113,8 +121,5 @@ func buildReaper(ctx context.Context) {
 				}
 			}
 		}
-
-		// Random sleep to avoid thundering herd.
-		time.Sleep(time.Minute * time.Duration(3+rand.Intn(5)))
 	}
 }

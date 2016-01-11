@@ -58,7 +58,10 @@ func (s *Server) ListenAndStart(ctx context.Context, addr string, privateSigner 
 				return nil, fmt.Errorf(`unsupported SSH user %q; use "git" for SSH git access`, c.User())
 			}
 
-			cl := sourcegraph.NewClientFromContext(s.ctx)
+			cl, err := sourcegraph.NewClientFromContext(s.ctx)
+			if err != nil {
+				return nil, err
+			}
 			userSpec, err := cl.UserKeys.LookupUser(s.ctx, &sourcegraph.SSHPublicKey{Key: key.Marshal()})
 			if err != nil {
 				return nil, err
@@ -176,7 +179,10 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
 	uid := uidFromSSHConn(sshConn)
 
-	cl := sourcegraph.NewClientFromContext(s.ctx)
+	cl, err := sourcegraph.NewClientFromContext(s.ctx)
+	if err != nil {
+		return err
+	}
 	repo, err := cl.Repos.Get(s.ctx, &sourcegraph.RepoSpec{URI: repoURI})
 	if err != nil {
 		if grpc.Code(err) == codes.NotFound {

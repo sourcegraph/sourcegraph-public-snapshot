@@ -34,7 +34,10 @@ func serveCreate(w http.ResponseWriter, r *http.Request) error {
 	}
 	newChangeset.Author = *user
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	cs, err := sg.Changesets.Create(ctx, &sourcegraph.ChangesetCreateOp{
 		Repo:      sourcegraph.RepoSpec{URI: uri},
 		Changeset: newChangeset,
@@ -80,7 +83,10 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 		return &errcode.HTTPErr{Status: http.StatusUnauthorized}
 	}
 	op.Author = *user
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	result, err := sg.Changesets.Update(ctx, &op)
 	if err != nil {
 		return err
@@ -115,7 +121,10 @@ func serveSubmitReview(w http.ResponseWriter, r *http.Request) error {
 	}
 	newReview.Author = *user
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	op := &sourcegraph.ChangesetCreateReviewOp{
 		Repo:        sourcegraph.RepoSpec{URI: uri},
 		ChangesetID: id,
@@ -160,7 +169,10 @@ func serveMerge(w http.ResponseWriter, r *http.Request) (err error) {
 	op.ID = id
 	op.Repo = sourcegraph.RepoSpec{URI: uri}
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	event, err := sg.Changesets.Merge(ctx, &op)
 	if err != nil {
 		return err

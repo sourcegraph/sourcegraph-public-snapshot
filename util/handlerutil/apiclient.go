@@ -1,6 +1,7 @@
 package handlerutil
 
 import (
+	"log"
 	"net/http"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -14,5 +15,10 @@ var APIClient = func(r *http.Request) *sourcegraph.Client {
 	// Add data to context that only exists on the request.
 	ctx := httpctx.FromRequest(r)
 	ctx = traceutil.NewContext(ctx, traceutil.SpanID(r))
-	return sourcegraph.NewClientFromContext(ctx)
+
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log.Fatalf("could not create API client: %s", err)
+	}
+	return c
 }
