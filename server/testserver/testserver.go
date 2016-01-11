@@ -503,7 +503,7 @@ func (s *Server) Start() error {
 	}
 	time.Sleep(75 * time.Millisecond)
 
-	s.Client = sourcegraph.NewClientFromContext(s.Ctx)
+	s.Client, _ = sourcegraph.NewClientFromContext(s.Ctx)
 
 	return nil
 }
