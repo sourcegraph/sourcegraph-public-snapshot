@@ -26,9 +26,10 @@ your changeset (e.g. `master`) and will use that template when available.
 The syntax is [Go text/template syntax](golang.org/pkg/text/template) and thus
 you can use any of the following in your template file:
 
-| Template Syntax | Description          | Example                                       |
-|-----------------|----------------------|-----------------------------------------------|
-| `{{.ID}}`       | CS ID number         | 4                                             |
-| `{{.Title}}`    | CS Title string      | `httpapi: fix a bug with the query method`    |
-| `{{.URL}}`      | URL to view CS       | `https://src.myteam.com/myrepo/.changesets/4` |
-| `{{.Author}}`   | CS Author's username | `bill33`                                      |
+| Template Syntax    | Description          | Example                                       |
+|--------------------|----------------------|-----------------------------------------------|
+| `{{.ID}}`          | CS ID number         | 4                                             |
+| `{{.Title}}`       | CS Title string      | `httpapi: fix a bug with the query method`    |
+| `{{.URL}}`         | URL to view CS       | `https://src.myteam.com/myrepo/.changesets/4` |
+| `{{.Author}}`      | CS Author's username | `bill33`                                      |
+| `{{.Description}}` | CS Description       | `This change fixes a bug with the HTTP API.`  |
