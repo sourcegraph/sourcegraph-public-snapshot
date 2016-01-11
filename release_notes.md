@@ -1,5 +1,9 @@
 # dev
 
+# 0.11.6
+
+- Fixes panic on empty commit author.
+
 # 0.11.5
 
 - Fix cloud install automation by providing appropriate default config.ini
