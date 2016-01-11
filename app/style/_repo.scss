@@ -38,6 +38,13 @@
 				background-color: $light-blue;
 			}
 		}
+
+		li.disabled {
+			a {
+				color: #ccc;
+				pointer-events: none;
+			}
+		}
 	}
 }
 
