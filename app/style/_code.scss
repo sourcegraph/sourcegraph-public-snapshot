@@ -197,6 +197,10 @@ pre code, .line-numbered-code td {
 			textarea {
 				height: 80px;
 			}
+
+			textarea:focus {
+				position: relative;
+			}
 		}
 	}
 

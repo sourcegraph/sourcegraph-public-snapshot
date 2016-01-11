@@ -545,6 +545,10 @@ h1.changeset-title {
 				margin-bottom: 5px;
 			}
 
+			textarea:focus {
+				position: relative;
+			}
+
 			.markdown-textarea .markdown-view {
 				height: auto;
 			}
