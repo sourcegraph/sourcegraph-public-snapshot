@@ -20,6 +20,6 @@ func importPathToDir(importPath string) string {
 
 // Assets is a virtual filesystem that contains template data used by the changesets app.
 var Assets = filter.New(
-	http.Dir(importPathToDir("src.sourcegraph.com/sourcegraph/Godeps/_workspace/src/src.sourcegraph.com/apps/apidocs/assets")),
+	http.Dir(importPathToDir("src.sourcegraph.com/apps/apidocs/assets")),
 	filter.FilesWithExtensions(".go"),
 )

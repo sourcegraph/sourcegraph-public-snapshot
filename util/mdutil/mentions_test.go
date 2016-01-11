@@ -17,7 +17,7 @@ import (
 )
 
 func TestMentions(t *testing.T) {
-	sourcegraph.MockNewClientFromContext(func(ctx context.Context) *sourcegraph.Client {
+	sourcegraph.MockNewClientFromContext(func(ctx context.Context) (*sourcegraph.Client, error) {
 		return &sourcegraph.Client{
 			Users: &mock.UsersClient{
 				Get_: func(v0 context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
@@ -32,7 +32,7 @@ func TestMentions(t *testing.T) {
 					return p, nil
 				},
 			},
-		}
+		}, nil
 	})
 	pfmt := pretty.Formatter
 	for _, tt := range []struct {

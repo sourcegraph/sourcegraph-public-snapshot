@@ -14,10 +14,13 @@ import (
 const serverHeartbeatInterval = 15 * time.Second
 
 // startHeartbeat spawns a background goroutine that sends heartbeats to the server until done is called.
-func startHeartbeat(ctx context.Context, build sourcegraph.BuildSpec) (done func()) {
+func startHeartbeat(ctx context.Context, build sourcegraph.BuildSpec) (done func(), err error) {
 	quitCh := make(chan struct{})
 
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	go func() {
 		t := time.NewTicker(serverHeartbeatInterval)
 		for {
@@ -41,5 +44,5 @@ func startHeartbeat(ctx context.Context, build sourcegraph.BuildSpec) (done func
 
 	return func() {
 		close(quitCh)
-	}
+	}, nil
 }

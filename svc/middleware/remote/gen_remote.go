@@ -56,7 +56,11 @@ var Services = svc.Services{
   <<<$service := .>>>
 	<<<range .Methods>>>
 		func (s remote<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 *<<<.ParamType>>>) (*<<<.ResultType>>>, error) {
-			return sourcegraph.NewClientFromContext(ctx).<<<$service.Name>>>.<<<.Name>>>(ctx, v1)
+			c, err := sourcegraph.NewClientFromContext(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return c.<<<$service.Name>>>.<<<.Name>>>(ctx, v1)
 		}
 	<<<end>>>
 <<<end>>>

@@ -134,7 +134,11 @@ func (c *changesetsCmdCommon) Repo() (*sourcegraph.Repo, error) {
 	}
 
 	cliCtx := putil.CLIContext()
-	sg := sourcegraph.NewClientFromContext(cliCtx)
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return nil, err
+	}
+
 	repo, err := sg.Repos.Get(cliCtx, &sourcegraph.RepoSpec{URI: repoURI})
 	if err != nil && isGuess && grpc.Code(err) == codes.NotFound {
 		return nil, errors.New("Could not guess repo, please specify a repo with -r.")
@@ -149,7 +153,10 @@ type changesetListCmd struct {
 
 func (c *changesetListCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	sg := sourcegraph.NewClientFromContext(cliCtx)
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	repo, err := c.Repo()
 	if err != nil {
@@ -207,7 +214,10 @@ type changesetCreateCmd struct {
 
 func (c *changesetCreateCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	sg := sourcegraph.NewClientFromContext(cliCtx)
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	repo, err := c.Repo()
 	if err != nil {
@@ -387,7 +397,10 @@ type changesetUpdateCmd struct {
 
 func (c *changesetUpdateCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	sg := sourcegraph.NewClientFromContext(cliCtx)
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	repo, err := c.Repo()
 	if err != nil {
@@ -417,7 +430,10 @@ type changesetMergeCmd struct {
 
 func (c *changesetMergeCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	sg := sourcegraph.NewClientFromContext(cliCtx)
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	repo, err := c.Repo()
 	if err != nil {
@@ -441,7 +457,10 @@ type changesetCloseCmd struct{ changesetUpdateCmdCommon }
 
 func (c *changesetCloseCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	sg := sourcegraph.NewClientFromContext(cliCtx)
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	repo, err := c.Repo()
 	if err != nil {
@@ -465,7 +484,10 @@ type changesetOpenCmd struct{ changesetUpdateCmdCommon }
 
 func (c *changesetOpenCmd) Execute(args []string) error {
 	cliCtx := putil.CLIContext()
-	sg := sourcegraph.NewClientFromContext(cliCtx)
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	repo, err := c.Repo()
 	if err != nil {

@@ -28,7 +28,10 @@ import (
 func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Builder, error) {
 	var b builder.Builder
 
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	repoSpec := sourcegraph.RepoSpec{URI: build.Repo}
 	repoRev := sourcegraph.RepoRevSpec{
@@ -146,7 +149,11 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		for i, label := range labels {
 			tasks[i] = &sourcegraph.BuildTask{Label: label}
 		}
-		createdTasks, err := sourcegraph.NewClientFromContext(ctx).Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
+		c, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		createdTasks, err := c.Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
 			Build: build.Spec(),
 			Tasks: tasks,
 		})
@@ -165,7 +172,11 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 
 	// FinalBuildConfig: Save config as BuilderConfig on the build.
 	b.FinalBuildConfig = func(ctx context.Context, configYAML string) error {
-		_, err := sourcegraph.NewClientFromContext(ctx).Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
+		c, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			return err
+		}
+		_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
 			Build: build.Spec(),
 			Info:  sourcegraph.BuildUpdate{BuilderConfig: string(configYAML)},
 		})
@@ -178,7 +189,10 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 // getContainerAppURL gets the Sourcegraph server's app URL from the
 // POV of the Docker containers.
 func getContainerAppURL(ctx context.Context) (*url.URL, error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// Get the app URL from the POV of the Docker containers.
 	serverConf, err := cl.Meta.Config(ctx, &pbtypes.Void{})

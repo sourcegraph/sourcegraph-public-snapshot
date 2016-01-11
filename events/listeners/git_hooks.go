@@ -51,7 +51,10 @@ func (g *gitHookListener) Start(ctx context.Context) {
 }
 
 func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPayload) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Warn("postPushHook error", "error", err)
+	}
 
 	repo := payload.Repo
 	event := payload.Event
@@ -124,7 +127,11 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 }
 
 func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("postPushHook: failed to create build", "err", err)
+		return
+	}
 	repo := payload.Repo
 	event := payload.Event
 
@@ -154,7 +161,10 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 // available immediately for future callers (which generally expect
 // that operation to be fast).
 func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPayload) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("inventoryHook error", "err", err)
+	}
 	event := payload.Event
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
 		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: payload.Repo, Rev: event.Commit, CommitID: event.Commit}

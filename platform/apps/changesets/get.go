@@ -31,7 +31,10 @@ import (
 // repository.
 func serveList(w http.ResponseWriter, r *http.Request) error {
 	ctx := putil.Context(r)
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	repo, ok := pctx.RepoRevSpec(ctx)
 	if !ok {
 		return errors.New("no repo found in context")
@@ -96,7 +99,10 @@ func serveList(w http.ResponseWriter, r *http.Request) error {
 // serveChangeset serves the page that displays a changeset.
 func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	ctx := putil.Context(r)
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	v := mux.Vars(r)
 	id, err := strconv.ParseInt(v["ID"], 10, 64)
 	if err != nil {

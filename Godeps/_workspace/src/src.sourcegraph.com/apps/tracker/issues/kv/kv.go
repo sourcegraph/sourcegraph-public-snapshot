@@ -44,7 +44,10 @@ type service struct {
 }
 
 func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.IssueListOptions) ([]issues.Issue, error) {
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var is []issues.Issue
@@ -117,11 +120,14 @@ func (s service) Count(ctx context.Context, repo issues.RepoSpec, opt issues.Iss
 func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issues.Issue, error) {
 	currentUser := putil.UserFromContext(ctx)
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return issues.Issue{}, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var issue issue
-	err := storage.GetJSON(sys, issuesBucket, formatUint64(id), &issue)
+	err = storage.GetJSON(sys, issuesBucket, formatUint64(id), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -170,7 +176,10 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint64, opt interface{}) ([]issues.Comment, error) {
 	currentUser := putil.UserFromContext(ctx)
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var comments []issues.Comment
@@ -219,7 +228,10 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 }
 
 func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64, opt interface{}) ([]issues.Event, error) {
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	var events []issues.Event
@@ -261,7 +273,10 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 		return issues.Comment{}, err
 	}
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return issues.Comment{}, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	createdAt := time.Now().UTC()
@@ -321,7 +336,10 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 		return issues.Issue{}, err
 	}
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return issues.Issue{}, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	createdAt := time.Now().UTC()
@@ -437,12 +455,15 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 		return issues.Issue{}, err
 	}
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return issues.Issue{}, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	// Get from storage.
 	var issue issue
-	err := storage.GetJSON(sys, issuesBucket, formatUint64(id), &issue)
+	err = storage.GetJSON(sys, issuesBucket, formatUint64(id), &issue)
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -540,7 +561,10 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 		return issues.Comment{}, err
 	}
 
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return issues.Comment{}, err
+	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
 	// Get from storage.
@@ -666,7 +690,10 @@ func (service) CurrentUser(ctx context.Context) (*issues.User, error) {
 		// Not authenticated, no current user.
 		return nil, nil
 	}
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	user, err := sg.Users.Get(ctx, userSpec)
 	if err != nil {
 		return nil, err
@@ -678,7 +705,10 @@ func (service) CurrentUser(ctx context.Context) (*issues.User, error) {
 func formatUint64(n uint64) string { return strconv.FormatUint(n, 10) }
 
 func referenceContents(ctx context.Context, ref *reference) (template.HTML, error) {
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 
 	te, err := sg.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: sourcegraph.TreeEntrySpec{

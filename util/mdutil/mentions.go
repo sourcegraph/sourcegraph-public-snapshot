@@ -22,7 +22,10 @@ func Mentions(ctx context.Context, md []byte) ([]*sourcegraph.UserSpec, error) {
 		return []*sourcegraph.UserSpec{}, nil
 	}
 	ppl := make([]*sourcegraph.UserSpec, 0, len(indexes))
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	for _, idx := range indexes {
 		m := md[idx[0]+1 : idx[1]]
 		u, err := findPerson(ctx, cl, m)

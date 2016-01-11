@@ -808,7 +808,15 @@ func (c *ServeCmd) checkReachability() {
 	doCheck := func(ctx context.Context, errorIsFatal bool) {
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
-		cl := sourcegraph.NewClientFromContext(ctx)
+		cl, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			if errorIsFatal {
+				log.Fatalf("Fatal: could not create client: %s", err)
+			} else {
+				log.Printf("Warning: could not create client: %s", err)
+			}
+			return
+		}
 		if _, err := cl.Meta.Status(ctx, &pbtypes.Void{}); err != nil && grpc.Code(err) != codes.Unauthenticated {
 			msg := fmt.Sprintf("Reachability check to server at %s failed (%s). Clients (including the web app) would be unable to connect to the server.", sourcegraph.GRPCEndpoint(ctx), err)
 			if errorIsFatal {
@@ -1013,9 +1021,14 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 	rctx := fed.Config.NewRemoteContext(context.Background())
 
 	for {
-		cl := sourcegraph.NewClientFromContext(rctx)
+		cl, err := sourcegraph.NewClientFromContext(rctx)
+		if err != nil {
+			log15.Error("Could not create client while registering client instance with root", "error", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
 
-		_, err := cl.RegisteredClients.Get(rctx, &sourcegraph.RegisteredClientSpec{
+		_, err = cl.RegisteredClients.Get(rctx, &sourcegraph.RegisteredClientSpec{
 			ID: idKey.ID,
 		})
 		if err == nil {
@@ -1106,7 +1119,12 @@ func (c *ServeCmd) graphUplink(ctx context.Context) {
 
 	for {
 		time.Sleep(c.GraphUplinkPeriod)
-		cl := sourcegraph.NewClientFromContext(rctx)
+		cl, err := sourcegraph.NewClientFromContext(rctx)
+		if err != nil {
+			log15.Error("GraphUplink push failed", "error", err)
+			continue
+		}
+
 		buf := &bytes.Buffer{}
 		mfs := metricutil.SnapshotMetricFamilies()
 		mfs.Marshal(buf)
@@ -1116,7 +1134,7 @@ func (c *ServeCmd) graphUplink(ctx context.Context) {
 			Type:          sourcegraph.TelemetryType_PrometheusDelimited0dot0dot4,
 			TelemetryData: buf.Bytes(),
 		}
-		_, err := cl.GraphUplink.Push(rctx, &snapshot)
+		_, err = cl.GraphUplink.Push(rctx, &snapshot)
 		if err != nil {
 			log15.Error("GraphUplink push failed", "error", err)
 		}

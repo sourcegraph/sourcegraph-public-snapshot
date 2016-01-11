@@ -13,13 +13,19 @@ import (
 // Person will convert a UserSpec into a sourcegraph.Person with a best effort
 // approach.
 func Person(ctx context.Context, u *sourcegraph.UserSpec) *sourcegraph.Person {
-	cl := sourcegraph.NewClientFromContext(ctx)
 	p := &sourcegraph.Person{
 		PersonSpec: sourcegraph.PersonSpec{
 			Login: u.Login,
 			UID:   u.UID,
 		},
 	}
+
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("notif.Person", "error", err)
+		return p
+	}
+
 	if p.Login == "" && cl.Users != nil {
 		user, err := cl.Users.Get(ctx, u)
 		if err != nil {

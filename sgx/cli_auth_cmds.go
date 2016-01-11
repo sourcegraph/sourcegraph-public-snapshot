@@ -8,6 +8,7 @@ import (
 
 	"github.com/howeyc/gopass"
 	"golang.org/x/oauth2"
+	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"sourcegraph.com/sqs/pbtypes"
@@ -66,7 +67,11 @@ func getSavedToken(endpointURL *url.URL) string {
 		oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}),
 	)
 	ctx = fed.NewRemoteContext(ctx, endpointURL)
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("Failed to verify saved auth credentials for %s", "endpointURL", endpointURL, "error", err)
+		return ""
+	}
 	_, err = cl.Auth.Identify(ctx, &pbtypes.Void{})
 	if err != nil {
 		log.Printf("# Failed to verify saved auth credentials for %s", endpointURL)
@@ -82,7 +87,10 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 	}
 
 	unauthedCtx := sourcegraph.WithCredentials(client.Ctx, nil)
-	cl := sourcegraph.NewClientFromContext(unauthedCtx)
+	cl, err := sourcegraph.NewClientFromContext(unauthedCtx)
+	if err != nil {
+		return "", err
+	}
 
 	var username, password string
 	if c.Username != "" {

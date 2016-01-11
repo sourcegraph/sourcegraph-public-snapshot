@@ -36,7 +36,11 @@ func (r *repoAutoCloner) Scopes() []string {
 }
 func (r *repoAutoCloner) Start(ctx context.Context) {
 	go func() {
-		apiclient := sourcegraph.NewClientFromContext(ctx)
+		apiclient, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			log15.Error("repoAutoCloner: could not create client", "error", err)
+			return
+		}
 		repos, err := apiclient.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			ListOptions: sourcegraph.ListOptions{
 				PerPage: 100000,
@@ -112,7 +116,11 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 }
 
 func (ru *repoUpdater) run(ctx context.Context) {
-	apiclient := sourcegraph.NewClientFromContext(ctx)
+	apiclient, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("repoUpdater: RefreshVCS: could not create client", "error", err)
+		return
+	}
 
 	for repo := range ru.queue {
 		op := &sourcegraph.MirrorReposRefreshVCSOp{

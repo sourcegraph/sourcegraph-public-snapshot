@@ -41,7 +41,10 @@ func AddConfigHandler(mux *http.ServeMux) {
 		}
 
 		ctx := httpctx.FromRequest(r)
-		cl := sourcegraph.NewClientFromContext(ctx)
+		cl, err := sourcegraph.NewClientFromContext(ctx)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+		}
 
 		config, err := cl.Meta.Config(ctx, &pbtypes.Void{})
 		if err != nil {

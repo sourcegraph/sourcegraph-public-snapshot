@@ -52,7 +52,7 @@ func TestPerRPCCredentials(t *testing.T) {
 			ctx = WithGRPCEndpoint(ctx, &url.URL{Host: l.Addr().String()})
 			ctx = WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "x", AccessToken: key}))
 			ctx = metadata.NewContext(ctx, metadata.MD{"want-access-token": []string{"x " + key}})
-			c := NewClientFromContext(ctx)
+			c, _ := NewClientFromContext(ctx)
 			if _, err := c.Meta.Status(ctx, &pbtypes.Void{}); err != nil {
 				t.Fatal(err)
 			}

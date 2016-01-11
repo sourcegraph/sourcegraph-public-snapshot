@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"log"
+
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
@@ -54,9 +56,13 @@ type System interface {
 // repository. Otherwise, storage is considered "global" (i.e. shared across
 // all repositories).
 func Namespace(ctx context.Context, appName string, repo string) System {
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return &system{
 		ctx:     ctx,
-		client:  sourcegraph.NewClientFromContext(ctx),
+		client:  c,
 		appName: appName,
 		repo:    repo,
 	}

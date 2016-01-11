@@ -49,7 +49,11 @@ func (g *changesetListener) Start(ctx context.Context) {
 
 func updateAffectedChangesets(ctx context.Context, id events.EventID, payload events.GitPayload) {
 	e := payload.Event
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("changesetHook: could not create client", "error", err)
+		return
+	}
 	changesetEvents, err := cl.Changesets.UpdateAffected(ctx, &sourcegraph.ChangesetUpdateAffectedOp{
 		Repo:      payload.Repo,
 		Branch:    e.Branch,
@@ -82,7 +86,10 @@ func updateAffectedChangesets(ctx context.Context, id events.EventID, payload ev
 }
 
 func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events.ChangesetPayload) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("changesetListener error", "error", err)
+	}
 	if payload.Changeset == nil {
 		cs, err := cl.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{
 			Repo: sourcegraph.RepoSpec{URI: payload.Repo},
@@ -131,7 +138,10 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 		return
 	}
 
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("changesetListener: error creating client", "error", err)
+	}
 
 	// Build list of recipients
 	recipients, err := mdutil.Mentions(ctx, []byte(payload.Changeset.Description))
@@ -163,7 +173,10 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 		return
 	}
 
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("changesetListener: error creating client", "error", err)
+	}
 
 	// Build list of recipients
 	recipients, err := mdutil.Mentions(ctx, []byte(payload.Review.Body))
@@ -203,7 +216,10 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 
 // notifyUpdate creates a slack notification that a changeset was updated, closed or merged.
 func notifyUpdate(ctx context.Context, id events.EventID, payload events.ChangesetPayload) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("changesetListener: error creating client", "error", err)
+	}
 
 	var actionType string
 	switch id {

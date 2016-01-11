@@ -76,7 +76,11 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 
 	service := trimGitService(r.URL.Query().Get("service"))
 
-	pkt, err := client(ctx).InfoRefs(ctx, &gitpb.InfoRefsOp{
+	c, err := client(ctx)
+	if err != nil {
+		return err
+	}
+	pkt, err := c.InfoRefs(ctx, &gitpb.InfoRefsOp{
 		Repo:    repo,
 		Service: service,
 	})
@@ -103,7 +107,11 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	pkt, err := client(ctx).ReceivePack(ctx, &gitpb.ReceivePackOp{
+	c, err := client(ctx)
+	if err != nil {
+		return err
+	}
+	pkt, err := c.ReceivePack(ctx, &gitpb.ReceivePackOp{
 		Repo:            repo,
 		ContentEncoding: r.Header.Get("content-encoding"),
 		Data:            body,
@@ -131,7 +139,11 @@ func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	pkt, err := client(ctx).UploadPack(ctx, &gitpb.UploadPackOp{
+	c, err := client(ctx)
+	if err != nil {
+		return err
+	}
+	pkt, err := c.UploadPack(ctx, &gitpb.UploadPackOp{
 		Repo:            repo,
 		ContentEncoding: r.Header.Get("content-encoding"),
 		Data:            body,

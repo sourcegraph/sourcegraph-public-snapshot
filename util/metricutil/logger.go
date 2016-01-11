@@ -60,7 +60,10 @@ func (w *Worker) LocateRootInstance() error {
 		return fmt.Errorf("cannot locate root as a root instance")
 	}
 	rootCtx := fed.Config.NewRemoteContext(w.Ctx)
-	rootCl := sourcegraph.NewClientFromContext(rootCtx)
+	rootCl, err := sourcegraph.NewClientFromContext(rootCtx)
+	if err != nil {
+		return err
+	}
 
 	config, err := rootCl.Meta.Config(rootCtx, &pbtypes.Void{})
 	if err != nil {
@@ -94,8 +97,11 @@ func (w *Worker) Flush() error {
 				return err
 			}
 		}
-		cl := sourcegraph.NewClientFromContext(w.RootCtx)
-		_, err := cl.GraphUplink.PushEvents(w.RootCtx, eventList)
+		cl, err := sourcegraph.NewClientFromContext(w.RootCtx)
+		if err != nil {
+			return err
+		}
+		_, err = cl.GraphUplink.PushEvents(w.RootCtx, eventList)
 		if err != nil {
 			log15.Error("GraphUplink.PushEvents failed", "error", err)
 			// Force the connection to root to be re-established on the next flush.

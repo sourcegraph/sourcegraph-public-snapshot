@@ -15,6 +15,7 @@ import (
 	"regexp"
 
 	"golang.org/x/net/context"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -42,7 +43,11 @@ type jiraRemoteLink struct {
 }
 
 func jiraOnChangesetUpdate(ctx context.Context, cs *sourcegraph.Changeset) {
-	sg := sourcegraph.NewClientFromContext(ctx)
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Error("jiraOnChangesetUpdate error: could not create client", "error", err)
+		return
+	}
 
 	delta, err := sg.Deltas.Get(ctx, &sourcegraph.DeltaSpec{
 		Base: cs.DeltaSpec.Base,

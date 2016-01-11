@@ -145,7 +145,10 @@ var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*s
 	// TODO: Cache UserPermissions to avoid making a call to root server for every
 	// write/admin operation.
 	rootCtx := fed.Config.NewRemoteContext(ctx)
-	rootCl := sourcegraph.NewClientFromContext(rootCtx)
+	rootCl, err := sourcegraph.NewClientFromContext(rootCtx)
+	if err != nil {
+		return nil, err
+	}
 	userPermissions, err := rootCl.RegisteredClients.GetUserPermissions(rootCtx, &sourcegraph.UserPermissionsOptions{
 		UID:        int32(actor.UID),
 		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: actor.ClientID},
