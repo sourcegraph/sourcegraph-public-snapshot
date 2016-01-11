@@ -10,7 +10,7 @@ machine:
     PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
     LD_LIBRARY_PATH: $HOME/protobuf/lib
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
-    LONG_VERSION: $(date +"%y%m%d")-$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:7}
+    LONG_VERSION: $(date +%y%m%d)-$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:7}
 
     # Don't block on `git diff` invocations of `less`.
     GIT_PAGER:
