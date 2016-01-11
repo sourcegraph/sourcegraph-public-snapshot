@@ -23,7 +23,7 @@ import (
 )
 
 func EnsureRepoExists(t *testing.T, ctx context.Context, repoURI string) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 	if err != nil {
@@ -39,7 +39,7 @@ func EnsureRepoExists(t *testing.T, ctx context.Context, repoURI string) {
 // it doesn't exist, it triggers a refresh of the repo's VCS data and
 // then retries (until maxGetCommitVCSRefreshWait has elapsed).
 func getCommitWithRefreshAndRetry(t *testing.T, ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) *vcs.Commit {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	wait := time.Second * 9 * ciFactor
 
@@ -85,7 +85,7 @@ func getCommitWithRefreshAndRetry(t *testing.T, ctx context.Context, repoRevSpec
 // CreateRepo creates a new repo. Callers must call the returned
 // done() func when done (if err is non-nil) to free up resources.
 func CreateRepo(t *testing.T, ctx context.Context, repoURI string) (repo *sourcegraph.Repo, done func(), err error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	op := &sourcegraph.ReposCreateOp{
 		URI: repoURI,
@@ -133,7 +133,7 @@ func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (commi
 // a default set of some text files is used. All files are committed
 // in the same commit.
 func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files map[string]string) (commitID string, err error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {

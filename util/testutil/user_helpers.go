@@ -12,7 +12,7 @@ import (
 const password = "pw"
 
 func CreateAccount(t *testing.T, ctx context.Context, login string) (*sourcegraph.UserSpec, error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	user, err := cl.Accounts.Create(ctx, &sourcegraph.NewAccount{
 		Login:    login,
@@ -28,7 +28,7 @@ func CreateAccount(t *testing.T, ctx context.Context, login string) (*sourcegrap
 }
 
 func EnsureUserExists(t *testing.T, ctx context.Context, login string) int {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{Login: login})
 	if err != nil {
@@ -38,7 +38,7 @@ func EnsureUserExists(t *testing.T, ctx context.Context, login string) int {
 }
 
 func WaitForUserEmailToExist(t *testing.T, ctx context.Context, login string, wantEmail string) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	d := time.Second * 10
 	timeout := time.After(d)

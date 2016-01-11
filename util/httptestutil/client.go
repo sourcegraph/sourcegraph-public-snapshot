@@ -25,8 +25,8 @@ func NewTest(h http.Handler) (*Client, *MockClients) {
 	// TODO(sqs): this makes the tests non-parallelizable, which is not ok
 	// since we have a few instances of tests using NewTest and running in
 	// parallel (eg: OAuth)
-	sourcegraph.MockNewClientFromContext(func(ctx context.Context) *sourcegraph.Client {
-		return mocks.Client()
+	sourcegraph.MockNewClientFromContext(func(ctx context.Context) (*sourcegraph.Client, error) {
+		return mocks.Client(), nil
 	})
 
 	httpClient := Client{http.Client{Transport: handlerTransport{h, &mocks.Ctx}}}

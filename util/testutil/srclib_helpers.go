@@ -19,7 +19,7 @@ import (
 // you just checked that specific defs exist, then the index creation
 // could fail (or have a bug) without you realizing it.
 func CheckImport(t *testing.T, ctx context.Context, repo, commitID string) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	if len(commitID) != 40 {
 		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repo}, Rev: commitID}
