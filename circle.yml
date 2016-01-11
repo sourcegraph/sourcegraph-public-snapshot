@@ -76,7 +76,7 @@ deployment:
           pwd: $REPO
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=master&tag=$LONG_VERSION"
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=master&version=$LONG_VERSION"
       - echo $LONG_VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
 
   next-branch:
@@ -84,7 +84,7 @@ deployment:
     commands:
       - ./circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=next&tag=$LONG_VERSION"
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=next&version=$LONG_VERSION"
 
   release-tag:
     tag: /[0-9]+\.[0-9]+\.[0-9]+/
@@ -92,7 +92,7 @@ deployment:
       - grep "# $VERSION" release_notes.md # fail if version is not mentioned in release notes
       - ./circle-build-docker-image.sh $CIRCLE_TAG:
           pwd: $REPO
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&tag=$CIRCLE_TAG"
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&version=$CIRCLE_TAG"
 
       # # push to Docker Hub
       # - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
