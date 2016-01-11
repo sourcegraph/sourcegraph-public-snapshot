@@ -436,6 +436,7 @@ h1.changeset-title {
 		.changeset-timeline-icon.changeset-icon-submit {
 			a {
 				display: inline-block;
+				text-decoration: none;
 				@include transition(0.1s all ease-in);
 
 				span {
