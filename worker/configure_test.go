@@ -1,6 +1,10 @@
 package worker
 
-import "testing"
+import (
+	"testing"
+
+	"src.sourcegraph.com/sourcegraph/pkg/dockerutil"
+)
 
 func TestParseURLOrGitSSHURL(t *testing.T) {
 	tests := map[string]string{
@@ -82,6 +86,11 @@ func TestDroneRepoLink(t *testing.T) {
 }
 
 func TestContainerAddrForHost(t *testing.T) {
+	containerHostname, err := dockerutil.ContainerHost()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := map[string]string{
 		"http://example.com/my/repo":             "http://example.com/my/repo",
 		"user@example.com:my/repo.git":           "git+ssh://user@example.com/my/repo.git",
