@@ -94,9 +94,9 @@ deployment:
           pwd: $REPO
       - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&version=$CIRCLE_TAG"
 
-      # # push to Docker Hub
-      # - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
-      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:$CIRCLE_TAG
-      # - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:latest
-      # - docker push sourcegraph/sourcegraph:$CIRCLE_TAG
-      # - docker push sourcegraph/sourcegraph:latest
+      # push to Docker Hub
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:$CIRCLE_TAG
+      - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:latest
+      - docker push sourcegraph/sourcegraph:$CIRCLE_TAG
+      - docker push sourcegraph/sourcegraph:latest
