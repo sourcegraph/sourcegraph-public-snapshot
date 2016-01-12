@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+
 	"golang.org/x/net/context"
 
 	"strings"
@@ -49,6 +51,7 @@ func TestRepoBuilds(t *testing.T) {
 	calledBuildsList := mock.Builds.MockList(t,
 		&sourcegraph.Build{ID: 1, Repo: "my/repo", CommitID: strings.Repeat("a", 40)},
 	)
+	calledGetCommit := mockRepoCommit(mock, &vcs.Commit{})
 
 	if _, err := c.GetOK(router.Rel.URLToRepoSubroute(router.RepoBuilds, "my/repo").String()); err != nil {
 		t.Fatal(err)
@@ -61,6 +64,9 @@ func TestRepoBuilds(t *testing.T) {
 	}
 	if !*calledBuildsList {
 		t.Error("!calledBuildsList")
+	}
+	if !*calledGetCommit {
+		t.Error("!calledGetCommit")
 	}
 }
 

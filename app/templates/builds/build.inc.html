@@ -1,16 +1,27 @@
 {{define "BuildCells"}}
-<th><a href="{{urlToRepoBuild .Repo .ID}}">#{{.ID}}</a></th>
-<td><a href="{{urlToRepoCommit .Repo .CommitID}}"><tt>{{truncateCommitID .CommitID}}</tt></a></td>
+<th><a href="{{urlToRepoBuild .Build.Repo .Build.ID}}">#{{.Build.ID}}</a></th>
 <td>
-	{{buildStatus .}}
-	{{if .EndedAt}}
-		{{template "TimeAgo" .EndedAt}}
-	{{else if .StartedAt}}
-		{{template "TimeAgo" .StartedAt}}
-	{{else}}
-		{{template "TimeAgo" .CreatedAt}}
+	{{if .Build.Branch}}
+		<a class="branch" href="{{urlToRepoCommit .Build.Repo .Build.Branch}}">{{.Build.Branch}}</a>
+	{{end}}
+	{{if .Build.Tag}}
+		<a class="tag" href="{{urlToRepoCommit .Build.Repo .Build.Tag}}">{{.Build.Tag}}</a>
+	{{end}}
+	<a href="{{urlToRepoCommit .Build.Repo .Build.CommitID}}"><tt>{{truncateCommitID .Build.CommitID}}</tt></a>
+	{{with .Commit}}
+		<span class="commit-message">{{.Message|truncate 60}}</span>
 	{{end}}
 </td>
-<td>{{duration .StartedAt (minTime .EndedAt now)}}</td>
-<td><a class="pull-right btn btn-xs btn-default" href="{{urlToRepoBuild .Repo .ID}}">View</a></td>
+<td>
+	{{buildStatus .Build}}
+	{{if .Build.EndedAt}}
+		{{template "TimeAgo" .Build.EndedAt}}
+	{{else if .Build.StartedAt}}
+		{{template "TimeAgo" .Build.StartedAt}}
+	{{else}}
+		{{template "TimeAgo" .Build.CreatedAt}}
+	{{end}}
+</td>
+<td>{{duration .Build.StartedAt (minTime .Build.EndedAt now)}}</td>
+<td><a class="pull-right btn btn-xs btn-default" href="{{urlToRepoBuild .Build.Repo .Build.ID}}">View</a></td>
 {{end}}

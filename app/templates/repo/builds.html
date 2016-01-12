@@ -7,8 +7,8 @@
 	<thead>
 		<tr><th>#</th><th>Commit</th><th>Status</th><th>Elapsed</th></tr>
 	</thead>
-	{{range .Builds}}
-	<tr class="{{buildClass .}} build" data-href="{{urlToRepoBuild .Repo .ID}}">
+	{{range .BuildsAndCommits}}
+	<tr class="{{buildClass .Build}} build" data-href="{{urlToRepoBuild .Build.Repo .Build.ID}}">
 		{{template "BuildCells" .}}
 	</tr>
 	{{end}}

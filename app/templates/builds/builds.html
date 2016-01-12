@@ -12,12 +12,12 @@
 	{{end}}
 </ul>
 
-{{if .Builds}}
+{{if .BuildsAndCommits}}
 <table class="table builds">
 	<thead>
 		<tr><th>Repo</th><th>#</th><th>Commit</th><th>Status</th><th>Elapsed</th></tr>
 	</thead>
-	{{range .Builds}}
+	{{range .BuildsAndCommits}}
 	{{template "BuildRow" .}}
 	{{end}}
 </table>
@@ -30,9 +30,9 @@
 {{end}}
 
 {{define "BuildRow"}}
-<tr class="build {{buildClass .}}" data-href="{{urlToRepoBuild .Repo .ID}}">
+<tr class="build {{buildClass .Build}}" data-href="{{urlToRepoBuild .Build.Repo .Build.ID}}">
 	<th>
-		{{template "RepoLink" (repoLink .Repo)}}
+		{{template "RepoLink" (repoLink .Build.Repo)}}
 	</th>
 	{{template "BuildCells" .}}
 </tr>

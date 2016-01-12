@@ -6,6 +6,12 @@
 	.repo-link {
 		font-weight: bold;
 	}
+	.commit-message {
+		color: $text-muted;
+	}
+	.branch, .tag {
+		font-weight: bold;
+	}
 	.commit-id {
 		font-size: $font-size-small*0.9;
 		opacity: 0.3;

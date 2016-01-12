@@ -3,6 +3,12 @@ package app
 import (
 	"net/http"
 
+	"github.com/rogpeppe/rog-go/parallel"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -58,17 +64,58 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	buildsAndCommits, err := fetchCommitsForBuilds(ctx, builds.Builds)
+	if err != nil {
+		return err
+	}
+
 	return tmpl.Exec(r, w, "builds/builds.html", http.StatusOK, nil, &struct {
-		Builds    []*sourcegraph.Build
-		Opt       sourcegraph.BuildListOptions
-		Tabs      []tab
-		PageLinks []pageLink
+		BuildsAndCommits []buildAndCommit
+		Opt              sourcegraph.BuildListOptions
+		Tabs             []tab
+		PageLinks        []pageLink
 
 		tmpl.Common
 	}{
-		Builds:    builds.Builds,
-		Opt:       opt,
-		Tabs:      tabs,
-		PageLinks: pg,
+		BuildsAndCommits: buildsAndCommits,
+		Opt:              opt,
+		Tabs:             tabs,
+		PageLinks:        pg,
 	})
+}
+
+type buildAndCommit struct {
+	Build  *sourcegraph.Build
+	Commit *vcs.Commit
+}
+
+func fetchCommitsForBuilds(ctx context.Context, builds []*sourcegraph.Build) ([]buildAndCommit, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	buildsAndCommits := make([]buildAndCommit, len(builds))
+	par := parallel.NewRun(8)
+	for i, b := range builds {
+		i, b := i, b
+		buildsAndCommits[i].Build = b
+		par.Do(func() error {
+			commit, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{
+				RepoSpec: sourcegraph.RepoSpec{URI: b.Repo},
+				Rev:      b.CommitID,
+				CommitID: b.CommitID,
+			})
+			if err != nil && grpc.Code(err) != codes.NotFound {
+				// Tolerate not found (happens when the commit is
+				// gc'd).
+				return err
+			}
+			buildsAndCommits[i].Commit = commit
+			return nil
+		})
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
+	}
+	return buildsAndCommits, nil
 }
