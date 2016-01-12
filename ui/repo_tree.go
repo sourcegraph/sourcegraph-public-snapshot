@@ -11,7 +11,6 @@ import (
 )
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", "application/json")
 	opt := &sourcegraph.RepoTreeGetOptions{TokenizedSource: true}
 	if err := schemaDecoder.Decode(opt, r.URL.Query()); err != nil {
 		return err
