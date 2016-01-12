@@ -309,16 +309,16 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 	return toRepos(repos), nil
 }
 
-func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	// Explicitly created repos in the DB are mirrors because they
 	// don't have a corresponding VCS repository on the filesystem for
 	// them.
 	if !newRepo.Mirror {
-		return nil, store.ErrRepoMirrorOnly
+		return store.ErrRepoMirrorOnly
 	}
 
 	if newRepo.HTTPCloneURL == "" && newRepo.SSHCloneURL == "" {
-		return nil, store.ErrRepoNeedsCloneURL
+		return store.ErrRepoNeedsCloneURL
 	}
 
 	if newRepo.DefaultBranch == "" {
@@ -329,10 +329,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (*sourceg
 
 	var r dbRepo
 	r.fromRepo(newRepo)
-	if err := dbh(ctx).Insert(&r); err != nil {
-		return nil, err
-	}
-	return r.toRepo(), nil
+	return dbh(ctx).Insert(&r)
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {

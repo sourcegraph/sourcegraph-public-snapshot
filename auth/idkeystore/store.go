@@ -16,8 +16,12 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// GenerateOrGetIDKey reads the server's ID key (or creates one on-demand)
-func GenerateOrGetIDKey(ctx context.Context, idKeyData string, idKeyFile string) (*idkey.IDKey, error) {
+// GenerateOrGetIDKey reads the server's ID key (or creates one
+// on-demand). If the call resulted in a key being created by this
+// process, the created return value is true. There is no guarantee
+// that if multiple servers running with the same backend only one
+// returns created=true.
+func GenerateOrGetIDKey(ctx context.Context, idKeyData string, idKeyFile string) (k *idkey.IDKey, created bool, err error) {
 	stringStore := &stringStore{idKeyData}
 	fileStore := &fileStore{idKeyFile}
 	platformStore := &platformStore{ctx}
@@ -28,13 +32,13 @@ func GenerateOrGetIDKey(ctx context.Context, idKeyData string, idKeyFile string)
 		if k == nil {
 			continue
 		}
-		return k, err
+		return k, false, err
 	}
 
 	log15.Info("Generating new Sourcegraph ID key")
-	k, err := idkey.Generate()
+	k, err = idkey.Generate()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	var p idStorePut
@@ -48,10 +52,11 @@ func GenerateOrGetIDKey(ctx context.Context, idKeyData string, idKeyFile string)
 
 	if err != nil && idKeyFile == "" && grpc.Code(err) == codes.AlreadyExists {
 		log15.Info("Key generation race detected. Falling back to first generated ID key")
-		return platformStore.Get()
+		k, err = platformStore.Get()
+		return k, false, err
 	}
 
-	return k, err
+	return k, true, err
 }
 
 type idStoreGet interface {

@@ -188,7 +188,7 @@ type ServeCmd struct {
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
-	InitRepos string `long:"init-repos" description:"initialize Sourcegraph with demo repositories; provide comma-separated list of languages"`
+	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -384,7 +384,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	idKey, err := idkeystore.GenerateOrGetIDKey(idKeyCtx, c.IDKeyData, c.IDKeyFile)
+	idKey, createdIDKey, err := idkeystore.GenerateOrGetIDKey(idKeyCtx, c.IDKeyData, c.IDKeyFile)
 	if err != nil {
 		return err
 	}
@@ -637,7 +637,12 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
-	c.initializeStarterRepos()
+	// Prepare for initial onboarding.
+	if createdIDKey && !c.NoInitialOnboarding {
+		if err := c.prepareInitialOnboarding(client.Ctx); err != nil {
+			log15.Warn("Error preparing initial onboarding", "err", err)
+		}
+	}
 
 	// Wait for signal to exit.
 	ch := make(chan os.Signal)
@@ -685,51 +690,6 @@ func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
 		return nil, err
 	}
 	return k, nil
-}
-
-func (c *ServeCmd) initializeStarterRepos() error {
-	cl := client.Client()
-
-	starterRepoURL := func(lang string) (string, error) {
-		switch lang {
-		case "go":
-			return "https://src.sourcegraph.com/lib/annotate", nil
-		case "java":
-			return "https://src.sourcegraph.com/sample/matrix-ops", nil
-		default:
-			return "", fmt.Errorf("Unrecognized language %s", lang)
-		}
-	}
-
-	initStarterRepo := func(lang string) {
-		url, err := starterRepoURL(lang)
-		if err != nil {
-			log15.Error(err.Error())
-			return
-		}
-
-		log15.Info(fmt.Sprintf("Creating starter repo for %s...", lang))
-		repo, err := cl.Repos.Create(client.Ctx, &sourcegraph.ReposCreateOp{
-			VCS:         "git",
-			URI:         fmt.Sprintf("sourcegraph-starter/%s", lang),
-			CloneURL:    url,
-			Description: fmt.Sprintf("A Sourcegraph starter project for %s", lang),
-			Language:    lang,
-		})
-		if err != nil {
-			log15.Warn(err.Error())
-		} else {
-			log15.Info(fmt.Sprintf("Created %s", repo.URI))
-		}
-	}
-
-	if c.InitRepos != "" {
-		for _, lang := range strings.Split(c.InitRepos, ",") {
-			initStarterRepo(lang)
-		}
-	}
-
-	return nil
 }
 
 // authenticateCLIContext adds a "service account" access token to

@@ -184,7 +184,7 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 			return
 		}
 		if event.Branch == repo.DefaultBranch {
-			lang := inv.PrimaryLanguage()
+			lang := inv.PrimaryProgrammingLanguage()
 			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.RepoSpec(), Language: lang}); err != nil {
 				log15.Warn("inventoryHook: call to Repos.Update to set language failed", "err", err, "repoRev", repoRev, "language", lang)
 			}

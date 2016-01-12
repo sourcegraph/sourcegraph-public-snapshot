@@ -277,8 +277,8 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 
 	// Determine the person who is merging.
 	p := notif.PersonFromContext(ctx)
-	if err != nil {
-		return err
+	if p == nil {
+		return grpc.Errorf(codes.Unauthenticated, "merging requires authentication")
 	}
 	merger := vcs.Signature{
 		Name:  p.FullName,

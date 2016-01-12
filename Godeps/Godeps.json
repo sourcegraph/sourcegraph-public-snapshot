@@ -440,6 +440,10 @@
 			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
+			"ImportPath": "github.com/shurcooL/go/vfs/godocfs/godocfs",
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
+		},
+		{
 			"ImportPath": "github.com/shurcooL/highlight_diff",
 			"Rev": "8f0db662adc4a5ba63b4ca15bf66ab08123f7161"
 		},

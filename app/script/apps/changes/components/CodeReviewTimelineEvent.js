@@ -18,7 +18,7 @@ var CodeReviewTimelineEvent = React.createClass({
 
 	render() {
 		var op = this.state.Op;
-		var login = op.Author.Login ? <b>{op.Author.Login}</b> : null;
+		var login = op.Author.Login ? <b>{op.Author.Login}</b> : "A user";
 		var i = op.Author.Login ? 0 : 1;
 		var msg;
 		var icon = "octicon-pencil";

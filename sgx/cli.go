@@ -25,7 +25,6 @@ func init() {
 
 	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
 		srclib.GlobalOpt.Verbose = globalOpt.Verbose
-		srclib.GlobalOpt.Verbose = true
 	})
 }
 

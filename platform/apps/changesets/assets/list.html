@@ -34,11 +34,13 @@
 								<div class="changeset-spec">
 									to merge {{.DeltaSpec.Head.Rev}} into {{.DeltaSpec.Base.Rev}}
 								</div>
+								{{with .Author.Login}}
 								<div class="changeset-author">
-									by <a class="author-name" href="{{urlToUser .Author.Login}}">
-										{{if .Author}}{{.Author.Login}}{{end}}
+									by <a class="author-name" href="{{urlToUser .}}">
+										{{.}}
 									</a>
 								</div>
+								{{end}}
 							</td>
 							<td class="table-cell-time">
 								<div class="changeset-time">

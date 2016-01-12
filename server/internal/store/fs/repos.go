@@ -18,16 +18,12 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/rwvfs"
-	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util"
 )
 
 // repos is a local filesystem-backed implementation of the Repos
@@ -198,89 +194,32 @@ func readGitDefaultBranch(fs vfs.FileSystem, dir string) (string, error) {
 	return string(data), nil
 }
 
-func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) error {
 	if repo.VCS != "git" {
-		return nil, grpc.Errorf(codes.Unimplemented, "only git is supported in Repos.Create")
+		return grpc.Errorf(codes.Unimplemented, "only git repos are supported in repo creation")
 	}
 
 	if repo.Mirror {
 		if repo.HTTPCloneURL == "" && repo.SSHCloneURL == "" {
-			return nil, store.ErrRepoNeedsCloneURL
+			return store.ErrRepoNeedsCloneURL
 		}
 	}
 
 	dir := absolutePathForRepo(ctx, repo.URI)
 	if dir == absolutePathForRepo(ctx, "") {
-		return nil, errors.New("Repos.Create needs at least one path element")
+		return grpc.Errorf(codes.InvalidArgument, "repo must have at least one path component")
 	}
 
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
-		return nil, errors.New("repository already exists")
+		return grpc.Errorf(codes.AlreadyExists, "repo %s already exists", repo.URI)
 	}
 
 	if err := os.MkdirAll(dir, 0700); err != nil {
-		return nil, err
+		return err
 	}
 
-	if repo.HTTPCloneURL != "" && repo.Mirror == false {
-		// Clone some repo from an external host (and block until complete).
-		// NOTE: this will circumvent the RefreshVCS code path.
-
-		remoteOpts := vcs.RemoteOpts{}
-		host := util.RepoURIHost(repo.URI)
-		authStore := ext.AuthStore{}
-		cred, err := authStore.Get(ctx, host)
-		if err != nil {
-			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", host, err)
-		}
-
-		remoteOpts.HTTPS = &vcs.HTTPSConfig{
-			Pass: cred.Token,
-		}
-
-		err = store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, false, &vcsclient.CloneInfo{
-			VCS:        repo.VCS,
-			CloneURL:   repo.HTTPCloneURL,
-			RemoteOpts: remoteOpts,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master"}, nil
-	}
-
-	// TODO: Doing this `git init --bare` followed by a later RefreshVCS results in non-standard default branches
-	//       to not be set. To fix that, either use git clone, or follow up with a `git ls-remote` and parse out HEAD.
-
-	cmd := exec.Command("git", "init", "--bare")
-	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("creating %s repository %s failed with output:\n%s", repo.VCS, repo.URI, string(out))
-	}
-
-	if repo.Private {
-		if err := s.setGitConfig(ctx, dir, "sourcegraph.private", "true"); err != nil {
-			return nil, err
-		}
-	}
-
-	if repo.Description != "" {
-		if err := s.setGitConfig(ctx, dir, "sourcegraph.description", repo.Description); err != nil {
-			return nil, err
-		}
-	}
-
-	if repo.Language != "" {
-		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", repo.Language); err != nil {
-			return nil, err
-		}
-	}
-
-	if repo.CreatedAt != nil {
-		if err := s.setGitConfig(ctx, dir, "sourcegraph.createdat", repo.CreatedAt.Time().Format(timeFormat)); err != nil {
-			return nil, err
-		}
+	if err := s.createBareGitRepo(ctx, repo, dir); err != nil {
+		return err
 	}
 
 	if repo.Mirror {
@@ -298,12 +237,48 @@ func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) (*sourcegrap
 			cmd.Dir = dir
 			out, err := cmd.CombinedOutput()
 			if err != nil {
-				return nil, fmt.Errorf("configuring mirrored %s repository %s (origin clone URL %s) failed with %v:\n%s", repo.VCS, repo.URI, repo.CloneURL(), err, string(out))
+				return fmt.Errorf("configuring mirrored %s repository %s (origin clone URL %s) failed with %v:\n%s", repo.VCS, repo.URI, repo.CloneURL(), err, string(out))
 			}
 		}
 	}
 
-	return &sourcegraph.Repo{URI: repo.URI, VCS: repo.VCS, DefaultBranch: "master", Mirror: repo.Mirror}, nil
+	return nil
+}
+
+func (s *repos) createBareGitRepo(ctx context.Context, repo *sourcegraph.Repo, dir string) error {
+	// TODO: Doing this `git init --bare` followed by a later
+	//       RefreshVCS results in non-standard default branches to
+	//       not be set. To fix that, either use git clone, or follow
+	//       up with a `git ls-remote` and parse out HEAD.
+	cmd := exec.Command("git", "init", "--bare")
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("creating %s repository %s failed with output:\n%s", repo.VCS, repo.URI, string(out))
+	}
+
+	if repo.Private {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.private", "true"); err != nil {
+			return err
+		}
+	}
+	if repo.Description != "" {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.description", repo.Description); err != nil {
+			return err
+		}
+	}
+	if repo.Language != "" {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.language", repo.Language); err != nil {
+			return err
+		}
+	}
+	if repo.CreatedAt != nil {
+		if err := s.setGitConfig(ctx, dir, "sourcegraph.createdat", repo.CreatedAt.Time().Format(timeFormat)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {

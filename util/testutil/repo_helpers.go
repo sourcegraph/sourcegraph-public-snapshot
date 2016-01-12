@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 	"src.sourcegraph.com/sourcegraph/util/executil"
@@ -155,7 +156,7 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 	if u.User != nil {
 		authedCloneURL = u.String()
 	} else {
-		authedCloneURL, err = AddSystemAuthToURL(ctx, repo.HTTPCloneURL)
+		authedCloneURL, err = authutil.AddSystemAuthToURL(ctx, "", repo.HTTPCloneURL)
 		if err != nil {
 			return "", err
 		}
