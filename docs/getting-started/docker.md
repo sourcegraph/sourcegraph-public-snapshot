@@ -17,10 +17,12 @@ docker run \
   --publish 80:80 \
   --publish 443:443 \
   --restart on-failure:10 \
-  --volume /etc/sourcegraph:/etc/sourcegraph \
   --volume /var/lib/sourcegraph:/root/.sourcegraph \
   --volume /var/run/docker.sock:/var/run/docker.sock \
-  sourcegraph/sourcegraph:latest
+  sourcegraph/sourcegraph:latest \
+  serve \
+  --http-addr=:80 \
+  --https-addr=:443
 ```
 
 This will download and run Sourcegraph. Once started, you can access
@@ -34,22 +36,16 @@ example) `--env DOCKER_HOST=tcp://1.2.3.4:2376`.
 
 ## Storage
 
-Sourcegraph's configuration and data is persisted on the host using
-[Docker volumes](https://docs.docker.com/userguide/dockervolumes/):
-
-* Configuration: the host directory `/etc/sourcegraph` is mounted at
-  `/etc/sourcegraph` in the container.
-* Data (repositories, builds, users, etc.): the host directory
-  `/var/lib/sourcegraph` is mounted at
-  `/home/sourcegraph/.sourcegraph` in the container.
+Sourcegraph's data (repositories, builds, users, etc.) is persisted on
+the host using a
+[Docker volume](https://docs.docker.com/userguide/dockervolumes/). The
+command above uses the `/var/lib/sourcegraph` directory on the host to
+store this data.
 
 
 ## Configuration & administration
 
-* Edit configuration: run `docker exec -it src vi
-  /etc/sourcegraph/config.ini` or edit `/etc/sourcegraph/config.ini`
-  directly on the host (assuming you used the volume mapping suggested
-  in the `docker run` command above).
+* Edit configuration: modify the command-line flags after the `serve` command.
 * Restart the Sourcegraph server (required after config changes): run
   `docker restart src`
 * Stop the Sourcegraph server: run `docker stop src`

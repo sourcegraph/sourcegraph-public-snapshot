@@ -11,6 +11,7 @@ RUN curl -Ls $STATIC_SITE_URL | tar x
 ADD src /usr/local/bin/src
 
 ENTRYPOINT ["src"]
-CMD ["serve", "--http-addr=:3080"]
+CMD ["serve", "--http-addr=:80", "--https-addr=:443", "--ssh-addr=:22"]
 
-EXPOSE 3080 3443
+VOLUME ["/root/.sourcegraph", "/var/run/docker.sock"]
+EXPOSE 80 443 22
