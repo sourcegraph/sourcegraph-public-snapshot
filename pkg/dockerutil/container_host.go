@@ -10,7 +10,7 @@ import (
 
 // ContainerHost returns is the IP address of the Docker host, as
 // viewed by Docker containers running on that host.
-func ContainerHost() (string, error) {
+var ContainerHost = func() (string, error) {
 	if runtime.GOOS == "darwin" {
 		return "192.168.99.1", nil // No reliable way to determine Docker machine's vbox interface
 	}

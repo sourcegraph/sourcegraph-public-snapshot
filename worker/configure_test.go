@@ -86,6 +86,8 @@ func TestDroneRepoLink(t *testing.T) {
 }
 
 func TestContainerAddrForHost(t *testing.T) {
+	dockerutil.ContainerHost = func() (string, error) { return "0.0.0.0", nil } // mock, since CI may not have Docker
+
 	containerHostname, err := dockerutil.ContainerHost()
 	if err != nil {
 		t.Fatal(err)
