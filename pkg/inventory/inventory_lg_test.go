@@ -15,6 +15,8 @@ import (
 )
 
 func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
+	t.Skip("flaky") // https://circleci.com/gh/sourcegraph/sourcegraph/10279
+
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
