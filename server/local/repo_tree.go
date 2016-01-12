@@ -166,6 +166,9 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 
 	total := len(res)
 	// Paginate the results.
+	if int(origOffset) > total {
+		return nil, grpc.Errorf(codes.InvalidArgument, "page offset bounds out of range")
+	}
 	res = res[origOffset:mathutil.Min(int(origOffset+origN), total)]
 
 	if opt.Formatted {
