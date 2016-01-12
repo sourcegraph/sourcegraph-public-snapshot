@@ -9,7 +9,6 @@ import (
 	"path"
 	"strings"
 
-	"regexp"
 	"runtime"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -459,10 +458,8 @@ var containerHostname = func() string {
 			log.Fatalf("could not determine docker hostname: %s", err)
 		}
 		for _, addr := range addrs {
-			if addr.Network() == "ip+net" {
-				if match := ipRegexp.FindString(addr.String()); match != "" {
-					return match
-				}
+			if ipn, ok := addr.(*net.IPNet); ok {
+				return ipn.IP.String()
 			}
 		}
 	}
@@ -474,4 +471,3 @@ var containerHostname = func() string {
 	return "172.17.42.1" // Linux's docker0
 }()
 
-var ipRegexp = regexp.MustCompile(`[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}`)
