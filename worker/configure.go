@@ -3,11 +3,14 @@ package worker
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/url"
 	"path"
-	"runtime"
 	"strings"
+
+	"regexp"
+	"runtime"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -448,12 +451,27 @@ func containerAddrForHost(hostURL string) (hostname, containerURL string, err er
 
 // containerHostname is the IP address of the host, as viewed by
 // Docker containers running on the host.
-//
-// TODO(native-ci): Un-hardcode this IP address; determine it by
-// actually querying the docker0 network interface.
 var containerHostname = func() string {
+	// native docker IP
+	if iface, err := net.InterfaceByName("docker0"); err == nil {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			log.Fatalf("could not determine docker hostname: %s", err)
+		}
+		for _, addr := range addrs {
+			if addr.Network() == "ip+net" {
+				if match := ipRegexp.FindString(addr.String()); match != "" {
+					return match
+				}
+			}
+		}
+	}
+
+	// HACK: hardcoded values
 	if runtime.GOOS == "darwin" {
 		return "192.168.99.1" // Docker machine's vboxnet0
 	}
 	return "172.17.42.1" // Linux's docker0
 }()
+
+var ipRegexp = regexp.MustCompile(`[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}`)
