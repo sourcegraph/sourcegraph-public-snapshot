@@ -3,3 +3,10 @@
 	filemode = true
 	bare = false
 	logallrefupdates = true
+[remote "origin"]
+	url = /home/sqs/src/src.sourcegraph.com/sourcegraph/misc/sampledata/sgpath/repos/golang/hello
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+	rebase = true
