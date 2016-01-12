@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
+	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
@@ -60,19 +60,19 @@ func TestRepoTree_FileRange_lg(t *testing.T) {
 		t.FailNow()
 	}
 
-	// Verify the content encoding (or else it'll end up in the frontend as a
-	// string instead of a JS object).
+	// Verify the content type (or else it'll end up in the frontend as a string
+	// instead of a JS object).
 	wantEncoding := "application/json"
-	if got := resp.Header.Get("Content-Encoding"); got != wantEncoding {
-		t.Fatalf("Got Content-Encoding header %q want %q", got, wantEncoding)
+	if got := resp.Header.Get("Content-Type"); got != wantEncoding {
+		t.Fatalf("Got Content-Type header %q want %q", got, wantEncoding)
 	}
 
-	// Verify the TreeEntry is the one we asked for.
-	var te sourcegraph.TreeEntry
-	if err := json.Unmarshal(body, &te); err != nil {
+	// Verify the CodeFile.Entry is the one we asked for.
+	var payload payloads.CodeFile
+	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatal(err)
 	}
-	if te.FileRange.StartLine != 1 || te.FileRange.EndLine != 3 {
-		t.Fatalf("got unexpected StartLine:%v / EndLine:%v\n", te.FileRange.StartLine, te.FileRange.EndLine)
+	if payload.Entry.FileRange.StartLine != 1 || payload.Entry.FileRange.EndLine != 3 {
+		t.Fatalf("got unexpected StartLine:%v / EndLine:%v\n", payload.Entry.FileRange.StartLine, payload.Entry.FileRange.EndLine)
 	}
 }
