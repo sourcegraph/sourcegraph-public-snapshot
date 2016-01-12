@@ -11,6 +11,13 @@ method in order to list and find documentation for all the definitions
 (functions, variables, etc) in your code and allows you to view the API for any
 given directory of code.
 
+# Development
+
+In order to develop easier, you can first `go generate -tags=dev ./...` which
+will cause assets to be loaded from disk instead of statically. After
+development you should always `go generate ./...` without `-tags=dev` and commit
+the result.
+
 ## TODO
 
 - Form a better UI with something more realistic (React, GopherJS, etc) instead
