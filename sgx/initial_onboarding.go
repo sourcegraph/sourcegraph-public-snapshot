@@ -48,42 +48,7 @@ func (c *ServeCmd) prepareInitialOnboarding(ctx context.Context) error {
 				Description: "A Go starter project to demonstrate Sourcegraph",
 				Language:    "Go",
 			},
-			pushRefspecs: []string{"master", "fix-ParallelGreet:fix-ParallelGreet"},
-			after: func(repo *sourcegraph.Repo, ctx context.Context) error {
-				commit, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: "fix-ParallelGreet"})
-				if err != nil {
-					return err
-				}
-
-				// Create build.
-				_, err = cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
-					Repo:     repo.RepoSpec(),
-					CommitID: string(commit.ID),
-					Branch:   "fix-ParallelGreet",
-					Config:   sourcegraph.BuildConfig{Queue: true},
-				})
-				if err != nil {
-					return err
-				}
-
-				// Create changeset.
-				_, err = cl.Changesets.Create(ctx, &sourcegraph.ChangesetCreateOp{
-					Repo: repo.RepoSpec(),
-					Changeset: &sourcegraph.Changeset{
-						Title:       "Fix Go parallelism in ParallelGreet func",
-						Description: "Addresses issues flagged by Sourcegraph on the master branch's ParallelGreet func.",
-						DeltaSpec: &sourcegraph.DeltaSpec{
-							Base: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: "master"},
-							Head: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: "fix-ParallelGreet", CommitID: string(commit.ID)},
-						},
-					},
-				})
-				if err != nil {
-					return err
-				}
-
-				return nil
-			},
+			pushRefspecs: []string{"master"},
 		},
 	}
 
