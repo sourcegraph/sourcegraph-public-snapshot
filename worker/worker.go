@@ -51,12 +51,15 @@ func (c *WorkCmd) Execute(args []string) error {
 
 	go buildReaper(client.Ctx)
 
+	throttle := time.Tick(time.Second / time.Duration(c.Parallel))
+
 	builders := make(chan struct{}, c.Parallel)
 	for i := 0; i < c.Parallel; i++ {
 		builders <- struct{}{}
 	}
 
 	for range builders {
+		<-throttle // rate limit our calls to DequeueNext
 		build, err := cl.Builds.DequeueNext(client.Ctx, &sourcegraph.BuildsDequeueNextOp{})
 		if err != nil {
 			if grpc.Code(err) == codes.NotFound {
