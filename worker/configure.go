@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/url"
 	"path"
-	"runtime"
 	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -20,6 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/pkg/dockerutil"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/worker/builder"
@@ -429,6 +429,12 @@ func containerAddrForHost(hostURL string) (hostname, containerURL string, err er
 		if err != nil {
 			return "", "", err
 		}
+
+		containerHostname, err := dockerutil.ContainerHost()
+		if err != nil {
+			return "", "", err
+		}
+
 		u.Host = strings.Replace(u.Host, origHost, containerHostname, 1)
 		containerURL = u.String()
 		hostname, err = urlHostNoPort(containerURL)
@@ -445,15 +451,3 @@ func containerAddrForHost(hostURL string) (hostname, containerURL string, err er
 	}
 	return
 }
-
-// containerHostname is the IP address of the host, as viewed by
-// Docker containers running on the host.
-//
-// TODO(native-ci): Un-hardcode this IP address; determine it by
-// actually querying the docker0 network interface.
-var containerHostname = func() string {
-	if runtime.GOOS == "darwin" {
-		return "192.168.99.1" // Docker machine's vboxnet0
-	}
-	return "172.17.42.1" // Linux's docker0
-}()
