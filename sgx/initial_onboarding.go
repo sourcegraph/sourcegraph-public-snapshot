@@ -9,12 +9,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/kr/fs"
 	"github.com/shurcooL/go/vfs/godocfs/godocfs"
 	"golang.org/x/tools/godoc/vfs"
 
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/misc/sampledata"
@@ -88,6 +91,10 @@ func (c *ServeCmd) prepareInitialOnboarding(ctx context.Context) error {
 		log15.Debug(fmt.Sprintf("Creating sample repo %s...", op.URI))
 		repo, err := cl.Repos.Create(ctx, &op.ReposCreateOp)
 		if err != nil {
+			if grpc.Code(err) == codes.Unimplemented {
+				log15.Info("Skipping creation of sample demonstration repo", "repo", op.URI)
+				return nil
+			}
 			return err
 		}
 
