@@ -13,8 +13,6 @@ var DiffStore = require("../stores/DiffStore");
 
 describe("actions/DiffActions", () => {
 	it("should expand upward", () => {
-    //expect(0).to.be(0);
-
     DiffStore.set("RepoRevSpec", {URI: "foo/bar", Head: {Rev: "feature-branch"}});
     DiffStore.set("DeltaSpec", {Head: {Rev: "feature-branch"}});
 
