@@ -29,11 +29,11 @@ import (
 // Identify why this is and fix it.
 
 func init() {
-	// TODO(slimsag): the below doesn't play nicely with `src drop` etc. Use more
-	// standard creation scheme like other alter type code that works with hstore
-	// type?
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		"CREATE TABLE appdata (name text, objects hstore)",
+	)
+	Schema.DropSQL = append(Schema.DropSQL,
+		"DROP TABLE IF EXISTS appdata;",
 	)
 }
 
