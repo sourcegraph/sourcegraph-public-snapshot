@@ -3,6 +3,8 @@
 - Improve the process of running a Sourcegraph server in Docker. The
   docker image is simplified, takes less disk space, and no longer uses
   an external config file.
+- A regression that caused expanding the top and bottom of diffs (for more
+  context) in Changesets has been fixed.
 - Users may now commit a `.sourcegraph-merge-template` file to their repository
   root which will be used to generate the merge commit message when merging a
   changeset via the web UI or src CLI. See [the docs](https://src.sourcegraph.com/sourcegraph/.docs/features/custom_merge_template)
