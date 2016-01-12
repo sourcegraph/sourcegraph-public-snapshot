@@ -105,14 +105,12 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 		Key: "srclib import",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "library/alpine:3.2",
+				Image: "sourcegraph/srclib-import@sha256:92fd741b7869c7259bf5d9b5b86b3fab8c5941772db68034816f500eb03ba160",
 				Environment: droneyaml.MapEqualSlice{
 					"SOURCEGRAPH_IMPORT_URL=" + importURL.String(),
 				},
 			},
 			Commands: []string{
-				"apk add -q -U ca-certificates zip curl",
-				"rm -rf /var/cache/apk/*",
 				"echo Importing to $SOURCEGRAPH_IMPORT_URL",
 				`[ -d .srclib-cache/* ] || (echo No srclib data found to import; exit 1)`,
 				`cd .srclib-cache/* && /usr/bin/zip -q --no-dir-entries -r - . | \
