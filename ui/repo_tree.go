@@ -11,8 +11,14 @@ import (
 )
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", "application/json")
+	opt := &sourcegraph.RepoTreeGetOptions{TokenizedSource: true}
+	if err := schemaDecoder.Decode(opt, r.URL.Query()); err != nil {
+		return err
+	}
+
 	e := json.NewEncoder(w)
-	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, &sourcegraph.RepoTreeGetOptions{TokenizedSource: true})
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, opt)
 	if err != nil {
 		if urlErr, ok := err.(*handlerutil.URLMovedError); ok {
 			return e.Encode(urlErr)
