@@ -100,6 +100,8 @@ var HunkModel = Backbone.Model.extend({
 	 * @returns {void}
 	 */
 	updateTop(data) {
+		this.validateHunkExpansionTreeEntry(data);
+
 		var totalLines = data.Entry.EndLine - data.Entry.StartLine,
 			origStartLine = this.get("OrigStartLine") - totalLines - 1,
 			newStartLine = this.get("NewStartLine") - totalLines - 1;
@@ -121,6 +123,8 @@ var HunkModel = Backbone.Model.extend({
 	 * @returns {void}
 	 */
 	updateBottom(data) {
+		this.validateHunkExpansionTreeEntry(data);
+
 		var totalLines = data.Entry.EndLine - data.Entry.StartLine,
 			origStartLine = this.get("OrigStartLine") + this.get("OrigLines"),
 			newStartLine = this.get("NewStartLine") + this.get("NewLines");
@@ -131,6 +135,23 @@ var HunkModel = Backbone.Model.extend({
 			OrigLines: this.get("OrigLines") + totalLines + 1,
 			Lines: this.get("Lines").concat(this._newContextLines(data.Entry.SourceCode.Lines, origStartLine, newStartLine)),
 		});
+	},
+
+	/**
+	 * @description Validates that a sourcegraph.TreeEntry has an Entry, Entry.EndLine, and Entry.StartLine fields.
+	 * @param {Object} data - The tree entry object for validation.
+	 * @returns {void}
+	 */
+	validateHunkExpansionTreeEntry(data) {
+		if (typeof data.Entry === "undefined") {
+			console.error("hunk expansion has failed: data.Entry is undefined; Please report this issue immediately!");
+		}
+		if (typeof data.Entry.EndLine === "undefined") {
+			console.error("hunk expansion has failed: data.Entry.EndLine is undefined; Please report this issue immediately!");
+		}
+		if (typeof data.Entry.StartLine === "undefined") {
+			console.error("hunk expansion has failed: data.Entry.StartLine is undefined; Please report this issue immediately!");
+		}
 	},
 
 	/**
