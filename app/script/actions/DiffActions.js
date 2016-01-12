@@ -41,11 +41,13 @@ module.exports.expandHunkUp = function(hunk) {
 			startLine = prevHunk.get("NewStartLine") + prevHunk.get("NewLines");
 		}
 	}
+	endLine -= 1;
 
-	CodeUtil.fetchFile(url, startLine, endLine-1).then(
+	CodeUtil.fetchFile(url, startLine, endLine).then(
 		data => DiffServerActions.receivedHunkTop(hunk, data),
 		DiffServerActions.failedReceiveExpansion
 	);
+	return {startLine: startLine, endLine: endLine};
 };
 
 /**
