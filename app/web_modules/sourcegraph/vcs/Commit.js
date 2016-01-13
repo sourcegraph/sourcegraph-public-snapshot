@@ -11,10 +11,13 @@ class Commit extends Component {
 	}
 
 	render() {
+		const defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=96";
 		return (
 			<div className="commit single media repo-build">
 				<a className="pull-left">
-					<img className="media-object avatar img-rounded" src={this.state.commit.AuthorPerson.AvatarURL} />
+					<img className="media-object avatar img-rounded" src={
+						this.state.commit.AuthorPerson ? this.state.commit.AuthorPerson.AvatarURL : defaultAvatar
+					}/>
 				</a>
 				<div className="media-body">
 					<h4 className="media-heading commit-title">
