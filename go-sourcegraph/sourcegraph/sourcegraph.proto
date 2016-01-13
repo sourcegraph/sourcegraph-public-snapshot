@@ -2999,6 +2999,7 @@ message UserEvent {
 	string url = 10 [(gogoproto.customname) = "URL"];
 }
 
+// UserEventList is a list of user events logged on this instance.
 message UserEventList {
 	repeated UserEvent events = 1;
 }
@@ -3013,24 +3014,40 @@ service GraphUplink {
 	rpc PushEvents(UserEventList) returns (pbtypes.Void);
 }
 
-// Event is any event logged on a Sourcegraph instance.
+// Event is any action logged on a Sourcegraph instance.
 message Event {
+	// Type specifies the action type, eg. "AccountCreate" or "AddRepo".
 	string type = 1;
 
+	// UserID is the unique identifier of a user on a Sourcegraph instance.
+	// It is constructed as "login@short-client-id", where short-client-id
+	// is the first 6 characters of this sourcegraph instance's public key
+	// fingerprint (i.e. it's ClientID).
 	string user_id = 2 [(gogoproto.customname) = "UserID"];
 
+	// DeviceID is the unique identifier of an anonymous user on a Sourcegraph
+	// instance.
 	string device_id = 3 [(gogoproto.customname) = "DeviceID"];
 
+	// ClientID is this Sourcegraph instance's public key fingerprint.
 	string client_id = 4 [(gogoproto.customname) = "ClientID"];
 
+	// Timestamp records the instant when this event was logged.
 	pbtypes.Timestamp timestamp = 5;
 
+	// UserProperties holds metadata relating to user who performed this
+	// action, eg. "Email".
 	map<string, string> user_properties = 6;
 
+	// EventProperties holds metadata relating to the action logged by
+	// this event, eg. for "AddRepo" event, a property is "Source" which
+	// specifies if the repo is local or mirrored.
 	map<string, string> event_properties = 7;
 }
 
+// EventList is a list of logged Sourcegraph events.
 message EventList {
+	// Events holds the list of events.
 	repeated Event events = 1;
 
 	// Version holds the release version of the Sourcegraph binary.

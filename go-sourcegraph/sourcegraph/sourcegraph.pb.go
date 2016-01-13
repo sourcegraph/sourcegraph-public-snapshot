@@ -3127,6 +3127,7 @@ func (m *UserEvent) Reset()         { *m = UserEvent{} }
 func (m *UserEvent) String() string { return proto.CompactTextString(m) }
 func (*UserEvent) ProtoMessage()    {}
 
+// UserEventList is a list of user events logged on this instance.
 type UserEventList struct {
 	Events []*UserEvent `protobuf:"bytes,1,rep,name=events" json:",omitempty"`
 }
@@ -3135,22 +3136,38 @@ func (m *UserEventList) Reset()         { *m = UserEventList{} }
 func (m *UserEventList) String() string { return proto.CompactTextString(m) }
 func (*UserEventList) ProtoMessage()    {}
 
-// Event is any event logged on a Sourcegraph instance.
+// Event is any action logged on a Sourcegraph instance.
 type Event struct {
-	Type            string             `protobuf:"bytes,1,opt,name=type,proto3" json:",omitempty"`
-	UserID          string             `protobuf:"bytes,2,opt,name=user_id,proto3" json:",omitempty"`
-	DeviceID        string             `protobuf:"bytes,3,opt,name=device_id,proto3" json:",omitempty"`
-	ClientID        string             `protobuf:"bytes,4,opt,name=client_id,proto3" json:",omitempty"`
-	Timestamp       *pbtypes.Timestamp `protobuf:"bytes,5,opt,name=timestamp" json:",omitempty"`
-	UserProperties  map[string]string  `protobuf:"bytes,6,rep,name=user_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	EventProperties map[string]string  `protobuf:"bytes,7,rep,name=event_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// Type specifies the action type, eg. "AccountCreate" or "AddRepo".
+	Type string `protobuf:"bytes,1,opt,name=type,proto3" json:",omitempty"`
+	// UserID is the unique identifier of a user on a Sourcegraph instance.
+	// It is constructed as "login@short-client-id", where short-client-id
+	// is the first 6 characters of this sourcegraph instance's public key
+	// fingerprint (i.e. it's ClientID).
+	UserID string `protobuf:"bytes,2,opt,name=user_id,proto3" json:",omitempty"`
+	// DeviceID is the unique identifier of an anonymous user on a Sourcegraph
+	// instance.
+	DeviceID string `protobuf:"bytes,3,opt,name=device_id,proto3" json:",omitempty"`
+	// ClientID is this Sourcegraph instance's public key fingerprint.
+	ClientID string `protobuf:"bytes,4,opt,name=client_id,proto3" json:",omitempty"`
+	// Timestamp records the instant when this event was logged.
+	Timestamp *pbtypes.Timestamp `protobuf:"bytes,5,opt,name=timestamp" json:",omitempty"`
+	// UserProperties holds metadata relating to user who performed this
+	// action, eg. "Email".
+	UserProperties map[string]string `protobuf:"bytes,6,rep,name=user_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// EventProperties holds metadata relating to the action logged by
+	// this event, eg. for "AddRepo" event, a property is "Source" which
+	// specifies if the repo is local or mirrored.
+	EventProperties map[string]string `protobuf:"bytes,7,rep,name=event_properties" json:",omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *Event) Reset()         { *m = Event{} }
 func (m *Event) String() string { return proto.CompactTextString(m) }
 func (*Event) ProtoMessage()    {}
 
+// EventList is a list of logged Sourcegraph events.
 type EventList struct {
+	// Events holds the list of events.
 	Events []*Event `protobuf:"bytes,1,rep,name=events" json:",omitempty"`
 	// Version holds the release version of the Sourcegraph binary.
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:",omitempty"`
