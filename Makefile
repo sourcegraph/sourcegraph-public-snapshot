@@ -160,6 +160,7 @@ GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest'
 PGUSER ?= $(USER)
 TESTPKGS ?= ./...
 test: check
+	cd app && npm test
 	$(MAKE) go-test
 
 go-test: src

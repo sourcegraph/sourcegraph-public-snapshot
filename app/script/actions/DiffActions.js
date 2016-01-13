@@ -24,25 +24,30 @@ module.exports.loadData = function(data) {
  * @returns {void}
  */
 module.exports.expandHunkUp = function(hunk) {
-	var endLine = hunk.get("NewStartLine"),
+	// TODO(slimsag): severe duplication with CodeReviewActions.js : expandHunk
+	var endLine = hunk.get("NewStartLine") - 1,
 		startLine = endLine - globals.HunkExpandLines < 1 ? 1 : endLine - globals.HunkExpandLines,
 		repoRev = DiffStore.get("RepoRevSpec"),
 		fileDiff = hunk.get("Parent"),
 		deltaSpec = DiffStore.get("DeltaSpec"),
-		url = router.fileURL(repoRev.URI, deltaSpec.Head.Rev, fileDiff.get("NewName"));
+		url = router.fileURL(repoRev.URI, deltaSpec.Head.Rev, fileDiff.get("NewName")),
+		hunks = fileDiff.get("Hunks");
 
 	// don't overflow into previous hunk
-	var index = hunk.index(),
-		prevHunk = fileDiff.get("Hunks").at(index - 1);
-
-	if (prevHunk && prevHunk.get("NewStartLine") + prevHunk.get("NewLines") - 1 >= startLine) {
-		startLine = prevHunk.get("NewStartLine") + prevHunk.get("NewLines");
+	var index = hunk.index();
+	if (index > 0 && hunks.length > 1) {
+		var prevHunk = hunks.at(index - 1);
+		if (prevHunk && prevHunk.get("NewStartLine") + prevHunk.get("NewLines") - 1 >= startLine) {
+			startLine = prevHunk.get("NewStartLine") + prevHunk.get("NewLines");
+		}
 	}
+	endLine -= 1;
 
-	CodeUtil.fetchFile(url, startLine, endLine-1).then(
+	CodeUtil.fetchFile(url, startLine, endLine).then(
 		data => DiffServerActions.receivedHunkTop(hunk, data),
 		DiffServerActions.failedReceiveExpansion
 	);
+	return {startLine: startLine, endLine: endLine};
 };
 
 /**
@@ -51,6 +56,7 @@ module.exports.expandHunkUp = function(hunk) {
  * @returns {void}
  */
 module.exports.expandHunkDown = function(hunk) {
+	// TODO(slimsag): severe duplication with CodeReviewActions.js : expandHunk
 	var firstLine = hunk.get("NewStartLine"),
 		newLines = hunk.get("NewLines");
 
