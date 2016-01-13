@@ -18,6 +18,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -78,6 +79,7 @@ func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.Tr
 	ctx := httpctx.FromRequest(r)
 	go cacheutil.PrecacheTreeEntry(apiclient, ctx, tc.Entry, tc.EntrySpec)
 
+	eventsutil.LogBrowseCode(ctx, "dir", tc, rc)
 	return tmpl.Exec(r, w, "repo/tree/dir.html", http.StatusOK, nil, &repoTreeTemplate{
 		TreeEntryCommon: tc,
 		RepoCommon:      rc,
@@ -92,6 +94,7 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		docs         string
 		fullWidth    bool
 	)
+	ctx := httpctx.FromRequest(r)
 
 	switch {
 	case tc.Entry.Type == vcsclient.DirEntry:
@@ -100,6 +103,7 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		return nil
 	case tc.Entry.SourceCode != nil:
 		fullWidth = true
+		eventsutil.LogBrowseCode(ctx, "file", tc, rc)
 		templateFile = "repo/tree/file.html"
 	default:
 		if tc.Entry.Contents == nil {
@@ -110,6 +114,7 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 			return err
 		}
 		docs = string(formatted)
+		eventsutil.LogBrowseCode(ctx, "doc", tc, rc)
 		templateFile = "repo/tree/doc.html"
 	}
 

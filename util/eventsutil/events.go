@@ -147,6 +147,38 @@ func LogBuildRepo(ctx context.Context, result string) {
 	})
 }
 
+func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon) {
+	clientID := sourcegraphClientID
+	user := handlerutil.UserFromContext(ctx)
+	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
+
+	codeIntelligenceAvailable := "false"
+	if tc != nil && tc.SrclibDataVersion != nil {
+		codeIntelligenceAvailable = "true"
+	}
+
+	source := "local"
+	if rc != nil && rc.Repo != nil && rc.Repo.Mirror {
+		if u, err := url.Parse(rc.Repo.HTTPCloneURL); err != nil {
+			source = "unknown"
+		} else {
+			source = u.Host
+		}
+	}
+
+	Log(&sourcegraph.Event{
+		Type:     "ViewRepoTree",
+		ClientID: clientID,
+		UserID:   userID,
+		DeviceID: deviceID,
+		EventProperties: map[string]string{
+			"EntryType":        entryType,
+			"CodeIntelligence": codeIntelligenceAvailable,
+			"Source":           source,
+		},
+	})
+}
+
 func LogHTTPGitPush(ctx context.Context) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
