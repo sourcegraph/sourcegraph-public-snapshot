@@ -62,7 +62,7 @@
 			<td class="name">
 				<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
 			</td>
-			{{if appconf.DisableTreeEntryCommits}}
+			{{if or appconf.DisableTreeEntryCommits (not $.Features.TreeEntryCommits)}}
 				<td></td>
 			{{else}}
 				<td class="commit">

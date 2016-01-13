@@ -17,10 +17,13 @@ var Features = struct {
 	// Note: Tracker search is in beta, and will not work on Sourcegraph clusters
 	// with more than one instance.
 	TrackerSearch bool
+	// Currently disabled due to performance issues.
+	TreeEntryCommits bool
 }{
 	Discussions:        false,
 	NotificationCenter: false,
 	TrackerSearch:      false,
+	TreeEntryCommits:   false,
 }
 
 func init() {
