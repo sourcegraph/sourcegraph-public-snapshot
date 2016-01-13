@@ -37,6 +37,11 @@
 															"$constructor": "WantExample",
 															"defURL": "/someURL",
 															"index": 1
+														},
+														{
+															"$constructor": "WantExample",
+															"defURL": "/someURL",
+															"index": 2
 														}
 													]
 												}
@@ -128,6 +133,11 @@
 			"$constructor": "WantExample",
 			"defURL": "/someURL",
 			"index": 0
+		},
+		{
+			"$constructor": "WantExample",
+			"defURL": "/someURL",
+			"index": 1
 		}
 	]
 }
