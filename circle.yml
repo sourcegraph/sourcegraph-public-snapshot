@@ -19,8 +19,8 @@ machine:
 
 dependencies:
   pre:
-    # Use go1.5
-    - cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.5.2.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
+    # Use Go 1.5.
+    - cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
 
   cache_directories:
     - ~/protobuf
