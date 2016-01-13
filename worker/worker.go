@@ -65,20 +65,22 @@ func (c *WorkCmd) Execute(args []string) error {
 	killc := make(chan os.Signal, 1)
 	signal.Notify(killc, syscall.SIGINT, syscall.SIGTERM)
 	ctx, cancel := context.WithCancel(ctx)
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-killc
-		defer os.Exit(1)
-		defer cancel()
 
 		// Mark all active builds (and their tasks) as killed. But set
 		// an aggressive timeout so we don't block the termination for
 		// too long.
 		activeBuildsMu.Lock()
 		defer activeBuildsMu.Unlock()
+		cancel()
 		if len(activeBuilds) == 0 {
 			return
 		}
-		ctx, cancel2 := context.WithTimeout(ctx, 1*time.Second)
+		ctx, cancel2 := context.WithTimeout(client.Ctx, 1*time.Second)
 		defer cancel2()
 		time.AfterFunc(500*time.Millisecond, func() {
 			// Log if it's taking a noticeable amount of time.
@@ -106,6 +108,9 @@ func (c *WorkCmd) Execute(args []string) error {
 		<-throttle // rate limit our calls to DequeueNext
 		build, err := cl.Builds.DequeueNext(ctx, &sourcegraph.BuildsDequeueNextOp{})
 		if err != nil {
+			if grpc.Code(err) == codes.Canceled {
+				break
+			}
 			if grpc.Code(err) == codes.NotFound {
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(c.DequeueMsec)))
 			} else {
@@ -121,7 +126,9 @@ func (c *WorkCmd) Execute(args []string) error {
 		activeBuilds[build] = struct{}{}
 		activeBuildsMu.Unlock()
 
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			startBuild(ctx, build)
 
 			// Remove from active list.
@@ -133,6 +140,8 @@ func (c *WorkCmd) Execute(args []string) error {
 		}()
 	}
 
+	wg.Wait()
+	os.Exit(1)
 	panic("unreachable")
 }
 
