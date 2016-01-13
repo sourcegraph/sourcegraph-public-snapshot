@@ -112,17 +112,25 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string) (repo *source
 	return repo, done, nil
 }
 
-// CreateAndPushRepo creates and pushes sample commits to a
-// repo. Callers must call the returned done() func when done (if err
-// is non-nil) to free up resources.
+// CreateAndPushRepo is short-handed for:
+//
+//  CreateAndPushRepoFiles(t, ctx, repoURI, nil)
+//
 func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (commitID string, done func(), err error) {
+	return CreateAndPushRepoFiles(t, ctx, repoURI, nil)
+}
+
+// CreateAndPushRepoFiles creates and pushes sample commits to a repo. Callers
+// must call the returned done() func when done (if err is non-nil) to free up
+// resources.
+func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, files map[string]string) (commitID string, done func(), err error) {
 	//var repo *sourcegraph.Repo
 	repo, done, err := CreateRepo(t, ctx, repoURI)
 	if err != nil {
 		return "", nil, err
 	}
 
-	commitID, err = PushRepo(t, ctx, repo, nil)
+	commitID, err = PushRepo(t, ctx, repo, files)
 	if err != nil {
 		return "", nil, err
 	}
