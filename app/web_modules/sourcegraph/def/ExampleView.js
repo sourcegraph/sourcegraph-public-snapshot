@@ -35,6 +35,7 @@ class ExampleView extends Component {
 	onStateTransition(prevState, nextState) {
 		if (prevState.defURL !== nextState.defURL || prevState.selectedIndex !== nextState.selectedIndex) {
 			Dispatcher.asyncDispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex));
+			Dispatcher.asyncDispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex + 1)); // check if there are more examples
 		}
 	}
 
