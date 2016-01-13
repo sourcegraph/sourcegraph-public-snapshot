@@ -147,6 +147,42 @@ func LogBuildRepo(ctx context.Context, result string) {
 	})
 }
 
+func LogFinishBuildTask(ctx context.Context, label string, success bool, failure bool) {
+	var eventType string
+	if strings.Contains(strings.ToLower(label), "(indexing)") {
+		// Log srclib code intelligence task result.
+		eventType = "FinishSrclibBuild"
+	} else if strings.Contains(strings.ToLower(label), "build") {
+		// Log CI (continuous integration) build task result.
+		eventType = "FinishCIBuild"
+	} else {
+		// Don't log other task types.
+		return
+	}
+
+	clientID := sourcegraphClientID
+	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+
+	result := "N/A"
+	if success {
+		result = "success"
+	} else if failure {
+		result = "failed"
+	}
+
+	Log(&sourcegraph.Event{
+		Type:     eventType,
+		ClientID: clientID,
+		UserID:   userID,
+		DeviceID: deviceID,
+		EventProperties: map[string]string{
+			"Label":  label,
+			"Result": result,
+		},
+	})
+
+}
+
 func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon) {
 	clientID := sourcegraphClientID
 	user := handlerutil.UserFromContext(ctx)

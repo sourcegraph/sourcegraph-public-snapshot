@@ -361,6 +361,12 @@ func (s *builds) UpdateTask(ctx context.Context, op *sourcegraph.BuildsUpdateTas
 	if err := store.BuildsFromContext(ctx).UpdateTask(ctx, op.Task, info); err != nil {
 		return nil, err
 	}
+
+	// If the task has finished, log it's result.
+	if info.EndedAt != nil {
+		eventsutil.LogFinishBuildTask(ctx, t.Label, t.Success, t.Failure)
+	}
+
 	return t, nil
 }
 
