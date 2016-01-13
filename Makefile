@@ -1,6 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smoke smtest src test clone-private libvfsgen
+.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smoke smtest src test libvfsgen
 
 PRIVATE_HASH := 87ff6253d35505c92cb3190e422f64ec61cc227f
 
@@ -203,21 +203,3 @@ deploy-appdash:
 
 gopath:
 	@echo $(GOPATH)
-
-clone-private:
-	if [ ! -d conf/private/.git ]; then git clone git@github.com:sourcegraph/conf_private conf/private; fi
-	cd conf/private && git rev-parse --verify $(PRIVATE_HASH)^{commit} > /dev/null 2>&1 || git fetch
-	cd conf/private && git reset --hard $(PRIVATE_HASH)
-
-deploy-dev: clone-private
-	ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com wget -q https://sourcegraph-release.s3.amazonaws.com/src/$(V)/linux-amd64/src.gz
-	ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'gunzip -f src.gz && sudo mv src /usr/bin/src && sudo chmod +x /usr/bin/src'
-	cat conf/private/src.sourcegraph.com.upstart | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "cat > /etc/init/src.conf"'
-	cat conf/private/src.sourcegraph.com.ini | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "mkdir -p /etc/sourcegraph && cat > /etc/sourcegraph/config.ini"'
-	cat conf/private/src.sourcegraph.com.env | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "mkdir -p /etc/sourcegraph && cat > /etc/sourcegraph/config.env"'
-	cat conf/private/ext-ca/src.sourcegraph.com.cert.pem | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "mkdir -p /etc/sourcegraph && cat > /etc/sourcegraph/sourcegraph.cert.pem"'
-	cat conf/private/ext-ca/src.sourcegraph.com.key.pem | ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "mkdir -p /etc/sourcegraph && cat > /etc/sourcegraph/sourcegraph.key.pem"'
-	ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo sh -c "setcap 'cap_net_bind_service=+ep' /usr/bin/src"'
-	ssh -i ~/.ssh/sg-dev.pem ubuntu@src.sourcegraph.com 'sudo stop src; sudo start src'
-	sleep 0.5
-	curl -s https://src.sourcegraph.com/.well-known/sourcegraph | python -c 'import json, sys; assert json.load(sys.stdin)["Version"] == sys.argv[1], "src.sourcegraph.com reported wrong version"' $(V)
