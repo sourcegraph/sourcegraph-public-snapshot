@@ -57,6 +57,8 @@ build:
 // Test when the repo doesn't contain any srclib auto-detected
 // languages, but it does explicitly configure srclib analysis.
 func TestWorker_BuildRepo_srclibExplicit_pass(t *testing.T) {
+	t.Skip("flaky") // https://circleci.com/gh/sourcegraph/sourcegraph/10330
+
 	_, _, sampleImage := testserver.SrclibSampleToolchain(true)
 
 	ctx, done, build, buildLog := testWorker_buildRepo(t, map[string]string{
