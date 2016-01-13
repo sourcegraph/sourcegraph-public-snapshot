@@ -1,3 +1,9 @@
+# Dev
+
+- Added a new event logger in `util/eventsutil`, which is similar to
+  `util/metricsutil` but enables more precise logging of user actions
+  on the Sourcegraph instance.
+
 # 0.11.7
 
 - Improve the process of running a Sourcegraph server in Docker. The
