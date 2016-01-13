@@ -21,6 +21,10 @@ import (
 // fields as query parameters works. The frontend uses these to implement hunk
 // expansion in diff views.
 func TestRepoTree_FileRange_lg(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip("pgsql local store can only create mirror repos")
+	}
+
 	// Initialize a server instance.
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
