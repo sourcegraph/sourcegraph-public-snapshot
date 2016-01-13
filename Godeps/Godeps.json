@@ -109,23 +109,23 @@
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/docker",
-			"Rev": "364d01f9969ec1475085a44058f7722abcfefa31"
+			"Rev": "78e1315696058eba5a12c5c30cfbc90aa55255de"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/exec",
-			"Rev": "364d01f9969ec1475085a44058f7722abcfefa31"
+			"Rev": "78e1315696058eba5a12c5c30cfbc90aa55255de"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/parser",
-			"Rev": "364d01f9969ec1475085a44058f7722abcfefa31"
+			"Rev": "78e1315696058eba5a12c5c30cfbc90aa55255de"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/runner",
-			"Rev": "364d01f9969ec1475085a44058f7722abcfefa31"
+			"Rev": "78e1315696058eba5a12c5c30cfbc90aa55255de"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/yaml",
-			"Rev": "364d01f9969ec1475085a44058f7722abcfefa31"
+			"Rev": "78e1315696058eba5a12c5c30cfbc90aa55255de"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-plugin-go/plugin",

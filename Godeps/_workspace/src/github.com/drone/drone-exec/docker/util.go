@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"golang.org/x/net/context"
 	// "strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -32,7 +34,7 @@ var (
 	}
 )
 
-func Run(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *dockerclient.AuthConfig, pull bool, outw, errw, logw io.Writer) (*dockerclient.ContainerInfo, error) {
+func Run(ctx context.Context, client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *dockerclient.AuthConfig, pull bool, outw, errw, logw io.Writer) (*dockerclient.ContainerInfo, error) {
 	if outw == nil {
 		outw = os.Stdout
 	}
@@ -86,6 +88,8 @@ func Run(client dockerclient.Client, conf *dockerclient.ContainerConfig, auth *d
 		return info, nil
 	case err := <-errc:
 		return info, err
+	case <-ctx.Done():
+		return info, ctx.Err()
 	}
 }
 

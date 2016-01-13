@@ -6,7 +6,12 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -48,8 +53,47 @@ func (c *WorkCmd) Execute(args []string) error {
 	}
 
 	cl := client.Client()
+	ctx := client.Ctx
 
-	go buildReaper(client.Ctx)
+	go buildReaper(ctx)
+
+	// Watch for sigkill so we can mark builds as ended before termination.
+	var (
+		activeBuildsMu sync.Mutex
+		activeBuilds   = map[*sourcegraph.Build]struct{}{}
+	)
+	killc := make(chan os.Signal, 1)
+	signal.Notify(killc, syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		<-killc
+		defer os.Exit(1)
+		defer cancel()
+
+		// Mark all active builds (and their tasks) as killed. But set
+		// an aggressive timeout so we don't block the termination for
+		// too long.
+		activeBuildsMu.Lock()
+		defer activeBuildsMu.Unlock()
+		if len(activeBuilds) == 0 {
+			return
+		}
+		ctx, cancel2 := context.WithTimeout(ctx, 1*time.Second)
+		defer cancel2()
+		time.AfterFunc(500*time.Millisecond, func() {
+			// Log if it's taking a noticeable amount of time.
+			builds := make([]string, 0, len(activeBuilds))
+			for b := range activeBuilds {
+				builds = append(builds, b.Spec().IDString())
+			}
+			log15.Info("Marking active builds as killed before terminating...", "builds", builds)
+		})
+		for b := range activeBuilds {
+			if err := markBuildAsKilled(ctx, b.Spec()); err != nil {
+				log15.Error("Error marking build as killed upon process termination", "build", b.Spec(), "err", err)
+			}
+		}
+	}()
 
 	throttle := time.Tick(time.Second / time.Duration(c.Parallel))
 
@@ -60,7 +104,7 @@ func (c *WorkCmd) Execute(args []string) error {
 
 	for range builders {
 		<-throttle // rate limit our calls to DequeueNext
-		build, err := cl.Builds.DequeueNext(client.Ctx, &sourcegraph.BuildsDequeueNextOp{})
+		build, err := cl.Builds.DequeueNext(ctx, &sourcegraph.BuildsDequeueNextOp{})
 		if err != nil {
 			if grpc.Code(err) == codes.NotFound {
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(c.DequeueMsec)))
@@ -72,14 +116,23 @@ func (c *WorkCmd) Execute(args []string) error {
 			continue
 		}
 
+		// Add to active list.
+		activeBuildsMu.Lock()
+		activeBuilds[build] = struct{}{}
+		activeBuildsMu.Unlock()
+
 		go func() {
-			startBuild(client.Ctx, build)
+			startBuild(ctx, build)
+
+			// Remove from active list.
+			activeBuildsMu.Lock()
+			delete(activeBuilds, build)
+			activeBuildsMu.Unlock()
+
 			builders <- struct{}{}
 		}()
 	}
 
-	// TODO(sqs): mark all currently running builds as "terminated by
-	// quit" before we quit (if this process is killed) so we know to rebuild them without waiting for the whole timeout period.
 	panic("unreachable")
 }
 
@@ -102,5 +155,52 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 
 	// Authenticate future requests.
 	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
+	return nil
+}
+
+func markBuildAsKilled(ctx context.Context, b sourcegraph.BuildSpec) error {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
+		Build: b,
+		Info: sourcegraph.BuildUpdate{
+			EndedAt: now(),
+			Killed:  true,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Mark all of the build's unfinished tasks as failed, too.
+	for page := int32(1); ; page++ {
+		tasks, err := cl.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{
+			Build: b,
+			Opt:   &sourcegraph.BuildTaskListOptions{ListOptions: sourcegraph.ListOptions{Page: page}},
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, task := range tasks.BuildTasks {
+			if task.EndedAt != nil {
+				continue
+			}
+			_, err := cl.Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
+				Task: task.Spec(),
+				Info: sourcegraph.TaskUpdate{Failure: true, EndedAt: now()},
+			})
+			if err != nil {
+				return err
+			}
+		}
+		if len(tasks.BuildTasks) == 0 {
+			break
+		}
+	}
+
 	return nil
 }

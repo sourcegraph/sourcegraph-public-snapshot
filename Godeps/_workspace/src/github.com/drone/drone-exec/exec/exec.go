@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/drone/drone-exec/docker"
 	"github.com/drone/drone-exec/parser"
@@ -64,8 +64,31 @@ type Error struct {
 func (e *Error) Error() string { return fmt.Sprintf("build failed (exit code %d)", e.ExitCode) }
 
 // Exec executes a build with the given payload and options. If the
-// build fails, an *Error is returned.
-func Exec(payload Payload, opt Options) (err error) {
+// build fails, an *Error is returned. Exec respects context cancelation
+// and deadlines.
+func Exec(ctx context.Context, payload Payload, opt Options) error {
+	// Respect timeout.
+	timeout := payload.Repo.Timeout
+	if timeout == 0 {
+		timeout = 60
+	}
+	ctx, timeoutCancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Minute)
+	defer timeoutCancel()
+
+	execc := make(chan error)
+	go func() {
+		execc <- exec(ctx, payload, opt)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-execc:
+		return err
+	}
+}
+
+func exec(ctx context.Context, payload Payload, opt Options) (err error) {
 	var sec *secure.Secure
 	if payload.Keys != nil && len(payload.YamlEnc) != 0 {
 		var err error
@@ -211,27 +234,6 @@ func Exec(payload Payload, opt Options) (err error) {
 		}
 	}()
 
-	// watch for sigkill (timeout or cancel build)
-	killc := make(chan os.Signal, 1)
-	signal.Notify(killc, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-killc
-		log.Println("Cancel request received, killing process")
-		controller.Destroy() // possibe race here. implement lock on the other end
-		os.Exit(130)         // cancel is treated like ctrl+c
-	}()
-
-	go func() {
-		var timeout = payload.Repo.Timeout
-		if timeout == 0 {
-			timeout = 60
-		}
-		<-time.After(time.Duration(timeout) * time.Minute)
-		log.Println("Timeout request received, killing process")
-		controller.Destroy() // possibe race here. implement lock on the other end
-		os.Exit(128)         // cancel is treated like ctrl+c
-	}()
-
 	if opt.Monitor == nil {
 		opt.Monitor = defaultMonitorFunc
 	}
@@ -248,33 +250,33 @@ func Exec(payload Payload, opt Options) (err error) {
 	}
 	if opt.Cache {
 		log.Debugln("Running Cache step")
-		err = r.RunNode(state, parser.NodeCache)
+		err = r.RunNode(ctx, state, parser.NodeCache)
 		if err != nil {
 			log.Debugln(err)
 		}
 	}
 	if opt.Clone {
 		log.Debugln("Running Clone step")
-		err = r.RunNode(state, parser.NodeClone)
+		err = r.RunNode(ctx, state, parser.NodeClone)
 		if err != nil {
 			log.Debugln(err)
 		}
 	}
 	if opt.Build && !state.Failed() {
 		log.Debugln("Running Build and Compose steps")
-		if err := r.RunNode(state, parser.NodeCompose); err != nil {
+		if err := r.RunNode(ctx, state, parser.NodeCompose); err != nil {
 			log.Debugln(err)
 		}
-		if err := r.RunNode(state, parser.NodeBuild); err != nil {
+		if err := r.RunNode(ctx, state, parser.NodeBuild); err != nil {
 			log.Debugln(err)
 		}
 	}
 	if opt.Deploy && !state.Failed() {
 		log.Debugln("Running Publish and Deploy steps")
-		if err := r.RunNode(state, parser.NodePublish); err != nil {
+		if err := r.RunNode(ctx, state, parser.NodePublish); err != nil {
 			log.Debugln(err)
 		}
-		if err := r.RunNode(state, parser.NodeDeploy); err != nil {
+		if err := r.RunNode(ctx, state, parser.NodeDeploy); err != nil {
 			log.Debugln(err)
 		}
 	}
@@ -288,14 +290,14 @@ func Exec(payload Payload, opt Options) (err error) {
 
 	if opt.Cache {
 		log.Debugln("Running post-Build Cache steps")
-		err = r.RunNode(state, parser.NodeCache)
+		err = r.RunNode(ctx, state, parser.NodeCache)
 		if err != nil {
 			log.Debugln(err)
 		}
 	}
 	if opt.Notify {
 		log.Debugln("Running Notify steps")
-		err = r.RunNode(state, parser.NodeNotify)
+		err = r.RunNode(ctx, state, parser.NodeNotify)
 		if err != nil {
 			log.Debugln(err)
 		}

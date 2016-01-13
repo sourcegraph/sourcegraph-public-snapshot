@@ -4,6 +4,9 @@ import React from "react";
 
 // buildStatus returns a textual status description for the build.
 export function buildStatus(b) {
+	if (b.Killed) {
+		return "Killed";
+	}
 	if (b.Warnings) {
 		return "Warnings";
 	}
@@ -22,6 +25,8 @@ export function buildStatus(b) {
 // buildClass returns the CSS class for the build.
 export function buildClass(b) {
 	switch (buildStatus(b)) {
+	case "Killed":
+		return "danger";
 	case "Warnings":
 		return "warning";
 	case "Failed":

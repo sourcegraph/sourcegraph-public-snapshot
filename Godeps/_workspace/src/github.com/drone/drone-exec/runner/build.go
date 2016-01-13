@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	// log "github.com/Sirupsen/logrus"
 	"github.com/drone/drone-exec/docker"
 	"github.com/drone/drone-exec/parser"
@@ -24,17 +26,16 @@ type Build struct {
 	typ  parser.NodeType
 }
 
-func (b *Build) Run(state *State) error {
-	return b.RunNode(state, "")
+func (b *Build) Run(ctx context.Context, state *State) error {
+	return b.RunNode(ctx, state, "")
 }
 
-func (b *Build) RunNode(state *State, typ parser.NodeType) error {
+func (b *Build) RunNode(ctx context.Context, state *State, typ parser.NodeType) error {
 	b.typ = typ
-	return b.walk(b.tree.Root, "", state)
+	return b.walk(ctx, b.tree.Root, "", state)
 }
 
-func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
-
+func (b *Build) walk(ctx context.Context, node parser.Node, key string, state *State) (err error) {
 	switch node := node.(type) {
 	case *parser.ListNode:
 		for i, n := range node.Nodes {
@@ -42,7 +43,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 				key = node.Keys[i]
 			}
 
-			err = b.walk(n, key, state)
+			err = b.walk(ctx, n, key, state)
 			if err != nil {
 				break
 			}
@@ -50,7 +51,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 
 	case *parser.FilterNode:
 		if isMatch(node, state) {
-			if err := b.walk(node.Node, key, state); err != nil {
+			if err := b.walk(ctx, node.Node, key, state); err != nil {
 				return err
 			}
 		}
@@ -88,6 +89,12 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 				failed = true
 			}
 			mon.End(!failed, node.AllowFailure)
+
+			// Prevent future steps from being run if this was
+			// canceled.
+			if err == context.Canceled || err == context.DeadlineExceeded {
+				state.Exit(1)
+			}
 		}()
 
 		switch node.Type() {
@@ -120,7 +127,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 				}
 			}
 
-			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw, errw)
+			info, err := docker.Run(ctx, state.Client, conf, auth, node.Pull, outw, errw, errw)
 			if err != nil {
 				recordExitCode(255)
 				fmt.Fprintln(errw, err)
@@ -143,7 +150,7 @@ func (b *Build) walk(node parser.Node, key string, state *State) (err error) {
 
 			conf := toContainerConfig(node)
 			conf.Cmd = toCommand(state, node)
-			info, err := docker.Run(state.Client, conf, auth, node.Pull, outw, errw, errw)
+			info, err := docker.Run(ctx, state.Client, conf, auth, node.Pull, outw, errw, errw)
 			if err != nil {
 				state.Exit(255)
 				fmt.Fprintln(errw, err)

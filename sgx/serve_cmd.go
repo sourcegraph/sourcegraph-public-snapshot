@@ -13,13 +13,11 @@ import (
 	"net/http/pprof"
 	"net/url"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
 	"text/template"
 	"time"
 
@@ -644,10 +642,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 	}
 
-	// Wait for signal to exit.
-	ch := make(chan os.Signal)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	<-ch
+	select {}
 	return nil
 }
 
