@@ -66,7 +66,7 @@ func (e *Error) Error() string { return fmt.Sprintf("build failed (exit code %d)
 // Exec executes a build with the given payload and options. If the
 // build fails, an *Error is returned. Exec respects context cancelation
 // and deadlines.
-func Exec(ctx context.Context, payload Payload, opt Options) error {
+func Exec(ctx context.Context, payload Payload, opt Options) (err error) {
 	// Respect timeout.
 	timeout := payload.Repo.Timeout
 	if timeout == 0 {
@@ -75,20 +75,6 @@ func Exec(ctx context.Context, payload Payload, opt Options) error {
 	ctx, timeoutCancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Minute)
 	defer timeoutCancel()
 
-	execc := make(chan error)
-	go func() {
-		execc <- exec(ctx, payload, opt)
-	}()
-
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case err := <-execc:
-		return err
-	}
-}
-
-func exec(ctx context.Context, payload Payload, opt Options) (err error) {
 	var sec *secure.Secure
 	if payload.Keys != nil && len(payload.YamlEnc) != 0 {
 		var err error
@@ -238,6 +224,20 @@ func exec(ctx context.Context, payload Payload, opt Options) (err error) {
 		opt.Monitor = defaultMonitorFunc
 	}
 
+	execc := make(chan error, 1)
+	go func() {
+		execc <- exec(ctx, payload, opt, r, controller)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-execc:
+		return err
+	}
+}
+
+func exec(ctx context.Context, payload Payload, opt Options, r *runner.Build, controller *docker.Client) (err error) {
 	state := &runner.State{
 		Client:    controller,
 		Monitor:   opt.Monitor,
