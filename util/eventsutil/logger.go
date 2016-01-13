@@ -20,7 +20,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
 
-const AnalyticsAPIEndpoint = "http://analytics.sourcegraph.com/events"
+const AnalyticsAPIEndpoint = "https://analytics.sgdev.org/events"
 const MaxRetries = 5
 
 var sourcegraphClientID string
@@ -132,7 +132,6 @@ type Logger struct {
 }
 
 func (l *Logger) Log(event *sourcegraph.Event) {
-
 	select {
 	case l.Channel <- event:
 	case <-time.After(10 * time.Millisecond):
@@ -183,9 +182,7 @@ func StartEventLogger(ctx context.Context, clientID string, channelCapacity, wor
 	}
 
 	go ActiveLogger.Worker.Work()
-
 	go ActiveLogger.Uploader(flushInterval)
-
 	log15.Debug("Events logger initialized")
 }
 
