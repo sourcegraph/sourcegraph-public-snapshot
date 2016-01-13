@@ -2,6 +2,7 @@ package worker
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"path"
@@ -18,6 +19,7 @@ import (
 	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/pkg/dockerutil"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
@@ -87,10 +89,13 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		return nil, err
 	}
 
+	fmt.Println("repoURL", repoURL)
+
 	repoLink, err := droneRepoLink(*repoURL)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("repoLink", repoLink)
 
 	b.Payload.Repo = &plugin.Repo{
 		FullName:  build.Repo,
@@ -168,6 +173,8 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		if err != nil {
 			return nil, err
 		}
+
+		fmt.Println("createdTasks", createdTasks)
 		states := make([]builder.TaskState, len(createdTasks.BuildTasks))
 		for i, task := range createdTasks.BuildTasks {
 			states[i] = &taskState{
@@ -197,7 +204,10 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 // getContainerAppURL gets the Sourcegraph server's app URL from the
 // POV of the Docker containers.
 func getAppURL(ctx context.Context) (*url.URL, error) {
-	cl := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// Get the app URL from the POV of the Docker containers.
 	serverConf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
@@ -223,7 +233,7 @@ func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, co
 // getHostNetrcEntry creates a netrc entry that authorizes access to
 // the Sourcegraph server.
 func getHostNetrcEntry(ctx context.Context, host string) (*plugin.NetrcEntry, error) {
-	token := cli.Credentials.GetAccessToken()
+	token := client.Credentials.GetAccessToken()
 	if token == "" {
 		return nil, errors.New("can't generate local netrc entry: token is empty")
 	}
@@ -290,7 +300,7 @@ func droneRepoLink(u url.URL) (string, error) {
 func containerAddrForHost(u url.URL) (string, *url.URL, error) {
 	containerHostname, err := dockerutil.ContainerHost()
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
 	u.Host = strings.Replace(u.Host, "localhost", containerHostname, 1)
