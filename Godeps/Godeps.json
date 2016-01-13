@@ -12,7 +12,7 @@
 		},
 		{
 			"ImportPath": "github.com/AaronO/go-git-http",
-			"Rev": "4d1ba6492b64d23915b7e46b95df6760fc231c85"
+			"Rev": "c283d69be8c9eaf5ddc4c2114930ec560b2da8bb"
 		},
 		{
 			"ImportPath": "github.com/BurntSushi/toml",

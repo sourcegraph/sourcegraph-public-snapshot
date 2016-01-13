@@ -3,30 +3,25 @@ package githttp
 import (
 	"io"
 	"regexp"
+	"strings"
 )
 
-// RpcReader scans for events in the incoming rpc request data
+// RpcReader scans for events in the incoming rpc request data.
 type RpcReader struct {
-	// Underlaying reader (to relay calls to)
+	// Underlying reader (to relay calls to).
 	io.Reader
 
-	// Rpc type (upload-pack or receive-pack)
+	// Rpc type (receive-pack or upload-pack).
 	Rpc string
 
-	// List of events RpcReader has picked up through scanning
-	// these events do not contain the "Dir" attribute
+	// List of events RpcReader has picked up through scanning.
+	// These events do not have the Dir field set.
 	Events []Event
 
 	pktLineParser pktLineParser
 }
 
-// Regexes to detect types of actions (fetch, push, etc ...)
-var (
-	receivePackRegex = regexp.MustCompile("([0-9a-fA-F]{40}) ([0-9a-fA-F]{40}) refs\\/(heads|tags)\\/(.*?)( |00|\x00)")
-	uploadPackRegex  = regexp.MustCompile(`^want ([0-9a-fA-F]{40})`)
-)
-
-// Implement the io.Reader interface
+// Read implements the io.Reader interface.
 func (r *RpcReader) Read(p []byte) (n int, err error) {
 	// Relay call
 	n, err = r.Reader.Read(p)
@@ -54,37 +49,28 @@ func (r *RpcReader) scan(data []byte) {
 
 		// When we get here, we're done collecting all pkt-lines successfully
 		// and can now extract relevant events.
-		var events []Event
 		switch r.Rpc {
 		case "receive-pack":
-			events = scanPush(r.pktLineParser.Total)
+			for _, line := range r.pktLineParser.Lines {
+				events := scanPush(line)
+				r.Events = append(r.Events, events...)
+			}
 		case "upload-pack":
-			events = scanFetch(r.pktLineParser.Total)
+			total := strings.Join(r.pktLineParser.Lines, "")
+			events := scanFetch(total)
+			r.Events = append(r.Events, events...)
 		}
-		r.Events = append(r.Events, events...)
 	}
 }
 
-func scanFetch(data []byte) []Event {
-	matches := uploadPackRegex.FindAllStringSubmatch(string(data), -1)
+// TODO: Avoid using regexp to parse a well documented binary protocol with an open source
+//       implementation. There should not be a need for regexp.
 
-	if matches == nil {
-		return nil
-	}
+// receivePackRegex is used once per pkt-line.
+var receivePackRegex = regexp.MustCompile("([0-9a-fA-F]{40}) ([0-9a-fA-F]{40}) refs\\/(heads|tags)\\/(.+?)(\x00|$)")
 
-	var events []Event
-	for _, m := range matches {
-		events = append(events, Event{
-			Type:   FETCH,
-			Commit: m[1],
-		})
-	}
-
-	return events
-}
-
-func scanPush(data []byte) []Event {
-	matches := receivePackRegex.FindAllStringSubmatch(string(data), -1)
+func scanPush(line string) []Event {
+	matches := receivePackRegex.FindAllStringSubmatch(line, -1)
 
 	if matches == nil {
 		return nil
@@ -107,6 +93,27 @@ func scanPush(data []byte) []Event {
 		}
 
 		events = append(events, e)
+	}
+
+	return events
+}
+
+// uploadPackRegex is used once on the entire header data.
+var uploadPackRegex = regexp.MustCompile(`^want ([0-9a-fA-F]{40})`)
+
+func scanFetch(total string) []Event {
+	matches := uploadPackRegex.FindAllStringSubmatch(total, -1)
+
+	if matches == nil {
+		return nil
+	}
+
+	var events []Event
+	for _, m := range matches {
+		events = append(events, Event{
+			Type:   FETCH,
+			Commit: m[1],
+		})
 	}
 
 	return events
