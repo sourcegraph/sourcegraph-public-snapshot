@@ -1,4 +1,4 @@
-# dev
+# 0.11.7
 
 - Improve the process of running a Sourcegraph server in Docker. The
   docker image is simplified, takes less disk space, and no longer uses
