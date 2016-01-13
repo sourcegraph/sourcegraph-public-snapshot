@@ -128,7 +128,8 @@ cloud_post() {
 	fi
 
 	sed -i 's|^;app-url =.*|app-url = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
-	echo 'http-addr = :80' >> /etc/sourcegraph/config.ini
+  echo '[serve]
+http-addr = :80' >> /etc/sourcegraph/config.ini
 	restart src || echo ok
 	# TODO: set up self-signed TLS certs
 }
