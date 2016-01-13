@@ -69,7 +69,7 @@ func (c *PackageCmd) Execute(args []string) error {
 		os.Getenv("GOPATH"),
 	}, string(filepath.ListSeparator))
 
-	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates", "./platform/...", "./devdoc/...")
+	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates", "./platform/...", "./devdoc/...", "./misc/sampledata")
 	overrideEnv(genCmd, "GOPATH", gopath)
 	if c.SkipProtoc {
 		genCmd.Env = append(genCmd.Env, "SKIP_PROTOC=t")
