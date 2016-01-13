@@ -1,10 +1,6 @@
-var sandbox = require("../testSandbox");
+require("../testSandbox");
 var expect = require("expect.js");
 
-var $ = require("jquery");
-var React = require("react");
-var ReactDOM = require("react-dom");
-var TestUtils = require("react-addons-test-utils");
 var Backbone = require("backbone");
 var DiffActions = require("./DiffActions");
 var HunkModel = require("../stores/models/HunkModel");
