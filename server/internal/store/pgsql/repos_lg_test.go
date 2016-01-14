@@ -17,7 +17,6 @@ import (
 // TestRepos_CreateStartsBuild_lg tests that creating a mirror repository
 // properly enqueues a new build for that repo.
 func TestRepos_CreateStartsBuild_lg(t *testing.T) {
-	t.Skip("flaky")
 	if testserver.Store != "pgsql" {
 		t.Skip()
 	}
@@ -67,7 +66,7 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 	// performs a veryShortCache on the first lack-of-builds query which lasts for
 	// 7s. By introducing a delay here just long enough for the build to complete
 	// on average, we shave off 5s from the test run time.
-	time.Sleep(2 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	// Wait for a build to succeeded for up to 10s.
 	for i := 0; i < 10; i++ {
