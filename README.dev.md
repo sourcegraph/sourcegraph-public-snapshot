@@ -53,7 +53,7 @@ permanent for every shell session by adding the following line to your
 
 ```bash
 # increase max number of file descriptors for running a sourcegraph instance.
-ulimit -n 16384
+ulimit -n 10000
 ```
 
 ## Test
