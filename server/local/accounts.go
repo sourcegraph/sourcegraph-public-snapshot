@@ -249,7 +249,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		URL:     invite.Email,
 		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
 	})
-	eventsutil.LogSendInvite(user, invite.Email, token[:5], invite.Admin, invite.Write)
+	eventsutil.LogSendInvite(ctx, invite.Email, token[:5], invite.Admin, invite.Write)
 
 	return &sourcegraph.PendingInvite{
 		Link:      u.String(),

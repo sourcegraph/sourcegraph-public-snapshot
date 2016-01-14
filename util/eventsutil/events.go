@@ -82,9 +82,9 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 }
 
 // LogSendInvite records that an invite link was created.
-func LogSendInvite(user *sourcegraph.User, email, inviteCode string, admin, write bool) {
+func LogSendInvite(ctx context.Context, email, inviteCode string, admin, write bool) {
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, user.Login)
+	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
 	eventProperties := map[string]string{
 		"Invitee":     email,
