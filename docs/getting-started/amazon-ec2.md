@@ -7,7 +7,7 @@ To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instanc
 
 * Open the [**Launch EC2 Instance Wizard**](https://us-west-2.console.aws.amazon.com/ec2/v2/home#LaunchInstanceWizard:) in the AWS Management Console.
 * **Choose an AMI:** Ubuntu Server 14.04 AMI.
-* **Choose an Instance Type:** Any instance with at least 2 GB of RAM (t2.small or better)
+* **Choose an Instance Type:** Any instance with at least 4 GB of RAM (t2.medium or better recommended)
 * **Configure Instance Details:** Expand **Edit instance details** then **Advanced details** and set the following **User data**:
 
 ```
