@@ -59,7 +59,7 @@ func (c *WorkCmd) Execute(args []string) error {
 
 	// Watch for sigkill so we can mark builds as ended before termination.
 	var (
-		activeBuildsMu sync.Mutex
+		activeBuildsMu sync.RWMutex
 		activeBuilds   = map[*sourcegraph.Build]struct{}{}
 	)
 	killc := make(chan os.Signal, 1)
@@ -74,8 +74,8 @@ func (c *WorkCmd) Execute(args []string) error {
 		// Mark all active builds (and their tasks) as killed. But set
 		// an aggressive timeout so we don't block the termination for
 		// too long.
-		activeBuildsMu.Lock()
-		defer activeBuildsMu.Unlock()
+		activeBuildsMu.RLock()
+		defer activeBuildsMu.RUnlock()
 		cancel()
 		if len(activeBuilds) == 0 {
 			return
@@ -83,6 +83,8 @@ func (c *WorkCmd) Execute(args []string) error {
 		ctx, cancel2 := context.WithTimeout(client.Ctx, 1*time.Second)
 		defer cancel2()
 		time.AfterFunc(500*time.Millisecond, func() {
+			activeBuildsMu.RLock()
+			defer activeBuildsMu.RUnlock()
 			// Log if it's taking a noticeable amount of time.
 			builds := make([]string, 0, len(activeBuilds))
 			for b := range activeBuilds {
