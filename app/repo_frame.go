@@ -121,7 +121,8 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 
 	// If Sourcegraph-Verbatim header was set to true, relay this
 	// request to browser directly, and copy appropriate headers.
-	if rr.Header().Get(platform.HTTPHeaderVerbatim) == "true" {
+	redirect := rr.Code == http.StatusSeeOther || rr.Code == http.StatusMovedPermanently
+	if rr.Header().Get(platform.HTTPHeaderVerbatim) == "true" || redirect {
 		w.Header().Set("Content-Encoding", rr.Header().Get("Content-Encoding"))
 		w.Header().Set("Content-Type", rr.Header().Get("Content-Type"))
 		w.Header().Set("Location", rr.Header().Get("Location"))
