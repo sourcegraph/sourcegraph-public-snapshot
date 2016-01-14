@@ -90,15 +90,17 @@ type Server struct {
 }
 
 type Config struct {
-	Flags      []interface{} // flags to `src`
-	Endpoint   client.EndpointOpts
-	Serve      sgx.ServeCmd
-	ServeFlags []interface{} // flags to `src serve`
+	Flags        []interface{} // flags to `src`
+	Endpoint     client.EndpointOpts
+	Serve        sgx.ServeCmd
+	ServeFlags   []interface{} // flags to `src serve`
+	ServeFSFlags *fs.Flags
 }
 
 func (c *Config) args() ([]string, error) {
 	flags := c.Flags
 	flags = append(flags, &c.Endpoint, "serve", &c.Serve)
+	flags = append(flags, c.ServeFSFlags)
 	flags = append(flags, c.ServeFlags...)
 	return makeCommandLineArgs(flags...)
 }
@@ -328,7 +330,7 @@ func NewServer() (*Server, context.Context) {
 }
 
 func NewUnstartedServerTLS() (*Server, context.Context) {
-	s, ctx := newUnstartedServer("https")
+	s, ctx := newUnstartedServer("https", Store)
 
 	s.Config.Serve.KeyFile = filepath.Join(s.SGPATH, "localhost.key")
 	s.Config.Serve.CertFile = filepath.Join(s.SGPATH, "localhost.crt")
@@ -343,10 +345,14 @@ func NewUnstartedServerTLS() (*Server, context.Context) {
 }
 
 func NewUnstartedServer() (*Server, context.Context) {
-	return newUnstartedServer("http")
+	return newUnstartedServer("http", Store)
 }
 
-func newUnstartedServer(scheme string) (*Server, context.Context) {
+func NewUnstartedServerWithStore(store string) (*Server, context.Context) {
+	return newUnstartedServer("http", store)
+}
+
+func newUnstartedServer(scheme, store string) (*Server, context.Context) {
 	var s Server
 
 	s.Config.Flags = append(s.Config.Flags, "-v")
@@ -385,7 +391,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// Store type
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &storecli.Flags{
-		Store: Store,
+		Store: store,
 	})
 
 	reposDir := filepath.Join(sgpath, "repos")
@@ -398,13 +404,13 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	appStorageDir := filepath.Join(sgpath, "appdata")
 
 	// FS
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &fs.Flags{
+	s.Config.ServeFSFlags = &fs.Flags{
 		ReposDir:      reposDir,
 		BuildStoreDir: buildStoreDir,
 		DBDir:         dbDir,
 		RepoStatusDir: statusDir,
 		AppStorageDir: appStorageDir,
-	})
+	}
 
 	// Appdash
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerConfig{
