@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/AaronO/go-git-http"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -20,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util"
 )
 
@@ -80,11 +83,38 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
-	return store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &vcsclient.CloneInfo{
+	err := store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &vcsclient.CloneInfo{
 		VCS:        repo.VCS,
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
 	})
+	if err != nil {
+		return err
+	}
+
+	// We've just cloned the repository, so kick off a build on the default
+	// branch. This isn't needed for the fs backend because it initializes an
+	// empty repository first and then proceeds to just updateRepo, thus skipping
+	// this clone phase entirely.
+	commit, err := svc.Repos(ctx).GetCommit(ctx, &sourcegraph.RepoRevSpec{
+		RepoSpec: repo.RepoSpec(),
+		Rev:      repo.DefaultBranch,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = svc.Builds(ctx).Create(ctx, &sourcegraph.BuildsCreateOp{
+		Repo:     repo.RepoSpec(),
+		CommitID: string(commit.ID),
+		Branch:   repo.DefaultBranch,
+		Config:   sourcegraph.BuildConfig{Queue: true},
+	})
+	if err != nil {
+		log15.Warn("cloneRepo: failed to create build", "err", err, "repo", repo.URI, "commit", commit.ID, "branch", repo.DefaultBranch)
+		return nil
+	}
+	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", commit.ID)
+	return nil
 }
 
 func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vcsRepo vcs.Repository, remoteOpts vcs.RemoteOpts) error {
