@@ -1162,7 +1162,7 @@ func noiseyLogFilter(r *log15.Record) bool {
 	if r.Lvl != log15.LvlDebug {
 		return true
 	}
-	noiseyPrefixes := []string{"gRPC Builds.DequeueNext", "gRPC MirrorRepos.RefreshVCS"}
+	noiseyPrefixes := []string{"gRPC Builds.DequeueNext", "gRPC MirrorRepos.RefreshVCS", "repoUpdater: RefreshVCS"}
 	for _, prefix := range noiseyPrefixes {
 		if strings.HasPrefix(r.Msg, prefix) {
 			return false
