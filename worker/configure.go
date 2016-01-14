@@ -2,7 +2,6 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/url"
 	"path"
@@ -89,13 +88,10 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		return nil, err
 	}
 
-	fmt.Println("repoURL", repoURL)
-
 	repoLink, err := droneRepoLink(*repoURL)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("repoLink", repoLink)
 
 	b.Payload.Repo = &plugin.Repo{
 		FullName:  build.Repo,
@@ -174,7 +170,6 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 			return nil, err
 		}
 
-		fmt.Println("createdTasks", createdTasks)
 		states := make([]builder.TaskState, len(createdTasks.BuildTasks))
 		for i, task := range createdTasks.BuildTasks {
 			states[i] = &taskState{
@@ -254,7 +249,7 @@ func parseCloneURL(repo *sourcegraph.Repo) (*url.URL, error) {
 	} else if repo.SSHCloneURL != "" {
 		return giturls.Parse(repo.SSHCloneURL)
 	} else {
-		return nil, errors.New("Must provider either an HTTP(S) or SSH clone URL")
+		return nil, errors.New("Must provide either an HTTP(S) or SSH clone URL")
 	}
 }
 
