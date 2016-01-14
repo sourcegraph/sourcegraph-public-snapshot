@@ -4,16 +4,16 @@ package sysreq
 
 import (
 	"fmt"
-	"syscall"
 
 	"golang.org/x/net/context"
+	"golang.org/x/sys/unix"
 )
 
 func rlimitCheck(ctx context.Context) (*status, error) {
 	const minLimit = 10000
 
-	var limit syscall.Rlimit
-	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &limit)
+	var limit unix.Rlimit
+	err := unix.Getrlimit(unix.RLIMIT_NOFILE, &limit)
 	if err != nil {
 		return nil, err
 	}
