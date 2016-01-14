@@ -1,6 +1,6 @@
 {
 	"ImportPath": "src.sourcegraph.com/sourcegraph",
-	"GoVersion": "go1.5.2",
+	"GoVersion": "go1.5.3",
 	"Packages": [
 		"./..."
 	],
@@ -149,10 +149,6 @@
 			"Rev": "362b626337a53744d1f571d5d70d66294c82d429"
 		},
 		{
-			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "299d728486342c894e7fafd68e3a4b89623bef1d"
-		},
-		{
 			"ImportPath": "github.com/gengo/grpc-gateway/internal",
 			"Rev": "8ac6df966068de084034d6535c2792367c1e1f28"
 		},
@@ -235,10 +231,6 @@
 		{
 			"ImportPath": "github.com/hashicorp/go-version",
 			"Rev": "2b9865f60ce11e527bd1255ba82036d465570aa3"
-		},
-		{
-			"ImportPath": "github.com/hashicorp/hcl",
-			"Rev": "197e8d3cf42199cfd53cd775deb37f3637234635"
 		},
 		{
 			"ImportPath": "github.com/howeyc/gopass",
@@ -698,6 +690,10 @@
 		{
 			"ImportPath": "golang.org/x/oauth2",
 			"Rev": "2baa8a1b9338cf13d9eeb27696d761155fa480be"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "833a04a10549a95dc34458c195cbad61bbb6cb4d"
 		},
 		{
 			"ImportPath": "golang.org/x/text/transform",
