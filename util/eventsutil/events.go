@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"golang.org/x/net/context"
 
@@ -133,6 +134,10 @@ func LogAddRepo(ctx context.Context, cloneURL, language string, mirror, private 
 }
 
 func LogBuildRepo(ctx context.Context, result string) {
+	if result == "" {
+		return
+	}
+
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
@@ -285,19 +290,19 @@ func LogCreateChangeset(ctx context.Context) {
 }
 
 func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, route string) {
+	eventType := getPageViewEventType(route)
+	if eventType == "" {
+		return
+	}
+
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
 
-	eventProperties := map[string]string{
-		"Route": route,
-	}
-
 	Log(&sourcegraph.Event{
-		Type:            "PageView",
-		ClientID:        clientID,
-		UserID:          userID,
-		DeviceID:        deviceID,
-		EventProperties: eventProperties,
+		Type:     eventType,
+		ClientID: clientID,
+		UserID:   userID,
+		DeviceID: deviceID,
 	})
 }
 
@@ -331,4 +336,29 @@ func getUserLogin(user *sourcegraph.UserSpec) string {
 		return user.Login
 	}
 	return ""
+}
+
+func getPageViewEventType(route string) string {
+	if route == "" {
+		return ""
+	}
+
+	// Filter out routes that have their own top-level event
+	// to avoid double logging the same user event.
+	switch route {
+	case "repo.tree":
+		return ""
+	}
+
+	eventType := "View"
+	chunks := strings.Split(route, ".")
+	for i := range chunks {
+		if len(chunks[i]) > 0 {
+			token := []rune(chunks[i])
+			token[0] = unicode.ToUpper(token[0])
+			eventType = eventType + string(token)
+		}
+	}
+
+	return eventType
 }
