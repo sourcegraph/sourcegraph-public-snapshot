@@ -35,12 +35,22 @@ header.repo-build {
 }
 
 .build-container {
+	.panel {
+		border-width: 1px 0;
+		box-shadow: none;
+	}
+
 	.panel-heading a {
 		text-decoration: none;
 		display: block;
 		&:hover {
 			opacity: 0.8;
 		}
+	}
+
+	.commit {
+		margin-top: 0;
+		padding-top: 0;
 	}
 
 	.top-level-tasks.panel-group {
@@ -53,9 +63,9 @@ header.repo-build {
 
 	.top-level-task {
 		& > .panel-heading {
-			padding: $padding-base-vertical $padding-small-horizontal;
+			padding: $padding-large-vertical $padding-small-horizontal;
 
-			border-bottom: solid 2px;
+			border-bottom: solid 1px;
 			h4 {
 				font-size: $font-size-large*1.2;
 			}
@@ -85,7 +95,7 @@ header.repo-build {
 			// Make clickable link area bigger.
 			padding: 0;
 			a {
-				padding: $padding-large-vertical*1.25 $padding-small-horizontal $padding-base-vertical;
+				padding: $padding-large-vertical $padding-small-horizontal;
 				.elapsed { font-weight: normal; }
 			}
 		}

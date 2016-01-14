@@ -79,10 +79,10 @@ $panel-repo-tree-padding-horizontal: 9px;
 }
 
 .panel-repo-tree {
+	padding-top: 1px;
+
 	box-shadow: none;
 	-webkit-box-shadow: none;
-
-	padding-top: 20px;
 
 	header.rev-and-breadcrumb {
 		// Reserve room for the RepoRevSwitcher React component (to avoid UI jitter).
@@ -132,7 +132,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 	// TreeTopCommit
 	header.commit {
 		background-color: #f5f5f5;
-		padding: 7px 0 0 0;
+		padding-top: 8px;
 
 		border: solid 1px #cdcdcd;
 		border-bottom-color: #ddd;
@@ -144,7 +144,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 		}
 
 		.build-indicator {
-			margin: 3px 10px 0 0;
+			margin-right: 10px;
 			&.btn-success {
 				border-color: darken(#5cb85c, 15%);
 			}
@@ -161,10 +161,9 @@ $panel-repo-tree-padding-horizontal: 9px;
 		}
 
 		.last-commit {
-			height: 30px;
-			padding: 0px 7px 5px 5px;
+			@include clearfix;
 			font-size: 12px;
-			margin-top: 10px;
+			margin: 8px 5px;
 
 			img.avatar {
 				@include square(19px);
@@ -173,7 +172,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 			}
 
 			.commit-id {
-				padding: 3px 3px 0 0;
+				padding: 0 3px 0 0;
 			}
 
 			.committer a.user {
