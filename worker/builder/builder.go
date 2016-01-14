@@ -344,7 +344,7 @@ func (b *Builder) execAxis(ctx context.Context, axis matrix.Axis, taskState Task
 		return taskMonitor{ctx: ctx, s: subtaskState}
 	}
 
-	return ignoreBtrfsCircleCIError(droneexec.Exec(axisPayload, opt))
+	return ignoreBtrfsCircleCIError(droneexec.Exec(ctx, axisPayload, opt))
 }
 
 // Ignores errors due to CircleCI forbidding certain operations inside

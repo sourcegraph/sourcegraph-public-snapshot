@@ -270,6 +270,9 @@ func writePlainLogEntries(w http.ResponseWriter, entries *sourcegraph.LogEntries
 
 // buildStatus returns a textual status description for the build.
 func buildStatus(b *sourcegraph.Build) string {
+	if b.Killed {
+		return "Killed"
+	}
 	if b.Failure {
 		return "Failed"
 	}
@@ -285,7 +288,7 @@ func buildStatus(b *sourcegraph.Build) string {
 // buildClass returns the CSS class for the build.
 func buildClass(b *sourcegraph.Build) string {
 	switch buildStatus(b) {
-	case "Failed":
+	case "Failed", "Killed":
 		return "danger"
 	case "Succeeded":
 		return "success"
