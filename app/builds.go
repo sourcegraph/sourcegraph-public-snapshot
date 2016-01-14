@@ -106,8 +106,7 @@ func fetchCommitsForBuilds(ctx context.Context, builds []*sourcegraph.Build) ([]
 				CommitID: b.CommitID,
 			})
 			if err != nil && grpc.Code(err) != codes.NotFound {
-				// Tolerate not found (happens when the commit is
-				// gc'd).
+				// Tolerate not found (happens when the commit is gc'd).
 				return err
 			}
 			buildsAndCommits[i].Commit = commit
