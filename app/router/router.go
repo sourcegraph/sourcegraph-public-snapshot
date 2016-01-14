@@ -85,6 +85,9 @@ const (
 	OAuth2ServerAuthorize = "oauth-provider.authorize"
 	OAuth2ServerToken     = "oauth-provider.token"
 
+	GitHubOAuth2Initiate = "github-oauth2.initiate"
+	GitHubOAuth2Receive  = "github-oauth2.receive"
+
 	Def         = "def"
 	DefExamples = "def.examples"
 	DefPopover  = "def.popover"
@@ -148,6 +151,9 @@ func New(base *mux.Router) *Router {
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 
 	base.Path("/sitemap.xml").Methods("GET").Name(SitemapIndex)
+
+	base.Path("/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
+	base.Path("/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
 
 	base.Path("/usercontent/{Name}").Methods("GET").Name(UserContent)
 
