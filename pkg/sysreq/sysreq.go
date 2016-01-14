@@ -140,4 +140,8 @@ var checks = []check{
 			return nil, nil
 		},
 	},
+	{
+		name:  "Rlimit",
+		check: rlimitCheck,
+	},
 }
