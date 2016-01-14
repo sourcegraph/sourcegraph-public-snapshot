@@ -104,6 +104,8 @@ div.repo-body {
 			}
 
 			#clone-url-value {
+				padding-left: 6px;
+				padding-left: 6px;
 				background-color: white;
 				overflow: hidden;
 				max-width: 15em;
@@ -135,8 +137,4 @@ div.repo-body {
 		color: $gray;
 		font-size: $font-size-small;
 	}
-}
-
-.clone-url-toggle {
-	background-color: #2F82C0 !important;
 }
