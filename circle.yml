@@ -92,7 +92,10 @@ deployment:
       - grep "# $VERSION" release_notes.md # fail if version is not mentioned in release notes
       - ./circle-build-docker-image.sh $CIRCLE_TAG:
           pwd: $REPO
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&version=$CIRCLE_TAG"
+
+      # build and upload binary releases
+      - sgtool release $CIRCLE_TAG --skip-package:
+          pwd: $REPO
 
       # push to Docker Hub
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
@@ -100,3 +103,6 @@ deployment:
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:latest
       - docker push sourcegraph/sourcegraph:$CIRCLE_TAG
       - docker push sourcegraph/sourcegraph:latest
+
+      # deploy
+      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&version=$CIRCLE_TAG"
