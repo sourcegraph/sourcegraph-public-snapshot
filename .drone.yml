@@ -5,3 +5,4 @@ build:
   image: golang:1.5
   commands:
     - GOPATH=$PWD/Godeps/_workspace:$GOPATH go test ./...
+  allow_failure: true
