@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -362,5 +363,8 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 
 func (s *repos) Delete(ctx context.Context, repo string) error {
 	_, err := dbh(ctx).Exec(`DELETE FROM repo WHERE uri=$1;`, repo)
-	return err
+	if err != nil {
+		return err
+	}
+	return fs.DeleteRepo(ctx, repo)
 }

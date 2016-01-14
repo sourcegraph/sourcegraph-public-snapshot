@@ -312,6 +312,13 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 }
 
 func (s *repos) Delete(ctx context.Context, repo string) error {
+	return DeleteRepo(ctx, repo)
+}
+
+// ReposDelete is the local filesystem-backed Repos service Delete method. It is
+// exposed so that the pgsql backend (which creates mirror repos on the FS) can
+// properly delete repositories.
+func DeleteRepo(ctx context.Context, repo string) error {
 	dir := absolutePathForRepo(ctx, repo)
 	if dir == absolutePathForRepo(ctx, "") {
 		return errors.New("Repos.Delete needs at least one path element")
