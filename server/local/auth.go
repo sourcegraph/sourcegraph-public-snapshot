@@ -304,7 +304,9 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 	}
 
 	dbToken, err := extTokensStore.GetUserToken(ctx, reqUID, request.Host, request.ClientID)
-	if err != nil {
+	if err == authpkg.ErrNoExternalAuthToken {
+		return nil, grpc.Errorf(codes.NotFound, "no external auth token found")
+	} else if err != nil {
 		return nil, err
 	}
 

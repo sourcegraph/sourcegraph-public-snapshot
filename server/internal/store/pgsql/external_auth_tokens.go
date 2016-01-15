@@ -12,7 +12,7 @@ func init() {
 	tbl := Schema.Map.AddTableWithName(auth.ExternalAuthToken{}, "ext_auth_token").SetKeys(false, "User", "Host", "client_id")
 	tbl.ColMap("FirstAuthFailureMessage").SetMaxSize(1000)
 	Schema.CreateSQL = append(Schema.CreateSQL,
-		`CREATE UNIQUE INDEX ext_auth_token_token_host ON ext_auth_token(token, host, client_id);`,
+		`CREATE UNIQUE INDEX ext_auth_token_token_host ON ext_auth_token(user, token, host, client_id);`,
 		`ALTER TABLE ext_auth_token ALTER COLUMN first_auth_failure_at TYPE timestamp with time zone USING first_auth_failure_at::timestamp with time zone;`,
 	)
 }

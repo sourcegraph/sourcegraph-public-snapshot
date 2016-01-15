@@ -19,10 +19,13 @@ import (
 	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/ext/github"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -39,6 +42,7 @@ import (
 var Repos sourcegraph.ReposServer = &repos{}
 
 var errEmptyRepoURI = grpc.Errorf(codes.InvalidArgument, "repo URI is empty")
+var errPermissionDenied = grpc.Errorf(codes.PermissionDenied, "cannot view this repo")
 
 type repos struct{}
 
@@ -54,6 +58,23 @@ func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegra
 	}
 	if err := s.setRepoOtherFields(ctx, r); err != nil {
 		return nil, err
+	}
+
+	a := authpkg.ActorFromContext(ctx)
+	if r.Private && !s.verifyScopeHasPrivateRepoAccess(a.Scope) {
+		uid := a.UID
+		if uid == 0 {
+			return nil, errPermissionDenied
+		}
+		repoPermsStore := authpkg.RepoPermsStore{}
+		perms, err := repoPermsStore.Get(ctx, uid, repo.URI)
+		if err != nil {
+			log15.Warn("Error checking repo permissions", "repo", repo.URI, "uid", uid)
+			return nil, errPermissionDenied
+		}
+		if !perms.Allow {
+			return nil, errPermissionDenied
+		}
 	}
 	veryShortCache(ctx)
 	return r, nil
@@ -91,8 +112,31 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	if err := s.setRepoOtherFields(ctx, repos...); err != nil {
 		return nil, err
 	}
+
+	// Filter out private repos that are not visible to the user.
+	// TODO: move this check to the store level.
+	var filteredRepos []*sourcegraph.Repo
+	repoPermsStore := authpkg.RepoPermsStore{}
+	uid := authpkg.ActorFromContext(ctx).UID
+	for _, repo := range repos {
+		if repo.Private {
+			if uid == 0 {
+				continue
+			}
+
+			perms, err := repoPermsStore.Get(ctx, uid, repo.URI)
+			if err != nil {
+				log15.Warn("Error checking repo permissions", "repo", repo.URI, "uid", uid)
+				continue
+			}
+			if !perms.Allow {
+				continue
+			}
+		}
+		filteredRepos = append(filteredRepos, repo)
+	}
 	veryShortCache(ctx)
-	return &sourcegraph.RepoList{Repos: repos}, nil
+	return &sourcegraph.RepoList{Repos: filteredRepos}, nil
 }
 
 // setRepoPermissions modifies repos in place, setting their
@@ -154,6 +198,13 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 			if err != nil {
 				log15.Warn("Failed to set access token for private repo", "repo", op.URI, "error", err)
 			}
+		}
+
+		// Allow this user to access this repo.
+		repoPermsStore := authpkg.RepoPermsStore{}
+		uid := authpkg.ActorFromContext(ctx).UID
+		if err := repoPermsStore.Set(ctx, uid, op.URI); err != nil {
+			log15.Warn("Failed to set repo permissions for user", "repo", op.URI, "uid", uid, "error", err)
 		}
 	}
 
@@ -424,6 +475,83 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	return inv, nil
 }
 
+func (s *repos) GetPrivateGitHubRepos(ctx context.Context, req *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
+	gd := &sourcegraph.GitHubRepoData{
+		URL:  githubcli.Config.URL(),
+		Host: githubcli.Config.Host() + "/",
+	}
+
+	// Fetch the currently authenticated user's stored access token (if any).
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+		Host:     githubcli.Config.Host(),
+		ClientID: req.GitHubClientID,
+	})
+	if grpc.Code(err) == codes.NotFound || extToken.Token == "" {
+		return gd, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	ghRepos := &github.Repos{}
+	// TODO(perf) Cache this response or perform the fetch after page load to avoid
+	// having to wait for an http round trip to github.com.
+	privateGitHubRepos, err := ghRepos.ListPrivate(ctx, extToken.Token)
+	if err != nil {
+		// If the error is caused by something other than the token not existing,
+		// ensure the user knows there is a value set for the token but that
+		// it is invalid.
+		if _, ok := err.(ext.TokenNotFoundError); !ok {
+			gd.TokenIsPresent = true
+		}
+		return gd, nil
+	}
+	gd.TokenIsPresent, gd.TokenIsValid = true, true
+
+	existingRepos := make(map[string]struct{})
+	privateRemoteRepos := make([]*sourcegraph.PrivateRemoteRepo, len(privateGitHubRepos))
+
+	repoOpts := &sourcegraph.RepoListOptions{
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 1000,
+			Page:    1,
+		},
+	}
+	for {
+		repoList, err := store.ReposFromContext(ctx).List(ctx, repoOpts)
+		if err != nil {
+			return nil, err
+		}
+		if len(repoList) == 0 {
+			break
+		}
+
+		for _, repo := range repoList {
+			existingRepos[repo.URI] = struct{}{}
+		}
+
+		repoOpts.ListOptions.Page += 1
+	}
+
+	// Check if a user's remote GitHub repo already exists locally under the
+	// same URI. Allow this user to access all their private repos that are
+	// already mirrored on this Sourcegraph.
+	repoPermsStore := authpkg.RepoPermsStore{}
+	uid := authpkg.ActorFromContext(ctx).UID
+	for i, repo := range privateGitHubRepos {
+		if _, ok := existingRepos[repo.URI]; ok {
+			privateRemoteRepos[i] = &sourcegraph.PrivateRemoteRepo{ExistsLocally: true, Repo: *repo}
+			if err := repoPermsStore.Set(ctx, uid, repo.URI); err != nil {
+				log15.Warn("Failed to set repo permissions for user", "repo", repo.URI, "uid", uid, "error", err)
+			}
+		} else {
+			privateRemoteRepos[i] = &sourcegraph.PrivateRemoteRepo{ExistsLocally: false, Repo: *repo}
+		}
+	}
+	gd.Repos = privateRemoteRepos
+
+	return gd, nil
+}
+
 func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
 	if err != nil {
@@ -436,6 +564,15 @@ func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 		return nil, err
 	}
 	return inv, nil
+}
+
+func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
+	for k := range scope {
+		if strings.HasPrefix(k, "internal:") {
+			return true
+		}
+	}
+	return false
 }
 
 type walkableFileSystem struct{ vfs.FileSystem }
