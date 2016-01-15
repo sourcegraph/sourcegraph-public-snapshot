@@ -646,6 +646,10 @@
 			"Rev": "0abe01ef9be25c4aedc174758ec2d917314d6d70"
 		},
 		{
+			"ImportPath": "github.com/whilp/git-urls",
+			"Rev": "e4bd4b1ee3861df27451acebbe81d7a5d67991fe"
+		},
+		{
 			"ImportPath": "github.com/willf/bitset",
 			"Comment": "v1.0.0-21-g40860d6",
 			"Rev": "40860d631a7cda5964b942da95bf80dd788e770f"

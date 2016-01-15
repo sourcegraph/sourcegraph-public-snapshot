@@ -2,21 +2,18 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/url"
 	"path"
 	"strings"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	droneexec "github.com/drone/drone-exec/exec"
 	"github.com/drone/drone-plugin-go/plugin"
+	"github.com/whilp/git-urls"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/pkg/dockerutil"
@@ -72,24 +69,36 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		b.Payload.Build.Ref = "" // fetches all branches from the remote
 	}
 
-	// Drone repo
-	cloneURL, cloneNetrc, err := getCloneURLAndAuthForBuild(ctx, repo)
+	appURL, err := getAppURL(ctx)
 	if err != nil {
 		return nil, err
 	}
-	repoLink, err := droneRepoLink(repo.HTTPCloneURL)
+
+	// Adjust the URL in case it uses localhost to an absolute IP.
+	hostname, containerAppURL, err := containerAddrForHost(*appURL)
 	if err != nil {
 		return nil, err
 	}
+
+	containerCloneURL := *containerAppURL
+	containerCloneURL.Path = repo.URI
+
+	repoURL, err := parseCloneURL(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	repoLink, err := droneRepoLink(*repoURL)
+	if err != nil {
+		return nil, err
+	}
+
 	b.Payload.Repo = &plugin.Repo{
 		FullName:  build.Repo,
-		Clone:     cloneURL,
+		Clone:     containerCloneURL.String(),
 		Link:      repoLink,
 		IsPrivate: true,
 		IsTrusted: true,
-	}
-	if cloneNetrc != nil {
-		b.Payload.Netrc = append(b.Payload.Netrc, cloneNetrc)
 	}
 
 	// Get the netrc entry we need for srclib-importing (and otherwise
@@ -97,7 +106,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	// may be the same credentials as the clone netrc credentials, but
 	// that's not true in all cases (e.g., clone credentials could be
 	// for GitHub).
-	hostNetrc, err := getHostNetrcEntry(ctx)
+	hostNetrc, err := getHostNetrcEntry(ctx, hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +141,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	}
 
 	// SrclibImportURL
-	srclibImportURL, err := getSrclibImportURL(ctx, repoRev)
+	srclibImportURL, err := getSrclibImportURL(ctx, repoRev, *containerAppURL)
 	if err != nil {
 		return nil, err
 	}
@@ -160,6 +169,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		if err != nil {
 			return nil, err
 		}
+
 		states := make([]builder.TaskState, len(createdTasks.BuildTasks))
 		for i, task := range createdTasks.BuildTasks {
 			states[i] = &taskState{
@@ -188,7 +198,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 
 // getContainerAppURL gets the Sourcegraph server's app URL from the
 // POV of the Docker containers.
-func getContainerAppURL(ctx context.Context) (*url.URL, error) {
+func getAppURL(ctx context.Context) (*url.URL, error) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -199,114 +209,28 @@ func getContainerAppURL(ctx context.Context) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, containerAppURLStr, err := containerAddrForHost(serverConf.AppURL)
-	if err != nil {
-		return nil, err
-	}
-	return url.Parse(containerAppURLStr)
+
+	return url.Parse(serverConf.AppURL)
 }
 
 // getSrclibImportURL constructs the srclib import URL to POST srclib
 // data to, after the srclib build steps complete.
-func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*url.URL, error) {
+func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
 	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, repoRev.RouteVars())
 	if err != nil {
 		return nil, err
 	}
 	srclibImportURL.Path = "/.api" + srclibImportURL.Path
 
-	containerAppURL, err := getContainerAppURL(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return containerAppURL.ResolveReference(srclibImportURL), nil
-}
-
-// getCloneURLAndAuthForBuild returns the information necessary to
-// clone repo during the build. The cloneURL never contains
-// credentials itself (e.g.,
-// "http://user:password@host.com/repo.git"); the credentials are
-// returned in the username and password fields. This means that the
-// cloneURL is safe to display in the build log.
-//
-// TODO(native-ci): look up and use SSH keys as well (e.g., with
-// MirroredRepoSSHKeys.Get), not just HTTP clone credentials.
-func getCloneURLAndAuthForBuild(ctx context.Context, repo *sourcegraph.Repo) (cloneURL string, netrc *plugin.NetrcEntry, err error) {
-	cloneURL = repo.HTTPCloneURL
-	host, err := urlHostNoPort(cloneURL)
-	if err != nil {
-		return
-	}
-
-	switch {
-	case repo.Mirror: // Mirror repos that live elsewhere.
-		if repo.Private {
-			// Fetch auth to external server (e.g., GitHub.com
-			// credentials).
-			//
-			// TODO(sqs!native-ci): Does the ext.AuthStore only work
-			// when the worker is running locally and has access to
-			// the SGPATH (i.e., when it's not a remote worker)?
-			authStore := ext.AuthStore{}
-			cred, err := authStore.Get(ctx, host)
-			if err != nil {
-				return "", nil, fmt.Errorf("unable to fetch credentials for host %q: %v", host, err)
-			}
-			netrc = &plugin.NetrcEntry{
-				Machine:  host,
-				Login:    "x-oauth-basic",
-				Password: cred.Token,
-			}
-		}
-
-	case repo.Origin == "": // Repos hosted on this server.
-		// NOTE: This assumes that if the if-condition below
-		// holds, the repo's HTTPCloneURL is on the trusted server. If
-		// it's ever possible for the HTTPCloneURL to be on a
-		// different server but still have this if-condition hold,
-		// then we could leak the user's credentials.
-		netrc, err = getHostNetrcEntry(ctx)
-		if err != nil {
-			return
-		}
-		if len(netrc.Password) > 255 {
-			// This should not occur anymore, but it is very
-			// difficult to debug if it does, so log it
-			// anyway.
-			log15.Warn("warning: Long repository password is incompatible with git < 2.0. If you see git authentication errors, upgrade to git 2.0+.", "repo", repo.URI, "password length", len(netrc.Password))
-		}
-	}
-
-	// Make the URL and credentials valid for the Docker container,
-	// not the host. See the doc for containerAddrForHost for more
-	// information.
-	host, cloneURL, err = containerAddrForHost(cloneURL)
-	if err != nil {
-		return
-	}
-	if netrc != nil {
-		netrc.Machine = host
-	}
-
-	return
 }
 
 // getHostNetrcEntry creates a netrc entry that authorizes access to
 // the Sourcegraph server.
-func getHostNetrcEntry(ctx context.Context) (*plugin.NetrcEntry, error) {
-	containerAppURL, err := getContainerAppURL(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func getHostNetrcEntry(ctx context.Context, host string) (*plugin.NetrcEntry, error) {
 	token := client.Credentials.GetAccessToken()
 	if token == "" {
 		return nil, errors.New("can't generate local netrc entry: token is empty")
-	}
-	host, _, err := containerAddrForHost(containerAppURL.String())
-	if err != nil {
-		return nil, err
 	}
 	return &plugin.NetrcEntry{
 		Machine:  host,
@@ -315,63 +239,18 @@ func getHostNetrcEntry(ctx context.Context) (*plugin.NetrcEntry, error) {
 	}, nil
 }
 
-// parseURLOrGitSSHURL parses a URL and handles Git SSH URLs like
-// "user@host:path/to/repo.git".
+// parseCloneURL parses any valid HTTP or SSH git repo URL and normalizes it
+// to a normal URL. For example:
 //
-// TODO(native-ci): Use https://github.com/whilp/git-urls, but ask the
-// person to add a license.
-func parseURLOrGitSSHURL(urlStr string) (*url.URL, error) {
-	u, err := url.Parse(urlStr)
-	if err != nil {
-		return nil, err
+// git@github.com:sourcegraph/srclib.git --> ssh://git@github.com/sourcegraph/srclib.git
+func parseCloneURL(repo *sourcegraph.Repo) (*url.URL, error) {
+	if repo.HTTPCloneURL != "" {
+		return giturls.Parse(repo.HTTPCloneURL)
+	} else if repo.SSHCloneURL != "" {
+		return giturls.Parse(repo.SSHCloneURL)
+	} else {
+		return nil, errors.New("Must provide either an HTTP(S) or SSH clone URL")
 	}
-	if u.Host != "" {
-		return u, nil
-	}
-
-	cleanPath := func(p string) string {
-		p = path.Clean(p)
-		if !strings.HasPrefix(p, "/") {
-			p = "/" + p
-		}
-		return p
-	}
-
-	// Special-case Git URLs of the form "host:/path".
-	if u.Scheme != "" && u.Opaque == "" && u.Path != "" {
-		u.Host = u.Scheme
-		u.Scheme = "git+ssh"
-		return u, nil
-	}
-
-	// Special-case Git URLs of the form "host:path".
-	if u.Scheme != "" && u.Opaque != "" && u.Path == "" {
-		u.Host = u.Scheme
-		u.Path = cleanPath(u.Opaque)
-		u.Scheme = "git+ssh"
-		u.Opaque = ""
-		return u, nil
-	}
-
-	// Special-case Git URLs of the form "user@host:path".
-	parts := strings.SplitN(u.Path, ":", 2)
-	if len(parts) != 2 || parts[1] == "" {
-		return nil, &url.Error{Op: "Parse(Git)", URL: urlStr, Err: errors.New("no path (follows host then ':')")}
-	}
-	return url.Parse("git+ssh://" + parts[0] + cleanPath(parts[1]))
-}
-
-// urlHostNoPort returns the host in the given URL string, without the port.
-func urlHostNoPort(urlStr string) (string, error) {
-	u, err := parseURLOrGitSSHURL(urlStr)
-	if err != nil {
-		return "", err
-	}
-	if host, _, _ := net.SplitHostPort(u.Host); host != "" {
-		// Remove ":port".
-		u.Host = host
-	}
-	return u.Host, nil
 }
 
 // droneRepoLink determines the link to tell Drone.
@@ -387,12 +266,7 @@ func urlHostNoPort(urlStr string) (string, error) {
 //
 // TODO(native-ci): Handle the case when cloneURL is a git URL like
 // "user@host:path/to/repo.git".
-func droneRepoLink(cloneURL string) (string, error) {
-	u, err := parseURLOrGitSSHURL(cloneURL)
-	if err != nil {
-		return "", err
-	}
-
+func droneRepoLink(u url.URL) (string, error) {
 	// Clean path.
 	u.Path = path.Clean(u.Path)
 	u.Path = strings.TrimPrefix(u.Path, "/")
@@ -418,36 +292,20 @@ func droneRepoLink(cloneURL string) (string, error) {
 // just use the IP address of the docker0 network interface. In some
 // cases it may be impossible to solve; for example, if your
 // Sourcegraph server is firewalled off from the Docker containers.
-func containerAddrForHost(hostURL string) (hostname, containerURL string, err error) {
-	origHost, err := urlHostNoPort(hostURL)
+func containerAddrForHost(u url.URL) (string, *url.URL, error) {
+	containerHostname, err := dockerutil.ContainerHost()
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
-	if origHost == "localhost" {
-		u, err := parseURLOrGitSSHURL(hostURL)
+	u.Host = strings.Replace(u.Host, "localhost", containerHostname, 1)
+	hostname := u.Host
+	if strings.Contains(u.Host, ":") {
+		var err error
+		hostname, _, err = net.SplitHostPort(hostname)
 		if err != nil {
-			return "", "", err
+			return "", nil, err
 		}
-
-		containerHostname, err := dockerutil.ContainerHost()
-		if err != nil {
-			return "", "", err
-		}
-
-		u.Host = strings.Replace(u.Host, origHost, containerHostname, 1)
-		containerURL = u.String()
-		hostname, err = urlHostNoPort(containerURL)
-		if err != nil {
-			return "", "", err
-		}
-	} else {
-		hostname = origHost
-		u, err := parseURLOrGitSSHURL(hostURL)
-		if err != nil {
-			return "", "", err
-		}
-		containerURL = u.String()
 	}
-	return
+	return hostname, &u, nil
 }
