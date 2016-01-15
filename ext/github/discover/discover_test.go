@@ -1,4 +1,4 @@
-package github
+package discover
 
 import (
 	"reflect"
@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
+	feddiscover "src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -20,7 +20,7 @@ func TestDiscoverRepoLocal_found(t *testing.T) {
 
 	fed.Config.IsRoot = true
 
-	info, err := discover.Repo(context.Background(), "github.com/o/r")
+	info, err := feddiscover.Repo(context.Background(), "github.com/o/r")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestDiscoverRepoLocalGHE_found(t *testing.T) {
 		githubcli.Config.GitHubHost = "github.com"
 	}()
 
-	info, err := discover.Repo(context.Background(), "myghe.com/o/r")
+	info, err := feddiscover.Repo(context.Background(), "myghe.com/o/r")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestDiscoverRepoRemote_found(t *testing.T) {
 	fed.Config.IsRoot = false
 	fed.Config.RootURLStr = "https://demo-mothership:13080"
 
-	info, err := discover.Repo(context.Background(), "github.com/o/r")
+	info, err := feddiscover.Repo(context.Background(), "github.com/o/r")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,10 +108,10 @@ func TestDiscover_notFound(t *testing.T) {
 	// Empty out RepoFuncs to avoid falling back to HTTP discovery
 	// (which hits the network and makes this test slower
 	// unnecessarily).
-	discover.RepoFuncs = nil
+	feddiscover.RepoFuncs = nil
 
-	_, err := discover.Repo(context.Background(), "example.com/foo/bar")
-	if !discover.IsNotFound(err) {
+	_, err := feddiscover.Repo(context.Background(), "example.com/foo/bar")
+	if !feddiscover.IsNotFound(err) {
 		t.Fatalf("got err == %v, want *discover.NotFoundError", err)
 	}
 }

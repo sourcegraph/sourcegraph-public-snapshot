@@ -1,4 +1,4 @@
-package github
+package discover
 
 import (
 	"errors"
@@ -7,16 +7,17 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
+	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
+	feddiscover "src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func init() {
-	discover.QuickRepoFuncs = append(discover.QuickRepoFuncs, discoverRepo)
+	feddiscover.QuickRepoFuncs = append(feddiscover.QuickRepoFuncs, discoverRepo)
 }
 
 // discoverRepo implements the discovery process for a repo that might
@@ -42,7 +43,7 @@ type discoveryInfo struct {
 func (i *discoveryInfo) NewContext(ctx context.Context) (context.Context, error) {
 	if i.host != "github.com" && githubcli.Config.IsGitHubEnterprise() {
 		log15.Debug("Serving GitHub Enterprise repo request locally")
-		ctx = store.WithRepos(ctx, &Repos{})
+		ctx = store.WithRepos(ctx, &github.Repos{})
 		return svc.WithServices(ctx, local.Services), nil
 	}
 	if !fed.Config.IsRoot {
@@ -53,7 +54,7 @@ func (i *discoveryInfo) NewContext(ctx context.Context) (context.Context, error)
 		return fed.Config.NewRemoteContext(ctx), nil
 	} else {
 		log15.Debug("Serving GitHub repo request locally")
-		ctx = store.WithRepos(ctx, &Repos{})
+		ctx = store.WithRepos(ctx, &github.Repos{})
 		return svc.WithServices(ctx, local.Services), nil
 	}
 }
