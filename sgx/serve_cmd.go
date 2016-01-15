@@ -580,6 +580,24 @@ func (c *ServeCmd) Execute(args []string) error {
 		serveHTTP(l, &srv, c.HTTPSAddr, true)
 	}
 
+	// Start SSH git server.
+	if c.SSHAddr != "" {
+		privateSigner, err := ssh.NewSignerFromKey(idKey.Private())
+		if err != nil {
+			return err
+		}
+		// create a context with regular (non self-signed) tokens that
+		// are valid on the federation root server.
+		ctx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:sshgit"})
+		if err != nil {
+			return err
+		}
+		err = (&sshgit.Server{}).ListenAndStart(ctx, c.SSHAddr, privateSigner, idKey.ID)
+		if err != nil {
+			return err
+		}
+	}
+
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
 
 	// Start background repo updater worker.
@@ -598,24 +616,6 @@ func (c *ServeCmd) Execute(args []string) error {
 			log.Fatalf("Could not connect to LDAP server: %v", err)
 		} else {
 			log15.Info("Connection to LDAP server successful")
-		}
-	}
-
-	// Start SSH git server.
-	if c.SSHAddr != "" {
-		privateSigner, err := ssh.NewSignerFromKey(idKey.Private())
-		if err != nil {
-			return err
-		}
-		// create a context with regular (non self-signed) tokens that
-		// are valid on the federation root server.
-		ctx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:sshgit"})
-		if err != nil {
-			return err
-		}
-		err = (&sshgit.Server{}).ListenAndStart(ctx, c.SSHAddr, privateSigner, idKey.ID)
-		if err != nil {
-			return err
 		}
 	}
 
