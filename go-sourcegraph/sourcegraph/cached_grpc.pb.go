@@ -2509,6 +2509,32 @@ func (s *CachedReposClient) GetInventory(ctx context.Context, in *RepoRevSpec, o
 	return result, nil
 }
 
+func (s *CachedReposClient) GetPrivateGitHubRepos(ctx context.Context, in *GitHubRepoRequest, opts ...grpc.CallOption) (*GitHubRepoData, error) {
+	if s.Cache != nil {
+		var cachedResult GitHubRepoData
+		cached, err := s.Cache.Get(ctx, "Repos.GetPrivateGitHubRepos", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.ReposClient.GetPrivateGitHubRepos(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Repos.GetPrivateGitHubRepos", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 type CachedSearchClient struct {
 	SearchClient
 	Cache *grpccache.Cache

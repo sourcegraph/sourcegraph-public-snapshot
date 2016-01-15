@@ -108,6 +108,7 @@ type ReposClient struct {
 	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(ctx context.Context, in *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	GetPrivateGitHubRepos_       func(ctx context.Context, in *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error)
 }
 
 func (s *ReposClient) Get(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -170,6 +171,10 @@ func (s *ReposClient) GetInventory(ctx context.Context, in *sourcegraph.RepoRevS
 	return s.GetInventory_(ctx, in)
 }
 
+func (s *ReposClient) GetPrivateGitHubRepos(ctx context.Context, in *sourcegraph.GitHubRepoRequest, opts ...grpc.CallOption) (*sourcegraph.GitHubRepoData, error) {
+	return s.GetPrivateGitHubRepos_(ctx, in)
+}
+
 var _ sourcegraph.ReposClient = (*ReposClient)(nil)
 
 type ReposServer struct {
@@ -188,6 +193,7 @@ type ReposServer struct {
 	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	GetPrivateGitHubRepos_       func(v0 context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error)
 }
 
 func (s *ReposServer) Get(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
@@ -248,6 +254,10 @@ func (s *ReposServer) ConfigureApp(v0 context.Context, v1 *sourcegraph.RepoConfi
 
 func (s *ReposServer) GetInventory(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
 	return s.GetInventory_(v0, v1)
+}
+
+func (s *ReposServer) GetPrivateGitHubRepos(v0 context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
+	return s.GetPrivateGitHubRepos_(v0, v1)
 }
 
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)

@@ -827,6 +827,14 @@ func (s remoteRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevSp
 	return c.Repos.GetInventory(ctx, v1)
 }
 
+func (s remoteRepos) GetPrivateGitHubRepos(ctx context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.Repos.GetPrivateGitHubRepos(ctx, v1)
+}
+
 type remoteSearch struct{ sourcegraph.SearchServer }
 
 func (s remoteSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {

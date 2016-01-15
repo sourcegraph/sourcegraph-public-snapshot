@@ -2709,6 +2709,28 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 	return
 }
 
+func (s wrappedRepos) GetPrivateGitHubRepos(ctx context.Context, param *sourcegraph.GitHubRepoRequest) (res *sourcegraph.GitHubRepoData, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "GetPrivateGitHubRepos", param)
+	defer func() {
+		trace.After(ctx, "Repos", "GetPrivateGitHubRepos", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Repos.GetPrivateGitHubRepos")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Repos
+
+	res, err = target.GetPrivateGitHubRepos(ctx, param)
+
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.GetPrivateGitHubRepos returned nil, nil")
+	}
+	return
+}
+
 type wrappedSearch struct {
 	c *auth.Config
 }
