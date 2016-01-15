@@ -598,6 +598,10 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 	}
 
+	// Connection test
+	c.checkReachability()
+	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
+
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
 
 	// Start background repo updater worker.
@@ -636,11 +640,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Occasionally send metrics and usage stats upstream via GraphUplink
 	go c.graphUplink(clientCtx)
-
-	// Connection test
-	c.checkReachability()
-
-	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	// Prepare for initial onboarding.
 	if createdIDKey && !c.NoInitialOnboarding {
