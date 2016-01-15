@@ -922,6 +922,9 @@ func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFu
 	h.Director = func(r *http.Request) {
 		origDirector(r)
 		r.Host = "github.com"
+		if strings.HasPrefix(r.URL.Path, "/github.com/") {
+			r.URL.Path = r.URL.Path[len("/github.com"):]
+		}
 	}
 	h.ServeHTTP(w, r)
 }
