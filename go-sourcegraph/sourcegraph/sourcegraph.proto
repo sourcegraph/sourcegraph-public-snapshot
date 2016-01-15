@@ -1848,6 +1848,14 @@ service Auth {
 			get: "/auth/identify"
 		};
 	};
+
+	// GetExternalToken returns a stored token that authorizes this server
+	// to an external service on behalf of the user.
+	rpc GetExternalToken(ExternalTokenRequest) returns (ExternalToken);
+
+	// SetExternalToken stores a token that authorizes this server
+	// to an external service on behalf of the user.
+	rpc SetExternalToken(ExternalToken) returns (pbtypes.Void);
 }
 
 // SSHPublicKey that users to authenticate with for SSH git access.
@@ -1970,6 +1978,41 @@ message AuthInfo {
 	// Scopes represent the permissions granted to the authenticated
 	// user (if any).
 	repeated string Scopes = 7;
+}
+
+// ExternalTokenRequest specifies a request for a stored auth token
+// of a user for an external host.
+message ExternalTokenRequest {
+	// UID is the UID of the user whose token is requested.
+	int32 uid = 1 [(gogoproto.customname) = "UID"];
+
+	// Host is the external service whose token is requested.
+	string host = 2;
+
+	// ClientID is the application client ID this token was granted
+	// to. The same client ID must be used when using this access
+	// token.
+	string client_id = 3 [(gogoproto.customname) = "ClientID"];
+}
+
+// ExternalToken specifies an auth token of a user for an external host.
+message ExternalToken {
+	// UID is the UID of the user authorized by the token.
+	int32 uid = 1 [(gogoproto.customname) = "UID"];
+
+	// Host is the external service which granted the token.
+	string host = 2;
+
+	// Token is the auth token authorizing a user on an external service.
+	string token = 3;
+
+	// Scope lists the permissions the token is entitled to.
+	string scope = 4;
+
+	// ClientID is the application client ID this token was granted
+	// to. The same client ID must be used when using this access
+	// token.
+	string client_id = 5 [(gogoproto.customname) = "ClientID"];
 }
 
 message AuthorshipInfo {

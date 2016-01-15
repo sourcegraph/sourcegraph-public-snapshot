@@ -126,6 +126,8 @@
 		AccessTokenRequest
 		AccessTokenResponse
 		AuthInfo
+		ExternalTokenRequest
+		ExternalToken
 		AuthorshipInfo
 		Def
 		DefAuthor
@@ -2132,6 +2134,43 @@ type AuthInfo struct {
 func (m *AuthInfo) Reset()         { *m = AuthInfo{} }
 func (m *AuthInfo) String() string { return proto.CompactTextString(m) }
 func (*AuthInfo) ProtoMessage()    {}
+
+// ExternalTokenRequest specifies a request for a stored auth token
+// of a user for an external host.
+type ExternalTokenRequest struct {
+	// UID is the UID of the user whose token is requested.
+	UID int32 `protobuf:"varint,1,opt,name=uid,proto3" json:",omitempty"`
+	// Host is the external service whose token is requested.
+	Host string `protobuf:"bytes,2,opt,name=host,proto3" json:",omitempty"`
+	// ClientID is the application client ID this token was granted
+	// to. The same client ID must be used when using this access
+	// token.
+	ClientID string `protobuf:"bytes,3,opt,name=client_id,proto3" json:",omitempty"`
+}
+
+func (m *ExternalTokenRequest) Reset()         { *m = ExternalTokenRequest{} }
+func (m *ExternalTokenRequest) String() string { return proto.CompactTextString(m) }
+func (*ExternalTokenRequest) ProtoMessage()    {}
+
+// ExternalToken specifies an auth token of a user for an external host.
+type ExternalToken struct {
+	// UID is the UID of the user authorized by the token.
+	UID int32 `protobuf:"varint,1,opt,name=uid,proto3" json:",omitempty"`
+	// Host is the external service which granted the token.
+	Host string `protobuf:"bytes,2,opt,name=host,proto3" json:",omitempty"`
+	// Token is the auth token authorizing a user on an external service.
+	Token string `protobuf:"bytes,3,opt,name=token,proto3" json:",omitempty"`
+	// Scope lists the permissions the token is entitled to.
+	Scope string `protobuf:"bytes,4,opt,name=scope,proto3" json:",omitempty"`
+	// ClientID is the application client ID this token was granted
+	// to. The same client ID must be used when using this access
+	// token.
+	ClientID string `protobuf:"bytes,5,opt,name=client_id,proto3" json:",omitempty"`
+}
+
+func (m *ExternalToken) Reset()         { *m = ExternalToken{} }
+func (m *ExternalToken) String() string { return proto.CompactTextString(m) }
+func (*ExternalToken) ProtoMessage()    {}
 
 type AuthorshipInfo struct {
 	AuthorEmail    string            `protobuf:"bytes,1,opt,name=AuthorEmail,proto3" json:"AuthorEmail,omitempty"`
@@ -6006,6 +6045,12 @@ type AuthClient interface {
 	// Identify describes the currently authenticated user and/or
 	// client (if any). It is akin to "whoami".
 	Identify(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AuthInfo, error)
+	// GetExternalToken returns a stored token that authorizes this server
+	// to an external service on behalf of the user.
+	GetExternalToken(ctx context.Context, in *ExternalTokenRequest, opts ...grpc.CallOption) (*ExternalToken, error)
+	// SetExternalToken stores a token that authorizes this server
+	// to an external service on behalf of the user.
+	SetExternalToken(ctx context.Context, in *ExternalToken, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
 
 type authClient struct {
@@ -6043,6 +6088,24 @@ func (c *authClient) Identify(ctx context.Context, in *pbtypes1.Void, opts ...gr
 	return out, nil
 }
 
+func (c *authClient) GetExternalToken(ctx context.Context, in *ExternalTokenRequest, opts ...grpc.CallOption) (*ExternalToken, error) {
+	out := new(ExternalToken)
+	err := grpc.Invoke(ctx, "/sourcegraph.Auth/GetExternalToken", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) SetExternalToken(ctx context.Context, in *ExternalToken, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.Auth/SetExternalToken", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Auth service
 
 type AuthServer interface {
@@ -6068,6 +6131,12 @@ type AuthServer interface {
 	// Identify describes the currently authenticated user and/or
 	// client (if any). It is akin to "whoami".
 	Identify(context.Context, *pbtypes1.Void) (*AuthInfo, error)
+	// GetExternalToken returns a stored token that authorizes this server
+	// to an external service on behalf of the user.
+	GetExternalToken(context.Context, *ExternalTokenRequest) (*ExternalToken, error)
+	// SetExternalToken stores a token that authorizes this server
+	// to an external service on behalf of the user.
+	SetExternalToken(context.Context, *ExternalToken) (*pbtypes1.Void, error)
 }
 
 func RegisterAuthServer(s *grpc.Server, srv AuthServer) {
@@ -6110,6 +6179,30 @@ func _Auth_Identify_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return out, nil
 }
 
+func _Auth_GetExternalToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ExternalTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AuthServer).GetExternalToken(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Auth_SetExternalToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ExternalToken)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AuthServer).SetExternalToken(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Auth_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Auth",
 	HandlerType: (*AuthServer)(nil),
@@ -6125,6 +6218,14 @@ var _Auth_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Identify",
 			Handler:    _Auth_Identify_Handler,
+		},
+		{
+			MethodName: "GetExternalToken",
+			Handler:    _Auth_GetExternalToken_Handler,
+		},
+		{
+			MethodName: "SetExternalToken",
+			Handler:    _Auth_SetExternalToken_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -12628,6 +12729,88 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *ExternalTokenRequest) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *ExternalTokenRequest) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.UID != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.UID))
+	}
+	if len(m.Host) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Host)))
+		i += copy(data[i:], m.Host)
+	}
+	if len(m.ClientID) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientID)))
+		i += copy(data[i:], m.ClientID)
+	}
+	return i, nil
+}
+
+func (m *ExternalToken) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *ExternalToken) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.UID != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.UID))
+	}
+	if len(m.Host) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Host)))
+		i += copy(data[i:], m.Host)
+	}
+	if len(m.Token) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
+	if len(m.Scope) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Scope)))
+		i += copy(data[i:], m.Scope)
+	}
+	if len(m.ClientID) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientID)))
+		i += copy(data[i:], m.ClientID)
+	}
+	return i, nil
+}
+
 func (m *AuthorshipInfo) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -18719,6 +18902,48 @@ func (m *AuthInfo) Size() (n int) {
 			l = len(s)
 			n += 1 + l + sovSourcegraph(uint64(l))
 		}
+	}
+	return n
+}
+
+func (m *ExternalTokenRequest) Size() (n int) {
+	var l int
+	_ = l
+	if m.UID != 0 {
+		n += 1 + sovSourcegraph(uint64(m.UID))
+	}
+	l = len(m.Host)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.ClientID)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	return n
+}
+
+func (m *ExternalToken) Size() (n int) {
+	var l int
+	_ = l
+	if m.UID != 0 {
+		n += 1 + sovSourcegraph(uint64(m.UID))
+	}
+	l = len(m.Host)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.Scope)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.ClientID)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	return n
 }
@@ -36587,6 +36812,318 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Scopes = append(m.Scopes, string(data[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExternalTokenRequest) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExternalTokenRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExternalTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)
+			}
+			m.UID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.UID |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Host = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClientID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClientID = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExternalToken) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExternalToken: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExternalToken: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)
+			}
+			m.UID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.UID |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Host = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scope", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Scope = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClientID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClientID = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

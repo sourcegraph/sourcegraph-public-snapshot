@@ -344,6 +344,58 @@ func (s *CachedAuthClient) Identify(ctx context.Context, in *pbtypes.Void, opts 
 	return result, nil
 }
 
+func (s *CachedAuthClient) GetExternalToken(ctx context.Context, in *ExternalTokenRequest, opts ...grpc.CallOption) (*ExternalToken, error) {
+	if s.Cache != nil {
+		var cachedResult ExternalToken
+		cached, err := s.Cache.Get(ctx, "Auth.GetExternalToken", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.AuthClient.GetExternalToken(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Auth.GetExternalToken", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *CachedAuthClient) SetExternalToken(ctx context.Context, in *ExternalToken, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	if s.Cache != nil {
+		var cachedResult pbtypes.Void
+		cached, err := s.Cache.Get(ctx, "Auth.SetExternalToken", in, &cachedResult)
+		if err != nil {
+			return nil, err
+		}
+		if cached {
+			return &cachedResult, nil
+		}
+	}
+
+	var trailer metadata.MD
+
+	result, err := s.AuthClient.SetExternalToken(ctx, in, grpc.Trailer(&trailer))
+	if err != nil {
+		return nil, err
+	}
+	if s.Cache != nil {
+		if err := s.Cache.Store(ctx, "Auth.SetExternalToken", in, result, trailer); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 type CachedBuildsClient struct {
 	BuildsClient
 	Cache *grpccache.Cache

@@ -149,6 +149,22 @@ func (s remoteAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegrap
 	return c.Auth.Identify(ctx, v1)
 }
 
+func (s remoteAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.Auth.GetExternalToken(ctx, v1)
+}
+
+func (s remoteAuth) SetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalToken) (*pbtypes.Void, error) {
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.Auth.SetExternalToken(ctx, v1)
+}
+
 type remoteBuilds struct{ sourcegraph.BuildsServer }
 
 func (s remoteBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
