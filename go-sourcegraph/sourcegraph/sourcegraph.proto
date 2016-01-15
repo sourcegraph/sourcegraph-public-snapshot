@@ -20,127 +20,127 @@ option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
 message Badge {
-	string name = 1;
-	string description = 2;
-	string image_url = 3 [(gogoproto.customname) = "ImageURL"];
-	string uncounted_image_url = 4 [(gogoproto.customname) = "UncountedImageURL"];
-	string markdown = 5;
+	string Name = 1;
+	string Description = 2;
+	string ImageURL = 3;
+	string UncountedImageURL = 4;
+	string Markdown = 5;
 }
 
 // CombinedStatus is the combined status (i.e., incorporating statuses from all
 // contexts) of the repository at a specific rev.
 message CombinedStatus {
 	// Rev is the revision that this status describes. It is set mutually exclusive with CommitID.
-	string rev = 4;
+	string Rev = 4;
 
 	// CommitID is the full commit ID of the commit this status describes. It is set mutually exclusively with Rev.
-	string commit_id = 1 [(gogoproto.customname) = "CommitID"];
+	string CommitID = 1;
 
 	// State is the combined status of the repository. Possible values are: failure,
 	// pending, or success.
-	string state = 2;
+	string State = 2;
 
 	// Statuses are the statuses for each context.
-	repeated RepoStatus statuses = 3;
+	repeated RepoStatus Statuses = 3;
 }
 
 message Counter {
-	string name = 1;
-	string description = 2;
-	string image_url = 3 [(gogoproto.customname) = "ImageURL"];
-	string uncounted_image_url = 4 [(gogoproto.customname) = "UncountedImageURL"];
-	string markdown = 5;
+	string Name = 1;
+	string Description = 2;
+	string ImageURL = 3;
+	string UncountedImageURL = 4;
+	string Markdown = 5;
 }
 
 // ListOptions specifies general pagination options for fetching a list of results.
 message ListOptions {
-	int32 per_page = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	int32 page = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 PerPage = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 Page = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // ListResponse specifies a general paginated response when fetching a list of results.
 message ListResponse {
 	// Total is the total number of results in the list.
-	int32 total = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 Total = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // StreamResponse specifies a paginated response where the total number of results
 // that can be returned is too expensive to compute, unbounded, or unknown.
 message StreamResponse {
 	// HasMore is true if there are more results available after the returned page.
-	bool has_more = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool HasMore = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // Changeset stores information about a changeset.
 message Changeset {
 	// ID is the unique identifier for this changeset, relative to the repository
 	// that contains it.
-	int64 id = 1 [(gogoproto.customname) = "ID"];
+	int64 ID = 1;
 
 	// Title holds a summary about this changeset.
-	string title = 2;
+	string Title = 2;
 
 	// Description holds the description for this changeset.
-	string description = 3;
+	string Description = 3;
 
 	// Author is the user that initiated this changeset.
-	UserSpec author = 4 [(gogoproto.nullable) = false];
+	UserSpec Author = 4 [(gogoproto.nullable) = false];
 
 	// DeltaSpec contains information about the base and head spec for this
 	// changeset.
-	DeltaSpec delta_spec = 5 [(gogoproto.nullable) = true];
+	DeltaSpec DeltaSpec = 5 [(gogoproto.nullable) = true];
 
 	// Merged specifies whether this changeset was merged.
-	bool merged = 6;
+	bool Merged = 6;
 
 	// CreatedAt holds the creation time of this changeset.
-	pbtypes.Timestamp created_at = 7;
+	pbtypes.Timestamp CreatedAt = 7;
 
 	// ClosedAt holds the time when this changeset was closed or merged.
-	pbtypes.Timestamp closed_at = 8;
+	pbtypes.Timestamp ClosedAt = 8;
 }
 
 // ChangesetReview contains information about a review submitted on a changeset.
 message ChangesetReview {
 	// ID holds the unique identifier (with reference to the changeset) of the
 	// review.
-	int64 id = 1 [(gogoproto.customname) = "ID"];
+	int64 ID = 1;
 
 	// Body holds the text description of the review.
-	string body = 2;
+	string Body = 2;
 
 	// Author is the spec of the user that submitted this review.
-	UserSpec author = 3 [(gogoproto.nullable) = false];
+	UserSpec Author = 3 [(gogoproto.nullable) = false];
 
 	// CreatedAt is the date at which this review was submitted.
-	pbtypes.Timestamp created_at = 4;
+	pbtypes.Timestamp CreatedAt = 4;
 
 	// EditedAt is the last time at which this review was edited. If the review
 	// has never been edited, this value will be nil.
-	pbtypes.Timestamp edited_at = 5;
+	pbtypes.Timestamp EditedAt = 5;
 
 	// Comments holds any inline comments that were submitted along with this
 	// review.
-	repeated InlineComment comments = 6 [(gogoproto.nullable) = true];
+	repeated InlineComment Comments = 6 [(gogoproto.nullable) = true];
 
 	// Deleted specifies whether this review has been removed.
-	bool deleted = 7;
+	bool Deleted = 7;
 }
 
 // ChangesetEvent holds information about an update that occurred on the
 // properties of a Changeset.
 message ChangesetEvent {
 	// Before holds the changeset as it was before the event.
-	Changeset before = 2 [(gogoproto.nullable) = true];
+	Changeset Before = 2 [(gogoproto.nullable) = true];
 
 	// After holds the changeset as it became after the event.
-	Changeset after = 3 [(gogoproto.nullable) = true];
+	Changeset After = 3 [(gogoproto.nullable) = true];
 
 	// Op holds the update operation that changed the state.
-	ChangesetUpdateOp op = 4;
+	ChangesetUpdateOp Op = 4;
 
 	// CreatedAt is the date at which the event was created.
-	pbtypes.Timestamp created_at = 5;
+	pbtypes.Timestamp CreatedAt = 5;
 }
 
 // InlineComment represents a comment made on a line of code. It is uniquely identified
@@ -151,46 +151,46 @@ message ChangesetEvent {
 // For more information on indexes see http://git-scm.com/docs/git-diff-index
 message InlineComment {
 	// Filename is the name of the file where this comment was made.
-	string filename = 1;
+	string Filename = 1;
 
 	// LineNumber is the line number relative to the beginning of the file in
 	// the specified commit.
-	int32 line_number = 2;
+	int32 LineNumber = 2;
 
 	// CommitID is the SHA-1 for the post-image of this file, where the comment
 	// was placed. The post-image can be deduced from the file entry in the diff
 	// that it belong by extracting it's extended header's index entry.
-	string commit_id = 3 [(gogoproto.customname) = "CommitID"];
+	string CommitID = 3;
 
 	// Author is the user that initiated this changeset.
-	UserSpec author = 4 [(gogoproto.nullable) = false];
+	UserSpec Author = 4 [(gogoproto.nullable) = false];
 
 	// Body holds the body of this comment.
-	string body = 5;
+	string Body = 5;
 
 	// CreatedAt holds the creation date of this comment.
-	pbtypes.Timestamp created_at = 6;
+	pbtypes.Timestamp CreatedAt = 6;
 
 	// EditedAt holds the time when this comment was last edited. If no edits occurred,
 	// it will be null.
-	pbtypes.Timestamp edited_at = 7;
+	pbtypes.Timestamp EditedAt = 7;
 
 	// Deleted indicates whether the comment has been deleted.
-	bool deleted = 8;
+	bool Deleted = 8;
 }
 
 // A Readme represents a formatted "README"-type file in a repository.
 message Readme {
 	// Path is the relative path of this readme file from the repository root.
-	string path = 1;
+	string Path = 1;
 
 	// HTML is the formatted HTML of this readme.
-	string html = 2 [(gogoproto.customname) = "HTML"];
+	string HTML = 2;
 }
 
 // GitHubRepo holds additional metadata about GitHub repos.
 message GitHubRepo {
-	int32 stars = 1;
+	int32 Stars = 1;
 }
 
 // RepoConfig describes a repository's config. This config is
@@ -198,128 +198,128 @@ message GitHubRepo {
 message RepoConfig {
 	// Apps is a list of app IDs denoting the applications that are
 	// enabled for this repository.
-	repeated string apps = 1;
+	repeated string Apps = 1;
 }
 
 // Repo represents a source code repository.
 message Repo {
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
-	string uri = 1 [(gogoproto.customname) = "URI"];
+	string URI = 1;
 
 	// Origin is populated for repos fetched via federation or
 	// discovery. It is the hostname of the host that owns the repo.
-	string origin = 21;
+	string Origin = 21;
 
 	// Name is the base name (the final path component) of the repository, typically
 	// the name of the directory that the repository would be cloned into. (For
 	// example, for git://example.com/foo.git, the name is "foo".)
-	string name = 2;
+	string Name = 2;
 
 	// Description is a brief description of the repository.
-	string description = 3;
+	string Description = 3;
 
 	// VCS is the short name of the VCS system that this repository uses: "git" or
 	// "hg".
-	string vcs = 4 [(gogoproto.customname) = "VCS"];
+	string VCS = 4;
 
 	// HTTPCloneURL is the HTTPS clone URL of the repository (or the HTTP clone URL, if
 	// no HTTPS clone URL is available).
-	string http_clone_url = 5 [(gogoproto.customname) = "HTTPCloneURL"];
+	string HTTPCloneURL = 5;
 
 	// SSHCloneURL is the SSH clone URL if the repository, if any.
-	string ssh_clone_url = 6 [(gogoproto.customname) = "SSHCloneURL"];
+	string SSHCloneURL = 6;
 
 	// HomepageURL is the URL to the repository's homepage, if any.
-	string homepage_url = 7 [(gogoproto.customname) = "HomepageURL"];
+	string HomepageURL = 7;
 
 	// HTMLURL is the URL to the repository's main page on the
 	// Sourcegraph server.
-	string html_url = 22 [(gogoproto.customname) = "HTMLURL"];
+	string HTMLURL = 22;
 
 	// DefaultBranch is the default VCS branch used (typically "master" for git
 	// repositories and "default" for hg repositories).
-	string default_branch = 8;
+	string DefaultBranch = 8;
 
 	// Language is the primary programming language used in this repository.
-	string language = 9;
+	string Language = 9;
 
 	// Blocked is whether this repo has been blocked by an admin (and
 	// will not be returned via the external API).
-	bool blocked = 10;
+	bool Blocked = 10;
 
 	// Deprecated repositories are labeled as such and hidden from global search
 	// results.
-	bool deprecated = 11;
+	bool Deprecated = 11;
 
 	// Fork is whether this repository is a fork.
-	bool fork = 12;
+	bool Fork = 12;
 
 	// Mirror indicates whether this repo's canonical location is on
 	// another server. Mirror repos track their upstream.
-	bool mirror = 13;
+	bool Mirror = 13;
 
 	// Private is whether this repository is private.
-	bool private = 14;
+	bool Private = 14;
 
 	// CreatedAt is when this repository was created. If it represents an externally
 	// hosted (e.g., GitHub) repository, the creation date is when it was created at
 	// that origin.
-	pbtypes.Timestamp created_at = 15;
+	pbtypes.Timestamp CreatedAt = 15;
 
 	// UpdatedAt is when this repository's metadata was last updated (on its origin if
 	// it's an externally hosted repository).
-	pbtypes.Timestamp updated_at = 16;
+	pbtypes.Timestamp UpdatedAt = 16;
 
 	// PushedAt is when this repository's was last (VCS-)pushed to.
-	pbtypes.Timestamp pushed_at = 17;
+	pbtypes.Timestamp PushedAt = 17;
 
 	// Permissions describes the permissions that the current user (or anonymous users,
 	// if there is no current user) is granted to this repository.
-	RepoPermissions permissions = 18;
+	RepoPermissions Permissions = 18;
 
-	GitHubRepo github = 19 [(gogoproto.customname) = "GitHub"];
+	GitHubRepo GitHub = 19;
 }
 
 message BadgeList {
-	repeated Badge badges = 1;
+	repeated Badge Badges = 1;
 }
 
 message CounterList {
-	repeated Counter counters = 1;
+	repeated Counter Counters = 1;
 }
 
 message RepoBadgesCountHitsOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	pbtypes.Timestamp since = 2;
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp Since = 2;
 }
 
 message RepoBadgesCountHitsResult {
-	int32 hits = 1;
+	int32 Hits = 1;
 }
 
 message RepoListOptions {
-	string name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
-	string query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	repeated string uri_s = 3 [(gogoproto.customname) = "URIs", (gogoproto.moretags) = "url:\",comma,omitempty\""];
-	string sort = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string direction = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool no_fork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions list_options = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated string URIs = 3 [(gogoproto.moretags) = "url:\",comma,omitempty\""];
+	string Sort = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Direction = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool NoFork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // RepoPermissions describes the possible permissions that a user (or an anonymous
 // user) can be granted to a repository.
 message RepoPermissions {
-	bool read = 1;
-	bool write = 2;
-	bool admin = 3;
+	bool Read = 1;
+	bool Write = 2;
+	bool Admin = 3;
 }
 
 // RepoRevSpec specifies a repository at a specific commit (or revision specifier,
@@ -352,14 +352,14 @@ message RepoPermissions {
 // you canonicalize a URL with 'y' but does not default to using the canonical
 // URL).
 message RepoRevSpec {
-	RepoSpec repo_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	string rev = 2;
-	string commit_id = 3 [(gogoproto.customname) = "CommitID"];
+	RepoSpec RepoSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string Rev = 2;
+	string CommitID = 3;
 }
 
 // RepoSpec specifies a repository.
 message RepoSpec {
-	string uri = 1 [(gogoproto.customname) = "URI"];
+	string URI = 1;
 }
 
 // RepoStatus is the status of the repository at a specific rev (in a single
@@ -367,29 +367,29 @@ message RepoSpec {
 message RepoStatus {
 	// State is the current status of the repository. Possible values are: pending,
 	// success, error, or failure.
-	string state = 2;
+	string State = 2;
 
 	// TargetURL is the URL of the page representing this status. It will be linked
 	// from the UI to allow users to see the source of the status.
-	string target_url = 3 [(gogoproto.customname) = "TargetURL"];
+	string TargetURL = 3;
 
 	// Description is a short, high-level summary of the status.
-	string description = 4;
+	string Description = 4;
 
 	// A string label to differentiate this status from the statuses of other systems.
-	string context = 5;
+	string Context = 5;
 
-	pbtypes.Timestamp created_at = 6 [(gogoproto.nullable) = false];
-	pbtypes.Timestamp updated_at = 7 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp CreatedAt = 6 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp UpdatedAt = 7 [(gogoproto.nullable) = false];
 }
 
 message RepoStatusesCreateOp {
-	RepoRevSpec repo = 1 [(gogoproto.nullable) = false];
-	RepoStatus status = 2 [(gogoproto.nullable) = false];
+	RepoRevSpec Repo = 1 [(gogoproto.nullable) = false];
+	RepoStatus Status = 2 [(gogoproto.nullable) = false];
 }
 
 message RepoList {
-	repeated Repo repos = 1;
+	repeated Repo Repos = 1;
 }
 
 
@@ -531,20 +531,20 @@ service Repos {
 
 // SrclibDataVersion specifies a srclib store version.
 message SrclibDataVersion {
-	string commit_id = 1 [(gogoproto.customname) = "CommitID"];
-	int32 commits_behind = 2;
+	string CommitID = 1;
+	int32 CommitsBehind = 2;
 }
 
 message RepoConfigureAppOp {
 	// Repo is the repository whose applications are being configured.
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 
 	// App is the app ID to enable or disable.
-	string app = 2;
+	string App = 2;
 
 	// Enable is true if the app should be enabled and false if it
 	// should be disabled.
-	bool enable = 3;
+	bool Enable = 3;
 }
 
 // StorageBucket represents the location where keys are stored.
@@ -559,53 +559,53 @@ message StorageBucket {
 	// AppName is the name of the application whose data you are trying to
 	// read/write, applications may read and write to each other's data assuming
 	// the admin has not restricted such access.
-	string app_name = 1;
+	string AppName = 1;
 
 	// Repo is the repository URI. If specified storage is considered local to the
 	// repository. Otherwise it is considered "global" (i.e. shared across all
 	// repositories).
-	string repo = 2;
+	string Repo = 2;
 
 	// Name is the bucket name. In filesystem terminology, a bucket is a 'folder'
 	// and an object is a 'file'.
-	string name = 3;
+	string Name = 3;
 }
 
 // StorageKey is a storage object's key.
 message StorageKey {
 	// Bucket is the bucket name.
-	StorageBucket bucket = 3;
+	StorageBucket Bucket = 3;
 
 	// Key is the name of the storage object. In filesystem terminology, this is
 	// the 'filename' and thus must be unique against all other key names in the
 	// bucket.
-	string key = 4;
+	string Key = 4;
 }
 
 // StorageValue is the value of a storage object.
 message StorageValue {
 	// Value is the value of the object.
-	bytes value = 2;
+	bytes Value = 2;
 }
 
 // StoragePutOp is the parameters for putting an object into storage.
 message StoragePutOp {
 	// Key is the key of the object to put into storage.
-	StorageKey key = 1 [(gogoproto.nullable) = false];
+	StorageKey Key = 1 [(gogoproto.nullable) = false];
 
 	// Value is the value of the object.
-	bytes value = 2;
+	bytes Value = 2;
 }
 
 // StorageExists is the result from checking if a storage object exists within
 // a bucket.
 message StorageExists {
-	bool exists = 1;
+	bool Exists = 1;
 }
 
 // StorageList is the result from listing all the keys in a storage bucket.
 message StorageList {
-	repeated string keys = 1;
+	repeated string Keys = 1;
 }
 
 // Storage provides applications with storage mechanisms. It is a simple key /
@@ -705,146 +705,146 @@ service Changesets {
 
 message ReposCreateOp {
 	// URI is the desired URI of the new repository.
-	string uri = 1 [(gogoproto.customname) = "URI"];
+	string URI = 1;
 
 	// VCS is the desired VCS type of the new repository (only "git"
 	// is currently supported).
-	string vcs = 2 [(gogoproto.customname) = "VCS"];
+	string VCS = 2;
 
 	// CloneURL is the clone URL of the repository for mirrored
 	// repositories. If blank, a new hosted repository is created
 	// (i.e., a repo whose origin is on the server). If Mirror is
 	// true, a clone URL must be provided.
-	string clone_url = 3 [(gogoproto.customname) = "CloneURL"];
+	string CloneURL = 3;
 
 	// Mirror is a boolean value indicating whether the newly created
 	// repository should be a mirror. Mirror repositories are
 	// periodically updated to track their upstream (which is
 	// specified using the CloneURL field of this message).
-	bool mirror = 4;
+	bool Mirror = 4;
 
 	// Private is whether this repository is private.
-	bool private = 5;
+	bool Private = 5;
 
 	// Description is the description of the repository.
-	string description = 6;
+	string Description = 6;
 
 	// Language is the primary programming language of the repository.
-	string language = 7;
+	string Language = 7;
 }
 
 // ReposUpdateOp is an operation to update a repository's metadata.
 message ReposUpdateOp {
 	// Repo is the repository to update.
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 
 	// Description is the new description of the repository. If empty,
 	// the description is not changed.
-	string description = 2;
+	string Description = 2;
 
 	// Language is the new primary programming language of the
 	// repository. If empty, the language is not changed.
-	string language = 3;
+	string Language = 3;
 };
 
 message ReposListCommitsOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	RepoListCommitsOptions opt = 2;
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	RepoListCommitsOptions Opt = 2;
 }
 
 message RepoListCommitsOptions {
-	string head = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string base = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	string path = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool refresh_cache = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Head = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Base = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string Path = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool RefreshCache = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 message CommitList {
-	repeated vcs.Commit commits = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated vcs.Commit Commits = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ReposListBranchesOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	RepoListBranchesOptions opt = 2;
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	RepoListBranchesOptions Opt = 2;
 }
 
 message RepoListBranchesOptions {
-	bool include_commit = 4;
-	string behind_ahead_branch = 5;
-	string contains_commit = 6;
-	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	bool IncludeCommit = 4;
+	string BehindAheadBranch = 5;
+	string ContainsCommit = 6;
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message BranchList {
-	repeated vcs.Branch branches = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated vcs.Branch Branches = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ReposListTagsOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	RepoListTagsOptions opt = 2;
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	RepoListTagsOptions Opt = 2;
 }
 
 message ReposListCommittersOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	RepoListCommittersOptions opt = 2;
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	RepoListCommittersOptions Opt = 2;
 }
 
 message RepoListCommittersOptions {
-	string rev = 1;
-	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string Rev = 1;
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message CommitterList {
-	repeated vcs.Committer committers = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated vcs.Committer Committers = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ChangesetCreateOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	Changeset changeset = 2;
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	Changeset Changeset = 2;
 }
 
 message ChangesetCreateReviewOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	int64 changeset_id = 2 [(gogoproto.customname) = "ChangesetID"];
-	ChangesetReview review = 3;
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	int64 ChangesetID = 2;
+	ChangesetReview Review = 3;
 }
 
 message ChangesetListReviewsOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	int64 changeset_id = 2 [(gogoproto.customname) = "ChangesetID"];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	int64 ChangesetID = 2;
 }
 
 message ChangesetSpec {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	int64 id = 2 [(gogoproto.customname) = "ID"];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	int64 ID = 2;
 }
 
 message ChangesetUpdateOp {
 	// Repo holds the RepoSpec where the Changeset to be updated is located.
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 
 	// ID holds the ID of the changeset that is to be updated.
-	int64 id = 2 [(gogoproto.customname) = "ID"];
+	int64 ID = 2;
 
 	// Title, if non-empty, will be set as the new title of the changeset.
-	string title = 3;
+	string Title = 3;
 
 	// Description, if specified, will become the new description of the changeset.
-	string description = 4;
+	string Description = 4;
 
 	// Open, if true, will set the changeset's ClosedAt value to nil.
-	bool open = 5;
+	bool Open = 5;
 
 	// Close, if true, will set the ClosedAt date.
-	bool close = 6;
+	bool Close = 6;
 
 	// Merged, if true, will update the changeset to indicate that it was priorly
 	// merged.
-	bool merged = 7;
+	bool Merged = 7;
 
 	// Author is the user that initiated this event.
 	UserSpec Author = 8 [(gogoproto.nullable) = false];
@@ -852,57 +852,57 @@ message ChangesetUpdateOp {
 
 message ChangesetMergeOp {
 	// Repo holds the RepoSpec where the Changeset to be merged is located.
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 
 	// ID holds the ID of the changeset that is to be merged.
-	int64 id = 2 [(gogoproto.customname) = "ID"];
+	int64 ID = 2;
 
 	// Message is a text template used to generate a message for the commit of
 	// the resulting merge operation. Any of the fields from the changeset are
 	// available to use in the template.
-	string message = 3;
+	string Message = 3;
 
 	// Squash, if true, will squash the commits of the head branch into a
 	// single commit prior to merging.
-	bool squash = 4;
+	bool Squash = 4;
 }
 
 message ChangesetUpdateAffectedOp {
 	// Repo holds the RepoSpec which received a commit.
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 
 	// Branch is the name of the branch which was pushed to.
-	string branch = 2;
+	string Branch = 2;
 
 	// Last is the SHA1 of the last commit on the branch.
-	string last = 3;
+	string Last = 3;
 
 	// Commit is the SHA1 of the tip of the newly pushed commits on the branch.
-	string commit = 4;
+	string Commit = 4;
 
 	// ForcePush is whether or not the branch was force pushed to.
-	bool force_push = 5;
+	bool ForcePush = 5;
 }
 
 message RepoListTagsOptions {
-	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message TagList {
-	repeated vcs.Tag tags = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated vcs.Tag Tags = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message MirrorReposRefreshVCSOp {
 	reserved 2;
 
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 }
 
 // VCSCredentials for authentication during communication with VCS remotes.
 message VCSCredentials {
 	// Pass is the password provided to the VCS.
-	string pass = 1;
+	string Pass = 1;
 }
 
 // MirrorRepos handles operations related to maintaining mirrors on
@@ -939,14 +939,14 @@ service MirroredRepoSSHKeys {
 }
 
 message MirroredRepoSSHKeysCreateOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	SSHPrivateKey key = 2 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	SSHPrivateKey Key = 2 [(gogoproto.nullable) = false];
 }
 
 // An SSHPrivateKey is an SSH key used to access a repository.
 message SSHPrivateKey {
 	// PEM is the encoded key.
-	bytes pem = 2 [(gogoproto.customname) = "PEM"];
+	bytes PEM = 2;
 }
 
 
@@ -976,15 +976,15 @@ message SSHPrivateKey {
 // evolve.
 message Build {
 	// Repo is the URI of the repository this build is for.
-	string repo = 1;
+	string Repo = 1;
 
 	// ID is the numeric ID of the build. It is up to the
 	// implementation to decide whether it is sequential within the
 	// repo or globally unique across all repos.
-	uint64 id = 2 [(gogoproto.customname) = "ID"];
+	uint64 ID = 2;
 
 	// CommitID is the full resolved commit ID to build.
-	string commit_id = 3 [(gogoproto.customname) = "CommitID"];
+	string CommitID = 3;
 
 	// Branch, if set, is the name of the VCS branch on which this
 	// commit was built. Commits may be configured to be built in
@@ -1003,31 +1003,31 @@ message Build {
 	// request a single commit (although this is changing; see
 	// http://stackoverflow.com/a/30701724, but it is still disabled
 	// by default for apparently good reasons).
-	string branch = 14;
+	string Branch = 14;
 
 	// Tag, if set, is the name of the VCS tag associated with this
 	// commit. See Branch for more information. A single commit can
 	// have any number of tags.
-	string tag = 15;
+	string Tag = 15;
 
-	pbtypes.Timestamp created_at = 4 [(gogoproto.nullable) = false];
-	pbtypes.Timestamp started_at = 5;
-	pbtypes.Timestamp ended_at = 6;
-	pbtypes.Timestamp heartbeat_at = 7;
-	bool success = 8;
-	bool failure = 9;
+	pbtypes.Timestamp CreatedAt = 4 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp StartedAt = 5;
+	pbtypes.Timestamp EndedAt = 6;
+	pbtypes.Timestamp HeartbeatAt = 7;
+	bool Success = 8;
+	bool Failure = 9;
 
 	// Killed is true if this build's worker didn't exit on its own accord. It is
 	// generally set when no heartbeat has been received within a certain interval. If
 	// Killed is true, then Failure must also always be set to true. Unqueued builds
 	// are never killed for lack of a heartbeat.
-	bool killed = 10;
+	bool Killed = 10;
 
 	// Host is the hostname of the machine that is working on this build.
-	string host = 11;
+	string Host = 11;
 
-	bool purged = 12;
-	BuildConfig build_config = 13 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	bool Purged = 12;
+	BuildConfig BuildConfig = 13 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // BuildConfig configures a repository build.
@@ -1035,18 +1035,18 @@ message BuildConfig {
 	// Queue is whether this build should be enqueued. If enqueued, any worker may
 	// begin running this build. If not enqueued, it is up to the client to run the
 	// build and update it accordingly.
-	bool queue = 2;
+	bool Queue = 2;
 
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
-	int32 priority = 4;
+	int32 Priority = 4;
 
 	// BuilderConfig is the actual .drone.yml config file that was
 	// used to run this build in CI. It reflects all automatic
 	// additions/changes made by the worker (i.e., it is not
 	// necessarily the same .drone.yml config file as the one in the
 	// repository).
-	string builder_config = 16 [(gogoproto.customname) = "BuilderConfig"];
+	string BuilderConfig = 16;
 }
 
 // BuildGetLogOptions specifies options for build log API methods.
@@ -1056,51 +1056,51 @@ message BuildGetLogOptions {
 	//
 	// To "tail -f" or watch a log for updates, set each subsequent request's MinID to
 	// the MaxID of the previous request.
-	string min_id = 1 [(gogoproto.customname) = "MinID"];
+	string MinID = 1;
 }
 
 message BuildListOptions {
-	bool queued = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool active = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool ended = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool succeeded = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool failed = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool purged = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string repo = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string commit_id = 8 [(gogoproto.customname) = "CommitID", (gogoproto.moretags) = "url:\",omitempty\""];
-	string sort = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string direction = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions list_options = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	bool Queued = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Active = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Ended = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Succeeded = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Failed = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Purged = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Repo = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string CommitID = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Sort = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Direction = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message ChangesetListOp {
-	string repo = 1;
+	string Repo = 1;
 
 	// Open, when true, will only return open changesets.
-	bool open = 2;
+	bool Open = 2;
 
 	// Closed, when true, will only return closed changeset.
-	bool closed = 3;
+	bool Closed = 3;
 
 	// Head, if set, will restrict the returned list to only changesets
 	// that have this branch as head.
-	string head = 4;
+	string Head = 4;
 
 	// Base, when set, will restrict the list to changesets that have this
 	// branch as a base.
-	string base = 5;
-	ListOptions list_options = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string Base = 5;
+	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // A BuildSpec uniquely identifies a build.
 message BuildSpec {
 	// Repo is the repository associated with the build.
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 
 	// ID is the numeric ID of the build. It is up to the
 	// implementation to decide whether it is sequential within the
 	// repo or globally unique across all repos' builds.
-	uint64 id = 2 [(gogoproto.customname) = "ID"];
+	uint64 ID = 2;
 }
 
 // A BuildTask represents an individual step of a build.
@@ -1111,124 +1111,124 @@ message BuildTask {
 	// ID is the numeric ID of the task. It is up to the
 	// implementation to decide whether it is sequential within the
 	// build or globally unique across all builds.
-	uint64 id = 1 [(gogoproto.customname) = "ID"];
+	uint64 ID = 1;
 
 	// Build specifies the build associated with this task.
-	BuildSpec build = 2 [(gogoproto.nullable) = false];
+	BuildSpec Build = 2 [(gogoproto.nullable) = false];
 
 	// ParentID, if non-zero, indicates that this task's parent is the
 	// task (in the same build) with the given ID. A ParentID of zero
 	// means that this is a top-level task.
-	uint64 parent_id = 3 [(gogoproto.customname) = "ParentID"];
+	uint64 ParentID = 3;
 
 	// Label describes the task (e.g., Code Intelligence).
-	string label = 4;
+	string Label = 4;
 
 	// CreatedAt is when this task was initially created.
-	pbtypes.Timestamp created_at = 5 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp CreatedAt = 5 [(gogoproto.nullable) = false];
 
 	// StartedAt is when this task's execution began.
-	pbtypes.Timestamp started_at = 6;
+	pbtypes.Timestamp StartedAt = 6;
 
 	// EndedAt is when this task's execution ended (whether because it succeeded or
 	// failed).
-	pbtypes.Timestamp ended_at = 7;
+	pbtypes.Timestamp EndedAt = 7;
 
 	// Success is whether this task's execution succeeded.
-	bool success = 8;
+	bool Success = 8;
 
 	// Failure is whether this task's execution failed.
-	bool failure = 9;
+	bool Failure = 9;
 
 	// Skipped is whether this task's execution was skipped.
-	bool skipped = 10;
+	bool Skipped = 10;
 
 	// Warnings is whether this task produced warnings. Tasks with
 	// warnings are not displayed as "green". The warnings are
 	// contained in the task logs.
-	bool warnings = 11;
+	bool Warnings = 11;
 }
 
 message BuildTaskListOptions {
-	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // A BuildUpdate contains updated information to update on an existing build.
 message BuildUpdate {
-	pbtypes.Timestamp started_at = 1;
-	pbtypes.Timestamp ended_at = 2;
-	pbtypes.Timestamp heartbeat_at = 3;
-	string host = 4;
-	bool success = 5;
-	bool purged = 6;
-	bool failure = 7;
-	bool killed = 8;
-	int32 priority = 9;
-	string builder_config = 10;
+	pbtypes.Timestamp StartedAt = 1;
+	pbtypes.Timestamp EndedAt = 2;
+	pbtypes.Timestamp HeartbeatAt = 3;
+	string Host = 4;
+	bool Success = 5;
+	bool Purged = 6;
+	bool Failure = 7;
+	bool Killed = 8;
+	int32 Priority = 9;
+	string BuilderConfig = 10;
 }
 
 message BuildList {
-	repeated Build builds = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated Build Builds = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message BuildsCreateOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 
 	// CommitID is the full commit ID of the commit to build. It is
 	// required.
-	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
+	string CommitID = 2;
 
 	// Branch, if specified, indicates that this build's commit is on
 	// the given branch. If Branch is set, Tag must be empty.
-	string branch = 3;
+	string Branch = 3;
 
 	// Tag, if specified, indicates that this build's commit has the
 	// given tag. If Tag is set, Branch must be empty.
-	string tag = 4;
+	string Tag = 4;
 
-	BuildConfig config = 5 [(gogoproto.nullable) = false];
+	BuildConfig Config = 5 [(gogoproto.nullable) = false];
 }
 
 message BuildsUpdateOp {
-	BuildSpec build = 1 [(gogoproto.nullable) = false];
-	BuildUpdate info = 2 [(gogoproto.nullable) = false];
+	BuildSpec Build = 1 [(gogoproto.nullable) = false];
+	BuildUpdate Info = 2 [(gogoproto.nullable) = false];
 }
 
 message BuildsListBuildTasksOp {
-	BuildSpec build = 1 [(gogoproto.nullable) = false];
-	BuildTaskListOptions opt = 2;
+	BuildSpec Build = 1 [(gogoproto.nullable) = false];
+	BuildTaskListOptions Opt = 2;
 }
 
 message BuildTaskList {
-	repeated BuildTask build_tasks = 1;
+	repeated BuildTask BuildTasks = 1;
 }
 
 message ChangesetReviewList {
-	repeated ChangesetReview reviews = 1;
+	repeated ChangesetReview Reviews = 1;
 }
 
 message ChangesetList {
-	repeated Changeset changesets = 1;
+	repeated Changeset Changesets = 1;
 }
 
 message ChangesetEventList {
-	repeated ChangesetEvent events = 1;
+	repeated ChangesetEvent Events = 1;
 }
 
 message BuildsCreateTasksOp {
-	BuildSpec build = 1 [(gogoproto.nullable) = false];
-	repeated BuildTask tasks = 2;
+	BuildSpec Build = 1 [(gogoproto.nullable) = false];
+	repeated BuildTask Tasks = 2;
 }
 
 message BuildsUpdateTaskOp {
-	TaskSpec task = 1 [(gogoproto.nullable) = false];
-	TaskUpdate info = 2 [(gogoproto.nullable) = false];
+	TaskSpec Task = 1 [(gogoproto.nullable) = false];
+	TaskUpdate Info = 2 [(gogoproto.nullable) = false];
 }
 
 message BuildsGetTaskLogOp {
-	TaskSpec task = 1 [(gogoproto.nullable) = false];
-	BuildGetLogOptions opt = 2;
+	TaskSpec Task = 1 [(gogoproto.nullable) = false];
+	BuildGetLogOptions Opt = 2;
 }
 
 message BuildsDequeueNextOp {
@@ -1237,48 +1237,48 @@ message BuildsDequeueNextOp {
 // EmailAddr is an email address associated with a user.
 message EmailAddr {
 	// the email address (case-insensitively compared in the DB and API)
-	string email = 1;
+	string Email = 1;
 
 	// whether this email address has been verified
-	bool verified = 2;
+	bool Verified = 2;
 
 	// indicates this is the user's primary email (only 1 email can be primary per user)
-	bool primary = 3;
+	bool Primary = 3;
 
 	// whether Sourcegraph inferred via public data that this is an email for the user
-	bool guessed = 4;
+	bool Guessed = 4;
 
 	// indicates that this email should not be associated with the user (even if guessed in the future)
-	bool blacklisted = 5;
+	bool Blacklisted = 5;
 }
 
 message LogEntries {
-	string max_id = 1 [(gogoproto.customname) = "MaxID"];
-	repeated string entries = 2;
+	string MaxID = 1;
+	repeated string Entries = 2;
 }
 
 message Org {
-	User user = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	User User = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message OrgListMembersOptions {
-	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // OrgSpec specifies an organization. At least one of Email, Login, and UID must be
 // nonempty.
 message OrgSpec {
-	string org = 1;
-	int32 uid = 2 [(gogoproto.customname) = "UID"];
+	string Org = 1;
+	int32 UID = 2;
 }
 
 message OrgsListMembersOp {
-	OrgSpec org = 1 [(gogoproto.nullable) = false];
-	OrgListMembersOptions opt = 2;
+	OrgSpec Org = 1 [(gogoproto.nullable) = false];
+	OrgListMembersOptions Opt = 2;
 }
 
 message UserList {
-	repeated User users = 1;
+	repeated User Users = 1;
 }
 
 message UserCount {
@@ -1291,126 +1291,126 @@ message Person {
 	// PersonSpec is an identifier for the person. If the person was resolved to a
 	// user, then both Login and UID are set. Otherwise only Email is set, and it may
 	// be obfuscated (to protect privacy).
-	PersonSpec person_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	PersonSpec PersonSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 
 	// FullName is the (possibly empty) full name of the person.
-	string full_name = 2;
+	string FullName = 2;
 
 	// AvatarURL is the URL to the user's avatar image.
-	string avatar_url = 3 [(gogoproto.customname) = "AvatarURL"];
+	string AvatarURL = 3;
 }
 
 // PersonSpec specifies a person. At least one of Email, Login, and UID must be
 // nonempty.
 message PersonSpec {
 	// Email is a person's email address. It may be obfuscated (to protect privacy).
-	string email = 1;
+	string Email = 1;
 
 	// Login is a user's login.
-	string login = 2;
+	string Login = 2;
 
 	// UID is a user's UID.
-	int32 uid = 3 [(gogoproto.customname) = "UID"];
+	int32 UID = 3;
 }
 
 message TaskSpec {
-	BuildSpec build = 1 [(gogoproto.nullable) = false];
-	uint64 id = 2 [(gogoproto.customname) = "ID"];
+	BuildSpec Build = 1 [(gogoproto.nullable) = false];
+	uint64 ID = 2;
 }
 
 // A TaskUpdate contains updated information to update on an existing task.
 message TaskUpdate {
-	pbtypes.Timestamp started_at = 1;
-	pbtypes.Timestamp ended_at = 2;
-	bool success = 3;
-	bool failure = 4;
-	bool skipped = 5;
-	bool warnings = 6;
+	pbtypes.Timestamp StartedAt = 1;
+	pbtypes.Timestamp EndedAt = 2;
+	bool Success = 3;
+	bool Failure = 4;
+	bool Skipped = 5;
+	bool Warnings = 6;
 }
 
 // User represents a registered user.
 message User {
 	// UID is the numeric primary key for a user.
-	int32 uid = 1 [(gogoproto.customname) = "UID"];
+	int32 UID = 1;
 
 	// Login is the user's username.
-	string login = 2;
+	string Login = 2;
 
 	// Domain is the host that the user originates from. If empty, it
 	// is assumed to be the domain of the server.
-	string domain = 3;
+	string Domain = 3;
 
 	// Name is the (possibly empty) full name of the user.
-	string name = 4;
+	string Name = 4;
 
 	// IsOrganization is whether this user represents an organization.
-	bool is_organization = 5;
+	bool IsOrganization = 5;
 
 	// AvatarURL is the URL to an avatar image specified by the user.
-	string avatar_url = 6 [(gogoproto.customname) = "AvatarURL"];
+	string AvatarURL = 6;
 
 	// Location is the user's physical location.
-	string location = 7;
+	string Location = 7;
 
 	// Company is the user's company.
-	string company = 8;
+	string Company = 8;
 
 	// HomepageURL is the user's homepage or blog URL.
-	string homepage_url = 9 [(gogoproto.customname) = "HomepageURL"];
+	string HomepageURL = 9;
 
 	// Disabled is whether the user account is disabled.
-	bool disabled = 10;
+	bool Disabled = 10;
 
 	// Admin is whether the user is a site admin for the site named by
 	// the Domain field.
-	bool admin = 12;
+	bool Admin = 12;
 
 	// Write is whether the user has write access for the site named by
 	// the Domain field.
-	bool write = 13;
+	bool Write = 13;
 
 	// RegisteredAt is the date that the user registered. If the user has not
 	// registered (i.e., we have processed their repos but they haven't signed into
 	// Sourcegraph), it is null.
-	pbtypes.Timestamp registered_at = 11;
+	pbtypes.Timestamp RegisteredAt = 11;
 }
 
 // UserSpec specifies a user. At least one of Login and UID must be
 // nonempty.
 message UserSpec {
 	// Login is a user's login.
-	string login = 1;
+	string Login = 1;
 
 	// UID is a user's UID.
-	int32 uid = 2 [(gogoproto.customname) = "UID"];
+	int32 UID = 2;
 
 	// Domain is the host that the user originates from. If empty, it
 	// is assumed to be the domain of the server.
-	string domain = 3;
+	string Domain = 3;
 }
 
 // UsersListOptions specifies options for the UsersService.List method.
 message UsersListOptions {
 	// Query filters the results to only those whose logins match. The search algorithm
 	// is an implementation detail (currently it is a prefix match).
-	string query = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Query = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	string sort = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string direction = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions list_options = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string Sort = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Direction = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message OrgsListOp {
-	UserSpec member = 1 [(gogoproto.nullable) = false];
-	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	UserSpec Member = 1 [(gogoproto.nullable) = false];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message EmailAddrList {
-	repeated EmailAddr email_addrs = 1;
+	repeated EmailAddr EmailAddrs = 1;
 }
 
 message OrgList {
-	repeated Org orgs = 1;
+	repeated Org Orgs = 1;
 }
 
 
@@ -1612,89 +1612,89 @@ service Accounts {
 
 message PasswordResetToken {
 	// token is the hard to guess token that allows a user to set a new password.
-	string token = 1;
+	string Token = 1;
 }
 
 message PendingPasswordReset {
 	// Link is the URL for resetting password using this token.
 	// It is set in the response only if the request was made
 	// by an admin user.
-	string link = 1;
+	string Link = 1;
 
 	// Token is the hard to guess token that allows a user to
 	// set a new password.
 	// It is set in the response only if the request was made
 	// by an admin user.
-	PasswordResetToken token = 2;
+	PasswordResetToken Token = 2;
 
 	// EmailSent is set if the password reset link was emailed to
 	// the user.
-	bool email_sent = 3;
+	bool EmailSent = 3;
 
 	// Login is the login name of user for whom this request is created.
-	string login = 4;
+	string Login = 4;
 }
 
 message NewPassword {
 	// password is the new password for the user who requested the password reset
 	// token.
-	string password = 1;
+	string Password = 1;
 
-	PasswordResetToken token = 2;
+	PasswordResetToken Token = 2;
 }
 
 message NewAccount {
 	// Login is the desired login for the new user account.
-	string login = 1;
+	string Login = 1;
 
 	// Email is the primary email address for the new user account.
-	string email = 2;
+	string Email = 2;
 
 	// Password is the password for the new user account.
-	string password = 3;
+	string Password = 3;
 
 	// UID is the desired UID for the new user account.
-	int32 uid = 4 [(gogoproto.customname) = "UID"];
+	int32 UID = 4;
 }
 
 message AccountInvite {
 	// Email is the primary email address for the new user account.
-	string email = 1;
+	string Email = 1;
 
 	// Write, if set, will grant write access to the user.
-	bool write = 2;
+	bool Write = 2;
 
 	// Admin, if set, will grant admin access to the user.
-	bool admin = 3;
+	bool Admin = 3;
 }
 
 // An InviteSpec specifies an existing invite.
 message InviteSpec {
 	// Email is the email address for which the invite was generated.
-	string email = 1;
+	string Email = 1;
 }
 
 message PendingInvite {
 	// Link is the URL for signing up using this invite.
-	string link = 1;
+	string Link = 1;
 
 	// Token identifies the pending invite.
-	string token = 2;
+	string Token = 2;
 
 	// EmailSent is set if the invite link was emailed to the user.
-	bool email_sent = 3;
+	bool EmailSent = 3;
 }
 
 message AccountInviteList {
-	repeated AccountInvite invites = 1;
+	repeated AccountInvite Invites = 1;
 }
 
 message AcceptedInvite {
 	// Account holds the desired account details.
-	NewAccount account = 1;
+	NewAccount Account = 1;
 
 	// Token identifies the pending invite.
-	string token = 2;
+	string Token = 2;
 }
 
 // UsersService communicates with the users-related endpoints in the Sourcegraph
@@ -1737,7 +1737,7 @@ service Users {
 }
 
 message SSHKeyList {
-	repeated SSHPublicKey ssh_keys = 1 [(gogoproto.nullable) = false, (gogoproto.customname) = "SSHKeys"];
+	repeated SSHPublicKey SSHKeys = 1 [(gogoproto.nullable) = false];
 }
 
 // UserKeys manages SSH public keys per user.
@@ -1797,25 +1797,25 @@ service Auth {
 // SSHPublicKey that users to authenticate with for SSH git access.
 message SSHPublicKey {
 	// Key is the serialized key data in SSH wire format, with the name prefix.
-	bytes key = 1;
+	bytes Key = 1;
 
 	// Name is the name of the SSH key.
-	string name = 2;
+	string Name = 2;
 
 	// ID is the ID of the SSH key.
-	uint64 id = 3 [(gogoproto.customname) = "ID"];
+	uint64 ID = 3;
 }
 
 // AuthorizationCodeRequest: see
 // https://tools.ietf.org/html/rfc6749#section-4.1.1.
 message AuthorizationCodeRequest {
-	string response_type = 1;
-	string client_id = 2 [(gogoproto.customname) = "ClientID"];
-	string redirect_uri = 3 [(gogoproto.customname) = "RedirectURI"];
-	repeated string scope = 4;
+	string ResponseType = 1;
+	string ClientID = 2;
+	string RedirectURI = 3;
+	repeated string Scope = 4;
 
 	// UID is the UID of the user who will be presented with the code.
-	int32 uid = 5 [(gogoproto.customname) = "UID"];
+	int32 UID = 5;
 }
 
 // AuthorizationCode represents an access token request using the
@@ -1826,17 +1826,17 @@ message AuthorizationCodeRequest {
 // The client_id field is not set in this message; it is taken from
 // the authenticated client for the request (which must exist).
 message AuthorizationCode {
-	string code = 1;
-	string redirect_uri = 2 [(gogoproto.customname) = "RedirectURI"];
+	string Code = 1;
+	string RedirectURI = 2;
 }
 
 // LoginCredentials is the information a user submits to log in.
 message LoginCredentials {
 	// Login is the user's claimed login.
-	string login = 1;
+	string Login = 1;
 
 	// Password is the password (possibly) corresponding to the login.
-	string password = 2;
+	string Password = 2;
 
 	// In the future we can add 2FA tokens, etc., here.
 }
@@ -1847,7 +1847,7 @@ message LoginCredentials {
 // for more information.
 message BearerJWT {
 	// Assertion is a JWT.
-	string assertion = 1;
+	string Assertion = 1;
 }
 
 // AccessTokenRequest contains the information necessary to
@@ -1858,27 +1858,27 @@ message AccessTokenRequest {
 	// See http://tools.ietf.org/html/rfc6749#section-1.3 for more
 	// information on OAuth2 authorization grant types.
 	oneof authorization_grant {
-		AuthorizationCode authorization_code = 1;
-		LoginCredentials resource_owner_password = 2;
-		BearerJWT bearer_jwt = 3 [(gogoproto.customname) = "BearerJWT"];
+		AuthorizationCode AuthorizationCode = 1;
+		LoginCredentials ResourceOwnerPassword = 2;
+		BearerJWT BearerJWT = 3;
 	}
 
 	// TokenURL is the token endpoint URL on the OAuth2 authorization
 	// server that the client is requesting an access token from.
-	string token_url = 9 [(gogoproto.customname) = "TokenURL"];
+	string TokenURL = 9;
 
-	repeated string scope = 17;
+	repeated string Scope = 17;
 }
 
 // AccessTokenResponse is a successful access token response. See
 // http://tools.ietf.org/html/rfc6749#section-5.1 for more
 // information.
 message AccessTokenResponse {
-	string access_token = 1;
-	string token_type = 2;
-	int32 expires_in_sec = 3; // optional
-	string refresh_token = 4; // optional
-	repeated string scope = 5; // optional if equal to the requested scope
+	string AccessToken = 1;
+	string TokenType = 2;
+	int32 ExpiresInSec = 3; // optional
+	string RefreshToken = 4; // optional
+	repeated string Scope = 5; // optional if equal to the requested scope
 }
 
 // AuthInfo describes the currently authenticated client and/or user
@@ -1888,69 +1888,69 @@ message AuthInfo {
 	// client. If a user is authenticated using an access token,
 	// ClientID is the client ID of the registered client that the
 	// access token was granted to.
-	string client_id = 1 [(gogoproto.customname) = "ClientID"];
+	string ClientID = 1;
 
 	// UID is the UID of the currently authenticated user (if any).
-	int32 uid = 2 [(gogoproto.customname) = "UID"];
+	int32 UID = 2;
 
 	// Domain is the domain of the currently authenticated user (if
 	// any), or blank if the user account was registered on the
 	// current server.
-	string domain = 3;
+	string Domain = 3;
 
 	// Login is the login of the currently authenticated user (if any).
-	string login = 4;
+	string Login = 4;
 
 	// Write is set if the user (if any) has write access on this server.
-	bool write = 5;
+	bool Write = 5;
 
 	// Admin is set if the user (if any) has admin access on this server.
-	bool admin = 6;
+	bool Admin = 6;
 
 	// Scopes represent the permissions granted to the authenticated
 	// user (if any).
-	repeated string scopes = 7;
+	repeated string Scopes = 7;
 }
 
 message AuthorshipInfo {
-	string author_email = 1;
-	pbtypes.Timestamp last_commit_date = 2 [(gogoproto.nullable) = false];
+	string AuthorEmail = 1;
+	pbtypes.Timestamp LastCommitDate = 2 [(gogoproto.nullable) = false];
 
 	// LastCommitID is the commit ID of the last commit that this author made to the
 	// thing that this info describes.
-	string last_commit_id = 3 [(gogoproto.customname) = "LastCommitID"];
+	string LastCommitID = 3;
 }
 
 // Def is a code def returned by the Sourcegraph API.
 message Def {
-	graph.Def def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	pbtypes.HTML doc_html = 2 [(gogoproto.customname) = "DocHTML"];
-	graph.DefFormatStrings fmt_strings = 3;
+	graph.Def Def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	pbtypes.HTML DocHTML = 2;
+	graph.DefFormatStrings FmtStrings = 3;
 }
 
 message DefAuthor {
-	int32 uid = 1 [(gogoproto.customname) = "UID"];
-	string email = 2;
-	DefAuthorship def_authorship = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	int32 UID = 1;
+	string Email = 2;
+	DefAuthorship DefAuthorship = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefAuthorship {
-	AuthorshipInfo authorship_info = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	AuthorshipInfo AuthorshipInfo = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 
 	// Exported is whether the def is exported.
-	bool exported = 2;
+	bool Exported = 2;
 
-	int32 bytes = 3;
-	double bytes_proportion = 4;
+	int32 Bytes = 3;
+	double BytesProportion = 4;
 }
 
 message DefClient {
-	int32 uid = 1 [(gogoproto.customname) = "UID"];
-	string email = 2;
-	AuthorshipInfo authorship_info = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	int32 UID = 1;
+	string Email = 2;
+	AuthorshipInfo AuthorshipInfo = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 
 	// UseCount is the number of times this person referred to the def.
-	int32 use_count = 4;
+	int32 UseCount = 4;
 }
 
 // A DefDelta represents a single definition that was changed. It has fields for
@@ -1960,170 +1960,170 @@ message DefClient {
 // deleted from base to head).
 message DefDelta {
 	// the def in the base commit (if nil, this def was added in the head)
-	Def base = 1;
+	Def Base = 1;
 
 	// the def in the head commit (if nil, this def was deleted in the head)
-	Def head = 2;
+	Def Head = 2;
 }
 
 // DefGetOptions specifies options for DefsService.Get.
 message DefGetOptions {
-	bool doc = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Doc = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // DefListAuthorsOptions specifies options for DefsService.ListAuthors.
 message DefListAuthorsOptions {
-	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DefListClientsOptions specifies options for DefsService.ListClients.
 message DefListClientsOptions {
-	ListOptions list_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DefListExamplesOptions specifies options for DefsService.ListExamples.
 message DefListExamplesOptions {
-	bool formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Filter by a specific Repo URI
-	string repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// TokenizedSource requests that the source code be returned as a tokenized data
 	// structure rather than an (annotated) string.
 	//
 	// This is useful when the client wants to take full control of rendering and
 	// manipulating the contents.
-	bool tokenized_source = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool TokenizedSource = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	ListOptions list_options = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DefListOptions specifies options for DefsService.List.
 message DefListOptions {
-	string name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Specifies a search query for defs. If specified, then the Sort and Direction
 	// options are ignored
-	string query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Query = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
 	// with the specified start and end byte offsets. This filter is only applied if
 	// both values are set.
-	uint32 byte_start = 3;
+	uint32 ByteStart = 3;
 
 	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
 	// with the specified start and end byte offsets. This filter is only applied if
 	// both values are set.
-	uint32 byte_end = 4;
+	uint32 ByteEnd = 4;
 
 	// DefKeys, if set, will return the definitions that match the given DefKey
-	repeated graph.DefKey def_keys = 5;
+	repeated graph.DefKey DefKeys = 5;
 
 	// RepoRevs constrains the results to a set of repository revisions (given by their
 	// URIs plus an optional "@" and a revision specifier). For example,
 	// "repo.com/foo@revspec".
-	repeated string repo_revs = 6 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
+	repeated string RepoRevs = 6 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
 
-	string unit_type = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string unit = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string path = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string UnitType = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Unit = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Path = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Files, if specified, will restrict the results to only defs defined in the
 	// specified file.
-	repeated string files = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated string Files = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// FilePathPrefix, if specified, will restrict the results to only defs defined in
 	// files whose path is underneath the specified prefix.
-	string file_path_prefix = 11 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string FilePathPrefix = 11 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	repeated string kinds = 12 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
-	bool exported = 13 [(gogoproto.moretags) = "url:\",omitempty\""];
-	bool nonlocal = 14 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated string Kinds = 12 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
+	bool Exported = 13 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Nonlocal = 14 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// IncludeTest is whether the results should include definitions in test files.
-	bool include_test = 15 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool IncludeTest = 15 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Enhancements
-	bool doc = 16 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Doc = 16 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	bool fuzzy = 17 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Fuzzy = 17 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Sorting
-	string sort = 18 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Sort = 18 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	string direction = 19 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Direction = 19 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Paging
-	ListOptions list_options = 20 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 20 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefListRefsOptions {
-	bool authorship = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	bool Authorship = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DefSpec specifies a def.
 message DefSpec {
-	string repo = 1;
-	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
-	string unit_type = 3;
-	string unit = 4;
-	string path = 5;
+	string Repo = 1;
+	string CommitID = 2;
+	string UnitType = 3;
+	string Unit = 4;
+	string Path = 5;
 }
 
 message DefsGetOp {
-	DefSpec def = 1 [(gogoproto.nullable) = false];
-	DefGetOptions opt = 2;
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+	DefGetOptions Opt = 2;
 }
 
 message DefList {
-	repeated Def defs = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated Def Defs = 1;
+	ListResponse ListResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListRefsOp {
-	DefSpec def = 1 [(gogoproto.nullable) = false];
-	DefListRefsOptions opt = 2;
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+	DefListRefsOptions Opt = 2;
 }
 
 message RefList {
-	repeated Ref refs = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated Ref Refs = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListExamplesOp {
-	DefSpec def = 1 [(gogoproto.nullable) = false];
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
 	// If set, source code in the examples will be linked to this branch, rather
 	// than to the commit ID.
-	string rev = 2;
-	DefListExamplesOptions opt = 3;
+	string Rev = 2;
+	DefListExamplesOptions Opt = 3;
 }
 
 message ExampleList {
-	repeated Example examples = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated Example Examples = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message DefsListAuthorsOp {
-	DefSpec def = 1 [(gogoproto.nullable) = false];
-	DefListAuthorsOptions opt = 2;
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+	DefListAuthorsOptions Opt = 2;
 }
 
 message DefsListClientsOp {
-	DefSpec def = 1 [(gogoproto.nullable) = false];
-	DefListClientsOptions opt = 2;
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+	DefListClientsOptions Opt = 2;
 }
 
 // Delta represents the difference between two commits (possibly in 2 separate
 // repositories).
 message Delta {
-	RepoRevSpec base = 1 [(gogoproto.nullable) = false];
-	RepoRevSpec head = 2 [(gogoproto.nullable) = false];
-	vcs.Commit base_commit = 3;
-	vcs.Commit head_commit = 4;
-	Repo base_repo = 5;
-	Repo head_repo = 6;
+	RepoRevSpec Base = 1 [(gogoproto.nullable) = false];
+	RepoRevSpec Head = 2 [(gogoproto.nullable) = false];
+	vcs.Commit BaseCommit = 3;
+	vcs.Commit HeadCommit = 4;
+	Repo BaseRepo = 5;
+	Repo HeadRepo = 6;
 }
 
 // DeltaAffectedPerson describes a person (registered user or committer email
@@ -2137,107 +2137,107 @@ message Delta {
 // uses.
 message DeltaAffectedPerson {
 	// the affected person
-	Person person = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	Person Person = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 
 	// the defs they authored or use (the reason why they're affected)
-	repeated Def defs = 2;
+	repeated Def Defs = 2;
 }
 
 // DeltaDefs describes definitions added/changed/deleted in a delta.
 message DeltaDefs {
 	// added/changed/deleted defs
-	repeated DefDelta defs = 1;
+	repeated DefDelta Defs = 1;
 
 	// overall diffstat (not subject to pagination)
-	diff.Stat diff_stat = 2 [(gogoproto.nullable) = false];
+	diff.Stat DiffStat = 2 [(gogoproto.nullable) = false];
 }
 
 // FileDiff holds data about a diff, and additionally stores extended
 // information about its hunks.
 message FileDiff {
-	diff.FileDiff file_diff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	repeated Hunk file_diff_hunks = 2;
+	diff.FileDiff FileDiff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated Hunk FileDiffHunks = 2;
 	// PreImage is the CommitID at which this file was before the change occurred.
-	string pre_image = 3 [(gogoproto.jsontag) = ",omitempty"];
+	string PreImage = 3 [(gogoproto.jsontag) = ",omitempty"];
 	// PostImage is the CommitID at which this file was after the change occurred.
-	string post_image = 4 [(gogoproto.jsontag) = ",omitempty"];
+	string PostImage = 4 [(gogoproto.jsontag) = ",omitempty"];
 	// Stat contains statistics about additions and deletions to this diff.
-	diff.Stat stats = 5 [(gogoproto.nullable) = false];
+	diff.Stat Stats = 5 [(gogoproto.nullable) = false];
 }
 
 // Hunk holds data about a hunk in a diff.
 message Hunk {
-	diff.Hunk hunk = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	diff.Hunk Hunk = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 
 	// LinePrefixes holds a string where each character's index corresponds
 	// to a line in the BodySource, and its value reflects whether the line
 	// is an addition, deletion, or change ('+', '-', ' ').
-	string line_prefixes = 2;
+	string LinePrefixes = 2;
 
 	// BaseSource holds the source code for the original hunk, having all
 	// lines starting from the original line down to the end of the hunk.
-	SourceCode base_source = 3;
+	SourceCode BaseSource = 3;
 
 	// HeadSource contains the source code for the new hunk, holding
 	// all consecutive lines from the start to the end.
-	SourceCode head_source = 4;
+	SourceCode HeadSource = 4;
 
 	// BodySource contains the source code for the Hunk body and is a mix
 	// of both additions and deletions.
-	SourceCode body_source = 5;
+	SourceCode BodySource = 5;
 }
 
 // DeltaFiles describes files added/changed/deleted in a delta.
 message DeltaFiles {
-	repeated FileDiff file_diffs = 1;
-	Delta delta = 2;
-	diff.Stat stats = 3 [(gogoproto.nullable) = false];
+	repeated FileDiff FileDiffs = 1;
+	Delta Delta = 2;
+	diff.Stat Stats = 3 [(gogoproto.nullable) = false];
 
 	// OverThreshold will be true when the source code contents of the diff
 	// have not been tokenized and linked. This occurs when the 'MaxSize'
 	// limit in DeltaListFilesOptions has been met.
-	bool over_threshold = 4;
+	bool OverThreshold = 4;
 }
 
 // DeltaFilter specifies criteria by which to filter results from DeltaListXxx
 // methods.
 message DeltaFilter {
-	string unit = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string unit_type = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Unit = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string UnitType = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // DeltaListAffectedAuthorsOptions specifies options for ListAffectedAuthors.
 message DeltaListAffectedAuthorsOptions {
-	DeltaFilter delta_filter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DeltaListAffectedClientsOptions specifies options for ListAffectedClients.
 message DeltaListAffectedClientsOptions {
-	DeltaFilter delta_filter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DeltaListDefsOptions specifies options for ListDefs.
 message DeltaListDefsOptions {
-	DeltaFilter delta_filter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DeltaListFilesOptions specifies options for ListFiles.
 message DeltaListFilesOptions {
 	// Formatted is whether the files should have their contents code-formatted
 	// (syntax-highlighted and reference-linked) if they contain code.
-	bool formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Filter filters the list of returned files to those whose name matches Filter.
-	string filter = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Filter = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Tokenized, when set, will tokenize the whole source code
 	// contained in the diff, returning 3 versions for each hunk: Head
 	// revision, Base revision and Hunk body. For more information,
 	// see sourcegraph.Hunk.
-	bool tokenized = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Tokenized = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// MaxSize stores the maximum number of bytes that will be accepted for tokenizing
 	// the diff. If the size of the diff exceeds this value, the returned structure
@@ -2245,9 +2245,9 @@ message DeltaListFilesOptions {
 	// This option is useful when one wishes to present the data in a browser and it
 	// may be too large for that. DeltaFiles structure size can be up to 4 times the
 	// size of the raw diff when tokenized and linked.
-	int32 max_size = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 MaxSize = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	DeltaFilter delta_filter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // DeltaListUnitsOptions specifies options for ListUnits.
@@ -2256,67 +2256,67 @@ message DeltaListUnitsOptions {
 
 // A DeltaSpec specifies a delta.
 message DeltaSpec {
-	RepoRevSpec base = 1 [(gogoproto.nullable) = false];
-	RepoRevSpec head = 2 [(gogoproto.nullable) = false];
+	RepoRevSpec Base = 1 [(gogoproto.nullable) = false];
+	RepoRevSpec Head = 2 [(gogoproto.nullable) = false];
 }
 
 message DeltasListUnitsOp {
-	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
-	DeltaListUnitsOptions opt = 2;
+	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
+	DeltaListUnitsOptions Opt = 2;
 }
 
 message UnitDeltaList {
-	repeated UnitDelta unit_deltas = 1;
+	repeated UnitDelta UnitDeltas = 1;
 }
 
 message DeltasListDefsOp {
-	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
-	DeltaListDefsOptions opt = 2;
+	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
+	DeltaListDefsOptions Opt = 2;
 }
 
 message DeltasListFilesOp {
-	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
-	DeltaListFilesOptions opt = 2;
+	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
+	DeltaListFilesOptions Opt = 2;
 }
 
 message DeltasListAffectedAuthorsOp {
-	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
-	DeltaListAffectedAuthorsOptions opt = 2;
+	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
+	DeltaListAffectedAuthorsOptions Opt = 2;
 }
 
 message DeltaAffectedPersonList {
-	repeated DeltaAffectedPerson delta_affected_persons = 1;
+	repeated DeltaAffectedPerson DeltaAffectedPersons = 1;
 }
 
 message DeltasListAffectedClientsOp {
-	DeltaSpec ds = 1 [(gogoproto.nullable) = false];
-	DeltaListAffectedClientsOptions opt = 2;
+	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
+	DeltaListAffectedClientsOptions Opt = 2;
 }
 
 // Example is a usage example of a def.
 message Example {
-	graph.Ref ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	graph.Ref Ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
 	// SrcHTML is the formatted HTML source code of the example, with links to
 	// definitions.
-	string src_html = 2 [(gogoproto.customname) = "SrcHTML"];
+	string SrcHTML = 2;
 
 	// SourceCode contains the parsed source for this example, if requested via
 	// DefListExamplesOptions.
-	SourceCode source_code = 3;
+	SourceCode SourceCode = 3;
 
 	// The line that the given example starts on
-	int32 start_line = 4;
+	int32 StartLine = 4;
 
 	// The line that the given example ends on
-	int32 end_line = 5;
+	int32 EndLine = 5;
 
 	// Error is whether an error occurred while fetching this example.
-	bool error = 6;
+	bool Error = 6;
 
 	// If the example has been requested by revision name (ie. branch, tag), this
 	// value will be set.
-	string rev = 7 [(gogoproto.jsontag) = ",omitempty"];
+	string Rev = 7 [(gogoproto.jsontag) = ",omitempty"];
 }
 
 // FormatResult contains information about and warnings from the formatting
@@ -2324,109 +2324,109 @@ message Example {
 message FormatResult {
 	// TooManyRefs indicates that the file being formatted exceeded the maximum number
 	// of refs that are linked. Only the first NumRefs refs are linked.
-	bool too_many_refs = 1;
+	bool TooManyRefs = 1;
 
 	// NumRefs is the number of refs that were linked in this file. If the total number
 	// of refs in the file exceeds the (server-defined) limit, NumRefs is capped at the
 	// limit.
-	int32 num_refs = 2;
+	int32 NumRefs = 2;
 
 	// LineStartByteOffsets is the byte offset of each line's first byte.
-	repeated int32 line_start_byte_offsets = 3;
+	repeated int32 LineStartByteOffsets = 3;
 }
 
 message MarkdownData {
-	bytes rendered = 1;
-	Checklist checklist = 2;
+	bytes Rendered = 1;
+	Checklist Checklist = 2;
 }
 
 message MarkdownOpt {
-	bool enable_checkboxes = 1;
+	bool EnableCheckboxes = 1;
 }
 
 message MarkdownRequestBody {
-	bytes markdown = 1;
-	MarkdownOpt markdown_opt = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	bytes Markdown = 1;
+	MarkdownOpt MarkdownOpt = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message MarkdownRenderOp {
-	bytes markdown = 1;
-	MarkdownOpt opt = 2 [(gogoproto.nullable) = false];
+	bytes Markdown = 1;
+	MarkdownOpt Opt = 2 [(gogoproto.nullable) = false];
 }
 
 message Ref {
-	graph.Ref ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	AuthorshipInfo authorship = 2;
+	graph.Ref Ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	AuthorshipInfo Authorship = 2;
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
 message RepoTreeGetOptions {
 	// Formatted is whether the specified entry, if it's a file, should have its
 	// Contents code-formatted using HTML.
-	bool formatted = 1;
+	bool Formatted = 1;
 
 	// HighlightStrings is a list of fixed strings that should be wrapped in a <span
 	// class="highlight"> in the returned HTML. It only takes effect if Formatted is
 	// true.
-	repeated string highlight_strings = 2;
+	repeated string HighlightStrings = 2;
 
 	// TokenizedSource requests that the source code be returned as a tokenized data
 	// structure rather than an (annotated) string.
 	//
 	// This is useful when the client wants to take full control of rendering and
 	// manipulating the contents.
-	bool tokenized_source = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool TokenizedSource = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	bool contents_as_string = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool ContentsAsString = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	vcsclient.GetFileOptions get_file_options = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	vcsclient.GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message RepoTreeSearchOptions {
-	vcs.SearchOptions search_options = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	bool formatted = 2;
+	vcs.SearchOptions SearchOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	bool Formatted = 2;
 }
 
 // A RepoTreeSearchResult is a tree search result that includes the repo and rev it
 // came from.
 message RepoTreeSearchResult {
-	vcs.SearchResult search_result = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	RepoRevSpec repo_rev = 2 [(gogoproto.nullable) = false];
+	vcs.SearchResult SearchResult = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
 }
 
 message RepoTreeGetOp {
-	TreeEntrySpec entry = 1 [(gogoproto.nullable) = false];
-	RepoTreeGetOptions opt = 2;
+	TreeEntrySpec Entry = 1 [(gogoproto.nullable) = false];
+	RepoTreeGetOptions Opt = 2;
 }
 
 message RepoTreeSearchOp {
-	RepoRevSpec rev = 1 [(gogoproto.nullable) = false];
-	RepoTreeSearchOptions opt = 2;
+	RepoRevSpec Rev = 1 [(gogoproto.nullable) = false];
+	RepoTreeSearchOptions Opt = 2;
 }
 
 message RepoTreeListOp {
-	RepoRevSpec rev = 1 [(gogoproto.nullable) = false];
+	RepoRevSpec Rev = 1 [(gogoproto.nullable) = false];
 }
 
 message RepoTreeListResult {
-	repeated string files = 1;
+	repeated string Files = 1;
 }
 
 message VCSSearchResultList {
-	repeated vcs.SearchResult search_results = 1;
-	ListResponse list_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated vcs.SearchResult SearchResults = 1;
+	ListResponse ListResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message TokenSearchOptions {
-	string query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
-	RepoRevSpec repo_rev = 2 [(gogoproto.nullable) = false];
-	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string Query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
+	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message TextSearchOptions {
-	string query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
-	RepoRevSpec repo_rev = 2 [(gogoproto.nullable) = false];
-	ListOptions list_options = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string Query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
+	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // SourceCode contains a snippet of code with linked and classed tokens, along with
@@ -2438,10 +2438,10 @@ message TextSearchOptions {
 // the TreeEntry, TokenizedSource must be set to "true" in the RepoTreeGetOptions.
 message SourceCode {
 	// Lines contains all the lines of the contained code snippet.
-	repeated SourceCodeLine lines = 1;
+	repeated SourceCodeLine Lines = 1;
 
-	int32 num_refs = 2;
-	bool too_many_refs = 3;
+	int32 NumRefs = 2;
+	bool TooManyRefs = 3;
 }
 
 // SourceCodeLine contains all tokens on this line along with other information
@@ -2449,59 +2449,59 @@ message SourceCode {
 message SourceCodeLine {
 	// StartByte and EndByte are the start and end offsets in bytes, in the original
 	// file.
-	int32 start_byte = 1;
+	int32 StartByte = 1;
 
-	int32 end_byte = 2;
+	int32 EndByte = 2;
 
 	// Tokens contains any tokens that may be on this line, including whitespace. New
 	// lines ('\n') are not present.
-	repeated SourceCodeToken tokens = 3;
+	repeated SourceCodeToken Tokens = 3;
 }
 
 // SourceCodeToken contains information about a code token.
 message SourceCodeToken {
 	// Start and end byte offsets in original file.
-	int32 start_byte = 1 [(gogoproto.jsontag) = "-"];
+	int32 StartByte = 1 [(gogoproto.jsontag) = "-"];
 
-	int32 end_byte = 2 [(gogoproto.jsontag) = "-"];
+	int32 EndByte = 2 [(gogoproto.jsontag) = "-"];
 
 	// If the token is a reference URL contains the DefKey-based URLs for all the
 	// definitions at this position.
-	repeated string url = 3 [(gogoproto.customname) = "URL", (gogoproto.jsontag) = ",omitempty"];
+	repeated string URL = 3 [(gogoproto.jsontag) = ",omitempty"];
 
 	// IsDef specifies whether the token is a definition.
-	bool is_def = 4 [(gogoproto.jsontag) = ",omitempty"];
+	bool IsDef = 4 [(gogoproto.jsontag) = ",omitempty"];
 
 	// Class specifies the token type as per
 	// [google-code-prettify](https://code.google.com/p/google-code-prettify/).
 	// All tokens except Whitespace will have this field.
-	string class = 5 [(gogoproto.jsontag) = ",omitempty"];
+	string Class = 5 [(gogoproto.jsontag) = ",omitempty"];
 
 	// ExtraClasses may additionally contain other classes for this token, such as
 	// for example highlighting in a diff.
-	string extraClasses = 6 [(gogoproto.jsontag) = ",omitempty"];
+	string ExtraClasses = 6 [(gogoproto.jsontag) = ",omitempty"];
 
 	// Label is non-whitespace HTML encoded source code.
-	string label = 7;
+	string Label = 7;
 }
 
 // TreeEntry is a file or directory in a repository, with additional feedback from
 // the formatting operation (if Formatted is true in the options).
 message TreeEntry {
-	vcsclient.TreeEntry tree_entry = 1 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	vcsclient.FileRange file_range = 2 [(gogoproto.embed) = true];
-	string contents_string = 3;
+	vcsclient.TreeEntry TreeEntry = 1 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	vcsclient.FileRange FileRange = 2 [(gogoproto.embed) = true];
+	string ContentsString = 3;
 
 	// SourceCode is set when TokenizedSource is enabled in RepoTreeGetOptions.
-	SourceCode source_code = 4;
+	SourceCode SourceCode = 4;
 
 	// FormatResult is only set if this TreeEntry is a file.
-	FormatResult format_result = 5;
+	FormatResult FormatResult = 5;
 }
 
 message TreeEntrySpec {
-	RepoRevSpec repo_rev = 1 [(gogoproto.nullable) = false];
-	string path = 2;
+	RepoRevSpec RepoRev = 1 [(gogoproto.nullable) = false];
+	string Path = 2;
 }
 
 // A UnitDelta represents a single source unit that was changed. It has fields for
@@ -2510,8 +2510,8 @@ message TreeEntrySpec {
 // nil means that the unit did not exist in that revision (e.g., it was added or
 // deleted from base to head).
 message UnitDelta {
-	unit.RepoSourceUnit base = 1;
-	unit.RepoSourceUnit head = 2;
+	unit.RepoSourceUnit Base = 1;
+	unit.RepoSourceUnit Head = 2;
 }
 
 // UnitListOptions specifies options for UnitsService.List.
@@ -2519,39 +2519,39 @@ message UnitListOptions {
 	// RepoRevs constrains the results to a set of repository revisions (given by their
 	// URIs plus an optional "@" and a revision specifier). For example,
 	// "repo.com/foo@revspec".
-	repeated string repo_revs = 1 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
+	repeated string RepoRevs = 1 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
 
-	string unit_type = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string unit = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string UnitType = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Unit = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// NameQuery specifies a full-text search query over the unit name.
-	string name_query = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string NameQuery = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Query specifies a full-text search query over the repo URI, unit name, and unit
 	// data.
-	string query = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Query = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Paging
-	ListOptions list_options = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // UnitSpec specifies a source unit.
 message UnitSpec {
-	RepoRevSpec repo_rev_spec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	string unit_type = 2;
-	string unit = 3;
+	RepoRevSpec RepoRevSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	string UnitType = 2;
+	string Unit = 3;
 }
 
 message RepoSourceUnitList {
-	repeated unit.RepoSourceUnit units = 1;
+	repeated unit.RepoSourceUnit Units = 1;
 }
 
 message DefAuthorList {
-	repeated DefAuthor def_authors = 1;
+	repeated DefAuthor DefAuthors = 1;
 }
 
 message DefClientList {
-	repeated DefClient def_clients = 1;
+	repeated DefClient DefClients = 1;
 }
 
 // DefsService communicates with the def- and graph-related endpoints in the
@@ -2719,15 +2719,15 @@ service Units {
 
 message Checklist {
 	// number of tasks to be done (unchecked)
-	int32 todo = 1;
+	int32 Todo = 1;
 
 	// number of tasks that are done (checked)
-	int32 done = 2;
+	int32 Done = 2;
 }
 
 message FileToken {
-	string path = 1;
-	vcsclient.TreeEntry entry = 2;
+	string Path = 1;
+	vcsclient.TreeEntry Entry = 2;
 }
 // Meta provides meta-information about Sourcegraph.
 service Meta {
@@ -2751,7 +2751,7 @@ service Meta {
 message ServerStatus {
 	// Info contains arbitrary human-readable status information about
 	// the server.
-	string info = 1;
+	string Info = 1;
 }
 
 // ServerConfig describes the server's configuration.
@@ -2761,33 +2761,33 @@ message ServerStatus {
 message ServerConfig {
 	// Version is the version of Sourcegraph that this server is
 	// running.
-	string version = 1;
+	string Version = 1;
 
 	// AppURL is the base URL of the user-facing web application
 	// (e.g., "https://sourcegraph.com").
-	string app_url = 2 [(gogoproto.customname) = "AppURL"];
+	string AppURL = 2;
 
 	// FederationRootURL is the --fed.root-url CLI flag's value. It is
 	// the URL of the federation root server, or blank if this server
 	// is itself a federation root (in which case IsFederationRoot is
 	// true).
-	string federation_root_url = 5 [(gogoproto.customname) = "FederationRootURL"];
+	string FederationRootURL = 5;
 
 	// IsFederationRoot is whether this server is itself a federation
 	// root. If true, then FederationRootURL is empty.
-	bool is_federation_root = 6;
+	bool IsFederationRoot = 6;
 
 	// IDKey is the server's identity key (ID key).
-	string id_key = 7 [(gogoproto.customname) = "IDKey"];
+	string IDKey = 7;
 
 	// AllowAnonymousReaders is whether anonymous (unauthenticated)
 	// users may perform "read" operations, such as viewing
 	// repositories.
-	bool allow_anonymous_readers = 9;
+	bool AllowAnonymousReaders = 9;
 
 	// AuthSource is which mode of authentication is set up on the
 	// server (local|oauth|ldap).
-	string auth_source = 10;
+	string AuthSource = 10;
 }
 
 // A RegisteredClient is a registered API client.
@@ -2799,47 +2799,47 @@ message ServerConfig {
 // conflict with the existing Client (Go) type.
 message RegisteredClient {
 	// ID is a unique identifier for this client.
-	string id = 1 [(gogoproto.customname) = "ID"];
+	string ID = 1;
 
 	// RedirectURIs is a list of allowed redirect URIs.
-	repeated string redirect_uris = 2 [(gogoproto.customname) = "RedirectURIs"];
+	repeated string RedirectURIs = 2;
 
 	// ClientName is the name of the client to be presented to the
 	// end-user.
-	string client_name = 3;
+	string ClientName = 3;
 
 	// LogoURI is a URL to this client's logo.
-	string logo_uri = 4 [(gogoproto.customname) = "LogoURI"];
+	string LogoURI = 4;
 
 	// ClientURI is a URL to this client's homepage.
-	string client_uri = 5 [(gogoproto.customname) = "ClientURI"];
+	string ClientURI = 5;
 
 	// JWKS is the client's JSON Web Key Set. It contains the client's
 	// public keys, if any.
-	string jwks = 6 [(gogoproto.customname) = "JWKS"];
+	string JWKS = 6;
 
 	// ClientSecret is the secret value that authenticates the
 	// client. It may be empty (e.g., if JWKS keys are used for
 	// authentication instead).
-	string client_secret = 7;
+	string ClientSecret = 7;
 
 	// Description is a human-readable description of this API client
 	// that's shown to the user during, e.g., OAuth2 authentication.
-	string description = 8;
+	string Description = 8;
 
 	// Meta holds arbitrary metadata about this API client. The
 	// structure is defined by the API client and is opaque to the
 	// server.
-	map<string, string> meta = 9;
+	map<string, string> Meta = 9;
 
 	// RegisteredClientType describes this client's type.
-	RegisteredClientType type = 10;
+	RegisteredClientType Type = 10;
 
 	// CreatedAt is when this API client's record was created.
-	pbtypes.Timestamp created_at = 11 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp CreatedAt = 11 [(gogoproto.nullable) = false];
 
 	// UpdatedAt is when this API client's record was last updated.
-	pbtypes.Timestamp updated_at = 12 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp UpdatedAt = 12 [(gogoproto.nullable) = false];
 }
 
 // RegisteredClientType is the set of kinds of clients.
@@ -2860,58 +2860,58 @@ enum RegisteredClientType {
 // A RegisteredClientSpec uniquely identifies a RegisteredClient.
 message RegisteredClientSpec {
 	// ID is the client's ID.
-	string id = 1 [(gogoproto.customname) = "ID"];
+	string ID = 1;
 }
 
 // A RegisteredClientCredentials authenticates a RegisteredClient.
 message RegisteredClientCredentials {
 	// ID is the client's ID.
-	string id = 1 [(gogoproto.customname) = "ID"];
+	string ID = 1;
 
 	// Secret is the client's secret.
-	string secret = 2;
+	string Secret = 2;
 }
 
 // RegisteredClientListOptions configures a call to
 // RegisteredClients.List.
 message RegisteredClientListOptions {
-	RegisteredClientType type = 1;
-	ListOptions list_options = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	RegisteredClientType Type = 1;
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 // RegisteredClientList holds a list of clients.
 message RegisteredClientList {
-	repeated RegisteredClient clients = 1;
-	StreamResponse stream_response = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	repeated RegisteredClient Clients = 1;
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
 message UserPermissions {
 	// UID is a user's UID.
-	int32 uid = 1 [(gogoproto.customname) = "UID"];
+	int32 UID = 1;
 
 	// ClientID is the ID of the client whose whitelist is to
 	// be fetched and/or modified.
-	string client_id = 2 [(gogoproto.customname) = "ClientID"];
+	string ClientID = 2;
 
 	// Read is true if the user has read permissions on the client.
-	bool read = 3;
+	bool Read = 3;
 
 	// Write is true if the user has write permissions on the client.
-	bool write = 4;
+	bool Write = 4;
 
 	// Admin is true if the user should be considered an admin on
 	// the client.
-	bool admin = 5;
+	bool Admin = 5;
 }
 
 message UserPermissionsList {
-	repeated UserPermissions user_permissions = 1 [(gogoproto.customname) = "UserPermissions"];
+	repeated UserPermissions UserPermissions = 1;
 }
 
 message UserPermissionsOptions {
-	RegisteredClientSpec client_spec = 1 [(gogoproto.customname) = "ClientSpec"];
+	RegisteredClientSpec ClientSpec = 1;
 
-	int32 uid = 2 [(gogoproto.customname) = "UID"];
+	int32 UID = 2;
 }
 
 // RegisteredClients manages registered API clients.
@@ -2967,41 +2967,41 @@ enum TelemetryType {
 // MetricsSnapshots encodes
 message MetricsSnapshot {
 	// Type is the encoding of TelemetryData
-	TelemetryType type = 1;
+	TelemetryType Type = 1;
 
 	// TelemetryData is the encoded metrics
-	bytes telemetry_data = 2;
+	bytes TelemetryData = 2;
 }
 
 // UserEvent encodes any user initiated event on the local instance.
 message UserEvent {
-	string type = 1;
+	string Type = 1;
 
-	int32 uid = 2 [(gogoproto.customname) = "UID"];
+	int32 UID = 2;
 
-	string client_id = 3 [(gogoproto.customname) = "ClientID"];
+	string ClientID = 3;
 
-	string service = 4;
+	string Service = 4;
 
-	string method = 5;
+	string Method = 5;
 
-	string result = 6;
+	string Result = 6;
 
 	// CreatedAt holds the time when this event was logged.
-	pbtypes.Timestamp created_at = 7;
+	pbtypes.Timestamp CreatedAt = 7;
 
-	string message = 8;
+	string Message = 8;
 
 	// Version holds the release version of the Sourcegraph binary.
-	string version = 9;
+	string Version = 9;
 
 	// URL holds the http request url.
-	string url = 10 [(gogoproto.customname) = "URL"];
+	string URL = 10;
 }
 
 // UserEventList is a list of user events logged on this instance.
 message UserEventList {
-	repeated UserEvent events = 1;
+	repeated UserEvent Events = 1;
 }
 
 // GraphUplink interfaces with the metric collectors.
@@ -3017,84 +3017,84 @@ service GraphUplink {
 // Event is any action logged on a Sourcegraph instance.
 message Event {
 	// Type specifies the action type, eg. "AccountCreate" or "AddRepo".
-	string type = 1;
+	string Type = 1;
 
 	// UserID is the unique identifier of a user on a Sourcegraph instance.
 	// It is constructed as "login@short-client-id", where short-client-id
 	// is the first 6 characters of this sourcegraph instance's public key
 	// fingerprint (i.e. it's ClientID).
-	string user_id = 2 [(gogoproto.customname) = "UserID"];
+	string UserID = 2;
 
 	// DeviceID is the unique identifier of an anonymous user on a Sourcegraph
 	// instance.
-	string device_id = 3 [(gogoproto.customname) = "DeviceID"];
+	string DeviceID = 3;
 
 	// ClientID is this Sourcegraph instance's public key fingerprint.
-	string client_id = 4 [(gogoproto.customname) = "ClientID"];
+	string ClientID = 4;
 
 	// Timestamp records the instant when this event was logged.
-	pbtypes.Timestamp timestamp = 5;
+	pbtypes.Timestamp Timestamp = 5;
 
 	// UserProperties holds metadata relating to user who performed this
 	// action, eg. "Email".
-	map<string, string> user_properties = 6;
+	map<string, string> UserProperties = 6;
 
 	// EventProperties holds metadata relating to the action logged by
 	// this event, eg. for "AddRepo" event, a property is "Source" which
 	// specifies if the repo is local or mirrored.
-	map<string, string> event_properties = 7;
+	map<string, string> EventProperties = 7;
 }
 
 // EventList is a list of logged Sourcegraph events.
 message EventList {
 	// Events holds the list of events.
-	repeated Event events = 1;
+	repeated Event Events = 1;
 
 	// Version holds the release version of the Sourcegraph binary.
-	string version = 2;
+	string Version = 2;
 
 	// AppURL holds the base URL of the Sourcegraph app.
-	string app_url = 3 [(gogoproto.customname) = "AppURL"];
+	string AppURL = 3;
 }
 
 // NotifyGenericEvent describes an action being done against an object. For
 // example reviewing a changeset.
 message NotifyGenericEvent {
 	// Actor is the User who did the action
-	UserSpec actor = 1;
+	UserSpec Actor = 1;
 
 	// Recipients is who should be notified of the action
-	repeated UserSpec recipients = 2;
+	repeated UserSpec Recipients = 2;
 
 	// ActionType example: "reviewed"
-	string action_type = 3;
+	string ActionType = 3;
 
 	// ActionContent example: "Please add tests for the new functionality"
-	string action_content = 4;
+	string ActionContent = 4;
 
 	// ObjectID example: 71
-	int64 object_id = 5 [(gogoproto.customname) = "ObjectID"];
+	int64 ObjectID = 5;
 
 	// ObjectRepo example: "gorilla/mux"
-	string object_repo = 6;
+	string ObjectRepo = 6;
 
 	// ObjectType example: "changeset"
-	string object_type = 7;
+	string ObjectType = 7;
 
 	// ObjectTitle example: "search: Simplify tokenizer"
-	string object_title = 8;
+	string ObjectTitle = 8;
 
 	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.changesets/71"
-	string object_url = 9 [(gogoproto.customname) = "ObjectURL"];
+	string ObjectURL = 9;
 
 	// SlackMsg, if present, will override the Slack message for this event.
-	string slack_msg = 10;
+	string SlackMsg = 10;
 
 	// EmailHTML, if present, will override the notification email body for this event.
-	string email_html = 11 [(gogoproto.customname) = "EmailHTML"];
+	string EmailHTML = 11;
 
 	// NoEmail turns off the email notification for this event.
-	bool no_email = 13;
+	bool NoEmail = 13;
 }
 
 // Notify service
