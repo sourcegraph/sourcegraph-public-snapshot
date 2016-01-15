@@ -51,6 +51,9 @@ func startBuild(ctx context.Context, build *sourcegraph.Build) {
 	execErr := builder.Exec(ctx)
 	if execErr == nil {
 		log15.Info("Build succeeded", "build", build.Spec().IDString(), "time", time.Since(start))
+	} else if ctx.Err() != nil {
+		log15.Info("Build killed", "build", build.Spec().IDString(), "time", time.Since(start))
+		return
 	} else {
 		log15.Info("Build failed", "build", build.Spec().IDString(), "time", time.Since(start), "err", execErr)
 	}

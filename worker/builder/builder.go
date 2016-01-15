@@ -123,13 +123,15 @@ func (b *Builder) Exec(ctx context.Context) error {
 			errs[i] = func() error {
 				taskState := taskStates[i]
 				if err := taskState.Start(ctx); err != nil {
-					log15.Error("Updating task starting state failed", "task", taskState.String(), "err", err)
+					if ctx.Err() == nil {
+						log15.Error("Updating task starting state failed", "task", taskState.String(), "err", err)
+					}
 					return err
 				}
 
 				var execErr error
 				defer func() {
-					if err := taskState.End(ctx, execErr); err != nil {
+					if err := taskState.End(ctx, execErr); err != nil && ctx.Err() == nil {
 						log15.Error("Updating task final state failed", "task", taskState.String(), "err", err)
 					}
 				}()
@@ -378,7 +380,7 @@ func (m taskMonitor) Skip() {
 
 func (m taskMonitor) End(ok, allowFailure bool) {
 	if !ok && allowFailure {
-		if err := m.s.Warnings(m.ctx); err != nil {
+		if err := m.s.Warnings(m.ctx); err != nil && m.ctx.Err() == nil {
 			log15.Error("Error marking monitored task as ended (with allowable failure)", "task", m.s.String(), "err", err)
 		}
 	} else {
@@ -386,7 +388,7 @@ func (m taskMonitor) End(ok, allowFailure bool) {
 		if !ok {
 			execErr = errors.New("failed")
 		}
-		if err := m.s.End(m.ctx, execErr); err != nil {
+		if err := m.s.End(m.ctx, execErr); err != nil && m.ctx.Err() == nil {
 			log15.Error("Error marking monitored task as ended", "task", m.s.String(), "err", err)
 		}
 	}
