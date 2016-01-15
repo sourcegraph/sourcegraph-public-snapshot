@@ -288,6 +288,62 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 	}, nil
 }
 
+func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	extTokensStore := store.ExternalAuthTokensFromContextOrNil(ctx)
+	if extTokensStore == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
+	}
+
+	reqUID := int(request.UID)
+	a := authpkg.ActorFromContext(ctx)
+	if reqUID == 0 {
+		reqUID = a.UID
+	}
+	if a.UID == 0 || a.UID != reqUID {
+		return nil, grpc.Errorf(codes.PermissionDenied, "user not authenticated to complete this operation")
+	}
+
+	dbToken, err := extTokensStore.GetUserToken(ctx, reqUID, request.Host, request.ClientID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sourcegraph.ExternalToken{
+		UID:      int32(dbToken.User),
+		Host:     dbToken.Host,
+		Token:    dbToken.Token,
+		Scope:    dbToken.Scope,
+		ClientID: dbToken.ClientID,
+	}, nil
+}
+
+func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.ExternalToken) (*pbtypes.Void, error) {
+	extTokensStore := store.ExternalAuthTokensFromContextOrNil(ctx)
+	if extTokensStore == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
+	}
+
+	reqUID := int(extToken.UID)
+	a := authpkg.ActorFromContext(ctx)
+	if reqUID == 0 {
+		reqUID = a.UID
+	}
+	if a.UID == 0 || a.UID != reqUID {
+		return nil, grpc.Errorf(codes.PermissionDenied, "user not authenticated to complete this operation")
+	}
+
+	dbToken := &authpkg.ExternalAuthToken{
+		User:     reqUID,
+		Host:     extToken.Host,
+		Token:    extToken.Token,
+		Scope:    extToken.Scope,
+		ClientID: extToken.ClientID,
+	}
+
+	err := extTokensStore.SetUserToken(ctx, dbToken)
+	return &pbtypes.Void{}, err
+}
+
 func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
 	a := authpkg.ActorFromContext(ctx)
 	if !a.IsAuthenticated() || a.ClientID == "" {

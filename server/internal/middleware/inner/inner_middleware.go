@@ -479,6 +479,50 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 	return
 }
 
+func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenRequest) (res *sourcegraph.ExternalToken, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Auth", "GetExternalToken", param)
+	defer func() {
+		trace.After(ctx, "Auth", "GetExternalToken", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Auth.GetExternalToken")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Auth
+
+	res, err = target.GetExternalToken(ctx, param)
+
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
+	}
+	return
+}
+
+func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.ExternalToken) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Auth", "SetExternalToken", param)
+	defer func() {
+		trace.After(ctx, "Auth", "SetExternalToken", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Auth.SetExternalToken")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Auth
+
+	res, err = target.SetExternalToken(ctx, param)
+
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
+	}
+	return
+}
+
 type wrappedBuilds struct {
 	c *auth.Config
 }

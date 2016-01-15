@@ -3,6 +3,8 @@ package auth
 import (
 	"errors"
 	"time"
+
+	"src.sourcegraph.com/sourcegraph/fed"
 )
 
 // ExternalAuthToken is an OAuth(2) access token for an external site, such as GitHub.
@@ -34,3 +36,11 @@ var (
 	// has been disabled, likely due to auth failures.
 	ErrExternalAuthTokenDisabled = errors.New("external auth token is disabled")
 )
+
+// AllowPrivateMirrors checks if private repo mirrors from external code hosts
+// eg. GitHub, should be allowed on this server.
+// Currently, private mirrors are only supported on fed root instances that have
+// a postgres backend.
+func AllowPrivateMirrors() bool {
+	return fed.Config.IsRoot
+}

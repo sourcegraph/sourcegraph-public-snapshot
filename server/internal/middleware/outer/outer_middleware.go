@@ -572,6 +572,64 @@ func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegra
 	return rv, nil
 }
 
+func (s wrappedAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AuthOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
+	}
+
+	rv, err := innerSvc.GetExternalToken(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
+func (s wrappedAuth) SetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalToken) (*pbtypes.Void, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AuthOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
+	}
+
+	rv, err := innerSvc.SetExternalToken(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
 type wrappedBuilds struct {
 	ctxFunc  ContextFunc
 	services svc.Services

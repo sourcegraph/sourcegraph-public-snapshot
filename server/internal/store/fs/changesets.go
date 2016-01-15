@@ -30,7 +30,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util"
 )
 
 const (
@@ -461,11 +460,10 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	var repoPath string
 	var auth string
 	if repo.Mirror {
-		gitHost := util.RepoURIHost(repo.URI)
 		authStore := ext.AuthStore{}
-		cred, err := authStore.Get(ctx, gitHost)
+		cred, err := authStore.Get(ctx, repo.URI)
 		if err != nil {
-			return fmt.Errorf("unable to fetch git credentials for host %q: %v", gitHost, err)
+			return fmt.Errorf("unable to fetch git credentials for repo %q: %v", repo.URI, err)
 		}
 		auth = cred.Token
 	} else {

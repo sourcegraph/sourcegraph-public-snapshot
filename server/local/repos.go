@@ -3,6 +3,7 @@ package local
 import (
 	"encoding/json"
 	"log"
+	"os"
 	pathpkg "path"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -30,6 +32,7 @@ import (
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
@@ -136,13 +139,31 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, err
 	}
 
-	repoSpec := repo.RepoSpec()
+	if op.Mirror && op.Private {
+		// Copy this user's access token into the external auth store, to
+		// enable the repo updater to fetch the repo from the external host.
+		token, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+			Host:     util.RepoURIHost(op.URI),
+			ClientID: os.Getenv("GITHUB_CLIENT_ID"),
+		})
+		if err != nil {
+			log15.Warn("Failed to fetch access token for private repo", "repo", op.URI, "error", err)
+		} else if token != nil {
+			authStore := ext.AuthStore{}
+			err := authStore.Set(ctx, op.URI, ext.Credentials{Token: token.Token})
+			if err != nil {
+				log15.Warn("Failed to set access token for private repo", "repo", op.URI, "error", err)
+			}
+		}
+	}
+
 	if op.Mirror {
 		repoupdater.Enqueue(repo)
 	}
 
 	eventsutil.LogAddRepo(ctx, op.CloneURL, op.Language, op.Mirror, op.Private)
 
+	repoSpec := repo.RepoSpec()
 	return s.Get(ctx, &repoSpec)
 }
 

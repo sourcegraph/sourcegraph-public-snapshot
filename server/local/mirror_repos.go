@@ -22,7 +22,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util"
 )
 
 var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}
@@ -55,11 +54,10 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	remoteOpts := vcs.RemoteOpts{}
 	// For private repos, supply auth from local auth store.
 	if r.Private {
-		host := util.RepoURIHost(op.Repo.URI)
 		authStore := ext.AuthStore{}
-		cred, err := authStore.Get(ctx, host)
+		cred, err := authStore.Get(ctx, op.Repo.URI)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", host, err)
+			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
 		}
 
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
