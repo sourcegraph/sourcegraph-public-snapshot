@@ -592,7 +592,11 @@ func (c *ServeCmd) Execute(args []string) error {
 	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
 
 	// Start background repo updater worker.
-	repoupdater.RepoUpdater.Start(client.Ctx)
+	repoUpdaterCtx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:repoupdater"})
+	if err != nil {
+		return err
+	}
+	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
 
 	if c.NoWorker {
 		log15.Info("Skip starting worker process.")
