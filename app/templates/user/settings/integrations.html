@@ -8,25 +8,21 @@
 <div class="panel panel-default panel-main person-settings person-settings-integration github">
 	<div class="panel-heading"><i class="fa fa-github"></i> GitHub</div>
 	<div class="panel-body">
-		<p>To use Sourcegraph with your private repositories on GitHub, <a href="{{.URL}}/settings/tokens" target="_window">create a GitHub personal access token</a> with <b>repo</b> scope.</p>
-		<p><strong>Security note:</strong> any user with read or write access to this Sourcegraph instance can use the instance to access <strong>any</strong> of the GitHub
-		repositories within the token's scope. Do not share this instance with anyone to whom you would not grant read/write access to all of your private repositories on GitHub.</p>
-		<form class="form-inline access-token-form" action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "github"}}" method="POST">
-			<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+		<p>To use Sourcegraph with your private repositories on GitHub, link your GitHub account with your Sourcegraph account via OAuth2.</p>
+		<form action={{router.URLToGitHubOAuth}} method="get">
 			<div class="form-group">
 				<p class="api-status">
 					{{if not .TokenIsPresent}}
-						<i class="fa fa-circle disabled"></i> No access token provided.
+						<i class="fa fa-circle disabled"></i> No GitHub account linked.
 					{{else if (and .PrivateRemoteRepos .TokenIsValid)}}
-						<i class="fa fa-circle success"></i> You have a valid access token.
+						<i class="fa fa-circle success"></i> GitHub account linked to this user.
 					{{else if .TokenIsValid}}
-					<i class="fa fa-circle warning"></i> No private GitHub repositories found. Make sure your <a href="{{.URL}}/settings/tokens">personal access token</a> has the <b>repo</b> scope enabled, and your account has access to private repositories.
+					<i class="fa fa-circle warning"></i> No private GitHub repositories found. Make sure your account has access to private repositories.
 					{{else}}
 						<i class="fa fa-circle danger"></i> Invalid access token.
 					{{end}}
 				</p>
-				<input type="text" class="form-control" placeholder="Access Token" name="Token" aria-describedby="github-access-token" required>
-				<button type="submit" class="btn btn-default">Update GitHub access token</button>
+				<button type="submit" class="btn btn-sgblue">Link GitHub Account</button>
 			</div>
 		</form>
 		{{if .PrivateRemoteRepos}}

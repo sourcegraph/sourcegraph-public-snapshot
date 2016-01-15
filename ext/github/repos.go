@@ -10,7 +10,6 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -194,16 +193,13 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	return repos, nil
 }
 
+// ListPrivate lists repos from GitHub that are visible in the given auth
+// token's scope.
 // TODO: rename or consolidate this method, since it can be used to list private
-// as well as public repos.
-func (s *Repos) ListPrivate(ctx context.Context) ([]*sourcegraph.Repo, error) {
-	authStore := &ext.AuthStore{}
-	cred, err := authStore.Get(ctx, githubcli.Config.Host())
-	if err != nil {
-		return nil, err
-	}
-
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cred.Token})
+// as well as public repos (when this instance is configured to access a
+// GitHub Enterprise instance).
+func (s *Repos) ListPrivate(ctx context.Context, token string) ([]*sourcegraph.Repo, error) {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
 	client := github.NewClient(tc)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/google/go-github/github"
 
@@ -19,6 +20,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -30,14 +33,19 @@ const (
 )
 
 var (
-	scopes = []string{"repo", "read:org"}
-
+	scopes          = []string{"repo", "read:org"}
 	nonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
+
+	githubClientID     string
+	githubClientSecret string
 )
 
 func init() {
 	internal.Handlers[router.GitHubOAuth2Initiate] = serveGitHubOAuth2Initiate
 	internal.Handlers[router.GitHubOAuth2Receive] = serveGitHubOAuth2Receive
+
+	githubClientID = os.Getenv("GITHUB_CLIENT_ID")
+	githubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 }
 
 // serveGitHubOAuth2Initiate generates the OAuth2 authorize URL
@@ -106,6 +114,7 @@ func oauthLoginURL(r *http.Request, state oauthAuthorizeClientState) (*url.URL, 
 
 func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
 	ctx := httpctx.FromRequest(r)
+	cl := handlerutil.APIClient(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	if currentUser == nil {
 		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("user must be logged in")}
@@ -145,7 +154,18 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	log.Printf("github user %s linked to sourcegraph user %s", *user.Login, currentUser.Login)
+	_, err = cl.Auth.SetExternalToken(ctx, &sourcegraph.ExternalToken{
+		UID:      currentUser.UID,
+		Host:     githubcli.Config.Host(),
+		Token:    token.AccessToken,
+		Scope:    strings.Join(scopes, ","),
+		ClientID: githubClientID,
+	})
+	if err != nil {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
+	}
+
+	log.Printf("github user %s linked to sourcegraph user %s, token: %#v", *user.Login, currentUser.Login, token)
 
 	returnTo := state.ReturnTo
 	if err := returnto.CheckSafe(returnTo); err != nil {
@@ -157,8 +177,8 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 func getOAuth2Conf(ctx context.Context) *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
-		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+		ClientID:     githubClientID,
+		ClientSecret: githubClientSecret,
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  githubAuthorizeUrl,
 			TokenURL: githubTokenUrl,

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/sourcegraph/mux"
@@ -23,11 +24,18 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
-	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/router_util"
 )
+
+var (
+	githubClientID string
+)
+
+func init() {
+	githubClientID = os.Getenv("GITHUB_CLIENT_ID")
+}
 
 type userSettingsCommonData struct {
 	User        *sourcegraph.User
@@ -153,10 +161,23 @@ func userGitHubIntegrationData(ctx context.Context, apiclient *sourcegraph.Clien
 		URL:  githubcli.Config.URL(),
 		Host: githubcli.Config.Host() + "/",
 	}
+
+	// Fetch the currently authenticated user's stored access token (if any).
+	extToken, err := apiclient.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+		Host:     githubcli.Config.Host(),
+		ClientID: githubClientID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if extToken.Token == "" {
+		return nil, errors.New("no valid token found for fetching GitHub repos")
+	}
+
 	ghRepos := &github.Repos{}
 	// TODO(perf) Cache this response or perform the fetch after page load to avoid
 	// having to wait for an http round trip to github.com.
-	privateGitHubRepos, err := ghRepos.ListPrivate(ctx)
+	privateGitHubRepos, err := ghRepos.ListPrivate(ctx, extToken.Token)
 	if err != nil {
 		// If the error is caused by something other than the token not existing,
 		// ensure the user knows there is a value set for the token but that
@@ -350,18 +371,10 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 	}
 
 	switch mux.Vars(r)["Integration"] {
-	case "github":
-		token := r.PostFormValue("Token")
-		authStore := ext.AuthStore{}
-		err := authStore.Set(ctx, githubcli.Config.Host(), ext.Credentials{Token: token})
-		if err != nil {
-			return err
-		}
 	case "enable":
 		r.ParseForm() // required if you don't call r.FormValue()
 		repoURIs := r.Form["RepoURI[]"]
 
-		var authStore *ext.AuthStore
 		for _, repoURI := range repoURIs {
 			// Check repo doesn't already exist, skip if so.
 			_, err = apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
@@ -373,18 +386,6 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 					return nil
 				default:
 					return fmt.Errorf("problem getting repo %q: %v", repoURI, err)
-				}
-			}
-
-			// Verify that credentials are available.
-			// We should only need to do this once for all repos
-			// (since we may assume they all have the same host).
-			if authStore == nil {
-				host := util.RepoURIHost(repoURI)
-				authStore = &ext.AuthStore{}
-				_, err := authStore.Get(ctx, host)
-				if err != nil {
-					return fmt.Errorf("could not fetch credentials for host %q: %v", host, err)
 				}
 			}
 

@@ -32,13 +32,8 @@
 				<br>
 			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
 				<p>
-					Or, mirror private repositories from other code hosts:
+					Or <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">import private repositories from GitHub</a>.
 				</p>
-				<form action={{router.URLToGitHubOAuth}} method="get">
-					<div class="form-group">
-						<button id="link-github-account" type="submit" class="btn btn-sgblue">Link GitHub Account</button>
-					</div>
-				</form>
 			{{end}}
 			</div>
 		</div>

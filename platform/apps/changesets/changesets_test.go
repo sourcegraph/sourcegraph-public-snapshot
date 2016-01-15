@@ -20,7 +20,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 )
@@ -78,9 +77,14 @@ func (ts *testSuite) prepRepo() error {
 			return nil
 		}
 
-		// Add the token to the auth store so that RefreshVCS operations succeed.
-		authStore := ext.AuthStore{}
-		err := authStore.Set(ts.ctx, "github.com", ext.Credentials{Token: personalAccessToken})
+		// Add a personal access token for the authenticated user so that it can be used
+		// in RefreshVCS operations.
+		_, err = ts.server.Client.Auth.SetExternalToken(ts.ctx, &sourcegraph.ExternalToken{
+			Host:     "github.com",
+			Token:    personalAccessToken,
+			Scope:    "repo,read:org",
+			ClientID: "testclient",
+		})
 		if err != nil {
 			return err
 		}
