@@ -1,5 +1,12 @@
 # Dev
 
+# 0.11.10
+
+- Added an SSH client to the sourcegraph docker container.
+- Only try to convert localhost to an absolute IP in
+  Drone build configuration if the given clone
+  URL is localhost.
+
 # 0.11.9
 
 - Added a number of commits to improve the resilience of the build
