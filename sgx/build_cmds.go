@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -23,6 +24,15 @@ func init() {
 		log.Fatal(err)
 	}
 	buildsGroup.Aliases = []string{"builds", "b"}
+
+	_, err = buildsGroup.AddCommand("get",
+		"get build",
+		"The get subcommand gets a specific build.",
+		&buildsGetCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	_, err = buildsGroup.AddCommand("list",
 		"list builds",
@@ -55,6 +65,32 @@ func init() {
 type buildsCmd struct{}
 
 func (c *buildsCmd) Execute(args []string) error { return nil }
+
+type buildsGetCmd struct {
+	Args struct {
+		Repo string `name:"repo" description:"repo URI"`
+		ID   uint64 `name:"id" description:"build ID"`
+	} `positional-args:"yes" required:"true"`
+}
+
+func (c *buildsGetCmd) Execute(args []string) error {
+	cl := client.Client()
+	opt := &sourcegraph.BuildSpec{
+		Repo: sourcegraph.RepoSpec{URI: c.Args.Repo},
+		ID:   c.Args.ID,
+	}
+	build, err := cl.Builds.Get(client.Ctx, opt)
+	if err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(build, "", "  ")
+	if err != nil {
+		return err
+	}
+	os.Stdout.Write(b)
+	fmt.Println()
+	return nil
+}
 
 type buildsListCmd struct {
 	Repo      string `long:"repo" description:"repo URI"`
