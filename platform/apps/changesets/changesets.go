@@ -20,7 +20,6 @@ const (
 )
 
 func init() {
-	router.StrictSlash(true)
 	schemaDecoder.IgnoreUnknownKeys(true)
 
 	router.Path("/").Methods("GET").Handler(handlerWithError(serveList))
