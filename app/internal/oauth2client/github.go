@@ -3,7 +3,6 @@ package oauth2client
 import (
 	"bytes"
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,6 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
@@ -52,7 +52,14 @@ func init() {
 // (including a nonce state value, also stored in a cookie) and
 // redirects the client to that URL.
 func serveGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
-	returnTo := router.Rel.URLTo(router.Home).String()
+	returnToURL, err := url.Parse(r.Referer())
+	if err != nil {
+		return err
+	}
+	returnTo := returnToURL.Path
+	if err := returnto.CheckSafe(returnTo); err != nil {
+		return err
+	}
 
 	nonce, err := writeNonceCookie(w, r, nonceCookiePath)
 	if err != nil {
@@ -165,7 +172,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	log.Printf("github user %s linked to sourcegraph user %s, token: %#v", *user.Login, currentUser.Login, token)
+	log15.Info("Linked GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
 
 	returnTo := state.ReturnTo
 	if err := returnto.CheckSafe(returnTo); err != nil {

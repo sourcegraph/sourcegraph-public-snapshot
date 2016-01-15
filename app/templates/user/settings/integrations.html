@@ -14,7 +14,7 @@
 				<p class="api-status">
 					{{if not .TokenIsPresent}}
 						<i class="fa fa-circle disabled"></i> No GitHub account linked.
-					{{else if (and .PrivateRemoteRepos .TokenIsValid)}}
+					{{else if (and .Repos .TokenIsValid)}}
 						<i class="fa fa-circle success"></i> GitHub account linked to this user.
 					{{else if .TokenIsValid}}
 					<i class="fa fa-circle warning"></i> No private GitHub repositories found. Make sure your account has access to private repositories.
@@ -22,16 +22,16 @@
 						<i class="fa fa-circle danger"></i> Invalid access token.
 					{{end}}
 				</p>
-				<button type="submit" class="btn btn-sgblue">Link GitHub Account</button>
+				<button type="submit" class="btn btn-sgblue">{{if .TokenIsValid}}Sync{{else}}Link{{end}} GitHub Account</button>
 			</div>
 		</form>
-		{{if .PrivateRemoteRepos}}
+		{{if .Repos}}
 			<div class="repo-list">
 				<h3>Available Private GitHub Repositories</h3>
 				<form action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">
 					<table class="table repo-list">
 						{{$host := .Host}}
-						{{range $repo := .PrivateRemoteRepos}}
+						{{range $repo := .Repos}}
 							<tr>
 								<td>
 									{{if $repo.ExistsLocally}}
