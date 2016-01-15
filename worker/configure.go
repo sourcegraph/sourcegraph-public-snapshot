@@ -293,12 +293,6 @@ func droneRepoLink(u url.URL) (string, error) {
 // cases it may be impossible to solve; for example, if your
 // Sourcegraph server is firewalled off from the Docker containers.
 func containerAddrForHost(u url.URL) (string, *url.URL, error) {
-	containerHostname, err := dockerutil.ContainerHost()
-	if err != nil {
-		return "", nil, err
-	}
-
-	u.Host = strings.Replace(u.Host, "localhost", containerHostname, 1)
 	hostname := u.Host
 	if strings.Contains(u.Host, ":") {
 		var err error
@@ -307,5 +301,15 @@ func containerAddrForHost(u url.URL) (string, *url.URL, error) {
 			return "", nil, err
 		}
 	}
+
+	if hostname == "localhost" {
+		containerHostname, err := dockerutil.ContainerHost()
+		if err != nil {
+			return "", nil, err
+		}
+		hostname = containerHostname
+		u.Host = strings.Replace(u.Host, "localhost", containerHostname, 1)
+	}
+
 	return hostname, &u, nil
 }
