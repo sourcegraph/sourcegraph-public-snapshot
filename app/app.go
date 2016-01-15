@@ -104,6 +104,9 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))
 	r.Get(router.RepoCreate).Handler(internal.Handler(serveRepoCreate))
 
+	r.Get(router.RobotsTxt).HandlerFunc(robotsTxt)
+	r.Get(router.Favicon).HandlerFunc(favicon)
+
 	r.Get(router.SitemapIndex).Handler(internal.Handler(serveSitemapIndex))
 
 	if !appconf.Flags.DisableUserContent {
@@ -161,9 +164,6 @@ func NewHandler(r *router.Router) http.Handler {
 
 	// This route dispatches to registered SearchFrames.
 	r.Get(router.RepoPlatformSearch).Handler(internal.Handler(serveRepoPlatformSearchResults))
-
-	r.Path("/robots.txt").Methods("GET").HandlerFunc(robotsTxt)
-	r.Path("/favicon.ico").Methods("GET").HandlerFunc(favicon)
 
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(internal.Handler(handlerFunc))

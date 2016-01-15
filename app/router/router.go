@@ -31,6 +31,9 @@ const (
 	DownloadInstall = "download.install"
 	Download        = "download"
 
+	RobotsTxt = "robots-txt"
+	Favicon   = "favicon"
+
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
 
@@ -139,6 +142,9 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/login/oauth/authorize").Methods("GET").Name(OAuth2ServerAuthorize)
 	base.Path("/login/oauth/token").Methods("POST").Name(OAuth2ServerToken)
+
+	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
+	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 
 	base.Path("/sitemap-index.xml").Methods("GET").Name(SitemapIndex)
 
