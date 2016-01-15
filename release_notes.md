@@ -1,5 +1,12 @@
 # Dev
 
+# 0.11.9
+
+- Added a number of commits to improve the resilience of the build
+  process.
+
+# 0.11.8
+
 - Added a new event logger in `util/eventsutil`, which is similar to
   `util/metricsutil` but enables more precise logging of user actions
   on the Sourcegraph instance.
