@@ -79,9 +79,24 @@ func serveAppGlobalNotificationCenter(w http.ResponseWriter, r *http.Request) er
 	// relay this request to browser directly, and copy appropriate headers.
 	redirect := rr.Code == http.StatusSeeOther || rr.Code == http.StatusMovedPermanently || rr.Code == http.StatusTemporaryRedirect || rr.Code == http.StatusFound
 	if rr.Header().Get(platform.HTTPHeaderVerbatim) == "true" || redirect {
-		w.Header().Set("Content-Encoding", rr.Header().Get("Content-Encoding"))
-		w.Header().Set("Content-Type", rr.Header().Get("Content-Type"))
-		w.Header().Set("Location", rr.Header().Get("Location"))
+		if h, ok := rr.Header()["Content-Encoding"]; ok {
+			w.Header()["Content-Encoding"] = h
+		}
+		if h, ok := rr.Header()["Content-Type"]; ok {
+			w.Header()["Content-Type"] = h
+		}
+		if h, ok := rr.Header()["Location"]; ok {
+			w.Header()["Location"] = h
+		}
+		// TODO: I think what's below is equivalent to just:
+		//
+		//       w.Header()["Last-Modified"] = rr.Header()["Last-Modified"]
+		//
+		//       Since the map value type is []string and nil value is effectively the same as no value.
+		//       Doing that might be better since it's shorter and equivalent.
+		if h, ok := rr.Header()["Last-Modified"]; ok {
+			w.Header()["Last-Modified"] = h
+		}
 		w.WriteHeader(rr.Code)
 		_, err := io.Copy(w, rr.Body)
 		return err
