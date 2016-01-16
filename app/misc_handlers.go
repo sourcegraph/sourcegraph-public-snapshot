@@ -29,5 +29,5 @@ func robotsTxt(w http.ResponseWriter, r *http.Request) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, assets.URL("/favicon.png").String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, assets.URL("/img/favicon.png").String(), http.StatusMovedPermanently)
 }
