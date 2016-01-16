@@ -115,26 +115,26 @@ var CompareView = React.createClass({
 						<div className="compare-icon octicon octicon-git-compare" />
 
 						<RepoRevSwitcher
-							repoSpec={this.state.DeltaSpec.Base.URI}
+							repoSpec={this.state.DeltaSpec.Base.RepoSpec.URI}
 							rev={this.state.DeltaSpec.Base.Rev}
 							onBranchSelect={this._changeBaseBranch}
 							label="base:" />
 
 						<RepoBuildIndicator
-							RepoURI={this.state.DiffData.Delta.Base.URI}
+							RepoURI={this.state.DiffData.Delta.Base.RepoSpec.URI}
 							CommitID={this.state.DiffData.Delta.BaseCommit.ID}
 							btnSize="btn-xs" />
 
 						<span className="separator">...</span>
 
 						<RepoRevSwitcher
-							repoSpec={this.state.DeltaSpec.Head.URI}
+							repoSpec={this.state.DeltaSpec.Head.RepoSpec.URI}
 							rev={this.state.DeltaSpec.Head.Rev}
 							onBranchSelect={this._changeHeadBranch}
 							label="head:" />
 
 						<RepoBuildIndicator
-							RepoURI={this.state.DiffData.Delta.Head.URI}
+							RepoURI={this.state.DiffData.Delta.Head.RepoSpec.URI}
 							CommitID={this.state.DiffData.Delta.HeadCommit.ID}
 							btnSize="btn-xs" />
 

@@ -312,11 +312,11 @@ func (ts *testSuite) changesetEqual(got, want *sourcegraph.Changeset) error {
 	if got.Author.Login != want.Author.Login {
 		return fmt.Errorf("wrong author login, got %q want %q", got.Author.Login, want.Author.Login)
 	}
-	if got.DeltaSpec.Base.URI != want.DeltaSpec.Base.URI {
-		return fmt.Errorf("wrong DeltaSpec.Base.URI, got %#v want %#v", got.DeltaSpec.Base.URI, want.DeltaSpec.Base.URI)
+	if got.DeltaSpec.Base.RepoSpec.URI != want.DeltaSpec.Base.RepoSpec.URI {
+		return fmt.Errorf("wrong DeltaSpec.Base.RepoSpec.URI, got %#v want %#v", got.DeltaSpec.Base.RepoSpec.URI, want.DeltaSpec.Base.RepoSpec.URI)
 	}
-	if got.DeltaSpec.Head.URI != want.DeltaSpec.Head.URI {
-		return fmt.Errorf("wrong DeltaSpec.Head.URI, got %#v want %#v", got.DeltaSpec.Head.URI, want.DeltaSpec.Head.URI)
+	if got.DeltaSpec.Head.RepoSpec.URI != want.DeltaSpec.Head.RepoSpec.URI {
+		return fmt.Errorf("wrong DeltaSpec.Head.RepoSpec.URI, got %#v want %#v", got.DeltaSpec.Head.RepoSpec.URI, want.DeltaSpec.Head.RepoSpec.URI)
 	}
 	if got.DeltaSpec.Base.Rev != want.DeltaSpec.Base.Rev {
 		return fmt.Errorf("wrong DeltaSpec.Base.Rev, got %#v want %#v", got.DeltaSpec.Base.Rev, want.DeltaSpec.Base.Rev)

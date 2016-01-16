@@ -56,7 +56,7 @@ module.exports.submitTitle = function(changeset, newTitle) {
 	});
 
 	CodeUtil
-		.updateChangesetStatus(changeset.DeltaSpec.Base.URI, changeset.ID, {Title: newTitle})
+		.updateChangesetStatus(changeset.DeltaSpec.Base.RepoSpec.URI, changeset.ID, {Title: newTitle})
 		.then(
 			CodeReviewServerActions.statusUpdated,
 			CodeReviewServerActions.statusUpdateFailed
@@ -88,7 +88,7 @@ module.exports.blurTokens = function blurTokens(token, evt, fileDiff) {
  */
 module.exports.submitReview = function submitReview(body) {
 	var changeset = CodeReviewStore.get("Changeset"),
-		repo = changeset.DeltaSpec.Base.URI,
+		repo = changeset.DeltaSpec.Base.RepoSpec.URI,
 		drafts = CodeReviewStore.get("reviews").drafts.toJSON();
 
 	AppDispatcher.handleViewAction({
@@ -243,7 +243,7 @@ module.exports.changeChangesetStatus = function(status, evt) {
 	});
 
 	var id = CodeReviewStore.get("Changeset").ID,
-		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI,
+		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.RepoSpec.URI,
 		updateOp = {};
 
 	switch (status) {
@@ -274,7 +274,7 @@ module.exports.changeChangesetStatus = function(status, evt) {
 
 module.exports.mergeChangeset = function(opt, evt) {
 	var id = CodeReviewStore.get("Changeset").ID,
-		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;
+		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.RepoSpec.URI;
 
 	AppDispatcher.handleViewAction({
 		type: globals.Actions.CR_MERGE,
@@ -350,7 +350,7 @@ module.exports.deleteDraft = function(fd, hunk, line, comment, evt) {
  */
 module.exports.saveDraft = function(fd, hunk, line, body, evt) {
 	var comment = {
-		repo: CodeReviewStore.get("Changeset").DeltaSpec.Base.URI,
+		repo: CodeReviewStore.get("Changeset").DeltaSpec.Base.RepoSpec.URI,
 		changesetId: CodeReviewStore.get("Changeset").ID,
 		User: null,
 		Body: body,
