@@ -1,4 +1,9 @@
-# Dev
+# dev
+
+# 0.11.11
+
+- Reduce errors of Drone connecting to SSH server that
+is not (yet) listening.
 
 # 0.11.10
 
