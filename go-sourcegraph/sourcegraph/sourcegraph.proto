@@ -311,7 +311,7 @@ message RepoListOptions {
 	bool NoFork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // RepoPermissions describes the possible permissions that a user (or an anonymous
@@ -352,7 +352,7 @@ message RepoPermissions {
 // you canonicalize a URL with 'y' but does not default to using the canonical
 // URL).
 message RepoRevSpec {
-	RepoSpec RepoSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	RepoSpec RepoSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	string Rev = 2;
 	string CommitID = 3;
 }
@@ -755,14 +755,14 @@ message ReposListCommitsOp {
 message RepoListCommitsOptions {
 	string Head = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Base = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	string Path = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool RefreshCache = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 message CommitList {
 	repeated vcs.Commit Commits = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message ReposListBranchesOp {
@@ -774,12 +774,12 @@ message RepoListBranchesOptions {
 	bool IncludeCommit = 4;
 	string BehindAheadBranch = 5;
 	string ContainsCommit = 6;
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message BranchList {
 	repeated vcs.Branch Branches = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message ReposListTagsOp {
@@ -794,12 +794,12 @@ message ReposListCommittersOp {
 
 message RepoListCommittersOptions {
 	string Rev = 1;
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message CommitterList {
 	repeated vcs.Committer Committers = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message ChangesetCreateOp {
@@ -885,12 +885,12 @@ message ChangesetUpdateAffectedOp {
 }
 
 message RepoListTagsOptions {
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message TagList {
 	repeated vcs.Tag Tags = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message MirrorReposRefreshVCSOp {
@@ -1027,7 +1027,7 @@ message Build {
 	string Host = 11;
 
 	bool Purged = 12;
-	BuildConfig BuildConfig = 13 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	BuildConfig BuildConfig = 13 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // BuildConfig configures a repository build.
@@ -1070,7 +1070,7 @@ message BuildListOptions {
 	string CommitID = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Sort = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Direction = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message ChangesetListOp {
@@ -1089,7 +1089,7 @@ message ChangesetListOp {
 	// Base, when set, will restrict the list to changesets that have this
 	// branch as a base.
 	string Base = 5;
-	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // A BuildSpec uniquely identifies a build.
@@ -1150,7 +1150,7 @@ message BuildTask {
 }
 
 message BuildTaskListOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // A BuildUpdate contains updated information to update on an existing build.
@@ -1169,7 +1169,7 @@ message BuildUpdate {
 
 message BuildList {
 	repeated Build Builds = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message BuildsCreateOp {
@@ -1258,11 +1258,11 @@ message LogEntries {
 }
 
 message Org {
-	User User = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	User User = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message OrgListMembersOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // OrgSpec specifies an organization. At least one of Email, Login, and UID must be
@@ -1291,7 +1291,7 @@ message Person {
 	// PersonSpec is an identifier for the person. If the person was resolved to a
 	// user, then both Login and UID are set. Otherwise only Email is set, and it may
 	// be obfuscated (to protect privacy).
-	PersonSpec PersonSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	PersonSpec PersonSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
 	// FullName is the (possibly empty) full name of the person.
 	string FullName = 2;
@@ -1397,12 +1397,12 @@ message UsersListOptions {
 
 	string Sort = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Direction = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message OrgsListOp {
 	UserSpec Member = 1 [(gogoproto.nullable) = false];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message EmailAddrList {
@@ -1931,11 +1931,11 @@ message Def {
 message DefAuthor {
 	int32 UID = 1;
 	string Email = 2;
-	DefAuthorship DefAuthorship = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DefAuthorship DefAuthorship = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message DefAuthorship {
-	AuthorshipInfo AuthorshipInfo = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	AuthorshipInfo AuthorshipInfo = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
 	// Exported is whether the def is exported.
 	bool Exported = 2;
@@ -1947,7 +1947,7 @@ message DefAuthorship {
 message DefClient {
 	int32 UID = 1;
 	string Email = 2;
-	AuthorshipInfo AuthorshipInfo = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	AuthorshipInfo AuthorshipInfo = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
 	// UseCount is the number of times this person referred to the def.
 	int32 UseCount = 4;
@@ -1973,12 +1973,12 @@ message DefGetOptions {
 
 // DefListAuthorsOptions specifies options for DefsService.ListAuthors.
 message DefListAuthorsOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DefListClientsOptions specifies options for DefsService.ListClients.
 message DefListClientsOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DefListExamplesOptions specifies options for DefsService.ListExamples.
@@ -1995,7 +1995,7 @@ message DefListExamplesOptions {
 	// manipulating the contents.
 	bool TokenizedSource = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DefListOptions specifies options for DefsService.List.
@@ -2054,13 +2054,13 @@ message DefListOptions {
 	string Direction = 19 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Paging
-	ListOptions ListOptions = 20 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 20 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message DefListRefsOptions {
 	bool Authorship = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DefSpec specifies a def.
@@ -2079,7 +2079,7 @@ message DefsGetOp {
 
 message DefList {
 	repeated Def Defs = 1;
-	ListResponse ListResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListResponse ListResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message DefsListRefsOp {
@@ -2089,7 +2089,7 @@ message DefsListRefsOp {
 
 message RefList {
 	repeated Ref Refs = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message DefsListExamplesOp {
@@ -2102,7 +2102,7 @@ message DefsListExamplesOp {
 
 message ExampleList {
 	repeated Example Examples = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message DefsListAuthorsOp {
@@ -2137,7 +2137,7 @@ message Delta {
 // uses.
 message DeltaAffectedPerson {
 	// the affected person
-	Person Person = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	Person Person = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
 	// the defs they authored or use (the reason why they're affected)
 	repeated Def Defs = 2;
@@ -2155,7 +2155,7 @@ message DeltaDefs {
 // FileDiff holds data about a diff, and additionally stores extended
 // information about its hunks.
 message FileDiff {
-	diff.FileDiff FileDiff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	diff.FileDiff FileDiff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	repeated Hunk FileDiffHunks = 2;
 	// PreImage is the CommitID at which this file was before the change occurred.
 	string PreImage = 3 [(gogoproto.jsontag) = ",omitempty"];
@@ -2167,7 +2167,7 @@ message FileDiff {
 
 // Hunk holds data about a hunk in a diff.
 message Hunk {
-	diff.Hunk Hunk = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	diff.Hunk Hunk = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
 	// LinePrefixes holds a string where each character's index corresponds
 	// to a line in the BodySource, and its value reflects whether the line
@@ -2208,20 +2208,20 @@ message DeltaFilter {
 
 // DeltaListAffectedAuthorsOptions specifies options for ListAffectedAuthors.
 message DeltaListAffectedAuthorsOptions {
-	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DeltaListAffectedClientsOptions specifies options for ListAffectedClients.
 message DeltaListAffectedClientsOptions {
-	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DeltaListDefsOptions specifies options for ListDefs.
 message DeltaListDefsOptions {
-	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DeltaListFilesOptions specifies options for ListFiles.
@@ -2247,7 +2247,7 @@ message DeltaListFilesOptions {
 	// size of the raw diff when tokenized and linked.
 	int32 MaxSize = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	DeltaFilter DeltaFilter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	DeltaFilter DeltaFilter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DeltaListUnitsOptions specifies options for ListUnits.
@@ -2346,7 +2346,7 @@ message MarkdownOpt {
 
 message MarkdownRequestBody {
 	bytes Markdown = 1;
-	MarkdownOpt MarkdownOpt = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	MarkdownOpt MarkdownOpt = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message MarkdownRenderOp {
@@ -2379,18 +2379,18 @@ message RepoTreeGetOptions {
 
 	bool ContentsAsString = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	vcsclient.GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	vcsclient.GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message RepoTreeSearchOptions {
-	vcs.SearchOptions SearchOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	vcs.SearchOptions SearchOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	bool Formatted = 2;
 }
 
 // A RepoTreeSearchResult is a tree search result that includes the repo and rev it
 // came from.
 message RepoTreeSearchResult {
-	vcs.SearchResult SearchResult = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	vcs.SearchResult SearchResult = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
 }
 
@@ -2414,19 +2414,19 @@ message RepoTreeListResult {
 
 message VCSSearchResultList {
 	repeated vcs.SearchResult SearchResults = 1;
-	ListResponse ListResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListResponse ListResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message TokenSearchOptions {
 	string Query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
 	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message TextSearchOptions {
 	string Query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
 	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // SourceCode contains a snippet of code with linked and classed tokens, along with
@@ -2489,7 +2489,7 @@ message SourceCodeToken {
 // the formatting operation (if Formatted is true in the options).
 message TreeEntry {
 	vcsclient.TreeEntry TreeEntry = 1 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	vcsclient.FileRange FileRange = 2 [(gogoproto.embed) = true];
+	vcsclient.FileRange FileRange = 2 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	string ContentsString = 3;
 
 	// SourceCode is set when TokenizedSource is enabled in RepoTreeGetOptions.
@@ -2532,12 +2532,12 @@ message UnitListOptions {
 	string Query = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Paging
-	ListOptions ListOptions = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // UnitSpec specifies a source unit.
 message UnitSpec {
-	RepoRevSpec RepoRevSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	RepoRevSpec RepoRevSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	string UnitType = 2;
 	string Unit = 3;
 }
@@ -2876,13 +2876,13 @@ message RegisteredClientCredentials {
 // RegisteredClients.List.
 message RegisteredClientListOptions {
 	RegisteredClientType Type = 1;
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // RegisteredClientList holds a list of clients.
 message RegisteredClientList {
 	repeated RegisteredClient Clients = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 message UserPermissions {

@@ -10,7 +10,7 @@ import (
 
 var linePattern = regexp.MustCompile(`^(\s+)(repeated )?((?:[\w\d\.]|<.*>)+ )?([\w\d]+)( = )(\d+)( \[(?:.+)\])?(;)( //.*)?(\n)$`)
 var wordBeginPattern = regexp.MustCompile(`^\w|_\w`)
-var optionPattern = regexp.MustCompile(`^\(([\w\.]+)\) = (?:\w+|"(.*)")$`)
+var optionPattern = regexp.MustCompile(`^\(([\w\.]+)\) = (?:(\w+)|"(.*)")$`)
 
 func main() {
 	in, err := os.Open(os.Args[1])
@@ -51,16 +51,28 @@ func main() {
 		if len(parts[6]) != 0 {
 			options := strings.Split(parts[6][2:len(parts[6])-1], ", ")
 			var newOptions []string
+			hasJSONTag := false
+			isEmbedded := false
 			for _, o := range options {
 				matches := optionPattern.FindStringSubmatch(o)
 				if matches == nil {
 					panic("option pattern did not match")
 				}
-				if matches[1] == "gogoproto.customname" {
-					parts[3] = matches[2]
+				switch matches[1] {
+				case "gogoproto.customname":
+					parts[3] = matches[3]
 					continue
+				case "gogoproto.jsontag":
+					hasJSONTag = true
+				case "gogoproto.embed":
+					if matches[2] == "true" {
+						isEmbedded = true
+					}
 				}
 				newOptions = append(newOptions, o)
+			}
+			if !hasJSONTag && isEmbedded {
+				newOptions = append(newOptions, `(gogoproto.jsontag) = ""`)
 			}
 			parts[6] = " [" + strings.Join(newOptions, ", ") + "]"
 			if len(newOptions) == 0 {

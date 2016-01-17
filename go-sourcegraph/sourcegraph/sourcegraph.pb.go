@@ -611,7 +611,7 @@ type RepoListOptions struct {
 	NoFork      bool     `protobuf:"varint,7,opt,name=NoFork,proto3" json:"NoFork,omitempty" url:",omitempty"`
 	Type        string   `protobuf:"bytes,8,opt,name=Type,proto3" json:"Type,omitempty" url:",omitempty"`
 	Owner       string   `protobuf:"bytes,10,opt,name=Owner,proto3" json:"Owner,omitempty" url:",omitempty"`
-	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *RepoListOptions) Reset()         { *m = RepoListOptions{} }
@@ -660,7 +660,7 @@ func (*RepoPermissions) ProtoMessage()    {}
 // you canonicalize a URL with 'y' but does not default to using the canonical
 // URL).
 type RepoRevSpec struct {
-	RepoSpec `protobuf:"bytes,1,opt,name=RepoSpec,embedded=RepoSpec" json:"RepoSpec"`
+	RepoSpec `protobuf:"bytes,1,opt,name=RepoSpec,embedded=RepoSpec" json:""`
 	Rev      string `protobuf:"bytes,2,opt,name=Rev,proto3" json:"Rev,omitempty"`
 	CommitID string `protobuf:"bytes,3,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
 }
@@ -877,7 +877,7 @@ func (*ReposListCommitsOp) ProtoMessage()    {}
 type RepoListCommitsOptions struct {
 	Head         string `protobuf:"bytes,1,opt,name=Head,proto3" json:"Head,omitempty" url:",omitempty"`
 	Base         string `protobuf:"bytes,2,opt,name=Base,proto3" json:"Base,omitempty" url:",omitempty"`
-	ListOptions  `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions  `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 	Path         string `protobuf:"bytes,4,opt,name=Path,proto3" json:"Path,omitempty" url:",omitempty"`
 	RefreshCache bool   `protobuf:"varint,5,opt,name=RefreshCache,proto3" json:"RefreshCache,omitempty" url:",omitempty"`
 }
@@ -888,7 +888,7 @@ func (*RepoListCommitsOptions) ProtoMessage()    {}
 
 type CommitList struct {
 	Commits        []*vcs.Commit `protobuf:"bytes,1,rep,name=Commits" json:"Commits,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *CommitList) Reset()         { *m = CommitList{} }
@@ -908,7 +908,7 @@ type RepoListBranchesOptions struct {
 	IncludeCommit     bool   `protobuf:"varint,4,opt,name=IncludeCommit,proto3" json:"IncludeCommit,omitempty"`
 	BehindAheadBranch string `protobuf:"bytes,5,opt,name=BehindAheadBranch,proto3" json:"BehindAheadBranch,omitempty"`
 	ContainsCommit    string `protobuf:"bytes,6,opt,name=ContainsCommit,proto3" json:"ContainsCommit,omitempty"`
-	ListOptions       `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions       `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *RepoListBranchesOptions) Reset()         { *m = RepoListBranchesOptions{} }
@@ -917,7 +917,7 @@ func (*RepoListBranchesOptions) ProtoMessage()    {}
 
 type BranchList struct {
 	Branches       []*vcs.Branch `protobuf:"bytes,1,rep,name=Branches" json:"Branches,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *BranchList) Reset()         { *m = BranchList{} }
@@ -944,7 +944,7 @@ func (*ReposListCommittersOp) ProtoMessage()    {}
 
 type RepoListCommittersOptions struct {
 	Rev         string `protobuf:"bytes,1,opt,name=Rev,proto3" json:"Rev,omitempty"`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *RepoListCommittersOptions) Reset()         { *m = RepoListCommittersOptions{} }
@@ -953,7 +953,7 @@ func (*RepoListCommittersOptions) ProtoMessage()    {}
 
 type CommitterList struct {
 	Committers     []*vcs.Committer `protobuf:"bytes,1,rep,name=Committers" json:"Committers,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *CommitterList) Reset()         { *m = CommitterList{} }
@@ -1057,7 +1057,7 @@ func (m *ChangesetUpdateAffectedOp) String() string { return proto.CompactTextSt
 func (*ChangesetUpdateAffectedOp) ProtoMessage()    {}
 
 type RepoListTagsOptions struct {
-	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *RepoListTagsOptions) Reset()         { *m = RepoListTagsOptions{} }
@@ -1066,7 +1066,7 @@ func (*RepoListTagsOptions) ProtoMessage()    {}
 
 type TagList struct {
 	Tags           []*vcs.Tag `protobuf:"bytes,1,rep,name=Tags" json:"Tags,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *TagList) Reset()         { *m = TagList{} }
@@ -1179,7 +1179,7 @@ type Build struct {
 	// Host is the hostname of the machine that is working on this build.
 	Host        string `protobuf:"bytes,11,opt,name=Host,proto3" json:"Host,omitempty"`
 	Purged      bool   `protobuf:"varint,12,opt,name=Purged,proto3" json:"Purged,omitempty"`
-	BuildConfig `protobuf:"bytes,13,opt,name=BuildConfig,embedded=BuildConfig" json:"BuildConfig"`
+	BuildConfig `protobuf:"bytes,13,opt,name=BuildConfig,embedded=BuildConfig" json:""`
 }
 
 func (m *Build) Reset()         { *m = Build{} }
@@ -1232,7 +1232,7 @@ type BuildListOptions struct {
 	CommitID    string `protobuf:"bytes,8,opt,name=CommitID,proto3" json:"CommitID,omitempty" url:",omitempty"`
 	Sort        string `protobuf:"bytes,9,opt,name=Sort,proto3" json:"Sort,omitempty" url:",omitempty"`
 	Direction   string `protobuf:"bytes,10,opt,name=Direction,proto3" json:"Direction,omitempty" url:",omitempty"`
-	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *BuildListOptions) Reset()         { *m = BuildListOptions{} }
@@ -1251,7 +1251,7 @@ type ChangesetListOp struct {
 	// Base, when set, will restrict the list to changesets that have this
 	// branch as a base.
 	Base        string `protobuf:"bytes,5,opt,name=Base,proto3" json:"Base,omitempty"`
-	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *ChangesetListOp) Reset()         { *m = ChangesetListOp{} }
@@ -1313,7 +1313,7 @@ func (m *BuildTask) String() string { return proto.CompactTextString(m) }
 func (*BuildTask) ProtoMessage()    {}
 
 type BuildTaskListOptions struct {
-	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *BuildTaskListOptions) Reset()         { *m = BuildTaskListOptions{} }
@@ -1340,7 +1340,7 @@ func (*BuildUpdate) ProtoMessage()    {}
 
 type BuildList struct {
 	Builds         []*Build `protobuf:"bytes,1,rep,name=Builds" json:"Builds,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *BuildList) Reset()         { *m = BuildList{} }
@@ -1477,7 +1477,7 @@ func (m *LogEntries) String() string { return proto.CompactTextString(m) }
 func (*LogEntries) ProtoMessage()    {}
 
 type Org struct {
-	User `protobuf:"bytes,1,opt,name=User,embedded=User" json:"User"`
+	User `protobuf:"bytes,1,opt,name=User,embedded=User" json:""`
 }
 
 func (m *Org) Reset()         { *m = Org{} }
@@ -1485,7 +1485,7 @@ func (m *Org) String() string { return proto.CompactTextString(m) }
 func (*Org) ProtoMessage()    {}
 
 type OrgListMembersOptions struct {
-	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *OrgListMembersOptions) Reset()         { *m = OrgListMembersOptions{} }
@@ -1534,7 +1534,7 @@ type Person struct {
 	// PersonSpec is an identifier for the person. If the person was resolved to a
 	// user, then both Login and UID are set. Otherwise only Email is set, and it may
 	// be obfuscated (to protect privacy).
-	PersonSpec `protobuf:"bytes,1,opt,name=PersonSpec,embedded=PersonSpec" json:"PersonSpec"`
+	PersonSpec `protobuf:"bytes,1,opt,name=PersonSpec,embedded=PersonSpec" json:""`
 	// FullName is the (possibly empty) full name of the person.
 	FullName string `protobuf:"bytes,2,opt,name=FullName,proto3" json:"FullName,omitempty"`
 	// AvatarURL is the URL to the user's avatar image.
@@ -1645,7 +1645,7 @@ type UsersListOptions struct {
 	Query       string `protobuf:"bytes,1,opt,name=Query,proto3" json:"Query,omitempty" url:",omitempty"`
 	Sort        string `protobuf:"bytes,2,opt,name=Sort,proto3" json:"Sort,omitempty" url:",omitempty"`
 	Direction   string `protobuf:"bytes,3,opt,name=Direction,proto3" json:"Direction,omitempty" url:",omitempty"`
-	ListOptions `protobuf:"bytes,4,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,4,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *UsersListOptions) Reset()         { *m = UsersListOptions{} }
@@ -1654,7 +1654,7 @@ func (*UsersListOptions) ProtoMessage()    {}
 
 type OrgsListOp struct {
 	Member      UserSpec `protobuf:"bytes,1,opt,name=Member" json:"Member"`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *OrgsListOp) Reset()         { *m = OrgsListOp{} }
@@ -2074,7 +2074,7 @@ func (*Def) ProtoMessage()    {}
 type DefAuthor struct {
 	UID           int32  `protobuf:"varint,1,opt,name=UID,proto3" json:"UID,omitempty"`
 	Email         string `protobuf:"bytes,2,opt,name=Email,proto3" json:"Email,omitempty"`
-	DefAuthorship `protobuf:"bytes,3,opt,name=DefAuthorship,embedded=DefAuthorship" json:"DefAuthorship"`
+	DefAuthorship `protobuf:"bytes,3,opt,name=DefAuthorship,embedded=DefAuthorship" json:""`
 }
 
 func (m *DefAuthor) Reset()         { *m = DefAuthor{} }
@@ -2082,7 +2082,7 @@ func (m *DefAuthor) String() string { return proto.CompactTextString(m) }
 func (*DefAuthor) ProtoMessage()    {}
 
 type DefAuthorship struct {
-	AuthorshipInfo `protobuf:"bytes,1,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:"AuthorshipInfo"`
+	AuthorshipInfo `protobuf:"bytes,1,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:""`
 	// Exported is whether the def is exported.
 	Exported        bool    `protobuf:"varint,2,opt,name=Exported,proto3" json:"Exported,omitempty"`
 	Bytes           int32   `protobuf:"varint,3,opt,name=Bytes,proto3" json:"Bytes,omitempty"`
@@ -2096,7 +2096,7 @@ func (*DefAuthorship) ProtoMessage()    {}
 type DefClient struct {
 	UID            int32  `protobuf:"varint,1,opt,name=UID,proto3" json:"UID,omitempty"`
 	Email          string `protobuf:"bytes,2,opt,name=Email,proto3" json:"Email,omitempty"`
-	AuthorshipInfo `protobuf:"bytes,3,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:"AuthorshipInfo"`
+	AuthorshipInfo `protobuf:"bytes,3,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:""`
 	// UseCount is the number of times this person referred to the def.
 	UseCount int32 `protobuf:"varint,4,opt,name=UseCount,proto3" json:"UseCount,omitempty"`
 }
@@ -2132,7 +2132,7 @@ func (*DefGetOptions) ProtoMessage()    {}
 
 // DefListAuthorsOptions specifies options for DefsService.ListAuthors.
 type DefListAuthorsOptions struct {
-	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DefListAuthorsOptions) Reset()         { *m = DefListAuthorsOptions{} }
@@ -2141,7 +2141,7 @@ func (*DefListAuthorsOptions) ProtoMessage()    {}
 
 // DefListClientsOptions specifies options for DefsService.ListClients.
 type DefListClientsOptions struct {
-	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DefListClientsOptions) Reset()         { *m = DefListClientsOptions{} }
@@ -2159,7 +2159,7 @@ type DefListExamplesOptions struct {
 	// This is useful when the client wants to take full control of rendering and
 	// manipulating the contents.
 	TokenizedSource bool `protobuf:"varint,3,opt,name=TokenizedSource,proto3" json:"TokenizedSource,omitempty" url:",omitempty"`
-	ListOptions     `protobuf:"bytes,4,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions     `protobuf:"bytes,4,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DefListExamplesOptions) Reset()         { *m = DefListExamplesOptions{} }
@@ -2207,7 +2207,7 @@ type DefListOptions struct {
 	Sort      string `protobuf:"bytes,18,opt,name=Sort,proto3" json:"Sort,omitempty" url:",omitempty"`
 	Direction string `protobuf:"bytes,19,opt,name=Direction,proto3" json:"Direction,omitempty" url:",omitempty"`
 	// Paging
-	ListOptions `protobuf:"bytes,20,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,20,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DefListOptions) Reset()         { *m = DefListOptions{} }
@@ -2217,7 +2217,7 @@ func (*DefListOptions) ProtoMessage()    {}
 type DefListRefsOptions struct {
 	Authorship  bool   `protobuf:"varint,1,opt,name=Authorship,proto3" json:"Authorship,omitempty" url:",omitempty"`
 	Repo        string `protobuf:"bytes,2,opt,name=Repo,proto3" json:"Repo,omitempty" url:",omitempty"`
-	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DefListRefsOptions) Reset()         { *m = DefListRefsOptions{} }
@@ -2248,7 +2248,7 @@ func (*DefsGetOp) ProtoMessage()    {}
 
 type DefList struct {
 	Defs         []*Def `protobuf:"bytes,1,rep,name=Defs" json:"Defs,omitempty"`
-	ListResponse `protobuf:"bytes,2,opt,name=ListResponse,embedded=ListResponse" json:"ListResponse"`
+	ListResponse `protobuf:"bytes,2,opt,name=ListResponse,embedded=ListResponse" json:""`
 }
 
 func (m *DefList) Reset()         { *m = DefList{} }
@@ -2266,7 +2266,7 @@ func (*DefsListRefsOp) ProtoMessage()    {}
 
 type RefList struct {
 	Refs           []*Ref `protobuf:"bytes,1,rep,name=Refs" json:"Refs,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *RefList) Reset()         { *m = RefList{} }
@@ -2287,7 +2287,7 @@ func (*DefsListExamplesOp) ProtoMessage()    {}
 
 type ExampleList struct {
 	Examples       []*Example `protobuf:"bytes,1,rep,name=Examples" json:"Examples,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *ExampleList) Reset()         { *m = ExampleList{} }
@@ -2338,7 +2338,7 @@ func (*Delta) ProtoMessage()    {}
 // uses.
 type DeltaAffectedPerson struct {
 	// the affected person
-	Person `protobuf:"bytes,1,opt,name=Person,embedded=Person" json:"Person"`
+	Person `protobuf:"bytes,1,opt,name=Person,embedded=Person" json:""`
 	// the defs they authored or use (the reason why they're affected)
 	Defs []*Def `protobuf:"bytes,2,rep,name=Defs" json:"Defs,omitempty"`
 }
@@ -2362,7 +2362,7 @@ func (*DeltaDefs) ProtoMessage()    {}
 // FileDiff holds data about a diff, and additionally stores extended
 // information about its hunks.
 type FileDiff struct {
-	diff.FileDiff `protobuf:"bytes,1,opt,name=FileDiff,embedded=FileDiff" json:"FileDiff"`
+	diff.FileDiff `protobuf:"bytes,1,opt,name=FileDiff,embedded=FileDiff" json:""`
 	FileDiffHunks []*Hunk `protobuf:"bytes,2,rep,name=FileDiffHunks" json:"FileDiffHunks,omitempty"`
 	// PreImage is the CommitID at which this file was before the change occurred.
 	PreImage string `protobuf:"bytes,3,opt,name=PreImage,proto3" json:",omitempty"`
@@ -2378,7 +2378,7 @@ func (*FileDiff) ProtoMessage()    {}
 
 // Hunk holds data about a hunk in a diff.
 type Hunk struct {
-	diff.Hunk `protobuf:"bytes,1,opt,name=Hunk,embedded=Hunk" json:"Hunk"`
+	diff.Hunk `protobuf:"bytes,1,opt,name=Hunk,embedded=Hunk" json:""`
 	// LinePrefixes holds a string where each character's index corresponds
 	// to a line in the BodySource, and its value reflects whether the line
 	// is an addition, deletion, or change ('+', '-', ' ').
@@ -2426,8 +2426,8 @@ func (*DeltaFilter) ProtoMessage()    {}
 
 // DeltaListAffectedAuthorsOptions specifies options for ListAffectedAuthors.
 type DeltaListAffectedAuthorsOptions struct {
-	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:"DeltaFilter"`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:""`
+	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DeltaListAffectedAuthorsOptions) Reset()         { *m = DeltaListAffectedAuthorsOptions{} }
@@ -2436,8 +2436,8 @@ func (*DeltaListAffectedAuthorsOptions) ProtoMessage()    {}
 
 // DeltaListAffectedClientsOptions specifies options for ListAffectedClients.
 type DeltaListAffectedClientsOptions struct {
-	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:"DeltaFilter"`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:""`
+	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DeltaListAffectedClientsOptions) Reset()         { *m = DeltaListAffectedClientsOptions{} }
@@ -2446,8 +2446,8 @@ func (*DeltaListAffectedClientsOptions) ProtoMessage()    {}
 
 // DeltaListDefsOptions specifies options for ListDefs.
 type DeltaListDefsOptions struct {
-	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:"DeltaFilter"`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:""`
+	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DeltaListDefsOptions) Reset()         { *m = DeltaListDefsOptions{} }
@@ -2473,7 +2473,7 @@ type DeltaListFilesOptions struct {
 	// may be too large for that. DeltaFiles structure size can be up to 4 times the
 	// size of the raw diff when tokenized and linked.
 	MaxSize     int32 `protobuf:"varint,4,opt,name=MaxSize,proto3" json:"MaxSize,omitempty" url:",omitempty"`
-	DeltaFilter `protobuf:"bytes,5,opt,name=DeltaFilter,embedded=DeltaFilter" json:"DeltaFilter"`
+	DeltaFilter `protobuf:"bytes,5,opt,name=DeltaFilter,embedded=DeltaFilter" json:""`
 }
 
 func (m *DeltaListFilesOptions) Reset()         { *m = DeltaListFilesOptions{} }
@@ -2620,7 +2620,7 @@ func (*MarkdownOpt) ProtoMessage()    {}
 
 type MarkdownRequestBody struct {
 	Markdown    []byte `protobuf:"bytes,1,opt,name=Markdown,proto3" json:"Markdown,omitempty"`
-	MarkdownOpt `protobuf:"bytes,2,opt,name=MarkdownOpt,embedded=MarkdownOpt" json:"MarkdownOpt"`
+	MarkdownOpt `protobuf:"bytes,2,opt,name=MarkdownOpt,embedded=MarkdownOpt" json:""`
 }
 
 func (m *MarkdownRequestBody) Reset()         { *m = MarkdownRequestBody{} }
@@ -2661,7 +2661,7 @@ type RepoTreeGetOptions struct {
 	// manipulating the contents.
 	TokenizedSource          bool `protobuf:"varint,3,opt,name=TokenizedSource,proto3" json:"TokenizedSource,omitempty" url:",omitempty"`
 	ContentsAsString         bool `protobuf:"varint,4,opt,name=ContentsAsString,proto3" json:"ContentsAsString,omitempty" url:",omitempty"`
-	vcsclient.GetFileOptions `protobuf:"bytes,5,opt,name=GetFileOptions,embedded=GetFileOptions" json:"GetFileOptions"`
+	vcsclient.GetFileOptions `protobuf:"bytes,5,opt,name=GetFileOptions,embedded=GetFileOptions" json:""`
 }
 
 func (m *RepoTreeGetOptions) Reset()         { *m = RepoTreeGetOptions{} }
@@ -2669,7 +2669,7 @@ func (m *RepoTreeGetOptions) String() string { return proto.CompactTextString(m)
 func (*RepoTreeGetOptions) ProtoMessage()    {}
 
 type RepoTreeSearchOptions struct {
-	vcs.SearchOptions `protobuf:"bytes,1,opt,name=SearchOptions,embedded=SearchOptions" json:"SearchOptions"`
+	vcs.SearchOptions `protobuf:"bytes,1,opt,name=SearchOptions,embedded=SearchOptions" json:""`
 	Formatted         bool `protobuf:"varint,2,opt,name=Formatted,proto3" json:"Formatted,omitempty"`
 }
 
@@ -2680,7 +2680,7 @@ func (*RepoTreeSearchOptions) ProtoMessage()    {}
 // A RepoTreeSearchResult is a tree search result that includes the repo and rev it
 // came from.
 type RepoTreeSearchResult struct {
-	vcs.SearchResult `protobuf:"bytes,1,opt,name=SearchResult,embedded=SearchResult" json:"SearchResult"`
+	vcs.SearchResult `protobuf:"bytes,1,opt,name=SearchResult,embedded=SearchResult" json:""`
 	RepoRev          RepoRevSpec `protobuf:"bytes,2,opt,name=RepoRev" json:"RepoRev"`
 }
 
@@ -2724,7 +2724,7 @@ func (*RepoTreeListResult) ProtoMessage()    {}
 
 type VCSSearchResultList struct {
 	SearchResults []*vcs.SearchResult `protobuf:"bytes,1,rep,name=SearchResults" json:"SearchResults,omitempty"`
-	ListResponse  `protobuf:"bytes,2,opt,name=ListResponse,embedded=ListResponse" json:"ListResponse"`
+	ListResponse  `protobuf:"bytes,2,opt,name=ListResponse,embedded=ListResponse" json:""`
 }
 
 func (m *VCSSearchResultList) Reset()         { *m = VCSSearchResultList{} }
@@ -2734,7 +2734,7 @@ func (*VCSSearchResultList) ProtoMessage()    {}
 type TokenSearchOptions struct {
 	Query       string      `protobuf:"bytes,1,opt,name=Query,proto3" json:"Query,omitempty" url:"q" schema:"q"`
 	RepoRev     RepoRevSpec `protobuf:"bytes,2,opt,name=RepoRev" json:"RepoRev"`
-	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *TokenSearchOptions) Reset()         { *m = TokenSearchOptions{} }
@@ -2744,7 +2744,7 @@ func (*TokenSearchOptions) ProtoMessage()    {}
 type TextSearchOptions struct {
 	Query       string      `protobuf:"bytes,1,opt,name=Query,proto3" json:"Query,omitempty" url:"q" schema:"q"`
 	RepoRev     RepoRevSpec `protobuf:"bytes,2,opt,name=RepoRev" json:"RepoRev"`
-	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *TextSearchOptions) Reset()         { *m = TextSearchOptions{} }
@@ -2814,7 +2814,7 @@ func (*SourceCodeToken) ProtoMessage()    {}
 // the formatting operation (if Formatted is true in the options).
 type TreeEntry struct {
 	*vcsclient.TreeEntry `protobuf:"bytes,1,opt,name=TreeEntry,embedded=TreeEntry" json:""`
-	*vcsclient.FileRange `protobuf:"bytes,2,opt,name=FileRange,embedded=FileRange" json:"FileRange,omitempty"`
+	*vcsclient.FileRange `protobuf:"bytes,2,opt,name=FileRange,embedded=FileRange" json:""`
 	ContentsString       string `protobuf:"bytes,3,opt,name=ContentsString,proto3" json:"ContentsString,omitempty"`
 	// SourceCode is set when TokenizedSource is enabled in RepoTreeGetOptions.
 	SourceCode *SourceCode `protobuf:"bytes,4,opt,name=SourceCode" json:"SourceCode,omitempty"`
@@ -2863,7 +2863,7 @@ type UnitListOptions struct {
 	// data.
 	Query string `protobuf:"bytes,5,opt,name=Query,proto3" json:"Query,omitempty" url:",omitempty"`
 	// Paging
-	ListOptions `protobuf:"bytes,6,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,6,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *UnitListOptions) Reset()         { *m = UnitListOptions{} }
@@ -2872,7 +2872,7 @@ func (*UnitListOptions) ProtoMessage()    {}
 
 // UnitSpec specifies a source unit.
 type UnitSpec struct {
-	RepoRevSpec `protobuf:"bytes,1,opt,name=RepoRevSpec,embedded=RepoRevSpec" json:"RepoRevSpec"`
+	RepoRevSpec `protobuf:"bytes,1,opt,name=RepoRevSpec,embedded=RepoRevSpec" json:""`
 	UnitType    string `protobuf:"bytes,2,opt,name=UnitType,proto3" json:"UnitType,omitempty"`
 	Unit        string `protobuf:"bytes,3,opt,name=Unit,proto3" json:"Unit,omitempty"`
 }
@@ -3041,7 +3041,7 @@ func (*RegisteredClientCredentials) ProtoMessage()    {}
 // RegisteredClients.List.
 type RegisteredClientListOptions struct {
 	Type        RegisteredClientType `protobuf:"varint,1,opt,name=Type,proto3,enum=sourcegraph.RegisteredClientType" json:"Type,omitempty"`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:"ListOptions"`
+	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *RegisteredClientListOptions) Reset()         { *m = RegisteredClientListOptions{} }
@@ -3051,7 +3051,7 @@ func (*RegisteredClientListOptions) ProtoMessage()    {}
 // RegisteredClientList holds a list of clients.
 type RegisteredClientList struct {
 	Clients        []*RegisteredClient `protobuf:"bytes,1,rep,name=Clients" json:"Clients,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:"StreamResponse"`
+	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
 func (m *RegisteredClientList) Reset()         { *m = RegisteredClientList{} }
