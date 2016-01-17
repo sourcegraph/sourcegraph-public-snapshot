@@ -94,7 +94,7 @@ var CodeReviewStore = FluxStore({
 
 		var reviews = new ReviewCollection((d.Reviews || []), {
 			changesetId: d.Changeset.ID,
-			repo: d.Changeset.DeltaSpec.Base.RepoSpec.URI,
+			repo: d.Changeset.DeltaSpec.Base.URI,
 		});
 
 		// TODO(gbbr): Make a separated collection

@@ -18,7 +18,7 @@ var ProposeChangeForm = React.createClass({
 
 		var root = ReactDOM.findDOMNode(this);
 
-		DiffActions.proposeChange(this.props.deltaSpec.Base.RepoSpec.URI, {
+		DiffActions.proposeChange(this.props.deltaSpec.Base.URI, {
 			DeltaSpec: this.props.deltaSpec,
 			Title: $(root).find("input.title").val(),
 			Description: this.refs.description.value(),
