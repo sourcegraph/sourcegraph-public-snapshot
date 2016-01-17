@@ -1,9 +1,8 @@
-
 # dev
 
 # 0.12.1
 
-- update references to DeltaSpec after schema update.
+- Fix issue blocking changesets from being created from the UI.
 
 # 0.12.0
 
