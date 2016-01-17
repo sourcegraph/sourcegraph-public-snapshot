@@ -1,4 +1,9 @@
+
 # dev
+
+# 0.12.1
+
+- update references to DeltaSpec after schema update.
 
 # 0.12.0
 
