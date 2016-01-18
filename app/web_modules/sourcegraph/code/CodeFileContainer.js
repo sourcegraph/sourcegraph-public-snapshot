@@ -155,6 +155,7 @@ class CodeFileContainer extends Container {
 							href={embedLink}
 							data-tooltip={true} title="Select text to specify a line range">Embed</a>
 					</div>
+					<div className="clearfix"></div>
 				</div>
 
 				{this.state.file &&

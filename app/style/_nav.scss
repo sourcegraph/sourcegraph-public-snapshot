@@ -8,29 +8,6 @@
 	margin-bottom: -7px;
 }
 
-.with-fixed-subnav {
-	header.page-header {
-		height: $navbar-height + $subnav-height;
-
-		> div {
-			@include z-index(navbar);
-			width: 100%;
-			height: inherit;
-			position: fixed;
-			top: 0;
-		}
-	}
-
-	.anchor:before {
-		content: "";
-		display: block;
-		margin-top: -$navbar-height - $subnav-height - 10;
-		height: $navbar-height + $subnav-height + 10;
-		width: 0;
-		position: relative;
-	}
-}
-
 header.page-header {
 	display: block;
 	width: 100%;

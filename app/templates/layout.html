@@ -56,7 +56,7 @@
 
 	{{$motd := ifTrue (not .HideMOTD) appconf.MOTD}}
 
-	<body class="{{classForRoute .CurrentRoute}}{{if $motd}} has-motd{{end}}{{if hasField . "Repo"}} with-fixed-subnav{{end}}"
+	<body class="{{classForRoute .CurrentRoute}}"
 		{{if hasField . "Repo"}}
 			data-current-repo-url="{{(urlToRepo .Repo.URI).String}}"
 		{{end}}
@@ -66,16 +66,14 @@
 	>
 
 		<header class="page-header">
-			<div class="fixed">
-				{{with $motd}}<div class="motd">{{.}}</div>{{end}}
+			{{with $motd}}<div class="motd">{{.}}</div>{{end}}
 
-				{{template "Nav" $}}
+			{{template "Nav" $}}
 
-				<!-- If the "RepoSubnav" template is defined in the current -->
-				<!-- template, include it. -->
-				<!-- The "RepoSubnav" definition is in "repo/subnav.html" -->
-				{{ifTemplate .Common.TemplateName "RepoSubnav" $}}
-			</div>
+			<!-- If the "RepoSubnav" template is defined in the current -->
+			<!-- template, include it. -->
+			<!-- The "RepoSubnav" definition is in "repo/subnav.html" -->
+			{{ifTemplate .Common.TemplateName "RepoSubnav" $}}
 		</header>
 
 		<div class="container{{if .FullWidth}}-fluid{{end}} body" id="main">

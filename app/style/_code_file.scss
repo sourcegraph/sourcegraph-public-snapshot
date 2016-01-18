@@ -119,8 +119,6 @@
 	}
 
 	.code-view-react {
-		margin-top: $code-file-toolbar-height;
-
 		.pale {
 			opacity: 0.5;
 		}
@@ -192,15 +190,11 @@
 	}
 
 	.code-file-toolbar {
-		@include z-index(navbar);
-		height: $code-file-toolbar-height;
 		background-color: $off-white;
-		position: fixed;
 		width: 100%;
-		top: $subnav-height+$navbar-height;
 		border: 1px solid #ddd;
 		box-shadow: 0px 1px 2px #efefef;
-		padding: 0 6px 0 20px;
+		padding: 0 6px 5px 20px;
 
 		.file {
 			color: #444;
