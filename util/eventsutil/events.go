@@ -157,7 +157,7 @@ func LogFinishBuildTask(ctx context.Context, label string, success bool, failure
 	if strings.Contains(strings.ToLower(label), "(indexing)") {
 		// Log srclib code intelligence task result.
 		eventType = "FinishSrclibBuild"
-	} else if strings.Contains(strings.ToLower(label), "build") {
+	} else if strings.ToLower(label) == "build" {
 		// Log CI (continuous integration) build task result.
 		eventType = "FinishCIBuild"
 	} else {
