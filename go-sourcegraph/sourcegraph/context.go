@@ -20,6 +20,7 @@ type contextKey int
 
 const (
 	grpcEndpointKey contextKey = iota
+	mockClientKey
 	credentialsKey
 	clientMetadataKey
 )
@@ -39,6 +40,23 @@ func GRPCEndpoint(ctx context.Context) *url.URL {
 		panic("no gRPC API endpoint URL set in context")
 	}
 	return url
+}
+
+// WithMockClient returns a copy of parent whose clients (obtained using
+// FromContext) communicate with the given mock client. NewClientFromContext
+// checks this value and returns it if it is set.
+func WithMockClient(parent context.Context, client *Client) context.Context {
+	return context.WithValue(parent, mockClientKey, client)
+}
+
+// MockClient returns the context's mocked client if it was
+// previously set using WithMockClient.
+func MockClient(ctx context.Context) *Client {
+	client, ok := ctx.Value(mockClientKey).(*Client)
+	if !ok {
+		return nil
+	}
+	return client
 }
 
 // Credentials authenticate gRPC requests made by an API client.
@@ -118,6 +136,11 @@ var (
 	newClientFromContext   = realNewClientFromContext
 )
 var realNewClientFromContext = func(ctx context.Context) (*Client, error) {
+	mockClient := MockClient(ctx)
+	if mockClient != nil {
+		return mockClient, nil
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithCodec(GRPCCodec),
 	}
