@@ -63,47 +63,25 @@ func (c *WorkCmd) Execute(args []string) error {
 	}
 
 	cl := client.Client()
-	ctx := client.Ctx
+	ctx, cancel := context.WithCancel(client.Ctx)
 
-	go buildReaper(ctx)
+	go buildReaper(client.Ctx)
 
 	// Watch for sigkill so we can mark builds as ended before termination.
-	activeBuilds := newActiveBuilds()
-	killc := make(chan os.Signal, 1)
+	var (
+		wg           sync.WaitGroup
+		activeBuilds = newActiveBuilds()
+		killc        = make(chan os.Signal, 1)
+	)
 	signal.Notify(killc, syscall.SIGINT, syscall.SIGTERM)
-	ctx, cancel := context.WithCancel(ctx)
-	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		<-killc
-
-		// Mark all active builds (and their tasks) as killed. But set
-		// an aggressive timeout so we don't block the termination for
-		// too long.
 		activeBuilds.RLock()
 		defer activeBuilds.RUnlock()
 		cancel()
-		if len(activeBuilds.Builds) == 0 {
-			return
-		}
-		ctx, cancel2 := context.WithTimeout(client.Ctx, 1*time.Second)
-		defer cancel2()
-		time.AfterFunc(500*time.Millisecond, func() {
-			activeBuilds.RLock()
-			defer activeBuilds.RUnlock()
-			// Log if it's taking a noticeable amount of time.
-			builds := make([]string, 0, len(activeBuilds.Builds))
-			for b := range activeBuilds.Builds {
-				builds = append(builds, b.Spec().IDString())
-			}
-			log15.Info("Marking active builds as killed before terminating...", "builds", builds)
-		})
-		for b := range activeBuilds.Builds {
-			if err := markBuildAsKilled(ctx, b.Spec()); err != nil {
-				log15.Error("Error marking build as killed upon process termination", "build", b.Spec(), "err", err)
-			}
-		}
+		buildCleanup(client.Ctx, activeBuilds)
 	}()
 
 	throttle := time.Tick(time.Second / time.Duration(c.Parallel))
@@ -175,53 +153,6 @@ func authenticateWorkerCtx() error {
 func getScopedToken(scope string) (*oauth2.Token, error) {
 	src := sharedsecret.ShortTokenSource(srcIDKey, scope)
 	return src.Token()
-}
-
-func markBuildAsKilled(ctx context.Context, b sourcegraph.BuildSpec) error {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	_, err = cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
-		Build: b,
-		Info: sourcegraph.BuildUpdate{
-			EndedAt: now(),
-			Killed:  true,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	// Mark all of the build's unfinished tasks as failed, too.
-	for page := int32(1); ; page++ {
-		tasks, err := cl.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{
-			Build: b,
-			Opt:   &sourcegraph.BuildTaskListOptions{ListOptions: sourcegraph.ListOptions{Page: page}},
-		})
-		if err != nil {
-			return err
-		}
-
-		for _, task := range tasks.BuildTasks {
-			if task.EndedAt != nil {
-				continue
-			}
-			_, err := cl.Builds.UpdateTask(ctx, &sourcegraph.BuildsUpdateTaskOp{
-				Task: task.Spec(),
-				Info: sourcegraph.TaskUpdate{Failure: true, EndedAt: now()},
-			})
-			if err != nil {
-				return err
-			}
-		}
-		if len(tasks.BuildTasks) == 0 {
-			break
-		}
-	}
-
-	return nil
 }
 
 type activeBuilds struct {
