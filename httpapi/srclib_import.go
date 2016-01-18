@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +17,7 @@ import (
 
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -65,6 +67,10 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 	if _, err := f.Seek(0, os.SEEK_SET); err != nil {
 		return err
+	}
+
+	if contentLength == 0 {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no data in request body")}
 	}
 
 	zipR, err := zip.NewReader(f, contentLength)

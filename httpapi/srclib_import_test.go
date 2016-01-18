@@ -104,3 +104,29 @@ func TestSrclibImport(t *testing.T) {
 		t.Error("!calledReposGetCommit")
 	}
 }
+
+func TestSrclibImport_empty(t *testing.T) {
+	c, mock := newTest()
+
+	calledReposGet := mock.Repos.MockGet(t, "r")
+	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
+
+	// POST an empty zip archive.
+	req, _ := http.NewRequest("PUT", "/repos/r@v/.srclib-import", nil)
+	req.Header.Set("content-type", "application/x-zip-compressed")
+	req.Header.Set("content-transfer-encoding", "binary")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if want := http.StatusBadRequest; resp.StatusCode != want {
+		t.Errorf("got HTTP response status %d, want %d", resp.StatusCode, want)
+	}
+	if !*calledReposGet {
+		t.Error("!calledReposGet")
+	}
+	if !*calledReposGetCommit {
+		t.Error("!calledReposGetCommit")
+	}
+}
