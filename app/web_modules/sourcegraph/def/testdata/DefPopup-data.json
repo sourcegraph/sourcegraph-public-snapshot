@@ -1,73 +1,51 @@
 {
 	"renderOutput": {
-		"type": "",
+		"type": "div",
 		"props": {
-			"handle": "header.toolbar",
+			"className": "token-details",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"className": "token-details",
+						"className": "body",
 						"children": [
 							{
-								"type": "div",
+								"type": "header",
 								"props": {
-									"className": "body",
+									"className": "docHTML",
 									"children": [
 										{
-											"type": "header",
+											"type": "div",
 											"props": {
-												"className": "docHTML",
+												"className": "header",
 												"children": [
 													{
-														"type": "div",
+														"type": "h1",
 														"props": {
-															"className": "header",
 															"children": [
 																{
-																	"type": "h1",
+																	"type": "span",
 																	"props": {
-																		"children": [
-																			{
-																				"type": "span",
-																				"props": {
-																					"className": "qualified-name",
-																					"dangerouslySetInnerHTML": {
-																						"__html": "someName"
-																					}
-																				}
-																			},
-																			{
-																				"type": "a",
-																				"props": {
-																					"className": "close top-action",
-																					"onClick": {
-																						"dispatched": [
-																							{
-																								"$constructor": "SelectDef"
-																							}
-																						]
-																					},
-																					"children": [
-																						"×"
-																					]
-																				}
-																			}
-																		]
+																		"className": "qualified-name",
+																		"dangerouslySetInnerHTML": {
+																			"__html": "someName"
+																		}
 																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "section",
-														"props": {
-															"className": "doc",
-															"children": [
+																},
 																{
-																	"type": "div",
+																	"type": "a",
 																	"props": {
-																		"dangerouslySetInnerHTML": "someDoc"
+																		"className": "close top-action",
+																		"onClick": {
+																			"dispatched": [
+																				{
+																					"$constructor": "SelectDef"
+																				}
+																			]
+																		},
+																		"children": [
+																			"×"
+																		]
 																	}
 																}
 															]
@@ -77,40 +55,45 @@
 											}
 										},
 										{
-											"type": "header",
+											"type": "section",
 											"props": {
-												"className": "examples-header",
+												"className": "doc",
 												"children": [
-													"Usage examples"
+													{
+														"type": "div",
+														"props": {
+															"dangerouslySetInnerHTML": "someDoc"
+														}
+													}
 												]
-											}
-										},
-										{
-											"type": "ExampleView",
-											"props": {
-												"defURL": "someURL",
-												"examples": {
-													"test": "examples"
-												},
-												"highlightedDef": "otherURL"
 											}
 										}
 									]
+								}
+							},
+							{
+								"type": "header",
+								"props": {
+									"className": "examples-header",
+									"children": [
+										"Usage examples"
+									]
+								}
+							},
+							{
+								"type": "ExampleView",
+								"props": {
+									"defURL": "someURL",
+									"examples": {
+										"test": "examples"
+									},
+									"highlightedDef": "otherURL"
 								}
 							}
 						]
 					}
 				}
-			],
-			"axis": "both",
-			"bounds": false,
-			"moveOnStartChange": false,
-			"start": {
-				"x": 0,
-				"y": 0
-			},
-			"zIndex": null,
-			"enableUserSelectHack": true
+			]
 		}
 	}
 }

@@ -1,5 +1,4 @@
 import React from "react";
-import Draggable from "react-draggable";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -14,27 +13,25 @@ class DefPopup extends Component {
 	render() {
 		let def = this.state.def;
 		return (
-			<Draggable handle="header.toolbar">
-				<div className="token-details">
-					<div className="body">
-							<header className="docHTML">
-								<div className="header">
-									<h1>
-										<span className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
-										<a className="close top-action" onClick={() => {
-											Dispatcher.dispatch(new DefActions.SelectDef(null));
-										}}>×</a>
-									</h1>
-								</div>
-								<section className="doc">
-									{def.Found ? <div dangerouslySetInnerHTML={def.Data.DocHTML} /> : <div>Definition of <div dangerouslySetInnerHTML={def.QualifiedName} /> is not available.</div>}
-								</section>
-							</header>
-							<header className="examples-header">Usage examples</header>
-							<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
-					</div>
+			<div className="token-details">
+				<div className="body">
+					<header className="docHTML">
+						<div className="header">
+							<h1>
+								<span className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
+								<a className="close top-action" onClick={() => {
+									Dispatcher.dispatch(new DefActions.SelectDef(null));
+								}}>×</a>
+							</h1>
+						</div>
+						<section className="doc">
+							{def.Found ? <div dangerouslySetInnerHTML={def.Data.DocHTML} /> : <div>Definition of <div dangerouslySetInnerHTML={def.QualifiedName} /> is not available.</div>}
+						</section>
+					</header>
+					<header className="examples-header">Usage examples</header>
+					<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
 				</div>
-			</Draggable>
+			</div>
 		);
 	}
 }
