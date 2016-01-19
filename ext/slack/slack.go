@@ -36,7 +36,7 @@ func PostMessage(opt PostOpts) {
 	if opt.Channel == "" {
 		opt.Channel = Config.DefaultChannel
 	}
-	if !strings.HasPrefix(opt.Channel, "#") {
+	if opt.Channel != "" && !strings.HasPrefix(opt.Channel, "#") {
 		opt.Channel = "#" + opt.Channel
 	}
 	if opt.Username == "" {
@@ -57,7 +57,7 @@ func PostMessage(opt PostOpts) {
 	}
 
 	var o = struct {
-		Channel     string       `json:"channel"`
+		Channel     string       `json:"channel,omitempty"`
 		Username    string       `json:"username"`
 		Text        string       `json:"text"`
 		IconEmoji   string       `json:"icon_emoji,omitempty"`
