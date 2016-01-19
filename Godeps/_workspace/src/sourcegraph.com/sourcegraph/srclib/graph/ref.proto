@@ -12,49 +12,49 @@ option (gogoproto.sizer_all) = true;
 message Ref {
     // DefRepo is the repository URI of the Def that this Ref refers
     // to.
-    string def_repo = 1 [(gogoproto.customname) = "DefRepo", (gogoproto.jsontag) = "DefRepo,omitempty"];
+    string DefRepo = 1 [(gogoproto.jsontag) = "DefRepo,omitempty"];
 
     // DefUnitType is the source unit type of the Def that this Ref refers to.
-    string def_unit_type = 3 [(gogoproto.customname) = "DefUnitType", (gogoproto.jsontag) = "DefUnitType,omitempty"];
+    string DefUnitType = 3 [(gogoproto.jsontag) = "DefUnitType,omitempty"];
 
     // DefUnit is the name of the source unit that this ref exists in.
-    string def_unit = 4 [(gogoproto.customname) = "DefUnit", (gogoproto.jsontag) = "DefUnit,omitempty"];
+    string DefUnit = 4 [(gogoproto.jsontag) = "DefUnit,omitempty"];
     
     // Path is the path of the Def that this ref refers to.
-    string def_path = 5 [(gogoproto.customname) = "DefPath", (gogoproto.jsontag) = "DefPath"];
+    string DefPath = 5 [(gogoproto.jsontag) = "DefPath"];
 
 
     // Repo is the VCS repository in which this ref exists.
-    string repo = 6 [(gogoproto.jsontag) = "Repo,omitempty"];
+    string Repo = 6 [(gogoproto.jsontag) = "Repo,omitempty"];
 
     // CommitID is the ID of the VCS commit that this ref exists
     // in. The CommitID is always a full commit ID (40 hexadecimal
     // characters for git and hg), never a branch or tag name.
-    string commit_id = 7 [(gogoproto.customname) = "CommitID", (gogoproto.jsontag) = "CommitID,omitempty"];
+    string CommitID = 7 [(gogoproto.jsontag) = "CommitID,omitempty"];
 
     // UnitType is the type name of the source unit that this ref
     // exists in.
-    string unit_type = 8 [(gogoproto.customname) = "UnitType", (gogoproto.jsontag) = "UnitType,omitempty"];
+    string UnitType = 8 [(gogoproto.jsontag) = "UnitType,omitempty"];
 
     // Unit is the name of the source unit that this ref exists in.
-    string unit = 9 [(gogoproto.jsontag) = "Unit,omitempty"];
+    string Unit = 9 [(gogoproto.jsontag) = "Unit,omitempty"];
 
     // Def is true if this Ref spans the name of the Def it points to.
-    bool def = 17 [(gogoproto.jsontag) = "Def,omitempty"];
+    bool Def = 17 [(gogoproto.jsontag) = "Def,omitempty"];
 
     // File is the filename in which this Ref exists.
-    string file = 10 [(gogoproto.jsontag) = "File,omitempty"];
+    string File = 10 [(gogoproto.jsontag) = "File,omitempty"];
 
     // Start is the byte offset of this ref's first byte in File.
-    uint32 start = 11 [(gogoproto.jsontag) = "Start"];
+    uint32 Start = 11 [(gogoproto.jsontag) = "Start"];
 
     // End is the byte offset of this ref's last byte in File.
-    uint32 end = 12 [(gogoproto.jsontag) = "End"];
+    uint32 End = 12 [(gogoproto.jsontag) = "End"];
 };
 
 message RefDefKey {
-    string def_repo = 1 [(gogoproto.customname) = "DefRepo", (gogoproto.jsontag) = "DefRepo,omitempty"];
-    string def_unit_type = 3 [(gogoproto.customname) = "DefUnitType", (gogoproto.jsontag) = "DefUnitType,omitempty"];
-    string def_unit = 4 [(gogoproto.customname) = "DefUnit", (gogoproto.jsontag) = "DefUnit,omitempty"];
-    string def_path = 5 [(gogoproto.customname) = "DefPath", (gogoproto.jsontag) = "DefPath"];
+    string DefRepo = 1 [(gogoproto.jsontag) = "DefRepo,omitempty"];
+    string DefUnitType = 3 [(gogoproto.jsontag) = "DefUnitType,omitempty"];
+    string DefUnit = 4 [(gogoproto.jsontag) = "DefUnit,omitempty"];
+    string DefPath = 5 [(gogoproto.jsontag) = "DefPath"];
 };

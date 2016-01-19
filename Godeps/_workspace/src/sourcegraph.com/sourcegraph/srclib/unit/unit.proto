@@ -15,11 +15,11 @@ option (gogoproto.sizer_all) = true;
 // (either in cross-source-unit analysis, such as cross-reference
 // resolution, or in after-the-fact DB/API queries).
 message RepoSourceUnit {
-	string repo = 1;
-	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
-	string unit_type = 3;
-	string unit = 4;
+	string Repo = 1;
+	string CommitID = 2;
+	string UnitType = 3;
+	string Unit = 4;
 
 	// Data is the JSON of the underlying SourceUnit.
-	bytes data = 5;
+	bytes Data = 5;
 }

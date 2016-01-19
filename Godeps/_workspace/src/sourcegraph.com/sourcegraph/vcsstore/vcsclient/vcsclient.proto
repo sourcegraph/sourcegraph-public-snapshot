@@ -12,47 +12,47 @@ option (gogoproto.sizer_all) = true;
 // FileRange is a line and byte range in a file.
 message FileRange {
 	// start of line range
-	int64 start_line = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int64 StartLine = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// end of line range
-	int64 end_line = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int64 EndLine = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// start of byte range
-	int64 start_byte = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int64 StartByte = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// end of byte range
-	int64 end_byte = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int64 EndByte = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // GetFileOptions specifies options for GetFileWithOptions.
 message GetFileOptions {
 	// line or byte range to fetch (can't set both line *and* byte range)
-	FileRange file_range = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	FileRange FileRange = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
 	// EntireFile is whether the entire file contents should be returned. If true,
 	// Start/EndLine and Start/EndBytes are ignored.
-	bool entire_file = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool EntireFile = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ExpandContextLines is how many lines of additional output context to include (if
 	// Start/EndLine and Start/EndBytes are specified). For example, specifying 2 will
 	// expand the range to include 2 full lines before the beginning and 2 full lines
 	// after the end of the range specified by Start/EndLine and Start/EndBytes.
-	int32 expand_context_lines = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 ExpandContextLines = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// FullLines is whether a range that includes partial lines should be extended to
 	// the nearest line boundaries on both sides. It is only valid if StartByte and
 	// EndByte are specified.
-	bool full_lines = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool FullLines = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Recursive only applies if the returned entry is a directory. It will
 	// return the full file tree of the host repository, recursing into all
 	// sub-directories.
-	bool recursive = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool Recursive = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// RecurseSingleSubfolderLimit only applies if the returned entry is a directory.
 	// If nonzero, it will recursively find and include all singleton sub-directory chains,
 	// up to a limit of RecurseSingleSubfolderLimit.
-	int32 recurse_single_subfolder_limit = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 RecurseSingleSubfolderLimit = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 enum TreeEntryType {
@@ -62,15 +62,15 @@ enum TreeEntryType {
 }
 
 message TreeEntry {
-	string name = 1;
+	string Name = 1;
 
-	TreeEntryType type = 2;
+	TreeEntryType Type = 2;
 
-	int64 size = 3;
+	int64 Size = 3;
 
-	pbtypes.Timestamp mod_time = 4 [(gogoproto.nullable) = false];
+	pbtypes.Timestamp ModTime = 4 [(gogoproto.nullable) = false];
 
-	bytes contents = 5;
+	bytes Contents = 5;
 
-	repeated TreeEntry entries = 6;
+	repeated TreeEntry Entries = 6;
 }

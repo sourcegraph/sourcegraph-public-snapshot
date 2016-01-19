@@ -772,7 +772,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-diff/diff",
-			"Rev": "9a14f200647da9ee7251bf92129669166ccd3b5a"
+			"Rev": "5b2cb822837736d5cd094d90aa59a19f98a170af"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
@@ -781,7 +781,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
-			"Rev": "8e70d2f720c620630dbfb96e4772c1185cb003b2"
+			"Rev": "9c023b43ac9f716b509c152501873800808dba66"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
@@ -809,8 +809,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.1.0-40-g4758dab",
-			"Rev": "4758dabebc5638ee41f70e7ed1d1448f6b9c4e0f"
+			"Comment": "v0.1.0-41-gfb108ed",
+			"Rev": "fb108edd38642aaa8329f1ec39cff79fefc746e9"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -855,11 +855,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/git",
-			"Rev": "1900d8982c846cb041b6e5420a308308b9d9d6dc"
+			"Rev": "5c45ab51b8215bcc49fac1a14cd46441cd279249"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/vcsclient",
-			"Rev": "1900d8982c846cb041b6e5420a308308b9d9d6dc"
+			"Rev": "5c45ab51b8215bcc49fac1a14cd46441cd279249"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",

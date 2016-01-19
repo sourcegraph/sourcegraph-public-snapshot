@@ -33,12 +33,12 @@ var _ = math.Inf
 // (either in cross-source-unit analysis, such as cross-reference
 // resolution, or in after-the-fact DB/API queries).
 type RepoSourceUnit struct {
-	Repo     string `protobuf:"bytes,1,opt,name=repo,proto3" json:",omitempty"`
-	CommitID string `protobuf:"bytes,2,opt,name=commit_id,proto3" json:",omitempty"`
-	UnitType string `protobuf:"bytes,3,opt,name=unit_type,proto3" json:",omitempty"`
-	Unit     string `protobuf:"bytes,4,opt,name=unit,proto3" json:",omitempty"`
+	Repo     string `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
+	CommitID string `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
+	UnitType string `protobuf:"bytes,3,opt,name=UnitType,proto3" json:"UnitType,omitempty"`
+	Unit     string `protobuf:"bytes,4,opt,name=Unit,proto3" json:"Unit,omitempty"`
 	// Data is the JSON of the underlying SourceUnit.
-	Data []byte `protobuf:"bytes,5,opt,name=data,proto3" json:",omitempty"`
+	Data []byte `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
 }
 
 func (m *RepoSourceUnit) Reset()         { *m = RepoSourceUnit{} }

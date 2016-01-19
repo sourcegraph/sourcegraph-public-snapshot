@@ -13,8 +13,8 @@ option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
 message Output {
-    repeated Def defs = 1 [(gogoproto.jsontag) = "Defs,omitempty"];
-    repeated Ref refs = 2 [(gogoproto.jsontag) = "Refs,omitempty"];
-    repeated Doc docs = 3 [(gogoproto.jsontag) = "Docs,omitempty"];
-    repeated ann.Ann anns = 4 [(gogoproto.jsontag) = "Anns,omitempty"];
+    repeated Def Defs = 1 [(gogoproto.jsontag) = "Defs,omitempty"];
+    repeated Ref Refs = 2 [(gogoproto.jsontag) = "Refs,omitempty"];
+    repeated Doc Docs = 3 [(gogoproto.jsontag) = "Docs,omitempty"];
+    repeated ann.Ann Anns = 4 [(gogoproto.jsontag) = "Anns,omitempty"];
 };

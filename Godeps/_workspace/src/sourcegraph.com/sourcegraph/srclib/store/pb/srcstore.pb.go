@@ -36,10 +36,10 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type ImportOp struct {
-	Repo     string               `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
-	CommitID string               `protobuf:"bytes,2,opt,name=commit_id,proto3" json:"commit_id,omitempty"`
-	Unit     *unit.RepoSourceUnit `protobuf:"bytes,3,opt,name=unit" json:"unit,omitempty"`
-	Data     *graph3.Output       `protobuf:"bytes,4,opt,name=data" json:"data,omitempty"`
+	Repo     string               `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
+	CommitID string               `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
+	Unit     *unit.RepoSourceUnit `protobuf:"bytes,3,opt,name=Unit" json:"Unit,omitempty"`
+	Data     *graph3.Output       `protobuf:"bytes,4,opt,name=Data" json:"Data,omitempty"`
 }
 
 func (m *ImportOp) Reset()         { *m = ImportOp{} }
@@ -47,8 +47,8 @@ func (m *ImportOp) String() string { return proto.CompactTextString(m) }
 func (*ImportOp) ProtoMessage()    {}
 
 type IndexOp struct {
-	Repo     string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
-	CommitID string `protobuf:"bytes,2,opt,name=commit_id,proto3" json:"commit_id,omitempty"`
+	Repo     string `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
+	CommitID string `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
 }
 
 func (m *IndexOp) Reset()         { *m = IndexOp{} }

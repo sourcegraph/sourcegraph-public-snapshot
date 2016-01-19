@@ -19,10 +19,10 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type Output struct {
-	Defs []*Def     `protobuf:"bytes,1,rep,name=defs" json:",omitempty"`
-	Refs []*Ref     `protobuf:"bytes,2,rep,name=refs" json:",omitempty"`
-	Docs []*Doc     `protobuf:"bytes,3,rep,name=docs" json:",omitempty"`
-	Anns []*ann.Ann `protobuf:"bytes,4,rep,name=anns" json:",omitempty"`
+	Defs []*Def     `protobuf:"bytes,1,rep,name=Defs" json:"Defs,omitempty"`
+	Refs []*Ref     `protobuf:"bytes,2,rep,name=Refs" json:"Refs,omitempty"`
+	Docs []*Doc     `protobuf:"bytes,3,rep,name=Docs" json:"Docs,omitempty"`
+	Anns []*ann.Ann `protobuf:"bytes,4,rep,name=Anns" json:"Anns,omitempty"`
 }
 
 func (m *Output) Reset()         { *m = Output{} }

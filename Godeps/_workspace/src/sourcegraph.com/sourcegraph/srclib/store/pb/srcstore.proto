@@ -24,13 +24,13 @@ service MultiRepoImporter {
 }
 
 message ImportOp {
-	string repo = 1;
-	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
-	unit.RepoSourceUnit unit = 3;
-	graph.Output data = 4;
+	string Repo = 1;
+	string CommitID = 2;
+	unit.RepoSourceUnit Unit = 3;
+	graph.Output Data = 4;
 }
 
 message IndexOp {
-	string repo = 1;
-	string commit_id = 2 [(gogoproto.customname) = "CommitID"];
+	string Repo = 1;
+	string CommitID = 2;
 }
