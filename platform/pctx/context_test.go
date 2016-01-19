@@ -59,9 +59,7 @@ func Test_repoFrameBaseURI(t *testing.T) {
 		rw := httptest.NewRecorder()
 		rtr.ServeHTTP(rw, req)
 
-		expPrefix := appURL
-		expPrefix.Path = test.expPrefix
-		if prefix != expPrefix.String() {
+		if prefix != test.expPrefix {
 			t.Errorf("expected prefix %s, got %s", test.expPrefix, prefix)
 		}
 	}

@@ -109,7 +109,7 @@ func repoFrameBaseURI(ctx context.Context, r *http.Request) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not produce base URL for app request url %s: %s", r.URL, err)
 	}
-	return conf.AppURL(ctx).ResolveReference(baseURI).String(), nil
+	return baseURI.String(), nil
 }
 
 func repoSearchBaseURI(ctx context.Context, r *http.Request) (string, error) {
