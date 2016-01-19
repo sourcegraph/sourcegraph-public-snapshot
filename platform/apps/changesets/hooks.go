@@ -3,16 +3,22 @@ package changesets
 import (
 	"bytes"
 	"fmt"
+	"html/template"
+	"time"
 
 	"github.com/russross/blackfriday"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	githttp "github.com/AaronO/go-git-http"
+	notif "src.sourcegraph.com/apps/notifications/notifications"
+	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/platform/notifications"
 
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
 
@@ -150,8 +156,7 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 		return
 	}
 
-	// Send notification
-	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+	n := &sourcegraph.NotifyGenericEvent{
 		Actor:         &payload.Actor,
 		Recipients:    recipients,
 		ActionType:    "created",
@@ -162,7 +167,12 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 		ObjectTitle:   payload.Title,
 		ActionContent: payload.Changeset.Description,
 		EmailHTML:     string(blackfriday.MarkdownCommon([]byte(payload.Changeset.Description))),
-	})
+	}
+
+	// Send notification
+	// TODO: Unified API for notifications
+	cl.Notify.GenericEvent(ctx, n)
+	notificationCenter(ctx, n)
 }
 
 // notifyReview creates a slack notification that a changeset was reviewed. It
@@ -194,13 +204,12 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 	}
 	recipients = append(recipients, &payload.Changeset.Author)
 
-	// Send notification
 	msg := bytes.NewBufferString(payload.Review.Body)
 	for _, c := range payload.Review.Comments {
 		msg.WriteString(fmt.Sprintf("\n\n- *%s:%d* - %s", c.Filename, c.LineNumber, c.Body))
 	}
 	actionContent := msg.String()
-	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+	n := &sourcegraph.NotifyGenericEvent{
 		Actor:         &payload.Actor,
 		Recipients:    recipients,
 		ActionType:    "reviewed",
@@ -211,7 +220,12 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 		ObjectTitle:   payload.Title,
 		ActionContent: actionContent,
 		EmailHTML:     string(blackfriday.MarkdownCommon([]byte(actionContent))),
-	})
+	}
+
+	// Send notification
+	// TODO: Unified API for notifications
+	cl.Notify.GenericEvent(ctx, n)
+	notificationCenter(ctx, n)
 }
 
 // notifyUpdate creates a slack notification that a changeset was updated, closed or merged.
@@ -235,8 +249,7 @@ func notifyUpdate(ctx context.Context, id events.EventID, payload events.Changes
 		return
 	}
 
-	// Send notification
-	cl.Notify.GenericEvent(ctx, &sourcegraph.NotifyGenericEvent{
+	n := &sourcegraph.NotifyGenericEvent{
 		Actor:       &payload.Actor,
 		ActionType:  actionType,
 		ObjectURL:   payload.URL,
@@ -244,6 +257,34 @@ func notifyUpdate(ctx context.Context, id events.EventID, payload events.Changes
 		ObjectType:  "changeset",
 		ObjectID:    payload.ID,
 		ObjectTitle: payload.Title,
+	}
+
+	// Send notification
+	// TODO: Unified API for notifications
+	cl.Notify.GenericEvent(ctx, n)
+	notificationCenter(ctx, n)
+}
+
+func notificationCenter(ctx context.Context, e *sourcegraph.NotifyGenericEvent) {
+	if notifications.Service == nil {
+		return
+	}
+	subscribers := []issues.UserSpec{issues.UserSpec{ID: uint64(e.Actor.UID), Domain: e.Actor.Domain}}
+	if e.Recipients != nil {
+		for _, u := range e.Recipients {
+			subscribers = append(subscribers, issues.UserSpec{ID: uint64(u.UID), Domain: u.Domain})
+		}
+	}
+	// HACK(keegancsmith) Notification API expects the user to be set in
+	// the context like we have in HTTP requests. This context is from the
+	// event bus. Fake it
+	ctx = handlerutil.WithUser(ctx, e.Actor)
+	notifications.Service.Subscribe(ctx, appID, issues.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), subscribers)
+	notifications.Service.Notify(ctx, appID, issues.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), notif.Notification{
+		Title:     e.ObjectTitle,
+		Icon:      "git-pull-request",
+		UpdatedAt: time.Now(),
+		HTMLURL:   template.URL(e.ObjectURL),
 	})
 }
 

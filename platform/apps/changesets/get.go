@@ -18,7 +18,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/platform/notifications"
 
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
@@ -244,6 +246,11 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		for _, id := range ids {
 			jiraIssues[id] = fmt.Sprintf("%s://%s/browse/%s", jiraURL.Scheme, jiraURL.Host, id)
 		}
+	}
+
+	// Mark the changeset as read
+	if notifications.Service != nil {
+		notifications.Service.MarkRead(ctx, appID, issues.RepoSpec{URI: rc.Repo.URI}, uint64(id))
 	}
 
 	return executeTemplate(w, r, "changeset.html", &struct {
