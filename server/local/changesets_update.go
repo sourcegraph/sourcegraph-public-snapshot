@@ -122,7 +122,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 			updateOp.Head = op.Last
 		}
 
-		{
+		if !isBranchDeleted {
 			// Find the new merge base (using the base rev, not base abs commit ID).
 			//
 			// TODO(sqs): This only needs to run on force-push, but we
