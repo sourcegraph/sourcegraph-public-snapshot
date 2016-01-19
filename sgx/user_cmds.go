@@ -297,7 +297,7 @@ type userUpdateCmd struct {
 	Access string `long:"access" description:"set access level for user (read|write|admin)"`
 	Args   struct {
 		User string `name:"User" description:"user login (or login@domain)"`
-	} `positional-args:"yes"`
+	} `positional-args:"yes" required:"yes"`
 }
 
 func (c *userUpdateCmd) Execute(args []string) error {
