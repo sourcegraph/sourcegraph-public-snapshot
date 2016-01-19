@@ -12,20 +12,20 @@ option (gogoproto.sizer_all) = true;
 // languages are used).
 message Inventory {
 	// Languages are the programming languages used in the tree.
-	repeated Lang languages = 1;
+	repeated Lang Languages = 1;
 }
 
 // Lang represents a programming language used in a directory tree.
 message Lang {
 	// Name is the name of a programming language (e.g., "Go" or
 	// "Java").
-	string name = 1;
+	string Name = 1;
 
 	// TotalBytes is the total number of bytes of code written in the
 	// programming language.
-	uint64 total_bytes = 2;
+	uint64 TotalBytes = 2;
 
 	// Type is either "data", "programming", "markup", "prose", or
 	// empty.
-	string type = 3;
+	string Type = 3;
 }

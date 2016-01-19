@@ -31,7 +31,7 @@ var _ = math.Inf
 // languages are used).
 type Inventory struct {
 	// Languages are the programming languages used in the tree.
-	Languages []*Lang `protobuf:"bytes,1,rep,name=languages" json:",omitempty"`
+	Languages []*Lang `protobuf:"bytes,1,rep,name=Languages" json:"Languages,omitempty"`
 }
 
 func (m *Inventory) Reset()         { *m = Inventory{} }
@@ -42,13 +42,13 @@ func (*Inventory) ProtoMessage()    {}
 type Lang struct {
 	// Name is the name of a programming language (e.g., "Go" or
 	// "Java").
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:",omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
 	// TotalBytes is the total number of bytes of code written in the
 	// programming language.
-	TotalBytes uint64 `protobuf:"varint,2,opt,name=total_bytes,proto3" json:",omitempty"`
+	TotalBytes uint64 `protobuf:"varint,2,opt,name=TotalBytes,proto3" json:"TotalBytes,omitempty"`
 	// Type is either "data", "programming", "markup", "prose", or
 	// empty.
-	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:",omitempty"`
+	Type string `protobuf:"bytes,3,opt,name=Type,proto3" json:"Type,omitempty"`
 }
 
 func (m *Lang) Reset()         { *m = Lang{} }
