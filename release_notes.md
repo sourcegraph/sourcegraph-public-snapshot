@@ -1,5 +1,10 @@
 # dev
 
+- Promote Notification Center feature to default on (it previously had to be toggled on via a flag).
+  It allows receiving notifications in a centralized manner in a web UI. New notifications
+  appear as a red badge over the icon in top right. Supported apps (Tracker) will subscribe you to
+  updates for threads you create, where you participate, or get @mentioned.
+
 # 0.12.1
 
 - Fix issue blocking changesets from being created from the UI.

@@ -21,7 +21,7 @@ var Features = struct {
 	TreeEntryCommits bool
 }{
 	Discussions:        false,
-	NotificationCenter: false,
+	NotificationCenter: true,
 	TrackerSearch:      false,
 	TreeEntryCommits:   false,
 }
