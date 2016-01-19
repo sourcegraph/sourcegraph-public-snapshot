@@ -213,6 +213,14 @@
 			"Rev": "ec0a78e0f4db229b7897be36596a8944230b857a"
 		},
 		{
+			"ImportPath": "github.com/gopherjs/gopherjs/build",
+			"Rev": "d942555ec097c1b3260ed89fff69afc2ceb93bec"
+		},
+		{
+			"ImportPath": "github.com/gopherjs/gopherjs/compiler",
+			"Rev": "d942555ec097c1b3260ed89fff69afc2ceb93bec"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "1be7a086a5fd6440ef16fe96baeda0c78282b980"
 		},
@@ -303,6 +311,10 @@
 			"Rev": "3dac7b4f76f6e17fb39b768b89e3783d16e237fe"
 		},
 		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
+		},
+		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
 		},
@@ -322,6 +334,10 @@
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
 			"Rev": "281073eb9eb092240d33ef253c404f1cca550309"
+		},
+		{
+			"ImportPath": "github.com/neelance/sourcemap",
+			"Rev": "8994456d80d26c100207bb0c4a758e25b1b4b5db"
 		},
 		{
 			"ImportPath": "github.com/opennota/urlesc",
@@ -428,12 +444,20 @@
 			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
+			"ImportPath": "github.com/shurcooL/go/gopherjs_http",
+			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
+		},
+		{
 			"ImportPath": "github.com/shurcooL/go/gzip_file_server",
 			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/vfs/godocfs/godocfs",
 			"Rev": "a84e97085eb0de48f81e98e00b1d7e6697f3875d"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/gopherjslib",
+			"Rev": "d8eec8734d3ea74418f19cd9066d54fb2fa46e44"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/highlight_diff",
@@ -457,6 +481,10 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/path/vfspath",
+			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
+		},
+		{
+			"ImportPath": "github.com/shurcooL/httpfs/union",
 			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
 		},
 		{
@@ -708,6 +736,18 @@
 			"Rev": "3eb7007b740b66a77f3c85f2660a0240b284115a"
 		},
 		{
+			"ImportPath": "golang.org/x/tools/go/exact",
+			"Rev": "d6e83e534da905609e21e4086a0fbaed33f88d07"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/importer",
+			"Rev": "d6e83e534da905609e21e4086a0fbaed33f88d07"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/types",
+			"Rev": "d6e83e534da905609e21e4086a0fbaed33f88d07"
+		},
+		{
 			"ImportPath": "golang.org/x/tools/godoc/vfs",
 			"Rev": "d6e83e534da905609e21e4086a0fbaed33f88d07"
 		},
@@ -718,6 +758,10 @@
 		{
 			"ImportPath": "google.golang.org/api/storage/v1",
 			"Rev": "0a735f7ec81c85ce7ec31bf7a67e125ef62266ec"
+		},
+		{
+			"ImportPath": "google.golang.org/appengine",
+			"Rev": "6bde959377a90acb53366051d7d587bfd7171354"
 		},
 		{
 			"ImportPath": "google.golang.org/cloud/compute/metadata",
