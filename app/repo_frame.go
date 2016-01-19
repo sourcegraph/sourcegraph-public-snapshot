@@ -119,9 +119,9 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	// extract response body (purposefully ignoring headers)
 	body := string(rr.Body.Bytes())
 
-	// If Sourcegraph-Verbatim header was set to true, relay this
-	// request to browser directly, and copy appropriate headers.
-	redirect := rr.Code == http.StatusSeeOther || rr.Code == http.StatusMovedPermanently
+	// If Sourcegraph-Verbatim header was set to true, or this is a redirect,
+	// relay this request to browser directly, and copy appropriate headers.
+	redirect := rr.Code == http.StatusSeeOther || rr.Code == http.StatusMovedPermanently || rr.Code == http.StatusTemporaryRedirect || rr.Code == http.StatusFound
 	if rr.Header().Get(platform.HTTPHeaderVerbatim) == "true" || redirect {
 		w.Header().Set("Content-Encoding", rr.Header().Get("Content-Encoding"))
 		w.Header().Set("Content-Type", rr.Header().Get("Content-Type"))
