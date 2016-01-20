@@ -186,11 +186,11 @@ func mustAtoi(s string) int {
 	return i
 }
 
-func (s state) Issue() (interface{}, error) {
+func (s state) Issue() (issues.Issue, error) {
 	return is.Get(s.ctx, s.repoSpec, uint64(mustAtoi(s.vars["id"])))
 }
 
-func (s state) Items() (interface{}, error) {
+func (s state) Items() ([]issueItem, error) {
 	cs, err := is.ListComments(s.ctx, s.repoSpec, uint64(mustAtoi(s.vars["id"])), nil)
 	if err != nil {
 		return nil, err
@@ -389,7 +389,7 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 		var resp = make(url.Values)
 
 		var buf bytes.Buffer
-		err := t.ExecuteTemplate(&buf, "issue-badge", issue.State)
+		err := t.ExecuteTemplate(&buf, "issue-state-badge", issue)
 		if err != nil {
 			return err
 		}
