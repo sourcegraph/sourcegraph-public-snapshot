@@ -3,6 +3,7 @@ package kv
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/url"
 	"path"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/platform/notifications"
+	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/util/mdutil"
 )
@@ -55,7 +57,7 @@ func (s service) markRead(ctx context.Context, repo issues.RepoSpec, issueID uin
 }
 
 // notify notifies all subscribed users of an update that shows up in their Notification Center.
-func (s service) notify(ctx context.Context, repo issues.RepoSpec, issueID uint64, fragment string, sys storage.System, createdAt time.Time) error {
+func (s service) notify(ctx context.Context, repo issues.RepoSpec, issueID uint64, fragment string, sys storage.System, createdAt time.Time, action string) error {
 	if notifications.Service == nil {
 		return nil
 	}
@@ -98,12 +100,31 @@ func (s service) notify(ctx context.Context, repo issues.RepoSpec, issueID uint6
 	}
 	htmlURL := template.URL(conf.AppURL(s.appCtx).ResolveReference(u).String())
 
-	return notifications.Service.Notify(ctx, s.appName, repo, issueID, notif.Notification{
+	n := notif.Notification{
 		Title:     issue.Title,
 		Icon:      notificationIcon(issue.State),
 		UpdatedAt: createdAt,
 		HTMLURL:   htmlURL,
-	})
+	}
+
+	if cl, err := sourcegraph.NewClientFromContext(ctx); err == nil {
+		// TODO(keegancsmith) we should unify notification center and
+		// the notify service
+		e := &sourcegraph.NotifyGenericEvent{
+			Actor:       putil.UserFromContext(ctx),
+			ActionType:  action,
+			ObjectID:    int64(issueID),
+			ObjectRepo:  repo.URI,
+			ObjectType:  s.appName,
+			ObjectTitle: n.Title,
+			ObjectURL:   string(n.HTMLURL),
+		}
+		if _, err = cl.Notify.GenericEvent(ctx, e); err != nil {
+			log.Println("tracker: failed to Notify.GenericEvent:", err)
+		}
+	}
+
+	return notifications.Service.Notify(ctx, s.appName, repo, issueID, n)
 }
 
 // TODO: This is display/presentation logic; try to factor it out of the backend service implementation.

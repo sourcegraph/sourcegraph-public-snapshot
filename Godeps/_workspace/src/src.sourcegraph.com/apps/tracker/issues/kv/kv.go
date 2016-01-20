@@ -309,7 +309,7 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 
 	// Notify subscribed users.
 	// TODO: Use Tracker app router to compute fragment; that logic shouldn't be duplicated here.
-	err = s.notify(ctx, repo, id, fmt.Sprintf("comment-%d", commentID), sys, createdAt)
+	err = s.notify(ctx, repo, id, fmt.Sprintf("comment-%d", commentID), sys, createdAt, "commented on")
 	if err != nil {
 		log.Println("service.CreateComment: failed to s.notify:", err)
 	}
@@ -390,7 +390,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 	}
 
 	// Notify subscribed users.
-	err = s.notify(ctx, repo, threadID, "", sys, createdAt)
+	err = s.notify(ctx, repo, threadID, "", sys, createdAt, "opened")
 	if err != nil {
 		log.Println("service.Edit: failed to s.notify:", err)
 	}
@@ -530,7 +530,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 
 	// Notify subscribed users.
 	// TODO: Maybe set fragment to fmt.Sprintf("event-%d", eventID), etc.
-	err = s.notify(ctx, repo, id, "", sys, createdAt)
+	err = s.notify(ctx, repo, id, "", sys, createdAt, string(event.Type))
 	if err != nil {
 		log.Println("service.Edit: failed to s.notify:", err)
 	}
