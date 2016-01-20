@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/go-github/github"
-
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -23,6 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
+	"src.sourcegraph.com/sourcegraph/util/githubutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -33,7 +32,7 @@ const (
 )
 
 var (
-	scopes          = []string{"repo", "read:org"}
+	scopes          = []string{"repo", "read:org", "user"}
 	nonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
 	githubClientID     string
@@ -154,7 +153,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("invalid token from OAuth2 provider")}
 	}
 
-	client := github.NewClient(oauthCfg.Client(oauth2.NoContext, token))
+	client := githubutil.Default.AuthedClient(token.AccessToken)
 
 	user, _, err := client.Users.Get("")
 	if err != nil {

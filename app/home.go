@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"net/url"
 	"os"
 
 	"golang.org/x/net/context"
@@ -13,23 +12,26 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return err
-	}
+	cl := handlerutil.APIClient(r)
+	currentUser := handlerutil.UserFromRequest(r)
 
-	conf, err := cl.Meta.Config(ctx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-	rootURL, err := url.Parse(conf.FederationRootURL)
-	if err != nil {
-		return err
+	allowPrivateMirrors := authutil.ActiveFlags.HasPrivateMirrors()
+	var gd *sourcegraph.GitHubRepoData
+	var teammates []*userInfo
+	if allowPrivateMirrors && currentUser != nil {
+		var err error
+		gd, err = cl.Repos.GetPrivateGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
+		if err != nil {
+			return err
+		}
+
+		teammates = getTeammates(ctx, cl)
 	}
 
 	var listOpts sourcegraph.ListOptions
@@ -56,7 +58,9 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		Users  []*userInfo
 		IsLDAP bool
 
-		RootURL *url.URL
+		AllowPrivateMirrors bool
+		GitHub              *sourcegraph.GitHubRepoData
+		Teammates           []*userInfo
 
 		tmpl.Common
 	}{
@@ -65,12 +69,15 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		Users:  getUsersAndInvites(ctx, cl),
 		IsLDAP: authutil.ActiveFlags.IsLDAP(),
 
-		RootURL: rootURL,
+		AllowPrivateMirrors: allowPrivateMirrors,
+		GitHub:              gd,
+		Teammates:           teammates,
 	})
 }
 
 type userInfo struct {
 	Identifier string
+	AvatarURL  string
 	Write      bool
 	Admin      bool
 	Invite     bool
@@ -106,10 +113,17 @@ func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*userInfo
 		for _, user := range userList.Users {
 			users = append(users, &userInfo{
 				Identifier: user.Login,
+				AvatarURL:  user.AvatarURL,
 				Write:      user.Write,
 				Admin:      user.Admin,
 			})
 		}
 	}
 	return users
+}
+
+func getTeammates(ctx context.Context, cl *sourcegraph.Client) []*userInfo {
+	var teammates []*userInfo
+
+	return teammates
 }

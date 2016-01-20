@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/sourcegraph/mux"
@@ -17,6 +16,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	authcli "src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
@@ -24,14 +24,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/router_util"
 )
-
-var (
-	githubClientID string
-)
-
-func init() {
-	githubClientID = os.Getenv("GITHUB_CLIENT_ID")
-}
 
 type userSettingsCommonData struct {
 	User        *sourcegraph.User
@@ -254,9 +246,7 @@ func serveUserSettingsIntegrations(w http.ResponseWriter, r *http.Request) error
 		return err
 	}
 
-	gd, err := apiclient.Repos.GetPrivateGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{
-		GitHubClientID: githubClientID,
-	})
+	gd, err := apiclient.Repos.GetPrivateGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
 	if err != nil {
 		return err
 	}
@@ -316,7 +306,11 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsIntegrations, "User", cd.User.Login).String(), http.StatusSeeOther)
+	if authcli.ActiveFlags.HasPrivateMirrors() {
+		http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsIntegrations, "User", cd.User.Login).String(), http.StatusSeeOther)
+	}
 	return nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -27,6 +28,14 @@ import (
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
+
+var (
+	githubClientID string
+)
+
+func init() {
+	githubClientID = os.Getenv("GITHUB_CLIENT_ID")
+}
 
 var Auth sourcegraph.AuthServer = &auth{}
 
@@ -303,6 +312,10 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 		return nil, grpc.Errorf(codes.PermissionDenied, "user not authenticated to complete this operation")
 	}
 
+	if request.ClientID == "" {
+		request.ClientID = githubClientID
+	}
+
 	dbToken, err := extTokensStore.GetUserToken(ctx, reqUID, request.Host, request.ClientID)
 	if err == authpkg.ErrNoExternalAuthToken {
 		return nil, grpc.Errorf(codes.NotFound, "no external auth token found")
@@ -332,6 +345,10 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 	}
 	if a.UID == 0 || a.UID != reqUID {
 		return nil, grpc.Errorf(codes.PermissionDenied, "user not authenticated to complete this operation")
+	}
+
+	if extToken.ClientID == "" {
+		extToken.ClientID = githubClientID
 	}
 
 	dbToken := &authpkg.ExternalAuthToken{

@@ -30,6 +30,8 @@ type Flags struct {
 	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations"`
 
 	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
+
+	PrivateMirrors bool `long:"auth.private-mirrors" description:"allow mirroring of private GitHub repos via OAuth"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
@@ -58,6 +60,8 @@ func (f Flags) HasSignup() bool { return f.IsLocal() }
 func (f Flags) HasUserProfiles() bool { return !f.DisableUserProfiles }
 
 func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.HasUserAccounts() }
+
+func (f Flags) HasPrivateMirrors() bool { return f.PrivateMirrors }
 
 // ActiveFlags are the flag values passed from the command line, if
 // we're running as a CLI.

@@ -483,10 +483,9 @@ func (s *repos) GetPrivateGitHubRepos(ctx context.Context, req *sourcegraph.GitH
 
 	// Fetch the currently authenticated user's stored access token (if any).
 	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
-		Host:     githubcli.Config.Host(),
-		ClientID: req.GitHubClientID,
+		Host: githubcli.Config.Host(),
 	})
-	if grpc.Code(err) == codes.NotFound || extToken.Token == "" {
+	if grpc.Code(err) == codes.NotFound {
 		return gd, nil
 	} else if err != nil {
 		return nil, err
