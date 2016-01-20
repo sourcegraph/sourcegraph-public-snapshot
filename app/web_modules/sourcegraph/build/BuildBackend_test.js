@@ -38,7 +38,7 @@ describe("BuildBackend", () => {
 
 		BuildBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
-			callback(null, {headers: {"x-sourcegraph-log-max-id": 789}}, "a");
+			callback(null, {headers: {"x-sourcegraph-log-max-id": 789}, statusCode: 200}, "a");
 		};
 		expect(Dispatcher.catchDispatched(() => {
 			Dispatcher.directDispatch(BuildBackend, new BuildActions.WantLog(action.repo, action.buildID, action.taskID));
@@ -60,7 +60,7 @@ describe("BuildBackend", () => {
 		let expectedURI = `/${action.repo}/.builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
 		BuildBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
-			callback(null, {headers: {"x-sourcegraph-log-max-id": 34}}, "c");
+			callback(null, {headers: {"x-sourcegraph-log-max-id": 34}, statusCode: 200}, "c");
 		};
 
 		expect(Dispatcher.catchDispatched(() => {
