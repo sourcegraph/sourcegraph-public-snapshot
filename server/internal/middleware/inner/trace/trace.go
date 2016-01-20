@@ -58,7 +58,7 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 	span.Log(instrument.EventName("appdash_span_id").Payload(spanID))
 	span.AddTraceJoinId("appdash_trace_id", spanID.Trace)
 
-	log15.Debug("gRPC "+server+"."+method+" before", "spanID", spanID)
+	log15.Debug("gRPC before", "rpc", server+"."+method, "spanID", spanID)
 
 	return ctx
 }
@@ -148,5 +148,5 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 		Message: message,
 	})
 
-	log15.Debug("gRPC "+server+"."+method+" after", "spanID", traceutil.SpanIDFromContext(ctx), "elapsed", elapsed)
+	log15.Debug("gRPC after", "rpc", server+"."+method, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
 }

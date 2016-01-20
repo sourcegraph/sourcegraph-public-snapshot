@@ -1164,9 +1164,22 @@ func noiseyLogFilter(r *log15.Record) bool {
 	if r.Lvl != log15.LvlDebug {
 		return true
 	}
-	noiseyPrefixes := []string{"gRPC Builds.DequeueNext", "gRPC MirrorRepos.RefreshVCS", "repoUpdater: RefreshVCS"}
+	noiseyPrefixes := []string{"repoUpdater: RefreshVCS"}
 	for _, prefix := range noiseyPrefixes {
 		if strings.HasPrefix(r.Msg, prefix) {
+			return false
+		}
+	}
+	if !strings.HasPrefix(r.Msg, "gRPC ") || len(r.Ctx) < 2 {
+		return true
+	}
+	rpc, ok := r.Ctx[1].(string)
+	if !ok {
+		return true
+	}
+	noisyRpc := []string{"Builds.DequeueNext", "MirrorRepos.RefreshVCS"}
+	for _, n := range noisyRpc {
+		if rpc == n {
 			return false
 		}
 	}
