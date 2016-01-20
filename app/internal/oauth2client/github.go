@@ -16,6 +16,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
@@ -171,7 +172,40 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	log15.Info("Linked GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
+	sgUser, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: currentUser.UID})
+	if err != nil {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
+	}
+	if sgUser.Name == "" && user.Name != nil {
+		sgUser.Name = *user.Name
+	}
+	if sgUser.AvatarURL == "" && user.AvatarURL != nil {
+		sgUser.AvatarURL = *user.AvatarURL
+	}
+	if sgUser.Location == "" && user.Location != nil {
+		sgUser.Location = *user.Location
+	}
+
+	_, err = cl.Accounts.Update(ctx, sgUser)
+	if err != nil {
+		log15.Info("Could not update profile info", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
+	}
+
+	extAccountsStore := authpkg.ExtAccountsStore{}
+	ghOrgs, _, err := client.Organizations.List("", nil)
+	if err == nil {
+		for _, org := range ghOrgs {
+			if err := extAccountsStore.Append(ctx, githubcli.Config.Host(), *org.Login, currentUser.UID); err != nil {
+				log15.Error("Could not link GitHub org to user", "github_org", *org.Login, "sourcegraph_user", currentUser.Login, "error", err)
+			}
+		}
+	} else {
+	}
+	if err := extAccountsStore.Set(ctx, githubcli.Config.Host(), currentUser.UID, *user.Login); err != nil {
+		log15.Error("Could not link GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login, "error", err)
+	} else {
+		log15.Info("Linked GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
+	}
 
 	returnTo := state.ReturnTo
 	if err := returnto.CheckSafe(returnTo); err != nil {

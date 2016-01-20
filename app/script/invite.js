@@ -5,6 +5,10 @@ document.addEventListener("DOMContentLoaded", function() {
 	if (btn !== null) {
 		addInviteClickListener(btn);
 	}
+	var btn2 = document.getElementById("teammate-invite-btn");
+	if (btn2 !== null) {
+		addTeammateInviteClickListener(btn2);
+	}
 	return;
 });
 
@@ -27,6 +31,26 @@ function addInviteClickListener(element) {
 			},
 		};
 		client.createInvite(email, perms, cb);
+	});
+}
+
+function addTeammateInviteClickListener(element) {
+	element.addEventListener("click", function(e) {
+		if (!document.getElementById("teammate-invite-email").checkValidity()) return;
+		var email = document.getElementById("teammate-invite-email").value;
+
+		var cb = {
+			success(resp) {
+				var node = document.createElement("LI");
+				setInviteHTML(node, email, resp);
+				document.getElementById("teammate-invites-list").appendChild(node);
+			},
+			error(err) {
+				console.error(err);
+				alert("".concat("Error creating invite: ", err.responseText));
+			},
+		};
+		client.createInvite(email, "write", cb);
 	});
 }
 

@@ -203,7 +203,12 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 	defer noCache(ctx)
 
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
-		return nil, err
+		if authutil.ActiveFlags.HasPrivateMirrors() {
+			invite.Admin = false
+			invite.Write = true
+		} else {
+			return nil, err
+		}
 	}
 
 	usersStore := store.UsersFromContextOrNil(ctx)

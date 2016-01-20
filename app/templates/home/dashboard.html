@@ -31,10 +31,11 @@
 <div class="row dashboard">
 	<div class="col-md-6">
 		<h3>Repositories
-			{{if .Repos}}
+			{{if (and .Repos (not .AllowPrivateMirrors))}}
 				<button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button>
 			{{end}}
 		</h3>
+		{{if not .AllowPrivateMirrors}}
 		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
 			<div class="well">
 				<form action={{router.URLToRepoCreate}} method="post">
@@ -54,6 +55,7 @@
 			{{end}}
 			</div>
 		</div>
+		{{end}}
 		<div class="list-group repos">
 			{{range .Repos}}
 				<a class="list-group-item" href="{{urlToRepo .URI}}">
@@ -65,8 +67,8 @@
 		</div>
 		{{if (and .AllowPrivateMirrors $.CurrentUser (not appconf.DisableIntegrations))}}
 			{{with .GitHub}}
-			<h3>Available Private GitHub Repositories</h3>
-			{{if not .TokenIsPresent}}
+			<h4>Available private GitHub repositories</h4>
+			{{if (or (not .TokenIsPresent) (not .TokenIsValid))}}
 					<p>Link your GitHub account to add your code to Sourcegraph</p>
 					<form action={{router.URLToGitHubOAuth}} method="get">
 						<div class="form-group">
@@ -115,7 +117,7 @@
 				</ul>
 				<form action="javascript:void(0);" class="form-inline">
 					<input name="Email" type="email" class="input-xlarge form-control" id="teammate-invite-email" placeholder="user@example.com" value="" required tabindex=1 autofocus>
-					<button type="submit" id="user-invite-btn" class="btn btn-md btn-sgblue" name="Invite" value="Invite" tabindex=3>Invite</button>
+					<button type="submit" id="teammate-invite-btn" class="btn btn-md btn-sgblue" name="Invite" value="Invite" tabindex=3>Invite</button>
 					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 				</form>
 			</div>
@@ -123,11 +125,11 @@
 		<div class="list-group">
 			{{range .Teammates}}
 				<li class="list-group-item">
-					<strong>{{.Identifier}}</strong>
+					{{if .AvatarURL}}<img src="{{.AvatarURL}}" class="avatar img-rounded" width="30" height="30" />{{end}} <strong>{{.Identifier}}</strong>
 				</li>
 			{{end}}
 		</div>
-		{{if .Users}}
+		{{if (and .Users (not .AllowPrivateMirrors))}}
 		<h3>Users <button class="btn btn-default" data-toggle="collapse" data-target="#addUser"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addUser">
 			<div class="well">
