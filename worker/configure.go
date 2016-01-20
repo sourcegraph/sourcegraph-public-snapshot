@@ -136,7 +136,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		Clone:  true,
 		Build:  true,
 		Deploy: false,
-		Notify: true,
+		Notify: false,
 		Debug:  true,
 	}
 
