@@ -1,0 +1,71 @@
+/* Logo */
+.header {
+	background: #247201 url(http://filamentgroup.com/images/headerbg-new.jpg) no-repeat bottom left;
+}
+#fg-logo {
+	text-indent: -9999px;
+	margin: 0 auto;
+	width: 287px;
+	height: 52px;
+	background-image: url(http://filamentgroup.com/images/fg-logo-icon.png);
+}
+@media (-webkit-min-device-pixel-ratio: 1.5), (min-device-pixel-ratio: 1.5){
+	#fg-logo {
+		background-size: 287px 52px;
+		background-image: url(http://filamentgroup.com/images/fg-logo-icon-lrg.png);
+	}
+}
+/* Demo CSS */
+body {
+	font-family: sans-serif;
+	color: #444;
+	margin: 0 auto;
+	padding: 0 2%;
+	max-width: 600px;
+}
+
+.top,
+.bottom {
+	text-align: center;
+	border: solid black;
+	border-width: 1px 0;
+	padding: 1em;
+	width: 100%;
+	max-width: 600px;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+.top.fixedsticky-on,
+.bottom.fixedsticky-on {
+	width: 96%;
+}
+
+/* Fixed-Sticky CSS */
+.top {
+	top: 0; 
+}
+.bottom {
+	bottom: 0;
+}
+#top-a {
+	top: 32px;
+}
+#bottom-b {
+	bottom: 16px;
+}
+
+/* Demo Colors */
+#top-a,
+#bottom-a {
+	background-color: #f00;
+	background-color: rgba(255,0,0,.6);
+}
+#top-b,
+#bottom-b {
+	background-color: #0f0;
+	background-color: rgba(0,255,0,.6);
+}
+.container {
+	background-color: #999;
+}

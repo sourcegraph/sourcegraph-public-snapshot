@@ -1,0 +1,13 @@
+{
+  "name": "filament-sticky",
+  "version": "0.1.6",
+  "main": ["fixedsticky.js", "fixedsticky.css"],
+  "ignore": [
+    "**/.*"
+  ],
+  "dependencies": {
+    "jquery": ">=1.9.1",
+    "filament-fixed": ">=0.1.1",
+    "qunit": ">=1.12.0"
+  }
+}
