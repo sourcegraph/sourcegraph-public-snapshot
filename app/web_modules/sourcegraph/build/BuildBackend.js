@@ -58,6 +58,10 @@ const BuildBackend = {
 						console.error(err);
 						return;
 					}
+					if (resp.statusCode !== 200) {
+						console.error(`HTTP status ${resp.statusCode} received while fetching logs from ${url}`);
+						return;
+					}
 					let maxID = resp.headers["x-sourcegraph-log-max-id"];
 					if (maxID) {
 						maxID = parseInt(maxID, 10);
