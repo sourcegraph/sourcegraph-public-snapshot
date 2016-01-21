@@ -291,13 +291,20 @@ func (s *builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info so
 	if info.HeartbeatAt != nil {
 		b.HeartbeatAt = info.HeartbeatAt
 	}
-	b.Host = info.Host
+	if info.BuilderConfig != "" {
+		b.BuilderConfig = info.BuilderConfig
+	}
+	if info.Host != "" {
+		b.Host = info.Host
+	}
+	if info.Priority != 0 {
+		// This means we can never update a priority back to 0
+		b.Priority = info.Priority
+	}
 	b.Purged = info.Purged
 	b.Success = info.Success
 	b.Failure = info.Failure
-	b.Priority = info.Priority
 	b.Killed = info.Killed
-	b.BuilderConfig = info.BuilderConfig
 
 	return s.create(ctx, b)
 }

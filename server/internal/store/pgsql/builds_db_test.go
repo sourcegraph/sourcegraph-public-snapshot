@@ -197,6 +197,16 @@ func TestBuilds_Update(t *testing.T) {
 	}
 }
 
+func TestBuilds_Update_builderConfig(t *testing.T) {
+	t.Parallel()
+
+	var s builds
+	ctx, done := testContext()
+	defer done()
+
+	testsuite.Builds_Update_builderConfig(ctx, t, &s, s.mustCreateBuilds)
+}
+
 func TestBuilds_CreateTasks(t *testing.T) {
 	t.Parallel()
 

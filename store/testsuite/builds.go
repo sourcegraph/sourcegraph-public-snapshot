@@ -283,6 +283,23 @@ func Builds_Update(ctx context.Context, t *testing.T, s store.Builds, insert Ins
 	assertBuildExists(ctx, s, &want, t)
 }
 
+// Builds_Update_builderConfig tests that updating BuilderConfig only updates
+// the BuilderConfig without affecting other fields.
+func Builds_Update_builderConfig(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
+	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
+	orig := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost", StartedAt: &t0}
+	insert(ctx, t, []*sourcegraph.Build{orig})
+
+	update := sourcegraph.BuildUpdate{BuilderConfig: "test"}
+	err := s.Update(ctx, orig.Spec(), update)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	want := *orig
+	want.BuilderConfig = update.BuilderConfig
+	assertBuildExists(ctx, s, &want, t)
+}
+
 func Builds_DequeueNext(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
 	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 	insert(ctx, t, []*sourcegraph.Build{want})

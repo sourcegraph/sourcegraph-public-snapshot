@@ -138,6 +138,11 @@ func TestBuilds_Update(t *testing.T) {
 	testsuite.Builds_Update(createTestContext(t), t, &s, s.setBuilds)
 }
 
+func TestBuilds_Update_builderConfig(t *testing.T) {
+	var s builds
+	testsuite.Builds_Update_builderConfig(createTestContext(t), t, &s, s.setBuilds)
+}
+
 func TestBuilds_DequeueNext(t *testing.T) {
 	var s builds
 	testsuite.Builds_DequeueNext(createTestContext(t), t, &s, s.setBuilds)

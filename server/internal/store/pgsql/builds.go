@@ -396,11 +396,18 @@ func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 	if info.HeartbeatAt != nil {
 		updates = append(updates, "heartbeat_at="+arg(info.HeartbeatAt.Time()))
 	}
-	updates = append(updates, "host="+arg(info.Host))
+	if info.BuilderConfig != "" {
+		updates = append(updates, "builder_config="+arg(info.BuilderConfig))
+	}
+	if info.Host != "" {
+		updates = append(updates, "host="+arg(info.Host))
+	}
+	if info.Priority != 0 {
+		updates = append(updates, "priority="+arg(info.Priority))
+	}
 	updates = append(updates, "purged="+arg(info.Purged))
 	updates = append(updates, "success="+arg(info.Success))
 	updates = append(updates, "failure="+arg(info.Failure))
-	updates = append(updates, "priority="+arg(info.Priority))
 	updates = append(updates, "killed="+arg(info.Killed))
 
 	if len(updates) != 0 {
