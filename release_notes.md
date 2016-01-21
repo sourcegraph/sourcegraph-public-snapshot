@@ -5,6 +5,10 @@
   appear as a red badge over the icon in top right. Supported apps (Tracker) will subscribe you to
   updates for threads you create, where you participate, or get @mentioned.
 
+# 0.13.0
+
+- Fix issues serving /robots.txt and /favicon.ico.
+
 # 0.12.1
 
 - Fix issue blocking changesets from being created from the UI.
