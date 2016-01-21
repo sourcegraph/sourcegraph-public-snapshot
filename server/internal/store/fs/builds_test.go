@@ -153,6 +153,11 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	testsuite.Builds_DequeueNext_ordered(createTestContext(t), t, &s, s.setBuilds)
 }
 
+func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
+	var s builds
+	testsuite.Builds_DequeueNext_noRaceCondition(createTestContext(t), t, &s, s.setBuilds)
+}
+
 func TestBuilds_CreateTasks(t *testing.T) {
 	var s builds
 	testsuite.Builds_CreateTasks(createTestContext(t), t, &s, s.setTasks)

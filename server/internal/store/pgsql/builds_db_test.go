@@ -3,11 +3,8 @@
 package pgsql
 
 import (
-	"strings"
-	"sync"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
@@ -194,71 +191,11 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 }
 
 func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
-	// This test ensures that DequeueNext will dequeue a build exactly
-	// once and that concurrent processes will not dequeue the same
-	// build. It may not always trigger the race condition, but if it
-	// even does once, it is very important that we fix it.
-
-	// TODO port this test to the testsuite
-
 	t.Parallel()
-
-	const (
-		nbuilds  = 90
-		nworkers = 30
-	)
-
-	var allBuilds []*sourcegraph.Build
-	for i := 0; i < nbuilds; i++ {
-		allBuilds = append(allBuilds, &sourcegraph.Build{
-			Repo: "r", BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: int32(i)},
-			CommitID: strings.Repeat("a", 40),
-		})
-	}
 
 	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	for i, b := range allBuilds {
-		allBuilds[i] = s.mustCreate(ctx, t, b)
-	}
-	t.Logf("enqueued %d builds", nbuilds)
-
-	dq := map[uint64]bool{} // build attempt -> whether it has already been dequeued
-	var dqMu sync.Mutex
-
-	var wg sync.WaitGroup
-	for i := 0; i < nworkers; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			for {
-				b, err := s.DequeueNext(ctx)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if b == nil {
-					return
-				}
-
-				dqMu.Lock()
-				if dq[b.ID] {
-					dqMu.Unlock()
-					t.Errorf("build %d was already dequeued (race condition)", b.ID)
-					return
-				}
-				dq[b.ID] = true
-				dqMu.Unlock()
-				t.Logf("worker %d got build %d (priority %d)", i, b.ID, b.Priority)
-			}
-		}(i)
-	}
-	wg.Wait()
-
-	for _, b := range allBuilds {
-		if !dq[b.ID] {
-			t.Errorf("build %d was never dequeued", b.ID)
-		}
-	}
+	testsuite.Builds_DequeueNext_noRaceCondition(ctx, t, &s, s.mustCreateBuilds)
 }

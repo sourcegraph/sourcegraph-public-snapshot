@@ -313,8 +313,24 @@ func (s *builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info so
 }
 
 func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	// Fast path - check if queue is empty with read lock
+	isEmpty, err := func() (bool, error) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+		var queue []sourcegraph.BuildSpec
+		err := getQueue(ctx, buildQueueFilename, &queue)
+		if err != nil {
+			return false, err
+		}
+		return len(queue) == 0, nil
+	}()
+	if isEmpty || err != nil {
+		return nil, err
+	}
+
+	// Slow path - attempt to pop
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	var queue []sourcegraph.BuildSpec
 	if err := getQueue(ctx, buildQueueFilename, &queue); err != nil {
@@ -323,6 +339,7 @@ func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 	if len(queue) == 0 {
 		return nil, nil
 	}
+
 	var first sourcegraph.BuildSpec
 	first, queue = queue[0], queue[1:]
 
