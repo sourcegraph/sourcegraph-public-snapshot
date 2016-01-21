@@ -3,7 +3,6 @@
 package pgsql
 
 import (
-	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -22,48 +21,12 @@ func TestBuilds_Get(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	wantBuild := s.mustCreate(ctx, t, &sourcegraph.Build{Repo: "r"})
-
-	build, err := s.Get(ctx, sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !jsonutil.JSONEqual(t, build, wantBuild) {
-		t.Errorf("got build %+v, want %+v", build, wantBuild)
-	}
+	testsuite.Builds_Get(ctx, t, &s, s.mustCreateBuilds)
 }
 
 func TestBuilds_List(t *testing.T) {
 	t.Parallel()
 
-	wantBuild := &sourcegraph.Build{Repo: "r"}
-	wantBuilds := []*sourcegraph.Build{wantBuild}
-
-	var s builds
-	ctx, done := testContext()
-	defer done()
-
-	wantBuild = s.mustCreate(ctx, t, wantBuild)
-
-	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{
-		Sort:        "priority",
-		Direction:   "desc",
-		ListOptions: sourcegraph.ListOptions{Page: 1, PerPage: 10},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if n := len(builds); n != len(wantBuilds) {
-		t.Errorf("got len(builds) == %d, want %d", n, len(wantBuilds))
-	}
-	if !jsonutil.JSONEqual(t, builds[0], wantBuild) {
-		t.Errorf("got build %+v, want %+v", builds[0], wantBuild)
-	}
-}
-
-func TestBuilds_List2(t *testing.T) {
 	var s builds
 	ctx, done := testContext()
 	defer done()
@@ -126,20 +89,7 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	newTasks := []*sourcegraph.BuildTask{{Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, ID: 1}, Label: "a"}}
-	wantTasks := s.mustCreateTasks(ctx, t, newTasks)
-
-	tasks, err := s.ListBuildTasks(ctx, sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, ID: 1}, &sourcegraph.BuildTaskListOptions{ListOptions: sourcegraph.ListOptions{Page: 1, PerPage: 10}})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if n := len(tasks); n != len(wantTasks) {
-		t.Errorf("got len(tasks) == %d, want %d", n, len(wantTasks))
-	}
-	if !reflect.DeepEqual(tasks, wantTasks) {
-		t.Errorf("got build tasks %+v, want %+v", tasks, wantTasks)
-	}
+	testsuite.Builds_ListBuildTasks(ctx, t, &s, s.mustCreateTasks)
 }
 
 func TestBuilds_Create(t *testing.T) {
@@ -149,14 +99,7 @@ func TestBuilds_Create(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	b, err := s.Create(ctx, &sourcegraph.Build{Repo: "r", CommitID: "c"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := s.Get(ctx, b.Spec()); err != nil {
-		t.Fatal(err)
-	}
+	testsuite.Builds_Create(ctx, t, &s)
 }
 
 func TestBuilds_Create_New(t *testing.T) {
@@ -182,19 +125,7 @@ func TestBuilds_Update(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	b := s.mustCreate(ctx, t, &sourcegraph.Build{Repo: "r", CommitID: "c"})
-
-	if err := s.Update(ctx, b.Spec(), sourcegraph.BuildUpdate{Success: true}); err != nil {
-		t.Fatal(err)
-	}
-
-	updated, err := s.Get(ctx, b.Spec())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !updated.Success {
-		t.Errorf("got updated build Success == %v, want %v", updated.Success, true)
-	}
+	testsuite.Builds_Update(ctx, t, &s, s.mustCreateBuilds)
 }
 
 func TestBuilds_Update_builderConfig(t *testing.T) {
@@ -214,22 +145,7 @@ func TestBuilds_CreateTasks(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	buildSpec := sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}}
-	tasks := []*sourcegraph.BuildTask{
-		{Build: buildSpec, Label: "foo"},
-		{Build: buildSpec, Label: "bar"},
-	}
-	if _, err := s.CreateTasks(ctx, tasks); err != nil {
-		t.Fatal(err)
-	}
-
-	tasks2, err := s.ListBuildTasks(ctx, buildSpec, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := 2; len(tasks2) != want {
-		t.Errorf("got len(tasks2) == %d, want %d", len(tasks2), want)
-	}
+	testsuite.Builds_CreateTasks(ctx, t, &s, s.mustCreateTasks)
 }
 
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
@@ -247,26 +163,17 @@ func TestBuilds_UpdateTask(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	task := &sourcegraph.BuildTask{ID: 1, Label: "foo"}
+	testsuite.Builds_UpdateTask(ctx, t, &s, s.mustCreateTasks)
+}
 
-	tasks, err := s.CreateTasks(ctx, []*sourcegraph.BuildTask{task})
-	if err != nil {
-		t.Fatal(err)
-	}
-	task = tasks[0]
+func TestBuilds_GetTask(t *testing.T) {
+	t.Parallel()
 
-	ts := pbtypes.NewTimestamp(time.Unix(123, 0))
-	if err := s.UpdateTask(ctx, task.Spec(), sourcegraph.TaskUpdate{Success: true, StartedAt: &ts}); err != nil {
-		t.Fatal(err)
-	}
+	var s builds
+	ctx, done := testContext()
+	defer done()
 
-	updated, err := s.GetTask(ctx, task.Spec())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !updated.Success {
-		t.Errorf("got updated task Success == %v, want %v", updated.Success, true)
-	}
+	testsuite.Builds_GetTask(ctx, t, &s, s.mustCreateTasks)
 }
 
 func TestBuilds_DequeueNext(t *testing.T) {
@@ -275,6 +182,8 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	var s builds
 	ctx, done := testContext()
 	defer done()
+
+	// TODO port this test to the testsuite
 
 	t1 := time.Unix(100000, 0)
 	t2 := time.Unix(200000, 0)
@@ -317,6 +226,8 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 	// once and that concurrent processes will not dequeue the same
 	// build. It may not always trigger the race condition, but if it
 	// even does once, it is very important that we fix it.
+
+	// TODO port this test to the testsuite
 
 	t.Parallel()
 

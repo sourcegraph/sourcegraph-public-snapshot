@@ -22,10 +22,9 @@ func (s *builds) mustCreateBuilds(ctx context.Context, t *testing.T, builds []*s
 	}
 }
 
-func (s *builds) mustCreateTasks(ctx context.Context, t *testing.T, tasks []*sourcegraph.BuildTask) []*sourcegraph.BuildTask {
-	createdTasks, err := s.CreateTasks(ctx, tasks)
+func (s *builds) mustCreateTasks(ctx context.Context, t *testing.T, tasks []*sourcegraph.BuildTask) {
+	_, err := s.CreateTasks(ctx, tasks)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return createdTasks
 }
