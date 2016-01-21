@@ -82,6 +82,10 @@ func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.Use
 		return sourcegraph.UserSpec{}, nil, err
 	}
 
+	if currentUser.UID != userSpec.UID {
+		return sourcegraph.UserSpec{}, nil, &errcode.HTTPErr{Status: http.StatusUnauthorized, Err: fmt.Errorf("must be logged in as the requested user")}
+	}
+
 	// The settings panel should have sections for the user AND for
 	// each of the orgs that the user can admin. This list is
 	// orgsAndSelf.
