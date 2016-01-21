@@ -6,14 +6,14 @@ linktitle = "on Amazon EC2"
 To set up Sourcegraph on a new [Amazon EC2](https://aws.amazon.com/ec2/) instance, follow these steps.
 
 * Open the [**Launch EC2 Instance Wizard**](https://us-west-2.console.aws.amazon.com/ec2/v2/home#LaunchInstanceWizard:) in the AWS Management Console.
-* **Choose an AMI:** Ubuntu Server 14.04 AMI.
-* **Choose an Instance Type:** Any instance with at least 4 GB of RAM (t2.medium or better recommended)
-* **Configure a public IP Address:** Set Auto-assign Public IP to enable
-* **Configure Instance Details:** Expand **Edit instance details** then **Advanced details** and set the following **User data**:
+	* **AMI:** Ubuntu Server 14.04 AMI.
+	* **Instance Type:** Any instance with at least 4 GB of RAM (t2.medium or better recommended)
+	* **Public IP Address:** Set Auto-assign Public IP to enable
+	* **Instance Details:** Expand **Edit instance details** then **Advanced details** and set the following **User data**:
 
-```
-{{% userdata SRC_AMAZON_EC2 %}}
-```
+		```
+		{{% userdata SRC_AMAZON_EC2 %}}
+		```
 
 * **Configure Security Group:** Allow external access to the following ports (or just choose All TCP).
   * Port 22 (for server administration via SSH)
