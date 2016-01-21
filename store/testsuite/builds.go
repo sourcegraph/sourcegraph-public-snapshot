@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
 
 // InsertBuildsFunc is called at the beginning of Builds_* test funcs
@@ -307,8 +308,45 @@ func Builds_DequeueNext(ctx context.Context, t *testing.T, s store.Builds, inser
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
 	}
+	if build.StartedAt == nil {
+		t.Errorf("got dequeued build StartedAt null, want it to be set to appx. now")
+	}
+	build.StartedAt = nil // don't compare since StartedAt is set from the current time
 	if !reflect.DeepEqual(build, want) {
 		t.Errorf("expected %#v, got %#v", want, build)
+	}
+}
+
+func Builds_DequeueNext_ordered(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
+	t1 := pbtypes.NewTimestamp(time.Unix(100000, 0))
+	t2 := pbtypes.NewTimestamp(time.Unix(200000, 0))
+
+	b1 := &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: 10}}
+	b2 := &sourcegraph.Build{ID: 2, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	b3 := &sourcegraph.Build{ID: 3, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	bNo1 := &sourcegraph.Build{ID: 4, CommitID: strings.Repeat("A", 40), Repo: "r", BuildConfig: sourcegraph.BuildConfig{Queue: false}}
+	bNo2 := &sourcegraph.Build{ID: 5, CommitID: strings.Repeat("A", 40), Repo: "r", StartedAt: &t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+
+	insert(ctx, t, []*sourcegraph.Build{b1, b2, b3, bNo1, bNo2})
+
+	wantBuilds := []*sourcegraph.Build{
+		b1, b2, b3, nil, // in order
+	}
+
+	for i, wantBuild := range wantBuilds {
+		build, err := s.DequeueNext(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if build != nil {
+			if build.StartedAt == nil {
+				t.Errorf("got dequeued build #%d StartedAt null, want it to be set to appx. now", i+1)
+			}
+			build.StartedAt = nil // don't compare since StartedAt is set from the current time
+		}
+		if !jsonutil.JSONEqual(t, build, wantBuild) {
+			t.Errorf("dequeued build #%d\n\nGOT\n%+v\n\nWANT\n%+v", i+1, build, wantBuild)
+		}
 	}
 }
 

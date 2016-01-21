@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
+
+	"sourcegraph.com/sqs/pbtypes"
 
 	"github.com/kr/fs"
 	"golang.org/x/net/context"
@@ -322,11 +325,23 @@ func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 	}
 	var first sourcegraph.BuildSpec
 	first, queue = queue[0], queue[1:]
+
+	// Set started timestamp on first
+	b, err := s.get(ctx, first)
+	if err != nil {
+		return nil, err
+	}
+	now := pbtypes.NewTimestamp(time.Now())
+	b.StartedAt = &now
+	if err = s.create(ctx, b); err != nil {
+		return nil, err
+	}
+
 	if err := replaceQueue(ctx, buildQueueFilename, queue); err != nil {
 		return nil, err
 	}
 
-	return s.get(ctx, first)
+	return b, nil
 }
 
 func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
