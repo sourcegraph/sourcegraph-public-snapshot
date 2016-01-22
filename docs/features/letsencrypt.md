@@ -18,6 +18,10 @@ The following instructions describe how to use [Let's Encrypt](https://letsencry
 
 ```
 [serve]
+; Run Sourcegraph on standard HTTP and HTTPS ports.
+http-addr = :80
+https-addr = :443
+
 ; Points to a TLS certificate and key.
 tls-cert = /etc/letsencrypt/live/mysite.com/fullchain.pem
 tls-key = /etc/letsencrypt/live/mysite.com/privkey.pem
