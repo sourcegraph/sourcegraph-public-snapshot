@@ -74,7 +74,7 @@ func TestRobotsTxt(t *testing.T) {
 		t.Errorf("got Content-Type %v, want %v", got, want)
 	}
 	if n == 0 {
-		t.Error("got empty body")
+		t.Error("got empty body, want non-empty")
 	}
 }
 
@@ -98,7 +98,75 @@ func TestFavicon(t *testing.T) {
 		t.Errorf("got Content-Type %v, want %v", got, want)
 	}
 	if n == 0 {
-		t.Error("got empty body")
+		t.Error("got empty body, want non-empty")
+	}
+}
+
+// Test that platform apps continue to support HTTP caching (conditional requests).
+//
+// If this test fails, it's either because caching is indeed broken,
+// or (more rarely) the target is no longer valid and needs to be updated.
+func TestPlatformAppConditionalRequests(t *testing.T) {
+	// This test expects the target to be a valid cacheable target. If this resource is no longer available
+	// due to app changes and the test fails, another valid target should be used.
+	const (
+		target            = "/.notifications/assets/script/script.js"
+		targetContentType = "application/javascript"
+	)
+
+	var lastModified []string
+
+	// Make the first fresh request. Expect to get a 200 with body and single Last-Modified header.
+	{
+		resp, err := http.Get(u(target))
+		if err != nil {
+			t.Fatal(err)
+		}
+		n, err := io.Copy(ioutil.Discard, resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got HTTP status %v, want %v", resp.Status, want)
+		}
+		if got, want := resp.Header.Get("Content-Type"), targetContentType; got != want {
+			t.Errorf("got Content-Type %v, want %v", got, want)
+		}
+		if n == 0 {
+			t.Error("got empty body, want non-empty")
+		}
+		lastModified = resp.Header["Last-Modified"]
+		if got, want := len(lastModified), 1; got != want {
+			t.Fatalf("HTTP caching broken: got %v Last-Modified values, want %v", got, want)
+		}
+	}
+
+	// Make a second request with If-Modified-Since set. Expect to get a 304 with no body.
+	{
+		req, err := http.NewRequest("GET", u(target), nil)
+		req.Header.Set("If-Modified-Since", lastModified[0])
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		n, err := io.Copy(ioutil.Discard, resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := http.StatusNotModified; resp.StatusCode != want {
+			t.Errorf("HTTP caching broken: got HTTP status %v, want %v", resp.Status, want)
+		}
+		if n != 0 {
+			t.Error("HTTP caching broken: got non-empty body, want empty")
+		}
 	}
 }
 
