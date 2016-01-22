@@ -9,7 +9,7 @@ The following instructions describe how to use [Let's Encrypt](https://letsencry
 1. `git clone https://github.com/letsencrypt/letsencrypt`
 1. `cd letsencrypt`
 1. `./letsencrypt-auto certonly --standalone --agree-tos --email admin@mysite.com -d src.mysite.com`
-  - Note: Let's Encrypt certificates expire after 90 days, it is advised that you re-run the above commands every 60 days.
+  - Note: Let's Encrypt certificates expire after 90 days, it is advised that you re-run the above commands every 60 days (a warning email will be sent to the email address you provide if your certificate is about to expire and you haven't renewed yet).
 
 ## Configuring Sourcegraph
 
