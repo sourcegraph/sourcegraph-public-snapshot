@@ -39,7 +39,7 @@ func init() {
 }
 
 func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String())
+	log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String(), "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent())
 
 	start := time.Now()
 	rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
