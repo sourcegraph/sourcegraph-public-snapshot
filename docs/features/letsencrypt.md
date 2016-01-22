@@ -61,10 +61,10 @@ which files you should copy: `ls -l /etc/letsencrypt/live/mysite.com`.
 
 ### Error "Failed to connect to host for DVSNI challenge"
 
-Let's Encrypt tries to verify your ownership of the server via ports :80 and :443,
-so confirm that your DNS settings correctly point to your server and that you
-are not being routed through e.g. CloudFlare or other HTTPS middleware
-providers while running the above commands.
+Let's Encrypt tries to verify your ownership of the server by starting it's own
+dedicated server via ports :80 and :443, so confirm that your DNS settings
+correctly point to your server and that you are not being routed through e.g.
+CloudFlare or other HTTPS middleware providers while running the above commands.
 
 ## Known Issues
 
