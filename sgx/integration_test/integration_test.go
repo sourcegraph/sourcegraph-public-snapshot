@@ -68,10 +68,10 @@ func TestRobotsTxt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if want := http.StatusOK; resp.StatusCode != want {
-		t.Errorf("got HTTP status %v, want %v", resp.Status, want)
+		t.Errorf("got HTTP status %v, want %v\n", resp.Status, want)
 	}
 	if got, want := resp.Header.Get("Content-Type"), "text/plain"; got != want {
-		t.Errorf("got Content-Type %v, want %v", got, want)
+		t.Errorf("got Content-Type %v, want %v\n", got, want)
 	}
 	if n == 0 {
 		t.Error("got empty body, want non-empty")
@@ -92,10 +92,10 @@ func TestFavicon(t *testing.T) {
 		t.Fatal(err)
 	}
 	if want := http.StatusOK; resp.StatusCode != want {
-		t.Errorf("got HTTP status %v, want %v", resp.Status, want)
+		t.Errorf("got HTTP status %v, want %v\n", resp.Status, want)
 	}
 	if got, want := resp.Header.Get("Content-Type"), "image/png"; got != want {
-		t.Errorf("got Content-Type %v, want %v", got, want)
+		t.Errorf("got Content-Type %v, want %v\n", got, want)
 	}
 	if n == 0 {
 		t.Error("got empty body, want non-empty")
@@ -131,17 +131,17 @@ func TestPlatformAppConditionalRequests(t *testing.T) {
 			t.Fatal(err)
 		}
 		if want := http.StatusOK; resp.StatusCode != want {
-			t.Errorf("got HTTP status %v, want %v", resp.Status, want)
+			t.Errorf("got HTTP status %v, want %v\n", resp.Status, want)
 		}
 		if got, want := resp.Header.Get("Content-Type"), targetContentType; got != want {
-			t.Errorf("got Content-Type %v, want %v", got, want)
+			t.Errorf("got Content-Type %v, want %v\n", got, want)
 		}
 		if n == 0 {
 			t.Error("got empty body, want non-empty")
 		}
 		lastModified = resp.Header["Last-Modified"]
 		if got, want := len(lastModified), 1; got != want {
-			t.Fatalf("HTTP caching broken: got %v Last-Modified values, want %v", got, want)
+			t.Fatalf("HTTP caching broken: got %v Last-Modified values, want %v\n", got, want)
 		}
 	}
 
@@ -162,7 +162,7 @@ func TestPlatformAppConditionalRequests(t *testing.T) {
 			t.Fatal(err)
 		}
 		if want := http.StatusNotModified; resp.StatusCode != want {
-			t.Errorf("HTTP caching broken: got HTTP status %v, want %v", resp.Status, want)
+			t.Errorf("HTTP caching broken: got HTTP status %v, want %v\n", resp.Status, want)
 		}
 		if n != 0 {
 			t.Error("HTTP caching broken: got non-empty body, want empty")
