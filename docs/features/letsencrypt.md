@@ -5,7 +5,7 @@ The following instructions describe how to use [Let's Encrypt](https://letsencry
 ## Generate Certificate
 
 1. These commands _must_ be run on the server you'll be running Sourcegraph on.
-1. Ensure nothing is already running on port 80 (e.g. `service stop src` or `docker stop src` first).
+1. Ensure nothing is already running on port 80 (e.g. `sudo stop src` or `docker stop src` first).
 1. `git clone https://github.com/letsencrypt/letsencrypt`
 1. `cd letsencrypt`
 1. `./letsencrypt-auto certonly --standalone --agree-tos --email admin@mysite.com -d src.mysite.com`
