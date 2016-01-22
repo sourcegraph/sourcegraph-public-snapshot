@@ -123,18 +123,7 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	// relay this request to browser directly, and copy appropriate headers.
 	redirect := rr.Code == http.StatusSeeOther || rr.Code == http.StatusMovedPermanently || rr.Code == http.StatusTemporaryRedirect || rr.Code == http.StatusFound
 	if rr.Header().Get(platform.HTTPHeaderVerbatim) == "true" || redirect {
-		if h, ok := rr.Header()["Content-Encoding"]; ok {
-			w.Header()["Content-Encoding"] = h
-		}
-		if h, ok := rr.Header()["Content-Type"]; ok {
-			w.Header()["Content-Type"] = h
-		}
-		if h, ok := rr.Header()["Location"]; ok {
-			w.Header()["Location"] = h
-		}
-		if h, ok := rr.Header()["Last-Modified"]; ok {
-			w.Header()["Last-Modified"] = h
-		}
+		copyHeader(w.Header(), rr.Header())
 		w.WriteHeader(rr.Code)
 		_, err := io.Copy(w, rr.Body)
 		return err
@@ -174,4 +163,18 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 
 		RobotsIndex: true,
 	})
+}
+
+// copyHeader copies whitelisted headers.
+//
+// TODO: Eventually, we should copy all headers minus hop-by-hop ones.
+//       We didn't want to do that right away in order to build better understanding and motivation
+//       for copying more headers than are needed, by by now it's becoming clear that's the way to go.
+func copyHeader(dst, src http.Header) {
+	// Since we're accessing the map directly, the header values must match canonicalized versions exactly.
+	dst["Content-Encoding"] = src["Content-Encoding"]
+	dst["Content-Type"] = src["Content-Type"]
+	dst["Location"] = src["Location"]
+	dst["Last-Modified"] = src["Last-Modified"]
+	dst["Etag"] = src["Etag"]
 }
