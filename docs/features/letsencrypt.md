@@ -42,9 +42,9 @@ Let's Encrypt, this is the IdenTrust CA as [they cross-sign all Let's Encrypt ce
 1. (Docker-only): use `docker exec -it src bash` to get a shell.
 1. `vi /usr/local/share/ca-certificates/identrust.crt`
 1. Paste the [IdenTrust DST Root CA X3](https://www.identrust.com/certificates/trustid/root-download-x3.html) contents.
-1. Type `:wq` + press enter to save the file.
-1. `update-ca-certificates`
-1. Restart Sourcegraph via `sudo restart src` or `docker src restart`.
+1. Press escape -> type `:wq` -> press enter to save the file.
+1. Run `update-ca-certificates`
+1. Start Sourcegraph again via `sudo start src` or `docker src start`.
 
 
 ### Docker
