@@ -19,14 +19,14 @@ The following instructions describe how to use [Let's Encrypt](https://letsencry
 ```
 [serve]
 ; Points to a TLS certificate and key.
-CertFile = /etc/letsencrypt/live/mysite.com/fullchain.pem
-KeyFile = /etc/letsencrypt/live/mysite.com/privkey.pem
+tls-cert = /etc/letsencrypt/live/mysite.com/fullchain.pem
+tls-key = /etc/letsencrypt/live/mysite.com/privkey.pem
 
 ; Be sure that your AppURL is "https://...".
-AppURL = https://src.mysite.com
+app-url = https://src.mysite.com
 
 ; Redirect "http://..." requests to "https://...".
-RedirectToHTTPS = true
+app.redirect-to-https = true
 ```
 
 ## Installing Root CA certificate
