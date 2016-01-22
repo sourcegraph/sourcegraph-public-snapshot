@@ -44,22 +44,32 @@ Let's Encrypt, this is the IdenTrust CA as [they cross-sign all Let's Encrypt ce
 1. Paste the [IdenTrust DST Root CA X3](https://www.identrust.com/certificates/trustid/root-download-x3.html) contents.
 1. Press escape -> type `:wq` -> press enter to save the file.
 1. Run `update-ca-certificates`
-1. Start Sourcegraph again via `sudo start src` or `docker src start`.
 
+## Without Docker (Cloud Installs)
 
-### Docker
+If you used one of the cloud installers or are otherwise running Sourcegraph
+outside of a Docker container, the remaining steps are:
+
+Give the `sourcegraph` user ownership and read access to the Let's Encrypt SSL
+certificates:
+
+1. `sudo chown -R sourcegraph /etc/letsencrypt`
+1. `chmod -R u+r /etc/letsencrypt`
+
+Start Sourcegraph again via `sudo start src` or `docker src start`.
+
+### With Docker
 
 If you're running the Sourcegraph inside a Docker container, you'll need to copy
-the newly generated PEM files into the container.
+the newly generated PEM files into the container directly.
 
 1. The files in `/etc/letsencrypt/live/mysite.com` are symlinks so find out
 which files you should copy: `ls -l /etc/letsencrypt/live/mysite.com`.
 1. Copy your certificates into the container:
   - `docker cp /etc/letsencrypt/archive/mysite.com/fullchain3.pem src:/etc/sourcegraph/fullchain.pem`
   - `docker cp /etc/letsencrypt/archive/mysite.com/privkey3.pem src:/etc/sourcegraph/privkey.pem`
-1. Grab an interactive shell:
-  - `docker exec -it src bash`
-1. `exit && docker src restart`
+  - Use these `/etc/sourcegraph/*.pem` paths in your config file for `tls-cert` and `tls-key`, respectively.
+1. `docker src restart`
 
 ## Troubleshooting
 
