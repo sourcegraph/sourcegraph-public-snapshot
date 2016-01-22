@@ -253,6 +253,18 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		notifications.Service.MarkRead(ctx, appID, issues.RepoSpec{URI: rc.Repo.URI}, uint64(id))
 	}
 
+	// If the source code contents of the diff have not been tokenized and linked
+	// (due to hitting DeltaListFilesOptions.MaxSize limit) then we won't display
+	// file diffs, no point in sending them to the client JSON-encoded. In fact,
+	// for large diffs this can mean the difference between 317KB vs 16MB+ for the
+	// page!
+	if files.OverThreshold {
+		for _, fd := range files.FileDiffs {
+			fd.FileDiffHunks = nil
+			fd.FileDiff.Hunks = nil
+		}
+	}
+
 	return executeTemplate(w, r, "changeset.html", &struct {
 		TmplCommon
 		handlerutil.RepoCommon
