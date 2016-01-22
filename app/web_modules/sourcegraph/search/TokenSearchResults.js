@@ -3,7 +3,7 @@ import React from "react";
 import Component from "sourcegraph/Component";
 import router from "../../../script/routing/router"; // FIXME
 
-const helpDocURL = "https://src.sourcegraph.com/sourcegraph/.docs/troubleshooting/builds/";
+const helpDocURL = "https://src.sourcegraph.com/sourcegraph/.docs/config/builds/";
 
 class TokenSearchResultsView extends Component {
 	reconcileState(state, props) {
