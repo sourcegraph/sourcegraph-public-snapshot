@@ -29,12 +29,12 @@ type Service interface {
 	Create(ctx context.Context, repo RepoSpec, issue Issue) (Issue, error)
 	CreateComment(ctx context.Context, repo RepoSpec, id uint64, comment Comment) (Comment, error)
 
-	Edit(ctx context.Context, repo RepoSpec, id uint64, ir IssueRequest) (Issue, error)
+	Edit(ctx context.Context, repo RepoSpec, id uint64, ir IssueRequest) (Issue, []Event, error)
 	EditComment(ctx context.Context, repo RepoSpec, id uint64, cr CommentRequest) (Comment, error)
 
 	Search(ctx context.Context, opt SearchOptions) (SearchResponse, error)
 
-	// TODO: This doesn't belong here, does it?
+	// TODO: This doesn't belong here; it should be factored out into a platform Users service that is provided to this service.
 	CurrentUser(ctx context.Context) (*User, error)
 }
 

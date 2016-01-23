@@ -185,6 +185,15 @@ func notificationsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if u, err := ns.CurrentUser(globalHandler.Context(req)); err != nil {
+		log.Println("ns.CurrentUser:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if u == nil {
+		http.Error(w, "this page requires an authenticated user", http.StatusUnauthorized)
+		return
+	}
+
 	baseState, err := baseState(req)
 	if err != nil {
 		log.Println("baseState:", err)

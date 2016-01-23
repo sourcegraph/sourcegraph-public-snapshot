@@ -177,11 +177,13 @@ func ToggleIssueState(issueState issues.State) {
 			issueToggleButton.Underlying().Set("outerHTML", data.Get("issue-toggle-button"))
 			setupIssueToggleButton()
 
-			// Create event.
-			newEvent := document.CreateElement("div").(*dom.HTMLDivElement)
-			newItemMarker := document.GetElementByID("new-item-marker")
-			newItemMarker.ParentNode().InsertBefore(newEvent, newItemMarker)
-			newEvent.Underlying().Set("outerHTML", data.Get("new-event"))
+			if newEventData := data.Get("new-event"); newEventData != "" {
+				// Create event.
+				newEvent := document.CreateElement("div").(*dom.HTMLDivElement)
+				newItemMarker := document.GetElementByID("new-item-marker")
+				newItemMarker.ParentNode().InsertBefore(newEvent, newItemMarker)
+				newEvent.Underlying().Set("outerHTML", newEventData)
+			}
 		}
 
 		// Post comment after if there's text entered, and we're reopening.

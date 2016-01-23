@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
-	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
@@ -354,35 +353,11 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	issue, err := is.Edit(ctx, repoSpec, uint64(mustAtoi(vars["id"])), ir)
+	issue, events, err := is.Edit(ctx, repoSpec, uint64(mustAtoi(vars["id"])), ir)
 	if err != nil {
 		log.Println("is.Edit:", err)
 		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 		return
-	}
-
-	// TODO: Move to right place?
-	user, err := is.CurrentUser(ctx)
-	if err != nil {
-		log.Println("is.CurrentUser:", err)
-		http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
-		return
-	}
-	issueEvent := issues.Event{
-		Actor:     *user,
-		CreatedAt: time.Now(),
-	}
-	switch {
-	case ir.State != nil && *ir.State == issues.OpenState:
-		issueEvent.Type = issues.Reopened
-	case ir.State != nil && *ir.State == issues.ClosedState:
-		issueEvent.Type = issues.Closed
-	case ir.Title != nil:
-		issueEvent.Type = issues.Renamed
-		issueEvent.Rename = &issues.Rename{
-			From: "TODO",
-			To:   *ir.Title,
-		}
 	}
 
 	err = func(w io.Writer, issue issues.Issue) error {
@@ -394,18 +369,23 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 			return err
 		}
 		resp.Set("issue-state-badge", buf.String())
+
 		buf.Reset()
 		err = t.ExecuteTemplate(&buf, "toggle-button", issue.State)
 		if err != nil {
 			return err
 		}
 		resp.Set("issue-toggle-button", buf.String())
-		buf.Reset()
-		err = t.ExecuteTemplate(&buf, "event", event{issueEvent})
-		if err != nil {
-			return err
+
+		if len(events) > 0 {
+			// TODO: We're currently sending at most one event. Support sending more than one.
+			buf.Reset()
+			err = t.ExecuteTemplate(&buf, "event", event{events[0]})
+			if err != nil {
+				return err
+			}
+			resp.Set("new-event", buf.String())
 		}
-		resp.Set("new-event", buf.String())
 
 		_, err = io.WriteString(w, resp.Encode())
 		return err

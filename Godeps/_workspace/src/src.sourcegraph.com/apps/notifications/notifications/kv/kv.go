@@ -13,6 +13,7 @@ import (
 	"src.sourcegraph.com/apps/tracker/issues"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/platform/putil"
 	"src.sourcegraph.com/sourcegraph/platform/storage"
 )
@@ -161,6 +162,25 @@ func (s service) MarkRead(ctx context.Context, appID string, repo issues.RepoSpe
 	}
 
 	return nil
+}
+
+// TODO: Factor this out into platform Users service.
+func (service) CurrentUser(ctx context.Context) (*issues.User, error) {
+	userSpec := putil.UserFromContext(ctx)
+	if userSpec == nil {
+		// Not authenticated, no current user.
+		return nil, nil
+	}
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	user, err := sg.Users.Get(ctx, userSpec)
+	if err != nil {
+		return nil, err
+	}
+	u := sgUser(ctx, user)
+	return &u, nil
 }
 
 func formatUint64(n uint64) string { return strconv.FormatUint(n, 10) }

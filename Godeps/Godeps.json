@@ -915,11 +915,11 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications",
-			"Rev": "a87485b700d06b53c2dffcc8438b0af7da7ba93f"
+			"Rev": "661ee41c3be73bca48207091bd21fd780eb67a52"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/tracker",
-			"Rev": "8e55fedad68da57750595636183c18569e5bf977"
+			"Rev": "cb433e809b4c0b749eb1476253dc355686a7329d"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",

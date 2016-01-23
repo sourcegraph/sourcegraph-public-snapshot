@@ -445,19 +445,19 @@ func canReact(currentUser *sourcegraph.UserSpec) error {
 	return nil
 }
 
-func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir issues.IssueRequest) (issues.Issue, error) {
+func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir issues.IssueRequest) (issues.Issue, []issues.Event, error) {
 	currentUser := putil.UserFromContext(ctx)
 	if currentUser == nil {
-		return issues.Issue{}, os.ErrPermission
+		return issues.Issue{}, nil, os.ErrPermission
 	}
 
 	if err := ir.Validate(); err != nil {
-		return issues.Issue{}, err
+		return issues.Issue{}, nil, err
 	}
 
 	sg, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		return issues.Issue{}, err
+		return issues.Issue{}, nil, err
 	}
 	sys := storage.Namespace(s.appCtx, s.appName, repo.URI)
 
@@ -465,21 +465,22 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	var issue issue
 	err = storage.GetJSON(sys, issuesBucket, formatUint64(id), &issue)
 	if err != nil {
-		return issues.Issue{}, err
+		return issues.Issue{}, nil, err
 	}
 
 	// Authorization check.
 	if err := canEdit(ctx, sg, currentUser, issue.AuthorUID); err != nil {
-		return issues.Issue{}, err
+		return issues.Issue{}, nil, err
 	}
 
 	// TODO: Doing this here before committing in case it fails; think about factoring this out into a user service that augments...
 	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
 	if err != nil {
-		return issues.Issue{}, err
+		return issues.Issue{}, nil, err
 	}
 
 	// Apply edits.
+	origState := issue.State
 	if ir.State != nil {
 		issue.State = *ir.State
 	}
@@ -491,7 +492,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	// Put in storage.
 	err = storage.PutJSON(sys, issuesBucket, formatUint64(id), issue)
 	if err != nil {
-		return issues.Issue{}, err
+		return issues.Issue{}, nil, err
 	}
 
 	// THINK: Is this the best place to do this? Should it be returned from this func? How would GH backend do it?
@@ -501,25 +502,40 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 		ActorUID:  currentUser.UID,
 		CreatedAt: createdAt,
 	}
+	// TODO: A single edit operation can result in multiple events, we should emit multiple events in such cases. We're currently emitting at most one event.
 	switch {
-	case ir.State != nil && *ir.State == issues.OpenState:
-		event.Type = issues.Reopened
-	case ir.State != nil && *ir.State == issues.ClosedState:
-		event.Type = issues.Closed
-	case ir.Title != nil:
+	case ir.State != nil && *ir.State != origState:
+		switch *ir.State {
+		case issues.OpenState:
+			event.Type = issues.Reopened
+		case issues.ClosedState:
+			event.Type = issues.Closed
+		}
+	case ir.Title != nil && *ir.Title != origTitle:
 		event.Type = issues.Renamed
 		event.Rename = &issues.Rename{
 			From: origTitle,
 			To:   *ir.Title,
 		}
 	}
-	eventID, err := nextID(sys, issueEventsBucket(id))
-	if err != nil {
-		return issues.Issue{}, err
-	}
-	err = storage.PutJSON(sys, issueEventsBucket(id), formatUint64(eventID), event)
-	if err != nil {
-		return issues.Issue{}, err
+	var events []issues.Event
+	if event.Type != "" {
+		eventID, err := nextID(sys, issueEventsBucket(id))
+		if err != nil {
+			return issues.Issue{}, nil, err
+		}
+		err = storage.PutJSON(sys, issueEventsBucket(id), formatUint64(eventID), event)
+		if err != nil {
+			return issues.Issue{}, nil, err
+		}
+
+		events = append(events, issues.Event{
+			ID:        eventID,
+			Actor:     sgUser(ctx, user),
+			CreatedAt: event.CreatedAt,
+			Type:      event.Type,
+			Rename:    event.Rename,
+		})
 	}
 
 	// Subscribe interested users.
@@ -547,7 +563,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 			CreatedAt: issue.CreatedAt,
 			Editable:  true, // You can always edit issues you've edited.
 		},
-	}, nil
+	}, events, nil
 }
 
 func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint64, cr issues.CommentRequest) (issues.Comment, error) {
@@ -683,7 +699,7 @@ func nextID(sys storage.System, bucket string) (uint64, error) {
 	return ids[len(ids)-1] + 1, nil
 }
 
-// TODO.
+// TODO: Factor this out into platform Users service.
 func (service) CurrentUser(ctx context.Context) (*issues.User, error) {
 	userSpec := putil.UserFromContext(ctx)
 	if userSpec == nil {

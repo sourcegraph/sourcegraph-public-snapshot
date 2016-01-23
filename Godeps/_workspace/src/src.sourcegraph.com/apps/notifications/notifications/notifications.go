@@ -16,6 +16,9 @@ type Service interface {
 type InternalService interface {
 	List(ctx context.Context, opt interface{}) (Notifications, error)
 	Count(ctx context.Context, opt interface{}) (uint64, error)
+
+	// TODO: This doesn't belong here; it should be factored out into a platform Users service that is provided to this service.
+	CurrentUser(ctx context.Context) (*issues.User, error)
 }
 
 type ExternalService interface {
