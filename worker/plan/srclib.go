@@ -112,7 +112,7 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 			},
 			Commands: []string{
 				"echo Importing to $SOURCEGRAPH_IMPORT_URL",
-				`[ -d .srclib-cache/* ] || (echo No srclib data found to import; exit 1)`,
+				`files=$(find .srclib-cache/ -type f | head -n 1); if [ -z "$files" ]; then echo No srclib data files found to import; exit 0; fi`,
 				`cd .srclib-cache/* && /usr/bin/zip -q --no-dir-entries -r - . | \
 			 /usr/bin/curl \
 				--silent --show-error \
