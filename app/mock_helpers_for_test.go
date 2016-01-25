@@ -93,11 +93,14 @@ func mockEmptyRepoConfig(c *httptestutil.MockClients) (called *bool) {
 	return called
 }
 
-// func mockRepoCommit(c *httptestutil.MockClients, commit *vcs.Commit) {
-// 	c.Repos.GetCommit_ = func(_ context.Context,_ sourcegraph.RepoRevSpec, _ *sourcegraph.RepoGetCommitOptions) (*vcs.Commit, error) {
-// 		return commit, nil, nil
-// 	}
-// }
+func mockRepoCommit(c *httptestutil.MockClients, commit *vcs.Commit) (called *bool) {
+	called = new(bool)
+	c.Repos.GetCommit_ = func(_ context.Context, _ *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
+		*called = true
+		return commit, nil
+	}
+	return called
+}
 
 func mockBasicRepoMainPage(c *httptestutil.MockClients) {
 	mockEmptyTreeEntry(c)

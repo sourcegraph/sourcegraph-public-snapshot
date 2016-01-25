@@ -47,16 +47,21 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	buildsAndCommits, err := fetchCommitsForBuilds(ctx, builds.Builds)
+	if err != nil {
+		return err
+	}
+
 	return tmpl.Exec(r, w, "repo/builds.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
-		Builds    []*sourcegraph.Build
-		PageLinks []pageLink
+		BuildsAndCommits []buildAndCommit
+		PageLinks        []pageLink
 
 		tmpl.Common
 	}{
-		RepoCommon: *rc,
-		Builds:     builds.Builds,
-		PageLinks:  pg,
+		RepoCommon:       *rc,
+		BuildsAndCommits: buildsAndCommits,
+		PageLinks:        pg,
 	})
 }
 

@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	document.addEventListener("click", function(ev) {
 		var el = ev.target;
-		while (el && el.dataset && !el.dataset.href) el = el.parentNode;
+		while (el && el.dataset && !el.dataset.href && el.tagName !== "A") el = el.parentNode;
 		if (el && el.dataset && el.dataset.href) triggerLink(el, ev);
 	});
 
