@@ -1,7 +1,7 @@
 // _code_file contains styles for the code browsing view.
 
 // Remove container horizontal padding (whitespace).
-.container-fluid.container-code-file.body {
+.container.container-code-file.body {
 	padding-left: inherit;
 	padding-right: inherit;
 	width: 98%;
@@ -168,9 +168,8 @@
 .code-file-toolbar {
 	height: 50px;
 	background-color: $file-toolbar-bg;
-	width: 100%;
 	border-bottom: solid 1px $content-border-color;
-	padding: 8px 6px 8px 20px;
+	padding: 8px 20px 8px 20px;
 
 	.file-breadcrumb {
 		display: inline-block;

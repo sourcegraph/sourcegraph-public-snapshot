@@ -25,7 +25,7 @@ class CodeFileToolbar extends Component {
 		});
 
 		return (
-			<div className="code-file-toolbar" ref="toolbar">
+			<div className="code-file-toolbar container" ref="toolbar">
 				<div className="file-breadcrumb">
 					<i className={this.state.file ? "fa fa-file" : "fa fa-spinner fa-spin"} />{breadcrumb}
 				</div>

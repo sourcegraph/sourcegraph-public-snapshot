@@ -90,7 +90,6 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 	var (
 		templateFile string
 		docs         string
-		fullWidth    bool
 	)
 	ctx := httpctx.FromRequest(r)
 
@@ -113,7 +112,6 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		templateFile = "repo/tree/doc.html"
 
 	default:
-		fullWidth = true
 		eventsutil.LogBrowseCode(ctx, "file", tc, rc)
 		templateFile = "repo/tree/file.html"
 	}
@@ -122,7 +120,6 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 	tc.Entry.Contents = nil
 
 	return tmpl.Exec(r, w, templateFile, http.StatusOK, nil, &repoTreeTemplate{
-		Common:          tmpl.Common{FullWidth: fullWidth},
 		Definition:      dc,
 		TreeEntryCommon: tc,
 		RepoCommon:      rc,

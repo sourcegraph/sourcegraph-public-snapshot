@@ -201,9 +201,6 @@ type Common struct {
 	// Features is a struct containing feature toggles. See conf/feature
 	Features interface{}
 
-	// FullWidth sets the main body and navigation to fluid.
-	FullWidth bool
-
 	// ErrorID is a randomly generated string used to identify a specific instance
 	// of app error in the error logs.
 	ErrorID string
@@ -306,7 +303,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,
-			FullWidth:            existingCommon.FullWidth,
 
 			ErrorID: errorID,
 

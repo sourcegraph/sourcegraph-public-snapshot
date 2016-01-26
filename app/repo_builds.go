@@ -133,8 +133,6 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 		RepoCommon: *rc,
 		Build:      build,
 		Commit:     commit,
-
-		Common: tmpl.Common{FullWidth: true},
 	})
 }
 
