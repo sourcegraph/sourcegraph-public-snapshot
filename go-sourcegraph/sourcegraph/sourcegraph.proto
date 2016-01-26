@@ -546,9 +546,9 @@ service Repos {
 	// repository's files.
 	rpc GetInventory(RepoRevSpec) returns (inventory.Inventory);
 
-	// GetPrivateGitHubRepos returns the list of private GitHub repos that
-	// are visible to the currently authenticated user.
-	rpc GetPrivateGitHubRepos(GitHubRepoRequest) returns (GitHubRepoData);
+	// GetGitHubRepos returns the list of GitHub repos that are visible
+	// to the currently authenticated user.
+	rpc GetGitHubRepos(GitHubRepoRequest) returns (GitHubRepoData);
 }
 
 // SrclibDataVersion specifies a srclib store version.
@@ -576,14 +576,14 @@ message GitHubRepoRequest {
 	string github_client_id = 1 [(gogoproto.customname) = "GitHubClientID"];
 }
 
-// PrivateRemoteRepo is a repo canonically stored on an external host,
+// RemoteRepo is a repo canonically stored on an external host,
 // and possibly mirrored on the local instance.
-message PrivateRemoteRepo {
+message RemoteRepo {
 	// ExistsLocally specifies if the repo is mirrored on the local
 	// Sourcegraph server.
 	bool exists_locally = 1;
 
-	// Repo is a private repo on an external host.
+	// Repo is a repo on an external host.
 	Repo repo = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
 }
 
@@ -597,7 +597,7 @@ message GitHubRepoData {
 	string host = 2;
 
 	// Repos is the list of repos visible to the user.
-	repeated PrivateRemoteRepo repos = 3;
+	repeated RemoteRepo repos = 3;
 
 	// TokenIsPresent specifies if a GitHub auth token is present
 	// for the user.

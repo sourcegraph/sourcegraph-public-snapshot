@@ -2,6 +2,7 @@ package authutil
 
 import (
 	"log"
+	"strings"
 
 	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
@@ -31,7 +32,9 @@ type Flags struct {
 
 	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
 
-	PrivateMirrors bool `long:"auth.private-mirrors" description:"allow mirroring of private GitHub repos via OAuth"`
+	MirrorsNext bool `long:"auth.mirrors-next" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
+
+	MirrorsWhitelist string `long:"auth.mirrors-whitelist" description:"space-separated logins of users whitelisted for MirrorsNext" env:"SG_MIRRORS_WHITELIST"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
@@ -61,8 +64,29 @@ func (f Flags) HasUserProfiles() bool { return !f.DisableUserProfiles }
 
 func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.HasUserAccounts() }
 
-func (f Flags) HasPrivateMirrors() bool { return f.PrivateMirrors }
+func (f Flags) HasMirrorsNext(login string) bool {
+	if !f.MirrorsNext {
+		return false
+	}
+
+	if mirrorsWhitelist == nil {
+		mirrorsWhitelist = make(map[string]bool)
+		for _, l := range strings.Fields(f.MirrorsWhitelist) {
+			if l == "" {
+				continue
+			}
+			mirrorsWhitelist[l] = true
+		}
+	}
+
+	_, ok := mirrorsWhitelist[login]
+	return ok
+}
 
 // ActiveFlags are the flag values passed from the command line, if
 // we're running as a CLI.
 var ActiveFlags Flags
+
+// mirrorsWhitelist is a map of login ids of users that are allowed
+// access to the mirror next feature.
+var mirrorsWhitelist map[string]bool

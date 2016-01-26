@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -193,12 +194,12 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	return repos, nil
 }
 
-// ListPrivate lists repos from GitHub that are visible in the given auth
+// ListWithToken lists repos from GitHub that are visible in the given auth
 // token's scope.
 // TODO: rename or consolidate this method, since it can be used to list private
 // as well as public repos (when this instance is configured to access a
 // GitHub Enterprise instance).
-func (s *Repos) ListPrivate(ctx context.Context, token string) ([]*sourcegraph.Repo, error) {
+func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph.Repo, error) {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
@@ -208,6 +209,9 @@ func (s *Repos) ListPrivate(ctx context.Context, token string) ([]*sourcegraph.R
 		client.BaseURL = githubcli.Config.APIBaseURL()
 		client.UploadURL = githubcli.Config.UploadURL()
 		repoType = "" // import both public and private repos from GHE.
+	}
+	if authutil.ActiveFlags.MirrorsNext {
+		repoType = "" // import both public and private repos for MirrorsNext.
 	}
 
 	var repos []*sourcegraph.Repo
