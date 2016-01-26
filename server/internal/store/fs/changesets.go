@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -58,6 +59,26 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	cs.ID, err = claimNextChangesetID(fs)
 	if err != nil {
 		return err
+	}
+
+	// It's fine to specify reviewers at creation time, but they can't set their
+	// LGTM status unless they are in fact that user.
+	a := authpkg.ActorFromContext(ctx)
+	if !a.HasAdminAccess() {
+		for _, reviewer := range cs.Reviewers {
+			// Get user to ensure we have a UID for comparison and storage (in case
+			// caller specifies just login).
+			reviewerUser, err := svc.Users(ctx).Get(ctx, &reviewer.UserSpec)
+			if err != nil {
+				return err
+			}
+			reviewer.UserSpec = reviewerUser.Spec()
+
+			// If callee isn't that user, clear the LGTM status.
+			if reviewer.UserSpec.Domain != a.Domain || reviewer.UserSpec.UID != int32(a.UID) {
+				reviewer.LGTM = false
+			}
+		}
 	}
 
 	ts := pbtypes.NewTimestamp(time.Now())
@@ -189,6 +210,88 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	}
 	if op.Merged {
 		after.Merged = true
+	}
+
+	addReviewer := func(add sourcegraph.UserSpec, lgtm bool) {
+		// Check they aren't already a reviewer.
+		already := false
+		for _, reviewer := range after.Reviewers {
+			if reviewer.UserSpec.Domain == add.Domain && reviewer.UserSpec.UID == add.UID {
+				already = true
+				break
+			}
+		}
+		if !already {
+			after.Reviewers = append(after.Reviewers, &sourcegraph.ChangesetReviewer{
+				UserSpec: add,
+				LGTM:     lgtm,
+			})
+		}
+	}
+
+	// Add a reviewer to the CS.
+	if add := op.AddReviewer; add != nil {
+		// Get user to ensure we have a UID for comparison and storage (in case
+		// caller specifies just login).
+		addUser, err := svc.Users(ctx).Get(ctx, add)
+		if err != nil {
+			return nil, err
+		}
+		addReviewer(addUser.Spec(), false)
+	}
+
+	// Remove a reviewer from the CS.
+	if remove := op.RemoveReviewer; remove != nil {
+		// Get user to ensure we have a UID for comparison and storage (in case
+		// caller specifies just login).
+		removeUser, err := svc.Users(ctx).Get(ctx, remove)
+		if err != nil {
+			return nil, err
+		}
+		*remove = removeUser.Spec()
+		for i, reviewer := range after.Reviewers {
+			if reviewer.UserSpec.Domain == remove.Domain && reviewer.UserSpec.UID == remove.UID {
+				// Delete from slice.
+				after.Reviewers = append(after.Reviewers[:i], after.Reviewers[i+1:]...)
+				break
+			}
+		}
+	}
+
+	// LGTM and not-LGTM operations.
+	if op.LGTM && op.NotLGTM {
+		return nil, errInvalidUpdateOp
+	}
+	if op.LGTM || op.NotLGTM {
+		// Confirm they have access to modify LGTM status for op.Author
+		a := authpkg.ActorFromContext(ctx)
+		authorUser, err := svc.Users(ctx).Get(ctx, &op.Author)
+		if err != nil {
+			return nil, err
+		}
+		hasAccess := a.HasAdminAccess() || authorUser.Domain == a.Domain && authorUser.UID == int32(a.UID)
+		if hasAccess {
+			updated := false
+			for _, reviewer := range after.Reviewers {
+				if reviewer.UserSpec.Domain == a.Domain && reviewer.UserSpec.UID == int32(a.UID) {
+					reviewer.LGTM = op.LGTM
+					updated = true
+					break
+				}
+			}
+			// Per the gRPC definition, if they aren't already a reviewer we will make
+			// them one.
+			if !updated {
+				addReviewer(authorUser.Spec(), op.LGTM)
+			}
+		}
+	}
+	if opt.Head != "" || opt.Base != "" {
+		// Updating the head or base of the CS? Then reviewers need to follow-up,
+		// undo their LGTM statuses.
+		for _, reviewer := range after.Reviewers {
+			reviewer.LGTM = false
+		}
 	}
 
 	id := strconv.FormatInt(current.ID, 10)
@@ -400,7 +503,7 @@ func mergeCommitMessage(ctx context.Context, cs *sourcegraph.Changeset, msgTmpl 
 // that needs to be registered. Registered events are be visible in the changeset's
 // timeline.
 func shouldRegisterEvent(op *sourcegraph.ChangesetUpdateOp) bool {
-	return op.Merged || op.Close || op.Open || op.Title != "" || op.Description != ""
+	return op.Merged || op.Close || op.Open || op.Title != "" || op.Description != "" || op.LGTM || op.NotLGTM || op.AddReviewer != nil || op.RemoveReviewer != nil
 }
 
 func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
