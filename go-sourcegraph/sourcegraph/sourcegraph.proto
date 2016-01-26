@@ -70,6 +70,18 @@ message StreamResponse {
 	bool HasMore = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
+// ChangesetReviewer represents a user who is acting as a reviewer on a
+// changeset, and whether or not they think the changeset is good to merge in
+// it's current form.
+message ChangesetReviewer {
+	// UserSpec is the user who is acting as a reviewer on a changeset.
+	UserSpec UserSpec = 1 [(gogoproto.nullable) = false];
+
+	// LGTM is whether or not they think the changeset is a good change to merge
+	// in it's current form.
+	bool LGTM = 2;
+}
+
 // Changeset stores information about a changeset.
 message Changeset {
 	// ID is the unique identifier for this changeset, relative to the repository
@@ -84,6 +96,9 @@ message Changeset {
 
 	// Author is the user that initiated this changeset.
 	UserSpec Author = 4 [(gogoproto.nullable) = false];
+
+	// Reviewers is a list of people who are assigned to review the changeset.
+	repeated ChangesetReviewer Reviewers = 9;
 
 	// DeltaSpec contains information about the base and head spec for this
 	// changeset.
@@ -844,6 +859,26 @@ message ChangesetUpdateOp {
 	// Merged, if true, will update the changeset to indicate that it was priorly
 	// merged.
 	bool Merged = 7;
+
+	// AddReviewer, if set, adds the specified user as a reviewer for the
+	// changeset.
+	UserSpec AddReviewer = 9;
+
+	// RemoveReviewer, if set, removes the specified user as a reviewer for the
+	// changeset.
+	UserSpec RemoveReviewer = 10;
+
+	// LGTM, if set, marks the changeset as "Looks Good To Me" (good to merge) as
+	// the author of this changeset update.
+	//
+	// It fails if you are not authenticated as that user / an admin, and
+	// automatically adds you as a reviewer to the changeset if you are not
+	// already.
+	bool LGTM = 11;
+
+	// NotLGTM, if set, is the exact opposite operation as LGTM. It does not
+	// remove you as a reviewer (use RemoveReviewer for that).
+	bool NotLGTM = 12;
 
 	// Author is the user that initiated this event.
 	UserSpec Author = 8 [(gogoproto.nullable) = false];
