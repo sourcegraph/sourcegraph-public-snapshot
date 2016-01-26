@@ -205,7 +205,7 @@ func (s state) Items() ([]issueItem, error) {
 	for _, e := range es {
 		items = append(items, issueItem{event{e}})
 	}
-	sort.Sort(byCreatedAt(items))
+	sort.Sort(byCreatedAtID(items))
 	return items, nil
 }
 
@@ -377,14 +377,13 @@ func postEditIssueHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		resp.Set("issue-toggle-button", buf.String())
 
-		if len(events) > 0 {
-			// TODO: We're currently sending at most one event. Support sending more than one.
+		for _, e := range events {
 			buf.Reset()
-			err = t.ExecuteTemplate(&buf, "event", event{events[0]})
+			err = t.ExecuteTemplate(&buf, "event", event{e})
 			if err != nil {
 				return err
 			}
-			resp.Set("new-event", buf.String())
+			resp.Add("new-event", buf.String())
 		}
 
 		_, err = io.WriteString(w, resp.Encode())

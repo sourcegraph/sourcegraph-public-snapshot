@@ -45,16 +45,15 @@ func EditComment(action string, this dom.HTMLElement) {
 					// TODO: Display error? Disable "Update comment" button?
 					return
 				}
+				commentID := commentEditor.GetAttribute("data-id")
 
-				{
-					go func() {
-						err := editComment(commentEditor)
-						if err != nil {
-							// TODO: Handle failure properly.
-							log.Println(err)
-						}
-					}()
-				}
+				go func() {
+					err := editComment(commentID, string(fmted))
+					if err != nil {
+						// TODO: Handle failure properly.
+						log.Println(err)
+					}
+				}()
 
 				commentEditor.SetAttribute("data-raw", string(fmted))
 				markdownBody := commentView.QuerySelector(".markdown-body").(*dom.HTMLDivElement)
