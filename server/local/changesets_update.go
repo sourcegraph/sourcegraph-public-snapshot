@@ -19,7 +19,7 @@ import (
 )
 
 func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Update"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Update", op.Repo.URI); err != nil {
 		return nil, err
 	}
 
@@ -35,7 +35,7 @@ func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 }
 
 func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.UpdateAffected"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.UpdateAffected", op.Repo.URI); err != nil {
 		return nil, err
 	}
 

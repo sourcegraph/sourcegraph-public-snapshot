@@ -14,6 +14,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -28,6 +29,14 @@ const defaultMaxDiffSize = 350 * 1024 // 350 KB
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	ds := op.Ds
 	opt := op.Opt
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListFiles", ds.Base.URI); err != nil {
+		return nil, err
+	}
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListFiles", ds.Head.URI); err != nil {
+		return nil, err
+	}
 
 	// Make sure we've fully resolved the RepoRevSpecs. If we haven't,
 	// then they will need to be re-resolved in each call to

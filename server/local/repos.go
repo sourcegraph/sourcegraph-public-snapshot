@@ -49,6 +49,9 @@ type repos struct{}
 var _ sourcegraph.ReposServer = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", repo.URI); err != nil {
+		return nil, err
+	}
 	r, err := s.get(ctx, repo.URI)
 	if err != nil {
 		return nil, err
@@ -163,7 +166,7 @@ func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Re
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
 		return nil, err
 	}
 
@@ -219,7 +222,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
 		return nil, err
 	}
 
@@ -232,7 +235,7 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo.URI); err != nil {
 		return nil, err
 	}
 
@@ -307,6 +310,9 @@ func (s *repos) defaultBranch(ctx context.Context, repoURI string) (string, erro
 }
 
 func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetReadme", repoRev.URI); err != nil {
+		return nil, err
+	}
 	cacheOnCommitID(ctx, repoRev.CommitID)
 
 	if repoRev.URI == "" {
@@ -353,6 +359,9 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetConfig", repo.URI); err != nil {
+		return nil, err
+	}
 	repoConfigsStore := store.RepoConfigsFromContextOrNil(ctx)
 	if repoConfigsStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoConfigs is not implemented")
@@ -369,6 +378,9 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 }
 
 func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.ConfigureApp", op.Repo.URI); err != nil {
+		return nil, err
+	}
 	defer noCache(ctx)
 
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Repos.ConfigureApp"); err != nil {
@@ -419,6 +431,9 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 }
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetInventory", repoRev.URI); err != nil {
+		return nil, err
+	}
 	if localcli.Flags.DisableRepoInventory {
 		return nil, grpc.Errorf(codes.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
 	}
@@ -475,7 +490,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	return inv, nil
 }
 
-func (s *repos) GetPrivateGitHubRepos(ctx context.Context, req *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
+func (s *repos) GetGitHubRepos(ctx context.Context, req *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
 	gd := &sourcegraph.GitHubRepoData{
 		URL:  githubcli.Config.URL(),
 		Host: githubcli.Config.Host() + "/",
@@ -494,7 +509,7 @@ func (s *repos) GetPrivateGitHubRepos(ctx context.Context, req *sourcegraph.GitH
 	ghRepos := &github.Repos{}
 	// TODO(perf) Cache this response or perform the fetch after page load to avoid
 	// having to wait for an http round trip to github.com.
-	privateGitHubRepos, err := ghRepos.ListPrivate(ctx, extToken.Token)
+	gitHubRepos, err := ghRepos.ListWithToken(ctx, extToken.Token)
 	if err != nil {
 		// If the error is caused by something other than the token not existing,
 		// ensure the user knows there is a value set for the token but that
@@ -507,7 +522,7 @@ func (s *repos) GetPrivateGitHubRepos(ctx context.Context, req *sourcegraph.GitH
 	gd.TokenIsPresent, gd.TokenIsValid = true, true
 
 	existingRepos := make(map[string]struct{})
-	privateRemoteRepos := make([]*sourcegraph.PrivateRemoteRepo, len(privateGitHubRepos))
+	remoteRepos := make([]*sourcegraph.RemoteRepo, len(gitHubRepos))
 
 	repoOpts := &sourcegraph.RepoListOptions{
 		ListOptions: sourcegraph.ListOptions{
@@ -536,17 +551,20 @@ func (s *repos) GetPrivateGitHubRepos(ctx context.Context, req *sourcegraph.GitH
 	// already mirrored on this Sourcegraph.
 	repoPermsStore := authpkg.RepoPermsStore{}
 	uid := authpkg.ActorFromContext(ctx).UID
-	for i, repo := range privateGitHubRepos {
+	for i, repo := range gitHubRepos {
 		if _, ok := existingRepos[repo.URI]; ok {
-			privateRemoteRepos[i] = &sourcegraph.PrivateRemoteRepo{ExistsLocally: true, Repo: *repo}
-			if err := repoPermsStore.Set(ctx, uid, repo.URI); err != nil {
-				log15.Warn("Failed to set repo permissions for user", "repo", repo.URI, "uid", uid, "error", err)
+			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: true, Repo: *repo}
+			if repo.Private {
+				err := repoPermsStore.Set(ctx, uid, repo.URI)
+				if err != nil {
+					log15.Warn("Failed to set repo permissions for user", "repo", repo.URI, "uid", uid, "error", err)
+				}
 			}
 		} else {
-			privateRemoteRepos[i] = &sourcegraph.PrivateRemoteRepo{ExistsLocally: false, Repo: *repo}
+			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: false, Repo: *repo}
 		}
 	}
-	gd.Repos = privateRemoteRepos
+	gd.Repos = remoteRepos
 
 	return gd, nil
 }

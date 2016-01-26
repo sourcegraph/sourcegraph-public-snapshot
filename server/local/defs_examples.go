@@ -7,10 +7,15 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListExamples", op.Def.Repo); err != nil {
+		return nil, err
+	}
+
 	defSpec := op.Def
 	opt := op.Opt
 	if opt == nil {

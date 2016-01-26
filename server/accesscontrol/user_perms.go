@@ -14,6 +14,17 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
+// VerifyUserHasReadAccess checks if the user in the current context
+// is authorized to make write requests to this server.
+//
+// This method always returns nil when the user has write access,
+// and returns a non-nil error when access cannot be granted.
+// If the cmdline flag auth.restrict-write-access is set, this method
+// will check if the authenticated user has admin privileges.
+func VerifyUserHasReadAccess(ctx context.Context, method, repo string) error {
+	return VerifyActorHasReadAccess(ctx, auth.ActorFromContext(ctx), method, repo)
+}
+
 // VerifyUserHasWriteAccess checks if the user in the current context
 // is authorized to make write requests to this server.
 //
@@ -21,8 +32,8 @@ import (
 // and returns a non-nil error when access cannot be granted.
 // If the cmdline flag auth.restrict-write-access is set, this method
 // will check if the authenticated user has admin privileges.
-func VerifyUserHasWriteAccess(ctx context.Context, method string) error {
-	return VerifyActorHasWriteAccess(ctx, auth.ActorFromContext(ctx), method)
+func VerifyUserHasWriteAccess(ctx context.Context, method, repo string) error {
+	return VerifyActorHasWriteAccess(ctx, auth.ActorFromContext(ctx), method, repo)
 }
 
 // VerifyUserHasWriteAccess checks if the user in the current context
@@ -38,7 +49,7 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 // This is meant for trusted server code living outside the scope of gRPC requests
 // to verify user permissions, for example the SSH Git server. For all other cases,
 // VerifyUserHasWriteAccess or VerifyUserHasAdminAccess should be used to authorize a user for gRPC operations.
-func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method string) error {
+func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has read access.
 		return nil
@@ -65,7 +76,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method stri
 // This is meant for trusted server code living outside the scope of gRPC requests
 // to verify user permissions, for example the SSH Git server. For all other cases,
 // VerifyUserHasWriteAccess should be used to authorize a user for gRPC operations.
-func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method string) error {
+func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil

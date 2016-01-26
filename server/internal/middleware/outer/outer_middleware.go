@@ -2977,7 +2977,7 @@ func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevS
 	return rv, nil
 }
 
-func (s wrappedRepos) GetPrivateGitHubRepos(ctx context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
+func (s wrappedRepos) GetGitHubRepos(ctx context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 
@@ -2992,7 +2992,7 @@ func (s wrappedRepos) GetPrivateGitHubRepos(ctx context.Context, v1 *sourcegraph
 		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
 	}
 
-	rv, err := innerSvc.GetPrivateGitHubRepos(ctx, v1)
+	rv, err := innerSvc.GetGitHubRepos(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

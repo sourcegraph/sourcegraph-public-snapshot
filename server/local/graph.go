@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -20,6 +21,10 @@ var Graph pb.MultiRepoImporterServer = &graph_{}
 type graph_ struct{}
 
 func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Graph.Import", op.Repo); err != nil {
+		return nil, err
+	}
+
 	graphStore := store.GraphFromContextOrNil(ctx)
 	if graphStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "graph importing")
@@ -28,6 +33,10 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 }
 
 func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Graph.Index", op.Repo); err != nil {
+		return nil, err
+	}
+
 	graphStore := store.GraphFromContextOrNil(ctx)
 	if graphStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "graph indexing")

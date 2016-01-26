@@ -13,6 +13,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -28,6 +29,14 @@ type deltas struct {
 var _ sourcegraph.DeltasServer = (*deltas)(nil)
 
 func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.Get", ds.Base.URI); err != nil {
+		return nil, err
+	}
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.Get", ds.Head.URI); err != nil {
+		return nil, err
+	}
+
 	d := &sourcegraph.Delta{
 		Base: ds.Base,
 		Head: ds.Head,
@@ -120,6 +129,14 @@ func (s *deltas) ListAffectedAuthors(ctx context.Context, op *sourcegraph.Deltas
 	ds := op.Ds
 	opt := op.Opt
 
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListAffectedAuthors", ds.Base.URI); err != nil {
+		return nil, err
+	}
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListAffectedAuthors", ds.Head.URI); err != nil {
+		return nil, err
+	}
+
 	listDefsOpt := *listDefsOpt
 	if opt != nil {
 		listDefsOpt.DeltaFilter = opt.DeltaFilter
@@ -187,6 +204,14 @@ func (s *deltas) ListAffectedAuthors(ctx context.Context, op *sourcegraph.Deltas
 func (s *deltas) ListAffectedClients(ctx context.Context, op *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
 	ds := op.Ds
 	opt := op.Opt
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListAffectedClients", ds.Base.URI); err != nil {
+		return nil, err
+	}
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListAffectedClients", ds.Head.URI); err != nil {
+		return nil, err
+	}
 
 	listDefsOpt := *listDefsOpt
 	if opt != nil {

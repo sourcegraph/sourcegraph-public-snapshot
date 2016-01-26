@@ -16,6 +16,10 @@ type repoStatuses struct{}
 var _ sourcegraph.RepoStatusesServer = (*repoStatuses)(nil)
 
 func (s *repoStatuses) GetCombined(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoStatuses.GetCombined", repoRev.URI); err != nil {
+		return nil, err
+	}
+
 	if repoRev == nil {
 		return nil, fmt.Errorf("nil repo rev")
 	}
@@ -24,7 +28,7 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repoRev *sourcegraph.Rep
 }
 
 func (s *repoStatuses) Create(ctx context.Context, op *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create", op.Repo.URI); err != nil {
 		return nil, err
 	}
 

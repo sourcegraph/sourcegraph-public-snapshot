@@ -7,12 +7,16 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetCommit", repoRev.URI); err != nil {
+		return nil, err
+	}
 	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
 	cacheOnCommitID(ctx, repoRev.CommitID)
 
@@ -41,6 +45,9 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 }
 
 func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.ListCommites", op.Repo.URI); err != nil {
+		return nil, err
+	}
 	log15.Debug("svc.local.repos.ListCommits", "op", op)
 	veryShortCache(ctx)
 
@@ -188,6 +195,9 @@ func (s *repos) listCommitsUncached(ctx context.Context, op *sourcegraph.ReposLi
 }
 
 func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.ListBranches", op.Repo.URI); err != nil {
+		return nil, err
+	}
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err
@@ -207,6 +217,9 @@ func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranc
 }
 
 func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.ListTags", op.Repo.URI); err != nil {
+		return nil, err
+	}
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err
@@ -222,6 +235,9 @@ func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (
 }
 
 func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.ListCommitters", op.Repo.URI); err != nil {
+		return nil, err
+	}
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err

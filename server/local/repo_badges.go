@@ -14,6 +14,7 @@ import (
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -36,6 +37,10 @@ var allRepositoryBadges = []sourcegraph.Badge{
 }
 
 func (s *repoBadges) ListBadges(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoBadges.ListBadges", repo.URI); err != nil {
+		return nil, err
+	}
+
 	if _, err := store.ReposFromContext(ctx).Get(ctx, repo.URI); err != nil {
 		return nil, err
 	}
@@ -66,6 +71,10 @@ var allRepositoryCounters = []sourcegraph.Counter{
 }
 
 func (s *repoBadges) ListCounters(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoBadges.ListCounters", repo.URI); err != nil {
+		return nil, err
+	}
+
 	if _, err := store.ReposFromContext(ctx).Get(ctx, repo.URI); err != nil {
 		return nil, err
 	}
@@ -95,6 +104,10 @@ func (s *repoBadges) ListCounters(ctx context.Context, repo *sourcegraph.RepoSpe
 }
 
 func (s *repoBadges) RecordHit(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoBadges.RecordHit", repo.URI); err != nil {
+		return nil, err
+	}
+
 	store := store.RepoCountersFromContextOrNil(ctx)
 	if store == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")
@@ -104,6 +117,10 @@ func (s *repoBadges) RecordHit(ctx context.Context, repo *sourcegraph.RepoSpec) 
 }
 
 func (s *repoBadges) CountHits(ctx context.Context, op *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoBadges.CountHits", op.Repo.URI); err != nil {
+		return nil, err
+	}
+
 	store := store.RepoCountersFromContextOrNil(ctx)
 	if store == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")

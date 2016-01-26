@@ -34,10 +34,14 @@ func (s *gitTransport) InfoRefs(ctx context.Context, op *gitpb.InfoRefsOp) (*git
 	// This service is read-only, but can be followed by a write
 	// action. If we only deny access once writing it leads to a confusing user
 	// experience
+	var err error
 	if op.Service == gitproto.ReceivePack {
-		if err := verifyRepoWriteAccess(ctx, op.Repo); err != nil {
-			return nil, err
-		}
+		err = verifyRepoWriteAccess(ctx, op.Repo)
+	} else {
+		err = accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.InfoRefs", op.Repo.URI)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	store := store.RepoVCSFromContext(ctx)
@@ -54,6 +58,10 @@ func (s *gitTransport) InfoRefs(ctx context.Context, op *gitpb.InfoRefsOp) (*git
 }
 
 func (s *gitTransport) UploadPack(ctx context.Context, op *gitpb.UploadPackOp) (*gitpb.Packet, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.UploadPack", op.Repo.URI); err != nil {
+		return nil, err
+	}
+
 	store := store.RepoVCSFromContext(ctx)
 	t, err := store.OpenGitTransport(ctx, op.Repo.URI)
 	if err != nil {
@@ -108,7 +116,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 }
 
 func verifyRepoWriteAccess(ctx context.Context, repoSpec sourcegraph.RepoSpec) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack", repoSpec.URI); err != nil {
 		return err
 	}
 	repo, err := svc.Repos(ctx).Get(ctx, &repoSpec)

@@ -59,7 +59,7 @@ func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*so
 }
 
 func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List", ""); err != nil {
 		return nil, err
 	}
 

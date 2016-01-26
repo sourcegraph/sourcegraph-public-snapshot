@@ -10,6 +10,7 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -18,6 +19,10 @@ import (
 // determining the correct commit ID to use when a user is resolved from
 // multiple email addresses.
 func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListAuthors", op.Def.Repo); err != nil {
+		return nil, err
+	}
+
 	defSpec := op.Def
 
 	def, err := svc.Defs(ctx).Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: nil})

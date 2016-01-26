@@ -5,10 +5,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func (s *builds) GetRepoBuild(ctx context.Context, rev *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetRepoBuild", rev.URI); err != nil {
+		return nil, err
+	}
+
 	wasAbs := isAbsCommitID(rev.CommitID) // cache if request was for absolute commit ID
 
 	if err := (&repos{}).resolveRepoRev(ctx, rev); err != nil {

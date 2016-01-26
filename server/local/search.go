@@ -4,6 +4,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
@@ -15,6 +16,9 @@ type search struct{}
 var _ sourcegraph.SearchServer = (*search)(nil)
 
 func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Search.SearchTokens", opt.RepoRev.URI); err != nil {
+		return nil, err
+	}
 	defListOpts := &sourcegraph.DefListOptions{
 		Query:       opt.Query,
 		RepoRevs:    []string{opt.RepoRev.URI + "@" + opt.RepoRev.CommitID},
@@ -34,6 +38,9 @@ func (s *search) SearchTokens(ctx context.Context, opt *sourcegraph.TokenSearchO
 }
 
 func (s *search) SearchText(ctx context.Context, opt *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Search.SearchText", opt.RepoRev.URI); err != nil {
+		return nil, err
+	}
 	vcsSearchOpts := &sourcegraph.RepoTreeSearchOptions{
 		Formatted: true,
 		SearchOptions: vcs.SearchOptions{

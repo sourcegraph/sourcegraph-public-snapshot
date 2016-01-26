@@ -16,6 +16,9 @@ type storage struct{}
 
 // Get implements the sourcegraph.StorageServer interface.
 func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.Get", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	v1, v2 := store.StorageFromContext(ctx).Get(ctx, opt)
 	noCache(ctx)
 	return v1, v2
@@ -23,7 +26,7 @@ func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 
 // Put implements the sourcegraph.StorageServer interface.
 func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Put"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Put", opt.Key.Bucket.Repo); err != nil {
 		return nil, err
 	}
 	v1, v2 := store.StorageFromContext(ctx).Put(ctx, opt)
@@ -33,7 +36,7 @@ func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 
 // PutNoOverwrite implements the sourcegraph.StorageServer interface.
 func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.PutNoOverwrite"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.PutNoOverwrite", opt.Key.Bucket.Repo); err != nil {
 		return nil, err
 	}
 	v1, v2 := store.StorageFromContext(ctx).PutNoOverwrite(ctx, opt)
@@ -43,7 +46,7 @@ func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePu
 
 // Delete implements the sourcegraph.StorageServer interface.
 func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Delete"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Delete", opt.Bucket.Repo); err != nil {
 		return nil, err
 	}
 	v1, v2 := store.StorageFromContext(ctx).Delete(ctx, opt)
@@ -53,6 +56,9 @@ func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 
 // Exists implements the sourcegraph.StorageServer interface.
 func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.Exists", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	v1, v2 := store.StorageFromContext(ctx).Exists(ctx, opt)
 	noCache(ctx)
 	return v1, v2
@@ -60,6 +66,9 @@ func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 
 // List implements the sourcegraph.StorageServer interface.
 func (s *storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.List", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	v1, v2 := store.StorageFromContext(ctx).List(ctx, opt)
 	noCache(ctx)
 	return v1, v2

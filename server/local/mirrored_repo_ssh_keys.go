@@ -20,7 +20,7 @@ type mirroredRepoSSHKeys struct{}
 var _ sourcegraph.MirroredRepoSSHKeysServer = (*mirroredRepoSSHKeys)(nil)
 
 func (s *mirroredRepoSSHKeys) Create(ctx context.Context, op *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Create"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Create", op.Repo.URI); err != nil {
 		return nil, err
 	}
 
@@ -45,6 +45,10 @@ func (s *mirroredRepoSSHKeys) Create(ctx context.Context, op *sourcegraph.Mirror
 }
 
 func (s *mirroredRepoSSHKeys) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "MirroredRepoSSHKeys.Get", repo.URI); err != nil {
+		return nil, err
+	}
+
 	store := store.MirroredRepoSSHKeysFromContextOrNil(ctx)
 	if store == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
@@ -61,7 +65,7 @@ func (s *mirroredRepoSSHKeys) Get(ctx context.Context, repo *sourcegraph.RepoSpe
 }
 
 func (s *mirroredRepoSSHKeys) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Delete"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Delete", repo.URI); err != nil {
 		return nil, err
 	}
 

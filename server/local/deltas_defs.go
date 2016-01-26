@@ -10,12 +10,21 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func (s *deltas) ListDefs(ctx context.Context, op *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error) {
 	ds := op.Ds
 	opt := op.Opt
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListDefs", ds.Base.URI); err != nil {
+		return nil, err
+	}
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListDefs", ds.Head.URI); err != nil {
+		return nil, err
+	}
 
 	if opt == nil {
 		opt = &sourcegraph.DeltaListDefsOptions{}

@@ -12,10 +12,15 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", op.Def.Repo); err != nil {
+		return nil, err
+	}
+
 	defSpec := op.Def
 	opt := op.Opt
 	if opt == nil {
