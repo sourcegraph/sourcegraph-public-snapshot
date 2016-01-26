@@ -126,9 +126,13 @@ func NewHandler(r *router.Router) http.Handler {
 		r.Get(router.UserSettingsIntegrationsUpdate).Handler(internal.Handler(serveUserSettingsIntegrationsUpdate))
 	}
 	if !authutil.ActiveFlags.DisableUserProfiles {
-		r.Get(router.User).Handler(internal.Handler(serveUser))
-		r.Get(router.UserOrgs).Handler(internal.Handler(serveUserOrgs))
-		r.Get(router.OrgMembers).Handler(internal.Handler(serveOrgMembers))
+		if authutil.ActiveFlags.MirrorsNext {
+			r.Get(router.User).Handler(internal.Handler(serveUserSettingsProfile))
+		} else {
+			r.Get(router.User).Handler(internal.Handler(serveUser))
+			r.Get(router.UserOrgs).Handler(internal.Handler(serveUserOrgs))
+			r.Get(router.OrgMembers).Handler(internal.Handler(serveOrgMembers))
+		}
 	}
 
 	r.Get(router.Repo).Handler(internal.Handler(serveRepo))

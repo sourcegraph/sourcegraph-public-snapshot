@@ -20,6 +20,7 @@ require("./auth");
 require("./appdash");
 require("./globals");
 require("./invite");
+require("./mirror-repos");
 
 // Dispatchers
 require("./dispatchers/AppDispatcher");

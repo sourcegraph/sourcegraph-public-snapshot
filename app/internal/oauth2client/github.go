@@ -192,19 +192,19 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	extAccountsStore := authpkg.ExtAccountsStore{}
-	ghOrgs, _, err := client.Organizations.List("", nil)
-	if err == nil {
+	if err := extAccountsStore.Set(ctx, githubcli.Config.Host(), currentUser.UID, *user.Login); err != nil {
+		log15.Error("Could not link GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login, "error", err)
+	} else {
+		log15.Info("Linked GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
+	}
+	if ghOrgs, _, err := client.Organizations.List("", nil); err == nil {
 		for _, org := range ghOrgs {
 			if err := extAccountsStore.Append(ctx, githubcli.Config.Host(), *org.Login, currentUser.UID); err != nil {
 				log15.Error("Could not link GitHub org to user", "github_org", *org.Login, "sourcegraph_user", currentUser.Login, "error", err)
 			}
 		}
 	} else {
-	}
-	if err := extAccountsStore.Set(ctx, githubcli.Config.Host(), currentUser.UID, *user.Login); err != nil {
-		log15.Error("Could not link GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login, "error", err)
-	} else {
-		log15.Info("Linked GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
+		log15.Error("Could not list GitHub orgs for user", "github_user", *user.Login, "error", err)
 	}
 
 	returnTo := state.ReturnTo

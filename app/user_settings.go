@@ -246,7 +246,7 @@ func serveUserSettingsIntegrations(w http.ResponseWriter, r *http.Request) error
 		return err
 	}
 
-	gd, err := apiclient.Repos.GetPrivateGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
+	gd, err := apiclient.Repos.GetGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
 	if err != nil {
 		return err
 	}
@@ -264,19 +264,33 @@ func serveUserSettingsIntegrations(w http.ResponseWriter, r *http.Request) error
 func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
-	_, cd, err := userSettingsCommon(w, r)
+	userSpec, cd, err := userSettingsCommon(w, r)
 	if err == errUserSettingsCommonWroteResponse {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
+	hasMirrorsNext := authcli.ActiveFlags.HasMirrorsNext(userSpec.Login)
+
 	switch mux.Vars(r)["Integration"] {
 	case "enable":
 		r.ParseForm() // required if you don't call r.FormValue()
 		repoURIs := r.Form["RepoURI[]"]
 
-		for _, repoURI := range repoURIs {
+		for _, repoInfo := range repoURIs {
+			var repoURI string
+			private := true // defensively assume that the repo is private.
+			if hasMirrorsNext {
+				tokens := strings.Split(repoInfo, ",")
+				repoURI = tokens[0]
+
+				if len(tokens) > 1 && tokens[1] == "public" {
+					private = false
+				}
+			} else {
+				repoURI = repoInfo
+			}
 			// Check repo doesn't already exist, skip if so.
 			_, err = apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 			if grpc.Code(err) != codes.NotFound {
@@ -296,7 +310,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 				VCS:      "git",
 				CloneURL: "https://" + repoURI + ".git",
 				Mirror:   true,
-				Private:  true,
+				Private:  private,
 			})
 			if err != nil {
 				return err
@@ -306,7 +320,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if authcli.ActiveFlags.HasPrivateMirrors() {
+	if hasMirrorsNext {
 		http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
 	} else {
 		http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsIntegrations, "User", cd.User.Login).String(), http.StatusSeeOther)

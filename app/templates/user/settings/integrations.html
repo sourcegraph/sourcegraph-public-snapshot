@@ -27,7 +27,7 @@
 		</form>
 		{{if .Repos}}
 			<div class="repo-list">
-				<h3>Available Private GitHub Repositories</h3>
+				<h3>Available GitHub Repositories</h3>
 				<form action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">
 					<table class="table repo-list">
 						{{$host := .Host}}

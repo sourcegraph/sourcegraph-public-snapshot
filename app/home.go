@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
@@ -23,20 +24,16 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 	currentUser := handlerutil.UserFromRequest(r)
 
-	users := getUsersAndInvites(ctx, cl)
-
-	allowPrivateMirrors := authutil.ActiveFlags.HasPrivateMirrors()
+	allowMirrorsNext := currentUser != nil && authutil.ActiveFlags.HasMirrorsNext(currentUser.Login)
 	var gd *sourcegraph.GitHubRepoData
-	var teammates []*userInfo
-	if allowPrivateMirrors && currentUser != nil {
+	if allowMirrorsNext {
 		var err error
-		gd, err = cl.Repos.GetPrivateGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
+		gd, err = cl.Repos.GetGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
 		if err != nil {
 			return err
 		}
-
-		teammates = getTeammates(ctx, cl, currentUser, users)
 	}
+	users := getUsers(ctx, cl, allowMirrorsNext)
 
 	var listOpts sourcegraph.ListOptions
 	if err := schemautil.Decode(&listOpts, r.URL.Query()); err != nil {
@@ -57,21 +54,19 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, &struct {
-		Repos               []*sourcegraph.Repo
-		Users               []*userInfo
-		IsLDAP              bool
-		AllowPrivateMirrors bool
-		GitHub              *sourcegraph.GitHubRepoData
-		Teammates           []*userInfo
+		Repos            []*sourcegraph.Repo
+		Users            []*userInfo
+		IsLDAP           bool
+		AllowMirrorsNext bool
+		GitHub           *sourcegraph.GitHubRepoData
 
 		tmpl.Common
 	}{
-		Repos:               repos.Repos,
-		Users:               users,
-		IsLDAP:              authutil.ActiveFlags.IsLDAP(),
-		AllowPrivateMirrors: allowPrivateMirrors,
-		GitHub:              gd,
-		Teammates:           teammates,
+		Repos:            repos.Repos,
+		Users:            users,
+		IsLDAP:           authutil.ActiveFlags.IsLDAP(),
+		AllowMirrorsNext: allowMirrorsNext,
+		GitHub:           gd,
 	})
 }
 
@@ -84,12 +79,23 @@ type userInfo struct {
 	Invite     bool
 }
 
-func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*userInfo {
+func getUsers(ctx context.Context, cl *sourcegraph.Client, allowMirrorsNext bool) []*userInfo {
 	var users []*userInfo
 	ctxActor := auth.ActorFromContext(ctx)
-	if !ctxActor.HasAdminAccess() { // current user is not an admin of the instance
+	if !allowMirrorsNext && !ctxActor.HasAdminAccess() {
 		return users
 	}
+	users = fetchUsersAndInvites(ctx, cl)
+	if !allowMirrorsNext {
+		return users
+	}
+
+	teammates := fetchTeammates(ctx, cl, int32(ctxActor.UID), users)
+	return teammates
+}
+
+func fetchUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*userInfo {
+	var users []*userInfo
 
 	// Fetch pending invites.
 	inviteList, err := cl.Accounts.ListInvites(ctx, &pbtypes.Void{})
@@ -124,7 +130,7 @@ func getUsersAndInvites(ctx context.Context, cl *sourcegraph.Client) []*userInfo
 	return users
 }
 
-func getTeammates(ctx context.Context, cl *sourcegraph.Client, cUser *sourcegraph.UserSpec, users []*userInfo) []*userInfo {
+func fetchTeammates(ctx context.Context, cl *sourcegraph.Client, currentUID int32, users []*userInfo) []*userInfo {
 	var teammates []*userInfo
 
 	// Fetch the currently authenticated user's stored access token (if any).
@@ -151,15 +157,23 @@ func getTeammates(ctx context.Context, cl *sourcegraph.Client, cUser *sourcegrap
 			continue
 		}
 
+		var foundSelf bool
 		for _, member := range acct.Users {
+			if currentUID == member {
+				foundSelf = true
+			}
 			linkedAccounts[member] = true
+		}
+
+		// Add this user to the organization's cached member list.
+		if !foundSelf {
+			if err := extAccountsStore.Append(ctx, githubcli.Config.Host(), *org.Login, currentUID); err != nil {
+				log15.Debug("Could not add user to org's member list", "uid", currentUID, "org", *org.Login, "error", err)
+			}
 		}
 	}
 
 	for _, user := range users {
-		if user.UID == cUser.UID {
-			continue
-		}
 		if _, ok := linkedAccounts[user.UID]; ok {
 			teammates = append(teammates, user)
 		}
