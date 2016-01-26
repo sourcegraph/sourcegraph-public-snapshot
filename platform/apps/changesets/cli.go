@@ -107,6 +107,48 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	_, err = changesetsGroup.AddCommand("review",
+		"review a changeset",
+		"The `sgx changeset review` command reviews a changeset.",
+		&changesetReviewCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	changesetsReviewersGroup, err := changesetsGroup.AddCommand("reviewers",
+		"manage reviewers",
+		"The changeset reviewers subcommands manage reviewers for a changeset.",
+		&changesetsReviewersCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = changesetsReviewersGroup.AddCommand("add",
+		"add a reviewer to a changeset",
+		"The `sgx changeset reviewers add` command adds a reviewer to a changeset.",
+		&changesetReviewersAddCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = changesetsReviewersGroup.AddCommand("remove",
+		"remove a reviewer to a changeset",
+		"The `sgx changeset reviewers remove` command removes a reviewer from a changeset.",
+		&changesetReviewersRemoveCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = changesetsReviewersGroup.AddCommand("list",
+		"list reviewers on a changeset",
+		"The `sgx changeset reviewers list` command lists all reviewers on a changeset.",
+		&changesetReviewersListCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type changesetsCmd struct{}
@@ -504,5 +546,210 @@ func (c *changesetOpenCmd) Execute(args []string) error {
 	}
 
 	log.Printf("# opened changeset %s #%d", repo.URI, ev.After.ID)
+	return nil
+}
+
+type changesetReviewCmd struct {
+	changesetUpdateCmdCommon
+	LGTM    bool `long:"lgtm" description:"mark the changeset as looks-good-to-me"`
+	NotLGTM bool `long:"not-lgtm" description:"mark the changeset as not-LGTM"`
+}
+
+func (c *changesetReviewCmd) Execute(args []string) error {
+	// Check if they didn't specify either flag, or if they specified both.
+	if c.LGTM == c.NotLGTM {
+		log.Fatal("Must specify one of --lgtm or --not-lgtm")
+	}
+
+	cliCtx := putil.CLIContext()
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
+
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
+	// TODO(sqs): Move this author field logic to the server so the
+	// client doesn't have to fill in all of these fields.
+	authInfo, err := sg.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	if !authInfo.Write {
+		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
+	}
+	author := sourcegraph.UserSpec{
+		UID:    authInfo.UID,
+		Login:  authInfo.Login,
+		Domain: authInfo.Domain,
+	}
+
+	if c.LGTM {
+		ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+			Repo:   repo.RepoSpec(),
+			ID:     c.Args.ID,
+			LGTM:   true,
+			Author: author,
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("# changeset LGTM %s #%d\n", repo.URI, ev.After.ID)
+	} else if c.NotLGTM {
+		ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+			Repo:    repo.RepoSpec(),
+			ID:      c.Args.ID,
+			NotLGTM: true,
+			Author:  author,
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("# changeset not-LGTM %s #%d\n", repo.URI, ev.After.ID)
+	}
+	return nil
+}
+
+type changesetsReviewersCmd struct{}
+
+func (c *changesetsReviewersCmd) Execute(args []string) error { return nil }
+
+type changesetReviewersAddCmd struct {
+	changesetUpdateCmdCommon
+	Args struct {
+		Reviewer []string `name:"Reviewer" description:"Username of reviewer to add to the changeset"`
+	} `positional-args:"yes" required:"yes"`
+}
+
+func (c *changesetReviewersAddCmd) Execute(args []string) error {
+	cliCtx := putil.CLIContext()
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
+
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
+	// TODO(sqs): Move this author field logic to the server so the
+	// client doesn't have to fill in all of these fields.
+	authInfo, err := sg.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	if !authInfo.Write {
+		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
+	}
+	author := sourcegraph.UserSpec{
+		UID:    authInfo.UID,
+		Login:  authInfo.Login,
+		Domain: authInfo.Domain,
+	}
+
+	for _, reviewer := range c.Args.Reviewer {
+		ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+			Repo: repo.RepoSpec(),
+			ID:   c.changesetUpdateCmdCommon.Args.ID,
+			AddReviewer: &sourcegraph.UserSpec{
+				Login: reviewer,
+			},
+			Author: author,
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("# Added reviewer %q to changeset %s #%d\n", reviewer, repo.URI, ev.After.ID)
+	}
+	return nil
+}
+
+type changesetReviewersRemoveCmd struct {
+	changesetUpdateCmdCommon
+	Args struct {
+		Reviewer []string `name:"Reviewer" description:"Username of reviewer to remove from the changeset"`
+	} `positional-args:"yes" required:"yes"`
+}
+
+func (c *changesetReviewersRemoveCmd) Execute(args []string) error {
+	cliCtx := putil.CLIContext()
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
+
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
+	// TODO(sqs): Move this author field logic to the server so the
+	// client doesn't have to fill in all of these fields.
+	authInfo, err := sg.Auth.Identify(cliCtx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+	if !authInfo.Write {
+		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
+	}
+	author := sourcegraph.UserSpec{
+		UID:    authInfo.UID,
+		Login:  authInfo.Login,
+		Domain: authInfo.Domain,
+	}
+
+	for _, reviewer := range c.Args.Reviewer {
+		ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+			Repo: repo.RepoSpec(),
+			ID:   c.changesetUpdateCmdCommon.Args.ID,
+			RemoveReviewer: &sourcegraph.UserSpec{
+				Login: reviewer,
+			},
+			Author: author,
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("# Removed reviewer %q from changeset %s #%d\n", reviewer, repo.URI, ev.After.ID)
+	}
+	return nil
+}
+
+type changesetReviewersListCmd struct{ changesetUpdateCmdCommon }
+
+func (c *changesetReviewersListCmd) Execute(args []string) error {
+	cliCtx := putil.CLIContext()
+	sg, err := sourcegraph.NewClientFromContext(cliCtx)
+	if err != nil {
+		return err
+	}
+
+	repo, err := c.Repo()
+	if err != nil {
+		return err
+	}
+
+	cs, err := sg.Changesets.Get(cliCtx, &sourcegraph.ChangesetSpec{
+		Repo: repo.RepoSpec(),
+		ID:   c.Args.ID,
+	})
+	if err != nil {
+		return err
+	}
+	if len(cs.Reviewers) == 0 {
+		log.Printf("# No assigned reviewers on changeset %s #%d (add some with 'src changeset reviewers add <ID> <reviewer>')\n", repo.URI, c.Args.ID)
+		return nil
+	}
+	for _, reviewer := range cs.Reviewers {
+		lgtm := "LGTM"
+		if !reviewer.LGTM {
+			lgtm = "(not reviewed)"
+		}
+		log.Printf("# Reviewer %q - %s\n", reviewer.UserSpec.Login, lgtm)
+	}
 	return nil
 }
