@@ -146,7 +146,7 @@ func New(base *mux.Router) *Router {
 	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 
-	base.Path("/sitemap-index.xml").Methods("GET").Name(SitemapIndex)
+	base.Path("/sitemap.xml").Methods("GET").Name(SitemapIndex)
 
 	base.Path("/usercontent/{Name}").Methods("GET").Name(UserContent)
 
