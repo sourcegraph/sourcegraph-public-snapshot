@@ -19,21 +19,55 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
+type dashboardData struct {
+	Repos       []*sourcegraph.Repo
+	Users       []*userInfo
+	IsLDAP      bool
+	MirrorsNext bool
+	LinkGitHub  bool
+	OnWaitlist  bool
+	MirrorData  *sourcegraph.UserMirrorData
+
+	tmpl.Common
+}
+
+func execDashboardTmpl(w http.ResponseWriter, r *http.Request, d *dashboardData) error {
+	d.IsLDAP = authutil.ActiveFlags.IsLDAP()
+	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, d)
+}
+
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	cl := handlerutil.APIClient(r)
 	currentUser := handlerutil.UserFromRequest(r)
 
-	allowMirrorsNext := currentUser != nil && authutil.ActiveFlags.HasMirrorsNext(currentUser.Login)
-	var gd *sourcegraph.GitHubRepoData
-	if allowMirrorsNext {
+	mirrorsNext := currentUser != nil && authutil.ActiveFlags.MirrorsNext
+	var mirrorData *sourcegraph.UserMirrorData
+	if mirrorsNext {
 		var err error
-		gd, err = cl.Repos.GetGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
+		mirrorData, err = cl.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
 		if err != nil {
 			return err
 		}
+
+		switch mirrorData.State {
+		case sourcegraph.UserMirrorsState_NoToken, sourcegraph.UserMirrorsState_InvalidToken:
+			return execDashboardTmpl(w, r, &dashboardData{
+				MirrorsNext: mirrorsNext,
+				MirrorData:  mirrorData,
+				LinkGitHub:  true,
+			})
+		case sourcegraph.UserMirrorsState_OnWaitlist:
+			return execDashboardTmpl(w, r, &dashboardData{
+				MirrorsNext: mirrorsNext,
+				MirrorData:  mirrorData,
+				OnWaitlist:  true,
+			})
+		case sourcegraph.UserMirrorsState_NotAllowed:
+			mirrorsNext = false
+		}
 	}
-	users := getUsers(ctx, cl, allowMirrorsNext)
+	users := getUsers(ctx, cl, mirrorsNext)
 
 	var listOpts sourcegraph.ListOptions
 	if err := schemautil.Decode(&listOpts, r.URL.Query()); err != nil {
@@ -53,20 +87,11 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, &struct {
-		Repos            []*sourcegraph.Repo
-		Users            []*userInfo
-		IsLDAP           bool
-		AllowMirrorsNext bool
-		GitHub           *sourcegraph.GitHubRepoData
-
-		tmpl.Common
-	}{
-		Repos:            repos.Repos,
-		Users:            users,
-		IsLDAP:           authutil.ActiveFlags.IsLDAP(),
-		AllowMirrorsNext: allowMirrorsNext,
-		GitHub:           gd,
+	return execDashboardTmpl(w, r, &dashboardData{
+		Repos:       repos.Repos,
+		Users:       users,
+		MirrorsNext: mirrorsNext,
+		MirrorData:  mirrorData,
 	})
 }
 

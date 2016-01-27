@@ -11,32 +11,45 @@
 </div>
 <br>
 {{end}}
-{{if (and .AllowMirrorsNext .CurrentUser (not appconf.DisableIntegrations) (not .GitHub.TokenIsPresent))}}
-<div class="row">
-	<div class="col-md-offset-3 col-md-6">
-		<br>
-		<div class="well oauth-provider">
-			<h1>Welcome to Sourcegraph!</h1>
-			<p>Link your GitHub account to add your code to Sourcegraph</p>
-			<form action={{router.URLToGitHubOAuth}} method="get">
-				<div class="form-group">
-					<button type="submit" class="btn btn-sgblue btn-lg">Link GitHub Account</button>
-				</div>
-			</form>
-			<div class="clearfix"></div>
+{{if (and .MirrorsNext .CurrentUser (or .LinkGitHub .OnWaitlist))}}
+	{{if .LinkGitHub}}
+	<div class="row">
+		<div class="col-md-offset-3 col-md-6">
+			<br>
+			<div class="well oauth-provider">
+				<h1>Welcome to Sourcegraph!</h1>
+				<p>Link your GitHub account to add your code to Sourcegraph</p>
+				<form action={{router.URLToGitHubOAuth}} method="get">
+					<div class="form-group">
+						<button type="submit" class="btn btn-sgblue btn-lg">Link GitHub Account</button>
+					</div>
+				</form>
+				<div class="clearfix"></div>
+			</div>
 		</div>
 	</div>
-</div>
+	{{else}}
+	<div class="row">
+		<div class="col-md-offset-3 col-md-6">
+			<br>
+			<div class="well oauth-provider">
+				<h1>You're on the waitlist!</h1>
+				<p>Look out for an email from us when you get access. Feel free to explore public repositories till then.</p>
+				<div class="clearfix"></div>
+			</div>
+		</div>
+	</div>
+	{{end}}
 {{else}}
-{{$hasUsers := (or .AllowMirrorsNext .Users)}}
+{{$hasUsers := (or .MirrorsNext .Users)}}
 <div class="row dashboard">
 	<div class="col-md-{{if $hasUsers}}6{{else}}12{{end}}">
 		<h3>Repositories
-			{{if (and .Repos (not .AllowMirrorsNext))}}
+			{{if (and .Repos (not .MirrorsNext))}}
 				<button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button>
 			{{end}}
 		</h3>
-		{{if not .AllowMirrorsNext}}
+		{{if not .MirrorsNext}}
 		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
 			<div class="well">
 				<form action={{router.URLToRepoCreate}} method="post">
@@ -66,17 +79,9 @@
 				</a>
 			{{end}}
 		</div>
-		{{if (and .AllowMirrorsNext $.CurrentUser (not appconf.DisableIntegrations))}}
-			{{with .GitHub}}
+		{{if (and .MirrorsNext $.CurrentUser (not appconf.DisableIntegrations))}}
+			{{with .MirrorData}}
 			<h4>Available GitHub repositories</h4>
-			{{if (or (not .TokenIsPresent) (not .TokenIsValid))}}
-					<p>Link your GitHub account to add your code to Sourcegraph</p>
-					<form action={{router.URLToGitHubOAuth}} method="get">
-						<div class="form-group">
-							<button type="submit" class="btn btn-sgblue btn-lg">Link GitHub Account</button>
-						</div>
-					</form>
-			{{end}}
 			{{if .Repos}}
 			<div class="repo-list">
 				<form action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">
@@ -118,7 +123,7 @@
 		{{end}}
 	</div>
 	<div class="col-md-6">
-		{{if .AllowMirrorsNext}}
+		{{if .MirrorsNext}}
 		<h3>Teammates <button class="btn btn-default" data-toggle="collapse" data-target="#addTeammate"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addTeammate">
 			<div class="well">
