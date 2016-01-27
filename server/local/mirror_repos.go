@@ -17,6 +17,8 @@ import (
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/ext"
+	"src.sourcegraph.com/sourcegraph/ext/github"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -242,4 +244,82 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		})
 	}
 	return nil
+}
+
+func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
+	gd := &sourcegraph.UserMirrorData{
+		URL:   githubcli.Config.URL(),
+		Host:  githubcli.Config.Host() + "/",
+		State: sourcegraph.UserMirrorsState_NoToken,
+	}
+
+	// Fetch the currently authenticated user's stored access token (if any).
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+		Host: githubcli.Config.Host(),
+	})
+	if grpc.Code(err) == codes.NotFound {
+		return gd, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	ghRepos := &github.Repos{}
+	// TODO(perf) Cache this response or perform the fetch after page load to avoid
+	// having to wait for an http round trip to github.com.
+	gitHubRepos, err := ghRepos.ListWithToken(ctx, extToken.Token)
+	if err != nil {
+		// Since the error is caused by something other than the token not existing,
+		// ensure the user knows there is a value set for the token but that
+		// it is invalid.
+		gd.State = sourcegraph.UserMirrorsState_InvalidToken
+		return gd, nil
+	}
+	gd.State = sourcegraph.UserMirrorsState_HasAccess
+
+	existingRepos := make(map[string]struct{})
+	remoteRepos := make([]*sourcegraph.RemoteRepo, len(gitHubRepos))
+
+	repoOpts := &sourcegraph.RepoListOptions{
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 1000,
+			Page:    1,
+		},
+	}
+	for {
+		repoList, err := store.ReposFromContext(ctx).List(ctx, repoOpts)
+		if err != nil {
+			return nil, err
+		}
+		if len(repoList) == 0 {
+			break
+		}
+
+		for _, repo := range repoList {
+			existingRepos[repo.URI] = struct{}{}
+		}
+
+		repoOpts.ListOptions.Page += 1
+	}
+
+	// Check if a user's remote GitHub repo already exists locally under the
+	// same URI. Allow this user to access all their private repos that are
+	// already mirrored on this Sourcegraph.
+	repoPermsStore := authpkg.RepoPermsStore{}
+	uid := authpkg.ActorFromContext(ctx).UID
+	for i, repo := range gitHubRepos {
+		if _, ok := existingRepos[repo.URI]; ok {
+			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: true, Repo: *repo}
+			if repo.Private {
+				err := repoPermsStore.Set(ctx, uid, repo.URI)
+				if err != nil {
+					log15.Warn("Failed to set repo permissions for user", "repo", repo.URI, "uid", uid, "error", err)
+				}
+			}
+		} else {
+			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: false, Repo: *repo}
+		}
+	}
+	gd.Repos = remoteRepos
+
+	return gd, nil
 }
