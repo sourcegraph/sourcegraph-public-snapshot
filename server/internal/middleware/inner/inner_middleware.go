@@ -1565,6 +1565,28 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 	return
 }
 
+func (s wrappedMirrorRepos) GetUserData(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserMirrorData, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "MirrorRepos", "GetUserData", param)
+	defer func() {
+		trace.After(ctx, "MirrorRepos", "GetUserData", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "MirrorRepos.GetUserData")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.MirrorRepos
+
+	res, err = target.GetUserData(ctx, param)
+
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MirrorRepos.GetUserData returned nil, nil")
+	}
+	return
+}
+
 type wrappedMirroredRepoSSHKeys struct {
 	c *auth.Config
 }
@@ -2705,28 +2727,6 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRepos) GetGitHubRepos(ctx context.Context, param *sourcegraph.GitHubRepoRequest) (res *sourcegraph.GitHubRepoData, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "GetGitHubRepos", param)
-	defer func() {
-		trace.After(ctx, "Repos", "GetGitHubRepos", param, err, time.Since(start))
-	}()
-
-	err = s.c.Authenticate(ctx, "Repos.GetGitHubRepos")
-	if err != nil {
-		return
-	}
-
-	target := local.Services.Repos
-
-	res, err = target.GetGitHubRepos(ctx, param)
-
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.GetGitHubRepos returned nil, nil")
 	}
 	return
 }

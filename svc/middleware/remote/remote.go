@@ -477,6 +477,14 @@ func (s remoteMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.Mirro
 	return c.MirrorRepos.RefreshVCS(ctx, v1)
 }
 
+func (s remoteMirrorRepos) GetUserData(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.MirrorRepos.GetUserData(ctx, v1)
+}
+
 type remoteMirroredRepoSSHKeys struct {
 	sourcegraph.MirroredRepoSSHKeysServer
 }
@@ -825,14 +833,6 @@ func (s remoteRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevSp
 		return nil, err
 	}
 	return c.Repos.GetInventory(ctx, v1)
-}
-
-func (s remoteRepos) GetGitHubRepos(ctx context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.Repos.GetGitHubRepos(ctx, v1)
 }
 
 type remoteSearch struct{ sourcegraph.SearchServer }

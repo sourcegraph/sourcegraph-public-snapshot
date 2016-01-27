@@ -108,7 +108,6 @@ type ReposClient struct {
 	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(ctx context.Context, in *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	GetGitHubRepos_              func(ctx context.Context, in *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error)
 }
 
 func (s *ReposClient) Get(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -171,10 +170,6 @@ func (s *ReposClient) GetInventory(ctx context.Context, in *sourcegraph.RepoRevS
 	return s.GetInventory_(ctx, in)
 }
 
-func (s *ReposClient) GetGitHubRepos(ctx context.Context, in *sourcegraph.GitHubRepoRequest, opts ...grpc.CallOption) (*sourcegraph.GitHubRepoData, error) {
-	return s.GetGitHubRepos_(ctx, in)
-}
-
 var _ sourcegraph.ReposClient = (*ReposClient)(nil)
 
 type ReposServer struct {
@@ -193,7 +188,6 @@ type ReposServer struct {
 	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	GetGitHubRepos_              func(v0 context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error)
 }
 
 func (s *ReposServer) Get(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
@@ -254,10 +248,6 @@ func (s *ReposServer) ConfigureApp(v0 context.Context, v1 *sourcegraph.RepoConfi
 
 func (s *ReposServer) GetInventory(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
 	return s.GetInventory_(v0, v1)
-}
-
-func (s *ReposServer) GetGitHubRepos(v0 context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
-	return s.GetGitHubRepos_(v0, v1)
 }
 
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)
@@ -433,21 +423,31 @@ func (s *ChangesetsServer) ListEvents(v0 context.Context, v1 *sourcegraph.Change
 var _ sourcegraph.ChangesetsServer = (*ChangesetsServer)(nil)
 
 type MirrorReposClient struct {
-	RefreshVCS_ func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	RefreshVCS_  func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	GetUserData_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
 }
 
 func (s *MirrorReposClient) RefreshVCS(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.RefreshVCS_(ctx, in)
 }
 
+func (s *MirrorReposClient) GetUserData(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.UserMirrorData, error) {
+	return s.GetUserData_(ctx, in)
+}
+
 var _ sourcegraph.MirrorReposClient = (*MirrorReposClient)(nil)
 
 type MirrorReposServer struct {
-	RefreshVCS_ func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	RefreshVCS_  func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	GetUserData_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
 }
 
 func (s *MirrorReposServer) RefreshVCS(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	return s.RefreshVCS_(v0, v1)
+}
+
+func (s *MirrorReposServer) GetUserData(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
+	return s.GetUserData_(v0, v1)
 }
 
 var _ sourcegraph.MirrorReposServer = (*MirrorReposServer)(nil)

@@ -1743,6 +1743,35 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.Mirr
 	return rv, nil
 }
 
+func (s wrappedMirrorRepos) GetUserData(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.MirrorReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "MirrorRepos")
+	}
+
+	rv, err := innerSvc.GetUserData(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
 type wrappedMirroredRepoSSHKeys struct {
 	ctxFunc  ContextFunc
 	services svc.Services
@@ -2964,35 +2993,6 @@ func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevS
 	}
 
 	rv, err := innerSvc.GetInventory(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
-	return rv, nil
-}
-
-func (s wrappedRepos) GetGitHubRepos(ctx context.Context, v1 *sourcegraph.GitHubRepoRequest) (*sourcegraph.GitHubRepoData, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ReposOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
-	}
-
-	rv, err := innerSvc.GetGitHubRepos(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

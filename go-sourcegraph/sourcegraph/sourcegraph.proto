@@ -545,10 +545,6 @@ service Repos {
 	// languages, etc., used by the repository, as evidenced by the
 	// repository's files.
 	rpc GetInventory(RepoRevSpec) returns (inventory.Inventory);
-
-	// GetGitHubRepos returns the list of GitHub repos that are visible
-	// to the currently authenticated user.
-	rpc GetGitHubRepos(GitHubRepoRequest) returns (GitHubRepoData);
 }
 
 // SrclibDataVersion specifies a srclib store version.
@@ -567,45 +563,6 @@ message RepoConfigureAppOp {
 	// Enable is true if the app should be enabled and false if it
 	// should be disabled.
 	bool Enable = 3;
-}
-
-// GitHubRepoRequest is a request for private GitHub repos.
-message GitHubRepoRequest {
-	// GitHubClientID is the client id of the GitHub application used to
-	// authorize users via GitHub OAuth2 login.
-	string github_client_id = 1 [(gogoproto.customname) = "GitHubClientID"];
-}
-
-// RemoteRepo is a repo canonically stored on an external host,
-// and possibly mirrored on the local instance.
-message RemoteRepo {
-	// ExistsLocally specifies if the repo is mirrored on the local
-	// Sourcegraph server.
-	bool exists_locally = 1;
-
-	// Repo is a repo on an external host.
-	Repo repo = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-}
-
-// GitHubRepoData is a list of private GitHub repos that are visible
-// to the current user.
-message GitHubRepoData {
-	// URL is the base url of the external code host.
-	string url = 1 [(gogoproto.customname) = "URL"];
-
-	// Host is the name of the external code host.
-	string host = 2;
-
-	// Repos is the list of repos visible to the user.
-	repeated RemoteRepo repos = 3;
-
-	// TokenIsPresent specifies if a GitHub auth token is present
-	// for the user.
-	bool token_is_present = 4;
-
-	// TokenIsValid specifies if the stored GitHub auth token for the
-	// user is valid.
-	bool token_is_valid = 5;
 }
 
 // StorageBucket represents the location where keys are stored.
@@ -1000,6 +957,90 @@ message VCSCredentials {
 	string Pass = 1;
 }
 
+// WaitlistedUser describes a user who has been added to the waitlist
+// for access to the private repos feature.
+message WaitlistedUser {
+	// UID is the unique id of the waitlisted user.
+	int32 UID = 1;
+
+	// AddedAt is the timestamp at which the user was added to the
+	// waitlist.
+	pbtypes.Timestamp AddedAt = 2;
+
+	// GrantedAt is the timestamp at which the user was granted
+	// access to the feature. If this field is null, the user is
+	// still on the waitlist.
+	pbtypes.Timestamp GrantedAt = 3;
+}
+
+// WaitlistedOrg describes a GitHub organization which has been added
+// to the waitlist for access to the private repos feature.
+message WaitlistedOrg {
+	// Name is the unique name of the waitlisted GitHub org.
+	string Name = 1;
+
+	// AddedAt is the timestamp at which the org was added to the
+	// waitlist.
+	pbtypes.Timestamp AddedAt = 2;
+
+	// GrantedAt is the timestamp at which the org was granted
+	// access to the feature. If this field is null, the org is
+	// still on the waitlist.
+	pbtypes.Timestamp GrantedAt = 3;
+}
+
+// UserMirrorsState specifies the state of the user's access to the
+// GitHub repo mirrors feature.
+enum UserMirrorsState {
+	// NotAllowed is the state where the user is not allowed to access
+	// the repo mirrors feature on this server.
+	NotAllowed = 0;
+
+	// OnWaitlist is the state where user is on the waitlist for the
+	// repo mirrors feature.
+	OnWaitlist = 1;
+
+	// NoToken is the state where the user has not yet linked their
+	// GitHub account on this server.
+	NoToken = 2;
+
+	// InvalidToken is the state where the user's stored GitHub OAuth2 token
+	// is invalid.
+	InvalidToken = 3;
+
+	// HasAccess is the state where user has access to the repo mirrors
+	// feature.
+	HasAccess = 4;
+}
+
+// RemoteRepo is a repo canonically stored on an external host,
+// and possibly mirrored on the local instance.
+message RemoteRepo {
+	// ExistsLocally specifies if the repo is mirrored on the local
+	// Sourcegraph server.
+	bool ExistsLocally = 1;
+
+	// Repo is a repo on an external host.
+	Repo Repo = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+}
+
+// UserMirrorData is a list of GitHub repo that are visible
+// to the current user.
+message UserMirrorData {
+	// URL is the base url of the external code host.
+	string URL = 1;
+
+	// Host is the name of the external code host.
+	string Host = 2;
+
+	// Repos is the list of repos visible to the user.
+	repeated RemoteRepo Repos = 3;
+
+	// State is the state of the user's access to mirrored repos on
+	// this server.
+	UserMirrorsState State = 4;
+}
+
 // MirrorRepos handles operations related to maintaining mirrors on
 // Sourcegraph of repositories hosted elsewhere.
 service MirrorRepos {
@@ -1009,6 +1050,10 @@ service MirrorRepos {
 			put: "/mirror_repos"
 		};
 	};
+
+	// GetUserData returns the list of GitHub repos that are visible
+	// to the currently authenticated user.
+	rpc GetUserData(pbtypes.Void) returns (UserMirrorData);
 }
 
 // MirroredRepoSSHKeys stores repository SSH keys (e.g., to access
