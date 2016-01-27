@@ -1,18 +1,19 @@
 package sgx
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 
-	"github.com/howeyc/gopass"
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/userauth"
+	"src.sourcegraph.com/sourcegraph/auth/usercreds"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
@@ -92,19 +93,20 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return "", err
 	}
 
-	var username, password string
+	var creds *usercreds.LoginCredentials
 	if c.Username != "" {
-		username, password = c.Username, c.Password
+		creds = &usercreds.LoginCredentials{Login: c.Username, Password: c.Password}
 	} else {
-		fmt.Printf("Enter credentials for %s\n", endpointURL)
-		fmt.Print("Username: ")
-		var err error
-		username, err = getLine()
-		if err != nil {
-			return "", err
+		creds = usercreds.FromNetRC(endpointURL)
+		if creds != nil {
+			fmt.Println("# Using credentials from netrc")
+		} else if creds == nil {
+			fmt.Printf("Enter credentials for %s\n", endpointURL)
+			creds = usercreds.FromTTY()
 		}
-		fmt.Print("Password: ")
-		password = string(gopass.GetPasswd())
+		if creds == nil {
+			return "", errors.New("Failed to get credentials from user")
+		}
 	}
 
 	// Get a user access token.
@@ -115,7 +117,7 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 	// have to mimic a browser's cookies and CSRF tokens).
 	tok, err := cl.Auth.GetAccessToken(unauthedCtx, &sourcegraph.AccessTokenRequest{
 		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
-			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
+			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: creds.Login, Password: creds.Password},
 		},
 	})
 	if err != nil {

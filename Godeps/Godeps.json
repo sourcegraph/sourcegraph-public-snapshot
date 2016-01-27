@@ -63,6 +63,10 @@
 			"Rev": "b965b613227fddccbfffe13eae360ed3fa822f8d"
 		},
 		{
+			"ImportPath": "github.com/bgentry/go-netrc/netrc",
+			"Rev": "9fd32a8b3d3d3f9d43c341bfe098430e07609480"
+		},
+		{
 			"ImportPath": "github.com/bitly/go-hostpool",
 			"Rev": "d0e59c22a56e8dadfed24f74f452cea5a52722d2"
 		},
