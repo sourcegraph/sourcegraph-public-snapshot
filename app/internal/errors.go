@@ -60,7 +60,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 			return
 		}
 	} else if grpc.Code(err) == codes.Unauthenticated {
-		log15.Debug("redirecting to login", "from", req.URL, "grpc_code", err)
+		log15.Debug("redirecting to login", "from", req.URL, "error", err)
 		err = UnauthorizedErrorHandler(resp, req, err)
 		if err == nil {
 			return
