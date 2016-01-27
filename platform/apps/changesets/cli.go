@@ -190,7 +190,7 @@ func (c *changesetsCmdCommon) Repo() (*sourcegraph.Repo, error) {
 
 type changesetListCmd struct {
 	changesetsCmdCommon
-	Status string `long:"status" description:"filter to only 'open' or 'closed' changesets (default: open)"`
+	Status string `long:"status" description:"filter 'open', 'closed', 'assigned' (to me) or 'all' changesets (default: open)"`
 }
 
 func (c *changesetListCmd) Execute(args []string) error {
@@ -205,25 +205,40 @@ func (c *changesetListCmd) Execute(args []string) error {
 		return err
 	}
 
-	var open, closed bool
+	var open, closed, assigned bool
 	switch c.Status {
 	case "open", "":
 		open = true
 	case "closed":
 		closed = true
+	case "assigned":
+		assigned = true
 	case "all":
 		open, closed = true, true
 	default:
-		return fmt.Errorf("Unrecognized status filter %v. Please pick one of open, closed or all", c.Status)
+		return fmt.Errorf("Unrecognized status filter %v. Please pick one of open, closed, assigned or all", c.Status)
 	}
 
 	for page := 1; ; page++ {
-		changesets, err := sg.Changesets.List(cliCtx, &sourcegraph.ChangesetListOp{
+		op := &sourcegraph.ChangesetListOp{
 			Repo:        repo.URI,
 			Open:        open,
 			Closed:      closed,
 			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
-		})
+		}
+		if assigned {
+			authInfo, err := sg.Auth.Identify(cliCtx, &pbtypes.Void{})
+			if err != nil {
+				return err
+			}
+			op.NeedsReview = &sourcegraph.UserSpec{
+				UID:    authInfo.UID,
+				Login:  authInfo.Login,
+				Domain: authInfo.Domain,
+			}
+		}
+
+		changesets, err := sg.Changesets.List(cliCtx, op)
 
 		if err != nil {
 			return err
