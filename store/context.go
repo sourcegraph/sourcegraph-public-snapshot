@@ -44,6 +44,7 @@ type Stores struct {
 	UserKeys                        UserKeys
 	UserPermissions                 UserPermissions
 	Users                           Users
+	Waitlist                        Waitlist
 }
 
 type contextKey int
@@ -75,6 +76,7 @@ const (
 	_UserKeysKey
 	_UserPermissionsKey
 	_UsersKey
+	_WaitlistKey
 )
 
 // WithStores returns a copy of parent with the given stores. If a store's field value is nil, its previous value is inherited from parent in the new context.
@@ -156,6 +158,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Users != nil {
 		ctx = WithUsers(ctx, s.Users)
+	}
+	if s.Waitlist != nil {
+		ctx = WithWaitlist(ctx, s.Waitlist)
 	}
 	return ctx
 }
@@ -752,6 +757,29 @@ func UsersFromContext(ctx context.Context) Users {
 // UsersFromContextOrNil returns the context's Users store if present, or else nil.
 func UsersFromContextOrNil(ctx context.Context) Users {
 	s, ok := ctx.Value(_UsersKey).(Users)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithWaitlist returns a copy of parent with the given Waitlist store.
+func WithWaitlist(parent context.Context, s Waitlist) context.Context {
+	return context.WithValue(parent, _WaitlistKey, s)
+}
+
+// WaitlistFromContext gets the context's Waitlist store. If the store is not present, it panics.
+func WaitlistFromContext(ctx context.Context) Waitlist {
+	s, ok := ctx.Value(_WaitlistKey).(Waitlist)
+	if !ok || s == nil {
+		panic("no Waitlist set in context")
+	}
+	return s
+}
+
+// WaitlistFromContextOrNil returns the context's Waitlist store if present, or else nil.
+func WaitlistFromContextOrNil(ctx context.Context) Waitlist {
+	s, ok := ctx.Value(_WaitlistKey).(Waitlist)
 	if ok {
 		return s
 	}

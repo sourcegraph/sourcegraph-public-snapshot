@@ -44,6 +44,7 @@ type Stores struct {
 	UserKeys                        UserKeys
 	UserPermissions                 UserPermissions
 	Users                           Users
+	Waitlist                        Waitlist
 }
 
 func (s *Stores) Stores() store.Stores {
@@ -74,5 +75,6 @@ func (s *Stores) Stores() store.Stores {
 		UserKeys:                        &s.UserKeys,
 		UserPermissions:                 &s.UserPermissions,
 		Users:                           &s.Users,
+		Waitlist:                        &s.Waitlist,
 	}
 }
