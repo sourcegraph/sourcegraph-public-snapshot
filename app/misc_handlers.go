@@ -19,7 +19,11 @@ func robotsTxt(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	fmt.Fprintln(&buf, "User-agent: *")
 	if os.Getenv("ROBOTS_TXT_ALLOW") != "" {
-		fmt.Fprintln(&buf, "Allow: /")
+		// Disallow user profiles only. On sourcegraph.com user
+		// profiles list github repos, which means crawlers will find
+		// repos not linked to anywhere else on the web and trigger a
+		// clone.
+		fmt.Fprintln(&buf, "Disallow: /~")
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
