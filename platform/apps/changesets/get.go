@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/apps/tracker/issues"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/platform/notifications"
 
@@ -42,8 +43,9 @@ func serveList(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("no repo found in context")
 	}
 	var q struct {
-		Closed bool `schema:"closed"`
-		Page   int  `schema:"page"`
+		Closed   bool `schema:"closed"`
+		Assigned bool `schema:"assigned"`
+		Page     int  `schema:"page"`
 	}
 	schemaDecoder.Decode(&q, r.URL.Query())
 	if q.Page == 0 {
@@ -53,12 +55,22 @@ func serveList(w http.ResponseWriter, r *http.Request) error {
 	op := &sourcegraph.ChangesetListOp{
 		Repo:   repo.URI,
 		Closed: q.Closed,
-		Open:   !q.Closed,
+		Open:   !q.Closed && !q.Assigned,
 		ListOptions: sourcegraph.ListOptions{
 			PerPage: 10,
 			Page:    int32(q.Page),
 		},
 	}
+
+	if q.Assigned {
+		a := authpkg.ActorFromContext(ctx)
+		op.NeedsReview = &sourcegraph.UserSpec{
+			Domain: a.Domain,
+			Login:  a.Login,
+			UID:    int32(a.UID),
+		}
+	}
+
 	list, err := sg.Changesets.List(ctx, op)
 	if err != nil {
 		return err

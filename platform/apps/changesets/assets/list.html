@@ -6,6 +6,9 @@
 		<li class="{{if .Op.Closed}}active{{end}}">
 			<a href="{{$.BaseURI}}?closed=true"><span class="octicon octicon-x"></span>Closed</a>
 		</li>
+		<li class="{{if .Op.NeedsReview}}active{{end}}">
+			<a href="{{$.BaseURI}}?assigned=true"><span class="octicon octicon-checklist"></span>Assigned to me</a>
+		</li>
 	</ul>
 
 	<a class="btn btn-sgblue compare-review" href="{{urlToCompare $.Ctx}}">
@@ -16,7 +19,11 @@
 
 	<div class="changeset-list-tab-content">
 		{{if eq (len .List) 0}}
-			<div class="changeset-empty-list">No {{if .Op.Closed}}closed{{else}}open{{end}} changesets.</div>
+			{{if .Op.NeedsReview}}
+				<div class="changeset-empty-list">No open changesets are assigned to you and require review.</div>
+			{{else}}
+				<div class="changeset-empty-list">No {{if .Op.Closed}}closed{{else}}open{{end}} changesets.</div>
+			{{end}}
 		{{else}}
 			<table>
 				<tbody>
