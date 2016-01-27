@@ -3,19 +3,17 @@ package gitserver
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-
 	"strings"
 
+	"github.com/sourcegraph/mux"
+	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-
-	"github.com/sourcegraph/mux"
 )
 
 // AddHandlers adds git HTTP handlers to r.
@@ -58,7 +56,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 	http.Error(w, displayErrBody, status)
 	if status < 200 || status >= 500 {
-		log.Printf("%s %s %d: %s", r.Method, r.URL.RequestURI(), status, err.Error())
+		log15.Debug("gitserver.handleError called with unsuccessful status code", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err.Error())
 	}
 }
 

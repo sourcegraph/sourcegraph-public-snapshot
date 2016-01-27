@@ -4,14 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/schema"
+	"github.com/sourcegraph/mux"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/csp"
 	"src.sourcegraph.com/sourcegraph/conf"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-
-	"github.com/gorilla/schema"
-	"github.com/sourcegraph/mux"
 )
 
 // NewHandler returns a new API handler that uses the provided API
@@ -112,6 +112,6 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 	http.Error(w, displayErrBody, status)
 	if status < 200 || status >= 500 {
-		log.Printf("%s %s %d: %s", r.Method, r.URL.RequestURI(), status, err.Error())
+		log15.Debug("httpapi.handleError called with unsuccessful status code", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err.Error())
 	}
 }

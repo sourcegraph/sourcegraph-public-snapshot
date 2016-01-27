@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/schema"
-	"github.com/sourcegraph/mux"
-
 	"reflect"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/gorilla/schema"
+	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
@@ -101,5 +99,5 @@ func serveError(w http.ResponseWriter, req *http.Request, status int, err error)
 	if err != nil {
 		log.Printf("Error during encoding error response: %s", err)
 	}
-	log.Println(msg)
+	log.Println("ui.serveError serving error:", msg)
 }

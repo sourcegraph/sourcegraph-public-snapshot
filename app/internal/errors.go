@@ -1,15 +1,16 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"reflect"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
+	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 // ErrorHandler is a func that renders a custom error page for the
@@ -59,7 +60,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 			return
 		}
 	} else if grpc.Code(err) == codes.Unauthenticated {
-		log.Printf("Redirecting to login from %s (got Unauthenticated gRPC code: %v).", req.URL, err)
+		log15.Debug("redirecting to login", "from", req.URL, "grpc_code", err)
 		err = UnauthorizedErrorHandler(resp, req, err)
 		if err == nil {
 			return
@@ -79,8 +80,21 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 	}
 
 	if status < 200 || status >= 500 {
-		log.Printf("%s %s %d: %s", req.Method, req.URL.RequestURI(), status, err.Error())
+		log15.Debug("app/internal.HandleError called with unsuccessful status code", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err.Error())
 	}
+
+	// Handle potential panic during execution of error template, since it may call out to
+	// code provided by an external platform app (e.g., via the GlobalApp.IconBadge callback).
+	defer func() {
+		if e := recover(); e != nil {
+			log15.Error("panic during execution of error template", "error", e, "func_name", "HandleError", "tmpl_name", "error/error.html")
+			err := fmt.Errorf("panic during execution of error template: %v", e)
+			if !handlerutil.DebugMode(req) {
+				err = errPublicFacingErrorMessage
+			}
+			http.Error(resp, err.Error(), http.StatusInternalServerError)
+		}
+	}()
 
 	errHeader := http.Header{"cache-control": []string{"no-cache"}}
 	err2 := tmpl.Exec(req, resp, "error/error.html", status, errHeader, &struct {
@@ -94,6 +108,20 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		Err:        err,
 	})
 	if err2 != nil {
-		log.Printf("Error during execution of error template: %s.", err2)
+		log15.Error("error during execution of error template", "error", err2)
+		err := fmt.Errorf("error during execution of error template: %v", err2)
+		if !handlerutil.DebugMode(req) {
+			err = errPublicFacingErrorMessage
+		}
+		http.Error(resp, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+// errPublicFacingErrorMessage is the public facing error message to display
+// when not in debug mode (to hide potentially sensitive information in original
+// error message). Normally, an HTML template is used to do this, but if rendering that fails,
+// this is the plain-text backup.
+var errPublicFacingErrorMessage = errors.New(`Sorry, there’s been a problem.
+
+If this issue persists, please post an issue in our tracker (https://src.sourcegraph.com/sourcegraph/.tracker/new)
+with steps to reproduce and other useful context. Or, contact us by email (help@sourcegraph.com).`)
