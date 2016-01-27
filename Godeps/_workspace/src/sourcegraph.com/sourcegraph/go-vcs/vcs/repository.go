@@ -8,6 +8,9 @@ import (
 
 // A Repository is a VCS repository.
 type Repository interface {
+	// Close closes all file handles opened by the repository.
+	Close() error
+
 	// ResolveRevision returns the revision that the given revision
 	// specifier resolves to, or a non-nil error if there is no such
 	// revision.

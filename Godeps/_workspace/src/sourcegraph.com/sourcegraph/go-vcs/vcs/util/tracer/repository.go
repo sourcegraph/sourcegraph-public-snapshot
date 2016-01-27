@@ -15,6 +15,10 @@ type repository struct {
 	rec *appdash.Recorder
 }
 
+func (r repository) Close() error {
+	return r.r.Close()
+}
+
 // ResolveRevision implements the vcs.Repository interface.
 func (r repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	start := time.Now()

@@ -17,7 +17,7 @@ func (repo *Repository) TagPath(tagName string) string {
 
 // GetTags returns all tags of given repository.
 func (repo *Repository) GetTags() ([]string, error) {
-	return repo.listRefs("refs/tags/")
+	return repo.readRefDir("refs/tags", "")
 }
 
 func (repo *Repository) CreateTag(tagName, idStr string) error {
@@ -34,12 +34,7 @@ func (repo *Repository) GetTag(tagName string) (*Tag, error) {
 		return nil, err
 	}
 
-	id, err := NewIdFromString(string(d))
-	if err != nil {
-		return nil, err
-	}
-
-	tag, err := repo.getTag(id)
+	tag, err := repo.getTag(ObjectIDHex(string(d)))
 	if err != nil {
 		return nil, err
 	}
@@ -47,29 +42,22 @@ func (repo *Repository) GetTag(tagName string) (*Tag, error) {
 	return tag, nil
 }
 
-func (repo *Repository) getTag(id sha1) (*Tag, error) {
-	repo.tagCacheMu.Lock()
-	defer repo.tagCacheMu.Unlock()
-
+func (repo *Repository) getTag(id ObjectID) (*Tag, error) {
 	if repo.tagCache != nil {
 		if c, ok := repo.tagCache[id]; ok {
 			return c, nil
 		}
 	} else {
-		repo.tagCache = make(map[sha1]*Tag, 10)
+		repo.tagCache = make(map[ObjectID]*Tag, 10)
 	}
 
-	tp, _, dataRc, err := repo.getRawObject(id, false)
+	o, err := repo.object(id, false)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		dataRc.Close()
-	}()
-
 	// tag with only reference to commit
-	if tp == ObjectCommit {
+	if o.Type == ObjectCommit {
 		tag := new(Tag)
 		tag.Id = id
 		tag.Object = id
@@ -81,17 +69,11 @@ func (repo *Repository) getTag(id sha1) (*Tag, error) {
 	}
 
 	// tag with message
-	if tp != ObjectTag {
+	if o.Type != ObjectTag {
 		return nil, errors.New("Expected tag type, read error.")
 	}
 
-	// TODO reader
-	data, err := ioutil.ReadAll(dataRc)
-	if err != nil {
-		return nil, err
-	}
-
-	tag, err := parseTagData(data)
+	tag, err := parseTagData(o.Data)
 	if err != nil {
 		return nil, err
 	}

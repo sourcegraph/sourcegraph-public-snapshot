@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 
@@ -66,15 +67,13 @@ func createArchive(tree *Tree, streamer cae.Streamer, relPaths ...string) error 
 				return err
 			}
 		} else {
-			dataRc, err := te.Blob().Data()
+			data, err := te.Blob().Data()
 			if err != nil {
 				return err
 			}
-			if err := streamer.StreamReader(relPath, te, dataRc); err != nil {
-				dataRc.Close()
+			if err := streamer.StreamReader(relPath, te, bytes.NewReader(data)); err != nil {
 				return err
 			}
-			dataRc.Close()
 		}
 	}
 

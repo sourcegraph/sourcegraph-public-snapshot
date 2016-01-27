@@ -51,7 +51,7 @@ func (bs Entries) Sort() {
 }
 
 type TreeEntry struct {
-	Id   sha1
+	Id   ObjectID
 	Type ObjectType
 
 	mode EntryMode
@@ -85,13 +85,13 @@ func (te *TreeEntry) Size() int64 {
 		return te.size
 	}
 
-	size, err := te.ptree.repo.objectSize(te.Id)
+	o, err := te.ptree.repo.object(te.Id, true)
 	if err != nil {
 		return 0
 	}
 
 	te.sized = true
-	te.size = size
+	te.size = int64(o.Size)
 	return te.size
 }
 

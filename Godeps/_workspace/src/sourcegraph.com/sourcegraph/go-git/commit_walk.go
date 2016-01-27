@@ -12,7 +12,7 @@ var (
 type CommitWalkFunc func(path []*Commit, current *Commit, err error) error
 
 type walkStack struct {
-	parents []sha1
+	parents []ObjectID
 	path    []*Commit
 }
 
@@ -21,12 +21,12 @@ type walkStack struct {
 func (c *Commit) Walk(walkFn CommitWalkFunc) error {
 	stack := []walkStack{
 		{
-			parents: []sha1{c.Id},
+			parents: []ObjectID{c.Id},
 			path:    []*Commit{},
 		},
 	}
 
-	var id sha1
+	var id ObjectID
 	for len(stack) > 0 {
 		s := stack[0]
 		id, s.parents = s.parents[0], s.parents[1:]

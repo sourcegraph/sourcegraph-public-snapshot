@@ -5,9 +5,9 @@ import "bytes"
 // Tag
 type Tag struct {
 	Name       string
-	Id         sha1
+	Id         ObjectID
 	repo       *Repository
-	Object     sha1 // The id of this commit object
+	Object     ObjectID // The id of this commit object
 	Type       string
 	Tagger     *Signature
 	TagMessage string
@@ -34,11 +34,7 @@ l:
 			reftype := line[:spacepos]
 			switch string(reftype) {
 			case "object":
-				id, err := NewIdFromString(string(line[spacepos+1:]))
-				if err != nil {
-					return nil, err
-				}
-				tag.Object = id
+				tag.Object = ObjectIDHex(string(line[spacepos+1:]))
 			case "type":
 				// A commit can have one or more parents
 				tag.Type = string(line[spacepos+1:])

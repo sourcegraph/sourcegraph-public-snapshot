@@ -12,17 +12,15 @@ type TreeScanner struct {
 	parent *Tree
 
 	*bufio.Scanner
-	closer io.Closer
 
 	treeEntry *TreeEntry
 	err       error
 }
 
-func NewTreeScanner(parent *Tree, rc io.ReadCloser) *TreeScanner {
+func NewTreeScanner(parent *Tree, r io.Reader) *TreeScanner {
 	ts := &TreeScanner{
 		parent:  parent,
-		Scanner: bufio.NewScanner(rc),
-		closer:  rc,
+		Scanner: bufio.NewScanner(r),
 	}
 	ts.Split(ScanTreeEntry)
 	return ts
@@ -41,10 +39,7 @@ func (t *TreeScanner) parse() error {
 	}
 
 	modeString, name := string(match[1]), string(match[2])
-	id, err := NewId(data[len(match[0]):])
-	if err != nil {
-		return err
-	}
+	id := ObjectID(data[len(match[0]):])
 
 	entryMode, objectType, err := ParseModeType(modeString)
 	if err != nil {
@@ -64,11 +59,6 @@ func (t *TreeScanner) parse() error {
 
 func (t *TreeScanner) Scan() bool {
 	if !t.Scanner.Scan() {
-		if t.closer != nil {
-			// Upon hitting any error, close the input.
-			t.closer.Close()
-			t.closer = nil
-		}
 		return false
 	}
 

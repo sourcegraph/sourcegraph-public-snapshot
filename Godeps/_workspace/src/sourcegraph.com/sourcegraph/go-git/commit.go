@@ -6,16 +6,17 @@ import (
 )
 
 var ErrDisjoint = errors.New("commit trees are disjoint")
+var IDNotExist = errors.New("object id not exist")
 
 // Commit represents a git commit.
 type Commit struct {
 	Tree
-	Id            sha1 // The id of this commit object
+	Id            ObjectID // The id of this commit object
 	Author        *Signature
 	Committer     *Signature
 	CommitMessage string
 
-	parents []sha1 // sha1 strings
+	parents []ObjectID // ObjectID strings
 }
 
 func (c *Commit) Summary() string {
@@ -41,16 +42,16 @@ func (c *Commit) Parent(n int) (*Commit, error) {
 }
 
 // Return oid of the parent number n (0-based index). Return nil if no such parent exists.
-func (c *Commit) ParentId(n int) (id sha1, err error) {
+func (c *Commit) ParentId(n int) (id ObjectID, err error) {
 	if n >= len(c.parents) {
-		err = IdNotExist
+		err = IDNotExist
 		return
 	}
 	return c.parents[n], nil
 }
 
 // Return the parent ids.
-func (c *Commit) ParentIds() []sha1 {
+func (c *Commit) ParentIds() []ObjectID {
 	return c.parents
 }
 
@@ -75,7 +76,7 @@ func (c *Commit) BehindAhead(commitId string) (behind int, ahead int, treeErr er
 	}
 	targetId := targetCommit.Id
 	found := errors.New("found")
-	seen := map[sha1]int{}
+	seen := map[ObjectID]int{}
 	err = c.Walk(func(path []*Commit, cur *Commit, err error) error {
 		seen[cur.Id] = len(path)
 		if cur.Id == targetId {
@@ -114,13 +115,13 @@ func (c *Commit) BehindAhead(commitId string) (behind int, ahead int, treeErr er
 //
 // TODO: Use a bitmap index for reachability (https://github.com/shazow/go-git/issues/4)
 func (c *Commit) IsAncestor(commitId string) bool {
-	ancestorId, err := NewIdFromString(commitId)
-	if err != nil || ancestorId == c.Id {
+	ancestorId := ObjectIDHex(commitId)
+	if ancestorId == c.Id {
 		return false
 	}
 
 	found := errors.New("found")
-	err = c.Walk(func(path []*Commit, cur *Commit, err error) error {
+	err := c.Walk(func(path []*Commit, cur *Commit, err error) error {
 		if err != nil {
 			// We're not expecting any errors.
 			return err
@@ -137,6 +138,6 @@ func (c *Commit) IsAncestor(commitId string) bool {
 }
 
 // Return oid of the (root) tree of this commit.
-func (c *Commit) TreeId() sha1 {
+func (c *Commit) TreeId() ObjectID {
 	return c.Tree.Id
 }

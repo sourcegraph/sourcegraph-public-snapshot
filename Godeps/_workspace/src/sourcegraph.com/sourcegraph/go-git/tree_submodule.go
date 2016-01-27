@@ -1,5 +1,7 @@
 package git
 
+import "bytes"
+
 // GetSubmodules returns the submodules in this commit tree (parsed from .gitmodules)
 func (t *Tree) GetSubmodules() ([]*Submodule, error) {
 	blob, err := t.GetBlobByPath(".gitmodules")
@@ -11,10 +13,9 @@ func (t *Tree) GetSubmodules() ([]*Submodule, error) {
 		return nil, err
 	}
 
-	r, err := blob.Data()
+	data, err := blob.Data()
 	if err != nil {
 		return nil, err
 	}
-	defer r.Close()
-	return parseSubmoduleConfig(r)
+	return parseSubmoduleConfig(bytes.NewReader(data))
 }

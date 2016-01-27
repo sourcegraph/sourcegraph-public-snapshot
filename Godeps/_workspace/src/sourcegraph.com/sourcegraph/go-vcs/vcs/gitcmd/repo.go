@@ -50,6 +50,11 @@ type Repository struct {
 	editLock sync.RWMutex // protects ops that change repository data
 }
 
+func (r *Repository) Close() error {
+	// nothing to do
+	return nil
+}
+
 func (r *Repository) RepoDir() string {
 	return r.Dir
 }

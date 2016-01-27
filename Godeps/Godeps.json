@@ -407,8 +407,8 @@
 			"Rev": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7"
 		},
 		{
-			"ImportPath": "github.com/shazow/go-git",
-			"Rev": "068b0683f7feeb7c6c75cba3b05558fcb8a6b570"
+			"ImportPath": "sourcegraph.com/sourcegraph/go-git",
+			"Rev": "bf71a6d8ba148ffa8071d24651d1ca2fc33bbf80"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/github_flavored_markdown",
@@ -829,7 +829,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
-			"Rev": "9c023b43ac9f716b509c152501873800808dba66"
+			"Rev": "0c23690f84e3ce263213b44fc806c604a5ec03a5"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
@@ -903,11 +903,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/git",
-			"Rev": "5c45ab51b8215bcc49fac1a14cd46441cd279249"
+			"Rev": "7dc7b4ac241b7cc5c14d1cc4dfa69d132d37cda0"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/vcsclient",
-			"Rev": "5c45ab51b8215bcc49fac1a14cd46441cd279249"
+			"Rev": "7dc7b4ac241b7cc5c14d1cc4dfa69d132d37cda0"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",

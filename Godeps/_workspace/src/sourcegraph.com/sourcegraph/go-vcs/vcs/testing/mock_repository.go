@@ -6,6 +6,8 @@ import (
 )
 
 type MockRepository struct {
+	Close_ func() error
+
 	ResolveRevision_ func(spec string) (vcs.CommitID, error)
 	ResolveTag_      func(name string) (vcs.CommitID, error)
 	ResolveBranch_   func(name string) (vcs.CommitID, error)
@@ -35,6 +37,10 @@ var (
 		vcs.Blamer
 	} = MockRepository{}
 )
+
+func (r MockRepository) Close() error {
+	return r.Close_()
+}
 
 func (r MockRepository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	return r.ResolveRevision_(spec)

@@ -1,7 +1,7 @@
 package git
 
 import (
-	"github.com/shazow/go-git"
+	"sourcegraph.com/sourcegraph/go-git"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 )
 

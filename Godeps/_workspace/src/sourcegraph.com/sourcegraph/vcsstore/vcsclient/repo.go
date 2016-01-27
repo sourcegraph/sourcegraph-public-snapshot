@@ -57,6 +57,11 @@ type CloneInfo struct {
 	vcs.RemoteOpts
 }
 
+func (r *repository) Close() error {
+	// ignored, because each remote call is stateless
+	return nil
+}
+
 func (r *repository) CloneOrUpdate(cloneInfo *CloneInfo) error {
 	url, err := r.url(RouteRepo, nil, nil)
 	if err != nil {

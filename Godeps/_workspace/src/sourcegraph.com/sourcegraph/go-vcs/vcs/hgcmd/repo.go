@@ -67,6 +67,11 @@ type Repository struct {
 	Dir string
 }
 
+func (r *Repository) Close() error {
+	// nothing to do
+	return nil
+}
+
 func (r *Repository) RepoDir() string {
 	return r.Dir
 }

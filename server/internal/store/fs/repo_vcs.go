@@ -29,6 +29,12 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	if err != nil {
 		return nil, err
 	}
+
+	go func() {
+		<-ctx.Done()
+		r.Close()
+	}()
+
 	return tracer.Wrap(r, traceutil.Recorder(ctx)), nil
 }
 

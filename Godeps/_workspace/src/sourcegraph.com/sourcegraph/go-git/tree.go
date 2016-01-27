@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"errors"
 	"path"
 	"strings"
@@ -17,7 +18,7 @@ type TreeWalkFunc func(path string, te *TreeEntry, err error) error
 
 // A tree is a flat directory listing.
 type Tree struct {
-	Id   sha1
+	Id   ObjectID
 	repo *Repository
 
 	// parent tree
@@ -123,7 +124,7 @@ func (t *Tree) ListEntries() (Entries, error) {
 	return t.entries, nil
 }
 
-func NewTree(repo *Repository, id sha1) *Tree {
+func NewTree(repo *Repository, id ObjectID) *Tree {
 	tree := new(Tree)
 	tree.Id = id
 	tree.repo = repo
@@ -131,9 +132,9 @@ func NewTree(repo *Repository, id sha1) *Tree {
 }
 
 func (t *Tree) Scanner() (*TreeScanner, error) {
-	_, _, r, err := t.repo.getRawObject(t.Id, false)
+	o, err := t.repo.object(t.Id, false)
 	if err != nil {
 		return nil, err
 	}
-	return NewTreeScanner(t, r), nil
+	return NewTreeScanner(t, bytes.NewReader(o.Data)), nil
 }

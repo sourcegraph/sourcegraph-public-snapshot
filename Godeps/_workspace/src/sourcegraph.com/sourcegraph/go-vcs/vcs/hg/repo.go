@@ -72,6 +72,11 @@ func Open(dir string) (*Repository, error) {
 	return &Repository{cr, r, st, cl, allTags, bh}, nil
 }
 
+func (r *Repository) Close() error {
+	// nothing to do
+	return nil
+}
+
 func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	if id, err := r.ResolveBranch(spec); err == nil {
 		return id, nil

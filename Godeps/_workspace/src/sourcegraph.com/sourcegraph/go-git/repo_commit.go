@@ -70,15 +70,15 @@ start:
 
 	allMatches := refRexp.FindAllStringSubmatch(string(f), 1)
 	if allMatches == nil {
-		// let's assume this is a sha1
+		// let's assume this is a ObjectID
 		if len(f) < 40 {
-			return "", errors.New("sha1 hash too short")
+			return "", errors.New("ObjectID hash too short")
 		}
-		sha1 := string(f[:40])
-		if !IsSha1(sha1) {
-			return "", fmt.Errorf("heads file wrong sha1 string %s", sha1)
+		id := string(f[:40])
+		if !IsObjectIDHex(id) {
+			return "", fmt.Errorf("heads file wrong ObjectID string %s", id)
 		}
-		return sha1, nil
+		return id, nil
 	}
 	// yes, it's "ref: something". Now let's lookup "something"
 	refpath = allMatches[0][1]
@@ -110,42 +110,24 @@ func (repo *Repository) getCommitIdOfPackedRef(refpath string) ([]byte, error) {
 
 // Find the commit object in the repository.
 func (repo *Repository) GetCommit(commitId string) (*Commit, error) {
-	id, err := NewIdFromString(commitId)
-	if err != nil {
-		return nil, err
-	}
-
-	return repo.getCommit(id)
+	return repo.getCommit(ObjectIDHex(commitId))
 }
 
-func (repo *Repository) getCommit(id sha1) (*Commit, error) {
-	repo.commitCacheMu.Lock()
-	defer repo.commitCacheMu.Unlock()
-
+func (repo *Repository) getCommit(id ObjectID) (*Commit, error) {
 	if repo.commitCache != nil {
 		if c, ok := repo.commitCache[id]; ok {
 			return c, nil
 		}
 	} else {
-		repo.commitCache = make(map[sha1]*Commit, 10)
+		repo.commitCache = make(map[ObjectID]*Commit, 10)
 	}
 
-	_, _, dataRc, err := repo.getRawObject(id, false)
+	o, err := repo.object(id, false)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		dataRc.Close()
-	}()
-
-	// TODO reader
-	data, err := ioutil.ReadAll(dataRc)
-	if err != nil {
-		return nil, err
-	}
-
-	commit, err := parseCommitData(data)
+	commit, err := parseCommitData(o.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +149,7 @@ func (repo *Repository) CommitsBetween(last *Commit, before *Commit) (*list.List
 	var err error
 	cur := last
 	for {
-		if cur.Id.Equal(before.Id) {
+		if cur.Id == before.Id {
 			break
 		}
 		l.PushBack(cur)
@@ -183,22 +165,17 @@ func (repo *Repository) CommitsBetween(last *Commit, before *Commit) (*list.List
 }
 
 func (repo *Repository) CommitsBefore(commitId string) (*list.List, error) {
-	id, err := NewIdFromString(commitId)
-	if err != nil {
-		return nil, err
-	}
-
-	return repo.getCommitsBefore(id)
+	return repo.getCommitsBefore(ObjectIDHex(commitId))
 }
 
-func (repo *Repository) getCommitsBefore(id sha1) (*list.List, error) {
+func (repo *Repository) getCommitsBefore(id ObjectID) (*list.List, error) {
 	l := list.New()
 	lock := new(sync.Mutex)
 	err := repo.commitsBefore(lock, l, nil, id, 0)
 	return l, err
 }
 
-func (repo *Repository) commitsBefore(lock *sync.Mutex, l *list.List, parent *list.Element, id sha1, limit int) error {
+func (repo *Repository) commitsBefore(lock *sync.Mutex, l *list.List, parent *list.Element, id ObjectID, limit int) error {
 	commit, err := repo.getCommit(id)
 	if err != nil {
 		return err
@@ -213,7 +190,7 @@ func (repo *Repository) commitsBefore(lock *sync.Mutex, l *list.List, parent *li
 		for {
 			if in == nil {
 				break
-			} else if in.Value.(*Commit).Id.Equal(commit.Id) {
+			} else if in.Value.(*Commit).Id == commit.Id {
 				//lock.Unlock()
 				return nil
 			} else {

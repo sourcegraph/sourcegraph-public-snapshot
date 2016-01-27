@@ -7,7 +7,7 @@ import "bytes"
 // \n\n separate headers from message
 func parseCommitData(data []byte) (*Commit, error) {
 	commit := new(Commit)
-	commit.parents = make([]sha1, 0, 1)
+	commit.parents = make([]ObjectID, 0, 1)
 	// we now have the contents of the commit object. Let's investigate...
 	nextline := 0
 l:
@@ -25,18 +25,10 @@ l:
 			reftype := line[:spacepos]
 			switch string(reftype) {
 			case "tree":
-				id, err := NewIdFromString(string(line[spacepos+1:]))
-				if err != nil {
-					return nil, err
-				}
-				commit.Tree.Id = id
+				commit.Tree.Id = ObjectIDHex(string(line[spacepos+1:]))
 			case "parent":
 				// A commit can have one or more parents
-				oid, err := NewIdFromString(string(line[spacepos+1:]))
-				if err != nil {
-					return nil, err
-				}
-				commit.parents = append(commit.parents, oid)
+				commit.parents = append(commit.parents, ObjectIDHex(string(line[spacepos+1:])))
 			case "author":
 				sig, err := newSignatureFromCommitline(line[spacepos+1:])
 				if err != nil {

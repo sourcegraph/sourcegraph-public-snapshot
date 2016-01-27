@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/shazow/go-git"
 	"golang.org/x/tools/godoc/vfs"
+	"sourcegraph.com/sourcegraph/go-git"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
 	"sourcegraph.com/sqs/pbtypes"
@@ -64,6 +64,10 @@ func Open(dir string) (*Repository, error) {
 	}, nil
 }
 
+func (r *Repository) Close() error {
+	return r.repo.Close()
+}
+
 // ResolveRevision returns the revision that the given revision
 // specifier resolves to, or a non-nil error if there is no such
 // revision.
@@ -99,7 +103,7 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 // ErrTagNotFound if no such tag exists.
 func (r *Repository) ResolveTag(name string) (vcs.CommitID, error) {
 	id, err := r.repo.GetCommitIdOfTag(name)
-	if git.IsNotFound(err) {
+	if _, ok := err.(git.RefNotFound); ok {
 		return "", vcs.ErrTagNotFound
 	} else if err != nil {
 		// Unexpected error
@@ -112,7 +116,7 @@ func (r *Repository) ResolveTag(name string) (vcs.CommitID, error) {
 // ErrBranchNotFound if no such branch exists.
 func (r *Repository) ResolveBranch(name string) (vcs.CommitID, error) {
 	id, err := r.repo.GetCommitIdOfBranch(name)
-	if git.IsNotFound(err) {
+	if _, ok := err.(git.RefNotFound); ok {
 		return "", vcs.ErrBranchNotFound
 	} else if err != nil {
 		// Unexpected error
