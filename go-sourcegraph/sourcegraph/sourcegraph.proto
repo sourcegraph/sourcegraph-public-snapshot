@@ -1116,6 +1116,10 @@ message ChangesetListOp {
 	// Closed, when true, will only return closed changeset.
 	bool Closed = 3;
 
+	// NeedsReview, when set, will only return changesets that need review by the
+	// given user (are open and not LGTM'd by that user).
+	UserSpec NeedsReview = 6;
+
 	// Head, if set, will restrict the returned list to only changesets
 	// that have this branch as head.
 	string Head = 4;
