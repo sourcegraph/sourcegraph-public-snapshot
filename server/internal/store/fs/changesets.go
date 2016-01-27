@@ -42,6 +42,8 @@ const (
 	changesetIndexOpenDir   = "index_open"
 	changesetIndexClosedDir = "index_closed"
 
+	changesetIndexNeedsReview = "index_needs_review_"
+
 	defaultCommitMessageTmpl = "{{.Title}}\n\nMerge changeset #{{.ID}}\n\n{{.Description}}"
 )
 
@@ -78,6 +80,11 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 			if reviewer.UserSpec.Domain != a.Domain || reviewer.UserSpec.UID != int32(a.UID) {
 				reviewer.LGTM = false
 			}
+
+			// The CS needs review by the reviewer, so update the index.
+			if err := s.updateNeedsReviewIndex(ctx, fs, cs.ID, reviewer.UserSpec, true); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -93,7 +100,7 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	err = platformstorage.PutJSON(fs, id, changesetMetadataFile, cs)
 	if err == nil {
 		// Update the index with the changeset's current state.
-		s.updateIndex(ctx, fs, cs.ID, true)
+		s.updateIndex(ctx, fs, cs, true)
 	}
 	return err
 }
@@ -212,7 +219,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		after.Merged = true
 	}
 
-	addReviewer := func(add sourcegraph.UserSpec, lgtm bool) {
+	addReviewer := func(add sourcegraph.UserSpec, lgtm bool) error {
 		// Check they aren't already a reviewer.
 		already := false
 		for _, reviewer := range after.Reviewers {
@@ -226,7 +233,13 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 				UserSpec: add,
 				LGTM:     lgtm,
 			})
+
+			// The CS needs review by the reviewer, so update the index.
+			if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, add, true); err != nil {
+				return err
+			}
 		}
+		return nil
 	}
 
 	// Add a reviewer to the CS.
@@ -237,7 +250,9 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		if err != nil {
 			return nil, err
 		}
-		addReviewer(addUser.Spec(), false)
+		if err := addReviewer(addUser.Spec(), false); err != nil {
+			return nil, err
+		}
 	}
 
 	// Remove a reviewer from the CS.
@@ -253,6 +268,11 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			if reviewer.UserSpec.Domain == remove.Domain && reviewer.UserSpec.UID == remove.UID {
 				// Delete from slice.
 				after.Reviewers = append(after.Reviewers[:i], after.Reviewers[i+1:]...)
+
+				// The CS no longer needs review by the reviewer, so update the index.
+				if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, reviewer.UserSpec, false); err != nil {
+					return nil, err
+				}
 				break
 			}
 		}
@@ -276,13 +296,27 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 				if reviewer.UserSpec.Domain == a.Domain && reviewer.UserSpec.UID == int32(a.UID) {
 					reviewer.LGTM = op.LGTM
 					updated = true
+
+					if op.LGTM {
+						// The CS no longer needs review by the reviewer, so update the index.
+						if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, reviewer.UserSpec, false); err != nil {
+							return nil, err
+						}
+					} else {
+						// The CS needs review by the reviewer, so update the index.
+						if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, reviewer.UserSpec, true); err != nil {
+							return nil, err
+						}
+					}
 					break
 				}
 			}
 			// Per the gRPC definition, if they aren't already a reviewer we will make
 			// them one.
 			if !updated {
-				addReviewer(authorUser.Spec(), op.LGTM)
+				if err := addReviewer(authorUser.Spec(), op.LGTM); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -319,7 +353,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	if err != nil {
 		return nil, err
 	}
-	s.updateIndex(ctx, fs, op.ID, after.ClosedAt == nil)
+	s.updateIndex(ctx, fs, &after, after.ClosedAt == nil)
 
 	var evt *sourcegraph.ChangesetEvent
 	if shouldRegisterEvent(op) {
@@ -506,6 +540,8 @@ func shouldRegisterEvent(op *sourcegraph.ChangesetUpdateOp) bool {
 	return op.Merged || op.Close || op.Open || op.Title != "" || op.Description != "" || op.LGTM || op.NotLGTM || op.AddReviewer != nil || op.RemoveReviewer != nil
 }
 
+var errInvalidListOp = errors.New("invalid list operation")
+
 func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
 	fs := s.storage(ctx, op.Repo)
 
@@ -518,7 +554,14 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		return nil, err
 	}
 
-	var open, closed map[int64]bool
+	var open, closed, needsReview map[int64]bool
+	if op.Open && op.Closed {
+		// TODO(slimsag): consider supporting this
+		return nil, errInvalidListOp
+	}
+	if op.NeedsReview != nil {
+		needsReview, err = s.indexList(ctx, fs, changesetIndexNeedsReview+strconv.Itoa(int(op.NeedsReview.UID)))
+	}
 	if op.Open {
 		open, err = s.indexList(ctx, fs, changesetIndexOpenDir)
 	}
@@ -537,7 +580,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 			continue
 		}
 
-		if (op.Open && open[int64(id)]) || (op.Closed && closed[int64(id)]) {
+		if (op.Open && open[int64(id)]) || (op.Closed && closed[int64(id)]) || (op.NeedsReview != nil && needsReview[int64(id)]) {
 			ids = append(ids, id)
 		}
 	}
@@ -612,18 +655,44 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 	return &list, nil
 }
 
+// updateNeedsReviewIndex updates the review index with whether or not the user,
+// u, needs to review the specified changeset or not.
+func (s *Changesets) updateNeedsReviewIndex(ctx context.Context, fs platformstorage.System, csID int64, u sourcegraph.UserSpec, needsReview bool) error {
+	bucket := changesetIndexNeedsReview + strconv.Itoa(int(u.UID))
+	if needsReview {
+		return s.indexAdd(ctx, fs, csID, bucket)
+	}
+	return s.indexRemove(ctx, fs, csID, bucket)
+}
+
 // updateIndex updates the index with the given changeset state (whether or not
 // it is opened or closed).
-func (s *Changesets) updateIndex(ctx context.Context, fs platformstorage.System, cid int64, open bool) error {
+func (s *Changesets) updateIndex(ctx context.Context, fs platformstorage.System, cs *sourcegraph.Changeset, open bool) error {
 	var adds, removes []string
 	if open {
 		// Changeset opened.
 		adds = append(adds, changesetIndexOpenDir)
 		removes = append(removes, changesetIndexClosedDir)
+
+		// All reviewers in the CS who have not already LGTM'd it need to review it.
+		for _, r := range cs.Reviewers {
+			if !r.LGTM {
+				if err := s.updateNeedsReviewIndex(ctx, fs, cs.ID, r.UserSpec, true); err != nil {
+					return err
+				}
+			}
+		}
 	} else {
 		// Changeset closed.
 		adds = append(adds, changesetIndexClosedDir)
 		removes = append(removes, changesetIndexOpenDir)
+
+		// All reviewers in the CS no longer need to review it.
+		for _, r := range cs.Reviewers {
+			if err := s.updateNeedsReviewIndex(ctx, fs, cs.ID, r.UserSpec, false); err != nil {
+				return err
+			}
+		}
 	}
 
 	// We need the state between open and closed to stay consistent. We
@@ -634,14 +703,14 @@ func (s *Changesets) updateIndex(ctx context.Context, fs platformstorage.System,
 
 	// Perform additions.
 	for _, indexDir := range adds {
-		if err := s.indexAdd(ctx, fs, cid, indexDir); err != nil {
+		if err := s.indexAdd(ctx, fs, cs.ID, indexDir); err != nil {
 			return err
 		}
 	}
 
 	// Perform removals.
 	for _, indexDir := range removes {
-		if err := s.indexRemove(ctx, fs, cid, indexDir); err != nil {
+		if err := s.indexRemove(ctx, fs, cs.ID, indexDir); err != nil {
 			return err
 		}
 	}
