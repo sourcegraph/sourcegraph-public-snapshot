@@ -1,4 +1,4 @@
-# dev
+# 0.13.1
 
 - Promote Notification Center feature to default on (it previously had to be toggled on via a flag).
   It allows receiving notifications in a centralized manner in a web UI. New notifications
