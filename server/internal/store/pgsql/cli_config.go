@@ -26,5 +26,7 @@ func init() {
 		Users:               &users{},
 		Changesets:          &fs.Changesets{},
 		Invites:             &invites{},
+		RepoPerms:           &repoPerms{},
+		Waitlist:            &waitlist{},
 	})
 }

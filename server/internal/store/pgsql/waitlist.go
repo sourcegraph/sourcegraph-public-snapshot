@@ -31,7 +31,7 @@ func init() {
 		`ALTER TABLE user_waitlist ALTER COLUMN granted_at TYPE timestamp with time zone USING granted_at::timestamp with time zone;`,
 	)
 
-	Schema.Map.AddTableWithName(userWaitlistRow{}, "org_waitlist").SetKeys(false, "Name")
+	Schema.Map.AddTableWithName(orgWaitlistRow{}, "org_waitlist").SetKeys(false, "Name")
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE org_waitlist ALTER COLUMN added_at TYPE timestamp with time zone USING added_at::timestamp with time zone;`,
 		`ALTER TABLE org_waitlist ALTER COLUMN granted_at TYPE timestamp with time zone USING granted_at::timestamp with time zone;`,
@@ -205,7 +205,7 @@ func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted boo
 		whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
 	}
 	sql := fmt.Sprintf(`SELECT * FROM org_waitlist WHERE %s`, whereSQL)
-	if err := dbh(ctx).Select(&orgWaitlistRows, sql); err != nil {
+	if err := dbh(ctx).Select(&orgWaitlistRows, sql, args...); err != nil {
 		return nil, err
 	}
 

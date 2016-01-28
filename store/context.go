@@ -37,6 +37,7 @@ type Stores struct {
 	RepoOriginWithAuthorizedSSHKeys RepoOriginWithAuthorizedSSHKeys
 	RepoOriginWithCommitStatuses    RepoOriginWithCommitStatuses
 	RepoOriginWithPushHooks         RepoOriginWithPushHooks
+	RepoPerms                       RepoPerms
 	RepoStatuses                    RepoStatuses
 	RepoVCS                         RepoVCS
 	Repos                           Repos
@@ -69,6 +70,7 @@ const (
 	_RepoOriginWithAuthorizedSSHKeysKey
 	_RepoOriginWithCommitStatusesKey
 	_RepoOriginWithPushHooksKey
+	_RepoPermsKey
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
@@ -137,6 +139,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.RepoOriginWithPushHooks != nil {
 		ctx = WithRepoOriginWithPushHooks(ctx, s.RepoOriginWithPushHooks)
+	}
+	if s.RepoPerms != nil {
+		ctx = WithRepoPerms(ctx, s.RepoPerms)
 	}
 	if s.RepoStatuses != nil {
 		ctx = WithRepoStatuses(ctx, s.RepoStatuses)
@@ -596,6 +601,29 @@ func RepoOriginWithPushHooksFromContext(ctx context.Context) RepoOriginWithPushH
 // RepoOriginWithPushHooksFromContextOrNil returns the context's RepoOriginWithPushHooks store if present, or else nil.
 func RepoOriginWithPushHooksFromContextOrNil(ctx context.Context) RepoOriginWithPushHooks {
 	s, ok := ctx.Value(_RepoOriginWithPushHooksKey).(RepoOriginWithPushHooks)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithRepoPerms returns a copy of parent with the given RepoPerms store.
+func WithRepoPerms(parent context.Context, s RepoPerms) context.Context {
+	return context.WithValue(parent, _RepoPermsKey, s)
+}
+
+// RepoPermsFromContext gets the context's RepoPerms store. If the store is not present, it panics.
+func RepoPermsFromContext(ctx context.Context) RepoPerms {
+	s, ok := ctx.Value(_RepoPermsKey).(RepoPerms)
+	if !ok || s == nil {
+		panic("no RepoPerms set in context")
+	}
+	return s
+}
+
+// RepoPermsFromContextOrNil returns the context's RepoPerms store if present, or else nil.
+func RepoPermsFromContextOrNil(ctx context.Context) RepoPerms {
+	s, ok := ctx.Value(_RepoPermsKey).(RepoPerms)
 	if ok {
 		return s
 	}

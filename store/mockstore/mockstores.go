@@ -37,6 +37,7 @@ type Stores struct {
 	RepoOriginWithAuthorizedSSHKeys RepoOriginWithAuthorizedSSHKeys
 	RepoOriginWithCommitStatuses    RepoOriginWithCommitStatuses
 	RepoOriginWithPushHooks         RepoOriginWithPushHooks
+	RepoPerms                       RepoPerms
 	RepoStatuses                    RepoStatuses
 	RepoVCS                         RepoVCS
 	Repos                           Repos
@@ -68,6 +69,7 @@ func (s *Stores) Stores() store.Stores {
 		RepoOriginWithAuthorizedSSHKeys: &s.RepoOriginWithAuthorizedSSHKeys,
 		RepoOriginWithCommitStatuses:    &s.RepoOriginWithCommitStatuses,
 		RepoOriginWithPushHooks:         &s.RepoOriginWithPushHooks,
+		RepoPerms:                       &s.RepoPerms,
 		RepoStatuses:                    &s.RepoStatuses,
 		RepoVCS:                         &s.RepoVCS,
 		Repos:                           &s.Repos,
