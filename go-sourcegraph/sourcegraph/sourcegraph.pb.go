@@ -2129,6 +2129,12 @@ type AuthInfo struct {
 	// Scopes represent the permissions granted to the authenticated
 	// user (if any).
 	Scopes []string `protobuf:"bytes,7,rep,name=Scopes" json:"Scopes,omitempty"`
+	// MirrorsNext is set if the user (if any) has access to the private
+	// mirrors feature on this server.
+	MirrorsNext bool `protobuf:"varint,8,opt,name=MirrorsNext,proto3" json:"MirrorsNext,omitempty"`
+	// MirrorsWaitlist is set if the user (if any) is on the waitlist for
+	// access to private mirrors feature on this server.
+	MirrorsWaitlist bool `protobuf:"varint,9,opt,name=MirrorsWaitlist,proto3" json:"MirrorsWaitlist,omitempty"`
 }
 
 func (m *AuthInfo) Reset()         { *m = AuthInfo{} }
@@ -12726,6 +12732,26 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 			i += copy(data[i:], s)
 		}
 	}
+	if m.MirrorsNext {
+		data[i] = 0x40
+		i++
+		if m.MirrorsNext {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.MirrorsWaitlist {
+		data[i] = 0x48
+		i++
+		if m.MirrorsWaitlist {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
 	return i, nil
 }
 
@@ -18869,6 +18895,12 @@ func (m *AccessTokenResponse) Size() (n int) {
 			l = len(s)
 			n += 1 + l + sovSourcegraph(uint64(l))
 		}
+	}
+	if m.MirrorsNext {
+		n += 2
+	}
+	if m.MirrorsWaitlist {
+		n += 2
 	}
 	return n
 }
@@ -36813,6 +36845,46 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 			}
 			m.Scopes = append(m.Scopes, string(data[iNdEx:postIndex]))
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MirrorsNext", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.MirrorsNext = bool(v != 0)
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MirrorsWaitlist", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.MirrorsWaitlist = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

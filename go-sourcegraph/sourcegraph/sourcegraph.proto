@@ -2075,6 +2075,14 @@ message AuthInfo {
 	// Scopes represent the permissions granted to the authenticated
 	// user (if any).
 	repeated string Scopes = 7;
+
+	// MirrorsNext is set if the user (if any) has access to the private
+	// mirrors feature on this server.
+	bool MirrorsNext = 8;
+
+	// MirrorsWaitlist is set if the user (if any) is on the waitlist for
+	// access to private mirrors feature on this server.
+	bool MirrorsWaitlist = 9;
 }
 
 // ExternalTokenRequest specifies a request for a stored auth token
