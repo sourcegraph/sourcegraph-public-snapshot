@@ -124,18 +124,16 @@ var langConfigs = map[string]struct {
 		build: droneyaml.BuildItem{
 			Key: "Python build (Python $$PYTHON_VERSION)",
 			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "python:$$PYTHON_VERSION"},
-				Commands: []string{
-				},
+				Container:    droneyaml.Container{Image: "python:$$PYTHON_VERSION"},
+				Commands:     []string{},
 				AllowFailure: true,
 			},
 		},
 		test: droneyaml.BuildItem{
 			Key: "Python test (Python $$PYTHON_VERSION)",
 			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "python:$$PYTHON_VERSION"},
-				Commands: []string{
-				},
+				Container:    droneyaml.Container{Image: "python:$$PYTHON_VERSION"},
+				Commands:     []string{},
 				AllowFailure: true,
 			},
 		},
