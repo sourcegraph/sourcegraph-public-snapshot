@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -133,10 +134,32 @@ func LogAddRepo(ctx context.Context, cloneURL, language string, mirror, private 
 	})
 }
 
-func LogBuildRepo(ctx context.Context, result string) {
+func LogBuildRepo(ctx context.Context, result string, build *sourcegraph.Build) {
 	if result == "" {
 		return
 	}
+
+	repoRevSpec := &sourcegraph.RepoRevSpec{
+		RepoSpec: sourcegraph.RepoSpec{build.Repo},
+		CommitID: build.CommitID,
+	}
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log15.Debug(err.Error())
+		return
+	}
+
+	inventory, err := cl.Repos.GetInventory(ctx, repoRevSpec)
+	if err != nil {
+		log15.Debug(err.Error())
+		return
+	}
+
+	var languages []string
+	for _, v := range inventory.Languages {
+		languages = append(languages, v.Name)
+	}
+	langs := strings.Join(languages, ",")
 
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
@@ -148,6 +171,7 @@ func LogBuildRepo(ctx context.Context, result string) {
 		DeviceID: deviceID,
 		EventProperties: map[string]string{
 			"CodeIntelligence": result,
+			"ProgramLanguages": langs,
 		},
 	})
 }

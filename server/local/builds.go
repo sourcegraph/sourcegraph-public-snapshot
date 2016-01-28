@@ -182,7 +182,7 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 			Method:  "Update",
 			Result:  Result,
 		})
-		eventsutil.LogBuildRepo(ctx, Result)
+		eventsutil.LogBuildRepo(ctx, Result, b)
 	}
 
 	return b, nil
