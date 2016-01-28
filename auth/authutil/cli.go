@@ -2,7 +2,6 @@ package authutil
 
 import (
 	"log"
-	"strings"
 
 	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
 )
@@ -26,15 +25,13 @@ type Flags struct {
 
 	DisableUserProfiles bool `long:"auth.disable-user-profiles" description:"do not show user profile pages"`
 
-	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login. CAUTION: use only for testing."`
+	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login."`
 
 	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations"`
 
 	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
 
 	MirrorsNext bool `long:"auth.mirrors-next" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
-
-	MirrorsWhitelist string `long:"auth.mirrors-whitelist" description:"space-separated logins of users whitelisted for MirrorsNext" env:"SG_MIRRORS_WHITELIST"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
@@ -63,25 +60,6 @@ func (f Flags) HasSignup() bool { return f.IsLocal() }
 func (f Flags) HasUserProfiles() bool { return !f.DisableUserProfiles }
 
 func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.HasUserAccounts() }
-
-func (f Flags) HasMirrorsNext(login string) bool {
-	if !f.MirrorsNext {
-		return false
-	}
-
-	if mirrorsWhitelist == nil {
-		mirrorsWhitelist = make(map[string]bool)
-		for _, l := range strings.Fields(f.MirrorsWhitelist) {
-			if l == "" {
-				continue
-			}
-			mirrorsWhitelist[l] = true
-		}
-	}
-
-	_, ok := mirrorsWhitelist[login]
-	return ok
-}
 
 // ActiveFlags are the flag values passed from the command line, if
 // we're running as a CLI.

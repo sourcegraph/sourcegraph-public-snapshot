@@ -16,7 +16,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	authcli "src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
@@ -264,14 +264,14 @@ func serveUserSettingsIntegrations(w http.ResponseWriter, r *http.Request) error
 func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
-	userSpec, cd, err := userSettingsCommon(w, r)
+	_, cd, err := userSettingsCommon(w, r)
 	if err == errUserSettingsCommonWroteResponse {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	hasMirrorsNext := authcli.ActiveFlags.HasMirrorsNext(userSpec.Login)
+	hasMirrorsNext := auth.ActorFromContext(ctx).MirrorsNext
 
 	switch mux.Vars(r)["Integration"] {
 	case "enable":

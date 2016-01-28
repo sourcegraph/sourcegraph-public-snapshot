@@ -44,6 +44,9 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 				Domain:   authInfo.Domain,
 				ClientID: authInfo.ClientID,
 				Scope:    auth.UnmarshalScope(authInfo.Scopes),
+
+				MirrorsNext:     authInfo.MirrorsNext,
+				MirrorsWaitlist: authInfo.MirrorsWaitlist,
 			})
 		}
 	}

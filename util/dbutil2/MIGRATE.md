@@ -1,6 +1,14 @@
 Migrations
 ==========
 
+## 2016 Jan 27
+
+```
+drop index ext_auth_token_token_host;
+```
+
+Run `src pgsql create`
+
 ## 2015 Dec 03
 
 ```
