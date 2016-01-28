@@ -23,8 +23,14 @@ type RepoPerms interface {
 	// ListUserRepos list the repos that the user has access to.
 	ListUserRepos(ctx context.Context, uid int32) ([]string, error)
 
+	// ListRepoUsers list all users that have access to the repo.
+	ListRepoUsers(ctx context.Context, repo string) ([]int32, error)
+
 	// DeleteUser deletes all permissions records pertaining to the user.
 	DeleteUser(ctx context.Context, uid int32) error
+
+	// DeleteRepo deletes all permissions records pertaining to the repo.
+	DeleteRepo(ctx context.Context, repo string) error
 }
 
 var (

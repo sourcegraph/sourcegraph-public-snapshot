@@ -12,7 +12,9 @@ type RepoPerms struct {
 	Update_        func(ctx context.Context, uid int32, repos []string) error
 	Delete_        func(ctx context.Context, uid int32, repo string) error
 	ListUserRepos_ func(ctx context.Context, uid int32) ([]string, error)
+	ListRepoUsers_ func(ctx context.Context, repo string) ([]int32, error)
 	DeleteUser_    func(ctx context.Context, uid int32) error
+	DeleteRepo_    func(ctx context.Context, repo string) error
 }
 
 func (s *RepoPerms) Add(ctx context.Context, uid int32, repo string) error {
@@ -31,6 +33,14 @@ func (s *RepoPerms) ListUserRepos(ctx context.Context, uid int32) ([]string, err
 	return s.ListUserRepos_(ctx, uid)
 }
 
+func (s *RepoPerms) ListRepoUsers(ctx context.Context, repo string) ([]int32, error) {
+	return s.ListRepoUsers_(ctx, repo)
+}
+
 func (s *RepoPerms) DeleteUser(ctx context.Context, uid int32) error { return s.DeleteUser_(ctx, uid) }
+
+func (s *RepoPerms) DeleteRepo(ctx context.Context, repo string) error {
+	return s.DeleteRepo_(ctx, repo)
+}
 
 var _ store.RepoPerms = (*RepoPerms)(nil)
