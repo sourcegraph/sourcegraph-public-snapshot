@@ -24,6 +24,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
 var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}
@@ -250,7 +251,15 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	gd := &sourcegraph.UserMirrorData{
 		URL:   githubcli.Config.URL(),
 		Host:  githubcli.Config.Host() + "/",
-		State: sourcegraph.UserMirrorsState_NoToken,
+		State: sourcegraph.UserMirrorsState_NotAllowed,
+	}
+
+	// Try adding user to waitlist.
+	if res, err := s.AddToWaitlist(ctx, &pbtypes.Void{}); err != nil {
+		return nil, err
+	} else if res.State != sourcegraph.UserMirrorsState_HasAccess {
+		gd.State = res.State
+		return gd, nil
 	}
 
 	// Fetch the currently authenticated user's stored access token (if any).
@@ -258,6 +267,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		Host: githubcli.Config.Host(),
 	})
 	if grpc.Code(err) == codes.NotFound {
+		gd.State = sourcegraph.UserMirrorsState_NoToken
 		return gd, nil
 	} else if err != nil {
 		return nil, err
@@ -322,4 +332,89 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	gd.Repos = remoteRepos
 
 	return gd, nil
+}
+
+func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.WaitlistState, error) {
+	uid := int32(authpkg.ActorFromContext(ctx).UID)
+	userLogin := authpkg.ActorFromContext(ctx).Login
+
+	if uid == 0 {
+		return nil, grpc.Errorf(codes.Unauthenticated, "no authenticated user found in context")
+	}
+
+	result := &sourcegraph.WaitlistState{State: sourcegraph.UserMirrorsState_NotAllowed}
+
+	// TODO: Check if server is running in "restricted" waitlist mode.
+
+	// Fetch the currently authenticated user's stored access token (if any).
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+		Host: githubcli.Config.Host(),
+	})
+	if grpc.Code(err) == codes.NotFound {
+		result.State = sourcegraph.UserMirrorsState_NoToken
+		return result, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	client := githubutil.Default.AuthedClient(extToken.Token)
+	ghUser, _, err := client.Users.Get("")
+	if err != nil {
+		result.State = sourcegraph.UserMirrorsState_InvalidToken
+		return result, nil
+	}
+
+	waitlistStore := store.WaitlistFromContextOrNil(ctx)
+	if waitlistStore == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "waitlist store not available")
+	}
+
+	waitlistedUser, err := waitlistStore.GetUser(ctx, uid)
+	if err != nil {
+		if err, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
+			return nil, err
+		}
+		// User is not waitlisted
+		waitlistedUser = &sourcegraph.WaitlistedUser{UID: uid}
+	}
+
+	if waitlistedUser.GrantedAt != nil {
+		// User has been granted access already
+		result.State = sourcegraph.UserMirrorsState_HasAccess
+		return result, nil
+	}
+
+	if waitlistedUser.AddedAt == nil {
+		// User is not on the waitlist, so add them.
+		if err := waitlistStore.AddUser(ctx, uid); err != nil {
+			return nil, err
+		}
+	}
+	result.State = sourcegraph.UserMirrorsState_OnWaitlist
+
+	// User is on the waitlist, but check if any of their orgs has been granted access already.
+	ghOrgs, _, err := client.Organizations.List("", nil)
+	if err != nil {
+		log15.Error("Could not list GitHub orgs for user", "github_user", *ghUser.Login, "sourcegraph_user", userLogin, "error", err)
+		return result, nil
+	}
+
+	orgNames := make([]string, len(ghOrgs))
+	for i, org := range ghOrgs {
+		orgNames[i] = *org.Login
+	}
+	grantedOrgs, err := waitlistStore.ListOrgs(ctx, false, true, orgNames)
+	if err != nil {
+		log15.Error("Could not check waitlisted orgs for user", "github_user", *ghUser.Login, "sourcegraph_user", userLogin, "error", err)
+		return result, nil
+	}
+	if len(grantedOrgs) > 0 {
+		// User should be granted access automatically.
+		if err := waitlistStore.GrantUser(ctx, uid); err != nil {
+			return nil, err
+		}
+		result.State = sourcegraph.UserMirrorsState_HasAccess
+	}
+
+	return result, nil
 }

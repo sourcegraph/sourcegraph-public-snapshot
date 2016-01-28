@@ -1772,6 +1772,35 @@ func (s wrappedMirrorRepos) GetUserData(ctx context.Context, v1 *pbtypes.Void) (
 	return rv, nil
 }
 
+func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.WaitlistState, error) {
+	var cc *grpccache.CacheControl
+	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.MirrorReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "MirrorRepos")
+	}
+
+	rv, err := innerSvc.AddToWaitlist(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	if !cc.IsZero() {
+		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
+			return nil, err
+		}
+	}
+
+	return rv, nil
+}
+
 type wrappedMirroredRepoSSHKeys struct {
 	ctxFunc  ContextFunc
 	services svc.Services

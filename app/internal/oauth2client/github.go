@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"sourcegraph.com/sqs/pbtypes"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -16,7 +18,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
@@ -155,7 +156,6 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	client := githubutil.Default.AuthedClient(token.AccessToken)
-
 	user, _, err := client.Users.Get("")
 	if err != nil {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
@@ -191,20 +191,9 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		log15.Info("Could not update profile info", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
 	}
 
-	extAccountsStore := authpkg.ExtAccountsStore{}
-	if err := extAccountsStore.Set(ctx, githubcli.Config.Host(), currentUser.UID, *user.Login); err != nil {
-		log15.Error("Could not link GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login, "error", err)
-	} else {
-		log15.Info("Linked GitHub user account", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
-	}
-	if ghOrgs, _, err := client.Organizations.List("", nil); err == nil {
-		for _, org := range ghOrgs {
-			if err := extAccountsStore.Append(ctx, githubcli.Config.Host(), *org.Login, currentUser.UID); err != nil {
-				log15.Error("Could not link GitHub org to user", "github_org", *org.Login, "sourcegraph_user", currentUser.Login, "error", err)
-			}
-		}
-	} else {
-		log15.Error("Could not list GitHub orgs for user", "github_user", *user.Login, "error", err)
+	_, err = cl.MirrorRepos.AddToWaitlist(ctx, &pbtypes.Void{})
+	if err != nil {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
 	returnTo := state.ReturnTo
