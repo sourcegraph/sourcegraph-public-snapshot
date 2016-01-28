@@ -120,4 +120,25 @@ var langConfigs = map[string]struct {
 		},
 		matrix: map[string][]string{"JAVA_VERSION": []string{"8"}},
 	},
+	"Python": {
+		build: droneyaml.BuildItem{
+			Key: "Python build (Python $$PYTHON_VERSION)",
+			Build: droneyaml.Build{
+				Container: droneyaml.Container{Image: "python:$$PYTHON_VERSION"},
+				Commands: []string{
+				},
+				AllowFailure: true,
+			},
+		},
+		test: droneyaml.BuildItem{
+			Key: "Python test (Python $$PYTHON_VERSION)",
+			Build: droneyaml.Build{
+				Container: droneyaml.Container{Image: "python:$$PYTHON_VERSION"},
+				Commands: []string{
+				},
+				AllowFailure: true,
+			},
+		},
+		matrix: map[string][]string{"PYTHON_VERSION": []string{"2.7"}},
+	},
 }
