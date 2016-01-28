@@ -12,11 +12,11 @@ type Waitlist struct {
 	AddUser_   func(ctx context.Context, uid int32) error
 	GetUser_   func(ctx context.Context, uid int32) (*sourcegraph.WaitlistedUser, error)
 	GrantUser_ func(ctx context.Context, uid int32) error
-	ListUsers_ func(v0 context.Context) ([]*sourcegraph.WaitlistedUser, error)
+	ListUsers_ func(ctx context.Context, onlyWaitlisted bool) ([]*sourcegraph.WaitlistedUser, error)
 	AddOrg_    func(ctx context.Context, orgName string) error
 	GetOrg_    func(ctx context.Context, orgName string) (*sourcegraph.WaitlistedOrg, error)
 	GrantOrg_  func(ctx context.Context, orgName string) error
-	ListOrgs_  func(v0 context.Context) ([]*sourcegraph.WaitlistedOrg, error)
+	ListOrgs_  func(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error)
 }
 
 func (s *Waitlist) AddUser(ctx context.Context, uid int32) error { return s.AddUser_(ctx, uid) }
@@ -27,8 +27,8 @@ func (s *Waitlist) GetUser(ctx context.Context, uid int32) (*sourcegraph.Waitlis
 
 func (s *Waitlist) GrantUser(ctx context.Context, uid int32) error { return s.GrantUser_(ctx, uid) }
 
-func (s *Waitlist) ListUsers(v0 context.Context) ([]*sourcegraph.WaitlistedUser, error) {
-	return s.ListUsers_(v0)
+func (s *Waitlist) ListUsers(ctx context.Context, onlyWaitlisted bool) ([]*sourcegraph.WaitlistedUser, error) {
+	return s.ListUsers_(ctx, onlyWaitlisted)
 }
 
 func (s *Waitlist) AddOrg(ctx context.Context, orgName string) error { return s.AddOrg_(ctx, orgName) }
@@ -41,8 +41,8 @@ func (s *Waitlist) GrantOrg(ctx context.Context, orgName string) error {
 	return s.GrantOrg_(ctx, orgName)
 }
 
-func (s *Waitlist) ListOrgs(v0 context.Context) ([]*sourcegraph.WaitlistedOrg, error) {
-	return s.ListOrgs_(v0)
+func (s *Waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error) {
+	return s.ListOrgs_(ctx, onlyWaitlisted, onlyGranted, filterNames)
 }
 
 var _ store.Waitlist = (*Waitlist)(nil)

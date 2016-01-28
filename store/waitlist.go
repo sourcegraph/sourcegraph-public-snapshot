@@ -14,12 +14,12 @@ type Waitlist interface {
 	AddUser(ctx context.Context, uid int32) error
 	GetUser(ctx context.Context, uid int32) (*sourcegraph.WaitlistedUser, error)
 	GrantUser(ctx context.Context, uid int32) error
-	ListUsers(context.Context) ([]*sourcegraph.WaitlistedUser, error)
+	ListUsers(ctx context.Context, onlyWaitlisted bool) ([]*sourcegraph.WaitlistedUser, error)
 
 	AddOrg(ctx context.Context, orgName string) error
 	GetOrg(ctx context.Context, orgName string) (*sourcegraph.WaitlistedOrg, error)
 	GrantOrg(ctx context.Context, orgName string) error
-	ListOrgs(context.Context) ([]*sourcegraph.WaitlistedOrg, error)
+	ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error)
 }
 
 // WaitlistedUserNotFoundError occurs when a WaitlistedUser is not

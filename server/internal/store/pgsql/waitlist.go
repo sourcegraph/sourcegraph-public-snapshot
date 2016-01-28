@@ -1,8 +1,11 @@
 package pgsql
 
 import (
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/sqs/modl"
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -62,7 +65,7 @@ func (w *waitlist) getUser(ctx context.Context, uid int32) (*userWaitlistRow, er
 		return nil, err
 	}
 	if len(users) == 0 {
-		return nil, &store.WaitlistedUserNotFoundError{}
+		return nil, &store.WaitlistedUserNotFoundError{UID: uid}
 	}
 	return users[0], err
 }
@@ -140,7 +143,7 @@ func (w *waitlist) getOrg(ctx context.Context, orgName string) (*orgWaitlistRow,
 		return nil, err
 	}
 	if len(orgs) == 0 {
-		return nil, &store.WaitlistedOrgNotFoundError{}
+		return nil, &store.WaitlistedOrgNotFoundError{OrgName: orgName}
 	}
 	return orgs[0], err
 }
@@ -173,12 +176,35 @@ func (w *waitlist) GrantOrg(ctx context.Context, orgName string) error {
 	return err
 }
 
-func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted bool) ([]*sourcegraph.WaitlistedOrg, error) {
+func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error) {
 	var orgWaitlistRows []*orgWaitlistRow
-	sql := `SELECT * FROM org_waitlist`
-	if onlyWaitlisted {
-		sql += ` WHERE granted_at is null`
+
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := modl.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
 	}
+
+	whereSQL := "true"
+	var conds []string
+	if onlyWaitlisted {
+		conds = append(conds, "granted_at is null")
+	}
+	if onlyGranted {
+		conds = append(conds, "granted_at is not null")
+	}
+	if filterNames != nil && len(filterNames) > 0 {
+		orgNames := make([]string, len(filterNames))
+		for i, name := range filterNames {
+			orgNames[i] = arg(name)
+		}
+		conds = append(conds, "name IN ("+strings.Join(orgNames, ",")+")")
+	}
+	if conds != nil && len(conds) > 0 {
+		whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
+	}
+	sql := fmt.Sprintf(`SELECT * FROM org_waitlist WHERE %s`, whereSQL)
 	if err := dbh(ctx).Select(&orgWaitlistRows, sql); err != nil {
 		return nil, err
 	}
