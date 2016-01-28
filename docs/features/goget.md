@@ -8,7 +8,7 @@ All repositories hosted on Sourcegraph automatically support [go get](https://go
 
 ## Public Repositories
 
-First [configure Sourcegraph to be public]({{< relref "config/public.md" >}}) if you haven't already, and then simply `go get src.example.com/my/pkg`.
+First [configure Sourcegraph to allow anonymous readers]({{< relref "management/access-control.md" >}}) if you haven't already, and then simply `go get src.example.com/my/pkg`.
 
 ## Private Repositories
 
