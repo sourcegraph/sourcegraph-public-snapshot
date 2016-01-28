@@ -485,6 +485,14 @@ func (s remoteMirrorRepos) GetUserData(ctx context.Context, v1 *pbtypes.Void) (*
 	return c.MirrorRepos.GetUserData(ctx, v1)
 }
 
+func (s remoteMirrorRepos) AddToWaitlist(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.WaitlistState, error) {
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.MirrorRepos.AddToWaitlist(ctx, v1)
+}
+
 type remoteMirroredRepoSSHKeys struct {
 	sourcegraph.MirroredRepoSSHKeysServer
 }

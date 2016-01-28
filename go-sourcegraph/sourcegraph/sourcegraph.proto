@@ -1041,6 +1041,11 @@ message UserMirrorData {
 	UserMirrorsState State = 4;
 }
 
+message WaitlistState {
+	// State is the state of the user on the waitlist.
+	UserMirrorsState State = 1;
+}
+
 // MirrorRepos handles operations related to maintaining mirrors on
 // Sourcegraph of repositories hosted elsewhere.
 service MirrorRepos {
@@ -1054,6 +1059,10 @@ service MirrorRepos {
 	// GetUserData returns the list of GitHub repos that are visible
 	// to the currently authenticated user.
 	rpc GetUserData(pbtypes.Void) returns (UserMirrorData);
+
+	// AddToWaitlist adds the authenticated user to the waitlist for
+	// private repo mirrors feature.
+	rpc AddToWaitlist(pbtypes.Void) returns (WaitlistState);
 }
 
 // MirroredRepoSSHKeys stores repository SSH keys (e.g., to access
