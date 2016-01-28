@@ -94,7 +94,7 @@ certificates:
 
 Start Sourcegraph again via `sudo start src` or `docker src start`.
 
-### With Docker
+## With Docker
 
 If you're running Sourcegraph inside a Docker container, you'll need to copy
 the newly generated PEM files into the container directly.
