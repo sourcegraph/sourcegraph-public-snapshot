@@ -1,9 +1,7 @@
 {{define "ErrorCommon"}}
 <div class="error-common">
 	{{if and (.Err) (.Debug)}}
-	<div class="error-message">
-		{{.Err}}
-	</div>
+	<div class="error-message">{{.Err}}</div>
 	{{end}}
 	<hr />
 	<p>Sorry, there’s been a problem.{{if .ErrorID}} To quickly identify this issue, use the ID <b>{{.ErrorID}}</b>.{{end}}</p>

@@ -17,6 +17,9 @@
 		background: #fafafa;
 		padding: 15px;
 		font-family: $font-family-monospace;
+		text-align: left;
+		overflow-x: scroll;
+		white-space: pre;
 
 		.actions {
 			margin: 10px 0 0 -5px;
