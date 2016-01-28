@@ -1,6 +1,6 @@
 +++
 title = "Builds"
-linktitle = "Builds"
+description = "Running builds and code indexing inside Sourcegraph"
 +++
 
 In Sourcegraph, a "build" runs the the analysis process of an entire
