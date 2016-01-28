@@ -55,6 +55,10 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		return nil
 	}
 
+	if authutil.ActiveFlags.MirrorsNext && repo != "" {
+		return VerifyRepoPerms(actor, method, repo)
+	}
+
 	if authutil.ActiveFlags.AllowAnonymousReaders {
 		return nil
 	}
@@ -80,6 +84,10 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil
+	}
+
+	if authutil.ActiveFlags.MirrorsNext && repo != "" {
+		return VerifyRepoPerms(actor, method, repo)
 	}
 
 	if !actor.IsAuthenticated() {

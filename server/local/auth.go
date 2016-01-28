@@ -291,9 +291,13 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 		UID:      int32(a.UID),
 		Login:    a.Login,
 		Domain:   a.Domain,
-		Write:    a.HasWriteAccess(),
-		Admin:    a.HasAdminAccess(),
-		Scopes:   authpkg.MarshalScope(a.Scope),
+
+		Write:  a.HasWriteAccess(),
+		Admin:  a.HasAdminAccess(),
+		Scopes: authpkg.MarshalScope(a.Scope),
+
+		MirrorsNext:     a.MirrorsNext,
+		MirrorsWaitlist: a.MirrorsWaitlist,
 	}, nil
 }
 

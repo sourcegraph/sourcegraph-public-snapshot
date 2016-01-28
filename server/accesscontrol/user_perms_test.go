@@ -85,4 +85,31 @@ func TestVerifyAccess(t *testing.T) {
 	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo"); err == nil {
 		t.Fatalf("user %v should not have MirrorRepos.CloneRepo access; got access\n", uid)
 	}
+
+	// Test that for local auth, all authenticated users have write access,
+	// but unauthenticated users don't.
+	authutil.ActiveFlags = authutil.Flags{
+		Source: "local",
+	}
+
+	uid = 0
+	ctx = asUID(uid)
+
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create"); err == nil {
+		t.Fatalf("user %v should not have write access; got access\n", uid)
+	}
+
+	uid = 1234
+	ctx = asUID(uid)
+
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create"); err != nil {
+		t.Fatalf("user %v should have write access; got: %v\n", uid, err)
+	}
+}
+
+func asUID(uid int) context.Context {
+	return auth.WithActor(context.Background(), auth.Actor{
+		UID:      uid,
+		ClientID: "xyz",
+	})
 }

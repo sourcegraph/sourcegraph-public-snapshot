@@ -203,7 +203,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 	defer noCache(ctx)
 
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
-		if authutil.ActiveFlags.HasMirrorsNext(authpkg.ActorFromContext(ctx).Login) {
+		if authpkg.ActorFromContext(ctx).MirrorsNext {
 			invite.Admin = false
 			invite.Write = false
 		} else {
