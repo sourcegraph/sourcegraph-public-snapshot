@@ -334,7 +334,7 @@ var CodeReviewStore = FluxStore({
 	},
 
 	_onBasicUpdateSuccess(action) {
-		if(Object.keys(action.data).length == 0) {
+		if (Object.keys(action.data).length === 0) {
 			return;
 		}
 		this.get("events").add(action.data, {silent: true});

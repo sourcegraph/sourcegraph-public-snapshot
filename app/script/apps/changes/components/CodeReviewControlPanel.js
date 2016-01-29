@@ -39,7 +39,7 @@ var CodeReviewControlPanel = React.createClass({
 		onRemoveReviewer: React.PropTypes.func,
 	},
 
-	getInitialState: function() {
+	getInitialState() {
 		return {showAddPersonMenu: false};
 	},
 
@@ -84,20 +84,20 @@ var CodeReviewControlPanel = React.createClass({
 		if (evt.keyCode !== 13) {
 			return;
 		}
-		if(this.props.onAddReviewer) {
+		if (this.props.onAddReviewer) {
 			this.props.onAddReviewer(evt.target.value);
 			this.setState({showAddPersonMenu: false});
 		}
 	},
 
 	_toggleLGTM(evt) {
-		if(this.props.onLGTMChange) {
+		if (this.props.onLGTMChange) {
 			this.props.onLGTMChange(evt.currentTarget.checked);
 		}
 	},
 
 	_removeReviewer(reviewer, evt) {
-		if(this.props.onRemoveReviewer) {
+		if (this.props.onRemoveReviewer) {
 			this.props.onRemoveReviewer(reviewer);
 		}
 	},
@@ -118,7 +118,7 @@ var CodeReviewControlPanel = React.createClass({
 		});
 
 		var reviewers = [];
-		if(this.props.changeset.Reviewers) {
+		if (this.props.changeset.Reviewers) {
 			reviewers = this.props.changeset.Reviewers;
 		}
 
@@ -146,13 +146,13 @@ var CodeReviewControlPanel = React.createClass({
 				<div className="review-form">
 					<div className="panel-label">Reviewers</div>
 					<div className="people">
-						{reviewers.map(function(reviewer){
+						{reviewers.map(function(reviewer) {
 							reviewer = reviewer.FullUser;
 							var classes = null;
 							var styles = {};
 							if (reviewer.AvatarURL) {
-								styles["backgroundImage"] = "url(" + reviewer.AvatarURL + ")";
-								classes = classnames({"reviewer": true, "avatar": true});
+								styles["backgroundImage"] = `url(${reviewer.AvatarURL})`;
+								classes = classnames({reviewer: true, avatar: true});
 							} else {
 								classes = classnames({"reviewer": true, "octicon": true, "octicon-person": true});
 							}
