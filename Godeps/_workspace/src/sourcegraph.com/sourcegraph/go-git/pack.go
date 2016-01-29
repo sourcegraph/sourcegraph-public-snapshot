@@ -10,47 +10,58 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 type pack struct {
-	repo      *Repository
-	id        string
-	indexFile *os.File
-	packFile  *os.File
+	repo              *Repository
+	id                string
+	indexFile         *os.File
+	packFile          *os.File
+	indexFileErr      error
+	packFileErr       error
+	openIndexFileOnce sync.Once
+	openPackFileOnce  sync.Once
 }
 
 func (p *pack) indexFileReader() (io.ReaderAt, error) {
-	if p.indexFile == nil {
+	p.openIndexFileOnce.Do(func() {
 		f, err := os.Open(filepath.Join(p.repo.Path, "objects", "pack", p.id+".idx"))
 		if err != nil {
-			return nil, err
+			p.indexFileErr = err
+			return
 		}
 		p.indexFile = f
 		if !bytes.Equal(readBytesAt(f, 0, 4), []byte{255, 't', 'O', 'c'}) {
-			return nil, errors.New("wrong magic number")
+			p.indexFileErr = errors.New("wrong magic number")
+			return
 		}
 		if binary.BigEndian.Uint32(readBytesAt(f, 4, 4)) != 2 {
-			return nil, errors.New("unsupported index file version")
+			p.indexFileErr = errors.New("unsupported index file version")
+			return
 		}
-	}
-	return p.indexFile, nil
+	})
+	return p.indexFile, p.indexFileErr
 }
 
 func (p *pack) packFileReader() (io.ReaderAt, error) {
-	if p.packFile == nil {
+	p.openPackFileOnce.Do(func() {
 		f, err := os.Open(filepath.Join(p.repo.Path, "objects", "pack", p.id+".pack"))
 		if err != nil {
-			return nil, err
+			p.packFileErr = err
+			return
 		}
 		p.packFile = f
 		if !bytes.HasPrefix(readBytesAt(f, 0, 4), []byte{'P', 'A', 'C', 'K'}) {
-			return nil, errors.New("pack file does not min with 'PACK'")
+			p.packFileErr = errors.New("pack file does not min with 'PACK'")
+			return
 		}
 		if binary.BigEndian.Uint32(readBytesAt(f, 4, 4)) != 2 {
-			return nil, errors.New("unsupported pack file version")
+			p.packFileErr = errors.New("unsupported pack file version")
+			return
 		}
-	}
-	return p.packFile, nil
+	})
+	return p.packFile, p.packFileErr
 }
 
 func (p *pack) Close() (err error) {

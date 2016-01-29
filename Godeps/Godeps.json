@@ -408,7 +408,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-git",
-			"Rev": "bf71a6d8ba148ffa8071d24651d1ca2fc33bbf80"
+			"Rev": "003a16b7d495c9f9ea4693c1138c1ffcd1eea5a2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/github_flavored_markdown",
