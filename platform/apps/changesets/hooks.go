@@ -97,9 +97,11 @@ func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events
 		log15.Error("changesetListener error", "error", err)
 	}
 	if payload.Changeset == nil {
-		cs, err := cl.Changesets.Get(ctx, &sourcegraph.ChangesetSpec{
-			Repo: sourcegraph.RepoSpec{URI: payload.Repo},
-			ID:   payload.ID,
+		cs, err := cl.Changesets.Get(ctx, &sourcegraph.ChangesetGetOp{
+			Spec: sourcegraph.ChangesetSpec{
+				Repo: sourcegraph.RepoSpec{URI: payload.Repo},
+				ID:   payload.ID,
+			},
 		})
 		if err != nil {
 			log15.Warn("changesetListener: could not fetch changeset", "repo", payload.Repo, "id", payload.ID, "error", err)

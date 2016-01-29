@@ -38,7 +38,7 @@ type Changesets interface {
 
 	// Get returns the changeset from within the specified repository path
 	// having the given ID.
-	Get(ctx context.Context, repo string, ID int64) (*sourcegraph.Changeset, error)
+	Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error)
 
 	// List lists all changesets for a repository.
 	List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)

@@ -748,9 +748,11 @@ func (c *changesetReviewersListCmd) Execute(args []string) error {
 		return err
 	}
 
-	cs, err := sg.Changesets.Get(cliCtx, &sourcegraph.ChangesetSpec{
-		Repo: repo.RepoSpec(),
-		ID:   c.Args.ID,
+	cs, err := sg.Changesets.Get(cliCtx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: repo.RepoSpec(),
+			ID:   c.Args.ID,
+		},
 	})
 	if err != nil {
 		return err

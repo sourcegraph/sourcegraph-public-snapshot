@@ -43,8 +43,8 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 	return op.Changeset, nil
 }
 
-func (s *changesets) Get(ctx context.Context, op *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error) {
-	return store.ChangesetsFromContext(ctx).Get(ctx, op.Repo.URI, op.ID)
+func (s *changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
+	return store.ChangesetsFromContext(ctx).Get(ctx, op)
 }
 
 func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
