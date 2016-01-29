@@ -204,7 +204,17 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	if err != nil {
 		return nil, err
 	}
-	after := *current
+
+	// Copy the current changeset. It is important that both after and current
+	// changesets are pointer types, as they are compared with reflect.DeepEqual
+	// below to detect changes.
+	afterCpy := *current
+	for i, reviewer := range after.Reviewers {
+		cpy := *reviewer
+		after.Reviewers[i] = &cpy
+	}
+	after := &afterCpy
+
 	ts := pbtypes.NewTimestamp(time.Now())
 
 	if op.Title != "" {
