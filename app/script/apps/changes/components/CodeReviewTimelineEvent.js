@@ -26,7 +26,7 @@ var CodeReviewTimelineEvent = React.createClass({
 			msg = <span className="msg">closed the changeset</span>;
 			icon = "octicon-x";
 		} else if (op.AddReviewer || op.RemoveReviewer) {
-			var verb = !op.AddReviewer ? "assigned" : "unassigned";
+			var verb = op.AddReviewer ? "assigned" : "unassigned";
 			var reviewer = op.AddReviewer ? op.AddReviewer : op.RemoveReviewer;
 			if (login === reviewer.Login) {
 				msg = <span className="msg">{verb} themselves as a reviewer.</span>;
