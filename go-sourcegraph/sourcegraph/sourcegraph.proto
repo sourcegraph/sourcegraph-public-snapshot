@@ -77,9 +77,13 @@ message ChangesetReviewer {
 	// UserSpec is the user who is acting as a reviewer on a changeset.
 	UserSpec UserSpec = 1 [(gogoproto.nullable) = false];
 
+	// FullUser is the full user object (AvatarURL and all) which is only non-nil
+	// if ChangesetGetOp.FullReviewerUsers == true.
+	User FullUser = 2;
+
 	// LGTM is whether or not they think the changeset is a good change to merge
 	// in it's current form.
-	bool LGTM = 2;
+	bool LGTM = 3;
 }
 
 // Changeset stores information about a changeset.
@@ -889,6 +893,10 @@ message ChangesetUpdateOp {
 	// NotLGTM, if set, is the exact opposite operation as LGTM. It does not
 	// remove you as a reviewer (use RemoveReviewer for that).
 	bool NotLGTM = 12;
+
+	// FullReviewerUsers, if set, will cause the returned changeset to include a
+	// full User object (with AvatarURL and all) for each Reviewer.
+	bool FullReviewerUsers = 13;
 
 	// Author is the user that initiated this event.
 	UserSpec Author = 8 [(gogoproto.nullable) = false];
