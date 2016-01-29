@@ -23,8 +23,6 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/resonancelabs/go-pub/instrument"
-	tg_client "github.com/resonancelabs/go-pub/instrument/client"
 	"github.com/sourcegraph/cmux"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/crypto/ssh"
@@ -274,17 +272,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	// presenting users with a half-working experience.
 	if err := checkSysReqs(client.Ctx, os.Stderr); err != nil {
 		return err
-	}
-
-	if len(os.Getenv("SG_TRACEGUIDE_ACCESS_TOKEN")) > 0 {
-		options := &tg_client.Options{
-			AccessToken: os.Getenv("SG_TRACEGUIDE_ACCESS_TOKEN"),
-		}
-		if len(os.Getenv("SG_TRACEGUIDE_SERVICE_HOST")) > 0 {
-			options.ServiceHost = os.Getenv("SG_TRACEGUIDE_SERVICE_HOST")
-		}
-		instrument.SetDefaultRuntime(tg_client.NewRuntime(options))
-		instrument.Log("Initialized Traceguide runtime")
 	}
 
 	cacheutil.Precache = c.Prefetch
