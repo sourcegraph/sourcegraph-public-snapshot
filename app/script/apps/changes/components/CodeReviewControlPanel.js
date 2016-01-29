@@ -117,12 +117,10 @@ var CodeReviewControlPanel = React.createClass({
 			"disabled": this.props.merging || this.props.changeset.ClosedAt,
 		});
 
-		var reviewers = [
-			{Login: "slimsag", AvatarURL: "https://image.freepik.com/free-photo/cat-face-viewed-from-front_21220647.jpg"},
-			{Login: "richard", AvatarURL: "http://media4.popsugar-assets.com/files/2014/09/19/978/n/1922507/4bc5042ee37fa1f9_thumb_temp_cover_file13465311411161397.xxxlarge/i/Funny-Cat-Costumes.jpg"},
-			{Login: "renfred", AvatarURL: "http://hdwallpapersfit.com/wp-content/uploads/2015/03/white-cat-face_wallpaper.jpg"},
-			{Login: "john"}
-		];
+		var reviewers = [];
+		if(this.props.changeset.Reviewers) {
+			reviewers = this.props.changeset.Reviewers;
+		}
 
 		var addPersonMenu = null;
 		if (this.state.showAddPersonMenu) {
@@ -149,6 +147,7 @@ var CodeReviewControlPanel = React.createClass({
 					<div className="panel-label">Reviewers</div>
 					<div className="people">
 						{reviewers.map(function(reviewer){
+							reviewer = reviewer.FullUser;
 							var classes = null;
 							var styles = {};
 							if (reviewer.AvatarURL) {
@@ -185,14 +184,6 @@ var CodeReviewControlPanel = React.createClass({
 
 				<hr/>
 
-				<div className="merge-form">
-					<div className="panel-label">Automatic Merge</div>
-					<label><input ref="squashOption" type="checkbox"/> Squash commits on merge</label>
-					<button className={mergeButtonClasses} onClick={this._merge}>
-						{mergeIcon}
-						<span> Merge changeset</span>
-					</button>
-				</div>
 				{!this.props.changeset.Merged &&
 					<div className="merge-form">
 						<div className="panel-label">Automatic Merge</div>
