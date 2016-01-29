@@ -137,10 +137,19 @@
 				</form>
 			</div>
 		</div>
+		<h4>On Sourcegraph</h4>
 		<div class="list-group">
-			{{range .Users}}
+			{{range .Teammates.LinkedUsers}}
 				<li class="list-group-item">
-					{{if .AvatarURL}}<img src="{{.AvatarURL}}" class="avatar img-rounded" width="30" height="30" />{{end}} <strong>{{.Identifier}}</strong>
+					{{if .AvatarURL}}<img src="{{.AvatarURL}}" class="avatar img-rounded" width="30" height="30" />{{end}} <strong>{{getIdentifier .Name .Login}}</strong>
+				</li>
+			{{end}}
+		</div>
+		<h4>Not Yet On Sourcegraph</h4>
+		<div class="list-group">
+			{{range .Teammates.ExternalUsers}}
+				<li class="list-group-item">
+					{{if .AvatarURL}}<img src="{{.AvatarURL}}" class="avatar img-rounded" width="30" height="30" />{{end}} <strong>{{getIdentifier .Name .Login}}</strong>
 				</li>
 			{{end}}
 		</div>
@@ -171,7 +180,7 @@
 		<div class="list-group">
 			{{range .Users}}
 				<li class="list-group-item">
-					<strong>{{.Identifier}}</strong>{{if .Invite}}<div class="btn-xs btn-red pull-right">Pending Invite</div>{{end}}{{if .Admin}}<div class="btn-xs btn-green pull-right">Admin</div>{{else if .Write}}<div class="btn-xs btn-sgblue pull-right">Write</div>{{end}}
+					<strong>{{getIdentifier .Name .Login}}</strong>{{if .Invite}}<div class="btn-xs btn-red pull-right">Pending Invite</div>{{end}}{{if .Admin}}<div class="btn-xs btn-green pull-right">Admin</div>{{else if .Write}}<div class="btn-xs btn-sgblue pull-right">Write</div>{{end}}
 				</li>
 			{{end}}
 		</div>

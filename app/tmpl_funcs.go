@@ -234,6 +234,16 @@ var tmplFuncs = htmpl.FuncMap{
 		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil
 	},
 
+	"getIdentifier": func(name, login string) string {
+		if name == "" {
+			return login
+		} else if login == "" {
+			return name
+		} else {
+			return fmt.Sprintf("%s (%s)", name, login)
+		}
+	},
+
 	"activeRepoApp": func(currentURL *url.URL, repoURI, appID string) (bool, error) {
 		u, err := router.Rel.URLToRepoApp(repoURI, appID)
 		if err != nil {

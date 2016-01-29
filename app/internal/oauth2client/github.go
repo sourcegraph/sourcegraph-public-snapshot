@@ -167,6 +167,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		Token:    token.AccessToken,
 		Scope:    strings.Join(scopes, ","),
 		ClientID: githubClientID,
+		ExtUID:   int32(*user.ID),
 	})
 	if err != nil {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}

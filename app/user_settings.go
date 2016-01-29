@@ -291,28 +291,18 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 			} else {
 				repoURI = repoInfo
 			}
-			// Check repo doesn't already exist, skip if so.
-			_, err = apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
-			if grpc.Code(err) != codes.NotFound {
-				switch err {
-				case nil:
-					log15.Warn("repo", repoURI, "already exists")
-					http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsIntegrations, "User", cd.User.Login).String(), http.StatusSeeOther)
-					return nil
-				default:
-					return fmt.Errorf("problem getting repo %q: %v", repoURI, err)
-				}
-			}
 
 			// Perform the following operations locally (non-federated) because it's a private repo.
-			_, err = apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+			_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 				URI:      repoURI,
 				VCS:      "git",
 				CloneURL: "https://" + repoURI + ".git",
 				Mirror:   true,
 				Private:  private,
 			})
-			if err != nil {
+			if grpc.Code(err) != codes.AlreadyExists {
+				log15.Warn("repo", repoURI, "already exists")
+			} else if err != nil {
 				return err
 			}
 
