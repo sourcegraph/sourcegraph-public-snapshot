@@ -1466,6 +1466,18 @@ message PersonSpec {
 	int32 UID = 3;
 }
 
+// Teammates lists all members of all GitHub organizations that a user is
+// part of. A teammate may or may not have a linked Sourcegraph account.
+message Teammates {
+	// LinkedUsers lists members of GitHub orgs that have a linked
+	// Sourcegraph account.
+	repeated User LinkedUsers = 1;
+
+	// ExternalUsers lists members of GitHub orgs that do not yet have
+	// a linked Sourcegraph account.
+	repeated User ExternalUsers = 2;
+}
+
 message TaskSpec {
 	BuildSpec Build = 1 [(gogoproto.nullable) = false];
 	uint64 ID = 2;
@@ -1551,6 +1563,10 @@ message UsersListOptions {
 	string Sort = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Direction = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+	// UIDs filters the resulting list to only contain users
+	// with one of these UIDs.
+	repeated int32 UIDs = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 message OrgsListOp {
@@ -1881,6 +1897,14 @@ service Users {
 		};
 	};
 
+	// ListTeammates fetches all members of the GitHub organizations
+	// that the current user is part of.
+	rpc ListTeammates(UserSpec) returns (Teammates) {
+		option (google.api.http) = {
+			get: "/users/list_teammates"
+		};
+	};
+
 	// Count returns the number of users signed up on this instance.
 	rpc Count(pbtypes.Void) returns (UserCount) {
 		option (google.api.http) = {
@@ -2118,6 +2142,10 @@ message ExternalToken {
 	// to. The same client ID must be used when using this access
 	// token.
 	string client_id = 5 [(gogoproto.customname) = "ClientID"];
+
+	// ExtUID is the UID on the external service of the user corresponding
+	// to this token.
+	int32 ext_uid = 6 [(gogoproto.customname) = "ExtUID"];
 }
 
 message AuthorshipInfo {

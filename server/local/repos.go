@@ -3,7 +3,6 @@ package local
 import (
 	"encoding/json"
 	"log"
-	"os"
 	pathpkg "path"
 	"time"
 
@@ -20,10 +19,10 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -33,7 +32,6 @@ import (
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
@@ -61,22 +59,6 @@ func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegra
 		return nil, err
 	}
 
-	a := authpkg.ActorFromContext(ctx)
-	if r.Private && !s.verifyScopeHasPrivateRepoAccess(a.Scope) {
-		uid := a.UID
-		if uid == 0 {
-			return nil, errPermissionDenied
-		}
-		repoPermsStore := authpkg.RepoPermsStore{}
-		perms, err := repoPermsStore.Get(ctx, uid, repo.URI)
-		if err != nil {
-			log15.Warn("Error checking repo permissions", "repo", repo.URI, "uid", uid)
-			return nil, errPermissionDenied
-		}
-		if !perms.Allow {
-			return nil, errPermissionDenied
-		}
-	}
 	veryShortCache(ctx)
 	return r, nil
 }
@@ -114,30 +96,8 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 		return nil, err
 	}
 
-	// Filter out private repos that are not visible to the user.
-	// TODO: move this check to the store level.
-	var filteredRepos []*sourcegraph.Repo
-	repoPermsStore := authpkg.RepoPermsStore{}
-	uid := authpkg.ActorFromContext(ctx).UID
-	for _, repo := range repos {
-		if repo.Private {
-			if uid == 0 {
-				continue
-			}
-
-			perms, err := repoPermsStore.Get(ctx, uid, repo.URI)
-			if err != nil {
-				log15.Warn("Error checking repo permissions", "repo", repo.URI, "uid", uid)
-				continue
-			}
-			if !perms.Allow {
-				continue
-			}
-		}
-		filteredRepos = append(filteredRepos, repo)
-	}
 	veryShortCache(ctx)
-	return &sourcegraph.RepoList{Repos: filteredRepos}, nil
+	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
 // setRepoPermissions modifies repos in place, setting their
@@ -168,6 +128,10 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, err
 	}
 
+	if _, err := s.get(ctx, op.URI); err == nil {
+		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
+	}
+
 	ts := pbtypes.NewTimestamp(time.Now())
 	repo := &sourcegraph.Repo{
 		URI:          op.URI,
@@ -184,27 +148,14 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, err
 	}
 
-	if op.Mirror && op.Private {
-		// Copy this user's access token into the external auth store, to
-		// enable the repo updater to fetch the repo from the external host.
-		token, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
-			Host:     util.RepoURIHost(op.URI),
-			ClientID: os.Getenv("GITHUB_CLIENT_ID"),
-		})
-		if err != nil {
-			log15.Warn("Failed to fetch access token for private repo", "repo", op.URI, "error", err)
-		} else if token != nil {
-			authStore := ext.AuthStore{}
-			err := authStore.Set(ctx, op.URI, ext.Credentials{Token: token.Token})
-			if err != nil {
-				log15.Warn("Failed to set access token for private repo", "repo", op.URI, "error", err)
-			}
-		}
-
+	if authutil.ActiveFlags.MirrorsNext && op.Mirror && op.Private {
 		// Allow this user to access this repo.
-		repoPermsStore := authpkg.RepoPermsStore{}
-		uid := authpkg.ActorFromContext(ctx).UID
-		if err := repoPermsStore.Set(ctx, uid, op.URI); err != nil {
+		repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
+		if repoPermsStore == nil {
+			return nil, grpc.Errorf(codes.Unimplemented, "repo perms store not available")
+		}
+		uid := int32(authpkg.ActorFromContext(ctx).UID)
+		if err := repoPermsStore.Add(ctx, uid, op.URI); err != nil && err != store.ErrRepoPermissionExists {
 			log15.Warn("Failed to set repo permissions for user", "repo", op.URI, "uid", uid, "error", err)
 		}
 	}

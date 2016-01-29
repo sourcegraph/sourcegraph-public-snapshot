@@ -98,3 +98,17 @@ func (s *users) verifyCanReadEmail(ctx context.Context, user sourcegraph.UserSpe
 	}
 	return grpc.Errorf(codes.PermissionDenied, "Can not view user email")
 }
+
+func (s *users) verifyCanListTeammates(ctx context.Context, user *sourcegraph.UserSpec) error {
+	if user.UID == 0 {
+		return grpc.Errorf(codes.FailedPrecondition, "no uid specified")
+	}
+
+	uid := int32(authpkg.ActorFromContext(ctx).UID)
+	if uid == user.UID {
+		return nil
+	}
+
+	// Actor not authenticated as requested user, so check if they have admin access.
+	return accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.ListTeammates")
+}

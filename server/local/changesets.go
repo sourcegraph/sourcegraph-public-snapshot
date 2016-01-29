@@ -4,12 +4,18 @@ import (
 	"errors"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
+	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
@@ -85,7 +91,34 @@ func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp
 		return nil, err
 	}
 
-	err := store.ChangesetsFromContext(ctx).Merge(ctx, op)
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{
+		URI: op.Repo.URI,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var token string
+	if repo.Mirror {
+		cred, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+			Host: githubcli.Config.Host(),
+		})
+		if err != nil {
+			return nil, grpc.Errorf(codes.PermissionDenied, "Changeset.Merge unable to fetch git credentials for repo %q: %v", repo.URI, err)
+		}
+		token = cred.Token
+	} else {
+		token = client.Credentials.GetAccessToken()
+		if token == "" {
+			return nil, grpc.Errorf(codes.PermissionDenied, "Changeset.Merge can't generate local access token: token is empty")
+		}
+	}
+
+	err = store.ChangesetsFromContext(ctx).Merge(ctx, &store.ChangesetMergeOp{
+		Op:       op,
+		CloneURL: repo.HTTPCloneURL,
+		Token:    token,
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -24,6 +24,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
@@ -312,7 +313,8 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 	if reqUID == 0 {
 		reqUID = a.UID
 	}
-	if a.UID == 0 || a.UID != reqUID {
+	// Check if actor is authenticated as the requested user, or if the actor has special scope with admin access.
+	if (a.UID == 0 || a.UID != reqUID) && !accesscontrol.VerifyScopeHasAccess(ctx, a.Scope, "Auth.GetExternalToken") {
 		return nil, grpc.Errorf(codes.PermissionDenied, "user not authenticated to complete this operation")
 	}
 
@@ -333,6 +335,7 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 		Token:    dbToken.Token,
 		Scope:    dbToken.Scope,
 		ClientID: dbToken.ClientID,
+		ExtUID:   int32(dbToken.ExtUID),
 	}, nil
 }
 
@@ -361,6 +364,7 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 		Token:    extToken.Token,
 		Scope:    extToken.Scope,
 		ClientID: extToken.ClientID,
+		ExtUID:   int(extToken.ExtUID),
 	}
 
 	err := extTokensStore.SetUserToken(ctx, dbToken)

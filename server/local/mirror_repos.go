@@ -1,6 +1,7 @@
 package local
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -61,14 +61,14 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	remoteOpts := vcs.RemoteOpts{}
 	// For private repos, supply auth from local auth store.
 	if r.Private {
-		authStore := ext.AuthStore{}
-		cred, err := authStore.Get(ctx, op.Repo.URI)
+		token, err := s.getRepoAuthToken(ctx, op.Repo.URI)
 		if err != nil {
+			log.Printf("err: %v", err)
 			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
 		}
 
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
-			Pass: cred.Token,
+			Pass: token,
 		}
 	}
 
@@ -84,6 +84,32 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
+}
+
+func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string, error) {
+	repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
+	if repoPermsStore == nil {
+		return "", grpc.Errorf(codes.Unimplemented, "repo perms store not available")
+	}
+
+	users, err := repoPermsStore.ListRepoUsers(ctx, repo)
+	if err != nil {
+		return "", err
+	}
+
+	if users == nil || len(users) == 0 {
+		return "", grpc.Errorf(codes.Unavailable, "repo has no user with access")
+	}
+
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+		UID:  users[0],
+		Host: githubcli.Config.Host(),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return extToken.Token, nil
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
@@ -273,6 +299,11 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		return nil, err
 	}
 
+	repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
+	if repoPermsStore == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "repo perms store not available")
+	}
+
 	ghRepos := &github.Repos{}
 	// TODO(perf) Cache this response or perform the fetch after page load to avoid
 	// having to wait for an http round trip to github.com.
@@ -314,20 +345,20 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// Check if a user's remote GitHub repo already exists locally under the
 	// same URI. Allow this user to access all their private repos that are
 	// already mirrored on this Sourcegraph.
-	repoPermsStore := authpkg.RepoPermsStore{}
-	uid := authpkg.ActorFromContext(ctx).UID
+	var localPrivateRepos []string
 	for i, repo := range gitHubRepos {
 		if _, ok := existingRepos[repo.URI]; ok {
 			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: true, Repo: *repo}
 			if repo.Private {
-				err := repoPermsStore.Set(ctx, uid, repo.URI)
-				if err != nil {
-					log15.Warn("Failed to set repo permissions for user", "repo", repo.URI, "uid", uid, "error", err)
-				}
+				localPrivateRepos = append(localPrivateRepos, repo.URI)
 			}
 		} else {
 			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: false, Repo: *repo}
 		}
+	}
+	uid := int32(authpkg.ActorFromContext(ctx).UID)
+	if err := repoPermsStore.Update(ctx, uid, localPrivateRepos); err != nil {
+		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
 	gd.Repos = remoteRepos
 
@@ -402,6 +433,12 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 	orgNames := make([]string, len(ghOrgs))
 	for i, org := range ghOrgs {
 		orgNames[i] = *org.Login
+
+		// Add org to waitlist if it doesn't exist already.
+		err := waitlistStore.AddOrg(ctx, orgNames[i])
+		if err != nil && err != store.ErrWaitlistedOrgExists {
+			return nil, err
+		}
 	}
 	grantedOrgs, err := waitlistStore.ListOrgs(ctx, false, true, orgNames)
 	if err != nil {

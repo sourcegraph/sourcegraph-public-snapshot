@@ -1005,6 +1005,14 @@ func (s remoteUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions)
 	return c.Users.List(ctx, v1)
 }
 
+func (s remoteUsers) ListTeammates(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.Teammates, error) {
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.Users.ListTeammates(ctx, v1)
+}
+
 func (s remoteUsers) Count(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error) {
 	c, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
