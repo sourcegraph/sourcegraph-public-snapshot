@@ -166,7 +166,6 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	opt.IncludeCommit = true
-	opt.BehindAheadBranch = "master" // TODO: Use default branch, which may not be "master".
 
 	branches, err := apiclient.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: rc.Repo.RepoSpec(), Opt: &opt})
 	if err != nil {
