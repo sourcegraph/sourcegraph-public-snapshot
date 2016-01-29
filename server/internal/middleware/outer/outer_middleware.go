@@ -901,7 +901,7 @@ func (s wrappedChangesets) Create(ctx context.Context, v1 *sourcegraph.Changeset
 	return rv, nil
 }
 
-func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error) {
+func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
 	var cc *grpccache.CacheControl
 	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
 

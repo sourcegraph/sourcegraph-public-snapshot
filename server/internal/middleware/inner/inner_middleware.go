@@ -807,7 +807,7 @@ func (s wrappedChangesets) Create(ctx context.Context, param *sourcegraph.Change
 	return
 }
 
-func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.ChangesetSpec) (res *sourcegraph.Changeset, err error) {
+func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.ChangesetGetOp) (res *sourcegraph.Changeset, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Changesets", "Get", param)
 	defer func() {
