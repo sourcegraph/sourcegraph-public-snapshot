@@ -687,7 +687,7 @@ service Changesets {
 	rpc Create(ChangesetCreateOp) returns (Changeset);
 
 	// Get returns the changeset by RepoSpec and ID.
-	rpc Get(ChangesetSpec) returns (Changeset);
+	rpc Get(ChangesetGetOp) returns (Changeset);
 
 	// List lists changesets for a repository.
 	rpc List(ChangesetListOp) returns (ChangesetList);
@@ -835,6 +835,16 @@ message ChangesetListReviewsOp {
 message ChangesetSpec {
 	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
 	int64 ID = 2;
+}
+
+// ChangesetGetOp specifies options to get a changeset.
+message ChangesetGetOp {
+	// Spec specifies the changeset to get.
+	ChangesetSpec Spec = 1 [(gogoproto.nullable) = false];
+
+	// FullReviewerUsers, if set, will cause the returned changeset to include a
+	// full User object (with AvatarURL and all) for each Reviewer.
+	bool FullReviewerUsers = 2;
 }
 
 message ChangesetUpdateOp {
