@@ -2,10 +2,22 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 
+// function created to update cursor position in constructor()
+let cursorX;
+let cursorY;
+document.onmousemove = (event) => {
+	cursorX = event.clientX;
+	cursorY = event.clientY;
+};
+
 class DefTooltip extends Component {
 	constructor(props) {
 		super(props);
 		this._updatePosition = this._updatePosition.bind(this);
+		this.state = {
+			top: cursorY + 15,
+			left: Math.min(cursorX + 15, window.innerWidth - 380),
+		};
 	}
 
 	componentDidMount() {

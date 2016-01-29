@@ -3,7 +3,10 @@
 		"type": "div",
 		"props": {
 			"className": "token-popover",
-			"style": {},
+			"style": {
+				"left": null,
+				"top": null
+			},
 			"children": [
 				{
 					"type": "div",
