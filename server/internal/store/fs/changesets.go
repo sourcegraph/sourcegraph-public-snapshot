@@ -92,6 +92,12 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 		}
 	}
 
+	// Do not ever encode full User objects. This is not the canonical storage for
+	// those (they are retrieved optionally by Changesets.Get).
+	for _, reviewer := range cs.Reviewers {
+		reviewer.FullUser = nil
+	}
+
 	ts := pbtypes.NewTimestamp(time.Now())
 	cs.CreatedAt = &ts
 	id := strconv.FormatInt(cs.ID, 10)
@@ -147,10 +153,22 @@ func resolveNextChangesetID(fs platformstorage.System) (int64, error) {
 	return max + 1, nil
 }
 
-func (s *Changesets) Get(ctx context.Context, repoPath string, ID int64) (*sourcegraph.Changeset, error) {
-	fs := s.storage(ctx, repoPath)
+func (s *Changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
+	fs := s.storage(ctx, op.Spec.Repo.URI)
 	cs := &sourcegraph.Changeset{}
-	err := s.unmarshal(fs, ID, changesetMetadataFile, cs)
+	err := s.unmarshal(fs, op.Spec.ID, changesetMetadataFile, cs)
+	if err != nil {
+		return nil, err
+	}
+
+	if op.FullReviewerUsers {
+		for _, reviewer := range cs.Reviewers {
+			reviewer.FullUser, err = svc.Users(ctx).Get(ctx, &reviewer.UserSpec)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	return cs, err
 }
 
@@ -192,6 +210,18 @@ func (s *Changesets) unmarshal(fs platformstorage.System, changesetID int64, fil
 
 var errInvalidUpdateOp = errors.New("invalid update operation")
 
+// copyChangeset copies a changeset struct for the specific needs of
+// Changesets.Update.
+func copyChangeset(src *sourcegraph.Changeset) *sourcegraph.Changeset {
+	cpy := *src
+	cpy.Reviewers = make([]*sourcegraph.ChangesetReviewer, len(src.Reviewers))
+	for i, reviewer := range src.Reviewers {
+		copied := *reviewer
+		cpy.Reviewers[i] = &copied
+	}
+	return &cpy
+}
+
 func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	fs := s.storage(ctx, opt.Op.Repo.URI)
 
@@ -200,7 +230,13 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	if (op.Close && op.Open) || (op.Open && op.Merged) {
 		return nil, errInvalidUpdateOp
 	}
-	current, err := s.Get(ctx, op.Repo.URI, op.ID)
+	current, err := s.Get(ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			ID:   op.ID,
+			Repo: op.Repo,
+		},
+		FullReviewerUsers: op.FullReviewerUsers,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -208,13 +244,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	// Copy the current changeset. It is important that both after and current
 	// changesets are pointer types, as they are compared with reflect.DeepEqual
 	// below to detect changes.
-	afterCpy := *current
-	afterCpy.Reviewers = make([]*sourcegraph.ChangesetReviewer, len(current.Reviewers))
-	for i, reviewer := range current.Reviewers {
-		cpy := *reviewer
-		afterCpy.Reviewers[i] = &cpy
-	}
-	after := &afterCpy
+	after := copyChangeset(current)
 
 	ts := pbtypes.NewTimestamp(time.Now())
 
@@ -234,23 +264,29 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		after.Merged = true
 	}
 
-	addReviewer := func(add sourcegraph.UserSpec, lgtm bool) error {
+	addReviewer := func(add *sourcegraph.User, lgtm bool) error {
 		// Check they aren't already a reviewer.
 		already := false
+		addSpec := add.Spec()
 		for _, reviewer := range after.Reviewers {
-			if reviewer.UserSpec.Domain == add.Domain && reviewer.UserSpec.UID == add.UID {
+			if reviewer.UserSpec.Domain == addSpec.Domain && reviewer.UserSpec.UID == addSpec.UID {
 				already = true
 				break
 			}
 		}
 		if !already {
+			fullUser := add
+			if !op.FullReviewerUsers {
+				fullUser = nil
+			}
 			after.Reviewers = append(after.Reviewers, &sourcegraph.ChangesetReviewer{
-				UserSpec: add,
+				UserSpec: addSpec,
 				LGTM:     lgtm,
+				FullUser: fullUser,
 			})
 
 			// The CS needs review by the reviewer, so update the index.
-			if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, add, true); err != nil {
+			if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, addSpec, true); err != nil {
 				return err
 			}
 		}
@@ -265,7 +301,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		if err != nil {
 			return nil, err
 		}
-		if err := addReviewer(addUser.Spec(), false); err != nil {
+		if err := addReviewer(addUser, false); err != nil {
 			return nil, err
 		}
 	}
@@ -329,7 +365,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			// Per the gRPC definition, if they aren't already a reviewer we will make
 			// them one.
 			if !updated {
-				if err := addReviewer(authorUser.Spec(), op.LGTM); err != nil {
+				if err := addReviewer(authorUser, op.LGTM); err != nil {
 					return nil, err
 				}
 			}
@@ -359,12 +395,19 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		return &sourcegraph.ChangesetEvent{}, nil
 	}
 
+	// Do not ever encode full User objects. This is not the canonical storage for
+	// those (they are retrieved optionally by Changesets.Get).
+	forStorage := copyChangeset(after)
+	for _, reviewer := range forStorage.Reviewers {
+		reviewer.FullUser = nil
+	}
+
 	// HERE BE DRAGONS: We are doing a read followed by a write without
 	// any concurrency control. We are relying on the fact that concurrent
 	// changes to CS metadata should be exceedingly rare, and we do as
 	// little as possible between read and write. This is done in the vain
 	// of performance wins.
-	err = platformstorage.PutJSON(fs, id, changesetMetadataFile, &after)
+	err = platformstorage.PutJSON(fs, id, changesetMetadataFile, forStorage)
 	if err != nil {
 		return nil, err
 	}
@@ -394,7 +437,12 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 }
 
 func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeOp) error {
-	cs, _ := s.Get(ctx, opt.Repo.URI, opt.ID)
+	cs, _ := s.Get(ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			ID:   opt.ID,
+			Repo: opt.Repo,
+		},
+	})
 	base, head := cs.DeltaSpec.Base.Rev, cs.DeltaSpec.Head.Rev
 	if cs.Merged {
 		return grpc.Errorf(codes.FailedPrecondition, "changeset #%d already merged", cs.ID)
