@@ -2,6 +2,7 @@ package pgsql
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -20,7 +21,7 @@ type repoPermsRow struct {
 func init() {
 	Schema.Map.AddTableWithName(repoPermsRow{}, "repo_perms").SetKeys(false, "UID", "Repo")
 	Schema.CreateSQL = append(Schema.CreateSQL,
-		`ALTER TABLE user_waitlist ALTER COLUMN granted_at TYPE timestamp with time zone USING granted_at::timestamp with time zone;`,
+		`ALTER TABLE repo_perms ALTER COLUMN granted_at TYPE timestamp with time zone USING granted_at::timestamp with time zone;`,
 	)
 }
 
@@ -81,7 +82,7 @@ func (r *repoPerms) Update(ctx context.Context, uid int32, repos []string) error
 
 	// Remove extra permissions
 	sql := fmt.Sprintf(`DELETE FROM repo_perms WHERE %s AND %s`, uidSQL, repoSQL)
-	res, err := dbh(ctx).Exec(sql, uid)
+	res, err := dbh(ctx).Exec(sql, args...)
 	if err != nil {
 		return err
 	}
@@ -131,6 +132,7 @@ func (r *repoPerms) ListRepoUsers(ctx context.Context, repo string) ([]int32, er
 
 	var repoPermsRows []*repoPermsRow
 	sql := `SELECT * FROM repo_perms WHERE repo=$1`
+	log.Printf("ListRepoUsers sql: %s", sql)
 	if err := dbh(ctx).Select(&repoPermsRows, sql, repo); err != nil {
 		return nil, err
 	}

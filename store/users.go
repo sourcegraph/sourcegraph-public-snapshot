@@ -90,6 +90,10 @@ type ExternalAuthTokens interface {
 	// match tok.User, tok.Host, and tok.ClientID, an error is
 	// returned.
 	SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error
+
+	// ListExternalUsers returns the list of external tokens corresponding to
+	// the given external user ids.
+	ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error)
 }
 
 // UserNotFoundError occurs when a user is not found.

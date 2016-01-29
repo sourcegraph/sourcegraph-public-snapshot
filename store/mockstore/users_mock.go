@@ -138,8 +138,9 @@ func (s *UserKeys) ListKeys(ctx context.Context, uid uint32) ([]sourcegraph.SSHP
 var _ store.UserKeys = (*UserKeys)(nil)
 
 type ExternalAuthTokens struct {
-	GetUserToken_ func(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error)
-	SetUserToken_ func(ctx context.Context, tok *auth.ExternalAuthToken) error
+	GetUserToken_      func(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error)
+	SetUserToken_      func(ctx context.Context, tok *auth.ExternalAuthToken) error
+	ListExternalUsers_ func(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error)
 }
 
 func (s *ExternalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error) {
@@ -148,6 +149,10 @@ func (s *ExternalAuthTokens) GetUserToken(ctx context.Context, user int, host, c
 
 func (s *ExternalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
 	return s.SetUserToken_(ctx, tok)
+}
+
+func (s *ExternalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error) {
+	return s.ListExternalUsers_(ctx, extUIDs, host, clientID)
 }
 
 var _ store.ExternalAuthTokens = (*ExternalAuthTokens)(nil)

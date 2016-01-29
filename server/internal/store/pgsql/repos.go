@@ -3,6 +3,7 @@ package pgsql
 import (
 	"errors"
 	"fmt"
+	"log"
 	"path"
 	"strings"
 	"time"
@@ -13,7 +14,10 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -172,7 +176,12 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	sql, args, err := s.listSQL(opt)
+	// Fetch the list of private repositories visible to the current user.
+	privateURIs := accesscontrol.GetActorPrivateRepos(ctx, authpkg.ActorFromContext(ctx), "Repos.List")
+	if len(privateURIs) == 0 && accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.List") {
+		privateURIs = nil
+	}
+	sql, args, err := s.listSQL(opt, privateURIs)
 	if err != nil {
 		if err == errOptionsSpecifyEmptyResult {
 			err = nil
@@ -199,7 +208,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
-func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
+func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -258,6 +267,23 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 			return "", nil, errOptionsSpecifyEmptyResult
 		}
 
+		// If MirrorsNext is enabled and private repositories are part of the request,
+		// only pick repositories that are either public or visible to the current user.
+		if authutil.ActiveFlags.MirrorsNext && privateURIs != nil && opt.Type != "public" {
+			filterPrivateSQL := "false"
+			if opt.Type != "private" {
+				filterPrivateSQL = "NOT private"
+			}
+			if len(privateURIs) > 0 {
+				privateURIBindVars := make([]string, len(privateURIs))
+				for i, uri := range privateURIs {
+					privateURIBindVars[i] = arg(uri)
+				}
+				filterPrivateSQL += " OR uri IN ("+strings.Join(privateURIBindVars, ",")+")"
+			}
+			conds = append(conds, filterPrivateSQL)
+		}
+
 		if conds != nil {
 			whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
 		} else {
@@ -297,7 +323,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 	orderBySQL += fmt.Sprintf("%s %s NULLS LAST", sort, direction)
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE %s ORDER BY %s`, selectSQL, fromSQL, whereSQL, orderBySQL)
-
+	log.Printf("repos.List sql: %s", sql)
 	return sql, args, nil
 }
 

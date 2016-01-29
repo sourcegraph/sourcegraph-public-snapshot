@@ -144,6 +144,14 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 		sql += " AND (LOWER(login)=" + arg(strings.ToLower(opt.Query)) + " OR LOWER(login) LIKE " + arg(strings.ToLower(opt.Query)+"%") + ")"
 	}
 
+	if opt.UIDs != nil && len(opt.UIDs) > 0 {
+		uidBindVars := make([]string, len(opt.UIDs))
+		for i, uid := range opt.UIDs {
+			uidBindVars[i] = arg(uid)
+		}
+		sql += " AND uid in ("+strings.Join(uidBindVars, ",")+")"
+	}
+
 	sort := opt.Sort
 	direction := opt.Direction
 	if sort == "" {

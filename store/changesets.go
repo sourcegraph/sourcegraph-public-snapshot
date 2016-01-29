@@ -31,6 +31,22 @@ type ChangesetUpdateOp struct {
 	Head string
 }
 
+// ChangesetMergeOp contains the configuration needed for a changeset merge
+// operation. It accepts the public API's update options, as well as two fields
+// not for external use.
+type ChangesetMergeOp struct {
+	// Op is the update operation that will be applied to a changeset's public
+	// properties.
+	Op *sourcegraph.ChangesetMergeOp
+
+	// CloneURL specifies the location of the git repository.
+	CloneURL string
+
+	// Token is the auth token to use for performing the merge operation on the
+	// git repository.
+	Token string
+}
+
 type Changesets interface {
 	// Create creates a new changeset within the given repository. It will
 	// alter the Changeset in the parameters by updating its fields (ID, CreatedAt).
@@ -56,7 +72,7 @@ type Changesets interface {
 
 	// Merge merges the head branch of the changeset into its base branch and
 	// pushes the resulting merged base.
-	Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp) error
+	Merge(ctx context.Context, op *ChangesetMergeOp) error
 
 	// ListChangesetEvents lists the events in a changeset
 	ListEvents(ctx context.Context, spec *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)

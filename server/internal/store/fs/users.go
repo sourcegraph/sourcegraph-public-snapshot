@@ -137,10 +137,18 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 
 	var users []*sourcegraph.User
 
-	if opt != nil && opt.Query != "" {
+	var uidMap map[int32]struct{}
+	if opt != nil && opt.UIDs != nil && len(opt.UIDs) > 0 {
+		uidMap = make(map[int32]struct{})
+		for _, uid := range opt.UIDs {
+			uidMap[uid] = struct{}{}
+		}
+	}
+
+	if opt != nil && (opt.Query != "" || uidMap != nil) {
 		users = []*sourcegraph.User{} // non-nil sentinel value
 		for _, e := range entries {
-			if userMatchesQuery(&e.User, opt.Query) {
+			if userMatchesQuery(&e.User, opt.Query, uidMap) {
 				users = append(users, &e.User)
 			}
 		}
@@ -177,8 +185,16 @@ func (s *users) Count(ctx context.Context) (int32, error) {
 	return count, nil
 }
 
-func userMatchesQuery(user *sourcegraph.User, query string) bool {
-	return strings.HasPrefix(strings.ToLower(user.Login), strings.ToLower(query))
+func userMatchesQuery(user *sourcegraph.User, query string, uidMap map[int32]struct{}) bool {
+	if query != "" && !strings.HasPrefix(strings.ToLower(user.Login), strings.ToLower(query)) {
+		return false
+	}
+	if uidMap != nil {
+		if _, ok := uidMap[user.UID]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {

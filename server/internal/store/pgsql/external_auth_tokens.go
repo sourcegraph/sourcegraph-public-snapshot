@@ -1,6 +1,9 @@
 package pgsql
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/auth"
@@ -45,4 +48,30 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 		_, err := tx.Update(tok)
 		return err
 	})
+}
+
+func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error) {
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := modl.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
+	}
+	var conds []string
+	conds = append(conds, "host="+arg(host))
+	conds = append(conds, "client_id="+arg(clientID))
+	uidBindVars := make([]string, len(extUIDs))
+	for i, uid := range extUIDs {
+		uidBindVars[i] = arg(uid)
+	}
+	conds = append(conds, "ext_uid IN ("+strings.Join(uidBindVars, ",")+")")
+	whereSQL := "(" + strings.Join(conds, ") AND (") + ")"
+	sql := fmt.Sprintf(`SELECT * FROM ext_auth_token WHERE %s`, whereSQL)
+
+	var toks []*auth.ExternalAuthToken
+	err := dbh(ctx).Select(&toks, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	return toks, nil
 }

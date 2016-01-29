@@ -22,14 +22,11 @@ import (
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 const (
@@ -435,11 +432,13 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	return evt, nil
 }
 
-func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeOp) error {
+func (s *Changesets) Merge(ctx context.Context, opt *store.ChangesetMergeOp) error {
+	op := opt.Op
+
 	cs, _ := s.Get(ctx, &sourcegraph.ChangesetGetOp{
 		Spec: sourcegraph.ChangesetSpec{
-			ID:   opt.ID,
-			Repo: opt.Repo,
+			ID:   op.ID,
+			Repo: op.Repo,
 		},
 	})
 	base, head := cs.DeltaSpec.Base.Rev, cs.DeltaSpec.Head.Rev
@@ -448,29 +447,6 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	}
 	if cs.ClosedAt != nil {
 		return grpc.Errorf(codes.FailedPrecondition, "changeset #%d already closed", cs.ID)
-	}
-
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{
-		URI: opt.Repo.URI,
-	})
-	if err != nil {
-		return err
-	}
-
-	var repoPath string
-	var auth string
-	if repo.Mirror {
-		authStore := ext.AuthStore{}
-		cred, err := authStore.Get(ctx, repo.URI)
-		if err != nil {
-			return fmt.Errorf("unable to fetch git credentials for repo %q: %v", repo.URI, err)
-		}
-		auth = cred.Token
-	} else {
-		auth = client.Credentials.GetAccessToken()
-		if auth == "" {
-			return errors.New("can't generate local access token: token is empty")
-		}
 	}
 
 	// Determine the person who is merging.
@@ -485,22 +461,22 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	}
 
 	// Determine the clone URL.
-	cloneURL, err := url.Parse(repo.HTTPCloneURL)
+	cloneURL, err := url.Parse(opt.CloneURL)
 	if err != nil {
 		return err
 	}
 	cloneURL.User = url.User("x-oauth-basic")
-	repoPath = cloneURL.String()
+	repoPath := cloneURL.String()
 
 	// Create a repo stage to perform the merge operation.
-	rs, err := changesetsNewRepoStage(repoPath, base, auth)
+	rs, err := changesetsNewRepoStage(repoPath, base, opt.Token)
 	if err != nil {
 		return err
 	}
 	defer rs.free()
 
 	// Determine the commit message template.
-	msgTmpl := opt.Message
+	msgTmpl := op.Message
 	if msgTmpl == "" {
 		// Caller didn't specify a template to use, so check the repository for one.
 		data, err := rs.readFile(".sourcegraph-merge-template")
@@ -519,7 +495,7 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 		return err
 	}
 
-	if err := rs.pull(head, opt.Squash); err != nil {
+	if err := rs.pull(head, op.Squash); err != nil {
 		return err
 	}
 	if err := rs.commit(merger, merger, msg); err != nil {
@@ -531,11 +507,11 @@ func (s *Changesets) Merge(ctx context.Context, opt *sourcegraph.ChangesetMergeO
 	// show the single "Merge changeset #33" commit message). Instead, we just
 	// mark the CS as merged here and confirm it has a resolved Base/Head for
 	// persistence after the branch has been deleted.
-	if opt.Squash {
+	if op.Squash {
 		_, err = s.Update(ctx, &store.ChangesetUpdateOp{
 			Op: &sourcegraph.ChangesetUpdateOp{
-				Repo:   opt.Repo,
-				ID:     opt.ID,
+				Repo:   op.Repo,
+				ID:     op.ID,
 				Merged: true,
 				Close:  true,
 			},
