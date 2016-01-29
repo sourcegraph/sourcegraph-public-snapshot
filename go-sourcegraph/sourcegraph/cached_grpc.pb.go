@@ -640,7 +640,7 @@ func (s *CachedChangesetsClient) Create(ctx context.Context, in *ChangesetCreate
 	return result, nil
 }
 
-func (s *CachedChangesetsClient) Get(ctx context.Context, in *ChangesetSpec, opts ...grpc.CallOption) (*Changeset, error) {
+func (s *CachedChangesetsClient) Get(ctx context.Context, in *ChangesetGetOp, opts ...grpc.CallOption) (*Changeset, error) {
 	if s.Cache != nil {
 		var cachedResult Changeset
 		cached, err := s.Cache.Get(ctx, "Changesets.Get", in, &cachedResult)
