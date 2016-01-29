@@ -241,7 +241,7 @@ func (s remoteChangesets) Create(ctx context.Context, v1 *sourcegraph.ChangesetC
 	return c.Changesets.Create(ctx, v1)
 }
 
-func (s remoteChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.Changeset, error) {
+func (s remoteChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
 	c, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, err
