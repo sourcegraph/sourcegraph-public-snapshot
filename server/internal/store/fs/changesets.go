@@ -42,10 +42,14 @@ const (
 	changesetIndexOpenDir   = "index_open"
 	changesetIndexClosedDir = "index_closed"
 
-	changesetIndexNeedsReview = "index_needs_review_"
-
 	defaultCommitMessageTmpl = "{{.Title}}\n\nMerge changeset #{{.ID}}\n\n{{.Description}}"
 )
+
+// changesetIndexNeedsReview returns a bucket name for the given UID that
+// represents the "changesets that need review" (by the given UID) index.
+func changesetIndexNeedsReview(uid int32) string {
+	return fmt.Sprintf("index_needs_review_%d", uid)
+}
 
 type Changesets struct {
 	fsLock sync.RWMutex // guards FS
@@ -560,7 +564,7 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 		return nil, errInvalidListOp
 	}
 	if op.NeedsReview != nil {
-		needsReview, err = s.indexList(ctx, fs, changesetIndexNeedsReview+strconv.Itoa(int(op.NeedsReview.UID)))
+		needsReview, err = s.indexList(ctx, fs, changesetIndexNeedsReview(op.NeedsReview.UID))
 	}
 	if op.Open {
 		open, err = s.indexList(ctx, fs, changesetIndexOpenDir)
@@ -658,7 +662,7 @@ func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.Changeset
 // updateNeedsReviewIndex updates the review index with whether or not the user,
 // u, needs to review the specified changeset or not.
 func (s *Changesets) updateNeedsReviewIndex(ctx context.Context, fs platformstorage.System, csID int64, u sourcegraph.UserSpec, needsReview bool) error {
-	bucket := changesetIndexNeedsReview + strconv.Itoa(int(u.UID))
+	bucket := changesetIndexNeedsReview(u.UID)
 	if needsReview {
 		return s.indexAdd(ctx, fs, csID, bucket)
 	}
