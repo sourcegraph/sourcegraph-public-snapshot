@@ -209,9 +209,10 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	// changesets are pointer types, as they are compared with reflect.DeepEqual
 	// below to detect changes.
 	afterCpy := *current
-	for i, reviewer := range after.Reviewers {
+	afterCpy.Reviewers = make([]*sourcegraph.ChangesetReviewer, len(current.Reviewers))
+	for i, reviewer := range current.Reviewers {
 		cpy := *reviewer
-		after.Reviewers[i] = &cpy
+		afterCpy.Reviewers[i] = &cpy
 	}
 	after := &afterCpy
 
@@ -367,13 +368,13 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	if err != nil {
 		return nil, err
 	}
-	s.updateIndex(ctx, fs, &after, after.ClosedAt == nil)
+	s.updateIndex(ctx, fs, after, after.ClosedAt == nil)
 
 	var evt *sourcegraph.ChangesetEvent
 	if shouldRegisterEvent(op) {
 		evt = &sourcegraph.ChangesetEvent{
 			Before:    current,
-			After:     &after,
+			After:     after,
 			Op:        op,
 			CreatedAt: &ts,
 		}
