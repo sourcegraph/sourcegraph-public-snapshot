@@ -156,7 +156,10 @@ var CodeReview = React.createClass({
 							changeset={this.state.Changeset}
 							onStatusChange={CodeReviewActions.changeChangesetStatus}
 							merging={this.state.merging}
-							onMerge={CodeReviewActions.mergeChangeset} />
+							onMerge={CodeReviewActions.mergeChangeset}
+							onLGTMChange={CodeReviewActions.LGTMChange}
+							onAddReviewer={CodeReviewActions.addReviewer}
+							onRemoveReviewer={CodeReviewActions.removeReviewer} />
 						{jiraIssues}
 					</div>
 				</div>

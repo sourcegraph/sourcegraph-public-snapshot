@@ -198,6 +198,8 @@ h1.changeset-title {
 		}
 
 		.changeset-control-panel {
+			max-width: 200px;
+
 			.panel-label {
 				display: block;
 				margin: 0 0 5px 3px;
@@ -218,6 +220,86 @@ h1.changeset-title {
 				}
 				label {
 					font-weight: normal;
+				}
+			}
+
+			.review-form {
+				.people {
+					margin-bottom: 15px;
+
+					.reviewer, .add-person {
+						line-height: 16px;
+						display: inline-block;
+						width: 34px;
+						height: 34px;
+						margin: 2px;
+						text-align: center;
+						vertical-align: middle;
+						padding: 4px;
+						border-radius: 50%;
+					}
+
+					.reviewer {
+						position: relative;
+						color: #999;
+						background-color: #efefef;
+
+						&.avatar {
+							background-size: cover;
+							.remove .btn .octicon {
+								top: -6px;
+							}
+						}
+
+						&::before {
+							position: relative;
+							top: 4px;
+						}
+
+						&:hover .remove {
+							display: inline-block;
+						}
+
+						.remove {
+							display: none;
+							position: relative;
+							width: 0;
+							height: 0;
+							top: -8px;
+							right: 8px;
+							float: right;
+							.btn {
+								background-color: #FF5757;
+								padding: 4.5px;
+								height: 18px;
+								width: 18px;
+								border: none;
+								border-radius: 50%;
+								&:focus {
+									outline:0;
+								}
+								.octicon {
+									font-size: 12px;
+									position: relative;
+									top: -5px;
+								}
+							}
+						}
+					}
+
+					.add-person {
+						border: 0;
+						&:focus {
+							outline:0;
+						}
+					}
+
+					.add-person-menu > input {
+						margin-top: 15px;
+						padding: .5em;
+						width: 100%;
+						border: 1px solid #E3E3D3;
+					}
 				}
 			}
 		}
