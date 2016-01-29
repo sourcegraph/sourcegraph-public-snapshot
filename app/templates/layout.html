@@ -47,14 +47,6 @@
 		<meta name="robots" content="noindex">
 		{{end}}
 
-		{{if .TraceguideAccessToken}}
-		<script src="https://resonancelabs.github.io/traceguide/dist/preview/rl-cruntime-browser.min.js"
-			type="text/javascript"
-			data-access_token="{{.TraceguideAccessToken}}"
-			data-service_host="{{.TraceguideServiceHost}}"
-			data-group_name="src_browser"></script>
-		{{end}}
-
 		{{template "Head" $}}
 
 		{{appconf.ExtraHeadHTML}}

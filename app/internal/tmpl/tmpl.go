@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"reflect"
 	"strconv"
 	"sync"
@@ -216,10 +215,6 @@ type Common struct {
 	// FullWidth sets the main body and navigation to fluid.
 	FullWidth bool
 
-	// Configuration for connecting to Traceguide servers.
-	TraceguideAccessToken string
-	TraceguideServiceHost string
-
 	// ErrorID is a randomly generated string used to identify a specific instance
 	// of app error in the error logs.
 	ErrorID string
@@ -319,9 +314,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,
 			FullWidth:            existingCommon.FullWidth,
-
-			TraceguideAccessToken: os.Getenv("SG_TRACEGUIDE_ACCESS_TOKEN"),
-			TraceguideServiceHost: os.Getenv("SG_TRACEGUIDE_SERVICE_HOST"),
 
 			ErrorID: errorID,
 

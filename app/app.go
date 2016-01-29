@@ -2,11 +2,9 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
@@ -185,13 +183,11 @@ var cspConfig = csp.Config{
 		FrameSrc:   []string{"https://www.youtube.com", "https://speakerdeck.com"},
 		FontSrc:    []string{"'self'", "https://s3-us-west-2.amazonaws.com/sourcegraph-assets/fonts/"},
 		ScriptSrc: []string{"'self'", "https://www.google-analytics.com", "heapanalytics.com", "https://cdn.heapanalytics.com", "https://platform.twitter.com", "https://speakerdeck.com",
-			"https://resonancelabs.github.io", // Traceguide JS
-			"'unsafe-eval'",                   // Required for Heap Analytics JS (their external script requires eval).
+			"'unsafe-eval'", // Required for Heap Analytics JS (their external script requires eval).
 		},
-		ImgSrc:     []string{"*"},
-		StyleSrc:   []string{"*"},
-		ConnectSrc: []string{fmt.Sprintf("%s:9997", os.Getenv("SG_TRACEGUIDE_SERVICE_HOST"))},
-		ReportURI:  "/.csp-report",
+		ImgSrc:    []string{"*"},
+		StyleSrc:  []string{"*"},
+		ReportURI: "/.csp-report",
 	},
 }
 
