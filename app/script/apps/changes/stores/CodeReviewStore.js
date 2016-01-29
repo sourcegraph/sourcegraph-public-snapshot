@@ -73,6 +73,9 @@ var CodeReviewStore = FluxStore({
 		CR_MERGE: "_onMerge",
 		CR_MERGE_SUCCESS: "_onMergeSuccess",
 		CR_MERGE_FAIL: "_onMergeFail",
+		CR_LGTM_CHANGE_SUCCESS: "_onBasicUpdateSuccess",
+		CR_ADD_REVIEWER_SUCCESS: "_onBasicUpdateSuccess",
+		CR_REMOVE_REVIEWER_SUCCESS: "_onBasicUpdateSuccess",
 	},
 
 	/**
@@ -328,6 +331,14 @@ var CodeReviewStore = FluxStore({
 
 	_onMergeFail(action) {
 		this.set("merging", false);
+	},
+
+	_onBasicUpdateSuccess(action) {
+		if(Object.keys(action.data).length == 0) {
+			return;
+		}
+		this.get("events").add(action.data, {silent: true});
+		this.set("Changeset", action.data.After);
 	},
 });
 
