@@ -87,6 +87,7 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 	if err != nil {
 		return err
 	}
+	op.FullReviewerUsers = true
 	result, err := sg.Changesets.Update(ctx, &op)
 	if err != nil {
 		return err

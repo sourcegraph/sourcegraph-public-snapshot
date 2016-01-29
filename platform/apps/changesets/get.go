@@ -135,7 +135,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		events  *sourcegraph.ChangesetEventList
 		csErr   error
 	)
-	changesetSpec := &sourcegraph.ChangesetSpec{
+	changesetSpec := sourcegraph.ChangesetSpec{
 		Repo: vc.RepoRevSpec.RepoSpec,
 		ID:   id,
 	}
@@ -144,7 +144,10 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		ChangesetID: id,
 	}
 	par.Do(func() error {
-		cs, csErr = sg.Changesets.Get(ctx, changesetSpec)
+		cs, csErr = sg.Changesets.Get(ctx, &sourcegraph.ChangesetGetOp{
+			Spec:              changesetSpec,
+			FullReviewerUsers: true,
+		})
 		return csErr
 	})
 	par.Do(func() error {
@@ -154,7 +157,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	})
 	par.Do(func() error {
 		var err error
-		events, err = sg.Changesets.ListEvents(ctx, changesetSpec)
+		events, err = sg.Changesets.ListEvents(ctx, &changesetSpec)
 		return err
 	})
 	err = par.Wait()
