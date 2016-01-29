@@ -11,6 +11,7 @@ type ExternalAuthToken struct {
 	Host        string    // the host that this token enables access to (e.g., "github.com")
 	Token       string    // the OAuth2 access token
 	Scope       string    // the scope listing the permissions the token is entitled to
+	ExtUID      int       `db:"ext_uid"`      // the external user id corresponding to this token
 	RefreshedAt time.Time `db:"refreshed_at"` // the last time this token was refreshed
 
 	// ClientID is the application client ID this token was granted

@@ -196,9 +196,6 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 // ListWithToken lists repos from GitHub that are visible in the given auth
 // token's scope.
-// TODO: rename or consolidate this method, since it can be used to list private
-// as well as public repos (when this instance is configured to access a
-// GitHub Enterprise instance).
 func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph.Repo, error) {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
