@@ -69,24 +69,66 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) *auth.Actor {
 }
 
 // VerifyRepoPerms checks if a repoURI is visible to the actor in the given context.
-func VerifyRepoPerms(actor auth.Actor, method, repoURI string) error {
-	if actor.UID == 0 {
-		return grpc.Errorf(codes.Unauthenticated, "repo not available (%s): no authenticated user in current context", method)
+func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI string) error {
+	// Confirm that the repo is private.
+	repoStore := store.ReposFromContextOrNil(ctx)
+	if repoStore == nil {
+		return grpc.Errorf(codes.Unimplemented, "no repo store in context", method)
+	}
+	if r, err := repoStore.Get(ctx, repoURI); err != nil {
+		return err
+	} else if !r.Private {
+		return nil
 	}
 
-	err := grpc.Errorf(codes.PermissionDenied, "repo not available (%s): user does not have access", method)
+	// If the user is unauthenticated, check if the scope has special access.
+	checkScope := func() error {
+		if VerifyScopeHasAccess(ctx, actor.Scope, method) {
+			return nil
+		} else {
+			return grpc.Errorf(codes.PermissionDenied, "repo not available (%s): user does not have access", method)
+		}
+	}
+
+	if actor.UID == 0 {
+		return checkScope()
+	}
+
 	if !actor.MirrorsNext || actor.RepoPerms == nil {
-		return err
+		return checkScope()
 	}
 
 	perms, ok := actor.RepoPerms.(*repoPerms)
 	if !ok || perms.visibleRepos == nil {
-		return err
+		return checkScope()
 	}
 
-	if val, ok := perms.visibleRepos[repoURI]; !ok || val == false {
-		return err
+	if val, ok := perms.visibleRepos[repoURI]; !ok || !val {
+		return checkScope()
 	}
 
 	return nil
+}
+
+// GetActorPrivateRepos returns the list of private repos visible to the current actor.
+func GetActorPrivateRepos(ctx context.Context, actor auth.Actor, method string) []string {
+	privateRepos := make([]string, 0)
+
+	if !authutil.ActiveFlags.MirrorsNext || actor.UID == 0 || !actor.MirrorsNext || actor.RepoPerms == nil {
+		return privateRepos
+	}
+
+	perms, ok := actor.RepoPerms.(*repoPerms)
+	if !ok || perms.visibleRepos == nil {
+		return privateRepos
+	}
+
+	for r, v := range perms.visibleRepos {
+		if !v {
+			continue
+		}
+		privateRepos = append(privateRepos, r)
+	}
+
+	return privateRepos
 }

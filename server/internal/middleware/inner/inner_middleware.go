@@ -3221,6 +3221,28 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	return
 }
 
+func (s wrappedUsers) ListTeammates(ctx context.Context, param *sourcegraph.UserSpec) (res *sourcegraph.Teammates, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Users", "ListTeammates", param)
+	defer func() {
+		trace.After(ctx, "Users", "ListTeammates", param, err, time.Since(start))
+	}()
+
+	err = s.c.Authenticate(ctx, "Users.ListTeammates")
+	if err != nil {
+		return
+	}
+
+	target := local.Services.Users
+
+	res, err = target.ListTeammates(ctx, param)
+
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Users.ListTeammates returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserCount, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Users", "Count", param)

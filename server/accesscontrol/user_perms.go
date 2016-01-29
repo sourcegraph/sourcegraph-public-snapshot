@@ -56,7 +56,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 	}
 
 	if authutil.ActiveFlags.MirrorsNext && repo != "" {
-		return VerifyRepoPerms(actor, method, repo)
+		return VerifyRepoPerms(ctx, actor, method, repo)
 	}
 
 	if authutil.ActiveFlags.AllowAnonymousReaders {
@@ -87,11 +87,11 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	}
 
 	if authutil.ActiveFlags.MirrorsNext && repo != "" {
-		return VerifyRepoPerms(actor, method, repo)
+		return VerifyRepoPerms(ctx, actor, method, repo)
 	}
 
 	if !actor.IsAuthenticated() {
-		if verifyScopeHasAccess(ctx, actor.Scope, method) {
+		if VerifyScopeHasAccess(ctx, actor.Scope, method) {
 			return nil
 		}
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
@@ -132,7 +132,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 	}
 
 	if !actor.IsAuthenticated() {
-		if verifyScopeHasAccess(ctx, actor.Scope, method) {
+		if VerifyScopeHasAccess(ctx, actor.Scope, method) {
 			return nil
 		}
 		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
@@ -188,7 +188,7 @@ var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*s
 // context. To avoid additional latency from expensive public key
 // operations, that check is not repeated here, but be careful
 // about refactoring that check.
-func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string) bool {
+func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string) bool {
 	for scope := range scopes {
 		switch {
 		case strings.HasPrefix(scope, "internal:"):
