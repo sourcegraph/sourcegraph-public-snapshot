@@ -83,6 +83,12 @@ module.exports = {
 		CR_MERGE: null,
 		CR_MERGE_SUCCESS: null,
 		CR_MERGE_FAIL: null,
+		CR_LGTM_CHANGE_SUCCESS: null,
+		CR_LGTM_CHANGE_FAIL: null,
+		CR_ADD_REVIEWER_SUCCESS: null,
+		CR_ADD_REVIEWER_FAIL: null,
+		CR_REMOVE_REVIEWER_SUCCESS: null,
+		CR_REMOVE_REVIEWER_FAIL: null,
 	}),
 
 	ChangesetStatus: keyMirror({
