@@ -182,3 +182,84 @@ module.exports.statusUpdateFailed = function(msg) {
 	if (msg.hasOwnProperty("Error")) msg = msg.Error;
 	notify.error(msg);
 };
+
+/**
+ * @description Action called by server if the request for adding a reviewer
+ * succeeds.
+ * @param {*} data - Server response.
+ * @returns {void}
+ */
+module.exports.addReviewerSuccess = function(data) {
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_ADD_REVIEWER_SUCCESS,
+		data: data,
+	});
+};
+
+/**
+ * @description Action called by server if the request for adding a reviewer
+ * fails.
+ * @param {*} err - Server response.
+ * @returns {void}
+ */
+module.exports.addReviewerFail = function(err) {
+	notify.warning(err.responseJSON.Error, null);
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_ADD_REVIEWER_FAIL,
+		data: err,
+	});
+};
+
+/**
+ * @description Action called by server if the request for removing a reviewer
+ * succeeds.
+ * @param {*} data - Server response.
+ * @returns {void}
+ */
+module.exports.removeReviewerSuccess = function(data) {
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_REMOVE_REVIEWER_SUCCESS,
+		data: data,
+	});
+};
+
+/**
+ * @description Action called by server if the request for removing a reviewer
+ * fails.
+ * @param {*} err - Server response.
+ * @returns {void}
+ */
+module.exports.removeReviewerFail = function(err) {
+	notify.warning(err.responseJSON.Error, null);
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_REMOVE_REVIEWER_FAIL,
+		data: err,
+	});
+};
+
+/**
+ * @description Action called by server if the request for changing the LGTM
+ * status succeeds.
+ * @param {*} data - Server response.
+ * @returns {void}
+ */
+module.exports.LGTMChangeSuccess = function(data) {
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_LGTM_CHANGE_SUCCESS,
+		data: data,
+	});
+};
+
+/**
+ * @description Action called by server if the request for changing the LGTM
+ * status fails.
+ * @param {*} err - Server response.
+ * @returns {void}
+ */
+module.exports.LGTMChangeFail = function(err) {
+	notify.warning(err.responseJSON.Error, null);
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_LGTM_CHANGE_FAIL,
+		data: err,
+	});
+};

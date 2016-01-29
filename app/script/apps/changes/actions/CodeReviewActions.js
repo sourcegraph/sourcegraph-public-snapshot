@@ -272,6 +272,49 @@ module.exports.changeChangesetStatus = function(status, evt) {
 		);
 };
 
+module.exports.LGTMChange = function(status) {
+	var id = CodeReviewStore.get("Changeset").ID,
+		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;
+
+	var op = {};
+	if (status) {
+		op.LGTM = true;
+	} else {
+		op.NotLGTM = true;
+	}
+
+	CodeUtil
+		.updateChangesetStatus(repo, id, op)
+		.then(
+			CodeReviewServerActions.LGTMChangeSuccess,
+			CodeReviewServerActions.LGTMChangeFailed
+		);
+};
+
+module.exports.addReviewer = function(reviewerLogin) {
+	var id = CodeReviewStore.get("Changeset").ID,
+		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;
+
+	CodeUtil
+		.updateChangesetStatus(repo, id, {AddReviewer: {Login: reviewerLogin}})
+		.then(
+			CodeReviewServerActions.addReviewerSuccess,
+			CodeReviewServerActions.addReviewerFailed
+		);
+};
+
+module.exports.removeReviewer = function(reviewerUser) {
+	var id = CodeReviewStore.get("Changeset").ID,
+		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;
+
+	CodeUtil
+		.updateChangesetStatus(repo, id, {RemoveReviewer: {Login: reviewerUser.Login}})
+		.then(
+			CodeReviewServerActions.removeReviewerSuccess,
+			CodeReviewServerActions.removeReviewerFailed
+		);
+};
+
 module.exports.mergeChangeset = function(opt, evt) {
 	var id = CodeReviewStore.get("Changeset").ID,
 		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;
