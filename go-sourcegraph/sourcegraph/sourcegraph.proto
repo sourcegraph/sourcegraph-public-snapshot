@@ -1033,12 +1033,15 @@ message UserMirrorData {
 	// Host is the name of the external code host.
 	string Host = 2;
 
-	// Repos is the list of repos visible to the user.
-	repeated RemoteRepo Repos = 3;
+	// PrivateRepos is the list of private repos visible to the user.
+	repeated RemoteRepo PrivateRepos = 3;
+
+	// PublicRepos is the list of public repos visible to the user.
+	repeated RemoteRepo PublicRepos = 4;
 
 	// State is the state of the user's access to mirrored repos on
 	// this server.
-	UserMirrorsState State = 4;
+	UserMirrorsState State = 5;
 }
 
 message WaitlistState {

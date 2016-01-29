@@ -3,7 +3,6 @@ package pgsql
 import (
 	"errors"
 	"fmt"
-	"log"
 	"path"
 	"strings"
 	"time"
@@ -323,7 +322,6 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 	orderBySQL += fmt.Sprintf("%s %s NULLS LAST", sort, direction)
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE %s ORDER BY %s`, selectSQL, fromSQL, whereSQL, orderBySQL)
-	log.Printf("repos.List sql: %s", sql)
 	return sql, args, nil
 }
 

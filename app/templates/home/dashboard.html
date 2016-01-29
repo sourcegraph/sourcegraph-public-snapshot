@@ -82,7 +82,7 @@
 		{{if (and .MirrorsNext $.CurrentUser (not appconf.DisableIntegrations))}}
 			{{with .MirrorData}}
 			<h4>Available GitHub repositories</h4>
-			{{if .Repos}}
+			{{if (or .PrivateRepos .PublicRepos)}}
 			<div class="repo-list">
 				<form action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">
 					<table class="table repo-list">
@@ -95,7 +95,13 @@
 							</td>
 						</tr>
 						{{$host := .Host}}
-						{{range $repo := .Repos}}
+						<tr>
+							<td>
+								<h4>Private</h4>
+							</td>
+							<td></td>
+						</tr>
+						{{range $repo := .PrivateRepos}}
 							{{if not $repo.ExistsLocally}}
 							<tr>
 								<td>
@@ -103,7 +109,26 @@
 									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
 								</td>
 								<td>
-									<input type="checkbox" name="RepoURI[]" value="{{$repo.URI}},{{ifString (not $repo.Private) "public"}}" >
+									<input type="checkbox" name="RepoURI[]" value="{{$repo.URI}},private" >
+								</td>
+							</tr>
+							{{end}}
+						{{end}}
+						<tr>
+							<td>
+								<h4>Public</h4>
+							</td>
+							<td></td>
+						</tr>
+						{{range $repo := .PublicRepos}}
+							{{if not $repo.ExistsLocally}}
+							<tr>
+								<td>
+									{{trimPrefix $repo.URI $host}}
+									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
+								</td>
+								<td>
+									<input type="checkbox" name="RepoURI[]" value="{{$repo.URI}},public" >
 								</td>
 							</tr>
 							{{end}}

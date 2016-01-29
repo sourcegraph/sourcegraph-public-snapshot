@@ -2,7 +2,6 @@ package pgsql
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -132,7 +131,6 @@ func (r *repoPerms) ListRepoUsers(ctx context.Context, repo string) ([]int32, er
 
 	var repoPermsRows []*repoPermsRow
 	sql := `SELECT * FROM repo_perms WHERE repo=$1`
-	log.Printf("ListRepoUsers sql: %s", sql)
 	if err := dbh(ctx).Select(&repoPermsRows, sql, repo); err != nil {
 		return nil, err
 	}

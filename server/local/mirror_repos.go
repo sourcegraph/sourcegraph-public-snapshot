@@ -1,7 +1,6 @@
 package local
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -63,7 +62,6 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	if r.Private {
 		token, err := s.getRepoAuthToken(ctx, op.Repo.URI)
 		if err != nil {
-			log.Printf("err: %v", err)
 			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
 		}
 
@@ -318,8 +316,6 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	gd.State = sourcegraph.UserMirrorsState_HasAccess
 
 	existingRepos := make(map[string]struct{})
-	remoteRepos := make([]*sourcegraph.RemoteRepo, len(gitHubRepos))
-
 	repoOpts := &sourcegraph.RepoListOptions{
 		ListOptions: sourcegraph.ListOptions{
 			PerPage: 1000,
@@ -345,22 +341,29 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// Check if a user's remote GitHub repo already exists locally under the
 	// same URI. Allow this user to access all their private repos that are
 	// already mirrored on this Sourcegraph.
+	privateRepos := make([]*sourcegraph.RemoteRepo, 0)
+	publicRepos := make([]*sourcegraph.RemoteRepo, 0)
 	var localPrivateRepos []string
-	for i, repo := range gitHubRepos {
+	for _, repo := range gitHubRepos {
+		remoteRepo := &sourcegraph.RemoteRepo{Repo: *repo}
 		if _, ok := existingRepos[repo.URI]; ok {
-			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: true, Repo: *repo}
+			remoteRepo.ExistsLocally = true
 			if repo.Private {
 				localPrivateRepos = append(localPrivateRepos, repo.URI)
 			}
+		}
+		if repo.Private {
+			privateRepos = append(privateRepos, remoteRepo)
 		} else {
-			remoteRepos[i] = &sourcegraph.RemoteRepo{ExistsLocally: false, Repo: *repo}
+			publicRepos = append(publicRepos, remoteRepo)
 		}
 	}
 	uid := int32(authpkg.ActorFromContext(ctx).UID)
 	if err := repoPermsStore.Update(ctx, uid, localPrivateRepos); err != nil {
 		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
-	gd.Repos = remoteRepos
+	gd.PrivateRepos = privateRepos
+	gd.PublicRepos = publicRepos
 
 	return gd, nil
 }
