@@ -101,8 +101,9 @@ var langConfigs = map[string]struct {
 			Build: droneyaml.Build{
 				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
 				Commands: []string{
-					"[ -f pom.xml ] && mvn --quiet package",
-					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew build) || gradle build)",
+// TODO (alexsaveliev) uncomment some day
+//					"[ -f pom.xml ] && mvn --quiet package",
+//					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew build) || gradle build)",
 				},
 				AllowFailure: true,
 			},
@@ -112,8 +113,9 @@ var langConfigs = map[string]struct {
 			Build: droneyaml.Build{
 				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
 				Commands: []string{
-					"[ -f pom.xml ] && mvn --quiet test",
-					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew test) || gradle test)",
+// TODO (alexsaveliev) uncomment some day
+//					"[ -f pom.xml ] && mvn --quiet test",
+//					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew test) || gradle test)",
 				},
 				AllowFailure: true,
 			},
