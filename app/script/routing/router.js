@@ -87,7 +87,7 @@ module.exports = {
 	},
 
 	personURL(login) {
-		return `/${login}`;
+		return `/~${login}`;
 	},
 
 	logInURL() { return "/login"; },
