@@ -21,6 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util"
@@ -83,6 +84,10 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo"); err != nil {
+		return err
+	}
+
 	err := store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &vcsclient.CloneInfo{
 		VCS:        repo.VCS,
 		CloneURL:   repo.HTTPCloneURL,

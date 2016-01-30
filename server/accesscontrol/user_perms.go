@@ -83,7 +83,9 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method str
 	}
 
 	var hasWrite bool
-	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
+	if inAuthenticatedWriteWhitelist(method) {
+		hasWrite = true
+	} else if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
 		hasWrite = actor.HasWriteAccess()
 	} else {
 		// Get UserPermissions info for this user from the root server.
@@ -192,6 +194,16 @@ func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method st
 			// TODO: configure app-specific permissions.
 			return true
 		}
+	}
+	return false
+}
+
+// Check if we always allow write access to a method for an authenticated
+// user.
+func inAuthenticatedWriteWhitelist(method string) bool {
+	switch method {
+	case "MirrorRepos.CloneRepo":
+		return true
 	}
 	return false
 }
