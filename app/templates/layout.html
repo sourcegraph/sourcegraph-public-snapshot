@@ -11,6 +11,8 @@
 		{{if .CacheControl}}data-cache-control="{{.CacheControl}}"{{end}}
 		{{if .CurrentUser}}data-current-user-login="{{.CurrentUser.Login}}"{{end}}
 		{{if .CurrentUser}}data-current-user-uid="{{.CurrentUser.UID}}"{{end}}
+		{{if .CurrentUser}}data-current-user-admin="{{.CurrentUser.Admin}}"{{end}}
+		{{if .CurrentUser}}data-current-user-write="{{.CurrentUser.Write}}"{{end}}
 		{{with .Session}}data-current-user-oauth2-access-token="{{.AccessToken}}"{{end}}
 		{{if .CurrentSpanID}}data-appdash-current-span-id="{{.CurrentSpanID}}"{{end}}
 		{{if .CurrentSpanID}}data-appdash-current-span-id-trace="{{.CurrentSpanID.Trace}}"{{end}}

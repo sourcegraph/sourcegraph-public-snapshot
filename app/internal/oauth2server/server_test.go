@@ -28,6 +28,10 @@ func TestOAuth2ServerAuthorize_notEnabled(t *testing.T) {
 
 	c, mock := apptest.New()
 
+	mock.Users.Get_ = func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		return &sourcegraph.User{}, nil
+	}
+
 	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.UserSpec{UID: 1})
 	resp, err := c.Get(router.Rel.URLTo(router.OAuth2ServerAuthorize).String())
 	if err != nil {
@@ -85,6 +89,9 @@ func TestOAuth2ServerAuthorize(t *testing.T) {
 	mock.Auth.GetAuthorizationCode_ = func(ctx context.Context, in *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
 		calledAuthGetAuthorizationCode = true
 		return &sourcegraph.AuthorizationCode{RedirectURI: "http://example.com/r", Code: "mycode"}, nil
+	}
+	mock.Users.Get_ = func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		return &sourcegraph.User{}, nil
 	}
 
 	u := router.Rel.URLTo(router.OAuth2ServerAuthorize)

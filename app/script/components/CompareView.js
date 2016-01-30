@@ -83,6 +83,10 @@ var CompareView = React.createClass({
 	},
 
 	_openProposeChangeForm() {
+		if (CurrentUser === null) {
+			window.location = router.signInURL(window.location.pathname);
+			return;
+		}
 		this.setState({proposingChange: true});
 	},
 
@@ -138,11 +142,11 @@ var CompareView = React.createClass({
 							CommitID={this.state.DiffData.Delta.HeadCommit.ID}
 							btnSize="btn-xs" />
 
-						{CurrentUser !== null && this.state.fileDiffs.length && !this.state.proposingChange ? (
-							<a href="#" className="btn btn-sgblue pull-right" onClick={this._openProposeChangeForm}>
+						{this.state.fileDiffs.length && !this.state.proposingChange && (
+							<a href="#" className={`btn btn-sgblue pull-right${(CurrentUser !== null && CurrentUser.Write === false) ? " disabled" : ""}`} onClick={this._openProposeChangeForm}>
 								<span>Propose this change</span>
 							</a>
-						) : null}
+						)}
 
 						{this.state.DeltaSpec.Base.CommitID !== this.state.DiffData.Delta.BaseCommit.ID ? (
 							<span className="pull-right warning">

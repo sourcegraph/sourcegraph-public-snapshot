@@ -172,7 +172,7 @@ type Common struct {
 	Session   *appauth.Session // the session cookie
 	CSRFToken string
 
-	CurrentUser   *sourcegraph.UserSpec
+	CurrentUser   *sourcegraph.User
 	CurrentRoute  string
 	CurrentURI    *url.URL
 	CurrentURL    *url.URL
@@ -262,6 +262,18 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			return err
 		}
 
+		var user *sourcegraph.User
+		if currentUser != nil {
+			sg, err := sourcegraph.NewClientFromContext(ctx)
+			if err != nil {
+				return err
+			}
+			user, err = sg.Users.Get(ctx, currentUser)
+			if err != nil {
+				return err
+			}
+		}
+
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(Common)
 
@@ -287,7 +299,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		}
 
 		field.Set(reflect.ValueOf(Common{
-			CurrentUser: currentUser,
+			CurrentUser: user,
 
 			RequestHost: req.Host,
 
