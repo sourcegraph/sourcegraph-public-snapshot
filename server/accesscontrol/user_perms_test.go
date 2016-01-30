@@ -10,37 +10,27 @@ import (
 )
 
 func TestVerifyAccess(t *testing.T) {
-	t.Skip("TODO(pararth): fix failing test after you merge your stuff with my removal of OAuth2")
-
-	getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*sourcegraph.UserPermissions, error) {
-		switch actor.UID {
+	authutil.ActiveFlags.Source = "local"
+	asUID := func(uid int) context.Context {
+		var user sourcegraph.User
+		switch uid {
 		case 1:
-			return &sourcegraph.UserPermissions{
-				UID:      int32(actor.UID),
-				ClientID: actor.ClientID,
-				Read:     true,
-				Write:    true,
-				Admin:    true,
-			}, nil
+			user = sourcegraph.User{
+				UID:   1,
+				Write: true,
+				Admin: true,
+			}
 		case 2:
-			return &sourcegraph.UserPermissions{
-				UID:      int32(actor.UID),
-				ClientID: actor.ClientID,
-				Read:     true,
-				Write:    true,
-			}, nil
-		case 3:
-			return &sourcegraph.UserPermissions{
-				UID:      int32(actor.UID),
-				ClientID: actor.ClientID,
-				Read:     true,
-			}, nil
+			user = sourcegraph.User{
+				UID:   2,
+				Write: true,
+			}
 		default:
-			return &sourcegraph.UserPermissions{
-				UID:      int32(actor.UID),
-				ClientID: actor.ClientID,
-			}, nil
+			user = sourcegraph.User{
+				UID: int32(uid),
+			}
 		}
+		return auth.WithActor(context.Background(), auth.GetActorFromUser(user))
 	}
 
 	var uid int
@@ -99,31 +89,4 @@ func TestVerifyAccess(t *testing.T) {
 	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create"); err == nil {
 		t.Fatalf("user %v should not have write access; got access\n", uid)
 	}
-
-	// Test that for local auth, all authenticated users have write access,
-	// but unauthenticated users don't.
-	authutil.ActiveFlags = authutil.Flags{
-		Source: "local",
-	}
-
-	uid = 0
-	ctx = asUID(uid)
-
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create"); err == nil {
-		t.Fatalf("user %v should not have write access; got access\n", uid)
-	}
-
-	uid = 1234
-	ctx = asUID(uid)
-
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create"); err != nil {
-		t.Fatalf("user %v should have write access; got: %v\n", uid, err)
-	}
-}
-
-func asUID(uid int) context.Context {
-	return auth.WithActor(context.Background(), auth.Actor{
-		UID:      uid,
-		ClientID: "xyz",
-	})
 }
