@@ -174,14 +174,6 @@ pre code, .line-numbered-code td {
 			}
 		}
 	}
-
-	&.fade-unselected-lines {
-		.line:not(.main-byte-range) .line-content {
-			span, a {
-				opacity: 0.45;
-			}
-		}
-	}
 }
 
 .line.main-byte-range {
