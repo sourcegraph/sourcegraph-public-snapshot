@@ -81,7 +81,7 @@
 		</div>
 		{{if (and .MirrorsNext $.CurrentUser (not appconf.DisableIntegrations))}}
 			{{with .MirrorData}}
-			<h4>Available GitHub repositories</h4>
+			<h4>GitHub repositories available for mirroring</h4>
 			{{if (or .PrivateRepos .PublicRepos)}}
 			<div class="repo-list">
 				<form action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">

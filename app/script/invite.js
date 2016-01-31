@@ -56,8 +56,15 @@ function addTeammateInviteClickListener(element) {
 
 function setInviteHTML(node, email, pendingInvite) {
 	node.className += " list-group-item";
-	node.innerHTML = "".concat(
-		"Share this link with <strong>", email, "</strong>: ",
-		`<input class="input-large form-inline form-control" type="text" value="`, pendingInvite["Link"], `">`
-	);
+	if (pendingInvite["EmailSent"]) {
+		node.innerHTML = "".concat(
+			"Email sent to <strong>", email, "</strong>: ",
+			`<input class="input-large form-inline form-control" type="text" value="`, pendingInvite["Link"], `">`
+		);
+	} else {
+		node.innerHTML = "".concat(
+			"Share this link with <strong>", email, "</strong>: ",
+			`<input class="input-large form-inline form-control" type="text" value="`, pendingInvite["Link"], `">`
+		);
+	}
 }

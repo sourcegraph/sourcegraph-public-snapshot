@@ -16,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
@@ -264,14 +263,12 @@ func serveUserSettingsIntegrations(w http.ResponseWriter, r *http.Request) error
 func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
-	_, cd, err := userSettingsCommon(w, r)
+	_, _, err := userSettingsCommon(w, r)
 	if err == errUserSettingsCommonWroteResponse {
 		return nil
 	} else if err != nil {
 		return err
 	}
-
-	hasMirrorsNext := auth.ActorFromContext(ctx).MirrorsNext
 
 	switch mux.Vars(r)["Integration"] {
 	case "enable":
@@ -279,17 +276,11 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 		repoURIs := r.Form["RepoURI[]"]
 
 		for _, repoInfo := range repoURIs {
-			var repoURI string
+			tokens := strings.Split(repoInfo, ",")
+			repoURI := tokens[0]
 			private := true // defensively assume that the repo is private.
-			if hasMirrorsNext {
-				tokens := strings.Split(repoInfo, ",")
-				repoURI = tokens[0]
-
-				if len(tokens) > 1 && tokens[1] == "public" {
-					private = false
-				}
-			} else {
-				repoURI = repoInfo
+			if len(tokens) > 1 && tokens[1] == "public" {
+				private = false
 			}
 
 			// Perform the following operations locally (non-federated) because it's a private repo.
@@ -310,11 +301,7 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if hasMirrorsNext {
-		http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
-	} else {
-		http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsIntegrations, "User", cd.User.Login).String(), http.StatusSeeOther)
-	}
+	http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
 	return nil
 }
 
