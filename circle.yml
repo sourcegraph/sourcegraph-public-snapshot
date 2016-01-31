@@ -26,7 +26,6 @@ dependencies:
     - ~/protobuf
     - ~/google-cloud-sdk
     - ~/daemonize
-    - ~/curl
 
   override:
     - rm -rf $HOME/.go_workspace/src
@@ -53,16 +52,21 @@ test:
         pwd: $REPO/app
     - make check:
         pwd: $REPO
-    - set -o pipefail; make mdtest TESTFLAGS="-test.v -test.timeout 5m" | tee $HOME/mdtest.out:
+    - set -o pipefail; make mdtest TESTFLAGS="-test.v -test.timeout 5m" TESTPKGS="$(dev/circle-ci-split-pkgs.sh)" | tee $HOME/mdtest.out:
         pwd: $REPO
+        parallel: true
     - make smoke:
         pwd: $REPO
   post:
-    - grep '^FAIL' $HOME/mdtest.out || true
+    - grep '^FAIL' $HOME/mdtest.out || true:
+        parallel: true
 
-    - go get github.com/jstemmer/go-junit-report
-    - mkdir -p $CIRCLE_TEST_REPORTS/junit
-    - go-junit-report < $HOME/mdtest.out > $CIRCLE_TEST_REPORTS/junit/mdtest.xml
+    - go get github.com/jstemmer/go-junit-report:
+        parallel: true
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit:
+        parallel: true
+    - go-junit-report < $HOME/mdtest.out > $CIRCLE_TEST_REPORTS/junit/mdtest.xml:
+        parallel: true
 
     - npm run graph:
         pwd: $REPO/app
