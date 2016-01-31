@@ -196,13 +196,7 @@ func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method st
 			return true
 
 		case scope == "worker:build":
-			// workers have write access on the Builds server.
-			if strings.HasPrefix(method, "Builds.") {
-				return true
-			}
-			if method == "RepoStatuses.Create" {
-				return true
-			}
+			return true
 
 		case strings.HasPrefix(scope, "app:"):
 			// all apps have default write access.

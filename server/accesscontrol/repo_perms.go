@@ -81,30 +81,27 @@ func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI stri
 		return nil
 	}
 
-	// If the user is unauthenticated, check if the scope has special access.
-	checkScope := func() error {
+	err := grpc.Errorf(codes.PermissionDenied, "repo not available (%s): user does not have access", method)
+	if actor.UID == 0 {
+		// If the user is unauthenticated, check if the scope has special access.
 		if VerifyScopeHasAccess(ctx, actor.Scope, method) {
 			return nil
 		} else {
-			return grpc.Errorf(codes.PermissionDenied, "repo not available (%s): user does not have access", method)
+			return grpc.Errorf(codes.PermissionDenied, "repo not available (%s): scope does not have access (%#v)", method, actor.Scope)
 		}
 	}
 
-	if actor.UID == 0 {
-		return checkScope()
-	}
-
 	if !actor.MirrorsNext || actor.RepoPerms == nil {
-		return checkScope()
+		return err
 	}
 
 	perms, ok := actor.RepoPerms.(*repoPerms)
 	if !ok || perms.visibleRepos == nil {
-		return checkScope()
+		return err
 	}
 
 	if val, ok := perms.visibleRepos[repoURI]; !ok || !val {
-		return checkScope()
+		return err
 	}
 
 	return nil
