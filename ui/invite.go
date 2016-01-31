@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -17,7 +18,8 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 
 	ctxActor := auth.ActorFromContext(ctx)
-	if !ctxActor.HasAdminAccess() { // current user is not an admin of the instance
+	if !ctxActor.HasAdminAccess() && !authutil.ActiveFlags.MirrorsNext {
+		// current user is not an admin of the instance
 		return fmt.Errorf("user not authenticated to complete this request")
 	}
 
