@@ -1,6 +1,7 @@
 package fileset
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"sync"
@@ -141,13 +142,24 @@ func (f *File) SetLinesForContent(content []byte) {
 	f.set.mutex.Unlock()
 }
 
+var utf8bom = []byte{0xef, 0xbb, 0xbf}
+
 func (f *File) SetByteOffsetsForContent(content []byte) {
+
+	offset := 0
+	if len(content) >= 3 {
+		if bytes.HasPrefix(content, utf8bom) {
+			content = content[3:]
+			offset = 3
+		}
+	}
+
 	s := string(content)
 
 	byteOffsetOfRune := make([]int, utf8.RuneCount(content))
 	i := 0
 	for b, _ := range s {
-		byteOffsetOfRune[i] = b
+		byteOffsetOfRune[i] = b + offset
 		i++
 	}
 

@@ -205,7 +205,9 @@ func ExpandPaths(base string, paths []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		expanded = append(expanded, hits...)
+		for _, hit := range hits {
+			expanded = append(expanded, filepath.ToSlash(hit))
+		}
 	}
 	return expanded, nil
 }

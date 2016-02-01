@@ -655,7 +655,7 @@
 		},
 		{
 			"ImportPath": "github.com/sqs/fileset",
-			"Rev": "4317e899aa9438ba7603a6e322389571cb3ffdff"
+			"Rev": "af79d58d268e6fb30711babccd37156c95fd5aaf"
 		},
 		{
 			"ImportPath": "github.com/sqs/go-selfupdate/selfupdate",
@@ -857,8 +857,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.1.0-41-gfb108ed",
-			"Rev": "fb108edd38642aaa8329f1ec39cff79fefc746e9"
+			"Rev": "03ca5cf3d961bdf2ca1521c91dd3181964ede13d"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
