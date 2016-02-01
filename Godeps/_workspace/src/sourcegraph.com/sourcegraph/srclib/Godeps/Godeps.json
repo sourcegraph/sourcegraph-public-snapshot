@@ -70,7 +70,7 @@
 		},
 		{
 			"ImportPath": "github.com/sqs/fileset",
-			"Rev": "4317e899aa9438ba7603a6e322389571cb3ffdff"
+			"Rev": "af79d58d268e6fb30711babccd37156c95fd5aaf"
 		},
 		{
 			"ImportPath": "github.com/sqs/go-selfupdate/selfupdate",

@@ -58,10 +58,6 @@ func ensureOffsetsAreByteOffsets(dir string, output *graph.Output) {
 			if *offset == 0 {
 				continue
 			}
-			before, after := *offset, uint32(f.ByteOffsetOfRune(int(*offset)))
-			if before != after {
-				log.Printf("Changed pos %d to %d in %s", before, after, filename)
-			}
 			*offset = uint32(f.ByteOffsetOfRune(int(*offset)))
 		}
 	}
@@ -104,7 +100,7 @@ func NormalizeData(unitType, dir string, o *graph.Output) error {
 		}
 	}
 
-	if unitType != "GoPackage" && unitType != "Dockerfile" && unitType != "NugetPackage" {
+	if unitType != "GoPackage" && unitType != "Dockerfile" {
 		ensureOffsetsAreByteOffsets(dir, o)
 	}
 

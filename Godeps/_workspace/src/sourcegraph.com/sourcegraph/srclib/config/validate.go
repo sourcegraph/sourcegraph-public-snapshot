@@ -22,6 +22,7 @@ func (c *Tree) validate() error {
 			if p == ".." || strings.HasPrefix(p, ".."+string(filepath.Separator)) {
 				return ErrInvalidFilePath
 			}
+			p = filepath.ToSlash(p)
 		}
 	}
 	return nil
