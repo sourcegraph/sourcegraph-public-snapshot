@@ -12,8 +12,6 @@ import (
 	"regexp"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
-
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
@@ -23,14 +21,14 @@ import (
 
 func treeEntryFixture(sourceContents []string) *sourcegraph.TreeEntry {
 	entry := &sourcegraph.TreeEntry{
-		TreeEntry: &vcsclient.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Contents: []byte(strings.Join(sourceContents, "\n")),
-			Type:     vcsclient.FileEntry,
+			Type:     sourcegraph.FileEntry,
 		},
 		SourceCode: &sourcegraph.SourceCode{
 			Lines: []*sourcegraph.SourceCodeLine{},
 		},
-		FileRange: &vcsclient.FileRange{
+		FileRange: &sourcegraph.FileRange{
 			StartLine: 1,
 			EndLine:   int64(len(sourceContents) + 1),
 		},

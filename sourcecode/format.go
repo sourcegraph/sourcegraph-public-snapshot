@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/annotate"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -20,7 +19,7 @@ import (
 // Format performs syntax highlighting and ref linking on entry. It
 // modifies entry.Contents during these 2 transformations and returns
 // other metadata about the operation.
-func Format(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWithRange, highlightStrings []string) (*sourcegraph.FormatResult, error) {
+func Format(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange, highlightStrings []string) (*sourcegraph.FormatResult, error) {
 	if err := sanitizeEntry(entrySpec, entry); err != nil {
 		return nil, err
 	}

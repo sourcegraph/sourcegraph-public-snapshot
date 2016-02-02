@@ -6,14 +6,13 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Parse takes the Contents of the given TreeEntry and tokenizes them,
 // adding syntax highlighting along with graph linking information.
-func Parse(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWithRange) (*sourcegraph.SourceCode, error) {
+func Parse(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) (*sourcegraph.SourceCode, error) {
 	if err := sanitizeEntry(entrySpec, entry); err != nil {
 		return nil, err
 	}

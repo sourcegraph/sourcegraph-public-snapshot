@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -45,10 +44,10 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 
 // makeFileList simplifies a TreeEntry to a slice of files.
 func makeFileList(entry *sourcegraph.TreeEntry) []string {
-	if entry == nil || entry.TreeEntry == nil || entry.TreeEntry.Entries == nil {
+	if entry == nil || entry.BasicTreeEntry == nil || entry.BasicTreeEntry.Entries == nil {
 		return nil
 	}
-	entries := entry.TreeEntry.Entries
+	entries := entry.BasicTreeEntry.Entries
 	list := make([]string, 0, len(entries))
 	for _, e := range entries {
 		list = append(list, getEntries("", e)...)
@@ -57,7 +56,7 @@ func makeFileList(entry *sourcegraph.TreeEntry) []string {
 }
 
 // getEntries recursively returns all files in an entry
-func getEntries(prefix string, e *vcsclient.TreeEntry) []string {
+func getEntries(prefix string, e *sourcegraph.BasicTreeEntry) []string {
 	if len(e.Entries) > 0 {
 		ee := make([]string, 0, len(e.Entries))
 		for _, entry := range e.Entries {

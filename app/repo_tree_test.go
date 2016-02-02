@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -30,7 +29,7 @@ func TestRepoTree(t *testing.T) {
 				},
 			},
 		},
-		TreeEntry: &vcsclient.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Contents: []byte(source),
 		},
 	})
@@ -61,7 +60,7 @@ func TestRepoTree_markdown(t *testing.T) {
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockNoSrclibData(mock)
 	mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
-		TreeEntry: &vcsclient.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Contents: []byte(docSource),
 		},
 	})
@@ -98,7 +97,7 @@ func TestRepoTree_plaintext(t *testing.T) {
 				},
 			},
 		},
-		TreeEntry: &vcsclient.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Contents: []byte(source),
 		},
 	})

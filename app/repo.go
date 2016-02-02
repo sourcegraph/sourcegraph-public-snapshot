@@ -16,7 +16,6 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -171,7 +170,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 			return
 		})
 		run.Do(func() (err error) {
-			opt := sourcegraph.RepoTreeGetOptions{GetFileOptions: vcsclient.GetFileOptions{
+			opt := sourcegraph.RepoTreeGetOptions{GetFileOptions: sourcegraph.GetFileOptions{
 				RecurseSingleSubfolderLimit: 200,
 			}}
 			tree, err = apiclient.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})

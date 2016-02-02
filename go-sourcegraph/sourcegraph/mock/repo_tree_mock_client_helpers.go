@@ -17,7 +17,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -38,9 +37,9 @@ func (s *RepoTreeClient) MockGet_Return_FileContents(t *testing.T, path, content
 			return nil, grpc.Errorf(codes.NotFound, "path %q not found", op.Entry.Path)
 		}
 		*called = true
-		return &sourcegraph.TreeEntry{TreeEntry: &vcsclient.TreeEntry{
+		return &sourcegraph.TreeEntry{BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name:     path,
-			Type:     vcsclient.FileEntry,
+			Type:     sourcegraph.FileEntry,
 			Contents: []byte(contents),
 		}}, nil
 	}

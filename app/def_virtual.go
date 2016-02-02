@@ -9,7 +9,6 @@ import (
 	"text/template"
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
@@ -68,14 +67,14 @@ func virtualTreeEntry(def *sourcegraph.Def, rev sourcegraph.RepoRevSpec) (*handl
 		Path:    def.File,
 	}
 
-	entry0 := &vcsclient.FileWithRange{
-		TreeEntry: &vcsclient.TreeEntry{
+	entry0 := &sourcegraph.FileWithRange{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name:     filepath.Base(def.File),
-			Type:     vcsclient.FileEntry,
+			Type:     sourcegraph.FileEntry,
 			Size_:    int64(len(rawContents)),
 			Contents: []byte(rawContents),
 		},
-		FileRange: vcsclient.FileRange{
+		FileRange: sourcegraph.FileRange{
 			StartLine: 0,
 			EndLine:   int64(strings.Count(rawContents, "\n")),
 			StartByte: 0,
@@ -89,9 +88,9 @@ func virtualTreeEntry(def *sourcegraph.Def, rev sourcegraph.RepoRevSpec) (*handl
 	}
 
 	entry := &sourcegraph.TreeEntry{
-		TreeEntry:  entry0.TreeEntry,
-		FileRange:  &entry0.FileRange,
-		SourceCode: sourceCode,
+		BasicTreeEntry: entry0.BasicTreeEntry,
+		FileRange:      &entry0.FileRange,
+		SourceCode:     sourceCode,
 	}
 
 	return &handlerutil.TreeEntryCommon{
@@ -103,7 +102,7 @@ func virtualTreeEntry(def *sourcegraph.Def, rev sourcegraph.RepoRevSpec) (*handl
 // parseVirtual returns the parsed tokenized representation of the virtual source code. This closely mirrors what
 // sourcecode.Parse returns, but for the fake source code that's generated for virtual defs. It is mostly copied and
 // pasted from sourcecode.Parse.
-func parseVirtual(def *sourcegraph.Def, entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWithRange) (*sourcegraph.SourceCode, error) {
+func parseVirtual(def *sourcegraph.Def, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) (*sourcegraph.SourceCode, error) {
 	sourceCode := sourcecode.Tokenize(entry)
 
 	refs := virtualEntryRefs(def, entrySpec, entry)
@@ -142,7 +141,7 @@ func parseVirtual(def *sourcegraph.Def, entrySpec sourcegraph.TreeEntrySpec, ent
 }
 
 // virtualEntryRefs returns fake refs for the fake source code generated for a virtual def.
-func virtualEntryRefs(def *sourcegraph.Def, entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWithRange) []*graph.Ref {
+func virtualEntryRefs(def *sourcegraph.Def, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) []*graph.Ref {
 	var refs []*graph.Ref
 	s := string(entry.Contents)
 	for seen, i := 0, strings.Index(s, def.Path); i >= 0; i = strings.Index(s, def.Path) {

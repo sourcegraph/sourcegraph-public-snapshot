@@ -7,7 +7,6 @@ import "sourcegraph.com/sourcegraph/go-vcs/vcs/vcs.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/def.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/ref.proto";
 import "sourcegraph.com/sourcegraph/srclib/unit/unit.proto";
-import "src.sourcegraph.com/sourcegraph/pkg/vcsclient/vcsclient.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 import "sourcegraph.com/sqs/pbtypes/void.proto";
 import "sourcegraph.com/sqs/pbtypes/html.proto";
@@ -2379,7 +2378,38 @@ message RepoTreeGetOptions {
 
 	bool ContentsAsString = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	vcsclient.GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+}
+
+// GetFileOptions specifies options for GetFileWithOptions.
+message GetFileOptions {
+	// line or byte range to fetch (can't set both line *and* byte range)
+	FileRange FileRange = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+	// EntireFile is whether the entire file contents should be returned. If true,
+	// Start/EndLine and Start/EndBytes are ignored.
+	bool EntireFile = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ExpandContextLines is how many lines of additional output context to include (if
+	// Start/EndLine and Start/EndBytes are specified). For example, specifying 2 will
+	// expand the range to include 2 full lines before the beginning and 2 full lines
+	// after the end of the range specified by Start/EndLine and Start/EndBytes.
+	int32 ExpandContextLines = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// FullLines is whether a range that includes partial lines should be extended to
+	// the nearest line boundaries on both sides. It is only valid if StartByte and
+	// EndByte are specified.
+	bool FullLines = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// Recursive only applies if the returned entry is a directory. It will
+	// return the full file tree of the host repository, recursing into all
+	// sub-directories.
+	bool Recursive = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// RecurseSingleSubfolderLimit only applies if the returned entry is a directory.
+	// If nonzero, it will recursively find and include all singleton sub-directory chains,
+	// up to a limit of RecurseSingleSubfolderLimit.
+	int32 RecurseSingleSubfolderLimit = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 message RepoTreeSearchOptions {
@@ -2488,8 +2518,8 @@ message SourceCodeToken {
 // TreeEntry is a file or directory in a repository, with additional feedback from
 // the formatting operation (if Formatted is true in the options).
 message TreeEntry {
-	vcsclient.TreeEntry TreeEntry = 1 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	vcsclient.FileRange FileRange = 2 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	BasicTreeEntry BasicTreeEntry = 1 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	FileRange FileRange = 2 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	string ContentsString = 3;
 
 	// SourceCode is set when TokenizedSource is enabled in RepoTreeGetOptions.
@@ -2499,9 +2529,40 @@ message TreeEntry {
 	FormatResult FormatResult = 5;
 }
 
+message BasicTreeEntry {
+	string Name = 1;
+	TreeEntryType Type = 2;
+	int64 Size = 3;
+	pbtypes.Timestamp ModTime = 4 [(gogoproto.nullable) = false];
+	bytes Contents = 5;
+	repeated BasicTreeEntry Entries = 6;
+}
+
+enum TreeEntryType {
+	option (gogoproto.goproto_enum_prefix) = false;
+	FileEntry = 0;
+	DirEntry = 1;
+	SymlinkEntry = 2;
+}
+
 message TreeEntrySpec {
 	RepoRevSpec RepoRev = 1 [(gogoproto.nullable) = false];
 	string Path = 2;
+}
+
+// FileRange is a line and byte range in a file.
+message FileRange {
+	// start of line range
+	int64 StartLine = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// end of line range
+	int64 EndLine = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// start of byte range
+	int64 StartByte = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// end of byte range
+	int64 EndByte = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // A UnitDelta represents a single source unit that was changed. It has fields for
@@ -2727,7 +2788,7 @@ message Checklist {
 
 message FileToken {
 	string Path = 1;
-	vcsclient.TreeEntry Entry = 2;
+	BasicTreeEntry Entry = 2;
 }
 // Meta provides meta-information about Sourcegraph.
 service Meta {

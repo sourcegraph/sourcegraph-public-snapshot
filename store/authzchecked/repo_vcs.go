@@ -3,7 +3,6 @@ package authzchecked
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -24,7 +23,7 @@ func (s *repoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	return s.noauthz.Open(ctx, repo)
 }
 
-func (s *repoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *vcsclient.CloneInfo) error {
+func (s *repoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error {
 	if err := auth.CheckRepo(ctx, repo, auth.Write); err != nil {
 		return err
 	}

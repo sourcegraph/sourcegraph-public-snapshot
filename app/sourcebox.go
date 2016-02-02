@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/mux"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -37,8 +36,8 @@ func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 	entrySpec := sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: dc.Def.File}
 	opt := sourcegraph.RepoTreeGetOptions{
 		TokenizedSource: true,
-		GetFileOptions: vcsclient.GetFileOptions{
-			FileRange: vcsclient.FileRange{
+		GetFileOptions: sourcegraph.GetFileOptions{
+			FileRange: sourcegraph.FileRange{
 				StartByte: int64(dc.Def.DefStart), EndByte: int64(dc.Def.DefEnd),
 			},
 			FullLines: true,

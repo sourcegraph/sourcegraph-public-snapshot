@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 
 	"sourcegraph.com/sourcegraph/go-flags"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
@@ -267,7 +266,7 @@ func (c *stressCmd) fetchFiles(ctx context.Context) error {
 
 			// Find the first file (not dir).
 			for _, e := range tree.Entries {
-				if e.Type == vcsclient.FileEntry {
+				if e.Type == sourcegraph.FileEntry {
 					c.files[repo.URI] = e.Name
 					break
 				}

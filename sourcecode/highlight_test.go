@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/kr/pretty"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"src.sourcegraph.com/syntaxhighlight"
@@ -60,10 +59,10 @@ func TestCodeEquals(t *testing.T) {
 	}
 }
 
-func newFileWithRange(src []byte) *vcsclient.FileWithRange {
-	return &vcsclient.FileWithRange{
-		TreeEntry: &vcsclient.TreeEntry{Contents: []byte(src)},
-		FileRange: vcsclient.FileRange{StartByte: 0, EndByte: int64(len(src))},
+func newFileWithRange(src []byte) *sourcegraph.FileWithRange {
+	return &sourcegraph.FileWithRange{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{Contents: []byte(src)},
+		FileRange:      sourcegraph.FileRange{StartByte: 0, EndByte: int64(len(src))},
 	}
 }
 

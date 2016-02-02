@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -27,8 +26,8 @@ func TestDefsService_ListExamples(t *testing.T) {
 	mock.servers.RepoTree.Get_ = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 		calledRepoTreeGet = true
 		return &sourcegraph.TreeEntry{
-			TreeEntry: &vcsclient.TreeEntry{Type: vcsclient.FileEntry},
-			FileRange: &vcsclient.FileRange{},
+			BasicTreeEntry: &sourcegraph.BasicTreeEntry{Type: sourcegraph.FileEntry},
+			FileRange:      &sourcegraph.FileRange{},
 		}, nil
 	}
 

@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -89,7 +88,7 @@ var _ store.RepoCounters = (*RepoCounters)(nil)
 
 type RepoVCS struct {
 	Open_             func(ctx context.Context, repo string) (vcs.Repository, error)
-	Clone_            func(ctx context.Context, repo string, bare, mirror bool, info *vcsclient.CloneInfo) error
+	Clone_            func(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error
 	OpenGitTransport_ func(ctx context.Context, repo string) (gitproto.Transport, error)
 }
 
@@ -97,7 +96,7 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	return s.Open_(ctx, repo)
 }
 
-func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *vcsclient.CloneInfo) error {
+func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error {
 	return s.Clone_(ctx, repo, bare, mirror, info)
 }
 

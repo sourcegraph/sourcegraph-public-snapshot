@@ -3,7 +3,6 @@ package sourcecode
 import (
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/sourcegraph/annotate"
@@ -17,7 +16,7 @@ func SyntaxHighlight(fileName string, src []byte) ([]*annotate.Annotation, error
 }
 
 // Tokenize takes a file entry and returns its contents as a tokenized structure.
-func Tokenize(e *vcsclient.FileWithRange) *sourcegraph.SourceCode {
+func Tokenize(e *sourcegraph.FileWithRange) *sourcegraph.SourceCode {
 	nilAnn := NewNilAnnotator(e)
 	// TODO(sqs!): error check?
 	runAnnotator(nilAnn, e.Name, e.Contents)
@@ -27,7 +26,7 @@ func Tokenize(e *vcsclient.FileWithRange) *sourcegraph.SourceCode {
 // TokenizePlain takes a file entry and returns its contents as a tokenized structure.
 // This function assumes that the file does not need syntax highlighting and returns
 // pure string tokens.
-func TokenizePlain(e *vcsclient.FileWithRange) *sourcegraph.SourceCode {
+func TokenizePlain(e *sourcegraph.FileWithRange) *sourcegraph.SourceCode {
 	lines := strings.Split(string(e.Contents), "\n")
 	code := sourcegraph.SourceCode{
 		Lines: make([]*sourcegraph.SourceCodeLine, len(lines)),

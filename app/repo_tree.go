@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/mux"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/doc"
@@ -45,7 +44,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	opt := sourcegraph.RepoTreeGetOptions{
 		TokenizedSource: !doc.IsFormattableDocFile(mux.Vars(r)["Path"]) || router.IsRaw(r.URL),
 
-		GetFileOptions: vcsclient.GetFileOptions{
+		GetFileOptions: sourcegraph.GetFileOptions{
 			RecurseSingleSubfolderLimit: 200,
 		},
 	}
@@ -66,9 +65,9 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	switch tc.Entry.Type {
-	case vcsclient.DirEntry:
+	case sourcegraph.DirEntry:
 		return serveRepoTreeDir(w, r, tc, rc, vc)
-	case vcsclient.FileEntry:
+	case sourcegraph.FileEntry:
 		return serveRepoTreeEntry(w, r, tc, rc, vc, nil)
 	}
 	return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("unrecognized tree entry type")}
@@ -97,7 +96,7 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 	ctx := httpctx.FromRequest(r)
 
 	switch {
-	case tc.Entry.Type == vcsclient.DirEntry:
+	case tc.Entry.Type == sourcegraph.DirEntry:
 		treeURL := router.Rel.URLToRepoTreeEntrySpec(tc.EntrySpec).String()
 		http.Redirect(w, r, treeURL, http.StatusFound)
 		return nil

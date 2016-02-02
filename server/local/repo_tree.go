@@ -12,7 +12,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -40,9 +39,9 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 	}
 
 	entry := &sourcegraph.TreeEntry{
-		TreeEntry: entry0.TreeEntry,
+		BasicTreeEntry: entry0.BasicTreeEntry,
 	}
-	if entry0.Type == vcsclient.FileEntry {
+	if entry0.Type == sourcegraph.FileEntry {
 		entry.FileRange = &entry0.FileRange
 	}
 
@@ -81,9 +80,9 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 // getFromVCS gets a tree entry from the vcsstore. Even though the
 // return type is FileWithRange, it can return dirs too (the FileRange
 // embedded struct will just be zeroed).
-func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, opt *vcsclient.GetFileOptions) (*vcsclient.FileWithRange, error) {
+func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, opt *sourcegraph.GetFileOptions) (*sourcegraph.FileWithRange, error) {
 	if opt == nil {
-		opt = &vcsclient.GetFileOptions{}
+		opt = &sourcegraph.GetFileOptions{}
 	}
 
 	if err := (&repos{}).resolveRepoRev(ctx, &entrySpec.RepoRev); err != nil {
@@ -184,8 +183,8 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 					Opt: &sourcegraph.RepoTreeGetOptions{
 						Formatted:        true,
 						HighlightStrings: []string{opt.SearchOptions.Query},
-						GetFileOptions: vcsclient.GetFileOptions{
-							FileRange: vcsclient.FileRange{
+						GetFileOptions: sourcegraph.GetFileOptions{
+							FileRange: sourcegraph.FileRange{
 								StartLine: int64(r.StartLine),
 								EndLine:   int64(r.EndLine),
 							},

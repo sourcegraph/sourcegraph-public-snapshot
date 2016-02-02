@@ -9,7 +9,7 @@ import (
 	"sort"
 	"sync"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/sqs/fileset"
 
@@ -19,14 +19,14 @@ import (
 )
 
 // getFileWithOptions gets a file and observes the options specified in opt.
-func getFileWithOptions(fs vfs.FileSystem, path string, opt vcsclient.GetFileOptions) (*vcsclient.FileWithRange, error) {
+func getFileWithOptions(fs vfs.FileSystem, path string, opt sourcegraph.GetFileOptions) (*sourcegraph.FileWithRange, error) {
 	fi, err := fs.Lstat(path)
 	if err != nil {
 		return nil, err
 	}
 
 	e := newTreeEntry(fi)
-	fwr := vcsclient.FileWithRange{TreeEntry: e}
+	fwr := sourcegraph.FileWithRange{BasicTreeEntry: e}
 
 	if fi.Mode().IsDir() {
 		ee, err := readDir(fs, path, int(opt.RecurseSingleSubfolderLimit), true)
@@ -49,7 +49,7 @@ func getFileWithOptions(fs vfs.FileSystem, path string, opt vcsclient.GetFileOpt
 
 		e.Contents = contents
 
-		if empty := (vcsclient.GetFileOptions{}); opt != empty {
+		if empty := (sourcegraph.GetFileOptions{}); opt != empty {
 			fr, _, err := computeFileRange(contents, opt)
 			if err != nil {
 				return nil, err
@@ -69,7 +69,7 @@ func getFileWithOptions(fs vfs.FileSystem, path string, opt vcsclient.GetFileOpt
 // sub-folders with a single sub-folder inside. It will only inspect up to
 // recurseSingleSubfolderLimit sub-folders. first should always be set to
 // true, other values are used internally.
-func readDir(fs vfs.FileSystem, base string, recurseSingleSubfolderLimit int, first bool) ([]*vcsclient.TreeEntry, error) {
+func readDir(fs vfs.FileSystem, base string, recurseSingleSubfolderLimit int, first bool) ([]*sourcegraph.BasicTreeEntry, error) {
 	entries, err := fs.ReadDir(base)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func readDir(fs vfs.FileSystem, base string, recurseSingleSubfolderLimit int, fi
 		recurseErr error
 		dirCount   = 0
 		sem        = make(chan bool, runtime.GOMAXPROCS(0))
-		te         = make([]*vcsclient.TreeEntry, len(entries))
+		te         = make([]*sourcegraph.BasicTreeEntry, len(entries))
 	)
 	for i, fi := range entries {
 		te[i] = newTreeEntry(fi)
@@ -114,18 +114,18 @@ func singleSubDir(entries []os.FileInfo) bool {
 	return len(entries) == 1 && entries[0].IsDir()
 }
 
-func newTreeEntry(fi os.FileInfo) *vcsclient.TreeEntry {
-	e := &vcsclient.TreeEntry{
+func newTreeEntry(fi os.FileInfo) *sourcegraph.BasicTreeEntry {
+	e := &sourcegraph.BasicTreeEntry{
 		Name:    fi.Name(),
 		Size_:   fi.Size(),
 		ModTime: pbtypes.NewTimestamp(fi.ModTime()),
 	}
 	if fi.Mode().IsDir() {
-		e.Type = vcsclient.DirEntry
+		e.Type = sourcegraph.DirEntry
 	} else if fi.Mode().IsRegular() {
-		e.Type = vcsclient.FileEntry
+		e.Type = sourcegraph.FileEntry
 	} else if fi.Mode()&os.ModeSymlink != 0 {
-		e.Type = vcsclient.SymlinkEntry
+		e.Type = sourcegraph.SymlinkEntry
 	}
 	return e
 }
@@ -134,7 +134,7 @@ func newTreeEntry(fi os.FileInfo) *vcsclient.TreeEntry {
 // input range parameter. For example, if input has a line range set,
 // the returned FileRange will contain the byte range that corresponds
 // to the input line range.
-func computeFileRange(data []byte, opt vcsclient.GetFileOptions) (*vcsclient.FileRange, *fileset.File, error) {
+func computeFileRange(data []byte, opt sourcegraph.GetFileOptions) (*sourcegraph.FileRange, *fileset.File, error) {
 	fr := opt.FileRange // alias for brevity
 
 	fset := fileset.NewFileSet()
@@ -207,16 +207,16 @@ func computeFileRange(data []byte, opt vcsclient.GetFileOptions) (*vcsclient.Fil
 	return &fr, f, nil
 }
 
-type TreeEntriesByTypeByName []*vcsclient.TreeEntry
+type TreeEntriesByTypeByName []*sourcegraph.BasicTreeEntry
 
 func (v TreeEntriesByTypeByName) Len() int      { return len(v) }
 func (v TreeEntriesByTypeByName) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
 func (v TreeEntriesByTypeByName) Less(i, j int) bool {
 	// Sort dirs before everything else.
-	if v[i].Type == vcsclient.DirEntry && v[j].Type != vcsclient.DirEntry {
+	if v[i].Type == sourcegraph.DirEntry && v[j].Type != sourcegraph.DirEntry {
 		return true
 	}
-	if v[i].Type != vcsclient.DirEntry && v[j].Type == vcsclient.DirEntry {
+	if v[i].Type != sourcegraph.DirEntry && v[j].Type == sourcegraph.DirEntry {
 		return false
 	}
 	return v[i].Name < v[j].Name

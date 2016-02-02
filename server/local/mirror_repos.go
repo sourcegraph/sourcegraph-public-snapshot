@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -88,7 +87,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	err := store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &vcsclient.CloneInfo{
+	err := store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &store.CloneInfo{
 		VCS:        repo.VCS,
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,

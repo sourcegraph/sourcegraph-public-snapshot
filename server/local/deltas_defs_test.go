@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -339,11 +338,11 @@ func TestChunkDiffOps(t *testing.T) {
 `),
 			}},
 			want: []*repoTreeGetOp{
-				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: vcsclient.GetFileOptions{FileRange: vcsclient.FileRange{StartLine: 0, EndLine: 1}}}},
-				{headEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: vcsclient.GetFileOptions{FileRange: vcsclient.FileRange{StartLine: 1, EndLine: 2}}}},
-				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: vcsclient.GetFileOptions{FileRange: vcsclient.FileRange{StartLine: 2, EndLine: 2}}}},
-				{headEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: vcsclient.GetFileOptions{FileRange: vcsclient.FileRange{StartLine: 4, EndLine: 4}}}},
-				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: vcsclient.GetFileOptions{FileRange: vcsclient.FileRange{StartLine: 3, EndLine: 4}}}},
+				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 0, EndLine: 1}}}},
+				{headEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 1, EndLine: 2}}}},
+				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 2, EndLine: 2}}}},
+				{headEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 4, EndLine: 4}}}},
+				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 3, EndLine: 4}}}},
 			},
 		},
 	}

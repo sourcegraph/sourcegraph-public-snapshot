@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 )
@@ -71,8 +70,18 @@ type RepoCounters interface {
 
 type RepoVCS interface {
 	Open(ctx context.Context, repo string) (vcs.Repository, error)
-	Clone(ctx context.Context, repo string, bare, mirror bool, info *vcsclient.CloneInfo) error
+	Clone(ctx context.Context, repo string, bare, mirror bool, info *CloneInfo) error
 	OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error)
+}
+
+// CloneInfo is the information needed to clone a repository.
+type CloneInfo struct {
+	// VCS is the type of VCS (e.g., "git")
+	VCS string
+	// CloneURL is the remote URL from which to clone.
+	CloneURL string
+	// Additional options
+	vcs.RemoteOpts
 }
 
 // RepoNotFoundError occurs when a repository is not found.

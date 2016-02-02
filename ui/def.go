@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
@@ -76,7 +75,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		eventsutil.LogViewDef(ctx, "GoToDefinition")
-		if entry.Type == vcsclient.DirEntry {
+		if entry.Type == sourcegraph.DirEntry {
 			return e.Encode(&handlerutil.URLMovedError{NewURL: d.URL})
 		}
 

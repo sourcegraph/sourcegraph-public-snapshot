@@ -11,7 +11,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -26,7 +25,7 @@ var ErrIsNotFile = errors.New("code file to format is not a file")
 const maxRefs = 5999
 
 // entryRefs fetches all references for a given entry and spec.
-func entryRefs(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWithRange) ([]*graph.Ref, error) {
+func entryRefs(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) ([]*graph.Ref, error) {
 	refFilters := []srcstore.RefFilter{
 		srcstore.ByRepos(entrySpec.RepoRev.RepoSpec.URI),
 		srcstore.ByCommitIDs(entrySpec.RepoRev.CommitID),
@@ -45,8 +44,8 @@ func entryRefs(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *
 
 // sanitizeEntry checks that the passed entry and entrySpec are valid and sets unset values
 // to their defaults.
-func sanitizeEntry(entrySpec sourcegraph.TreeEntrySpec, entry *vcsclient.FileWithRange) error {
-	if entry.Type != vcsclient.FileEntry {
+func sanitizeEntry(entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) error {
+	if entry.Type != sourcegraph.FileEntry {
 		return ErrIsNotFile
 	}
 	if entrySpec.RepoRev.CommitID == "" {

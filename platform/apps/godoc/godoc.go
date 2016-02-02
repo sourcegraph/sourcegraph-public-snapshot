@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/gddo/doc"
 	"github.com/sourcegraph/gddo/gosrc"
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -173,7 +172,7 @@ func getGodocDir(ctx context.Context, cl *sourcegraph.Client, repo *sourcegraph.
 	for _, entry := range dirEntry.Entries {
 		path := filepath.Join(subdir, entry.Name)
 		switch entry.Type {
-		case vcsclient.FileEntry:
+		case sourcegraph.FileEntry:
 			if filepath.Ext(entry.Name) == ".go" {
 				file, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRevSpec, Path: path}, Opt: nil})
 				if err != nil {
@@ -185,7 +184,7 @@ func getGodocDir(ctx context.Context, cl *sourcegraph.Client, repo *sourcegraph.
 					BrowseURL: router.Rel.URLToRepoTreeEntry(repo.URI, repoRevSpec.CommitID, path).String(),
 				})
 			}
-		case vcsclient.DirEntry:
+		case sourcegraph.DirEntry:
 			d.Subdirectories = append(d.Subdirectories, path)
 		}
 	}

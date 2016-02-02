@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/sourcegraph/annotate"
@@ -31,7 +30,7 @@ type NilAnnotator struct {
 
 // Instantiates new NilAnnotator from the given source code.
 // Annotator will contain a list of line spans (start byte to end byte) in the source code
-func NewNilAnnotator(e *vcsclient.FileWithRange) *NilAnnotator {
+func NewNilAnnotator(e *sourcegraph.FileWithRange) *NilAnnotator {
 	lines := make([]*sourcegraph.SourceCodeLine, 0, bytes.Count(e.Contents, []byte("\n"))+1)
 	last := len(e.Contents) - 1
 

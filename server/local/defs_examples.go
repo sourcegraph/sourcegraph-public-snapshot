@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/rogpeppe/rog-go/parallel"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -55,8 +54,8 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 				opt := &sourcegraph.RepoTreeGetOptions{
 					Formatted:       opt.Formatted,
 					TokenizedSource: opt.TokenizedSource,
-					GetFileOptions: vcsclient.GetFileOptions{
-						FileRange: vcsclient.FileRange{
+					GetFileOptions: sourcegraph.GetFileOptions{
+						FileRange: sourcegraph.FileRange{
 							StartByte: int64(ref.Start), EndByte: int64(ref.End),
 						},
 						FullLines:          true,
@@ -69,7 +68,7 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 					examples[i].Error = true
 					return nil
 				}
-				if e.Type != vcsclient.FileEntry {
+				if e.Type != sourcegraph.FileEntry {
 					examples[i].Error = true
 					return nil
 				}

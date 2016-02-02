@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/httptestutil"
 )
@@ -70,7 +69,7 @@ func mockEmptyTreeEntry(c *httptestutil.MockClients) (called *bool) {
 	called = new(bool)
 	c.RepoTree.Get_ = func(context.Context, *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
 		*called = true
-		return &sourcegraph.TreeEntry{TreeEntry: &vcsclient.TreeEntry{}}, nil
+		return &sourcegraph.TreeEntry{BasicTreeEntry: &sourcegraph.BasicTreeEntry{}}, nil
 	}
 	return called
 }

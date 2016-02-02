@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -219,7 +218,7 @@ type TreeEntryCommon struct {
 }
 
 // FlattenName flattens a nested TreeEntry name, joining with slashes.
-func FlattenName(e *vcsclient.TreeEntry) string {
+func FlattenName(e *sourcegraph.BasicTreeEntry) string {
 	if len(e.Entries) == 1 {
 		return e.Name + "/" + FlattenName(e.Entries[0])
 	} else {
@@ -229,7 +228,7 @@ func FlattenName(e *vcsclient.TreeEntry) string {
 
 // FlattenNameHTML flattens a nested TreeEntry name, returning HTML for rendering the slash-separated name
 // with all but the last elements grayed out.
-func FlattenNameHTML(e *vcsclient.TreeEntry) template.HTML {
+func FlattenNameHTML(e *sourcegraph.BasicTreeEntry) template.HTML {
 	if len(e.Entries) == 1 {
 		return template.HTML(`<span class="dim">`+template.HTMLEscapeString(e.Name)+`/</span>`) + FlattenNameHTML(e.Entries[0])
 	} else {

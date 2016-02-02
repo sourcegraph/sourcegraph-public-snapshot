@@ -13,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
@@ -297,8 +296,8 @@ func tokenizeHunkBody(fd *sourcegraph.FileDiff, hunk *sourcegraph.Hunk) {
 	}
 	hunk.LinePrefixes = prefixes.String()
 
-	file := vcsclient.FileWithRange{
-		TreeEntry: &vcsclient.TreeEntry{Contents: body.Bytes()},
+	file := sourcegraph.FileWithRange{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{Contents: body.Bytes()},
 	}
 	fileName := fd.NewName
 	if fd.NewName == "/dev/null" {
@@ -314,10 +313,10 @@ func tokenizeHunkBody(fd *sourcegraph.FileDiff, hunk *sourcegraph.Hunk) {
 
 // fetchCodeSnippet fetches a snippet of code from the VCS, applying syntax highlighting
 // and linking to it.
-func fetchCodeSnippet(ctx context.Context, spec sourcegraph.TreeEntrySpec, fileRange vcsclient.FileRange) *sourcegraph.SourceCode {
+func fetchCodeSnippet(ctx context.Context, spec sourcegraph.TreeEntrySpec, fileRange sourcegraph.FileRange) *sourcegraph.SourceCode {
 	opt := sourcegraph.RepoTreeGetOptions{
 		TokenizedSource: true,
-		GetFileOptions:  vcsclient.GetFileOptions{FileRange: fileRange},
+		GetFileOptions:  sourcegraph.GetFileOptions{FileRange: fileRange},
 	}
 	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: spec, Opt: &opt})
 	// If any errors occur while fetching the snippet, resume execution and don't block
@@ -335,7 +334,7 @@ func fetchCodeSnippet(ctx context.Context, spec sourcegraph.TreeEntrySpec, fileR
 // if they are considered to be code and have successful builds.
 func linkBaseAndHead(ctx context.Context, delta *sourcegraph.Delta, fd *sourcegraph.FileDiff, hunk *sourcegraph.Hunk) {
 	if fd.OrigName != "/dev/null" {
-		fileRange := vcsclient.FileRange{
+		fileRange := sourcegraph.FileRange{
 			StartLine: int64(hunk.OrigStartLine),
 			EndLine:   int64(hunk.OrigStartLine + hunk.OrigLines - 1),
 		}
@@ -355,7 +354,7 @@ func linkBaseAndHead(ctx context.Context, delta *sourcegraph.Delta, fd *sourcegr
 		}
 	}
 	if fd.NewName != "/dev/null" {
-		fileRange := vcsclient.FileRange{
+		fileRange := sourcegraph.FileRange{
 			StartLine: int64(hunk.NewStartLine),
 			EndLine:   int64(hunk.NewStartLine + hunk.NewLines - 1),
 		}

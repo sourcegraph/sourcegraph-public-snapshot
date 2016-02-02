@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -736,8 +735,8 @@ func referenceContents(ctx context.Context, ref *reference) (template.HTML, erro
 		},
 		Opt: &sourcegraph.RepoTreeGetOptions{
 			Formatted: true,
-			GetFileOptions: vcsclient.GetFileOptions{
-				FileRange: vcsclient.FileRange{
+			GetFileOptions: sourcegraph.GetFileOptions{
+				FileRange: sourcegraph.FileRange{
 					StartLine: int64(ref.StartLine),
 					EndLine:   int64(ref.EndLine),
 				},
