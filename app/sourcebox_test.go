@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 
 	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"

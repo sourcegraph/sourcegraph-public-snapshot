@@ -16,7 +16,7 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
-	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"

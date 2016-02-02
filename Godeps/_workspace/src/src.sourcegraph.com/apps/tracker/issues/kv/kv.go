@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"

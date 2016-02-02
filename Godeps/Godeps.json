@@ -901,14 +901,6 @@
 			"Rev": "9d81f9803c5e97ccfda0dd91fec1fa2b9fa01f94"
 		},
 		{
-			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/git",
-			"Rev": "7dc7b4ac241b7cc5c14d1cc4dfa69d132d37cda0"
-		},
-		{
-			"ImportPath": "sourcegraph.com/sourcegraph/vcsstore/vcsclient",
-			"Rev": "7dc7b4ac241b7cc5c14d1cc4dfa69d132d37cda0"
-		},
-		{
 			"ImportPath": "sourcegraph.com/sqs/pbtypes",
 			"Rev": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18"
 		},

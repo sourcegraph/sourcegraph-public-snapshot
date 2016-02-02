@@ -7,7 +7,7 @@ import "sourcegraph.com/sourcegraph/go-vcs/vcs/vcs.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/def.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/ref.proto";
 import "sourcegraph.com/sourcegraph/srclib/unit/unit.proto";
-import "sourcegraph.com/sourcegraph/vcsstore/vcsclient/vcsclient.proto";
+import "src.sourcegraph.com/sourcegraph/pkg/vcsclient/vcsclient.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 import "sourcegraph.com/sqs/pbtypes/void.proto";
 import "sourcegraph.com/sqs/pbtypes/html.proto";

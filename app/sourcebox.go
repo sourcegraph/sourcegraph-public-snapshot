@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/mux"
 
-	"sourcegraph.com/sourcegraph/vcsstore/vcsclient"
+	"src.sourcegraph.com/sourcegraph/pkg/vcsclient"
 	"src.sourcegraph.com/sourcegraph/app/assets"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
