@@ -66,10 +66,6 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method stri
 // to verify user permissions, for example the SSH Git server. For all other cases,
 // VerifyUserHasWriteAccess should be used to authorize a user for gRPC operations.
 func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method string) error {
-	if authutil.ActiveFlags.RestrictWriteAccess {
-		return VerifyActorHasAdminAccess(ctx, actor, method)
-	}
-
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil

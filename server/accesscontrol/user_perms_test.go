@@ -85,14 +85,4 @@ func TestVerifyAccess(t *testing.T) {
 	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo"); err == nil {
 		t.Fatalf("user %v should not have MirrorRepos.CloneRepo access; got access\n", uid)
 	}
-
-	// Test that UID 2 loses write access when it is restricted to admins
-	authutil.ActiveFlags.RestrictWriteAccess = true
-
-	uid = 2
-	ctx = asUID(uid)
-
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create"); err == nil {
-		t.Fatalf("user %v should not have write access; got access\n", uid)
-	}
 }

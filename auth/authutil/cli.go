@@ -19,8 +19,6 @@ func init() {
 type Flags struct {
 	AllowAnonymousReaders bool `long:"auth.allow-anon-readers" description:"allow unauthenticated users to perform read operations (viewing repos, etc.)"`
 
-	RestrictWriteAccess bool `long:"auth.restrict-write-access" description:"only allow admin users to perform write operations (create/delete repo, push to repo, etc.)" default:"false"`
-
 	Source string `long:"auth.source" description:"source of authentication to use (none|local|ldap)" default:"local"`
 
 	OAuth2AuthServer bool `long:"auth.oauth2-auth-server" description:"enable OAuth2 authentication server (allow users to authenticate via this server)"`

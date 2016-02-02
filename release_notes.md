@@ -1,3 +1,9 @@
+# dev
+
+- Removed the config option `--restrict-write-access`/`RestrictWriteAccess`.
+  This flag would limit write access to admin users only. This is no longer
+  necessary now that our ACL model includes write access.
+
 # 0.13.1
 
 - Promote Notification Center feature to default on (it previously had to be toggled on via a flag).
