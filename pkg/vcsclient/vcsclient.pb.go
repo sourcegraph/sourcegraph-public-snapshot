@@ -37,19 +37,19 @@ const (
 	SymlinkEntry TreeEntryType = 2
 )
 
-var name = map[int32]string{
+var TreeEntryType_name = map[int32]string{
 	0: "FileEntry",
 	1: "DirEntry",
 	2: "SymlinkEntry",
 }
-var value = map[string]int32{
+var TreeEntryType_value = map[string]int32{
 	"FileEntry":    0,
 	"DirEntry":     1,
 	"SymlinkEntry": 2,
 }
 
 func (x TreeEntryType) String() string {
-	return proto.EnumName(name, int32(x))
+	return proto.EnumName(TreeEntryType_name, int32(x))
 }
 
 // FileRange is a line and byte range in a file.
@@ -112,7 +112,7 @@ func (m *TreeEntry) String() string { return proto.CompactTextString(m) }
 func (*TreeEntry) ProtoMessage()    {}
 
 func init() {
-	proto.RegisterEnum("vcsclient.TreeEntryType", name, value)
+	proto.RegisterEnum("vcsclient.TreeEntryType", TreeEntryType_name, TreeEntryType_value)
 }
 func (m *FileRange) Marshal() (data []byte, err error) {
 	size := m.Size()

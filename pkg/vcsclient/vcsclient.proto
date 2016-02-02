@@ -56,6 +56,7 @@ message GetFileOptions {
 }
 
 enum TreeEntryType {
+	option (gogoproto.goproto_enum_prefix) = false;
 	FileEntry = 0;
 	DirEntry = 1;
 	SymlinkEntry = 2;
