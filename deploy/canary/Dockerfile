@@ -8,10 +8,10 @@ RUN { \
 		echo 'UseRoaming no'; \
 	} >> /etc/ssh/ssh_config
 
+# ADD wrapdocker /usr/local/bin/wrapdocker # currently not supported on Container Engine, add lxc package when using
 ADD src /usr/local/bin/src
-ADD src-init.sh /usr/local/bin/src-init.sh
 
-ENTRYPOINT ["src-init.sh"]
+ENTRYPOINT ["src"]
 CMD ["serve", "--http-addr=:80", "--https-addr=:443", "--ssh-addr=:22"]
 
 VOLUME ["/root/.sourcegraph", "/var/run/docker.sock"]
