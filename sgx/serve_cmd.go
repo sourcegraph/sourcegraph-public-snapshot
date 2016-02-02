@@ -64,6 +64,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ui"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
 	"src.sourcegraph.com/sourcegraph/usercontent"
+	"src.sourcegraph.com/sourcegraph/util/dbutil2"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/expvarutil"
@@ -190,6 +191,8 @@ type ServeCmd struct {
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
 	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup"`
+
+	PgsqlCreateDB bool `long:"pgsql-create-db" description:"create postgres database schema before server startup"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -246,6 +249,10 @@ func (c *ServeCmd) configureSSHURL(appURL *url.URL) (*url.URL, error) {
 func (c *ServeCmd) Execute(args []string) error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
+
+	if c.PgsqlCreateDB {
+		c.initPostgresDB()
+	}
 
 	logHandler := log15.StderrHandler
 	if globalOpt.VerbosePkg != "" {
@@ -1146,6 +1153,21 @@ func (c *ServeCmd) runGitServer() {
 	if err := gitserver.Dial(addr); err != nil {
 		log.Fatalf("git-server dial failed: %s", err)
 	}
+}
+
+func (c *ServeCmd) initPostgresDB() {
+	if cli.DBSchema.Map == nil {
+		log.Fatal("Cannot create db: cli.DBSchema is empty")
+	}
+	dbh, err := dbutil2.Open("", cli.DBSchema, dbutil2.CreateDBIfNotExists)
+	if err != nil {
+		log.Fatalf("open DB: %s", err)
+	}
+	err = dbh.CreateSchema()
+	if err != nil {
+		log.Fatalf("create DB: %s", err)
+	}
+	log15.Debug("Postgres databse initialized")
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
