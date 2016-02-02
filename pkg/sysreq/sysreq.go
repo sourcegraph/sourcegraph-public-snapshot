@@ -113,7 +113,7 @@ var checks = []check{
 
 			st := &status{
 				problem: "Could not contact Docker host. Docker is required for Sourcegraph to build and analyze code.",
-				fix:     "Install Docker if you haven't already (see https://docs.docker.com/engine/installation/). Then check the DOCKER_HOST (and possibly DOCKER_CERT_PATH and DOCKER_TLS_VERIFY) environment variables. Set them so they point to a Docker host. If you're running on OS X, pass Sourcegraph the environment vars in `docker-machine env default`. See https://docs.docker.com/machine/reference/env/ for more information.",
+				fix:     "Install Docker if you haven't already (see https://docs.docker.com/engine/installation/). Then check the DOCKER_HOST (and possibly DOCKER_CERT_PATH and DOCKER_TLS_VERIFY) environment variables. Set them so they point to a Docker host. If you're running on OS X, pass Sourcegraph the environment vars in `docker-machine env $(docker-machine ls -q)`. See https://docs.docker.com/machine/reference/env/ for more information.",
 			}
 
 			client, err := dockerclient.NewDockerClient(daemonURL, tlsConfig)
