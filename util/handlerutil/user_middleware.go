@@ -94,16 +94,13 @@ func fetchUserForCredentials(cred sourcegraph.Credentials) bool {
 	return hasUID
 }
 
-// UserFromContext returns the request's context's authenticated user (if
+// UserFromRequest returns the request's context's authenticated user (if
 // any).
-//
-// TODO(sqs): rename to CurrentUser or something -- "FromContext"
-// implies it takes a context.Context, which it does not.
 func UserFromRequest(r *http.Request) *sourcegraph.UserSpec {
 	return UserFromContext(httpctx.FromRequest(r))
 }
 
-// userFromContext returns the context's authenticated user (if any).
+// UserFromContext returns the context's authenticated user (if any).
 func UserFromContext(ctx context.Context) *sourcegraph.UserSpec {
 	user, _ := ctx.Value(userKey).(*sourcegraph.UserSpec)
 	return user
