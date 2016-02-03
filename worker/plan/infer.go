@@ -96,29 +96,29 @@ var langConfigs = map[string]struct {
 		matrix: map[string][]string{"NODE_VERSION": []string{"4"}},
 	},
 	"Java": {
-// TODO (alexsaveliev) uncomment some day
-//		build: droneyaml.BuildItem{
-//			Key: "Java build (Java $$JAVA_VERSION)",
-//			Build: droneyaml.Build{
-//				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
-//				Commands: []string{
-//					"[ -f pom.xml ] && mvn --quiet package",
-//					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew build) || gradle build)",
-//				},
-//				AllowFailure: true,
-//			},
-//		},
-//		test: droneyaml.BuildItem{
-//			Key: "Java test (Java $$JAVA_VERSION)",
-//			Build: droneyaml.Build{
-//				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
-//				Commands: []string{
-//					"[ -f pom.xml ] && mvn --quiet test",
-//					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew test) || gradle test)",
-//				},
-//				AllowFailure: true,
-//			},
-//		},
-//		matrix: map[string][]string{"JAVA_VERSION": []string{"8"}},
+	// TODO (alexsaveliev) uncomment some day
+	//		build: droneyaml.BuildItem{
+	//			Key: "Java build (Java $$JAVA_VERSION)",
+	//			Build: droneyaml.Build{
+	//				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
+	//				Commands: []string{
+	//					"[ -f pom.xml ] && mvn --quiet package",
+	//					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew build) || gradle build)",
+	//				},
+	//				AllowFailure: true,
+	//			},
+	//		},
+	//		test: droneyaml.BuildItem{
+	//			Key: "Java test (Java $$JAVA_VERSION)",
+	//			Build: droneyaml.Build{
+	//				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
+	//				Commands: []string{
+	//					"[ -f pom.xml ] && mvn --quiet test",
+	//					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew test) || gradle test)",
+	//				},
+	//				AllowFailure: true,
+	//			},
+	//		},
+	//		matrix: map[string][]string{"JAVA_VERSION": []string{"8"}},
 	},
 }
