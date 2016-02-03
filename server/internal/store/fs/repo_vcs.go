@@ -43,11 +43,14 @@ func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, inf
 		return err
 	}
 
-	_, err := vcs.Clone(info.VCS, info.CloneURL, dir, vcs.CloneOpt{
+	r, err := vcs.Clone(info.VCS, info.CloneURL, dir, vcs.CloneOpt{
 		Bare:       bare,
 		Mirror:     mirror,
 		RemoteOpts: info.RemoteOpts,
 	})
+	if err == nil {
+		r.Close()
+	}
 	return err
 }
 
