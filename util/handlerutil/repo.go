@@ -81,6 +81,9 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 			}
 		}
 		if err != nil {
+			if _, ok := mux.Vars(r)["Rev"]; ok {
+				return nil, nil, vcs.ErrRevisionNotFound
+			}
 			return nil, nil, &NoVCSDataError{rc}
 		}
 	} else if err != nil {
