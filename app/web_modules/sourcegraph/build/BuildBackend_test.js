@@ -75,7 +75,7 @@ describe("BuildBackend", () => {
 			repo: "aRepo",
 			buildID: 123,
 		};
-		let expectedURI = `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks`;
+		let expectedURI = `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks?PerPage=1000`;
 
 		BuildBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
