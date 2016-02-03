@@ -23,7 +23,7 @@ class Tooltip extends Component {
 
 	componentWillUnmount() {
 		let el = ReactDOM.findDOMNode(this).parentElement;
-		el.removeEventListener("mouseenter", this._onUnhover);
+		el.removeEventListener("mouseenter", this._onHover);
 		el.removeEventListener("mouseleave", this._onUnhover);
 	}
 
