@@ -76,7 +76,7 @@ const BuildBackend = {
 				let tasks = BuildBackend.buildStore.tasks.get(action.repo, action.buildID);
 				if (tasks === null || action.force) {
 					BuildBackend.xhr({
-						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks`,
+						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks?PerPage=1000`,
 						json: {},
 						headers: authHeaders(),
 					}, function(err, resp, body) {
