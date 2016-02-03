@@ -224,8 +224,14 @@ func binarySearch(r io.ReaderAt, tableStart int64, min, max uint32, id ObjectID)
 			return mid, nil
 		}
 		if midID < id {
+			if mid == math.MaxUint32 {
+				break
+			}
 			min = mid + 1
 			continue
+		}
+		if mid == 0 {
+			break
 		}
 		max = mid - 1
 	}
