@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	droneexec "github.com/drone/drone-exec/exec"
 	"github.com/samalba/dockerclient"
 	"golang.org/x/net/context"
 )
@@ -105,7 +104,7 @@ var checks = []check{
 			var tlsConfig *tls.Config
 			if path := os.Getenv("DOCKER_CERT_PATH"); os.Getenv("DOCKER_TLS_VERIFY") != "" && path != "" {
 				var err error
-				tlsConfig, err = droneexec.TLSConfigFromCertPath(path)
+				tlsConfig, err = dockerclient.TLSConfigFromCertPath(path)
 				if err != nil {
 					return nil, err
 				}

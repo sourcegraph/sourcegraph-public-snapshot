@@ -1,4 +1,4 @@
-package exec
+package dockerclient
 
 import (
 	"crypto/tls"
@@ -8,7 +8,10 @@ import (
 	"path/filepath"
 )
 
-// TODO(sqs!native-ci): remove when https://github.com/samalba/dockerclient/pull/201 and https://github.com/drone/drone-exec/pull/13 are merged.
+// TLSConfigFromCertPath returns a configuration based on PEM files in the directory
+//
+// path is usually what is set by the environment variable `DOCKER_CERT_PATH`,
+// or `$HOME/.docker`.
 func TLSConfigFromCertPath(path string) (*tls.Config, error) {
 	cert, err := ioutil.ReadFile(filepath.Join(path, "cert.pem"))
 	if err != nil {

@@ -107,29 +107,29 @@
 			"Rev": "acc5a5f31e3493f1992315fd85aa49226372b810"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/units",
-			"Comment": "v1.4.1-8449-g8d36f09",
-			"Rev": "8d36f097cfe8fd3a4e6bed6123fb1fea24889c7b"
+			"ImportPath": "github.com/docker/go-units",
+			"Comment": "v0.1.0-9-g954fed0",
+			"Rev": "954fed01cc617c55d838fa2230073f2cb17386c8"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/docker",
-			"Rev": "a2907837ccc701b09ed9cb07fae5124a61250630"
+			"Rev": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/exec",
-			"Rev": "a2907837ccc701b09ed9cb07fae5124a61250630"
+			"Rev": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/parser",
-			"Rev": "a2907837ccc701b09ed9cb07fae5124a61250630"
+			"Rev": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/runner",
-			"Rev": "a2907837ccc701b09ed9cb07fae5124a61250630"
+			"Rev": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-exec/yaml",
-			"Rev": "a2907837ccc701b09ed9cb07fae5124a61250630"
+			"Rev": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc"
 		},
 		{
 			"ImportPath": "github.com/drone/drone-plugin-go/plugin",
@@ -396,7 +396,7 @@
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
-			"Rev": "4656b1bc6cbc06b75d65983475e4809cbd53ebb5"
+			"Rev": "ccb0d5a7b8a7278f3f57de0135d4c5cc6921fcac"
 		},
 		{
 			"ImportPath": "github.com/satori/go.uuid",

@@ -194,7 +194,7 @@ func Exec(ctx context.Context, payload Payload, opt Options) (err error) {
 	}
 	var tlsConfig *tls.Config
 	if path := os.Getenv("DOCKER_CERT_PATH"); os.Getenv("DOCKER_TLS_VERIFY") != "" && path != "" {
-		tlsConfig, err = TLSConfigFromCertPath(path)
+		tlsConfig, err = dockerclient.TLSConfigFromCertPath(path)
 		if err != nil {
 			return err
 		}

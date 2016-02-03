@@ -42,6 +42,7 @@ type Client interface {
 	RemoveContainer(id string, force, volumes bool) error
 	ListImages(all bool) ([]*Image, error)
 	RemoveImage(name string, force bool) ([]*ImageDelete, error)
+	SearchImages(query, registry string, auth *AuthConfig) ([]ImageSearch, error)
 	PauseContainer(name string) error
 	UnpauseContainer(name string) error
 	RenameContainer(oldName string, newName string) error
@@ -54,6 +55,6 @@ type Client interface {
 	InspectNetwork(id string) (*NetworkResource, error)
 	CreateNetwork(config *NetworkCreate) (*NetworkCreateResponse, error)
 	ConnectNetwork(id, container string) error
-	DisconnectNetwork(id, container string) error
+	DisconnectNetwork(id, container string, force bool) error
 	RemoveNetwork(id string) error
 }

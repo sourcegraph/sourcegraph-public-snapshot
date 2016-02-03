@@ -122,6 +122,10 @@ func (client *NopClient) RemoveImage(name string, force bool) ([]*dockerclient.I
 	return nil, ErrNoEngine
 }
 
+func (client *NopClient) SearchImages(query, registry string, authConfig *dockerclient.AuthConfig) ([]dockerclient.ImageSearch, error) {
+	return nil, ErrNoEngine
+}
+
 func (client *NopClient) PauseContainer(name string) error {
 	return ErrNoEngine
 }
@@ -182,7 +186,7 @@ func (client *NopClient) ConnectNetwork(id, container string) error {
 	return ErrNoEngine
 }
 
-func (client *NopClient) DisconnectNetwork(id, container string) error {
+func (client *NopClient) DisconnectNetwork(id, container string, force bool) error {
 	return ErrNoEngine
 }
 

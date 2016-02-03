@@ -141,6 +141,11 @@ func (client *MockClient) RemoveImage(name string, force bool) ([]*dockerclient.
 	return args.Get(0).([]*dockerclient.ImageDelete), args.Error(1)
 }
 
+func (client *MockClient) SearchImages(query, registry string, authConfig *dockerclient.AuthConfig) ([]dockerclient.ImageSearch, error) {
+	args := client.Mock.Called(query, registry, authConfig)
+	return args.Get(0).([]dockerclient.ImageSearch), args.Error(1)
+}
+
 func (client *MockClient) PauseContainer(name string) error {
 	args := client.Mock.Called(name)
 	return args.Error(0)
@@ -216,8 +221,8 @@ func (client *MockClient) ConnectNetwork(id, container string) error {
 	return args.Error(0)
 }
 
-func (client *MockClient) DisconnectNetwork(id, container string) error {
-	args := client.Mock.Called(id, container)
+func (client *MockClient) DisconnectNetwork(id, container string, force bool) error {
+	args := client.Mock.Called(id, container, force)
 	return args.Error(0)
 }
 
