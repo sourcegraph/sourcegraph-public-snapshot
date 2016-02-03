@@ -6,7 +6,7 @@ Installation
 ------------
 
 ```bash
-go get -u src.sourcegraph.com/apps/tracker/...
+go get -u -d src.sourcegraph.com/apps/tracker/...
 ```
 
 Development
@@ -34,4 +34,4 @@ go generate src.sourcegraph.com/apps/tracker/...
 License
 -------
 
--	TODO.
+-	[MIT License](http://opensource.org/licenses/mit-license.php)

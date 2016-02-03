@@ -71,7 +71,7 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 		if err != nil {
 			return is, err
 		}
-		user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
+		author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
 		if err != nil {
 			return is, err
 		}
@@ -80,7 +80,7 @@ func (s service) List(ctx context.Context, repo issues.RepoSpec, opt issues.Issu
 			State: issue.State,
 			Title: issue.Title,
 			Comment: issues.Comment{
-				User:      sgUser(ctx, user),
+				User:      sgUser(ctx, author),
 				CreatedAt: issue.CreatedAt,
 			},
 			Replies: len(comments) - 1,
@@ -131,7 +131,7 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 		return issues.Issue{}, err
 	}
 
-	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
+	author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -164,7 +164,7 @@ func (s service) Get(ctx context.Context, repo issues.RepoSpec, id uint64) (issu
 		State: issue.State,
 		Title: issue.Title,
 		Comment: issues.Comment{
-			User:      sgUser(ctx, user),
+			User:      sgUser(ctx, author),
 			CreatedAt: issue.CreatedAt,
 			Editable:  nil == canEdit(ctx, sg, currentUser, issue.AuthorUID),
 		},
@@ -194,7 +194,7 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 			return comments, err
 		}
 
-		user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: comment.AuthorUID})
+		author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: comment.AuthorUID})
 		if err != nil {
 			return comments, err
 		}
@@ -205,17 +205,17 @@ func (s service) ListComments(ctx context.Context, repo issues.RepoSpec, id uint
 			}
 			for _, uid := range cr.AuthorUIDs {
 				// TODO: Since we're potentially getting many of the same users multiple times here, consider caching them locally.
-				user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: uid})
+				reactionAuthor, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: uid})
 				if err != nil {
 					return comments, err
 				}
-				reaction.Users = append(reaction.Users, sgUser(ctx, user))
+				reaction.Users = append(reaction.Users, sgUser(ctx, reactionAuthor))
 			}
 			reactions = append(reactions, reaction)
 		}
 		comments = append(comments, issues.Comment{
 			ID:        commentID,
-			User:      sgUser(ctx, user),
+			User:      sgUser(ctx, author),
 			CreatedAt: comment.CreatedAt,
 			Body:      comment.Body,
 			Reactions: reactions,
@@ -246,13 +246,13 @@ func (s service) ListEvents(ctx context.Context, repo issues.RepoSpec, id uint64
 			return events, err
 		}
 
-		user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: event.ActorUID})
+		actor, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: event.ActorUID})
 		if err != nil {
 			return events, err
 		}
 		events = append(events, issues.Event{
 			ID:        eventID,
-			Actor:     sgUser(ctx, user),
+			Actor:     sgUser(ctx, actor),
 			CreatedAt: event.CreatedAt,
 			Type:      event.Type,
 			Rename:    event.Rename,
@@ -285,7 +285,7 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 		Body:      c.Body,
 	}
 
-	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: comment.AuthorUID})
+	author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: comment.AuthorUID})
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -317,7 +317,7 @@ func (s service) CreateComment(ctx context.Context, repo issues.RepoSpec, id uin
 
 	return issues.Comment{
 		ID:        commentID,
-		User:      sgUser(ctx, user),
+		User:      sgUser(ctx, author),
 		CreatedAt: comment.CreatedAt,
 		Body:      comment.Body,
 		Editable:  true, // You can always edit comments you've created.
@@ -363,7 +363,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 		}
 	}
 
-	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
+	author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
 	if err != nil {
 		return issues.Issue{}, err
 	}
@@ -402,7 +402,7 @@ func (s service) Create(ctx context.Context, repo issues.RepoSpec, i issues.Issu
 		Title: issue.Title,
 		Comment: issues.Comment{
 			ID:        0,
-			User:      sgUser(ctx, user),
+			User:      sgUser(ctx, author),
 			CreatedAt: issue.CreatedAt,
 			Body:      comment.Body,
 			Editable:  true, // You can always edit issues you've created.
@@ -473,7 +473,12 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 	}
 
 	// TODO: Doing this here before committing in case it fails; think about factoring this out into a user service that augments...
-	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
+	// TODO: If author == currentUser, fetching actor can be optimized by not doing it (since it's the same user).
+	author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: issue.AuthorUID})
+	if err != nil {
+		return issues.Issue{}, nil, err
+	}
+	actor, err := sg.Users.Get(ctx, currentUser)
 	if err != nil {
 		return issues.Issue{}, nil, err
 	}
@@ -530,7 +535,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 
 		events = append(events, issues.Event{
 			ID:        eventID,
-			Actor:     sgUser(ctx, user),
+			Actor:     sgUser(ctx, actor),
 			CreatedAt: event.CreatedAt,
 			Type:      event.Type,
 			Rename:    event.Rename,
@@ -558,7 +563,7 @@ func (s service) Edit(ctx context.Context, repo issues.RepoSpec, id uint64, ir i
 		Title: issue.Title,
 		Comment: issues.Comment{
 			ID:        0,
-			User:      sgUser(ctx, user),
+			User:      sgUser(ctx, author),
 			CreatedAt: issue.CreatedAt,
 			Editable:  true, // You can always edit issues you've edited.
 		},
@@ -602,7 +607,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 	}
 
 	// TODO: Doing this here before committing in case it fails; think about factoring this out into a user service that augments...
-	user, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: comment.AuthorUID})
+	author, err := sg.Users.Get(ctx, &sourcegraph.UserSpec{UID: comment.AuthorUID})
 	if err != nil {
 		return issues.Comment{}, err
 	}
@@ -635,7 +640,7 @@ func (s service) EditComment(ctx context.Context, repo issues.RepoSpec, id uint6
 
 	return issues.Comment{
 		ID:        cr.ID,
-		User:      sgUser(ctx, user),
+		User:      sgUser(ctx, author),
 		CreatedAt: comment.CreatedAt,
 		Body:      comment.Body,
 		Editable:  true, // You can always edit comments you've edited.

@@ -175,7 +175,7 @@ func ToggleIssueState(issueState issues.State) {
 			issueStateBadge.SetInnerHTML(data.Get("issue-state-badge"))
 
 			issueToggleButton := document.GetElementByID("issue-toggle-button")
-			issueToggleButton.Underlying().Set("outerHTML", data.Get("issue-toggle-button"))
+			issueToggleButton.SetOuterHTML(data.Get("issue-toggle-button"))
 			setupIssueToggleButton()
 
 			for _, newEventData := range data["new-event"] {
@@ -183,7 +183,7 @@ func ToggleIssueState(issueState issues.State) {
 				newEvent := document.CreateElement("div").(*dom.HTMLDivElement)
 				newItemMarker := document.GetElementByID("new-item-marker")
 				newItemMarker.ParentNode().InsertBefore(newEvent, newItemMarker)
-				newEvent.Underlying().Set("outerHTML", newEventData)
+				newEvent.SetOuterHTML(newEventData)
 			}
 		}
 
@@ -238,7 +238,7 @@ func postComment() error {
 		newItemMarker := document.GetElementByID("new-item-marker")
 		newItemMarker.ParentNode().InsertBefore(newComment, newItemMarker)
 
-		newComment.Underlying().Set("outerHTML", string(body))
+		newComment.SetOuterHTML(string(body))
 
 		// Reset new-comment component.
 		commentEditor.Value = ""

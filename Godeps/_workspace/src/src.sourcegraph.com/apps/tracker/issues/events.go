@@ -11,14 +11,19 @@ type Event struct {
 	Rename    *Rename
 }
 
+// EventType is the type of an event.
 type EventType string
 
 const (
+	// Reopened is when an issue is reopened.
 	Reopened EventType = "reopened"
-	Closed   EventType = "closed"
-	Renamed  EventType = "renamed"
+	// Closed is when an issue is closed.
+	Closed EventType = "closed"
+	// Renamed is when an issue is renamed.
+	Renamed EventType = "renamed"
 )
 
+// Valid returns non-nil error if the event type is invalid.
 func (et EventType) Valid() bool {
 	switch et {
 	case Reopened, Closed, Renamed:
@@ -28,6 +33,7 @@ func (et EventType) Valid() bool {
 	}
 }
 
+// Rename provides details for a Renamed event.
 type Rename struct {
 	From string
 	To   string
