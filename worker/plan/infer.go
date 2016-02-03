@@ -120,4 +120,6 @@ var langConfigs = map[string]struct {
 		},
 		matrix: map[string][]string{"JAVA_VERSION": []string{"8"}},
 	},
+	"Python": {
+	},
 }

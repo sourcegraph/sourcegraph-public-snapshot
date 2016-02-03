@@ -93,6 +93,15 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			Commands: srclibBuildCommands,
 		},
 	},
+	"Python": droneyaml.BuildItem{
+		Key: "Python (indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: "srclib/drone-srclib-python@sha256:30f6405d6ced73bdf418dec5a97ba5e650d1c6967acfefebc43de2dd75792d01",
+			},
+			Commands: srclibBuildCommands,
+		},
+	},
 }
 
 var srclibBuildCommands = []string{"srclib config", "srclib make"}
