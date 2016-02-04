@@ -727,6 +727,10 @@
 			"Rev": "0abe01ef9be25c4aedc174758ec2d917314d6d70"
 		},
 		{
+			"ImportPath": "github.com/termie/go-shutil",
+			"Rev": "bcacb06fecaeec8dc42af03c87c6949f4a05c74c"
+		},
+		{
 			"ImportPath": "github.com/whilp/git-urls",
 			"Rev": "e4bd4b1ee3861df27451acebbe81d7a5d67991fe"
 		},
