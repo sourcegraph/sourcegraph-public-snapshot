@@ -9,13 +9,11 @@ import (
 	"sort"
 	"sync"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-
 	"github.com/sqs/fileset"
-
-	"sourcegraph.com/sqs/pbtypes"
-
 	"golang.org/x/tools/godoc/vfs"
+	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // getFileWithOptions gets a file and observes the options specified in opt.
@@ -120,11 +118,14 @@ func newTreeEntry(fi os.FileInfo) *sourcegraph.BasicTreeEntry {
 		Size_:   fi.Size(),
 		ModTime: pbtypes.NewTimestamp(fi.ModTime()),
 	}
-	if fi.Mode().IsDir() {
+	switch {
+	case fi.Mode()&vcs.ModeSubmodule == vcs.ModeSubmodule:
+		e.Type = sourcegraph.SubmoduleEntry
+	case fi.Mode().IsDir():
 		e.Type = sourcegraph.DirEntry
-	} else if fi.Mode().IsRegular() {
+	case fi.Mode().IsRegular():
 		e.Type = sourcegraph.FileEntry
-	} else if fi.Mode()&os.ModeSymlink != 0 {
+	case fi.Mode()&os.ModeSymlink != 0:
 		e.Type = sourcegraph.SymlinkEntry
 	}
 	return e

@@ -2600,6 +2600,7 @@ enum TreeEntryType {
 	FileEntry = 0;
 	DirEntry = 1;
 	SymlinkEntry = 2;
+	SubmoduleEntry = 3;
 }
 
 message TreeEntrySpec {

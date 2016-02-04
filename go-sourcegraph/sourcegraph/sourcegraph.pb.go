@@ -253,20 +253,23 @@ var _ = math.Inf
 type TreeEntryType int32
 
 const (
-	FileEntry    TreeEntryType = 0
-	DirEntry     TreeEntryType = 1
-	SymlinkEntry TreeEntryType = 2
+	FileEntry      TreeEntryType = 0
+	DirEntry       TreeEntryType = 1
+	SymlinkEntry   TreeEntryType = 2
+	SubmoduleEntry TreeEntryType = 3
 )
 
 var TreeEntryType_name = map[int32]string{
 	0: "FileEntry",
 	1: "DirEntry",
 	2: "SymlinkEntry",
+	3: "SubmoduleEntry",
 }
 var TreeEntryType_value = map[string]int32{
-	"FileEntry":    0,
-	"DirEntry":     1,
-	"SymlinkEntry": 2,
+	"FileEntry":      0,
+	"DirEntry":       1,
+	"SymlinkEntry":   2,
+	"SubmoduleEntry": 3,
 }
 
 func (x TreeEntryType) String() string {

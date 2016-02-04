@@ -82,11 +82,11 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 		}
 	}
 
-	ci, err := r.ResolveTag(spec)
+	ci, err := r.ResolveBranch(spec)
 	if err == nil {
 		return ci, nil
 	}
-	ci, err = r.ResolveBranch(spec)
+	ci, err = r.ResolveTag(spec)
 	if err == nil {
 		return ci, nil
 	}
@@ -201,6 +201,9 @@ func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 
 // Tags returns a list of all tags in the repository.
 func (r *Repository) Tags() ([]*vcs.Tag, error) {
+	// TODO: implement non-fallback (similar to Branches endpoint)
+	return r.Repository.Tags()
+
 	names, err := r.repo.GetTags()
 	if err != nil {
 		return nil, err

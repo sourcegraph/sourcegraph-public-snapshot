@@ -882,7 +882,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
-			"Rev": "0c23690f84e3ce263213b44fc806c604a5ec03a5"
+			"Rev": "3d2c2343c88aa22d57ad6039780336ff5e18400e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
