@@ -153,23 +153,19 @@ func (fs *filesystem) submoduleInfo(path string, e *git.TreeEntry) (*util.FileIn
 	if err != nil {
 		return nil, err
 	}
-	var found *git.Submodule
+	var foundURL string
 	for _, sub := range subs {
 		if sub.Path == path {
-			found = sub
+			foundURL = sub.URL
 			break
 		}
-	}
-
-	if found == nil {
-		return nil, fmt.Errorf("submodule not found: %s", path)
 	}
 
 	return &util.FileInfo{
 		Name_: e.Name(),
 		Mode_: vcs.ModeSubmodule,
 		Sys_: vcs.SubmoduleInfo{
-			URL:      found.URL,
+			URL:      foundURL,
 			CommitID: vcs.CommitID(e.Id.String()),
 		},
 	}, nil
