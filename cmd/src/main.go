@@ -30,6 +30,7 @@ import (
 	_ "src.sourcegraph.com/apps/apidocs"
 	_ "src.sourcegraph.com/apps/notifications/sgapp"
 	_ "src.sourcegraph.com/apps/tracker/sgapp"
+	_ "src.sourcegraph.com/apps/updater/sgapp"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/changesets"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
