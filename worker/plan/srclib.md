@@ -47,3 +47,37 @@ course create a repo and build it in the UI. But you can also run `src
 check --debug` in any locally checked out repo (which does not even
 need to exist on any Sourcegraph server). That runs the same CI
 process but locally.
+
+# Infer build and test configuration 
+
+By making the user, not srclib, responsible for building and installing deps, we
+(1) greatly simplify srclib and (2) make it easier for users to customize
+srclib.
+
+For example, suppose your Java build needed to add special auth for Artifactory,
+needed to run an install.sh script as well as `mvn package`, and needed Maven
+4.9 not Maven 4.3. How would you specify all that in srclib? By just configuring
+it using a standard CI system (Drone), not custom srclib stuff, it is easier and
+simpler.
+
+The principle is: srclib and srclib toolchains assume the build system has
+already fetched deps, compiled, etc.
+
+Implicit srclib configuration is when there is no `.drone.yml` and Sourcegraph
+creates one based on the filenames (.java,. go, etc.) it sees. Explicit srclib
+configuration is when you have a .drone.yml with srclib steps in it; in that
+case, no implicit configuration is performed (e.g., say you had some .py files
+but didn't want to run srclib-python).
+
+By default, Sourcegraphs adds up to two build steps per language 
+* *Build* that tries to compile source code
+* *Test* that tries to run tests defined in repository
+
+Presence of these steps depends on language (some may not have centralized
+'build source code' entry point or 'run tests' entry point.
+
+If build step defined in `.drone.yml` or added implicitly refers to Docker image
+built by Sourcegraph (identified by the presence of `srclib` substring in
+image's name) it's assumed that indexing step was explicitly configured and
+won't be added after the 'build' and 'test' steps. There is an exception now:
+**Java-based projects adding 'indexing' step anyway**.

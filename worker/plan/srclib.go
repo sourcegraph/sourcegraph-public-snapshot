@@ -17,7 +17,10 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	for _, step := range config.Build {
 		// Rough heuristic for now: does the Docker image name contain
 		// "srclib".
-		if strings.Contains(step.Container.Image, "srclib") {
+		// (alexsaveliev) excluding srclib-java from heuristic
+		// because it's used both by build/test and srclib steps
+		if strings.Contains(step.Container.Image, "srclib") &&
+			!strings.Contains(step.Container.Image, "srclib-java") {
 			srclibExplicitlyConfigured = true
 			break
 		}
