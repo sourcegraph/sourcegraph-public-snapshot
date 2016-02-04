@@ -9,10 +9,10 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/emailaddrs"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 

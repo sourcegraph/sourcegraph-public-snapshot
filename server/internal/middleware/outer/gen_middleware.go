@@ -34,7 +34,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"

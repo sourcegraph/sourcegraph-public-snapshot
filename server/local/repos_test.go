@@ -9,10 +9,10 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	vcstesting "src.sourcegraph.com/sourcegraph/pkg/vcs/testing"
 	"src.sourcegraph.com/sourcegraph/platform"
 )
 

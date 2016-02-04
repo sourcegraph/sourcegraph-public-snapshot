@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os/exec"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs/ssh"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/ssh"
 )
 
 // trivialGitRepoHandler is an HTTP handler that serves a dummy git repo with

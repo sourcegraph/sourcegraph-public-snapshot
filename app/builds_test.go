@@ -3,7 +3,7 @@ package app_test
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
 	"strings"
 

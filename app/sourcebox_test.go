@@ -12,11 +12,11 @@ import (
 	"regexp"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 func treeEntryFixture(sourceContents []string) *sourcegraph.TreeEntry {

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
 	"golang.org/x/net/context"
 

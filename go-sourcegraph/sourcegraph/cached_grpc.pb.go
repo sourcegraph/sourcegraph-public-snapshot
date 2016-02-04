@@ -15,11 +15,11 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 type CachedAccountsClient struct {

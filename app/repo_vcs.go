@@ -6,7 +6,7 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"

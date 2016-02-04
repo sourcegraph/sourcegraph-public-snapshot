@@ -11,9 +11,9 @@ import (
 
 	"github.com/sqs/fileset"
 	"golang.org/x/tools/godoc/vfs"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 // getFileWithOptions gets a file and observes the options specified in opt.

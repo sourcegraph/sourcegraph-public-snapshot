@@ -3,7 +3,7 @@ package sourcegraph;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "sourcegraph.com/sourcegraph/go-diff/diff/diff.proto";
-import "sourcegraph.com/sourcegraph/go-vcs/vcs/vcs.proto";
+import "src.sourcegraph.com/sourcegraph/pkg/vcs/vcs.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/def.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/ref.proto";
 import "sourcegraph.com/sourcegraph/srclib/unit/unit.proto";

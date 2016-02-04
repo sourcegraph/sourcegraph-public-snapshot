@@ -877,14 +877,6 @@
 			"Rev": "dace7e122742808bf6016bdc6510649d84f2a31e"
 		},
 		{
-			"ImportPath": "sourcegraph.com/sourcegraph/go-git",
-			"Rev": "54ac6cc3efd9725d578fff6cb19a0c1f55add9b1"
-		},
-		{
-			"ImportPath": "sourcegraph.com/sourcegraph/go-vcs/vcs",
-			"Rev": "3d2c2343c88aa22d57ad6039780336ff5e18400e"
-		},
-		{
 			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
 			"Rev": "7ff0e3658acaebb8a75bff7091a3072c73be0171"
 		},

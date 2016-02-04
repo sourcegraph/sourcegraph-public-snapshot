@@ -7,9 +7,9 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/fed/discover"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/store"
 
 	"github.com/gorilla/schema"

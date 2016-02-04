@@ -36,9 +36,7 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
 
 	// VCS
-	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/git"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs/gitcmd"
-	_ "sourcegraph.com/sourcegraph/go-vcs/vcs/hgcmd"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 )
 
 func init() {

@@ -1,6 +1,6 @@
 package local
 
-import "sourcegraph.com/sourcegraph/go-vcs/vcs"
+import "src.sourcegraph.com/sourcegraph/pkg/vcs"
 
 // blameFileByteRange calls r.BlameFile and filters the returned hunks
 // to only those that contain bytes in [startByte, endByte). It is

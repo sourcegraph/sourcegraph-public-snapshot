@@ -2,9 +2,9 @@ package authzchecked
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 

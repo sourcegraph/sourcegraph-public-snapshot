@@ -7,8 +7,8 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 func TestGroupCommitsByDay(t *testing.T) {

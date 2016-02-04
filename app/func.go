@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 

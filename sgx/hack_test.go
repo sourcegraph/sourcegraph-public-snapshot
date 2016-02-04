@@ -4,4 +4,4 @@ package sgx
 // `godep save` does not see it. Putting it here, too, lets `godep
 // save` see it and vendor it.
 
-import _ "sourcegraph.com/sourcegraph/go-vcs/vcs/ssh"
+import _ "src.sourcegraph.com/sourcegraph/pkg/vcs/ssh"

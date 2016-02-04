@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	vcstesting "sourcegraph.com/sourcegraph/go-vcs/vcs/testing"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	vcstesting "src.sourcegraph.com/sourcegraph/pkg/vcs/testing"
 )
 
 func TestBuildsService_GetRepoBuild(t *testing.T) {

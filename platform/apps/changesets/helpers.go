@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
 	"google.golang.org/grpc"
 

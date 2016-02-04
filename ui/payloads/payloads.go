@@ -1,9 +1,9 @@
 package payloads
 
 import (
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 // DefCommon holds all of the def-specific information necessary to

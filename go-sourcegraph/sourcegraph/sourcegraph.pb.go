@@ -225,7 +225,7 @@ import math "math"
 
 // discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 import diff "sourcegraph.com/sourcegraph/go-diff/diff"
-import vcs "sourcegraph.com/sourcegraph/go-vcs/vcs"
+import vcs "src.sourcegraph.com/sourcegraph/pkg/vcs"
 import graph "sourcegraph.com/sourcegraph/srclib/graph"
 import graph1 "sourcegraph.com/sourcegraph/srclib/graph"
 import unit "sourcegraph.com/sourcegraph/srclib/unit"

@@ -7,9 +7,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/store/mockstore"
 )
 

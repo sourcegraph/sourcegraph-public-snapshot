@@ -1,7 +1,7 @@
 package local
 
 import (
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/store"
 
 	"golang.org/x/net/context"

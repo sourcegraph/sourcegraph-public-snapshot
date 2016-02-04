@@ -11,7 +11,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 var (

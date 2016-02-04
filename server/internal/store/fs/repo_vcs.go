@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
-	"sourcegraph.com/sourcegraph/go-vcs/vcs/util/tracer"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/util/tracer"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )

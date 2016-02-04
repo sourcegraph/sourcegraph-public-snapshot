@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"sourcegraph.com/sourcegraph/go-vcs/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
