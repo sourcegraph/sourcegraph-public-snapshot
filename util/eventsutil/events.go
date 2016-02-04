@@ -11,7 +11,6 @@ import (
 	"golang.org/x/net/context"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
