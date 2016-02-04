@@ -67,6 +67,14 @@ func trimGitService(name string) string {
 func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
+	cred := sourcegraph.CredentialsFromContext(ctx)
+	if cred != nil {
+		tok, err := cred.Token()
+		if err == nil {
+			log15.Info("serveInfoRefs creds", "token", tok.AccessToken)
+		}
+	}
+
 	repo, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err

@@ -291,9 +291,10 @@ func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request)
 				Mirror:   true,
 				Private:  private,
 			})
-			if grpc.Code(err) != codes.AlreadyExists {
-				log15.Warn("repo", repoURI, "already exists")
+			if grpc.Code(err) == codes.AlreadyExists {
+				log15.Warn("repo already exists", "uri", repoURI)
 			} else if err != nil {
+				log15.Warn("user settings integration update failed", "uri", repoURI, "error", err)
 				return err
 			}
 

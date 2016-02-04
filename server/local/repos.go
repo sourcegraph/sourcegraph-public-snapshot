@@ -166,6 +166,11 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 
 	eventsutil.LogAddRepo(ctx, op.CloneURL, op.Language, op.Mirror, op.Private)
 
+	actor := authpkg.ActorFromContext(ctx)
+	authedActor := accesscontrol.SetMirrorRepoPerms(ctx, &actor)
+	if authedActor != nil {
+		ctx = authpkg.WithActor(ctx, *authedActor)
+	}
 	repoSpec := repo.RepoSpec()
 	return s.Get(ctx, &repoSpec)
 }

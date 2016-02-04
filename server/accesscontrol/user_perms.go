@@ -86,8 +86,12 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		return nil
 	}
 
-	if authutil.ActiveFlags.MirrorsNext && repo != "" {
-		return VerifyRepoPerms(ctx, actor, method, repo)
+	if authutil.ActiveFlags.MirrorsNext {
+		if repo != "" {
+			return VerifyRepoPerms(ctx, actor, method, repo)
+		} else if method == "Repos.Create" && actor.MirrorsNext {
+			return nil
+		}
 	}
 
 	if !actor.IsAuthenticated() {

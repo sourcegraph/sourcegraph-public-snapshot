@@ -433,7 +433,7 @@ func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLo
 
 	buildLogs := store.BuildLogsFromContextOrNil(ctx)
 	if buildLogs == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "BuildLogs")
+		return nil, grpc.Errorf(codes.Unimplemented, "BuildLogs not implemented")
 	}
 
 	var minID string
