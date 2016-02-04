@@ -13,6 +13,7 @@ import (
 	"net/http/pprof"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -57,6 +58,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/serverctx"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
+	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 	"src.sourcegraph.com/sourcegraph/ui"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
 	"src.sourcegraph.com/sourcegraph/usercontent"
@@ -423,6 +425,13 @@ func (c *ServeCmd) Execute(args []string) error {
 		eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
 		eventsutil.LogStartServer(clientCtx)
 	}
+
+	go func() {
+		if err := exec.Command(sgxcmd.Path, "git-server").Run(); err != nil {
+			log.Fatalf("git-server failed: %s", err)
+		}
+		log.Fatal("git-server has exited")
+	}()
 
 	sm := http.NewServeMux()
 	for _, f := range cli.ServeMuxFuncs {

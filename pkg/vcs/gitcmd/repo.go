@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/internal"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
@@ -64,19 +65,15 @@ func (r *Repository) String() string {
 }
 
 func Open(dir string) (*Repository, error) {
-	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
-		// --resolve-git-dir checks to see if a path is a git directory
-		// (the directory with the actual git data files).
-		cmd := exec.Command("git", "rev-parse", "--resolve-git-dir", ".")
-		cmd.Dir = dir
-		if err := cmd.Run(); err != nil {
-			// dir does not contain ".git" and it is not a git data
-			// directory.
-			return nil, &os.PathError{
-				Op:   "Open git repo",
-				Path: dir,
-				Err:  os.ErrNotExist,
-			}
+	cmd := gitserver.Command("git", "rev-parse")
+	cmd.Dir = dir
+	if err := cmd.Run(); err != nil {
+		// dir does not contain ".git" and it is not a git data
+		// directory.
+		return nil, &os.PathError{
+			Op:   "Open git repo",
+			Path: dir,
+			Err:  os.ErrNotExist,
 		}
 	}
 	return &Repository{Dir: dir}, nil
@@ -163,9 +160,9 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 		return "", err
 	}
 
-	cmd := exec.Command("git", "rev-parse", spec+"^0")
+	cmd := gitserver.Command("git", "rev-parse", spec+"^0")
 	cmd.Dir = r.Dir
-	stdout, stderr, err := dividedOutput(cmd)
+	stdout, stderr, err := cmd.DividedOutput()
 	if err != nil {
 		if bytes.Contains(stderr, []byte("unknown revision")) {
 			return "", vcs.ErrRevisionNotFound
@@ -275,7 +272,7 @@ func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
 func (r *Repository) branches(args ...string) ([]string, error) {
-	cmd := exec.Command("git", append([]string{"branch"}, args...)...)
+	cmd := gitserver.Command("git", append([]string{"branch"}, args...)...)
 	cmd.Dir = r.Dir
 	out, err := cmd.Output()
 	if err != nil {
@@ -299,7 +296,7 @@ func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead,
 		return nil, err
 	}
 
-	cmd := exec.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
+	cmd := gitserver.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
 	cmd.Dir = r.Dir
 	out, err := cmd.Output()
 	if err != nil {
@@ -343,13 +340,13 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func (r *Repository) showRef(arg string) ([][2]string, error) {
-	cmd := exec.Command("git", "show-ref", arg)
+	cmd := gitserver.Command("git", "show-ref", arg)
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		// Exit status of 1 and no output means there were no
 		// results. This is not a fatal error.
-		if exitStatus(err) == 1 && len(out) == 0 {
+		if cmd.ExitStatus == 1 && len(out) == 0 {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("exec `git show-ref %s` in %s failed: %s. Output was:\n\n%s", arg, r.Dir, err, out)
@@ -459,7 +456,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 		args = append(args, "--", opt.Path)
 	}
 
-	cmd := exec.Command("git", args...)
+	cmd := gitserver.Command("git", args...)
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -511,7 +508,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 	// Count commits.
 	var total uint
 	if !opt.NoTotal {
-		cmd = exec.Command("git", "rev-list", "--count", rng)
+		cmd = gitserver.Command("git", "rev-list", "--count", rng)
 		if opt.Path != "" {
 			// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
 			cmd.Args = append(cmd.Args, "--", opt.Path)
@@ -563,7 +560,7 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 	}
 
 	args = append(args, rng, "--")
-	cmd := exec.Command("git", args...)
+	cmd := gitserver.Command("git", args...)
 	if opt != nil {
 		cmd.Args = append(cmd.Args, opt.Paths...)
 	}
@@ -617,7 +614,7 @@ func (r *Repository) fetchRemote(repoDir string) error {
 	name := base64.URLEncoding.EncodeToString([]byte(repoDir))
 
 	// Fetch remote commit data.
-	cmd := exec.Command("git", "fetch", "-v", filepath.ToSlash(repoDir), "+refs/heads/*:refs/remotes/"+name+"/*")
+	cmd := gitserver.Command("git", "fetch", "-v", filepath.ToSlash(repoDir), "+refs/heads/*:refs/remotes/"+name+"/*")
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -669,13 +666,11 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 		cmd.Env = env
 	}
 
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	err := cmd.Run()
+	_, stderr, err := dividedOutput(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, stderr.String())
+		return nil, fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
 	}
-	result, err := parseRemoteUpdate(stderr.Bytes())
+	result, err := parseRemoteUpdate(stderr)
 	if err != nil {
 		return nil, fmt.Errorf("parsing output of `git remote update` failed: %v", err)
 	}
@@ -704,7 +699,7 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
-	cmd := exec.Command("git", args...)
+	cmd := gitserver.Command("git", args...)
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -813,7 +808,7 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
-	cmd := exec.Command("git", "merge-base", "--", string(a), string(b))
+	cmd := gitserver.Command("git", "merge-base", "--", string(a), string(b))
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -959,7 +954,7 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 		opt.Rev = "HEAD"
 	}
 
-	cmd := exec.Command("git", "shortlog", "-sne", opt.Rev)
+	cmd := gitserver.Command("git", "shortlog", "-sne", opt.Rev)
 	cmd.Dir = r.Dir
 	out, err := cmd.Output()
 	if err != nil {
@@ -1001,7 +996,7 @@ func (r *Repository) ListFiles(at vcs.CommitID) ([]string, error) {
 	if at == "" {
 		at = "HEAD"
 	}
-	cmd := exec.Command("git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", string(at))
+	cmd := gitserver.Command("git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", string(at))
 	cmd.Dir = r.Dir
 	out, err := cmd.Output()
 	if err != nil {
@@ -1046,7 +1041,7 @@ func (fs *gitFSCmd) Open(name string) (vfs.ReadSeekCloser, error) {
 }
 
 func (fs *gitFSCmd) readFileBytes(name string) ([]byte, error) {
-	cmd := exec.Command("git", "show", string(fs.at)+":"+name)
+	cmd := gitserver.Command("git", "show", string(fs.at)+":"+name)
 	cmd.Dir = fs.dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1105,7 +1100,7 @@ func (fs *gitFSCmd) getModTimeFromGitLog(path string) (time.Time, error) {
 	if !SetModTime {
 		return time.Time{}, nil
 	}
-	cmd := exec.Command("git", "log", "-1", "--format=%ad", string(fs.at), "--", filepath.ToSlash(path))
+	cmd := gitserver.Command("git", "log", "-1", "--format=%ad", string(fs.at), "--", filepath.ToSlash(path))
 	cmd.Dir = fs.dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1160,7 +1155,7 @@ func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
 		return nil, err
 	}
 
-	cmd := exec.Command("git", "ls-tree", "-z", "--full-name", "--long", string(fs.at), "--", filepath.ToSlash(path))
+	cmd := gitserver.Command("git", "ls-tree", "-z", "--full-name", "--long", string(fs.at), "--", filepath.ToSlash(path))
 	cmd.Dir = fs.dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1235,7 +1230,7 @@ func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
 			}
 		case "commit":
 			mode = mode | vcs.ModeSubmodule
-			cmd := exec.Command("git", "config", "--get", "submodule."+name+".url")
+			cmd := gitserver.Command("git", "config", "--get", "submodule."+name+".url")
 			cmd.Dir = fs.dir
 			url := "" // url is not available if submodules are not initialized
 			if out, err := cmd.Output(); err == nil {
