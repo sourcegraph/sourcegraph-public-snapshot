@@ -389,9 +389,11 @@ func TestChangesets_Get(t *testing.T) {
 	}
 
 	// Test that Get works.
-	cs, err := ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		ID:   newCS.ID,
-		Repo: basicRepo,
+	cs, err := ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			ID:   newCS.ID,
+			Repo: basicRepo,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -844,9 +846,11 @@ func testChangesets_BackgroundBaseCommits(t *testing.T, mirror bool) {
 	}
 
 	// Get the changeset again.
-	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		Repo: basicRepo,
-		ID:   cs.ID,
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: basicRepo,
+			ID:   cs.ID,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -998,9 +1002,11 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 	// once a bug that caused the DeltaSpec.Base.CommitID to not be updated on a
 	// force push (causing the computed diff to show all commits to e.g. master
 	// since the CS was opened).
-	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		Repo: basicRepo,
-		ID:   cs.ID,
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: basicRepo,
+			ID:   cs.ID,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1025,9 +1031,11 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 	ts.refreshVCS()
 
 	// Verify the current DeltaSpec of the changeset.
-	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		Repo: basicRepo,
-		ID:   cs.ID,
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: basicRepo,
+			ID:   cs.ID,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1069,9 +1077,11 @@ func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
 
 	// The changeset is now merged, verify the DeltaSpec has exactly the right
 	// CommitIDs (which must be present for persistence after branch deletion).
-	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		Repo: basicRepo,
-		ID:   cs.ID,
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: basicRepo,
+			ID:   cs.ID,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1205,9 +1215,11 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 
 	// Verify the current DeltaSpec of the changeset. We do this once prior to
 	// merge; and also after merge (below).
-	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		Repo: basicRepo,
-		ID:   cs.ID,
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: basicRepo,
+			ID:   cs.ID,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1247,9 +1259,11 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 	ts.refreshVCS()
 
 	// Verify the current DeltaSpec of the changeset.
-	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		Repo: basicRepo,
-		ID:   cs.ID,
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: basicRepo,
+			ID:   cs.ID,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1291,9 +1305,11 @@ func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
 
 	// The changeset is now merged, verify the DeltaSpec has exactly the right
 	// CommitIDs (which must be present for persistence after branch deletion).
-	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetSpec{
-		Repo: basicRepo,
-		ID:   cs.ID,
+	cs, err = ts.server.Client.Changesets.Get(ts.ctx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: basicRepo,
+			ID:   cs.ID,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
