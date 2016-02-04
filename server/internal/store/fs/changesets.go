@@ -27,6 +27,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 const (
