@@ -19,6 +19,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -144,6 +145,8 @@ func serveLoginSubmit(w http.ResponseWriter, r *http.Request) error {
 	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}); err != nil {
 		return err
 	}
+
+	eventsutil.LogSignIn(ctx)
 
 	returnTo, err := returnto.ExactURLFromQuery(r)
 	if err != nil {

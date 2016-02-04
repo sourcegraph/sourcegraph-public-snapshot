@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -324,6 +325,27 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, route string) 
 
 	Log(&sourcegraph.Event{
 		Type:     eventType,
+		ClientID: clientID,
+		UserID:   userID,
+		DeviceID: deviceID,
+	})
+}
+
+func LogSignIn(ctx context.Context) {
+	LogEvent(ctx, "UserSignIn")
+}
+
+func LogSignOut(ctx context.Context) {
+	LogEvent(ctx, "UserSignOut")
+}
+
+func LogEvent(ctx context.Context, event string) {
+	login := auth.ActorFromContext(ctx).Login
+	clientID := sourcegraphClientID
+	userID, deviceID := getUserOrDeviceID(clientID, login)
+
+	Log(&sourcegraph.Event{
+		Type:     event,
 		ClientID: clientID,
 		UserID:   userID,
 		DeviceID: deviceID,
