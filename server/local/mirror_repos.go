@@ -111,7 +111,7 @@ func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo"); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo", repo.URI); err != nil {
 		return err
 	}
 
@@ -323,7 +323,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		},
 	}
 	for {
-		repoList, err := store.ReposFromContext(ctx).List(ctx, repoOpts)
+		repoList, err := store.ReposFromContext(ctx).List(elevatedActor(ctx), repoOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -457,4 +457,8 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 	}
 
 	return result, nil
+}
+
+func elevatedActor(ctx context.Context) context.Context {
+	return authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{"internal:mirror_repos": true}})
 }

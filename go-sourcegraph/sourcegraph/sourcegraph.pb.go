@@ -12834,6 +12834,11 @@ func (m *ExternalToken) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientID)))
 		i += copy(data[i:], m.ClientID)
 	}
+	if m.ExtUID != 0 {
+		data[i] = 0x30
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.ExtUID))
+	}
 	return i, nil
 }
 
@@ -18935,6 +18940,12 @@ func (m *AuthInfo) Size() (n int) {
 			n += 1 + l + sovSourcegraph(uint64(l))
 		}
 	}
+	if m.MirrorsNext {
+		n += 2
+	}
+	if m.MirrorsWaitlist {
+		n += 2
+	}
 	return n
 }
 
@@ -18992,6 +19003,9 @@ func (m *AuthorshipInfo) Size() (n int) {
 	l = len(m.LastCommitID)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if m.ExtUID != 0 {
+		n += 1 + sovSourcegraph(uint64(m.ExtUID))
 	}
 	return n
 }
@@ -37197,6 +37211,25 @@ func (m *ExternalToken) Unmarshal(data []byte) error {
 			}
 			m.ClientID = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExtUID", wireType)
+			}
+			m.ExtUID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.ExtUID |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
