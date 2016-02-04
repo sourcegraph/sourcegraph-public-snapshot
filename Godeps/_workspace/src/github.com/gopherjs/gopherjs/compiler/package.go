@@ -5,18 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/ast"
+	"go/constant"
 	"go/token"
+	"go/types"
 	"sort"
 	"strings"
 
 	"github.com/gopherjs/gopherjs/compiler/analysis"
-	"golang.org/x/tools/go/importer"
-	"golang.org/x/tools/go/types"
+	"github.com/gopherjs/gopherjs/third_party/importer"
 	"golang.org/x/tools/go/types/typeutil"
 )
 
 type pkgContext struct {
 	*analysis.Info
+	additionalSelections map[*ast.SelectorExpr]selection
+
 	typeNames    []*types.TypeName
 	pkgVars      map[string]string
 	objectNames  map[types.Object]string
@@ -30,6 +33,38 @@ type pkgContext struct {
 	fileSet      *token.FileSet
 	errList      ErrorList
 }
+
+func (p *pkgContext) SelectionOf(e *ast.SelectorExpr) (selection, bool) {
+	if sel, ok := p.Selections[e]; ok {
+		return sel, true
+	}
+	if sel, ok := p.additionalSelections[e]; ok {
+		return sel, true
+	}
+	return nil, false
+}
+
+type selection interface {
+	Kind() types.SelectionKind
+	Recv() types.Type
+	Index() []int
+	Obj() types.Object
+	Type() types.Type
+}
+
+type fakeSelection struct {
+	kind  types.SelectionKind
+	recv  types.Type
+	index []int
+	obj   types.Object
+	typ   types.Type
+}
+
+func (sel *fakeSelection) Kind() types.SelectionKind { return sel.kind }
+func (sel *fakeSelection) Recv() types.Type          { return sel.recv }
+func (sel *fakeSelection) Index() []int              { return sel.index }
+func (sel *fakeSelection) Obj() types.Object         { return sel.obj }
+func (sel *fakeSelection) Type() types.Type          { return sel.typ }
 
 type funcContext struct {
 	*analysis.FuncInfo
@@ -66,6 +101,23 @@ func NewImportContext(importFunc func(string) (*Archive, error)) *ImportContext 
 	}
 }
 
+// packageImporter implements go/types.Importer interface.
+type packageImporter struct {
+	importContext *ImportContext
+	importError   *error // A pointer to importError in Compile.
+}
+
+func (pi packageImporter) Import(path string) (*types.Package, error) {
+	if _, err := pi.importContext.Import(path); err != nil {
+		if *pi.importError == nil {
+			// If import failed, show first error of import only (https://github.com/gopherjs/gopherjs/issues/119).
+			*pi.importError = err
+		}
+		return nil, err
+	}
+	return pi.importContext.Packages[path], nil
+}
+
 func Compile(importPath string, files []*ast.File, fileSet *token.FileSet, importContext *ImportContext, minify bool) (*Archive, error) {
 	typesInfo := &types.Info{
 		Types:      make(map[ast.Expr]types.TypeAndValue),
@@ -80,15 +132,9 @@ func Compile(importPath string, files []*ast.File, fileSet *token.FileSet, impor
 	var errList ErrorList
 	var previousErr error
 	config := &types.Config{
-		Packages: importContext.Packages,
-		Import: func(_ map[string]*types.Package, path string) (*types.Package, error) {
-			if _, err := importContext.Import(path); err != nil {
-				if importError == nil {
-					importError = err
-				}
-				return nil, err
-			}
-			return importContext.Packages[path], nil
+		Importer: packageImporter{
+			importContext: importContext,
+			importError:   &importError,
 		},
 		Sizes: sizes32,
 		Error: func(err error) {
@@ -141,7 +187,9 @@ func Compile(importPath string, files []*ast.File, fileSet *token.FileSet, impor
 	c := &funcContext{
 		FuncInfo: pkgInfo.InitFuncInfo,
 		p: &pkgContext{
-			Info:         pkgInfo,
+			Info:                 pkgInfo,
+			additionalSelections: make(map[*ast.SelectorExpr]selection),
+
 			pkgVars:      make(map[string]string),
 			objectNames:  make(map[types.Object]string),
 			varPtrNames:  make(map[*types.Var]string),
@@ -353,6 +401,11 @@ func Compile(importPath string, files []*ast.File, fileSet *token.FileSet, impor
 			Body: &ast.BlockStmt{
 				List: []ast.Stmt{
 					&ast.ExprStmt{X: call},
+					&ast.AssignStmt{
+						Lhs: []ast.Expr{c.newIdent("$mainFinished", types.Typ[types.Bool])},
+						Tok: token.ASSIGN,
+						Rhs: []ast.Expr{c.newConst(types.Typ[types.Bool], constant.MakeBool(true))},
+					},
 				},
 			},
 		}
@@ -380,7 +433,7 @@ func Compile(importPath string, files []*ast.File, fileSet *token.FileSet, impor
 				typeName := c.objectName(o)
 				lhs := typeName
 				if isPkgLevel(o) {
-					lhs += " = $pkg." + o.Name()
+					lhs += " = $pkg." + encodeIdent(o.Name())
 				}
 				size := int64(0)
 				constructor := "null"
@@ -570,7 +623,7 @@ func (c *funcContext) translateToplevelFunction(fun *ast.FuncDecl, info *analysi
 		funcRef := c.objectName(o)
 		code.Write(primaryFunction(funcRef))
 		if fun.Name.IsExported() {
-			fmt.Fprintf(code, "\t$pkg.%s = %s;\n", fun.Name.Name, funcRef)
+			fmt.Fprintf(code, "\t$pkg.%s = %s;\n", encodeIdent(fun.Name.Name), funcRef)
 		}
 		return code.Bytes()
 	}
@@ -732,7 +785,10 @@ func translateFunction(typ *ast.FuncType, initStmts []ast.Stmt, body *ast.BlockS
 
 	if len(c.Flattened) != 0 {
 		prefix = prefix + " s: while (true) { switch ($s) { case 0:"
-		suffix = " $s = -1; case -1: } return; }" + suffix
+		suffix = " } return; }" + suffix
+		if !endsWithReturn(body.List) {
+			suffix = " $s = -1; case -1:" + suffix
+		}
 	}
 
 	if c.HasDefer {

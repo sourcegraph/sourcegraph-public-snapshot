@@ -351,11 +351,12 @@ func loadScalar(p unsafe.Pointer, n uintptr) uintptr {
 }
 
 func makechan(typ *rtype, size uint64) (ch unsafe.Pointer) {
-	return unsafe.Pointer(jsType(typ).New(size).Unsafe())
+	ctyp := (*chanType)(unsafe.Pointer(typ))
+	return unsafe.Pointer(js.Global.Get("$Chan").New(jsType(ctyp.elem), size).Unsafe())
 }
 
 func makemap(t *rtype) (m unsafe.Pointer) {
-	return unsafe.Pointer(js.Global.Get("$Map").New().Unsafe())
+	return unsafe.Pointer(js.Global.Get("Object").New().Unsafe())
 }
 
 func keyFor(t *rtype, key unsafe.Pointer) (*js.Object, string) {
@@ -430,8 +431,6 @@ func cvtDirect(v Value, typ Type) Value {
 
 	var val *js.Object
 	switch k := typ.Kind(); k {
-	case Chan:
-		val = jsType(typ).New()
 	case Slice:
 		slice := jsType(typ).New(srcVal.Get("$array"))
 		slice.Set("$offset", srcVal.Get("$offset"))
@@ -452,7 +451,7 @@ func cvtDirect(v Value, typ Type) Value {
 	case Struct:
 		val = jsType(typ).Get("ptr").New()
 		copyStruct(val, srcVal, typ)
-	case Array, Func, Interface, Map, String:
+	case Array, Bool, Chan, Func, Interface, Map, String:
 		val = js.InternalObject(v.ptr)
 	default:
 		panic(&ValueError{"reflect.Convert", k})
@@ -953,8 +952,10 @@ func (v Value) InterfaceData() [2]uintptr {
 
 func (v Value) IsNil() bool {
 	switch k := v.kind(); k {
-	case Chan, Ptr, Slice:
+	case Ptr, Slice:
 		return v.object() == jsType(v.typ).Get("nil")
+	case Chan:
+		return v.object() == js.Global.Get("$chanNil")
 	case Func:
 		return v.object() == js.Global.Get("$throwNilPointerError")
 	case Map:
@@ -1010,7 +1011,7 @@ func (v Value) Set(x Value) {
 	if v.flag&flagIndir != 0 {
 		switch v.typ.Kind() {
 		case Array:
-			js.Global.Call("$copy", js.InternalObject(v.ptr), js.InternalObject(x.ptr), jsType(v.typ))
+			jsType(v.typ).Call("copy", js.InternalObject(v.ptr), js.InternalObject(x.ptr))
 		case Interface:
 			js.InternalObject(v.ptr).Call("$set", js.InternalObject(valueInterface(x, false)))
 		case Struct:

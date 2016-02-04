@@ -7,12 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/token"
+	"go/types"
 	"io"
 	"strings"
 
 	"github.com/gopherjs/gopherjs/compiler/prelude"
-	"golang.org/x/tools/go/importer"
-	"golang.org/x/tools/go/types"
+	"github.com/gopherjs/gopherjs/third_party/importer"
 )
 
 var sizes32 = &types.StdSizes{WordSize: 4, MaxAlign: 8}
@@ -37,6 +37,7 @@ type Archive struct {
 	Imports      []string
 	ExportData   []byte
 	Declarations []*Decl
+	IncJSCode    []byte
 	FileSet      []byte
 	Minified     bool
 
@@ -182,6 +183,9 @@ func WritePkgCode(pkg *Archive, dceSelection map[*Decl]struct{}, minify bool, w 
 		if err := w.fileSet.Read(json.NewDecoder(bytes.NewReader(pkg.FileSet)).Decode); err != nil {
 			panic(err)
 		}
+	}
+	if _, err := w.Write(pkg.IncJSCode); err != nil {
+		return err
 	}
 	if _, err := w.Write(removeWhitespace([]byte(fmt.Sprintf("$packages[\"%s\"] = (function() {\n", pkg.ImportPath)), minify)); err != nil {
 		return err
