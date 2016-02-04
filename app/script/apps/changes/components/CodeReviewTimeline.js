@@ -6,6 +6,8 @@ var TimelineCommit = require("./CodeReviewTimelineCommit");
 var TimelineReview = require("./CodeReviewTimelineReview");
 var TimelineEvent = require("./CodeReviewTimelineEvent");
 var MarkdownView = require("../../../components/MarkdownView");
+var MarkdownTextarea = require("../../../components/MarkdownTextarea");
+var CurrentUser = require("../../../CurrentUser");
 
 /**
  * @description CodeReviewTimeline holds the Timeline on the first tab of the
@@ -26,6 +28,10 @@ var CodeReviewTimeline = React.createClass({
 
 		// Information about the changeset. Maps to sourcegraph.Changeset object.
 		changeset: React.PropTypes.object.isRequired,
+
+		// onSubmitDescription is called when the user submits an edited changeset
+		// description.
+		onSubmitDescription: React.PropTypes.func,
 	},
 
 	getInitialState() {
@@ -33,6 +39,7 @@ var CodeReviewTimeline = React.createClass({
 			commits: this.props.commits.models,
 			reviews: this.props.reviews,
 			events: this.props.events,
+			editing: false,
 		};
 	},
 
@@ -95,6 +102,47 @@ var CodeReviewTimeline = React.createClass({
 		});
 	},
 
+	/**
+	 * @description Called when a new description is submitted. If the description
+	 * is the same as the current one, no change is triggered.
+	 * @returns {void}
+	 * @private
+	 */
+	_submitEdit() {
+		if (!this.isMounted()) return;
+		var value = this.refs.description.value();
+		if (value === this.props.changeset.Description) {
+			this._cancelEdit();
+			return;
+		}
+
+		if (typeof this.props.onSubmitDescription === "function") {
+			this.props.onSubmitDescription(value);
+		}
+
+		this._cancelEdit();
+	},
+
+	/**
+	 * @description Called when editing the description is cancelled.
+	 * @returns {void}
+	 * @private
+	 */
+	_cancelEdit() {
+		this.setState({editing: false});
+	},
+
+	/**
+	 * @description Triggered when the Edit icon is clicked on the description.
+	 * Displays a form to edit the description.
+	 * @returns {void}
+	 * @private
+	 */
+	_onEditClick() {
+		if (!this.isMounted()) return;
+		this.setState({editing: !this.state.editing});
+	},
+
 	render() {
 		if (this.state.commits.length === 0) return null;
 
@@ -116,7 +164,30 @@ var CodeReviewTimeline = React.createClass({
 							</td>
 							<td className="timeline-header-message">
 								<b>{this.props.changeset.Author.Login || "A user"}</b> started this changeset<span className="date">{moment(this.props.changeset.CreatedAt).fromNow()}</span>
-								<br /><MarkdownView content={this.props.changeset.Description} />
+								{!this.state.editing && CurrentUser !== null && CurrentUser.Login === this.props.changeset.Author.Login ? (
+									<a title="Edit" onClick={this._onEditClick} className="description-edit">
+										<span className="octicon octicon-pencil"></span>
+									</a>
+								) : null}
+
+								{this.state.editing ? (
+									<div className="changeset-propose-form">
+										<MarkdownTextarea
+											ref="description"
+											placeholder="Enter a description..."
+											defaultValue={this.props.changeset.Description}
+											autoFocus={true} />
+										<div className="actions">
+											{this.props.changesetLoading ? <span>Loading...</span> : null}
+											<div className="pull-right">
+												<button className="btn btn-success" onClick={this._submitEdit} tabIndex="0">Submit</button>
+												<button className="btn btn-neutral" onClick={this._cancelEdit} tabIndex="0">Cancel</button>
+											</div>
+										</div>
+									</div>
+								) : (
+									<span><br /><MarkdownView content={this.props.changeset.Description} /></span>
+								)}
 							</td>
 						</tr>
 					</tbody>

@@ -446,6 +446,12 @@ h1.changeset-title {
 			.timeline-header-message {
 				padding: 15px 20px 20px 6px;
 
+				.description-edit {
+					cursor: pointer;
+					display: inline-block;
+					margin-left: 5px;
+				}
+
 				.markdown-view {
 					padding: 10px 10px 0 10px;
 				}
@@ -467,6 +473,11 @@ h1.changeset-title {
 	.changeset-description {
 		position: relative;
 		bottom: 10px;
+
+		.changeset-propose-form {
+			border: 0;
+			padding: 0;
+		}
 	}
 
 	.date {

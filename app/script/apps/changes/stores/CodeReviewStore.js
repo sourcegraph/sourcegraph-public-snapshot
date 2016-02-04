@@ -74,6 +74,7 @@ var CodeReviewStore = FluxStore({
 		CR_MERGE_SUCCESS: "_onMergeSuccess",
 		CR_MERGE_FAIL: "_onMergeFail",
 		CR_LGTM_CHANGE_SUCCESS: "_onBasicUpdateSuccess",
+		CR_SUBMIT_DESCRIPTION_SUCCESS: "_onBasicUpdateSuccess",
 		CR_ADD_REVIEWER_SUCCESS: "_onBasicUpdateSuccess",
 		CR_REMOVE_REVIEWER_SUCCESS: "_onBasicUpdateSuccess",
 	},

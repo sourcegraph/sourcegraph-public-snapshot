@@ -86,6 +86,27 @@ var CodeReview = React.createClass({
 		CodeReviewActions.submitReview(body);
 	},
 
+	/**
+	 * @description Triggers the action to submit a description on the current
+	 * changeset.
+	 * @param {string} description - The text description.
+	 * @param {Event} e - The (click) event that triggered the action.
+	 * @returns {void}
+	 * @private
+	 */
+	_submitDescription(description, e) {
+		// HACK(slimsag): If we don't update the description Immediately, our React
+		// code won't block until the Markdown is rendered. Remove this once
+		// MarkdownView is no longer rendering server-side.
+		var cs = CodeReviewStore.get("Changeset");
+		window.cs = cs;
+		cs.Description = description;
+		CodeReviewStore.set("Changeset", cs);
+		this.setState(CodeReviewStore.attributes);
+
+		CodeReviewActions.submitDescription(description);
+	},
+
 	render() {
 		if (typeof this.state.Changeset === "undefined") return null;
 		var url = `${router.changesetURL(this.state.Changeset.DeltaSpec.Base.URI, this.state.Changeset.ID)}/files`;
@@ -125,6 +146,7 @@ var CodeReview = React.createClass({
 							commits={this.state.commits}
 							reviews={this.state.reviews}
 							events={this.state.events}
+							onSubmitDescription={this._submitDescription}
 							changeset={this.state.Changeset} />
 
 						{this.state.ReviewGuidelines && this.state.ReviewGuidelines.__html ? (

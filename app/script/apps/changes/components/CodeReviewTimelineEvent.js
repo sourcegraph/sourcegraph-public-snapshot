@@ -43,7 +43,7 @@ var CodeReviewTimelineEvent = React.createClass({
 		} else if (op.Title && op.Title !== "") {
 			msg = <span className="msg"> changed title to <i>"{op.Title}"</i></span>;
 		} else if (op.Description && op.Description !== "") {
-			msg = <span className="msg"> changed title to <i>"{op.Description}"</i></span>;
+			msg = <span className="msg"> updated the description</span>;
 		}
 
 		return (

@@ -272,6 +272,17 @@ module.exports.changeChangesetStatus = function(status, evt) {
 		);
 };
 
+module.exports.submitDescription = function(description) {
+	var id = CodeReviewStore.get("Changeset").ID,
+		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;
+
+	CodeUtil
+		.updateChangesetStatus(repo, id, {Description: description})
+		.then(
+			CodeReviewServerActions.submitDescriptionSuccess,
+			CodeReviewServerActions.submitDescriptionFailed
+		);
+};
 module.exports.LGTMChange = function(status) {
 	var id = CodeReviewStore.get("Changeset").ID,
 		repo = CodeReviewStore.get("Changeset").DeltaSpec.Base.URI;

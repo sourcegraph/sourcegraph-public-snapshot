@@ -238,6 +238,33 @@ module.exports.removeReviewerFail = function(err) {
 };
 
 /**
+ * @description Action called by server if the request for changing the
+ * description succeeds.
+ * @param {*} data - Server response.
+ * @returns {void}
+ */
+module.exports.submitDescriptionSuccess = function(data) {
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_SUBMIT_DESCRIPTION_SUCCESS,
+		data: data,
+	});
+};
+
+/**
+ * @description Action called by server if the request for changing the
+ * description fails.
+ * @param {*} err - Server response.
+ * @returns {void}
+ */
+module.exports.submitDescriptionFail = function(err) {
+	notify.warning(err.responseJSON.Error, null);
+	AppDispatcher.handleServerAction({
+		type: globals.Actions.CR_SUBMIT_DESCRIPTION_FAIL,
+		data: err,
+	});
+};
+
+/**
  * @description Action called by server if the request for changing the LGTM
  * status succeeds.
  * @param {*} data - Server response.
