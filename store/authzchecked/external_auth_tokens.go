@@ -30,3 +30,7 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 	}
 	return s.noauthz.SetUserToken(ctx, tok)
 }
+
+func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error) {
+	return s.noauthz.ListExternalUsers(ctx, extUIDs, host, clientID)
+}

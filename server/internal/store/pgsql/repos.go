@@ -278,7 +278,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 				for i, uri := range privateURIs {
 					privateURIBindVars[i] = arg(uri)
 				}
-				filterPrivateSQL += " OR uri IN ("+strings.Join(privateURIBindVars, ",")+")"
+				filterPrivateSQL += " OR uri IN (" + strings.Join(privateURIBindVars, ",") + ")"
 			}
 			conds = append(conds, filterPrivateSQL)
 		}

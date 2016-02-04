@@ -23,7 +23,7 @@ func init() {
 // discoverRepo implements the discovery process for a repo that might
 // be hosted on GitHub. If it is not hosted on GitHub or on a GitHub Enterprise
 // instance, a discover.NotFoundError is returned.
-func discoverRepo(ctx context.Context, repo string) (discover.Info, error) {
+func discoverRepo(ctx context.Context, repo string) (feddiscover.Info, error) {
 	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
 		return &discoveryInfo{host: "github.com"}, nil
 	}
@@ -33,7 +33,7 @@ func discoverRepo(ctx context.Context, repo string) (discover.Info, error) {
 			return &discoveryInfo{host: gitHubHost}, nil
 		}
 	}
-	return nil, &discover.NotFoundError{Type: "repo", Input: repo}
+	return nil, &feddiscover.NotFoundError{Type: "repo", Input: repo}
 }
 
 type discoveryInfo struct {

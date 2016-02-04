@@ -149,7 +149,7 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 		for i, uid := range opt.UIDs {
 			uidBindVars[i] = arg(uid)
 		}
-		sql += " AND uid in ("+strings.Join(uidBindVars, ",")+")"
+		sql += " AND uid in (" + strings.Join(uidBindVars, ",") + ")"
 	}
 
 	sort := opt.Sort
