@@ -449,10 +449,15 @@ type changesetUpdateCmdCommon struct {
 
 type changesetUpdateCmd struct {
 	changesetUpdateCmdCommon
-	Title string `short:"t" long:"title" description:"new changeset title" required:"yes"`
+	Title       string `short:"t" long:"title" description:"new changeset title"`
+	Description bool   `short:"d" long:"description" description:"update changeset description"`
 }
 
 func (c *changesetUpdateCmd) Execute(args []string) error {
+	if c.Title == "" && !c.Description {
+		return errors.New("must specify either --title or --description")
+	}
+
 	cliCtx := putil.CLIContext()
 	sg, err := sourcegraph.NewClientFromContext(cliCtx)
 	if err != nil {
@@ -464,16 +469,32 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 		return err
 	}
 
-	ev, err := sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
-		Repo:  repo.RepoSpec(),
-		ID:    c.Args.ID,
-		Title: c.Title,
+	cs, err := sg.Changesets.Get(cliCtx, &sourcegraph.ChangesetGetOp{
+		Spec: sourcegraph.ChangesetSpec{
+			Repo: repo.RepoSpec(),
+			ID:   c.Args.ID,
+		},
 	})
 	if err != nil {
 		return err
 	}
 
-	log.Printf("# updated changeset %s #%d", repo.URI, ev.After.ID)
+	newDescription, err := tempedit.Edit([]byte(cs.Description), changesetMessagePath())
+	if err != nil {
+		return err
+	}
+
+	_, err = sg.Changesets.Update(cliCtx, &sourcegraph.ChangesetUpdateOp{
+		Repo:        repo.RepoSpec(),
+		ID:          c.Args.ID,
+		Title:       c.Title,
+		Description: string(newDescription),
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("# updated changeset %s #%d", repo.URI, c.Args.ID)
 	return nil
 }
 
