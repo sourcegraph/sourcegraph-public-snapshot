@@ -1,6 +1,6 @@
 package prelude
 
-const Prelude = prelude + types + numeric + goroutines + jsmapping
+const Prelude = prelude + numeric + types + goroutines + jsmapping
 
 const prelude = `Error.stackTraceLimit = Infinity;
 
@@ -25,23 +25,11 @@ if (typeof module !== "undefined") {
 
 var $packages = {}, $idCounter = 0;
 var $keys = function(m) { return m ? Object.keys(m) : []; };
-var $min = Math.min;
-var $mod = function(x, y) { return x % y; };
-var $parseInt = parseInt;
-var $parseFloat = function(f) {
-  if (f !== undefined && f !== null && f.constructor === Number) {
-    return f;
-  }
-  return parseFloat(f);
-};
 var $flushConsole = function() {};
 var $throwRuntimeError; /* set by package "runtime" */
 var $throwNilPointerError = function() { $throwRuntimeError("invalid memory address or nil pointer dereference"); };
 var $call = function(fn, rcvr, args) { return fn.apply(rcvr, args); };
 var $makeFunc = function(fn) { return function() { return fn(new ($sliceType($jsObjectPtr))($global.Array.prototype.slice.call(arguments, []))); } };
-
-var $froundBuf = new Float32Array(1);
-var $fround = Math.fround || function(f) { $froundBuf[0] = f; return $froundBuf[0]; };
 
 var $mapArray = function(array, f) {
   var newArray = new array.constructor(array.length);
@@ -87,6 +75,22 @@ var $methodExpr = function(typ, name) {
     };
   }
   return method.$expr;
+};
+
+var $ifaceMethodExprs = {};
+var $ifaceMethodExpr = function(name) {
+  var expr = $ifaceMethodExprs["$" + name];
+  if (expr === undefined) {
+    expr = $ifaceMethodExprs["$" + name] = function() {
+      $stackDepthOffset--;
+      try {
+        return Function.call.apply(arguments[0][name], arguments);
+      } finally {
+        $stackDepthOffset++;
+      }
+    };
+  }
+  return expr;
 };
 
 var $subslice = function(slice, low, high, max) {
@@ -242,28 +246,6 @@ var $copySlice = function(dst, src) {
   return n;
 };
 
-var $copy = function(dst, src, typ) {
-  switch (typ.kind) {
-  case $kindArray:
-    $copyArray(dst, src, 0, 0, src.length, typ.elem);
-    break;
-  case $kindStruct:
-    for (var i = 0; i < typ.fields.length; i++) {
-      var f = typ.fields[i];
-      switch (f.typ.kind) {
-      case $kindArray:
-      case $kindStruct:
-        $copy(dst[f.prop], src[f.prop], f.typ);
-        continue;
-      default:
-        dst[f.prop] = src[f.prop];
-        continue;
-      }
-    }
-    break;
-  }
-};
-
 var $copyArray = function(dst, src, dstOffset, srcOffset, n, elem) {
   if (n === 0 || (dst === src && dstOffset === srcOffset)) {
     return;
@@ -279,12 +261,12 @@ var $copyArray = function(dst, src, dstOffset, srcOffset, n, elem) {
   case $kindStruct:
     if (dst === src && dstOffset > srcOffset) {
       for (var i = n - 1; i >= 0; i--) {
-        $copy(dst[dstOffset + i], src[srcOffset + i], elem);
+        elem.copy(dst[dstOffset + i], src[srcOffset + i]);
       }
       return;
     }
     for (var i = 0; i < n; i++) {
-      $copy(dst[dstOffset + i], src[srcOffset + i], elem);
+      elem.copy(dst[dstOffset + i], src[srcOffset + i]);
     }
     return;
   }
@@ -302,7 +284,7 @@ var $copyArray = function(dst, src, dstOffset, srcOffset, n, elem) {
 
 var $clone = function(src, type) {
   var clone = type.zero();
-  $copy(clone, src, type);
+  type.copy(clone, src);
   return clone;
 };
 
@@ -318,7 +300,7 @@ var $pointerOfStructConversion = function(obj, type) {
       (function(fieldProp) {
         properties[fieldProp] = {
           get: function() { return obj[fieldProp]; },
-          set: function(value) { obj[fieldProp] = value; },
+          set: function(value) { obj[fieldProp] = value; }
         };
       })(type.elem.fields[i].prop);
     }

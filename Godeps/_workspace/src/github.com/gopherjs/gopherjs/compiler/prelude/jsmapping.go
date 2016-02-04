@@ -84,7 +84,14 @@ var $externalize = function(v, t) {
     var s = "", r;
     for (var i = 0; i < v.length; i += r[1]) {
       r = $decodeRune(v, i);
-      s += String.fromCharCode(r[0]);
+      var c = r[0];
+      if (c > 0xFFFF) {
+        var h = Math.floor((c - 0x10000) / 0x400) + 0xD800;
+        var l = (c - 0x10000) % 0x400 + 0xDC00;
+        s += String.fromCharCode(h, l);
+        continue;
+      }
+      s += String.fromCharCode(c);
     }
     return s;
   case $kindStruct:
@@ -129,7 +136,7 @@ var $externalize = function(v, t) {
     }
     return o;
   }
-  $panic(new $String("cannot externalize " + t.string));
+  $throwRuntimeError("cannot externalize " + t.string);
 };
 
 var $externalizeFunction = function(v, t, passThis) {
@@ -179,12 +186,15 @@ var $internalize = function(v, t, recv) {
     return v;
   }
   if (t === $jsObjectPtr.elem) {
-    $panic(new $String("cannot internalize js.Object, use *js.Object instead"));
+    $throwRuntimeError("cannot internalize js.Object, use *js.Object instead");
+  }
+  if (v && v.__internal_object__ !== undefined) {
+    return $assertType(v.__internal_object__, t, false);
   }
   var timePkg = $packages["time"];
   if (timePkg !== undefined && t === timePkg.Time) {
     if (!(v !== null && v !== undefined && v.constructor === Date)) {
-      $panic(new $String("cannot internalize time.Time from " + typeof v + ", must be Date"));
+      $throwRuntimeError("cannot internalize time.Time from " + typeof v + ", must be Date");
     }
     return timePkg.Unix(new $Int64(0, 0), new $Int64(0, v.getTime() * 1000000));
   }
@@ -247,7 +257,7 @@ var $internalize = function(v, t, recv) {
     };
   case $kindInterface:
     if (t.methods.length !== 0) {
-      $panic(new $String("cannot internalize " + t.string));
+      $throwRuntimeError("cannot internalize " + t.string);
     }
     if (v === null) {
       return $ifaceNil;
@@ -297,7 +307,7 @@ var $internalize = function(v, t, recv) {
       return new mapType($internalize(v, mapType));
     }
   case $kindMap:
-    var m = new $Map();
+    var m = {};
     var keys = $keys(v);
     for (var i = 0; i < keys.length; i++) {
       var k = $internalize(keys[i], t.key);
@@ -316,8 +326,18 @@ var $internalize = function(v, t, recv) {
       return v;
     }
     var s = "";
-    for (var i = 0; i < v.length; i++) {
-      s += $encodeRune(v.charCodeAt(i));
+    var i = 0;
+    while (i < v.length) {
+      var h = v.charCodeAt(i);
+      if (0xD800 <= h && h <= 0xDBFF) {
+        var l = v.charCodeAt(i + 1);
+        var c = (h - 0xD800) * 0x400 + l - 0xDC00 + 0x10000;
+        s += $encodeRune(c);
+        i += 2;
+        continue;
+      }
+      s += $encodeRune(h);
+      i++;
     }
     return s;
   case $kindStruct:
@@ -327,7 +347,7 @@ var $internalize = function(v, t, recv) {
         return v;
       }
       if (t === $jsObjectPtr.elem) {
-        $panic(new $String("cannot internalize js.Object, use *js.Object instead"));
+        $throwRuntimeError("cannot internalize js.Object, use *js.Object instead");
       }
       switch (t.kind) {
       case $kindPtr:
@@ -350,6 +370,6 @@ var $internalize = function(v, t, recv) {
       return o;
     }
   }
-  $panic(new $String("cannot internalize " + t.string));
+  $throwRuntimeError("cannot internalize " + t.string);
 };
 `

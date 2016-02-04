@@ -1,6 +1,30 @@
 package prelude
 
 const numeric = `
+var $min = Math.min;
+var $mod = function(x, y) { return x % y; };
+var $parseInt = parseInt;
+var $parseFloat = function(f) {
+  if (f !== undefined && f !== null && f.constructor === Number) {
+    return f;
+  }
+  return parseFloat(f);
+};
+
+var $froundBuf = new Float32Array(1);
+var $fround = Math.fround || function(f) {
+  $froundBuf[0] = f;
+  return $froundBuf[0];
+};
+
+var $imul = Math.imul || function(a, b) {
+  var ah = (a >>> 16) & 0xffff;
+  var al = a & 0xffff;
+  var bh = (b >>> 16) & 0xffff;
+  var bl = b & 0xffff;
+  return ((al * bl) + (((ah * bl + al * bh) << 16) >>> 0) >> 0);
+};
+
 var $floatKey = function(f) {
   if (f !== f) {
     $idCounter++;
@@ -139,24 +163,24 @@ var $div64 = function(x, y, returnRemainder) {
 };
 
 var $divComplex = function(n, d) {
-  var ninf = n.$real === 1/0 || n.$real === -1/0 || n.$imag === 1/0 || n.$imag === -1/0;
-  var dinf = d.$real === 1/0 || d.$real === -1/0 || d.$imag === 1/0 || d.$imag === -1/0;
+  var ninf = n.$real === Infinity || n.$real === -Infinity || n.$imag === Infinity || n.$imag === -Infinity;
+  var dinf = d.$real === Infinity || d.$real === -Infinity || d.$imag === Infinity || d.$imag === -Infinity;
   var nnan = !ninf && (n.$real !== n.$real || n.$imag !== n.$imag);
   var dnan = !dinf && (d.$real !== d.$real || d.$imag !== d.$imag);
   if(nnan || dnan) {
-    return new n.constructor(0/0, 0/0);
+    return new n.constructor(NaN, NaN);
   }
   if (ninf && !dinf) {
-    return new n.constructor(1/0, 1/0);
+    return new n.constructor(Infinity, Infinity);
   }
   if (!ninf && dinf) {
     return new n.constructor(0, 0);
   }
   if (d.$real === 0 && d.$imag === 0) {
     if (n.$real === 0 && n.$imag === 0) {
-      return new n.constructor(0/0, 0/0);
+      return new n.constructor(NaN, NaN);
     }
-    return new n.constructor(1/0, 1/0);
+    return new n.constructor(Infinity, Infinity);
   }
   var a = Math.abs(d.$real);
   var b = Math.abs(d.$imag);

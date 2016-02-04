@@ -5,16 +5,16 @@ import (
 	"encoding/binary"
 	"fmt"
 	"go/ast"
+	"go/constant"
 	"go/token"
+	"go/types"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/gopherjs/gopherjs/compiler/analysis"
 	"github.com/gopherjs/gopherjs/compiler/typesutil"
-
-	"golang.org/x/tools/go/exact"
-	"golang.org/x/tools/go/types"
 )
 
 func (c *funcContext) Write(b []byte) (int, error) {
@@ -131,7 +131,7 @@ func (c *funcContext) translateArgs(sig *types.Signature, argExprs []ast.Expr, e
 	return args
 }
 
-func (c *funcContext) translateSelection(sel *types.Selection, pos token.Pos) ([]string, string) {
+func (c *funcContext) translateSelection(sel selection, pos token.Pos) ([]string, string) {
 	var fields []string
 	t := sel.Recv()
 	for _, index := range sel.Index() {
@@ -172,11 +172,11 @@ func (c *funcContext) zeroValue(ty types.Type) ast.Expr {
 	case *types.Basic:
 		switch {
 		case isBoolean(t):
-			return c.newConst(ty, exact.MakeBool(false))
+			return c.newConst(ty, constant.MakeBool(false))
 		case isNumeric(t):
-			return c.newConst(ty, exact.MakeInt64(0))
+			return c.newConst(ty, constant.MakeInt64(0))
 		case isString(t):
-			return c.newConst(ty, exact.MakeString(""))
+			return c.newConst(ty, constant.MakeString(""))
 		case t.Kind() == types.UnsafePointer:
 			// fall through to "nil"
 		case t.Kind() == types.UntypedNil:
@@ -196,7 +196,7 @@ func (c *funcContext) zeroValue(ty types.Type) ast.Expr {
 	return id
 }
 
-func (c *funcContext) newConst(t types.Type, value exact.Value) ast.Expr {
+func (c *funcContext) newConst(t types.Type, value constant.Value) ast.Expr {
 	id := &ast.Ident{}
 	c.p.Types[id] = types.TypeAndValue{Type: t, Value: value}
 	return id
@@ -210,12 +210,7 @@ func (c *funcContext) newVariableWithLevel(name string, pkgLevel bool) string {
 	if name == "" {
 		panic("newVariable: empty name")
 	}
-	for _, b := range []byte(name) {
-		if (b < '0' || b > 'z') && b != '$' {
-			name = "nonAsciiName"
-			break
-		}
-	}
+	name = encodeIdent(name)
 	if c.p.minify {
 		i := 0
 		for {
@@ -484,7 +479,7 @@ func isWrapped(ty types.Type) bool {
 	switch t := ty.Underlying().(type) {
 	case *types.Basic:
 		return !is64Bit(t) && !isComplex(t) && t.Kind() != types.UntypedNil
-	case *types.Array, *types.Map, *types.Signature:
+	case *types.Array, *types.Chan, *types.Map, *types.Signature:
 		return true
 	case *types.Pointer:
 		_, isArray := t.Elem().Underlying().(*types.Array)
@@ -633,4 +628,17 @@ func rangeCheck(pattern string, constantIndex, array bool) string {
 		check = "(%2f < 0 || " + check + ")"
 	}
 	return "(" + check + ` ? $throwRuntimeError("index out of range") : ` + pattern + ")"
+}
+
+func endsWithReturn(stmts []ast.Stmt) bool {
+	if len(stmts) > 0 {
+		if _, ok := stmts[len(stmts)-1].(*ast.ReturnStmt); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func encodeIdent(name string) string {
+	return strings.Replace(url.QueryEscape(name), "%", "$", -1)
 }

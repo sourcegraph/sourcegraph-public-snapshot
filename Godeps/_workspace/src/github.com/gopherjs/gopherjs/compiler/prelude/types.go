@@ -53,6 +53,14 @@ var $identity = function(x) { return x; };
 
 var $typeIDCounter = 0;
 
+var $idKey = function(x) {
+  if (x.$id === undefined) {
+    $idCounter++;
+    x.$id = $idCounter;
+  }
+  return String(x.$id);
+};
+
 var $newType = function(size, kind, string, name, pkg, constructor) {
   var typ;
   switch(kind) {
@@ -66,10 +74,16 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
   case $kindUint16:
   case $kindUint32:
   case $kindUintptr:
-  case $kindString:
   case $kindUnsafePointer:
     typ = function(v) { this.$val = v; };
     typ.wrapped = true;
+    typ.keyFor = $identity;
+    break;
+
+  case $kindString:
+    typ = function(v) { this.$val = v; };
+    typ.wrapped = true;
+    typ.keyFor = function(x) { return "$" + x; };
     break;
 
   case $kindFloat32:
@@ -120,7 +134,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
     typ.wrapped = true;
     typ.ptr = $newType(4, $kindPtr, "*" + string, "", "", function(array) {
       this.$get = function() { return array; };
-      this.$set = function(v) { $copy(this, v, typ); };
+      this.$set = function(v) { typ.copy(this, v); };
       this.$val = array;
     });
     typ.init = function(elem, len) {
@@ -132,33 +146,22 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
           return String(elem.keyFor(e)).replace(/\\/g, "\\\\").replace(/\$/g, "\\$");
         }), "$");
       };
+      typ.copy = function(dst, src) {
+        $copyArray(dst, src, 0, 0, src.length, elem);
+      };
       typ.ptr.init(typ);
       Object.defineProperty(typ.ptr.nil, "nilCheck", { get: $throwNilPointerError });
     };
     break;
 
   case $kindChan:
-    typ = function(capacity) {
-      this.$val = this;
-      this.$capacity = capacity;
-      this.$buffer = [];
-      this.$sendQueue = [];
-      this.$recvQueue = [];
-      this.$closed = false;
-    };
-    typ.keyFor = function(x) {
-      if (x.$id === undefined) {
-        $idCounter++;
-        x.$id = $idCounter;
-      }
-      return String(x.$id);
-    };
+    typ = function(v) { this.$val = v; };
+    typ.wrapped = true;
+    typ.keyFor = $idKey;
     typ.init = function(elem, sendOnly, recvOnly) {
       typ.elem = elem;
       typ.sendOnly = sendOnly;
       typ.recvOnly = recvOnly;
-      typ.nil = new typ(0);
-      typ.nil.$sendQueue = typ.nil.$recvQueue = { length: 0, push: function() {}, shift: function() { return undefined; }, indexOf: function() { return -1; } };
     };
     break;
 
@@ -201,13 +204,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
       this.$target = target;
       this.$val = this;
     };
-    typ.keyFor = function(x) {
-      if (x.$id === undefined) {
-        $idCounter++;
-        x.$id = $idCounter;
-      }
-      return String(x.$id);
-    };
+    typ.keyFor = $idKey;
     typ.init = function(elem) {
       typ.elem = elem;
       typ.wrapped = (elem.kind === $kindArray);
@@ -240,7 +237,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
     typ.ptr = $newType(4, $kindPtr, "*" + string, "", "", constructor);
     typ.ptr.elem = typ;
     typ.ptr.prototype.$get = function() { return this; };
-    typ.ptr.prototype.$set = function(v) { $copy(this, v, typ); };
+    typ.ptr.prototype.$set = function(v) { typ.copy(this, v); };
     typ.init = function(fields) {
       typ.fields = fields;
       fields.forEach(function(f) {
@@ -253,6 +250,20 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
         return $mapArray(fields, function(f) {
           return String(f.typ.keyFor(val[f.prop])).replace(/\\/g, "\\\\").replace(/\$/g, "\\$");
         }).join("$");
+      };
+      typ.copy = function(dst, src) {
+        for (var i = 0; i < fields.length; i++) {
+          var f = fields[i];
+          switch (f.typ.kind) {
+          case $kindArray:
+          case $kindStruct:
+            f.typ.copy(dst[f.prop], src[f.prop]);
+            continue;
+          default:
+            dst[f.prop] = src[f.prop];
+            continue;
+          }
+        }
       };
       /* nil value */
       var properties = {};
@@ -328,11 +339,13 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
     typ.zero = function() { return zero; };
     break;
 
-  case $kindChan:
   case $kindPtr:
   case $kindSlice:
     typ.zero = function() { return typ.nil; };
     break;
+
+  case $kindChan:
+    typ.zero = function() { return $chanNil; };
 
   case $kindFunc:
     typ.zero = function() { return $throwNilPointerError; };
@@ -374,7 +387,6 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
   typ.methods = [];
   typ.methodSetCache = null;
   typ.comparable = true;
-  typ.keyFor = typ.keyFor || $identity;
   return typ;
 };
 
@@ -521,6 +533,19 @@ var $chanType = function(elem, sendOnly, recvOnly) {
   }
   return typ;
 };
+var $Chan = function(elem, capacity) {
+  if (capacity < 0 || capacity > 2147483647) {
+    $throwRuntimeError("makechan: size out of range");
+  }
+  this.$elem = elem;
+  this.$capacity = capacity;
+  this.$buffer = [];
+  this.$sendQueue = [];
+  this.$recvQueue = [];
+  this.$closed = false;
+};
+var $chanNil = new $Chan(null, 0);
+$chanNil.$sendQueue = $chanNil.$recvQueue = { length: 0, push: function() {}, shift: function() { return undefined; }, indexOf: function() { return -1; } };
 
 var $funcTypes = {};
 var $funcType = function(params, results, variadic) {
@@ -566,13 +591,6 @@ var $ifaceNil = {};
 var $error = $newType(8, $kindInterface, "error", "error", "", null);
 $error.init([{prop: "Error", name: "Error", pkg: "", typ: $funcType([], [$String], false)}]);
 
-var $Map = function() {};
-(function() {
-  var names = Object.getOwnPropertyNames(Object.prototype);
-  for (var i = 0; i < names.length; i++) {
-    $Map.prototype[names[i]] = undefined;
-  }
-})();
 var $mapTypes = {};
 var $mapType = function(key, elem) {
   var typeKey = key.id + "$" + elem.id;
@@ -585,7 +603,7 @@ var $mapType = function(key, elem) {
   return typ;
 };
 var $makeMap = function(keyForFunc, entries) {
-  var m = new $Map();
+  var m = {};
   for (var i = 0; i < entries.length; i++) {
     var e = entries[i];
     m[keyForFunc(e.k)] = e;
@@ -626,6 +644,12 @@ var $sliceType = function(elem) {
 };
 var $makeSlice = function(typ, length, capacity) {
   capacity = capacity || length;
+  if (length < 0 || length > 2147483647) {
+    $throwRuntimeError("makeslice: len out of range");
+  }
+  if (capacity < 0 || capacity < length || capacity > 2147483647) {
+    $throwRuntimeError("makeslice: cap out of range");
+  }
   var array = new typ.nativeArray(capacity);
   if (typ.nativeArray === Array) {
     for (var i = 0; i < capacity; i++) {

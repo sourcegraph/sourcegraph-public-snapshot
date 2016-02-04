@@ -3,16 +3,15 @@ package compiler
 import (
 	"fmt"
 	"go/ast"
+	"go/constant"
 	"go/token"
+	"go/types"
 	"strings"
 
 	"github.com/gopherjs/gopherjs/compiler/analysis"
 	"github.com/gopherjs/gopherjs/compiler/astutil"
 	"github.com/gopherjs/gopherjs/compiler/filter"
 	"github.com/gopherjs/gopherjs/compiler/typesutil"
-
-	"golang.org/x/tools/go/exact"
-	"golang.org/x/tools/go/types"
 )
 
 type this struct {
@@ -71,7 +70,7 @@ func (c *funcContext) translateStmt(stmt ast.Stmt, label *types.Label) {
 		tag := s.Tag
 		if tag == nil {
 			tag = ast.NewIdent("true")
-			c.p.Types[tag] = types.TypeAndValue{Type: types.Typ[types.Bool], Value: exact.MakeBool(true)}
+			c.p.Types[tag] = types.TypeAndValue{Type: types.Typ[types.Bool], Value: constant.MakeBool(true)}
 		}
 
 		if c.p.Types[tag].Value == nil {
@@ -282,7 +281,13 @@ func (c *funcContext) translateStmt(stmt ast.Stmt, label *types.Label) {
 			}
 			results = c.resultNames
 		}
-		c.Printf("return%s;", c.translateResults(results))
+		rVal := c.translateResults(results)
+		if c.Flattened[s] {
+			resumeCase := c.caseCounter
+			c.caseCounter++
+			c.Printf("/* */ $s = %[1]d; case %[1]d:", resumeCase)
+		}
+		c.Printf("return%s;", rVal)
 
 	case *ast.DeferStmt:
 		isBuiltin := false
@@ -328,7 +333,7 @@ func (c *funcContext) translateStmt(stmt ast.Stmt, label *types.Label) {
 			lhs := astutil.RemoveParens(s.Lhs[0])
 			if isBlank(lhs) {
 				if analysis.HasSideEffect(s.Rhs[0], c.p.Info.Info) {
-					c.Printf("%s;", c.translateExpr(s.Rhs[0]).String())
+					c.Printf("%s;", c.translateExpr(s.Rhs[0]))
 				}
 				return
 			}
@@ -336,35 +341,32 @@ func (c *funcContext) translateStmt(stmt ast.Stmt, label *types.Label) {
 
 		case len(s.Lhs) > 1 && len(s.Rhs) == 1:
 			tupleVar := c.newVariable("_tuple")
-			out := tupleVar + " = " + c.translateExpr(s.Rhs[0]).String() + ";"
+			c.Printf("%s = %s;", tupleVar, c.translateExpr(s.Rhs[0]))
 			tuple := c.p.TypeOf(s.Rhs[0]).(*types.Tuple)
 			for i, lhs := range s.Lhs {
 				lhs = astutil.RemoveParens(lhs)
 				if !isBlank(lhs) {
-					out += " " + c.translateAssign(lhs, c.newIdent(fmt.Sprintf("%s[%d]", tupleVar, i), tuple.At(i).Type()), s.Tok == token.DEFINE)
+					c.Printf("%s", c.translateAssign(lhs, c.newIdent(fmt.Sprintf("%s[%d]", tupleVar, i), tuple.At(i).Type()), s.Tok == token.DEFINE))
 				}
 			}
-			c.Printf("%s", out)
 		case len(s.Lhs) == len(s.Rhs):
 			tmpVars := make([]string, len(s.Rhs))
-			var parts []string
 			for i, rhs := range s.Rhs {
 				tmpVars[i] = c.newVariable("_tmp")
 				if isBlank(astutil.RemoveParens(s.Lhs[i])) {
 					if analysis.HasSideEffect(rhs, c.p.Info.Info) {
-						c.Printf("%s;", c.translateExpr(rhs).String())
+						c.Printf("%s;", c.translateExpr(rhs))
 					}
 					continue
 				}
-				parts = append(parts, c.translateAssign(c.newIdent(tmpVars[i], c.p.TypeOf(s.Lhs[i])), rhs, true))
+				c.Printf("%s", c.translateAssign(c.newIdent(tmpVars[i], c.p.TypeOf(s.Lhs[i])), rhs, true))
 			}
 			for i, lhs := range s.Lhs {
 				lhs = astutil.RemoveParens(lhs)
 				if !isBlank(lhs) {
-					parts = append(parts, c.translateAssign(lhs, c.newIdent(tmpVars[i], c.p.TypeOf(lhs)), s.Tok == token.DEFINE))
+					c.Printf("%s", c.translateAssign(lhs, c.newIdent(tmpVars[i], c.p.TypeOf(lhs)), s.Tok == token.DEFINE))
 				}
 			}
-			c.Printf("%s", strings.Join(parts, " "))
 
 		default:
 			panic("Invalid arity of AssignStmt.")
@@ -452,7 +454,7 @@ func (c *funcContext) translateStmt(stmt ast.Stmt, label *types.Label) {
 				panic(fmt.Sprintf("unhandled: %T", comm))
 			}
 			indexLit := &ast.BasicLit{Kind: token.INT}
-			c.p.Types[indexLit] = types.TypeAndValue{Type: types.Typ[types.Int], Value: exact.MakeInt64(int64(i))}
+			c.p.Types[indexLit] = types.TypeAndValue{Type: types.Typ[types.Int], Value: constant.MakeInt64(int64(i))}
 			caseClauses = append(caseClauses, &ast.CaseClause{
 				List: []ast.Expr{indexLit},
 				Body: clause.Body,
@@ -625,7 +627,7 @@ clauseLoop:
 				printCaseBodyPrefix(b.index)
 			}
 			c.translateStmtList(b.body)
-			if flatten && (defaultBranch != nil || i != len(branches)-1) {
+			if flatten && (defaultBranch != nil || i != len(branches)-1) && !endsWithReturn(b.body) {
 				c.Printf("$s = %d; continue;", endCase)
 			}
 		})
@@ -729,7 +731,7 @@ func (c *funcContext) translateAssign(lhs, rhs ast.Expr, define bool) string {
 			if define {
 				return fmt.Sprintf("%s = $clone(%s, %s);", c.translateExpr(lhs), rhsExpr, c.typeName(lhsType))
 			}
-			return fmt.Sprintf("$copy(%s, %s, %s);", c.translateExpr(lhs), rhsExpr, c.typeName(lhsType))
+			return fmt.Sprintf("%s.copy(%s, %s);", c.typeName(lhsType), c.translateExpr(lhs), rhsExpr)
 		}
 	}
 
@@ -741,7 +743,7 @@ func (c *funcContext) translateAssign(lhs, rhs ast.Expr, define bool) string {
 		}
 		return fmt.Sprintf("%s = %s;", c.objectName(o), rhsExpr)
 	case *ast.SelectorExpr:
-		sel, ok := c.p.Selections[l]
+		sel, ok := c.p.SelectionOf(l)
 		if !ok {
 			// qualified identifier
 			return fmt.Sprintf("%s = %s;", c.objectName(c.p.Uses[l.Sel]), rhsExpr)
@@ -757,7 +759,7 @@ func (c *funcContext) translateAssign(lhs, rhs ast.Expr, define bool) string {
 		switch t := c.p.TypeOf(l.X).Underlying().(type) {
 		case *types.Array, *types.Pointer:
 			pattern := rangeCheck("%1e[%2f] = %3s", c.p.Types[l.Index].Value != nil, true)
-			if _, ok := t.(*types.Pointer); ok { // check pointer for nix (attribute getter causes a panic)
+			if _, ok := t.(*types.Pointer); ok { // check pointer for nil (attribute getter causes a panic)
 				pattern = `%1e.nilCheck, ` + pattern
 			}
 			return c.formatExpr(pattern, l.X, l.Index, rhsExpr).String() + ";"
