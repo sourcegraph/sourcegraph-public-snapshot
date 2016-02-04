@@ -17,7 +17,10 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	for _, step := range config.Build {
 		// Rough heuristic for now: does the Docker image name contain
 		// "srclib".
-		if strings.Contains(step.Container.Image, "srclib") {
+		// (alexsaveliev) excluding srclib-java from heuristic
+		// because it's used both by build/test and srclib steps
+		if strings.Contains(step.Container.Image, "srclib") &&
+			!strings.Contains(step.Container.Image, "srclib-java") {
 			srclibExplicitlyConfigured = true
 			break
 		}
@@ -88,7 +91,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Java (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-java@sha256:27de13858a2d459847f7c3ebc317e95b6ff52f0c57263dd94e60e1bb82102497",
+				Image: "srclib/drone-srclib-java:5efb783-36f0fbf-ff3b48f",
 			},
 			Commands: srclibBuildCommands,
 		},

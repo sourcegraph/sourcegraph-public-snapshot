@@ -99,7 +99,7 @@ var langConfigs = map[string]struct {
 		build: droneyaml.BuildItem{
 			Key: "Java build (Java $$JAVA_VERSION)",
 			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
+				Container: droneyaml.Container{Image: "srclib/drone-srclib-java:5efb783-36f0fbf-ff3b48f"},
 				Commands: []string{
 					"[ -f pom.xml ] && mvn --quiet package",
 					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew build) || gradle build)",
@@ -110,7 +110,7 @@ var langConfigs = map[string]struct {
 		test: droneyaml.BuildItem{
 			Key: "Java test (Java $$JAVA_VERSION)",
 			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "maven:3-jdk-$$JAVA_VERSION"},
+				Container: droneyaml.Container{Image: "srclib/drone-srclib-java:5efb783-36f0fbf-ff3b48f"},
 				Commands: []string{
 					"[ -f pom.xml ] && mvn --quiet test",
 					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew test) || gradle test)",
