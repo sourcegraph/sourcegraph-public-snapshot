@@ -10,7 +10,7 @@ import (
 
 type Changesets struct {
 	Create_       func(ctx context.Context, repo string, cs *sourcegraph.Changeset) error
-	Get_          func(ctx context.Context, repo string, ID int64) (*sourcegraph.Changeset, error)
+	Get_          func(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error)
 	List_         func(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
 	CreateReview_ func(ctx context.Context, repo string, changesetID int64, newReview *sourcegraph.ChangesetReview) (*sourcegraph.ChangesetReview, error)
 	ListReviews_  func(ctx context.Context, repo string, changesetID int64) (*sourcegraph.ChangesetReviewList, error)
@@ -23,8 +23,8 @@ func (s *Changesets) Create(ctx context.Context, repo string, cs *sourcegraph.Ch
 	return s.Create_(ctx, repo, cs)
 }
 
-func (s *Changesets) Get(ctx context.Context, repo string, ID int64) (*sourcegraph.Changeset, error) {
-	return s.Get_(ctx, repo, ID)
+func (s *Changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
+	return s.Get_(ctx, op)
 }
 
 func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
