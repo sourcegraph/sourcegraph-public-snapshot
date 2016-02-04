@@ -58,9 +58,13 @@
 		{{$fullPath := (pathJoin $parentEntryPath (flattenName .))}}
 		{{$isDir := eq .Type.String "DirEntry"}}
 		<tr class="entry">
-			<td class="icon"><i class="fa {{if eq .Type.String "FileEntry"}}fa-file-text-o{{else if eq .Type.String "DirEntry"}}fa-folder{{else}}fa-file-o{{end}}"></i></td>
+			<td class="icon"><i class="{{if eq .Type.String "FileEntry"}}fa fa-file-text-o{{else if eq .Type.String "DirEntry"}}fa fa-folder{{else if eq .Type.String "SubmoduleEntry"}}octicon octicon-file-submodule{{else}}fa fa-file-o{{end}}"></i></td>
 			<td class="name">
-				<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
+				{{if ne .Type.String "SubmoduleEntry"}}
+					<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
+				{{else}}
+					<span>{{flattenNameHTML .}}</span>
+				{{end}}
 			</td>
 			{{if or appconf.DisableTreeEntryCommits (not $.Features.TreeEntryCommits)}}
 				<td></td>
