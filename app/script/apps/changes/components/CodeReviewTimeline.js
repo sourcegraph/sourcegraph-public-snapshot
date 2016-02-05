@@ -129,6 +129,12 @@ var CodeReviewTimeline = React.createClass({
 	 * @private
 	 */
 	_cancelEdit() {
+		var value = this.refs.description.value();
+		if (value !== this.props.changeset.Description) {
+			if (!confirm("Are you sure you wish to discard your unsaved changes?")) {
+				return;
+			}
+		}
 		this.setState({editing: false});
 	},
 
