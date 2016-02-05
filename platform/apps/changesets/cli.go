@@ -27,6 +27,11 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
 
+const (
+	srcChangesetCreateMSG = "SRC_CHANGESET_CREATEMSG"
+	srcChangesetEditMSG   = "SRC_CHANGESET_EDITMSG"
+)
+
 type serveFlags struct {
 	ReviewGuidelines string `long:"changesets.review-guidelines" description:"loads the given file as review guidelines and displays it on the changesets page (Markdown supported)."`
 	JiraURL          string `long:"jira.url" description:"URL that hosts a JIRA instance."`
@@ -330,7 +335,7 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	})
 	par.Do(func() error {
-		messagePath = changesetMessagePath()
+		messagePath = changesetMessagePath(srcChangesetCreateMSG)
 		return nil
 	})
 	err = par.Wait()
@@ -432,12 +437,12 @@ func parseMessage(txt []byte) (title string, description string) {
 	return title, strings.TrimSpace(description)
 }
 
-func changesetMessagePath() string {
+func changesetMessagePath(name string) string {
 	root, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 	if err != nil || len(root) == 0 {
 		return ""
 	}
-	return filepath.Join(strings.TrimSpace(string(root)), ".git", "SRC_CHANGESET_EDITMSG")
+	return filepath.Join(strings.TrimSpace(string(root)), ".git", name)
 }
 
 type changesetUpdateCmdCommon struct {
@@ -479,7 +484,7 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 		return err
 	}
 
-	newDescription, err := tempedit.Edit([]byte(cs.Description), changesetMessagePath())
+	newDescription, err := tempedit.Edit([]byte(cs.Description), changesetMessagePath(srcChangesetEditMSG))
 	if err != nil {
 		return err
 	}
