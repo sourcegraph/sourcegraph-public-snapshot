@@ -26,7 +26,7 @@ func TestDeltas_lg(t *testing.T) {
 	}
 	defer a.Close()
 
-	_, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
+	_, _, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}

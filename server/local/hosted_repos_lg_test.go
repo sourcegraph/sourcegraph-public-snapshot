@@ -27,7 +27,7 @@ func TestHostedRepo_CreateCloneAndView(t *testing.T) {
 	}
 	defer a.Close()
 
-	_, done, err := testutil.CreateAndPushRepo(t, ctx, "r/r")
+	_, _, done, err := testutil.CreateAndPushRepo(t, ctx, "r/r")
 	if err != nil {
 		t.Fatal(err)
 	}

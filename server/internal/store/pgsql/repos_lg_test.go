@@ -34,7 +34,7 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 	defer fsServer.Close()
 
 	// Create and push a repo to the host.
-	commitID, done, err := testutil.CreateAndPushRepo(t, fsCtx, "myrepo")
+	_, commitID, done, err := testutil.CreateAndPushRepo(t, fsCtx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	defer fsServer.Close()
 
 	// Create and push a repo to the host.
-	_, done, err := testutil.CreateAndPushRepo(t, fsCtx, "myrepo")
+	_, _, done, err := testutil.CreateAndPushRepo(t, fsCtx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}

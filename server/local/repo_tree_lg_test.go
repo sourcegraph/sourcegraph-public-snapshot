@@ -27,7 +27,7 @@ func TestRepoTree_Search_lg(t *testing.T) {
 	}
 	defer a.Close()
 
-	commitID, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
+	_, commitID, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}

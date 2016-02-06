@@ -6,9 +6,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"net/url"
+	"strings"
 	"testing"
 
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -16,153 +18,51 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/testutil"
 )
 
-func TestGitClone_noAuth(t *testing.T) {
-	testGitClone_noAuth_withCloneArgs(t, nil)
+func TestGitServerWithAnonymousReaders(t *testing.T) {
+	testGitServer(t, &authutil.Flags{Source: "none", AllowAnonymousReaders: true},
+		gitServerTestExpectations{
+			UnauthedCloneHTTP: false,
+			AuthedCloneHTTP:   false,
+			// TODO: Maybe unauthed cloning over SSH should be
+			// enabled with the `AllowAnonymousReaders` flag set.
+			UnauthedCloneSSH: true,
+			AuthedCloneSSH:   false,
+		})
 }
 
-func TestGitClone_noAuth_shallowClone(t *testing.T) {
-	testGitClone_noAuth_withCloneArgs(t, []string{"--depth=1"})
+func TestGitServerWithAuth(t *testing.T) {
+	testGitServer(t, &authutil.Flags{Source: "local", AllowAllLogins: true},
+		gitServerTestExpectations{
+			UnauthedCloneHTTP: true,
+			AuthedCloneHTTP:   false,
+			UnauthedCloneSSH:  true,
+			AuthedCloneSSH:    false,
+		})
 }
 
-func testGitClone_noAuth_withCloneArgs(t *testing.T, cloneArgs []string) {
+type gitServerTestExpectations struct {
+	UnauthedCloneHTTP, AuthedCloneHTTP bool
+	UnauthedCloneSSH, AuthedCloneSSH   bool
+}
+
+func testGitServer(t *testing.T, authFlags *authutil.Flags, expect gitServerTestExpectations) {
 	if testserver.Store == "pgsql" {
 		t.Skip()
 	}
 
 	t.Parallel()
 
-	a, ctx := testserver.NewUnstartedServer()
-	a.Config.Serve.NoWorker = true
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
-	)
-	if err := a.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer a.Close()
+	// Start test server.
+	server, ctx := runTestServer(t, authFlags)
+	defer server.Close()
 
-	_, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer done()
-
-	repo, err := a.Client.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: "myrepo"})
+	// Create a test user.
+	_, err := server.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "u", Email: "u@example.com", Password: "p"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := testutil.CloneRepo(t, repo.HTTPCloneURL, "", cloneArgs); err != nil {
-		t.Fatalf("git clone %v %s: %s", cloneArgs, repo.HTTPCloneURL, err)
-	}
-}
-
-func TestGitClone_authRequired(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
-
-	t.Parallel()
-
-	a, ctx := testserver.NewUnstartedServer()
-	a.Config.Serve.NoWorker = true
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "local", AllowAllLogins: true},
-		&fed.Flags{IsRoot: true},
-	)
-	if err := a.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer a.Close()
-
-	user, err := a.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "u", Email: "u@example.com", Password: "p"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	authedCtx := a.AsUIDWithScope(ctx, int(user.UID), []string{"user:write"})
-
-	_, done, err := testutil.CreateRepo(t, authedCtx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer done()
-	repo, err := a.Client.Repos.Get(authedCtx, &sourcegraph.RepoSpec{URI: "myrepo"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	authedCloneURL, err := url.Parse(repo.HTTPCloneURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	authedCloneURL.User = url.UserPassword("u", "p")
-	unauthedCloneURL := repo.HTTPCloneURL
-	repo.HTTPCloneURL = authedCloneURL.String()
-
-	if _, err := testutil.PushRepo(t, authedCtx, repo, nil); err != nil {
-		t.Fatal(err)
-	}
-
-	// Can't clone if unauthed.
-	if err := testutil.CloneRepo(t, unauthedCloneURL, "", nil); err == nil {
-		t.Fatalf("git clone %s: err == nil, wanted auth denied", unauthedCloneURL)
-	}
-
-	// Can clone if authed.
-	if err := testutil.CloneRepo(t, authedCloneURL.String(), "", nil); err != nil {
-		t.Fatalf("git clone %s: %s", authedCloneURL, err)
-	}
-}
-
-func TestGitClone_ssh(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
-
-	t.Parallel()
-
-	a, ctx := testserver.NewUnstartedServer()
-	a.Config.Serve.NoWorker = true
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "local", AllowAllLogins: true},
-		&fed.Flags{IsRoot: true},
-	)
-	if err := a.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer a.Close()
-
-	user, err := a.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "u", Email: "u@example.com", Password: "p"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	authedCtx := a.AsUIDWithScope(ctx, int(user.UID), []string{"user:write"})
-
-	_, done, err := testutil.CreateRepo(t, authedCtx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer done()
-	repo, err := a.Client.Repos.Get(authedCtx, &sourcegraph.RepoSpec{URI: "myrepo"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	authedCloneURL, err := url.Parse(repo.HTTPCloneURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	authedCloneURL.User = url.UserPassword("u", "p")
-	repo.HTTPCloneURL = authedCloneURL.String()
-
-	if _, err := testutil.PushRepo(t, authedCtx, repo, nil); err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("SSH clone url: %s", repo.SSHCloneURL)
-
-	// Clone using SSH key linked to user.
+	// Link a SSH key to the user.
 	linkedKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatal(err)
@@ -171,21 +71,60 @@ func TestGitClone_ssh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = a.Client.UserKeys.AddKey(ctx,
+	_, err = server.Client.UserKeys.AddKey(ctx,
 		&sourcegraph.SSHPublicKey{Name: "testkey", Key: ssh.MarshalAuthorizedKey(linkedKeyPublic)})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := testutil.CloneRepoSSH(t, repo.SSHCloneURL, "", linkedKey, nil); err != nil {
-		t.Fatalf("git clone %s with linked key: %s", repo.SSHCloneURL, err)
-	}
 
-	// Clone using SSH key that isn't linked to a user, should fail.
+	// Create SSH key not linked with the user.
 	unlinkedKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := testutil.CloneRepoSSH(t, repo.SSHCloneURL, "", unlinkedKey, nil); err == nil {
-		t.Fatalf("git clone %s with unlinked key should have failed.", repo.SSHCloneURL)
+
+	// Create repo with files.
+	repo, _, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer done()
+	authedCloneURL, err := url.Parse(repo.HTTPCloneURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authedCloneURL.User = url.UserPassword("u", "p")
+
+	// Run clone tests on the server.
+	cloneArgs := [][]string{
+		[]string{},
+		[]string{"--depth", "1"},
+	}
+	for _, cloneArg := range cloneArgs {
+		// Test unauthed clones.
+		testGitClone(t, "Unauthed HTTP clone", expect.UnauthedCloneHTTP, repo.HTTPCloneURL, nil, cloneArg...)
+		testGitClone(t, "Unauthed SSH clone", expect.UnauthedCloneSSH, repo.SSHCloneURL, unlinkedKey, cloneArg...)
+		// Test authed clones.
+		testGitClone(t, "Authed HTTP clone", expect.AuthedCloneHTTP, authedCloneURL.String(), nil, cloneArg...)
+		testGitClone(t, "Authed SSH clone", expect.AuthedCloneSSH, repo.SSHCloneURL, linkedKey, cloneArg...)
+	}
+}
+
+// TODO: test ssh/http push, with different scopes: "", "user:write", "user:admin"
+
+func runTestServer(t *testing.T, authFlags *authutil.Flags) (*testserver.Server, context.Context) {
+	server, ctx := testserver.NewUnstartedServer()
+	server.Config.Serve.NoWorker = true
+	server.Config.ServeFlags = append(server.Config.ServeFlags, &fed.Flags{IsRoot: true}, authFlags)
+	if err := server.Start(); err != nil {
+		t.Fatal("Unable to start the test server:", err)
+	}
+	return server, ctx
+}
+
+func testGitClone(t *testing.T, name string, errorExpected bool, cloneURL string, key *rsa.PrivateKey, cloneArgs ...string) {
+	err := testutil.CloneRepo(t, cloneURL, "", key, cloneArgs)
+	if (errorExpected && err == nil) || (!errorExpected && err != nil) {
+		t.Errorf("%s: error expected: %t : git clone %s %s", name, errorExpected, strings.Join(cloneArgs, " "), cloneURL)
 	}
 }

@@ -33,7 +33,7 @@ func TestSrclibPush(t *testing.T) {
 	}
 	defer a.Close()
 
-	_, close, err := testutil.CreateAndPushRepo(t, ctx, "r/rr")
+	_, _, close, err := testutil.CreateAndPushRepo(t, ctx, "r/rr")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 	}
 
 	// Clone the repo locally.
-	if err := testutil.CloneRepo(t, authedCloneURL, tmpDir, nil); err != nil {
+	if err := testutil.CloneRepo(t, authedCloneURL, tmpDir, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	repoDir := filepath.Join(tmpDir, repo.Name)

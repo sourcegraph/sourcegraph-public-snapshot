@@ -40,7 +40,7 @@ func TestRepoTree_FileRange_lg(t *testing.T) {
 		"one": "first\nawesome\nfile\ncontents\n",
 		"two": "second\nawesome\nfile\ncontents\n",
 	}
-	_, done, err := testutil.CreateAndPushRepoFiles(t, ctx, "r/r", files)
+	_, _, done, err := testutil.CreateAndPushRepoFiles(t, ctx, "r/r", files)
 	if err != nil {
 		t.Fatal(err)
 	}

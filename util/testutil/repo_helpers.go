@@ -120,25 +120,25 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string) (repo *source
 //
 //  CreateAndPushRepoFiles(t, ctx, repoURI, nil)
 //
-func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (commitID string, done func(), err error) {
+func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (repo *sourcegraph.Repo, commitID string, done func(), err error) {
 	return CreateAndPushRepoFiles(t, ctx, repoURI, nil)
 }
 
 // CreateAndPushRepoFiles creates and pushes sample commits to a repo. Callers
 // must call the returned done() func when done (if err is non-nil) to free up
 // resources.
-func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, files map[string]string) (commitID string, done func(), err error) {
+func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, files map[string]string) (repo *sourcegraph.Repo, commitID string, done func(), err error) {
 	//var repo *sourcegraph.Repo
-	repo, done, err := CreateRepo(t, ctx, repoURI)
+	repo, done, err = CreateRepo(t, ctx, repoURI)
 	if err != nil {
-		return "", nil, err
+		return nil, "", nil, err
 	}
 
 	commitID, err = PushRepo(t, ctx, repo, files)
 	if err != nil {
-		return "", nil, err
+		return nil, "", nil, err
 	}
-	return commitID, done, nil
+	return repo, commitID, done, nil
 }
 
 // PushRepo pushes sample commits to a repo. If files is specified, it
@@ -168,7 +168,7 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 	if u.User != nil {
 		authedCloneURL = u.String()
 	} else {
-		authedCloneURL, err = authutil.AddSystemAuthToURL(ctx, "", repo.HTTPCloneURL)
+		authedCloneURL, err = authutil.AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
 		if err != nil {
 			return "", err
 		}
@@ -229,17 +229,7 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 	return string(commit.ID), nil
 }
 
-func CloneRepo(t *testing.T, cloneURL, dir string, args []string) error {
-	return cloneRepo(t, cloneURL, dir, nil, args)
-}
-
-// CloneRepoSSH clones the repo over SSH, attempts to authenticate using the
-// passed in RSA key.
-func CloneRepoSSH(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) error {
-	return cloneRepo(t, cloneURL, dir, key, args)
-}
-
-func cloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
+func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
 	if dir == "" {
 		var err error
 		dir, err = ioutil.TempDir("", "")
