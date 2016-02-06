@@ -365,8 +365,8 @@ func newUnstartedServer(scheme, store string) (*Server, context.Context) {
 	s.SGPATH = sgpath
 
 	// Find unused ports
-	var httpPort, httpsPort, appdashHTTPPort int
-	s.selectUnusedPorts(&httpPort, &httpsPort, &appdashHTTPPort)
+	var httpPort, httpsPort, sshPort, appdashHTTPPort int
+	s.selectUnusedPorts(&httpPort, &httpsPort, &sshPort, &appdashHTTPPort)
 
 	var mainHTTPPort int
 	switch scheme {
@@ -382,6 +382,9 @@ func newUnstartedServer(scheme, store string) (*Server, context.Context) {
 	s.Config.Serve.HTTPAddr = fmt.Sprintf(":%d", httpPort)
 	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
 	s.Config.Endpoint.URL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
+
+	// SSH
+	s.Config.Serve.SSHAddr = fmt.Sprintf(":%d", sshPort)
 
 	// Other config
 	s.Config.Serve.NoInitialOnboarding = true
@@ -434,7 +437,7 @@ func newUnstartedServer(scheme, store string) (*Server, context.Context) {
 	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL), nil)
 
 	// ID key
-	idkey.SetTestEnvironment()
+	idkey.SetTestEnvironment(1024) // Minimum RSA size for SSH is 1024
 	idKey, err := idkey.Generate()
 	if err != nil {
 		log.Fatal(err)
@@ -520,7 +523,10 @@ func (s *Server) Start() error {
 func bareEnvConfig() []string {
 	var env []string
 	for _, v := range os.Environ() {
-		if strings.HasPrefix(v, "PG") || strings.HasPrefix(v, "GITHUB_CLIENT_") || strings.HasPrefix(v, "SRCLIBPATH=") || strings.HasPrefix(v, "SG_SRCLIB_") || strings.HasPrefix(v, "SG_URL") || strings.HasPrefix(v, "SRC_CLIENT_") {
+		if strings.HasPrefix(v, "SGPATH") || strings.HasPrefix(v, "PG") ||
+			strings.HasPrefix(v, "GITHUB_CLIENT_") || strings.HasPrefix(v, "SRCLIBPATH=") ||
+			strings.HasPrefix(v, "SG_SRCLIB_") || strings.HasPrefix(v, "SG_URL") ||
+			strings.HasPrefix(v, "SRC_CLIENT_") {
 			continue
 		}
 		env = append(env, v)

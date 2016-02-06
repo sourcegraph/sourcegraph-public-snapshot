@@ -9,7 +9,7 @@ import (
 )
 
 func TestParseSelfSignedToken(t *testing.T) {
-	idkey.SetTestEnvironment()
+	idkey.SetTestEnvironment(512)
 	k, err := idkey.Generate()
 	if err != nil {
 		t.Fatal(err)

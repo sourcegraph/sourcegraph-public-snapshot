@@ -153,9 +153,9 @@ var testEnvOnce sync.Once
 // SetTestEnvironment adjusts the configuration for use in non-production
 // environments. This is so non-production environments can run faster. This
 // should never be called in production
-func SetTestEnvironment() {
+func SetTestEnvironment(size int) {
 	testEnvOnce.Do(func() {
-		bits = 512 // small for testing
+		bits = size
 	})
 }
 

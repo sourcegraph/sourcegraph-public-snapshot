@@ -18,7 +18,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -224,28 +223,18 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 
 func (c *ServeCmd) configureSSHURL(appURL *url.URL) (*url.URL, error) {
 	if c.SSHAddr != "" {
-		urlRegexp, err := regexp.Compile(`https?://([^:]*)(.*)`)
+		host, _, err := net.SplitHostPort(appURL.Host)
 		if err != nil {
 			return nil, err
 		}
-
-		groups := urlRegexp.FindStringSubmatch(appURL.String())
-		domain := ""
-		if groups[1] != "" {
-			domain = groups[1]
-		} else {
-			domain = "localhost"
-		}
-		port := ""
+		sshURL := *appURL
+		sshURL.Scheme = "ssh"
+		sshURL.User = url.User("git")
+		sshURL.Host = host
 		if c.SSHAddr != ":22" {
-			port = c.SSHAddr
+			sshURL.Host += c.SSHAddr
 		}
-
-		sshURL, err := url.Parse(fmt.Sprintf("ssh://git@%s%s", domain, port))
-		if err != nil {
-			return nil, err
-		}
-		return sshURL, nil
+		return &sshURL, nil
 	}
 	return nil, nil
 }
@@ -601,7 +590,9 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Start background repo updater worker.
 	repoupdater.RepoUpdater.Start(client.Ctx)
 
-	if !c.NoWorker {
+	if c.NoWorker {
+		log15.Info("Skip starting worker process.")
+	} else {
 		go func() {
 			if err := c.WorkCmd.Execute(nil); err != nil {
 				log.Fatal("Worker exited with error:", err)

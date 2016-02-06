@@ -2,6 +2,9 @@ package testutil
 
 import (
 	"bytes"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
@@ -12,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -221,7 +225,17 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 	return string(commit.ID), nil
 }
 
-func CloneRepo(t *testing.T, cloneURL, dir string, args []string) (err error) {
+func CloneRepo(t *testing.T, cloneURL, dir string, args []string) error {
+	return cloneRepo(t, cloneURL, dir, nil, args)
+}
+
+// CloneRepoSSH clones the repo over SSH, attempts to authenticate using the
+// passed in RSA key.
+func CloneRepoSSH(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) error {
+	return cloneRepo(t, cloneURL, dir, key, args)
+}
+
+func cloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
 	if dir == "" {
 		var err error
 		dir, err = ioutil.TempDir("", "")
@@ -230,12 +244,52 @@ func CloneRepo(t *testing.T, cloneURL, dir string, args []string) (err error) {
 		}
 		defer os.RemoveAll(dir)
 	}
-
 	cmd := exec.Command("git", "clone")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Args = append(cmd.Args, cloneURL)
 	cmd.Env = append(os.Environ(), "GIT_ASKPASS=true") // disable password prompt
 	cmd.Dir = dir
+	if key != nil {
+		// Attempting to clone over SSH.
+		sshDir := filepath.Join(dir, ".ssh")
+		if err := os.Mkdir(sshDir, 0700); err != nil {
+			return err
+		}
+
+		idFile := filepath.Join(sshDir, "sshkey")
+
+		// Write public key.
+		sshPublicKey, err := ssh.NewPublicKey(&key.PublicKey)
+		if err != nil {
+			return err
+		}
+		publicKey := ssh.MarshalAuthorizedKey(sshPublicKey)
+		t.Log("Key public data:\n", string(publicKey))
+		if err := ioutil.WriteFile(idFile+".pub", publicKey, 0600); err != nil {
+			return err
+		}
+
+		// Write private key.
+		keyPrivatePEM := pem.EncodeToMemory(&pem.Block{
+			Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+		t.Log("Key private PEM data:\n", string(keyPrivatePEM))
+		if err := ioutil.WriteFile(idFile, keyPrivatePEM, 0600); err != nil {
+			return err
+		}
+
+		// Generate the necessary SSH command.
+		// NOTE: GIT_SSH_COMMAND requires git version 2.3+, so we must
+		// use GIT_SSH.
+		gitSSH := filepath.Join(sshDir, "gitssh")
+		if err := ioutil.WriteFile(gitSSH, []byte(fmt.Sprintf("!#/bin/sh\nssh -i %s -vvvv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \"$@\"\n", idFile)), 0500); err != nil {
+			return err
+		}
+		cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SSH=%s", gitSSH))
+	} else {
+		// Attempting to clone over HTTP(s).
+		ClearCachedCredentials(t, cloneURL)
+		defer ClearCachedCredentials(t, cloneURL)
+	}
 
 	var buf bytes.Buffer
 	cmd.Stdout = &buf

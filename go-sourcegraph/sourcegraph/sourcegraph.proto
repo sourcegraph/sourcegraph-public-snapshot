@@ -1853,6 +1853,10 @@ service Auth {
 // SSHPublicKey that users to authenticate with for SSH git access.
 message SSHPublicKey {
 	// Key is the serialized key data in SSH wire format, with the name prefix.
+	//
+	// NOTE: When adding a key, the server instead expects the data to be
+	// serialized in the same format as keys in an OpenSSH authorized_keys
+	// file.
 	bytes Key = 1;
 
 	// Name is the name of the SSH key.

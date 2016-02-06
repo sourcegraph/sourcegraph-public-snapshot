@@ -3,9 +3,12 @@
 package gitserver_test
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"net/url"
 	"testing"
 
+	"golang.org/x/crypto/ssh"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -29,6 +32,7 @@ func testGitClone_noAuth_withCloneArgs(t *testing.T, cloneArgs []string) {
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
+	a.Config.Serve.NoWorker = true
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
 		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
 	)
@@ -61,6 +65,7 @@ func TestGitClone_authRequired(t *testing.T) {
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
+	a.Config.Serve.NoWorker = true
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
 		&authutil.Flags{Source: "local", AllowAllLogins: true},
 		&fed.Flags{IsRoot: true},
@@ -107,5 +112,80 @@ func TestGitClone_authRequired(t *testing.T) {
 	// Can clone if authed.
 	if err := testutil.CloneRepo(t, authedCloneURL.String(), "", nil); err != nil {
 		t.Fatalf("git clone %s: %s", authedCloneURL, err)
+	}
+}
+
+func TestGitClone_ssh(t *testing.T) {
+	if testserver.Store == "pgsql" {
+		t.Skip()
+	}
+
+	t.Parallel()
+
+	a, ctx := testserver.NewUnstartedServer()
+	a.Config.Serve.NoWorker = true
+	a.Config.ServeFlags = append(a.Config.ServeFlags,
+		&authutil.Flags{Source: "local", AllowAllLogins: true},
+		&fed.Flags{IsRoot: true},
+	)
+	if err := a.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+
+	user, err := a.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "u", Email: "u@example.com", Password: "p"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authedCtx := a.AsUIDWithScope(ctx, int(user.UID), []string{"user:write"})
+
+	_, done, err := testutil.CreateRepo(t, authedCtx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer done()
+	repo, err := a.Client.Repos.Get(authedCtx, &sourcegraph.RepoSpec{URI: "myrepo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authedCloneURL, err := url.Parse(repo.HTTPCloneURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authedCloneURL.User = url.UserPassword("u", "p")
+	repo.HTTPCloneURL = authedCloneURL.String()
+
+	if _, err := testutil.PushRepo(t, authedCtx, repo, nil); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("SSH clone url: %s", repo.SSHCloneURL)
+
+	// Clone using SSH key linked to user.
+	linkedKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	linkedKeyPublic, err := ssh.NewPublicKey(&linkedKey.PublicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = a.Client.UserKeys.AddKey(ctx,
+		&sourcegraph.SSHPublicKey{Name: "testkey", Key: ssh.MarshalAuthorizedKey(linkedKeyPublic)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := testutil.CloneRepoSSH(t, repo.SSHCloneURL, "", linkedKey, nil); err != nil {
+		t.Fatalf("git clone %s with linked key: %s", repo.SSHCloneURL, err)
+	}
+
+	// Clone using SSH key that isn't linked to a user, should fail.
+	unlinkedKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := testutil.CloneRepoSSH(t, repo.SSHCloneURL, "", unlinkedKey, nil); err == nil {
+		t.Fatalf("git clone %s with unlinked key should have failed.", repo.SSHCloneURL)
 	}
 }

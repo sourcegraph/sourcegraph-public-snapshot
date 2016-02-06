@@ -7,7 +7,7 @@ import (
 )
 
 func TestToken(t *testing.T) {
-	idkey.SetTestEnvironment()
+	idkey.SetTestEnvironment(512)
 	k, err := idkey.Generate()
 	if err != nil {
 		t.Fatal(err)
@@ -19,7 +19,7 @@ func TestToken(t *testing.T) {
 }
 
 func TestShortToken(t *testing.T) {
-	idkey.SetTestEnvironment()
+	idkey.SetTestEnvironment(512)
 	k, err := idkey.Generate()
 	if err != nil {
 		t.Fatal(err)
@@ -31,7 +31,7 @@ func TestShortToken(t *testing.T) {
 }
 
 func TestShortTokenLength(t *testing.T) {
-	idkey.SetTestEnvironment()
+	idkey.SetTestEnvironment(512)
 	k, err := idkey.Generate()
 	if err != nil {
 		t.Fatal(err)
