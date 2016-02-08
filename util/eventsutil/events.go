@@ -18,9 +18,9 @@ import (
 )
 
 // LogStartServer records a server startup event.
-func LogStartServer() {
+func LogStartServer(ctx context.Context) {
 	clientID := sourcegraphClientID
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "StartServer",
 		DeviceID: clientID,
 		ClientID: clientID,
@@ -32,9 +32,9 @@ func LogStartServer() {
 }
 
 // LogRegisterServer records that this client registered with the mothership.
-func LogRegisterServer(clientName string) {
+func LogRegisterServer(ctx context.Context, clientName string) {
 	clientID := sourcegraphClientID
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "RegisterServer",
 		DeviceID: clientID,
 		ClientID: clientID,
@@ -73,7 +73,7 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 		"InviteCode": inviteCode,
 	}
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:            "CreateAccount",
 		ClientID:        clientID,
 		UserID:          userID,
@@ -94,7 +94,7 @@ func LogSendInvite(ctx context.Context, email, inviteCode string, admin, write b
 		"AccessLevel": getAccessLevel(admin, write),
 	}
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:            "SendInvite",
 		ClientID:        clientID,
 		UserID:          userID,
@@ -121,7 +121,7 @@ func LogAddRepo(ctx context.Context, cloneURL, language string, mirror, private 
 		visibility = "private"
 	}
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "AddRepo",
 		ClientID: clientID,
 		UserID:   userID,
@@ -164,7 +164,7 @@ func LogBuildRepo(ctx context.Context, result string, build *sourcegraph.Build) 
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "BuildRepo",
 		ClientID: clientID,
 		UserID:   userID,
@@ -199,7 +199,7 @@ func LogFinishBuildTask(ctx context.Context, label string, success bool, failure
 		result = "failed"
 	}
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     eventType,
 		ClientID: clientID,
 		UserID:   userID,
@@ -231,7 +231,7 @@ func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEn
 		}
 	}
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "ViewRepoTree",
 		ClientID: clientID,
 		UserID:   userID,
@@ -248,7 +248,7 @@ func LogHTTPGitPush(ctx context.Context) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "GitPush",
 		ClientID: clientID,
 		UserID:   userID,
@@ -259,10 +259,10 @@ func LogHTTPGitPush(ctx context.Context) {
 	})
 }
 
-func LogSSHGitPush(clientID, login string) {
+func LogSSHGitPush(ctx context.Context, clientID, login string) {
 	userID, deviceID := getUserOrDeviceID(clientID, login)
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "GitPush",
 		ClientID: clientID,
 		UserID:   userID,
@@ -277,7 +277,7 @@ func LogSearchQuery(ctx context.Context, searchType string, numResults int32) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     searchType,
 		ClientID: clientID,
 		UserID:   userID,
@@ -293,7 +293,7 @@ func LogViewDef(ctx context.Context, eventType string) {
 	user := handlerutil.UserFromContext(ctx)
 	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     eventType,
 		ClientID: clientID,
 		UserID:   userID,
@@ -305,7 +305,7 @@ func LogCreateChangeset(ctx context.Context) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     "CreateChangeset",
 		ClientID: clientID,
 		UserID:   userID,
@@ -322,7 +322,7 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, route string) 
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     eventType,
 		ClientID: clientID,
 		UserID:   userID,
@@ -343,7 +343,7 @@ func LogEvent(ctx context.Context, event string) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, login)
 
-	Log(&sourcegraph.Event{
+	Log(ctx, &sourcegraph.Event{
 		Type:     event,
 		ClientID: clientID,
 		UserID:   userID,

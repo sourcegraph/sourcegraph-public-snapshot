@@ -421,7 +421,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if c.GraphUplinkPeriod != 0 {
 		// Listen for events and periodically push them to analytics gateway.
 		eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
-		eventsutil.LogStartServer()
+		eventsutil.LogStartServer(clientCtx)
 	}
 
 	sm := http.NewServeMux()
@@ -1003,7 +1003,7 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 			time.Sleep(10 * time.Minute)
 			continue
 		}
-		eventsutil.LogRegisterServer(clientName)
+		eventsutil.LogRegisterServer(rctx, clientName)
 		log15.Debug("Registered as client of root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
 		return
 	}

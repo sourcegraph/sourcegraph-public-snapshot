@@ -95,7 +95,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 			if err != nil {
 				log15.Debug("Could not update registered client", "id", clientID, "error", err)
 			} else {
-				eventsutil.LogRegisterServer(rc.ClientName)
+				eventsutil.LogRegisterServer(ctx, rc.ClientName)
 			}
 		}
 	}

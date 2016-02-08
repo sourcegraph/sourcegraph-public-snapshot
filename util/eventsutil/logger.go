@@ -188,18 +188,18 @@ func StartEventLogger(ctx context.Context, clientID string, channelCapacity, wor
 
 // Log adds a sourcegraph.Event to the local log buffer, which
 // will be periodically flushed upstream.
-func Log(event *sourcegraph.Event) {
-	if ActiveLogger != nil {
-		if event.ClientID == "" {
-			event.ClientID = sourcegraphClientID
-		}
-
-		if event.Timestamp == nil {
-			ts := pbtypes.NewTimestamp(time.Now().UTC())
-			event.Timestamp = &ts
-		}
-
-		ActiveLogger.Log(event)
-		log15.Debug("Logged event", "event", event)
+func Log(ctx context.Context, event *sourcegraph.Event) {
+	if ActiveLogger == nil {
+		return
 	}
+	if event.ClientID == "" {
+		event.ClientID = sourcegraphClientID
+	}
+	if event.Timestamp == nil {
+		ts := pbtypes.NewTimestamp(time.Now().UTC())
+		event.Timestamp = &ts
+	}
+
+	ActiveLogger.Log(event)
+	log15.Debug("Logged event", "event", event)
 }
