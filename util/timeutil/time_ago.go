@@ -14,12 +14,12 @@ func TimeAgo(v interface{}) string {
 	}
 
 	const (
-		Minute = 60
-		Hour   = 60 * Minute
-		Day    = 24 * Hour
-		Week   = 7 * Day
-		Month  = 30 * Day
-		Year   = 12 * Month
+		minute = 60
+		hour   = 60 * minute
+		day    = 24 * hour
+		week   = 7 * day
+		month  = 30 * day
+		year   = 12 * month
 	)
 
 	now := time.Now()
@@ -37,40 +37,40 @@ func TimeAgo(v interface{}) string {
 		return "now"
 	case diff <= 2:
 		return fmt.Sprintf("1 second %s", lbl)
-	case diff < 1*Minute:
+	case diff < 1*minute:
 		return fmt.Sprintf("%d seconds %s", diff, lbl)
 
-	case diff < 2*Minute:
+	case diff < 2*minute:
 		return fmt.Sprintf("1 minute %s", lbl)
-	case diff < 1*Hour:
-		return fmt.Sprintf("%d minutes %s", diff/Minute, lbl)
+	case diff < 1*hour:
+		return fmt.Sprintf("%d minutes %s", diff/minute, lbl)
 
-	case diff < 2*Hour:
+	case diff < 2*hour:
 		return fmt.Sprintf("1 hour %s", lbl)
-	case diff < 1*Day:
-		return fmt.Sprintf("%d hours %s", diff/Hour, lbl)
+	case diff < 1*day:
+		return fmt.Sprintf("%d hours %s", diff/hour, lbl)
 
-	case diff < 2*Day:
+	case diff < 2*day:
 		return fmt.Sprintf("1 day %s", lbl)
-	case diff < 1*Week:
-		return fmt.Sprintf("%d days %s", diff/Day, lbl)
+	case diff < 1*week:
+		return fmt.Sprintf("%d days %s", diff/day, lbl)
 
-	case diff < 2*Week:
+	case diff < 2*week:
 		return fmt.Sprintf("1 week %s", lbl)
-	case diff < 1*Month:
-		return fmt.Sprintf("%d weeks %s", diff/Week, lbl)
+	case diff < 1*month:
+		return fmt.Sprintf("%d weeks %s", diff/week, lbl)
 
-	case diff < 2*Month:
+	case diff < 2*month:
 		return fmt.Sprintf("1 month %s", lbl)
-	case diff < 1*Year:
-		return fmt.Sprintf("%d months %s", diff/Month, lbl)
+	case diff < 1*year:
+		return fmt.Sprintf("%d months %s", diff/month, lbl)
 
-	case diff < 13*Month:
+	case diff < 13*month:
 		return fmt.Sprintf("1 year 1 month %s", lbl)
-	case diff < 24*Month:
-		return fmt.Sprintf("1 year %d months %s", diff/Month-12, lbl)
+	case diff < 24*month:
+		return fmt.Sprintf("1 year %d months %s", diff/month-12, lbl)
 	}
-	return fmt.Sprintf("%d years %s", diff/Year, lbl)
+	return fmt.Sprintf("%d years %s", diff/year, lbl)
 }
 
 func TimeOrNil(v interface{}) *time.Time {
