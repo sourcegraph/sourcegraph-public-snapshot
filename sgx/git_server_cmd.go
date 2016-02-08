@@ -2,6 +2,8 @@ package sgx
 
 import (
 	"log"
+	"net"
+	"net/http"
 
 	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -22,5 +24,12 @@ type gitServerCmd struct {
 }
 
 func (c *gitServerCmd) Execute(args []string) error {
-	return gitserver.ListenAndServe()
+	gitserver.RegisterHandler()
+
+	l, err := net.Listen("tcp", ":0")
+	if err != nil {
+		return err
+	}
+	log.Printf("Git server listening on %s", l.Addr())
+	return http.Serve(l, nil)
 }

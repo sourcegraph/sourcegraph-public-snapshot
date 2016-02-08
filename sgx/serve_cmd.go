@@ -1,10 +1,12 @@
 package sgx
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -52,6 +54,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
@@ -426,12 +429,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		eventsutil.LogStartServer(clientCtx)
 	}
 
-	go func() {
-		if err := exec.Command(sgxcmd.Path, "git-server").Run(); err != nil {
-			log.Fatalf("git-server failed: %s", err)
-		}
-		log.Fatal("git-server has exited")
-	}()
+	c.runGitServer()
 
 	sm := http.NewServeMux()
 	for _, f := range cli.ServeMuxFuncs {
@@ -1123,6 +1121,31 @@ func (c *ServeCmd) safeConfigFlags() string {
 		}
 	}
 	return configStr
+}
+
+func (c *ServeCmd) runGitServer() {
+	stderrReader, stderrWriter := io.Pipe()
+	go func() {
+		cmd := exec.Command(sgxcmd.Path, "git-server")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = io.MultiWriter(os.Stderr, stderrWriter)
+		if err := cmd.Run(); err != nil {
+			log.Fatalf("git-server failed: %s", err)
+		}
+		log.Fatal("git-server has exited")
+	}()
+
+	r := bufio.NewReader(stderrReader)
+	line, err := r.ReadString('\n')
+	if err != nil {
+		log.Fatalf("git-server stderr read failed: %s", err)
+	}
+	addr := line[strings.LastIndexByte(line, ' ')+1 : len(line)-1]
+	go io.Copy(ioutil.Discard, stderrReader) // drain pipe
+
+	if err := gitserver.Dial(addr); err != nil {
+		log.Fatalf("git-server dial failed: %s", err)
+	}
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted

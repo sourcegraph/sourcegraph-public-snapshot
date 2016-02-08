@@ -3,12 +3,8 @@ package gitserver
 import (
 	"bytes"
 	"errors"
-	"log"
-	"net"
-	"net/http"
 	"net/rpc"
 	"os/exec"
-	"sync"
 	"syscall"
 )
 
@@ -28,17 +24,10 @@ type ExecReply struct {
 }
 
 var clientSingleton *rpc.Client
-var clientSingletonMutex sync.Mutex
 
-func ListenAndServe() error {
+func RegisterHandler() {
 	rpc.Register(&Git{})
 	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", ":3081")
-	if e != nil {
-		return e
-	}
-	log.Print("Git server listening on :3081")
-	return http.Serve(l, nil)
 }
 
 func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
@@ -56,17 +45,10 @@ func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
 	return nil
 }
 
-func client() (*rpc.Client, error) {
-	clientSingletonMutex.Lock()
-	defer clientSingletonMutex.Unlock()
-	if clientSingleton == nil {
-		var err error
-		clientSingleton, err = rpc.DialHTTP("tcp", ":3081")
-		if err != nil {
-			return nil, err
-		}
-	}
-	return clientSingleton, nil
+func Dial(addr string) error {
+	var err error
+	clientSingleton, err = rpc.DialHTTP("tcp", addr)
+	return err
 }
 
 type Cmd struct {
@@ -85,14 +67,11 @@ func Command(name string, arg ...string) *Cmd {
 }
 
 func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
-	cl, err := client()
-	if err != nil {
-		return nil, nil, err
-	}
 	var reply ExecReply
-	if err = cl.Call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:]}, &reply); err != nil {
+	if err := clientSingleton.Call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:]}, &reply); err != nil {
 		return nil, nil, err
 	}
+	var err error
 	if reply.Error != "" {
 		err = errors.New(reply.Error)
 	}
