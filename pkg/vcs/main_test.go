@@ -16,7 +16,7 @@ func TestMain(m *testing.M) {
 
 	gitserver.RegisterHandler()
 
-	l, err := net.Listen("tcp", ":0")
+	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		log.Fatalf("listen failed: %s", err)
 	}
