@@ -210,7 +210,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 		max-width: 190px;
 		margin-left: 5px;
 		padding: 0;
-		a, span {
+		a, span.disabled {
 			display: block;
 			overflow: hidden; text-overflow: ellipsis;
 			padding: $table-cell-padding $table-cell-padding $table-cell-padding 3px;
