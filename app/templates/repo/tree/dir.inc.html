@@ -63,7 +63,7 @@
 				{{if ne .Type.String "SubmoduleEntry"}}
 					<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
 				{{else}}
-					<span>{{flattenNameHTML .}}</span>
+					<span class="disabled">{{flattenNameHTML .}}</span>
 				{{end}}
 			</td>
 			{{if or appconf.DisableTreeEntryCommits (not $.Features.TreeEntryCommits)}}
