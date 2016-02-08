@@ -2748,6 +2748,9 @@ type DeltaListFilesOptions struct {
 	// returned DeltaFiles.FileDiffs will not contain any hunks and will have
 	// Filtered set to true.
 	Filter string `protobuf:"bytes,2,opt,name=Filter,proto3" json:"Filter,omitempty" url:",omitempty"`
+	// Ignore specifies a list of filepath globs to omit from the returned
+	// results.
+	Ignore []string `protobuf:"bytes,6,rep,name=Ignore" json:"Ignore,omitempty" url:",omitempty"`
 	// Tokenized, when set, will tokenize the whole source code
 	// contained in the diff, returning 3 versions for each hunk: Head
 	// revision, Base revision and Hunk body. For more information,
@@ -14629,6 +14632,21 @@ func (m *DeltaListAffectedAuthorsOptions) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n163
+	if len(m.Ignore) > 0 {
+		for _, s := range m.Ignore {
+			data[i] = 0x32
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				data[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			data[i] = uint8(l)
+			i++
+			i += copy(data[i:], s)
+		}
+	}
 	return i, nil
 }
 
@@ -20082,6 +20100,12 @@ func (m *DeltaListFilesOptions) Size() (n int) {
 	}
 	l = m.DeltaFilter.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
+	if len(m.Ignore) > 0 {
+		for _, s := range m.Ignore {
+			l = len(s)
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -41315,6 +41339,35 @@ func (m *ExampleList) Unmarshal(data []byte) error {
 			if err := m.StreamResponse.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ignore", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ignore = append(m.Ignore, string(data[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
