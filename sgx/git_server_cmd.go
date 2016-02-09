@@ -1,6 +1,7 @@
 package sgx
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -38,6 +39,6 @@ func (c *gitServerCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("git-server: listening on %s", l.Addr())
+	fmt.Printf("git-server: listening on %s\n", l.Addr())
 	return http.Serve(l, nil)
 }

@@ -1124,25 +1124,25 @@ func (c *ServeCmd) safeConfigFlags() string {
 }
 
 func (c *ServeCmd) runGitServer() {
-	stderrReader, stderrWriter := io.Pipe()
+	stdoutReader, stdoutWriter := io.Pipe()
 	go func() {
 		cmd := exec.Command(sgxcmd.Path, "git-server")
 		cmd.StdinPipe() // keep stdin from closing
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = io.MultiWriter(os.Stderr, stderrWriter)
+		cmd.Stdout = io.MultiWriter(os.Stdout, stdoutWriter)
+		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
 			log.Fatalf("git-server failed: %s", err)
 		}
 		log.Fatal("git-server has exited")
 	}()
 
-	r := bufio.NewReader(stderrReader)
+	r := bufio.NewReader(stdoutReader)
 	line, err := r.ReadString('\n')
 	if err != nil {
-		log.Fatalf("git-server stderr read failed: %s", err)
+		log.Fatalf("git-server stdout read failed: %s", err)
 	}
 	addr := line[strings.LastIndexByte(line, ' ')+1 : len(line)-1]
-	go io.Copy(ioutil.Discard, stderrReader) // drain pipe
+	go io.Copy(ioutil.Discard, stdoutReader) // drain pipe
 
 	if err := gitserver.Dial(addr); err != nil {
 		log.Fatalf("git-server dial failed: %s", err)
