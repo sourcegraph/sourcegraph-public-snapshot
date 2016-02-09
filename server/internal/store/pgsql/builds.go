@@ -222,6 +222,9 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	var conds []string
 	if opt.Repo != "" {
 		conds = append(conds, "b.repo="+arg(opt.Repo))
+	} else {
+		// only list public repo builds on main builds page.
+		conds = append(conds, "b.repo in (select uri from repo where not private)")
 	}
 	if opt.Queued {
 		conds = append(conds, "b.started_at IS NULL AND b.queue")
