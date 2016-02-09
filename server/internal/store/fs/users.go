@@ -150,8 +150,6 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 		users = usersFromUserDBEntries(entries)
 	}
 
-	// TODO(sqs): respect opt.
-
 	low := opt.Offset()
 	if low >= len(users) {
 		return []*sourcegraph.User{}, nil

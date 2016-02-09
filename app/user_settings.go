@@ -55,12 +55,12 @@ var errUserSettingsCommonWroteResponse = errors.New("userSettingsCommon already 
 // stop handling the HTTP request. That means that this function
 // already sent an HTTP response (such as a redirect). For example:
 //
-//  userSpec, cd, err := userSettingsCommon(w, r)
-//  if err == errUserSettingsCommonWroteResponse {
-//  	return nil
-//  } else if err != nil {
-//  	return err
-//  }
+// 	userSpec, cd, err := userSettingsCommon(w, r)
+// 	if err == errUserSettingsCommonWroteResponse {
+// 		return nil
+// 	} else if err != nil {
+// 		return err
+// 	}
 func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.UserSpec, *userSettingsCommonData, error) {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)

@@ -35,7 +35,7 @@ func NewLenChars(length int, chars []byte) string {
 	}
 	clen := len(chars)
 	if clen < 2 || clen > 256 {
-		panic("uniuri: wrong charset length for NewLenChars")
+		panic("randstring: wrong charset length for NewLenChars")
 	}
 	maxrb := 255 - (256 % clen)
 	b := make([]byte, length)
@@ -43,7 +43,7 @@ func NewLenChars(length int, chars []byte) string {
 	i := 0
 	for {
 		if _, err := rand.Read(r); err != nil {
-			panic("uniuri: error reading random bytes: " + err.Error())
+			panic("randstring: error reading random bytes: " + err.Error())
 		}
 		for _, rb := range r {
 			c := int(rb)
