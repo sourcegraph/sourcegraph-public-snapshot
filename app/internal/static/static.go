@@ -20,7 +20,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -312,7 +312,7 @@ func newMiddleware() (*staticMiddleware, error) {
 
 	if Flags.Repo != "" {
 		// Open the git repository.
-		repo, err := vcs.Open("git", Flags.Repo)
+		repo, err := gitcmd.Open(Flags.Repo)
 		if err != nil {
 			return nil, err
 		}

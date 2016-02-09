@@ -42,12 +42,12 @@ func TestRepository_Clone_ssh(t *testing.T) {
 	// TODO(sqs): test hg ssh support when it's implemented
 	tests := map[string]struct {
 		repoDir      string
-		cloner       func(url, dir string, opt vcs.CloneOpt) (vcs.Repository, error)
+		cloner       func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error)
 		wantCommitID vcs.CommitID // commit ID that tag t0 refers to
 	}{
 		"git cmd": {
 			repoDir:      initGitRepository(t, gitCommands...),
-			cloner:       func(url, dir string, opt vcs.CloneOpt) (vcs.Repository, error) { return gitcmd.Clone(url, dir, opt) },
+			cloner:       func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error) { return gitcmd.Clone(url, dir, opt) },
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
 	}
@@ -57,7 +57,7 @@ func TestRepository_Clone_ssh(t *testing.T) {
 			s, remoteOpts := startGitShellSSHServer(t, label, filepath.Dir(test.repoDir))
 			defer s.Close()
 
-			opt := vcs.CloneOpt{
+			opt := gitcmd.CloneOpt{
 				Bare:       true,
 				RemoteOpts: remoteOpts,
 			}
@@ -109,7 +109,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 		vcs, baseDir, headDir string
 
 		opener func(dir string) (vcs.Repository, error)
-		cloner func(url, dir string, opt vcs.CloneOpt) (vcs.Repository, error)
+		cloner func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error)
 
 		// newCmds should commit a file "newfile" in the repository
 		// root and tag the commit with "second". This is used to test
@@ -122,7 +122,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 		"git cmd": { // gitcmd
 			vcs: "git", baseDir: initGitRepository(t, gitCommands...), headDir: makeTmpDir(t, "git-update-ssh"),
 			opener:  func(dir string) (vcs.Repository, error) { return gitcmd.Open(dir) },
-			cloner:  func(url, dir string, opt vcs.CloneOpt) (vcs.Repository, error) { return gitcmd.Clone(url, dir, opt) },
+			cloner:  func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error) { return gitcmd.Clone(url, dir, opt) },
 			newCmds: []string{"git tag t0", "git checkout -b b0"},
 			wantUpdateResult: &vcs.UpdateResult{
 				Changes: []vcs.Change{
@@ -140,7 +140,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			baseURL := s.GitURL + "/" + filepath.Base(test.baseDir)
 			t.Logf("Cloning from %s to %s", baseURL, test.headDir)
-			_, err := test.cloner(baseURL, test.headDir, vcs.CloneOpt{Bare: true, Mirror: true, RemoteOpts: remoteOpts})
+			_, err := test.cloner(baseURL, test.headDir, gitcmd.CloneOpt{Bare: true, Mirror: true, RemoteOpts: remoteOpts})
 			if err != nil {
 				t.Errorf("Clone(%q, %q, %q): %s", label, baseURL, test.headDir, err)
 				return

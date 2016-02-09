@@ -29,6 +29,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/util/tracer"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
@@ -117,12 +118,12 @@ func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir 
 	// TODO(sqs): Assumes that repo is on local disk. To remove this
 	// assumption, we would need a VFS interface that operates over
 	// gRPC to the RepoTree service.
-	vcsRepo, err := vcs.Open("git", filepath.Join(os.Getenv("SGPATH"), "repos", repoRev.URI))
+	vcsRepo, err := gitcmd.Open(filepath.Join(os.Getenv("SGPATH"), "repos", repoRev.URI))
 	if err != nil {
 		return "", nil, err
 	}
-	vcsRepo = tracer.Wrap(vcsRepo, traceutil.Recorder(ctx))
-	vfs, err := vcsRepo.FileSystem(vcs.CommitID(repoRev.CommitID))
+	tracedVcsRepo := tracer.Wrap(vcsRepo, traceutil.Recorder(ctx))
+	vfs, err := tracedVcsRepo.FileSystem(vcs.CommitID(repoRev.CommitID))
 	if err != nil {
 		return "", nil, err
 	}

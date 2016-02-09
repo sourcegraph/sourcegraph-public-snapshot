@@ -36,15 +36,6 @@ var (
 	logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+([A-Za-z]+(?:\s[A-Za-z]+)*)\s+<([A-Za-z@.]+)>\s*$`)
 )
 
-func init() {
-	vcs.RegisterOpener("git", func(dir string) (vcs.Repository, error) {
-		return Open(dir)
-	})
-	vcs.RegisterCloner("git", func(url, dir string, opt vcs.CloneOpt) (vcs.Repository, error) {
-		return Clone(url, dir, opt)
-	})
-}
-
 type Repository struct {
 	Dir string
 
@@ -79,7 +70,15 @@ func Open(dir string) (*Repository, error) {
 	return &Repository{Dir: dir}, nil
 }
 
-func Clone(url, dir string, opt vcs.CloneOpt) (*Repository, error) {
+// CloneOpt configures a clone operation.
+type CloneOpt struct {
+	Bare   bool // create a bare repo
+	Mirror bool // create a mirror repo (`git clone --mirror`)
+
+	vcs.RemoteOpts // configures communication with the remote repository
+}
+
+func Clone(url, dir string, opt CloneOpt) (*Repository, error) {
 	args := []string{"clone"}
 	if opt.Bare {
 		args = append(args, "--bare")
@@ -623,6 +622,8 @@ func (r *Repository) fetchRemote(repoDir string) error {
 	return nil
 }
 
+// UpdateEverything updates all branches, tags, etc., to match the
+// default remote repository.
 func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
 	r.editLock.Lock()
 	defer r.editLock.Unlock()

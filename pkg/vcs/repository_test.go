@@ -1247,31 +1247,22 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 func TestOpen(t *testing.T) {
 	t.Parallel()
-	tests := []struct{ vcs, dir string }{
-		{"git", initGitRepository(t)},
-	}
 
-	for _, test := range tests {
-		_, err := vcs.Open(test.vcs, test.dir)
-		if err != nil {
-			t.Errorf("Open(%q, %q): %s", test.vcs, test.dir, err)
-			continue
-		}
+	dir := initGitRepository(t)
+	_, err := gitcmd.Open(dir)
+	if err != nil {
+		t.Errorf("Open(%q): %s", dir, err)
 	}
 }
 
 func TestClone(t *testing.T) {
 	t.Parallel()
-	tests := []struct{ vcs, url, dir string }{
-		{"git", initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty"), makeTmpDir(t, "git-clone")},
-	}
 
-	for _, test := range tests {
-		_, err := vcs.Clone(test.vcs, test.url, test.dir, vcs.CloneOpt{})
-		if err != nil {
-			t.Errorf("Clone(%q, %q, %q): %s", test.vcs, test.url, test.dir, err)
-			continue
-		}
+	url := initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty")
+	dir := makeTmpDir(t, "git-clone")
+	_, err := gitcmd.Clone(url, dir, gitcmd.CloneOpt{})
+	if err != nil {
+		t.Errorf("Clone(%q, %q): %s", url, dir, err)
 	}
 }
 
@@ -1305,9 +1296,9 @@ func TestRepository_UpdateEverything(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		_, err := vcs.Clone(test.vcs, test.baseDir, test.headDir, vcs.CloneOpt{Bare: true, Mirror: true})
+		_, err := gitcmd.Clone(test.baseDir, test.headDir, gitcmd.CloneOpt{Bare: true, Mirror: true})
 		if err != nil {
-			t.Errorf("Clone(%q, %q, %q): %s", test.vcs, test.baseDir, test.headDir, err)
+			t.Errorf("Clone(%q, %q): %s", test.baseDir, test.headDir, err)
 			continue
 		}
 

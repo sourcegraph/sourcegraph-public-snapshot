@@ -12,6 +12,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/pkg/mv"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/util/tracer"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
@@ -29,7 +30,7 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 		return nil, err
 	}
 
-	r, err := vcs.Open("git", dir)
+	r, err := gitcmd.Open(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, inf
 	}
 
 	start := time.Now()
-	r, err := vcs.Clone(info.VCS, info.CloneURL, cloneDir, vcs.CloneOpt{
+	r, err := gitcmd.Clone(info.CloneURL, cloneDir, gitcmd.CloneOpt{
 		Bare:       bare,
 		Mirror:     mirror,
 		RemoteOpts: info.RemoteOpts,
