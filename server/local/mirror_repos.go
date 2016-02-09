@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
@@ -378,7 +379,10 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 
 	result := &sourcegraph.WaitlistState{State: sourcegraph.UserMirrorsState_NotAllowed}
 
-	// TODO: Check if server is running in "restricted" waitlist mode.
+	if authutil.ActiveFlags.MirrorsWaitlist == "none" {
+		result.State = sourcegraph.UserMirrorsState_HasAccess
+		return result, nil
+	}
 
 	// Fetch the currently authenticated user's stored access token (if any).
 	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{

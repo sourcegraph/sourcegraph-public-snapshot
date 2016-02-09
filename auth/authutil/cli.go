@@ -32,6 +32,8 @@ type Flags struct {
 	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
 
 	MirrorsNext bool `long:"auth.mirrors-next" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
+
+	MirrorsWaitlist string `long:"auth.mirrors-waitlist" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.

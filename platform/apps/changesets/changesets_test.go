@@ -79,7 +79,7 @@ func (ts *testSuite) prepRepo() error {
 
 		// Add a personal access token for the authenticated user so that it can be used
 		// in RefreshVCS operations.
-		_, err = ts.server.Client.Auth.SetExternalToken(ts.ctx, &sourcegraph.ExternalToken{
+		_, err := ts.server.Client.Auth.SetExternalToken(ts.ctx, &sourcegraph.ExternalToken{
 			Host:     "github.com",
 			Token:    personalAccessToken,
 			Scope:    "repo,read:org",

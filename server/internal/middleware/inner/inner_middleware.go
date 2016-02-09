@@ -100,7 +100,9 @@ func (s wrappedGitTransport) InfoRefs(ctx context.Context, param *gitpb.InfoRefs
 		trace.After(ctx, "GitTransport", "InfoRefs", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "GitTransport.InfoRefs")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "GitTransport.InfoRefs", repoURI)
 	if err != nil {
 		return
 	}
@@ -122,7 +124,9 @@ func (s wrappedGitTransport) ReceivePack(ctx context.Context, param *gitpb.Recei
 		trace.After(ctx, "GitTransport", "ReceivePack", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "GitTransport.ReceivePack")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "write", "GitTransport.ReceivePack", repoURI)
 	if err != nil {
 		return
 	}
@@ -144,7 +148,9 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.Upload
 		trace.After(ctx, "GitTransport", "UploadPack", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "GitTransport.UploadPack")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "GitTransport.UploadPack", repoURI)
 	if err != nil {
 		return
 	}
@@ -170,7 +176,9 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 		trace.After(ctx, "MultiRepoImporter", "Import", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MultiRepoImporter.Import")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "MultiRepoImporter.Import", repoURI)
 	if err != nil {
 		return
 	}
@@ -192,7 +200,9 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 		trace.After(ctx, "MultiRepoImporter", "Index", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MultiRepoImporter.Index")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "MultiRepoImporter.Index", repoURI)
 	if err != nil {
 		return
 	}
@@ -218,7 +228,9 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 		trace.After(ctx, "Accounts", "Create", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.Create")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "none", "Accounts.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -240,7 +252,9 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 		trace.After(ctx, "Accounts", "RequestPasswordReset", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.RequestPasswordReset")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "none", "Accounts.RequestPasswordReset", repoURI)
 	if err != nil {
 		return
 	}
@@ -262,7 +276,9 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.N
 		trace.After(ctx, "Accounts", "ResetPassword", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.ResetPassword")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "none", "Accounts.ResetPassword", repoURI)
 	if err != nil {
 		return
 	}
@@ -284,7 +300,9 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 		trace.After(ctx, "Accounts", "Update", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.Update")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Accounts.Update", repoURI)
 	if err != nil {
 		return
 	}
@@ -306,7 +324,9 @@ func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountI
 		trace.After(ctx, "Accounts", "Invite", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.Invite")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "admin", "Accounts.Invite", repoURI)
 	if err != nil {
 		return
 	}
@@ -328,7 +348,9 @@ func (s wrappedAccounts) AcceptInvite(ctx context.Context, param *sourcegraph.Ac
 		trace.After(ctx, "Accounts", "AcceptInvite", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.AcceptInvite")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "none", "Accounts.AcceptInvite", repoURI)
 	if err != nil {
 		return
 	}
@@ -350,7 +372,9 @@ func (s wrappedAccounts) ListInvites(ctx context.Context, param *pbtypes.Void) (
 		trace.After(ctx, "Accounts", "ListInvites", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.ListInvites")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "admin", "Accounts.ListInvites", repoURI)
 	if err != nil {
 		return
 	}
@@ -372,7 +396,9 @@ func (s wrappedAccounts) DeleteInvite(ctx context.Context, param *sourcegraph.In
 		trace.After(ctx, "Accounts", "DeleteInvite", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.DeleteInvite")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "admin", "Accounts.DeleteInvite", repoURI)
 	if err != nil {
 		return
 	}
@@ -394,7 +420,9 @@ func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSp
 		trace.After(ctx, "Accounts", "Delete", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Accounts.Delete")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "admin", "Accounts.Delete", repoURI)
 	if err != nil {
 		return
 	}
@@ -420,7 +448,9 @@ func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, param *sourcegrap
 		trace.After(ctx, "Auth", "GetAuthorizationCode", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Auth.GetAuthorizationCode")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Auth.GetAuthorizationCode", repoURI)
 	if err != nil {
 		return
 	}
@@ -442,7 +472,9 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 		trace.After(ctx, "Auth", "GetAccessToken", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Auth.GetAccessToken")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "none", "Auth.GetAccessToken", repoURI)
 	if err != nil {
 		return
 	}
@@ -464,7 +496,9 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 		trace.After(ctx, "Auth", "Identify", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Auth.Identify")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "none", "Auth.Identify", repoURI)
 	if err != nil {
 		return
 	}
@@ -486,7 +520,9 @@ func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.Ex
 		trace.After(ctx, "Auth", "GetExternalToken", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Auth.GetExternalToken")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Auth.GetExternalToken", repoURI)
 	if err != nil {
 		return
 	}
@@ -508,7 +544,9 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.Ex
 		trace.After(ctx, "Auth", "SetExternalToken", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Auth.SetExternalToken")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Auth.SetExternalToken", repoURI)
 	if err != nil {
 		return
 	}
@@ -534,7 +572,13 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 		trace.After(ctx, "Builds", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Builds.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -566,7 +610,13 @@ func (s wrappedBuilds) GetRepoBuild(ctx context.Context, param *sourcegraph.Repo
 		trace.After(ctx, "Builds", "GetRepoBuild", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.GetRepoBuild")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Builds.GetRepoBuild", repoURI)
 	if err != nil {
 		return
 	}
@@ -598,7 +648,9 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 		trace.After(ctx, "Builds", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Builds.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -618,7 +670,13 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 		trace.After(ctx, "Builds", "Create", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.Create")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Builds.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -650,7 +708,13 @@ func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpda
 		trace.After(ctx, "Builds", "Update", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.Update")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Build.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Builds.Update", repoURI)
 	if err != nil {
 		return
 	}
@@ -682,7 +746,13 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.Bu
 		trace.After(ctx, "Builds", "ListBuildTasks", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.ListBuildTasks")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Build.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Builds.ListBuildTasks", repoURI)
 	if err != nil {
 		return
 	}
@@ -714,7 +784,13 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.Build
 		trace.After(ctx, "Builds", "CreateTasks", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.CreateTasks")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Build.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Builds.CreateTasks", repoURI)
 	if err != nil {
 		return
 	}
@@ -746,7 +822,13 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 		trace.After(ctx, "Builds", "UpdateTask", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.UpdateTask")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Task.Build.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Builds.UpdateTask", repoURI)
 	if err != nil {
 		return
 	}
@@ -778,7 +860,13 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 		trace.After(ctx, "Builds", "GetTaskLog", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.GetTaskLog")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Task.Build.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Builds.GetTaskLog", repoURI)
 	if err != nil {
 		return
 	}
@@ -810,7 +898,9 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 		trace.After(ctx, "Builds", "DequeueNext", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Builds.DequeueNext")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "write", "Builds.DequeueNext", repoURI)
 	if err != nil {
 		return
 	}
@@ -836,7 +926,13 @@ func (s wrappedChangesets) Create(ctx context.Context, param *sourcegraph.Change
 		trace.After(ctx, "Changesets", "Create", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.Create")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Changesets.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -858,7 +954,13 @@ func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.Changeset
 		trace.After(ctx, "Changesets", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Spec.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Changesets.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -880,7 +982,9 @@ func (s wrappedChangesets) List(ctx context.Context, param *sourcegraph.Changese
 		trace.After(ctx, "Changesets", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Changesets.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -902,7 +1006,13 @@ func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.Change
 		trace.After(ctx, "Changesets", "Update", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.Update")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Changesets.Update", repoURI)
 	if err != nil {
 		return
 	}
@@ -924,7 +1034,13 @@ func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.Changes
 		trace.After(ctx, "Changesets", "Merge", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.Merge")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Changesets.Merge", repoURI)
 	if err != nil {
 		return
 	}
@@ -946,7 +1062,13 @@ func (s wrappedChangesets) UpdateAffected(ctx context.Context, param *sourcegrap
 		trace.After(ctx, "Changesets", "UpdateAffected", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.UpdateAffected")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Changesets.UpdateAffected", repoURI)
 	if err != nil {
 		return
 	}
@@ -968,7 +1090,13 @@ func (s wrappedChangesets) CreateReview(ctx context.Context, param *sourcegraph.
 		trace.After(ctx, "Changesets", "CreateReview", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.CreateReview")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Changesets.CreateReview", repoURI)
 	if err != nil {
 		return
 	}
@@ -990,7 +1118,13 @@ func (s wrappedChangesets) ListReviews(ctx context.Context, param *sourcegraph.C
 		trace.After(ctx, "Changesets", "ListReviews", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.ListReviews")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Changesets.ListReviews", repoURI)
 	if err != nil {
 		return
 	}
@@ -1012,7 +1146,13 @@ func (s wrappedChangesets) ListEvents(ctx context.Context, param *sourcegraph.Ch
 		trace.After(ctx, "Changesets", "ListEvents", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Changesets.ListEvents")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Changesets.ListEvents", repoURI)
 	if err != nil {
 		return
 	}
@@ -1038,7 +1178,13 @@ func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res
 		trace.After(ctx, "Defs", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Defs.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Def.Repo
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Defs.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -1070,7 +1216,9 @@ func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions
 		trace.After(ctx, "Defs", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Defs.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Defs.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -1090,7 +1238,13 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 		trace.After(ctx, "Defs", "ListRefs", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Defs.ListRefs")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Def.Repo
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Defs.ListRefs", repoURI)
 	if err != nil {
 		return
 	}
@@ -1122,7 +1276,13 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 		trace.After(ctx, "Defs", "ListExamples", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Defs.ListExamples")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Def.Repo
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Defs.ListExamples", repoURI)
 	if err != nil {
 		return
 	}
@@ -1154,7 +1314,13 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 		trace.After(ctx, "Defs", "ListAuthors", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Defs.ListAuthors")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Def.Repo
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Defs.ListAuthors", repoURI)
 	if err != nil {
 		return
 	}
@@ -1186,7 +1352,13 @@ func (s wrappedDefs) ListClients(ctx context.Context, param *sourcegraph.DefsLis
 		trace.After(ctx, "Defs", "ListClients", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Defs.ListClients")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Def.Repo
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Defs.ListClients", repoURI)
 	if err != nil {
 		return
 	}
@@ -1222,7 +1394,13 @@ func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (r
 		trace.After(ctx, "Deltas", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Deltas.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Base.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Deltas.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -1254,7 +1432,13 @@ func (s wrappedDeltas) ListUnits(ctx context.Context, param *sourcegraph.DeltasL
 		trace.After(ctx, "Deltas", "ListUnits", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Deltas.ListUnits")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Ds.Base.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Deltas.ListUnits", repoURI)
 	if err != nil {
 		return
 	}
@@ -1286,7 +1470,13 @@ func (s wrappedDeltas) ListDefs(ctx context.Context, param *sourcegraph.DeltasLi
 		trace.After(ctx, "Deltas", "ListDefs", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Deltas.ListDefs")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Ds.Base.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Deltas.ListDefs", repoURI)
 	if err != nil {
 		return
 	}
@@ -1318,7 +1508,13 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 		trace.After(ctx, "Deltas", "ListFiles", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Deltas.ListFiles")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Ds.Base.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Deltas.ListFiles", repoURI)
 	if err != nil {
 		return
 	}
@@ -1350,7 +1546,13 @@ func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, param *sourcegra
 		trace.After(ctx, "Deltas", "ListAffectedAuthors", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Deltas.ListAffectedAuthors")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Ds.Base.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Deltas.ListAffectedAuthors", repoURI)
 	if err != nil {
 		return
 	}
@@ -1382,7 +1584,13 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegra
 		trace.After(ctx, "Deltas", "ListAffectedClients", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Deltas.ListAffectedClients")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Ds.Base.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Deltas.ListAffectedClients", repoURI)
 	if err != nil {
 		return
 	}
@@ -1418,7 +1626,9 @@ func (s wrappedGraphUplink) Push(ctx context.Context, param *sourcegraph.Metrics
 		trace.After(ctx, "GraphUplink", "Push", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "GraphUplink.Push")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "GraphUplink.Push", repoURI)
 	if err != nil {
 		return
 	}
@@ -1440,7 +1650,9 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.U
 		trace.After(ctx, "GraphUplink", "PushEvents", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "GraphUplink.PushEvents")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "GraphUplink.PushEvents", repoURI)
 	if err != nil {
 		return
 	}
@@ -1466,7 +1678,9 @@ func (s wrappedMarkdown) Render(ctx context.Context, param *sourcegraph.Markdown
 		trace.After(ctx, "Markdown", "Render", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Markdown.Render")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Markdown.Render", repoURI)
 	if err != nil {
 		return
 	}
@@ -1492,7 +1706,9 @@ func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sour
 		trace.After(ctx, "Meta", "Status", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Meta.Status")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Meta.Status", repoURI)
 	if err != nil {
 		return
 	}
@@ -1514,7 +1730,9 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 		trace.After(ctx, "Meta", "Config", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Meta.Config")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Meta.Config", repoURI)
 	if err != nil {
 		return
 	}
@@ -1540,7 +1758,13 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 		trace.After(ctx, "MirrorRepos", "RefreshVCS", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MirrorRepos.RefreshVCS")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "MirrorRepos.RefreshVCS", repoURI)
 	if err != nil {
 		return
 	}
@@ -1572,7 +1796,9 @@ func (s wrappedMirrorRepos) GetUserData(ctx context.Context, param *pbtypes.Void
 		trace.After(ctx, "MirrorRepos", "GetUserData", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MirrorRepos.GetUserData")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "MirrorRepos.GetUserData", repoURI)
 	if err != nil {
 		return
 	}
@@ -1594,7 +1820,9 @@ func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, param *pbtypes.Vo
 		trace.After(ctx, "MirrorRepos", "AddToWaitlist", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MirrorRepos.AddToWaitlist")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "MirrorRepos.AddToWaitlist", repoURI)
 	if err != nil {
 		return
 	}
@@ -1620,7 +1848,13 @@ func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, param *sourcegra
 		trace.After(ctx, "MirroredRepoSSHKeys", "Create", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MirroredRepoSSHKeys.Create")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "MirroredRepoSSHKeys.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -1642,7 +1876,13 @@ func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, param *sourcegraph.
 		trace.After(ctx, "MirroredRepoSSHKeys", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MirroredRepoSSHKeys.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "MirroredRepoSSHKeys.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -1664,7 +1904,13 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, param *sourcegra
 		trace.After(ctx, "MirroredRepoSSHKeys", "Delete", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "MirroredRepoSSHKeys.Delete")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "MirroredRepoSSHKeys.Delete", repoURI)
 	if err != nil {
 		return
 	}
@@ -1690,7 +1936,9 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 		trace.After(ctx, "Notify", "GenericEvent", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Notify.GenericEvent")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Notify.GenericEvent", repoURI)
 	if err != nil {
 		return
 	}
@@ -1716,7 +1964,9 @@ func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *
 		trace.After(ctx, "Orgs", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Orgs.Get")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Orgs.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -1738,7 +1988,9 @@ func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (r
 		trace.After(ctx, "Orgs", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Orgs.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Orgs.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -1760,7 +2012,9 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 		trace.After(ctx, "Orgs", "ListMembers", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Orgs.ListMembers")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Orgs.ListMembers", repoURI)
 	if err != nil {
 		return
 	}
@@ -1786,7 +2040,9 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 		trace.After(ctx, "People", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "People.Get")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "People.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -1812,7 +2068,9 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, param *sourcegraph.Re
 		trace.After(ctx, "RegisteredClients", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.Get")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -1834,7 +2092,9 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes
 		trace.After(ctx, "RegisteredClients", "GetCurrent", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.GetCurrent")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.GetCurrent", repoURI)
 	if err != nil {
 		return
 	}
@@ -1856,7 +2116,9 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph
 		trace.After(ctx, "RegisteredClients", "Create", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.Create")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -1878,7 +2140,9 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph
 		trace.After(ctx, "RegisteredClients", "Update", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.Update")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Update", repoURI)
 	if err != nil {
 		return
 	}
@@ -1900,7 +2164,9 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph
 		trace.After(ctx, "RegisteredClients", "Delete", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.Delete")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Delete", repoURI)
 	if err != nil {
 		return
 	}
@@ -1922,7 +2188,9 @@ func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.R
 		trace.After(ctx, "RegisteredClients", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "admin", "RegisteredClients.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -1944,7 +2212,9 @@ func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, param 
 		trace.After(ctx, "RegisteredClients", "GetUserPermissions", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.GetUserPermissions")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.GetUserPermissions", repoURI)
 	if err != nil {
 		return
 	}
@@ -1966,7 +2236,9 @@ func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, param 
 		trace.After(ctx, "RegisteredClients", "SetUserPermissions", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.SetUserPermissions")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.SetUserPermissions", repoURI)
 	if err != nil {
 		return
 	}
@@ -1988,7 +2260,9 @@ func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, param
 		trace.After(ctx, "RegisteredClients", "ListUserPermissions", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RegisteredClients.ListUserPermissions")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "RegisteredClients.ListUserPermissions", repoURI)
 	if err != nil {
 		return
 	}
@@ -2014,7 +2288,13 @@ func (s wrappedRepoBadges) ListBadges(ctx context.Context, param *sourcegraph.Re
 		trace.After(ctx, "RepoBadges", "ListBadges", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoBadges.ListBadges")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoBadges.ListBadges", repoURI)
 	if err != nil {
 		return
 	}
@@ -2046,7 +2326,13 @@ func (s wrappedRepoBadges) ListCounters(ctx context.Context, param *sourcegraph.
 		trace.After(ctx, "RepoBadges", "ListCounters", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoBadges.ListCounters")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoBadges.ListCounters", repoURI)
 	if err != nil {
 		return
 	}
@@ -2078,7 +2364,13 @@ func (s wrappedRepoBadges) RecordHit(ctx context.Context, param *sourcegraph.Rep
 		trace.After(ctx, "RepoBadges", "RecordHit", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoBadges.RecordHit")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoBadges.RecordHit", repoURI)
 	if err != nil {
 		return
 	}
@@ -2110,7 +2402,13 @@ func (s wrappedRepoBadges) CountHits(ctx context.Context, param *sourcegraph.Rep
 		trace.After(ctx, "RepoBadges", "CountHits", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoBadges.CountHits")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoBadges.CountHits", repoURI)
 	if err != nil {
 		return
 	}
@@ -2146,7 +2444,13 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 		trace.After(ctx, "RepoStatuses", "GetCombined", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoStatuses.GetCombined")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoStatuses.GetCombined", repoURI)
 	if err != nil {
 		return
 	}
@@ -2178,7 +2482,13 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 		trace.After(ctx, "RepoStatuses", "Create", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoStatuses.Create")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "RepoStatuses.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -2214,7 +2524,13 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 		trace.After(ctx, "RepoTree", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoTree.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Entry.RepoRev.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoTree.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -2246,7 +2562,13 @@ func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTree
 		trace.After(ctx, "RepoTree", "Search", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoTree.Search")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Rev.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoTree.Search", repoURI)
 	if err != nil {
 		return
 	}
@@ -2278,7 +2600,13 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 		trace.After(ctx, "RepoTree", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "RepoTree.List")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Rev.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "RepoTree.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -2314,7 +2642,13 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 		trace.After(ctx, "Repos", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -2334,7 +2668,9 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 		trace.After(ctx, "Repos", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Repos.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -2356,7 +2692,9 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 		trace.After(ctx, "Repos", "Create", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.Create")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "write", "Repos.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -2376,7 +2714,13 @@ func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdate
 		trace.After(ctx, "Repos", "Update", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.Update")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Repos.Update", repoURI)
 	if err != nil {
 		return
 	}
@@ -2408,7 +2752,13 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 		trace.After(ctx, "Repos", "Delete", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.Delete")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "write", "Repos.Delete", repoURI)
 	if err != nil {
 		return
 	}
@@ -2440,7 +2790,13 @@ func (s wrappedRepos) GetReadme(ctx context.Context, param *sourcegraph.RepoRevS
 		trace.After(ctx, "Repos", "GetReadme", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.GetReadme")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.GetReadme", repoURI)
 	if err != nil {
 		return
 	}
@@ -2472,7 +2828,13 @@ func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec
 		trace.After(ctx, "Repos", "GetConfig", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.GetConfig")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.GetConfig", repoURI)
 	if err != nil {
 		return
 	}
@@ -2504,7 +2866,13 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 		trace.After(ctx, "Repos", "GetCommit", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.GetCommit")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.GetCommit", repoURI)
 	if err != nil {
 		return
 	}
@@ -2536,7 +2904,13 @@ func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposL
 		trace.After(ctx, "Repos", "ListCommits", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.ListCommits")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.ListCommits", repoURI)
 	if err != nil {
 		return
 	}
@@ -2568,7 +2942,13 @@ func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.Repos
 		trace.After(ctx, "Repos", "ListBranches", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.ListBranches")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.ListBranches", repoURI)
 	if err != nil {
 		return
 	}
@@ -2600,7 +2980,13 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 		trace.After(ctx, "Repos", "ListTags", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.ListTags")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.ListTags", repoURI)
 	if err != nil {
 		return
 	}
@@ -2632,7 +3018,13 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 		trace.After(ctx, "Repos", "ListCommitters", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.ListCommitters")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.ListCommitters", repoURI)
 	if err != nil {
 		return
 	}
@@ -2664,7 +3056,13 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 		trace.After(ctx, "Repos", "GetSrclibDataVersionForPath", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.GetSrclibDataVersionForPath")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.RepoRev.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.GetSrclibDataVersionForPath", repoURI)
 	if err != nil {
 		return
 	}
@@ -2696,7 +3094,13 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoC
 		trace.After(ctx, "Repos", "ConfigureApp", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.ConfigureApp")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo.URI
+	}
+
+	err = s.c.Authenticate(ctx, "admin", "Repos.ConfigureApp", repoURI)
 	if err != nil {
 		return
 	}
@@ -2728,7 +3132,13 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 		trace.After(ctx, "Repos", "GetInventory", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Repos.GetInventory")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Repos.GetInventory", repoURI)
 	if err != nil {
 		return
 	}
@@ -2764,7 +3174,13 @@ func (s wrappedSearch) SearchTokens(ctx context.Context, param *sourcegraph.Toke
 		trace.After(ctx, "Search", "SearchTokens", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Search.SearchTokens")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.RepoRev.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Search.SearchTokens", repoURI)
 	if err != nil {
 		return
 	}
@@ -2796,7 +3212,13 @@ func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSe
 		trace.After(ctx, "Search", "SearchText", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Search.SearchText")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.RepoRev.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Search.SearchText", repoURI)
 	if err != nil {
 		return
 	}
@@ -2832,7 +3254,9 @@ func (s wrappedStorage) Get(ctx context.Context, param *sourcegraph.StorageKey) 
 		trace.After(ctx, "Storage", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Get")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Storage.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -2854,7 +3278,9 @@ func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp
 		trace.After(ctx, "Storage", "Put", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Put")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "write", "Storage.Put", repoURI)
 	if err != nil {
 		return
 	}
@@ -2876,7 +3302,9 @@ func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.S
 		trace.After(ctx, "Storage", "PutNoOverwrite", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.PutNoOverwrite")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "write", "Storage.PutNoOverwrite", repoURI)
 	if err != nil {
 		return
 	}
@@ -2898,7 +3326,9 @@ func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKe
 		trace.After(ctx, "Storage", "Delete", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Delete")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "write", "Storage.Delete", repoURI)
 	if err != nil {
 		return
 	}
@@ -2920,7 +3350,9 @@ func (s wrappedStorage) Exists(ctx context.Context, param *sourcegraph.StorageKe
 		trace.After(ctx, "Storage", "Exists", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.Exists")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Storage.Exists", repoURI)
 	if err != nil {
 		return
 	}
@@ -2942,7 +3374,9 @@ func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey)
 		trace.After(ctx, "Storage", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Storage.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Storage.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -2968,7 +3402,13 @@ func (s wrappedUnits) Get(ctx context.Context, param *sourcegraph.UnitSpec) (res
 		trace.After(ctx, "Units", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Units.Get")
+	var repoURI string
+
+	if param != nil {
+		repoURI = param.URI
+	}
+
+	err = s.c.Authenticate(ctx, "read", "Units.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -3000,7 +3440,9 @@ func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptio
 		trace.After(ctx, "Units", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Units.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Units.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -3026,7 +3468,9 @@ func (s wrappedUserKeys) AddKey(ctx context.Context, param *sourcegraph.SSHPubli
 		trace.After(ctx, "UserKeys", "AddKey", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "UserKeys.AddKey")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "UserKeys.AddKey", repoURI)
 	if err != nil {
 		return
 	}
@@ -3048,7 +3492,9 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHP
 		trace.After(ctx, "UserKeys", "LookupUser", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "UserKeys.LookupUser")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "UserKeys.LookupUser", repoURI)
 	if err != nil {
 		return
 	}
@@ -3070,7 +3516,9 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *sourcegraph.SSHPu
 		trace.After(ctx, "UserKeys", "DeleteKey", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "UserKeys.DeleteKey")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "UserKeys.DeleteKey", repoURI)
 	if err != nil {
 		return
 	}
@@ -3092,7 +3540,9 @@ func (s wrappedUserKeys) ListKeys(ctx context.Context, param *pbtypes.Void) (res
 		trace.After(ctx, "UserKeys", "ListKeys", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "UserKeys.ListKeys")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "UserKeys.ListKeys", repoURI)
 	if err != nil {
 		return
 	}
@@ -3114,7 +3564,9 @@ func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, param *pbtypes.Void)
 		trace.After(ctx, "UserKeys", "DeleteAllKeys", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "UserKeys.DeleteAllKeys")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "UserKeys.DeleteAllKeys", repoURI)
 	if err != nil {
 		return
 	}
@@ -3140,7 +3592,9 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 		trace.After(ctx, "Users", "Get", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Users.Get")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Users.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -3162,7 +3616,9 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.Email
 		trace.After(ctx, "Users", "GetWithEmail", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Users.GetWithEmail")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Users.GetWithEmail", repoURI)
 	if err != nil {
 		return
 	}
@@ -3184,7 +3640,9 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 		trace.After(ctx, "Users", "ListEmails", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Users.ListEmails")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Users.ListEmails", repoURI)
 	if err != nil {
 		return
 	}
@@ -3206,7 +3664,9 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 		trace.After(ctx, "Users", "List", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Users.List")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "write", "Users.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -3228,7 +3688,9 @@ func (s wrappedUsers) ListTeammates(ctx context.Context, param *sourcegraph.User
 		trace.After(ctx, "Users", "ListTeammates", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Users.ListTeammates")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Users.ListTeammates", repoURI)
 	if err != nil {
 		return
 	}
@@ -3250,7 +3712,9 @@ func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sour
 		trace.After(ctx, "Users", "Count", param, err, time.Since(start))
 	}()
 
-	err = s.c.Authenticate(ctx, "Users.Count")
+	var repoURI string
+
+	err = s.c.Authenticate(ctx, "read", "Users.Count", repoURI)
 	if err != nil {
 		return
 	}

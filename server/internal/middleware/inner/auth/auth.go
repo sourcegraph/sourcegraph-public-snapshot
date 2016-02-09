@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )
 
 // Config specifies what authorization checks should be performed by
@@ -26,7 +26,7 @@ type Config struct {
 
 // Authenticate returns a non-nil error if authentication failed
 // (according to c's config).
-func (c *Config) Authenticate(ctx context.Context, label string) (err error) {
+func (c *Config) Authenticate(ctx context.Context, accessLevel, label, repoURI string) (err error) {
 	if c.DebugLog {
 		defer func() {
 			var outcome string
@@ -64,25 +64,17 @@ func (c *Config) Authenticate(ctx context.Context, label string) (err error) {
 		}()
 	}
 
-	// Always allow methods that are called to establish
-	// authentication; otherwise users wouldn't be able ever log in.
-	switch label {
-	case "Auth.GetAccessToken", "Accounts.Create", "Accounts.AcceptInvite", "Auth.Identify", "Meta.Config", "Accounts.RequestPasswordReset", "Accounts.ResetPassword", "RegisteredClients.GetCurrent", "Users.Count":
+	switch accessLevel {
+	case "none":
+		// Always allow methods that are called to establish
+		// authentication; otherwise users wouldn't be able ever log in.
 		return nil
-	case "GraphUplink.Push", "GraphUplink.PushEvents":
-		// This is for backwards compatibility with client instances that are running older versions
-		// of sourcegraph (< v0.7.22).
-		// TODO: remove this hack once clients upgrade to binaries having the new grpc-go API.
-		return nil
-	}
-
-	// TODO: This can be replaced with a more general implementation in accesscontrol.VerifyActorHasReadAccess.
-	//       It would require factoring out the above label checking as well.
-	if c.AllowAnonymousReaders || !authutil.ActiveFlags.HasUserAccounts() {
-		return nil
-	}
-	if auth.IsAuthenticated(ctx) || len(auth.ActorFromContext(ctx).Scope) > 0 {
-		return nil
+	case "read":
+		return accesscontrol.VerifyUserHasReadAccess(ctx, label, repoURI)
+	case "write":
+		return accesscontrol.VerifyUserHasWriteAccess(ctx, label, repoURI)
+	case "admin":
+		return accesscontrol.VerifyUserHasAdminAccess(ctx, label)
 	}
 
 	return grpc.Errorf(codes.Unauthenticated, "%s requires auth", label)
