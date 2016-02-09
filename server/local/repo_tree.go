@@ -116,15 +116,11 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, err
 	}
 
-	if flvcs, ok := vcsrepo.(vcs.FileLister); ok {
-		files, err := flvcs.ListFiles(vcs.CommitID(repoRevSpec.CommitID))
-		if err != nil {
-			return nil, err
-		}
-		return &sourcegraph.RepoTreeListResult{Files: files}, nil
-	} else {
-		return nil, grpc.Errorf(codes.Unimplemented, "repo does not support listing files")
+	files, err := vcsrepo.ListFiles(vcs.CommitID(repoRevSpec.CommitID))
+	if err != nil {
+		return nil, err
 	}
+	return &sourcegraph.RepoTreeListResult{Files: files}, nil
 }
 
 func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
@@ -141,12 +137,6 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 		return nil, err
 	}
 
-	rcs, ok := vcsrepo.(vcs.Searcher)
-	if !ok {
-		// Repo does not support tree searching.
-		return nil, grpc.Errorf(codes.Unimplemented, "VCS searching")
-	}
-
 	if !isAbsCommitID(repoRev.CommitID) {
 		return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required (got %q)", repoRev.CommitID)
 	}
@@ -158,7 +148,7 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 	origN, origOffset := opt.SearchOptions.N, opt.SearchOptions.Offset
 	// Get all of the matches in the repo so we can count the total.
 	opt.SearchOptions.N, opt.SearchOptions.Offset = math.MaxInt32, 0
-	res, err := rcs.Search(vcs.CommitID(repoRev.CommitID), opt.SearchOptions)
+	res, err := vcsrepo.Search(vcs.CommitID(repoRev.CommitID), opt.SearchOptions)
 	if err != nil {
 		return nil, err
 	}

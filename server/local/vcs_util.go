@@ -14,7 +14,7 @@ import "src.sourcegraph.com/sourcegraph/pkg/vcs"
 // byte ranges do not extend outside of [startByte, endByte). However,
 // their start and end lines are not clipped and reflect the original
 // hunk's start and end lines.
-func blameFileByteRange(r vcs.Blamer, path string, opt *vcs.BlameOptions, startByte, endByte int) ([]*vcs.Hunk, error) {
+func blameFileByteRange(r vcs.Repository, path string, opt *vcs.BlameOptions, startByte, endByte int) ([]*vcs.Hunk, error) {
 	hunks, err := r.BlameFile(path, opt)
 	if err != nil {
 		return nil, err

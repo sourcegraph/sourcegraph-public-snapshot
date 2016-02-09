@@ -8,6 +8,8 @@ import (
 
 // A Repository is a VCS repository.
 type Repository interface {
+	GitRootDir() string
+
 	// Close closes all file handles opened by the repository.
 	Close() error
 
@@ -58,11 +60,44 @@ type Repository interface {
 	// implementation proxying a remote filesystem may not want to
 	// incur the round-trip to check that the commit exists.)
 	FileSystem(at CommitID) (vfs.FileSystem, error)
-}
 
-// A Blamer is a repository that can blame portions of a file.
-type Blamer interface {
 	BlameFile(path string, opt *BlameOptions) ([]*Hunk, error)
+
+	// Diff shows changes between two commits. If base or head do not
+	// exist, an error is returned.
+	Diff(base, head CommitID, opt *DiffOptions) (*Diff, error)
+
+	// CrossRepoDiff shows changes between two commits in different
+	// repositories. If base or head do not exist, an error is
+	// returned.
+	CrossRepoDiff(base CommitID, headRepo Repository, head CommitID, opt *DiffOptions) (*Diff, error)
+
+	// ListFiles returns list of all file names in the repo at the
+	// given commit. Returned file paths are forward slash separated,
+	// relative to the base directory of the repository, and sorted
+	// alphabetically. E.g., returned paths have the form "path/to/file.txt".
+	ListFiles(CommitID) ([]string, error)
+
+	// MergeBase returns the merge base commit for the specified
+	// commits.
+	MergeBase(CommitID, CommitID) (CommitID, error)
+
+	// CrossRepoMergeBase returns the merge base commit for the
+	// specified commits.
+	//
+	// The commit specified by `b` must exist in repoB but does not
+	// need to exist in the repository that CrossRepoMergeBase is
+	// called on. Likewise, the commit specified by `a` need not exist
+	// in repoB.
+	CrossRepoMergeBase(a CommitID, repoB Repository, b CommitID) (CommitID, error)
+
+	// UpdateEverything updates all branches, tags, etc., to match the
+	// default remote repository.
+	UpdateEverything(RemoteOpts) (*UpdateResult, error)
+
+	// Search searches the text of a repository at the given commit
+	// ID.
+	Search(CommitID, SearchOptions) ([]*SearchResult, error)
 }
 
 // BlameOptions configures a blame.
@@ -82,23 +117,6 @@ type Hunk struct {
 	EndByte   int // 0-indexed end byte position (exclusive)
 	CommitID
 	Author Signature
-}
-
-// A Differ is a repository that can compute diffs between two
-// commits.
-type Differ interface {
-	// Diff shows changes between two commits. If base or head do not
-	// exist, an error is returned.
-	Diff(base, head CommitID, opt *DiffOptions) (*Diff, error)
-}
-
-// A CrossRepoDiffer is a repository that can compute diffs with
-// respect to a commit in a different repository.
-type CrossRepoDiffer interface {
-	// CrossRepoDiff shows changes between two commits in different
-	// repositories. If base or head do not exist, an error is
-	// returned.
-	CrossRepoDiff(base CommitID, headRepo Repository, head CommitID, opt *DiffOptions) (*Diff, error)
 }
 
 var (
@@ -179,12 +197,10 @@ func (p Tags) Len() int           { return len(p) }
 func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
 func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// A FileLister is a repository that can perform actions related to
-// listing the entire file tree.
-type FileLister interface {
-	// ListFiles returns list of all file names in the repo at the
-	// given commit. Returned file paths are forward slash separated,
-	// relative to the base directory of the repository, and sorted
-	// alphabetically. E.g., returned paths have the form "path/to/file.txt".
-	ListFiles(CommitID) ([]string, error)
-}
+const (
+	// FixedQuery is a value for SearchOptions.QueryType that
+	// indicates the query is a fixed string, not a regex.
+	FixedQuery = "fixed"
+
+	// TODO(sqs): allow regexp searches, extended regexp searches, etc.
+)

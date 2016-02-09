@@ -1339,7 +1339,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		}
 
 		// update the mirror.
-		result, err := r.(vcs.RemoteUpdater).UpdateEverything(vcs.RemoteOpts{})
+		result, err := r.UpdateEverything(vcs.RemoteOpts{})
 		if err != nil {
 			t.Errorf("%s: UpdateEverything: %s", test.vcs, err)
 			continue

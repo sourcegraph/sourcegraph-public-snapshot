@@ -1,7 +1,6 @@
 package local
 
 import (
-	"fmt"
 	"log"
 
 	"google.golang.org/grpc"
@@ -75,11 +74,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 				if err != nil {
 					return err
 				}
-				br, ok := vcsrepo.(vcs.Blamer)
-				if !ok {
-					return grpc.Errorf(codes.Unimplemented, fmt.Sprintf("repository %T does not support blaming files", vcsrepo))
-				}
-				hunks, err := blameFileByteRange(br, ref.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(ref.CommitID)}, int(ref.Start), int(ref.End))
+				hunks, err := blameFileByteRange(vcsrepo, ref.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(ref.CommitID)}, int(ref.Start), int(ref.End))
 				if err != nil {
 					return err
 				}

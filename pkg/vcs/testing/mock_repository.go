@@ -6,7 +6,8 @@ import (
 )
 
 type MockRepository struct {
-	Close_ func() error
+	GitRootDir_ func() string
+	Close_      func() error
 
 	ResolveRevision_ func(spec string) (vcs.CommitID, error)
 	ResolveTag_      func(name string) (vcs.CommitID, error)
@@ -29,14 +30,19 @@ type MockRepository struct {
 	CrossRepoMergeBase_ func(a vcs.CommitID, repoB vcs.Repository, b vcs.CommitID) (vcs.CommitID, error)
 
 	Committers_ func(opt vcs.CommittersOptions) ([]*vcs.Committer, error)
+
+	UpdateEverything_ func(vcs.RemoteOpts) (*vcs.UpdateResult, error)
+
+	ListFiles_ func(vcs.CommitID) ([]string, error)
+
+	Search_ func(vcs.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
 }
 
-var (
-	_ interface {
-		vcs.Repository
-		vcs.Blamer
-	} = MockRepository{}
-)
+var _ vcs.Repository = MockRepository{}
+
+func (r MockRepository) GitRootDir() string {
+	return r.GitRootDir_()
+}
 
 func (r MockRepository) Close() error {
 	return r.Close_()
@@ -96,4 +102,16 @@ func (r MockRepository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository,
 
 func (r MockRepository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
 	return r.Committers_(opt)
+}
+
+func (r MockRepository) ListFiles(commit vcs.CommitID) ([]string, error) {
+	return r.ListFiles_(commit)
+}
+
+func (r MockRepository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
+	return r.UpdateEverything_(opt)
+}
+
+func (r MockRepository) Search(commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
+	return r.Search_(commit, opt)
 }

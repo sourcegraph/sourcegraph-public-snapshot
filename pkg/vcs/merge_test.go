@@ -27,10 +27,7 @@ func TestMerger_MergeBase(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			vcs.Merger
-			ResolveRevision(spec string) (vcs.CommitID, error)
-		}
+		repo vcs.Repository
 		a, b string // can be any revspec; is resolved during the test
 
 		wantMergeBase string // can be any revspec; is resolved during test
@@ -101,10 +98,7 @@ func TestMerger_CrossRepoMergeBase(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repoA interface {
-			vcs.CrossRepoMerger
-			ResolveRevision(spec string) (vcs.CommitID, error)
-		}
+		repoA vcs.Repository
 		repoB vcs.Repository
 		a, b  string // can be any revspec; is resolved during the test
 

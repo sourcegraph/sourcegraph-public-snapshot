@@ -30,10 +30,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo interface {
-			vcs.Blamer
-			ResolveRevision(spec string) (vcs.CommitID, error)
-		}
+		repo vcs.Repository
 		path string
 		opt  *vcs.BlameOptions
 

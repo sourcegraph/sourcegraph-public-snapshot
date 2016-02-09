@@ -18,17 +18,6 @@ type HTTPSConfig struct {
 	Pass string // Pass is the password provided to the vcs.
 }
 
-// A RemoteUpdater is a repository that can fetch updates to itself
-// from a remote repository.
-type RemoteUpdater interface {
-	// UpdateEverything updates all branches, tags, etc., to match the
-	// default remote repository. The implementation is VCS-dependent.
-	//
-	// If supported by the implementation, parsed results of update will be returned,
-	// otherwise it'll be nil.
-	UpdateEverything(RemoteOpts) (*UpdateResult, error)
-}
-
 // UpdateResult is the result of parsing output of the remote update operation.
 type UpdateResult struct {
 	Changes []Change

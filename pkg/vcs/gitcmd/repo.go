@@ -577,23 +577,10 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 	}, nil
 }
 
-// A CrossRepo is a git repository that can be used in cross-repo
-// operations (e.g., as the head repository for a cross-repo diff in
-// another git repository's CrossRepoDiff method, or as the 2nd repo
-// in a CrossRepoMergeBase call).
-type CrossRepo interface {
-	GitRootDir() string // the repo's root directory
-}
-
 func (r *Repository) GitRootDir() string { return r.Dir }
 
 func (r *Repository) CrossRepoDiff(base vcs.CommitID, headRepo vcs.Repository, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
-	var headDir string // path to head repo on local filesystem
-	if headRepo, ok := headRepo.(CrossRepo); ok {
-		headDir = headRepo.GitRootDir()
-	} else {
-		return nil, fmt.Errorf("git cross-repo diff not supported against head repo type %T", headRepo)
-	}
+	headDir := headRepo.GitRootDir()
 
 	if headDir == r.Dir {
 		return r.Diff(base, head, opt)
@@ -822,12 +809,7 @@ func (r *Repository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository, b 
 	// git.Repository inherits GitRootDir and CrossRepo from its
 	// embedded gitcmd.Repository.
 
-	var repoBDir string // path to head repo on local filesystem
-	if repoB, ok := repoB.(CrossRepo); ok {
-		repoBDir = repoB.GitRootDir()
-	} else {
-		return "", fmt.Errorf("git cross-repo merge-base not supported against repo type %T", repoB)
-	}
+	repoBDir := repoB.GitRootDir()
 
 	if repoBDir != r.Dir {
 		if err := r.fetchRemote(repoBDir); err != nil {

@@ -7,11 +7,12 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sourcegraph/appdash"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 )
 
 // repository implements the vcs.Repository interface.
 type repository struct {
-	r   vcs.Repository
+	r   *gitcmd.Repository
 	rec *appdash.Recorder
 }
 
@@ -136,4 +137,15 @@ func (r repository) FileSystem(at vcs.CommitID) (vfs.FileSystem, error) {
 		return nil, err
 	}
 	return fileSystem{fs: fs, rec: r.rec}, nil
+}
+
+func (r repository) GitRootDir() string {
+	start := time.Now()
+	dir := r.r.GitRootDir()
+	r.rec.Child().Event(GoVCS{
+		Name:      "gitcmd.CrossRepo.GitRootDir",
+		StartTime: start,
+		EndTime:   time.Now(),
+	})
+	return dir
 }

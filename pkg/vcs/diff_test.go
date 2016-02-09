@@ -26,10 +26,7 @@ func TestRepository_Diff(t *testing.T) {
 		"git tag testhead",
 	}
 	tests := map[string]struct {
-		repo interface {
-			vcs.Differ
-			ResolveRevision(spec string) (vcs.CommitID, error)
-		}
+		repo       vcs.Repository
 		base, head string // can be any revspec; is resolved during the test
 		opt        *vcs.DiffOptions
 
@@ -107,10 +104,7 @@ func TestRepository_Diff_rename(t *testing.T) {
 	}
 	opt := &vcs.DiffOptions{DetectRenames: true}
 	tests := map[string]struct {
-		repo interface {
-			vcs.Differ
-			ResolveRevision(spec string) (vcs.CommitID, error)
-		}
+		repo       vcs.Repository
 		base, head string // can be any revspec; is resolved during the test
 		opt        *vcs.DiffOptions
 
@@ -194,10 +188,7 @@ func TestRepository_CrossRepoDiff_git(t *testing.T) {
 		"git tag testhead",
 	}
 	tests := map[string]struct {
-		baseRepo interface {
-			vcs.CrossRepoDiffer
-			ResolveRevision(spec string) (vcs.CommitID, error)
-		}
+		baseRepo   vcs.Repository
 		headRepo   vcs.Repository
 		base, head string // can be any revspec; is resolved during the test
 		opt        *vcs.DiffOptions

@@ -86,7 +86,7 @@ func TestRepository_Search(t *testing.T) {
 // repoInitCommands
 func testGitRepositorySearch(t *testing.T, repoInitCmds []string, searchOpt vcs.SearchOptions, wantRes []*vcs.SearchResult) {
 	tests := map[string]struct {
-		repo        vcs.Searcher
+		repo        vcs.Repository
 		spec        vcs.CommitID
 		opt         vcs.SearchOptions
 		wantResults []*vcs.SearchResult

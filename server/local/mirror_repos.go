@@ -19,7 +19,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -122,11 +121,6 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 }
 
 func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vcsRepo vcs.Repository, remoteOpts vcs.RemoteOpts) error {
-	ru, ok := vcsRepo.(vcs.RemoteUpdater)
-	if !ok {
-		return grpc.Errorf(codes.Unimplemented, "MirrorRepos.RefreshVCS on hosted repo")
-	}
-
 	// TODO: Need to detect new tags and copy git_transport.go in event publishing
 	// behavior.
 
@@ -137,19 +131,17 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	}
 
 	// Update everything.
-	updateResult, err := ru.UpdateEverything(remoteOpts)
+	updateResult, err := vcsRepo.UpdateEverything(remoteOpts)
 	if err != nil {
 		return err
 	}
 
-	// TODO(slimsag): instead of using CrossRepo here; add a vcs.Cleaner interface
-	// which invokes 'git gc' or relevant cousin depending on vcs backend.
-	if gitRepo, ok := vcsRepo.(gitcmd.CrossRepo); ok && len(updateResult.Changes) > 0 {
+	if len(updateResult.Changes) > 0 {
 		go func() {
 			activeGitGC.Inc()
 			defer activeGitGC.Dec()
 			gcCmd := exec.Command("git", "gc")
-			gcCmd.Dir = gitRepo.GitRootDir()
+			gcCmd.Dir = vcsRepo.GitRootDir()
 			gcCmd.Run() // ignore error
 		}()
 	}

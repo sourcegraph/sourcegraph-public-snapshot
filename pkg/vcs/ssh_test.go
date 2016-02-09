@@ -175,7 +175,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 			}
 
 			// update the mirror.
-			result, err := r.(vcs.RemoteUpdater).UpdateEverything(remoteOpts)
+			result, err := r.UpdateEverything(remoteOpts)
 			if err != nil {
 				t.Errorf("%s: UpdateEverything: %s", label, err)
 				return

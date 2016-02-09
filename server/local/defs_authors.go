@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"golang.org/x/net/context"
 
 	"sort"
@@ -32,12 +29,8 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 	if err != nil {
 		return nil, err
 	}
-	br, ok := vcsrepo.(vcs.Blamer)
-	if !ok {
-		return nil, grpc.Errorf(codes.Unimplemented, fmt.Sprintf("repository %T does not support blaming files", vcsrepo))
-	}
 
-	hunks, err := blameFileByteRange(br, def.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(def.CommitID)}, int(def.DefStart), int(def.DefEnd))
+	hunks, err := blameFileByteRange(vcsrepo, def.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(def.CommitID)}, int(def.DefStart), int(def.DefEnd))
 	if err != nil {
 		return nil, err
 	}

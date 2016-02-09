@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strings"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -157,20 +156,12 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	}
 
 	if sameRepo {
-		baseDiffer, ok := baseVCSRepo.(vcs.Differ)
-		if !ok {
-			return nil, nil, grpc.Errorf(codes.Unimplemented, fmt.Sprintf("repository %T does not support diffs", baseVCSRepo))
-		}
-		vcsDiff, err = baseDiffer.Diff(vcs.CommitID(ds.Base.CommitID), vcs.CommitID(ds.Head.CommitID), diffOpt)
+		vcsDiff, err = baseVCSRepo.Diff(vcs.CommitID(ds.Base.CommitID), vcs.CommitID(ds.Head.CommitID), diffOpt)
 		if err != nil {
 			return nil, nil, err
 		}
 	} else {
-		baseDiffer, ok := baseVCSRepo.(vcs.CrossRepoDiffer)
-		if !ok {
-			return nil, nil, grpc.Errorf(codes.Unimplemented, fmt.Sprintf("repository %T does not support cross-repo diffs", baseVCSRepo))
-		}
-		vcsDiff, err = baseDiffer.CrossRepoDiff(vcs.CommitID(ds.Base.CommitID), headVCSRepo, vcs.CommitID(ds.Head.CommitID), diffOpt)
+		vcsDiff, err = baseVCSRepo.CrossRepoDiff(vcs.CommitID(ds.Base.CommitID), headVCSRepo, vcs.CommitID(ds.Head.CommitID), diffOpt)
 		if err != nil {
 			return nil, nil, err
 		}
