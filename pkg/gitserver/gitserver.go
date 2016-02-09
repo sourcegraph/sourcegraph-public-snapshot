@@ -39,7 +39,9 @@ func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
 	if err := cmd.Run(); err != nil {
 		reply.Error = err.Error()
 	}
-	reply.ExitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	if cmd.ProcessState != nil { // is nil if process failed to start
+		reply.ExitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	}
 	reply.Stdout = stdoutBuf.Bytes()
 	reply.Stderr = stderrBuf.Bytes()
 	return nil
