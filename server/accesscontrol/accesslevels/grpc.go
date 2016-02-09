@@ -10,7 +10,7 @@ var (
 		"Accounts.Create":               "none",
 		"Accounts.Delete":               "admin",
 		"Accounts.DeleteInvite":         "admin",
-		"Accounts.Invite":               "admin",
+		"Accounts.Invite":               "none",
 		"Accounts.ListInvites":          "admin",
 		"Accounts.RequestPasswordReset": "none",
 		"Accounts.ResetPassword":        "none",
@@ -24,7 +24,7 @@ var (
 
 		"Builds.Create":         "read",
 		"Builds.CreateTasks":    "write",
-		"Builds.DequeueNext":    "write",
+		"Builds.DequeueNext":    "admin",
 		"Builds.Get":            "read",
 		"Builds.GetRepoBuild":   "read",
 		"Builds.GetTaskLog":     "read",
@@ -57,16 +57,17 @@ var (
 		"Deltas.ListFiles":           "read",
 		"Deltas.ListUnits":           "read",
 
-		"GitTransport.InfoRefs":    "read",
-		"GitTransport.ReceivePack": "write",
-		"GitTransport.UploadPack":  "read",
+		// GitTransport methods have access checks within the method body.
+		"GitTransport.InfoRefs":    "none",
+		"GitTransport.ReceivePack": "none",
+		"GitTransport.UploadPack":  "none",
 
 		"GraphUplink.Push":       "read",
 		"GraphUplink.PushEvents": "read",
 
 		"Markdown.Render": "read",
 
-		"Meta.Config": "read",
+		"Meta.Config": "none",
 		"Meta.Status": "read",
 
 		"MirroredRepoSSHKeys.Create": "write",
@@ -88,22 +89,23 @@ var (
 
 		"People.Get": "read",
 
-		"RegisteredClients.Create":              "read",
-		"RegisteredClients.Delete":              "read",
-		"RegisteredClients.Get":                 "read",
-		"RegisteredClients.GetCurrent":          "read",
-		"RegisteredClients.GetUserPermissions":  "read",
-		"RegisteredClients.List":                "admin",
-		"RegisteredClients.ListUserPermissions": "read",
-		"RegisteredClients.SetUserPermissions":  "read",
-		"RegisteredClients.Update":              "read",
+		// RegisteredClients methods have access checks within the method body.
+		"RegisteredClients.Create":              "none",
+		"RegisteredClients.Delete":              "none",
+		"RegisteredClients.Get":                 "none",
+		"RegisteredClients.GetCurrent":          "none",
+		"RegisteredClients.GetUserPermissions":  "none",
+		"RegisteredClients.List":                "none",
+		"RegisteredClients.ListUserPermissions": "none",
+		"RegisteredClients.SetUserPermissions":  "none",
+		"RegisteredClients.Update":              "none",
 
 		"RepoBadges.CountHits":    "read",
 		"RepoBadges.ListBadges":   "read",
 		"RepoBadges.ListCounters": "read",
 		"RepoBadges.RecordHit":    "read",
 
-		"Repos.ConfigureApp":                "admin",
+		"Repos.ConfigureApp":                "write",
 		"Repos.Create":                      "write",
 		"Repos.Delete":                      "write",
 		"Repos.Get":                         "read",

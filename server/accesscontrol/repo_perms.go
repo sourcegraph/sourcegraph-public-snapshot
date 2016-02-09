@@ -24,27 +24,29 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) *auth.Actor {
 		return actor
 	}
 
-	waitlistStore := store.WaitlistFromContextOrNil(ctx)
-	if waitlistStore == nil {
-		log15.Debug("Waitlist store unavailable")
-		return actor
-	}
-
-	waitlistedUser, err := waitlistStore.GetUser(ctx, int32(actor.UID))
-	if err != nil {
-		if err, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
-			log15.Debug("Error fetching waitlisted user", "uid", actor.UID, "error", err)
+	if authutil.ActiveFlags.MirrorsWaitlist != "none" {
+		waitlistStore := store.WaitlistFromContextOrNil(ctx)
+		if waitlistStore == nil {
+			log15.Debug("Waitlist store unavailable")
+			return actor
 		}
-		return actor
+
+		waitlistedUser, err := waitlistStore.GetUser(ctx, int32(actor.UID))
+		if err != nil {
+			if err, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
+				log15.Debug("Error fetching waitlisted user", "uid", actor.UID, "error", err)
+			}
+			return actor
+		}
+
+		if waitlistedUser.GrantedAt == nil {
+			// User is on the waitlist.
+			actor.MirrorsWaitlist = true
+			return actor
+		}
 	}
 
-	if waitlistedUser.GrantedAt == nil {
-		// User is on the waitlist.
-		actor.MirrorsWaitlist = true
-		return actor
-	} else {
-		actor.MirrorsNext = true
-	}
+	actor.MirrorsNext = true
 
 	// User has access to private mirrors. Save the visible repos
 	// in the context actor.
