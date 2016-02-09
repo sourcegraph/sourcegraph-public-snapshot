@@ -18,9 +18,9 @@ import (
 )
 
 // LogStartServer records a server startup event.
-func LogStartServer(ctx context.Context) {
+func LogStartServer() {
 	clientID := sourcegraphClientID
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     "StartServer",
 		DeviceID: clientID,
 		ClientID: clientID,
@@ -32,9 +32,10 @@ func LogStartServer(ctx context.Context) {
 }
 
 // LogRegisterServer records that this client registered with the mothership.
-func LogRegisterServer(ctx context.Context, clientName string) {
+func LogRegisterServer(clientName string) {
 	clientID := sourcegraphClientID
-	Log(ctx, &sourcegraph.Event{
+
+	Log(&sourcegraph.Event{
 		Type:     "RegisterServer",
 		DeviceID: clientID,
 		ClientID: clientID,
@@ -73,7 +74,7 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 		"InviteCode": inviteCode,
 	}
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:            "CreateAccount",
 		ClientID:        clientID,
 		UserID:          userID,
@@ -94,7 +95,7 @@ func LogSendInvite(ctx context.Context, email, inviteCode string, admin, write b
 		"AccessLevel": getAccessLevel(admin, write),
 	}
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:            "SendInvite",
 		ClientID:        clientID,
 		UserID:          userID,
@@ -121,7 +122,7 @@ func LogAddRepo(ctx context.Context, cloneURL, language string, mirror, private 
 		visibility = "private"
 	}
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     "AddRepo",
 		ClientID: clientID,
 		UserID:   userID,
@@ -164,7 +165,7 @@ func LogBuildRepo(ctx context.Context, result string, build *sourcegraph.Build) 
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     "BuildRepo",
 		ClientID: clientID,
 		UserID:   userID,
@@ -199,7 +200,7 @@ func LogFinishBuildTask(ctx context.Context, label string, success bool, failure
 		result = "failed"
 	}
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     eventType,
 		ClientID: clientID,
 		UserID:   userID,
@@ -216,6 +217,7 @@ func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEn
 	clientID := sourcegraphClientID
 	user := handlerutil.UserFromContext(ctx)
 	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
+	userAgent := UserAgentFromContext(ctx)
 
 	codeIntelligenceAvailable := "false"
 	if tc != nil && tc.SrclibDataVersion != nil {
@@ -231,16 +233,22 @@ func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEn
 		}
 	}
 
-	Log(ctx, &sourcegraph.Event{
-		Type:     "ViewRepoTree",
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
-		EventProperties: map[string]string{
-			"EntryType":        entryType,
-			"CodeIntelligence": codeIntelligenceAvailable,
-			"Source":           source,
-		},
+	eventProperties := map[string]string{
+		"EntryType":        entryType,
+		"CodeIntelligence": codeIntelligenceAvailable,
+		"Source":           source,
+	}
+
+	if userAgent != "" {
+		eventProperties["UserAgent"] = userAgent
+	}
+
+	Log(&sourcegraph.Event{
+		Type:            "ViewRepoTree",
+		ClientID:        clientID,
+		UserID:          userID,
+		DeviceID:        deviceID,
+		EventProperties: eventProperties,
 	})
 }
 
@@ -248,7 +256,7 @@ func LogHTTPGitPush(ctx context.Context) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     "GitPush",
 		ClientID: clientID,
 		UserID:   userID,
@@ -259,10 +267,10 @@ func LogHTTPGitPush(ctx context.Context) {
 	})
 }
 
-func LogSSHGitPush(ctx context.Context, clientID, login string) {
+func LogSSHGitPush(clientID, login string) {
 	userID, deviceID := getUserOrDeviceID(clientID, login)
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     "GitPush",
 		ClientID: clientID,
 		UserID:   userID,
@@ -277,7 +285,7 @@ func LogSearchQuery(ctx context.Context, searchType string, numResults int32) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     searchType,
 		ClientID: clientID,
 		UserID:   userID,
@@ -293,7 +301,7 @@ func LogViewDef(ctx context.Context, eventType string) {
 	user := handlerutil.UserFromContext(ctx)
 	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     eventType,
 		ClientID: clientID,
 		UserID:   userID,
@@ -305,7 +313,7 @@ func LogCreateChangeset(ctx context.Context) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
-	Log(ctx, &sourcegraph.Event{
+	Log(&sourcegraph.Event{
 		Type:     "CreateChangeset",
 		ClientID: clientID,
 		UserID:   userID,
@@ -321,12 +329,20 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, route string) 
 
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
+	userAgent := UserAgentFromContext(ctx)
 
-	Log(ctx, &sourcegraph.Event{
-		Type:     eventType,
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
+	var eventProperties map[string]string
+	if userAgent != "" {
+		eventProperties = make(map[string]string)
+		eventProperties["UserAgent"] = userAgent
+	}
+
+	Log(&sourcegraph.Event{
+		Type:            eventType,
+		ClientID:        clientID,
+		UserID:          userID,
+		DeviceID:        deviceID,
+		EventProperties: eventProperties,
 	})
 }
 
@@ -342,12 +358,20 @@ func LogEvent(ctx context.Context, event string) {
 	login := auth.ActorFromContext(ctx).Login
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, login)
+	userAgent := UserAgentFromContext(ctx)
 
-	Log(ctx, &sourcegraph.Event{
-		Type:     event,
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
+	var eventProperties map[string]string
+	if userAgent != "" {
+		eventProperties = make(map[string]string)
+		eventProperties["UserAgent"] = userAgent
+	}
+
+	Log(&sourcegraph.Event{
+		Type:            event,
+		ClientID:        clientID,
+		UserID:          userID,
+		DeviceID:        deviceID,
+		EventProperties: eventProperties,
 	})
 }
 
