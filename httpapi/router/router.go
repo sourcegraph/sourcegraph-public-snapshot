@@ -30,6 +30,7 @@ const (
 	SearchComplete    = "search.complete"
 	SearchSuggestions = "search.suggestions"
 	SrclibImport      = "srclib.import"
+	SrclibValidate    = "srclib.validate"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -69,6 +70,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/.defs").Methods("GET").Name(Defs)
 
 	repoRev.Path("/.srclib-import").Methods("PUT").Name(SrclibImport)
+	repoRev.Path("/.srclib-validate").Methods("PUT").Name(SrclibValidate)
 
 	// Old paths we used to support. Explicitly handle them to avoid bad
 	// signal in no route logs

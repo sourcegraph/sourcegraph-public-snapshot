@@ -1,4 +1,4 @@
-package metricutil
+package util
 
 import (
 	"net/http"
@@ -28,7 +28,7 @@ func TestGetTrackedRepo(t *testing.T) {
 	}
 	for _, c := range cases {
 		r := http.Request{URL: &url.URL{Path: c.Path}}
-		got := getTrackedRepo(&r)
+		got := GetTrackedRepo(&r)
 		if got != c.TrackedRepo {
 			t.Errorf("getTrackedRepo(%#v) == %#v != %#v", c.Path, got, c.TrackedRepo)
 		}
