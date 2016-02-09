@@ -8,12 +8,13 @@
 	<div class="panel-heading">Profile</div>
 	<div class="panel-body">
 		<form role="form" class="person-profile" method="post">
-			{{if .User.AvatarURL}}
 			<div class="form-group">
 				<label for="AvatarURL">Profile picture</label>
-				<img src="{{.User.AvatarURL}}" class="avatar img-rounded">
+				<div class="avatar">
+					<img src="{{.User.AvatarURL}}" class="avatar img-rounded">
+					<button type="button" class="btn btn-default" data-toggle="modal" data-target="#set-via-gravatar-modal">Set via Gravatar</button>
+				</div>
 			</div>
-			{{end}}
 			<div class="form-group">
 				<label for="Name">Name</label>
 				<input type="text" class="form-control" id="Name" name="Name" value="{{.User.Name}}" placeholder="Not set">
@@ -41,6 +42,29 @@
 			<input type="submit" value="Save" class="btn btn-sgblue">
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		</form>
+	</div>
+</div>
+
+{{/* Set profile picture via Gravatar Modal. */}}
+<div class="modal" id="set-via-gravatar-modal" tabindex="-1" role="dialog" aria-labelledby="set-via-gravatar-label">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="set-via-gravatar-label">Set via Gravatar</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-inline" action="profile/avatar" method="post">
+					<p>Enter your <a href="https://gravatar.com/" target="_blank">Gravatar account</a> email to set your profile picture.</p>
+					<input type="email" class="form-control" name="GravatarEmail" id="GravatarEmail" placeholder="Gravatar Email">
+					<button type="submit" class="btn btn-default">Update profile picture</button>
+					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
 	</div>
 </div>
 {{end}}

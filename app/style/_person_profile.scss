@@ -1,7 +1,9 @@
 .person-profile {
 	margin-bottom: 15px;
-	img.avatar {
-		max-width: 110px;
+	.avatar {
+		img {
+			max-width: 110px;
+		}
 	}
 
 	.person-info {
