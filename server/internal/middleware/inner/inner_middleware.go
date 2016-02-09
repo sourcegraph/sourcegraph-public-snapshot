@@ -102,7 +102,7 @@ func (s wrappedGitTransport) InfoRefs(ctx context.Context, param *gitpb.InfoRefs
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "GitTransport.InfoRefs", repoURI)
+	err = s.c.Authenticate(ctx, "none", "GitTransport.InfoRefs", repoURI)
 	if err != nil {
 		return
 	}
@@ -126,7 +126,7 @@ func (s wrappedGitTransport) ReceivePack(ctx context.Context, param *gitpb.Recei
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "write", "GitTransport.ReceivePack", repoURI)
+	err = s.c.Authenticate(ctx, "none", "GitTransport.ReceivePack", repoURI)
 	if err != nil {
 		return
 	}
@@ -150,7 +150,7 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.Upload
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "GitTransport.UploadPack", repoURI)
+	err = s.c.Authenticate(ctx, "none", "GitTransport.UploadPack", repoURI)
 	if err != nil {
 		return
 	}
@@ -326,7 +326,7 @@ func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountI
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "admin", "Accounts.Invite", repoURI)
+	err = s.c.Authenticate(ctx, "none", "Accounts.Invite", repoURI)
 	if err != nil {
 		return
 	}
@@ -650,6 +650,10 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 
 	var repoURI string
 
+	if param != nil {
+		repoURI = param.Repo
+	}
+
 	err = s.c.Authenticate(ctx, "read", "Builds.List", repoURI)
 	if err != nil {
 		return
@@ -900,7 +904,7 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "write", "Builds.DequeueNext", repoURI)
+	err = s.c.Authenticate(ctx, "admin", "Builds.DequeueNext", repoURI)
 	if err != nil {
 		return
 	}
@@ -983,6 +987,10 @@ func (s wrappedChangesets) List(ctx context.Context, param *sourcegraph.Changese
 	}()
 
 	var repoURI string
+
+	if param != nil {
+		repoURI = param.Repo
+	}
 
 	err = s.c.Authenticate(ctx, "read", "Changesets.List", repoURI)
 	if err != nil {
@@ -1732,7 +1740,7 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "Meta.Config", repoURI)
+	err = s.c.Authenticate(ctx, "none", "Meta.Config", repoURI)
 	if err != nil {
 		return
 	}
@@ -2070,7 +2078,7 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, param *sourcegraph.Re
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Get", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.Get", repoURI)
 	if err != nil {
 		return
 	}
@@ -2094,7 +2102,7 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.GetCurrent", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.GetCurrent", repoURI)
 	if err != nil {
 		return
 	}
@@ -2118,7 +2126,7 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Create", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.Create", repoURI)
 	if err != nil {
 		return
 	}
@@ -2142,7 +2150,7 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Update", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.Update", repoURI)
 	if err != nil {
 		return
 	}
@@ -2166,7 +2174,7 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.Delete", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.Delete", repoURI)
 	if err != nil {
 		return
 	}
@@ -2190,7 +2198,7 @@ func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.R
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "admin", "RegisteredClients.List", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.List", repoURI)
 	if err != nil {
 		return
 	}
@@ -2214,7 +2222,7 @@ func (s wrappedRegisteredClients) GetUserPermissions(ctx context.Context, param 
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.GetUserPermissions", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.GetUserPermissions", repoURI)
 	if err != nil {
 		return
 	}
@@ -2238,7 +2246,7 @@ func (s wrappedRegisteredClients) SetUserPermissions(ctx context.Context, param 
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.SetUserPermissions", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.SetUserPermissions", repoURI)
 	if err != nil {
 		return
 	}
@@ -2262,7 +2270,7 @@ func (s wrappedRegisteredClients) ListUserPermissions(ctx context.Context, param
 
 	var repoURI string
 
-	err = s.c.Authenticate(ctx, "read", "RegisteredClients.ListUserPermissions", repoURI)
+	err = s.c.Authenticate(ctx, "none", "RegisteredClients.ListUserPermissions", repoURI)
 	if err != nil {
 		return
 	}
@@ -3100,7 +3108,7 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoC
 		repoURI = param.Repo.URI
 	}
 
-	err = s.c.Authenticate(ctx, "admin", "Repos.ConfigureApp", repoURI)
+	err = s.c.Authenticate(ctx, "write", "Repos.ConfigureApp", repoURI)
 	if err != nil {
 		return
 	}
@@ -3256,6 +3264,10 @@ func (s wrappedStorage) Get(ctx context.Context, param *sourcegraph.StorageKey) 
 
 	var repoURI string
 
+	if param != nil {
+		repoURI = param.Bucket.Repo
+	}
+
 	err = s.c.Authenticate(ctx, "read", "Storage.Get", repoURI)
 	if err != nil {
 		return
@@ -3279,6 +3291,10 @@ func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp
 	}()
 
 	var repoURI string
+
+	if param != nil {
+		repoURI = param.Key.Bucket.Repo
+	}
 
 	err = s.c.Authenticate(ctx, "write", "Storage.Put", repoURI)
 	if err != nil {
@@ -3304,6 +3320,10 @@ func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.S
 
 	var repoURI string
 
+	if param != nil {
+		repoURI = param.Key.Bucket.Repo
+	}
+
 	err = s.c.Authenticate(ctx, "write", "Storage.PutNoOverwrite", repoURI)
 	if err != nil {
 		return
@@ -3327,6 +3347,10 @@ func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKe
 	}()
 
 	var repoURI string
+
+	if param != nil {
+		repoURI = param.Bucket.Repo
+	}
 
 	err = s.c.Authenticate(ctx, "write", "Storage.Delete", repoURI)
 	if err != nil {
@@ -3352,6 +3376,10 @@ func (s wrappedStorage) Exists(ctx context.Context, param *sourcegraph.StorageKe
 
 	var repoURI string
 
+	if param != nil {
+		repoURI = param.Bucket.Repo
+	}
+
 	err = s.c.Authenticate(ctx, "read", "Storage.Exists", repoURI)
 	if err != nil {
 		return
@@ -3375,6 +3403,10 @@ func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey)
 	}()
 
 	var repoURI string
+
+	if param != nil {
+		repoURI = param.Bucket.Repo
+	}
 
 	err = s.c.Authenticate(ctx, "read", "Storage.List", repoURI)
 	if err != nil {
