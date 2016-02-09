@@ -172,6 +172,7 @@ func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
 				--retry 3 \
 				--retry-delay 2 \
 				-XPUT \
+				-H 'Content-Type: application/json' \
 				-H 'Content-Transfer-Encoding: binary' \
 				--data-binary @- \
 				$SOURCEGRAPH_VALIDATE_URL`,
