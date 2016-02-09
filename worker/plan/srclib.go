@@ -178,6 +178,7 @@ func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
 				$SOURCEGRAPH_VALIDATE_URL`,
 				"echo Done publishing",
 			},
+			AllowFailure: false,
 		},
 	}
 }

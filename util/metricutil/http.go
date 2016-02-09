@@ -2,13 +2,13 @@ package metricutil
 
 import (
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/inconshreveable/log15.v2"
+	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
@@ -60,25 +60,13 @@ func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFu
 		"route":  name,
 		"method": strings.ToLower(r.Method),
 		"code":   strconv.Itoa(code),
-		"repo":   getTrackedRepo(r),
+		"repo":   util.GetTrackedRepo(r),
 	}
 	requestCount.With(labels).Inc()
 	requestDuration.With(labels).Observe(duration.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 	log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "duration", duration, "code", code)
-}
-
-var trackedRepoRe = regexp.MustCompile(`/(github.com/kubernetes/kubernetes)\b`)
-
-// getTrackedRepo guesses which repo a request is for. It only looks at a
-// certain subset of repos for its guess.
-func getTrackedRepo(r *http.Request) string {
-	m := trackedRepoRe.FindStringSubmatch(r.URL.Path)
-	if len(m) == 0 {
-		return "unknown"
-	}
-	return m[1]
 }
 
 // ResponseWriterStatusIntercept implements the http.ResponseWriter interface

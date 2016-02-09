@@ -54,6 +54,9 @@ func TestSrclibValidate(t *testing.T) {
 		t.Fatalf("Expected success, got %d", resp.StatusCode)
 	}
 
-	// prometheus should get updated (can this be mocked?)
+	if !*calledReposGet {
+		t.Fatal("Repos.Get should have been called and was not")
+	}
+
 	// TODO(poler) mocks for prometheus?
 }

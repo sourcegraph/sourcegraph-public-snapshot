@@ -2,11 +2,13 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -21,24 +23,22 @@ type BuildWarning struct {
 	Warning   string
 }
 
-var validateCounter *prometheus.CounterVec
+var validateCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_srclib_validate",
+	Help: "Srclib validate results, sanity checks the success/failure of srclib builds.",
+},
+	[]string{"status", "repo"},
+)
 
 func init() {
-	validateCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_srclib_validate",
-		Help: "Srclib validate results, sanity checks the success/failure of srclib builds.",
-	},
-		[]string{"repo_build_success"},
-	)
-
 	prometheus.MustRegister(validateCounter)
 }
 
-func serveSrclibCoverage(w http.ResponseWriter, r *http.Request) error {
+func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 
 	if strings.ToLower(r.Header.Get("content-type")) != "application/json" {
-		http.Error(w, "requires Content-Type: application/json", http.StatusBadRequest)
-		return nil
+		w.WriteHeader(http.StatusBadRequest)
+		return errors.New("requires Content-Type: application/json")
 	}
 
 	cl := handlerutil.APIClient(r)
@@ -56,13 +56,15 @@ func serveSrclibCoverage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	log15.Info("Srclib Validate Output", "repoRev", repoRev, "srclib validate output", val)
+	log15.Debug("Srclib Validate Output", "repoRev", repoRev, "srclib validate output", val)
+
+	trackedRepo := util.GetTrackedRepo(r)
 
 	var counter prometheus.Counter
 	if len(val.Warnings) == 0 {
-		counter, err = validateCounter.GetMetricWithLabelValues("success")
+		counter, err = validateCounter.GetMetricWithLabelValues("success", trackedRepo)
 	} else {
-		counter, err = validateCounter.GetMetricWithLabelValues("failure")
+		counter, err = validateCounter.GetMetricWithLabelValues("failure", trackedRepo)
 	}
 	if err != nil {
 		return err

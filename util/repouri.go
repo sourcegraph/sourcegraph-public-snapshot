@@ -1,7 +1,9 @@
 package util
 
 import (
+	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -12,4 +14,16 @@ func RepoURIHost(repoURI string) string {
 		return ""
 	}
 	return strings.ToLower(u.Host)
+}
+
+var trackedRepoRe = regexp.MustCompile(`/(github.com/kubernetes/kubernetes)\b`)
+
+// getTrackedRepo guesses which repo a request is for. It only looks at a
+// certain subset of repos for its guess.
+func GetTrackedRepo(r *http.Request) string {
+	m := trackedRepoRe.FindStringSubmatch(r.URL.Path)
+	if len(m) == 0 {
+		return "unknown"
+	}
+	return m[1]
 }
