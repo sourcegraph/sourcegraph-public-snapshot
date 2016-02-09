@@ -46,6 +46,9 @@ func RepoURIExpr(arg ast.Expr, argType ast.Expr) ast.Expr {
 				var argField ast.Expr
 				if len(field.Names) > 0 {
 					argField = &ast.SelectorExpr{X: arg, Sel: field.Names[0]}
+					if x := AstString(field.Type); x == "string" && field.Names[0].Name == "Repo" {
+						return argField
+					}
 				} else {
 					argField = arg
 				}
