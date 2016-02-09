@@ -177,6 +177,7 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 	// Clone the repo locally.
 	cmd := exec.Command("git", "clone", authedCloneURL)
 	cmd.Dir = tmpDir
+	prepGitCommand(cmd)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
@@ -195,14 +196,16 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 		}
 		cmd = exec.Command("git", "add", path)
 		cmd.Dir = repoDir
+		prepGitCommand(cmd)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 		}
 	}
 
 	cmd = exec.Command("git", "commit", "-m", "hello", "--author", "a <a@a.com>", "--date", "2006-01-02T15:04:05Z")
-	//cmd.Env = append(os.Environ(), "GIT_COMMITTER_NAME=a", "GIT_COMMITTER_EMAIL=a@a.com", "GIT_COMMITTER_DATE=2006-01-02T15:04:05Z")
+	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME=a", "GIT_COMMITTER_EMAIL=a@a.com", "GIT_COMMITTER_DATE=2006-01-02T15:04:05Z")
 	cmd.Dir = repoDir
+	prepGitCommand(cmd)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
@@ -210,6 +213,7 @@ func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files m
 	// Push.
 	cmd = exec.Command("git", "push", "origin", "master")
 	cmd.Dir = repoDir
+	prepGitCommand(cmd)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
@@ -247,8 +251,9 @@ func cloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 	cmd := exec.Command("git", "clone")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Args = append(cmd.Args, cloneURL)
-	cmd.Env = append(os.Environ(), "GIT_ASKPASS=true") // disable password prompt
+	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	cmd.Dir = dir
+	prepGitCommand(cmd)
 	if key != nil {
 		// Attempting to clone over SSH.
 		sshDir := filepath.Join(dir, ".ssh")
@@ -285,10 +290,6 @@ func cloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 			return err
 		}
 		cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SSH=%s", gitSSH))
-	} else {
-		// Attempting to clone over HTTP(s).
-		ClearCachedCredentials(t, cloneURL)
-		defer ClearCachedCredentials(t, cloneURL)
 	}
 
 	var buf bytes.Buffer
@@ -320,4 +321,14 @@ func cloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 		return err
 	}
 	return nil
+}
+
+// prepGitCommand adds environment variables for running a git command.
+func prepGitCommand(cmd *exec.Cmd) *exec.Cmd {
+	// Avoid using git's system/global configurations.
+	cmd.Env = append(cmd.Env, "GIT_CONFIG_NOSYSTEM=1", "HOME=/doesnotexist", "XDG_CONFIG_HOME=/doesnotexist")
+	// Debugging.
+	//cmd.Env = append(cmd.Env, "GIT_TRACE=1")
+	//cmd.Env = append(cmd.Env, "GIT_CURL_VERBOSE=1")
+	return cmd
 }
