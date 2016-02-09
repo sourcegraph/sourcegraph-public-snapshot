@@ -45,10 +45,6 @@ func init() {
 }
 
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "MirrorRepos.RefreshVCS", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	r, err := store.ReposFromContext(ctx).Get(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err

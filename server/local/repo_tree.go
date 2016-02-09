@@ -13,7 +13,6 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -26,10 +25,6 @@ type repoTree struct{}
 var _ sourcegraph.RepoTreeServer = (*repoTree)(nil)
 
 func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoTree.Get", op.Entry.RepoRev.URI); err != nil {
-		return nil, err
-	}
-
 	entrySpec := op.Entry
 	opt := op.Opt
 	if opt == nil {
@@ -142,10 +137,6 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 }
 
 func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoTree.List", op.Rev.URI); err != nil {
-		return nil, err
-	}
-
 	repoRevSpec := op.Rev
 
 	cacheOnCommitID(ctx, repoRevSpec.CommitID)
@@ -175,10 +166,6 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 }
 
 func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoTree.List", op.Rev.URI); err != nil {
-		return nil, err
-	}
-
 	repoRev := op.Rev
 	opt := op.Opt
 	if opt == nil || strings.TrimSpace(opt.Query) == "" {

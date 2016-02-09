@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -20,10 +19,6 @@ type mirroredRepoSSHKeys struct{}
 var _ sourcegraph.MirroredRepoSSHKeysServer = (*mirroredRepoSSHKeys)(nil)
 
 func (s *mirroredRepoSSHKeys) Create(ctx context.Context, op *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Create", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	repo := op.Repo
 	keyPEM := op.Key.PEM
 
@@ -45,10 +40,6 @@ func (s *mirroredRepoSSHKeys) Create(ctx context.Context, op *sourcegraph.Mirror
 }
 
 func (s *mirroredRepoSSHKeys) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "MirroredRepoSSHKeys.Get", repo.URI); err != nil {
-		return nil, err
-	}
-
 	store := store.MirroredRepoSSHKeysFromContextOrNil(ctx)
 	if store == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
@@ -65,10 +56,6 @@ func (s *mirroredRepoSSHKeys) Get(ctx context.Context, repo *sourcegraph.RepoSpe
 }
 
 func (s *mirroredRepoSSHKeys) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Delete", repo.URI); err != nil {
-		return nil, err
-	}
-
 	store := store.MirroredRepoSSHKeysFromContextOrNil(ctx)
 	if store == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")

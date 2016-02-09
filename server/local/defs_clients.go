@@ -6,15 +6,10 @@ import (
 	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func (s *defs) ListClients(ctx context.Context, op *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListClients", op.Def.Repo); err != nil {
-		return nil, err
-	}
-
 	def := op.Def
 
 	refs, err := svc.Defs(ctx).ListRefs(ctx, &sourcegraph.DefsListRefsOp{

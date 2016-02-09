@@ -14,7 +14,6 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -25,9 +24,6 @@ type units struct{}
 var _ sourcegraph.UnitsServer = (*units)(nil)
 
 func (s *units) Get(ctx context.Context, unitSpec *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Units.Get", unitSpec.RepoSpec.URI); err != nil {
-		return nil, err
-	}
 	if unitSpec.RepoSpec.URI == "" || unitSpec.CommitID == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "UnitSpec URI and CommitID must be set")
 	}

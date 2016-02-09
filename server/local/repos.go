@@ -45,9 +45,6 @@ type repos struct{}
 var _ sourcegraph.ReposServer = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", repo.URI); err != nil {
-		return nil, err
-	}
 	r, err := s.get(ctx, repo.URI)
 	if err != nil {
 		return nil, err
@@ -124,10 +121,6 @@ func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Re
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
-		return nil, err
-	}
-
 	if _, err := s.get(ctx, op.URI); err == nil {
 		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
 	}
@@ -176,10 +169,6 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	ts := time.Now()
 	update := &store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
@@ -189,10 +178,6 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo.URI); err != nil {
-		return nil, err
-	}
-
 	if err := store.ReposFromContextOrNil(ctx).Delete(ctx, repo.URI); err != nil {
 		return nil, err
 	}
@@ -264,9 +249,6 @@ func (s *repos) defaultBranch(ctx context.Context, repoURI string) (string, erro
 }
 
 func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetReadme", repoRev.URI); err != nil {
-		return nil, err
-	}
 	cacheOnCommitID(ctx, repoRev.CommitID)
 
 	if repoRev.URI == "" {
@@ -313,9 +295,6 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetConfig", repo.URI); err != nil {
-		return nil, err
-	}
 	repoConfigsStore := store.RepoConfigsFromContextOrNil(ctx)
 	if repoConfigsStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "RepoConfigs is not implemented")
@@ -332,14 +311,7 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 }
 
 func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.ConfigureApp", op.Repo.URI); err != nil {
-		return nil, err
-	}
 	defer noCache(ctx)
-
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Repos.ConfigureApp"); err != nil {
-		return nil, err
-	}
 
 	store := store.RepoConfigsFromContextOrNil(ctx)
 	if store == nil {
@@ -385,9 +357,6 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 }
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetInventory", repoRev.URI); err != nil {
-		return nil, err
-	}
 	if localcli.Flags.DisableRepoInventory {
 		return nil, grpc.Errorf(codes.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
 	}

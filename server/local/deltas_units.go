@@ -18,12 +18,12 @@ func (s *deltas) ListUnits(ctx context.Context, op *sourcegraph.DeltasListUnitsO
 	ds := op.Ds
 	opt := op.Opt
 
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListUnits", ds.Base.URI); err != nil {
-		return nil, err
-	}
-
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListUnits", ds.Head.URI); err != nil {
-		return nil, err
+	// The middleware auth wrapper will verify that the ctx has read access to the base repo.
+	// If head repo is different from base repo, check that the ctx has access to the head repo.
+	if ds.Base.URI != ds.Head.URI {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListUnits", ds.Head.URI); err != nil {
+			return nil, err
+		}
 	}
 
 	if opt == nil {

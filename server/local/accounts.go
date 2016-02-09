@@ -317,10 +317,6 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
 	defer noCache(ctx)
 
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.ListInvites"); err != nil {
-		return nil, err
-	}
-
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "invites")
@@ -336,10 +332,6 @@ func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegra
 
 func (s *accounts) DeleteInvite(ctx context.Context, inviteSpec *sourcegraph.InviteSpec) (*pbtypes.Void, error) {
 	defer noCache(ctx)
-
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.DeleteInvite"); err != nil {
-		return nil, err
-	}
 
 	invitesStore := store.InvitesFromContextOrNil(ctx)
 	if invitesStore == nil {
@@ -464,10 +456,6 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 
 func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
 	defer noCache(ctx)
-
-	if err := verifyAdminUser(ctx, "Accounts.Delete"); err != nil {
-		return nil, err
-	}
 
 	usersStore := store.UsersFromContextOrNil(ctx)
 	if usersStore == nil {

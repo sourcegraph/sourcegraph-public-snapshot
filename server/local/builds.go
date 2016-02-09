@@ -27,19 +27,11 @@ type builds struct{}
 var _ sourcegraph.BuildsServer = (*builds)(nil)
 
 func (s *builds) Get(ctx context.Context, build *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Get", build.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	veryShortCache(ctx)
 	return store.BuildsFromContext(ctx).Get(ctx, *build)
 }
 
 func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.List", opt.Repo); err != nil {
-		return nil, err
-	}
-
 	builds, err := store.BuildsFromContext(ctx).List(ctx, opt)
 	if err != nil {
 		return nil, err
@@ -64,10 +56,6 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) (*
 }
 
 func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Create", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	if len(op.CommitID) != 40 {
@@ -125,10 +113,6 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 }
 
 func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Update", op.Build.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	b, err := store.BuildsFromContext(ctx).Get(ctx, op.Build)
@@ -333,10 +317,6 @@ func updateRepoStatusForBuild(ctx context.Context, b *sourcegraph.Build) error {
 }
 
 func (s *builds) ListBuildTasks(ctx context.Context, op *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.ListBuildTasks", op.Build.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	tasks, err := store.BuildsFromContext(ctx).ListBuildTasks(ctx, op.Build, op.Opt)
 	if err != nil {
 		return nil, err
@@ -345,10 +325,6 @@ func (s *builds) ListBuildTasks(ctx context.Context, op *sourcegraph.BuildsListB
 }
 
 func (s *builds) CreateTasks(ctx context.Context, op *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.CreateTasks", op.Build.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	// Validate.
@@ -376,10 +352,6 @@ func (s *builds) CreateTasks(ctx context.Context, op *sourcegraph.BuildsCreateTa
 }
 
 func (s *builds) UpdateTask(ctx context.Context, op *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.UpdateTask", op.Task.Build.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	t, err := store.BuildsFromContext(ctx).GetTask(ctx, op.Task)
@@ -420,10 +392,6 @@ func (s *builds) UpdateTask(ctx context.Context, op *sourcegraph.BuildsUpdateTas
 // the log entry search, which speeds up the operation significantly
 // for the Papertrail backend.
 func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetTaskLog", op.Task.Build.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	task := op.Task
 	opt := op.Opt
 
@@ -460,10 +428,6 @@ func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLo
 }
 
 func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.DequeueNext", ""); err != nil {
-		return nil, err
-	}
-
 	nextBuild, err := store.BuildsFromContext(ctx).DequeueNext(ctx)
 	if err != nil {
 		return nil, err

@@ -12,7 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -26,10 +25,6 @@ var _ sourcegraph.ChangesetsServer = (*changesets)(nil)
 type changesets struct{}
 
 func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Create", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	if err := store.ChangesetsFromContext(ctx).Create(ctx, op.Repo.URI, op.Changeset); err != nil {
@@ -50,17 +45,10 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 }
 
 func (s *changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.Get", op.Spec.Repo.URI); err != nil {
-		return nil, err
-	}
 	return store.ChangesetsFromContext(ctx).Get(ctx, op)
 }
 
 func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.CreateReview", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	review, err := store.ChangesetsFromContext(ctx).CreateReview(ctx, op.Repo.URI, op.ChangesetID, op.Review)
@@ -79,18 +67,10 @@ func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.Changeset
 }
 
 func (s *changesets) ListReviews(ctx context.Context, op *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.ListReviews", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	return store.ChangesetsFromContext(ctx).ListReviews(ctx, op.Repo.URI, op.ChangesetID)
 }
 
 func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Merge", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{
 		URI: op.Repo.URI,
 	})
@@ -153,17 +133,9 @@ func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp
 }
 
 func (s *changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.List", op.Repo); err != nil {
-		return nil, err
-	}
-
 	return store.ChangesetsFromContext(ctx).List(ctx, op)
 }
 
 func (s *changesets) ListEvents(ctx context.Context, spec *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.ListEvents", spec.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	return store.ChangesetsFromContext(ctx).ListEvents(ctx, spec)
 }

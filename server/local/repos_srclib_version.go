@@ -11,16 +11,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetSrclibDataVersionForPath", entry.RepoRev.URI); err != nil {
-		return nil, err
-	}
 	wasAbs := isAbsCommitID(entry.RepoRev.CommitID)
 
 	if err := s.resolveRepoRev(ctx, &entry.RepoRev); err != nil {

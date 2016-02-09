@@ -14,15 +14,10 @@ import (
 
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Update", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	event, err := store.ChangesetsFromContext(ctx).Update(ctx, &store.ChangesetUpdateOp{Op: op})
@@ -35,10 +30,6 @@ func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 }
 
 func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.UpdateAffected", op.Repo.URI); err != nil {
-		return nil, err
-	}
-
 	defer noCache(ctx)
 
 	if op == nil {
