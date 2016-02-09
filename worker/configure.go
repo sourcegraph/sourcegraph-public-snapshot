@@ -147,6 +147,13 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	}
 	b.SrclibImportURL = srclibImportURL
 
+	// SrclibValidateURL
+	srclibValidateURL, err := getSrclibValidateURL(ctx, repoRev, *containerAppURL)
+	if err != nil {
+		return nil, err
+	}
+	b.SrclibValidateURL = srclibValidateURL
+
 	// Inventory
 	b.Inventory = func(ctx context.Context) (*inventory.Inventory, error) {
 		return cl.Repos.GetInventory(ctx, &repoRev)
@@ -223,6 +230,16 @@ func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, co
 	srclibImportURL.Path = "/.api" + srclibImportURL.Path
 
 	return containerAppURL.ResolveReference(srclibImportURL), nil
+}
+
+func getSrclibValidateURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
+	srclibValidateURL, err := httpapirouter.URL(httpapirouter.SrclibValidate, repoRev.RouteVars())
+	if err != nil {
+		return nil, err
+	}
+	srclibValidateURL.Path = "/.api" + srclibValidateURL.Path
+
+	return containerAppURL.ResolveReference(srclibValidateURL), nil
 }
 
 // getHostNetrcEntry creates a netrc entry that authorizes access to

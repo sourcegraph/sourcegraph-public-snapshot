@@ -12,7 +12,7 @@ import (
 
 // configureSrclib modifies the Drone config to run srclib analysis
 // during the CI build.
-func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []matrix.Axis, srclibImportURL *url.URL) error {
+func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []matrix.Axis, srclibImportURL, srclibValidateURL *url.URL) error {
 	var srclibExplicitlyConfigured bool
 	for _, step := range config.Build {
 		// Rough heuristic for now: does the Docker image name contain
@@ -56,6 +56,12 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	// srclib analyzer already (or one was explicitly configured).
 	if srclibImportURL != nil && usingSrclib {
 		if err := insertSrclibBuild(config, axes, srclibImportStep(srclibImportURL)); err != nil {
+			return err
+		}
+	}
+
+	if srclibValidateURL != nil && usingSrclib {
+		if err := insertSrclibBuild(config, axes, srclibValidateStep(srclibValidateURL)); err != nil {
 			return err
 		}
 	}
@@ -118,9 +124,9 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image: "sourcegraph/srclib-import@sha256:92fd741b7869c7259bf5d9b5b86b3fab8c5941772db68034816f500eb03ba160",
-				Environment: droneyaml.MapEqualSlice{
+				Environment: droneyaml.MapEqualSlice([]string{
 					"SOURCEGRAPH_IMPORT_URL=" + importURL.String(),
-				},
+				}),
 			},
 			Commands: []string{
 				"echo Importing to $SOURCEGRAPH_IMPORT_URL",
@@ -141,6 +147,35 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 				--data-binary @- \
 				$SOURCEGRAPH_IMPORT_URL`,
 				"echo Done importing",
+			},
+		},
+	}
+}
+
+func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
+	return droneyaml.BuildItem{
+		Key: "srclib validate",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: "testing123",
+				Environment: droneyaml.MapEqualSlice([]string{
+					"SOURCEGRAPH_VALIDATE_URL=" + validateURL.String(),
+				}),
+			},
+			Commands: []string{
+				"echo Publishing srclib validate stats",
+				`srclib validate | /usr/bin/curl \
+				--silent --show-error \
+				--netrc \
+				--max-time 300 \
+				--no-keepalive \
+				--retry 3 \
+				--retry-delay 2 \
+				-XPUT \
+				-H 'Content-Transfer-Encoding: binary' \
+				--data-binary @- \
+				$SOURCEGRAPH_VALIDATE_URL`,
+				"echo Done publishing",
 			},
 		},
 	}
