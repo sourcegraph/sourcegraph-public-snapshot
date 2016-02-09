@@ -157,7 +157,7 @@ func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
 		Key: "srclib validate",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "testing123",
+				Image: "srclib/drone-srclib-go",
 				Environment: droneyaml.MapEqualSlice([]string{
 					"SOURCEGRAPH_VALIDATE_URL=" + validateURL.String(),
 				}),
