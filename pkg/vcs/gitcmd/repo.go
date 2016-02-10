@@ -42,11 +42,6 @@ type Repository struct {
 	editLock sync.RWMutex // protects ops that change repository data
 }
 
-func (r *Repository) Close() error {
-	// nothing to do
-	return nil
-}
-
 func (r *Repository) RepoDir() string {
 	return r.Dir
 }
@@ -78,7 +73,7 @@ type CloneOpt struct {
 	vcs.RemoteOpts // configures communication with the remote repository
 }
 
-func Clone(url, dir string, opt CloneOpt) (*Repository, error) {
+func Clone(url, dir string, opt CloneOpt) error {
 	args := []string{"clone"}
 	if opt.Bare {
 		args = append(args, "--bare")
@@ -99,7 +94,7 @@ func Clone(url, dir string, opt CloneOpt) (*Repository, error) {
 			}
 		}()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		defer os.Remove(gitSSHWrapper)
 		if gitSSHWrapperDir != "" {
@@ -114,7 +109,7 @@ func Clone(url, dir string, opt CloneOpt) (*Repository, error) {
 
 		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.Pass)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		defer os.Remove(gitPassHelper)
 		if gitPassHelperDir != "" {
@@ -128,9 +123,9 @@ func Clone(url, dir string, opt CloneOpt) (*Repository, error) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("exec `git clone` failed: %s. Output was:\n\n%s", err, out)
+		return fmt.Errorf("exec `git clone` failed: %s. Output was:\n\n%s", err, out)
 	}
-	return Open(dir)
+	return nil
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could

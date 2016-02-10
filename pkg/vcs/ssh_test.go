@@ -42,12 +42,11 @@ func TestRepository_Clone_ssh(t *testing.T) {
 	// TODO(sqs): test hg ssh support when it's implemented
 	tests := map[string]struct {
 		repoDir      string
-		cloner       func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error)
+		cloner       func(url, dir string, opt gitcmd.CloneOpt) error
 		wantCommitID vcs.CommitID // commit ID that tag t0 refers to
 	}{
 		"git cmd": {
 			repoDir:      initGitRepository(t, gitCommands...),
-			cloner:       func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error) { return gitcmd.Clone(url, dir, opt) },
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
 	}
@@ -65,9 +64,13 @@ func TestRepository_Clone_ssh(t *testing.T) {
 			gitURL := s.GitURL + "/" + filepath.Base(test.repoDir)
 			cloneDir := makeTmpDir(t, "ssh-clone")
 			t.Logf("Cloning from %s to %s", gitURL, cloneDir)
-			r, err := test.cloner(gitURL, cloneDir, opt)
+			if err := gitcmd.Clone(gitURL, cloneDir, opt); err != nil {
+				t.Fatalf("%s: Clone: %s", label, err)
+			}
+
+			r, err := gitcmd.Open(cloneDir)
 			if err != nil {
-				t.Fatalf("%s: test.cloner: %s", label, err)
+				t.Fatalf("%s: Open: %s", label, err)
 			}
 
 			tags, err := r.Tags()
@@ -121,8 +124,6 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 	}{
 		"git cmd": { // gitcmd
 			vcs: "git", baseDir: initGitRepository(t, gitCommands...), headDir: makeTmpDir(t, "git-update-ssh"),
-			opener:  func(dir string) (vcs.Repository, error) { return gitcmd.Open(dir) },
-			cloner:  func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error) { return gitcmd.Clone(url, dir, opt) },
 			newCmds: []string{"git tag t0", "git checkout -b b0"},
 			wantUpdateResult: &vcs.UpdateResult{
 				Changes: []vcs.Change{
@@ -140,15 +141,14 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			baseURL := s.GitURL + "/" + filepath.Base(test.baseDir)
 			t.Logf("Cloning from %s to %s", baseURL, test.headDir)
-			_, err := test.cloner(baseURL, test.headDir, gitcmd.CloneOpt{Bare: true, Mirror: true, RemoteOpts: remoteOpts})
-			if err != nil {
+			if err := gitcmd.Clone(baseURL, test.headDir, gitcmd.CloneOpt{Bare: true, Mirror: true, RemoteOpts: remoteOpts}); err != nil {
 				t.Errorf("Clone(%q, %q, %q): %s", label, baseURL, test.headDir, err)
 				return
 			}
 
-			r, err := test.opener(test.headDir)
+			r, err := gitcmd.Open(test.headDir)
 			if err != nil {
-				t.Errorf("opener[->%s](%q): %s", reflect.TypeOf(test.opener).Out(0), test.headDir, err)
+				t.Errorf("Open(%q): %s", test.headDir, err)
 				return
 			}
 

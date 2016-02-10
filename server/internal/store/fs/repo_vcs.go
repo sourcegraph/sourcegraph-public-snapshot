@@ -35,11 +35,6 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 		return nil, err
 	}
 
-	go func() {
-		<-ctx.Done()
-		r.Close()
-	}()
-
 	return tracer.Wrap(r, traceutil.Recorder(ctx)), nil
 }
 
@@ -61,15 +56,13 @@ func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, inf
 	}
 
 	start := time.Now()
-	r, err := gitcmd.Clone(info.CloneURL, cloneDir, gitcmd.CloneOpt{
+	if err := gitcmd.Clone(info.CloneURL, cloneDir, gitcmd.CloneOpt{
 		Bare:       bare,
 		Mirror:     mirror,
 		RemoteOpts: info.RemoteOpts,
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
-	r.Close()
 
 	// We cloned into a temporary directory, move into place
 	if cloneDir != dir {
