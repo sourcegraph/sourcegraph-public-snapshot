@@ -105,7 +105,7 @@ func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Co
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := testutil.PushRepo(t, ctx, repo, files); err != nil {
+	if err := testutil.PushRepo(ctx, repo.HTTPCloneURL, repo.HTTPCloneURL, nil, files); err != nil {
 		t.Fatal(err)
 	}
 

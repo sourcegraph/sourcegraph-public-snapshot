@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -111,7 +110,6 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string) (repo *source
 		done()
 		return nil, done, err
 	}
-	t.Logf("created repo %q (VCS %q, clone URL %q)", repo.URI, repo.VCS, repo.CloneURL())
 
 	return repo, done, nil
 }
@@ -134,99 +132,95 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 		return nil, "", nil, err
 	}
 
-	commitID, err = PushRepo(t, ctx, repo, files)
+	err = PushRepo(ctx, "", repo.HTTPCloneURL, nil, files)
 	if err != nil {
 		return nil, "", nil, err
 	}
-	return repo, commitID, done, nil
+
+	cl, _ := sourcegraph.NewClientFromContext(ctx)
+	commit, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{
+		RepoSpec: sourcegraph.RepoSpec{URI: repo.URI},
+		Rev:      "master",
+	})
+	if err != nil {
+		return nil, "", nil, err
+	}
+	return repo, string(commit.ID), done, nil
 }
 
-// PushRepo pushes sample commits to a repo. If files is specified, it
-// is treated as a map of filenames to file contents. If files is nil,
-// a default set of some text files is used. All files are committed
-// in the same commit.
-func PushRepo(t *testing.T, ctx context.Context, repo *sourcegraph.Repo, files map[string]string) (commitID string, err error) {
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
+// PushRepo pushes sample commits to the remote specified.
+// If files is specified, it is treated as a map of filenames to file contents.
+// If files is nil, a default set of some text files is used. All files are
+// committed in the same commit.
+func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey, files map[string]string) error {
+	if cloneURL == "" {
+		return fmt.Errorf("PushRepo can't be called with both `cloneURL` unset.")
+	}
 
+	// Clone the repository.
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer os.RemoveAll(tmpDir)
-
-	if repo.Mirror || repo.Origin != "" {
-		t.Logf("warning: repo %q is not hosted by this server. CreateAndPushRepo should only be used when it's necessary that the server hosts the git repo and has commit data. If you just need to create a repo that can be fetched with, e.g., Repos.Get and Repos.List, call testutil.CreateRepo instead of CreateAndPushRepo.", repo.URI)
-	}
-
-	// Add auth to HTTP clone URL so that `git clone`, `git push`,
-	// etc., commands are authenticated.
-	u, err := url.Parse(repo.HTTPCloneURL)
+	// Add system OAuth token so that clone will work.
+	authedCloneURL, err := authutil.AddSystemAuthToURL(ctx, "internal:write", cloneURL)
 	if err != nil {
-		return "", err
+		return err
 	}
-	var authedCloneURL string
-	if u.User != nil {
-		authedCloneURL = u.String()
-	} else {
-		authedCloneURL, err = authutil.AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	// Clone the repo locally.
-	cmd := exec.Command("git", "clone", authedCloneURL)
+	dir := filepath.Join(tmpDir, "testrepo")
+	cmd := exec.Command("git", "clone", authedCloneURL, dir)
 	cmd.Dir = tmpDir
 	prepGitCommand(cmd)
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
-	repoDir := filepath.Join(tmpDir, repo.Name)
 
 	// Add files and make a commit.
 	if files == nil {
 		files = map[string]string{"myfile.txt": "a"}
 	}
 	for path, data := range files {
-		if err := os.MkdirAll(filepath.Dir(filepath.Join(repoDir, path)), 0700); err != nil {
-			return "", err
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, path)), 0700); err != nil {
+			return err
 		}
-		if err := ioutil.WriteFile(filepath.Join(repoDir, path), []byte(data), 0700); err != nil {
-			return "", err
+		if err := ioutil.WriteFile(filepath.Join(dir, path), []byte(data), 0700); err != nil {
+			return err
 		}
-		cmd = exec.Command("git", "add", path)
-		cmd.Dir = repoDir
+		cmd := exec.Command("git", "add", path)
+		cmd.Dir = dir
 		prepGitCommand(cmd)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 		}
 	}
 
 	cmd = exec.Command("git", "commit", "-m", "hello", "--author", "a <a@a.com>", "--date", "2006-01-02T15:04:05Z")
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME=a", "GIT_COMMITTER_EMAIL=a@a.com", "GIT_COMMITTER_DATE=2006-01-02T15:04:05Z")
-	cmd.Dir = repoDir
+	cmd.Dir = dir
 	prepGitCommand(cmd)
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
 
-	// Push.
-	cmd = exec.Command("git", "push", "origin", "master")
-	cmd.Dir = repoDir
+	// Push the commits.
+	if pushURL == "" {
+		pushURL = "origin"
+	}
+	cmd = exec.Command("git", "push", pushURL, "master")
+	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
+	cmd.Dir = dir
 	prepGitCommand(cmd)
+	if key != nil {
+		// Attempting to push over SSH.
+		if _, err := prepGitSSHCommand(cmd, dir, key); err != nil {
+			return err
+		}
+	}
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
-
-	commit, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: repo.URI},
-		Rev:      "master",
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return string(commit.ID), nil
+	return nil
 }
 
 func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
@@ -246,40 +240,9 @@ func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 	prepGitCommand(cmd)
 	if key != nil {
 		// Attempting to clone over SSH.
-		sshDir := filepath.Join(dir, ".ssh")
-		if err := os.Mkdir(sshDir, 0700); err != nil {
+		if _, err := prepGitSSHCommand(cmd, dir, key); err != nil {
 			return err
 		}
-
-		idFile := filepath.Join(sshDir, "sshkey")
-
-		// Write public key.
-		sshPublicKey, err := ssh.NewPublicKey(&key.PublicKey)
-		if err != nil {
-			return err
-		}
-		publicKey := ssh.MarshalAuthorizedKey(sshPublicKey)
-		t.Log("Key public data:\n", string(publicKey))
-		if err := ioutil.WriteFile(idFile+".pub", publicKey, 0600); err != nil {
-			return err
-		}
-
-		// Write private key.
-		keyPrivatePEM := pem.EncodeToMemory(&pem.Block{
-			Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
-		t.Log("Key private PEM data:\n", string(keyPrivatePEM))
-		if err := ioutil.WriteFile(idFile, keyPrivatePEM, 0600); err != nil {
-			return err
-		}
-
-		// Generate the necessary SSH command.
-		// NOTE: GIT_SSH_COMMAND requires git version 2.3+, so we must
-		// use GIT_SSH.
-		gitSSH := filepath.Join(sshDir, "gitssh")
-		if err := ioutil.WriteFile(gitSSH, []byte(fmt.Sprintf("!#/bin/sh\nssh -i %s -vvvv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \"$@\"\n", idFile)), 0500); err != nil {
-			return err
-		}
-		cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SSH=%s", gitSSH))
 	}
 
 	var buf bytes.Buffer
@@ -311,6 +274,45 @@ func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 		return err
 	}
 	return nil
+}
+
+// prepGitSSHCommand performs the necessary configurations to execute an git
+// command using the provided RSA key.
+func prepGitSSHCommand(cmd *exec.Cmd, dir string, key *rsa.PrivateKey) (*exec.Cmd, error) {
+	// Attempting to clone over SSH.
+	sshDir := filepath.Join(dir, ".ssh")
+	if err := os.Mkdir(sshDir, 0700); err != nil {
+		return cmd, err
+	}
+
+	idFile := filepath.Join(sshDir, "sshkey")
+
+	// Write public key.
+	sshPublicKey, err := ssh.NewPublicKey(&key.PublicKey)
+	if err != nil {
+		return cmd, err
+	}
+	publicKey := ssh.MarshalAuthorizedKey(sshPublicKey)
+	if err := ioutil.WriteFile(idFile+".pub", publicKey, 0600); err != nil {
+		return cmd, err
+	}
+
+	// Write private key.
+	keyPrivatePEM := pem.EncodeToMemory(&pem.Block{
+		Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	if err := ioutil.WriteFile(idFile, keyPrivatePEM, 0600); err != nil {
+		return cmd, err
+	}
+
+	// Generate the necessary SSH command.
+	// NOTE: GIT_SSH_COMMAND requires git version 2.3+, so we must
+	// use GIT_SSH.
+	gitSSH := filepath.Join(sshDir, "gitssh")
+	if err := ioutil.WriteFile(gitSSH, []byte(fmt.Sprintf("#!/bin/sh\nssh -i %s -vvvv -F /dev/null -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \"$@\"\n", idFile)), 0500); err != nil {
+		return cmd, err
+	}
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SSH=%s", gitSSH))
+	return cmd, err
 }
 
 // prepGitCommand adds environment variables for running a git command.

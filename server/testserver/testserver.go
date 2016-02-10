@@ -452,7 +452,7 @@ func newUnstartedServer(scheme, store string) (*Server, context.Context) {
 	}
 	s.Ctx = idkey.NewContext(s.Ctx, idKey)
 
-	s.Ctx = s.AsUIDWithScope(s.Ctx, 1, []string{"user:write"})
+	s.Ctx = s.AsUIDWithScope(s.Ctx, 1, []string{"user:admin"})
 
 	if Store == "pgsql" {
 		if err := s.configDB(); err != nil {

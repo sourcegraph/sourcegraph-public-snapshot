@@ -188,7 +188,7 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 	if (user.Admin != in.Admin) || (user.Write != in.Write) {
 		// Only admin users can modify access levels of a user.
 		if !a.HasAdminAccess() {
-			return nil, grpc.Errorf(codes.PermissionDenied, "need admin privileges to modify user permissions")
+			return nil, grpc.Errorf(codes.PermissionDenied, "XXX need admin privileges to modify user permissions")
 		}
 	}
 
