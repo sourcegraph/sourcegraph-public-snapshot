@@ -19,6 +19,7 @@ type Repos interface {
 
 	// GetPerms reports the current user's (or anonymous user's)
 	// permissions on the specified repo.
+	// DEPRECATED: use RepoPerms store to fetch repo permissions info.
 	GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error)
 
 	// List lists repositories.

@@ -110,10 +110,21 @@ func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI stri
 }
 
 // GetActorPrivateRepos returns the list of private repos visible to the current actor.
+// If MirrorsNext is not enabled, or if the actor has access to all private repos (eg. internal command)
+// then the returned slice will be nil.
+// If the slice is non-nil but empty, the actor has access to no private repos on this server.
 func GetActorPrivateRepos(ctx context.Context, actor auth.Actor, method string) []string {
+	if !authutil.ActiveFlags.MirrorsNext {
+		return nil
+	}
+
+	if VerifyScopeHasAccess(ctx, actor.Scope, method) {
+		return nil
+	}
+
 	privateRepos := make([]string, 0)
 
-	if !authutil.ActiveFlags.MirrorsNext || actor.UID == 0 || !actor.MirrorsNext || actor.RepoPerms == nil {
+	if actor.UID == 0 || !actor.MirrorsNext || actor.RepoPerms == nil {
 		return privateRepos
 	}
 

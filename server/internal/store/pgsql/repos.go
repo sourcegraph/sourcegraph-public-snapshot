@@ -14,7 +14,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
@@ -177,9 +176,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 	// Fetch the list of private repositories visible to the current user.
 	privateURIs := accesscontrol.GetActorPrivateRepos(ctx, authpkg.ActorFromContext(ctx), "Repos.List")
-	if len(privateURIs) == 0 && accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.List") {
-		privateURIs = nil
-	}
+
 	sql, args, err := s.listSQL(opt, privateURIs)
 	if err != nil {
 		if err == errOptionsSpecifyEmptyResult {
@@ -268,7 +265,9 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 
 		// If MirrorsNext is enabled and private repositories are part of the request,
 		// only pick repositories that are either public or visible to the current user.
-		if authutil.ActiveFlags.MirrorsNext && privateURIs != nil && opt.Type != "public" {
+		// NOTE: if privateURIs == nil, then either MirrorsNext is not enabled, or the
+		// actor has access to all private repos on this server.
+		if privateURIs != nil && opt.Type != "public" {
 			filterPrivateSQL := "false"
 			if opt.Type != "private" {
 				filterPrivateSQL = "NOT private"

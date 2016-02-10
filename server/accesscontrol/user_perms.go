@@ -1,7 +1,6 @@
 package accesscontrol
 
 import (
-	"errors"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -10,8 +9,6 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // VerifyUserHasReadAccess checks if the user in the current context
@@ -104,16 +101,8 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	var hasWrite bool
 	if inAuthenticatedWriteWhitelist(method) {
 		hasWrite = true
-	} else if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
-		hasWrite = actor.HasWriteAccess()
 	} else {
-		// Get UserPermissions info for this user from the root server.
-		perms, err := getUserPermissionsFromRoot(ctx, actor)
-		if err != nil {
-			return err
-		}
-
-		hasWrite = perms.Write || perms.Admin
+		hasWrite = actor.HasWriteAccess()
 	}
 
 	if !hasWrite {
@@ -142,42 +131,10 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
 	}
 
-	var isAdmin bool
-	if authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP() {
-		isAdmin = actor.HasAdminAccess()
-	} else {
-		// Get UserPermissions info for this user from the root server.
-		if perms, err := getUserPermissionsFromRoot(ctx, actor); err != nil {
-			return err
-		} else {
-			isAdmin = perms.Admin
-		}
-	}
-
-	if !isAdmin {
+	if !actor.HasAdminAccess() {
 		return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: user does not have admin status", method)
 	}
 	return nil
-}
-
-var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*sourcegraph.UserPermissions, error) {
-	return nil, errors.New("TODO(pararth): update to not rely on root server permissions")
-
-	// TODO: Cache UserPermissions to avoid making a call to root server for every
-	// write/admin operation.
-	rootCtx := fed.Config.NewRemoteContext(ctx)
-	rootCl, err := sourcegraph.NewClientFromContext(rootCtx)
-	if err != nil {
-		return nil, err
-	}
-	userPermissions, err := rootCl.RegisteredClients.GetUserPermissions(rootCtx, &sourcegraph.UserPermissionsOptions{
-		UID:        int32(actor.UID),
-		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: actor.ClientID},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return userPermissions, nil
 }
 
 // Check if the actor is authorized with an access token
@@ -193,6 +150,9 @@ var getUserPermissionsFromRoot = func(ctx context.Context, actor auth.Actor) (*s
 // operations, that check is not repeated here, but be careful
 // about refactoring that check.
 func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string) bool {
+	if scopes == nil {
+		return false
+	}
 	for scope := range scopes {
 		switch {
 		case strings.HasPrefix(scope, "internal:"):
