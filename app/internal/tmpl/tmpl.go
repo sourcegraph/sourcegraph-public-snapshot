@@ -336,7 +336,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 	}
 
 	metricutil.LogEvent(ctx, appEvent)
-	eventsutil.LogPageView(ctx, currentUser, httpctx.RouteName(req))
+	eventsutil.LogPageView(ctx, currentUser, req)
 
 	// Buffer HTTP response so that if the template execution returns
 	// an error (e.g., a template calls a template func that panics or

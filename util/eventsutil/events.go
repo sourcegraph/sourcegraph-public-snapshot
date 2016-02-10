@@ -2,11 +2,14 @@ package eventsutil
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"runtime"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/gorilla/mux"
 
 	"golang.org/x/net/context"
 
@@ -15,6 +18,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // LogStartServer records a server startup event.
@@ -122,16 +126,23 @@ func LogAddRepo(ctx context.Context, cloneURL, language string, mirror, private 
 		visibility = "private"
 	}
 
+	eventProperties := map[string]string{
+		"Source":     source,
+		"Visibility": visibility,
+		"Language":   language,
+	}
+
+	organization := returnOrganization(cloneURL)
+	if organization != "" {
+		eventProperties["Org"] = organization
+	}
+
 	Log(&sourcegraph.Event{
-		Type:     "AddRepo",
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
-		EventProperties: map[string]string{
-			"Source":     source,
-			"Visibility": visibility,
-			"Language":   language,
-		},
+		Type:            "AddRepo",
+		ClientID:        clientID,
+		UserID:          userID,
+		DeviceID:        deviceID,
+		EventProperties: eventProperties,
 	})
 }
 
@@ -165,15 +176,22 @@ func LogBuildRepo(ctx context.Context, result string, build *sourcegraph.Build) 
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
+	eventProperties := map[string]string{
+		"CodeIntelligence": result,
+		"ProgramLanguages": langs,
+	}
+
+	organization := returnOrganization(build.Repo)
+	if organization != "" {
+		eventProperties["Org"] = organization
+	}
+
 	Log(&sourcegraph.Event{
-		Type:     "BuildRepo",
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
-		EventProperties: map[string]string{
-			"CodeIntelligence": result,
-			"ProgramLanguages": langs,
-		},
+		Type:            "BuildRepo",
+		ClientID:        clientID,
+		UserID:          userID,
+		DeviceID:        deviceID,
+		EventProperties: eventProperties,
 	})
 }
 
@@ -321,7 +339,8 @@ func LogCreateChangeset(ctx context.Context) {
 	})
 }
 
-func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, route string) {
+func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, req *http.Request) {
+	route := httpctx.RouteName(req)
 	eventType := getPageViewEventType(route)
 	if eventType == "" {
 		return
@@ -329,11 +348,25 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, route string) 
 
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
+	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(req))
+	var organization string
+	if err != nil {
+		organization = ""
+	} else {
+		organization = returnOrganization(repoSpec.URI)
+	}
 	userAgent := UserAgentFromContext(ctx)
 
 	var eventProperties map[string]string
-	if userAgent != "" {
+	if organization != "" {
 		eventProperties = make(map[string]string)
+		eventProperties["Org"] = organization
+	}
+
+	if userAgent != "" {
+		if organization == "" {
+			eventProperties = make(map[string]string)
+		}
 		eventProperties["UserAgent"] = userAgent
 	}
 
