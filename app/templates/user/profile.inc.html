@@ -11,9 +11,9 @@
 
 <div class="person-profile">
 	<div class="media">
-		{{if .User.AvatarURL}}
-		<a href="{{.User.AvatarURL}}" class="pull-left">
-			<img src="{{.User.AvatarURL}}" class="avatar media-object img-rounded">
+		{{with .User.AvatarURLOfSize 220}}
+		<a href="{{.}}" class="pull-left">
+			<img src="{{.}}" class="avatar media-object img-rounded">
 		</a>
 		{{end}}
 

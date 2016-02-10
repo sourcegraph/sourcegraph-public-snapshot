@@ -1,5 +1,5 @@
 {{define "Commit"}}
-{{if .AuthorPerson}}<a class="pull-left" {{if not .AuthorPerson.Transient}}href="{{urlToUser .AuthorPerson.Login}}"{{end}}><img class="media-object avatar img-rounded" src="{{.AuthorPerson.AvatarURL}}"></a>{{end}}
+{{if .AuthorPerson}}<a class="pull-left" {{if not .AuthorPerson.Transient}}href="{{urlToUser .AuthorPerson.Login}}"{{end}}><img class="media-object avatar img-rounded" src="{{.AuthorPerson.AvatarURLOfSize 84}}"></a>{{end}}
 <div class="media-body">
 	{{template "commitLinks" $}}
 	<h4 class="media-heading commit-title">
@@ -23,7 +23,7 @@
 {{if .AuthorPerson}}{{/* AuthorPerson should never be nil in any circumstances, except for tests. */}}
 <div class="last-commit">
 	<a class="pull-left" {{if not .AuthorPerson.Transient}}href="{{urlToUser .AuthorPerson.Login}}"{{end}}>
-	<img class="avatar" src="{{.AuthorPerson.AvatarURL}}"></a>
+	<img class="avatar" src="{{.AuthorPerson.AvatarURLOfSize 38}}"></a>
 	<div class="pull-left">
 		<p class="author committer">
 			<cite>{{template "PersonLink" .AuthorPerson}}</cite> <span class="date">authored {{template "TimeAgo" .Author.Date}}</span>

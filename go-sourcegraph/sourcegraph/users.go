@@ -17,6 +17,10 @@ func (u *User) AvatarURLOfSize(width int) string {
 }
 
 func avatarURLOfSize(avatarURL string, width int) string {
+	// Default avatar.
+	if avatarURL == "" {
+		avatarURL = "https://secure.gravatar.com/avatar?d=mm&f=y"
+	}
 	return avatarURL + fmt.Sprintf("&s=%d", width)
 }
 
