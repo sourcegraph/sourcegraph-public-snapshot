@@ -101,7 +101,7 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 	ts := pbtypes.NewTimestamp(time.Now())
 	cs.CreatedAt = &ts
 	id := strconv.FormatInt(cs.ID, 10)
-	head, err := repoVCS.ResolveBranch(cs.DeltaSpec.Head.Rev)
+	head, err := repoVCS.ResolveRevision(cs.DeltaSpec.Head.Rev)
 	if err != nil {
 		return err
 	}

@@ -166,30 +166,6 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	return vcs.CommitID(bytes.TrimSpace(stdout)), nil
 }
 
-func (r *Repository) ResolveRef(name string) (vcs.CommitID, error) {
-	commitID, err := r.ResolveRevision(name)
-	if err == vcs.ErrRevisionNotFound {
-		return "", vcs.ErrRefNotFound
-	}
-	return commitID, nil
-}
-
-func (r *Repository) ResolveBranch(name string) (vcs.CommitID, error) {
-	commitID, err := r.ResolveRevision(name)
-	if err == vcs.ErrRevisionNotFound {
-		return "", vcs.ErrBranchNotFound
-	}
-	return commitID, nil
-}
-
-func (r *Repository) ResolveTag(name string) (vcs.CommitID, error) {
-	commitID, err := r.ResolveRevision(name)
-	if err == vcs.ErrRevisionNotFound {
-		return "", vcs.ErrTagNotFound
-	}
-	return commitID, nil
-}
-
 // branchFilter is a filter for branch names.
 // If not empty, only contained branch names are allowed. If empty, all names are allowed.
 // The map should be made so it's not nil.
@@ -456,7 +432,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 	if err != nil {
 		out = bytes.TrimSpace(out)
 		if isBadObjectErr(string(out), string(opt.Head)) {
-			return nil, 0, vcs.ErrCommitNotFound
+			return nil, 0, vcs.ErrRevisionNotFound
 		}
 		return nil, 0, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, out)
 	}
@@ -563,7 +539,7 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 	if err != nil {
 		out = bytes.TrimSpace(out)
 		if isBadObjectErr(string(out), string(base)) || isBadObjectErr(string(out), string(head)) || isInvalidRevisionRangeError(string(out), string(base)) || isInvalidRevisionRangeError(string(out), string(head)) {
-			return nil, vcs.ErrCommitNotFound
+			return nil, vcs.ErrRevisionNotFound
 		}
 		return nil, fmt.Errorf("exec `git diff` failed: %s. Output was:\n\n%s", err, out)
 	}

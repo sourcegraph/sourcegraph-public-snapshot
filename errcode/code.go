@@ -30,7 +30,7 @@ func HTTP(err error) int {
 	}
 
 	switch err {
-	case vcs.ErrRevisionNotFound, vcs.ErrCommitNotFound:
+	case vcs.ErrRevisionNotFound:
 		return http.StatusNotFound
 	case auth.ErrNoExternalAuthToken:
 		return http.StatusUnauthorized

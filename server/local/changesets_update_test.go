@@ -240,7 +240,7 @@ func (tt *changesetUpdateTester) configRepoStore() {
 			}
 			return b, nil
 		},
-		ResolveBranch_: func(name string) (vcs.CommitID, error) {
+		ResolveRevision_: func(name string) (vcs.CommitID, error) {
 			return vcs.CommitID(fakeCommit(name)), nil
 		},
 	})

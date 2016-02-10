@@ -173,7 +173,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			}
 
 			// Determine the new branch head revision.
-			head, err := vcsRepo.ResolveBranch(change.Branch)
+			head, err := vcsRepo.ResolveRevision(change.Branch)
 			if err != nil {
 				return err
 			}
@@ -203,8 +203,8 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		}
 
 		// Determine new branch head revision.
-		head, err := vcsRepo.ResolveBranch(oldBranch.Name)
-		if err == vcs.ErrBranchNotFound {
+		head, err := vcsRepo.ResolveRevision(oldBranch.Name)
+		if err == vcs.ErrRevisionNotFound {
 			// Branch was deleted.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(events.GitDeleteBranchEvent, events.GitPayload{

@@ -160,7 +160,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 			Base: op.Last,
 		}
 		if !isBranchDeleted && isBranchMerged {
-			head, err := repoVCS.ResolveBranch(cs.DeltaSpec.Head.Rev)
+			head, err := repoVCS.ResolveRevision(cs.DeltaSpec.Head.Rev)
 			if err != nil {
 				log15.Error("Changesets.UpdateAffected: cannot resolve head branch", "rev", cs.DeltaSpec.Head.Rev, "error", err)
 			}

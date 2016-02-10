@@ -20,14 +20,6 @@ type Repository interface {
 	// or determined to be a certain kind of revision specifier.
 	ResolveRevision(spec string) (CommitID, error)
 
-	// ResolveTag returns the tag with the given name, or
-	// ErrTagNotFound if no such tag exists.
-	ResolveTag(name string) (CommitID, error)
-
-	// ResolveBranch returns the branch with the given name, or
-	// ErrBranchNotFound if no such branch exists.
-	ResolveBranch(name string) (CommitID, error)
-
 	// Branches returns a list of all branches in the repository.
 	Branches(BranchesOptions) ([]*Branch, error)
 
@@ -117,11 +109,7 @@ type Hunk struct {
 }
 
 var (
-	ErrRefNotFound      = errors.New("ref not found")
-	ErrBranchNotFound   = errors.New("branch not found")
-	ErrCommitNotFound   = errors.New("commit not found")
 	ErrRevisionNotFound = errors.New("revision not found")
-	ErrTagNotFound      = errors.New("tag not found")
 )
 
 type CommitID string

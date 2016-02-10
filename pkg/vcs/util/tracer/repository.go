@@ -29,32 +29,6 @@ func (r repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	return rev, err
 }
 
-// ResolveTag implements the vcs.Repository interface.
-func (r repository) ResolveTag(name string) (vcs.CommitID, error) {
-	start := time.Now()
-	tag, err := r.r.ResolveTag(name)
-	r.rec.Child().Event(GoVCS{
-		Name:      "vcs.Repository.ResolveTag",
-		Args:      fmt.Sprintf("%#v", name),
-		StartTime: start,
-		EndTime:   time.Now(),
-	})
-	return tag, err
-}
-
-// ResolveBranch implements the vcs.Repository interface.
-func (r repository) ResolveBranch(name string) (vcs.CommitID, error) {
-	start := time.Now()
-	branch, err := r.r.ResolveBranch(name)
-	r.rec.Child().Event(GoVCS{
-		Name:      "vcs.Repository.ResolveBranch",
-		Args:      fmt.Sprintf("%#v", name),
-		StartTime: start,
-		EndTime:   time.Now(),
-	})
-	return branch, err
-}
-
 // Branches implements the vcs.Repository interface.
 func (r repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
 	start := time.Now()

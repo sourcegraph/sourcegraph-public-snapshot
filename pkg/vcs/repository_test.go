@@ -33,9 +33,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			ResolveBranch(string) (vcs.CommitID, error)
-		}
+		repo         vcs.Repository
 		branch       string
 		wantCommitID vcs.CommitID
 	}{
@@ -47,9 +45,9 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveBranch(test.branch)
+		commitID, err := test.repo.ResolveRevision(test.branch)
 		if err != nil {
-			t.Errorf("%s: ResolveBranch: %s", label, err)
+			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
 		}
 
@@ -66,97 +64,21 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			ResolveBranch(string) (vcs.CommitID, error)
-		}
+		repo    vcs.Repository
 		branch  string
 		wantErr error
 	}{
 		"git cmd": {
 			repo:    makeGitRepositoryCmd(t, gitCommands...),
 			branch:  "doesntexist",
-			wantErr: vcs.ErrBranchNotFound,
+			wantErr: vcs.ErrRevisionNotFound,
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveBranch(test.branch)
+		commitID, err := test.repo.ResolveRevision(test.branch)
 		if err != test.wantErr {
-			t.Errorf("%s: ResolveBranch: %s", label, err)
-			continue
-		}
-
-		if commitID != "" {
-			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
-		}
-	}
-}
-
-func TestRepository_ResolveRevision(t *testing.T) {
-	t.Parallel()
-
-	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
-	tests := map[string]struct {
-		repo interface {
-			ResolveRevision(string) (vcs.CommitID, error)
-		}
-		spec         string
-		wantCommitID vcs.CommitID
-	}{
-		"git cmd": {
-			repo:         makeGitRepositoryCmd(t, gitCommands...),
-			spec:         "master",
-			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(test.spec)
-		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != test.wantCommitID {
-			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
-		}
-	}
-}
-
-func TestRepository_ResolveRevision_error(t *testing.T) {
-	t.Parallel()
-
-	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
-	tests := map[string]struct {
-		repo interface {
-			ResolveRevision(string) (vcs.CommitID, error)
-		}
-		spec    string
-		wantErr error
-	}{
-		"git cmd testcase1": {
-			repo:    makeGitRepositoryCmd(t, gitCommands...),
-			spec:    "doesntexist",
-			wantErr: vcs.ErrRevisionNotFound,
-		},
-
-		// These revisions look like valid commit hashes (and may be valid after more commits are made),
-		// but they are not present in the current repository, hence we want vcs.ErrRevisionNotFound.
-		"git cmd testcase2": {
-			repo:    makeGitRepositoryCmd(t, gitCommands...),
-			spec:    "2874b2ef9be165966e5620fc29b592c041262721",
-			wantErr: vcs.ErrRevisionNotFound,
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(test.spec)
-		if err != test.wantErr {
-			t.Errorf("%s: ResolveRevision: got %v, want %v", label, err, test.wantErr)
 			continue
 		}
 
@@ -174,9 +96,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 		"git tag t",
 	}
 	tests := map[string]struct {
-		repo interface {
-			ResolveTag(string) (vcs.CommitID, error)
-		}
+		repo         vcs.Repository
 		tag          string
 		wantCommitID vcs.CommitID
 	}{
@@ -188,9 +108,9 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveTag(test.tag)
+		commitID, err := test.repo.ResolveRevision(test.tag)
 		if err != nil {
-			t.Errorf("%s: ResolveTag: %s", label, err)
+			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
 		}
 
@@ -207,23 +127,21 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			ResolveTag(string) (vcs.CommitID, error)
-		}
+		repo    vcs.Repository
 		tag     string
 		wantErr error
 	}{
 		"git cmd": {
 			repo:    makeGitRepositoryCmd(t, gitCommands...),
 			tag:     "doesntexist",
-			wantErr: vcs.ErrTagNotFound,
+			wantErr: vcs.ErrRevisionNotFound,
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveTag(test.tag)
+		commitID, err := test.repo.ResolveRevision(test.tag)
 		if err != test.wantErr {
-			t.Errorf("%s: ResolveTag: %s", label, err)
+			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
 		}
 
@@ -548,9 +466,9 @@ func TestRepository_GetCommit(t *testing.T) {
 			t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
 		}
 
-		// Test that trying to get a nonexistent commit returns ErrCommitNotFound.
-		if _, err := test.repo.GetCommit(nonexistentCommitID); err != vcs.ErrCommitNotFound {
-			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrCommitNotFound)
+		// Test that trying to get a nonexistent commit returns ErrRevisionNotFound.
+		if _, err := test.repo.GetCommit(nonexistentCommitID); err != vcs.ErrRevisionNotFound {
+			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrRevisionNotFound)
 		}
 	}
 }
@@ -624,9 +542,9 @@ func TestRepository_Commits(t *testing.T) {
 			}
 		}
 
-		// Test that trying to get a nonexistent commit returns ErrCommitNotFound.
-		if _, _, err := test.repo.Commits(vcs.CommitsOptions{Head: nonexistentCommitID}); err != vcs.ErrCommitNotFound {
-			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrCommitNotFound)
+		// Test that trying to get a nonexistent commit returns ErrRevisionNotFound.
+		if _, _, err := test.repo.Commits(vcs.CommitsOptions{Head: nonexistentCommitID}); err != vcs.ErrRevisionNotFound {
+			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrRevisionNotFound)
 		}
 	}
 }
@@ -1175,7 +1093,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			ResolveBranch(string) (vcs.CommitID, error)
+			ResolveRevision(string) (vcs.CommitID, error)
 			FileSystem(vcs.CommitID) (vfs.FileSystem, error)
 		}
 	}{
@@ -1185,7 +1103,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveBranch("master")
+		commitID, err := test.repo.ResolveRevision("master")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1306,9 +1224,9 @@ func TestRepository_UpdateEverything(t *testing.T) {
 			continue
 		}
 
-		initial, err := r.ResolveTag("initial")
+		initial, err := r.ResolveRevision("initial")
 		if err != nil {
-			t.Errorf("%s: ResolveTag(%q): %s", test.vcs, "initial", err)
+			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "initial", err)
 			continue
 		}
 		fs1, err := r.FileSystem(initial)
@@ -1359,9 +1277,9 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		}
 
 		// newfile should exist in the mirror now.
-		second, err := r.ResolveTag("second")
+		second, err := r.ResolveRevision("second")
 		if err != nil {
-			t.Errorf("%s: ResolveTag(%q): %s", test.vcs, "second", err)
+			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "second", err)
 			continue
 		}
 		fs2, err := r.FileSystem(second)

@@ -9,8 +9,6 @@ type MockRepository struct {
 	GitRootDir_ func() string
 
 	ResolveRevision_ func(spec string) (vcs.CommitID, error)
-	ResolveTag_      func(name string) (vcs.CommitID, error)
-	ResolveBranch_   func(name string) (vcs.CommitID, error)
 
 	Branches_ func(vcs.BranchesOptions) ([]*vcs.Branch, error)
 	Tags_     func() ([]*vcs.Tag, error)
@@ -45,14 +43,6 @@ func (r MockRepository) GitRootDir() string {
 
 func (r MockRepository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	return r.ResolveRevision_(spec)
-}
-
-func (r MockRepository) ResolveTag(name string) (vcs.CommitID, error) {
-	return r.ResolveTag_(name)
-}
-
-func (r MockRepository) ResolveBranch(name string) (vcs.CommitID, error) {
-	return r.ResolveBranch_(name)
 }
 
 func (r MockRepository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {

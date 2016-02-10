@@ -317,7 +317,7 @@ func newMiddleware() (*staticMiddleware, error) {
 			return nil, err
 		}
 		mw.debugf("serving git repository @ master branch\n")
-		commit, err := repo.ResolveBranch("master")
+		commit, err := repo.ResolveRevision("master")
 		if err != nil {
 			return nil, err
 		}
