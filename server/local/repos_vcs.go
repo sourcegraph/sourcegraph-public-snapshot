@@ -8,6 +8,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
@@ -31,7 +32,7 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, err
 	}
 
-	vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +143,7 @@ func (s *repos) refreshCommitsCache(ctx context.Context, repoRev sourcegraph.Rep
 func (s *repos) listCommitsUncached(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
 	log15.Debug("svc.local.repos.listCommitsUncached", "op", op)
 
-	vcsrepo, err := cachedRepoVCSOpen(ctx, op.Repo.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +188,7 @@ func (s *repos) listCommitsUncached(ctx context.Context, op *sourcegraph.ReposLi
 }
 
 func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
-	vcsrepo, err := cachedRepoVCSOpen(ctx, op.Repo.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +207,7 @@ func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranc
 }
 
 func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
-	vcsrepo, err := cachedRepoVCSOpen(ctx, op.Repo.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +222,7 @@ func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (
 }
 
 func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
-	vcsrepo, err := cachedRepoVCSOpen(ctx, op.Repo.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
 		return nil, err
 	}

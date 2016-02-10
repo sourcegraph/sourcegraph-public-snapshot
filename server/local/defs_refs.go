@@ -70,7 +70,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		for _, ref0 := range refs {
 			ref := ref0
 			par.Do(func() error {
-				vcsrepo, err := cachedRepoVCSOpen(ctx, ref.Repo)
+				vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, ref.Repo)
 				if err != nil {
 					return err
 				}

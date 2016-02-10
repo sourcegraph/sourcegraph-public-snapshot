@@ -180,7 +180,7 @@ func (s *repos) resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRev
 	}
 
 	if repoRev.CommitID == "" {
-		vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
+		vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
 		if err != nil {
 			return err
 		}
@@ -246,7 +246,7 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, err
 	}
 
-	vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -413,7 +413,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	vcsrepo, err := cachedRepoVCSOpen(ctx, repoRev.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
 	if err != nil {
 		return nil, err
 	}

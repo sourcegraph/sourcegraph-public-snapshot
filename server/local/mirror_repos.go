@@ -67,7 +67,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		}
 	}
 
-	vcsRepo, err := cachedRepoVCSOpen(ctx, r.URI)
+	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, r.URI)
 	if os.IsNotExist(err) || grpc.Code(err) == codes.NotFound {
 		err = s.cloneRepo(ctx, r, remoteOpts)
 	} else if err != nil {
