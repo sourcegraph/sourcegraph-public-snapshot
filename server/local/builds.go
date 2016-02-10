@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
+	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
@@ -194,7 +197,31 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 // is not a build on a GitHub or Sourcegraph repo, no update is
 // performed.
 func updateRepoStatusForBuild(ctx context.Context, b *sourcegraph.Build) error {
-	// TODO(nodb-deploy): implement this
+	if b.EndedAt != nil {
+		// increment a counter labeled with status
+		// "beat" a heartbeat
+		var state string
+		switch {
+		case b.Success:
+			state = "success"
+		case b.Failure:
+			state = "failure"
+		case b.Killed:
+			state = "killed"
+		default:
+			state = "unknown"
+		}
+		duration := b.EndedAt.Time().Sub(b.StartedAt.Time())
+		labels := prometheus.Labels{
+			"state": state,
+			"repo":  util.GetTrackedRepo(b.Repo),
+		}
+		buildsCount.With(labels).Inc()
+		buildsDuration.With(labels).Observe(duration.Seconds())
+		buildsHeartbeat.With(labels).Set(float64(time.Now().Unix()))
+	}
+
+	// TODO(nodb-deploy): implement this -- not sure what this originally did, but leaving in for future
 	return nil
 	// updateRepoStatus := func(repoRevSpec sourcegraph.RepoRevSpec, st sourcegraph.RepoStatus) error {
 	// 	// Check if the repo is a GitHub-backed repo.
@@ -425,4 +452,31 @@ func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueN
 		return nil, grpc.Errorf(codes.NotFound, "build queue is empty")
 	}
 	return nextBuild, nil
+}
+
+var metricLabels = []string{"state", "repo"}
+var buildsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "total",
+	Help:      "Total number of builds made.",
+}, metricLabels)
+var buildsDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "duration_seconds",
+	Help:      "The builds latencies in seconds.",
+	Buckets:   []float64{1, 5, 10, 60, 300},
+}, metricLabels)
+var buildsHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "last_timestamp_unixtime",
+	Help:      "Last time a build finished.",
+}, metricLabels)
+
+func init() {
+	prometheus.MustRegister(buildsCount)
+	prometheus.MustRegister(buildsDuration)
+	prometheus.MustRegister(buildsHeartbeat)
 }

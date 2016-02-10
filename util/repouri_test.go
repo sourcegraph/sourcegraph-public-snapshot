@@ -1,10 +1,6 @@
 package util
 
-import (
-	"net/http"
-	"net/url"
-	"testing"
-)
+import "testing"
 
 func TestGetTrackedRepo(t *testing.T) {
 	cases := []struct {
@@ -27,8 +23,7 @@ func TestGetTrackedRepo(t *testing.T) {
 		{"", "unknown"}, {"/", "unknown"},
 	}
 	for _, c := range cases {
-		r := http.Request{URL: &url.URL{Path: c.Path}}
-		got := GetTrackedRepo(&r)
+		got := GetTrackedRepo(c.Path)
 		if got != c.TrackedRepo {
 			t.Errorf("getTrackedRepo(%#v) == %#v != %#v", c.Path, got, c.TrackedRepo)
 		}

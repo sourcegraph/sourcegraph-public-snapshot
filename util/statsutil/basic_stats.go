@@ -43,11 +43,19 @@ var execDurationGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 	Help:      "Duration of executing the echo command.",
 })
 
+var oldestEnqueuedBuildGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "oldest_enqueued_build_seconds",
+	Help:      "Age of oldest build in the queue",
+})
+
 func init() {
 	prometheus.MustRegister(numReposGauge)
 	prometheus.MustRegister(numBuildsGauge)
 	prometheus.MustRegister(numUsersGauge)
 	prometheus.MustRegister(execDurationGauge)
+	prometheus.MustRegister(oldestEnqueuedBuildGauge)
 
 	// test the latency of exec, which may increase under certain memory conditions
 	go func() {
@@ -76,6 +84,7 @@ func ComputeUsageStats(ctx context.Context, interval time.Duration) {
 		updateNumRepos(cl, ctx)
 		updateNumBuilds(cl, ctx)
 		updateNumUsers(cl, ctx)
+		updateOldestEnqueuedRepo(cl, ctx)
 
 		time.Sleep(interval)
 	}
@@ -117,4 +126,31 @@ func updateNumUsers(cl *sourcegraph.Client, ctx context.Context) {
 		return
 	}
 	numUsersGauge.Set(float64(len(usersList.Users)))
+}
+
+func updateOldestEnqueuedRepo(cl *sourcegraph.Client, ctx context.Context) {
+	buildQueue, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
+		Queued:    true,
+		Sort:      "created_at",
+		Direction: "asc",
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 1,
+		},
+	})
+	if err != nil {
+		log15.Warn("ComputeUsageStats: could not compute the oldest build in the queue")
+		return
+	}
+
+	if len(buildQueue.Builds) == 0 {
+		// we need to set the age of the oldest build to 0 since
+		// it would appear that there was still something on the queue
+		oldestEnqueuedBuildGauge.Set(float64(0))
+	}
+
+	build := buildQueue.Builds[0]
+
+	age := time.Now().Sub(build.CreatedAt.Time())
+
+	oldestEnqueuedBuildGauge.Set(age.Seconds())
 }

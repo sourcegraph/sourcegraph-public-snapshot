@@ -58,7 +58,7 @@ func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 
 	log15.Debug("Srclib Validate Output", "repoRev", repoRev, "srclib validate output", val)
 
-	trackedRepo := util.GetTrackedRepo(r)
+	trackedRepo := util.GetTrackedRepo(r.URL.Path)
 
 	var counter prometheus.Counter
 	if len(val.Warnings) == 0 {

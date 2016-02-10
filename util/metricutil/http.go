@@ -60,7 +60,7 @@ func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFu
 		"route":  name,
 		"method": strings.ToLower(r.Method),
 		"code":   strconv.Itoa(code),
-		"repo":   util.GetTrackedRepo(r),
+		"repo":   util.GetTrackedRepo(r.URL.Path),
 	}
 	requestCount.With(labels).Inc()
 	requestDuration.With(labels).Observe(duration.Seconds())
