@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	srcChangesetCreateMSG = "SRC_CHANGESET_CREATEMSG"
-	srcChangesetEditMSG   = "SRC_CHANGESET_EDITMSG"
+	srcChangesetCreateMsg = "SRC_CHANGESET_CREATEMSG"
+	srcChangesetEditMsg   = "SRC_CHANGESET_EDITMSG"
 )
 
 type serveFlags struct {
@@ -335,7 +335,7 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 		return err
 	})
 	par.Do(func() error {
-		messagePath = changesetMessagePath(srcChangesetCreateMSG)
+		messagePath = changesetMessagePath(srcChangesetCreateMsg)
 		return nil
 	})
 	err = par.Wait()
@@ -484,7 +484,7 @@ func (c *changesetUpdateCmd) Execute(args []string) error {
 		return err
 	}
 
-	newDescription, err := tempedit.Edit([]byte(cs.Description), changesetMessagePath(srcChangesetEditMSG))
+	newDescription, err := tempedit.Edit([]byte(cs.Description), changesetMessagePath(srcChangesetEditMsg))
 	if err != nil {
 		return err
 	}
