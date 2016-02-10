@@ -257,7 +257,6 @@ var scope = []string{
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli",
 	"src.sourcegraph.com/sourcegraph/ext/papertrail",
 	"src.sourcegraph.com/sourcegraph/ext/slack",
-	"src.sourcegraph.com/sourcegraph/extsvc/github",
 	"src.sourcegraph.com/sourcegraph/fed",
 	"src.sourcegraph.com/sourcegraph/fed/discover",
 	"src.sourcegraph.com/sourcegraph/gen",
