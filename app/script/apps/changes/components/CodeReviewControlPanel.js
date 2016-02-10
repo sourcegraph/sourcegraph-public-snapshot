@@ -2,6 +2,7 @@ var React = require("react");
 var globals = require("../../../globals");
 var classnames = require("classnames");
 var Tooltip = require("../../../../web_modules/sourcegraph/util/Tooltip").default;
+var CurrentUser = require("../../../CurrentUser");
 
 /**
  * @description CodeReviewControlPanel holds the view that shows general information
@@ -122,6 +123,15 @@ var CodeReviewControlPanel = React.createClass({
 			reviewers = this.props.changeset.Reviewers;
 		}
 
+		// Determine whether or not the current user is LGTM'd by looking through
+		// the reviewers.
+		var isLGTM = false;
+		reviewers.map(function(r) {
+			if (r.UserSpec.Login === CurrentUser.Login) {
+				isLGTM = r.LGTM;
+			}
+		});
+
 		var addPersonMenu = null;
 		if (this.state.showAddPersonMenu) {
 			addPersonMenu = (
@@ -178,7 +188,7 @@ var CodeReviewControlPanel = React.createClass({
 						{addPersonMenu}
 					</div>
 					<label className="btn btn-secondary active">
-						<input type="checkbox" autoComplete="off" onClick={this._toggleLGTM}></input> LGTM
+						<input type="checkbox" autoComplete="off" onChange={this._toggleLGTM} checked={isLGTM}></input> LGTM
 					</label>
 				</div>
 
