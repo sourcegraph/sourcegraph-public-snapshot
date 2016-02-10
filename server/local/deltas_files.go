@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ryanuber/go-glob"
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/groupcache/lru"
@@ -118,6 +119,14 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		for _, fdiff := range fdiffs {
 			if (strings.HasPrefix(fdiff.OrigName, filter) || strings.HasPrefix(fdiff.NewName, filter)) != expected {
 				filtered[fdiff] = true
+			}
+		}
+	} else if len(opt.Ignore) > 0 {
+		for _, fdiff := range fdiffs {
+			for _, pattern := range opt.Ignore {
+				if glob.Glob(pattern, fdiff.OrigName) || glob.Glob(pattern, fdiff.NewName) {
+					filtered[fdiff] = true
+				}
 			}
 		}
 	}
