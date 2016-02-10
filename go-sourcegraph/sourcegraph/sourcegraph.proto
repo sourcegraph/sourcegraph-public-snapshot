@@ -2402,6 +2402,10 @@ message FileDiff {
 	string PostImage = 4 [(gogoproto.jsontag) = ",omitempty"];
 	// Stat contains statistics about additions and deletions to this diff.
 	diff.Stat Stats = 5 [(gogoproto.nullable) = false];
+
+	// Filtered specifies whether or not this file diff was filtered out, and as
+	// such contains no FileDiffHunks or FileDiff.Hunks.
+	bool Filtered = 6 [(gogoproto.jsontag) = ",omitempty"];
 }
 
 // Hunk holds data about a hunk in a diff.
@@ -2469,7 +2473,10 @@ message DeltaListFilesOptions {
 	// (syntax-highlighted and reference-linked) if they contain code.
 	bool Formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// Filter filters the list of returned files to those whose name matches Filter.
+	// Filter filters the list of returned files to those whose name matches
+	// Filter. There is no difference in the returned data except that the
+	// returned DeltaFiles.FileDiffs will not contain any hunks and will have
+	// Filtered set to true.
 	string Filter = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// Tokenized, when set, will tokenize the whole source code
