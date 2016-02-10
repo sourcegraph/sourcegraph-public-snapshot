@@ -123,6 +123,7 @@ var CodeReviewChanges = React.createClass({
 								allowComments={true}
 								key={fd.cid}
 								Delta={this.state.changes.delta}
+								urlBase={this.props.urlBase}
 								model={fd} />
 						))}
 					</div>

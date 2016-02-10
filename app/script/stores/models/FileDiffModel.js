@@ -98,6 +98,7 @@ var FileDiffModel = Backbone.Model.extend({
 			NewName: fileDiff.NewName,
 			PreImage: fileDiff.PreImage,
 			PostImage: fileDiff.PostImage,
+			Filtered: fileDiff.Filtered,
 			Hunks: new Backbone.Collection(
 				(fileDiff.FileDiffHunks || []).map((hunk, i) => {
 					hunk.parent = this;

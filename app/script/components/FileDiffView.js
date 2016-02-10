@@ -91,6 +91,12 @@ var FileDiffView = React.createClass({
 		var baseUrl = router.fileURL(this.props.Delta.Base.URI, this.props.Delta.Base.CommitID, this.state.OrigName);
 		var newUrl = router.fileURL(this.props.Delta.Head.URI, this.props.Delta.Head.CommitID, this.state.NewName);
 
+		var viewDiffFile = this.state.OrigName;
+		if (this.state.NewName && this.state.NewName !== "/dev/null") {
+			viewDiffFile = this.state.NewName;
+		}
+		var viewDiffUrl = `${this.props.urlBase}/${viewDiffFile}`;
+
 		return (
 			<div className="file-diff">
 				<header>
@@ -104,8 +110,10 @@ var FileDiffView = React.createClass({
 					<div className="btn-group pull-right">
 						{this.state.OrigName !== "/dev/null" && <a className="button btn btn-default btn-xs" href={baseUrl}>Original</a>}
 						{this.state.NewName !== "/dev/null" && <a className="button btn btn-default btn-xs" href={newUrl}>New</a>}
+						{this.state.Filtered && <a className="button btn btn-default btn-xs" href={viewDiffUrl}>View Diff</a>}
 					</div>
 				</header>
+
 
 				{this.state.Hunks.map(
 					hunk => <Hunk
