@@ -1,7 +1,9 @@
 package local
 
 import (
+	"io/ioutil"
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/cznic/mathutil"
@@ -100,7 +102,48 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 		return nil, err
 	}
 
-	return getFileWithOptions(fs, entrySpec.Path, *opt)
+	fi, err := fs.Lstat(entrySpec.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	e := newTreeEntry(fi)
+	fwr := sourcegraph.FileWithRange{BasicTreeEntry: e}
+
+	if fi.Mode().IsDir() {
+		ee, err := readDir(fs, entrySpec.Path, int(opt.RecurseSingleSubfolderLimit), true)
+		if err != nil {
+			return nil, err
+		}
+		sort.Sort(TreeEntriesByTypeByName(ee))
+		e.Entries = ee
+	} else if fi.Mode().IsRegular() {
+		f, err := fs.Open(entrySpec.Path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+
+		contents, err := ioutil.ReadAll(f)
+		if err != nil {
+			return nil, err
+		}
+
+		e.Contents = contents
+
+		if empty := (sourcegraph.GetFileOptions{}); *opt != empty {
+			fr, _, err := computeFileRange(contents, *opt)
+			if err != nil {
+				return nil, err
+			}
+
+			// Trim to only requested range.
+			e.Contents = e.Contents[fr.StartByte:fr.EndByte]
+			fwr.FileRange = *fr
+		}
+	}
+
+	return &fwr, nil
 }
 
 func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {

@@ -2,11 +2,9 @@ package local
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
-	"sort"
 	"sync"
 
 	"github.com/sqs/fileset"
@@ -15,52 +13,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
-
-// getFileWithOptions gets a file and observes the options specified in opt.
-func getFileWithOptions(fs vfs.FileSystem, path string, opt sourcegraph.GetFileOptions) (*sourcegraph.FileWithRange, error) {
-	fi, err := fs.Lstat(path)
-	if err != nil {
-		return nil, err
-	}
-
-	e := newTreeEntry(fi)
-	fwr := sourcegraph.FileWithRange{BasicTreeEntry: e}
-
-	if fi.Mode().IsDir() {
-		ee, err := readDir(fs, path, int(opt.RecurseSingleSubfolderLimit), true)
-		if err != nil {
-			return nil, err
-		}
-		sort.Sort(TreeEntriesByTypeByName(ee))
-		e.Entries = ee
-	} else if fi.Mode().IsRegular() {
-		f, err := fs.Open(path)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		contents, err := ioutil.ReadAll(f)
-		if err != nil {
-			return nil, err
-		}
-
-		e.Contents = contents
-
-		if empty := (sourcegraph.GetFileOptions{}); opt != empty {
-			fr, _, err := computeFileRange(contents, opt)
-			if err != nil {
-				return nil, err
-			}
-
-			// Trim to only requested range.
-			e.Contents = e.Contents[fr.StartByte:fr.EndByte]
-			fwr.FileRange = *fr
-		}
-	}
-
-	return &fwr, nil
-}
 
 // readDir uses the passed vfs.FileSystem to read from starting at the base path.
 // If recurseSingleSubfolderLimit is non-zero, it will descend and include
