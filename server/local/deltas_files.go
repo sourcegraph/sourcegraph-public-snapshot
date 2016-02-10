@@ -102,12 +102,12 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		return res.(*sourcegraph.DeltaFiles), nil
 	}
 
-	fdiffsAll, delta, err := s.diff(ctx, ds)
+	fdiffs, delta, err := s.diff(ctx, ds)
 	if err != nil {
 		return nil, err
 	}
 
-	var fdiffs []*diff.FileDiff
+	filtered := make(map[*diff.FileDiff]bool)
 	if opt.Filter != "" {
 		filter := opt.Filter
 		expected := true
@@ -115,16 +115,14 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 			filter = filter[1:]
 			expected = false
 		}
-		for _, fdiff := range fdiffsAll {
-			if (strings.HasPrefix(fdiff.OrigName, filter) || strings.HasPrefix(fdiff.NewName, filter)) == expected {
-				fdiffs = append(fdiffs, fdiff)
+		for _, fdiff := range fdiffs {
+			if (strings.HasPrefix(fdiff.OrigName, filter) || strings.HasPrefix(fdiff.NewName, filter)) != expected {
+				filtered[fdiff] = true
 			}
 		}
-	} else {
-		fdiffs = fdiffsAll
 	}
 
-	files, err := parseMultiFileDiffs(ctx, delta, fdiffs, opt)
+	files, err := parseMultiFileDiffs(ctx, delta, fdiffs, filtered, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +200,7 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 
 // parseMultiFileDiffs converts a slice of diff.FileDiffs to a slice of sourcegraph.FileDiff,
 // applying syntax-highlighting and adding various information.
-func parseMultiFileDiffs(ctx context.Context, delta *sourcegraph.Delta, fdiffs []*diff.FileDiff, opt *sourcegraph.DeltaListFilesOptions) (*sourcegraph.DeltaFiles, error) {
+func parseMultiFileDiffs(ctx context.Context, delta *sourcegraph.Delta, fdiffs []*diff.FileDiff, filtered map[*diff.FileDiff]bool, opt *sourcegraph.DeltaListFilesOptions) (*sourcegraph.DeltaFiles, error) {
 	var overSized bool
 	if opt.MaxSize > 0 && len(fdiffs) > 1 {
 		var totalSize int
@@ -221,12 +219,18 @@ func parseMultiFileDiffs(ctx context.Context, delta *sourcegraph.Delta, fdiffs [
 		parseRenames(fd)
 		pre, post := getPrePostImage(fd.Extended)
 		fds[i] = &sourcegraph.FileDiff{
-			FileDiff:      *fd,
-			FileDiffHunks: make([]*sourcegraph.Hunk, len(fd.Hunks)),
-			Stats:         fd.Stat(),
-			PreImage:      pre,
-			PostImage:     post,
+			FileDiff:  *fd,
+			Stats:     fd.Stat(),
+			PreImage:  pre,
+			PostImage: post,
 		}
+		if _, filtered := filtered[fd]; filtered {
+			fds[i].FileDiff.Hunks = nil
+			fds[i].Filtered = true
+			continue
+		}
+
+		fds[i].FileDiffHunks = make([]*sourcegraph.Hunk, len(fd.Hunks))
 		for j, h := range fd.Hunks {
 			hunk := &sourcegraph.Hunk{Hunk: *h}
 			hunkFileDiff := fds[i]
