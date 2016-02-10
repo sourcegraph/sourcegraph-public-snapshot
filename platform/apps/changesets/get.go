@@ -6,8 +6,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
+
+	"golang.org/x/net/context"
 
 	"github.com/rogpeppe/rog-go/parallel"
 
@@ -195,12 +200,18 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		return err
 	})
 	par.Do(func() error {
+		// Read and parse the .srcignore file.
+		ignorePatterns, err := readSrcignore(ctx, vc.RepoRevSpec)
+		if err != nil {
+			return err
+		}
+
 		// If this route is for changes, request the diffs too
-		var err error
 		opt := sourcegraph.DeltaListFilesOptions{
 			Formatted: false,
 			Tokenized: true,
 			Filter:    v["Filter"],
+			Ignore:    ignorePatterns,
 		}
 		files, err = sg.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
 			Ds:  *ds,
@@ -306,6 +317,73 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 			Events:    events.Events,
 		},
 	})
+}
+
+const defaultSrcignore = `
+# Lines starting with a hash are ignored.
+
+# Go
+Godeps/*
+*.gen.go
+*.pb.go
+*.pb_mock.go
+
+`
+
+const srcignore = ".srcignore"
+
+// readSrcignore reads and parses the .srcignore file from the specified
+// repository root, falling back to the global and default srcignore if needed.
+// It returns the relevant unix glob patterns from the chosen file.
+func readSrcignore(ctx context.Context, rev sourcegraph.RepoRevSpec) ([]string, error) {
+	// Check the repository for a .srcignore file.
+	sg, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	te, err := sg.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: sourcegraph.TreeEntrySpec{
+			RepoRev: rev,
+			Path:    srcignore,
+		},
+		Opt: &sourcegraph.RepoTreeGetOptions{
+			ContentsAsString: true,
+			GetFileOptions: sourcegraph.GetFileOptions{
+				EntireFile: true,
+			},
+		},
+	})
+	if err == nil {
+		return parseSrcignore(te.ContentsString), nil
+	} else if grpc.Code(err) != codes.NotFound {
+		return nil, err
+	}
+
+	// Check for a global one then.
+	data, err := ioutil.ReadFile(filepath.Join(os.Getenv("SGPATH"), srcignore))
+	if err == nil {
+		return parseSrcignore(string(data)), nil
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	// Use a default .srcignore file.
+	return parseSrcignore(defaultSrcignore), nil
+}
+
+// parseSrcignore parses a .srcignore file and returns the relevant unix glob
+// patterns from the file.
+func parseSrcignore(fileContents string) []string {
+	// Accumulate pattern lines (ignoring empty lines + # comments).
+	var patterns []string
+	for _, line := range strings.Split(fileContents, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		patterns = append(patterns, line)
+	}
+	return patterns
 }
 
 // byDate implements the sorting interface for sorting
