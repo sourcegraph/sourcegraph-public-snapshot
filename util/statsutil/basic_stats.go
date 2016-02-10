@@ -146,6 +146,7 @@ func updateOldestEnqueuedRepo(cl *sourcegraph.Client, ctx context.Context) {
 		// we need to set the age of the oldest build to 0 since
 		// it would appear that there was still something on the queue
 		oldestEnqueuedBuildGauge.Set(float64(0))
+		return
 	}
 
 	build := buildQueue.Builds[0]
