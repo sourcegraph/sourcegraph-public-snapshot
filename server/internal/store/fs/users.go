@@ -13,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/internal/store/shared/sharedusers"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -89,12 +88,6 @@ func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 	if err != nil {
 		return nil, err
 	}
-
-	// Default avatar.
-	if e.User.AvatarURL == "" {
-		e.User.AvatarURL = sharedusers.DefaultAvatarURL
-	}
-
 	return &e.User, nil
 }
 

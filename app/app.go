@@ -120,7 +120,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.LogOut).Handler(internal.Handler(serveLogOut))
 
 	r.Get(router.UserSettingsProfile).Handler(internal.Handler(serveUserSettingsProfile))
-	r.Get(router.UserSettingsProfileAvatar).Handler(internal.Handler(serveUserSettingsProfileAvatar))
 	r.Get(router.UserSettingsEmails).Handler(internal.Handler(serveUserSettingsEmails))
 	r.Get(router.UserSettingsKeys).Handler(internal.Handler(serveUserSettingsKeys))
 	if !appconf.Flags.DisableIntegrations {

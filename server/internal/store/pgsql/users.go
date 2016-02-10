@@ -11,7 +11,6 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/internal/store/shared/sharedusers"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -98,12 +97,6 @@ func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 	} else {
 		return nil, &store.UserNotFoundError{}
 	}
-
-	// Default avatar.
-	if user.AvatarURL == "" {
-		user.AvatarURL = sharedusers.DefaultAvatarURL
-	}
-
 	return user, err
 }
 

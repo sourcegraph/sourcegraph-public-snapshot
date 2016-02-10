@@ -1,12 +1,9 @@
 package app
 
 import (
-	"crypto/md5"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
@@ -235,41 +232,6 @@ func serveUserSettingsProfile(w http.ResponseWriter, r *http.Request) error {
 	}{
 		userSettingsCommonData: *cd,
 	})
-}
-
-func serveUserSettingsProfileAvatar(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
-
-	_, cd, err := userSettingsCommon(w, r)
-	if err == errUserSettingsCommonWroteResponse {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	user := cd.User
-	email := r.PostFormValue("GravatarEmail")
-	user.AvatarURL = gravatarURL(email)
-
-	_, err = apiclient.Accounts.Update(ctx, user)
-	if err != nil {
-		return err
-	}
-
-	http.Redirect(w, r, router.Rel.URLTo(router.UserSettingsProfile, "User", user.Login).String(), http.StatusSeeOther)
-	return nil
-}
-
-// gravatarURL returns the URL to the Gravatar avatar image for email.
-// The generated URL can have a "&s=128"-like suffix appended to set the size.
-// That allows it to be compatible with User.AvatarURLOfSize.
-func gravatarURL(email string) string {
-	email = strings.TrimSpace(email) // Trim leading and trailing whitespace from an email address.
-	email = strings.ToLower(email)   // Force all characters to lower-case.
-	h := md5.New()
-	io.WriteString(h, email) // md5 hash the final string.
-	return fmt.Sprintf("https://secure.gravatar.com/avatar/%x?d=mm", h.Sum(nil))
 }
 
 func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {

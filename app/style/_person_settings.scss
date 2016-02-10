@@ -42,22 +42,12 @@
 	}
 }
 
-#set-via-gravatar-modal {
-	#GravatarEmail {
-		width: 240px;
-	}
-}
-
 .person-settings.panel {
 	form.person-profile {
-		.avatar {
-			img {
-				width: 64px;
-				height: 64px;
-			}
-			button {
-				vertical-align: top;
-			}
+		img.avatar {
+			display: block;
+			width: 64px;
+			height: 64px;
 		}
 	}
 
