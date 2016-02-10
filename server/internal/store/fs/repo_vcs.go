@@ -13,7 +13,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/mv"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/util/tracer"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
@@ -34,8 +33,9 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	if err != nil {
 		return nil, err
 	}
+	r.AppdashRec = traceutil.Recorder(ctx)
 
-	return tracer.Wrap(r, traceutil.Recorder(ctx)), nil
+	return r, nil
 }
 
 func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error {

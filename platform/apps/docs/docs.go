@@ -30,7 +30,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/util/tracer"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/platform/pctx"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -122,8 +121,8 @@ func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir 
 	if err != nil {
 		return "", nil, err
 	}
-	tracedVcsRepo := tracer.Wrap(vcsRepo, traceutil.Recorder(ctx))
-	vfs, err := tracedVcsRepo.FileSystem(vcs.CommitID(repoRev.CommitID))
+	vcsRepo.AppdashRec = traceutil.Recorder(ctx)
+	vfs, err := vcsRepo.FileSystem(vcs.CommitID(repoRev.CommitID))
 	if err != nil {
 		return "", nil, err
 	}

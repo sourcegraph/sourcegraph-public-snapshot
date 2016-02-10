@@ -21,6 +21,7 @@ import (
 	"syscall"
 	"time"
 
+	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -39,7 +40,8 @@ var (
 type Repository struct {
 	Dir string
 
-	editLock sync.RWMutex // protects ops that change repository data
+	editLock   sync.RWMutex // protects ops that change repository data
+	AppdashRec *appdash.Recorder
 }
 
 func (r *Repository) RepoDir() string {
@@ -147,6 +149,8 @@ func dividedOutput(c *exec.Cmd) (stdout []byte, stderr []byte, err error) {
 }
 
 func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
+	defer r.trace(time.Now(), "ResolveRevision", spec)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -189,6 +193,8 @@ func (f branchFilter) add(list []string) {
 }
 
 func (r *Repository) Branches(opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
+	defer r.trace(time.Now(), "Branches", opt)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -285,6 +291,8 @@ func (r *Repository) branchesBehindAhead(branch, base string) (*vcs.BehindAhead,
 }
 
 func (r *Repository) Tags() ([]*vcs.Tag, error) {
+	defer r.trace(time.Now(), "Tags")
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -370,6 +378,8 @@ func (r *Repository) getCommit(id vcs.CommitID) (*vcs.Commit, error) {
 }
 
 func (r *Repository) GetCommit(id vcs.CommitID) (*vcs.Commit, error) {
+	defer r.trace(time.Now(), "GetCommit", id)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -377,6 +387,8 @@ func (r *Repository) GetCommit(id vcs.CommitID) (*vcs.Commit, error) {
 }
 
 func (r *Repository) Commits(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
+	defer r.trace(time.Now(), "Commits", opt)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -504,6 +516,8 @@ func parseUint(s string) (uint, error) {
 }
 
 func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
+	defer r.trace(time.Now(), "Diff", base, head, opt)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -551,6 +565,8 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 func (r *Repository) GitRootDir() string { return r.Dir }
 
 func (r *Repository) CrossRepoDiff(base vcs.CommitID, headRepo vcs.Repository, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
+	defer r.trace(time.Now(), "CrossRepoDiff", base, headRepo.GitRootDir(), head, opt)
+
 	headDir := headRepo.GitRootDir()
 
 	if headDir == r.Dir {
@@ -583,6 +599,8 @@ func (r *Repository) fetchRemote(repoDir string) error {
 // UpdateEverything updates all branches, tags, etc., to match the
 // default remote repository.
 func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
+	defer r.trace(time.Now(), "UpdateEverything", opt)
+
 	r.editLock.Lock()
 	defer r.editLock.Unlock()
 
@@ -637,6 +655,8 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 }
 
 func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
+	defer r.trace(time.Now(), "BlameFile", path, opt)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -764,6 +784,8 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 }
 
 func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
+	defer r.trace(time.Now(), "MergeBase", a, b)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -777,6 +799,8 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 }
 
 func (r *Repository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository, b vcs.CommitID) (vcs.CommitID, error) {
+	defer r.trace(time.Now(), "CrossRepoMergeBase", a, repoB.GitRootDir(), b)
+
 	// git.Repository inherits GitRootDir and CrossRepo from its
 	// embedded gitcmd.Repository.
 
@@ -792,6 +816,8 @@ func (r *Repository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository, b 
 }
 
 func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
+	defer r.trace(time.Now(), "Search", at, opt)
+
 	if err := checkSpecArgSafety(string(at)); err != nil {
 		return nil, err
 	}
@@ -901,6 +927,8 @@ func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.Sear
 }
 
 func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
+	defer r.trace(time.Now(), "Committers", opt)
+
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
@@ -940,6 +968,8 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 }
 
 func (r *Repository) ListFiles(at vcs.CommitID) ([]string, error) {
+	defer r.trace(time.Now(), "ListFiles", at)
+
 	if err := checkSpecArgSafety(string(at)); err != nil {
 		return nil, err
 	}
@@ -964,6 +994,8 @@ func (r *Repository) ListFiles(at vcs.CommitID) ([]string, error) {
 }
 
 func (r *Repository) FileSystem(at vcs.CommitID) (vfs.FileSystem, error) {
+	defer r.trace(time.Now(), "FileSystem", at)
+
 	if err := checkSpecArgSafety(string(at)); err != nil {
 		return nil, err
 	}
@@ -984,6 +1016,8 @@ type gitFSCmd struct {
 }
 
 func (fs *gitFSCmd) Open(name string) (vfs.ReadSeekCloser, error) {
+	defer fs.repo.trace(time.Now(), "fs.Open", name)
+
 	name = internal.Rel(name)
 	fs.repoEditLock.RLock()
 	defer fs.repoEditLock.RUnlock()
@@ -1020,6 +1054,8 @@ func (fs *gitFSCmd) readFileBytes(name string) ([]byte, error) {
 }
 
 func (fs *gitFSCmd) Lstat(path string) (os.FileInfo, error) {
+	defer fs.repo.trace(time.Now(), "fs.Lstat", path)
+
 	fs.repoEditLock.RLock()
 	defer fs.repoEditLock.RUnlock()
 
@@ -1068,6 +1104,8 @@ func (fs *gitFSCmd) getModTimeFromGitLog(path string) (time.Time, error) {
 }
 
 func (fs *gitFSCmd) Stat(path string) (os.FileInfo, error) {
+	defer fs.repo.trace(time.Now(), "fs.Stat", path)
+
 	path = internal.Rel(path)
 
 	fs.repoEditLock.RLock()
@@ -1093,6 +1131,8 @@ func (fs *gitFSCmd) Stat(path string) (os.FileInfo, error) {
 }
 
 func (fs *gitFSCmd) ReadDir(path string) ([]os.FileInfo, error) {
+	defer fs.repo.trace(time.Now(), "fs.ReadDir", path)
+
 	fs.repoEditLock.RLock()
 	defer fs.repoEditLock.RUnlock()
 	// Trailing slash is necessary to ls-tree under the dir (not just
