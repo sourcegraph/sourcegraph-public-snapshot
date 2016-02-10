@@ -2651,6 +2651,9 @@ type FileDiff struct {
 	PostImage string `protobuf:"bytes,4,opt,name=PostImage,proto3" json:",omitempty"`
 	// Stat contains statistics about additions and deletions to this diff.
 	Stats diff.Stat `protobuf:"bytes,5,opt,name=Stats" json:"Stats"`
+	// Filtered specifies whether or not this file diff was filtered out, and as
+	// such contains no FileDiffHunks or FileDiff.Hunks.
+	Filtered bool `protobuf:"varint,6,opt,name=Filtered,proto3" json:",omitempty"`
 }
 
 func (m *FileDiff) Reset()         { *m = FileDiff{} }
@@ -2740,7 +2743,10 @@ type DeltaListFilesOptions struct {
 	// Formatted is whether the files should have their contents code-formatted
 	// (syntax-highlighted and reference-linked) if they contain code.
 	Formatted bool `protobuf:"varint,1,opt,name=Formatted,proto3" json:"Formatted,omitempty" url:",omitempty"`
-	// Filter filters the list of returned files to those whose name matches Filter.
+	// Filter filters the list of returned files to those whose name matches
+	// Filter. There is no difference in the returned data except that the
+	// returned DeltaFiles.FileDiffs will not contain any hunks and will have
+	// Filtered set to true.
 	Filter string `protobuf:"bytes,2,opt,name=Filter,proto3" json:"Filter,omitempty" url:",omitempty"`
 	// Tokenized, when set, will tokenize the whole source code
 	// contained in the diff, returning 3 versions for each hunk: Head
@@ -14429,6 +14435,16 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n155
+	if m.Filtered {
+		data[i] = 0x30
+		i++
+		if m.Filtered {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
 	return i, nil
 }
 
@@ -19953,6 +19969,9 @@ func (m *FileDiff) Size() (n int) {
 	}
 	l = m.Stats.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
+	if m.Filtered {
+		n += 2
+	}
 	return n
 }
 
@@ -42186,6 +42205,26 @@ func (m *FileDiff) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filtered", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Filtered = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
