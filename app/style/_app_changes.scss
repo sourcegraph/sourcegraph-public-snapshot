@@ -246,7 +246,7 @@ h1.changeset-title {
 
 						&.avatar {
 							background-size: cover;
-							.remove .btn .octicon {
+							.remove .btn .octicon, .lgtm .btn .octicon {
 								top: -6px;
 							}
 						}
@@ -256,12 +256,20 @@ h1.changeset-title {
 							top: 4px;
 						}
 
-						&:hover .remove {
-							display: inline-block;
-						}
-
 						.remove {
 							display: none;
+							.btn { background-color: #FF5757; }
+						}
+						.lgtm {
+							display: inline-block;
+							.btn { background-color: #5cb85c; }
+						}
+						&:hover {
+							.remove { display: inline-block; }
+							.lgtm { display: none; }
+						}
+
+						.remove, .lgtm {
 							position: relative;
 							width: 0;
 							height: 0;
@@ -269,7 +277,6 @@ h1.changeset-title {
 							right: 8px;
 							float: right;
 							.btn {
-								background-color: #FF5757;
 								padding: 4.5px;
 								height: 18px;
 								width: 18px;

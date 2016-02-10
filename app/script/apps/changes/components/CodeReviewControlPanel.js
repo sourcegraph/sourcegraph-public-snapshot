@@ -157,25 +157,32 @@ var CodeReviewControlPanel = React.createClass({
 					<div className="panel-label">Reviewers</div>
 					<div className="people">
 						{reviewers.map(function(reviewer) {
-							reviewer = reviewer.FullUser;
+							var fullUser = reviewer.FullUser;
 							var classes = null;
 							var styles = {};
 							if (reviewer.AvatarURL) {
-								styles["backgroundImage"] = `url(${reviewer.AvatarURL})`;
+								styles["backgroundImage"] = `url(${fullUser.AvatarURL})`;
 								classes = classnames({reviewer: true, avatar: true});
 							} else {
 								classes = classnames({"reviewer": true, "octicon": true, "octicon-person": true});
 							}
 
 							return (
-								<span className={classes} key={reviewer.Login} style={styles}>
+								<span className={classes} key={fullUser.Login} style={styles}>
 									<div className="remove">
-										<button className="btn btn-secondary" onClick={this._removeReviewer.bind(this, reviewer)}>
+										<button className="btn btn-secondary" onClick={this._removeReviewer.bind(this, fullUser)}>
 											<span className="octicon octicon-x"></span>
 										</button>
 									</div>
+									{reviewer.LGTM &&
+										<div className="lgtm">
+											<button className="btn btn-secondary">
+												<span className="octicon octicon-check"></span>
+											</button>
+										</div>
+									}
 
-									<Tooltip><b>{reviewer.Login}</b></Tooltip>
+									<Tooltip><b>{fullUser.Login}</b></Tooltip>
 								</span>
 							);
 						}, this)}
