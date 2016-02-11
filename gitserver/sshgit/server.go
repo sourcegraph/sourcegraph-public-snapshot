@@ -14,13 +14,13 @@ import (
 	"syscall"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"github.com/AaronO/go-git-http"
 	"github.com/flynn/go-shlex"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -194,7 +194,7 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		return fmt.Errorf("error accessing repo %q: %v", repoURI, err)
 	}
 
-	user, err := cl.Users.Get(s.ctx, &sourcegraph.UserSpec{UID: uid})
+	user, err := cl.Users.Get(grpccache.NoCache(s.ctx), &sourcegraph.UserSpec{UID: uid})
 	if err != nil {
 		fmt.Fprintf(ch.Stderr(), "Could not find user with uid %v.\n\n", uid)
 		return fmt.Errorf("could not find user with uid %v: %v", uid, err)
