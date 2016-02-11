@@ -125,6 +125,16 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
 	}
 
+	if op.Mirror {
+		if op.CloneURL == "" {
+			return nil, grpc.Errorf(codes.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
+		}
+	}
+
+	if op.URI == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "repo URI must have at least one path component")
+	}
+
 	ts := pbtypes.NewTimestamp(time.Now())
 	repo := &sourcegraph.Repo{
 		Name:         pathpkg.Base(op.URI),

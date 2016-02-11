@@ -10,7 +10,7 @@ import (
 	// App
 	_ "src.sourcegraph.com/sourcegraph/app/cmd"
 
-	// Stores
+	// Server
 	_ "src.sourcegraph.com/sourcegraph/server/cmd"
 	_ "src.sourcegraph.com/sourcegraph/server/dbinit"
 

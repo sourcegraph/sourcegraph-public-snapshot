@@ -1,7 +1,6 @@
 package store
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -97,16 +96,3 @@ func IsRepoNotFound(err error) bool {
 	_, ok := err.(*RepoNotFoundError)
 	return ok
 }
-
-// ErrRepoNeedsCloneURL occurs when Repos.Create is called and the
-// repo has no HTTPCloneURL or SSHCloneURL set, when the operation
-// requires that one be set. For example, mirror repos require the
-// repo to exist as a git/hg/etc. repository elsewhere already.
-var ErrRepoNeedsCloneURL = errors.New("creating a repo requires a clone URL to be set")
-
-// ErrRepoNoCloneURL occurs when Repos.Create is called and the repo
-// has a HTTPCloneURL or SSHCloneURL set, when the operation requires
-// that one NOT be set. For example, creating origin (non-mirror)
-// repos calls `git init` to create a new repo, so a clone URL would
-// be meaningless.
-var ErrRepoNoCloneURL = errors.New("creating a hosted repo initializes a new repo; no clone URL may be provided")

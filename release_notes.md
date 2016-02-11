@@ -15,8 +15,14 @@
   steps are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub)
 - Added the config option `--mirrors-waitlist=[none|open]`/`MirrorsWaitlist`, which enables restricting
   access to the PrivateMirrors feature via a waitlist. The default is no waitlist (`none`).
+- Removed support for storing most types of data (users, changesets,
+  tracker threads, etc.) on the filesystem. Git data is still stored
+  on the filesystem, but all other data now must be stored in
+  PostgreSQL. See docs/config/storage.md for PostgreSQL configuration
+  instructions.
 
 # 0.13.3
+
 - Removed the config option `--restrict-write-access`/`RestrictWriteAccess`.
   This flag would limit write access to admin users only. This is no longer
   necessary now that our ACL model includes write access.

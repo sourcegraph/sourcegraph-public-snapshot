@@ -2,7 +2,6 @@ package pgsql
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/sqs/modl"
@@ -26,23 +25,23 @@ var (
 	dbLock    sync.Mutex      // protects globalDBH
 )
 
-// DB opens the DB if it isn't already open, and returns
+// globalDB opens the DB if it isn't already open, and returns
 // it. Subsequent calls return the same DB handle.
-func DB() *dbutil2.Handle {
+func globalDB() (*dbutil2.Handle, error) {
 	dbLock.Lock()
 	defer dbLock.Unlock()
 
 	if globalDBH != nil {
-		return globalDBH
+		return globalDBH, nil
 	}
 
 	dbh, err := OpenDB(0)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	globalDBH = dbh
-	return globalDBH
+	return globalDBH, nil
 }
 
 // OpenDB opens and returns the DB handle for the DB. Use DB unless

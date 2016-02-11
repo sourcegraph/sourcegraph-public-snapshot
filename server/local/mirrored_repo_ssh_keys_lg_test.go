@@ -19,10 +19,6 @@ import (
 )
 
 func TestMirroredRepoSSHKeys_lg(t *testing.T) {
-	if testserver.Store != "pgsql" {
-		t.Skip()
-	}
-
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
 		&authutil.Flags{DisableAccessControl: true},

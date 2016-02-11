@@ -1,3 +1,5 @@
+// +build pgsqltest
+
 package testdb
 
 import (

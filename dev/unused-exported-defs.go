@@ -322,7 +322,6 @@ var scope = []string{
 	"src.sourcegraph.com/sourcegraph/srclib_support",
 	"src.sourcegraph.com/sourcegraph/store",
 	"src.sourcegraph.com/sourcegraph/store/authzchecked",
-	"src.sourcegraph.com/sourcegraph/store/cli",
 	"src.sourcegraph.com/sourcegraph/store/mockstore",
 	"src.sourcegraph.com/sourcegraph/store/testsuite",
 	"src.sourcegraph.com/sourcegraph/svc",

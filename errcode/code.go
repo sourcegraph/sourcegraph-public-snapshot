@@ -34,8 +34,6 @@ func HTTP(err error) int {
 		return http.StatusNotFound
 	case auth.ErrNoExternalAuthToken:
 		return http.StatusUnauthorized
-	case store.ErrRepoNeedsCloneURL, store.ErrRepoNoCloneURL:
-		return http.StatusPreconditionFailed
 	case store.ErrRegisteredClientIDExists:
 		return http.StatusConflict
 	}

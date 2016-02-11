@@ -34,7 +34,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
-	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 	appdashcli "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
 	"src.sourcegraph.com/sourcegraph/worker"
 )
@@ -43,21 +42,8 @@ var (
 	verbose  = flag.Bool("testapp.v", false, "verbose output for test app init")
 	keepTemp = flag.Bool("testapp.keeptemp", false, "keep temp dirs (do not remove) after exiting")
 
-	// Store must be provided via env vars because otherwise packages
-	// that don't use testserver.Server would fail because they lack the
-	// CLI flag.
-	Store = getTestStore()
-
 	waitServerStart = flag.Duration("testapp.wait", 10*time.Second, "max time to wait for server to start")
 )
-
-func getTestStore() string {
-	v := os.Getenv("TEST_STORE")
-	if v == "" {
-		v = "fs"
-	}
-	return v
-}
 
 // Server is a testing helper for integration tests. It lets you spawn an
 // external sourcegraph server process optionally letting you
@@ -107,9 +93,7 @@ func (c *Config) args() ([]string, error) {
 
 func (s *Server) allEnvConfig() []string {
 	v := s.serverEnvConfig()
-	if Store == "pgsql" {
-		v = append(v, s.dbEnvConfig()...)
-	}
+	v = append(v, s.dbEnvConfig()...)
 	v = append(v, s.srclibEnvConfig()...)
 	return v
 }
@@ -238,9 +222,7 @@ func (s *Server) Close() {
 		}
 	}
 
-	if Store == "pgsql" {
-		s.dbConfig.close()
-	}
+	s.dbConfig.close()
 }
 
 func (s *Server) AbsURL(rest string) string {
@@ -330,7 +312,7 @@ func NewServer() (*Server, context.Context) {
 }
 
 func NewUnstartedServerTLS() (*Server, context.Context) {
-	s, ctx := newUnstartedServer("https", Store)
+	s, ctx := newUnstartedServer("https")
 
 	s.Config.Serve.KeyFile = filepath.Join(s.SGPATH, "localhost.key")
 	s.Config.Serve.CertFile = filepath.Join(s.SGPATH, "localhost.crt")
@@ -345,14 +327,10 @@ func NewUnstartedServerTLS() (*Server, context.Context) {
 }
 
 func NewUnstartedServer() (*Server, context.Context) {
-	return newUnstartedServer("http", Store)
+	return newUnstartedServer("http")
 }
 
-func NewUnstartedServerWithStore(store string) (*Server, context.Context) {
-	return newUnstartedServer("http", store)
-}
-
-func newUnstartedServer(scheme, store string) (*Server, context.Context) {
+func newUnstartedServer(scheme string) (*Server, context.Context) {
 	var s Server
 
 	s.Config.Flags = append(s.Config.Flags, "-v")
@@ -392,27 +370,14 @@ func newUnstartedServer(scheme, store string) (*Server, context.Context) {
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
 
-	// Store type
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &storecli.Flags{
-		Store: store,
-	})
-
 	reposDir := filepath.Join(sgpath, "repos")
 	if err := os.MkdirAll(reposDir, 0700); err != nil {
 		log.Fatal(err)
 	}
-	buildStoreDir := filepath.Join(sgpath, "buildstore")
-	dbDir := filepath.Join(sgpath, "db")
-	statusDir := filepath.Join(sgpath, "statuses")
-	appStorageDir := filepath.Join(sgpath, "appdata")
 
 	// FS
 	s.Config.ServeFSFlags = &fs.Flags{
-		ReposDir:      reposDir,
-		BuildStoreDir: buildStoreDir,
-		DBDir:         dbDir,
-		RepoStatusDir: statusDir,
-		AppStorageDir: appStorageDir,
+		ReposDir: reposDir,
 	}
 
 	// Appdash
@@ -454,10 +419,8 @@ func newUnstartedServer(scheme, store string) (*Server, context.Context) {
 
 	s.Ctx = s.AsUIDWithScope(s.Ctx, 1, []string{"user:admin"})
 
-	if Store == "pgsql" {
-		if err := s.configDB(); err != nil {
-			log.Fatal(err)
-		}
+	if err := s.configDB(); err != nil {
+		log.Fatal(err)
 	}
 
 	// Server command.

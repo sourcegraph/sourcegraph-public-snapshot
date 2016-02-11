@@ -40,9 +40,8 @@ This separation has benefits and drawbacks:
 
 How do you know whether to implement new functionality in a server
 method vs. a store method? If it's specific to the way the data is
-persisted, you must put it in the store (and write implementations for
-pgsql and fs, as a minimum). If it's independent of how the data is
-persisted ("business logic"), use a server method.
+persisted, you must put it in the store. If it's independent of how
+the data is persisted ("business logic"), use a server method.
 
 
 AUTHORIZATION AND PERMISSIONS (WORK-IN-PROGRESS)

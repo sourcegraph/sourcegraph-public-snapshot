@@ -114,6 +114,11 @@ cloud_pre() {
 
 	# Install Docker
 	curl -sSL https://get.docker.com/ | sh
+
+	# Install PostgreSQL
+	apt-get install -y postgresql postgresql-contrib
+	sudo -u postgres createuser --superuser sourcegraph # superuser needed for 'CREATE EXTENSION'
+	sudo -u postgres createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 }
 
 cloud_post() {
@@ -130,7 +135,11 @@ cloud_post() {
 	sed -i 's|^;app-url =.*|app-url = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
   echo '[serve]
 http-addr = :80' >> /etc/sourcegraph/config.ini
-	restart src || echo ok
+
+	# initialize PostgreSQL database
+	sudo -u sourcegraph src pgsql create
+
+	restart src || start src || echo ok
 	# TODO: set up self-signed TLS certs
 }
 

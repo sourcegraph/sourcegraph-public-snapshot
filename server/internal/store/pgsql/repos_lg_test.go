@@ -18,13 +18,10 @@ import (
 // properly enqueues a new build for that repo.
 func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 	t.Skip("flaky")
-	if testserver.Store != "pgsql" {
-		t.Skip()
-	}
 	t.Parallel()
 
-	// Start a fs-backed server to act as our repository host for mirroring.
-	fsServer, fsCtx := testserver.NewUnstartedServerWithStore("fs")
+	// Start a server to act as our repository host for mirroring.
+	fsServer, fsCtx := testserver.NewUnstartedServer()
 	fsServer.Config.ServeFlags = append(fsServer.Config.ServeFlags,
 		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
 	)
@@ -91,13 +88,10 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 // repository does remove the filesystem-stored git repository (which acts as
 // a working directory for git ops).
 func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
-	if testserver.Store != "pgsql" {
-		t.Skip()
-	}
 	t.Parallel()
 
-	// Start a fs-backed server to act as our repository host for mirroring.
-	fsServer, fsCtx := testserver.NewUnstartedServerWithStore("fs")
+	// Start a server to act as our repository host for mirroring.
+	fsServer, fsCtx := testserver.NewUnstartedServer()
 	fsServer.Config.ServeFlags = append(fsServer.Config.ServeFlags,
 		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
 	)

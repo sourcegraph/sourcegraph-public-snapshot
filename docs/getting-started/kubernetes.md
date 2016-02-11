@@ -8,19 +8,23 @@ setup a Sourcegraph instance (single replica) on a Google Container Engine
 cluster. With small modification to the configuration below you can setup
 Sourcegraph to run on any Kubernetes infrastructure.
 
+**Note:** Sourcegraph requires PostgreSQL, but this Kubernetes
+deployment guide does not cover PostgreSQL setup; you must set it up
+on your own. (We will add instructions here soon.)
+
 # Volumes
 
 A Sourcegraph Pod must mount two volumes: one to persist server configuration
-and another to persist repositories and other Sourcegraph metadata.
+and another to persist Git repository data.
 
 On Google infrastructure, create a Persistent Disk for each volume:
 
 ```
-gcloud compute disks create --size=300GB sourcegraph-data
+gcloud compute disks create --size=300GB sourcegraph-repos
 gcloud compute disks create --size=10GB sourcegraph-config
 ```
 
-Choose a disk size for `sourcegraph-data` based on your repository storage
+Choose a disk size for `sourcegraph-repos` based on your repository storage
 requirements.
 
 # Service
@@ -60,7 +64,8 @@ kubectl create -f service.yml
 Create a Replication Controller to pull Sourcegraph's docker image
 and mount your volumes.
 
-First, create a `rc.yml` file with the following contents:
+First, create a `rc.yml` file with the following contents (with the
+`PG*` environment variable values replaced with their actual values):
 
 ```
 apiVersion: v1
@@ -80,20 +85,29 @@ spec:
       - name: src
         image: sourcegraph/sourcegraph:latest
         volumeMounts:
-        - name: data
-          mountPath: /etc/sourcegraph
-        - name: config
+        - name: repos
           mountPath: /home/sourcegraph/.sourcegraph
+        - name: config
+          mountPath: /etc/sourcegraph
         ports:
         - containerPort: 80
           protocol: TCP
-        ports:
         - containerPort: 443
           protocol: TCP
+	    env:
+		- name: PGHOST
+		  value: example.com
+		- name: PGUSER
+		  value: myuser
+        - name: PGPASSWORD
+		  value: mypassword
+	    - name: PGDATABASE
+		  value: mydatabase
+	    # add any other PG* env vars needed
       volumes:
-      - name: data
+      - name: repos
         gcePersistentDisk:
-          pdName: sourcegraph-data
+          pdName: sourcegraph-repos
           fsType: "ext4"
       - name: config
         gcePersistentDisk:

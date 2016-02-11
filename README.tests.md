@@ -41,7 +41,7 @@ kinds of tests contained in the file.
   not use the database, network, or external programs. This is the
   most common kind of test.
 * **exectest**: tests that spawn a `src` child process
-* **dbtest**: tests that require access to the PostgreSQL database.
+* **pgsqltest**: tests that require access to the PostgreSQL database.
 * **nettest**: tests that require access to the network. We currently
   don't distinguish between tests that require localhost access and
   tests that require Internet access, but we may do so later.

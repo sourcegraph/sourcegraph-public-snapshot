@@ -73,7 +73,6 @@ BD_SGPATH = $(HOME)/.sourcegraph
 serve-beyang-dev:
 	SG_FEATURE_SEARCHNEXT=f SG_FEATURE_DISCUSSIONS=f $(MAKE) serve-dev SRCFLAGS="-v --grpc-endpoint http://localhost:3100 $(SRCFLAGS)" SERVEFLAGS="\
 --graphstore.root='$(BD_SGPATH)/repos' \
---fs.build-store-dir='$(BD_SGPATH)/buildstore' \
 --no-worker \
 --app-url '' \
 --app.custom-logo 'MyLogo' \
@@ -111,8 +110,11 @@ serve-dep:
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
 	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" npm start &)) || echo Serving bundled assets, not using Webpack.
 
-smoke:
-	godep go run ./smoke/basicgit/basicgit.go
+smoke: src
+	dropdb --if-exists src-smoke
+	createdb src-smoke
+	PGDATABASE=src-smoke $(GOBIN)/src pgsql create
+	PGDATABASE=src-smoke godep go run ./smoke/basicgit/basicgit.go
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
@@ -170,8 +172,7 @@ smtest:
 	$(MAKE) go-test GOFLAGS=""
 
 mdtest:
-	$(MAKE) go-test GOFLAGS="-tags 'exectest pgsqltest nettest buildtest'" TEST_STORE="fs"
-	$(MAKE) go-test GOFLAGS="-tags 'exectest pgsqltest nettest buildtest'" TEST_STORE="pgsql"
+	$(MAKE) go-test GOFLAGS="-tags 'exectest pgsqltest nettest buildtest'"
 
 lgtest: go-test
 
