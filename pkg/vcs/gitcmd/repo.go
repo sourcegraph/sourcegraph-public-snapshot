@@ -1088,7 +1088,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		return nil, err
 	}
 
-	args := []string{"ls-tree", "-z", "--full-name", string(commit)}
+	args := []string{"ls-tree", "--full-name", string(commit)}
 	if recurse {
 		args = append(args, "-r")
 	}
@@ -1108,7 +1108,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 	}
 
 	prefixLen := strings.LastIndexByte(strings.TrimPrefix(path, "./"), '/') + 1
-	lines := bytes.Split(out, []byte{'\x00'})
+	lines := strings.Split(string(out), "\n")
 	fis := make([]os.FileInfo, len(lines)-1)
 	for i, line := range lines {
 		if i == len(lines)-1 {
@@ -1116,7 +1116,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 			continue
 		}
 
-		parts := strings.Fields(string(line))
+		parts := strings.Fields(line)
 		if len(parts) != 4 {
 			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
 		}
@@ -1129,7 +1129,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		}
 
 		var sys interface{}
-		mode, err := strconv.ParseInt(string(parts[0]), 8, 32)
+		mode, err := strconv.ParseInt(parts[0], 8, 32)
 		if err != nil {
 			return nil, err
 		}
