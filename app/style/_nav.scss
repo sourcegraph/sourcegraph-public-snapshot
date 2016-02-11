@@ -67,23 +67,10 @@ header.page-header {
 #nav {
 	margin-bottom: 0;
 
-	&.navbar-default {
-		background-color: white;
-		border-bottom: 1px solid #eee;
-	}
-	&.navbar-inverted {
-		background-color: $sg-blue-color;
-		a { color: white; }
-		.tokenfield {
-			border: none;
-		}
-	}
-	&.navbar-tint {
-		background-color: $dark-blue;
-		border: 0px;
-		.tokenfield {
-			padding: 6px 6px;
-		}
+	background-color: $nav-background-color;
+	border: 0px;
+	.tokenfield {
+		padding: 6px 6px;
 	}
 
 	.navbar-brand {
@@ -116,7 +103,7 @@ header.page-header {
 				border: none;
 				&:hover,
 				&:focus {
-					background-color: darken($dark-blue, 5);
+					background-color: darken($nav-background-color, 5);
 				}
 			}
 			a, i, .btn-link {

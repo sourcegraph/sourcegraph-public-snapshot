@@ -9,44 +9,4 @@
 $font-family-sans-serif: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
 $font-family-base: $font-family-sans-serif;
 $font-family-monospace: "Roboto Mono", Consolas, Menlo, Monaco, "Courier New", monospace;
-
-$brand-primary: $dark-blue;
-$non-brand-success: $brand-success;
-$brand-success: $sg-blue-color;
-
-$text-quieted: $gray-mid;
-
-$link-color: $mid-blue;
-
-$btn-primary-color:              #fff;
-$btn-primary-bg:                 $brand-primary;
-$btn-primary-border:             darken($btn-primary-bg, 5%);
-
-$list-group-border: #ccc;
-$list-group-active-bg: $sg-blue-color;
-$list-group-active-color: white;
-$list-group-active-border: $sg-blue-color;
-
-$navbar-default-bg: $dark-blue;
-$navbar-default-link-color: #444;
-$navbar-default-link-active-color: #222;
-$navbar-default-link-hover-color: $link-color;
-$navbar-border-radius: 0;
-$nav-link-hover-bg: $light-blue;
-
-$code-color:                  none;
-$code-bg:                     none;
-$pre-bg:                      none;
-$pre-color:                   none;
-$pre-border-color:            none;
-$pre-scrollable-max-height:   none;
-
-$zindex-dropdown:         z-index(dropdown);
-$zindex-popover:          z-index(popover);
-$zindex-tooltip:          z-index(tooltip);
-$zindex-navbar-fixed:     z-index(navbar);
-$zindex-navbar:           z-index(navbar);
-$zindex-modal-background: z-index(modal-backdrop);
-$zindex-modal:            z-index(modal);
-
 $blockquote-font-size: $font-size-base;

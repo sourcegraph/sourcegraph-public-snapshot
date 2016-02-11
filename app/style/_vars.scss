@@ -1,6 +1,9 @@
+// ----------------------------------------------------------------------------
+// Colors
+// ----------------------------------------------------------------------------
+
 $row-highlight-color: #DCE7F3;
 $sg-blue-color: rgba(78, 155, 212, 1); // less-saturated version of actual sg-blue (#459def)
-$footer-height: 110px;//180px;
 $panel-head-color: #f5f5f5;
 
 $white: #ffffff;
@@ -22,10 +25,59 @@ $highlight-ref-border: darken($highlight-ref-bg, 5%);
 $highlight-ref-secondary-bg: rgba(255, 204, 0, 0.2);
 $highlight-ref-secondary-border: darken($highlight-ref-secondary-bg, 5%);
 
-// TODO(sqs): Remove hardcoded dimensions.
-$code-file-toolbar-height: 40px;
-$navbar-logo-width: 140px;
-$subnav-height: $navbar-height + 7;
+$code-bg: #fff;
+$code-line-fg: rgba(0,0,0,0.3);
+$inactive-code-color: darken($gray-light, 2%);
+$active-code-bg: lighten(#fc0, 43%);
+
+$diff-added-color: #54a63e;
+$diff-changed-color: lighten(#c98d00, 4%);
+$diff-deleted-color: lighten(#c71111, 3%);
+
+/* Palette */
+$brand-azure: #0fb6f2;
+
+$charcoal: #2d2836;
+$ghost-white: #f6fafd;
+$white: #ffffff;
+
+/* Components */
+$nav-background-color: $dark-blue;
+
+/* Bootstrap Overrides */
+$brand-primary: $dark-blue;
+$non-brand-success: $brand-success;
+$brand-success: $sg-blue-color;
+
+$text-quieted: $gray-mid;
+$link-color: $mid-blue;
+
+$btn-primary-color: #fff;
+$btn-primary-bg: $brand-primary;
+$btn-primary-border: darken($btn-primary-bg, 5%);
+
+$list-group-border: #ccc;
+$list-group-active-bg: $sg-blue-color;
+$list-group-active-color: white;
+$list-group-active-border: $sg-blue-color;
+
+$navbar-default-bg: $charcoal;
+$navbar-default-link-color: #444;
+$navbar-default-link-active-color: #222;
+$navbar-default-link-hover-color: $link-color;
+$navbar-border-radius: 0;
+$nav-link-hover-bg: $light-blue;
+
+$code-color:                  none;
+$code-bg:                     none;
+$pre-bg:                      none;
+$pre-color:                   none;
+$pre-border-color:            none;
+$pre-scrollable-max-height:   none;
+
+// ----------------------------------------------------------------------------
+// Z-index
+// ----------------------------------------------------------------------------
 
 $z-index:            (
 	loading-indicator: 3100,
@@ -43,19 +95,27 @@ $z-index:            (
 	context-menu:      100,
 );
 
-// Code View
-$code-bg: #fff;
-$code-line-fg: rgba(0,0,0,0.3);
+/* Bootstrap Overrides */
+$zindex-dropdown:         z-index(dropdown);
+$zindex-popover:          z-index(popover);
+$zindex-tooltip:          z-index(tooltip);
+$zindex-navbar-fixed:     z-index(navbar);
+$zindex-navbar:           z-index(navbar);
+$zindex-modal-background: z-index(modal-backdrop);
+$zindex-modal:            z-index(modal);
+
+// ----------------------------------------------------------------------------
+// Dimensions
+// ----------------------------------------------------------------------------
+
+$footer-height: 110px;
+$motd-height: 29px;
+
+// TODO(sqs): Remove hardcoded dimensions.
+$code-file-toolbar-height: 40px;
+$navbar-logo-width: 140px;
+$subnav-height: $navbar-height + 7;
 $code-line-height: 1.35em;
 $code-font-size: 13px;
 $code-popup-width: 600px;
 $line-number-padding: 0 9px 0 2px;
-
-$inactive-code-color: darken($gray-light, 2%);
-$active-code-bg: lighten(#fc0, 43%);
-
-$diff-added-color: #54a63e;
-$diff-changed-color: lighten(#c98d00, 4%);
-$diff-deleted-color: lighten(#c71111, 3%);
-
-$motd-height: 29px;
