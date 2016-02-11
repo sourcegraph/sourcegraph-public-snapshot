@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )
 
 var Notify sourcegraph.NotifyServer = &notify{}
@@ -85,8 +86,11 @@ func (s *notify) getPeople(ctx context.Context, users ...*sourcegraph.UserSpec) 
 }
 
 func (s *notify) verifyCanNotify(ctx context.Context, actor *sourcegraph.UserSpec, recipients []*sourcegraph.UserSpec) error {
-	// TODO(keegan) implement some sort of verification to prevent abuse
-	return nil
+	var uid int32
+	if actor != nil {
+		uid = actor.UID
+	}
+	return accesscontrol.VerifyUserSelfOrAdmin(ctx, "Notify.GenericEvent", uid)
 }
 
 func dedupUsers(users []*sourcegraph.UserSpec) []*sourcegraph.UserSpec {

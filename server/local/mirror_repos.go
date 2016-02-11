@@ -438,19 +438,19 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 		orgNames[i] = *org.Login
 
 		// Add org to waitlist if it doesn't exist already.
-		err := waitlistStore.AddOrg(ctx, orgNames[i])
+		err := waitlistStore.AddOrg(elevatedActor(ctx), orgNames[i])
 		if err != nil && err != store.ErrWaitlistedOrgExists {
 			return nil, err
 		}
 	}
-	grantedOrgs, err := waitlistStore.ListOrgs(ctx, false, true, orgNames)
+	grantedOrgs, err := waitlistStore.ListOrgs(elevatedActor(ctx), false, true, orgNames)
 	if err != nil {
 		log15.Error("Could not check waitlisted orgs for user", "github_user", *ghUser.Login, "sourcegraph_user", userLogin, "error", err)
 		return result, nil
 	}
 	if len(grantedOrgs) > 0 {
 		// User should be granted access automatically.
-		if err := waitlistStore.GrantUser(ctx, uid); err != nil {
+		if err := waitlistStore.GrantUser(elevatedActor(ctx), uid); err != nil {
 			return nil, err
 		}
 		result.State = sourcegraph.UserMirrorsState_HasAccess

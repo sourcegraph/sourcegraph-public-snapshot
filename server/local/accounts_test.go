@@ -3,13 +3,10 @@ package local
 import (
 	"errors"
 	"net/url"
-	"os"
 	"reflect"
 	"testing"
 
 	"github.com/mattbaird/gochimp"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -222,27 +219,6 @@ func TestUpdate(t *testing.T) {
 		}
 		return nil
 	}
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 123})
-
-	if _, err := Accounts.Update(ctx, user); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 124}); grpc.Code(err) != codes.PermissionDenied {
-		t.Errorf("expected grpc.PermissionDenied, got %v", err)
-	}
-
-	// Update user's permissions.
-	user.Write = true
-	user.Admin = true
-
-	// Verify that non-admin user cannot set their own access level.
-	if _, err := Accounts.Update(ctx, user); grpc.Code(err) != codes.PermissionDenied {
-		t.Errorf("expected grpc.PermissionDenied, got %v", err)
-	}
-
-	// Verify that admin user can set access levels.
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 124, Scope: map[string]bool{"user:admin": true}})
 	if _, err := Accounts.Update(ctx, user); err != nil {
 		t.Error(err)
 	}

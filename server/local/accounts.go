@@ -53,7 +53,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	if numUsers == 0 {
 		write = true
 		admin = true
-	} else if !fed.Config.IsRoot && !authutil.ActiveFlags.AllowAllLogins && !authpkg.ActorFromContext(ctx).HasAdminAccess() {
+	} else if !authutil.ActiveFlags.AllowAllLogins && !authpkg.ActorFromContext(ctx).HasAdminAccess() {
 		// This is not the first user and this instance does not allow
 		// non-admin users to create an account without an invite.
 		return nil, grpc.Errorf(codes.PermissionDenied, "cannot sign up without an invite")

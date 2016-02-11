@@ -24,7 +24,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
@@ -139,7 +138,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 		return nil, grpc.Errorf(codes.Unimplemented, "no Users")
 	}
 
-	user, err := usersStore.Get(ctx, sourcegraph.UserSpec{Login: cred.Login})
+	user, err := usersStore.Get(elevatedActor(ctx), sourcegraph.UserSpec{Login: cred.Login})
 	if err != nil {
 		if !(store.IsUserNotFound(err) && authutil.ActiveFlags.IsLDAP()) {
 			return nil, err
@@ -164,7 +163,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 			return nil, grpc.Errorf(codes.Unimplemented, "no Passwords")
 		}
 
-		if passwordStore.CheckUIDPassword(ctx, user.UID, cred.Password) != nil {
+		if passwordStore.CheckUIDPassword(elevatedActor(ctx), user.UID, cred.Password) != nil {
 			return nil, grpc.Errorf(codes.PermissionDenied, "bad password for user %q", cred.Login)
 		}
 	}
@@ -208,7 +207,7 @@ func (s *auth) authenticateBearerJWT(ctx context.Context, rawTok *sourcegraph.Be
 			return nil, errors.New("bearer JWT has empty issuer, can't look up key")
 		}
 		var err error
-		regClient, err = (&registeredClients{}).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: clientID})
+		regClient, err = (&registeredClients{}).Get(elevatedActor(ctx), &sourcegraph.RegisteredClientSpec{ID: clientID})
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +347,7 @@ func linkLDAPUserAccount(ctx context.Context, ldapuser *ldap.LDAPUser) (*sourceg
 	}
 
 	// Link the LDAP username with a user in the local accounts store.
-	userSpec, err := svc.Accounts(ctx).Create(ctx, &sourcegraph.NewAccount{
+	userSpec, err := (&accounts{}).Create(elevatedActor(ctx), &sourcegraph.NewAccount{
 		// Use the LDAP username.
 		Login: ldapuser.Username,
 		// Use the common email address as the primary email.
