@@ -170,10 +170,6 @@ smtest:
 	$(MAKE) go-test GOFLAGS=""
 
 mdtest:
-# Note: we go install srclib so that stale Godeps pkgs get rebuilt as
-# well (srclib could be any other pkg in Godeps). This will no longer
-# be necessary in Go 1.5.
-	$(GODEP) go install ./cmd/src sourcegraph.com/sourcegraph/srclib
 	$(MAKE) go-test GOFLAGS="-tags 'exectest pgsqltest nettest buildtest'" TEST_STORE="fs"
 	$(MAKE) go-test GOFLAGS="-tags 'exectest pgsqltest nettest buildtest'" TEST_STORE="pgsql"
 
