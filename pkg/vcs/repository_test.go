@@ -918,9 +918,6 @@ func TestRepository_FileSystem(t *testing.T) {
 		if name := file1Info.Name(); name != "file1" {
 			t.Errorf("%s: got file1 name %q, want 'file1'", label, name)
 		}
-		if size, want := file1Info.Size(), int64(len("infile1")); size != want {
-			t.Errorf("%s: got file1 size %d, want %d", label, size, want)
-		}
 
 		// file2 shouldn't exist in the 1st commit.
 		_, err = fs1.Open("file2")

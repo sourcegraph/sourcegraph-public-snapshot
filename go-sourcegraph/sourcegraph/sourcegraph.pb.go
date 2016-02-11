@@ -2944,8 +2944,6 @@ func (*TreeEntry) ProtoMessage()    {}
 type BasicTreeEntry struct {
 	Name     string            `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
 	Type     TreeEntryType     `protobuf:"varint,2,opt,name=Type,proto3,enum=sourcegraph.TreeEntryType" json:"Type,omitempty"`
-	Size_    int64             `protobuf:"varint,3,opt,name=Size,proto3" json:"Size,omitempty"`
-	ModTime  pbtypes.Timestamp `protobuf:"bytes,4,opt,name=ModTime" json:"ModTime"`
 	Contents []byte            `protobuf:"bytes,5,opt,name=Contents,proto3" json:"Contents,omitempty"`
 	Entries  []*BasicTreeEntry `protobuf:"bytes,6,rep,name=Entries" json:"Entries,omitempty"`
 }
@@ -15387,19 +15385,6 @@ func (m *BasicTreeEntry) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Type))
 	}
-	if m.Size_ != 0 {
-		data[i] = 0x18
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Size_))
-	}
-	data[i] = 0x22
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ModTime.Size()))
-	n202, err := m.ModTime.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n202
 	if m.Contents != nil {
 		if len(m.Contents) > 0 {
 			data[i] = 0x2a
@@ -15441,11 +15426,11 @@ func (m *TreeEntrySpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n203, err := m.RepoRev.MarshalTo(data[i:])
+	n202, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n203
+	i += n202
 	if len(m.Path) > 0 {
 		data[i] = 0x12
 		i++
@@ -15512,21 +15497,21 @@ func (m *UnitDelta) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-		n204, err := m.Base.MarshalTo(data[i:])
+		n203, err := m.Base.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n204
+		i += n203
 	}
 	if m.Head != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-		n205, err := m.Head.MarshalTo(data[i:])
+		n204, err := m.Head.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n205
+		i += n204
 	}
 	return i, nil
 }
@@ -15588,11 +15573,11 @@ func (m *UnitListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x32
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n206, err := m.ListOptions.MarshalTo(data[i:])
+	n205, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n206
+	i += n205
 	return i, nil
 }
 
@@ -15614,11 +15599,11 @@ func (m *UnitSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRevSpec.Size()))
-	n207, err := m.RepoRevSpec.MarshalTo(data[i:])
+	n206, err := m.RepoRevSpec.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n207
+	i += n206
 	if len(m.UnitType) > 0 {
 		data[i] = 0x12
 		i++
@@ -15777,11 +15762,11 @@ func (m *FileToken) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-		n208, err := m.Entry.MarshalTo(data[i:])
+		n207, err := m.Entry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n208
+		i += n207
 	}
 	return i, nil
 }
@@ -15980,19 +15965,19 @@ func (m *RegisteredClient) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x5a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-	n209, err := m.CreatedAt.MarshalTo(data[i:])
+	n208, err := m.CreatedAt.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n208
+	data[i] = 0x62
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
+	n209, err := m.UpdatedAt.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n209
-	data[i] = 0x62
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
-	n210, err := m.UpdatedAt.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n210
 	return i, nil
 }
 
@@ -16073,11 +16058,11 @@ func (m *RegisteredClientListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n211, err := m.ListOptions.MarshalTo(data[i:])
+	n210, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n211
+	i += n210
 	return i, nil
 }
 
@@ -16111,11 +16096,11 @@ func (m *RegisteredClientList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n212, err := m.StreamResponse.MarshalTo(data[i:])
+	n211, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n212
+	i += n211
 	return i, nil
 }
 
@@ -16227,11 +16212,11 @@ func (m *UserPermissionsOptions) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.ClientSpec.Size()))
-		n213, err := m.ClientSpec.MarshalTo(data[i:])
+		n212, err := m.ClientSpec.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n213
+		i += n212
 	}
 	if m.UID != 0 {
 		data[i] = 0x10
@@ -16326,11 +16311,11 @@ func (m *UserEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-		n214, err := m.CreatedAt.MarshalTo(data[i:])
+		n213, err := m.CreatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n214
+		i += n213
 	}
 	if len(m.Message) > 0 {
 		data[i] = 0x42
@@ -16426,11 +16411,11 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Timestamp.Size()))
-		n215, err := m.Timestamp.MarshalTo(data[i:])
+		n214, err := m.Timestamp.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n215
+		i += n214
 	}
 	if len(m.UserProperties) > 0 {
 		keysForUserProperties := make([]string, 0, len(m.UserProperties))
@@ -16540,11 +16525,11 @@ func (m *NotifyGenericEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Actor.Size()))
-		n216, err := m.Actor.MarshalTo(data[i:])
+		n215, err := m.Actor.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n216
+		i += n215
 	}
 	if len(m.Recipients) > 0 {
 		for _, msg := range m.Recipients {
@@ -19766,11 +19751,6 @@ func (m *BasicTreeEntry) Size() (n int) {
 	if m.Type != 0 {
 		n += 1 + sovSourcegraph(uint64(m.Type))
 	}
-	if m.Size_ != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Size_))
-	}
-	l = m.ModTime.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
 	if m.Contents != nil {
 		l = len(m.Contents)
 		if l > 0 {
@@ -45097,55 +45077,6 @@ func (m *BasicTreeEntry) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Size_", wireType)
-			}
-			m.Size_ = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.Size_ |= (int64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModTime", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ModTime.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Contents", wireType)

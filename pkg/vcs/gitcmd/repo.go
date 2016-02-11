@@ -1085,7 +1085,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		return nil, err
 	}
 
-	args := []string{"ls-tree", "-z", "--full-name", "--long", string(commit)}
+	args := []string{"ls-tree", "-z", "--full-name", string(commit)}
 	if recurse {
 		args = append(args, "-r")
 	}
@@ -1113,38 +1113,19 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 			continue
 		}
 
-		// Format of `git ls-tree --long` is:
-		// "MODE TYPE COMMITID      SIZE    NAME"
-		// For example:
-		// "100644 blob cfea37f3df073e40c52b61efcd8f94af750346c7     73   mydir/myfile"
-		parts := bytes.SplitN(line, []byte(" "), 4)
+		parts := strings.Fields(string(line))
 		if len(parts) != 4 {
-			return nil, fmt.Errorf("invalid `git ls-tree --long` output: %q", out)
+			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
 		}
 
-		typ := string(parts[1])
+		typ := parts[1]
 		oid := parts[2]
+		name := parts[3]
 		if len(oid) != 40 {
-			return nil, fmt.Errorf("invalid `git ls-tree --long` oid output: %q", oid)
+			return nil, fmt.Errorf("invalid `git ls-tree` oid output: %q", oid)
 		}
-
-		rest := bytes.TrimLeft(parts[3], " ")
-		restParts := bytes.SplitN(rest, []byte{'\t'}, 2)
-		if len(restParts) != 2 {
-			return nil, fmt.Errorf("invalid `git ls-tree --long` size and/or name: %q", rest)
-		}
-		sizeB := restParts[0]
-		var size int64
-		if len(sizeB) != 0 && sizeB[0] != '-' {
-			size, err = strconv.ParseInt(string(sizeB), 10, 64)
-			if err != nil {
-				return nil, err
-			}
-		}
-		name := string(restParts[1])
 
 		var sys interface{}
-
 		mode, err := strconv.ParseInt(string(parts[0]), 8, 32)
 		if err != nil {
 			return nil, err
@@ -1183,7 +1164,6 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		fis[i] = &util.FileInfo{
 			Name_: name[prefixLen:],
 			Mode_: os.FileMode(mode),
-			Size_: size,
 			Sys_:  sys,
 		}
 	}

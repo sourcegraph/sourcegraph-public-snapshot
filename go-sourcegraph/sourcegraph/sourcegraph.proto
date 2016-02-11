@@ -2589,8 +2589,6 @@ message TreeEntry {
 message BasicTreeEntry {
 	string Name = 1;
 	TreeEntryType Type = 2;
-	int64 Size = 3;
-	pbtypes.Timestamp ModTime = 4 [(gogoproto.nullable) = false];
 	bytes Contents = 5;
 	repeated BasicTreeEntry Entries = 6;
 }

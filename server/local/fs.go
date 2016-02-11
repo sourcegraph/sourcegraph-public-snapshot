@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/sqs/fileset"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
@@ -65,9 +64,7 @@ func singleSubDir(entries []os.FileInfo) bool {
 
 func newTreeEntry(fi os.FileInfo) *sourcegraph.BasicTreeEntry {
 	e := &sourcegraph.BasicTreeEntry{
-		Name:    fi.Name(),
-		Size_:   fi.Size(),
-		ModTime: pbtypes.NewTimestamp(fi.ModTime()),
+		Name: fi.Name(),
 	}
 	switch {
 	case fi.Mode()&vcs.ModeSubmodule == vcs.ModeSubmodule:
