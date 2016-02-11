@@ -1090,7 +1090,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 
 	args := []string{"ls-tree", "--full-name", string(commit)}
 	if recurse {
-		args = append(args, "-r")
+		args = append(args, "-r", "-t")
 	}
 	args = append(args, "--", filepath.ToSlash(path))
 	cmd := gitserver.Command("git", args...)
