@@ -1,6 +1,6 @@
-@import "_bootstrap_overrides";
-@import "_bootstrap";
+@import "_vars";
 
+@import "_bootstrap";
 $fa-font-path: "/.assets/font/font-awesome";
 @import "~font-awesome/scss/variables";
 @import "~font-awesome/scss/mixins";
@@ -16,7 +16,6 @@ $fa-font-path: "/.assets/font/font-awesome";
 @import "~font-awesome/scss/icons";
 
 @import "_mixins";
-@import "_vars";
 @import "_fonts";
 
 @import "_error";

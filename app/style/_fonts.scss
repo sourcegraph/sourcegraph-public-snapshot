@@ -1,61 +1,69 @@
 $font-assets-path: "/.assets/font";
 
-/* roboto-regular - latin */
+// ----------------------------------------------------------------------------
+// Circular
+// ----------------------------------------------------------------------------
+
+/* Circular-Book */
 @font-face {
-	font-family: "Roboto";
+	font-family: "Circular";
 	font-style: normal;
 	font-weight: 400;
-	src: local("Roboto"), local("Roboto-Regular"),
-	url($font-assets-path + "/roboto/roboto-v15-latin-regular.woff2") format("woff2"), /* Chrome 26+, Opera 23+ */
-	url($font-assets-path + "/roboto/roboto-v15-latin-regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+	src: url($font-assets-path + "/circular/circular-book.ttf") format("truetype");
 }
 
-/* roboto-italic - latin */
+/* Circular-Book Italic */
 @font-face {
-	font-family: "Roboto";
+	font-family: "Circular";
 	font-style: italic;
 	font-weight: 400;
-	src: local("Roboto Italic"), local("Roboto-Italic"),
-	url($font-assets-path + "/roboto/roboto-v15-latin-italic.woff2") format("woff2"), /* Chrome 26+, Opera 23+ */
-	url($font-assets-path + "/roboto/roboto-v15-latin-italic.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+	src: url($font-assets-path + "/circular/circular-book-italic.ttf") format("truetype");
 }
 
-/* roboto-500 - latin */
+/* Circular-Medium */
 @font-face {
-	font-family: "Roboto";
+	font-family: "Circular";
 	font-style: normal;
 	font-weight: 500;
-	src: local("Roboto Medium"), local("Roboto-Medium"),
-	url($font-assets-path + "/roboto/roboto-v15-latin-500.woff2") format("woff2"), /* Chrome 26+, Opera 23+ */
-	url($font-assets-path + "/roboto/roboto-v15-latin-500.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+	src: url($font-assets-path + "/circular/circular-medium.ttf") format("truetype");
 }
 
-/* roboto-700 - latin */
+/* Circular-Medium Italic */
 @font-face {
-	font-family: "Roboto";
+	font-family: "Circular";
+	font-style: italic;
+	font-weight: 500;
+	src: url($font-assets-path + "/circular/circular-medium-italic.ttf") format("truetype");
+}
+
+/* Circular-Bold */
+@font-face {
+	font-family: "Circular";
 	font-style: normal;
 	font-weight: 700;
-	src: local("Roboto Bold"), local("Roboto-Bold"),
-	url($font-assets-path + "/roboto/roboto-v15-latin-700.woff2") format("woff2"), /* Chrome 26+, Opera 23+ */
-	url($font-assets-path + "/roboto/roboto-v15-latin-700.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+	src: url($font-assets-path + "/circular/circular-bold.ttf") format("truetype");
 }
 
-/* roboto-mono-regular - latin */
+/* Circular-Bold Italic */
 @font-face {
-	font-family: "Roboto Mono";
-	font-style: normal;
-	font-weight: 400;
-	src: local("Roboto Mono"), local("RobotoMono-Regular"),
-	url($font-assets-path + "/roboto-mono/roboto-mono-v4-latin-regular.woff2") format("woff2"), /* Chrome 26+, Opera 23+ */
-	url($font-assets-path + "/roboto-mono/roboto-mono-v4-latin-regular.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
-}
-
-/* roboto-mono-700 - latin */
-@font-face {
-	font-family: "Roboto Mono";
-	font-style: normal;
+	font-family: "Circular";
+	font-style: italic;
 	font-weight: 700;
-	src: local("Roboto Mono Bold"), local("RobotoMono-Bold"),
-	url($font-assets-path + "/roboto-mono/roboto-mono-v4-latin-700.woff2") format("woff2"), /* Chrome 26+, Opera 23+ */
-	url($font-assets-path + "/roboto-mono/roboto-mono-v4-latin-700.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+	src: url($font-assets-path + "/circular/circular-bold-italic.ttf") format("truetype");
+}
+
+/* Circular-Black */
+@font-face {
+	font-family: "Circular";
+	font-style: normal;
+	font-weight: 800;
+	src: url($font-assets-path + "/circular/circular-black.ttf") format("truetype");
+}
+
+/* Circular-Black Italic */
+@font-face {
+	font-family: "Circular";
+	font-style: italic;
+	font-weight: 800;
+	src: url($font-assets-path + "/circular/circular-black-italic.ttf") format("truetype");
 }

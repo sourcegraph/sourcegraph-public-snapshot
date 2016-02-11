@@ -1,3 +1,5 @@
+@import "~bootstrap-sass/assets/stylesheets/bootstrap/variables";
+
 // ----------------------------------------------------------------------------
 // Colors
 // ----------------------------------------------------------------------------
@@ -74,6 +76,17 @@ $pre-bg:                      none;
 $pre-color:                   none;
 $pre-border-color:            none;
 $pre-scrollable-max-height:   none;
+
+// ----------------------------------------------------------------------------
+// Fonts
+// ----------------------------------------------------------------------------
+
+/* Bootstrap Overrides */
+$font-family-sans-serif: "Circular", sans-serif;
+$font-family-base: $font-family-sans-serif;
+// TODO(renfredxh): Add DejaVu as an alternative to Menlo.
+$font-family-monospace: Menlo, Consolas, Monaco, "Courier New", monospace;
+$blockquote-font-size: $font-size-base;
 
 // ----------------------------------------------------------------------------
 // Z-index
