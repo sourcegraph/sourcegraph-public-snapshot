@@ -12,9 +12,9 @@ import (
 func TestCheck(t *testing.T) {
 	checks = []check{
 		{
-			name: "a",
-			check: func(ctx context.Context) (*status, error) {
-				return nil, errors.New("foo")
+			Name: "a",
+			Check: func(ctx context.Context) (problem, fix string, err error) {
+				return "", "", errors.New("foo")
 			},
 		},
 	}
@@ -28,9 +28,9 @@ func TestCheck(t *testing.T) {
 func TestCheck_skip(t *testing.T) {
 	checks = []check{
 		{
-			name: "a",
-			check: func(ctx context.Context) (*status, error) {
-				return nil, errors.New("foo")
+			Name: "a",
+			Check: func(ctx context.Context) (problem, fix string, err error) {
+				return "", "", errors.New("foo")
 			},
 		},
 	}
@@ -44,10 +44,10 @@ func TestCheck_skip(t *testing.T) {
 func TestCheck_timeout(t *testing.T) {
 	checks = []check{
 		{
-			name: "a",
-			check: func(ctx context.Context) (*status, error) {
+			Name: "a",
+			Check: func(ctx context.Context) (problem, fix string, err error) {
 				time.Sleep(150 * time.Millisecond)
-				return nil, nil
+				return
 			},
 		},
 	}

@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func rlimitCheck(ctx context.Context) (*status, error) {
+func rlimitCheck(ctx context.Context) (problem, fix string, err error) {
 	// Don't do anything on other platforms.
-	return nil, nil
+	return
 }

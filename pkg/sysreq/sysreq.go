@@ -2,13 +2,10 @@
 package sysreq
 
 import (
-	"crypto/tls"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
 
-	"github.com/samalba/dockerclient"
 	"golang.org/x/net/context"
 )
 
@@ -46,9 +43,9 @@ func Check(ctx context.Context, skip []string) []Status {
 	statuses := make([]Status, len(checks))
 	var wg sync.WaitGroup
 	for i, c := range checks {
-		statuses[i].Name = c.name
+		statuses[i].Name = c.Name
 
-		if shouldSkip(c.name) {
+		if shouldSkip(c.Name) {
 			statuses[i].Skipped = true
 			continue
 		}
@@ -60,14 +57,12 @@ func Check(ctx context.Context, skip []string) []Status {
 			finished := make(chan struct{})
 
 			go func() {
-				st, err := c.check(ctx)
+				problem, fix, err := c.Check(ctx)
 				if err != nil {
 					statuses[i].Err = err
 				}
-				if st != nil {
-					statuses[i].Problem = st.problem
-					statuses[i].Fix = st.fix
-				}
+				statuses[i].Problem = problem
+				statuses[i].Fix = fix
 				finished <- struct{}{}
 			}()
 
@@ -83,64 +78,35 @@ func Check(ctx context.Context, skip []string) []Status {
 	return statuses
 }
 
-type status struct{ problem, fix string }
-
 type check struct {
-	name  string
-	check func(context.Context) (*status, error)
+	Name  string
+	Check CheckFunc
+}
+
+// CheckFunc is a function that checks for a system requirement. If
+// any of problem, fix, or err are non-zero, then the system
+// requirement check is deemed to have failed.
+type CheckFunc func(context.Context) (problem, fix string, err error)
+
+// AddCheck adds a new check that will be run when this package's
+// Check func is called. It is used by other packages to specify
+// system requirements.
+func AddCheck(name string, fn CheckFunc) {
+	checks = append(checks, check{name, fn})
 }
 
 var checks = []check{
 	{
-		name: "Docker",
-		check: func(ctx context.Context) (*status, error) {
-			// TODO(sqs!native-ci): copied temporarily from
-			// https://github.com/drone/drone-exec/pull/13, godep
-			// update when that is merged into drone-exec
-			daemonURL := os.Getenv("DOCKER_HOST")
-			if daemonURL == "" {
-				daemonURL = "unix:///var/run/docker.sock"
-			}
-			var tlsConfig *tls.Config
-			if path := os.Getenv("DOCKER_CERT_PATH"); os.Getenv("DOCKER_TLS_VERIFY") != "" && path != "" {
-				var err error
-				tlsConfig, err = dockerclient.TLSConfigFromCertPath(path)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			st := &status{
-				problem: "Could not contact Docker host. Docker is required for Sourcegraph to build and analyze code.",
-				fix:     "Install Docker if you haven't already (see https://docs.docker.com/engine/installation/). Then check the DOCKER_HOST (and possibly DOCKER_CERT_PATH and DOCKER_TLS_VERIFY) environment variables. Set them so they point to a Docker host. If you're running on OS X, pass Sourcegraph the environment vars in `docker-machine env $(docker-machine ls -q)`. See https://docs.docker.com/machine/reference/env/ for more information.",
-			}
-
-			client, err := dockerclient.NewDockerClient(daemonURL, tlsConfig)
-			if err != nil {
-				return st, err
-			}
-
-			if _, err := client.Version(); err != nil {
-				return st, err
-			}
-
-			return nil, nil
-		},
-	},
-	{
-		name: "Git",
-		check: func(ctx context.Context) (*status, error) {
+		Name: "Git",
+		Check: func(ctx context.Context) (problem, fix string, err error) {
 			if _, err := exec.LookPath("git"); err != nil {
-				return &status{
-					problem: "Git is not installed",
-					fix:     "Install Git on your system and make sure it is in your $PATH.",
-				}, err
+				return "Git is not installed", "Install Git on your system and make sure it is in your $PATH.", err
 			}
-			return nil, nil
+			return
 		},
 	},
 	{
-		name:  "Rlimit",
-		check: rlimitCheck,
+		Name:  "Rlimit",
+		Check: rlimitCheck,
 	},
 }

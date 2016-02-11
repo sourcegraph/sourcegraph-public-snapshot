@@ -9,20 +9,16 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func rlimitCheck(ctx context.Context) (*status, error) {
+func rlimitCheck(ctx context.Context) (problem, fix string, err error) {
 	const minLimit = 10000
 
 	var limit unix.Rlimit
-	err := unix.Getrlimit(unix.RLIMIT_NOFILE, &limit)
-	if err != nil {
-		return nil, err
+	if err := unix.Getrlimit(unix.RLIMIT_NOFILE, &limit); err != nil {
+		return "", "", err
 	}
 
 	if limit.Cur < minLimit {
-		return &status{
-			problem: "Insufficient file descriptor limit",
-			fix:     fmt.Sprintf(`Please increase the open file limit by running "ulimit -n %d".`, minLimit),
-		}, nil
+		return "Insufficient file descriptor limit", fmt.Sprintf(`Please increase the open file limit by running "ulimit -n %d".`, minLimit), nil
 	}
-	return nil, nil
+	return
 }
