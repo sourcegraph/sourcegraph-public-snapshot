@@ -16,7 +16,6 @@ import (
 	dronerunner "github.com/drone/drone-exec/runner"
 	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
-	"github.com/kr/text"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
@@ -230,15 +229,15 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 					return err
 				}
 
-				w := text.NewIndentWriter(state.Log(), []byte("# "))
+				w := state.Log()
 				if b.DroneYMLFileExists {
-					fmt.Fprintln(w, "Using .drone.yml file with srclib Code Intelligence indexing steps added.")
+					fmt.Fprintln(w, "# Using .drone.yml file with srclib Code Intelligence indexing steps added.")
 				} else {
-					fmt.Fprintln(w, "Because this repository has no .drone.yml file, Sourcegraph attempted to infer this repository's build and test configuration.")
-					fmt.Fprintln(w)
-					fmt.Fprintln(w, "If this configuration is incorrect or incomplete, add a .drone.yml file to your repository (using this as a starter) with the correct configuration. See http://readme.drone.io/usage/overview/ for instructions.")
-					fmt.Fprintln(w)
-					fmt.Fprintln(w, "Tip: You can test your .drone.yml locally by running `src check` in your repository, after downloading the src CLI tool at https://src.sourcegraph.com/sourcegraph/.docs/install/CLI/.")
+					fmt.Fprintln(w, "# Because this repository has no .drone.yml file, Sourcegraph attempted to infer this repository's build and test configuration.")
+					fmt.Fprintln(w, "#")
+					fmt.Fprintln(w, "# If this configuration is incorrect or incomplete, add a .drone.yml file to your repository (using this as a starter) with the correct configuration. See http://readme.drone.io/usage/overview/ for instructions.")
+					fmt.Fprintln(w, "#")
+					fmt.Fprintln(w, "# Tip: You can test your .drone.yml locally by running `src check` in your repository, after downloading the src CLI tool at https://src.sourcegraph.com/sourcegraph/.docs/install/CLI/.")
 				}
 
 				fmt.Fprintln(state.Log())
