@@ -150,10 +150,18 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, err
 	}
 
-	files, err := vcsrepo.ListFiles(vcs.CommitID(repoRevSpec.CommitID))
+	infos, err := vcsrepo.ReadDir(vcs.CommitID(repoRevSpec.CommitID), ".", true)
 	if err != nil {
 		return nil, err
 	}
+
+	var files []string
+	for _, info := range infos {
+		if !info.IsDir() {
+			files = append(files, info.Name())
+		}
+	}
+
 	return &sourcegraph.RepoTreeListResult{Files: files}, nil
 }
 

@@ -188,7 +188,7 @@ func TestReposService_GetReadme(t *testing.T) {
 
 	var calledReadDir, calledReadFile bool
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{
-		ReadDir_: func(commit vcs.CommitID, name string) ([]os.FileInfo, error) {
+		ReadDir_: func(commit vcs.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
 			if name != "." {
 				t.Error("name != .")
 			}

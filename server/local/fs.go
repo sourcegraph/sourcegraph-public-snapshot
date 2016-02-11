@@ -19,7 +19,7 @@ import (
 // recurseSingleSubfolderLimit sub-folders. first should always be set to
 // true, other values are used internally.
 func readDir(r vcs.Repository, commit vcs.CommitID, base string, recurseSingleSubfolderLimit int, first bool) ([]*sourcegraph.BasicTreeEntry, error) {
-	entries, err := r.ReadDir(commit, base)
+	entries, err := r.ReadDir(commit, base, false)
 	if err != nil {
 		return nil, err
 	}

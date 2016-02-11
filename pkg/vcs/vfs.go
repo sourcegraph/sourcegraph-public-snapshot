@@ -36,7 +36,7 @@ func (fs fileSystem) Stat(name string) (os.FileInfo, error) {
 }
 
 func (fs fileSystem) ReadDir(name string) ([]os.FileInfo, error) {
-	return fs.repo.ReadDir(fs.commit, name)
+	return fs.repo.ReadDir(fs.commit, name, false)
 }
 
 func (fs fileSystem) String() string {

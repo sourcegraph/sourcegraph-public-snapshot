@@ -252,7 +252,7 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 
 	commit := vcs.CommitID(repoRev.CommitID)
 
-	entries, err := vcsrepo.ReadDir(commit, ".")
+	entries, err := vcsrepo.ReadDir(commit, ".", false)
 	if err != nil {
 		return nil, err
 	}

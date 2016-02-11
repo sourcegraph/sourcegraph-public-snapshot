@@ -961,32 +961,6 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 	return committers, nil
 }
 
-func (r *Repository) ListFiles(at vcs.CommitID) ([]string, error) {
-	defer r.trace(time.Now(), "ListFiles", at)
-
-	if err := checkSpecArgSafety(string(at)); err != nil {
-		return nil, err
-	}
-
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
-
-	if at == "" {
-		at = "HEAD"
-	}
-	cmd := gitserver.Command("git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", string(at))
-	cmd.Dir = r.Dir
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("exec `git ls-tree --full-tree -r -z --name-only %v` failed: %v", at, err)
-	}
-	if len(out) == 0 {
-		return []string{}, nil
-	}
-	out = bytes.TrimSuffix(out, []byte("\x00"))
-	return strings.Split(string(out), "\x00"), nil
-}
-
 func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) {
 	defer r.trace(time.Now(), "OpenFile", name)
 
@@ -1050,7 +1024,7 @@ func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error
 		return &util.FileInfo{Mode_: os.ModeDir, ModTime_: mtime}, nil
 	}
 
-	fis, err := r.lsTree(commit, path)
+	fis, err := r.lsTree(commit, path, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1114,7 +1088,7 @@ func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error)
 	return fi, nil
 }
 
-func (r *Repository) ReadDir(commit vcs.CommitID, path string) ([]os.FileInfo, error) {
+func (r *Repository) ReadDir(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	defer r.trace(time.Now(), "ReadDir", path)
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
@@ -1125,11 +1099,11 @@ func (r *Repository) ReadDir(commit vcs.CommitID, path string) ([]os.FileInfo, e
 	defer r.editLock.RUnlock()
 	// Trailing slash is necessary to ls-tree under the dir (not just
 	// to list the dir's tree entry in its parent dir).
-	return r.lsTree(commit, filepath.Clean(internal.Rel(path))+"/")
+	return r.lsTree(commit, filepath.Clean(internal.Rel(path))+"/", recurse)
 }
 
 // lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
-func (r *Repository) lsTree(commit vcs.CommitID, path string) ([]os.FileInfo, error) {
+func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
 
@@ -1137,7 +1111,12 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string) ([]os.FileInfo, er
 		return nil, err
 	}
 
-	cmd := gitserver.Command("git", "ls-tree", "-z", "--full-name", "--long", string(commit), "--", filepath.ToSlash(path))
+	args := []string{"ls-tree", "-z", "--full-name", "--long", string(commit)}
+	if recurse {
+		args = append(args, "-r")
+	}
+	args = append(args, "--", filepath.ToSlash(path))
+	cmd := gitserver.Command("git", args...)
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1151,6 +1130,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string) ([]os.FileInfo, er
 		return nil, os.ErrNotExist
 	}
 
+	prefixLen := strings.LastIndexByte(strings.TrimPrefix(path, "./"), '/') + 1
 	lines := bytes.Split(out, []byte{'\x00'})
 	fis := make([]os.FileInfo, len(lines)-1)
 	for i, line := range lines {
@@ -1232,7 +1212,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string) ([]os.FileInfo, er
 		}
 
 		fis[i] = &util.FileInfo{
-			Name_:    filepath.Base(name),
+			Name_:    name[prefixLen:],
 			Mode_:    os.FileMode(mode),
 			Size_:    size,
 			ModTime_: mtime,

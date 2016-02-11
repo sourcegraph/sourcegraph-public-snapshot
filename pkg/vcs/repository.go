@@ -52,7 +52,7 @@ type Repository interface {
 	ReadFile(commit CommitID, name string) ([]byte, error)
 
 	// Readdir reads the contents of the named directory at commit.
-	ReadDir(commit CommitID, name string) ([]os.FileInfo, error)
+	ReadDir(commit CommitID, name string, recurse bool) ([]os.FileInfo, error)
 
 	BlameFile(path string, opt *BlameOptions) ([]*Hunk, error)
 
@@ -64,12 +64,6 @@ type Repository interface {
 	// repositories. If base or head do not exist, an error is
 	// returned.
 	CrossRepoDiff(base CommitID, headRepo Repository, head CommitID, opt *DiffOptions) (*Diff, error)
-
-	// ListFiles returns list of all file names in the repo at the
-	// given commit. Returned file paths are forward slash separated,
-	// relative to the base directory of the repository, and sorted
-	// alphabetically. E.g., returned paths have the form "path/to/file.txt".
-	ListFiles(CommitID) ([]string, error)
 
 	// MergeBase returns the merge base commit for the specified
 	// commits.
