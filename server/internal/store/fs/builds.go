@@ -77,12 +77,16 @@ func (s *builds) getFromPath(ctx context.Context, path string) (*sourcegraph.Bui
 }
 
 func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	if opt == nil {
 		opt = &sourcegraph.BuildListOptions{}
 	}
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.List", opt.Repo); err != nil {
+		return nil, err
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	log15.Debug("Listing builds", "pkg", "server/internal/store/fs", "Repo", opt.Repo, "CommitID", opt.CommitID)
 

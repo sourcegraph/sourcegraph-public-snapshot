@@ -33,7 +33,7 @@ func TestRepos_List_byOwner_empty(t *testing.T) {
 
 	testUserSpec := sourcegraph.UserSpec{Login: "alice"}
 
-	repos, err := s.List(nil, &sourcegraph.RepoListOptions{Owner: testUserSpec.SpecString()})
+	repos, err := s.List(context.Background(), &sourcegraph.RepoListOptions{Owner: testUserSpec.SpecString()})
 	if err != nil {
 		t.Fatal(err)
 	}

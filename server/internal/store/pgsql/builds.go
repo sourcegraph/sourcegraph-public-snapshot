@@ -12,6 +12,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -217,6 +218,10 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 		opt = &sourcegraph.BuildListOptions{}
 	}
 
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.List", opt.Repo); err != nil {
+		return nil, err
+	}
+
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -226,7 +231,7 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	var conds []string
 	if opt.Repo != "" {
 		conds = append(conds, "b.repo="+arg(opt.Repo))
-	} else {
+	} else if authutil.ActiveFlags.MirrorsNext {
 		// only list public repo builds on main builds page.
 		// TODO: add filtering for private repos.
 		conds = append(conds, "b.repo in (select uri from repo where not private)")
