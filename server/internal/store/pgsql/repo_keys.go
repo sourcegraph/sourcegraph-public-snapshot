@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"database/sql"
 	"encoding/pem"
 	"log"
 	"os"
@@ -22,8 +23,10 @@ type repoKey struct {
 }
 
 func init() {
-	tbl := Schema.Map.AddTableWithName(repoKey{}, "repo_key").SetKeys(false, "Repo")
-	tbl.ColMap("PrivateKeyPEM").SetSqlType("text")
+	Schema.Map.AddTableWithName(repoKey{}, "repo_key").SetKeys(false, "Repo")
+	Schema.CreateSQL = append(Schema.CreateSQL,
+		`ALTER TABLE repo_key ALTER COLUMN private_key_pem TYPE text;`,
+	)
 }
 
 // mirroredRepoSSHKeys is a DB-backed implementation of the MirroredRepoSSHKeys store.
@@ -63,15 +66,14 @@ func (s *mirroredRepoSSHKeys) GetPEM(ctx context.Context, repo string) ([]byte, 
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.GetPEM", repo); err != nil {
 		return nil, err
 	}
-	var k []*repoKey
-	if err := dbh(ctx).Select(&k, `SELECT * FROM repo_key WHERE repo=$1 LIMIT 1`, repo); err != nil {
+	var k repoKey
+	if err := dbh(ctx).SelectOne(&k, `SELECT * FROM repo_key WHERE repo=$1 LIMIT 1`, repo); err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
-	if len(k) == 0 {
-		return nil, nil
-	}
 
-	block, _ := pem.Decode([]byte(k[0].PrivateKeyPEM))
+	block, _ := pem.Decode([]byte(k.PrivateKeyPEM))
 	d, err := x509.DecryptPEMBlock(block, []byte(pemPassword))
 	if err != nil {
 		return nil, err

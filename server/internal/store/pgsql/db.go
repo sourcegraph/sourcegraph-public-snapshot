@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sqs/modl"
+	"gopkg.in/gorp.v1"
 
 	"src.sourcegraph.com/sourcegraph/util/dbutil2"
 )
@@ -16,7 +16,7 @@ var (
 			`CREATE EXTENSION IF NOT EXISTS citext;`,
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
 		},
-		Map: &modl.DbMap{Dialect: modl.PostgresDialect{}},
+		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
 	}
 )
 

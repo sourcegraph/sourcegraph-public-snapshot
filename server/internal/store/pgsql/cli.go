@@ -83,5 +83,5 @@ func (c *truncateCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	return db.TruncateAllTables()
+	return db.TruncateTables()
 }

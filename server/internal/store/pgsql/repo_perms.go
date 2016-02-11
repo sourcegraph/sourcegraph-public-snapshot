@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sqs/modl"
+	"gopkg.in/gorp.v1"
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -71,7 +71,7 @@ func (r *repoPerms) Update(ctx context.Context, uid int32, repos []string) error
 
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -126,7 +126,7 @@ func (r *repoPerms) ListUserRepos(ctx context.Context, uid int32) ([]string, err
 
 	var repoPermsRows []*repoPermsRow
 	sql := `SELECT * FROM repo_perms WHERE uid=$1`
-	if err := dbh(ctx).Select(&repoPermsRows, sql, uid); err != nil {
+	if _, err := dbh(ctx).Select(&repoPermsRows, sql, uid); err != nil {
 		return nil, err
 	}
 
@@ -147,7 +147,7 @@ func (r *repoPerms) ListRepoUsers(ctx context.Context, repo string) ([]int32, er
 
 	var repoPermsRows []*repoPermsRow
 	sql := `SELECT * FROM repo_perms WHERE repo=$1`
-	if err := dbh(ctx).Select(&repoPermsRows, sql, repo); err != nil {
+	if _, err := dbh(ctx).Select(&repoPermsRows, sql, repo); err != nil {
 		return nil, err
 	}
 

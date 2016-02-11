@@ -1,14 +1,16 @@
 package pgsql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 
+	"gopkg.in/gorp.v1"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -118,16 +120,14 @@ func (s *users) getByLogin(ctx context.Context, login string) (*sourcegraph.User
 
 // getBySQL returns a user matching the SQL query (if any exists). A
 // "LIMIT 1" clause is appended to the query before it is executed.
-func (s *users) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.User, error) {
-	var users []*dbUser
-	err := dbh(ctx).Select(&users, "SELECT * FROM users WHERE ("+sql+") LIMIT 1", args...)
-	if err != nil {
+func (s *users) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
+	var user dbUser
+	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM users WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
+		return nil, &store.UserNotFoundError{Login: "(from args)"} // can't nicely serialize args
+	} else if err != nil {
 		return nil, err
 	}
-	if len(users) == 0 {
-		return nil, &store.UserNotFoundError{Login: "(from args)"} // can't nicely serialize args
-	}
-	return users[0].toUser(), nil
+	return user.toUser(), nil
 }
 
 var okUsersSorts = map[string]struct{}{
@@ -142,7 +142,7 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 	}
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -184,7 +184,7 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 
 	sql = "SELECT * " + sql
 	var users []*dbUser
-	if err := dbh(ctx).Select(&users, sql, args...); err != nil {
+	if _, err := dbh(ctx).Select(&users, sql, args...); err != nil {
 		return nil, err
 	}
 	return toUsers(users), nil
@@ -194,10 +194,6 @@ func (s *users) Count(ctx context.Context) (int32, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.Count"); err != nil {
 		return 0, err
 	}
-	sql := "SELECT count(*) FROM users WHERE NOT disabled;"
-	var count []int
-	if err := dbh(ctx).Select(&count, sql); err != nil || len(count) == 0 {
-		return 0, err
-	}
-	return int32(count[0]), nil
+	count, err := dbh(ctx).SelectInt("SELECT count(*) FROM users WHERE NOT disabled;")
+	return int32(count), err
 }

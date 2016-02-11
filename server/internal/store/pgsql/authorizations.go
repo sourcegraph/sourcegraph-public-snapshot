@@ -1,10 +1,12 @@
 package pgsql
 
 import (
+	"database/sql"
 	"log"
 	"time"
 
-	"github.com/sqs/modl"
+	"gopkg.in/gorp.v1"
+
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -66,24 +68,22 @@ func (s *authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.Au
 func (s *authorizations) MarkExchanged(ctx context.Context, code *sourcegraph.AuthorizationCode, clientID string) (*sourcegraph.AuthorizationCodeRequest, error) {
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
 
-	sql := `
+	query := `
 SELECT * FROM oauth2_auth_code c
 WHERE c.code=` + arg(code.Code) + ` AND c.redirect_uri=` + arg(code.RedirectURI) + ` AND
       c.client_id=` + arg(clientID) + ` AND c.expires_at > current_timestamp;`
 
-	var dbCodes []*dbAuthCode
-	if err := dbh(ctx).Select(&dbCodes, sql, args...); err != nil {
+	var dbCode dbAuthCode
+	if err := dbh(ctx).SelectOne(&dbCode, query, args...); err == sql.ErrNoRows {
+		return nil, store.ErrAuthCodeNotFound
+	} else if err != nil {
 		return nil, err
 	}
-	if len(dbCodes) == 0 {
-		return nil, store.ErrAuthCodeNotFound
-	}
-	dbCode := dbCodes[0]
 
 	// Don't allow it to be exchanged twice!
 	if dbCode.Exchanged {
@@ -92,7 +92,7 @@ WHERE c.code=` + arg(code.Code) + ` AND c.redirect_uri=` + arg(code.RedirectURI)
 	}
 
 	dbCode.Exchanged = true
-	if _, err := dbh(ctx).Update(dbCode); err != nil {
+	if _, err := dbh(ctx).Update(&dbCode); err != nil {
 		return nil, err
 	}
 

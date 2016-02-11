@@ -29,11 +29,10 @@ import (
 //
 // Identify why this is and fix it.
 func init() {
+	Schema.Map.AddTableWithName(struct{ Name string }{}, "appdata").SetKeys(false, "Name")
 	Schema.CreateSQL = append(Schema.CreateSQL,
-		"CREATE TABLE appdata (name text, objects hstore)",
-	)
-	Schema.DropSQL = append(Schema.DropSQL,
-		"DROP TABLE IF EXISTS appdata;",
+		"ALTER TABLE appdata ALTER COLUMN name TYPE text;",
+		"ALTER TABLE appdata ADD COLUMN objects hstore;",
 	)
 }
 
@@ -61,7 +60,7 @@ func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 	}
 
 	var value []string
-	err = dbh(ctx).Select(&value, "SELECT objects -> $1 FROM appdata WHERE name = $2 AND objects ? $1;", url.QueryEscape(opt.Key), bucket)
+	_, err = dbh(ctx).Select(&value, "SELECT objects -> $1 FROM appdata WHERE name = $2 AND objects ? $1;", url.QueryEscape(opt.Key), bucket)
 	if err != nil {
 		return &sourcegraph.StorageValue{}, err
 	}
@@ -106,7 +105,7 @@ func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePu
 	// protect us against distributed race conditions (i.e. the case of multiple
 	// frontend instances) it does not protect us against process-local races
 	// because all PostgreSQL locks for a given transaction are reentrant. To fix
-	// this we should expose the modl.Transaction type from within the context and
+	// this we should expose the gorp.Transaction type from within the context and
 	// use transaction-based locks instead.
 	s.putNoOverwrite.Lock()
 	defer s.putNoOverwrite.Unlock()
@@ -193,7 +192,7 @@ func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 	}
 
 	var exists []bool
-	err = dbh(ctx).Select(&exists, "SELECT exist(objects, $1) FROM appdata WHERE name = $2", url.QueryEscape(opt.Key), bucket)
+	_, err = dbh(ctx).Select(&exists, "SELECT exist(objects, $1) FROM appdata WHERE name = $2", url.QueryEscape(opt.Key), bucket)
 	if err != nil {
 		return &sourcegraph.StorageExists{}, err
 	}
@@ -218,7 +217,7 @@ func (s *storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourc
 	}
 
 	var rawKeys []string
-	err = dbh(ctx).Select(&rawKeys, "SELECT skeys(objects) FROM appdata WHERE name = $1", bucket)
+	_, err = dbh(ctx).Select(&rawKeys, "SELECT skeys(objects) FROM appdata WHERE name = $1", bucket)
 	if err != nil {
 		return &sourcegraph.StorageList{}, err
 	}

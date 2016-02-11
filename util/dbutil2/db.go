@@ -1,6 +1,7 @@
 package dbutil2
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -9,13 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"gopkg.in/gorp.v1"
 
-	"src.sourcegraph.com/sourcegraph/util/dbutil"
-
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/sqs/modl"
 )
 
 // A Schema describes a database schema.
@@ -30,7 +27,7 @@ type Schema struct {
 
 	// Map is a DbMap without the Db/Dbx set (because a schema can be
 	// used to construct several DB connections).
-	Map *modl.DbMap
+	Map *gorp.DbMap
 }
 
 type Mode uint
@@ -45,14 +42,14 @@ const (
 )
 
 var (
-	opened     map[string]*sqlx.DB // cache of Open dataSource -> DB
-	openedLock sync.Mutex          // protects opened
+	opened     map[string]*sql.DB // cache of Open dataSource -> DB
+	openedLock sync.Mutex         // protects opened
 )
 
-// open opens the DB identified by dataSource. If an existing *sqlx.DB
+// open opens the DB identified by dataSource. If an existing *sql.DB
 // already exists for the same dataSource, the existing one is
 // returned instead of opening a new one.
-func open(dataSource string, mode Mode) (*sqlx.DB, error) {
+func open(dataSource string, mode Mode) (*sql.DB, error) {
 	openedLock.Lock()
 	defer openedLock.Unlock()
 	if db, present := opened[dataSource]; present {
@@ -61,7 +58,7 @@ func open(dataSource string, mode Mode) (*sqlx.DB, error) {
 
 	triedCreate := false
 tryOpen:
-	db, err := sqlx.Open("postgres", dataSource)
+	db, err := sql.Open("postgres", dataSource)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +79,7 @@ tryOpen:
 
 	// Cache for next time.
 	if opened == nil {
-		opened = map[string]*sqlx.DB{}
+		opened = map[string]*sql.DB{}
 	}
 	opened[dataSource] = db
 	return db, nil
@@ -165,8 +162,7 @@ func Open(dataSource string, schema Schema, mode Mode) (*Handle, error) {
 	}
 
 	dbm := *schema.Map // copy
-	dbm.Dbx = db
-	dbm.Db = db.DB
+	dbm.Db = db
 	h := &Handle{
 		DataSource: dataSource,
 		schema:     schema,
@@ -183,7 +179,7 @@ func Open(dataSource string, schema Schema, mode Mode) (*Handle, error) {
 // set and checks that the DB timezone is UTC.
 func (h *Handle) configure() error {
 	if trace, err := strconv.ParseBool(os.Getenv("PGTRACE")); err == nil && trace {
-		dbname, err := dbutil.SelectString(h.DbMap, "SELECT current_database()")
+		dbname, err := h.SelectStr("SELECT current_database()")
 		if err != nil {
 			return err
 		}
@@ -191,7 +187,7 @@ func (h *Handle) configure() error {
 	}
 
 	// Ensure we're in UTC.
-	tz, err := dbutil.SelectString(h.DbMap, "SELECT current_setting('TIMEZONE')")
+	tz, err := h.SelectStr("SELECT current_setting('TIMEZONE')")
 	if err != nil {
 		return fmt.Errorf("getting DB timezone: %s", err)
 	}
@@ -220,7 +216,7 @@ type Handle struct {
 	//
 	// It is embedded (although it also exists underneath the schema
 	// field) so that Handle exports DbMap's methods.
-	*modl.DbMap
+	*gorp.DbMap
 }
 
 // CreateUnloggedTables determines whether the PostgreSQL tables
@@ -234,28 +230,10 @@ var CreateUnloggedTables bool
 // CreateSchema creates the schema for this handle in the database
 // it's connected to.
 func (h *Handle) CreateSchema() error {
-	createTablesSQL, err := h.DbMap.CreateTablesSql()
-	if err != nil {
+	if err := h.DbMap.CreateTables(); err != nil {
 		return err
 	}
 	var errs []error
-	par := parallel.NewRun(8)
-	for _, sql0 := range createTablesSQL {
-		sql := sql0
-		par.Do(func() error {
-			if CreateUnloggedTables {
-				sql = strings.Replace(sql, "create table", "create unlogged table", -1)
-				sql = strings.Replace(sql, "CREATE TABLE", "CREATE UNLOGGED TABLE", -1)
-			}
-			if _, err := h.Exec(sql); err != nil && !IsAlreadyExistsError(err) {
-				errs = append(errs, fmt.Errorf("%s (on SQL: %s)", err, sql))
-			}
-			return nil
-		})
-	}
-	if err := par.Wait(); err != nil {
-		return err
-	}
 	for _, sql := range h.schema.CreateSQL {
 		if _, err := h.Exec(sql); err != nil && !IsAlreadyExistsError(err) {
 			errs = append(errs, fmt.Errorf("%s (on SQL: %s)", err, sql))
@@ -270,17 +248,10 @@ func (h *Handle) CreateSchema() error {
 // DropSchema drops the schema for this handle in the database
 // it's connected to.
 func (h *Handle) DropSchema() error {
-	tables, err := h.getTableNames()
-	if err != nil {
+	if err := h.DropTablesIfExists(); err != nil {
 		return err
 	}
 	var errs []error
-	for _, tbl := range tables {
-		sql := fmt.Sprintf("DROP TABLE IF EXISTS %q CASCADE;", tbl)
-		if _, err := h.Exec(sql); err != nil {
-			errs = append(errs, fmt.Errorf("%s (on SQL: %s)", err, sql))
-		}
-	}
 	for _, sql := range h.schema.DropSQL {
 		if _, err := h.Exec(sql); err != nil {
 			errs = append(errs, fmt.Errorf("%s (on SQL: %s)", err, sql))
@@ -292,45 +263,10 @@ func (h *Handle) DropSchema() error {
 	return nil
 }
 
-// TruncateAllTables truncates (i.e., removes all rows from) all
-// tables in this schema in the database that this handle is connected
-// to.
-func (h *Handle) TruncateAllTables() error {
-	tables, err := h.getTableNames()
-	if err != nil {
-		return err
-	}
-	par := parallel.NewRun(8)
-	for _, tbl0 := range tables {
-		tbl := tbl0
-		par.Do(func() error {
-			sql := fmt.Sprintf("TRUNCATE %q;", tbl)
-			if _, err := h.Exec(sql); err != nil {
-				return fmt.Errorf("%s (on SQL: %s)", err, sql)
-			}
-			return nil
-		})
-	}
-	return par.Wait()
-}
-
-// getTableNames returns a list of DB table names mapped on h's DbMap.
-func (h *Handle) getTableNames() ([]string, error) {
-	var tables []string
-	tblMap, err := h.DbMap.CreateTablesSql()
-	if err != nil {
-		return nil, err
-	}
-	for tbl := range tblMap {
-		tables = append(tables, tbl)
-	}
-	return tables, nil
-}
-
 // UnderlyingSQLExecutor implements dbutil.SQLExecutorWrapper so that
 // other utility funcs can unwrap Handle to get to its DbMap without
 // having to import package dbutil.
-func (h *Handle) UnderlyingSQLExecutor() modl.SqlExecutor { return h.DbMap }
+func (h *Handle) UnderlyingSQLExecutor() gorp.SqlExecutor { return h.DbMap }
 
 // IsAlreadyExistsError returns true if err is a PostgreSQL error that
 // something "already exists" (such as a table).

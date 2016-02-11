@@ -1,8 +1,8 @@
 package pgsql
 
 import (
-	"github.com/sqs/modl"
 	"golang.org/x/net/context"
+	"gopkg.in/gorp.v1"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
@@ -14,13 +14,13 @@ const (
 
 // NewContext creates a new child context with the specified DB
 // handle.
-func NewContext(ctx context.Context, dbh modl.SqlExecutor) context.Context {
+func NewContext(ctx context.Context, dbh gorp.SqlExecutor) context.Context {
 	return context.WithValue(ctx, dbhKey, dbh)
 }
 
 // dbh returns the context's DB handle.
-func dbh(ctx context.Context) modl.SqlExecutor {
-	dbh, ok := ctx.Value(dbhKey).(modl.SqlExecutor)
+func dbh(ctx context.Context) gorp.SqlExecutor {
+	dbh, ok := ctx.Value(dbhKey).(gorp.SqlExecutor)
 	if !ok {
 		panic("no DB handle set in context")
 	}

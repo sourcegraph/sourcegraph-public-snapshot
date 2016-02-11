@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	Schema.Map.AddTableWithName(dbInvites{}, "invites").SetKeys(false, "email")
+	Schema.Map.AddTableWithName(dbInvites{}, "invites").SetKeys(false, "Email")
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE invites ALTER COLUMN created_at TYPE timestamp with time zone USING created_at::timestamp with time zone;`,
 		"CREATE UNIQUE INDEX invites_token ON invites(token)",
@@ -103,8 +103,7 @@ func (s *invites) MarkUnused(ctx context.Context, token string) error {
 
 func (s *invites) get(ctx context.Context, token string) (*dbInvites, error) {
 	var invites []*dbInvites
-	err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`)
-	if err != nil {
+	if _, err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`); err != nil {
 		return nil, err
 	}
 	// Constant time comparison to prevent timing attacks.
@@ -139,8 +138,7 @@ func (s *invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error
 		return nil, err
 	}
 	var invites []*dbInvites
-	err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`)
-	if err != nil {
+	if _, err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`); err != nil {
 		return nil, err
 	}
 	accountInvites := make([]*sourcegraph.AccountInvite, 0)

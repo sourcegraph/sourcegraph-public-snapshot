@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sqs/modl"
+	"gopkg.in/gorp.v1"
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -63,15 +63,11 @@ func (w *waitlist) AddUser(ctx context.Context, uid int32) error {
 }
 
 func (w *waitlist) getUser(ctx context.Context, uid int32) (*userWaitlistRow, error) {
-	var users []*userWaitlistRow
-	err := dbh(ctx).Select(&users, "SELECT * FROM user_waitlist WHERE uid=$1 LIMIT 1", uid)
-	if err != nil {
+	var user userWaitlistRow
+	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM user_waitlist WHERE uid=$1 LIMIT 1", uid); err != nil {
 		return nil, err
 	}
-	if len(users) == 0 {
-		return nil, &store.WaitlistedUserNotFoundError{UID: uid}
-	}
-	return users[0], err
+	return &user, nil
 }
 
 func (w *waitlist) GetUser(ctx context.Context, uid int32) (*sourcegraph.WaitlistedUser, error) {
@@ -117,7 +113,7 @@ func (w *waitlist) ListUsers(ctx context.Context, onlyWaitlisted bool) ([]*sourc
 	if onlyWaitlisted {
 		sql += ` WHERE granted_at is null`
 	}
-	if err := dbh(ctx).Select(&userWaitlistRows, sql); err != nil {
+	if _, err := dbh(ctx).Select(&userWaitlistRows, sql); err != nil {
 		return nil, err
 	}
 
@@ -153,15 +149,11 @@ func (w *waitlist) AddOrg(ctx context.Context, orgName string) error {
 }
 
 func (w *waitlist) getOrg(ctx context.Context, orgName string) (*orgWaitlistRow, error) {
-	var orgs []*orgWaitlistRow
-	err := dbh(ctx).Select(&orgs, "SELECT * FROM org_waitlist WHERE name=$1 LIMIT 1", orgName)
-	if err != nil {
+	var org orgWaitlistRow
+	if err := dbh(ctx).SelectOne(&org, "SELECT * FROM org_waitlist WHERE name=$1 LIMIT 1", orgName); err != nil {
 		return nil, err
 	}
-	if len(orgs) == 0 {
-		return nil, &store.WaitlistedOrgNotFoundError{OrgName: orgName}
-	}
-	return orgs[0], err
+	return &org, nil
 }
 
 func (w *waitlist) GetOrg(ctx context.Context, orgName string) (*sourcegraph.WaitlistedOrg, error) {
@@ -206,7 +198,7 @@ func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted boo
 
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -230,7 +222,7 @@ func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted boo
 		whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
 	}
 	sql := fmt.Sprintf(`SELECT * FROM org_waitlist WHERE %s`, whereSQL)
-	if err := dbh(ctx).Select(&orgWaitlistRows, sql, args...); err != nil {
+	if _, err := dbh(ctx).Select(&orgWaitlistRows, sql, args...); err != nil {
 		return nil, err
 	}
 

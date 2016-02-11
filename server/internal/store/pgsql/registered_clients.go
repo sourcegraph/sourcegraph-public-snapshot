@@ -2,12 +2,14 @@ package pgsql
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"fmt"
 	"time"
 
+	"gopkg.in/gorp.v1"
+
 	"strings"
 
-	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -17,8 +19,8 @@ import (
 )
 
 func init() {
-	tbl := Schema.Map.AddTableWithName(dbRegisteredClient{}, "reg_clients").SetKeys(true, "ID")
-	tbl.ColMap("jwks").SetMaxSize(5000)
+	tbl := Schema.Map.AddTableWithName(dbRegisteredClient{}, "reg_clients").SetKeys(false, "ID")
+	tbl.ColMap("JWKS").SetMaxSize(5000)
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE reg_clients ALTER COLUMN created_at TYPE timestamp with time zone USING created_at::timestamp with time zone;`,
 		`ALTER TABLE reg_clients ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
@@ -112,16 +114,14 @@ func (s *registeredClients) GetByCredentials(ctx context.Context, cred sourcegra
 
 // getBySQL returns a client matching the SQL query (if any exists). A
 // "LIMIT 1" clause is appended to the query before it is executed.
-func (s *registeredClients) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.RegisteredClient, error) {
-	var clients []*dbRegisteredClient
-	err := dbh(ctx).Select(&clients, "SELECT * FROM reg_clients WHERE ("+sql+") LIMIT 1", args...)
-	if err != nil {
+func (s *registeredClients) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.RegisteredClient, error) {
+	var client dbRegisteredClient
+	if err := dbh(ctx).SelectOne(&client, "SELECT * FROM reg_clients WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
+		return nil, &store.RegisteredClientNotFoundError{}
+	} else if err != nil {
 		return nil, err
 	}
-	if len(clients) == 0 {
-		return nil, &store.RegisteredClientNotFoundError{}
-	}
-	return clients[0].toRegisteredClient(), nil
+	return client.toRegisteredClient(), nil
 }
 
 func (s *registeredClients) Create(ctx context.Context, client sourcegraph.RegisteredClient) error {
@@ -156,7 +156,7 @@ func (s *registeredClients) Update(ctx context.Context, client sourcegraph.Regis
 
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -207,7 +207,7 @@ func (s *registeredClients) List(ctx context.Context, opt sourcegraph.Registered
 	}
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -222,7 +222,7 @@ func (s *registeredClients) List(ctx context.Context, opt sourcegraph.Registered
 	sql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(limit+1), arg(opt.Offset()))
 
 	var clients []*dbRegisteredClient
-	if err := dbh(ctx).Select(&clients, sql, args...); err != nil {
+	if _, err := dbh(ctx).Select(&clients, sql, args...); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RegisteredClientList{

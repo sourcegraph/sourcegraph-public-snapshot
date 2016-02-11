@@ -1,12 +1,13 @@
 package pgsql
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/sqs/modl"
 	"golang.org/x/net/context"
+	"gopkg.in/gorp.v1"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -33,15 +34,14 @@ func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, c
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.GetExternalToken", int32(user)); err != nil {
 		return nil, err
 	}
-	var toks []*auth.ExternalAuthToken
-	err := dbh(ctx).Select(&toks, `SELECT * FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3`, user, host, clientID)
-	if err != nil {
+	var tok auth.ExternalAuthToken
+	err := dbh(ctx).SelectOne(&tok, `SELECT * FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3`, user, host, clientID)
+	if err == sql.ErrNoRows {
+		return nil, auth.ErrNoExternalAuthToken
+	} else if err != nil {
 		return nil, err
 	}
-	if len(toks) == 0 {
-		return nil, auth.ErrNoExternalAuthToken
-	}
-	return toks[0], nil
+	return &tok, nil
 }
 
 func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
@@ -51,7 +51,7 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.SetExternalToken", int32(tok.User)); err != nil {
 		return err
 	}
-	return dbutil.Transact(dbh(ctx), func(tx modl.SqlExecutor) error {
+	return dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
 		ctx = NewContext(ctx, tx)
 
 		if _, err := s.GetUserToken(ctx, tok.User, tok.Host, tok.ClientID); err == auth.ErrNoExternalAuthToken {
@@ -70,7 +70,7 @@ func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []in
 	}
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -86,8 +86,7 @@ func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []in
 	sql := fmt.Sprintf(`SELECT * FROM ext_auth_token WHERE %s`, whereSQL)
 
 	var toks []*auth.ExternalAuthToken
-	err := dbh(ctx).Select(&toks, sql, args...)
-	if err != nil {
+	if _, err := dbh(ctx).Select(&toks, sql, args...); err != nil {
 		return nil, err
 	}
 	return toks, nil

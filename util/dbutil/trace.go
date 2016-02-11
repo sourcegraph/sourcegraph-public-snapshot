@@ -1,12 +1,12 @@
 package dbutil
 
-import "github.com/sqs/modl"
+import "gopkg.in/gorp.v1"
 
 type SQLExecutorWrapper interface {
-	UnderlyingSQLExecutor() modl.SqlExecutor
+	UnderlyingSQLExecutor() gorp.SqlExecutor
 }
 
-func GetUnderlyingSQLExecutor(x modl.SqlExecutor) modl.SqlExecutor {
+func GetUnderlyingSQLExecutor(x gorp.SqlExecutor) gorp.SqlExecutor {
 	if w, ok := x.(SQLExecutorWrapper); ok {
 		x = GetUnderlyingSQLExecutor(w.UnderlyingSQLExecutor())
 	}

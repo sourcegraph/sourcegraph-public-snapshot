@@ -111,7 +111,7 @@ func prepareDBs(id int, mdb *dbutil2.Handle, drop, create, truncate bool) {
 		if *verbose {
 			vlog.Printf("(%d) Truncating all tables...", id)
 		}
-		if err := mdb.TruncateAllTables(); err != nil {
+		if err := mdb.TruncateTables(); err != nil {
 			log.Fatal("testdb: truncate all tables:", err)
 		}
 	}
@@ -177,7 +177,7 @@ func backgroundDBCreator(schema *dbutil2.Schema) {
 					if *verbose {
 						vlog.Println("(background) Truncating all tables...")
 					}
-					if err := dbh.TruncateAllTables(); err != nil {
+					if err := dbh.TruncateTables(); err != nil {
 						log.Fatal("testdb: truncate all tables:", err)
 					}
 					if *verbose {

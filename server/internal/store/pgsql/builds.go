@@ -1,15 +1,17 @@
 package pgsql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
+
+	"gopkg.in/gorp.v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -20,7 +22,7 @@ import (
 )
 
 func init() {
-	t := Schema.Map.AddTableWithName(dbBuild{}, "repo_build").SetKeys(false, "repo", "id")
+	t := Schema.Map.AddTableWithName(dbBuild{}, "repo_build").SetKeys(false, "Repo", "ID")
 	t.ColMap("commit_id").SetMaxSize(40)
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE repo_build ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
@@ -45,7 +47,7 @@ func init() {
 		`CREATE TRIGGER repo_build_next_id BEFORE INSERT ON repo_build FOR EACH ROW EXECUTE PROCEDURE increment_build_id();`,
 	)
 
-	Schema.Map.AddTableWithName(dbBuildTask{}, "repo_build_task").SetKeys(false, "repo", "build_id", "id")
+	Schema.Map.AddTableWithName(dbBuildTask{}, "repo_build_task").SetKeys(false, "Repo", "BuildID", "ID")
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE repo_build_task ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build_task ALTER COLUMN ended_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
@@ -202,15 +204,15 @@ func (s *builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sou
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Get", buildSpec.Repo.URI); err != nil {
 		return nil, err
 	}
-	var builds []*dbBuild
-	err := dbh(ctx).Select(&builds, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
-	if err != nil {
+
+	var build dbBuild
+	err := dbh(ctx).SelectOne(&build, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
+	if err == sql.ErrNoRows {
+		return nil, grpc.Errorf(codes.NotFound, "build %s not found", buildSpec.IDString())
+	} else if err != nil {
 		return nil, err
 	}
-	if len(builds) != 1 {
-		return nil, grpc.Errorf(codes.NotFound, "build %s not found", buildSpec.IDString())
-	}
-	return builds[0].toBuild(), nil
+	return build.toBuild(), nil
 }
 
 func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error) {
@@ -225,7 +227,7 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
-		return modl.PostgresDialect{}.BindVar(len(args) - 1)
+		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
 	var conds []string
@@ -308,7 +310,7 @@ SELECT b.* FROM builds b
 ` + orderSQL
 
 	var builds []*dbBuild
-	if err := dbh(ctx).Select(&builds, sql, args...); err != nil {
+	if _, err := dbh(ctx).Select(&builds, sql, args...); err != nil {
 		return nil, err
 	}
 
@@ -326,7 +328,7 @@ func (s *builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitI
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
-		return modl.PostgresDialect{}.BindVar(len(args) - 1)
+		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
 	sortCases := make([]string, len(commitIDs))
@@ -349,7 +351,7 @@ LIMIT 1
 `
 
 	var builds []*dbBuild
-	if err := dbh(ctx).Select(&builds, sql, args...); err != nil {
+	if _, err := dbh(ctx).Select(&builds, sql, args...); err != nil {
 		return nil, 0, err
 	}
 	if len(builds) == 1 {
@@ -382,7 +384,7 @@ func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
-		return modl.PostgresDialect{}.BindVar(len(args) - 1)
+		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
 	// Construct SQL manually so we can retrieve the id # from
@@ -393,7 +395,7 @@ func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 		arg(b.EndedAt) + `,` + arg(b.HeartbeatAt) + `, ` + arg(b.Success) + `, ` + arg(b.Failure) + `, ` + arg(b.Killed) + `, ` +
 		arg(b.Host) + `, ` + arg(b.Purged) + `, ` + arg(b.Queue) + `, ` + arg(b.Priority) + `, ` + arg(b.BuilderConfig) + `)
             RETURNING id;`
-	id, err := dbutil.SelectInt(dbh(ctx), sql, args...)
+	id, err := dbh(ctx).SelectInt(sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +410,7 @@ func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
-		return modl.PostgresDialect{}.BindVar(len(args) - 1)
+		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
 	var updates []string
@@ -462,7 +464,7 @@ func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 		var args []interface{}
 		arg := func(v interface{}) string {
 			args = append(args, v)
-			return modl.PostgresDialect{}.BindVar(len(args) - 1)
+			return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 		}
 
 		created[i] = &dbBuildTask{}
@@ -474,7 +476,7 @@ func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 		sql := `INSERT INTO repo_build_task(id, repo, build_id, parent_id, label, created_at, started_at, ended_at, success, failure, skipped, warnings)
             VALUES(` + arg(t.ID) + `, ` + arg(t.Repo) + `, ` + arg(t.BuildID) + `, ` + arg(t.ParentID) + `, ` + arg(t.Label) + `, ` + arg(t.CreatedAt) + `, ` + arg(t.StartedAt) + `,` + arg(t.EndedAt) + `,` + arg(t.Success) + `, ` + arg(t.Failure) + `, ` + arg(t.Skipped) + `, ` + arg(t.Warnings) + `)
             RETURNING id;`
-		id, err := dbutil.SelectInt(dbh(ctx), sql, args...)
+		id, err := dbh(ctx).SelectInt(sql, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -490,7 +492,7 @@ func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
-		return modl.PostgresDialect{}.BindVar(len(args) - 1)
+		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
 	var updates []string
@@ -538,7 +540,7 @@ func (s *builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
-		return modl.PostgresDialect{}.BindVar(len(args) - 1)
+		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
 	conds := []string{"build_id=" + arg(build.ID), "repo=" + arg(build.Repo.URI)}
@@ -550,7 +552,7 @@ WHERE ` + condsSQL + `
 ORDER BY id ASC
 LIMIT ` + arg(opt.Limit()) + ` OFFSET ` + arg(opt.Offset()) + `;`
 	var tasks []*dbBuildTask
-	if err := dbh(ctx).Select(&tasks, sql, args...); err != nil {
+	if _, err := dbh(ctx).Select(&tasks, sql, args...); err != nil {
 		return nil, err
 	}
 	return toBuildTasks(tasks), nil
@@ -560,7 +562,7 @@ func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.DequeueNext"); err != nil {
 		return nil, err
 	}
-	sql := `-- Builds.DequeueNext
+	query := `-- Builds.DequeueNext
 WITH
 to_dequeue AS (
   SELECT * FROM repo_build
@@ -575,27 +577,26 @@ FROM to_dequeue
 WHERE repo_build.repo = to_dequeue.repo AND repo_build.id = to_dequeue.id
 RETURNING repo_build.*;
 `
-	var nextBuilds []*dbBuild
-	if err := dbh(ctx).Select(&nextBuilds, sql); err != nil {
+	var nextBuild dbBuild
+	if err := dbh(ctx).SelectOne(&nextBuild, query); err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
-	if len(nextBuilds) == 0 {
-		return nil, nil
-	}
-	return nextBuilds[0].toBuild(), nil
+	return nextBuild.toBuild(), nil
 }
 
-func (s *builds) GetTask(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetTask", task.Build.Repo.URI); err != nil {
+func (s *builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetTask", taskSpec.Build.Repo.URI); err != nil {
 		return nil, err
 	}
-	var tasks []*dbBuildTask
-	sql := `SELECT * FROM repo_build_task WHERE repo=$1 AND build_id=$2 AND id=$3;`
-	if err := dbh(ctx).Select(&tasks, sql, task.Build.Repo.URI, task.Build.ID, task.ID); err != nil {
-		return nil, err
-	}
-	if len(tasks) == 0 {
+
+	var task dbBuildTask
+	query := `SELECT * FROM repo_build_task WHERE repo=$1 AND build_id=$2 AND id=$3;`
+	if err := dbh(ctx).SelectOne(&task, query, taskSpec.Build.Repo.URI, taskSpec.Build.ID, taskSpec.ID); err == sql.ErrNoRows {
 		return nil, nil
+	} else if err != nil {
+		return nil, err
 	}
-	return tasks[0].toBuildTask(), nil
+	return task.toBuildTask(), nil
 }

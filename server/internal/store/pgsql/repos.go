@@ -1,17 +1,19 @@
 package pgsql
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"path"
 	"strings"
 	"time"
 
+	"gopkg.in/gorp.v1"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
@@ -24,7 +26,7 @@ import (
 )
 
 func init() {
-	Schema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(true, "URI")
+	Schema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(false, "URI")
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
 		"ALTER TABLE repo ALTER COLUMN description TYPE text",
@@ -164,16 +166,14 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 // getBySQL returns a repository matching the SQL query, if any
 // exists. A "LIMIT 1" clause is appended to the query before it is
 // executed.
-func (s *repos) getBySQL(ctx context.Context, sql string, args ...interface{}) (*sourcegraph.Repo, error) {
-	var repos []*dbRepo
-	err := dbh(ctx).Select(&repos, "SELECT * FROM repo WHERE ("+sql+") LIMIT 1", args...)
-	if err != nil {
+func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.Repo, error) {
+	var repo dbRepo
+	if err := dbh(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
+		return nil, &store.RepoNotFoundError{Repo: "(unknown)"} // can't nicely serialize args
+	} else if err != nil {
 		return nil, err
 	}
-	if len(repos) == 0 {
-		return nil, &store.RepoNotFoundError{Repo: "(unknown)"} // can't nicely serialize args
-	}
-	return repos[0].toRepo(), nil
+	return repo.toRepo(), nil
 }
 
 func (s *repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
@@ -203,7 +203,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	}
 
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -243,7 +243,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := modl.PostgresDialect{}.BindVar(len(args))
+		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
 		return v
 	}
@@ -360,8 +360,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 
 func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*sourcegraph.Repo, error) {
 	var repos []*dbRepo
-	err := dbh(ctx).Select(&repos, sql, args...)
-	if err != nil {
+	if _, err := dbh(ctx).Select(&repos, sql, args...); err != nil {
 		return nil, err
 	}
 	return toRepos(repos), nil

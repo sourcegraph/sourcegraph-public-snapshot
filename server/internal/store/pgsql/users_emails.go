@@ -1,8 +1,10 @@
 package pgsql
 
 import (
-	"github.com/sqs/modl"
+	"database/sql"
+
 	"golang.org/x/net/context"
+	"gopkg.in/gorp.v1"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -27,15 +29,14 @@ func (s *users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAdd
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.GetWithEmail"); err != nil {
 		return nil, err
 	}
-	var emailAddrRows []*userEmailAddrRow
-	sql := `SELECT * FROM user_email WHERE email=$1 AND "primary"=true`
-	if err := dbh(ctx).Select(&emailAddrRows, sql, emailAddr.Email); err != nil {
+	var emailAddrRow userEmailAddrRow
+	query := `SELECT * FROM user_email WHERE email=$1 AND "primary"=true`
+	if err := dbh(ctx).SelectOne(&emailAddrRow, query, emailAddr.Email); err == sql.ErrNoRows {
+		return nil, &store.UserNotFoundError{Email: emailAddr.Email}
+	} else if err != nil {
 		return nil, err
 	}
-	if len(emailAddrRows) == 0 {
-		return nil, &store.UserNotFoundError{Email: emailAddr.Email}
-	}
-	return s.getByUID(ctx, emailAddrRows[0].UID)
+	return s.getByUID(ctx, emailAddrRow.UID)
 }
 
 func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
@@ -48,7 +49,7 @@ func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*s
 
 	var emailAddrRows []*userEmailAddrRow
 	sql := `SELECT * FROM user_email WHERE uid=$1 ORDER BY "primary" DESC, verified DESC`
-	if err := dbh(ctx).Select(&emailAddrRows, sql, user.UID); err != nil {
+	if _, err := dbh(ctx).Select(&emailAddrRows, sql, user.UID); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +68,7 @@ func (s *accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, 
 		return &store.UserNotFoundError{UID: 0}
 	}
 
-	return dbutil.Transact(dbh(ctx), func(tx modl.SqlExecutor) error {
+	return dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
 		// Clear out all existing from DB, and add in the merged (final) list.
 		if _, err := tx.Exec(`DELETE FROM user_email WHERE uid=$1;`, user.UID); err != nil {
 			return err

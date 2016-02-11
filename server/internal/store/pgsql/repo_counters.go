@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
 
 func init() {
@@ -45,6 +44,6 @@ func (s *repoCounters) CountHits(ctx context.Context, repo string, since time.Ti
 		sql += ` AND "at" > $2`
 		args = append(args, since)
 	}
-	n, err := dbutil.SelectInt(dbh(ctx), sql, args...)
+	n, err := dbh(ctx).SelectInt(sql, args...)
 	return int(n), err
 }

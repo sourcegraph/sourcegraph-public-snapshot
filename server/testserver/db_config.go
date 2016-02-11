@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sqs/modl"
+	"gopkg.in/gorp.v1"
 
 	"src.sourcegraph.com/sourcegraph/server/internal/store/pgsql"
 	"src.sourcegraph.com/sourcegraph/util/dbutil2"
@@ -16,7 +16,7 @@ import (
 
 // dbConfig is embedded in TestServer.
 type dbConfig struct {
-	MainDBH modl.SqlExecutor
+	MainDBH gorp.SqlExecutor
 	dbDone  func()
 }
 

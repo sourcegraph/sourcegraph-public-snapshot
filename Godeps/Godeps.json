@@ -274,11 +274,6 @@
 			"Rev": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
 		},
 		{
-			"ImportPath": "github.com/jmoiron/sqlx",
-			"Comment": "sqlx-v1.0-45-gaa6f196",
-			"Rev": "aa6f196bd82f2024e5f0b5d5e6cf3b21414be8b4"
-		},
-		{
 			"ImportPath": "github.com/justinas/nosurf",
 			"Comment": "0.1-50-g45adcfc",
 			"Rev": "45adcfcaf70610a5934db447ffe0ea9d13462c9e"
@@ -711,10 +706,6 @@
 			"Rev": "d36f0a97c909dccd193274709266ff9b68a003db"
 		},
 		{
-			"ImportPath": "github.com/sqs/modl",
-			"Rev": "8b246f69234077ca1e4656ec5fe38c61574f5c9c"
-		},
-		{
 			"ImportPath": "github.com/sqs/s3",
 			"Rev": "ee47412d98d9637046a7096f24809bc45f6bcbd5"
 		},
@@ -845,6 +836,11 @@
 		{
 			"ImportPath": "gopkg.in/gcfg.v1",
 			"Rev": "bf6a13274e638b65158eced37fe57b04c5b1838e"
+		},
+		{
+			"ImportPath": "gopkg.in/gorp.v1",
+			"Comment": "v1.7.1",
+			"Rev": "c87af80f3cc5036b55b83d77171e156791085e2e"
 		},
 		{
 			"ImportPath": "gopkg.in/inconshreveable/go-update.v0",

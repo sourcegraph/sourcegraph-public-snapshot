@@ -1,6 +1,8 @@
 package pgsql
 
 import (
+	"database/sql"
+
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -47,15 +49,13 @@ func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Get", repo); err != nil {
 		return nil, err
 	}
-	var confRows []*dbRepoConfig
-	sql := `SELECT * FROM repo_config WHERE repo=$1;`
-	if err := dbh(ctx).Select(&confRows, sql, repo); err != nil {
+	var config dbRepoConfig
+	if err := dbh(ctx).SelectOne(&config, `SELECT * FROM repo_config WHERE repo=$1;`, repo); err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
-	if len(confRows) == 0 {
-		return nil, nil
-	}
-	return confRows[0].toRepoConfig(), nil
+	return config.toRepoConfig(), nil
 }
 
 func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {

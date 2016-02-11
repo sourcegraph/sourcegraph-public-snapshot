@@ -23,8 +23,7 @@ type dbPassword struct {
 var tableName = "passwords"
 
 func init() {
-	t := Schema.Map.AddTableWithName(dbPassword{}, tableName)
-	t.SetKeys(false, "uid")
+	Schema.Map.AddTableWithName(dbPassword{}, tableName).SetKeys(false, "UID")
 }
 
 // CheckUIDPassword returns an error if the password argument is not correct for
@@ -33,16 +32,14 @@ func (p password) CheckUIDPassword(ctx context.Context, UID int32, password stri
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Password.CheckUIDPassword"); err != nil {
 		return err
 	}
-	var records [][]byte
-	err := dbh(ctx).Select(&records, "SELECT hashedpassword FROM passwords WHERE uid=$1;", UID)
+	hashed, err := dbh(ctx).SelectStr("SELECT hashedpassword FROM passwords WHERE uid=$1;", UID)
 	if err != nil {
 		return err
 	}
-	if len(records) != 1 {
+	if hashed == "" {
 		return &store.UserNotFoundError{UID: int(UID)}
 	}
-	hashed := records[0]
-	return bcrypt.CompareHashAndPassword(hashed, []byte(password))
+	return bcrypt.CompareHashAndPassword([]byte(hashed), []byte(password))
 }
 
 func (p password) SetPassword(ctx context.Context, uid int32, password string) error {
@@ -58,20 +55,11 @@ func (p password) SetPassword(ctx context.Context, uid int32, password string) e
 		return err
 	}
 
-	var records []int32
-	err = dbh(ctx).Select(&records, "SELECT uid FROM passwords WHERE uid=$1;", uid)
-	if err != nil {
-		return err
-	}
-
-	u := dbPassword{UID: uid, HashedPassword: hashed}
-	if len(records) == 0 {
-		err = dbh(ctx).Insert(&u)
-	} else {
-		_, err = dbh(ctx).Update(&u)
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+	query := `
+WITH upsert AS (
+  UPDATE passwords SET hashedpassword=$2 WHERE uid=$1 RETURNING *
+)
+INSERT INTO passwords(uid, hashedpassword) SELECT $1, $2 WHERE NOT EXISTS (SELECT * FROM upsert);`
+	_, err = dbh(ctx).Exec(query, uid, hashed)
+	return err
 }

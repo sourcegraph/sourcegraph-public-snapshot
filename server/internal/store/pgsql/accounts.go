@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -41,14 +42,11 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 
 	if newUser.UID == 0 {
 		sql := "SELECT uid FROM users order by uid desc limit 1;"
-		var maxUID []int
-		if err := dbh(ctx).Select(&maxUID, sql); err != nil {
+		maxUID, err := dbh(ctx).SelectInt(sql)
+		if err != nil {
 			return nil, err
-		} else if len(maxUID) == 0 {
-			// first user
-			maxUID = append(maxUID, 0)
 		}
-		newUser.UID = int32(maxUID[0]) + 1
+		newUser.UID = int32(maxUID) + 1
 	}
 
 	var u dbUser
@@ -126,18 +124,19 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
 	genericErr := errors.New("error reseting password") // don't need to reveal everything
-	req := make([]passwordResetRequest, 0)
-	err := dbh(ctx).Select(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token)
-	if err != nil || len(req) != 1 {
+	var req passwordResetRequest
+	if err := dbh(ctx).SelectOne(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err == sql.ErrNoRows {
 		log15.Warn("Token does not exist in password reset database", "store", "Accounts", "error", err)
 		return genericErr
+	} else if err != nil {
+		return genericErr
 	}
-	log15.Info("Resetting password", "store", "Accounts", "UID", req[0].UID)
-	if err := (password{}).SetPassword(ctx, req[0].UID, newPass.Password); err != nil {
+	log15.Info("Resetting password", "store", "Accounts", "UID", req.UID)
+	if err := (password{}).SetPassword(ctx, req.UID, newPass.Password); err != nil {
 		return fmt.Errorf("Error changing password: %s", err)
 	}
-	_, err = dbh(ctx).Exec(`DELETE FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token)
-	if err != nil {
+
+	if _, err := dbh(ctx).Exec(`DELETE FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err != nil {
 		log15.Warn("Error deleting token", "store", "Accounts", "error", err)
 		return nil
 	}
