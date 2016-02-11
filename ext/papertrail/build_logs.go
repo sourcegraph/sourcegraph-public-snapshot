@@ -78,11 +78,7 @@ func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID st
 	}
 	for i := len(allEvents) - 1; i >= 0; i-- {
 		e0 := allEvents[i]
-		var prog string
-		if e0.Program != nil {
-			prog = *e0.Program
-		}
-		es.Entries[len(es.Entries)-i-1] = fmt.Sprintf("%s %s %s: %s", e0.ReceivedAt, e0.SourceName, prog, e0.Message)
+		es.Entries[len(es.Entries)-i-1] = e0.Message
 	}
 	return es, nil
 }
