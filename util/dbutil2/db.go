@@ -230,7 +230,7 @@ var CreateUnloggedTables bool
 // CreateSchema creates the schema for this handle in the database
 // it's connected to.
 func (h *Handle) CreateSchema() error {
-	if err := h.DbMap.CreateTables(); err != nil {
+	if err := h.DbMap.CreateTablesIfNotExists(); err != nil {
 		return err
 	}
 	var errs []error
