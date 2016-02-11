@@ -1050,8 +1050,11 @@ func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error)
 
 	if fi.Mode()&os.ModeSymlink != 0 {
 		// Deref symlink.
-		si := fi.Sys().(vcs.SymlinkInfo)
-		fi2, err := r.Lstat(commit, si.Dest)
+		b, err := r.readFileBytes(commit, path)
+		if err != nil {
+			return nil, err
+		}
+		fi2, err := r.Lstat(commit, string(b))
 		if err != nil {
 			return nil, err
 		}
@@ -1134,13 +1137,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		case "blob":
 			const gitModeSymlink = 020000
 			if mode&gitModeSymlink != 0 {
-				// Dereference symlink.
-				b, err := r.readFileBytes(commit, name)
-				if err != nil {
-					return nil, err
-				}
 				mode = int64(os.ModeSymlink)
-				sys = vcs.SymlinkInfo{Dest: string(b)}
 			} else {
 				// Regular file.
 				mode = mode | 0644

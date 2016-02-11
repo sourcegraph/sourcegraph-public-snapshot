@@ -730,25 +730,20 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	tests := map[string]struct {
 		repo     vcs.Repository
 		commitID vcs.CommitID
-
-		testFileInfoSys bool // whether to check the SymlinkInfo in FileInfo.Sys()
-		git             bool // whether we are working with GIT or HG
 	}{
 		// TODO(sqs): implement Lstat and symlink handling for git, git
 		// cmd, and hg cmd.
 
 		"git cmd": {
-			repo:            makeGitRepositoryCmd(t, gitCommands...),
-			commitID:        gitCommitID,
-			testFileInfoSys: true,
-			git:             true,
+			repo:     makeGitRepositoryCmd(t, gitCommands...),
+			commitID: gitCommitID,
 		},
 	}
 	for label, test := range tests {
 
 		var commitID string
 		if test.commitID == "" {
-			commitID = computeCommitHash(test.repo.GitRootDir(), test.git)
+			commitID = computeCommitHash(test.repo.GitRootDir(), true)
 		} else {
 			commitID = string(test.commitID)
 		}
@@ -770,15 +765,6 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 			}
 			if want := "link1"; link.Name() != want {
 				t.Errorf("%s: got link.Name() == %q, want %q", label, link.Name(), want)
-			}
-			if test.testFileInfoSys {
-				si, ok := link.Sys().(vcs.SymlinkInfo)
-				if !ok {
-					t.Errorf("%s: link.Sys(): got %v %T, want SymlinkInfo", label, si, si)
-				}
-				if want := "file1"; si.Dest != want {
-					t.Errorf("%s: (SymlinkInfo).Dest: got %q, want %q", label, si.Dest, want)
-				}
 			}
 		}
 

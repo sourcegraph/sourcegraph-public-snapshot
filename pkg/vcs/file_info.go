@@ -14,10 +14,3 @@ type SubmoduleInfo struct {
 	// submodule repository's commit ID space).
 	CommitID
 }
-
-// SymlinkInfo holds information about a symlink and is returned in
-// the FileInfo's Sys field by Stat/Lstat/ReadDir calls.
-type SymlinkInfo struct {
-	// Dest is the path that the symlink points to.
-	Dest string
-}
