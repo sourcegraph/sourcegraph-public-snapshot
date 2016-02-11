@@ -39,6 +39,30 @@ func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
 	return VerifyActorHasAdminAccess(ctx, auth.ActorFromContext(ctx), method)
 }
 
+// VerifyUserSelfOrAdmin checks if the user in the current context has
+// the given uid, or if the actor has admin access on the server.
+// This check should be used in cases where a request should succeed only
+// if the request is for the user's own information, or if the ctx actor is an admin.
+func VerifyUserSelfOrAdmin(ctx context.Context, method string, uid int32) error {
+	if uid != 0 && auth.ActorFromContext(ctx).UID == int(uid) {
+		return nil
+	}
+
+	return VerifyUserHasAdminAccess(ctx, method)
+}
+
+// VerifyClientSelfOrAdmin checks if the client in the current context has
+// the given id, or if the actor has admin access on the server.
+// This check should be used in cases where a request should succeed only
+// if the request is for the client's own information, or if the ctx actor is an admin.
+func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string) error {
+	if clientID != "" && auth.ActorFromContext(ctx).ClientID == clientID {
+		return nil
+	}
+
+	return VerifyUserHasAdminAccess(ctx, method)
+}
+
 // VerifyActorHasReadAccess checks if the given actor is authorized to make
 // read requests to this server.
 //

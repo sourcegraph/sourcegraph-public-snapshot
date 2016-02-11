@@ -19,16 +19,16 @@ type repoPerms struct {
 // SetMirrorRepoPerms checks if the MirrorsNext feature is enabled
 // and the actor corresponds to a logged-in user, and sets the
 // appropriate waitlist state and repo permissions for the actor.
-func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) *auth.Actor {
+func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 	if !authutil.ActiveFlags.MirrorsNext || actor == nil || actor.UID == 0 {
-		return actor
+		return
 	}
 
 	if authutil.ActiveFlags.MirrorsWaitlist != "none" {
 		waitlistStore := store.WaitlistFromContextOrNil(ctx)
 		if waitlistStore == nil {
 			log15.Debug("Waitlist store unavailable")
-			return actor
+			return
 		}
 
 		waitlistedUser, err := waitlistStore.GetUser(ctx, int32(actor.UID))
@@ -36,13 +36,13 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) *auth.Actor {
 			if err, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
 				log15.Debug("Error fetching waitlisted user", "uid", actor.UID, "error", err)
 			}
-			return actor
+			return
 		}
 
 		if waitlistedUser.GrantedAt == nil {
 			// User is on the waitlist.
 			actor.MirrorsWaitlist = true
-			return actor
+			return
 		}
 	}
 
@@ -53,13 +53,13 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) *auth.Actor {
 	repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
 	if repoPermsStore == nil {
 		log15.Debug("Repo perms store unavailable")
-		return actor
+		return
 	}
 
 	userRepos, err := repoPermsStore.ListUserRepos(ctx, int32(actor.UID))
 	if err != nil {
 		log15.Debug("Error listing visible repos for user", "uid", actor.UID, "error", err)
-		return actor
+		return
 	}
 
 	visibleRepos := make(map[string]bool)
@@ -67,7 +67,6 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) *auth.Actor {
 		visibleRepos[repo] = true
 	}
 	actor.RepoPerms = &repoPerms{visibleRepos: visibleRepos}
-	return actor
 }
 
 // VerifyRepoPerms checks if a repoURI is visible to the actor in the given context.
