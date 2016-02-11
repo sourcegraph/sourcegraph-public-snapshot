@@ -14,10 +14,6 @@ import (
 var httpClient = &httptestutil.Client{}
 
 func TestHostedRepo_CreateCloneAndView(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
-
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
 		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},

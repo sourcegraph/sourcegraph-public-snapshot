@@ -260,6 +260,10 @@ func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) error {
 	return nil
 }
 
+func CreateRepo(ctx context.Context, repo *sourcegraph.Repo) error {
+	return (&repos{}).Create(ctx, repo)
+}
+
 func (s *repos) createBareGitRepo(ctx context.Context, repo *sourcegraph.Repo, dir string) error {
 	// TODO: Doing this `git init --bare` followed by a later
 	//       RefreshVCS results in non-standard default branches to

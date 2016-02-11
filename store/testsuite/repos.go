@@ -17,15 +17,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// PreCreateRepoFunc prepares a repo to be created. It is used when
-// repo store implementations have constraints for the repos they
-// create. For example, the FS-backed repo store can only create repos
-// whose VCS=="git", and the DB-backed repo store can only create
-// mirrored repos.
-//
-// For convenience, it should both return *and* modify the repo.
-type PreCreateRepoFunc func(*sourcegraph.Repo) *sourcegraph.Repo
-
 // Repos_Get_existing tests the behavior of Repos.Get when called on a
 // repo that exists (i.e., the successful outcome).
 func Repos_Get_existing(ctx context.Context, t *testing.T, s store.Repos, existingRepo string) {
@@ -57,15 +48,15 @@ func Repos_Get_nonexistent(ctx context.Context, t *testing.T, s store.Repos, non
 
 // Repos_List_query tests the behavior of Repos.List when called with
 // a query.
-func Repos_List_query(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+func Repos_List_query(ctx context.Context, t *testing.T, s store.Repos) {
 	// Add some repos.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "abc/def", Name: "def"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "def/ghi", Name: "ghi"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "def/ghi", Name: "ghi", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -91,12 +82,12 @@ func Repos_List_query(ctx context.Context, t *testing.T, s store.Repos, preCreat
 
 // Repos_List_URIs tests the behavior of Repos.List when called with
 // URIs.
-func Repos_List_URIs(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+func Repos_List_URIs(ctx context.Context, t *testing.T, s store.Repos) {
 	// Add some repos.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "c/d"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "c/d", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -120,12 +111,12 @@ func Repos_List_URIs(ctx context.Context, t *testing.T, s store.Repos, preCreate
 	}
 }
 
-func Repos_Create(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+func Repos_Create(ctx context.Context, t *testing.T, s store.Repos) {
 	tm := time.Now().Round(time.Second)
 	ts := pbtypes.NewTimestamp(tm)
 
 	// Add a repo.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b", CreatedAt: &ts})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -141,26 +132,26 @@ func Repos_Create(ctx context.Context, t *testing.T, s store.Repos, preCreate Pr
 	}
 }
 
-func Repos_Create_dupe(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+func Repos_Create_dupe(ctx context.Context, t *testing.T, s store.Repos) {
 	tm := time.Now().Round(time.Second)
 	ts := pbtypes.NewTimestamp(tm)
 
 	// Add a repo.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b", CreatedAt: &ts})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
 
 	// Add another repo with the same name.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b", CreatedAt: &ts})); err == nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err == nil {
 		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
 	}
 }
 
 // Repos_Update_Description tests the behavior of Repos.Update to
 // update a repo's description.
-func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos) {
 	// Add a repo.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -185,9 +176,9 @@ func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos, 
 	}
 }
 
-func Repos_Update_UpdatedAt(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+func Repos_Update_UpdatedAt(ctx context.Context, t *testing.T, s store.Repos) {
 	// Add a repo.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -217,9 +208,9 @@ func Repos_Update_UpdatedAt(ctx context.Context, t *testing.T, s store.Repos, pr
 	}
 }
 
-func Repos_Update_PushedAt(ctx context.Context, t *testing.T, s store.Repos, preCreate PreCreateRepoFunc) {
+func Repos_Update_PushedAt(ctx context.Context, t *testing.T, s store.Repos) {
 	// Add a repo.
-	if err := s.Create(ctx, preCreate(&sourcegraph.Repo{URI: "a/b"})); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
 		t.Fatal(err)
 	}
 

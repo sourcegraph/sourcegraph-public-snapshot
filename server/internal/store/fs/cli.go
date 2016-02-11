@@ -18,7 +18,7 @@ func init() {
 	cli.RegisterStores("fs", &store.Stores{
 		Accounts:          &accounts{},
 		Authorizations:    &authorizations{},
-		BuildLogs:         &buildLogs{},
+		BuildLogs:         &BuildLogs{},
 		Builds:            &builds{},
 		RepoConfigs:       &repoConfigs{},
 		Password:          &password{},

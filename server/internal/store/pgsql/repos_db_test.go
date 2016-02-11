@@ -12,12 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
 
-func preCreateRepo(repo *sourcegraph.Repo) *sourcegraph.Repo {
-	repo.Mirror = true
-	repo.HTTPCloneURL = "http://example.com/dummy.git"
-	return repo
-}
-
 func TestRepos_List(t *testing.T) {
 	t.Parallel()
 
@@ -80,47 +74,47 @@ func TestRepos_List_query(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_query(ctx, t, &repos{}, preCreateRepo)
+	testsuite.Repos_List_query(ctx, t, &repos{})
 }
 
 func TestRepos_List_URIs(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_URIs(ctx, t, &repos{}, preCreateRepo)
+	testsuite.Repos_List_URIs(ctx, t, &repos{})
 }
 
 func TestRepos_Create(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create(ctx, t, &repos{}, preCreateRepo)
+	testsuite.Repos_Create(ctx, t, &repos{})
 }
 
 func TestRepos_Create_dupe(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create_dupe(ctx, t, &repos{}, preCreateRepo)
+	testsuite.Repos_Create_dupe(ctx, t, &repos{})
 }
 
 func TestRepos_Update_Description(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_Description(ctx, t, &repos{}, preCreateRepo)
+	testsuite.Repos_Update_Description(ctx, t, &repos{})
 }
 
 func TestRepos_Update_UpdatedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_UpdatedAt(ctx, t, &repos{}, preCreateRepo)
+	testsuite.Repos_Update_UpdatedAt(ctx, t, &repos{})
 }
 
 func TestRepos_Update_PushedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_PushedAt(ctx, t, &repos{}, preCreateRepo)
+	testsuite.Repos_Update_PushedAt(ctx, t, &repos{})
 }

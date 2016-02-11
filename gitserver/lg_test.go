@@ -102,10 +102,6 @@ func (t gitPushTest) String() string {
 }
 
 func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{}) {
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
-
 	t.Parallel()
 
 	// Start test server.

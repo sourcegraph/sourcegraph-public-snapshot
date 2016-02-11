@@ -127,6 +127,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 
 	ts := pbtypes.NewTimestamp(time.Now())
 	repo := &sourcegraph.Repo{
+		Name:         pathpkg.Base(op.URI),
 		URI:          op.URI,
 		VCS:          op.VCS,
 		HTTPCloneURL: op.CloneURL,

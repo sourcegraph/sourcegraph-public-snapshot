@@ -12,9 +12,6 @@ import (
 )
 
 func TestDeltas_lg(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()

@@ -36,8 +36,6 @@ func HTTP(err error) int {
 		return http.StatusUnauthorized
 	case store.ErrRepoNeedsCloneURL, store.ErrRepoNoCloneURL:
 		return http.StatusPreconditionFailed
-	case store.ErrRepoMirrorOnly:
-		return http.StatusNotImplemented
 	case store.ErrRegisteredClientIDExists:
 		return http.StatusConflict
 	}

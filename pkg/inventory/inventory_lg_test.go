@@ -17,10 +17,6 @@ import (
 func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 	t.Skip("flaky") // https://circleci.com/gh/sourcegraph/sourcegraph/10279
 
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
-
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
@@ -33,7 +29,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 	}
 	defer a.Close()
 
-	repo, done, err := testutil.CreateRepo(t, ctx, "myrepo")
+	repo, done, err := testutil.CreateRepo(t, ctx, "myrepo", false)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,11 +9,14 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
+	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
@@ -136,11 +139,16 @@ type repos struct{}
 
 var _ store.Repos = (*repos)(nil)
 
-func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", repo); err != nil {
+func (s *repos) Get(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", uri); err != nil {
 		return nil, err
 	}
-	return s.getByURI(ctx, repo)
+	repo, err := s.getByURI(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+	setCloneURLField(ctx, repo)
+	return repo, nil
 }
 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
@@ -208,10 +216,27 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
+	for _, repo := range repos {
+		setCloneURLField(ctx, repo)
+	}
+
 	return repos, nil
 }
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
+
+// setCloneURLField sets the *CloneURL fields on the repo based on
+// the ctx's app and SSH URLs. These values are not stored in the
+// database because if they were, the values would be stale if the
+// configuration's app or SSH URLs change.
+func setCloneURLField(ctx context.Context, repo *sourcegraph.Repo) {
+	if !repo.Mirror {
+		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
+		if conf.SSHURL(ctx) != nil {
+			repo.SSHCloneURL = fmt.Sprintf("%s/%s", conf.SSHURL(ctx).String(), repo.URI)
+		}
+	}
+}
 
 func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
@@ -346,21 +371,20 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
 		return err
 	}
-	// Explicitly created repos in the DB are mirrors because they
-	// don't have a corresponding VCS repository on the filesystem for
-	// them.
-	if !newRepo.Mirror {
-		return store.ErrRepoMirrorOnly
-	}
-
-	if newRepo.HTTPCloneURL == "" && newRepo.SSHCloneURL == "" {
-		return store.ErrRepoNeedsCloneURL
-	}
 
 	if newRepo.DefaultBranch == "" {
 		// TODO(sqs): set this in a layer above, not here (e.g., in
 		// the NewRepo protobuf type).
 		newRepo.DefaultBranch = "master"
+	}
+
+	// Create the filesystem repo where the git data lives. (The repo
+	// metadata, such as the existence, description, language, etc.,
+	// live in PostgreSQL.)
+	if err := fs.CreateRepo(ctx, newRepo); grpc.Code(err) == codes.AlreadyExists {
+		log15.Warn("Repo already exists on filesystem; reusing", "repo", newRepo.URI)
+	} else if err != nil {
+		return err
 	}
 
 	var r dbRepo
@@ -407,5 +431,8 @@ func (s *repos) Delete(ctx context.Context, repo string) error {
 	if err != nil {
 		return err
 	}
-	return fs.DeleteRepo(ctx, repo)
+	if err := fs.DeleteRepo(ctx, repo); err != nil {
+		log15.Warn("Deleting repo on filesystem failed", "repo", repo, "err", err)
+	}
+	return nil
 }

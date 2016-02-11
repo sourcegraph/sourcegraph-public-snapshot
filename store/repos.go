@@ -99,20 +99,14 @@ func IsRepoNotFound(err error) bool {
 }
 
 // ErrRepoNeedsCloneURL occurs when Repos.Create is called and the
-// repo has no HTTPCloneURL or SSHCloneURL set, when the store type
-// requires that one be set. For example, the DB store requires the
-// repo to exist as a git/hg/etc. repository elsewhere already, since
-// it only creates a row in the DB for the repo, not the actual VCS
-// repository.
+// repo has no HTTPCloneURL or SSHCloneURL set, when the operation
+// requires that one be set. For example, mirror repos require the
+// repo to exist as a git/hg/etc. repository elsewhere already.
 var ErrRepoNeedsCloneURL = errors.New("creating a repo requires a clone URL to be set")
 
 // ErrRepoNoCloneURL occurs when Repos.Create is called and the repo
-// has a HTTPCloneURL or SSHCloneURL set, when the store type requires
-// that one NOT be set. For example, the FS store calls `git init` to
-// create a new repo, so a clone URL would be meaningless.
+// has a HTTPCloneURL or SSHCloneURL set, when the operation requires
+// that one NOT be set. For example, creating origin (non-mirror)
+// repos calls `git init` to create a new repo, so a clone URL would
+// be meaningless.
 var ErrRepoNoCloneURL = errors.New("creating a hosted repo initializes a new repo; no clone URL may be provided")
-
-// ErrRepoMirrorOnly occurs when Repos.Create is called to create a
-// non-mirror repo, but the store type requires mirror repos (e.g.,
-// the DB-backed store).
-var ErrRepoMirrorOnly = errors.New("this repo store can only create mirrored repos")

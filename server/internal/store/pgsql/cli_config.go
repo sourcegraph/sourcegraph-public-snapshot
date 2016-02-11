@@ -11,6 +11,7 @@ func init() {
 		Accounts:            &accounts{},
 		Authorizations:      &authorizations{},
 		Builds:              &builds{},
+		BuildLogs:           &fs.BuildLogs{},
 		Directory:           &directory{},
 		ExternalAuthTokens:  &externalAuthTokens{},
 		RepoConfigs:         &repoConfigs{},

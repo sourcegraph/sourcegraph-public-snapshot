@@ -11,10 +11,7 @@ import (
 func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
 	var createdRepos []*sourcegraph.Repo
 	for _, repo := range repos {
-		// All pgsql repos must be mirrors, so it's more efficient
-		// to set that here than in EVERY test.
-		repo.Mirror = true
-		repo.HTTPCloneURL = "http://example.com/dummy.git"
+		repo.VCS = "git"
 
 		if err := s.Create(ctx, repo); err != nil {
 			t.Fatal(err)

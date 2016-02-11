@@ -22,11 +22,6 @@ import (
 // calls to #2 for repos that live on #1 are transparently served by
 // #2 communicating with #1 on the client's behalf.
 func TestFederation(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		// TODO(sqs): Test when the origin server is DB-based.
-		t.Skip()
-	}
-
 	a1, ctx1 := testserver.NewUnstartedServer()
 	a1.Config.ServeFlags = append(a1.Config.ServeFlags,
 		&fed.Flags{IsRoot: true},

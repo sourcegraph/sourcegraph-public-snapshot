@@ -362,10 +362,6 @@ func newTestSuite(t *testing.T) (*testSuite, error) {
 
 // TestChangesets_Create tests that creating a changeset works.
 func TestChangesets_Create(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -382,10 +378,6 @@ func TestChangesets_Create(t *testing.T) {
 
 // TestChangesets_Get tests that creating a changeset and then getting it works.
 func TestChangesets_Get(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -421,10 +413,6 @@ func TestChangesets_Get(t *testing.T) {
 // TestChangesets_List tests that creating a few changesets and then listing
 // them works.
 func TestChangesets_List(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -474,10 +462,6 @@ func TestChangesets_List(t *testing.T) {
 // TestChangesets_Update tests that creating a changeset and then updating it
 // works.
 func TestChangesets_Update(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -519,10 +503,6 @@ func TestChangesets_Update(t *testing.T) {
 // TestChangesets_CreateReview tests that creating a changeset and then
 // creating a review on it works.
 func TestChangesets_CreateReview(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -579,10 +559,6 @@ func TestChangesets_CreateReview(t *testing.T) {
 // TestChangesets_ListReviews tests that creating a few changesets and then
 // listing the events on it works.
 func TestChangesets_ListReviews(t *testing.T) {
-	if testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -674,10 +650,6 @@ func TestChangesets_MirroredListEvents(t *testing.T) {
 // It takes a single parameter, which is whether or not the test should be
 // performed on a mirrored GitHub repo or not.
 func testChangesets_ListEvents(t *testing.T, mirror bool) {
-	if !mirror && testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -764,10 +736,6 @@ func TestChangesets_MirroredBackgroundBaseCommits(t *testing.T) {
 // It takes a single parameter, which is whether or not the test should be
 // performed on a mirrored GitHub repo or not.
 func testChangesets_BackgroundBaseCommits(t *testing.T, mirror bool) {
-	if !mirror && testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -916,10 +884,6 @@ func TestChangesets_MirroredRebaseFlow(t *testing.T) {
 // It takes a single parameter, which is whether or not the test should be
 // performed on a mirrored GitHub repo or not.
 func testChangesets_RebaseFlow(t *testing.T, mirror bool) {
-	if !mirror && testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {
@@ -1141,10 +1105,6 @@ func TestChangesets_MirroredCLIMergeFlow(t *testing.T) {
 // It takes a single parameter, which is whether or not the test should be
 // performed on a mirrored GitHub repo or not.
 func testChangesets_MergeFlow(t *testing.T, mirror, cli bool) {
-	if !mirror && testserver.Store == "pgsql" {
-		t.Skip("pgsql local store can only create mirror repos")
-	}
-
 	// Create a new test suite.
 	ts, err := newTestSuite(t)
 	if err != nil {

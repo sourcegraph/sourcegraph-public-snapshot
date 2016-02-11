@@ -22,7 +22,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	storecli "src.sourcegraph.com/sourcegraph/store/cli"
 	"src.sourcegraph.com/sourcegraph/util/executil"
 )
 
@@ -88,7 +87,7 @@ func getCommitWithRefreshAndRetry(t *testing.T, ctx context.Context, repoRevSpec
 
 // CreateRepo creates a new repo. Callers must call the returned
 // done() func when done (if err is non-nil) to free up resources.
-func CreateRepo(t *testing.T, ctx context.Context, repoURI string) (repo *sourcegraph.Repo, done func(), err error) {
+func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) (repo *sourcegraph.Repo, done func(), err error) {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	op := &sourcegraph.ReposCreateOp{
@@ -96,7 +95,7 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string) (repo *source
 		VCS: "git",
 	}
 
-	if storecli.ActiveFlags.Store == "pgsql" {
+	if mirror {
 		s := httptest.NewServer(trivialGitRepoHandler)
 		op.CloneURL, done = s.URL, s.Close
 		op.Mirror = true
@@ -127,7 +126,7 @@ func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (repo 
 // resources.
 func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, files map[string]string) (repo *sourcegraph.Repo, commitID string, done func(), err error) {
 	//var repo *sourcegraph.Repo
-	repo, done, err = CreateRepo(t, ctx, repoURI)
+	repo, done, err = CreateRepo(t, ctx, repoURI, false)
 	if err != nil {
 		return nil, "", nil, err
 	}

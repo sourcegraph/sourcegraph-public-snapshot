@@ -86,10 +86,6 @@ build:
 }
 
 func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Context, done func(), build *sourcegraph.Build, buildLog string) {
-	if testserver.Store == "pgsql" {
-		t.Skip()
-	}
-
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
@@ -101,7 +97,7 @@ func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Co
 	}
 
 	// Create and push a repo that uses the sample toolchain.
-	repo, repoDone, err := testutil.CreateRepo(t, ctx, "r/r")
+	repo, repoDone, err := testutil.CreateRepo(t, ctx, "r/r", false)
 	if err != nil {
 		t.Fatal(err)
 	}
