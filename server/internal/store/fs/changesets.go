@@ -26,6 +26,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -53,6 +54,9 @@ type Changesets struct {
 }
 
 func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegraph.Changeset) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Create", repoPath); err != nil {
+		return err
+	}
 	fs := s.storage(ctx, repoPath)
 	repoVCS, err := store.RepoVCSFromContext(ctx).Open(ctx, repoPath)
 	if err != nil {
@@ -151,6 +155,9 @@ func resolveNextChangesetID(fs platformstorage.System) (int64, error) {
 }
 
 func (s *Changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.Get", op.Spec.Repo.URI); err != nil {
+		return nil, err
+	}
 	fs := s.storage(ctx, op.Spec.Repo.URI)
 	cs := &sourcegraph.Changeset{}
 	err := s.unmarshal(fs, op.Spec.ID, changesetMetadataFile, cs)
@@ -170,6 +177,9 @@ func (s *Changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*
 }
 
 func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changesetID int64, newReview *sourcegraph.ChangesetReview) (*sourcegraph.ChangesetReview, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.CreateReview", repoPath); err != nil {
+		return nil, err
+	}
 	s.fsLock.Lock()
 	defer s.fsLock.Unlock()
 	fs := s.storage(ctx, repoPath)
@@ -190,6 +200,9 @@ func (s *Changesets) CreateReview(ctx context.Context, repoPath string, changese
 }
 
 func (s *Changesets) ListReviews(ctx context.Context, repo string, changesetID int64) (*sourcegraph.ChangesetReviewList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.ListReviews", repo); err != nil {
+		return nil, err
+	}
 	fs := s.storage(ctx, repo)
 
 	list := &sourcegraph.ChangesetReviewList{Reviews: []*sourcegraph.ChangesetReview{}}
@@ -220,6 +233,9 @@ func copyChangeset(src *sourcegraph.Changeset) *sourcegraph.Changeset {
 }
 
 func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Update", opt.Op.Repo.URI); err != nil {
+		return nil, err
+	}
 	fs := s.storage(ctx, opt.Op.Repo.URI)
 
 	op := opt.Op
@@ -434,6 +450,9 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 }
 
 func (s *Changesets) Merge(ctx context.Context, opt *store.ChangesetMergeOp) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Changesets.Merge", opt.Op.Repo.URI); err != nil {
+		return err
+	}
 	op := opt.Op
 
 	cs, _ := s.Get(ctx, &sourcegraph.ChangesetGetOp{
@@ -581,6 +600,9 @@ func shouldRegisterEvent(op *sourcegraph.ChangesetUpdateOp) bool {
 var errInvalidListOp = errors.New("invalid list operation")
 
 func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.List", op.Repo); err != nil {
+		return nil, err
+	}
 	fs := s.storage(ctx, op.Repo)
 
 	list := sourcegraph.ChangesetList{Changesets: []*sourcegraph.Changeset{}}
@@ -684,6 +706,9 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 }
 
 func (s *Changesets) ListEvents(ctx context.Context, spec *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.ListEvents", spec.Repo.URI); err != nil {
+		return nil, err
+	}
 	fs := s.storage(ctx, spec.Repo.URI)
 	list := sourcegraph.ChangesetEventList{Events: []*sourcegraph.ChangesetEvent{}}
 	err := s.unmarshal(fs, spec.ID, changesetEventsFile, &list.Events)

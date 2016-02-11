@@ -16,6 +16,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -46,6 +47,9 @@ var _ store.Builds = (*builds)(nil)
 const buildQueueFilename = "queue-builds.json"
 
 func (s *builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Get", buildSpec.Repo.URI); err != nil {
+		return nil, err
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -191,7 +195,9 @@ func (s *builds) listBuildsWalkFS(ctx context.Context, opt *sourcegraph.BuildLis
 
 func (s *builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
 	log15.Debug("Finding first built commit in order", "pkg", "server/internal/store/fs", "repo", repo, "commit order", commitIDs, "successfulOnly", successfulOnly)
-
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetFirstInCommitOrder", repo); err != nil {
+		return nil, 0, err
+	}
 	// TODO(gbbr): Get only commits in parameter, not all for the repo.
 	buildIdx, err := getRepoBuildIndex(ctx, repo)
 	if err != nil {
@@ -227,6 +233,9 @@ func (s *builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitI
 }
 
 func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Create", newBuild.Repo); err != nil {
+		return nil, err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -277,6 +286,9 @@ func (s *builds) createAndUpdateIndex(ctx context.Context, b *sourcegraph.Build)
 }
 
 func (s *builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Update", spec.Repo.URI); err != nil {
+		return err
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -313,6 +325,9 @@ func (s *builds) Update(ctx context.Context, spec sourcegraph.BuildSpec, info so
 }
 
 func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.DequeueNext"); err != nil {
+		return nil, err
+	}
 	// Fast path - check if queue is empty with read lock
 	isEmpty, err := func() (bool, error) {
 		s.mu.RLock()
@@ -362,6 +377,16 @@ func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 }
 
 func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
+	var repo string
+	for _, task := range tasks {
+		if task.Build.Repo.URI != repo {
+			if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.CreateTasks", task.Build.Repo.URI); err != nil {
+				return nil, err
+			}
+			// Cache the last repo URI that was checked for write access.
+			repo = task.Build.Repo.URI
+		}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -399,6 +424,9 @@ func (s *builds) updateTask(ctx context.Context, task *sourcegraph.BuildTask) er
 }
 
 func (s *builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.UpdateTask", taskSpec.Build.Repo.URI); err != nil {
+		return err
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -430,6 +458,9 @@ func (s *builds) UpdateTask(ctx context.Context, taskSpec sourcegraph.TaskSpec, 
 }
 
 func (s *builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.ListBuildTasks", buildSpec.Repo.URI); err != nil {
+		return nil, err
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -465,6 +496,9 @@ func (s *builds) ListBuildTasks(ctx context.Context, buildSpec sourcegraph.Build
 }
 
 func (s *builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetTask", taskSpec.Build.Repo.URI); err != nil {
+		return nil, err
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

@@ -4,6 +4,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
 
@@ -43,6 +44,9 @@ type repoConfigs struct{}
 var _ store.RepoConfigs = (*repoConfigs)(nil)
 
 func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Get", repo); err != nil {
+		return nil, err
+	}
 	var confRows []*dbRepoConfig
 	sql := `SELECT * FROM repo_config WHERE repo=$1;`
 	if err := dbh(ctx).Select(&confRows, sql, repo); err != nil {
@@ -55,6 +59,9 @@ func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 }
 
 func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Update", repo); err != nil {
+		return err
+	}
 	var dbConf dbRepoConfig
 	dbConf.fromRepoConfig(repo, &conf)
 	n, err := dbh(ctx).Update(&dbConf)

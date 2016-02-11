@@ -7,6 +7,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
@@ -38,6 +39,9 @@ type authorizations struct{}
 var _ store.Authorizations = (*authorizations)(nil)
 
 func (s *authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.AuthorizationCodeRequest, expires time.Duration) (string, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Authorizations.CreateAuthCode", req.UID); err != nil {
+		return "", err
+	}
 	code := &dbAuthCode{
 		Code:        randstring.NewLen(40),
 		ClientID:    req.ClientID,

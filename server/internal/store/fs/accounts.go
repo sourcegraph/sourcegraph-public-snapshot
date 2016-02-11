@@ -15,8 +15,10 @@ import (
 	"sourcegraph.com/sourcegraph/rwvfs"
 
 	"golang.org/x/net/context"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
@@ -31,6 +33,9 @@ func (s *accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User
 }
 
 func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Create"); err != nil {
+		return nil, err
+	}
 	if newUser.UID != 0 && !authutil.ActiveFlags.MigrateMode {
 		return nil, errors.New("uid already set")
 	}
@@ -68,6 +73,17 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 }
 
 func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error {
+	// A user can only update their own record, but an admin can update all records.
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.Update", modUser.UID); err != nil {
+		return err
+	}
+
+	a := authpkg.ActorFromContext(ctx)
+	// Only admin users can modify access levels of a user.
+	if !a.HasAdminAccess() && (modUser.Admin || (a.HasWriteAccess() != modUser.Write)) {
+		return grpc.Errorf(codes.PermissionDenied, "need admin privileges to modify user permissions")
+	}
+
 	users, err := readUserDB(ctx)
 	if err != nil {
 		return err
@@ -84,6 +100,9 @@ func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 }
 
 func (s *accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.UpdateEmails", user.UID); err != nil {
+		return err
+	}
 	users, err := readUserDB(ctx)
 	if err != nil {
 		return err
@@ -100,6 +119,9 @@ func (s *accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, 
 }
 
 func (s *accounts) Delete(ctx context.Context, uid int32) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.Delete", uid); err != nil {
+		return err
+	}
 	users, err := readUserDB(ctx)
 	if err != nil {
 		return err
@@ -171,6 +193,9 @@ func writePasswordResetDB(ctx context.Context, users []*passwordReset) (err erro
 }
 
 func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.RequestPasswordReset", user.UID); err != nil {
+		return nil, err
+	}
 	const tokenLength = 44
 	if user.UID == 0 {
 		return nil, errors.New("UID must be set")

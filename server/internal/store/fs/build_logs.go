@@ -14,6 +14,7 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -27,6 +28,9 @@ type buildLogs struct{}
 var _ store.BuildLogs = (*buildLogs)(nil)
 
 func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minIDStr string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "BuildLogs.Get", task.Build.Repo.URI); err != nil {
+		return nil, err
+	}
 	// Read the log file.
 	b, err := ioutil.ReadFile(logFilePath(task))
 	if err != nil {

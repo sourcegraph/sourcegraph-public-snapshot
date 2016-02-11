@@ -137,6 +137,9 @@ type repos struct{}
 var _ store.Repos = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", repo); err != nil {
+		return nil, err
+	}
 	return s.getByURI(ctx, repo)
 }
 
@@ -166,10 +169,16 @@ func (s *repos) getBySQL(ctx context.Context, sql string, args ...interface{}) (
 }
 
 func (s *repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetPerms", repo); err != nil {
+		return nil, err
+	}
 	return &sourcegraph.RepoPermissions{Read: true, Write: true, Admin: true}, nil
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", ""); err != nil {
+		return nil, err
+	}
 	if opt == nil {
 		opt = &sourcegraph.RepoListOptions{}
 	}
@@ -334,6 +343,9 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 }
 
 func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
+		return err
+	}
 	// Explicitly created repos in the DB are mirrors because they
 	// don't have a corresponding VCS repository on the filesystem for
 	// them.
@@ -357,6 +369,9 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
+		return err
+	}
 	if op.Description != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
 		if err != nil {
@@ -385,6 +400,9 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 }
 
 func (s *repos) Delete(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo); err != nil {
+		return err
+	}
 	_, err := dbh(ctx).Exec(`DELETE FROM repo WHERE uri=$1;`, repo)
 	if err != nil {
 		return err

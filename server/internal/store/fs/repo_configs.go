@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -24,6 +25,9 @@ const (
 )
 
 func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Get", repo); err != nil {
+		return nil, err
+	}
 	sys := platformstorage.Namespace(ctx, repoConfigsAppName, repo)
 	var conf sourcegraph.RepoConfig
 	if err := platformstorage.GetJSON(sys, repoConfigsBucket, repoConfigsKey, &conf); err != nil {
@@ -37,6 +41,9 @@ func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 }
 
 func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Update", repo); err != nil {
+		return err
+	}
 	sys := platformstorage.Namespace(ctx, repoConfigsAppName, repo)
 	return platformstorage.PutJSON(sys, repoConfigsBucket, repoConfigsKey, &conf)
 }

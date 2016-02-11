@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -84,6 +85,9 @@ type users struct{}
 var _ store.Users = (*users)(nil)
 
 func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.Get", ""); err != nil {
+		return nil, err
+	}
 	e, err := s.getDBEntry(ctx, userSpec)
 	if err != nil {
 		return nil, err
@@ -92,6 +96,9 @@ func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 }
 
 func (s *users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.GetWithEmail"); err != nil {
+		return nil, err
+	}
 	if emailAddr.Email == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "email address must not be empty")
 	}
@@ -130,6 +137,9 @@ func (s *users) getDBEntry(ctx context.Context, userSpec sourcegraph.UserSpec) (
 }
 
 func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List", ""); err != nil {
+		return nil, err
+	}
 	entries, err := readUserDB(ctx)
 	if err != nil {
 		return nil, err
@@ -170,6 +180,9 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 }
 
 func (s *users) Count(ctx context.Context) (int32, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.Count"); err != nil {
+		return 0, err
+	}
 	entries, err := readUserDB(ctx)
 	if err != nil {
 		return 0, err
@@ -198,6 +211,9 @@ func userMatchesQuery(user *sourcegraph.User, query string, uidMap map[int32]str
 }
 
 func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", user.UID); err != nil {
+		return nil, err
+	}
 	e, err := s.getDBEntry(ctx, user)
 	if err != nil {
 		return nil, err

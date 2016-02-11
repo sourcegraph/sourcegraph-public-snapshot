@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
@@ -16,6 +17,9 @@ type directory struct{}
 var _ store.Directory = (*directory)(nil)
 
 func (s *directory) GetUserByEmail(ctx context.Context, email string) (*sourcegraph.UserSpec, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Directory.GetUserByEmail"); err != nil {
+		return nil, err
+	}
 	q := `SELECT uid FROM user_email WHERE (NOT blacklisted) AND email=$1 ORDER BY uid ASC LIMIT 1`
 	uid, err := dbutil.SelectInt(dbh(ctx), q, email)
 	switch {

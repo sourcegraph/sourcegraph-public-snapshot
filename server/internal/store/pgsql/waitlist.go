@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -42,6 +43,9 @@ func init() {
 type waitlist struct{}
 
 func (w *waitlist) AddUser(ctx context.Context, uid int32) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Waitlist.AddUser", uid); err != nil {
+		return err
+	}
 	currTime := time.Now()
 	dbUser := &userWaitlistRow{
 		UID:     uid,
@@ -71,6 +75,9 @@ func (w *waitlist) getUser(ctx context.Context, uid int32) (*userWaitlistRow, er
 }
 
 func (w *waitlist) GetUser(ctx context.Context, uid int32) (*sourcegraph.WaitlistedUser, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Waitlist.GetUser", uid); err != nil {
+		return nil, err
+	}
 	dbUser, err := w.getUser(ctx, uid)
 	if err != nil {
 		return nil, err
@@ -83,6 +90,9 @@ func (w *waitlist) GetUser(ctx context.Context, uid int32) (*sourcegraph.Waitlis
 }
 
 func (w *waitlist) GrantUser(ctx context.Context, uid int32) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.GrantUser"); err != nil {
+		return err
+	}
 	dbUser, err := w.getUser(ctx, uid)
 	if err != nil {
 		return err
@@ -99,6 +109,9 @@ func (w *waitlist) GrantUser(ctx context.Context, uid int32) error {
 }
 
 func (w *waitlist) ListUsers(ctx context.Context, onlyWaitlisted bool) ([]*sourcegraph.WaitlistedUser, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.ListUsers"); err != nil {
+		return nil, err
+	}
 	var userWaitlistRows []*userWaitlistRow
 	sql := `SELECT * FROM user_waitlist`
 	if onlyWaitlisted {
@@ -120,6 +133,9 @@ func (w *waitlist) ListUsers(ctx context.Context, onlyWaitlisted bool) ([]*sourc
 }
 
 func (w *waitlist) AddOrg(ctx context.Context, orgName string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.AddOrg"); err != nil {
+		return err
+	}
 	currTime := time.Now()
 	dbOrg := &orgWaitlistRow{
 		Name:    orgName,
@@ -149,6 +165,9 @@ func (w *waitlist) getOrg(ctx context.Context, orgName string) (*orgWaitlistRow,
 }
 
 func (w *waitlist) GetOrg(ctx context.Context, orgName string) (*sourcegraph.WaitlistedOrg, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.GetOrg"); err != nil {
+		return nil, err
+	}
 	dbOrg, err := w.getOrg(ctx, orgName)
 	if err != nil {
 		return nil, err
@@ -161,6 +180,9 @@ func (w *waitlist) GetOrg(ctx context.Context, orgName string) (*sourcegraph.Wai
 }
 
 func (w *waitlist) GrantOrg(ctx context.Context, orgName string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.GrantOrg"); err != nil {
+		return err
+	}
 	dbOrg, err := w.getOrg(ctx, orgName)
 	if err != nil {
 		return err
@@ -177,6 +199,9 @@ func (w *waitlist) GrantOrg(ctx context.Context, orgName string) error {
 }
 
 func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.ListOrgs"); err != nil {
+		return nil, err
+	}
 	var orgWaitlistRows []*orgWaitlistRow
 
 	var args []interface{}

@@ -11,8 +11,10 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
@@ -27,6 +29,9 @@ func (s *accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User
 }
 
 func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Create"); err != nil {
+		return nil, err
+	}
 	if newUser.UID != 0 && !authutil.ActiveFlags.MigrateMode {
 		return nil, errors.New("uid already set")
 	}
@@ -58,6 +63,17 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 }
 
 func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error {
+	// A user can only update their own record, but an admin can update all records.
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.Update", modUser.UID); err != nil {
+		return err
+	}
+
+	a := authpkg.ActorFromContext(ctx)
+	// Only admin users can modify access levels of a user.
+	if !a.HasAdminAccess() && (modUser.Admin || (a.HasWriteAccess() != modUser.Write)) {
+		return grpc.Errorf(codes.PermissionDenied, "need admin privileges to modify user permissions")
+	}
+
 	var u dbUser
 	u.fromUser(modUser)
 	if _, err := dbh(ctx).Update(&u); err != nil {
@@ -67,6 +83,9 @@ func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 }
 
 func (s *accounts) Delete(ctx context.Context, uid int32) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.Delete", uid); err != nil {
+		return err
+	}
 	dbUID := int(uid)
 	if _, err := dbh(ctx).Exec(`DELETE FROM users where uid=$1`, dbUID); err != nil {
 		return err
@@ -84,6 +103,9 @@ type passwordResetRequest struct {
 }
 
 func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.RequestPasswordReset", user.UID); err != nil {
+		return nil, err
+	}
 	// 62 characters in upper, lower, and decimal, 62^44 is slightly more than
 	// 2^256, so it's astronomically hard to guess, but doesn't take an excessive
 	// amount of space to store.

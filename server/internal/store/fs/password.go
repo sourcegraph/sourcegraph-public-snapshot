@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -76,6 +77,9 @@ type password struct{}
 var _ store.Password = (*password)(nil)
 
 func (p password) CheckUIDPassword(ctx context.Context, uid int32, password string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Password.CheckUIDPassword"); err != nil {
+		return err
+	}
 	pwmap, err := readPasswordDB(ctx)
 	if err != nil {
 		return err
@@ -90,6 +94,9 @@ func (p password) CheckUIDPassword(ctx context.Context, uid int32, password stri
 }
 
 func (p password) SetPassword(ctx context.Context, uid int32, password string) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Password.SetPassword", uid); err != nil {
+		return err
+	}
 	if password == "" {
 		return errors.New("password must not be empty")
 	}

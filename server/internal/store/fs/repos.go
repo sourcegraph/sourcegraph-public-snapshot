@@ -23,6 +23,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -35,6 +36,9 @@ var _ store.Repos = (*repos)(nil)
 const timeFormat = time.RFC3339Nano
 
 func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", repo); err != nil {
+		return nil, err
+	}
 	dir := dirForRepo(repo)
 	reposVFS := rwvfs.OS(reposAbsPath(ctx))
 	if !isGitRepoDir(reposVFS, dir) {
@@ -44,13 +48,21 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 func (s *repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetPerms", repo); err != nil {
+		return nil, err
+	}
 	return &sourcegraph.RepoPermissions{Read: true, Write: true, Admin: true}, nil
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", ""); err != nil {
+		return nil, err
+	}
 	if opt == nil {
 		opt = &sourcegraph.RepoListOptions{}
 	}
+
+	// TODO: implement filtering of private repos for fs-store.
 
 	var repos []*sourcegraph.Repo
 	reposVFS := rwvfs.OS(reposAbsPath(ctx))
@@ -195,6 +207,9 @@ func readGitDefaultBranch(fs vfs.FileSystem, dir string) (string, error) {
 }
 
 func (s *repos) Create(ctx context.Context, repo *sourcegraph.Repo) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
+		return err
+	}
 	if repo.VCS != "git" {
 		return grpc.Errorf(codes.Unimplemented, "only git repos are supported in repo creation")
 	}
@@ -282,6 +297,9 @@ func (s *repos) createBareGitRepo(ctx context.Context, repo *sourcegraph.Repo, d
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
+		return err
+	}
 	dir := absolutePathForRepo(ctx, op.Repo.URI)
 
 	if op.Description != "" {
@@ -312,6 +330,9 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 }
 
 func (s *repos) Delete(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo); err != nil {
+		return err
+	}
 	return DeleteRepo(ctx, repo)
 }
 

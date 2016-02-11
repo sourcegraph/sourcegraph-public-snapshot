@@ -8,6 +8,7 @@ import (
 	"github.com/sqs/modl"
 
 	"golang.org/x/net/context"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -28,6 +29,9 @@ func init() {
 type repoPerms struct{}
 
 func (r *repoPerms) Add(ctx context.Context, uid int32, repo string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RepoPerms.Add"); err != nil {
+		return err
+	}
 	if uid == 0 || repo == "" {
 		return nil
 	}
@@ -50,6 +54,9 @@ func (r *repoPerms) Add(ctx context.Context, uid int32, repo string) error {
 }
 
 func (r *repoPerms) Update(ctx context.Context, uid int32, repos []string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RepoPerms.Update"); err != nil {
+		return err
+	}
 	if uid == 0 {
 		return nil
 	}
@@ -92,6 +99,9 @@ func (r *repoPerms) Update(ctx context.Context, uid int32, repos []string) error
 }
 
 func (r *repoPerms) Delete(ctx context.Context, uid int32, repo string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RepoPerms.Delete"); err != nil {
+		return err
+	}
 	if uid == 0 || repo == "" {
 		return nil
 	}
@@ -107,6 +117,9 @@ func (r *repoPerms) Delete(ctx context.Context, uid int32, repo string) error {
 }
 
 func (r *repoPerms) ListUserRepos(ctx context.Context, uid int32) ([]string, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "RepoPerms.ListUserRepos", uid); err != nil {
+		return nil, err
+	}
 	if uid == 0 {
 		return make([]string, 0), nil
 	}
@@ -125,6 +138,9 @@ func (r *repoPerms) ListUserRepos(ctx context.Context, uid int32) ([]string, err
 }
 
 func (r *repoPerms) ListRepoUsers(ctx context.Context, repo string) ([]int32, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RepoPerms.ListRepoUsers"); err != nil {
+		return nil, err
+	}
 	if repo == "" {
 		return make([]int32, 0), nil
 	}
@@ -143,6 +159,9 @@ func (r *repoPerms) ListRepoUsers(ctx context.Context, repo string) ([]int32, er
 }
 
 func (r *repoPerms) DeleteUser(ctx context.Context, uid int32) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "RepoPerms.DeleteUser", uid); err != nil {
+		return err
+	}
 	if uid == 0 {
 		return nil
 	}
@@ -158,6 +177,9 @@ func (r *repoPerms) DeleteUser(ctx context.Context, uid int32) error {
 }
 
 func (r *repoPerms) DeleteRepo(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RepoPerms.DeleteRepo"); err != nil {
+		return err
+	}
 	if repo == "" {
 		return nil
 	}

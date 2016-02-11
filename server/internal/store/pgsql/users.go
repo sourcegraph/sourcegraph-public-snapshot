@@ -11,6 +11,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -86,6 +87,9 @@ type users struct{}
 var _ store.Users = (*users)(nil)
 
 func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.Get", ""); err != nil {
+		return nil, err
+	}
 	var user *sourcegraph.User
 	var err error
 	if userSpec.UID != 0 && userSpec.Login != "" {
@@ -133,6 +137,9 @@ var okUsersSorts = map[string]struct{}{
 }
 
 func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List", ""); err != nil {
+		return nil, err
+	}
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := modl.PostgresDialect{}.BindVar(len(args))
@@ -184,6 +191,9 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 }
 
 func (s *users) Count(ctx context.Context) (int32, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.Count"); err != nil {
+		return 0, err
+	}
 	sql := "SELECT count(*) FROM users WHERE NOT disabled;"
 	var count []int
 	if err := dbh(ctx).Select(&count, sql); err != nil || len(count) == 0 {

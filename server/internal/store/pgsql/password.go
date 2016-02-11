@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -29,6 +30,9 @@ func init() {
 // CheckUIDPassword returns an error if the password argument is not correct for
 // the user.
 func (p password) CheckUIDPassword(ctx context.Context, UID int32, password string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Password.CheckUIDPassword"); err != nil {
+		return err
+	}
 	var records [][]byte
 	err := dbh(ctx).Select(&records, "SELECT hashedpassword FROM passwords WHERE uid=$1;", UID)
 	if err != nil {
@@ -42,6 +46,9 @@ func (p password) CheckUIDPassword(ctx context.Context, UID int32, password stri
 }
 
 func (p password) SetPassword(ctx context.Context, uid int32, password string) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Password.SetPassword", uid); err != nil {
+		return err
+	}
 	if password == "" {
 		return errors.New("password must not be empty")
 	}

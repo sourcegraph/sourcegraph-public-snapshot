@@ -13,6 +13,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/mv"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
@@ -24,6 +25,9 @@ type RepoVCS struct{}
 var _ store.RepoVCS = (*RepoVCS)(nil)
 
 func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoVCS.Open", repo); err != nil {
+		return nil, err
+	}
 	dir := absolutePathForRepo(ctx, repo)
 	if err := os.MkdirAll(filepath.Dir(dir), 0700); err != nil {
 		return nil, err
@@ -39,6 +43,9 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 }
 
 func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoVCS.Clone", repo); err != nil {
+		return err
+	}
 	name := filepath.Base(repo)
 	dir := absolutePathForRepo(ctx, repo)
 	if err := os.MkdirAll(filepath.Dir(dir), 0700); err != nil {

@@ -1,12 +1,14 @@
 package pgsql
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
@@ -25,6 +27,12 @@ type externalAuthTokens struct{}
 var _ store.ExternalAuthTokens = (*externalAuthTokens)(nil)
 
 func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error) {
+	if user == 0 {
+		return nil, errors.New("no uid specified")
+	}
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.GetExternalToken", int32(user)); err != nil {
+		return nil, err
+	}
 	var toks []*auth.ExternalAuthToken
 	err := dbh(ctx).Select(&toks, `SELECT * FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3`, user, host, clientID)
 	if err != nil {
@@ -37,6 +45,12 @@ func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, c
 }
 
 func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
+	if tok.User == 0 {
+		return errors.New("no uid specified")
+	}
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.SetExternalToken", int32(tok.User)); err != nil {
+		return err
+	}
 	return dbutil.Transact(dbh(ctx), func(tx modl.SqlExecutor) error {
 		ctx = NewContext(ctx, tx)
 
@@ -51,6 +65,9 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 }
 
 func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "ExternalAuthTokens.ListExternalUsers"); err != nil {
+		return nil, err
+	}
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := modl.PostgresDialect{}.BindVar(len(args))

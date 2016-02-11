@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
@@ -28,10 +29,16 @@ type repoCounters struct{}
 var _ store.RepoCounters = (*repoCounters)(nil)
 
 func (s *repoCounters) RecordHit(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoCounters.RecordHit", repo); err != nil {
+		return err
+	}
 	return dbh(ctx).Insert(&hit{Repo: repo, At: time.Now().In(time.UTC)})
 }
 
 func (s *repoCounters) CountHits(ctx context.Context, repo string, since time.Time) (int, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoCounters.CountHits", repo); err != nil {
+		return 0, err
+	}
 	sql := `SELECT COUNT(*) FROM "repo_hit" WHERE repo=$1`
 	args := []interface{}{repo}
 	if !since.IsZero() {

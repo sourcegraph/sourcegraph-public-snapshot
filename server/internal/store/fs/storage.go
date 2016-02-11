@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/shared/storageutil"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -40,6 +41,9 @@ var _ store.Storage = (*storage)(nil)
 
 // Get implements the store.Storage interface.
 func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.Get", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageValue{}, errors.New("key must be specified")
@@ -71,6 +75,9 @@ func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 
 // Put implements the store.Storage interface.
 func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Put", opt.Key.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	s.fs.Lock()
 	v, err := s.putNoLock(ctx, opt)
 	s.fs.Unlock()
@@ -108,6 +115,9 @@ func (s *storage) putNoLock(ctx context.Context, opt *sourcegraph.StoragePutOp) 
 
 // PutNoOverwrite implements the store.Storage interface.
 func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.PutNoOverwrite", opt.Key.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	s.fs.Lock()
 	defer s.fs.Unlock()
 
@@ -123,6 +133,9 @@ func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePu
 
 // Delete implements the store.Storage interface.
 func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Delete", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Parse the path and grab the lock.
 	path, err := storageKeyPath(ctx, opt)
 	if err != nil {
@@ -172,6 +185,9 @@ func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 
 // Exists implements the store.Storage interface.
 func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.Exists", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	s.fs.Lock()
 	v, err := s.existsNoLock(ctx, opt)
 	s.fs.Unlock()
@@ -208,6 +224,9 @@ func (s *storage) existsNoLock(ctx context.Context, opt *sourcegraph.StorageKey)
 
 // List implements the store.Storage interface.
 func (s *storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.List", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Disregard the key field.
 	opt.Key = ""
 

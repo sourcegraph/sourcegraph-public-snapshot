@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -31,6 +32,9 @@ type mirroredRepoSSHKeys struct{}
 var _ store.MirroredRepoSSHKeys = (*mirroredRepoSSHKeys)(nil)
 
 func (s *mirroredRepoSSHKeys) Create(ctx context.Context, repo string, privKey *rsa.PrivateKey) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Create", repo); err != nil {
+		return err
+	}
 	block, err := x509.EncryptPEMBlock(rand.Reader, "RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(privKey), []byte(pemPassword), x509.PEMCipherAES128)
 	if err != nil {
 		return err
@@ -56,6 +60,9 @@ WHERE NOT EXISTS (SELECT NULL FROM update_result);
 }
 
 func (s *mirroredRepoSSHKeys) GetPEM(ctx context.Context, repo string) ([]byte, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.GetPEM", repo); err != nil {
+		return nil, err
+	}
 	var k []*repoKey
 	if err := dbh(ctx).Select(&k, `SELECT * FROM repo_key WHERE repo=$1 LIMIT 1`, repo); err != nil {
 		return nil, err
@@ -73,6 +80,9 @@ func (s *mirroredRepoSSHKeys) GetPEM(ctx context.Context, repo string) ([]byte, 
 }
 
 func (s *mirroredRepoSSHKeys) Delete(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirroredRepoSSHKeys.Delete", repo); err != nil {
+		return err
+	}
 	_, err := dbh(ctx).Exec(`DELETE FROM repo_key WHERE repo=$1;`, repo)
 	return err
 }

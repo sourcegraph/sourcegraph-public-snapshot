@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
@@ -197,6 +198,9 @@ type builds struct{}
 var _ store.Builds = (*builds)(nil)
 
 func (s *builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Get", buildSpec.Repo.URI); err != nil {
+		return nil, err
+	}
 	var builds []*dbBuild
 	err := dbh(ctx).Select(&builds, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
 	if err != nil {
@@ -224,6 +228,7 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 		conds = append(conds, "b.repo="+arg(opt.Repo))
 	} else {
 		// only list public repo builds on main builds page.
+		// TODO: add filtering for private repos.
 		conds = append(conds, "b.repo in (select uri from repo where not private)")
 	}
 	if opt.Queued {
@@ -306,6 +311,9 @@ SELECT b.* FROM builds b
 }
 
 func (s *builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetFirstInCommitOrder", repo); err != nil {
+		return nil, 0, err
+	}
 	if len(commitIDs) == 0 {
 		return nil, -1, nil
 	}
@@ -360,6 +368,9 @@ LIMIT 1
 }
 
 func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Create", newBuild.Repo); err != nil {
+		return nil, err
+	}
 	var b dbBuild
 	b.fromBuild(newBuild)
 
@@ -386,6 +397,9 @@ func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 }
 
 func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Update", build.Repo.URI); err != nil {
+		return err
+	}
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -428,6 +442,16 @@ func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 }
 
 func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
+	var repo string
+	for _, task := range tasks {
+		if task.Build.Repo.URI != repo {
+			if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.CreateTasks", task.Build.Repo.URI); err != nil {
+				return nil, err
+			}
+			// Cache the last repo URI that was checked for write access.
+			repo = task.Build.Repo.URI
+		}
+	}
 	created := make([]*dbBuildTask, len(tasks))
 	for i, task := range tasks {
 		var args []interface{}
@@ -455,6 +479,9 @@ func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 }
 
 func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.UpdateTask", task.Build.Repo.URI); err != nil {
+		return err
+	}
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -496,6 +523,9 @@ func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 }
 
 func (s *builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.ListBuildTasks", build.Repo.URI); err != nil {
+		return nil, err
+	}
 	if opt == nil {
 		opt = &sourcegraph.BuildTaskListOptions{}
 	}
@@ -522,6 +552,9 @@ LIMIT ` + arg(opt.Limit()) + ` OFFSET ` + arg(opt.Offset()) + `;`
 }
 
 func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.DequeueNext"); err != nil {
+		return nil, err
+	}
 	sql := `-- Builds.DequeueNext
 WITH
 to_dequeue AS (
@@ -548,6 +581,9 @@ RETURNING repo_build.*;
 }
 
 func (s *builds) GetTask(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetTask", task.Build.Repo.URI); err != nil {
+		return nil, err
+	}
 	var tasks []*dbBuildTask
 	sql := `SELECT * FROM repo_build_task WHERE repo=$1 AND build_id=$2 AND id=$3;`
 	if err := dbh(ctx).Select(&tasks, sql, task.Build.Repo.URI, task.Build.ID, task.ID); err != nil {

@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
@@ -38,12 +39,15 @@ func toInvite(d *dbInvites) *sourcegraph.AccountInvite {
 	}
 }
 
-// Authorizations is a FS-backed implementation of the Authorizations store.
+// Invites is a DB-backed implementation of the Invites store.
 type invites struct{}
 
 var _ store.Invites = (*invites)(nil)
 
 func (s *invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Invites.CreateOrUpdate"); err != nil {
+		return "", err
+	}
 	dbInvite := &dbInvites{
 		Email:     invite.Email,
 		Token:     randstring.NewLen(20),
@@ -118,6 +122,9 @@ func (s *invites) Delete(ctx context.Context, token string) error {
 }
 
 func (s *invites) DeleteByEmail(ctx context.Context, email string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Invites.DeleteByEmail"); err != nil {
+		return err
+	}
 	res, err := dbh(ctx).Exec(`DELETE FROM invites WHERE "email" = $1;`, email)
 	if n, err := res.RowsAffected(); err != nil {
 		return err
@@ -128,6 +135,9 @@ func (s *invites) DeleteByEmail(ctx context.Context, email string) error {
 }
 
 func (s *invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Invites.List"); err != nil {
+		return nil, err
+	}
 	var invites []*dbInvites
 	err := dbh(ctx).Select(&invites, `SELECT * FROM invites;`)
 	if err != nil {

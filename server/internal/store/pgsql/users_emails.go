@@ -4,6 +4,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
 )
@@ -23,6 +24,9 @@ func init() {
 }
 
 func (s *users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.GetWithEmail"); err != nil {
+		return nil, err
+	}
 	var emailAddrRows []*userEmailAddrRow
 	sql := `SELECT * FROM user_email WHERE email=$1 AND "primary"=true`
 	if err := dbh(ctx).Select(&emailAddrRows, sql, emailAddr.Email); err != nil {
@@ -35,6 +39,9 @@ func (s *users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAdd
 }
 
 func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", user.UID); err != nil {
+		return nil, err
+	}
 	if user.UID == 0 {
 		return nil, &store.UserNotFoundError{UID: 0}
 	}
@@ -53,6 +60,9 @@ func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*s
 }
 
 func (s *accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, emails []*sourcegraph.EmailAddr) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.UpdateEmails", user.UID); err != nil {
+		return err
+	}
 	if user.UID == 0 {
 		return &store.UserNotFoundError{UID: 0}
 	}

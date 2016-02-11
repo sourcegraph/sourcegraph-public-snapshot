@@ -17,6 +17,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/shared/storageutil"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -45,6 +46,9 @@ var _ store.Storage = (*storage)(nil)
 
 // Get implements the store.Storage interface.
 func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.Get", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageValue{}, errors.New("key must be specified")
@@ -70,6 +74,9 @@ func (s *storage) Get(ctx context.Context, opt *sourcegraph.StorageKey) (*source
 
 // Put implements the store.Storage interface.
 func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Put", opt.Key.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key.Key == "" {
 		return &pbtypes.Void{}, errors.New("key must be specified")
@@ -91,6 +98,9 @@ func (s *storage) Put(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbty
 
 // PutNoOverwrite implements the store.Storage interface.
 func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.PutNoOverwrite", opt.Key.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// TODO(slimsag): this is a hack to prevent a race condition with multiple
 	// in-process calls to PutNoOverwrite. Although the advisory lock below does
 	// protect us against distributed race conditions (i.e. the case of multiple
@@ -146,6 +156,9 @@ func (s *storage) PutNoOverwrite(ctx context.Context, opt *sourcegraph.StoragePu
 
 // Delete implements the store.Storage interface.
 func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Storage.Delete", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Compose the bucket key.
 	bucket, err := bucketKey(opt.Bucket)
 	if err != nil {
@@ -165,6 +178,9 @@ func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 
 // Exists implements the store.Storage interface.
 func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.Exists", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Validate the key. We don't care what it is, as long as it's something.
 	if opt.Key == "" {
 		return &sourcegraph.StorageExists{}, errors.New("key must be specified")
@@ -192,6 +208,9 @@ func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 
 // List implements the store.Storage interface.
 func (s *storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Storage.List", opt.Bucket.Repo); err != nil {
+		return nil, err
+	}
 	// Compose the bucket key.
 	bucket, err := bucketKey(opt.Bucket)
 	if err != nil {

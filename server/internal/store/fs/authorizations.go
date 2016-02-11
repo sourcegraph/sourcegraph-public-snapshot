@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
@@ -82,6 +83,9 @@ type authorizations struct{}
 var _ store.Authorizations = (*authorizations)(nil)
 
 func (s *authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.AuthorizationCodeRequest, expires time.Duration) (string, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Authorizations.CreateAuthCode", req.UID); err != nil {
+		return "", err
+	}
 	codes, err := readAuthCodesDB(ctx)
 	if err != nil {
 		return "", err

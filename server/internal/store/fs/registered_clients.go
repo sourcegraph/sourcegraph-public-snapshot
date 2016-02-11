@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -69,6 +70,9 @@ type registeredClients struct{}
 var _ store.RegisteredClients = (*registeredClients)(nil)
 
 func (s *registeredClients) Get(ctx context.Context, client sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RegisteredClients.Get", ""); err != nil {
+		return nil, err
+	}
 	clients, err := readRegClientDB(ctx)
 	if err != nil {
 		return nil, err
@@ -130,6 +134,9 @@ func (s *registeredClients) Create(ctx context.Context, client sourcegraph.Regis
 }
 
 func (s *registeredClients) Update(ctx context.Context, client sourcegraph.RegisteredClient) error {
+	if err := accesscontrol.VerifyClientSelfOrAdmin(ctx, "RegisteredClients.Update", client.ID); err != nil {
+		return err
+	}
 	if client.ID == "" {
 		return fmt.Errorf("registered client ID must be set")
 	}
@@ -153,6 +160,9 @@ func (s *registeredClients) Update(ctx context.Context, client sourcegraph.Regis
 }
 
 func (s *registeredClients) Delete(ctx context.Context, client sourcegraph.RegisteredClientSpec) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.Delete"); err != nil {
+		return err
+	}
 	clients, err := readRegClientDB(ctx)
 	if err != nil {
 		return err
@@ -173,6 +183,9 @@ func (s *registeredClients) Delete(ctx context.Context, client sourcegraph.Regis
 }
 
 func (s *registeredClients) List(ctx context.Context, opt sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.List"); err != nil {
+		return nil, err
+	}
 	clients, err := readRegClientDB(ctx)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/server/internal/store/pgsql/dbtypes"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/dbutil"
@@ -89,6 +90,9 @@ type registeredClients struct{}
 var _ store.RegisteredClients = (*registeredClients)(nil)
 
 func (s *registeredClients) Get(ctx context.Context, client sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RegisteredClients.Get", ""); err != nil {
+		return nil, err
+	}
 	regClient, err := s.getBySQL(ctx, "id=$1", client.ID)
 	if err, ok := err.(*store.RegisteredClientNotFoundError); ok {
 		err.ID = client.ID
@@ -140,6 +144,9 @@ func (s *registeredClients) Create(ctx context.Context, client sourcegraph.Regis
 }
 
 func (s *registeredClients) Update(ctx context.Context, client sourcegraph.RegisteredClient) error {
+	if err := accesscontrol.VerifyClientSelfOrAdmin(ctx, "RegisteredClients.Update", client.ID); err != nil {
+		return err
+	}
 	if client.ID == "" {
 		return fmt.Errorf("registered client ID must be set")
 	}
@@ -179,6 +186,9 @@ WHERE id=` + arg(dbClient.ID)
 }
 
 func (s *registeredClients) Delete(ctx context.Context, client sourcegraph.RegisteredClientSpec) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.Delete"); err != nil {
+		return err
+	}
 	res, err := dbh(ctx).Exec(`DELETE FROM reg_clients WHERE id=$1;`, client.ID)
 	if err != nil {
 		return err
@@ -192,6 +202,9 @@ func (s *registeredClients) Delete(ctx context.Context, client sourcegraph.Regis
 }
 
 func (s *registeredClients) List(ctx context.Context, opt sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.List"); err != nil {
+		return nil, err
+	}
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := modl.PostgresDialect{}.BindVar(len(args))

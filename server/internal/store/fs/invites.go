@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
@@ -88,6 +89,9 @@ type invites struct{}
 var _ store.Invites = (*invites)(nil)
 
 func (s *invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Invites.CreateOrUpdate"); err != nil {
+		return "", err
+	}
 	invitesList, err := readInvitesDB(ctx)
 	if err != nil {
 		return "", err
@@ -187,6 +191,9 @@ func (s *invites) Delete(ctx context.Context, token string) error {
 }
 
 func (s *invites) DeleteByEmail(ctx context.Context, email string) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Invites.DeleteByEmail"); err != nil {
+		return err
+	}
 	invites, err := readInvitesDB(ctx)
 	if err != nil {
 		return err
@@ -207,6 +214,9 @@ func (s *invites) DeleteByEmail(ctx context.Context, email string) error {
 }
 
 func (s *invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Invites.List"); err != nil {
+		return nil, err
+	}
 	accountInvites := make([]*sourcegraph.AccountInvite, 0)
 	invitesList, err := readInvitesDB(ctx)
 	if err != nil {
