@@ -827,11 +827,6 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
 
-	file1MTime, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// In all tests, repo should contain two commits. The first commit (whose ID
 	// is in the 'first' field) has a file at dir1/file1 with the contents
 	// "myfile1" and the mtime 2006-01-02T15:04:05Z. The second commit (whose ID
@@ -866,7 +861,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		fs1 := vcs.FileSystem(test.repo, test.first)
 
 		// notafile should not exist.
-		if _, err = fs1.Stat("notafile"); !os.IsNotExist(err) {
+		if _, err := fs1.Stat("notafile"); !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Stat(notafile): got err %v, want os.IsNotExist", label, err)
 			continue
 		}
@@ -925,9 +920,6 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 		if size, want := file1Info.Size(), int64(len("infile1")); size != want {
 			t.Errorf("%s: got file1 size %d, want %d", label, size, want)
-		}
-		if mtime, want := file1Info.ModTime(), file1MTime; !mtime.Equal(want) {
-			t.Errorf("%s: got file1 mtime %v, want %v", label, mtime, want)
 		}
 
 		// file2 shouldn't exist in the 1st commit.

@@ -1017,11 +1017,7 @@ func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		mtime, err := r.getModTimeFromGitLog(commit, path)
-		if err != nil {
-			return nil, err
-		}
-		return &util.FileInfo{Mode_: os.ModeDir, ModTime_: mtime}, nil
+		return &util.FileInfo{Mode_: os.ModeDir}, nil
 	}
 
 	fis, err := r.lsTree(commit, path, false)
@@ -1033,28 +1029,6 @@ func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error
 	}
 
 	return fis[0], nil
-}
-
-// SetModTime is a boolean indicating whether os.FileInfos
-// representing files should have their ModTime set (which can be slow
-// on large repositories).
-var SetModTime = true
-
-func (r *Repository) getModTimeFromGitLog(commit vcs.CommitID, path string) (time.Time, error) {
-	if !SetModTime {
-		return time.Time{}, nil
-	}
-	cmd := gitserver.Command("git", "log", "-1", "--format=%ad", string(commit), "--", filepath.ToSlash(path))
-	cmd.Dir = r.Dir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return time.Time{}, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
-	}
-	timeStr := strings.Trim(string(out), "\n")
-	if timeStr == "" {
-		return time.Time{}, &os.PathError{Op: "mtime", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
-	}
-	return time.Parse("Mon Jan _2 15:04:05 2006 -0700", timeStr)
 }
 
 func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error) {
@@ -1206,17 +1180,11 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 			mode = mode | int64(os.ModeDir)
 		}
 
-		mtime, err := r.getModTimeFromGitLog(commit, name)
-		if err != nil {
-			return nil, err
-		}
-
 		fis[i] = &util.FileInfo{
-			Name_:    name[prefixLen:],
-			Mode_:    os.FileMode(mode),
-			Size_:    size,
-			ModTime_: mtime,
-			Sys_:     sys,
+			Name_: name[prefixLen:],
+			Mode_: os.FileMode(mode),
+			Size_: size,
+			Sys_:  sys,
 		}
 	}
 	util.SortFileInfosByName(fis)

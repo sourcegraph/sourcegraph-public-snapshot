@@ -36,13 +36,7 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
 
 	// VCS
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 )
-
-func init() {
-	// Getting ModTime for directories with many files is slow, so avoid doing it since we don't need results.
-	gitcmd.SetModTime = false
-}
 
 func main() {
 	err := sgx.Main()
