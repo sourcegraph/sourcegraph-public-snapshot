@@ -42,8 +42,6 @@ type Stores struct {
 	RepoVCS                         RepoVCS
 	Repos                           Repos
 	Storage                         Storage
-	UserKeys                        UserKeys
-	UserPermissions                 UserPermissions
 	Users                           Users
 	Waitlist                        Waitlist
 }
@@ -75,8 +73,6 @@ const (
 	_RepoVCSKey
 	_ReposKey
 	_StorageKey
-	_UserKeysKey
-	_UserPermissionsKey
 	_UsersKey
 	_WaitlistKey
 )
@@ -154,12 +150,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Storage != nil {
 		ctx = WithStorage(ctx, s.Storage)
-	}
-	if s.UserKeys != nil {
-		ctx = WithUserKeys(ctx, s.UserKeys)
-	}
-	if s.UserPermissions != nil {
-		ctx = WithUserPermissions(ctx, s.UserPermissions)
 	}
 	if s.Users != nil {
 		ctx = WithUsers(ctx, s.Users)
@@ -716,52 +706,6 @@ func StorageFromContext(ctx context.Context) Storage {
 // StorageFromContextOrNil returns the context's Storage store if present, or else nil.
 func StorageFromContextOrNil(ctx context.Context) Storage {
 	s, ok := ctx.Value(_StorageKey).(Storage)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithUserKeys returns a copy of parent with the given UserKeys store.
-func WithUserKeys(parent context.Context, s UserKeys) context.Context {
-	return context.WithValue(parent, _UserKeysKey, s)
-}
-
-// UserKeysFromContext gets the context's UserKeys store. If the store is not present, it panics.
-func UserKeysFromContext(ctx context.Context) UserKeys {
-	s, ok := ctx.Value(_UserKeysKey).(UserKeys)
-	if !ok || s == nil {
-		panic("no UserKeys set in context")
-	}
-	return s
-}
-
-// UserKeysFromContextOrNil returns the context's UserKeys store if present, or else nil.
-func UserKeysFromContextOrNil(ctx context.Context) UserKeys {
-	s, ok := ctx.Value(_UserKeysKey).(UserKeys)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithUserPermissions returns a copy of parent with the given UserPermissions store.
-func WithUserPermissions(parent context.Context, s UserPermissions) context.Context {
-	return context.WithValue(parent, _UserPermissionsKey, s)
-}
-
-// UserPermissionsFromContext gets the context's UserPermissions store. If the store is not present, it panics.
-func UserPermissionsFromContext(ctx context.Context) UserPermissions {
-	s, ok := ctx.Value(_UserPermissionsKey).(UserPermissions)
-	if !ok || s == nil {
-		panic("no UserPermissions set in context")
-	}
-	return s
-}
-
-// UserPermissionsFromContextOrNil returns the context's UserPermissions store if present, or else nil.
-func UserPermissionsFromContextOrNil(ctx context.Context) UserPermissions {
-	s, ok := ctx.Value(_UserPermissionsKey).(UserPermissions)
 	if ok {
 		return s
 	}

@@ -40,12 +40,10 @@ type RepoOrigin interface {
 	// implementation communicates with (e.g., GitHub, GitHub
 	// Enterprise, or Bitbucket).
 	BrandName() string
-
 	// Host is the hostname of the server that this implementation
 	// communicates with (e.g., github.com for GitHub.com or
 	// github.example.com for a GitHub Enterprise installation).
 	Host() string
-
 	// A RepoOrigin's functionality is determined by the other Go
 	// interfaces (named RepoOriginXxx) that it implements.
 }
@@ -56,10 +54,8 @@ type RepoOrigin interface {
 type RepoOriginWithPushHooks interface {
 	// IsPushHookEnabled determines if the push hook is set up.
 	IsPushHookEnabled(ctx context.Context, repo string) (bool, error)
-
 	// EnablePushHook enables a push hook.
 	EnablePushHook(ctx context.Context, repo string) error
-
 	// TODO(sqs!nodb-ctx): add DeletePushHook method or something, and
 	// add arg for the endpoint URL? and make impls of this interface
 	// provide a handler, too?
@@ -80,7 +76,6 @@ type RepoOriginWithCommitStatuses interface {
 	// check that the repo is enabled (in our local RepoConfig) before
 	// publishing commit statuses.
 	IsCommitStatusCapable(ctx context.Context, repo string) (bool, error)
-
 	// PublishCommitStatus publishes a commit status.
 	PublishCommitStatus(ctx context.Context, repo string, status *sourcegraph.RepoStatus) error
 }
@@ -94,10 +89,8 @@ type RepoOriginWithAuthorizedSSHKeys interface {
 	// IsSSHKeyAuthorized determines if the given public key is
 	// authorized for access to the repo.
 	IsSSHKeyAuthorized(ctx context.Context, repo string, key ssh.PublicKey) (bool, error)
-
 	// AuthorizeSSHKey authorizes the keypair for access to the repo.
 	AuthorizeSSHKey(ctx context.Context, repo string, key ssh.PublicKey) error
-
 	// DeleteSSHKey deauthorizes and removes a previously authorized
 	// SSH keypair.
 	DeleteSSHKey(ctx context.Context, repo string, key ssh.PublicKey) error

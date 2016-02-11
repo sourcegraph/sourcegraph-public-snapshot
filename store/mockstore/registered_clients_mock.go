@@ -42,28 +42,3 @@ func (s *RegisteredClients) List(v0 context.Context, v1 sourcegraph.RegisteredCl
 }
 
 var _ store.RegisteredClients = (*RegisteredClients)(nil)
-
-type UserPermissions struct {
-	Get_    func(ctx context.Context, opt *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error)
-	Verify_ func(ctx context.Context, perms *sourcegraph.UserPermissions) (bool, error)
-	Set_    func(ctx context.Context, perms *sourcegraph.UserPermissions) error
-	List_   func(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error)
-}
-
-func (s *UserPermissions) Get(ctx context.Context, opt *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
-	return s.Get_(ctx, opt)
-}
-
-func (s *UserPermissions) Verify(ctx context.Context, perms *sourcegraph.UserPermissions) (bool, error) {
-	return s.Verify_(ctx, perms)
-}
-
-func (s *UserPermissions) Set(ctx context.Context, perms *sourcegraph.UserPermissions) error {
-	return s.Set_(ctx, perms)
-}
-
-func (s *UserPermissions) List(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
-	return s.List_(ctx, client)
-}
-
-var _ store.UserPermissions = (*UserPermissions)(nil)

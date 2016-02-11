@@ -43,16 +43,6 @@ type RegisteredClients interface {
 	List(context.Context, sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error)
 }
 
-// UserPermissions manages per-client (i.e. local instance) user permissions
-// that control which users can login to a particular instance with
-// their sourcegraph.com account credentials.
-type UserPermissions interface {
-	Get(ctx context.Context, opt *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error)
-	Verify(ctx context.Context, perms *sourcegraph.UserPermissions) (bool, error)
-	Set(ctx context.Context, perms *sourcegraph.UserPermissions) error
-	List(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error)
-}
-
 // RegisteredClientNotFoundError occurs when a RegisteredClient is not
 // found with the given arguments.
 type RegisteredClientNotFoundError struct {
