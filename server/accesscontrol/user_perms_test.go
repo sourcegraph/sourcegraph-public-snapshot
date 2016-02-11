@@ -10,7 +10,12 @@ import (
 )
 
 func TestVerifyAccess(t *testing.T) {
+	origSource := authutil.ActiveFlags.Source
+	defer func() {
+		authutil.ActiveFlags.Source = origSource
+	}()
 	authutil.ActiveFlags.Source = "local"
+
 	asUID := func(uid int) context.Context {
 		var user sourcegraph.User
 		switch uid {
@@ -102,8 +107,8 @@ func TestVerifyAccess(t *testing.T) {
 	uid = 1234
 	ctx = asUID(uid)
 
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
-		t.Fatalf("user %v should have write access; got: %v\n", uid, err)
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err == nil {
+		t.Fatalf("user %v should not have write access; got access\n", uid)
 	}
 }
 
