@@ -7,10 +7,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/go-github/github"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 func TestRepos_Get_existing(t *testing.T) {
+	githubcli.Config.GitHubHost = "github.com"
 	ctx := testContext(&minimalClient{
 		repos: mockGitHubRepos{
 			Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
@@ -28,6 +30,7 @@ func TestRepos_Get_existing(t *testing.T) {
 }
 
 func TestRepos_Get_nonexistent(t *testing.T) {
+	githubcli.Config.GitHubHost = "github.com"
 	ctx := testContext(&minimalClient{
 		repos: mockGitHubRepos{
 			Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
