@@ -27,7 +27,6 @@ import (
 //  2015/11/21 10:31:18 grpc: Server failed to encode response proto: Marshal called with nil
 //
 // Identify why this is and fix it.
-
 func init() {
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		"CREATE TABLE appdata (name text, objects hstore)",
@@ -187,6 +186,9 @@ func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 	}
 	return &sourcegraph.StorageExists{Exists: exists[0]}, nil
 }
+
+// appdata does not exist in prod but we are still trying to do (from prod pgsql logs):
+// STATEMENT:  SELECT skeys(objects) FROM appdata WHERE name = $1
 
 // List implements the store.Storage interface.
 func (s *storage) List(ctx context.Context, opt *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
