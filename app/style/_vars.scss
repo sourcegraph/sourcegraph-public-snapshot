@@ -45,6 +45,7 @@ $charcoal: #2d2836;
 $cloudy-blue: #bfc1d0;
 $jet-black: #2e3844;
 $pale-grey: #fafafc;
+$slate-grey: #aaafbf;
 $white: #ffffff;
 
 /* Components */
@@ -53,6 +54,12 @@ $nav-border-color: darken($nav-background-color, 5%);
 $nav-text-color: #979daf;
 $nav-brand-color: $jet-black;
 $nav-icon-badge-color: $brand-orange;
+
+$subnav-background-color: $white;
+$subnav-color: $slate-grey;
+$subnav-active-color: $brand-azure;
+$subnav-repo-link-color: $jet-black;
+$subnav-border-color: darken($nav-background-color, 5%);
 
 /* Bootstrap Overrides */
 $input-border: transparentize($cloudy-blue, 0.56);

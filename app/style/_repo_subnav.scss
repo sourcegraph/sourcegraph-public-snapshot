@@ -2,35 +2,35 @@
 
 .subnav.repo-subnav {
 	$active-indicator-width: 3px;
-	$active-indicator-color: $sg-blue-color;
 
-	background-color: $light-blue;
+	background-color: $subnav-background-color;
 
 	@include z-index(navbar);
 
-	border-bottom: solid 1px darken($light-blue, 6.5%);
+	border-bottom: solid 1px $subnav-border-color;
 	border-radius: 0;
 	border-top-width: 0;
 
 	a {
-		color: $dark-blue;
+		color: $subnav-repo-link-color;
 	}
 
 	.navbar-header {
 		padding-top: 3px;
 		.github {
-			color: #bbb;
+			color: $subnav-color;
 		}
 	}
 
 	ul.navbar-nav {
 		float: none;
+		> li > a {
+			color: $subnav-color;
+		}
 	}
 
-	//background-color: saturate(lighten($sg-blue-color, 41%), 60%);
-
 	ul.repo-subnav > li {
-		$active-color: $active-indicator-color;
+		$active-color: $subnav-active-color;
 
 		$icon-size: 18px;
 		$icon-margin-left: 2px;
@@ -55,7 +55,7 @@
 		}
 
 		i, span.caret {
-				color: $gray-light;
+				color: $subnav-color;
 		}
 
 		i {
@@ -80,7 +80,7 @@
 
 		&.active, &:hover {
 			& > a:hover { text-decoration: none !important; }
-			& > a, & > a > i { color: darken($active-indicator-color, 5%); }
+			& > a, & > a > i { color: $subnav-active-color; }
 		}
 
 		@media(min-width: $screen-sm-min) and (max-width: $screen-md-min) {
@@ -91,9 +91,9 @@
 
 		&.active > a {
 			background-color: inherit;
-			border-bottom-color: $active-indicator-color !important;
+			border-bottom-color: $subnav-active-color !important;
 			font-weight: bold;
-			&, i { color: darken($active-indicator-color, 10%) !important; }
+			&, i { color: $subnav-active-color; }
 			@media (max-width: $grid-float-breakpoint) {
 				border-bottom: 0;
 				background-color: #efefef;
@@ -102,7 +102,7 @@
 		&:hover {
 
 			> a {
-				border-bottom-color: saturate(lighten($active-indicator-color, 10%), 5%);
+				border-bottom-color: $subnav-active-color;
 				@media (max-width: $grid-float-breakpoint) {
 					border-bottom: 0;
 					background-color: #efefef;
