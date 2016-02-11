@@ -38,15 +38,27 @@ $diff-deleted-color: lighten(#c71111, 3%);
 
 /* Palette */
 $brand-azure: #0fb6f2;
+$brand-orange: #f86012;
+$brand-violet: #bd37f9;
 
 $charcoal: #2d2836;
-$ghost-white: #f6fafd;
+$cloudy-blue: #bfc1d0;
+$jet-black: #2e3844;
+$pale-grey: #fafafc;
 $white: #ffffff;
 
 /* Components */
-$nav-background-color: $dark-blue;
+$nav-background-color: $pale-grey;
+$nav-border-color: darken($nav-background-color, 5%);
+$nav-text-color: #979daf;
+$nav-brand-color: $jet-black;
+$nav-icon-badge-color: $brand-orange;
 
 /* Bootstrap Overrides */
+$input-border: transparentize($cloudy-blue, 0.56);
+$input-color: $cloudy-blue;
+
+
 $brand-primary: $dark-blue;
 $non-brand-success: $brand-success;
 $brand-success: $sg-blue-color;
@@ -63,12 +75,9 @@ $list-group-active-bg: $sg-blue-color;
 $list-group-active-color: white;
 $list-group-active-border: $sg-blue-color;
 
-$navbar-default-bg: $charcoal;
-$navbar-default-link-color: #444;
-$navbar-default-link-active-color: #222;
-$navbar-default-link-hover-color: $link-color;
+$navbar-default-link-color: $nav-text-color;
+$navbar-default-link-hover-color: darken($nav-background-color, 5%);
 $navbar-border-radius: 0;
-$nav-link-hover-bg: $light-blue;
 
 $code-color:                  none;
 $code-bg:                     none;
@@ -132,3 +141,12 @@ $code-line-height: 1.35em;
 $code-font-size: 13px;
 $code-popup-width: 600px;
 $line-number-padding: 0 9px 0 2px;
+
+/* Bootstrap Overrides */
+$border-radius-base:  3px;
+$border-radius-large: 4px;
+$border-radius-small: 2px;
+
+$input-border-radius:       $border-radius-base;
+$input-border-radius-large: $border-radius-large;
+$input-border-radius-small: $border-radius-small;

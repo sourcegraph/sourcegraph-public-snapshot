@@ -68,12 +68,13 @@ header.page-header {
 	margin-bottom: 0;
 
 	background-color: $nav-background-color;
-	border: 0px;
+	border: solid $nav-border-color 1px;
 	.tokenfield {
 		padding: 6px 6px;
 	}
 
 	.navbar-brand {
+		color: $nav-brand-color;
 		margin-right: 5px;
 		&.logo {
 			white-space: nowrap;
@@ -107,7 +108,7 @@ header.page-header {
 				}
 			}
 			a, i, .btn-link {
-				color: $off-white;
+				color: $nav-text-color;
 				text-decoration: none;
 			}
 			button {
@@ -127,18 +128,14 @@ header.page-header {
 		}
 	}
 
-	.navbar-brand {
-		color: $off-white;
-	}
-
 	.sign-up {
 		font-weight: bold;
 	}
 
 	.navbar-toggle {
-		border: 1px solid $off-white;
+		border: 1px solid $nav-text-color;
 		.icon-bar {
-			background-color: $off-white;
+			background-color: $nav-text-color;
 		}
 	}
 
@@ -156,6 +153,6 @@ header.page-header {
 		width: 10px;
 		height: 10px;
 		border-radius: 50%;
-		background-color: red;
+		background-color: $nav-icon-badge-color;
 	}
 }
