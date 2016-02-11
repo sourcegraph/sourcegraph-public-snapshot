@@ -120,7 +120,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		return nil, grpc.Errorf(codes.Unimplemented, "users")
 	}
 
-	_, err := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: newAcct.Email})
+	_, err := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: newAcct.Email})
 	if err == nil {
 		return nil, grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", newAcct.Email)
 	}
@@ -134,7 +134,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		Admin:        admin,
 	}
 
-	created, err := accountsStore.Create(ctx, newUser)
+	created, err := accountsStore.Create(elevatedActor(ctx), newUser)
 	if err != nil {
 		return nil, err
 	}

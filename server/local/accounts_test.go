@@ -228,8 +228,8 @@ func TestUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 124}); err != os.ErrPermission {
-		t.Errorf("expected os.ErrPermission, got %v", err)
+	if _, err := Accounts.Update(ctx, &sourcegraph.User{UID: 124}); grpc.Code(err) != codes.PermissionDenied {
+		t.Errorf("expected grpc.PermissionDenied, got %v", err)
 	}
 
 	// Update user's permissions.
