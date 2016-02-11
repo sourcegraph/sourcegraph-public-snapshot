@@ -27,8 +27,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/internal"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
-
-	"golang.org/x/tools/godoc/vfs"
 )
 
 var (
@@ -42,10 +40,6 @@ type Repository struct {
 
 	editLock   sync.RWMutex // protects ops that change repository data
 	AppdashRec *appdash.Recorder
-}
-
-func (r *Repository) RepoDir() string {
-	return r.Dir
 }
 
 func (r *Repository) String() string {
@@ -993,44 +987,26 @@ func (r *Repository) ListFiles(at vcs.CommitID) ([]string, error) {
 	return strings.Split(string(out), "\x00"), nil
 }
 
-func (r *Repository) FileSystem(at vcs.CommitID) (vfs.FileSystem, error) {
-	defer r.trace(time.Now(), "FileSystem", at)
+func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) {
+	defer r.trace(time.Now(), "OpenFile", name)
 
-	if err := checkSpecArgSafety(string(at)); err != nil {
+	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
 	}
 
-	return &gitFSCmd{
-		dir:          r.Dir,
-		at:           at,
-		repo:         r,
-		repoEditLock: &r.editLock,
-	}, nil
-}
-
-type gitFSCmd struct {
-	dir          string
-	at           vcs.CommitID
-	repo         *Repository
-	repoEditLock *sync.RWMutex
-}
-
-func (fs *gitFSCmd) Open(name string) (vfs.ReadSeekCloser, error) {
-	defer fs.repo.trace(time.Now(), "fs.Open", name)
-
 	name = internal.Rel(name)
-	fs.repoEditLock.RLock()
-	defer fs.repoEditLock.RUnlock()
-	b, err := fs.readFileBytes(name)
+	r.editLock.RLock()
+	defer r.editLock.RUnlock()
+	b, err := r.readFileBytes(commit, name)
 	if err != nil {
 		return nil, err
 	}
-	return util.NopCloser{bytes.NewReader(b)}, nil
+	return b, nil
 }
 
-func (fs *gitFSCmd) readFileBytes(name string) ([]byte, error) {
-	cmd := gitserver.Command("git", "show", string(fs.at)+":"+name)
-	cmd.Dir = fs.dir
+func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, error) {
+	cmd := gitserver.Command("git", "show", string(commit)+":"+name)
+	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) || bytes.Contains(out, []byte("does not exist")) {
@@ -1038,7 +1014,7 @@ func (fs *gitFSCmd) readFileBytes(name string) ([]byte, error) {
 		}
 		if bytes.HasPrefix(out, []byte("fatal: bad object ")) {
 			// Could be a git submodule.
-			fi, err := fs.Stat(name)
+			fi, err := r.Stat(commit, name)
 			if err != nil {
 				return nil, err
 			}
@@ -1053,24 +1029,28 @@ func (fs *gitFSCmd) readFileBytes(name string) ([]byte, error) {
 	return out, nil
 }
 
-func (fs *gitFSCmd) Lstat(path string) (os.FileInfo, error) {
-	defer fs.repo.trace(time.Now(), "fs.Lstat", path)
+func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error) {
+	defer r.trace(time.Now(), "Lstat", path)
 
-	fs.repoEditLock.RLock()
-	defer fs.repoEditLock.RUnlock()
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	r.editLock.RLock()
+	defer r.editLock.RUnlock()
 
 	path = filepath.Clean(internal.Rel(path))
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		mtime, err := fs.getModTimeFromGitLog(path)
+		mtime, err := r.getModTimeFromGitLog(commit, path)
 		if err != nil {
 			return nil, err
 		}
 		return &util.FileInfo{Mode_: os.ModeDir, ModTime_: mtime}, nil
 	}
 
-	fis, err := fs.lsTree(path)
+	fis, err := r.lsTree(commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -1086,12 +1066,12 @@ func (fs *gitFSCmd) Lstat(path string) (os.FileInfo, error) {
 // on large repositories).
 var SetModTime = true
 
-func (fs *gitFSCmd) getModTimeFromGitLog(path string) (time.Time, error) {
+func (r *Repository) getModTimeFromGitLog(commit vcs.CommitID, path string) (time.Time, error) {
 	if !SetModTime {
 		return time.Time{}, nil
 	}
-	cmd := gitserver.Command("git", "log", "-1", "--format=%ad", string(fs.at), "--", filepath.ToSlash(path))
-	cmd.Dir = fs.dir
+	cmd := gitserver.Command("git", "log", "-1", "--format=%ad", string(commit), "--", filepath.ToSlash(path))
+	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return time.Time{}, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
@@ -1103,15 +1083,19 @@ func (fs *gitFSCmd) getModTimeFromGitLog(path string) (time.Time, error) {
 	return time.Parse("Mon Jan _2 15:04:05 2006 -0700", timeStr)
 }
 
-func (fs *gitFSCmd) Stat(path string) (os.FileInfo, error) {
-	defer fs.repo.trace(time.Now(), "fs.Stat", path)
+func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error) {
+	defer r.trace(time.Now(), "Stat", path)
+
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
 
 	path = internal.Rel(path)
 
-	fs.repoEditLock.RLock()
-	defer fs.repoEditLock.RUnlock()
+	r.editLock.RLock()
+	defer r.editLock.RUnlock()
 
-	fi, err := fs.Lstat(path)
+	fi, err := r.Lstat(commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -1119,7 +1103,7 @@ func (fs *gitFSCmd) Stat(path string) (os.FileInfo, error) {
 	if fi.Mode()&os.ModeSymlink != 0 {
 		// Deref symlink.
 		si := fi.Sys().(vcs.SymlinkInfo)
-		fi2, err := fs.Lstat(si.Dest)
+		fi2, err := r.Lstat(commit, si.Dest)
 		if err != nil {
 			return nil, err
 		}
@@ -1130,18 +1114,22 @@ func (fs *gitFSCmd) Stat(path string) (os.FileInfo, error) {
 	return fi, nil
 }
 
-func (fs *gitFSCmd) ReadDir(path string) ([]os.FileInfo, error) {
-	defer fs.repo.trace(time.Now(), "fs.ReadDir", path)
+func (r *Repository) ReadDir(commit vcs.CommitID, path string) ([]os.FileInfo, error) {
+	defer r.trace(time.Now(), "ReadDir", path)
 
-	fs.repoEditLock.RLock()
-	defer fs.repoEditLock.RUnlock()
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	r.editLock.RLock()
+	defer r.editLock.RUnlock()
 	// Trailing slash is necessary to ls-tree under the dir (not just
 	// to list the dir's tree entry in its parent dir).
-	return fs.lsTree(filepath.Clean(internal.Rel(path)) + "/")
+	return r.lsTree(commit, filepath.Clean(internal.Rel(path))+"/")
 }
 
-// lsTree returns ls of tree at path. The caller must be holding fs.repoEditLock.RLock().
-func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
+// lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
+func (r *Repository) lsTree(commit vcs.CommitID, path string) ([]os.FileInfo, error) {
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
 
@@ -1149,8 +1137,8 @@ func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
 		return nil, err
 	}
 
-	cmd := gitserver.Command("git", "ls-tree", "-z", "--full-name", "--long", string(fs.at), "--", filepath.ToSlash(path))
-	cmd.Dir = fs.dir
+	cmd := gitserver.Command("git", "ls-tree", "-z", "--full-name", "--long", string(commit), "--", filepath.ToSlash(path))
+	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
@@ -1212,7 +1200,7 @@ func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
 			const gitModeSymlink = 020000
 			if mode&gitModeSymlink != 0 {
 				// Dereference symlink.
-				b, err := fs.readFileBytes(name)
+				b, err := r.readFileBytes(commit, name)
 				if err != nil {
 					return nil, err
 				}
@@ -1225,7 +1213,7 @@ func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
 		case "commit":
 			mode = mode | vcs.ModeSubmodule
 			cmd := gitserver.Command("git", "config", "--get", "submodule."+name+".url")
-			cmd.Dir = fs.dir
+			cmd.Dir = r.Dir
 			url := "" // url is not available if submodules are not initialized
 			if out, err := cmd.Output(); err == nil {
 				url = string(bytes.TrimSpace(out))
@@ -1238,7 +1226,7 @@ func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
 			mode = mode | int64(os.ModeDir)
 		}
 
-		mtime, err := fs.getModTimeFromGitLog(name)
+		mtime, err := r.getModTimeFromGitLog(commit, name)
 		if err != nil {
 			return nil, err
 		}
@@ -1254,10 +1242,6 @@ func (fs *gitFSCmd) lsTree(path string) ([]os.FileInfo, error) {
 	util.SortFileInfosByName(fis)
 
 	return fis, nil
-}
-
-func (fs *gitFSCmd) String() string {
-	return fmt.Sprintf("git repository %s commit %s (cmd)", fs.dir, fs.at)
 }
 
 // makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the

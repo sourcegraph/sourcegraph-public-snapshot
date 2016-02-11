@@ -8,19 +8,18 @@ import (
 	"sync"
 
 	"github.com/sqs/fileset"
-	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
-// readDir uses the passed vfs.FileSystem to read from starting at the base path.
+// readDir uses the passed repo and commit to read from starting at the base path.
 // If recurseSingleSubfolderLimit is non-zero, it will descend and include
 // sub-folders with a single sub-folder inside. It will only inspect up to
 // recurseSingleSubfolderLimit sub-folders. first should always be set to
 // true, other values are used internally.
-func readDir(fs vfs.FileSystem, base string, recurseSingleSubfolderLimit int, first bool) ([]*sourcegraph.BasicTreeEntry, error) {
-	entries, err := fs.ReadDir(base)
+func readDir(r vcs.Repository, commit vcs.CommitID, base string, recurseSingleSubfolderLimit int, first bool) ([]*sourcegraph.BasicTreeEntry, error) {
+	entries, err := r.ReadDir(commit, base)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +43,7 @@ func readDir(fs vfs.FileSystem, base string, recurseSingleSubfolderLimit int, fi
 			go func() {
 				defer wg.Done()
 				defer func() { <-sem }()
-				ee, err := readDir(fs, path.Join(base, name), recurseSingleSubfolderLimit, false)
+				ee, err := readDir(r, commit, path.Join(base, name), recurseSingleSubfolderLimit, false)
 				if err != nil {
 					recurseErr = err
 					return

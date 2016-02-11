@@ -2,8 +2,7 @@ package vcs
 
 import (
 	"errors"
-
-	"golang.org/x/tools/godoc/vfs"
+	"os"
 )
 
 // A Repository is a VCS repository.
@@ -41,14 +40,19 @@ type Repository interface {
 	// Committers returns the per-author commit statistics of the repo.
 	Committers(CommittersOptions) ([]*Committer, error)
 
-	// FileSystem opens the repository file tree at a given commit ID.
-	//
-	// Implementations may choose to check that the commit exists
-	// before FileSystem returns or to defer the check until
-	// operations are performed on the filesystem. (For example, an
-	// implementation proxying a remote filesystem may not want to
-	// incur the round-trip to check that the commit exists.)
-	FileSystem(at CommitID) (vfs.FileSystem, error)
+	// Stat returns a FileInfo describing the named file at commit. If the file
+	// is a symbolic link, the returned FileInfo describes the symbolic link.
+	// Lstat makes no attempt to follow the link.
+	Lstat(commit CommitID, name string) (os.FileInfo, error)
+
+	// Stat returns a FileInfo describing the named file at commit.
+	Stat(commit CommitID, name string) (os.FileInfo, error)
+
+	// ReadFile returns the content of the named file at commit.
+	ReadFile(commit CommitID, name string) ([]byte, error)
+
+	// Readdir reads the contents of the named directory at commit.
+	ReadDir(commit CommitID, name string) ([]os.FileInfo, error)
 
 	BlameFile(path string, opt *BlameOptions) ([]*Hunk, error)
 

@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
@@ -729,10 +728,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo interface {
-			FileSystem(vcs.CommitID) (vfs.FileSystem, error)
-			RepoDir() string
-		}
+		repo     vcs.Repository
 		commitID vcs.CommitID
 
 		testFileInfoSys bool // whether to check the SymlinkInfo in FileInfo.Sys()
@@ -752,15 +748,11 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 		var commitID string
 		if test.commitID == "" {
-			commitID = computeCommitHash(test.repo.RepoDir(), test.git)
+			commitID = computeCommitHash(test.repo.GitRootDir(), test.git)
 		} else {
 			commitID = string(test.commitID)
 		}
-		fs, err := test.repo.FileSystem(vcs.CommitID(commitID))
-		if err != nil {
-			t.Errorf("%s: FileSystem: %s", label, err)
-			continue
-		}
+		fs := vcs.FileSystem(test.repo, vcs.CommitID(commitID))
 
 		// file1 should be a file.
 		file1Info, err := fs.Stat("file1")
@@ -860,9 +852,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			FileSystem(vcs.CommitID) (vfs.FileSystem, error)
-		}
+		repo          vcs.Repository
 		first, second vcs.CommitID
 	}{
 		"git cmd": {
@@ -873,11 +863,7 @@ func TestRepository_FileSystem(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		fs1, err := test.repo.FileSystem(test.first)
-		if err != nil {
-			t.Errorf("%s: FileSystem: %s", label, err)
-			continue
-		}
+		fs1 := vcs.FileSystem(test.repo, test.first)
 
 		// notafile should not exist.
 		if _, err = fs1.Stat("notafile"); !os.IsNotExist(err) {
@@ -951,10 +937,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file2 should exist in the 2nd commit.
-		fs2, err := test.repo.FileSystem(test.second)
-		if err != nil {
-			t.Errorf("%s: FileSystem: %s", label, err)
-		}
+		fs2 := vcs.FileSystem(test.repo, test.second)
 		_, err = fs2.Open("file2")
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file2): %s", label, err)
@@ -1092,10 +1075,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m 'add submodule' --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			ResolveRevision(string) (vcs.CommitID, error)
-			FileSystem(vcs.CommitID) (vfs.FileSystem, error)
-		}
+		repo vcs.Repository
 	}{
 		"git cmd": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
@@ -1108,11 +1088,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fs, err := test.repo.FileSystem(commitID)
-		if err != nil {
-			t.Errorf("%s: FileSystem: %s", label, err)
-			continue
-		}
+		fs := vcs.FileSystem(test.repo, commitID)
 
 		checkSubmoduleFileInfo := func(label string, submod os.FileInfo) {
 			if want := "submod"; submod.Name() != want {
@@ -1229,11 +1205,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "initial", err)
 			continue
 		}
-		fs1, err := r.FileSystem(initial)
-		if err != nil {
-			t.Errorf("%s: FileSystem(%q): %s", test.vcs, initial, err)
-			continue
-		}
+		fs1 := vcs.FileSystem(r, initial)
 
 		// newfile does not yet exist in either the mirror or origin.
 		_, err = fs1.Stat("newfile")
@@ -1282,7 +1254,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "second", err)
 			continue
 		}
-		fs2, err := r.FileSystem(second)
+		fs2 := vcs.FileSystem(r, second)
 		if err != nil {
 			t.Errorf("%s: FileSystem(%q): %s", test.vcs, second, err)
 			continue

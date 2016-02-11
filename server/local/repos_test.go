@@ -1,18 +1,18 @@
 package local
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
 	"golang.org/x/net/context"
-	"golang.org/x/tools/godoc/vfs"
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/rwvfs"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	vcstesting "src.sourcegraph.com/sourcegraph/pkg/vcs/testing"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
 	"src.sourcegraph.com/sourcegraph/platform"
 )
 
@@ -186,11 +186,21 @@ func TestReposService_GetReadme(t *testing.T) {
 		HTML: "<pre>hello</pre>",
 	}
 
-	var calledVCSRepoFileSystem bool
+	var calledReadDir, calledReadFile bool
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{
-		FileSystem_: func(at vcs.CommitID) (vfs.FileSystem, error) {
-			calledVCSRepoFileSystem = true
-			return rwvfs.Map(map[string]string{"README.txt": "hello"}), nil
+		ReadDir_: func(commit vcs.CommitID, name string) ([]os.FileInfo, error) {
+			if name != "." {
+				t.Error("name != .")
+			}
+			calledReadDir = true
+			return []os.FileInfo{&util.FileInfo{Name_: "README.txt"}}, nil
+		},
+		ReadFile_: func(commit vcs.CommitID, name string) ([]byte, error) {
+			if name != "README.txt" {
+				t.Error("name != README.txt")
+			}
+			calledReadFile = true
+			return []byte("hello"), nil
 		},
 	})
 
@@ -202,8 +212,11 @@ func TestReposService_GetReadme(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !calledVCSRepoFileSystem {
-		t.Error("!calledVCSRepoFileSystem")
+	if !calledReadDir {
+		t.Error("!calledReadDir")
+	}
+	if !calledReadFile {
+		t.Error("!calledReadFile")
 	}
 	if !reflect.DeepEqual(readme, wantReadme) {
 		t.Errorf("got %+v, want %+v", readme, wantReadme)

@@ -1,7 +1,6 @@
 package local
 
 import (
-	"io/ioutil"
 	"math"
 	"sort"
 	"strings"
@@ -97,12 +96,9 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 		return nil, err
 	}
 
-	fs, err := vcsrepo.FileSystem(vcs.CommitID(entrySpec.RepoRev.CommitID))
-	if err != nil {
-		return nil, err
-	}
+	commit := vcs.CommitID(entrySpec.RepoRev.CommitID)
 
-	fi, err := fs.Lstat(entrySpec.Path)
+	fi, err := vcsrepo.Lstat(commit, entrySpec.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -111,20 +107,14 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 	fwr := sourcegraph.FileWithRange{BasicTreeEntry: e}
 
 	if fi.Mode().IsDir() {
-		ee, err := readDir(fs, entrySpec.Path, int(opt.RecurseSingleSubfolderLimit), true)
+		ee, err := readDir(vcsrepo, commit, entrySpec.Path, int(opt.RecurseSingleSubfolderLimit), true)
 		if err != nil {
 			return nil, err
 		}
 		sort.Sort(TreeEntriesByTypeByName(ee))
 		e.Entries = ee
 	} else if fi.Mode().IsRegular() {
-		f, err := fs.Open(entrySpec.Path)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		contents, err := ioutil.ReadAll(f)
+		contents, err := vcsrepo.ReadFile(commit, entrySpec.Path)
 		if err != nil {
 			return nil, err
 		}

@@ -2,7 +2,6 @@ package local
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	pathpkg "path"
 	"time"
@@ -250,12 +249,10 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 	if err != nil {
 		return nil, err
 	}
-	fs, err := vcsrepo.FileSystem(vcs.CommitID(repoRev.CommitID))
-	if err != nil {
-		return nil, err
-	}
 
-	entries, err := fs.ReadDir(".")
+	commit := vcs.CommitID(repoRev.CommitID)
+
+	entries, err := vcsrepo.ReadDir(commit, ".")
 	if err != nil {
 		return nil, err
 	}
@@ -270,13 +267,7 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, grpc.Errorf(codes.NotFound, "no README found in %v", repoRev)
 	}
 
-	f, err := fs.Open(readme.Path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	data, err := ioutil.ReadAll(f)
+	data, err := vcsrepo.ReadFile(commit, readme.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -418,11 +409,7 @@ func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 		return nil, err
 	}
 
-	fs, err := vcsrepo.FileSystem(vcs.CommitID(repoRev.CommitID))
-	if err != nil {
-		return nil, err
-	}
-
+	fs := vcs.FileSystem(vcsrepo, vcs.CommitID(repoRev.CommitID))
 	inv, err := inventory.Scan(ctx, walkableFileSystem{fs})
 	if err != nil {
 		return nil, err

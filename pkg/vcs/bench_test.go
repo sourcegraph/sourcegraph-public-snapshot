@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"golang.org/x/tools/godoc/vfs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -42,7 +41,7 @@ func BenchmarkGetCommit_GitCmd(b *testing.B) {
 	}()
 
 	cmds, _ := makeGitCommandsAndFiles(benchGetCommitCommits)
-	openRepo := func() benchRepository {
+	openRepo := func() vcs.Repository {
 		r, err := gitcmd.Open(initGitRepository(b, cmds...))
 		if err != nil {
 			b.Fatal(err)
@@ -63,7 +62,7 @@ func BenchmarkCommits_GitCmd(b *testing.B) {
 	}()
 
 	cmds, _ := makeGitCommandsAndFiles(benchCommitsCommits)
-	openRepo := func() benchRepository {
+	openRepo := func() vcs.Repository {
 		r, err := gitcmd.Open(initGitRepository(b, cmds...))
 		if err != nil {
 			b.Fatal(err)
@@ -106,25 +105,14 @@ func benchFilename(i int) string {
 	panic("unreachable")
 }
 
-type benchRepository interface {
-	ResolveRevision(string) (vcs.CommitID, error)
-	GetCommit(vcs.CommitID) (*vcs.Commit, error)
-	Commits(vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
-	FileSystem(vcs.CommitID) (vfs.FileSystem, error)
-}
-
-func benchFileSystem(b *testing.B, r benchRepository, tag string, files []string) {
+func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string) {
 	commitID, err := r.ResolveRevision(tag)
 	if err != nil {
 		b.Errorf("ResolveRevision: %s", err)
 		return
 	}
 
-	fs, err := r.FileSystem(commitID)
-	if err != nil {
-		b.Errorf("FileSystem: %s", err)
-		return
-	}
+	fs := vcs.FileSystem(r, commitID)
 
 	for _, f := range files {
 		dir := filepath.Dir(f)
@@ -176,7 +164,7 @@ func benchFileSystem(b *testing.B, r benchRepository, tag string, files []string
 	}
 }
 
-func benchGetCommit(b *testing.B, openRepo func() benchRepository, tag string) {
+func benchGetCommit(b *testing.B, openRepo func() vcs.Repository, tag string) {
 	r := openRepo()
 
 	commitID, err := r.ResolveRevision(tag)
@@ -192,7 +180,7 @@ func benchGetCommit(b *testing.B, openRepo func() benchRepository, tag string) {
 	}
 }
 
-func benchCommits(b *testing.B, openRepo func() benchRepository, tag string) {
+func benchCommits(b *testing.B, openRepo func() vcs.Repository, tag string) {
 	r := openRepo()
 
 	commitID, err := r.ResolveRevision(tag)

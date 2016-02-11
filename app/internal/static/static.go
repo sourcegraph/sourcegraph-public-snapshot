@@ -20,6 +20,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
@@ -321,10 +322,7 @@ func newMiddleware() (*staticMiddleware, error) {
 		if err != nil {
 			return nil, err
 		}
-		mw.vfs, err = repo.FileSystem(commit)
-		if err != nil {
-			return nil, err
-		}
+		mw.vfs = vcs.FileSystem(repo, commit)
 	} else if Flags.Dir != "" {
 		mw.debugf("serving a normal directory\n")
 		mw.vfs = vfs.OS(Flags.Dir)

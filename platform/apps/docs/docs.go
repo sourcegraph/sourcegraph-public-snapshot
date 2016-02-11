@@ -122,11 +122,7 @@ func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir 
 		return "", nil, err
 	}
 	vcsRepo.AppdashRec = traceutil.Recorder(ctx)
-	vfs, err := vcsRepo.FileSystem(vcs.CommitID(repoRev.CommitID))
-	if err != nil {
-		return "", nil, err
-	}
-	fs = aferoVFS{vfs}
+	fs = aferoVFS{vcs.FileSystem(vcsRepo, vcs.CommitID(repoRev.CommitID))}
 
 	hugoDir, err = findHugoDataDir(ctx, repoRev)
 	if err != nil {

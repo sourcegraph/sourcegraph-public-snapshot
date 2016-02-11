@@ -1,7 +1,8 @@
 package testing
 
 import (
-	"golang.org/x/tools/godoc/vfs"
+	"os"
+
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
@@ -18,7 +19,10 @@ type MockRepository struct {
 
 	BlameFile_ func(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error)
 
-	FileSystem_ func(at vcs.CommitID) (vfs.FileSystem, error)
+	Lstat_    func(commit vcs.CommitID, name string) (os.FileInfo, error)
+	Stat_     func(commit vcs.CommitID, name string) (os.FileInfo, error)
+	ReadFile_ func(commit vcs.CommitID, name string) ([]byte, error)
+	ReadDir_  func(commit vcs.CommitID, name string) ([]os.FileInfo, error)
 
 	Diff_          func(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error)
 	CrossRepoDiff_ func(base vcs.CommitID, headRepo vcs.Repository, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error)
@@ -65,8 +69,20 @@ func (r MockRepository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hu
 	return r.BlameFile_(path, opt)
 }
 
-func (r MockRepository) FileSystem(at vcs.CommitID) (vfs.FileSystem, error) {
-	return r.FileSystem_(at)
+func (r MockRepository) Lstat(commit vcs.CommitID, name string) (os.FileInfo, error) {
+	return r.Lstat_(commit, name)
+}
+
+func (r MockRepository) Stat(commit vcs.CommitID, name string) (os.FileInfo, error) {
+	return r.Stat_(commit, name)
+}
+
+func (r MockRepository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) {
+	return r.ReadFile_(commit, name)
+}
+
+func (r MockRepository) ReadDir(commit vcs.CommitID, name string) ([]os.FileInfo, error) {
+	return r.ReadDir_(commit, name)
 }
 
 func (r MockRepository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
