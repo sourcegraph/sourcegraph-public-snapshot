@@ -262,18 +262,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			return err
 		}
 
-		var user *sourcegraph.User
-		if currentUser != nil {
-			sg, err := sourcegraph.NewClientFromContext(ctx)
-			if err != nil {
-				return err
-			}
-			user, err = sg.Users.Get(ctx, currentUser)
-			if err != nil {
-				return err
-			}
-		}
-
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(Common)
 
@@ -299,7 +287,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		}
 
 		field.Set(reflect.ValueOf(Common{
-			CurrentUser: user,
+			CurrentUser: handlerutil.FullUserFromRequest(req),
 
 			RequestHost: req.Host,
 

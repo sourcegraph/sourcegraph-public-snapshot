@@ -6,7 +6,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
-
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/auth"
@@ -21,6 +22,7 @@ type contextKey int
 
 const (
 	userKey contextKey = iota
+	fullUserKey
 )
 
 // UserMiddleware fetches the user object and stores it in the context
@@ -32,8 +34,10 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 
 	cred := sourcegraph.CredentialsFromContext(ctx)
 	if cred != nil && UserFromRequest(r) == nil && fetchUserForCredentials(cred) {
-		if authInfo := identifyUser(ctx, w); authInfo != nil {
+		if authInfo, user := identifyUser(ctx, w); authInfo != nil {
+			// This code should be kept in sync with ClearUser.
 			ctx = WithUser(ctx, authInfo.UserSpec())
+			ctx = withFullUser(ctx, user)
 			ctx = auth.WithActor(ctx, auth.Actor{
 				UID:      int(authInfo.UID),
 				Login:    authInfo.Login,
@@ -48,12 +52,21 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 	next(w, r)
 }
 
-func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.AuthInfo {
+// ClearUser removes user from context.
+// It should unset all context values that UserMiddleware has set.
+func ClearUser(ctx context.Context) context.Context {
+	ctx = WithUser(ctx, nil)
+	ctx = withFullUser(ctx, nil)
+	ctx = auth.WithActor(ctx, auth.Actor{})
+	return ctx
+}
+
+func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.AuthInfo, *sourcegraph.User) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
 		appauth.DeleteSessionCookie(w)
-		return nil
+		return nil, nil
 	}
 
 	// Call to Identify will be authenticated with the
@@ -62,17 +75,27 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) *sourcegraph.AuthI
 	if err != nil {
 		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
 		appauth.DeleteSessionCookie(w)
-		return nil
+		return nil, nil
 	}
 
 	if authInfo.UID == 0 {
 		// The cookie was probably created by another server; delete it.
 		log.Printf("warning: credentials don't identify a user on this server (continuing, deleting cookie)")
 		appauth.DeleteSessionCookie(w)
-		return nil
+		return nil, nil
 	}
 
-	return authInfo
+	// Fetch full user.
+	user, err := cl.Users.Get(ctx, authInfo.UserSpec())
+	if err != nil {
+		if grpc.Code(err) != codes.Unimplemented && grpc.Code(err) != codes.Unauthenticated {
+			log.Printf("warning: fetching full user failed: %s (continuing, deleting cookie)", err)
+			appauth.DeleteSessionCookie(w)
+		}
+		return nil, nil
+	}
+
+	return authInfo, user
 }
 
 // fetchUserForCredentials is whether UserMiddleware should try to
@@ -94,8 +117,7 @@ func fetchUserForCredentials(cred sourcegraph.Credentials) bool {
 	return hasUID
 }
 
-// UserFromRequest returns the request's context's authenticated user (if
-// any).
+// UserFromRequest returns the request's context's authenticated user (if any).
 func UserFromRequest(r *http.Request) *sourcegraph.UserSpec {
 	return UserFromContext(httpctx.FromRequest(r))
 }
@@ -112,4 +134,21 @@ func UserFromContext(ctx context.Context) *sourcegraph.UserSpec {
 // useful for tests where you want to inject a specific user.
 func WithUser(ctx context.Context, user *sourcegraph.UserSpec) context.Context {
 	return context.WithValue(ctx, userKey, user)
+}
+
+// FullUserFromRequest returns the request's context's authenticated full user (if any).
+func FullUserFromRequest(r *http.Request) *sourcegraph.User {
+	return FullUserFromContext(httpctx.FromRequest(r))
+}
+
+// FullUserFromContext returns the context's authenticated full user (if any).
+func FullUserFromContext(ctx context.Context) *sourcegraph.User {
+	user, _ := ctx.Value(fullUserKey).(*sourcegraph.User)
+	return user
+}
+
+// withFullUser returns a copy of the context with the full user added to it
+// (and available via FullUserFromContext).
+func withFullUser(ctx context.Context, user *sourcegraph.User) context.Context {
+	return context.WithValue(ctx, fullUserKey, user)
 }

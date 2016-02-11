@@ -12,16 +12,16 @@ import (
 
 func serveLogOut(w http.ResponseWriter, r *http.Request) error {
 	appauth.DeleteSessionCookie(w)
-	ctx := httpctx.FromRequest(r)
 
+	ctx := httpctx.FromRequest(r)
 	eventsutil.LogSignOut(ctx)
 
-	currentUser := handlerutil.UserFromRequest(r)
+	currentUser := handlerutil.UserFromContext(ctx)
 	if currentUser != nil {
-		// If already logged in, then clear the user in the request
-		// context so that we don't show the logout page with the
+		// If a user was logged in prior to navigating here, clear the user in
+		// the request context so that we don't show the logout page with the
 		// user's info.
-		ctx = handlerutil.WithUser(ctx, nil)
+		ctx = handlerutil.ClearUser(ctx)
 		httpctx.SetForRequest(r, ctx)
 	}
 
