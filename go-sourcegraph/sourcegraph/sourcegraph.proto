@@ -3246,15 +3246,6 @@ service RegisteredClients {
 
 	// List enumerates API clients according to the options.
 	rpc List(RegisteredClientListOptions) returns (RegisteredClientList);
-
-	// Get the permissions of the user on the specified client.
-	rpc GetUserPermissions(UserPermissionsOptions) returns (UserPermissions);
-
-	// Set the permissions of the user on the specified client.
-	rpc SetUserPermissions(UserPermissions) returns (pbtypes.Void);
-
-	// List the permissions of all users that are registered on this client.
-	rpc ListUserPermissions(RegisteredClientSpec) returns (UserPermissionsList);
 }
 
 // TelemetryType is the format MetricsSnapshot.TelemetryData is encoded in

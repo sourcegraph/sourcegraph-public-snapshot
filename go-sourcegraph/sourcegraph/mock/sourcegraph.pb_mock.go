@@ -1253,15 +1253,12 @@ func (s *MetaServer) Config(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.
 var _ sourcegraph.MetaServer = (*MetaServer)(nil)
 
 type RegisteredClientsClient struct {
-	Get_                 func(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error)
-	GetCurrent_          func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.RegisteredClient, error)
-	Create_              func(ctx context.Context, in *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error)
-	Update_              func(ctx context.Context, in *sourcegraph.RegisteredClient) (*pbtypes.Void, error)
-	Delete_              func(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error)
-	List_                func(ctx context.Context, in *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error)
-	GetUserPermissions_  func(ctx context.Context, in *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error)
-	SetUserPermissions_  func(ctx context.Context, in *sourcegraph.UserPermissions) (*pbtypes.Void, error)
-	ListUserPermissions_ func(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error)
+	Get_        func(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error)
+	GetCurrent_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.RegisteredClient, error)
+	Create_     func(ctx context.Context, in *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error)
+	Update_     func(ctx context.Context, in *sourcegraph.RegisteredClient) (*pbtypes.Void, error)
+	Delete_     func(ctx context.Context, in *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error)
+	List_       func(ctx context.Context, in *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error)
 }
 
 func (s *RegisteredClientsClient) Get(ctx context.Context, in *sourcegraph.RegisteredClientSpec, opts ...grpc.CallOption) (*sourcegraph.RegisteredClient, error) {
@@ -1288,30 +1285,15 @@ func (s *RegisteredClientsClient) List(ctx context.Context, in *sourcegraph.Regi
 	return s.List_(ctx, in)
 }
 
-func (s *RegisteredClientsClient) GetUserPermissions(ctx context.Context, in *sourcegraph.UserPermissionsOptions, opts ...grpc.CallOption) (*sourcegraph.UserPermissions, error) {
-	return s.GetUserPermissions_(ctx, in)
-}
-
-func (s *RegisteredClientsClient) SetUserPermissions(ctx context.Context, in *sourcegraph.UserPermissions, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.SetUserPermissions_(ctx, in)
-}
-
-func (s *RegisteredClientsClient) ListUserPermissions(ctx context.Context, in *sourcegraph.RegisteredClientSpec, opts ...grpc.CallOption) (*sourcegraph.UserPermissionsList, error) {
-	return s.ListUserPermissions_(ctx, in)
-}
-
 var _ sourcegraph.RegisteredClientsClient = (*RegisteredClientsClient)(nil)
 
 type RegisteredClientsServer struct {
-	Get_                 func(v0 context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error)
-	GetCurrent_          func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.RegisteredClient, error)
-	Create_              func(v0 context.Context, v1 *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error)
-	Update_              func(v0 context.Context, v1 *sourcegraph.RegisteredClient) (*pbtypes.Void, error)
-	Delete_              func(v0 context.Context, v1 *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error)
-	List_                func(v0 context.Context, v1 *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error)
-	GetUserPermissions_  func(v0 context.Context, v1 *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error)
-	SetUserPermissions_  func(v0 context.Context, v1 *sourcegraph.UserPermissions) (*pbtypes.Void, error)
-	ListUserPermissions_ func(v0 context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error)
+	Get_        func(v0 context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error)
+	GetCurrent_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.RegisteredClient, error)
+	Create_     func(v0 context.Context, v1 *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error)
+	Update_     func(v0 context.Context, v1 *sourcegraph.RegisteredClient) (*pbtypes.Void, error)
+	Delete_     func(v0 context.Context, v1 *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error)
+	List_       func(v0 context.Context, v1 *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error)
 }
 
 func (s *RegisteredClientsServer) Get(v0 context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
@@ -1336,18 +1318,6 @@ func (s *RegisteredClientsServer) Delete(v0 context.Context, v1 *sourcegraph.Reg
 
 func (s *RegisteredClientsServer) List(v0 context.Context, v1 *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
 	return s.List_(v0, v1)
-}
-
-func (s *RegisteredClientsServer) GetUserPermissions(v0 context.Context, v1 *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
-	return s.GetUserPermissions_(v0, v1)
-}
-
-func (s *RegisteredClientsServer) SetUserPermissions(v0 context.Context, v1 *sourcegraph.UserPermissions) (*pbtypes.Void, error) {
-	return s.SetUserPermissions_(v0, v1)
-}
-
-func (s *RegisteredClientsServer) ListUserPermissions(v0 context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
-	return s.ListUserPermissions_(v0, v1)
 }
 
 var _ sourcegraph.RegisteredClientsServer = (*RegisteredClientsServer)(nil)

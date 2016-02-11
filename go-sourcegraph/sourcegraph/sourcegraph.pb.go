@@ -7105,12 +7105,6 @@ type RegisteredClientsClient interface {
 	Delete(ctx context.Context, in *RegisteredClientSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// List enumerates API clients according to the options.
 	List(ctx context.Context, in *RegisteredClientListOptions, opts ...grpc.CallOption) (*RegisteredClientList, error)
-	// Get the permissions of the user on the specified client.
-	GetUserPermissions(ctx context.Context, in *UserPermissionsOptions, opts ...grpc.CallOption) (*UserPermissions, error)
-	// Set the permissions of the user on the specified client.
-	SetUserPermissions(ctx context.Context, in *UserPermissions, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// List the permissions of all users that are registered on this client.
-	ListUserPermissions(ctx context.Context, in *RegisteredClientSpec, opts ...grpc.CallOption) (*UserPermissionsList, error)
 }
 
 type registeredClientsClient struct {
@@ -7175,33 +7169,6 @@ func (c *registeredClientsClient) List(ctx context.Context, in *RegisteredClient
 	return out, nil
 }
 
-func (c *registeredClientsClient) GetUserPermissions(ctx context.Context, in *UserPermissionsOptions, opts ...grpc.CallOption) (*UserPermissions, error) {
-	out := new(UserPermissions)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/GetUserPermissions", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registeredClientsClient) SetUserPermissions(ctx context.Context, in *UserPermissions, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/SetUserPermissions", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registeredClientsClient) ListUserPermissions(ctx context.Context, in *RegisteredClientSpec, opts ...grpc.CallOption) (*UserPermissionsList, error) {
-	out := new(UserPermissionsList)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/ListUserPermissions", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Server API for RegisteredClients service
 
 type RegisteredClientsServer interface {
@@ -7222,12 +7189,6 @@ type RegisteredClientsServer interface {
 	Delete(context.Context, *RegisteredClientSpec) (*pbtypes1.Void, error)
 	// List enumerates API clients according to the options.
 	List(context.Context, *RegisteredClientListOptions) (*RegisteredClientList, error)
-	// Get the permissions of the user on the specified client.
-	GetUserPermissions(context.Context, *UserPermissionsOptions) (*UserPermissions, error)
-	// Set the permissions of the user on the specified client.
-	SetUserPermissions(context.Context, *UserPermissions) (*pbtypes1.Void, error)
-	// List the permissions of all users that are registered on this client.
-	ListUserPermissions(context.Context, *RegisteredClientSpec) (*UserPermissionsList, error)
 }
 
 func RegisterRegisteredClientsServer(s *grpc.Server, srv RegisteredClientsServer) {
@@ -7306,42 +7267,6 @@ func _RegisteredClients_List_Handler(srv interface{}, ctx context.Context, dec f
 	return out, nil
 }
 
-func _RegisteredClients_GetUserPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(UserPermissionsOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).GetUserPermissions(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _RegisteredClients_SetUserPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(UserPermissions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).SetUserPermissions(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _RegisteredClients_ListUserPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RegisteredClientSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).ListUserPermissions(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 var _RegisteredClients_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.RegisteredClients",
 	HandlerType: (*RegisteredClientsServer)(nil),
@@ -7369,18 +7294,6 @@ var _RegisteredClients_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _RegisteredClients_List_Handler,
-		},
-		{
-			MethodName: "GetUserPermissions",
-			Handler:    _RegisteredClients_GetUserPermissions_Handler,
-		},
-		{
-			MethodName: "SetUserPermissions",
-			Handler:    _RegisteredClients_SetUserPermissions_Handler,
-		},
-		{
-			MethodName: "ListUserPermissions",
-			Handler:    _RegisteredClients_ListUserPermissions_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

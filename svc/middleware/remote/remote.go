@@ -619,30 +619,6 @@ func (s remoteRegisteredClients) List(ctx context.Context, v1 *sourcegraph.Regis
 	return c.RegisteredClients.List(ctx, v1)
 }
 
-func (s remoteRegisteredClients) GetUserPermissions(ctx context.Context, v1 *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.RegisteredClients.GetUserPermissions(ctx, v1)
-}
-
-func (s remoteRegisteredClients) SetUserPermissions(ctx context.Context, v1 *sourcegraph.UserPermissions) (*pbtypes.Void, error) {
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.RegisteredClients.SetUserPermissions(ctx, v1)
-}
-
-func (s remoteRegisteredClients) ListUserPermissions(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.RegisteredClients.ListUserPermissions(ctx, v1)
-}
-
 type remoteRepoBadges struct{ sourcegraph.RepoBadgesServer }
 
 func (s remoteRepoBadges) ListBadges(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
