@@ -82,12 +82,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 }
 
 func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string, error) {
-	repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
-	if repoPermsStore == nil {
-		return "", grpc.Errorf(codes.Unimplemented, "repo perms store not available")
-	}
-
-	users, err := repoPermsStore.ListRepoUsers(ctx, repo)
+	users, err := store.RepoPermsFromContext(ctx).ListRepoUsers(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -297,10 +292,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		return nil, err
 	}
 
-	repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
-	if repoPermsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "repo perms store not available")
-	}
+	repoPermsStore := store.RepoPermsFromContext(ctx)
 
 	ghRepos := &github.Repos{}
 	// TODO(perf) Cache this response or perform the fetch after page load to avoid
@@ -399,10 +391,7 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 		return result, nil
 	}
 
-	waitlistStore := store.WaitlistFromContextOrNil(ctx)
-	if waitlistStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "waitlist store not available")
-	}
+	waitlistStore := store.WaitlistFromContext(ctx)
 
 	waitlistedUser, err := waitlistStore.GetUser(ctx, uid)
 	if err != nil {

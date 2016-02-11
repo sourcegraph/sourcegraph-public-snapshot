@@ -174,15 +174,6 @@ func AccountsFromContext(ctx context.Context) Accounts {
 	return s
 }
 
-// AccountsFromContextOrNil returns the context's Accounts store if present, or else nil.
-func AccountsFromContextOrNil(ctx context.Context) Accounts {
-	s, ok := ctx.Value(_AccountsKey).(Accounts)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithAuthorizations returns a copy of parent with the given Authorizations store.
 func WithAuthorizations(parent context.Context, s Authorizations) context.Context {
 	return context.WithValue(parent, _AuthorizationsKey, s)
@@ -195,15 +186,6 @@ func AuthorizationsFromContext(ctx context.Context) Authorizations {
 		panic("no Authorizations set in context")
 	}
 	return s
-}
-
-// AuthorizationsFromContextOrNil returns the context's Authorizations store if present, or else nil.
-func AuthorizationsFromContextOrNil(ctx context.Context) Authorizations {
-	s, ok := ctx.Value(_AuthorizationsKey).(Authorizations)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithBuildLogs returns a copy of parent with the given BuildLogs store.
@@ -220,15 +202,6 @@ func BuildLogsFromContext(ctx context.Context) BuildLogs {
 	return s
 }
 
-// BuildLogsFromContextOrNil returns the context's BuildLogs store if present, or else nil.
-func BuildLogsFromContextOrNil(ctx context.Context) BuildLogs {
-	s, ok := ctx.Value(_BuildLogsKey).(BuildLogs)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithBuilds returns a copy of parent with the given Builds store.
 func WithBuilds(parent context.Context, s Builds) context.Context {
 	return context.WithValue(parent, _BuildsKey, s)
@@ -241,15 +214,6 @@ func BuildsFromContext(ctx context.Context) Builds {
 		panic("no Builds set in context")
 	}
 	return s
-}
-
-// BuildsFromContextOrNil returns the context's Builds store if present, or else nil.
-func BuildsFromContextOrNil(ctx context.Context) Builds {
-	s, ok := ctx.Value(_BuildsKey).(Builds)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithChangesets returns a copy of parent with the given Changesets store.
@@ -266,15 +230,6 @@ func ChangesetsFromContext(ctx context.Context) Changesets {
 	return s
 }
 
-// ChangesetsFromContextOrNil returns the context's Changesets store if present, or else nil.
-func ChangesetsFromContextOrNil(ctx context.Context) Changesets {
-	s, ok := ctx.Value(_ChangesetsKey).(Changesets)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithDirectory returns a copy of parent with the given Directory store.
 func WithDirectory(parent context.Context, s Directory) context.Context {
 	return context.WithValue(parent, _DirectoryKey, s)
@@ -287,15 +242,6 @@ func DirectoryFromContext(ctx context.Context) Directory {
 		panic("no Directory set in context")
 	}
 	return s
-}
-
-// DirectoryFromContextOrNil returns the context's Directory store if present, or else nil.
-func DirectoryFromContextOrNil(ctx context.Context) Directory {
-	s, ok := ctx.Value(_DirectoryKey).(Directory)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithExternalAuthTokens returns a copy of parent with the given ExternalAuthTokens store.
@@ -312,15 +258,6 @@ func ExternalAuthTokensFromContext(ctx context.Context) ExternalAuthTokens {
 	return s
 }
 
-// ExternalAuthTokensFromContextOrNil returns the context's ExternalAuthTokens store if present, or else nil.
-func ExternalAuthTokensFromContextOrNil(ctx context.Context) ExternalAuthTokens {
-	s, ok := ctx.Value(_ExternalAuthTokensKey).(ExternalAuthTokens)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithGraph returns a copy of parent with the given Graph store.
 func WithGraph(parent context.Context, s srcstore.MultiRepoStoreImporterIndexer) context.Context {
 	return context.WithValue(parent, _GraphKey, s)
@@ -333,15 +270,6 @@ func GraphFromContext(ctx context.Context) srcstore.MultiRepoStoreImporterIndexe
 		panic("no Graph set in context")
 	}
 	return s
-}
-
-// GraphFromContextOrNil returns the context's Graph store if present, or else nil.
-func GraphFromContextOrNil(ctx context.Context) srcstore.MultiRepoStoreImporterIndexer {
-	s, ok := ctx.Value(_GraphKey).(srcstore.MultiRepoStoreImporterIndexer)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithInvites returns a copy of parent with the given Invites store.
@@ -358,15 +286,6 @@ func InvitesFromContext(ctx context.Context) Invites {
 	return s
 }
 
-// InvitesFromContextOrNil returns the context's Invites store if present, or else nil.
-func InvitesFromContextOrNil(ctx context.Context) Invites {
-	s, ok := ctx.Value(_InvitesKey).(Invites)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithMirroredRepoSSHKeys returns a copy of parent with the given MirroredRepoSSHKeys store.
 func WithMirroredRepoSSHKeys(parent context.Context, s MirroredRepoSSHKeys) context.Context {
 	return context.WithValue(parent, _MirroredRepoSSHKeysKey, s)
@@ -379,15 +298,6 @@ func MirroredRepoSSHKeysFromContext(ctx context.Context) MirroredRepoSSHKeys {
 		panic("no MirroredRepoSSHKeys set in context")
 	}
 	return s
-}
-
-// MirroredRepoSSHKeysFromContextOrNil returns the context's MirroredRepoSSHKeys store if present, or else nil.
-func MirroredRepoSSHKeysFromContextOrNil(ctx context.Context) MirroredRepoSSHKeys {
-	s, ok := ctx.Value(_MirroredRepoSSHKeysKey).(MirroredRepoSSHKeys)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithOrgs returns a copy of parent with the given Orgs store.
@@ -404,15 +314,6 @@ func OrgsFromContext(ctx context.Context) Orgs {
 	return s
 }
 
-// OrgsFromContextOrNil returns the context's Orgs store if present, or else nil.
-func OrgsFromContextOrNil(ctx context.Context) Orgs {
-	s, ok := ctx.Value(_OrgsKey).(Orgs)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithPassword returns a copy of parent with the given Password store.
 func WithPassword(parent context.Context, s Password) context.Context {
 	return context.WithValue(parent, _PasswordKey, s)
@@ -425,15 +326,6 @@ func PasswordFromContext(ctx context.Context) Password {
 		panic("no Password set in context")
 	}
 	return s
-}
-
-// PasswordFromContextOrNil returns the context's Password store if present, or else nil.
-func PasswordFromContextOrNil(ctx context.Context) Password {
-	s, ok := ctx.Value(_PasswordKey).(Password)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithRegisteredClients returns a copy of parent with the given RegisteredClients store.
@@ -450,15 +342,6 @@ func RegisteredClientsFromContext(ctx context.Context) RegisteredClients {
 	return s
 }
 
-// RegisteredClientsFromContextOrNil returns the context's RegisteredClients store if present, or else nil.
-func RegisteredClientsFromContextOrNil(ctx context.Context) RegisteredClients {
-	s, ok := ctx.Value(_RegisteredClientsKey).(RegisteredClients)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithRepoConfigs returns a copy of parent with the given RepoConfigs store.
 func WithRepoConfigs(parent context.Context, s RepoConfigs) context.Context {
 	return context.WithValue(parent, _RepoConfigsKey, s)
@@ -471,15 +354,6 @@ func RepoConfigsFromContext(ctx context.Context) RepoConfigs {
 		panic("no RepoConfigs set in context")
 	}
 	return s
-}
-
-// RepoConfigsFromContextOrNil returns the context's RepoConfigs store if present, or else nil.
-func RepoConfigsFromContextOrNil(ctx context.Context) RepoConfigs {
-	s, ok := ctx.Value(_RepoConfigsKey).(RepoConfigs)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithRepoCounters returns a copy of parent with the given RepoCounters store.
@@ -496,15 +370,6 @@ func RepoCountersFromContext(ctx context.Context) RepoCounters {
 	return s
 }
 
-// RepoCountersFromContextOrNil returns the context's RepoCounters store if present, or else nil.
-func RepoCountersFromContextOrNil(ctx context.Context) RepoCounters {
-	s, ok := ctx.Value(_RepoCountersKey).(RepoCounters)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithRepoOrigin returns a copy of parent with the given RepoOrigin store.
 func WithRepoOrigin(parent context.Context, s RepoOrigin) context.Context {
 	return context.WithValue(parent, _RepoOriginKey, s)
@@ -517,15 +382,6 @@ func RepoOriginFromContext(ctx context.Context) RepoOrigin {
 		panic("no RepoOrigin set in context")
 	}
 	return s
-}
-
-// RepoOriginFromContextOrNil returns the context's RepoOrigin store if present, or else nil.
-func RepoOriginFromContextOrNil(ctx context.Context) RepoOrigin {
-	s, ok := ctx.Value(_RepoOriginKey).(RepoOrigin)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithRepoOriginWithAuthorizedSSHKeys returns a copy of parent with the given RepoOriginWithAuthorizedSSHKeys store.
@@ -542,15 +398,6 @@ func RepoOriginWithAuthorizedSSHKeysFromContext(ctx context.Context) RepoOriginW
 	return s
 }
 
-// RepoOriginWithAuthorizedSSHKeysFromContextOrNil returns the context's RepoOriginWithAuthorizedSSHKeys store if present, or else nil.
-func RepoOriginWithAuthorizedSSHKeysFromContextOrNil(ctx context.Context) RepoOriginWithAuthorizedSSHKeys {
-	s, ok := ctx.Value(_RepoOriginWithAuthorizedSSHKeysKey).(RepoOriginWithAuthorizedSSHKeys)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithRepoOriginWithCommitStatuses returns a copy of parent with the given RepoOriginWithCommitStatuses store.
 func WithRepoOriginWithCommitStatuses(parent context.Context, s RepoOriginWithCommitStatuses) context.Context {
 	return context.WithValue(parent, _RepoOriginWithCommitStatusesKey, s)
@@ -563,15 +410,6 @@ func RepoOriginWithCommitStatusesFromContext(ctx context.Context) RepoOriginWith
 		panic("no RepoOriginWithCommitStatuses set in context")
 	}
 	return s
-}
-
-// RepoOriginWithCommitStatusesFromContextOrNil returns the context's RepoOriginWithCommitStatuses store if present, or else nil.
-func RepoOriginWithCommitStatusesFromContextOrNil(ctx context.Context) RepoOriginWithCommitStatuses {
-	s, ok := ctx.Value(_RepoOriginWithCommitStatusesKey).(RepoOriginWithCommitStatuses)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithRepoOriginWithPushHooks returns a copy of parent with the given RepoOriginWithPushHooks store.
@@ -588,15 +426,6 @@ func RepoOriginWithPushHooksFromContext(ctx context.Context) RepoOriginWithPushH
 	return s
 }
 
-// RepoOriginWithPushHooksFromContextOrNil returns the context's RepoOriginWithPushHooks store if present, or else nil.
-func RepoOriginWithPushHooksFromContextOrNil(ctx context.Context) RepoOriginWithPushHooks {
-	s, ok := ctx.Value(_RepoOriginWithPushHooksKey).(RepoOriginWithPushHooks)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithRepoPerms returns a copy of parent with the given RepoPerms store.
 func WithRepoPerms(parent context.Context, s RepoPerms) context.Context {
 	return context.WithValue(parent, _RepoPermsKey, s)
@@ -609,15 +438,6 @@ func RepoPermsFromContext(ctx context.Context) RepoPerms {
 		panic("no RepoPerms set in context")
 	}
 	return s
-}
-
-// RepoPermsFromContextOrNil returns the context's RepoPerms store if present, or else nil.
-func RepoPermsFromContextOrNil(ctx context.Context) RepoPerms {
-	s, ok := ctx.Value(_RepoPermsKey).(RepoPerms)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithRepoStatuses returns a copy of parent with the given RepoStatuses store.
@@ -634,15 +454,6 @@ func RepoStatusesFromContext(ctx context.Context) RepoStatuses {
 	return s
 }
 
-// RepoStatusesFromContextOrNil returns the context's RepoStatuses store if present, or else nil.
-func RepoStatusesFromContextOrNil(ctx context.Context) RepoStatuses {
-	s, ok := ctx.Value(_RepoStatusesKey).(RepoStatuses)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithRepoVCS returns a copy of parent with the given RepoVCS store.
 func WithRepoVCS(parent context.Context, s RepoVCS) context.Context {
 	return context.WithValue(parent, _RepoVCSKey, s)
@@ -655,15 +466,6 @@ func RepoVCSFromContext(ctx context.Context) RepoVCS {
 		panic("no RepoVCS set in context")
 	}
 	return s
-}
-
-// RepoVCSFromContextOrNil returns the context's RepoVCS store if present, or else nil.
-func RepoVCSFromContextOrNil(ctx context.Context) RepoVCS {
-	s, ok := ctx.Value(_RepoVCSKey).(RepoVCS)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithRepos returns a copy of parent with the given Repos store.
@@ -680,15 +482,6 @@ func ReposFromContext(ctx context.Context) Repos {
 	return s
 }
 
-// ReposFromContextOrNil returns the context's Repos store if present, or else nil.
-func ReposFromContextOrNil(ctx context.Context) Repos {
-	s, ok := ctx.Value(_ReposKey).(Repos)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithStorage returns a copy of parent with the given Storage store.
 func WithStorage(parent context.Context, s Storage) context.Context {
 	return context.WithValue(parent, _StorageKey, s)
@@ -701,15 +494,6 @@ func StorageFromContext(ctx context.Context) Storage {
 		panic("no Storage set in context")
 	}
 	return s
-}
-
-// StorageFromContextOrNil returns the context's Storage store if present, or else nil.
-func StorageFromContextOrNil(ctx context.Context) Storage {
-	s, ok := ctx.Value(_StorageKey).(Storage)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithUsers returns a copy of parent with the given Users store.
@@ -726,15 +510,6 @@ func UsersFromContext(ctx context.Context) Users {
 	return s
 }
 
-// UsersFromContextOrNil returns the context's Users store if present, or else nil.
-func UsersFromContextOrNil(ctx context.Context) Users {
-	s, ok := ctx.Value(_UsersKey).(Users)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithWaitlist returns a copy of parent with the given Waitlist store.
 func WithWaitlist(parent context.Context, s Waitlist) context.Context {
 	return context.WithValue(parent, _WaitlistKey, s)
@@ -747,13 +522,4 @@ func WaitlistFromContext(ctx context.Context) Waitlist {
 		panic("no Waitlist set in context")
 	}
 	return s
-}
-
-// WaitlistFromContextOrNil returns the context's Waitlist store if present, or else nil.
-func WaitlistFromContextOrNil(ctx context.Context) Waitlist {
-	s, ok := ctx.Value(_WaitlistKey).(Waitlist)
-	if ok {
-		return s
-	}
-	return nil
 }

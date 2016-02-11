@@ -197,10 +197,7 @@ func (s *registeredClients) List(ctx context.Context, opt *sourcegraph.Registere
 }
 
 func registeredClientsOrError(ctx context.Context) (store.RegisteredClients, error) {
-	s := store.RegisteredClientsFromContextOrNil(ctx)
-	if s == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RegisteredClients")
-	}
+	s := store.RegisteredClientsFromContext(ctx)
 	if !fed.Config.AllowsClientRegistration() {
 		return nil, grpc.Errorf(codes.Unimplemented, "server is not a federation root and therefore does not allow client registration")
 	}

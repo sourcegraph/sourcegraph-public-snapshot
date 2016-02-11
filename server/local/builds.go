@@ -399,11 +399,6 @@ func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLo
 		opt = &sourcegraph.BuildGetLogOptions{}
 	}
 
-	buildLogs := store.BuildLogsFromContextOrNil(ctx)
-	if buildLogs == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "BuildLogs not implemented")
-	}
-
 	var minID string
 	var minTime, maxTime time.Time
 
@@ -424,7 +419,7 @@ func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLo
 		minID = opt.MinID
 	}
 
-	return buildLogs.Get(ctx, task, minID, minTime, maxTime)
+	return store.BuildLogsFromContext(ctx).Get(ctx, task, minID, minTime, maxTime)
 }
 
 func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {

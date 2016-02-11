@@ -1,11 +1,6 @@
 package local
 
 import (
-	"log"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -20,10 +15,7 @@ type users struct{}
 var _ sourcegraph.UsersServer = (*users)(nil)
 
 func (s *users) Get(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.User, error) {
-	store := store.UsersFromContextOrNil(ctx)
-	if store == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Users")
-	}
+	store := store.UsersFromContext(ctx)
 
 	shortCache(ctx)
 	return store.Get(ctx, *user)
@@ -49,23 +41,12 @@ func (s *users) ensureUIDPopulated(ctx context.Context, userSpec *sourcegraph.Us
 }
 
 func (s *users) GetWithEmail(ctx context.Context, emailAddr *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
-	store := store.UsersFromContextOrNil(ctx)
-	if store == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Users")
-	}
-
 	shortCache(ctx)
-	return store.GetWithEmail(ctx, *emailAddr)
+	return store.UsersFromContext(ctx).GetWithEmail(ctx, *emailAddr)
 }
 
 func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
-	store := store.UsersFromContextOrNil(ctx)
-	if store == nil {
-		log.Printf("Warning: users not implemented, returning empty list")
-		return &sourcegraph.EmailAddrList{}, nil
-	}
-
-	emails, err := store.ListEmails(ctx, *user)
+	emails, err := store.UsersFromContext(ctx).ListEmails(ctx, *user)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +55,7 @@ func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*so
 }
 
 func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
-	store := store.UsersFromContextOrNil(ctx)
-	if store == nil {
-		log.Printf("Warning: users not implemented, returning empty list")
-		return &sourcegraph.UserList{}, nil
-	}
-
-	users, err := store.List(ctx, opt)
+	users, err := store.UsersFromContext(ctx).List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -91,13 +66,7 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*s
 func (s *users) Count(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
 	noCache(ctx)
 
-	store := store.UsersFromContextOrNil(ctx)
-	if store == nil {
-		log.Printf("Warning: users not implemented, returning zero")
-		return &sourcegraph.UserCount{}, nil
-	}
-
-	count, err := store.Count(elevatedActor(ctx))
+	count, err := store.UsersFromContext(ctx).Count(elevatedActor(ctx))
 	if err != nil {
 		return nil, err
 	}

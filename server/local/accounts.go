@@ -39,10 +39,7 @@ type accounts struct {
 func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
 	defer noCache(ctx)
 
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "users")
-	}
+	usersStore := store.UsersFromContext(ctx)
 
 	var write, admin bool
 	// If this is the first user, set them as admin.
@@ -102,10 +99,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 }
 
 func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.UserSpec, error) {
-	accountsStore := store.AccountsFromContextOrNil(ctx)
-	if accountsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "user accounts")
-	}
+	accountsStore := store.AccountsFromContext(ctx)
 
 	if !isValidLogin(newAcct.Login) {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
@@ -115,10 +109,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty password")
 	}
 
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "users")
-	}
+	usersStore := store.UsersFromContext(ctx)
 
 	_, err := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: newAcct.Email})
 	if err == nil {
@@ -150,12 +141,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		}
 	}
 
-	passwordStore := store.PasswordFromContextOrNil(ctx)
-	if passwordStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "user passwords")
-	}
-
-	if err := passwordStore.SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
+	if err := store.PasswordFromContext(ctx).SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
 		return nil, err
 	}
 
@@ -164,12 +150,8 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
 	defer noCache(ctx)
-	accountsStore := store.AccountsFromContextOrNil(ctx)
-	if accountsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "user accounts")
-	}
 
-	if err := accountsStore.Update(ctx, in); err != nil {
+	if err := store.AccountsFromContext(ctx).Update(ctx, in); err != nil {
 		return nil, err
 	}
 
@@ -188,20 +170,14 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		}
 	}
 
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "users")
-	}
+	usersStore := store.UsersFromContext(ctx)
 
 	user, _ := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: invite.Email})
 	if user != nil {
 		return nil, grpc.Errorf(codes.FailedPrecondition, "a user already exists with this email")
 	}
 
-	invitesStore := store.InvitesFromContextOrNil(ctx)
-	if invitesStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "invites")
-	}
+	invitesStore := store.InvitesFromContext(ctx)
 
 	token, err := invitesStore.CreateOrUpdate(elevatedActor(ctx), invite)
 	if err != nil {
@@ -249,10 +225,7 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	invitesStore := store.InvitesFromContextOrNil(ctx)
-	if invitesStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "invites")
-	}
+	invitesStore := store.InvitesFromContext(ctx)
 
 	invite, err := invitesStore.Retrieve(ctx, acceptedInvite.Token)
 	if err != nil {
@@ -294,12 +267,7 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
 	defer noCache(ctx)
 
-	invitesStore := store.InvitesFromContextOrNil(ctx)
-	if invitesStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "invites")
-	}
-
-	invites, err := invitesStore.List(ctx)
+	invites, err := store.InvitesFromContext(ctx).List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -310,12 +278,7 @@ func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegra
 func (s *accounts) DeleteInvite(ctx context.Context, inviteSpec *sourcegraph.InviteSpec) (*pbtypes.Void, error) {
 	defer noCache(ctx)
 
-	invitesStore := store.InvitesFromContextOrNil(ctx)
-	if invitesStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "invites")
-	}
-
-	if err := invitesStore.DeleteByEmail(ctx, inviteSpec.Email); err != nil {
+	if err := store.InvitesFromContext(ctx).DeleteByEmail(ctx, inviteSpec.Email); err != nil {
 		return nil, err
 	}
 
@@ -343,15 +306,9 @@ var verifyAdminUser = accesscontrol.VerifyUserHasAdminAccess
 func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
 	defer noCache(ctx)
 
-	accountsStore := store.AccountsFromContextOrNil(ctx)
-	if accountsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "user accounts")
-	}
+	accountsStore := store.AccountsFromContext(ctx)
 
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "users")
-	}
+	usersStore := store.UsersFromContext(ctx)
 	var user *sourcegraph.User
 	var err error
 	if person.Email != "" {
@@ -420,10 +377,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) (*pbtypes.Void, error) {
 	defer noCache(ctx)
 
-	accountsStore := store.AccountsFromContextOrNil(ctx)
-	if accountsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "user password reset")
-	}
+	accountsStore := store.AccountsFromContext(ctx)
 	err := accountsStore.ResetPassword(ctx, newPass)
 	if err != nil {
 		return nil, err
@@ -434,15 +388,8 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
 	defer noCache(ctx)
 
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "users")
-	}
-
-	accountsStore := store.AccountsFromContextOrNil(ctx)
-	if accountsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "accounts")
-	}
+	usersStore := store.UsersFromContext(ctx)
+	accountsStore := store.AccountsFromContext(ctx)
 
 	var uid int32
 	if person.UID != 0 {

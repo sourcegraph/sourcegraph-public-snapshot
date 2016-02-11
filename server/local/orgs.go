@@ -15,18 +15,18 @@ type orgs struct{}
 var _ sourcegraph.OrgsServer = (*orgs)(nil)
 
 func (s *orgs) Get(ctx context.Context, org *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
-	orgsStore := store.OrgsFromContextOrNil(ctx)
-	if orgsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Orgs")
-	}
+	// TODO: remove when Orgs is implemented
+	return nil, grpc.Errorf(codes.Unimplemented, "Orgs is not implemented")
+
+	orgsStore := store.OrgsFromContext(ctx)
 	return orgsStore.Get(ctx, *org)
 }
 
 func (s *orgs) List(ctx context.Context, op *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
-	orgsStore := store.OrgsFromContextOrNil(ctx)
-	if orgsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Orgs")
-	}
+	// TODO: remove when Orgs is implemented
+	return nil, grpc.Errorf(codes.Unimplemented, "Orgs is not implemented")
+
+	orgsStore := store.OrgsFromContext(ctx)
 
 	orgs, err := orgsStore.List(ctx, op.Member, &op.ListOptions)
 	if err != nil {
@@ -36,10 +36,10 @@ func (s *orgs) List(ctx context.Context, op *sourcegraph.OrgsListOp) (*sourcegra
 }
 
 func (s *orgs) ListMembers(ctx context.Context, op *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error) {
-	orgsStore := store.OrgsFromContextOrNil(ctx)
-	if orgsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Orgs")
-	}
+	// TODO: remove when Orgs is implemented
+	return nil, grpc.Errorf(codes.Unimplemented, "Orgs is not implemented")
+
+	orgsStore := store.OrgsFromContext(ctx)
 
 	members, err := orgsStore.ListMembers(ctx, op.Org, op.Opt)
 	if err != nil {

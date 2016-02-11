@@ -201,13 +201,6 @@ func writeStores(ifaces []*ast.TypeSpec, outPkgName string) ([]byte, error) {
 		fmt.Fprintln(&w, "\t}")
 		fmt.Fprintln(&w, "\treturn s")
 		fmt.Fprintln(&w, "}")
-		fmt.Fprintln(&w)
-		fmt.Fprintf(&w, "// %sFromContextOrNil returns the context's %s store if present, or else nil.\n", name(iface), name(iface))
-		fmt.Fprintf(&w, "func %sFromContextOrNil(ctx context.Context) %s {\n", name(iface), typeName(iface))
-		fmt.Fprintf(&w, "\ts, ok := ctx.Value(%s).(%s)\n", contextKey(iface), typeName(iface))
-		fmt.Fprintln(&w, "\tif ok { return s }")
-		fmt.Fprintln(&w, "\treturn nil")
-		fmt.Fprintln(&w, "}")
 	}
 
 	return format.Source(w.Bytes())

@@ -55,7 +55,7 @@ func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericE
 
 func (s *notify) getPeople(ctx context.Context, users ...*sourcegraph.UserSpec) []*sourcegraph.Person {
 	people := make([]*sourcegraph.Person, len(users))
-	store := store.UsersFromContextOrNil(ctx)
+	store := store.UsersFromContext(ctx)
 	for i, u := range users {
 		people[i] = notif.Person(ctx, u)
 		if people[i] == nil {

@@ -28,14 +28,8 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		return nil, err
 	}
 
-	extTokenStore := store.ExternalAuthTokensFromContextOrNil(ctx)
-	if extTokenStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "ext auth tokens store not implemented")
-	}
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "users store not implemented")
-	}
+	extTokenStore := store.ExternalAuthTokensFromContext(ctx)
+	usersStore := store.UsersFromContext(ctx)
 
 	client := githubutil.Default.AuthedClient(extToken.Token)
 	githubCtx := github.NewContextWithClient(ctx, client)

@@ -148,16 +148,13 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		CreatedAt:    &ts,
 	}
 
-	if err := store.ReposFromContextOrNil(ctx).Create(ctx, repo); err != nil {
+	if err := store.ReposFromContext(ctx).Create(ctx, repo); err != nil {
 		return nil, err
 	}
 
 	if authutil.ActiveFlags.PrivateMirrors && op.Mirror && op.Private {
 		// Allow this user to access this repo.
-		repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
-		if repoPermsStore == nil {
-			return nil, grpc.Errorf(codes.Unimplemented, "repo perms store not available")
-		}
+		repoPermsStore := store.RepoPermsFromContext(ctx)
 		uid := int32(authpkg.ActorFromContext(ctx).UID)
 		if err := repoPermsStore.Add(ctx, uid, op.URI); err != nil && err != store.ErrRepoPermissionExists {
 			log15.Warn("Failed to set repo permissions for user", "repo", op.URI, "uid", uid, "error", err)
@@ -188,7 +185,7 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	if err := store.ReposFromContextOrNil(ctx).Delete(ctx, repo.URI); err != nil {
+	if err := store.ReposFromContext(ctx).Delete(ctx, repo.URI); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
@@ -305,10 +302,7 @@ func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
-	repoConfigsStore := store.RepoConfigsFromContextOrNil(ctx)
-	if repoConfigsStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoConfigs is not implemented")
-	}
+	repoConfigsStore := store.RepoConfigsFromContext(ctx)
 
 	conf, err := repoConfigsStore.Get(ctx, repo.URI)
 	if err != nil {
@@ -323,10 +317,7 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
 	defer noCache(ctx)
 
-	store := store.RepoConfigsFromContextOrNil(ctx)
-	if store == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoConfigs is not implemented")
-	}
+	store := store.RepoConfigsFromContext(ctx)
 
 	if op.Enable {
 		// Check that app ID is a valid app. Allow disabling invalid

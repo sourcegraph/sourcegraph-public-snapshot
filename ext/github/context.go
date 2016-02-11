@@ -48,15 +48,13 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 	var c *github.Client
 
 	if a.IsAuthenticated() {
-		if s := store.ExternalAuthTokensFromContextOrNil(ctx); s != nil {
-			host := strings.TrimPrefix(githubutil.Default.BaseURL.Host, "api.") // api.github.com -> github.com
-			tok, err := s.GetUserToken(ctx, a.UID, host, githubutil.Default.OAuth.ClientID)
-			if err == nil {
-				c = githubutil.Default.AuthedClient(tok.Token)
-			}
-			if err != nil && err != auth.ErrNoExternalAuthToken && err != auth.ErrExternalAuthTokenDisabled {
-				return nil, err
-			}
+		host := strings.TrimPrefix(githubutil.Default.BaseURL.Host, "api.") // api.github.com -> github.com
+		tok, err := store.ExternalAuthTokensFromContext(ctx).GetUserToken(ctx, a.UID, host, githubutil.Default.OAuth.ClientID)
+		if err == nil {
+			c = githubutil.Default.AuthedClient(tok.Token)
+		}
+		if err != nil && err != auth.ErrNoExternalAuthToken && err != auth.ErrExternalAuthTokenDisabled {
+			return nil, err
 		}
 	}
 	if c == nil {

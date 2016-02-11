@@ -29,10 +29,7 @@ func (s *people) Get(ctx context.Context, personSpec *sourcegraph.PersonSpec) (*
 
 	// If only email is set, look up in directory service.
 	if personSpec.UID == 0 && personSpec.Login == "" && personSpec.Email != "" {
-		var err error
-		if dirStore := store.DirectoryFromContextOrNil(ctx); dirStore != nil {
-			userSpec, err = dirStore.GetUserByEmail(ctx, personSpec.Email)
-		}
+		userSpec, err := store.DirectoryFromContext(ctx).GetUserByEmail(ctx, personSpec.Email)
 		_, isNotExist := err.(*store.UserNotFoundError)
 		if userSpec == nil || isNotExist {
 			p = newTransientPerson(personSpec.Email)

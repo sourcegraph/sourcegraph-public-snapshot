@@ -43,10 +43,7 @@ type auth struct{}
 var _ sourcegraph.AuthServer = (*auth)(nil)
 
 func (s *auth) GetAuthorizationCode(ctx context.Context, op *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
-	authStore := store.AuthorizationsFromContextOrNil(ctx)
-	if authStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Authorizations")
-	}
+	authStore := store.AuthorizationsFromContext(ctx)
 
 	if op.ResponseType != "code" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid response_type")
@@ -86,15 +83,9 @@ func (s *auth) GetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRe
 }
 
 func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph.AuthorizationCode) (*sourcegraph.AccessTokenResponse, error) {
-	authStore := store.AuthorizationsFromContextOrNil(ctx)
-	if authStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Authorizations")
-	}
+	authStore := store.AuthorizationsFromContext(ctx)
 
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Users")
-	}
+	usersStore := store.UsersFromContext(ctx)
 
 	clientID := authpkg.ActorFromContext(ctx).ClientID
 	client, err := (&registeredClients{}).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: clientID})
@@ -134,10 +125,7 @@ func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph
 }
 
 func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCredentials) (*sourcegraph.AccessTokenResponse, error) {
-	usersStore := store.UsersFromContextOrNil(ctx)
-	if usersStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no Users")
-	}
+	usersStore := store.UsersFromContext(ctx)
 
 	user, err := usersStore.Get(elevatedActor(ctx), sourcegraph.UserSpec{Login: cred.Login})
 	if err != nil {
@@ -159,10 +147,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 			}
 		}
 	} else {
-		passwordStore := store.PasswordFromContextOrNil(ctx)
-		if passwordStore == nil {
-			return nil, grpc.Errorf(codes.Unimplemented, "no Passwords")
-		}
+		passwordStore := store.PasswordFromContext(ctx)
 
 		if passwordStore.CheckUIDPassword(elevatedActor(ctx), user.UID, cred.Password) != nil {
 			return nil, grpc.Errorf(codes.PermissionDenied, "bad password for user %q", cred.Login)
@@ -293,10 +278,7 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 	if request == nil {
 		request = &sourcegraph.ExternalTokenRequest{}
 	}
-	extTokensStore := store.ExternalAuthTokensFromContextOrNil(ctx)
-	if extTokensStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
-	}
+	extTokensStore := store.ExternalAuthTokensFromContext(ctx)
 
 	if request.ClientID == "" {
 		request.ClientID = githubClientID
@@ -334,10 +316,7 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 	if extToken == nil {
 		extToken = &sourcegraph.ExternalToken{}
 	}
-	extTokensStore := store.ExternalAuthTokensFromContextOrNil(ctx)
-	if extTokensStore == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
-	}
+	extTokensStore := store.ExternalAuthTokensFromContext(ctx)
 
 	if extToken.ClientID == "" {
 		extToken.ClientID = githubClientID

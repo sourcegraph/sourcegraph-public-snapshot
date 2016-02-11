@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
@@ -70,10 +68,6 @@ func (s *repoBadges) ListCounters(ctx context.Context, repo *sourcegraph.RepoSpe
 		return nil, err
 	}
 
-	if store.RepoCountersFromContextOrNil(ctx) == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")
-	}
-
 	var counters []*sourcegraph.Counter
 	for _, c := range allRepositoryCounters {
 		imageURL, err := approuter.Rel.URLToOrError(
@@ -95,19 +89,13 @@ func (s *repoBadges) ListCounters(ctx context.Context, repo *sourcegraph.RepoSpe
 }
 
 func (s *repoBadges) RecordHit(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	store := store.RepoCountersFromContextOrNil(ctx)
-	if store == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")
-	}
+	store := store.RepoCountersFromContext(ctx)
 
 	return &pbtypes.Void{}, store.RecordHit(ctx, repo.URI)
 }
 
 func (s *repoBadges) CountHits(ctx context.Context, op *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
-	store := store.RepoCountersFromContextOrNil(ctx)
-	if store == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoCounters")
-	}
+	store := store.RepoCountersFromContext(ctx)
 
 	var since time.Time
 	if op.Since != nil {

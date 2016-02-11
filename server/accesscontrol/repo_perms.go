@@ -25,13 +25,7 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 	}
 
 	if authutil.ActiveFlags.MirrorsWaitlist != "none" {
-		waitlistStore := store.WaitlistFromContextOrNil(ctx)
-		if waitlistStore == nil {
-			log15.Debug("Waitlist store unavailable")
-			return
-		}
-
-		waitlistedUser, err := waitlistStore.GetUser(elevatedActor(ctx), int32(actor.UID))
+		waitlistedUser, err := store.WaitlistFromContext(ctx).GetUser(elevatedActor(ctx), int32(actor.UID))
 		if err != nil {
 			if _, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
 				log15.Debug("Error fetching waitlisted user", "uid", actor.UID, "error", err)
@@ -50,13 +44,7 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 
 	// User has access to private mirrors. Save the visible repos
 	// in the context actor.
-	repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
-	if repoPermsStore == nil {
-		log15.Debug("Repo perms store unavailable")
-		return
-	}
-
-	userRepos, err := repoPermsStore.ListUserRepos(elevatedActor(ctx), int32(actor.UID))
+	userRepos, err := store.RepoPermsFromContext(ctx).ListUserRepos(elevatedActor(ctx), int32(actor.UID))
 	if err != nil {
 		log15.Debug("Error listing visible repos for user", "uid", actor.UID, "error", err)
 		return
@@ -78,11 +66,7 @@ func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI stri
 	}
 
 	// Confirm that the repo is private.
-	repoStore := store.ReposFromContextOrNil(ctx)
-	if repoStore == nil {
-		return grpc.Errorf(codes.Unimplemented, "no repo store in context", method)
-	}
-	if r, err := repoStore.Get(elevatedActor(ctx), repoURI); err != nil {
+	if r, err := store.ReposFromContext(ctx).Get(elevatedActor(ctx), repoURI); err != nil {
 		return err
 	} else if !r.Private {
 		return nil

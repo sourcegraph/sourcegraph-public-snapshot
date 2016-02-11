@@ -78,10 +78,7 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty argument")
 	}
 
-	changesetsStore := store.ChangesetsFromContextOrNil(ctx)
-	if changesetsStore == nil {
-		return nil, grpc.Errorf(codes.Internal, "no changesets store in context")
-	}
+	changesetsStore := store.ChangesetsFromContext(ctx)
 
 	// Get ChangesetUpdateOps for the affected changesets.
 	updates, err := s.getAffected(ctx, op)
@@ -109,10 +106,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 		return nil, grpc.Errorf(codes.Internal, "cannot open repo vcs %v: %v", op.Repo.URI, err)
 	}
 
-	changesetsStore := store.ChangesetsFromContextOrNil(ctx)
-	if changesetsStore == nil {
-		return nil, grpc.Errorf(codes.Internal, "no changesets store in context")
-	}
+	changesetsStore := store.ChangesetsFromContext(ctx)
 
 	// Find open changesets that have the pushed branch as HEAD:
 	havingHead, err := changesetsStore.List(ctx, &sourcegraph.ChangesetListOp{
