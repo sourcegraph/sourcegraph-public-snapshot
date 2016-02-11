@@ -3,10 +3,8 @@ package server
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/auth"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
@@ -22,17 +20,12 @@ func NewServer(svcs svc.Services, opts ...grpc.ServerOption) *grpc.Server {
 }
 
 func Config(ctxFunc func(context.Context) context.Context) svc.Services {
-	authConfig := &auth.Config{
-		AllowAnonymousReaders: authutil.ActiveFlags.AllowAnonymousReaders,
-		DebugLog:              false, /* TODO(sqs:cleanup) globalOpt.Verbose*/
-	}
-
 	// Construct the inner services. The inner services are the
 	// services as they appear in the context of service method
-	// implementations. Below we wrap them with authentication,
+	// implementations. Below we wrap them with federation,
 	// metadata, config, etc., handlers that only need to be run
 	// once per external request.
-	services := inner.Services(authConfig)
+	services := inner.Services()
 
 	// Wrap in middleware for context initialization. This is the
 	// outermost wrapper because it performs the most

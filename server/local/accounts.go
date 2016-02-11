@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"regexp"
 	"sync"
 	"time"
@@ -26,7 +25,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
@@ -48,7 +46,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 
 	var write, admin bool
 	// If this is the first user, set them as admin.
-	numUsers, err := usersStore.Count(ctx)
+	numUsers, err := usersStore.Count(elevatedActor(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -166,30 +164,9 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
 	defer noCache(ctx)
-
-	a := authpkg.ActorFromContext(ctx)
-
-	// A user can only update their own record, but an admin can
-	// update all records.
-	if !a.HasAdminAccess() && a.UID != int(in.UID) {
-		return nil, os.ErrPermission
-	}
-
-	user, err := svc.Users(ctx).Get(ctx, &sourcegraph.UserSpec{UID: in.UID})
-	if err != nil {
-		return nil, err
-	}
-
 	accountsStore := store.AccountsFromContextOrNil(ctx)
 	if accountsStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "user accounts")
-	}
-
-	if (user.Admin != in.Admin) || (user.Write != in.Write) {
-		// Only admin users can modify access levels of a user.
-		if !a.HasAdminAccess() {
-			return nil, grpc.Errorf(codes.PermissionDenied, "XXX need admin privileges to modify user permissions")
-		}
 	}
 
 	if err := accountsStore.Update(ctx, in); err != nil {
@@ -216,7 +193,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		return nil, grpc.Errorf(codes.Unimplemented, "users")
 	}
 
-	user, _ := usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: invite.Email})
+	user, _ := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: invite.Email})
 	if user != nil {
 		return nil, grpc.Errorf(codes.FailedPrecondition, "a user already exists with this email")
 	}
@@ -226,7 +203,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		return nil, grpc.Errorf(codes.Unimplemented, "invites")
 	}
 
-	token, err := invitesStore.CreateOrUpdate(ctx, invite)
+	token, err := invitesStore.CreateOrUpdate(elevatedActor(ctx), invite)
 	if err != nil {
 		return nil, err
 	}

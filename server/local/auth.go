@@ -21,10 +21,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
@@ -57,17 +55,6 @@ func (s *auth) GetAuthorizationCode(ctx context.Context, op *sourcegraph.Authori
 	client, err := (&registeredClients{}).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: op.ClientID})
 	if err != nil {
 		return nil, err
-	}
-
-	if uid := authpkg.ActorFromContext(ctx).UID; uid == 0 || uid != int(op.UID) {
-		return nil, grpc.Errorf(codes.PermissionDenied, "user %d attempted to create auth code for user %d", uid, op.UID)
-	}
-
-	ctx2 := authpkg.WithActor(ctx, authpkg.Actor{UID: int(op.UID), ClientID: op.ClientID})
-	if userPerms, err := s.GetPermissions(ctx2, &pbtypes.Void{}); err != nil {
-		return nil, err
-	} else if !(userPerms.Read || userPerms.Write || userPerms.Admin) {
-		return nil, grpc.Errorf(codes.PermissionDenied, "user %d is not allowed to log into this server", op.UID)
 	}
 
 	// RedirectURI is OPTIONAL
@@ -308,21 +295,11 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
 	}
 
-	reqUID := int(request.UID)
-	a := authpkg.ActorFromContext(ctx)
-	if reqUID == 0 {
-		reqUID = a.UID
-	}
-	// Check if actor is authenticated as the requested user, or if the actor has special scope with admin access.
-	if (a.UID == 0 || a.UID != reqUID) && !accesscontrol.VerifyScopeHasAccess(ctx, a.Scope, "Auth.GetExternalToken") {
-		return nil, grpc.Errorf(codes.PermissionDenied, "user not authenticated to complete this operation")
-	}
-
 	if request.ClientID == "" {
 		request.ClientID = githubClientID
 	}
 
-	dbToken, err := extTokensStore.GetUserToken(ctx, reqUID, request.Host, request.ClientID)
+	dbToken, err := extTokensStore.GetUserToken(ctx, int(request.UID), request.Host, request.ClientID)
 	if err == authpkg.ErrNoExternalAuthToken {
 		return nil, grpc.Errorf(codes.NotFound, "no external auth token found")
 	} else if err != nil {
@@ -347,21 +324,12 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
 	}
 
-	reqUID := int(extToken.UID)
-	a := authpkg.ActorFromContext(ctx)
-	if reqUID == 0 {
-		reqUID = a.UID
-	}
-	if a.UID == 0 || a.UID != reqUID {
-		return nil, grpc.Errorf(codes.PermissionDenied, "user not authenticated to complete this operation")
-	}
-
 	if extToken.ClientID == "" {
 		extToken.ClientID = githubClientID
 	}
 
 	dbToken := &authpkg.ExternalAuthToken{
-		User:     reqUID,
+		User:     int(extToken.UID),
 		Host:     extToken.Host,
 		Token:    extToken.Token,
 		Scope:    extToken.Scope,
@@ -371,69 +339,6 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 
 	err := extTokensStore.SetUserToken(ctx, dbToken)
 	return &pbtypes.Void{}, err
-}
-
-func (s *auth) GetPermissions(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserPermissions, error) {
-	a := authpkg.ActorFromContext(ctx)
-	if !a.IsAuthenticated() || a.ClientID == "" {
-		return nil, grpc.Errorf(codes.Unauthenticated, "no authenticated actor or client in context")
-	}
-
-	userPerms := &sourcegraph.UserPermissions{UID: int32(a.UID), ClientID: a.ClientID}
-
-	// A user has a set of permissions within the scope of a particular server.
-	// These permissions may be different from the permissions the same user may
-	// have on another server.
-	//
-	// On instances with local auth, a user's permissions for the local server are
-	// obtained directly from the Users store.
-	if a.ClientID == idkey.FromContext(ctx).ID && (authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP()) {
-		userPerms.Read = a.IsAuthenticated()
-		userPerms.Write = a.HasWriteAccess()
-		userPerms.Admin = a.HasAdminAccess()
-		return userPerms, nil
-	}
-
-	// check user's access permissions for the client.
-	userPermsOpt := &sourcegraph.UserPermissionsOptions{
-		UID:        int32(a.UID),
-		ClientSpec: &sourcegraph.RegisteredClientSpec{ID: a.ClientID},
-	}
-
-	var err error
-	userPerms, err = svc.RegisteredClients(ctx).GetUserPermissions(ctx, userPermsOpt)
-	if err != nil {
-		// ignore Unimplemented as the UserPermissionsStore is not implemented
-		if errcode.GRPC(err) != codes.Unimplemented {
-			return nil, err
-		}
-	}
-
-	if !(userPerms.Read || userPerms.Write || userPerms.Admin) {
-		// check if the client allows all logins.
-		client, err := svc.RegisteredClients(ctx).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: a.ClientID})
-		if err != nil {
-			return nil, err
-		}
-		if client.Meta != nil && client.Meta["allow-logins"] == "all" {
-			// activate this user on the client.
-			userPerms.Read = true
-			if client.Meta["default-access"] == "write" {
-				userPerms.Write = true
-			}
-			// WARN(security): using the non-strict setPermissionsForUser method which doesn't
-			// enforce perms checks on the user setting the permissions since the current user
-			// is not an admin on the client. Be careful about modifying this code as it can
-			// lead to security vulnerabilities.
-			if _, err := setPermissionsForUser(ctx, userPerms); err != nil {
-				// ignore Unimplemented as the UserPermissionsStore is not implemented
-				if errcode.GRPC(err) != codes.Unimplemented {
-					return nil, err
-				}
-			}
-		}
-	}
-	return userPerms, nil
 }
 
 // linkLDAPUserAccount links the LDAP account with an account in the local users store.

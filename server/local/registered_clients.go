@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -13,12 +12,10 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
-	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
@@ -125,25 +122,6 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 		return nil, err
 	}
 
-	// if a UID is specified, set that user as an admin on the client
-	actorUID := authpkg.ActorFromContext(ctx).UID
-	if actorUID != 0 {
-		adminOpt := &sourcegraph.UserPermissions{
-			UID:      int32(actorUID),
-			ClientID: client.ID,
-			Read:     true,
-			Write:    true,
-			Admin:    true,
-		}
-
-		if _, err := setPermissionsForUser(ctx, adminOpt); err != nil {
-			// ignore Unimplemented as the UserPermissionsStore is not implemented
-			if errcode.GRPC(err) != codes.Unimplemented {
-				return nil, err
-			}
-		}
-	}
-
 	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
 		Type:     "notif",
 		ClientID: client.ID,
@@ -162,10 +140,6 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 }
 
 func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
-	if authpkg.ActorFromContext(ctx).ClientID != client.ID {
-		return nil, grpc.Errorf(codes.PermissionDenied, "RegisteredClients.Update: need to be authenticated as the client to complete this operation")
-	}
-
 	store, err := registeredClientsOrError(ctx)
 	if err != nil {
 		return nil, err
@@ -202,12 +176,6 @@ func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.Regi
 }
 
 func (s *registeredClients) Delete(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error) {
-	if isAdmin, err := s.checkCtxUserIsAdmin(ctx, client.ID); err != nil {
-		return nil, err
-	} else if !isAdmin {
-		return nil, grpc.Errorf(codes.PermissionDenied, "RegisteredClients.Delete: need admin access on client to complete this operation")
-	}
-
 	store, err := registeredClientsOrError(ctx)
 	if err != nil {
 		return nil, err
@@ -220,155 +188,12 @@ func (s *registeredClients) Delete(ctx context.Context, client *sourcegraph.Regi
 }
 
 func (s *registeredClients) List(ctx context.Context, opt *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.List"); err != nil {
-		return nil, err
-	}
-
 	store, err := registeredClientsOrError(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return store.List(ctx, *opt)
-}
-
-func (s *registeredClients) GetUserPermissions(ctx context.Context, opt *sourcegraph.UserPermissionsOptions) (*sourcegraph.UserPermissions, error) {
-	mediumCache(ctx)
-
-	if opt.ClientSpec.ID == "" || opt.UID == 0 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "RegisteredClients.GetUserPermissions: caller must specify valid clientID and UID")
-	}
-
-	userPermsStore, err := userPermissionsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if authpkg.ActorFromContext(ctx).ClientID != opt.ClientSpec.ID {
-		// check if ctx user is admin on client.
-		if isAdmin, err := s.checkCtxUserIsAdmin(ctx, opt.ClientSpec.ID); err != nil {
-			return nil, err
-		} else if !isAdmin {
-			// check if ctx user is admin on fed root server.
-			if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.GetUserPermissions"); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	userPerms, err := userPermsStore.Get(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-	return userPerms, nil
-}
-
-func (s *registeredClients) SetUserPermissions(ctx context.Context, userPerms *sourcegraph.UserPermissions) (*pbtypes.Void, error) {
-	if userPerms.ClientID == "" || userPerms.UID == 0 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "RegisteredClients.SetUserPermissions: caller must specify valid clientID and UID")
-	}
-
-	if isAdmin, err := s.checkCtxUserIsAdmin(ctx, userPerms.ClientID); err != nil {
-		return nil, err
-	} else if !isAdmin {
-		// check if user is admin on fed root server.
-		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.SetUserPermissions"); err != nil {
-			return nil, err
-		}
-	}
-
-	return setPermissionsForUser(ctx, userPerms)
-}
-
-func (s *registeredClients) ListUserPermissions(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*sourcegraph.UserPermissionsList, error) {
-	mediumCache(ctx)
-
-	if client.ID == "" {
-		return &sourcegraph.UserPermissionsList{}, nil
-	}
-
-	userPermsStore, err := userPermissionsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if isAdmin, err := s.checkCtxUserIsAdmin(ctx, client.ID); err != nil {
-		return nil, err
-	} else if !isAdmin {
-		// check if user is admin on fed root server.
-		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.ListUserPermissions"); err != nil {
-			return nil, err
-		}
-	}
-
-	userPermsList, err := userPermsStore.List(ctx, client)
-	if err != nil {
-		return nil, err
-	}
-	return userPermsList, nil
-}
-
-func (s *registeredClients) checkCtxUserIsAdmin(ctx context.Context, clientID string) (bool, error) {
-	actor := authpkg.ActorFromContext(ctx)
-	if !actor.IsAuthenticated() {
-		// If ctx is not authenticated with a user, check if actor has a special scope
-		// that grants admin access on that client.
-		if actor.ClientID == clientID {
-			for scope := range actor.Scope {
-				// internal server commands have default admin access.
-				if strings.HasPrefix(scope, "internal:") {
-					return true, nil
-				}
-			}
-		}
-		return false, grpc.Errorf(codes.Unauthenticated, "RegisteredClients.UserPermissions: no authenticated user in context")
-	}
-	userPermsStore, err := userPermissionsOrError(ctx)
-	if err != nil {
-		return false, err
-	}
-	return userPermsStore.Verify(ctx, &sourcegraph.UserPermissions{
-		UID:      int32(actor.UID),
-		ClientID: clientID,
-		Admin:    true,
-	})
-}
-
-// NOTE(security): This function allows the caller to set a user as an admin on a client's
-// whitelist without enforcing that the caller itself be authorized by an admin user.
-// The only instance where this should be called from is RegisteredClients.Create, to add
-// the user registering the client as an admin on the client, since that will be the first admin
-// user on that client. After that, only an existing admin should be able to create new admins,
-// via the gRPC endpoint RegisteredClients.SetUserPermissions
-func setPermissionsForUser(ctx context.Context, userPerms *sourcegraph.UserPermissions) (*pbtypes.Void, error) {
-	userPermsStore, err := userPermissionsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := userPermsStore.Set(ctx, userPerms); err != nil {
-		return nil, err
-	}
-
-	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
-		Type:     "notif",
-		UID:      userPerms.UID,
-		ClientID: userPerms.ClientID,
-		Service:  "RegisteredClients",
-		Method:   "SetPermissionsForUser",
-		Result:   "success",
-	})
-
-	user := authpkg.UserSpecFromContext(ctx)
-	if user.UID != userPerms.UID {
-		events.Publish(events.ClientGrantAccessEvent, events.ClientPayload{
-			Actor:    user,
-			ClientID: userPerms.ClientID,
-			Grantee:  sourcegraph.UserSpec{UID: userPerms.UID},
-			Perms:    userPerms,
-		})
-	}
-
-	return &pbtypes.Void{}, nil
 }
 
 func registeredClientsOrError(ctx context.Context) (store.RegisteredClients, error) {
@@ -378,14 +203,6 @@ func registeredClientsOrError(ctx context.Context) (store.RegisteredClients, err
 	}
 	if !fed.Config.AllowsClientRegistration() {
 		return nil, grpc.Errorf(codes.Unimplemented, "server is not a federation root and therefore does not allow client registration")
-	}
-	return s, nil
-}
-
-func userPermissionsOrError(ctx context.Context) (store.UserPermissions, error) {
-	s := store.UserPermissionsFromContextOrNil(ctx)
-	if s == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "UserPermissions")
 	}
 	return s, nil
 }

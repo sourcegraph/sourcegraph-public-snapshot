@@ -458,7 +458,3 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 
 	return result, nil
 }
-
-func elevatedActor(ctx context.Context) context.Context {
-	return authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{"internal:mirror_repos": true}})
-}
