@@ -1,12 +1,3 @@
-.line.main-byte-range .line-content {
-	background-color: $active-code-bg;
-	-webkit-animation:highlight-flash 1s;
-	-moz-animation:highlight-flash 1s;
-	animation:highlight-flash 1s;
-
-	box-shadow:0px 0px 7px $active-code-bg;
-}
-
 pre.code {
 	border: 0;
 	border-radius: 0;
@@ -46,8 +37,6 @@ the middle of prose */
 pre code, .line-numbered-code td {
 	tab-size: 4;
 
-	background-color: $code-bg;
-
 	line-height: $code-line-height;
 	font-size: $code-font-size;
 	font-family: $font-family-monospace;
@@ -60,40 +49,6 @@ pre code, .line-numbered-code td {
 		text-decoration: none;
 		border-radius: 2px;
 		display: inline-block;
-
-		&.highlight, &.highlight-primary, &.highlight-mainbox-primary {
-			.x {
-				background-color: $highlight-ref-bg !important;
-			}
-			background: $highlight-ref-bg;
-			box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
-			-webkit-filter: brightness(0.9) contrast(1.55);
-		}
-		&.highlight-secondary, &.highlight-mainbox-secondary {
-			.x {
-				background-color: $highlight-ref-secondary-bg !important;
-			}
-			background: $highlight-ref-secondary-bg;
-			box-shadow: inset 0px 0px 0px 1px $highlight-ref-secondary-border;
-			-webkit-filter: brightness(1.0) contrast(1.2);
-		}
-
-		&.selected-primary {
-			.x {
-				background-color: rgba(78, 155, 212, 0.15) !important;
-			}
-			border-bottom: 1px dotted $sg-blue-color;
-			background-color: rgba(78, 155, 212, 0.15);
-			padding: 2px 2px 1px 2px;
-		}
-
-		&.selected-secondary {
-			.x {
-				background-color: rgba(78, 155, 212, 0.3) !important;
-			}
-			background-color: rgba(78, 155, 212, 0.3);
-			padding: 2px 2px 1px 2px;
-		}
 	}
 
 	span.match {
@@ -134,6 +89,8 @@ pre code, .line-numbered-code td {
 		vertical-align: top;
 		overflow: hidden;
 		overflow: visible;
+		background-color: $line-number-bg;
+		color: $line-number-text;
 		// match code
 		font-family: $font-family-monospace;
 		font-size: $code-font-size;
@@ -235,14 +192,21 @@ pre code, .line-numbered-code td {
 	}
 }
 
-$flash-color: #fc0;
-$highlight-flash-transparency: 0.65;
+.line.main-byte-range {
+ .line-content {
+		background-color: $active-code-bg;
+		-webkit-animation: highlight-flash 1s;
+		-moz-animation: highlight-flash 1s;
+		animation: highlight-flash 1s;
+	}
+}
+
 @-webkit-keyframes highlight-flash {
-	5% { background-color: transparentize($flash-color, $highlight-flash-transparency); }
+	5% { background-color: $active-code-flash-bg; }
 }
 @-moz-keyframes highlight-flash {
-	5% { background-color: transparentize($flash-color, $highlight-flash-transparency); }
+	5% { background-color: $active-code-flash-bg; }
 }
 @keyframes highlight-flash {
-	5% { background-color: transparentize($flash-color, $highlight-flash-transparency); }
+	5% { background-color: $active-code-flash-bg; }
 }

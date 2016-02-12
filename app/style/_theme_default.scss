@@ -1,31 +1,49 @@
-// white-background theme for syntax highlighting
-
 .theme-default, .rendered-markdown code {
-	color: #111;
-	.pln{color:#333}
-	@media screen{
-		.str{color:#080}
-		.kwd{color:#008}
-		.com{color:#969896}
-		.typ{color:#606}
-		.lit{color:#066}
-		.pun,.opn,.clo{color:#660}
-		.tag{color:#008}
-		.atn{color:#606}
-		.atv{color:#080}
-		.dec,.var{color:#606}
-		.fun{color:red}
+	color: $jet-black;
+	.pln {
+		color: $jet-black;
 	}
-	@media print,projection{
-		.str{color:#060}
-		.kwd{color:#006;font-weight:bold}
-		.com{color:#600;font-style:italic}
-		.typ{color:#404;font-weight:bold}
-		.lit{color:#044}
-		.pun,.opn,.clo{color:#440}
-		.tag{color:#006;font-weight:bold}
-		.atn{color:#404}
-		.atv{color:#060}
+	.str {
+		color: $turquoise;
+	}
+	.kwd {
+		color: $bright-sky-blue;
+	}
+	.com {
+		color: $slate-grey;
+	}
+	.typ {
+		color: $bright-violet;
+	}
+	.lit {
+		color: $green-apple;
+	}
+	.pun, .opn, .clo {
+		color: $shadow-blue;
+	}
+	.tag {
+		color: $brand-azure;
+	}
+	.atn {
+		color: $jet-black;
+	}
+	.atv {
+		color: $turquoise-blue;
+	}
+	.dec, .var {
+		color: $brand-violet;
+	}
+	.fun {
+		color: $dark-pink;
+	}
+
+	.highlight-primary {
+		background: $token-focus-color;
+		box-shadow: inset 0px 0px 0px 1px darken($token-focus-color, 8%);
+	}
+	.highlight-secondary{
+		background: $token-hover-color;
+		box-shadow: inset 0px 0px 0px 1px darken($token-hover-color, 5%);
 	}
 }
 

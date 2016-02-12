@@ -28,7 +28,6 @@ $highlight-ref-secondary-border: darken($highlight-ref-secondary-bg, 5%);
 $code-bg: #fff;
 $code-line-fg: rgba(0,0,0,0.3);
 $inactive-code-color: darken($gray-lightest, 2%);
-$active-code-bg: lighten(#fc0, 43%);
 
 $diff-added-color: #54a63e;
 $diff-changed-color: lighten(#c98d00, 4%);
@@ -93,6 +92,10 @@ $code-block-bg: $duck-egg-blue;
 $file-toolbar-bg: $white;
 $file-toolbar-path-color: $warm-grey;
 
+$line-number-bg: $pale-grey;
+$line-number-text: $cloudy-blue;
+$active-code-bg: transparentize($brand-azure, 0.85);
+$active-code-flash-bg: transparentize($brand-azure, 0.80);
 $token-focus-color: $lemon;
 $token-hover-color: transparentize($lemon, 0.56);
 
