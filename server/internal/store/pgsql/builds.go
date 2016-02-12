@@ -480,10 +480,11 @@ func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	}
 
 	if len(updates) != 0 {
-		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID)
+		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID) + ` AND repo=` + arg(task.Build.Repo) + ` AND build_id=` + arg(task.Build.ID)
 		log15.Debug("Update task operation BEFORE", "sql", sql, "args", args)
+		startTime := time.Now()
 		_, err := dbh(ctx).Exec(sql, args...)
-		log15.Debug("Update task operation AFTER", "sql", sql, "args", args, "err", err)
+		log15.Debug("Update task operation AFTER", "sql", sql, "args", args, "err", err, "duration", time.Now().Sub(startTime).String())
 		if err != nil {
 			return err
 		}
