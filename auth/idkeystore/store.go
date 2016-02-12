@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -24,6 +25,7 @@ import (
 func GenerateOrGetIDKey(ctx context.Context, idKeyData string, idKeyFile string) (k *idkey.IDKey, created bool, err error) {
 	stringStore := &stringStore{idKeyData}
 	fileStore := &fileStore{idKeyFile}
+	ctx = auth.WithActor(ctx, auth.Actor{Scope: map[string]bool{"internal:elevated": true}})
 	platformStore := &platformStore{ctx}
 
 	getStores := []idStoreGet{stringStore, fileStore, platformStore}
