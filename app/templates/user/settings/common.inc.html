@@ -19,7 +19,7 @@
 	<div class="panel panel-main panel-default adminable {{if .IsOrganization}}org{{else}}self{{end}}" data-name="{{.Login}}">
 		<div class="panel-heading">
 			<a href="{{urlToUserSubroute "person.settings.profile" .Login}}">
-				{{with .AvatarURLOfSize 56}}<img src="{{.}}" class="avatar img-rounded">{{end}}
+				<img src="{{.AvatarURLOfSize 56}}" class="avatar img-rounded">
 				{{.Login}}
 			</a>
 		</div>
