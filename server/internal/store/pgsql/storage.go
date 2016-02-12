@@ -187,7 +187,7 @@ func (s *storage) Exists(ctx context.Context, opt *sourcegraph.StorageKey) (*sou
 	return &sourcegraph.StorageExists{Exists: exists[0]}, nil
 }
 
-// appdata does not exist in prod but we are still trying to do (from prod pgsql logs):
+// TODO(poler) appdata does not exist in prod but we are still trying to do (from prod pgsql logs):
 // STATEMENT:  SELECT skeys(objects) FROM appdata WHERE name = $1
 
 // List implements the store.Storage interface.

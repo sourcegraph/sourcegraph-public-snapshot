@@ -5,10 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
@@ -51,7 +50,7 @@ func init() {
 
 		// Set id to 1 + the max previous task ID for the build.
 		// This looks like the where clause is on non-indexed columns. With a huge table this might mean that every insert is quite expensive.
-		// maybe worth indexing those two columns.
+		// Maybe worth indexing those two columns.
 		`CREATE OR REPLACE FUNCTION increment_build_task_id() RETURNS trigger IMMUTABLE AS $$
          BEGIN
            IF NEW.id = 0 OR NEW.id IS NULL THEN
