@@ -49,10 +49,16 @@ $cornflower: #6065f5;
 $brand-violet: #bd37f9;
 $dark-pink: #d03592;
 
+// Code
+$bright-violet: #ab19f7;
+$bright-sky-blue: #00c5f3;
+$lemon: #ffe37e;
+
 // Content
 $blue-grey: #5c768d;
 $dark-blue-grey: #344a66;
 $shadow-blue: #7794ae;
+$warm-grey: #787878;
 
 // UI
 $cloudy-blue: #bfc2d0;
@@ -83,6 +89,12 @@ $btn-default-hover-bg: $white;
 $btn-default-dark: $jet-black;
 
 $code-block-bg: $duck-egg-blue;
+
+$file-toolbar-bg: $white;
+$file-toolbar-path-color: $warm-grey;
+
+$token-focus-color: $lemon;
+$token-hover-color: transparentize($lemon, 0.56);
 
 /* Bootstrap Overrides */
 $brand-primary: $brand-azure;
@@ -143,14 +155,14 @@ $z-index:            (
 	modal:             3010,
 	tree-search-modal: 3005,
 	modal-backdrop:    3000,
-	tooltip:           2020,
+	tooltip:           2030,
+	token-details-box: 2020,
 	nav-search-input:  2010,
 	navbar:            2000,
 	alert:             1040,
 	popover:           1020,
 	dropdown:          1000,
 	token-popover:     1000,
-	token-details-box: 200,
 	context-menu:      100,
 );
 

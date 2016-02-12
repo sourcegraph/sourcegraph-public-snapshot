@@ -154,7 +154,7 @@ var RepoRevSwitcher = React.createClass({
 
 		return (
 			<div className="btn-group repo-rev-switcher">
-				<button type="button" className="button btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" onClick={this._onToggleDropdown}>
+				<button type="button" className="button btn btn-default dropdown-toggle" data-toggle="dropdown" onClick={this._onToggleDropdown}>
 					<i className="octicon octicon-git-branch"></i> {this.props.label ? <span className="label">{this.props.label}</span> : null} {abbrevRev(this.props.rev)} <span className="caret"></span>
 				</button>
 				<ul className={this.props.alignRight ? "dropdown-menu dropdown-menu-right" : "dropdown-menu"} role="menu">

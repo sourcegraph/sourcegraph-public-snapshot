@@ -22,7 +22,6 @@
 	background: $light-blue;
 	padding: 10px 13px;
 	font-size: 13px;
-	color: #444;
 
 	a.close {
 		cursor: pointer;
@@ -98,12 +97,7 @@
 }
 
 
-#CodeFileView {
-	// Undo padding.
-	margin-top: -5px;
-	margin-left: -15px;
-	margin-right: -15px;
-
+.FileView {
 	.scroll-container {
 		width: 100%;
 		position: absolute;
@@ -188,65 +182,85 @@
 			}
 		}
 	}
+}
 
-	.code-file-toolbar {
-		background-color: $off-white;
-		width: 100%;
-		border: 1px solid #ddd;
-		box-shadow: 0px 1px 2px #efefef;
-		padding: 0 6px 5px 20px;
+.code-file-toolbar {
+	@include z-index(navbar);
+	top: 0;
+	height: 56px;
+	background-color: $file-toolbar-bg;
+	width: 100%;
+	border-bottom: solid 1px $content-border-color;
+	padding: 8px 6px 8px 20px;
 
-		.file {
-			color: #444;
-			margin-top: 10px;
-			float: left;
+	.file-breadcrumb {
+		display: inline-block;
+		margin-top: 10px;
 
-			& > i {
-				margin-right: 10px;
-				font-size: 14px;
-				&.fa-spinner { font-size: 16px; }
-			}
+		& > i {
+			margin-right: 10px;
+			font-size: 14px;
+			&.fa-spinner { font-size: 16px; }
+		}
 
+		.path-component {
 			a {
-				color: #444;
-				&:hover { text-decoration: none; }
+				color: $file-toolbar-path-color;
+				margin-top: 10px;
 			}
-
-			.build-indicator {
-				margin-left: 10px;
-			}
-
-			.build-info {
-				font-size: 13px;
-				margin-left: 5px;
-				color: #888;
+			&:last-child {
 				a {
 					color: $link-color;
 				}
 			}
+		}
+
+		.build-indicator {
+			margin-left: 10px;
+		}
+
+		.build-info {
+			font-size: 13px;
+			margin-left: 5px;
+			color: #888;
+			a {
+				color: $link-color;
+			}
 
 			.icon-maxRefs {
-				color: #d50000;
 				margin: 0px 0 0 10px;
 				font-size: 15px;
 				position: relative;
 				top: 1px;
 			}
 		}
+	}
 
-		.actions {
-			float: right;
-			padding: 3px 1px 0 0;
+	.actions {
+		float: right;
+		padding: 3px 1px 0 0;
 
-			.repo-rev-switcher .caret {
-				position: relative;
-				left: 2px;
-			}
+		.repo-rev-switcher .caret {
+			position: relative;
+			left: 2px;
 		}
 	}
 }
 
 .token-details {
+	@include z-index(token-details-box);
+	@include transform(scale(1));
+	position: fixed;
+	top: 150px;
+	right: 5%;
+	display: block;
+	background: #fff;
+	border: 1px solid #bbb;
+	border-radius: 3px;
+	width: $code-popup-width;
+	overflow: hidden;
+	opacity: 1;
+
 	&.token-details-review {
 		i.file-path {
 			display: inline-block;
@@ -257,8 +271,6 @@
 			vertical-align: -4px;
 		}
 	}
-
-	overflow: hidden;
 
 	&.closed {
 		opacity: 0;
@@ -271,19 +283,6 @@
 		font-family: $font-family-monospace;
 		font-size: 11px;
 	}
-
-	opacity: 1;
-	@include transform(scale(1));
-
-	@include z-index(token-details-box);
-	position: fixed;
-	top: 150px;
-	right: 5%;
-	display: block;
-	background: #fff;
-	border: 1px solid #bbb;
-	border-radius: 3px;
-	width: $code-popup-width;
 
 	.line-numbered-code.pale {
 		opacity: 0.5;

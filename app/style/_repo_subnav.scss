@@ -13,8 +13,14 @@
 
 	margin-bottom: 0;
 
+	.navbar-brand {
+		font-size: 20px;
+		padding: 13px;
+	}
+
 	a {
 		color: $subnav-repo-link-color;
+		font-weight: 500;
 	}
 
 	.navbar-header {
@@ -44,10 +50,11 @@
 		padding: 0;
 		margin: 0 0 -1px 0;
 
-		font-size: $font-size-base*1.05;
+		font-size: $font-size-base;
 
 		> a {
 			display: block;
+			padding-top: 18px;
 			border-bottom: solid $active-indicator-width transparent;
 			&:hover {
 				background: none;

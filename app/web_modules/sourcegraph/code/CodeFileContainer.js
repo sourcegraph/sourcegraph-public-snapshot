@@ -41,6 +41,9 @@ class CodeFileContainer extends Container {
 		super.componentDidMount();
 		document.addEventListener("click", this._onClick);
 		document.addEventListener("keydown", this._onKeyDown);
+
+		// FIXME: jQuery is deprecated.
+		window.jQuery(this.refs.toolbar).fixedsticky();
 	}
 
 	componentWillUnmount() {
@@ -122,10 +125,14 @@ class CodeFileContainer extends Container {
 		let revPart = this.state.rev ? `@${this.state.rev}` : "";
 		let basePath = `/${this.state.repo}${revPart}/.tree`;
 		let repoSegs = this.state.repo.split("/");
-		let breadcrumb = [<a key="base" href={basePath}>{repoSegs[repoSegs.length-1]}</a>];
+		let breadcrumb = [
+			<span key="base" className="path-component">
+				<a className="path-component" href={basePath}>{repoSegs[repoSegs.length-1]}</a>
+			</span>,
+		];
 		this.state.tree.split("/").forEach((seg, i) => {
 			basePath += `/${seg}`;
-			breadcrumb.push(<span key={i}> / <a href={basePath}>{seg}</a></span>);
+			breadcrumb.push(<span key={i} className="path-component"> / <a href={basePath}>{seg}</a></span>);
 		});
 
 
@@ -137,13 +144,13 @@ class CodeFileContainer extends Container {
 		let selectedDefData = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
 		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
 		return (
-			<div>
-				<div className="code-file-toolbar">
-					<div className="file">
+			<div className="row">
+				<div className="code-file-toolbar" ref="toolbar">
+					<div className="file-breadcrumb">
 						<i className={this.state.file ? "fa fa-file" : "fa fa-spinner fa-spin"} />{breadcrumb}
 					</div>
 
-					<div className="actions">
+					<span className="actions">
 						<RepoBuildIndicator btnSize="btn-sm" RepoURI={this.state.repo} commitID={this.state.rev} />
 
 						<RepoRevSwitcher repoSpec={this.state.repo}
@@ -151,10 +158,11 @@ class CodeFileContainer extends Container {
 							path={this.state.tree}
 							alignRight={true} />
 
-						<a className="share top-action btn btn-default btn-xs"
+						<a className="share top-action btn btn-default"
 							href={embedLink}
-							data-tooltip={true} title="Select text to specify a line range">Embed</a>
-					</div>
+							data-tooltip={true} data-placement="bottom"
+							title="Select text to specify a line range">Embed</a>
+					</span>
 					<div className="clearfix"></div>
 				</div>
 

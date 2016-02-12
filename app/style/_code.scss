@@ -113,9 +113,17 @@ pre code, .line-numbered-code td {
 	table-layout: fixed;
 	border-collapse: separate;
 
-	.line:hover {
-		.btn-inline {
-			display: inline-block;
+	.line {
+		&:first-child {
+			> td {
+				padding-top: 10px;
+			}
+		}
+
+		&:hover {
+			.btn-inline {
+				display: inline-block;
+			}
 		}
 	}
 
