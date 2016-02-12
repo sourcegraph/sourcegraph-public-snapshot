@@ -20,6 +20,18 @@
   on the filesystem, but all other data now must be stored in
   PostgreSQL. See docs/config/storage.md for PostgreSQL configuration
   instructions.
+  
+  To migrate from FS storage to PostgreSQL, first run `src pgsql
+  create` (with the `PG*` environment variables set for connecting to
+  the desired PostgreSQL server). Then run `src internal-store-migrate
+  --sgpath $SGPATH -x` on the server, with `$SGPATH` being the
+  `$SGPATH` used by the server and with the `PG*` environment
+  variables set.
+  
+  Users (including emails and password hashes), repositories,
+  changesets, and tracker threads will be migrated. Outstanding user
+  invitations and user SSH keys will not be migrated and must be
+  manually re-added after migration.
 
 # 0.13.3
 
