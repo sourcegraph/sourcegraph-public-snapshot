@@ -371,17 +371,20 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, req *http.Requ
 		eventProperties["UserAgent"] = userAgent
 	}
 
-	var refererKey string
-	if strings.Contains(Referer, "type=token") {
-		refererKey = "token"
-	} else if strings.Contains(Referer, "type=text") {
-		refererKey = "text"
-	}
-	if eventProperties == nil && refererKey != "" {
-		eventProperties = make(map[string]string)
-		eventProperties["RefererKey"] = refererKey
-	} else if refererKey != "" {
-		eventProperties["RefererKey"] = refererKey
+	if strings.Contains(Referer, ".search") {
+		var searchClick string
+
+		if strings.Contains(Referer, "type=token") {
+			searchClick = "token"
+		} else if strings.Contains(Referer, "type=text") {
+			searchClick = "text"
+		}
+		if eventProperties == nil && searchClick != "" {
+			eventProperties = make(map[string]string)
+			eventProperties["SearchClick"] = searchClick
+		} else if refererKey != "" {
+			eventProperties["SearchClick"] = searchClick
+		}
 	}
 
 	Log(&sourcegraph.Event{
