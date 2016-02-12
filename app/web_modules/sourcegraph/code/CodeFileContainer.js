@@ -7,11 +7,10 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import CodeStore from "sourcegraph/code/CodeStore";
 import DefStore from "sourcegraph/def/DefStore";
 import CodeListing from "sourcegraph/code/CodeListing";
+import CodeFileToolbar from "sourcegraph/code/CodeFileToolbar";
 import DefPopup from "sourcegraph/def/DefPopup";
 import DefTooltip from "sourcegraph/def/DefTooltip";
 import IssueForm from "sourcegraph/issue/IssueForm";
-import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
-import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
 
@@ -121,51 +120,15 @@ class CodeFileContainer extends Container {
 			return null;
 		}
 
-		// TODO replace with proper shared component
-		let revPart = this.state.rev ? `@${this.state.rev}` : "";
-		let basePath = `/${this.state.repo}${revPart}/.tree`;
-		let repoSegs = this.state.repo.split("/");
-		let breadcrumb = [
-			<span key="base" className="path-component">
-				<a className="path-component" href={basePath}>{repoSegs[repoSegs.length-1]}</a>
-			</span>,
-		];
-		this.state.tree.split("/").forEach((seg, i) => {
-			basePath += `/${seg}`;
-			breadcrumb.push(<span key={i} className="path-component"> / <a href={basePath}>{seg}</a></span>);
-		});
-
-
-		let embedLink = `/${this.state.repo}${revPart}/.tree/${this.state.tree}/.share`;
-		if (this.state.startLine && this.state.endLine) {
-			embedLink += `?StartLine=${this.state.startLine}&EndLine=${this.state.endLine}`;
-		}
-
 		let selectedDefData = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
 		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
 		return (
 			<div className="row">
-				<div className="code-file-toolbar" ref="toolbar">
-					<div className="file-breadcrumb">
-						<i className={this.state.file ? "fa fa-file" : "fa fa-spinner fa-spin"} />{breadcrumb}
-					</div>
-
-					<span className="actions">
-						<RepoBuildIndicator btnSize="btn-sm" RepoURI={this.state.repo} commitID={this.state.rev} />
-
-						<RepoRevSwitcher repoSpec={this.state.repo}
-							rev={this.state.rev}
-							path={this.state.tree}
-							alignRight={true} />
-
-						<a className="share top-action btn btn-default"
-							href={embedLink}
-							data-tooltip={true} data-placement="bottom"
-							title="Select text to specify a line range">Embed</a>
-					</span>
-					<div className="clearfix"></div>
-				</div>
-
+				<CodeFileToolbar
+					repo={this.state.repo}
+					rev={this.state.rev}
+					tree={this.state.tree}
+					file={this.state.file} />
 				{this.state.file &&
 					<div className="code-view-react">
 						<CodeListing

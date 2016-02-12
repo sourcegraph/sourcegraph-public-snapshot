@@ -186,8 +186,8 @@
 
 .code-file-toolbar {
 	@include z-index(navbar);
-	top: 0;
-	height: 56px;
+	top: 0; // For fixed-sticky.
+	height: 50px;
 	background-color: $file-toolbar-bg;
 	width: 100%;
 	border-bottom: solid 1px $content-border-color;
@@ -195,7 +195,8 @@
 
 	.file-breadcrumb {
 		display: inline-block;
-		margin-top: 10px;
+		padding: $padding-base-vertical $padding-base-horizontal;
+		padding-left: 0;
 
 		& > i {
 			margin-right: 10px;
@@ -226,19 +227,12 @@
 			a {
 				color: $link-color;
 			}
-
-			.icon-maxRefs {
-				margin: 0px 0 0 10px;
-				font-size: 15px;
-				position: relative;
-				top: 1px;
-			}
 		}
 	}
 
 	.actions {
+		display: inline-block;
 		float: right;
-		padding: 3px 1px 0 0;
 
 		.repo-rev-switcher .caret {
 			position: relative;
