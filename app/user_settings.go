@@ -234,32 +234,6 @@ func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveUserSettingsIntegrations(w http.ResponseWriter, r *http.Request) error {
-	// apiclient := handlerutil.APIClient(r)
-	// ctx := httpctx.FromRequest(r)
-
-	_, cd, err := userSettingsCommon(w, r)
-	if err == errUserSettingsCommonWroteResponse {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	// gd, err := apiclient.Repos.GetGitHubRepos(ctx, &sourcegraph.GitHubRepoRequest{})
-	// if err != nil {
-	// 	return err
-	// }
-
-	return tmpl.Exec(r, w, "user/settings/integrations.html", http.StatusOK, nil, &struct {
-		userSettingsCommonData
-		GitHub *sourcegraph.UserMirrorData
-		tmpl.Common
-	}{
-		userSettingsCommonData: *cd,
-		GitHub:                 nil,
-	})
-}
-
 func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request) error {
 	apiclient := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)

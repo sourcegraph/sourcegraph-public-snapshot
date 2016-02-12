@@ -62,11 +62,6 @@
 					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 				</form>
 				<br>
-			{{if (and $.CurrentUser (not appconf.DisableIntegrations))}}
-				<p>
-					Or <a href="{{urlTo "person.settings.integrations" "User" $.CurrentUser.Login}}">import private repositories from GitHub</a>.
-				</p>
-			{{end}}
 			</div>
 		</div>
 		{{end}}

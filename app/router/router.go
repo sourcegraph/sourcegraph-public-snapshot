@@ -41,7 +41,6 @@ const (
 	UserSettingsEmails             = "person.settings.emails"
 	UserSettingsProfile            = "person.settings.profile"
 	UserSettingsProfileAvatar      = "person.settings.profile.avatar"
-	UserSettingsIntegrations       = "person.settings.integrations"
 	UserSettingsIntegrationsUpdate = "person.settings.integrations.update"
 	UserSettingsKeys               = "person.settings.keys"
 	UserOrgs                       = "person.orgs"
@@ -171,7 +170,6 @@ func New(base *mux.Router) *Router {
 	if !appconf.Flags.DisableIntegrations {
 		integrationsPath := "/.settings/integrations"
 		integrations := user.PathPrefix(integrationsPath).Subrouter()
-		user.Path(integrationsPath).Methods("GET").Name(UserSettingsIntegrations)
 		integrations.Path("/{Integration}").Methods("POST").Name(UserSettingsIntegrationsUpdate)
 	}
 	if !authutil.ActiveFlags.DisableUserProfiles {

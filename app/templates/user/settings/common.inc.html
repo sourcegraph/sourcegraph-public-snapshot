@@ -30,13 +30,6 @@
 					{{if .IsOrganization}}Organization profile{{else}}Profile{{end}}
 				</li>
 			</a>
-			{{if not appconf.DisableIntegrations}}
-			<a href="{{urlToUserSubroute "person.settings.integrations" .Login}}">
-				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.integrations" .Login).String)}}active{{end}}">
-					Integrations
-				</li>
-			</a>
-			{{end}}
 			{{if not .IsOrganization}}
 			<a href="{{urlToUserSubroute "person.settings.emails" .Login}}">
 				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.emails" .Login).String)}}active{{end}}">
