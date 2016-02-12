@@ -8,7 +8,6 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -46,9 +45,6 @@ func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*so
 		log.Printf("Warning: users not implemented, returning empty list")
 		return &sourcegraph.EmailAddrList{}, nil
 	}
-	if err := s.verifyCanReadEmail(ctx, *user); err != nil {
-		return nil, err
-	}
 
 	emails, err := store.ListEmails(ctx, *user)
 	if err != nil {
@@ -59,10 +55,6 @@ func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*so
 }
 
 func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List", ""); err != nil {
-		return nil, err
-	}
-
 	store := store.UsersFromContextOrNil(ctx)
 	if store == nil {
 		log.Printf("Warning: users not implemented, returning empty list")
@@ -99,25 +91,4 @@ func (s *users) Count(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCo
 		}
 	}
 	return &sourcegraph.UserCount{Count: count}, nil
-}
-
-func (s *users) verifyCanReadEmail(ctx context.Context, user sourcegraph.UserSpec) error {
-	if authpkg.UserSpecFromContext(ctx).UID == user.UID {
-		return nil
-	}
-	return grpc.Errorf(codes.PermissionDenied, "Can not view user email")
-}
-
-func (s *users) verifyCanListTeammates(ctx context.Context, user *sourcegraph.UserSpec) error {
-	if user.UID == 0 {
-		return grpc.Errorf(codes.FailedPrecondition, "no uid specified")
-	}
-
-	uid := int32(authpkg.ActorFromContext(ctx).UID)
-	if uid == user.UID {
-		return nil
-	}
-
-	// Actor not authenticated as requested user, so check if they have admin access.
-	return accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.ListTeammates")
 }

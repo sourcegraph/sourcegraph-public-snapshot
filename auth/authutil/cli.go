@@ -33,7 +33,7 @@ type Flags struct {
 
 	MirrorsNext bool `long:"auth.mirrors-next" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
 
-	MirrorsWaitlist string `long:"auth.mirrors-waitlist" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
+	MirrorsWaitlist string `long:"auth.mirrors-waitlist" description:"enable mirroring of GitHub repos via OAuth2 on this server" default:"none"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.

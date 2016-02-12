@@ -96,12 +96,20 @@ func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string
 		return "", grpc.Errorf(codes.Unavailable, "repo has no user with access")
 	}
 
-	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: users[0]})
-	if err != nil {
-		return "", err
+	var token string
+	for _, user := range users {
+		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: user})
+		if err != nil {
+			log15.Debug("No auth token found for user to fetch repo", "uid", users[0], "repo", repo, "error", err)
+			continue
+		}
+		token = extToken.Token
 	}
 
-	return extToken.Token, nil
+	if token == "" {
+		return "", grpc.Errorf(codes.Unavailable, "no auth token found for repo")
+	}
+	return token, nil
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {

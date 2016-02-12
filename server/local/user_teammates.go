@@ -16,10 +16,11 @@ import (
 )
 
 func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.Teammates, error) {
-	if err := s.verifyCanListTeammates(ctx, user); err != nil {
-		return nil, err
+	if user.UID == 0 {
+		return nil, grpc.Errorf(codes.FailedPrecondition, "no uid specified")
 	}
 
+	// This call will also confirm that the request actor has access to this user's teammate info.
 	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: user.UID})
 	if grpc.Code(err) == codes.NotFound {
 		return &sourcegraph.Teammates{}, nil

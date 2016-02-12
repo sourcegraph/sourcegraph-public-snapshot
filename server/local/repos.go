@@ -121,7 +121,7 @@ func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Re
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
-	if _, err := s.get(ctx, op.URI); err == nil {
+	if _, err := s.get(elevatedActor(ctx), op.URI); err == nil {
 		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
 	}
 
