@@ -225,7 +225,11 @@ func (c *ServeCmd) configureSSHURL(appURL *url.URL) (*url.URL, error) {
 	if c.SSHAddr != "" {
 		host, _, err := net.SplitHostPort(appURL.Host)
 		if err != nil {
-			return nil, err
+			if strings.Contains(err.Error(), "missing port in address") {
+				host = appURL.Host
+			} else {
+				return nil, err
+			}
 		}
 		sshURL := *appURL
 		sshURL.Scheme = "ssh"
