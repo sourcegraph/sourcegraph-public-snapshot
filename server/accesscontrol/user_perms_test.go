@@ -91,6 +91,24 @@ func TestVerifyAccess(t *testing.T) {
 		t.Fatalf("user %v should not have MirrorRepos.CloneRepo access; got access\n", uid)
 	}
 
+	// Test that user has read access for their own data, but not other users'
+	// data, unless the user is admin.
+	uid = 1
+	var uid2 int = 2
+	ctx = asUID(uid)
+
+	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", int32(uid)); err != nil {
+		t.Fatalf("user %v should have read access; got: %v\n", uid, err)
+	}
+	// uid = 1 is admin, so they should have access.
+	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", int32(uid2)); err != nil {
+		t.Fatalf("user %v should have read access; got: %v\n", uid, err)
+	}
+	ctx = asUID(uid2)
+	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", int32(uid)); err == nil {
+		t.Fatalf("user %v should not have read access; got access\n", uid2)
+	}
+
 	// Test that for local auth, all authenticated users have write access,
 	// but unauthenticated users don't.
 	authutil.ActiveFlags = authutil.Flags{
