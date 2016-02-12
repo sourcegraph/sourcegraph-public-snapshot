@@ -4,7 +4,7 @@
 <div class="panel panel-repo-tree">
 	<header class="rev-and-breadcrumb">
 	{{if showRepoRevSwitcher .CurrentRoute}}
-		<a class="btn btn-sgblue compare-review" data-tooltip title="Compare" href="{{urlToRepoCompare .Repo.URI .RepoRevSpec.Rev .RepoRevSpec.Rev}}">
+		<a class="btn btn-primary compare-review" data-tooltip title="Compare" href="{{urlToRepoCompare .Repo.URI .RepoRevSpec.Rev .RepoRevSpec.Rev}}">
 			<span class="octicon octicon-git-compare"></span>
 		</a>
 		<span data-react="RepoRevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="file" data-repo-spec="{{.CurrentRouteVars.Repo}}" data-path="{{.EntrySpec.Path}}"></span>

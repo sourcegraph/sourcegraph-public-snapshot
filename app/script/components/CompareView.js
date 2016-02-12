@@ -143,7 +143,7 @@ var CompareView = React.createClass({
 							btnSize="btn-xs" />
 
 						{this.state.fileDiffs.length && !this.state.proposingChange && (
-							<a href="#" className={`btn btn-sgblue pull-right${(CurrentUser !== null && CurrentUser.Write === false) ? " disabled" : ""}`} onClick={this._openProposeChangeForm}>
+							<a href="#" className={`btn btn-primary pull-right${(CurrentUser !== null && CurrentUser.Write === false) ? " disabled" : ""}`} onClick={this._openProposeChangeForm}>
 								<span>Propose this change</span>
 							</a>
 						)}

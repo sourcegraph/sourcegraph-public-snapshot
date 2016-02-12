@@ -57,7 +57,7 @@
 						<label for="repo-name-input">Create a repository:</label> <input type="text" name="repo-name" id="repo-name-input" placeholder="e.g. my-project" class="form-control">
 					</div>
 					<div class="form-group">
-						<button type="submit" class="btn btn-sgblue">Create</button>
+						<button type="submit" class="btn btn-primary">Create</button>
 					</div>
 					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 				</form>
@@ -191,7 +191,7 @@
 						<option value="write">can write</option>
 						<option value="admin">is admin</option>
 					</select>
-					<button type="submit" id="user-invite-btn" class="btn btn-md btn-sgblue" name="Invite" value="Invite" tabindex=3>Invite</button>
+					<button type="submit" id="user-invite-btn" class="btn btn-md btn-primary" name="Invite" value="Invite" tabindex=3>Invite</button>
 					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 				</form>
 				{{end}}
@@ -200,7 +200,7 @@
 		<div class="list-group">
 			{{range .Users}}
 				<li class="list-group-item">
-					<strong>{{getIdentifier .Name .Login}}</strong>{{if .Invite}}<div class="btn-xs btn-red pull-right">Pending Invite</div>{{end}}{{if .Admin}}<div class="btn-xs btn-green pull-right">Admin</div>{{else if .Write}}<div class="btn-xs btn-sgblue pull-right">Write</div>{{end}}
+					<strong>{{getIdentifier .Name .Login}}</strong>{{if .Invite}}<div class="btn-xs btn-info pull-right">Pending Invite</div>{{end}}{{if .Admin}}<div class="btn-xs btn-success pull-right">Admin</div>{{else if .Write}}<div class="btn-xs btn-primary pull-right">Write</div>{{end}}
 				</li>
 			{{end}}
 		</div>

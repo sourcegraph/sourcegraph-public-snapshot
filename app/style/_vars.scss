@@ -1,5 +1,3 @@
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/variables";
-
 // ----------------------------------------------------------------------------
 // Colors
 // ----------------------------------------------------------------------------
@@ -29,26 +27,45 @@ $highlight-ref-secondary-border: darken($highlight-ref-secondary-bg, 5%);
 
 $code-bg: #fff;
 $code-line-fg: rgba(0,0,0,0.3);
-$inactive-code-color: darken($gray-light, 2%);
+$inactive-code-color: darken($gray-lightest, 2%);
 $active-code-bg: lighten(#fc0, 43%);
 
 $diff-added-color: #54a63e;
 $diff-changed-color: lighten(#c98d00, 4%);
 $diff-deleted-color: lighten(#c71111, 3%);
 
-/* Palette */
-$brand-azure: #0fb6f2;
-$brand-orange: #f86012;
-$brand-violet: #bd37f9;
+$text-quieted: $gray-mid;
 
-$charcoal: #2d2836;
-$cloudy-blue: #bfc1d0;
+/* Palette */
+
+// Accents
+$brand-orange: #f86012;
+$light-gold: #fdd74e;
+$green-apple: #62ce21;
+$turquoise: #0dceb7;
+$turquoise-blue: #0ec3d3;
+$brand-azure: #0fb6f2;
+$cornflower: #6065f5;
+$brand-violet: #bd37f9;
+$dark-pink: #d03592;
+
+// Content
+$blue-grey: #5c768d;
+$dark-blue-grey: #344a66;
+$shadow-blue: #7794ae;
+
+// UI
+$cloudy-blue: #bfc2d0;
+$duck-egg-blue: #f6fafd;
 $jet-black: #2e3844;
 $pale-grey: #fafafc;
 $slate-grey: #aaafbf;
 $white: #ffffff;
 
+
 /* Components */
+$content-border-color: transparentize($cloudy-blue, 0.56);
+
 $nav-background-color: $pale-grey;
 $nav-border-color: darken($nav-background-color, 5%);
 $nav-text-color: #979daf;
@@ -61,30 +78,41 @@ $subnav-active-color: $brand-azure;
 $subnav-repo-link-color: $jet-black;
 $subnav-border-color: darken($nav-background-color, 5%);
 
+$btn-default-hover-color: $brand-azure;
+$btn-default-hover-bg: $white;
+$btn-default-dark: $jet-black;
+
+$code-block-bg: $duck-egg-blue;
+
 /* Bootstrap Overrides */
+$brand-primary: $brand-azure;
+$brand-success: $green-apple;
+$brand-info: $turquoise;
+$brand-warning: $light-gold;
+$brand-danger: $brand-orange;
+
+$text-color: $shadow-blue;
+$link-color: $brand-azure;
+$headings-color: $dark-blue-grey;
+
+$heading-text-color: $blue-grey;
+$heading-bg-color: $duck-egg-blue;
+$heading-border: $content-border-color;
+
+$panel-default-heading-bg: $duck-egg-blue;
+$panel-default-border: $content-border-color;
+$panel-default-text: $blue-grey;
+
+$btn-default-color: $cloudy-blue;
+$btn-default-bg: $white;
+$btn-default-border: $cloudy-blue;
+$btn-primary-bg: $brand-primary;
+
 $input-border: transparentize($cloudy-blue, 0.56);
 $input-color: $cloudy-blue;
 
 
-$brand-primary: $dark-blue;
 $non-brand-success: $brand-success;
-$brand-success: $sg-blue-color;
-
-$text-quieted: $gray-mid;
-$link-color: $mid-blue;
-
-$btn-primary-color: #fff;
-$btn-primary-bg: $brand-primary;
-$btn-primary-border: darken($btn-primary-bg, 5%);
-
-$list-group-border: #ccc;
-$list-group-active-bg: $sg-blue-color;
-$list-group-active-color: white;
-$list-group-active-border: $sg-blue-color;
-
-$navbar-default-link-color: $nav-text-color;
-$navbar-default-link-hover-color: darken($nav-background-color, 5%);
-$navbar-border-radius: 0;
 
 $code-color:                  none;
 $code-bg:                     none;
@@ -98,6 +126,8 @@ $pre-scrollable-max-height:   none;
 // ----------------------------------------------------------------------------
 
 /* Bootstrap Overrides */
+$font-size-base: 14px;
+
 $font-family-sans-serif: "Circular", sans-serif;
 $font-family-base: $font-family-sans-serif;
 // TODO(renfredxh): Add DejaVu as an alternative to Menlo.
@@ -137,8 +167,12 @@ $zindex-modal:            z-index(modal);
 // Dimensions
 // ----------------------------------------------------------------------------
 
+$content-border: solid 1px $content-border-color;
+
 $footer-height: 110px;
 $motd-height: 29px;
+
+$navbar-height: 50px;
 
 // TODO(sqs): Remove hardcoded dimensions.
 $code-file-toolbar-height: 40px;
@@ -157,3 +191,5 @@ $border-radius-small: 2px;
 $input-border-radius:       $border-radius-base;
 $input-border-radius-large: $border-radius-large;
 $input-border-radius-small: $border-radius-small;
+
+$navbar-border-radius: 0;

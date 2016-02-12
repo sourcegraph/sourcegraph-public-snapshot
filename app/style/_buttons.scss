@@ -1,65 +1,8 @@
-.btn-sgblue {
-	border-radius: 3px;
-	color: #FFF;
-	border: 1px solid darken($sg-blue-color, 8%);
-	background: linear-gradient(lighten($sg-blue-color, 5%), $sg-blue-color);
-	background-repeat: repeat-x;
-	font-size: 13px;
-
-	&:hover {
-		border: 1px solid darken($sg-blue-color, 10%);
-		background: linear-gradient($sg-blue-color, darken($sg-blue-color, 8%));
-		color: #fff;
-	}
-}
-
-.btn-green {
-	border-radius: 3px;
-	color: #FFF;
-	border: 1px solid darken($green, 8%);
-	background: linear-gradient(lighten($green, 5%), $green);
-	background-repeat: repeat-x;
-	font-size: 13px;
-
-	&:hover {
-		border: 1px solid darken($green, 10%);
-		background: linear-gradient($green, darken($green, 8%));
-		color: #fff;
-	}
-}
-
-.btn-red {
-	border-radius: 3px;
-	color: #FFF;
-	border: 1px solid darken($salmon-red, 8%);
-	background: linear-gradient(lighten($salmon-red, 5%), $salmon-red);
-	background-repeat: repeat-x;
-	font-size: 13px;
-
-	&:hover {
-		border: 1px solid darken($salmon-red, 10%);
-		background: linear-gradient($salmon-red, darken($salmon-red, 8%));
-		color: #fff;
-	}
-}
-
+// TODO Remove
 .btn.btn-secondary {
 	@include button-variant($white, $sg-blue-color, darken($sg-blue-color, 10%));
 }
 
 .btn.btn-neutral {
 	@include button-variant($btn-default-color, $gray-lightest, darken($gray-lightest, 8%));
-}
-
-.btn.btn-default {
-	$btn-default-color: #fcfcfc;
-	padding: 3px 10px 3px 10px;
-	margin-left: 5px;
-	background-color: $btn-default-color;
-	background-image: linear-gradient($btn-default-color, darken($btn-default-color, 3%));
-	background-repeat: repeat-x;
-	border: 1px solid #d5d5d5;
-	border-radius: 3px;
-	font-weight: bold;
-	font-size: 12px;
 }

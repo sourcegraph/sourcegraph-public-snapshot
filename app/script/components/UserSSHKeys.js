@@ -106,7 +106,7 @@ var UserSSHKeys = React.createClass({
 						</div>
 
 						<div className="text-right">
-							<button type="button" className="btn btn-sgblue" onClick={this.onSave}>Save</button>
+							<button type="button" className="btn btn-primary" onClick={this.onSave}>Save</button>
 						</div>
 					</div>
 				</form>

@@ -1,6 +1,6 @@
 // white-background theme for syntax highlighting
 
-.theme-default {
+.theme-default, .rendered-markdown code {
 	color: #111;
 	.pln{color:#333}
 	@media screen{
@@ -31,16 +31,4 @@
 
 pre.theme-default code {
 	background-color: white;
-}
-
-.button {
-	padding: 4px 10px 4px 10px;
-	height: 28px;
-	margin-left: 5px;
-	background-color: #eee;
-	background-image: linear-gradient(#fcfcfc, #eee);
-	background-repeat: repeat-x;
-	border: 1px solid #d5d5d5;
-	border-radius: 3px;
-	font-weight: bold;
 }

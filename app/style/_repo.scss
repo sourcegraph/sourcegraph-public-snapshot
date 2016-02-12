@@ -21,6 +21,16 @@
 }
 
 .repo-rev-switcher {
+	.button {
+		color: $btn-default-dark;
+		font-weight: bold;
+		&:not(&:hover) {
+			.caret {
+				color: $btn-default-color;
+			}
+		}
+	}
+
 	.search-section {
 		padding: 0 5px;
 		input {
@@ -90,8 +100,9 @@ div.repo-body {
 	.repo-meta {
 		margin-top: 0.75em;
 		.description {
-			font-size: $font-size-base * 1.05;
-			color: $gray-dark;
+			font-size: $font-size-base;
+			color: $heading-text-color;
+			padding-top: $padding-small-vertical;
 		}
 	}
 
@@ -112,6 +123,11 @@ div.repo-body {
 				text-overflow: ellipsis;
 				white-space: nowrap;
 			}
+		}
+
+		.clone-copy {
+			color: $heading-text-color;
+			background-color: $heading-bg-color;
 		}
 	}
 }

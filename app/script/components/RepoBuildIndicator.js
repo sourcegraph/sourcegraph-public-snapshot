@@ -162,14 +162,14 @@ var RepoBuildIndicator = React.createClass({
 
 		case this.BuildStatus.STARTED:
 			txt = "started";
-			cls = "info";
+			cls = "primary";
 			icon = "fa-circle-o-notch fa-spin";
 			break;
 
 		case this.BuildStatus.QUEUED:
 			txt = "queued";
-			cls = "info";
-			icon = "fa-circle-o-notch";
+			cls = "primary";
+			icon = "fa-ellipsis-h";
 			break;
 		}
 		return (

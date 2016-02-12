@@ -55,7 +55,7 @@ export function taskClass(task) {
 	if (task.Failure) {
 		return {icon: "fa fa-exclamation-circle", text: "text-danger", listGroupItem: "list-group-item-danger"};
 	}
-	return {icon: "fa fa-circle-o-notch fa-spin", text: "text-info", listGroupItem: "list-group-item-info"};
+	return {icon: "fa fa-circle-o-notch fa-spin", text: "", listGroupItem: "list-group-item-info"};
 }
 
 export function elapsed(buildOrTask) {

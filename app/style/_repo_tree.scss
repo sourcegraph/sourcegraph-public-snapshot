@@ -90,13 +90,11 @@ $panel-repo-tree-padding-horizontal: 9px;
 		span[data-react=RepoRevSwitcher] { min-width: 83px; min-height: 18px; display: inline-block; }
 
 		padding: $padding-base-vertical 0;
+		margin-bottom: $font-size-base;
 
 		.btn.compare-review {
 			width: 33px;
-			padding: 4px;
-			span.octicon {
-				color: #fff;
-			}
+			padding: $padding-small-vertical;
 		}
 
 		.tree-breadcrumb {
@@ -104,7 +102,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 			font-size: $font-size-large;
 			vertical-align: -1px;
 			a {
-				color: $link-color;
 				&:last-of-type { font-weight: bold; }
 			}
 		}
@@ -114,11 +111,14 @@ $panel-repo-tree-padding-horizontal: 9px;
 			margin: 0 5px 0 0;
 
 			li {
-				margin: 0 5px 0 0;
 				padding: 0;
 				a {
 					padding: 5px 10px;
-					font-size: 13px;
+					color: $heading-text-color;
+					font-weight: bold;
+					&:hover {
+						background-color: $heading-bg-color;
+					}
 				}
 			}
 		}
@@ -131,13 +131,13 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 	// TreeTopCommit
 	header.commit {
-		background-color: #f5f5f5;
 		padding-top: 8px;
-
-		border: solid 1px #cdcdcd;
+		border: $content-border;
 		border-bottom-color: #ddd;
 		border-top-left-radius: 3px;
 		border-top-right-radius: 3px;
+		background-color: $heading-bg-color;
+		color: $heading-text-color;
 
 		.pull-right.repo-build {
 			padding-top: 1px;
@@ -154,9 +154,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 			font-size: 13px;
 			font-weight: normal;
 			margin: 2px 0 0 10px;
-			a {
-				color: #666;
-			}
 			display: inline-block;
 		}
 
@@ -184,24 +181,27 @@ $panel-repo-tree-padding-horizontal: 9px;
 }
 
 .repo-tree-dir {
-	border: solid 1px #ddd;
-	border-collapse: separate;
-
-	table-layout:fixed;
 	width:100%;
+	border: $content-border;
+	border-top-left-radius: 0 !important;
+	border-top-right-radius: 0 !important;
+	border-top: none;
+	border-collapse: separate;
+	padding: 10px 21px;
+	table-layout:fixed;
 
 	tr:first-child td {
 		border-top: none;
 	}
 
 	td.icon {
-		width: 24px;
+		width: 32px;
 		padding-right: 0;
-		padding-left: $panel-repo-tree-padding-horizontal;
+		padding-left: 0;
 		opacity: 0.9;
 		i.fa-folder {
 			width: 16px;
-			color: $sg-blue-color;
+			color: $brand-primary;
 		}
 	}
 
@@ -235,14 +235,8 @@ $panel-repo-tree-padding-horizontal: 9px;
 	}
 
 	span.dim {
-		color: $gray-light;
+		color: $text-color;
 	}
-
-	// don\'t have curved borders that touch the treetop commit (since that is the top and its top borders are curved)
-	border-top-left-radius: 0 !important;
-	border-top-right-radius: 0 !important;
-	border-top: none;
-	background-color: #fcfcfc;
 
 	tbody > tr > td {
 		border-top: 1px solid #eee;
@@ -263,7 +257,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 	}
 
 	.panel-heading.readme-file {
-		padding: 7px 15px;
+		font-weight: bold;
 	}
 
 	&.plain-file {

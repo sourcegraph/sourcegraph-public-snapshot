@@ -5,3 +5,30 @@
 .form-control {
 	box-shadow: none;
 }
+
+.btn {
+	&.btn-primary,
+	&.btn-success,
+	&.btn-info,
+	&.btn-danger,
+	&.btn-warning, {
+		border: none;
+	}
+
+	&.btn-default {
+		&:hover {
+			background-color: $btn-default-hover-bg;
+			border-color: $btn-default-hover-color;
+			color: $btn-default-hover-color;
+		}
+	}
+}
+
+.btn-group.open .dropdown-toggle {
+	box-shadow: none;
+}
+
+hr {
+  margin-top: $font-size-base;
+  margin-bottom: $font-size-base;
+}

@@ -5,7 +5,7 @@ $doc-font-size: 16px;
 	font-size: $doc-font-size;
 }
 
-.repo-doc-body, .app-docs-body {
+.repo-doc-body, .app-docs-body, .rendered-markdown {
 	line-height: 1.6;
 
 	h1, h2 {
@@ -28,7 +28,8 @@ $doc-font-size: 16px;
 
 	pre {
 		padding: $padding-large-vertical $padding-large-horizontal;
-		background-color: #f5fafe;
+		background-color: $code-block-bg;
+		border-radius: $border-radius-base;
 		code {
 			font-size: 14px;
 			line-height: 1.42;
