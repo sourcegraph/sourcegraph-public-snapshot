@@ -23,8 +23,12 @@ for your Sourcegraph server. To enable this feature, follow these steps:
   `$APP_URL` is the URL at which you access your Sourcegraph server.
 - Get the client id and client secret. Set these env vars in your Sourcegraph server's
   environment:
-  ```export GITHUB_CLIENT_ID=[client_id]```
-  ```export GITHUB_CLIENT_SECRET=[client_secret]```
+  
+  ```
+  export GITHUB_CLIENT_ID=[client_id]
+  export GITHUB_CLIENT_SECRET=[client_secret]
+  ```
+
 - Make sure you are running the server with a PostgreSQL database backend. Also, you may need to
   run the db migration steps listed in `dbutil2/MIGRATE.md` if you have updated your server
   from an older version (<= 0.13.6)
