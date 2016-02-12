@@ -1,13 +1,17 @@
 Migrations
 ==========
 
-## 2016 Jan 27
+## 2016 Feb 12
+
+For updating servers from version <=0.13.6, execute these commands in a pgsql shell:
 
 ```
 drop index ext_auth_token_token_host;
+alter table ext_auth_token add column ext_uid integer;
 ```
 
-Run `src pgsql create`
+Then run `src pgsql create` to create new db tables, with
+a `src` binary with version >=0.13.7.
 
 ## 2015 Dec 03
 

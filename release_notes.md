@@ -1,5 +1,22 @@
 # dev
 
+- Add the flag `--pgsql-create-db`/`PgsqlCreateDB` which will create Postgres database tables for
+  Sourcegraph before starting the server. Existing tables will not be modified.
+- Modified the schema for the `ext_auth_tokens` db table. Postgres backed Sourcegraph instances must
+  update their database by running the migration commands in `dbutil2/MIGRATE.md` under `2016 Feb 12`.
+- Added the config option `--auth.mirrors-next`/`MirrorsNext` to enable the feature for mirroring
+  private GitHub repos on the Sourcegraph server by linking your GitHub account to Sourcegraph via
+  OAuth2. This feature is only implemented for pgsql-backed Sourcegraph servers. Detailed instructions
+  for setting this up on local Sourcegraph servers are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub)
+- Removed the feature for mirroring private repos via a GitHub personal access token. Users who
+  mirrored private repos on their Sourcegraph server using this feature must switch to using the
+  `--auth.mirrors-next` feature. All users on the Sourcegraph server will need to link their GitHub
+  account to Sourcegraph in order to view private repository data on Sourcegraph. Detailed migration
+  steps are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub)
+- Added the config option `--auth.mirrors-waitlist=[none|open]`/`MirrorsWaitlist`, which enables restricting
+  access to the MirrorsNext feature via a waitlist. The default is no waitlist (`none`).
+
+# 0.13.3
 - Removed the config option `--restrict-write-access`/`RestrictWriteAccess`.
   This flag would limit write access to admin users only. This is no longer
   necessary now that our ACL model includes write access.
