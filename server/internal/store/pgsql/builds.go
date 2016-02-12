@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sqs/modl"
 	"golang.org/x/net/context"
@@ -48,6 +49,8 @@ func init() {
 		`ALTER TABLE repo_build_task ALTER COLUMN ended_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
 
 		// Set id to 1 + the max previous task ID for the build.
+		// This looks like the where clause is on non-indexed columns. With a huge table this might mean that every insert is quite expensive.
+		// Maybe worth indexing those two columns.
 		`CREATE OR REPLACE FUNCTION increment_build_task_id() RETURNS trigger IMMUTABLE AS $$
          BEGIN
            IF NEW.id = 0 OR NEW.id IS NULL THEN
@@ -476,8 +479,12 @@ func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	}
 
 	if len(updates) != 0 {
-		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID)
-		if _, err := dbh(ctx).Exec(sql, args...); err != nil {
+		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID) + ` AND repo=` + arg(task.Build.Repo) + ` AND build_id=` + arg(task.Build.ID)
+		log15.Debug("Update task operation BEFORE", "sql", sql, "args", args)
+		startTime := time.Now()
+		_, err := dbh(ctx).Exec(sql, args...)
+		log15.Debug("Update task operation AFTER", "sql", sql, "args", args, "err", err, "duration", time.Now().Sub(startTime).String())
+		if err != nil {
 			return err
 		}
 	}
