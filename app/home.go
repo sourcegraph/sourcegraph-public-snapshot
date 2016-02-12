@@ -16,14 +16,14 @@ import (
 )
 
 type dashboardData struct {
-	Repos       []*sourcegraph.Repo
-	Users       []*userInfo
-	IsLDAP      bool
+	Repos          []*sourcegraph.Repo
+	Users          []*userInfo
+	IsLDAP         bool
 	PrivateMirrors bool
-	LinkGitHub  bool
-	OnWaitlist  bool
-	MirrorData  *sourcegraph.UserMirrorData
-	Teammates   *sourcegraph.Teammates
+	LinkGitHub     bool
+	OnWaitlist     bool
+	MirrorData     *sourcegraph.UserMirrorData
+	Teammates      *sourcegraph.Teammates
 
 	tmpl.Common
 }
@@ -39,10 +39,10 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	currentUser := handlerutil.UserFromRequest(r)
 	var users []*userInfo
 
-	mirrorsNext := currentUser != nil && authutil.ActiveFlags.PrivateMirrors
+	privateMirrors := currentUser != nil && authutil.ActiveFlags.PrivateMirrors
 	var mirrorData *sourcegraph.UserMirrorData
 	var teammates *sourcegraph.Teammates
-	if mirrorsNext {
+	if privateMirrors {
 		var err error
 		mirrorData, err = cl.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
 		if err != nil {
@@ -52,21 +52,21 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		switch mirrorData.State {
 		case sourcegraph.UserMirrorsState_NoToken, sourcegraph.UserMirrorsState_InvalidToken:
 			return execDashboardTmpl(w, r, &dashboardData{
-				PrivateMirrors: mirrorsNext,
-				MirrorData:  mirrorData,
-				LinkGitHub:  true,
+				PrivateMirrors: privateMirrors,
+				MirrorData:     mirrorData,
+				LinkGitHub:     true,
 			})
 		case sourcegraph.UserMirrorsState_OnWaitlist:
 			return execDashboardTmpl(w, r, &dashboardData{
-				PrivateMirrors: mirrorsNext,
-				MirrorData:  mirrorData,
-				OnWaitlist:  true,
+				PrivateMirrors: privateMirrors,
+				MirrorData:     mirrorData,
+				OnWaitlist:     true,
 			})
 		case sourcegraph.UserMirrorsState_NotAllowed:
-			mirrorsNext = false
+			privateMirrors = false
 		}
 	}
-	if mirrorsNext {
+	if privateMirrors {
 		var err error
 		teammates, err = cl.Users.ListTeammates(ctx, currentUser)
 		if err != nil {
@@ -95,11 +95,11 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return execDashboardTmpl(w, r, &dashboardData{
-		Repos:       repos.Repos,
-		Users:       users,
-		PrivateMirrors: mirrorsNext,
-		MirrorData:  mirrorData,
-		Teammates:   teammates,
+		Repos:          repos.Repos,
+		Users:          users,
+		PrivateMirrors: privateMirrors,
+		MirrorData:     mirrorData,
+		Teammates:      teammates,
 	})
 }
 
