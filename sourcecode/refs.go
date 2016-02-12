@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -26,6 +27,9 @@ const maxRefs = 5999
 
 // entryRefs fetches all references for a given entry and spec.
 func entryRefs(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) ([]*graph.Ref, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Sourcecode.EntryRefs", entrySpec.RepoRev.RepoSpec.URI); err != nil {
+		return nil, err
+	}
 	refFilters := []srcstore.RefFilter{
 		srcstore.ByRepos(entrySpec.RepoRev.RepoSpec.URI),
 		srcstore.ByCommitIDs(entrySpec.RepoRev.CommitID),

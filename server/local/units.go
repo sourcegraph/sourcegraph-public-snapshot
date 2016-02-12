@@ -13,8 +13,11 @@ import (
 
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 var Units sourcegraph.UnitsServer = &units{}
@@ -26,6 +29,9 @@ var _ sourcegraph.UnitsServer = (*units)(nil)
 func (s *units) Get(ctx context.Context, unitSpec *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
 	if unitSpec.RepoSpec.URI == "" || unitSpec.CommitID == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "UnitSpec URI and CommitID must be set")
+	}
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Units.Get", unitSpec.RepoSpec.URI); err != nil {
+		return nil, err
 	}
 	us, err := store.GraphFromContext(ctx).Units(
 		srcstore.ByUnits(unit.ID2{Type: unitSpec.UnitType, Name: unitSpec.Unit}),
@@ -55,6 +61,7 @@ func (s *units) List(ctx context.Context, opt *sourcegraph.UnitListOptions) (*so
 			return strings.Contains(strings.ToLower(u.Name), q)
 		}))
 	}
+
 	hasRepoRevFilter := false
 	if len(opt.RepoRevs) > 0 {
 		vs := make([]srcstore.Version, 0, len(opt.RepoRevs))
@@ -71,6 +78,15 @@ func (s *units) List(ctx context.Context, opt *sourcegraph.UnitListOptions) (*so
 				}
 				commitID = string(repoRev.CommitID)
 			}
+
+			if authutil.ActiveFlags.MirrorsNext {
+				// Verify that the repo is visible to the current user.
+				_, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
+				if err != nil {
+					continue
+				}
+			}
+
 			if commitID != "" {
 				vs = append(vs, srcstore.Version{Repo: repoURI, CommitID: commitID})
 			}
@@ -81,7 +97,7 @@ func (s *units) List(ctx context.Context, opt *sourcegraph.UnitListOptions) (*so
 		}
 	}
 	if !hasRepoRevFilter {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Units.List requires at least 1 RepoRevs entry to narrow scope")
+		return nil, grpc.Errorf(codes.InvalidArgument, "Units.List requires at least 1 valid RepoRevs entry to narrow scope")
 	}
 
 	units, err := store.GraphFromContext(ctx).Units(unitFilters...)

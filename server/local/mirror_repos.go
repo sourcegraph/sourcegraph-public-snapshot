@@ -96,10 +96,7 @@ func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string
 		return "", grpc.Errorf(codes.Unavailable, "repo has no user with access")
 	}
 
-	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
-		UID:  users[0],
-		Host: githubcli.Config.Host(),
-	})
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: users[0]})
 	if err != nil {
 		return "", err
 	}
@@ -284,9 +281,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	}
 
 	// Fetch the currently authenticated user's stored access token (if any).
-	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
-		Host: githubcli.Config.Host(),
-	})
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, nil)
 	if grpc.Code(err) == codes.NotFound {
 		gd.State = sourcegraph.UserMirrorsState_NoToken
 		return gd, nil
@@ -381,9 +376,7 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 	}
 
 	// Fetch the currently authenticated user's stored access token (if any).
-	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
-		Host: githubcli.Config.Host(),
-	})
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{})
 	if grpc.Code(err) == codes.NotFound {
 		result.State = sourcegraph.UserMirrorsState_NoToken
 		return result, nil

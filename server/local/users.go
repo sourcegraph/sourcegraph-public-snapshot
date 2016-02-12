@@ -78,17 +78,26 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*s
 }
 
 func (s *users) Count(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
+	noCache(ctx)
+
 	store := store.UsersFromContextOrNil(ctx)
 	if store == nil {
 		log.Printf("Warning: users not implemented, returning zero")
 		return &sourcegraph.UserCount{}, nil
 	}
 
-	count, err := store.Count(ctx)
+	count, err := store.Count(elevatedActor(ctx))
 	if err != nil {
 		return nil, err
 	}
-	noCache(ctx)
+
+	if count > 0 {
+		// If the request is not authed with admin privileges, don't reveal the actual
+		// number of users.
+		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.Count"); err != nil {
+			count = 1729 // https://en.wikipedia.org/wiki/Taxicab_number
+		}
+	}
 	return &sourcegraph.UserCount{Count: count}, nil
 }
 

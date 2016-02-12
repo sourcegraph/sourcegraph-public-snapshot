@@ -11,6 +11,7 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
@@ -24,6 +25,10 @@ var _ sourcegraph.DefsServer = (*defs)(nil)
 
 func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 	defSpec := op.Def
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.Get", defSpec.Repo); err != nil {
+		return nil, err
+	}
 
 	cacheOnCommitID(ctx, defSpec.CommitID)
 
@@ -67,6 +72,10 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		opt = &sourcegraph.DefListOptions{}
 	}
 
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.List", ""); err != nil {
+		return nil, err
+	}
+
 	shortCache(ctx)
 
 	// Eliminate repos that don't exist.
@@ -75,7 +84,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	for _, repoRev := range origRepoRevs {
 		repoURI, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
 
-		// Dealias.
+		// Dealias. This call also verifies that the repo is visible to the current user.
 		rA, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 		if err != nil {
 			log.Printf("Warning: dropping repo rev %q from defs list because repo or repo alias was not found: %s.", repoRev, err)

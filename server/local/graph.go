@@ -21,7 +21,7 @@ var Graph pb.MultiRepoImporterServer = &graph_{}
 type graph_ struct{}
 
 func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Graph.Import", op.Repo); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Import", op.Repo); err != nil {
 		return nil, err
 	}
 
@@ -33,7 +33,7 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 }
 
 func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) (*pbtypes.Void, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Graph.Index", op.Repo); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Index", op.Repo); err != nil {
 		return nil, err
 	}
 

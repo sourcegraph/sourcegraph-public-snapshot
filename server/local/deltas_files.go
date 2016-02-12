@@ -30,12 +30,11 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 	ds := op.Ds
 	opt := op.Opt
 
-	// The middleware auth wrapper will verify that the ctx has read access to the base repo.
-	// If head repo is different from base repo, check that the ctx has access to the head repo.
-	if ds.Base.URI != ds.Head.URI {
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListFiles", ds.Head.URI); err != nil {
-			return nil, err
-		}
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListFiles", ds.Base.URI); err != nil {
+		return nil, err
+	}
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListFiles", ds.Head.URI); err != nil {
+		return nil, err
 	}
 
 	// Make sure we've fully resolved the RepoRevSpecs. If we haven't,

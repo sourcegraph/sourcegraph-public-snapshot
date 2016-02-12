@@ -21,6 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -289,6 +290,9 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 }
 
 func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	if request == nil {
+		request = &sourcegraph.ExternalTokenRequest{}
+	}
 	extTokensStore := store.ExternalAuthTokensFromContextOrNil(ctx)
 	if extTokensStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
@@ -298,7 +302,16 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 		request.ClientID = githubClientID
 	}
 
-	dbToken, err := extTokensStore.GetUserToken(ctx, int(request.UID), request.Host, request.ClientID)
+	if request.Host == "" {
+		request.Host = githubcli.Config.Host()
+	}
+
+	uid := int(request.UID)
+	if uid == 0 {
+		uid = authpkg.ActorFromContext(ctx).UID
+	}
+
+	dbToken, err := extTokensStore.GetUserToken(ctx, uid, request.Host, request.ClientID)
 	if err == authpkg.ErrNoExternalAuthToken {
 		return nil, grpc.Errorf(codes.NotFound, "no external auth token found")
 	} else if err != nil {
@@ -318,6 +331,9 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 }
 
 func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.ExternalToken) (*pbtypes.Void, error) {
+	if extToken == nil {
+		extToken = &sourcegraph.ExternalToken{}
+	}
 	extTokensStore := store.ExternalAuthTokensFromContextOrNil(ctx)
 	if extTokensStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "no External Tokens")
@@ -327,8 +343,17 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 		extToken.ClientID = githubClientID
 	}
 
+	if extToken.Host == "" {
+		extToken.Host = githubcli.Config.Host()
+	}
+
+	uid := int(extToken.UID)
+	if uid == 0 {
+		uid = authpkg.ActorFromContext(ctx).UID
+	}
+
 	dbToken := &authpkg.ExternalAuthToken{
-		User:     int(extToken.UID),
+		User:     uid,
 		Host:     extToken.Host,
 		Token:    extToken.Token,
 		Scope:    extToken.Scope,

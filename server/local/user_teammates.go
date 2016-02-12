@@ -20,10 +20,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		return nil, err
 	}
 
-	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
-		Host: githubcli.Config.Host(),
-		UID:  user.UID,
-	})
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: user.UID})
 	if grpc.Code(err) == codes.NotFound {
 		return &sourcegraph.Teammates{}, nil
 	} else if err != nil {
@@ -66,7 +63,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 			}
 		}
 	}
-	linkedUserTokens, err := extTokenStore.ListExternalUsers(ctx, githubUIDs, githubcli.Config.Host(), githubClientID)
+	linkedUserTokens, err := extTokenStore.ListExternalUsers(elevatedActor(ctx), githubUIDs, githubcli.Config.Host(), githubClientID)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +72,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		sgUIDs = append(sgUIDs, int32(tok.User))
 	}
 
-	sgUsers, err := usersStore.List(ctx, &sourcegraph.UsersListOptions{UIDs: sgUIDs})
+	sgUsers, err := usersStore.List(elevatedActor(ctx), &sourcegraph.UsersListOptions{UIDs: sgUIDs})
 	if err != nil {
 		return nil, err
 	}

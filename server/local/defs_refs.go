@@ -12,6 +12,7 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -24,12 +25,21 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 
 	var repoFilters []srcstore.RefFilter
 	if opt.Repo != "" {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", opt.Repo); err != nil {
+			return nil, err
+		}
 		repoFilters = []srcstore.RefFilter{
 			srcstore.ByRepos(opt.Repo),
 		}
 	} else {
 		if defSpec.CommitID == "" {
 			return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID is empty")
+		}
+		if defSpec.Repo == "" {
+			return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: Repo is empty")
+		}
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", defSpec.Repo); err != nil {
+			return nil, err
 		}
 		repoFilters = []srcstore.RefFilter{
 			// TODO(sqs): don't restrict to same-commit

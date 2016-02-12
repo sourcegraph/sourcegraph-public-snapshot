@@ -10,7 +10,6 @@ import (
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -80,9 +79,7 @@ func (s *changesets) Merge(ctx context.Context, op *sourcegraph.ChangesetMergeOp
 
 	var token string
 	if repo.Mirror {
-		cred, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
-			Host: githubcli.Config.Host(),
-		})
+		cred, err := svc.Auth(ctx).GetExternalToken(ctx, nil)
 		if err != nil {
 			return nil, grpc.Errorf(codes.PermissionDenied, "Changeset.Merge unable to fetch git credentials for repo %q: %v", repo.URI, err)
 		}

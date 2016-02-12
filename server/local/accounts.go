@@ -139,6 +139,7 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		return nil, err
 	}
 	userSpec := created.Spec()
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID)})
 
 	if newAcct.Email != "" {
 		email := []*sourcegraph.EmailAddr{
@@ -150,11 +151,10 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 	}
 
 	passwordStore := store.PasswordFromContextOrNil(ctx)
-	if accountsStore == nil {
+	if passwordStore == nil {
 		return nil, grpc.Errorf(codes.Unimplemented, "user passwords")
 	}
 
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID)})
 	if err := passwordStore.SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
 		return nil, err
 	}
