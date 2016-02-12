@@ -14,7 +14,7 @@
   account to Sourcegraph in order to view private repository data on Sourcegraph. Detailed migration
   steps are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub)
 - Added the config option `--mirrors-waitlist=[none|open]`/`MirrorsWaitlist`, which enables restricting
-  access to the MirrorsNext feature via a waitlist. The default is no waitlist (`none`).
+  access to the PrivateMirrors feature via a waitlist. The default is no waitlist (`none`).
 
 # 0.13.3
 - Removed the config option `--restrict-write-access`/`RestrictWriteAccess`.

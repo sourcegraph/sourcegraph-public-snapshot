@@ -18,7 +18,7 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 
 	ctxActor := auth.ActorFromContext(ctx)
-	if !ctxActor.HasAdminAccess() && !authutil.ActiveFlags.MirrorsNext {
+	if !ctxActor.HasAdminAccess() && !authutil.ActiveFlags.PrivateMirrors {
 		// current user is not an admin of the instance
 		return fmt.Errorf("user not authenticated to complete this request")
 	}

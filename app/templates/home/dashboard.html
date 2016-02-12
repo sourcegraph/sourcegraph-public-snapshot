@@ -11,7 +11,7 @@
 </div>
 <br>
 {{end}}
-{{if (and .MirrorsNext .CurrentUser (or .LinkGitHub .OnWaitlist))}}
+{{if (and .PrivateMirrors .CurrentUser (or .LinkGitHub .OnWaitlist))}}
 	{{if .LinkGitHub}}
 	<div class="row">
 		<div class="col-md-offset-3 col-md-6">
@@ -41,15 +41,15 @@
 	</div>
 	{{end}}
 {{else}}
-{{$hasUsers := (or .MirrorsNext .Users)}}
+{{$hasUsers := (or .PrivateMirrors .Users)}}
 <div class="row dashboard">
 	<div class="col-md-{{if $hasUsers}}6{{else}}12{{end}}">
 		<h3>Repositories
-			{{if (and .Repos (not .MirrorsNext))}}
+			{{if (and .Repos (not .PrivateMirrors))}}
 				<button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button>
 			{{end}}
 		</h3>
-		{{if not .MirrorsNext}}
+		{{if not .PrivateMirrors}}
 		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
 			<div class="well">
 				<form action={{router.URLToRepoCreate}} method="post">
@@ -74,7 +74,7 @@
 				</a>
 			{{end}}
 		</div>
-		{{if (and .MirrorsNext $.CurrentUser (not appconf.DisableIntegrations))}}
+		{{if (and .PrivateMirrors $.CurrentUser (not appconf.DisableIntegrations))}}
 			{{with .MirrorData}}
 			<h4>GitHub repositories available for mirroring</h4>
 			{{if (or .PrivateRepos .PublicRepos)}}
@@ -143,7 +143,7 @@
 		{{end}}
 	</div>
 	<div class="col-md-6">
-		{{if .MirrorsNext}}
+		{{if .PrivateMirrors}}
 		<h3>Teammates <button class="btn btn-default" data-toggle="collapse" data-target="#addTeammate"><i class="fa fa-plus"></i></button></h3>
 		<div class="collapse" id="addTeammate">
 			<div class="well">

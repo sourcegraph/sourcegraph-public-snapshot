@@ -79,7 +79,7 @@ func (s *units) List(ctx context.Context, opt *sourcegraph.UnitListOptions) (*so
 				commitID = string(repoRev.CommitID)
 			}
 
-			if authutil.ActiveFlags.MirrorsNext {
+			if authutil.ActiveFlags.PrivateMirrors {
 				// Verify that the repo is visible to the current user.
 				_, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 				if err != nil {

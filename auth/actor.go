@@ -35,9 +35,9 @@ type Actor struct {
 	// access to on the given server.
 	Scope map[string]bool `json:",omitempty"`
 
-	// MirrorsNext is true if the actor corresponds to a user that has
+	// PrivateMirrors is true if the actor corresponds to a user that has
 	// access to the private mirrors feature.
-	MirrorsNext bool `json:",omitempty"`
+	PrivateMirrors bool `json:",omitempty"`
 
 	// MirrorsWaitlist is true if the actor corresponds to a user that
 	// is on the waitlist for access to the private mirrors feature.

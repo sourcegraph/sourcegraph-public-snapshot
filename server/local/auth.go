@@ -284,7 +284,7 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 		Admin:  a.HasAdminAccess(),
 		Scopes: authpkg.MarshalScope(a.Scope),
 
-		MirrorsNext:     a.MirrorsNext,
+		PrivateMirrors:  a.PrivateMirrors,
 		MirrorsWaitlist: a.MirrorsWaitlist,
 	}, nil
 }

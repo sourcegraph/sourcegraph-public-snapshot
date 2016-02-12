@@ -19,7 +19,7 @@ type dashboardData struct {
 	Repos       []*sourcegraph.Repo
 	Users       []*userInfo
 	IsLDAP      bool
-	MirrorsNext bool
+	PrivateMirrors bool
 	LinkGitHub  bool
 	OnWaitlist  bool
 	MirrorData  *sourcegraph.UserMirrorData
@@ -39,7 +39,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	currentUser := handlerutil.UserFromRequest(r)
 	var users []*userInfo
 
-	mirrorsNext := currentUser != nil && authutil.ActiveFlags.MirrorsNext
+	mirrorsNext := currentUser != nil && authutil.ActiveFlags.PrivateMirrors
 	var mirrorData *sourcegraph.UserMirrorData
 	var teammates *sourcegraph.Teammates
 	if mirrorsNext {
@@ -52,13 +52,13 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		switch mirrorData.State {
 		case sourcegraph.UserMirrorsState_NoToken, sourcegraph.UserMirrorsState_InvalidToken:
 			return execDashboardTmpl(w, r, &dashboardData{
-				MirrorsNext: mirrorsNext,
+				PrivateMirrors: mirrorsNext,
 				MirrorData:  mirrorData,
 				LinkGitHub:  true,
 			})
 		case sourcegraph.UserMirrorsState_OnWaitlist:
 			return execDashboardTmpl(w, r, &dashboardData{
-				MirrorsNext: mirrorsNext,
+				PrivateMirrors: mirrorsNext,
 				MirrorData:  mirrorData,
 				OnWaitlist:  true,
 			})
@@ -97,7 +97,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	return execDashboardTmpl(w, r, &dashboardData{
 		Repos:       repos.Repos,
 		Users:       users,
-		MirrorsNext: mirrorsNext,
+		PrivateMirrors: mirrorsNext,
 		MirrorData:  mirrorData,
 		Teammates:   teammates,
 	})

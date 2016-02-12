@@ -231,7 +231,7 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	var conds []string
 	if opt.Repo != "" {
 		conds = append(conds, "b.repo="+arg(opt.Repo))
-	} else if authutil.ActiveFlags.MirrorsNext {
+	} else if authutil.ActiveFlags.PrivateMirrors {
 		// only list public repo builds on main builds page.
 		// TODO: add filtering for private repos.
 		conds = append(conds, "b.repo in (select uri from repo where not private)")

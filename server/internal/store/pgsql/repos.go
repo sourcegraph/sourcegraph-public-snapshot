@@ -272,9 +272,9 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 			return "", nil, errOptionsSpecifyEmptyResult
 		}
 
-		// If MirrorsNext is enabled and private repositories are part of the request,
+		// If PrivateMirrors is enabled and private repositories are part of the request,
 		// only pick repositories that are either public or visible to the current user.
-		// NOTE: if privateURIs == nil, then either MirrorsNext is not enabled, or the
+		// NOTE: if privateURIs == nil, then either PrivateMirrors is not enabled, or the
 		// actor has access to all private repos on this server.
 		if privateURIs != nil && opt.Type != "public" {
 			filterPrivateSQL := "false"

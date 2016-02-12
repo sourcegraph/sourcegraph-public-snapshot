@@ -2277,9 +2277,9 @@ type AuthInfo struct {
 	// Scopes represent the permissions granted to the authenticated
 	// user (if any).
 	Scopes []string `protobuf:"bytes,7,rep,name=Scopes" json:"Scopes,omitempty"`
-	// MirrorsNext is set if the user (if any) has access to the private
+	// PrivateMirrors is set if the user (if any) has access to the private
 	// mirrors feature on this server.
-	MirrorsNext bool `protobuf:"varint,8,opt,name=MirrorsNext,proto3" json:"MirrorsNext,omitempty"`
+	PrivateMirrors bool `protobuf:"varint,8,opt,name=PrivateMirrors,proto3" json:"PrivateMirrors,omitempty"`
 	// MirrorsWaitlist is set if the user (if any) is on the waitlist for
 	// access to private mirrors feature on this server.
 	MirrorsWaitlist bool `protobuf:"varint,9,opt,name=MirrorsWaitlist,proto3" json:"MirrorsWaitlist,omitempty"`
@@ -13144,10 +13144,10 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 			i += copy(data[i:], s)
 		}
 	}
-	if m.MirrorsNext {
+	if m.PrivateMirrors {
 		data[i] = 0x40
 		i++
-		if m.MirrorsNext {
+		if m.PrivateMirrors {
 			data[i] = 1
 		} else {
 			data[i] = 0
@@ -19453,7 +19453,7 @@ func (m *AuthInfo) Size() (n int) {
 			n += 1 + l + sovSourcegraph(uint64(l))
 		}
 	}
-	if m.MirrorsNext {
+	if m.PrivateMirrors {
 		n += 2
 	}
 	if m.MirrorsWaitlist {
@@ -38144,7 +38144,7 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 8:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MirrorsNext", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PrivateMirrors", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -38161,7 +38161,7 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 					break
 				}
 			}
-			m.MirrorsNext = bool(v != 0)
+			m.PrivateMirrors = bool(v != 0)
 		case 9:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MirrorsWaitlist", wireType)

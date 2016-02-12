@@ -207,8 +207,8 @@ func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph
 		client.UploadURL = githubcli.Config.UploadURL()
 		repoType = "" // import both public and private repos from GHE.
 	}
-	if authutil.ActiveFlags.MirrorsNext {
-		repoType = "" // import both public and private repos for MirrorsNext.
+	if authutil.ActiveFlags.PrivateMirrors {
+		repoType = "" // import both public and private repos for PrivateMirrors.
 	}
 
 	var repos []*sourcegraph.Repo

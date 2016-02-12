@@ -16,11 +16,11 @@ type repoPerms struct {
 	visibleRepos map[string]bool
 }
 
-// SetMirrorRepoPerms checks if the MirrorsNext feature is enabled
+// SetMirrorRepoPerms checks if the PrivateMirrors feature is enabled
 // and the actor corresponds to a logged-in user, and sets the
 // appropriate waitlist state and repo permissions for the actor.
 func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
-	if !authutil.ActiveFlags.MirrorsNext || actor == nil || actor.UID == 0 {
+	if !authutil.ActiveFlags.PrivateMirrors || actor == nil || actor.UID == 0 {
 		return
 	}
 
@@ -46,7 +46,7 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 		}
 	}
 
-	actor.MirrorsNext = true
+	actor.PrivateMirrors = true
 
 	// User has access to private mirrors. Save the visible repos
 	// in the context actor.
@@ -89,7 +89,7 @@ func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI stri
 	}
 
 	err := grpc.Errorf(codes.PermissionDenied, "repo not available (%s): user does not have access", method)
-	if actor.UID == 0 || !actor.MirrorsNext || actor.RepoPerms == nil {
+	if actor.UID == 0 || !actor.PrivateMirrors || actor.RepoPerms == nil {
 		return err
 	}
 
@@ -106,11 +106,11 @@ func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI stri
 }
 
 // GetActorPrivateRepos returns the list of private repos visible to the current actor.
-// If MirrorsNext is not enabled, or if the actor has access to all private repos (eg. internal command)
+// If PrivateMirrors is not enabled, or if the actor has access to all private repos (eg. internal command)
 // then the returned slice will be nil.
 // If the slice is non-nil but empty, the actor has access to no private repos on this server.
 func GetActorPrivateRepos(ctx context.Context, actor auth.Actor, method string) []string {
-	if !authutil.ActiveFlags.MirrorsNext {
+	if !authutil.ActiveFlags.PrivateMirrors {
 		return nil
 	}
 
@@ -120,7 +120,7 @@ func GetActorPrivateRepos(ctx context.Context, actor auth.Actor, method string) 
 
 	privateRepos := make([]string, 0)
 
-	if actor.UID == 0 || !actor.MirrorsNext || actor.RepoPerms == nil {
+	if actor.UID == 0 || !actor.PrivateMirrors || actor.RepoPerms == nil {
 		return privateRepos
 	}
 
@@ -140,7 +140,7 @@ func GetActorPrivateRepos(ctx context.Context, actor auth.Actor, method string) 
 }
 
 // GetActorPrivateRepoMap returns the list of private repos visible to the context actor.
-// If MirrorsNext is not enabled, or if the actor has access to all private repos (eg. internal command)
+// If PrivateMirrors is not enabled, or if the actor has access to all private repos (eg. internal command)
 // then the returned map will be nil.
 // If the map is non-nil but empty, the actor has access to no private repos on this server.
 func GetActorPrivateRepoMap(ctx context.Context, method string) map[string]bool {

@@ -125,7 +125,7 @@ func NewHandler(r *router.Router) http.Handler {
 		r.Get(router.UserSettingsIntegrationsUpdate).Handler(internal.Handler(serveUserSettingsIntegrationsUpdate))
 	}
 	if !authutil.ActiveFlags.DisableUserProfiles {
-		if authutil.ActiveFlags.MirrorsNext {
+		if authutil.ActiveFlags.PrivateMirrors {
 			r.Get(router.User).Handler(internal.Handler(serveUserSettingsProfile))
 		} else {
 			r.Get(router.User).Handler(internal.Handler(serveUser))

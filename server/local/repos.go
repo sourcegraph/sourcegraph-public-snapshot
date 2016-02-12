@@ -141,7 +141,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, err
 	}
 
-	if authutil.ActiveFlags.MirrorsNext && op.Mirror && op.Private {
+	if authutil.ActiveFlags.PrivateMirrors && op.Mirror && op.Private {
 		// Allow this user to access this repo.
 		repoPermsStore := store.RepoPermsFromContextOrNil(ctx)
 		if repoPermsStore == nil {

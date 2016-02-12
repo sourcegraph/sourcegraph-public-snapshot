@@ -76,7 +76,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		return nil
 	}
 
-	if authutil.ActiveFlags.MirrorsNext && repo != "" {
+	if authutil.ActiveFlags.PrivateMirrors && repo != "" {
 		return VerifyRepoPerms(ctx, actor, method, repo)
 	}
 
@@ -107,8 +107,8 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		return nil
 	}
 
-	if authutil.ActiveFlags.MirrorsNext {
-		if method == "Repos.Create" && actor.MirrorsNext {
+	if authutil.ActiveFlags.PrivateMirrors {
+		if method == "Repos.Create" && actor.PrivateMirrors {
 			return nil
 		} else if repo != "" {
 			return VerifyRepoPerms(ctx, actor, method, repo)
