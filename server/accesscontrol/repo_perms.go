@@ -31,9 +31,9 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 			return
 		}
 
-		waitlistedUser, err := waitlistStore.GetUser(ctx, int32(actor.UID))
+		waitlistedUser, err := waitlistStore.GetUser(elevatedActor(ctx), int32(actor.UID))
 		if err != nil {
-			if err, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
+			if _, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
 				log15.Debug("Error fetching waitlisted user", "uid", actor.UID, "error", err)
 			}
 			return
@@ -56,7 +56,7 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 		return
 	}
 
-	userRepos, err := repoPermsStore.ListUserRepos(ctx, int32(actor.UID))
+	userRepos, err := repoPermsStore.ListUserRepos(elevatedActor(ctx), int32(actor.UID))
 	if err != nil {
 		log15.Debug("Error listing visible repos for user", "uid", actor.UID, "error", err)
 		return
@@ -71,28 +71,25 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 
 // VerifyRepoPerms checks if a repoURI is visible to the actor in the given context.
 func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI string) error {
+	// Short-circuit: If the user is unauthenticated and the scope has special access,
+	// grant access directly to avoid infinite cycles back to this function from reposStore.Get.
+	if actor.UID == 0 && VerifyScopeHasAccess(ctx, actor.Scope, method) {
+		return nil
+	}
+
 	// Confirm that the repo is private.
 	repoStore := store.ReposFromContextOrNil(ctx)
 	if repoStore == nil {
 		return grpc.Errorf(codes.Unimplemented, "no repo store in context", method)
 	}
-	if r, err := repoStore.Get(ctx, repoURI); err != nil {
+	if r, err := repoStore.Get(elevatedActor(ctx), repoURI); err != nil {
 		return err
 	} else if !r.Private {
 		return nil
 	}
 
 	err := grpc.Errorf(codes.PermissionDenied, "repo not available (%s): user does not have access", method)
-	if actor.UID == 0 {
-		// If the user is unauthenticated, check if the scope has special access.
-		if VerifyScopeHasAccess(ctx, actor.Scope, method) {
-			return nil
-		} else {
-			return grpc.Errorf(codes.PermissionDenied, "repo not available (%s): scope does not have access (%#v)", method, actor.Scope)
-		}
-	}
-
-	if !actor.MirrorsNext || actor.RepoPerms == nil {
+	if actor.UID == 0 || !actor.MirrorsNext || actor.RepoPerms == nil {
 		return err
 	}
 
@@ -161,4 +158,14 @@ func GetActorPrivateRepoMap(ctx context.Context, method string) map[string]bool 
 	}
 
 	return visiblePrivateRepos
+}
+
+// elevatedActor returns an actor with admin access to the stores.
+//
+// CAUTION: use this function only in cases where it is required
+// to complete an operation with elevated access, for example when
+// creating an account when a user signs up. DO NOT USE this actor
+// to complete requests that will return store data in the response.
+func elevatedActor(ctx context.Context) context.Context {
+	return auth.WithActor(ctx, auth.Actor{Scope: map[string]bool{"internal:elevated": true}})
 }

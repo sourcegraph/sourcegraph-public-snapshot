@@ -351,7 +351,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		}
 	}
 	uid := int32(authpkg.ActorFromContext(ctx).UID)
-	if err := repoPermsStore.Update(ctx, uid, localPrivateRepos); err != nil {
+	if err := repoPermsStore.Update(elevatedActor(ctx), uid, localPrivateRepos); err != nil {
 		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
 	gd.PrivateRepos = privateRepos
