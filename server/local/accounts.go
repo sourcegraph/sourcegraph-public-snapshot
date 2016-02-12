@@ -268,7 +268,7 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 	if err != nil {
 		// If MarkUnused fails, we ignore the error. This makes the invite unusable,
 		// so the admin must send a new invite to the user.
-		invitesStore.MarkUnused(ctx, invite.Email)
+		invitesStore.MarkUnused(ctx, acceptedInvite.Token)
 		return nil, err
 	}
 
@@ -355,19 +355,19 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 	var user *sourcegraph.User
 	var err error
 	if person.Email != "" {
-		user, err = usersStore.GetWithEmail(ctx, sourcegraph.EmailAddr{Email: person.Email})
+		user, err = usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: person.Email})
 		if err != nil {
 			return nil, err
 		}
 	} else if person.Login != "" {
 		userSpec := sourcegraph.UserSpec{Login: person.Login}
-		user, err = usersStore.Get(ctx, userSpec)
+		user, err = usersStore.Get(elevatedActor(ctx), userSpec)
 		if err != nil {
 			return nil, err
 		}
 
 		// Find the primary email address for this user.
-		emailAddrs, err := usersStore.ListEmails(ctx, userSpec)
+		emailAddrs, err := usersStore.ListEmails(elevatedActor(ctx), userSpec)
 		if err != nil {
 			return nil, err
 		}

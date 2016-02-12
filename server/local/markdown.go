@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )
 
 const (
@@ -26,6 +27,9 @@ type markdown struct{}
 var _ sourcegraph.MarkdownServer = (*markdown)(nil)
 
 func (s *markdown) Render(ctx context.Context, op *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Markdown.Render", ""); err != nil {
+		return nil, err
+	}
 	rendered, err := doc.ToHTML(doc.Markdown, op.Markdown)
 	if err != nil {
 		return nil, err
