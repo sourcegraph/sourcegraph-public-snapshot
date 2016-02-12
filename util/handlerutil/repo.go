@@ -8,14 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/mux"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
 	"gopkg.in/inconshreveable/log15.v2"
-
-	"golang.org/x/net/context"
-
-	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"

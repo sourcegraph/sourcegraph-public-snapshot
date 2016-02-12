@@ -280,7 +280,7 @@ func notificationCenter(ctx context.Context, e *sourcegraph.NotifyGenericEvent) 
 	// HACK(keegancsmith) Notification API expects the user to be set in
 	// the context like we have in HTTP requests. This context is from the
 	// event bus. Fake it
-	ctx = handlerutil.WithUser(ctx, e.Actor)
+	ctx = handlerutil.WithUser(ctx, *e.Actor)
 	notifications.Service.Subscribe(ctx, appID, issues.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), subscribers)
 	notifications.Service.Notify(ctx, appID, issues.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), notif.Notification{
 		Title:     e.ObjectTitle,

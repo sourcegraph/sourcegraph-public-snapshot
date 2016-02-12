@@ -35,8 +35,8 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 	cred := sourcegraph.CredentialsFromContext(ctx)
 	if cred != nil && UserFromRequest(r) == nil && fetchUserForCredentials(cred) {
 		if authInfo, user := identifyUser(ctx, w); authInfo != nil {
-			// This code should be kept in sync with ClearUser.
-			ctx = WithUser(ctx, authInfo.UserSpec())
+			// This code should be kept in sync with ClearUser and WithUser.
+			ctx = withUser(ctx, authInfo.UserSpec())
 			ctx = withFullUser(ctx, user)
 			ctx = auth.WithActor(ctx, auth.Actor{
 				UID:      int(authInfo.UID),
@@ -52,12 +52,31 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 	next(w, r)
 }
 
-// ClearUser removes user from context.
+// ClearUser removes user, full user, actor and and credentials from context.
 // It should unset all context values that UserMiddleware has set.
 func ClearUser(ctx context.Context) context.Context {
-	ctx = WithUser(ctx, nil)
+	ctx = withUser(ctx, nil)
 	ctx = withFullUser(ctx, nil)
 	ctx = auth.WithActor(ctx, auth.Actor{})
+	ctx = sourcegraph.WithCredentials(ctx, nil)
+	return ctx
+}
+
+// WithUser returns a copy of the context with the user and full user added to it
+// (available via UserFromContext and FullUserFromContext).
+//
+// To clear the user, ClearUser should be used instead.
+//
+// Generally you should use UserMiddleware to set it in the context;
+// WithUser should only be used for tests where you want to inject
+// a specific user.
+func WithUser(ctx context.Context, user sourcegraph.UserSpec) context.Context {
+	ctx = withUser(ctx, &user)
+	ctx = withFullUser(ctx, &sourcegraph.User{
+		Login:  user.Login,
+		UID:    user.UID,
+		Domain: user.Domain,
+	})
 	return ctx
 }
 
@@ -128,11 +147,9 @@ func UserFromContext(ctx context.Context) *sourcegraph.UserSpec {
 	return user
 }
 
-// WithUser returns a copy of the context with the user added to it
-// (and available via UserFromContext). Generally you should use
-// UserMiddleware to set it in the context; WithUser is probably most
-// useful for tests where you want to inject a specific user.
-func WithUser(ctx context.Context, user *sourcegraph.UserSpec) context.Context {
+// withUser returns a copy of the context with the user added to it
+// (and available via UserFromContext).
+func withUser(ctx context.Context, user *sourcegraph.UserSpec) context.Context {
 	return context.WithValue(ctx, userKey, user)
 }
 

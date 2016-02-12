@@ -34,7 +34,7 @@ func TestUserSettingsAccess(t *testing.T) {
 	}
 
 	// Test that the settings page is accessible as the same user.
-	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.UserSpec{
+	mock.Ctx = handlerutil.WithUser(mock.Ctx, sourcegraph.UserSpec{
 		UID:   1,
 		Login: "u",
 	})
@@ -52,7 +52,7 @@ func TestUserSettingsAccess(t *testing.T) {
 	}
 
 	// Test that the settings page is not accessible as a different user.
-	mock.Ctx = handlerutil.WithUser(mock.Ctx, &sourcegraph.UserSpec{
+	mock.Ctx = handlerutil.WithUser(mock.Ctx, sourcegraph.UserSpec{
 		UID:   2,
 		Login: "w",
 	})
@@ -67,7 +67,7 @@ func TestUserSettingsAccess(t *testing.T) {
 	}
 
 	// Test that the settings page is not accessible as an anonymous user.
-	mock.Ctx = handlerutil.WithUser(mock.Ctx, nil)
+	mock.Ctx = handlerutil.ClearUser(mock.Ctx)
 
 	if _, err := c.GetOK(router.Rel.URLToUserSubroute(router.UserSettingsProfile, "u").String()); err == nil {
 		t.Fatalf("expected to get error when accessing a user's settings page as anonymous. got nil")

@@ -8,11 +8,11 @@ import (
 
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
-
 	"sourcegraph.com/sourcegraph/csp"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal"
+	_ "src.sourcegraph.com/sourcegraph/app/internal/markdown"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -22,8 +22,6 @@ import (
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-
-	_ "src.sourcegraph.com/sourcegraph/app/internal/markdown"
 )
 
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided
