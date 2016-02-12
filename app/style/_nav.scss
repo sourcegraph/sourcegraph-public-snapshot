@@ -88,6 +88,14 @@ header.page-header {
 		}
 	}
 
+	.sourcegraph-logo {
+		margin-right: 38px;
+		img {
+			padding: 15px 0;
+			height: 51px;
+		}
+	}
+
 	.current-user.name {
 		font-weight: bold;
 	}

@@ -2,10 +2,15 @@
 <nav class="navbar navbar-tint" role="navigation" id="nav">
 	<div class="container{{if .FullWidth}}-fluid{{end}}">
 		<div class="navbar-header">
-			<a class="navbar-brand logo logo-symbol-and-text" href="/">
-				{{customLogo}}
-				<span class="symbol">&#x2731;</span> <span class="name">sourcegraph</span>
-			</a>
+			{{if appconf.CustomLogo}}
+				<a class="navbar-brand logo logo-symbol-and-text" href="/">
+					{{customLogo}}
+				</a>
+			{{else}}
+				<a class="sourcegraph-logo" href="/">
+					<img src="{{assetURL "/img/sourcegraph-logo.svg"}}">
+				</a>
+			{{end}}
 
 			{{if appconf.CustomNavLayout}}
 				{{appconf.CustomNavLayout}}
