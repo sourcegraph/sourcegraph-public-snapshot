@@ -141,3 +141,24 @@ func GetActorPrivateRepos(ctx context.Context, actor auth.Actor, method string) 
 
 	return privateRepos
 }
+
+// GetActorPrivateRepoMap returns the list of private repos visible to the context actor.
+// If MirrorsNext is not enabled, or if the actor has access to all private repos (eg. internal command)
+// then the returned map will be nil.
+// If the map is non-nil but empty, the actor has access to no private repos on this server.
+func GetActorPrivateRepoMap(ctx context.Context, method string) map[string]bool {
+	var visiblePrivateRepos map[string]bool
+	actorPrivateRepos := GetActorPrivateRepos(ctx, auth.ActorFromContext(ctx), method)
+
+	// Note: if actorPrivateRepos is nil, either the mirrors next feature
+	// is not enabled, or the actor has access to all private repos on this
+	// server.
+	if actorPrivateRepos != nil {
+		visiblePrivateRepos = make(map[string]bool)
+		for _, repo := range actorPrivateRepos {
+			visiblePrivateRepos[repo] = true
+		}
+	}
+
+	return visiblePrivateRepos
+}
