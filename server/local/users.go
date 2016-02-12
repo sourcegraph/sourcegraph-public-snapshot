@@ -29,6 +29,25 @@ func (s *users) Get(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegra
 	return store.Get(ctx, *user)
 }
 
+// resolveUserSpec fills in the UID and Login fields.
+func (s *users) resolveUserSpec(ctx context.Context, userSpec *sourcegraph.UserSpec) error {
+	user, err := s.Get(ctx, userSpec)
+	if err != nil {
+		return err
+	}
+	*userSpec = user.Spec()
+	return nil
+}
+
+// ensureUIDPopulated fills in the UID field by looking up the user by
+// the Login field, if only the Login field (and not UID) is set.
+func (s *users) ensureUIDPopulated(ctx context.Context, userSpec *sourcegraph.UserSpec) error {
+	if userSpec.UID != 0 {
+		return nil
+	}
+	return s.resolveUserSpec(ctx, userSpec)
+}
+
 func (s *users) GetWithEmail(ctx context.Context, emailAddr *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	store := store.UsersFromContextOrNil(ctx)
 	if store == nil {

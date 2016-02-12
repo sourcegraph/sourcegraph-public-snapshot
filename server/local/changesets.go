@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sqs/pbtypes"
 
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
@@ -26,6 +27,32 @@ type changesets struct{}
 func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
 	defer noCache(ctx)
 
+	// It's fine to specify reviewers at creation time, but they can't set their
+	// LGTM status unless they are in fact that user.
+	if actor := authpkg.ActorFromContext(ctx); !actor.HasAdminAccess() {
+		for _, reviewer := range op.Changeset.Reviewers {
+			// Get user to ensure we have a UID for comparison and storage (in case
+			// caller specifies just login).
+			reviewerUser, err := svc.Users(ctx).Get(ctx, &reviewer.UserSpec)
+			if err != nil {
+				return nil, err
+			}
+			reviewer.UserSpec = reviewerUser.Spec()
+
+			// If callee isn't that user, clear the LGTM status.
+			if reviewer.UserSpec.Domain != actor.Domain || reviewer.UserSpec.UID != int32(actor.UID) {
+				reviewer.LGTM = false
+			}
+		}
+	}
+
+	if err := (&repos{}).resolveRepoRev(ctx, &op.Changeset.DeltaSpec.Head); err != nil {
+		return nil, err
+	}
+
+	ts := pbtypes.NewTimestamp(time.Now())
+	op.Changeset.CreatedAt = &ts
+
 	if err := store.ChangesetsFromContext(ctx).Create(ctx, op.Repo.URI, op.Changeset); err != nil {
 		return nil, err
 	}
@@ -44,7 +71,21 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 }
 
 func (s *changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
-	return store.ChangesetsFromContext(ctx).Get(ctx, op)
+	cs, err := store.ChangesetsFromContext(ctx).Get(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	if op.FullReviewerUsers {
+		for _, reviewer := range cs.Reviewers {
+			reviewer.FullUser, err = svc.Users(ctx).Get(ctx, &reviewer.UserSpec)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return cs, nil
 }
 
 func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {

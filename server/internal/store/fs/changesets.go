@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"reflect"
 	"sort"
@@ -20,7 +19,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
@@ -28,7 +26,6 @@ import (
 	platformstorage "src.sourcegraph.com/sourcegraph/platform/storage"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 const (
@@ -58,38 +55,17 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 		return err
 	}
 	fs := s.storage(ctx, repoPath)
-	repoVCS, err := store.RepoVCSFromContext(ctx).Open(ctx, repoPath)
-	if err != nil {
-		return err
-	}
 
+	var err error
 	cs.ID, err = claimNextChangesetID(fs)
 	if err != nil {
 		return err
 	}
 
-	// It's fine to specify reviewers at creation time, but they can't set their
-	// LGTM status unless they are in fact that user.
-	a := authpkg.ActorFromContext(ctx)
-	if !a.HasAdminAccess() {
-		for _, reviewer := range cs.Reviewers {
-			// Get user to ensure we have a UID for comparison and storage (in case
-			// caller specifies just login).
-			reviewerUser, err := svc.Users(ctx).Get(ctx, &reviewer.UserSpec)
-			if err != nil {
-				return err
-			}
-			reviewer.UserSpec = reviewerUser.Spec()
-
-			// If callee isn't that user, clear the LGTM status.
-			if reviewer.UserSpec.Domain != a.Domain || reviewer.UserSpec.UID != int32(a.UID) {
-				reviewer.LGTM = false
-			}
-
-			// The CS needs review by the reviewer, so update the index.
-			if err := s.updateNeedsReviewIndex(ctx, fs, cs.ID, reviewer.UserSpec, true); err != nil {
-				return err
-			}
+	for _, reviewer := range cs.Reviewers {
+		// The CS needs review by the reviewer, so update the index.
+		if err := s.updateNeedsReviewIndex(ctx, fs, cs.ID, reviewer.UserSpec, true); err != nil {
+			return err
 		}
 	}
 
@@ -99,14 +75,7 @@ func (s *Changesets) Create(ctx context.Context, repoPath string, cs *sourcegrap
 		reviewer.FullUser = nil
 	}
 
-	ts := pbtypes.NewTimestamp(time.Now())
-	cs.CreatedAt = &ts
 	id := strconv.FormatInt(cs.ID, 10)
-	head, err := repoVCS.ResolveRevision(cs.DeltaSpec.Head.Rev)
-	if err != nil {
-		return err
-	}
-	cs.DeltaSpec.Head.CommitID = string(head)
 
 	err = platformstorage.PutJSON(fs, id, changesetMetadataFile, cs)
 	if err == nil {
@@ -163,15 +132,6 @@ func (s *Changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*
 	err := s.unmarshal(fs, op.Spec.ID, changesetMetadataFile, cs)
 	if err != nil {
 		return nil, err
-	}
-
-	if op.FullReviewerUsers {
-		for _, reviewer := range cs.Reviewers {
-			reviewer.FullUser, err = svc.Users(ctx).Get(ctx, &reviewer.UserSpec)
-			if err != nil {
-				return nil, err
-			}
-		}
 	}
 	return cs, err
 }
@@ -277,10 +237,9 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		after.Merged = true
 	}
 
-	addReviewer := func(add *sourcegraph.User, lgtm bool) error {
+	addReviewer := func(addSpec sourcegraph.UserSpec, lgtm bool) error {
 		// Check they aren't already a reviewer.
 		already := false
-		addSpec := add.Spec()
 		for _, reviewer := range after.Reviewers {
 			if reviewer.UserSpec.Domain == addSpec.Domain && reviewer.UserSpec.UID == addSpec.UID {
 				already = true
@@ -288,14 +247,9 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 			}
 		}
 		if !already {
-			fullUser := add
-			if !op.FullReviewerUsers {
-				fullUser = nil
-			}
 			after.Reviewers = append(after.Reviewers, &sourcegraph.ChangesetReviewer{
 				UserSpec: addSpec,
 				LGTM:     lgtm,
-				FullUser: fullUser,
 			})
 
 			// The CS needs review by the reviewer, so update the index.
@@ -307,27 +261,14 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	}
 
 	// Add a reviewer to the CS.
-	if add := op.AddReviewer; add != nil {
-		// Get user to ensure we have a UID for comparison and storage (in case
-		// caller specifies just login).
-		addUser, err := svc.Users(ctx).Get(ctx, add)
-		if err != nil {
-			return nil, err
-		}
-		if err := addReviewer(addUser, false); err != nil {
+	if op.AddReviewer != nil {
+		if err := addReviewer(*op.AddReviewer, false); err != nil {
 			return nil, err
 		}
 	}
 
 	// Remove a reviewer from the CS.
 	if remove := op.RemoveReviewer; remove != nil {
-		// Get user to ensure we have a UID for comparison and storage (in case
-		// caller specifies just login).
-		removeUser, err := svc.Users(ctx).Get(ctx, remove)
-		if err != nil {
-			return nil, err
-		}
-		*remove = removeUser.Spec()
 		for i, reviewer := range after.Reviewers {
 			if reviewer.UserSpec.Domain == remove.Domain && reviewer.UserSpec.UID == remove.UID {
 				// Delete from slice.
@@ -347,40 +288,31 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		return nil, errInvalidUpdateOp
 	}
 	if op.LGTM || op.NotLGTM {
-		// Confirm they have access to modify LGTM status for op.Author
-		a := authpkg.ActorFromContext(ctx)
-		authorUser, err := svc.Users(ctx).Get(ctx, &op.Author)
-		if err != nil {
-			return nil, err
-		}
-		hasAccess := a.HasAdminAccess() || authorUser.Domain == a.Domain && authorUser.UID == int32(a.UID)
-		if hasAccess {
-			updated := false
-			for _, reviewer := range after.Reviewers {
-				if reviewer.UserSpec.Domain == a.Domain && reviewer.UserSpec.UID == int32(a.UID) {
-					reviewer.LGTM = op.LGTM
-					updated = true
+		updated := false
+		for _, reviewer := range after.Reviewers {
+			if reviewer.UserSpec.Domain == op.Author.Domain && reviewer.UserSpec.UID == op.Author.UID {
+				reviewer.LGTM = op.LGTM
+				updated = true
 
-					if op.LGTM {
-						// The CS no longer needs review by the reviewer, so update the index.
-						if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, reviewer.UserSpec, false); err != nil {
-							return nil, err
-						}
-					} else {
-						// The CS needs review by the reviewer, so update the index.
-						if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, reviewer.UserSpec, true); err != nil {
-							return nil, err
-						}
+				if op.LGTM {
+					// The CS no longer needs review by the reviewer, so update the index.
+					if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, reviewer.UserSpec, false); err != nil {
+						return nil, err
 					}
-					break
+				} else {
+					// The CS needs review by the reviewer, so update the index.
+					if err := s.updateNeedsReviewIndex(ctx, fs, current.ID, reviewer.UserSpec, true); err != nil {
+						return nil, err
+					}
 				}
+				break
 			}
-			// Per the gRPC definition, if they aren't already a reviewer we will make
-			// them one.
-			if !updated {
-				if err := addReviewer(authorUser, op.LGTM); err != nil {
-					return nil, err
-				}
+		}
+		// Per the gRPC definition, if they aren't already a reviewer we will make
+		// them one.
+		if !updated {
+			if err := addReviewer(op.Author, op.LGTM); err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -455,12 +387,15 @@ func (s *Changesets) Merge(ctx context.Context, opt *store.ChangesetMergeOp) err
 	}
 	op := opt.Op
 
-	cs, _ := s.Get(ctx, &sourcegraph.ChangesetGetOp{
+	cs, err := s.Get(ctx, &sourcegraph.ChangesetGetOp{
 		Spec: sourcegraph.ChangesetSpec{
 			ID:   op.ID,
 			Repo: op.Repo,
 		},
 	})
+	if err != nil {
+		return err
+	}
 	base, head := cs.DeltaSpec.Base.Rev, cs.DeltaSpec.Head.Rev
 	if cs.Merged {
 		return grpc.Errorf(codes.FailedPrecondition, "changeset #%d already merged", cs.ID)
@@ -480,16 +415,8 @@ func (s *Changesets) Merge(ctx context.Context, opt *store.ChangesetMergeOp) err
 		Date:  pbtypes.NewTimestamp(time.Now()),
 	}
 
-	// Determine the clone URL.
-	cloneURL, err := url.Parse(opt.CloneURL)
-	if err != nil {
-		return err
-	}
-	cloneURL.User = url.User("x-oauth-basic")
-	repoPath := cloneURL.String()
-
 	// Create a repo stage to perform the merge operation.
-	rs, err := changesetsNewRepoStage(repoPath, base, opt.Token)
+	rs, err := changesetsNewRepoStage(opt.CloneURL, base, opt.Token)
 	if err != nil {
 		return err
 	}

@@ -59,10 +59,17 @@ type testSuite struct {
 	mirror                             bool
 	mirrorOrganization, mirrorRepoName string
 	github                             *github.Client
+	uid                                int32
 }
 
 // prepRepo creates a new repository, adds one file, commits and pushes it.
 func (ts *testSuite) prepRepo() error {
+	newUser, err := ts.server.Client.Accounts.Create(ts.ctx, &sourcegraph.NewAccount{Login: "jim", Password: "pw"})
+	if err != nil {
+		return err
+	}
+	ts.uid = newUser.UID
+
 	// Create the repository
 	if ts.mirror {
 		// Parse environment variables so we can exit early.
@@ -688,19 +695,22 @@ func testChangesets_ListEvents(t *testing.T, mirror bool) {
 	// Update the changeset title a few times.
 	updates := []*sourcegraph.ChangesetUpdateOp{
 		&sourcegraph.ChangesetUpdateOp{
-			Repo:  basicRepo,
-			ID:    cs.ID,
-			Title: "First new changeset title!",
+			Repo:   basicRepo,
+			ID:     cs.ID,
+			Title:  "First new changeset title!",
+			Author: sourcegraph.UserSpec{Login: "jim", UID: ts.uid},
 		},
 		&sourcegraph.ChangesetUpdateOp{
-			Repo:  basicRepo,
-			ID:    cs.ID,
-			Title: "Second new changeset title!",
+			Repo:   basicRepo,
+			ID:     cs.ID,
+			Title:  "Second new changeset title!",
+			Author: sourcegraph.UserSpec{Login: "jim", UID: ts.uid},
 		},
 		&sourcegraph.ChangesetUpdateOp{
-			Repo:  basicRepo,
-			ID:    cs.ID,
-			Title: "Third new changeset title!",
+			Repo:   basicRepo,
+			ID:     cs.ID,
+			Title:  "Third new changeset title!",
+			Author: sourcegraph.UserSpec{Login: "jim", UID: ts.uid},
 		},
 	}
 	for _, update := range updates {
