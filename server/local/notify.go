@@ -17,8 +17,6 @@ type notify struct{}
 var _ sourcegraph.NotifyServer = (*notify)(nil)
 
 func (s *notify) GenericEvent(ctx context.Context, e *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	// Dedup recipients. We do this here as a convenience to users of the
 	// API
 	e.Recipients = dedupUsers(e.Recipients)

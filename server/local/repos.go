@@ -55,8 +55,6 @@ func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegra
 	if err := s.setRepoOtherFields(ctx, r); err != nil {
 		return nil, err
 	}
-
-	veryShortCache(ctx)
 	return r, nil
 }
 
@@ -92,8 +90,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	if err := s.setRepoOtherFields(ctx, repos...); err != nil {
 		return nil, err
 	}
-
-	veryShortCache(ctx)
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
@@ -256,8 +252,6 @@ func (s *repos) defaultBranch(ctx context.Context, repoURI string) (string, erro
 }
 
 func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
-	cacheOnCommitID(ctx, repoRev.CommitID)
-
 	if repoRev.URI == "" {
 		return nil, errEmptyRepoURI
 	}
@@ -315,8 +309,6 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 }
 
 func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	store := store.RepoConfigsFromContext(ctx)
 
 	if op.Enable {
@@ -361,8 +353,6 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	if localcli.Flags.DisableRepoInventory {
 		return nil, grpc.Errorf(codes.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
 	}
-
-	defer cacheOnCommitID(ctx, repoRev.CommitID)
 
 	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
 		return nil, err

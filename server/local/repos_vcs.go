@@ -14,7 +14,6 @@ import (
 
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
-	cacheOnCommitID(ctx, repoRev.CommitID)
 
 	// Get default branch if no revision specified
 	if err := s.resolveRepoRevBranch(ctx, repoRev); err != nil {
@@ -42,7 +41,6 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 
 func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
 	log15.Debug("svc.local.repos.ListCommits", "op", op)
-	veryShortCache(ctx)
 
 	if op.Opt == nil {
 		op.Opt = &sourcegraph.RepoListCommitsOptions{}
@@ -202,7 +200,6 @@ func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranc
 		return nil, err
 	}
 
-	cacheFor(ctx, maxMutableVCSAge)
 	return &sourcegraph.BranchList{Branches: branches}, nil
 }
 
@@ -217,7 +214,6 @@ func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (
 		return nil, err
 	}
 
-	cacheFor(ctx, maxMutableVCSAge)
 	return &sourcegraph.TagList{Tags: tags}, nil
 }
 
@@ -238,7 +234,6 @@ func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCom
 		return nil, err
 	}
 
-	cacheFor(ctx, maxMutableVCSAge)
 	return &sourcegraph.CommitterList{Committers: committers}, nil
 }
 

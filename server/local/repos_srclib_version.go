@@ -21,7 +21,6 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetSrclibDataVersionForPath", entry.RepoRev.URI); err != nil {
 		return nil, err
 	}
-	wasAbs := isAbsCommitID(entry.RepoRev.CommitID)
 
 	if err := s.resolveRepoRev(ctx, &entry.RepoRev); err != nil {
 		return nil, err
@@ -35,9 +34,6 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		return nil, err
 	}
 	if len(vers) == 1 {
-		if wasAbs {
-			veryShortCache(ctx)
-		}
 		log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "exact match")
 		return &sourcegraph.SrclibDataVersion{CommitID: vers[0].CommitID, CommitsBehind: 0}, nil
 	}
@@ -57,7 +53,6 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		}
 		return nil, err
 	}
-	veryShortCache(ctx)
 	log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", fmt.Sprintf("lookback match %+v", info))
 	return info, nil
 }

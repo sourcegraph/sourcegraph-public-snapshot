@@ -31,8 +31,6 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 		opt = &sourcegraph.RepoTreeGetOptions{}
 	}
 
-	cacheOnCommitID(ctx, entrySpec.RepoRev.CommitID)
-
 	// It's OK if entrySpec is a dir. GetFileOptions will be ignored
 	// by the vcsstore server in that case.
 	entry0, err := s.getFromVCS(ctx, entrySpec, &opt.GetFileOptions)
@@ -139,8 +137,6 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
 	repoRevSpec := op.Rev
 
-	cacheOnCommitID(ctx, repoRevSpec.CommitID)
-
 	if err := (&repos{}).resolveRepoRev(ctx, &repoRevSpec); err != nil {
 		return nil, err
 	}
@@ -171,8 +167,6 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 	if opt == nil || strings.TrimSpace(opt.Query) == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "opt and opt.Query must be set")
 	}
-
-	cacheOnCommitID(ctx, repoRev.CommitID)
 
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
 	if err != nil {

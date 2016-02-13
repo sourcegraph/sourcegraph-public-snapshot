@@ -18,8 +18,6 @@ import (
 )
 
 func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	defer noCache(ctx)
-
 	actor := authpkg.ActorFromContext(ctx)
 	op.Author = sourcegraph.UserSpec{
 		UID:    int32(actor.UID),
@@ -72,8 +70,6 @@ func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 }
 
 func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
-	defer noCache(ctx)
-
 	if op == nil {
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty argument")
 	}

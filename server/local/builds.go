@@ -27,7 +27,6 @@ type builds struct{}
 var _ sourcegraph.BuildsServer = (*builds)(nil)
 
 func (s *builds) Get(ctx context.Context, build *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
-	veryShortCache(ctx)
 	return store.BuildsFromContext(ctx).Get(ctx, *build)
 }
 
@@ -51,13 +50,10 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) (*
 		streamResponse = sourcegraph.StreamResponse{HasMore: len(moreBuilds) > 0}
 	}
 
-	veryShortCache(ctx)
 	return &sourcegraph.BuildList{Builds: builds, StreamResponse: streamResponse}, nil
 }
 
 func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
-	defer noCache(ctx)
-
 	if len(op.CommitID) != 40 {
 		return nil, grpc.Errorf(codes.InvalidArgument, "Builds.Create requires full commit ID")
 	}
@@ -113,8 +109,6 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 }
 
 func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error) {
-	defer noCache(ctx)
-
 	b, err := store.BuildsFromContext(ctx).Get(ctx, op.Build)
 	if err != nil {
 		return nil, err
@@ -325,8 +319,6 @@ func (s *builds) ListBuildTasks(ctx context.Context, op *sourcegraph.BuildsListB
 }
 
 func (s *builds) CreateTasks(ctx context.Context, op *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error) {
-	defer noCache(ctx)
-
 	// Validate.
 	buildSpec := op.Build
 	tasks := op.Tasks
@@ -352,8 +344,6 @@ func (s *builds) CreateTasks(ctx context.Context, op *sourcegraph.BuildsCreateTa
 }
 
 func (s *builds) UpdateTask(ctx context.Context, op *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error) {
-	defer noCache(ctx)
-
 	t, err := store.BuildsFromContext(ctx).GetTask(ctx, op.Task)
 	if err != nil {
 		return nil, err

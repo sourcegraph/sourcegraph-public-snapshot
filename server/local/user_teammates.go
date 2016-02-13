@@ -83,7 +83,6 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		}
 	}
 
-	veryShortCache(ctx)
 	return &sourcegraph.Teammates{
 		LinkedUsers:   sgUsers,
 		ExternalUsers: extUsers,

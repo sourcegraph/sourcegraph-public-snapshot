@@ -9,8 +9,6 @@ import (
 )
 
 func (s *builds) GetRepoBuild(ctx context.Context, rev *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
-	wasAbs := isAbsCommitID(rev.CommitID) // cache if request was for absolute commit ID
-
 	if err := (&repos{}).resolveRepoRev(ctx, rev); err != nil {
 		return nil, err
 	}
@@ -22,8 +20,5 @@ func (s *builds) GetRepoBuild(ctx context.Context, rev *sourcegraph.RepoRevSpec)
 		return nil, grpc.Errorf(codes.NotFound, "No build found for %s", rev.String())
 	}
 
-	if wasAbs {
-		veryShortCache(ctx)
-	}
 	return build, nil
 }

@@ -25,8 +25,6 @@ var _ sourcegraph.ChangesetsServer = (*changesets)(nil)
 type changesets struct{}
 
 func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
-	defer noCache(ctx)
-
 	// It's fine to specify reviewers at creation time, but they can't set their
 	// LGTM status unless they are in fact that user.
 	if actor := authpkg.ActorFromContext(ctx); !actor.HasAdminAccess() {
@@ -89,8 +87,6 @@ func (s *changesets) Get(ctx context.Context, op *sourcegraph.ChangesetGetOp) (*
 }
 
 func (s *changesets) CreateReview(ctx context.Context, op *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
-	defer noCache(ctx)
-
 	review, err := store.ChangesetsFromContext(ctx).CreateReview(ctx, op.Repo.URI, op.ChangesetID, op.Review)
 	if err != nil {
 		return nil, err

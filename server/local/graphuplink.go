@@ -21,8 +21,6 @@ type graphUplink struct{}
 var _ sourcegraph.GraphUplinkServer = (*graphUplink)(nil)
 
 func (s *graphUplink) Push(ctx context.Context, snapshot *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	actorID := authpkg.ActorFromContext(ctx).ClientID
 	log15.Debug("GraphUplink metrics push", "actorID", actorID, "type", snapshot.Type, "dataSize", len(snapshot.TelemetryData))
 
@@ -51,8 +49,6 @@ func (s *graphUplink) Push(ctx context.Context, snapshot *sourcegraph.MetricsSna
 }
 
 func (s *graphUplink) PushEvents(ctx context.Context, eventList *sourcegraph.UserEventList) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	actorID := authpkg.ActorFromContext(ctx).ClientID
 
 	for _, event := range eventList.Events {

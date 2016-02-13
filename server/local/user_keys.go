@@ -33,7 +33,6 @@ type userKeys struct{}
 var _ sourcegraph.UserKeysServer = (*userKeys)(nil)
 
 func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
-	defer noCache(ctx)
 	actor := authpkg.ActorFromContext(ctx)
 
 	if !actor.IsAuthenticated() {
@@ -74,8 +73,6 @@ func (s *userKeys) AddKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*
 
 // LookupUser looks up user by key. The returned UserSpec will only have UID field set.
 func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
-	defer noCache(ctx)
-
 	userKV := pstorage.Namespace(ctx, sshKeysAppName, "")
 	var keysToUID map[string]int32
 	keyHash := publicKeyToHash(key.Key)
@@ -91,7 +88,6 @@ func (s *userKeys) LookupUser(ctx context.Context, key *sourcegraph.SSHPublicKey
 }
 
 func (s *userKeys) ListKeys(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
-	defer noCache(ctx)
 	actor := authpkg.ActorFromContext(ctx)
 
 	if !actor.IsAuthenticated() {
@@ -152,7 +148,6 @@ func (s *userKeys) getSSHKey(userKV pstorage.System, actor authpkg.Actor, key st
 }
 
 func (s *userKeys) DeleteAllKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes.Void, error) {
-	defer noCache(ctx)
 	actor := authpkg.ActorFromContext(ctx)
 
 	if !actor.IsAuthenticated() {
@@ -185,7 +180,6 @@ func (s *userKeys) DeleteAllKeys(ctx context.Context, _ *pbtypes.Void) (*pbtypes
 }
 
 func (s *userKeys) DeleteKey(ctx context.Context, key *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
-	defer noCache(ctx)
 	actor := authpkg.ActorFromContext(ctx)
 
 	if !actor.IsAuthenticated() {

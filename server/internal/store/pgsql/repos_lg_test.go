@@ -60,12 +60,6 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Artificial delay for caching. This speeds up the test as Builds.List
-	// performs a veryShortCache on the first lack-of-builds query which lasts for
-	// 7s. By introducing a delay here just long enough for the build to complete
-	// on average, we shave off 5s from the test run time.
-	time.Sleep(4 * time.Second)
-
 	// Wait for a build to succeeded for up to 10s.
 	for i := 0; i < 10; i++ {
 		builds, err := pgsqlServer.Client.Builds.List(pgsqlCtx, &sourcegraph.BuildListOptions{

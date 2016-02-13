@@ -255,9 +255,6 @@ func accessTokenToTokenResponse(t *oauth2.Token) *sourcegraph.AccessTokenRespons
 }
 
 func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
-	// TODO(sqs): cache until the expiration of the token
-	// shortCache(ctx)
-
 	a := authpkg.ActorFromContext(ctx)
 	return &sourcegraph.AuthInfo{
 		ClientID: a.ClientID,
@@ -299,8 +296,6 @@ func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.Extern
 	} else if err != nil {
 		return nil, err
 	}
-
-	shortCache(ctx)
 
 	return &sourcegraph.ExternalToken{
 		UID:      int32(dbToken.User),

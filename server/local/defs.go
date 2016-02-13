@@ -30,8 +30,6 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph
 		return nil, err
 	}
 
-	cacheOnCommitID(ctx, defSpec.CommitID)
-
 	if !isAbsCommitID(defSpec.CommitID) {
 		return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required (got %q)", defSpec.CommitID)
 	}
@@ -75,8 +73,6 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.List", ""); err != nil {
 		return nil, err
 	}
-
-	shortCache(ctx)
 
 	// Eliminate repos that don't exist.
 	origRepoRevs := opt.RepoRevs

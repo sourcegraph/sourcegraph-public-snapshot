@@ -18,13 +18,10 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repoRev *sourcegraph.Rep
 	if repoRev == nil {
 		return nil, fmt.Errorf("nil repo rev")
 	}
-	veryShortCache(ctx)
 	return store.RepoStatusesFromContext(ctx).GetCombined(ctx, *repoRev)
 }
 
 func (s *repoStatuses) Create(ctx context.Context, op *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
-	defer noCache(ctx)
-
 	repoRev := op.Repo
 	status := &op.Status
 	err := store.RepoStatusesFromContext(ctx).Create(ctx, repoRev, status)

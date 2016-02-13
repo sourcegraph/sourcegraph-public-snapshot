@@ -15,10 +15,7 @@ type users struct{}
 var _ sourcegraph.UsersServer = (*users)(nil)
 
 func (s *users) Get(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.User, error) {
-	store := store.UsersFromContext(ctx)
-
-	shortCache(ctx)
-	return store.Get(ctx, *user)
+	return store.UsersFromContext(ctx).Get(ctx, *user)
 }
 
 // resolveUserSpec fills in the UID and Login fields.
@@ -41,7 +38,6 @@ func (s *users) ensureUIDPopulated(ctx context.Context, userSpec *sourcegraph.Us
 }
 
 func (s *users) GetWithEmail(ctx context.Context, emailAddr *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
-	shortCache(ctx)
 	return store.UsersFromContext(ctx).GetWithEmail(ctx, *emailAddr)
 }
 
@@ -50,7 +46,6 @@ func (s *users) ListEmails(ctx context.Context, user *sourcegraph.UserSpec) (*so
 	if err != nil {
 		return nil, err
 	}
-	shortCache(ctx)
 	return &sourcegraph.EmailAddrList{EmailAddrs: emails}, nil
 }
 
@@ -59,13 +54,10 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) (*s
 	if err != nil {
 		return nil, err
 	}
-	shortCache(ctx)
 	return &sourcegraph.UserList{Users: users}, nil
 }
 
 func (s *users) Count(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserCount, error) {
-	noCache(ctx)
-
 	count, err := store.UsersFromContext(ctx).Count(elevatedActor(ctx))
 	if err != nil {
 		return nil, err

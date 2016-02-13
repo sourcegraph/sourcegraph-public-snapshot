@@ -37,8 +37,6 @@ type accounts struct {
 }
 
 func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
-	defer noCache(ctx)
-
 	usersStore := store.UsersFromContext(ctx)
 
 	var write, admin bool
@@ -149,8 +147,6 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 }
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	if err := store.AccountsFromContext(ctx).Update(ctx, in); err != nil {
 		return nil, err
 	}
@@ -159,8 +155,6 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 }
 
 func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
-	defer noCache(ctx)
-
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
 		if authpkg.ActorFromContext(ctx).PrivateMirrors {
 			invite.Admin = false
@@ -217,8 +211,6 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 }
 
 func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error) {
-	defer noCache(ctx)
-
 	// Prevent concurrent executions of this method to avoid creation of multiple
 	// accounts from the same invite token.
 	// TODO(performance): partition lock on token string.
@@ -265,8 +257,6 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 }
 
 func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
-	defer noCache(ctx)
-
 	invites, err := store.InvitesFromContext(ctx).List(ctx)
 	if err != nil {
 		return nil, err
@@ -276,8 +266,6 @@ func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegra
 }
 
 func (s *accounts) DeleteInvite(ctx context.Context, inviteSpec *sourcegraph.InviteSpec) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	if err := store.InvitesFromContext(ctx).DeleteByEmail(ctx, inviteSpec.Email); err != nil {
 		return nil, err
 	}
@@ -304,8 +292,6 @@ var sendEmail = func(template, name, email, subject string, templateContent []go
 var verifyAdminUser = accesscontrol.VerifyUserHasAdminAccess
 
 func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
-	defer noCache(ctx)
-
 	accountsStore := store.AccountsFromContext(ctx)
 
 	usersStore := store.UsersFromContext(ctx)
@@ -375,8 +361,6 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 }
 
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	accountsStore := store.AccountsFromContext(ctx)
 	err := accountsStore.ResetPassword(ctx, newPass)
 	if err != nil {
@@ -386,8 +370,6 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 }
 
 func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
-	defer noCache(ctx)
-
 	usersStore := store.UsersFromContext(ctx)
 	accountsStore := store.AccountsFromContext(ctx)
 

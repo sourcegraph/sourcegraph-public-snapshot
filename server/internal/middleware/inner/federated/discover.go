@@ -29,10 +29,6 @@ const (
 // If the returned Context is nil, then the caller's underlying
 // service should be used.
 func lookupRepo(ctx context.Context, repo *string) (context.Context, discover.Info, error) {
-	// Set NoSetCacheKey to avoid setting a cache-control trailer for
-	// Repos.Get, as opposed to the actual gRPC endpoint
-	ctx = context.WithValue(ctx, local.NoSetCacheKey, struct{}{})
-
 	if _, err := local.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: *repo}); errcode.GRPC(err) == codes.NotFound {
 		if ctx.Value(alreadyLookedUpRepo) != nil {
 			// Avoid infinite cycles.
