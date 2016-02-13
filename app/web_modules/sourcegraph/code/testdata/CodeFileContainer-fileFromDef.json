@@ -2,94 +2,14 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"className": "row",
 			"children": [
 				{
-					"type": "div",
+					"type": "CodeFileToolbar",
 					"props": {
-						"className": "code-file-toolbar",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"className": "file",
-									"children": [
-										{
-											"type": "i",
-											"props": {
-												"className": "fa fa-spinner fa-spin"
-											}
-										},
-										{
-											"type": "a",
-											"key": "base",
-											"props": {
-												"href": "/aRepo@aRev/.tree",
-												"children": [
-													"aRepo"
-												]
-											}
-										},
-										{
-											"type": "span",
-											"key": "0",
-											"props": {
-												"children": [
-													" / ",
-													{
-														"type": "a",
-														"props": {
-															"href": "/aRepo@aRev/.tree/somePath",
-															"children": [
-																"somePath"
-															]
-														}
-													}
-												]
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"className": "actions",
-									"children": [
-										{
-											"type": "",
-											"props": {
-												"btnSize": "btn-sm",
-												"RepoURI": "aRepo",
-												"commitID": "aRev",
-												"tooltipPosition": "top",
-												"Buildable": false
-											}
-										},
-										{
-											"type": "",
-											"props": {
-												"repoSpec": "aRepo",
-												"rev": "aRev",
-												"path": "somePath",
-												"alignRight": true
-											}
-										},
-										{
-											"type": "a",
-											"props": {
-												"className": "share top-action btn btn-default btn-xs",
-												"href": "/aRepo@aRev/.tree/somePath/.share",
-												"data-tooltip": true,
-												"title": "Select text to specify a line range",
-												"children": [
-													"Embed"
-												]
-											}
-										}
-									]
-								}
-							}
-						]
+						"repo": "aRepo",
+						"rev": "aRev",
+						"tree": "somePath"
 					}
 				},
 				{

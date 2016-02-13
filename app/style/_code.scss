@@ -193,7 +193,7 @@ pre code, .line-numbered-code td {
 }
 
 .line.main-byte-range {
- .line-content {
+	.line-content {
 		background-color: $active-code-bg;
 		-webkit-animation: highlight-flash 1s;
 		-moz-animation: highlight-flash 1s;

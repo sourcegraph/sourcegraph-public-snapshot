@@ -38,9 +38,9 @@ describe("RepoBuildIndicator", () => {
 			CommitID: "CTmmID123",
 			ID: 1,
 			expect: {
-				cls: "info",
+				cls: "primary",
 				txt: "started",
-				icon: "fa-spin",
+				icon: "fa-circle-o-notch fa-spin",
 			},
 		},
 		QUEUED: {
@@ -48,9 +48,9 @@ describe("RepoBuildIndicator", () => {
 			CommitID: "CQmmID123",
 			ID: 1,
 			expect: {
-				cls: "info",
+				cls: "primary",
 				txt: "queued",
-				icon: "fa-circle-o-notch",
+				icon: "fa-ellipsis-h",
 			},
 		},
 	};
