@@ -96,10 +96,13 @@ func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 	var err error
 	if userSpec.UID != 0 && userSpec.Login != "" {
 		user, err = s.getBySQL(ctx, "uid=$1 AND login=$2", userSpec.UID, userSpec.Login)
+		if err == sql.ErrNoRows {
+			err = &store.UserNotFoundError{UID: int(userSpec.UID), Login: userSpec.Login}
+		}
 	} else if userSpec.UID != 0 {
-		user, err = s.getBySQL(ctx, "uid=$1", userSpec.UID)
+		user, err = s.getByUID(ctx, int(userSpec.UID))
 	} else if userSpec.Login != "" {
-		user, err = s.getBySQL(ctx, "login=$1", userSpec.Login)
+		user, err = s.getByLogin(ctx, userSpec.Login)
 	} else {
 		return nil, &store.UserNotFoundError{}
 	}
@@ -109,22 +112,28 @@ func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*source
 // getByUID returns the user with the given uid, if such a user
 // exists in the database.
 func (s *users) getByUID(ctx context.Context, uid int) (*sourcegraph.User, error) {
-	return s.getBySQL(ctx, "uid=$1", uid)
+	user, err := s.getBySQL(ctx, "uid=$1", uid)
+	if err == sql.ErrNoRows {
+		err = &store.UserNotFoundError{UID: uid}
+	}
+	return user, err
 }
 
 // getByLogin returns the user with the given login, if such a user
 // exists in the database.
 func (s *users) getByLogin(ctx context.Context, login string) (*sourcegraph.User, error) {
-	return s.getBySQL(ctx, "login=$1", login)
+	user, err := s.getBySQL(ctx, "login=$1", login)
+	if err == sql.ErrNoRows {
+		err = &store.UserNotFoundError{Login: login}
+	}
+	return user, err
 }
 
 // getBySQL returns a user matching the SQL query (if any exists). A
 // "LIMIT 1" clause is appended to the query before it is executed.
 func (s *users) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
 	var user dbUser
-	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM users WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
-		return nil, &store.UserNotFoundError{Login: "(from args)"} // can't nicely serialize args
-	} else if err != nil {
+	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM users WHERE ("+query+") LIMIT 1", args...); err != nil {
 		return nil, err
 	}
 	return user.toUser(), nil
