@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf/feature"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
@@ -167,9 +166,8 @@ func New(base *mux.Router) *Router {
 	user.Path("/.settings/profile/avatar").Methods("POST").Name(UserSettingsProfileAvatar)
 	user.Path("/.settings/emails").Methods("GET").Name(UserSettingsEmails)
 	user.Path("/.settings/keys").Methods("GET", "POST").Name(UserSettingsKeys)
-	if !appconf.Flags.DisableIntegrations {
-		integrationsPath := "/.settings/integrations"
-		integrations := user.PathPrefix(integrationsPath).Subrouter()
+	if authutil.ActiveFlags.PrivateMirrors {
+		integrations := user.PathPrefix("/.settings/integrations").Subrouter()
 		integrations.Path("/{Integration}").Methods("POST").Name(UserSettingsIntegrationsUpdate)
 	}
 	if !authutil.ActiveFlags.DisableUserProfiles {

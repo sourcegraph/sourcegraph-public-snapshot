@@ -74,7 +74,7 @@
 				</a>
 			{{end}}
 		</div>
-		{{if (and .PrivateMirrors $.CurrentUser (not appconf.DisableIntegrations))}}
+		{{if (and .PrivateMirrors $.CurrentUser)}}
 			{{with .MirrorData}}
 			<h4>GitHub repositories available for mirroring</h4>
 			{{if (or .PrivateRepos .PublicRepos)}}
