@@ -8,7 +8,23 @@ Sourcegraph is available as the
 
 # Running a container
 
-To run Sourcegraph in a Docker container:
+To run Sourcegraph in a Docker container, first create the PostgreSQL
+database for Sourcegraph:
+
+```
+docker run \
+  --env PGHOST=myhost \
+  --env PGUSER=myuser \
+  --env PGPASSWORD=mypassword \
+  --env PGDATABASE=mydatabase \
+  sourcegraph/sourcegraph:latest \
+  pgsql create
+```
+
+The `PG*` environment variables must point to a valid PostgreSQL
+server.
+
+Then start the Sourcegraph server:
 
 ```
 docker run \
@@ -19,6 +35,10 @@ docker run \
   --restart on-failure:10 \
   --volume /var/lib/sourcegraph:/root/.sourcegraph \
   --volume /var/run/docker.sock:/var/run/docker.sock \
+  --env PGHOST=myhost \
+  --env PGUSER=myuser \
+  --env PGPASSWORD=mypassword \
+  --env PGDATABASE=mydatabase \
   sourcegraph/sourcegraph:latest \
   serve \
   --http-addr=:80 \
@@ -36,8 +56,10 @@ example) `--env DOCKER_HOST=tcp://1.2.3.4:2376`.
 
 ## Storage
 
-Sourcegraph's data (repositories, builds, users, etc.) is persisted on
-the host using a
+Most Sourcegraph data is stored in a PostgreSQL database, which the
+`PG*` environment variables must point to.
+
+Sourcegraph's Git repository data is persisted on the host using a
 [Docker volume](https://docs.docker.com/userguide/dockervolumes/). The
 command above uses the `/var/lib/sourcegraph` directory on the host to
 store this data.
