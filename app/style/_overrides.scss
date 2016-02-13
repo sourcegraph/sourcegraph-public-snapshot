@@ -2,12 +2,17 @@
 // Bootstrap
 // ----------------------------------------------------------------------------
 
+b, strong {
+	color: $text-strong-color;
+}
+
 .form-control {
 	box-shadow: none;
 }
 
 .btn {
 	&.btn-primary,
+	&.btn-secondary,
 	&.btn-success,
 	&.btn-info,
 	&.btn-danger,
@@ -24,8 +29,29 @@
 	}
 }
 
-.btn-group.open .dropdown-toggle {
+.btn.btn-secondary {
+	@include button-variant($white, $brand-secondary, darken($brand-secondary, 10%));
+}
+
+.open > .btn-default.dropdown-toggle {
 	box-shadow: none;
+	background-color: $btn-default-hover-bg;
+	border-color: $btn-default-hover-color;
+	color: $btn-default-hover-color;
+	&:hover,
+	&:focus {
+		background-color: $btn-default-hover-bg;
+		border-color: $btn-default-hover-color;
+		color: $btn-default-hover-color;
+	}
+}
+
+.btn-default.dropdown-toggle {
+	&:focus {
+		background-color: $btn-default-bg;
+		border-color: $btn-default-color;
+		color: $btn-default-dark;
+	}
 }
 
 hr {

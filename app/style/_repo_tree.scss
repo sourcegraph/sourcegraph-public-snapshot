@@ -30,7 +30,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 				width: 100%;
 				padding: $table-cell-padding 12px;
 				border: 1px solid $white;
-				border-bottom: 1px solid darken($off-white, 10);
+				border-bottom: $content-border;
 				background-color: $white;
 				&:focus {
 					outline: none;
@@ -51,15 +51,15 @@ $panel-repo-tree-padding-horizontal: 9px;
 			padding: 0;
 			margin: 0;
 			border-width: 0 1px 1px 1px;
-			background-color: $off-white;
+			background-color: $white;
 			font-weight: normal;
 
 			li {
 				padding: $table-cell-padding 12px;
-				border-bottom: 1px solid darken($off-white, 10);
+				border-bottom: $content-border;
 
 				&.selected {
-					background-color: darken($off-white, 5)
+					background-color: darken($white, 5)
 				}
 			}
 		}
@@ -80,6 +80,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 .panel-repo-tree {
 	padding-top: 1px;
+	margin-top: 14px;
 
 	box-shadow: none;
 	-webkit-box-shadow: none;
@@ -145,9 +146,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 		.build-indicator {
 			margin-right: 10px;
-			&.btn-success {
-				border-color: darken(#5cb85c, 15%);
-			}
 		}
 
 		.commit-title {
@@ -221,7 +219,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 	}
 
 	td.commit {
-		&, a { color: $gray-mid; }
 		time {
 			float: right;
 			padding-left: 25px;

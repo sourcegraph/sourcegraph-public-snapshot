@@ -538,7 +538,7 @@ h1.changeset-title {
 				span {
 					&:before { left: 12px; }
 					color: #fff;
-					background-color: $green;
+					background-color: $brand-success;
 				}
 			}
 		}
@@ -654,7 +654,8 @@ h1.changeset-title {
 		.comment-add-note {
 			padding: 10px 0 10px 5px;
 			border-top: 1px solid #eee;
-			background-color: #fefefe;
+			background-color: $panel-default-heading-bg;
+			color: $panel-default-text;
 			font-family: $font-family-sans-serif;
 
 			a {

@@ -95,7 +95,8 @@ pre.diff {
 div.file-list {
 	.file-list-header {
 		display: block;
-		background-color: #f5f5f5;
+		background-color: $panel-default-heading-bg;
+		color: $panel-default-text;
 		&:hover {
 			background-color: #f0f0f0;
 			text-decoration: none;
@@ -284,8 +285,9 @@ div.file-list {
 	border-bottom: solid 1px #dadada;
 
 	> header {
-		background-color: #f5f5f5;
-		border: solid 1px #dadada;
+		background-color: $panel-default-heading-bg;
+		color: $panel-default-text;
+		border: $content-border;
 		padding: 10px;
 		border-top-right-radius: 3px;
 		border-top-left-radius: 3px;
@@ -308,11 +310,11 @@ div.file-list {
 		border-width: 0 1px 0 1px;
 
 		.expand {
-			color: #b6b6b6;
+			background-color: $panel-default-heading-bg;
+			color: $panel-default-text;
 			line-height: 11px;
 			text-align: center;
 			border: 1px solid #efefef;
-			background-color: #fbfbfb;
 
 			i {
 				font-size: 11px;
@@ -343,7 +345,7 @@ div.file-list {
 			}
 			td {
 				border-color: #e5e5e5;
-				background-color: lighten($sg-blue-color, 40%);
+				background-color: lighten($panel-default-heading-bg, 1%);
 			}
 		}
 		tr.line.gray {

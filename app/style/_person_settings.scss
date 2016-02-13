@@ -75,7 +75,7 @@
 
 	&.person-settings-auth {
 		pre {
-			border: solid 1px mix($gray-mid, $gray-lighter);
+			border: $content-border;
 			border-radius: $border-radius-base;
 			background-color: $gray-lightest;
 			padding: $padding-small-vertical $padding-small-horizontal;

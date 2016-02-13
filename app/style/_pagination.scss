@@ -5,8 +5,8 @@
 
 	.disabled {
 		a, a:hover {
-			color: $gray-mid;
-			background-color: $gray-lightest;
+			color: $text-quieted;
+			background-color: $cloudy-blue;
 			cursor: default;
 			pointer-events: none;
 		}

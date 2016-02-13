@@ -49,7 +49,7 @@ $line-number-width: 40px;
 				color: inherit;
 				&:hover {
 					background-color: $light-blue;
-					color: $mid-blue;
+					color: darken($light-blue, 10%);
 				}
 			}
 		}
@@ -102,15 +102,15 @@ $line-number-width: 40px;
 
 @-webkit-keyframes yellow-fade {
 	0% {
-		background: $highlight-ref-bg;
-		box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
+		background: $token-hover-color;
+		box-shadow: inset 0px 0px 0px 1px $token-hover-border;
 	}
 }
 
 
 @keyframes yellow-fade {
 	0% {
-		background: $highlight-ref-bg;
-		box-shadow: inset 0px 0px 0px 1px $highlight-ref-border;
+		background: $token-hover-color;
+		box-shadow: inset 0px 0px 0px 1px $token-hover-border;
 	}
 }

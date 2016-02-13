@@ -1,6 +1,4 @@
 body {
-	margin-bottom: $footer-height;
-
 	&.route-def, &.route-repo-tree {
 		margin-bottom: 0;
 
@@ -10,30 +8,17 @@ body {
 	}
 }
 
-html {
-	position: relative;
-	min-height: 100%;
-}
-
 #footer {
-	position: absolute;
-	width: 100%;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	height: $footer-height;
-	color: $off-white;
+	color: $footer-text;
 
 	.footer-inner {
-		background-color: $dark-blue;
-		//height: $footer-height;
-		margin-top: 30px;
-		padding-top: 18px;
 		padding-bottom: 30px;
-	}
 
-	a {
-		color: white;
+		.footer-container {
+			margin-top: $line-height-computed;
+			padding-top: $line-height-computed;
+			border-top: $content-border;
+		}
 	}
 
 	li.separator {
@@ -42,7 +27,7 @@ html {
 
 	.container-fluid {
 		width: auto;
-		background-color: $dark-blue;
+		background-color: $dark-blue-grey;
 	}
 
 	.info {

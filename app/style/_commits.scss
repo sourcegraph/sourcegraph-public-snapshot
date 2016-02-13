@@ -37,18 +37,12 @@
 	p.author {
 		clear: right;
 		margin: 0;
-		span.date {
-			color: $gray-mid;
-		}
 	}
 }
 
 .commit-days {
 	.commit-day {
 		margin-top: $padding-large-vertical*2;
-		.commit-day-start {
-			color: $gray-mid;
-		}
 		.commit {
 			margin-left: 0;
 			margin-right: 0;

@@ -25,15 +25,16 @@
 	&.text-danger {
 		font-size: 13px;
 		padding: 0 7px;
-		color: #dd0000 !important;
+		color: $brand-danger !important;
 	}
 	i {
 		margin-right: 1px !important;
 	}
 	&.not-available {
-		color: brighten($gray-light, 5%);
+		color: $gray-light;
 	}
 	&.text-success {
-		color: brighten($brand-success, 18%);
+		margin-top: -2px;
+		color: $brand-success;
 	}
 }

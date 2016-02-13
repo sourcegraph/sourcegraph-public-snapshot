@@ -53,7 +53,7 @@
 		justify-content: center;
 		text-align: center;
 		z-index: 1;
-		background-color: transparentize($night-black, 0.10);
+		background-color: transparentize($jet-black, 0.10);
 		color: $white;
 		a {
 			color: $light-blue;
@@ -100,7 +100,7 @@
 			}
 
 			.tooltip-inner {
-				color: $subtle-silver;
+				color: $slate-grey;
 				b {
 					font-weight: normal;
 					color: $white;

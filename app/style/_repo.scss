@@ -83,7 +83,7 @@ div.repo-body {
 
 	.nav {
 		a {
-			color: $dark-blue;
+			color: $dark-blue-grey;
 		}
 	}
 
@@ -96,7 +96,7 @@ div.repo-body {
 	}
 
 	.repo-meta {
-		margin-top: 0.75em;
+		margin-top: 18px;
 		.description {
 			font-size: $font-size-base;
 			color: $heading-text-color;
@@ -126,6 +126,7 @@ div.repo-body {
 		.clone-copy {
 			color: $heading-text-color;
 			background-color: $heading-bg-color;
+			border: $content-border;
 		}
 	}
 }

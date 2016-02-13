@@ -170,13 +170,13 @@ var CodeReviewControlPanel = React.createClass({
 							return (
 								<span className={classes} key={fullUser.Login} style={styles}>
 									<div className="remove">
-										<button className="btn btn-secondary" onClick={this._removeReviewer.bind(this, fullUser)}>
+										<button className="btn btn-primary" onClick={this._removeReviewer.bind(this, fullUser)}>
 											<span className="octicon octicon-x"></span>
 										</button>
 									</div>
 									{reviewer.LGTM &&
 										<div className="lgtm">
-											<button className="btn btn-secondary">
+											<button className="btn btn-primary">
 												<span className="octicon octicon-check"></span>
 											</button>
 										</div>
@@ -187,14 +187,14 @@ var CodeReviewControlPanel = React.createClass({
 							);
 						}, this)}
 
-						<button className="add-person btn btn-secondary" data-toggle="button" style={{position: "relative"}} onClick={this._toggleAddPersonMenu}>
+						<button className="add-person btn btn-primary" data-toggle="button" style={{position: "relative"}} onClick={this._toggleAddPersonMenu}>
 							<Tooltip><b>add a reviewer</b></Tooltip>
 							<span className="octicon octicon-plus"></span>
 						</button>
 
 						{addPersonMenu}
 					</div>
-					<label className="btn btn-secondary active">
+					<label className="btn btn-primary">
 						<input type="checkbox" autoComplete="off" onChange={this._toggleLGTM} checked={isLGTM}></input> LGTM
 					</label>
 				</div>

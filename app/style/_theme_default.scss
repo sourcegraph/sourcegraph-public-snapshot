@@ -39,14 +39,14 @@
 
 	.highlight-primary {
 		background: $token-focus-color;
-		box-shadow: inset 0px 0px 0px 1px darken($token-focus-color, 8%);
+		box-shadow: inset 0px 0px 0px 1px $token-focus-border;
 	}
 	.highlight-secondary{
 		background: $token-hover-color;
-		box-shadow: inset 0px 0px 0px 1px darken($token-hover-color, 5%);
+		box-shadow: inset 0px 0px 0px 1px $token-hover-border;
 	}
 }
 
 pre.theme-default code {
-	background-color: white;
+	background-color: $white;
 }

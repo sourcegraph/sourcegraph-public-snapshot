@@ -29,7 +29,6 @@
 
 .search-results {
 	.summary {
-		color: $gray-mid;
 		font-style: italic;
 	}
 
@@ -46,7 +45,7 @@
 			@include disable-user-select;
 			.badge {
 				font-size: $font-size-base;
-				background-color: $dark-blue;
+				background-color: $dark-blue-grey;
 			}
 		}
 		li.active {
@@ -60,7 +59,7 @@
 .token-search-result {
 	a {
 		font-size: 16px;
-		color: $gray-mid;
+		color: $text-color;
 		code {
 			padding: 0;
 		}
@@ -70,7 +69,7 @@
 		}
 	}
 	p {
-		color: $gray-mid;
+		color: $text-color;
 		padding-top: 4px;
 	}
 	&:nth-of-type(1) {
@@ -93,7 +92,7 @@
 	}
 
 	.line-numbered-code {
-		border: 1px solid $border-gray;
+		border: $content-border;
 		border-top: none;
 		$result-section-padding: 6px;
 
