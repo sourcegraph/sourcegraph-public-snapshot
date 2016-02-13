@@ -382,7 +382,7 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, req *http.Requ
 		if eventProperties == nil && searchClick != "" {
 			eventProperties = make(map[string]string)
 			eventProperties["SearchClick"] = searchClick
-		} else if refererKey != "" {
+		} else if searchClick != "" {
 			eventProperties["SearchClick"] = searchClick
 		}
 	}
