@@ -48,12 +48,6 @@ If you run into errors while compiling protobufs, try again with these versions 
    go get -u sourcegraph.com/sourcegraph/gopathexec
    ```
 
-6. **Install `grpccache-gen`**:
-
-   ```
-   go get -u sourcegraph.com/sourcegraph/grpccache/grpccache-gen
-   ```
-
 ### Regenerating Go code after changing `sourcegraph.proto`
 
 1. In `go-sourcegraph` (this repository), run:

@@ -1,9 +1,9 @@
 package handlerutil
 
 import (
+	"log"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
@@ -13,7 +13,7 @@ func CacheMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFu
 	ctx := httpctx.FromRequest(r)
 
 	if hasNoCacheHeader(r) {
-		ctx = grpccache.NoCache(ctx)
+		log.Printf("TODO(granular-caching): ctx = NoCache(ctx)")
 		httpctx.SetForRequest(r, ctx)
 	}
 

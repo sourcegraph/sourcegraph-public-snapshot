@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -62,7 +61,7 @@ func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.Use
 		return sourcegraph.UserSpec{}, nil, err
 	}
 
-	p, userSpec, err := getUser(grpccache.NoCache(ctx), r)
+	p, userSpec, err := getUser(ctx, r)
 	if err != nil {
 		return sourcegraph.UserSpec{}, nil, err
 	}

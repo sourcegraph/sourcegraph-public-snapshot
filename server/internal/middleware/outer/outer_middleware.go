@@ -15,7 +15,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
@@ -65,9 +64,6 @@ type wrappedGitTransport struct {
 }
 
 func (s wrappedGitTransport) InfoRefs(ctx context.Context, v1 *gitpb.InfoRefsOp) (*gitpb.Packet, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -84,19 +80,10 @@ func (s wrappedGitTransport) InfoRefs(ctx context.Context, v1 *gitpb.InfoRefsOp)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedGitTransport) ReceivePack(ctx context.Context, v1 *gitpb.ReceivePackOp) (*gitpb.Packet, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -113,19 +100,10 @@ func (s wrappedGitTransport) ReceivePack(ctx context.Context, v1 *gitpb.ReceiveP
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedGitTransport) UploadPack(ctx context.Context, v1 *gitpb.UploadPackOp) (*gitpb.Packet, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -142,12 +120,6 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, v1 *gitpb.UploadPac
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -157,9 +129,6 @@ type wrappedMultiRepoImporter struct {
 }
 
 func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -176,19 +145,10 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, v1 *pb.IndexOp) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -205,12 +165,6 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, v1 *pb.IndexOp) (*p
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -220,9 +174,6 @@ type wrappedAccounts struct {
 }
 
 func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -239,19 +190,10 @@ func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -268,19 +210,10 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, v1 *sourcegra
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) ResetPassword(ctx context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -297,19 +230,10 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, v1 *sourcegraph.NewP
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -326,19 +250,10 @@ func (s wrappedAccounts) Update(ctx context.Context, v1 *sourcegraph.User) (*pbt
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) Invite(ctx context.Context, v1 *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -355,19 +270,10 @@ func (s wrappedAccounts) Invite(ctx context.Context, v1 *sourcegraph.AccountInvi
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) AcceptInvite(ctx context.Context, v1 *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -384,19 +290,10 @@ func (s wrappedAccounts) AcceptInvite(ctx context.Context, v1 *sourcegraph.Accep
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) ListInvites(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -413,19 +310,10 @@ func (s wrappedAccounts) ListInvites(ctx context.Context, v1 *pbtypes.Void) (*so
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) DeleteInvite(ctx context.Context, v1 *sourcegraph.InviteSpec) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -442,19 +330,10 @@ func (s wrappedAccounts) DeleteInvite(ctx context.Context, v1 *sourcegraph.Invit
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -471,12 +350,6 @@ func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -486,9 +359,6 @@ type wrappedAuth struct {
 }
 
 func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, v1 *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -505,19 +375,10 @@ func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, v1 *sourcegraph.A
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAuth) GetAccessToken(ctx context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -534,19 +395,10 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, v1 *sourcegraph.AccessT
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -563,19 +415,10 @@ func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (*sourcegra
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -592,19 +435,10 @@ func (s wrappedAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.Exter
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedAuth) SetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalToken) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -621,12 +455,6 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, v1 *sourcegraph.Exter
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -636,9 +464,6 @@ type wrappedBuilds struct {
 }
 
 func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -655,19 +480,10 @@ func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (*sou
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) GetRepoBuild(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -684,19 +500,10 @@ func (s wrappedBuilds) GetRepoBuild(ctx context.Context, v1 *sourcegraph.RepoRev
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -713,19 +520,10 @@ func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOption
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) Create(ctx context.Context, v1 *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -742,19 +540,10 @@ func (s wrappedBuilds) Create(ctx context.Context, v1 *sourcegraph.BuildsCreateO
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) Update(ctx context.Context, v1 *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -771,19 +560,10 @@ func (s wrappedBuilds) Update(ctx context.Context, v1 *sourcegraph.BuildsUpdateO
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) ListBuildTasks(ctx context.Context, v1 *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -800,19 +580,10 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, v1 *sourcegraph.Build
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) CreateTasks(ctx context.Context, v1 *sourcegraph.BuildsCreateTasksOp) (*sourcegraph.BuildTaskList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -829,19 +600,10 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, v1 *sourcegraph.BuildsCr
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpdateTaskOp) (*sourcegraph.BuildTask, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -858,19 +620,10 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, v1 *sourcegraph.BuildsUpd
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGetTaskLogOp) (*sourcegraph.LogEntries, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -887,19 +640,10 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGet
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -916,12 +660,6 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDe
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -931,9 +669,6 @@ type wrappedChangesets struct {
 }
 
 func (s wrappedChangesets) Create(ctx context.Context, v1 *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -950,19 +685,10 @@ func (s wrappedChangesets) Create(ctx context.Context, v1 *sourcegraph.Changeset
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -979,19 +705,10 @@ func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetGet
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) List(ctx context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1008,19 +725,10 @@ func (s wrappedChangesets) List(ctx context.Context, v1 *sourcegraph.ChangesetLi
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1037,19 +745,10 @@ func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.Changeset
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1066,19 +765,10 @@ func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetM
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) UpdateAffected(ctx context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1095,19 +785,10 @@ func (s wrappedChangesets) UpdateAffected(ctx context.Context, v1 *sourcegraph.C
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1124,19 +805,10 @@ func (s wrappedChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.Cha
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) ListReviews(ctx context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1153,19 +825,10 @@ func (s wrappedChangesets) ListReviews(ctx context.Context, v1 *sourcegraph.Chan
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedChangesets) ListEvents(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1182,12 +845,6 @@ func (s wrappedChangesets) ListEvents(ctx context.Context, v1 *sourcegraph.Chang
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1197,9 +854,6 @@ type wrappedDefs struct {
 }
 
 func (s wrappedDefs) Get(ctx context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1216,19 +870,10 @@ func (s wrappedDefs) Get(ctx context.Context, v1 *sourcegraph.DefsGetOp) (*sourc
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDefs) List(ctx context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1245,19 +890,10 @@ func (s wrappedDefs) List(ctx context.Context, v1 *sourcegraph.DefListOptions) (
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDefs) ListRefs(ctx context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1274,19 +910,10 @@ func (s wrappedDefs) ListRefs(ctx context.Context, v1 *sourcegraph.DefsListRefsO
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1303,19 +930,10 @@ func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListE
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1332,19 +950,10 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAu
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDefs) ListClients(ctx context.Context, v1 *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1361,12 +970,6 @@ func (s wrappedDefs) ListClients(ctx context.Context, v1 *sourcegraph.DefsListCl
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1376,9 +979,6 @@ type wrappedDeltas struct {
 }
 
 func (s wrappedDeltas) Get(ctx context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1395,19 +995,10 @@ func (s wrappedDeltas) Get(ctx context.Context, v1 *sourcegraph.DeltaSpec) (*sou
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDeltas) ListUnits(ctx context.Context, v1 *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1424,19 +1015,10 @@ func (s wrappedDeltas) ListUnits(ctx context.Context, v1 *sourcegraph.DeltasList
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDeltas) ListDefs(ctx context.Context, v1 *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1453,19 +1035,10 @@ func (s wrappedDeltas) ListDefs(ctx context.Context, v1 *sourcegraph.DeltasListD
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1482,19 +1055,10 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasList
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, v1 *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1511,19 +1075,10 @@ func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, v1 *sourcegraph.
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedDeltas) ListAffectedClients(ctx context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1540,12 +1095,6 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, v1 *sourcegraph.
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1555,9 +1104,6 @@ type wrappedGraphUplink struct {
 }
 
 func (s wrappedGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1574,19 +1120,10 @@ func (s wrappedGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSna
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.UserEventList) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1603,12 +1140,6 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.User
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1618,9 +1149,6 @@ type wrappedMarkdown struct {
 }
 
 func (s wrappedMarkdown) Render(ctx context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1637,12 +1165,6 @@ func (s wrappedMarkdown) Render(ctx context.Context, v1 *sourcegraph.MarkdownRen
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1652,9 +1174,6 @@ type wrappedMeta struct {
 }
 
 func (s wrappedMeta) Status(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerStatus, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1671,19 +1190,10 @@ func (s wrappedMeta) Status(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1700,12 +1210,6 @@ func (s wrappedMeta) Config(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1715,9 +1219,6 @@ type wrappedMirrorRepos struct {
 }
 
 func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1734,19 +1235,10 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, v1 *sourcegraph.Mirr
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedMirrorRepos) GetUserData(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1763,19 +1255,10 @@ func (s wrappedMirrorRepos) GetUserData(ctx context.Context, v1 *pbtypes.Void) (
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.WaitlistState, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1792,12 +1275,6 @@ func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, v1 *pbtypes.Void)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1807,9 +1284,6 @@ type wrappedMirroredRepoSSHKeys struct {
 }
 
 func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, v1 *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1826,19 +1300,10 @@ func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, v1 *sourcegraph.
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1855,19 +1320,10 @@ func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.Rep
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1884,12 +1340,6 @@ func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1899,9 +1349,6 @@ type wrappedNotify struct {
 }
 
 func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1918,12 +1365,6 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, v1 *sourcegraph.NotifyG
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -1933,9 +1374,6 @@ type wrappedOrgs struct {
 }
 
 func (s wrappedOrgs) Get(ctx context.Context, v1 *sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1952,19 +1390,10 @@ func (s wrappedOrgs) Get(ctx context.Context, v1 *sourcegraph.OrgSpec) (*sourceg
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedOrgs) List(ctx context.Context, v1 *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -1981,19 +1410,10 @@ func (s wrappedOrgs) List(ctx context.Context, v1 *sourcegraph.OrgsListOp) (*sou
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedOrgs) ListMembers(ctx context.Context, v1 *sourcegraph.OrgsListMembersOp) (*sourcegraph.UserList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2010,12 +1430,6 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, v1 *sourcegraph.OrgsListMe
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -2025,9 +1439,6 @@ type wrappedPeople struct {
 }
 
 func (s wrappedPeople) Get(ctx context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.Person, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2044,12 +1455,6 @@ func (s wrappedPeople) Get(ctx context.Context, v1 *sourcegraph.PersonSpec) (*so
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -2059,9 +1464,6 @@ type wrappedRegisteredClients struct {
 }
 
 func (s wrappedRegisteredClients) Get(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2078,19 +1480,10 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, v1 *sourcegraph.Regis
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.RegisteredClient, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2107,19 +1500,10 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, v1 *pbtypes.Vo
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRegisteredClients) Create(ctx context.Context, v1 *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2136,19 +1520,10 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, v1 *sourcegraph.Re
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRegisteredClients) Update(ctx context.Context, v1 *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2165,19 +1540,10 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, v1 *sourcegraph.Re
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRegisteredClients) Delete(ctx context.Context, v1 *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2194,19 +1560,10 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, v1 *sourcegraph.Re
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRegisteredClients) List(ctx context.Context, v1 *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2223,12 +1580,6 @@ func (s wrappedRegisteredClients) List(ctx context.Context, v1 *sourcegraph.Regi
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -2238,9 +1589,6 @@ type wrappedRepoBadges struct {
 }
 
 func (s wrappedRepoBadges) ListBadges(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2257,19 +1605,10 @@ func (s wrappedRepoBadges) ListBadges(ctx context.Context, v1 *sourcegraph.RepoS
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepoBadges) ListCounters(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2286,19 +1625,10 @@ func (s wrappedRepoBadges) ListCounters(ctx context.Context, v1 *sourcegraph.Rep
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepoBadges) RecordHit(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2315,19 +1645,10 @@ func (s wrappedRepoBadges) RecordHit(ctx context.Context, v1 *sourcegraph.RepoSp
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepoBadges) CountHits(ctx context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2344,12 +1665,6 @@ func (s wrappedRepoBadges) CountHits(ctx context.Context, v1 *sourcegraph.RepoBa
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -2359,9 +1674,6 @@ type wrappedRepoStatuses struct {
 }
 
 func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2378,19 +1690,10 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.Re
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepoStatuses) Create(ctx context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2407,12 +1710,6 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, v1 *sourcegraph.RepoSta
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -2422,9 +1719,6 @@ type wrappedRepoTree struct {
 }
 
 func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2441,19 +1735,10 @@ func (s wrappedRepoTree) Get(ctx context.Context, v1 *sourcegraph.RepoTreeGetOp)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSearchOp) (*sourcegraph.VCSSearchResultList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2470,19 +1755,10 @@ func (s wrappedRepoTree) Search(ctx context.Context, v1 *sourcegraph.RepoTreeSea
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepoTree) List(ctx context.Context, v1 *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2499,12 +1775,6 @@ func (s wrappedRepoTree) List(ctx context.Context, v1 *sourcegraph.RepoTreeListO
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -2514,9 +1784,6 @@ type wrappedRepos struct {
 }
 
 func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2533,19 +1800,10 @@ func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourc
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2562,19 +1820,10 @@ func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2591,19 +1840,10 @@ func (s wrappedRepos) Create(ctx context.Context, v1 *sourcegraph.ReposCreateOp)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2620,19 +1860,10 @@ func (s wrappedRepos) Update(ctx context.Context, v1 *sourcegraph.ReposUpdateOp)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2649,19 +1880,10 @@ func (s wrappedRepos) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pb
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) GetReadme(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2678,19 +1900,10 @@ func (s wrappedRepos) GetReadme(ctx context.Context, v1 *sourcegraph.RepoRevSpec
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2707,19 +1920,10 @@ func (s wrappedRepos) GetConfig(ctx context.Context, v1 *sourcegraph.RepoSpec) (
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) GetCommit(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2736,19 +1940,10 @@ func (s wrappedRepos) GetCommit(ctx context.Context, v1 *sourcegraph.RepoRevSpec
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) ListCommits(ctx context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2765,19 +1960,10 @@ func (s wrappedRepos) ListCommits(ctx context.Context, v1 *sourcegraph.ReposList
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) ListBranches(ctx context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2794,19 +1980,10 @@ func (s wrappedRepos) ListBranches(ctx context.Context, v1 *sourcegraph.ReposLis
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2823,19 +2000,10 @@ func (s wrappedRepos) ListTags(ctx context.Context, v1 *sourcegraph.ReposListTag
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2852,19 +2020,10 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, v1 *sourcegraph.ReposL
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2881,19 +2040,10 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, v1 *sourc
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) ConfigureApp(ctx context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2910,19 +2060,10 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, v1 *sourcegraph.RepoConf
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2939,12 +2080,6 @@ func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevS
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -2954,9 +2089,6 @@ type wrappedSearch struct {
 }
 
 func (s wrappedSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -2973,19 +2105,10 @@ func (s wrappedSearch) SearchTokens(ctx context.Context, v1 *sourcegraph.TokenSe
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3002,12 +2125,6 @@ func (s wrappedSearch) SearchText(ctx context.Context, v1 *sourcegraph.TextSearc
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -3017,9 +2134,6 @@ type wrappedStorage struct {
 }
 
 func (s wrappedStorage) Get(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3036,19 +2150,10 @@ func (s wrappedStorage) Get(ctx context.Context, v1 *sourcegraph.StorageKey) (*s
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedStorage) Put(ctx context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3065,19 +2170,10 @@ func (s wrappedStorage) Put(ctx context.Context, v1 *sourcegraph.StoragePutOp) (
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedStorage) PutNoOverwrite(ctx context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3094,19 +2190,10 @@ func (s wrappedStorage) PutNoOverwrite(ctx context.Context, v1 *sourcegraph.Stor
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedStorage) Delete(ctx context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3123,19 +2210,10 @@ func (s wrappedStorage) Delete(ctx context.Context, v1 *sourcegraph.StorageKey) 
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedStorage) Exists(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3152,19 +2230,10 @@ func (s wrappedStorage) Exists(ctx context.Context, v1 *sourcegraph.StorageKey) 
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedStorage) List(ctx context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3181,12 +2250,6 @@ func (s wrappedStorage) List(ctx context.Context, v1 *sourcegraph.StorageKey) (*
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -3196,9 +2259,6 @@ type wrappedUnits struct {
 }
 
 func (s wrappedUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3215,19 +2275,10 @@ func (s wrappedUnits) Get(ctx context.Context, v1 *sourcegraph.UnitSpec) (*unit.
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3244,12 +2295,6 @@ func (s wrappedUnits) List(ctx context.Context, v1 *sourcegraph.UnitListOptions)
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -3259,9 +2304,6 @@ type wrappedUserKeys struct {
 }
 
 func (s wrappedUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3278,19 +2320,10 @@ func (s wrappedUserKeys) AddKey(ctx context.Context, v1 *sourcegraph.SSHPublicKe
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3307,19 +2340,10 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, v1 *sourcegraph.SSHPubl
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3336,19 +2360,10 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, v1 *sourcegraph.SSHPubli
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUserKeys) ListKeys(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3365,19 +2380,10 @@ func (s wrappedUserKeys) ListKeys(ctx context.Context, v1 *pbtypes.Void) (*sourc
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3394,12 +2400,6 @@ func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, v1 *pbtypes.Void) (*
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
@@ -3409,9 +2409,6 @@ type wrappedUsers struct {
 }
 
 func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.User, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3428,19 +2425,10 @@ func (s wrappedUsers) Get(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourc
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3457,19 +2445,10 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, v1 *sourcegraph.EmailAdd
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3486,19 +2465,10 @@ func (s wrappedUsers) ListEmails(ctx context.Context, v1 *sourcegraph.UserSpec) 
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions) (*sourcegraph.UserList, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3515,19 +2485,10 @@ func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUsers) ListTeammates(ctx context.Context, v1 *sourcegraph.UserSpec) (*sourcegraph.Teammates, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3544,19 +2505,10 @@ func (s wrappedUsers) ListTeammates(ctx context.Context, v1 *sourcegraph.UserSpe
 		return nil, wrapErr(err)
 	}
 
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
-	}
-
 	return rv, nil
 }
 
 func (s wrappedUsers) Count(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph.UserCount, error) {
-	var cc *grpccache.CacheControl
-	ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -3571,12 +2523,6 @@ func (s wrappedUsers) Count(ctx context.Context, v1 *pbtypes.Void) (*sourcegraph
 	rv, err := innerSvc.Count(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
-	}
-
-	if !cc.IsZero() {
-		if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-			return nil, err
-		}
 	}
 
 	return rv, nil

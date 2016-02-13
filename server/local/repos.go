@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
@@ -373,8 +372,8 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	//
 	// We cache inventory result on the commit status. This lets us
 	// populate the cache by calling this method from anywhere (e.g.,
-	// after a git push). Just using grpccache would only cache the
-	// result in that particular client.
+	// after a git push). Just using the memory cache would mean that
+	// each server process would have to recompute this result.
 	const statusContext = "cache:repo.inventory"
 	statusRev := sourcegraph.RepoRevSpec{RepoSpec: repoRev.RepoSpec, CommitID: repoRev.CommitID}
 	statuses, err := svc.RepoStatuses(ctx).GetCombined(ctx, &statusRev)
@@ -384,10 +383,6 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	if status := statuses.GetStatus(statusContext); status != nil {
 		var inv inventory.Inventory
 		if err := json.Unmarshal([]byte(status.Description), &inv); err == nil {
-			if grpccache.GetNoCache(ctx) {
-				// Warn because debugging caching issues can be hard.
-				log15.Info("Repos.GetInventory is using cached inventory despite gRPC set to no-cache because inventory can be very slow (remove the commit status from the cache if needed)", "repoRev", statusRev)
-			}
 			return &inv, nil
 		}
 		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repoRev", statusRev, "err", err)

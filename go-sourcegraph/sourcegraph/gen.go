@@ -4,13 +4,11 @@ package sourcegraph
 
 //go:generate gen-mocks -w -i=.+(Server|Client|Service)$ -o mock -outpkg mock -name_prefix= -no_pass_args=opts
 
-//go:generate go run gen_cached.go
-
 //go:generate go generate ./mock
 
 // The pbtypes package selector is emitted as pbtypes1 when more than
 // one pbtypes type is used. Fix this up so that goimports works.
 //
-//go:generate go run gen/goreplace.go -from "pbtypes1" -to "pbtypes" cached_grpc.pb.go mock/sourcegraph.pb_mock.go
+//go:generate go run gen/goreplace.go -from "pbtypes1" -to "pbtypes" mock/sourcegraph.pb_mock.go
 
-//go:generate goimports -w cached_grpc.pb.go mock/sourcegraph.pb_mock.go
+//go:generate goimports -w mock/sourcegraph.pb_mock.go

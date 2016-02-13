@@ -35,7 +35,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
@@ -63,9 +62,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
   <<<$service := .>>>
 	<<<range .Methods>>>
 		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 *<<<.ParamType>>>) (*<<<.ResultType>>>, error) {
-			var cc *grpccache.CacheControl
-			ctx, cc = grpccache.Internal_WithCacheControl(ctx)
-
 			var err error
 			ctx, err = initContext(ctx, s.ctxFunc, s.services)
 			if err != nil {
@@ -80,12 +76,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 			rv, err := innerSvc.<<<.Name>>>(ctx, v1)
 			if err != nil {
 				return nil, wrapErr(err)
-			}
-
-			if !cc.IsZero() {
-				if err := grpccache.Internal_SetCacheControlTrailer(ctx, *cc); err != nil {
-					return nil, err
-				}
 			}
 
 			return rv, nil

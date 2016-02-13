@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/grpccache"
 	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -28,7 +27,7 @@ func buildReaper(ctx context.Context) {
 			return nil, err
 		}
 		for page := int32(1); ; page++ {
-			builds, err := cl.Builds.List(grpccache.NoCache(ctx), &sourcegraph.BuildListOptions{
+			builds, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
 				Active:      true,
 				ListOptions: sourcegraph.ListOptions{Page: page, PerPage: 100},
 			})

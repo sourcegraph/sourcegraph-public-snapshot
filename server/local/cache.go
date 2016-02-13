@@ -1,10 +1,10 @@
 package local
 
 import (
+	"log"
 	"time"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/grpccache"
 )
 
 const (
@@ -27,11 +27,11 @@ func cacheFor(ctx context.Context, maxAge time.Duration) {
 		return
 	}
 
-	grpccache.SetCacheControl(ctx, grpccache.CacheControl{MaxAge: maxAge})
+	log.Printf("TODO(granular-caching): SetCacheControl(ctx, CacheControl{MaxAge: %s})", maxAge)
 }
 
 func noCache(ctx context.Context) {
-	grpccache.SetCacheControl(ctx, grpccache.CacheControl{})
+	log.Printf("TODO(granular-caching): SetCacheControl(ctx, CacheControl{})")
 }
 
 func veryShortCache(ctx context.Context) {

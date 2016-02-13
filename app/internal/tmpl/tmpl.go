@@ -17,7 +17,6 @@ import (
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal/canonicalurl"
@@ -281,7 +280,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		}
 
 		var cacheControl string
-		if grpccache.GetNoCache(ctx) {
+		if /* TODO(granular-caching): GetNoCache(ctx) */ true {
 			cacheControl = "no-cache"
 		}
 

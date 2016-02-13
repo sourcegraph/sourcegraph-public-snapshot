@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/grpccache"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -56,7 +55,7 @@ func WaitForBuild(t *testing.T, ctx context.Context, buildSpec sourcegraph.Build
 			return nil, fmt.Errorf("build did not complete within %s", waitEnd)
 		}
 
-		b, err := cl.Builds.Get(grpccache.NoCache(ctx), &buildSpec)
+		b, err := cl.Builds.Get(ctx, &buildSpec)
 		if grpc.Code(err) == codes.NotFound {
 			// Maybe the build hasn't actually been created yet; don't
 			// treat that as a fatal error, just wait a bit.

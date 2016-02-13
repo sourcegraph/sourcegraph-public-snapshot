@@ -1,63 +1,13 @@
 package sgx
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
 	"log"
-	"os"
 
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/credentials/oauth"
-	"google.golang.org/grpc/metadata"
-	"sourcegraph.com/sourcegraph/grpccache"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
-	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
-
-func init() {
-	sourcegraph.Cache = &grpccache.Cache{
-		MaxSize: 150 * (1024 * 1024), // 150 MB
-		KeyPart: func(ctx context.Context) string {
-			// Separate caches based on the authorization level, to
-			// avoid cross-user/client leakage.
-			//
-			// The authorization metadata can be in EITHER:
-			//  (a) the client credentials, if the client was created
-			//      normally. This is tried first.
-			//  (b) the ctx's metadata, if the client was created by the
-			//      remote services in a federated request. This is tried
-			//      second in order to properly cache federated requests.
-			//
-			// NOTE: This is important code. If we don't get
-			// the right auth data, we could leak sensitive data
-			// across authentication boundaries.
-
-			key := sourcegraph.GRPCEndpoint(ctx).String() + ":"
-
-			if cred := sourcegraph.CredentialsFromContext(ctx); cred != nil {
-				md, err := (oauth.TokenSource{TokenSource: cred}).GetRequestMetadata(ctx)
-				if err != nil {
-					log.Printf("Determining cache key with token auth failed: %s. Caching will not be performed.", err)
-					// Use a random string to prevent caching.
-					return "err#" + randstring.NewLen(64)
-				}
-				key += md["authorization"]
-			} else if md, ok := metadata.FromContext(ctx); ok {
-				// if ctx metadata contains auth token, use it in the cache key
-				if authMD, ok := md["authorization"]; ok && len(authMD) > 0 {
-					key += authMD[len(authMD)-1]
-				}
-			}
-
-			s := sha256.Sum256([]byte(key))
-			return base64.StdEncoding.EncodeToString(s[:])
-		},
-		Log: os.Getenv("CACHE_LOG") != "",
-	}
-}
 
 func init() {
 	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
