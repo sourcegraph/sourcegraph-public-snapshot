@@ -70,6 +70,9 @@ func (ts *testSuite) prepRepo() error {
 	}
 	ts.uid = newUser.UID
 
+	// Wait for account creation to complete.
+	time.Sleep(500 * time.Millisecond)
+
 	// Create the repository
 	if ts.mirror {
 		// Parse environment variables so we can exit early.
