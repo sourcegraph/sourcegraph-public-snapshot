@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	pathpkg "path"
+	"path/filepath"
 	"time"
 
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"sort"
 
 	"golang.org/x/net/context"
-	"golang.org/x/tools/godoc/vfs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -26,6 +26,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -421,7 +422,7 @@ func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 	}
 
 	fs := vcs.FileSystem(vcsrepo, vcs.CommitID(repoRev.CommitID))
-	inv, err := inventory.Scan(ctx, walkableFileSystem{fs})
+	inv, err := inventory.Scan(ctx, vfsutil.Walkable(fs, filepath.Join))
 	if err != nil {
 		return nil, err
 	}
@@ -436,7 +437,3 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 	}
 	return false
 }
-
-type walkableFileSystem struct{ vfs.FileSystem }
-
-func (walkableFileSystem) Join(path ...string) string { return pathpkg.Join(path...) }

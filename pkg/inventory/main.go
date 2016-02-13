@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
+	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
 )
 
 var (
@@ -30,7 +31,7 @@ func main() {
 		defer cancel()
 	}
 
-	inv, err := inventory.Scan(ctx, walkableFileSystem{vfs.OS(*dir)})
+	inv, err := inventory.Scan(ctx, vfsutil.Walkable(vfs.OS(*dir), filepath.Join))
 	if err != nil {
 		if err == context.Canceled {
 			fmt.Fprintln(os.Stderr, "warning: timeout reached, inventory is incomplete")
@@ -46,7 +47,3 @@ func main() {
 	}
 	fmt.Println(string(data))
 }
-
-type walkableFileSystem struct{ vfs.FileSystem }
-
-func (walkableFileSystem) Join(path ...string) string { return filepath.Join(path...) }

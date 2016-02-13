@@ -2,11 +2,12 @@ package inventory
 
 import (
 	"errors"
-	pathpkg "path"
+	"path"
 	"reflect"
 	"testing"
 
-	"github.com/kr/fs"
+	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
+
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/mapfs"
@@ -14,28 +15,28 @@ import (
 
 func TestScan(t *testing.T) {
 	tests := map[string]struct {
-		fs      fs.FileSystem
+		fs      vfs.FileSystem
 		want    *Inventory
 		wantErr error
 	}{
 		"no files": {
-			fs:      walkableFileSystem{mapfs.New(map[string]string{})},
+			fs:      mapfs.New(map[string]string{}),
 			wantErr: errors.New("file does not exist"),
 		},
 		"empty file": {
-			fs:   walkableFileSystem{mapfs.New(map[string]string{"a": ""})},
+			fs:   mapfs.New(map[string]string{"a": ""}),
 			want: &Inventory{},
 		},
 		"excludes": {
-			fs: walkableFileSystem{mapfs.New(map[string]string{
+			fs: mapfs.New(map[string]string{
 				"a.min.js":                     "a",
 				"node_modules/a/b.js":          "a",
 				"Godeps/_workspace/src/a/b.go": "a",
-			})},
+			}),
 			want: &Inventory{},
 		},
 		"java": {
-			fs: walkableFileSystem{mapfs.New(map[string]string{"a.java": "a"})},
+			fs: mapfs.New(map[string]string{"a.java": "a"}),
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 1, Type: "programming"},
@@ -43,7 +44,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"go": {
-			fs: walkableFileSystem{mapfs.New(map[string]string{"a.go": "a"})},
+			fs: mapfs.New(map[string]string{"a.go": "a"}),
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Go", TotalBytes: 1, Type: "programming"},
@@ -51,7 +52,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"java and go": {
-			fs: walkableFileSystem{mapfs.New(map[string]string{"a.java": "aa", "a.go": "a"})},
+			fs: mapfs.New(map[string]string{"a.java": "aa", "a.go": "a"}),
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 2, Type: "programming"},
@@ -60,13 +61,13 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"large": {
-			fs: walkableFileSystem{mapfs.New(map[string]string{
+			fs: mapfs.New(map[string]string{
 				"a.java": "aaaaaaaaa",
 				"b.java": "bbbbbbb",
 				"a.go":   "aaaaa",
 				"b.go":   "bbb",
 				"c.txt":  "ccccc",
-			})},
+			}),
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 16, Type: "programming"},
@@ -77,7 +78,7 @@ func TestScan(t *testing.T) {
 		},
 	}
 	for label, test := range tests {
-		inv, err := Scan(context.Background(), test.fs)
+		inv, err := Scan(context.Background(), vfsutil.Walkable(test.fs, path.Join))
 		if err != nil && (test.wantErr == nil || err.Error() != test.wantErr.Error()) {
 			t.Errorf("%s: Scan: %s (want error %v)", label, err, test.wantErr)
 			continue
@@ -92,7 +93,3 @@ func TestScan(t *testing.T) {
 		}
 	}
 }
-
-type walkableFileSystem struct{ vfs.FileSystem }
-
-func (walkableFileSystem) Join(path ...string) string { return pathpkg.Join(path...) }

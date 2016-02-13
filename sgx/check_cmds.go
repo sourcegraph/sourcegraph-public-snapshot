@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
+	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
@@ -123,7 +124,7 @@ func (c *checkCmd) configureBuilder(ctx context.Context) (*builder.Builder, erro
 
 	// Inventory
 	b.Inventory = func(ctx context.Context) (*inventory.Inventory, error) {
-		return inventory.Scan(ctx, walkableFileSystem{fs})
+		return inventory.Scan(ctx, vfsutil.Walkable(fs, filepath.Join))
 	}
 
 	// CreateTasks
@@ -202,10 +203,6 @@ func (s taskState) CreateSubtask(ctx context.Context, label string) (builder.Tas
 func (s taskState) Log() io.Writer { return s.log }
 
 func (s taskState) String() string { return s.label }
-
-type walkableFileSystem struct{ vfs.FileSystem }
-
-func (walkableFileSystem) Join(path ...string) string { return filepath.Join(path...) }
 
 type nopWriteCloser struct{ io.Writer }
 

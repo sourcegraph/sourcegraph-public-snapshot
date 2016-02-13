@@ -21,6 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/misc/sampledata"
+	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
 )
 
 // prepareInitialOnboarding adds sample repos to show off
@@ -72,7 +73,7 @@ func (c *ServeCmd) prepareInitialOnboarding(ctx context.Context) error {
 		// Write the sample repository data to disk (from the
 		// sampledata VFS baked into this binary).
 		vfsDir := path.Join("/repos", strings.TrimPrefix(repo.URI, "sample/"))
-		sampledataVFS := walkableFileSystem{godocfs.New(sampledata.Data)}
+		sampledataVFS := vfsutil.Walkable(godocfs.New(sampledata.Data), path.Join)
 		w := fs.WalkFS(vfsDir, sampledataVFS)
 		for w.Step() {
 			if err := w.Err(); err != nil {
@@ -83,7 +84,7 @@ func (c *ServeCmd) prepareInitialOnboarding(ctx context.Context) error {
 				continue
 			}
 
-			path := strings.TrimPrefix(w.Path(), vfsDir+"/")
+			path := strings.TrimPrefix(w.Path(), vfsDir+string(os.PathSeparator))
 			path = strings.Replace(path, ".git-versioned", ".git", 1)
 			if err := os.MkdirAll(filepath.Join(dir, filepath.Dir(path)), 0700); err != nil {
 				return err
