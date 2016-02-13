@@ -7,7 +7,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-flags"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
-	"src.sourcegraph.com/sourcegraph/util/dbutil2"
 )
 
 var CLI = flags.NewNamedParser(sgxcmd.Name, flags.PrintErrors|flags.PassDoubleDash)
@@ -33,9 +32,6 @@ var ServeInit []func()
 // http.ServeMux as the argument. They can attach handlers to the
 // ServeMux prior to server startup.
 var ServeMuxFuncs []func(*http.ServeMux)
-
-// DBSchema is the postgres database schema in use by the stores.
-var DBSchema dbutil2.Schema
 
 var (
 	// ServerContext is a list of funcs that are run to initialize the

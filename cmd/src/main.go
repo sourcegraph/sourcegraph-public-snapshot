@@ -12,7 +12,6 @@ import (
 
 	// Server
 	_ "src.sourcegraph.com/sourcegraph/server/cmd"
-	_ "src.sourcegraph.com/sourcegraph/server/dbinit"
 
 	// Events
 	_ "src.sourcegraph.com/sourcegraph/events"
