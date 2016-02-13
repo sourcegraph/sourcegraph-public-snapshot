@@ -77,14 +77,11 @@
 // columns
 
 div.repo-body {
-	&.repo-body-full-width {
-		max-width: none;
-	}
+	margin-top: 18px;
 
-	.nav {
-		a {
-			color: $dark-blue-grey;
-		}
+	&.repo-body-full-width {
+		margin-top: 0;
+		max-width: none;
 	}
 
 	h1 {
@@ -96,7 +93,6 @@ div.repo-body {
 	}
 
 	.repo-meta {
-		margin-top: 18px;
 		.description {
 			font-size: $font-size-base;
 			color: $heading-text-color;

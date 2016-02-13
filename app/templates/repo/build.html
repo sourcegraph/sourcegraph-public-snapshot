@@ -3,7 +3,7 @@
 {{end}}
 
 {{define "RepoBody"}}
-<nav class="page-actions">
+<nav class="page-actions build-actions">
 	<a class="btn btn-default btn-sm" href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">&laquo; View all builds</a>
 	<form action="{{urlToRepoSubroute "repo.builds.create" .Repo.URI}}" method="post" class="form-inline">
 		<input type="hidden" name="CommitID" value="{{.Build.CommitID}}">

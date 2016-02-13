@@ -681,29 +681,23 @@ h1.changeset-title {
 
 .changeset-empty-list {
 	text-align: center;
-	color: #999;
 	padding: 100px 0;
 	font-size: 20px;
-	border-bottom: 1px solid #eee;
 }
 
 .changeset-list {
 	position: relative;
 
 	.btn.compare-review {
+		float: right;
+
 		span.octicon {
 			margin-right: 3px;
 		}
-
-		position: absolute;
-		top: 15px;
-		right: 5px;
 		font-size: 14px;
 	}
 
 	.changeset-tabs.nav {
-		padding: 15px 0 0 0;
-
 		li {
 			a {
 				span {

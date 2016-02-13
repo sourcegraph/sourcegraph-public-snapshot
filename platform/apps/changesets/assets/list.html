@@ -9,11 +9,10 @@
 		<li class="{{if .Op.NeedsReview}}active{{end}}">
 			<a href="{{$.BaseURI}}?assigned=true"><span class="octicon octicon-checklist"></span>Assigned to me</a>
 		</li>
+		<a class="btn btn-success compare-review" href="{{urlToCompare $.Ctx}}">
+			<span class="octicon octicon-git-compare"></span> Create a new changeset
+		</a>
 	</ul>
-
-	<a class="btn btn-primary compare-review" href="{{urlToCompare $.Ctx}}">
-		<span class="octicon octicon-git-compare"></span> Create a new changeset
-	</a>
 
 	{{$repo := .Repo.URI}}
 

@@ -79,19 +79,12 @@ $panel-repo-tree-padding-horizontal: 9px;
 }
 
 .panel-repo-tree {
-	padding-top: 1px;
-	margin-top: 14px;
-
 	box-shadow: none;
 	-webkit-box-shadow: none;
 
 	header.rev-and-breadcrumb {
-		// Reserve room for the RepoRevSwitcher React component (to avoid UI jitter).
-		min-height: 42px;
-		span[data-react=RepoRevSwitcher] { min-width: 83px; min-height: 18px; display: inline-block; }
-
-		padding: $padding-base-vertical 0;
-		margin-bottom: $font-size-base;
+		margin-top: 7px;
+		margin-bottom: 14px;
 
 		.btn.compare-review {
 			padding-left: 10px;

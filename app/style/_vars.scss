@@ -79,12 +79,12 @@ $file-toolbar-path-color: $warm-grey;
 
 $line-number-bg: $pale-grey;
 $line-number-text: $cloudy-blue;
-$active-code-bg: transparentize($brand-azure, 0.85);
-$active-code-flash-bg: transparentize($brand-azure, 0.80);
+$active-code-bg: transparentize($brand-azure, 0.90);
+$active-code-flash-bg: transparentize($brand-azure, 0.85);
 $token-focus-color: $lemon;
 $token-focus-border: darken($token-focus-color, 8%);
 $token-hover-color: transparentize($lemon, 0.56);
-$token-hover-border: darken($token-focus-color, 5%);
+$token-hover-border: darken($token-hover-color, 5%);
 
 /* Bootstrap Overrides */
 $brand-primary: $brand-azure;
