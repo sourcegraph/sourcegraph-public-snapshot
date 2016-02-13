@@ -32,6 +32,10 @@ type dashboardData struct {
 	tmpl.Common
 }
 
+type marshalledDashboard struct {
+	JSON string
+}
+
 func execDashboardTmpl(w http.ResponseWriter, r *http.Request, d *dashboardData) error {
 	d.IsLDAP = authutil.ActiveFlags.IsLDAP()
 	q := r.URL.Query()

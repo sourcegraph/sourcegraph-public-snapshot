@@ -2,44 +2,71 @@
 {{end}}
 
 {{define "Body"}}
-<br/>
-{{if eq .AppURL.String "http://src.sourcegraph.com"}}
-<div class="row">
-	<div class="col-md-12">
-		<h5>New to Sourcegraph? <a href="https://src.sourcegraph.com/sourcegraph/.docs/getting-started/">Getting started</a> is easy!</h5>
-	</div>
-</div>
-<br>
-{{end}}
-{{if (and .PrivateMirrors .CurrentUser (or .LinkGitHub .OnWaitlist))}}
-	{{if .LinkGitHub}}
-	<div class="row">
-		<div class="col-md-offset-3 col-md-6">
-			<br>
-			<div class="well oauth-provider">
-				<h1>Welcome to Sourcegraph!</h1>
-				<p>Link your GitHub account to add your code to Sourcegraph</p>
-				<form action={{router.URLToGitHubOAuth}} method="get">
-					<div class="form-group">
-						<button type="submit" class="btn btn-sgblue btn-lg">Link GitHub Account</button>
-					</div>
-				</form>
-				<div class="clearfix"></div>
-			</div>
-		</div>
-	</div>
+
+<script>
+	window.repos = JSON.parse({{json .Repos}}) || [];
+	window.users = JSON.parse({{json .Users}}) || [];
+
+	window.progress = {
+		numSteps: 4,
+	};
+	// TODO: inject .DoOnboarding (for post .LinkGitHub)
+	{{if (or (and .PrivateMirrors .CurrentUser) .LinkGitHub)}}
+		{{if .LinkGitHub}}
+			window.progress.currentStep = 0;
+			window.progress.githubLinkURL = "{{router.URLToGitHubOAuth}}";
+		{{else}}
+			window.progress.currentStep = 1;
+		{{end}}
 	{{else}}
-	<div class="row">
-		<div class="col-md-offset-3 col-md-6">
-			<br>
-			<div class="well oauth-provider">
-				<h1>You're on the waitlist!</h1>
-				<p>Look out for an email from us when you get access. Feel free to explore public repositories till then.</p>
-				<div class="clearfix"></div>
-			</div>
-		</div>
-	</div>
+		// This is where we would tell you you're on the whitelist.
 	{{end}}
+	window.progres.currentStep = 30; // TODO: remove
+
+	{{if (and .PrivateMirrors $.CurrentUser (not appconf.DisableIntegrations))}}
+		var mirrorData = JSON.parse({{json .MirrorData}});
+		var counter = 0;
+		var privateRepos = mirrorData.PrivateRepos.map(function(repo) {
+			var uriParts = repo.Repo.URI.split("/");
+			return {
+				name: uriParts[0] === "github.com" ? uriParts.slice(1).join("/") : repo.Repo.URI,
+				index: counter++,
+				URI: repo.Repo.URI,
+				updatedAt: new Date(repo.Repo.UpdatedAt),
+				description: repo.Repo.Description,
+				org: uriParts[0] === "github.com" ? uriParts[1] : uriParts[0],
+				isPrivate: true,
+			}
+		});
+		var publicRepos = mirrorData.PrivateRepos.map(function(repo) {
+			var uriParts = repo.Repo.URI.split("/");
+			return {
+				name: uriParts[0] === "github.com" ? uriParts.slice(1).join("/") : repo.Repo.URI,
+				index: counter++,
+				URI: repo.Repo.URI,
+				updatedAt: new Date(repo.Repo.UpdatedAt),
+				description: repo.Repo.Description,
+				org: uriParts[0] === "github.com" ? uriParts[1] : uriParts[0],
+				isPrivate: false,
+			}
+		});
+		window.mirrorRepos = privateRepos.concat(publicRepos);
+	{{end}}
+	window.mirrorRepos = window.mirrorRepos || [];
+
+	window.addRepoURL = "{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}";
+	window.csrfToken = "{{.CSRFToken}}";
+
+
+</script>
+
+<div>
+	<div id="DashboardContainer"></div>
+	<div id="OnboardingContainer"></div>
+</div>
+
+<div style="display:none;">
+{{if (and .PrivateMirrors .CurrentUser (or .LinkGitHub .OnWaitlist))}}
 {{else}}
 {{$hasUsers := (or .PrivateMirrors .Users)}}
 <div class="row dashboard">
@@ -54,7 +81,7 @@
 			<div class="well">
 				<form action={{router.URLToRepoCreate}} method="post">
 					<div class="form-group">
-						<label for="repo-name-input">Create a repository:</label> <input type="text" name="repo-name" id="repo-name-input" placeholder="e.g. my-project" class="form-control" required="true">
+						<label for="repo-name-input">Create a repository:</label> <input type="text" name="repo-name" id="repo-name-input" placeholder="e.g. my-project" class="form-control">
 					</div>
 					<div class="form-group">
 						<button type="submit" class="btn btn-primary">Create</button>
@@ -208,5 +235,7 @@
 		{{end}}
 	</div>
 </div>
+
 {{end}}
+</div>
 {{end}}

@@ -3,30 +3,34 @@
 {{end}}
 
 {{define "Body"}}
-<div class="row">
-	<div class="col-md-5">
-		{{if .FirstUser}}
-		<h1>Set up Sourcegraph</h1>
-		<p>Set up your new Sourcegraph server by logging in{{if .IsLDAP}} via LDAP{{end}} to create an admin account.</p>
-		<p>{{template "dataCollectionMessage"}}</p>
-		{{else}}
-		<h1>Sign into your account{{if .IsLDAP}} via LDAP{{end}}</h1>
-		{{end}}
-		<form method="post" action="{{urlToWithReturnTo "log-in" .ReturnTo}}" class="log-in">
-			<p class="help-block">{{.LoginForm.FormError}}</p>
-			<div class="form-group {{.LoginForm.FieldClass "Login"}}">
-				<label for="login">Username</label>
-				<input name="Login" type="text" class="form-control" id="login" value="{{.LoginForm.Login}}" required pattern="[\w-]+" tabindex=1 autofocus>
-				{{if (not .IsLDAP)}}<p class="help-block">{{.LoginForm.FieldError "Login"}} No account yet? <a href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">Sign up.</a></p>{{end}}
+<div class="row row-single-panel">
+	<div class="col-md-6 col-md-offset-3">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<p class="get-started-header">Hey there,<br>welcome back!</p>
+				<div class="form-container">
+					<form method="post" action="{{urlToWithReturnTo "log-in" .ReturnTo}}" class="log-in">
+						<p class="help-block">{{.LoginForm.FormError}}</p>
+						<div class="form-group {{.LoginForm.FieldClass "Login"}}">
+							<input placeholder="Username" name="Login" type="text" class="form-control" id="login" value="{{.LoginForm.Login}}" required pattern="[\w-]+" tabindex=1 autofocus>
+						</div>
+						<div class="form-group {{.LoginForm.FieldClass "Password"}}">
+							<input placeholder="Password" name="Password" type="password" class="form-control" id="password" required tabindex=2>
+						</div>
+						<button type="submit" class="btn btn-primary btn-block" tabindex=3>LOGIN</button>
+						<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+					</form>
+					<p class="small-block">
+						{{if .IsLDAP}}
+						Use your LDAP credentials to login.
+						{{else}}
+						{{.LoginForm.FieldError "Password"}} Oh no, I <a href="{{urlToWithReturnTo "forgot-password" .ReturnTo}}">forgot my password</a>
+						{{end}}
+					</p>
+					{{if (not .IsLDAP)}}<p class="redirect-block">Don't have an account yet? <a href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">Sign Up</a></p>{{end}}
+				</div>
 			</div>
-			<div class="form-group {{.LoginForm.FieldClass "Password"}}">
-				<label for="password">Password</label>
-				<input name="Password" type="password" class="form-control" id="password" required tabindex=2>
-				<p class="help-block">{{.LoginForm.FieldError "Password"}} <a href="{{urlToWithReturnTo "forgot-password" .ReturnTo}}">Forgot your password?</a></p>
-			</div>
-			<button type="submit" class="btn btn-primary btn-lg" tabindex=3>Sign in</button>
-			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-		</form>
+		</div>
 	</div>
 </div>
 {{end}}

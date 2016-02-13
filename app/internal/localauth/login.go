@@ -18,6 +18,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -85,11 +86,13 @@ func serveLoginForm(w http.ResponseWriter, r *http.Request, form loginForm) erro
 		LoginForm loginForm
 		FirstUser bool
 		IsLDAP    bool
+		IsRoot    bool
 		tmpl.Common
 	}{
 		LoginForm: form,
 		FirstUser: (numUsers.Count == 0),
 		IsLDAP:    authutil.ActiveFlags.IsLDAP(),
+		IsRoot:    fed.Config.IsRoot,
 	})
 }
 

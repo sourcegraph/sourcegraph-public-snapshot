@@ -2,6 +2,8 @@ var $ = require("jquery");
 var React = require("react");
 var ReactDOM = require("react-dom");
 
+var DashboardContainer = require("sourcegraph/dashboard/DashboardContainer").default;
+var OnboardingContainer = require("sourcegraph/dashboard/OnboardingContainer").default;
 var BuildContainer = require("sourcegraph/build/BuildContainer").default;
 var CloseChangesetButton = require("./components/CloseChangesetButton");
 var CompareView = require("./components/CompareView");
@@ -28,6 +30,22 @@ require("./apps/changes/componentInjection.js");
 // TODO use some common method for all components
 document.addEventListener("DOMContentLoaded", () => {
 	var el;
+
+	el = $("#DashboardContainer");
+	if (el.length > 0) {
+		ReactDOM.render(
+			<DashboardContainer />,
+			el[0]
+		);
+	}
+
+	el = $("#OnboardingContainer");
+	if (el.length > 0) {
+		ReactDOM.render(
+			<OnboardingContainer />,
+			el[0]
+		);
+	}
 
 	el = $("#SearchBar");
 	if (el.length > 0) {

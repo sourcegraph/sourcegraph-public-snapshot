@@ -1,3 +1,69 @@
+.row-single-panel {
+	text-align: center;
+	margin-top: 80px;
+
+	.get-started-header {
+		margin-top: 70px;
+		font-size: 24px;
+		margin-bottom: 60px;
+	}
+
+	.panel {
+		box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.05);
+	}
+
+	.form-container {
+		display: inline-block;
+		width: 75%;
+		margin: auto;
+
+		.form-group {
+			margin-bottom: 24px;
+		}
+
+		input {
+			height: 40px;
+		}
+
+		button {
+			font-size: 13px;
+			letter-spacing: 1px;
+			height: 48px;
+		}
+	}
+
+	.panel-footer {
+		background-color: #f6fafd;
+		height: 81px;
+
+		span {
+			margin-left: 5px;
+			margin-top: 18px;
+			float: left
+		}
+
+		a {
+			margin-right: 5px;
+			margin-top: 18px;
+			float: right;
+		}
+	}
+
+	.small-block {
+		margin-top: 24px;
+		font-size: 13px;
+		font-face: Circular-Book;
+		color: #bfc2d0;
+	}
+
+	.redirect-block {
+		font-size: 16px;
+		font-face: Circular-Book;
+		color: #7794ae;
+		margin-top: 24px;
+	}
+}
+
 form.sign-up {
 	.notice {
 		margin: 15px 0;

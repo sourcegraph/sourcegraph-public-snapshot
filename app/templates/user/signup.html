@@ -3,55 +3,61 @@
 {{end}}
 
 {{define "Body"}}
-<div class="row">
-	<div class="col-md-5">
-		{{if .FirstUser}}
-		<h1>Set up Sourcegraph</h1>
-		<p>Set up your new Sourcegraph server by first creating an admin account.</p>
-		{{else if .SignupForm.Token}}
-		<h1>Join this Sourcegraph server</h1>
-		<p>To accept your invitation and create an account on this server, choose a login and password.</p>
-		{{else}}
-		<h1>Create a personal account</h1>
-		{{end}}
+<div class="row row-single-panel">
+	<div class="col-md-6 col-md-offset-3">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<p class="get-started-header">Get started with<br>Sourcegraph {{if .IsRoot}}Cloud{{else}}Server{{end}}</p>
+				<div class="form-container">
+					<form method="post" action="{{urlToWithReturnTo "sign-up" .ReturnTo}}" class="sign-up">
+						<p class="help-block">{{.SignupForm.FormError}}</p>
+						<div class="form-group {{.SignupForm.FieldClass "Login"}}">
+							<input placeholder="Username" name="Login" type="text" class="form-control" id="login" value="{{.SignupForm.Login}}" required pattern="[\w-]+" tabindex=1 autofocus>
+							<p class="help-block">
+								{{with .SignupForm.FieldError "Login"}}
+								{{.}}
+								{{end}}
+							</p>
+						</div>
+						<div class="form-group {{.SignupForm.FieldClass "Password"}}">
+							<input placeholder="Password" name="Password" type="password" class="form-control" id="password" value="{{.SignupForm.Password}}" required tabindex=2>
+							<p class="help-block">{{.SignupForm.FieldError "Password"}}</p>
+						</div>
+						<div class="form-group {{.SignupForm.FieldClass "Email"}}">
+							<input placeholder="Email" name="Email" type="email" class="form-control" id="email" value="{{.SignupForm.Email}}" required {{if .SignupForm.Token}}readonly {{end}}tabindex=3>
+							<p class="help-block">
+								{{with .SignupForm.FieldError "Email"}}
+								{{.}}
+								{{end}}
+							</p>
+						</div>
 
-		<form method="post" action="{{urlToWithReturnTo "sign-up" .ReturnTo}}" class="sign-up">
-			<p class="help-block">{{.SignupForm.FormError}}</p>
-			<div class="form-group {{.SignupForm.FieldClass "Login"}}">
-				<label for="login">Username</label>
-				<input name="Login" type="text" class="form-control" id="login" value="{{.SignupForm.Login}}" required pattern="[\w-]+" tabindex=1 autofocus>
-				<p class="help-block">
-					{{with .SignupForm.FieldError "Login"}}
-						{{.}}
-					{{end}}
-				</p>
+						{{$btnLabel := printf "CREATE %s ACCOUNT" (ifString .FirstUser "ADMIN")}}
+						<button type="submit" class="btn btn-primary btn-block" tabindex=4>{{$btnLabel}}</button>
+						<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+						{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
+					</form>
+					<p class="small-block">
+						{{if .IsRoot}}
+						By creating an account you agree to our <a href="https://sourcegraph.com/privacy">privacy policy</a> and <a href="https://sourcegraph.com/terms">terms</a>.
+						{{else if .FirstUser}}
+						{{template "dataCollectionMessage"}}
+						{{end}}
+					</p>
+					<p class="redirect-block">Already have an account? <a href="{{urlToWithReturnTo "log-in" .ReturnTo}}">Login</a></p>
+				</div>
 			</div>
-			<div class="form-group {{.SignupForm.FieldClass "Password"}}">
-				<label for="password">Password</label>
-				<input name="Password" type="password" class="form-control" id="password" value="{{.SignupForm.Password}}" required tabindex=2>
-				<p class="help-block">{{.SignupForm.FieldError "Password"}}</p>
-			</div>
-			<div class="form-group {{.SignupForm.FieldClass "Email"}}">
-				<label for="email">Email address</label>
-				<input name="Email" type="email" class="form-control" id="email" value="{{.SignupForm.Email}}" required {{if .SignupForm.Token}}readonly {{end}}tabindex=3>
-				<p class="help-block">
-					{{with .SignupForm.FieldError "Email"}}
-						{{.}}
-					{{end}}
-				</p>
-			</div>
-
-			{{$btnLabel := printf "Create %s account" (ifString .FirstUser "admin")}}
-			<p class="help-block">
+			<div class="panel-footer">
 				{{if .IsRoot}}
-					By clicking on "{{$btnLabel}}" below, you agree to our <a href="https://sourcegraph.com/privacy">privacy policy</a> and <a href="https://sourcegraph.com/terms">terms</a>.
+				<span>Want to install Sourcegraph on your own server?</span>
+				<a href="https://src.sourcegraph.com/sourcegraph/.docs">Get Sourcegraph Server</a>
+				{{else}}
+				<span>Don't want to install Sourcegraph on your own server?</span>
+				<a href="https://sourcegraph.com/join?return-to=">Get Sourcegraph Cloud</a>
 				{{end}}
-				{{if .FirstUser}}{{template "dataCollectionMessage"}}{{end}}
-			</p>
-			<button type="submit" class="btn btn-primary btn-lg" tabindex=4>{{$btnLabel}}</button>
-			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-			{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
-		</form>
+			</div>
+		</div>
+
 	</div>
 </div>
 {{end}}

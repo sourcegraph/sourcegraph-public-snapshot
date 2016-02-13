@@ -1,0 +1,52 @@
+{{define "Head"}}<title>Sign up - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+{{$beforeConnect := false}}
+<div class="row row-centered">
+	<div class="col-md-6 col-md-offset-3">
+		<p class="onboarding-step">STEP 1/4</p>
+		<div class="onboarding-dot-line"></div>
+		<div class="onboarding-dot-container">
+			<div class="onboarding-dot" style="float:left;">
+				<div class="smaller-onboarding-dot"></div>
+			</div>
+			<div class="onboarding-dot">
+				<div class="smaller-onboarding-dot"></div>
+			</div>
+			<div class="onboarding-dot" style="float:right;">
+				<div class="smaller-onboarding-dot"></div>
+			</div>
+		</div>
+		<div class="onboarding-line"></div>
+	</div>
+</div>
+<div class="row row-centered">
+	<div class="col-md-4 col-md-offset-4">
+		{{if $beforeConnect}}
+		<p class="onboarding-step-header">Connect with your GitHub<br>account</p>
+		{{else}}
+		<div class="onboarding-step-header">
+			<div class="avatar-container">
+				<div class="circle-avatar">
+					<img class="circle-avatar" src="http://placekitten.com/g/115/115">
+					<div class="github-link-success-icon">
+						<span class="check-icon"><i class="fa fa-check"></i></span>
+					</div>
+				</div>
+			</div>
+			<p>Welcome Johnathan!</p>
+		</div>
+		{{end}}
+		<form method="post" action="{{urlToWithReturnTo "sign-up" .ReturnTo}}" class="connect-github">
+			<p class="onboarding-text">
+				Nullam id dolor id nibh ultricies vehicula ut id elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.
+			</p>
+			<button type="submit" class="btn btn-primary btn-lg" tabindex=1>{{if $beforeConnect}}GRANT PERMISSION{{else}}NEXT{{end}}</button>
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
+		</form>
+	</div>
+</div>
+{{end}}

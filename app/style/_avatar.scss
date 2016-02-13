@@ -2,7 +2,20 @@ a:hover img.avatar {
 	opacity: 0.88;
 }
 
+img.avatar-lg {
+	border-radius: 50%;
+    width: 115.5px;
+    max-width: 115.5px;
+    max-height: 115.5px;
+    height: 115.5px;
+	display: inline-block;
+}
+
 img.avatar-sm {
-	border-radius: $border-radius-base;
-	@include square(32px);
+	border-radius: 50%;
+    width: 24px;
+    height: 24px;
+	max-width: 24px;
+	max-height: 24px;
+	display: inline-block;
 }

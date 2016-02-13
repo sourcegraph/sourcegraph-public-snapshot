@@ -1,15 +1,184 @@
-.dashboard .repos {
-	h4 {
-		margin: 0;
-		.repo-attr-icon {
-			margin-right: 3px;
+.dashboard {
+	display: -webkit-flex;
+	display: flex;
+	-webkit-flex-wrap: wrap;
+  	flex-wrap: wrap;
+
+	.dash-repos {
+		flex: 6;
+		margin-top: 30px;
+		margin-right: 40px;
+		border: none;
+
+		.dash-repos-header {
+			display: flex;
+			-webkit-align-items: center;
+				align-items: center;
+			-webkit-justify-content: center;
+				justify-content: center;
+			border-bottom: solid 1px #e7e7e7;
+
+			.your-repos {
+				flex: 9;
+			}
+
+			.add-repo-btn {
+				flex: 1;
+				-webkit-align-items: center;
+					align-items: center;
+				-webkit-justify-content: center;
+					justify-content: center;
+
+				width: 50%;
+				height: 40px;
+				text-align: center;
+			}
+
+			.plus-btn {
+				display: inline-block;
+				background-color: white;
+
+				width: 16px;
+				height: 16px;
+				border-radius: 2px;
+				margin-right: 10px;
+			}
+
+			.plus {
+				display: inline-block;
+				color: #0fb6f2;
+			}
+
+			.add-repo-label {
+				display: inline-block;
+			}
+		}
+
+		.panel {
+			border: none;
+			padding: 10px;
+		}
+
+		.panel-heading {
+			display: flex;
+			display: -webkit-flex;
+			-webkit-flex-wrap: wrap;
+			flex-wrap: wrap;
+			-webkit-align-items: center;
+				align-items: center;
+			-webkit-justify-content: center;
+				justify-content: center;
+			background-color: white;
+			border: none;
+
+			.toggles {
+				flex: 5;
+				margin-top: 0px;
+				margin-right: 50px;
+				min-width: 285px;
+				height: 36px;
+
+				.toggle {
+					width: 94px;
+					height: 36px;
+					margin-top: 0px;
+					text-transform: uppercase;
+					font-size: 12px;
+				}
+
+			}
+
+			.search-bar {
+				flex: 5;
+				min-width: 170px;
+				padding: 15px;
+			}
+		}
+
+
+		h4 {
+			margin: 0;
+			.repo-attr-icon {
+				margin-right: 3px;
+			}
+		}
+		p.description, p.updated {
+			margin: 7px 0 0 0;
+		}
+		p.updated {
+			font-size: $font-size-small;
+			color: $text-muted;
 		}
 	}
-	p.description, p.updated {
-		margin: 7px 0 0 0;
-	}
-	p.updated {
-		font-size: $font-size-small;
-		color: $text-muted;
+
+	.dash-users {
+		flex: 2;
+		margin-top: 50px;
+		text-align: center;
+
+		.panel-heading {
+			background-color: white;
+			height: 52px;
+			h5 {
+				display: inline-block;
+			}
+		}
+
+		.add-user-btn {
+			display: inline-block;
+			float: right;
+			width: 32px;
+			height: 32px;
+
+		}
+
+		.list-group-item {
+			display: flex;
+			-webkit-align-items: center;
+				align-items: center;
+			-webkit-justify-content: center;
+				justify-content: center;
+
+			height: 45px;
+			text-align: left;
+
+			margin-top: 1px; // to accomodate bottom border
+
+			border: none;
+			border-bottom: solid 1px #e7e7e7;
+
+			.avatar-sm {
+				// float: left;
+				flex: 1
+			}
+
+			.user-name {
+				// float: left;
+				margin-left: 15px;
+				margin-top: 4px;
+				flex: 5;
+			}
+
+			.user-permissions {
+				margin-top: 4px;
+				flex: 1;
+			}
+
+		}
+
+		.plus-btn {
+			display: inline-block;
+			background-color: white;
+
+			width: 16px;
+			height: 16px;
+			border-radius: 2px;
+			margin-right: 10px;
+		}
+
+		h5 {
+			display: inline-block;
+			float: left;
+		}
 	}
 }
