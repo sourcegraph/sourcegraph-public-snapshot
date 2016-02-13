@@ -66,10 +66,16 @@ header.page-header {
 
 	.sourcegraph-logo {
 		margin-right: 38px;
+		margin-left: $navbar-padding-horizontal;
+		@media (min-width: $screen-sm-min) {
+			margin-left: 0;
+		}
+
 		img {
 			padding: 15px 0;
 			height: 51px;
 		}
+
 	}
 
 	.current-user.name {

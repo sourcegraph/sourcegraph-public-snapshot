@@ -83,6 +83,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 	-webkit-box-shadow: none;
 
 	header.rev-and-breadcrumb {
+		@include clearfix;
 		margin-top: 7px;
 		margin-bottom: 14px;
 
@@ -101,8 +102,11 @@ $panel-repo-tree-padding-horizontal: 9px;
 		}
 
 		.branch-commit-tag {
-			float: left;
-			margin: 0 5px 0 0;
+			margin-top: $padding-base-vertical;
+			@media (min-width: $screen-sm-min) {
+				margin-top: 0;
+				float: right;
+			}
 
 			li {
 				padding: 0;
@@ -145,7 +149,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 			font-size: 13px;
 			font-weight: normal;
 			margin: 2px 0 0 10px;
-			display: inline-block;
 		}
 
 		.last-commit {
