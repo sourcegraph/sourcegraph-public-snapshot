@@ -1,7 +1,5 @@
 # dev
 
-- Add the flag `--pgsql-create-db`/`PgsqlCreateDB` which will create Postgres database tables for
-  Sourcegraph before starting the server. Existing tables will not be modified.
 - Modified the schema for the `ext_auth_tokens` db table. Postgres backed Sourcegraph instances must
   update their database by running the migration commands in `dbutil2/MIGRATE.md` under `2016 Feb 12`.
 - Added the config option `--private-mirrors`/`PrivateMirrors` to enable the feature for mirroring
