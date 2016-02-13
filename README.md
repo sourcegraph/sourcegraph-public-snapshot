@@ -61,7 +61,7 @@ is a good place to start.
 
 Security is very important to us. If you discover a security-related
 issue, please responsibly disclose it by emailing
-[security@sourcegraph.com](mailto:security@sourcegaph.com) and not by
+[security@sourcegraph.com](mailto:security@sourcegraph.com) and not by
 creating an issue.
 
 [Read our complete security policy.](https://sourcegraph.com/security)
