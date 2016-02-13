@@ -10,27 +10,19 @@
 	.list-group-item {
 		& > a {
 			display: block;
-			color: $list-group-link-color;
 			text-decoration: none;
-			&:hover {
-				color: $link-color;
-			}
 		}
 		.count {
 			margin-right: 8px;
 		}
 
 		&.active {
-			background-color: $dark-blue-grey;
+			background-color: $panel-default-heading-bg;
 			border: none;
+			border-radius: 0;
 			&, a {
+				color: $text-color;
 				font-weight: bold;
-				color: $list-group-active-color;
-			}
-		}
-		&:not(.active) {
-			&:hover {
-				color: $link-color;
 			}
 		}
 	}
