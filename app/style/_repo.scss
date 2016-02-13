@@ -44,9 +44,6 @@
 		overflow-y: scroll;
 		a {
 			cursor: pointer;
-			&:hover {
-				background-color: $light-blue;
-			}
 		}
 
 		li.disabled {

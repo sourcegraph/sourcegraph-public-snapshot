@@ -714,14 +714,26 @@ h1.changeset-title {
 			width: 100%;
 
 			tr {
+				&:last-child {
+					td {
+						border-bottom: none;
+					}
+				}
+
 				td {
 					vertical-align: top;
 					text-align: left;
 					padding: 10px 0;
-					border-bottom: 1px solid #eee;
+					border-bottom: $content-border;
 
 					&.table-cell-id {
 						width: 35px;
+					}
+
+					&.table-cell-title {
+						a {
+							color: $text-color;
+						}
 					}
 
 					&.table-cell-time {
@@ -731,14 +743,13 @@ h1.changeset-title {
 
 					.changeset-id, .changeset-id a {
 						&:hover { text-decoration: none; }
-						font-size: 21px;
+						font-size: 18px;
 						line-height: 24px;
-						color: #bfbfbf;
 						padding: 5px;
 					}
 
 					.changeset-title {
-						font-size: 19px;
+						font-size: 18px;
 						line-height: 24px;
 						padding: 5px 0 0 5px;
 					}
@@ -749,9 +760,10 @@ h1.changeset-title {
 					}
 
 					.changeset-author {
-						font-style: italic;
-						color: #888;
 						display: inline-block;
+						a {
+							color: $link-color;
+						}
 					}
 
 					.changeset-time {
