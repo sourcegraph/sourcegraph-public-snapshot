@@ -29,7 +29,7 @@ type WaitlistedUserNotFoundError struct {
 }
 
 func (e *WaitlistedUserNotFoundError) Error() string {
-	s := fmt.Sprintf("no such waitlisted user with UID %q", e.UID)
+	s := fmt.Sprintf("no such waitlisted user with UID %d", e.UID)
 	return s
 }
 
@@ -40,7 +40,7 @@ type WaitlistedOrgNotFoundError struct {
 }
 
 func (e *WaitlistedOrgNotFoundError) Error() string {
-	s := fmt.Sprintf("no such waitlisted org with name %q", e.OrgName)
+	s := fmt.Sprintf("no such waitlisted org with name %s", e.OrgName)
 	return s
 }
 
