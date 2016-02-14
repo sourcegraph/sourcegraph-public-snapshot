@@ -29,3 +29,12 @@ func (c *Cache) Add(key lru.Key, value interface{}) {
 	c.lru.Add(key, value)
 	c.mu.Unlock()
 }
+
+// Clear removes all elements.
+func (c *Cache) Clear() {
+	c.mu.Lock()
+	for c.lru.Len() > 0 {
+		c.lru.RemoveOldest()
+	}
+	c.mu.Unlock()
+}
