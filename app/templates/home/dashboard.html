@@ -21,7 +21,7 @@
 	{{else}}
 		// This is where we would tell you you're on the whitelist.
 	{{end}}
-	window.progres.currentStep = 30; // TODO: remove
+	window.progress.currentStep = 30; // TODO: remove
 
 	{{if (and .PrivateMirrors $.CurrentUser (not appconf.DisableIntegrations))}}
 		var mirrorData = JSON.parse({{json .MirrorData}});
@@ -53,6 +53,7 @@
 		window.mirrorRepos = privateRepos.concat(publicRepos);
 	{{end}}
 	window.mirrorRepos = window.mirrorRepos || [];
+	window.mirrorUsers = [];
 
 	window.addRepoURL = "{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}";
 	window.csrfToken = "{{.CSRFToken}}";

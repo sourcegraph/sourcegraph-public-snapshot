@@ -4,6 +4,7 @@ import Component from "sourcegraph/Component";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as OnboardingActions from "sourcegraph/dashboard/OnboardingActions";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 import update from "react/lib/update";
 
@@ -32,11 +33,13 @@ class SelectableList extends Component {
 
 	_handleSelectAll(e) {
 		const items = this.state.items.filter(this._showItem);
-		Dispatcher.dispatch(new OnboardingActions.SelectItems(items, this.state.type, e.target.checked));
+		// Dispatcher.dispatch(new OnboardingActions.SelectItems(items, this.state.type, e.target.checked));
+		Dispatcher.dispatch(new DashboardActions.SelectRepos(items, e.target.checked));
 	}
 
 	_handleSelect(e, index) {
-		Dispatcher.dispatch(new OnboardingActions.SelectItem(index, this.state.type, e.target.checked));
+		// Dispatcher.dispatch(new OnboardingActions.SelectItem(index, this.state.type, e.target.checked));
+		Dispatcher.dispatch(new DashboardActions.SelectRepo(index, e.target.checked));
 	}
 
 	_showItem(item) {
@@ -45,6 +48,8 @@ class SelectableList extends Component {
 	}
 
 	render() {
+		console.log("rendering the component!");
+		console.log(this.state.selections);
 		return (
 			<div className="add-repo-list">
 				<div className="header">
@@ -95,7 +100,7 @@ SelectableList.propTypes = {
 		name: React.PropTypes.string,
 	})).isRequired,
 	// type identifies the entity type of the items which populate the list
-	type: React.PropTypes.string.isRequired,
+	type: React.PropTypes.string,
 	// selections is a object which identifies which items are currently selected {index: isSelected}
 	selections: React.PropTypes.object.isRequired,
 	// selectAll identifies if the "select all" aggregator is toggled
