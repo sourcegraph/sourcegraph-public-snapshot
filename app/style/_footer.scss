@@ -1,13 +1,3 @@
-body {
-	&.route-def, &.route-repo-tree {
-		margin-bottom: 0;
-
-		#footer {
-			display: none;
-		}
-	}
-}
-
 #footer {
 	color: $footer-text;
 
