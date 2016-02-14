@@ -3,13 +3,27 @@
 .content-view {
 	display: flex;
 	& > .content {
-		flex: 1;
+		@media(max-width: $screen-md-min) {
+			flex: 1 500px;
+		}
+		@media(min-width: $screen-md-min) and (max-width: $screen-lg-min) {
+			flex: 1 650px;
+		}
+		flex: 0.5 750px;
 	}
 	& > .sidebar {
-		flex: 0 360px;
-		padding-left: 35px;
+		@media(max-width: $screen-md-min) {
+			flex: 0 1 250px;
+		}
+		@media(min-width: $screen-md-min) and (max-width: $screen-lg-min) {
+			flex: 0 1 325px;
+		}
+		flex: 0.5 1 400px;
+		padding-left: $grid-gutter-width/2;
+		margin-right: $grid-gutter-width/2;
 		& > .card {
 			width: 100%;
+			flex: 1;
 		}
 	}
 }

@@ -124,6 +124,9 @@
 		td {
 			vertical-align: top;
 		}
+		.line .line-content {
+			width: 100%;
+		}
 	}
 
 	.context-menu {
@@ -287,43 +290,6 @@
 						font-weight: bold;
 					}
 				}
-
-				ul {
-					margin: -7px 0 10px 25px;
-					padding: 0;
-					list-style-type: none;
-
-					li {
-						cursor: pointer;
-						i.fa {
-							color: #666;
-							font-size: 10px;
-							margin-right: 5px;
-						}
-						&:hover {
-							span, i {
-								color: #2a74ac;
-							}
-						}
-					}
-
-					.qualified-name {
-						font-size: 12px;
-					}
-				}
-			}
-
-			.doc {
-				max-height: 180px;
-				border-top: $content-border;
-
-				p {
-					margin-top: 0;
-
-					&:last-child {
-						margin-bottom: 0;
-					}
-				}
 			}
 		}
 
@@ -418,7 +384,7 @@
 
 	.line-numbered-code td {
 		clear: both;
-		font-size: 85%;
+		font-size: 80%;
 		background-color: $line-content-bg;
 	}
 }

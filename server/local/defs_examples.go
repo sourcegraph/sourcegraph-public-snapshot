@@ -53,7 +53,7 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 						StartByte: int64(ref.Start), EndByte: int64(ref.End),
 					},
 					FullLines:          true,
-					ExpandContextLines: 4,
+					ExpandContextLines: 2,
 				},
 			}
 			e, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: opt})

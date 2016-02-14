@@ -13,7 +13,7 @@ class DefPopup extends Component {
 	render() {
 		let def = this.state.def;
 		return (
-			<div className="token-details">
+			<div className="token-details card">
 				<div className="body">
 					<header className="docHTML">
 						<div className="header">
@@ -24,11 +24,9 @@ class DefPopup extends Component {
 								}}>×</a>
 							</h1>
 						</div>
-						<section className="doc">
-							{def.Found ? <div dangerouslySetInnerHTML={def.Data.DocHTML} /> : <div>Definition of <div dangerouslySetInnerHTML={def.QualifiedName} /> is not available.</div>}
-						</section>
 					</header>
-					<header className="examples-header">Usage examples</header>
+					<header className="examples-header">Uses</header>
+
 					<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
 				</div>
 			</div>

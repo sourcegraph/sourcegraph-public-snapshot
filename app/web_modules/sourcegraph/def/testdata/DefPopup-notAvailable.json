@@ -2,7 +2,7 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "token-details",
+			"className": "token-details card",
 			"children": [
 				{
 					"type": "div",
@@ -53,26 +53,6 @@
 													}
 												]
 											}
-										},
-										{
-											"type": "section",
-											"props": {
-												"className": "doc",
-												"children": [
-													[
-														"Definition of ",
-														{
-															"type": "div",
-															"props": {
-																"dangerouslySetInnerHTML": {
-																	"__html": "someName"
-																}
-															}
-														},
-														" is not available."
-													]
-												]
-											}
 										}
 									]
 								}
@@ -82,7 +62,7 @@
 								"props": {
 									"className": "examples-header",
 									"children": [
-										"Usage examples"
+										"Uses"
 									]
 								}
 							},

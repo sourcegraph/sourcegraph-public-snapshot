@@ -79,7 +79,7 @@ class ExampleView extends Component {
 					<button className={`btn btn-default prev ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}><i className="fa fa-arrow-left"></i></button>
 					<button className={`btn btn-default next ${this.state.selectedIndex >= this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}><i className="fa fa-arrow-right"></i></button>
 					<button className="btn btn-default all pull-right" target="_blank" href={`${this.state.defURL}/.examples`}>
-						See all examples
+						View all uses
 					</button>
 				</nav>
 			</div>
