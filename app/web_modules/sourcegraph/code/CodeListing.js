@@ -7,7 +7,7 @@ import lineFromByte from "sourcegraph/code/lineFromByte";
 
 import classNames from "classnames";
 
-const tilingFactor = 500;
+const tilingFactor = 50;
 
 class CodeListing extends Component {
 	constructor(props) {
