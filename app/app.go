@@ -55,7 +55,6 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	mw := []handlerutil.Middleware{
-		handlerutil.CacheMiddleware,
 		appauth.CookieMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
 		handlerutil.UserMiddleware,

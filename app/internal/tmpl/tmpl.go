@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -279,8 +280,11 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			appEvent.Message = fmt.Sprintf("ErrorID:%s Msg:%s", errorID, appError.Error())
 		}
 
+		// Propagate Cache-Control no-cache and max-age=0 directives
+		// to the requests made by our client-side JavaScript. This is
+		// not a perfect parser, but it catches the important cases.
 		var cacheControl string
-		if /* TODO(granular-caching): GetNoCache(ctx) */ true {
+		if cc := req.Header.Get("cache-control"); strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age=0") {
 			cacheControl = "no-cache"
 		}
 

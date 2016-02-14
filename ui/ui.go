@@ -42,7 +42,6 @@ func init() {
 // the provided router as a base.
 func NewHandler(r *mux.Router) http.Handler {
 	mw := []handlerutil.Middleware{
-		handlerutil.CacheMiddleware,
 		appauth.CookieMiddleware,
 		handlerutil.UserMiddleware,
 	}

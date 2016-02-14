@@ -28,7 +28,6 @@ func NewHandler(m *mux.Router) http.Handler {
 		// authentication. Doing so would open it up to CSRF
 		// attacks. By requiring users use HTTP Basic authentication,
 		// we mitigate the risk of CSRF.
-		handlerutil.CacheMiddleware,
 		httpapiauth.PasswordMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
 	}
