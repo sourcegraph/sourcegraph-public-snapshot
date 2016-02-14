@@ -3,7 +3,7 @@
 		"type": "table",
 		"ref": "table",
 		"props": {
-			"className": "line-numbered-code",
+			"className": "line-numbered-code content file-content",
 			"children": [
 				{
 					"type": "tbody",

@@ -2,7 +2,6 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "row",
 			"children": [
 				{
 					"type": "CodeFileToolbar",
@@ -25,7 +24,7 @@
 				{
 					"type": "div",
 					"props": {
-						"className": "code-view-react",
+						"className": "content-view file-container",
 						"children": [
 							{
 								"type": "CodeListing",
@@ -33,8 +32,18 @@
 									"contents": "hello\nworld",
 									"lineNumbers": true,
 									"selectedDef": "someDef",
-									"linePanels": {
-										"null": {
+									"highlightedDef": "otherDef"
+								}
+							},
+							{
+								"type": "FileMargin",
+								"props": {
+									"examples": {
+										"content": {},
+										"counts": {}
+									},
+									"children": [
+										{
 											"type": "DefPopup",
 											"props": {
 												"def": {
@@ -48,8 +57,7 @@
 												"highlightedDef": "otherDef"
 											}
 										}
-									},
-									"highlightedDef": "otherDef"
+									]
 								}
 							}
 						]

@@ -100,29 +100,29 @@
 	width: 100%;
 }
 
-.FileView {
+.file-container {
+
 	a.ref {
 		&:hover {
 			text-decoration: none;
 		}
 	}
 
-	.code-view-react {
-		.line-number {
-			cursor: pointer;
+	.line-number {
+		cursor: pointer;
+	}
+
+	.line-numbered-code {
+		border: 0px;
+		table-layout: fixed;
+		display: block;
+
+		&.placeholder {
+			width: 100%;
 		}
 
-		.line-numbered-code {
-			border: 0px;
-			table-layout: fixed;
-
-			&.placeholder {
-				width: 100%;
-			}
-
-			td {
-				vertical-align: top;
-			}
+		td {
+			vertical-align: top;
 		}
 	}
 
@@ -220,13 +220,11 @@
 }
 
 .token-details {
-	@include z-index(token-details-box);
 	display: block;
 	padding: 14px;
 	border: $content-border;
 	border-radius: $border-radius-small;
 	background-color: #fff;
-	overflow: auto;
 	box-shadow: $line-panel-shadow;
 
 	&.token-details-review {
@@ -319,7 +317,6 @@
 
 			.doc {
 				max-height: 180px;
-				overflow-y: scroll;
 				border-top: $content-border;
 
 				p {

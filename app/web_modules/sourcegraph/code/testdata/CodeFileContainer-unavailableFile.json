@@ -2,7 +2,6 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "row",
 			"children": [
 				{
 					"type": "CodeFileToolbar",
@@ -10,6 +9,23 @@
 						"repo": "aRepo",
 						"rev": "aRev",
 						"tree": "aTree"
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "content-view file-container",
+						"children": [
+							{
+								"type": "FileMargin",
+								"props": {
+									"examples": {
+										"content": {},
+										"counts": {}
+									}
+								}
+							}
+						]
 					}
 				}
 			]

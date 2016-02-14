@@ -9,7 +9,6 @@ class CodeLineView extends Component {
 		Object.assign(state, props);
 		state.lineNumber = props.lineNumber || null;
 		state.selected = Boolean(props.selected);
-		state.linePanel = props.linePanel || null;
 	}
 
 	render() {
@@ -29,7 +28,6 @@ class CodeLineView extends Component {
 				<td className="line-content">
 					{this.state.contents}
 					{this.state.contents === "" && <span>&nbsp;</span>}
-					{this.state.linePanel}
 				</td>
 			</tr>
 		);
@@ -42,7 +40,6 @@ CodeLineView.propTypes = {
 	selected: React.PropTypes.bool,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
-	linePanel: React.PropTypes.element,
 };
 
 export default CodeLineView;

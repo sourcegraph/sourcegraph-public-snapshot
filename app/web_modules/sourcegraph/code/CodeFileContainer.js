@@ -10,21 +10,10 @@ import CodeListing from "sourcegraph/code/CodeListing";
 import CodeFileToolbar from "sourcegraph/code/CodeFileToolbar";
 import DefPopup from "sourcegraph/def/DefPopup";
 import DefTooltip from "sourcegraph/def/DefTooltip";
+import FileMargin from "sourcegraph/code/FileMargin";
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
-
-function lineFromByte(contents, bytePos) {
-	let lines = contents.split("\n");
-	let pos = 0;
-	for (let i = 0; i < lines.length; i++) {
-		let endPos = pos + lines[i].length + 1; // add 1 to account for newline (stripped by split)
-		if (bytePos >= pos && bytePos < endPos) {
-			return i + 1; // line numbers start with 1
-		}
-		pos = endPos;
-	}
-	throw new Error(`Byte ${bytePos} is out of bounds (file length: ${contents.length})`);
-}
+import lineFromByte from "sourcegraph/code/lineFromByte";
 
 class CodeFileContainer extends Container {
 	constructor(props) {
@@ -107,60 +96,57 @@ class CodeFileContainer extends Container {
 			return null;
 		}
 
-		let linePanels = {};
 		let selectedDefData = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
 		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
 
-		if (selectedDefData) {
-			linePanels[this.state.startLine] = (
-				<DefPopup
-					def={selectedDefData}
-					examples={this.state.examples}
-					highlightedDef={this.state.highlightedDef} />
-			);
-		}
 		return (
-			<div className="row">
+			<div>
 				<CodeFileToolbar
 					repo={this.state.repo}
 					rev={this.state.rev}
 					tree={this.state.tree}
 					file={this.state.file} />
-				{this.state.file &&
-					<div className="code-view-react">
-						<CodeListing
-							contents={this.state.file.Entry.ContentsString}
-							lineNumbers={true}
-							startLine={this.state.startLine}
-							endLine={this.state.endLine}
-							selectedDef={this.state.selectedDef}
-							linePanels={linePanels}
-							highlightedDef={this.state.highlightedDef} />
-					</div>
-				}
+				<div className="content-view file-container">
+					{this.state.file &&
+					<CodeListing
+						ref={(e) => this.setState({_codeListing: e})}
+						contents={this.state.file.Entry.ContentsString}
+						lineNumbers={true}
+						startLine={this.state.startLine}
+						endLine={this.state.endLine}
+						selectedDef={this.state.selectedDef}
+						highlightedDef={this.state.highlightedDef} />}
+
+					<FileMargin examples={this.state.examples} getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
+						{selectedDefData && // TODO(sqs!): remove this disabled code path
+						<DefPopup
+							def={selectedDefData}
+							examples={this.state.examples}
+							highlightedDef={this.state.highlightedDef || null} />}
+					</FileMargin>
+				</div>
 
 				{highlightedDefData && highlightedDefData.Found && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
 
 				{this.state.defOptionsURLs &&
-					<div className="context-menu"
-						style={{
-							left: this.state.defOptionsLeft,
-							top: this.state.defOptionsTop,
-						}}>
-						<ul>
-							{this.state.defOptionsURLs.map((url, i) => {
-								let data = this.state.defs.get(url);
-								return (
-									<li key={i} onClick={() => {
-										Dispatcher.dispatch(new DefActions.SelectDef(url));
-									}}>
-										{data ? <span dangerouslySetInnerHTML={data.QualifiedName} /> : "..."}
-									</li>
-								);
-							})}
-						</ul>
-					</div>
-				}
+				<div className="context-menu"
+					style={{
+						left: this.state.defOptionsLeft,
+						top: this.state.defOptionsTop,
+					}}>
+					<ul>
+						{this.state.defOptionsURLs.map((url, i) => {
+							let data = this.state.defs.get(url);
+							return (
+								<li key={i} onClick={() => {
+									Dispatcher.dispatch(new DefActions.SelectDef(url));
+								}}>
+									{data ? <span dangerouslySetInnerHTML={data.QualifiedName} /> : "..."}
+								</li>
+							);
+						})}
+					</ul>
+				</div>}
 			</div>
 		);
 	}

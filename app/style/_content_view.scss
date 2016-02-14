@@ -1,0 +1,15 @@
+// content-view refers to the general view structure where there is a
+// file or diff with sidebar cards.
+.content-view {
+	display: flex;
+	& > .content {
+		flex: 1;
+	}
+	& > .sidebar {
+		flex: 0 360px;
+		padding-left: 35px;
+		& > .card {
+			width: 100%;
+		}
+	}
+}

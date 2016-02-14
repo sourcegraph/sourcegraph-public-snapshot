@@ -1,8 +1,9 @@
 import React from "react";
+import ReactDOM from "react-dom";
 
 import Component from "sourcegraph/Component";
 import CodeLineView from "sourcegraph/code/CodeLineView";
-import CodeLinePanelGroup from "sourcegraph/code/CodeLinePanelGroup";
+import lineFromByte from "sourcegraph/code/lineFromByte";
 
 import classNames from "classnames";
 
@@ -60,6 +61,14 @@ class CodeListing extends Component {
 		window.scrollTo(0, rect.height / this.state.lines.length * (line - 1) - 100);
 	}
 
+	getOffsetTopForByte(byte) {
+		let $el = ReactDOM.findDOMNode(this);
+		let line = lineFromByte(this.state.lines, byte);
+		let $line = $el.querySelector(`[data-line="${line}"]`);
+		if ($line) return $line.offsetTop;
+		throw new Error(`No element found for line ${line}`);
+	}
+
 	render() {
 		let visibleLinesStart = this.state.firstVisibleLine;
 		let visibleLinesEnd = visibleLinesStart + this.state.visibleLinesCount;
@@ -84,12 +93,6 @@ class CodeListing extends Component {
 			let lineNumber = 1 + visibleLinesStart + i;
 			let selected = this.state.startLine <= lineNumber && this.state.endLine >= lineNumber;
 
-			let linePanelItems = [];
-			if (this.state.linePanels && this.state.linePanels[lineNumber]) {
-				linePanelItems.push(this.state.linePanels[lineNumber]);
-			}
-			let linePanel = linePanelItems.length > 0 ? <CodeLinePanelGroup items={linePanelItems} /> : null;
-
 			return (
 				<CodeLineView
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
@@ -97,13 +100,14 @@ class CodeListing extends Component {
 					selected={selected}
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
-					linePanel={linePanel}
 					key={visibleLinesStart + i} />
 			);
 		});
 
 		let listingClasses = classNames({
 			"line-numbered-code": true,
+			"content": true,
+			"file-content": true,
 		});
 
 		return (
