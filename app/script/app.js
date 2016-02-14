@@ -13,7 +13,6 @@ require("bootstrap-sass/assets/javascripts/bootstrap/collapse.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/button.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/dropdown.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/modal.js");
-require("bootstrap-tokenfield/dist/css/bootstrap-tokenfield.css");
 require("google-code-prettify/prettify");
 
 require("./auth");
