@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"gopkg.in/gorp.v1"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
