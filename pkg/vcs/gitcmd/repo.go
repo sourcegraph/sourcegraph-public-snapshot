@@ -21,9 +21,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alecthomas/binary"
+	"github.com/golang/groupcache/lru"
+
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
+	"src.sourcegraph.com/sourcegraph/pkg/synclru"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/internal"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
@@ -509,7 +513,23 @@ func parseUint(s string) (uint, error) {
 	return uint(n), err
 }
 
+var diffCache = synclru.New(lru.New(100))
+
 func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
+	ensureAbsCommit(base)
+	ensureAbsCommit(head)
+	if opt == nil {
+		opt = &vcs.DiffOptions{}
+	}
+	optData, err := binary.Marshal(opt)
+	if err != nil {
+		return nil, err
+	}
+	cacheKey := r.GitRootDir() + "\x00" + string(base) + "\x00" + string(head) + "\x00" + string(optData)
+	if diff, found := diffCache.Get(cacheKey); found {
+		return diff.(*vcs.Diff), nil
+	}
+
 	defer r.trace(time.Now(), "Diff", base, head, opt)
 
 	r.editLock.RLock()
@@ -551,9 +571,9 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 		}
 		return nil, fmt.Errorf("exec `git diff` failed: %s. Output was:\n\n%s", err, out)
 	}
-	return &vcs.Diff{
-		Raw: string(out),
-	}, nil
+	diff := &vcs.Diff{Raw: string(out)}
+	diffCache.Add(cacheKey, diff)
+	return diff, nil
 }
 
 func (r *Repository) GitRootDir() string { return r.Dir }
@@ -978,7 +998,15 @@ func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) 
 	return b, nil
 }
 
+var readFileBytesCache = synclru.New(lru.New(1000))
+
 func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, error) {
+	ensureAbsCommit(commit)
+	cacheKey := r.GitRootDir() + "\x00" + string(commit) + "\x00" + name
+	if data, found := readFileBytesCache.Get(cacheKey); found {
+		return data.([]byte), nil
+	}
+
 	cmd := gitserver.Command("git", "show", string(commit)+":"+name)
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
@@ -1000,6 +1028,7 @@ func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, er
 		}
 		return nil, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
 	}
+	readFileBytesCache.Add(cacheKey, out)
 	return out, nil
 }
 
@@ -1079,8 +1108,16 @@ func (r *Repository) ReadDir(commit vcs.CommitID, path string, recurse bool) ([]
 	return r.lsTree(commit, filepath.Clean(internal.Rel(path))+"/", recurse)
 }
 
+var lsTreeCache = synclru.New(lru.New(10000))
+
 // lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
 func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+	ensureAbsCommit(commit)
+	cacheKey := r.GitRootDir() + "\x00" + string(commit) + "\x00" + path + "\x00" + strconv.FormatBool(recurse)
+	if fis, found := lsTreeCache.Get(cacheKey); found {
+		return fis.([]os.FileInfo), nil
+	}
+
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
 
@@ -1166,6 +1203,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 	}
 	util.SortFileInfosByName(fis)
 
+	lsTreeCache.Add(cacheKey, fis)
 	return fis, nil
 }
 
@@ -1269,4 +1307,13 @@ func gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, temp
 
 	err = internal.WriteFileWithPermissions(sshWrapperName, []byte(script), 0500)
 	return sshWrapperName, tempDir, err
+}
+
+func ensureAbsCommit(commitID vcs.CommitID) {
+	// We don't want to even be running commands on non-absolute
+	// commit IDs if we can avoid it, because we can't cache the
+	// expensive part of those computations.
+	if len(commitID) != 40 {
+		panic("non-absolute commit ID")
+	}
 }

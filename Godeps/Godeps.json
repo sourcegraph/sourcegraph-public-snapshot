@@ -210,6 +210,10 @@
 			"Rev": "44145f04b68cf362d9c4df2182967c2275eaefed"
 		},
 		{
+			"ImportPath": "github.com/golang/groupcache/lru",
+			"Rev": "4eab30f13db9d8b25c752e99d1583628ac2fa422"
+		},
+		{
 			"ImportPath": "github.com/golang/protobuf/proto",
 			"Rev": "efd7476481382c195beb33acd8ec2f1527167fb4"
 		},
