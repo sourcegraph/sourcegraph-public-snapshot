@@ -2,22 +2,24 @@ package local
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"runtime"
 	"strings"
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/golang/groupcache/lru"
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/synclru"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 // Maximum accepted raw diff size, in bytes. This is not the actual
@@ -26,10 +28,16 @@ import (
 // larger when tokenizing and linking head, base and raw diff source.
 const defaultMaxDiffSize = 350 * 1024 // 350 KB
 
+var deltasListFilesCache = synclru.New(lru.New(50))
+
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	ds := op.Ds
 	opt := op.Opt
 
+	// SECURITY NOTE: If these auth checks are moved or removed, we
+	// MUST remove the code below that satisfies this request from the
+	// cache, since we can't be sure that the user is authorized to
+	// view the result.
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListFiles", ds.Base.URI); err != nil {
 		return nil, err
 	}
@@ -78,6 +86,22 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		opt.MaxSize = defaultMaxDiffSize
 	}
 
+	// Construct cache key and check if cached.
+	//
+	// SECURITY NOTE: We are only able to cache these because we've
+	// checked the user's authentication above. If those checks are
+	// removed, we can't return the cached values without leaking
+	// private data!
+	op.Ds = ds
+	op.Opt = opt
+	cacheKey, err := json.Marshal(op)
+	if err != nil {
+		return nil, err
+	}
+	if res, found := deltasListFilesCache.Get(string(cacheKey)); found {
+		return res.(*sourcegraph.DeltaFiles), nil
+	}
+
 	fdiffsAll, delta, err := s.diff(ctx, ds)
 	if err != nil {
 		return nil, err
@@ -112,6 +136,7 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		}
 	}
 
+	deltasListFilesCache.Add(string(cacheKey), files)
 	return files, nil
 }
 
@@ -310,7 +335,7 @@ func fetchCodeSnippet(ctx context.Context, spec sourcegraph.TreeEntrySpec, fileR
 		TokenizedSource: true,
 		GetFileOptions:  sourcegraph.GetFileOptions{FileRange: fileRange},
 	}
-	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: spec, Opt: &opt})
+	entry, err := (&repoTree{}).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: spec, Opt: &opt})
 	// If any errors occur while fetching the snippet, resume execution and don't block
 	// the user experience. Content will still be available as a fall back from the
 	// BodySource entry, but might not be linked on this hunk.
@@ -387,7 +412,7 @@ func formatFileDiffHunk(ctx context.Context, baseFile, headFile sourcegraph.Tree
 	ops := chunkDiffOps(baseFile, headFile, hunk)
 	var fmtBody []byte
 	for _, op := range ops {
-		file, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: op.file, Opt: &op.opt})
+		file, err := (&repoTree{}).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: op.file, Opt: &op.opt})
 		if err != nil {
 			return err
 		}
