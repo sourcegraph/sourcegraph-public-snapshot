@@ -11,21 +11,6 @@
 						"rev": "aRev",
 						"tree": "somePath"
 					}
-				},
-				{
-					"type": "DefPopup",
-					"props": {
-						"def": {
-							"Found": true,
-							"File": {
-								"Path": "somePath"
-							}
-						},
-						"examples": {
-							"content": {},
-							"counts": {}
-						}
-					}
 				}
 			]
 		}

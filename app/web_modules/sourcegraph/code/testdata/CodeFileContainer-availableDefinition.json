@@ -33,24 +33,26 @@
 									"contents": "hello\nworld",
 									"lineNumbers": true,
 									"selectedDef": "someDef",
+									"linePanels": {
+										"null": {
+											"type": "DefPopup",
+											"props": {
+												"def": {
+													"Found": true,
+													"test": "defData"
+												},
+												"examples": {
+													"content": {},
+													"counts": {}
+												},
+												"highlightedDef": "otherDef"
+											}
+										}
+									},
 									"highlightedDef": "otherDef"
 								}
 							}
 						]
-					}
-				},
-				{
-					"type": "DefPopup",
-					"props": {
-						"def": {
-							"Found": true,
-							"test": "defData"
-						},
-						"examples": {
-							"content": {},
-							"counts": {}
-						},
-						"highlightedDef": "otherDef"
 					}
 				},
 				{

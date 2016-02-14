@@ -32,7 +32,8 @@
 								"props": {
 									"contents": "hello\nworld",
 									"lineNumbers": true,
-									"selectedDef": "someDef"
+									"selectedDef": "someDef",
+									"linePanels": {}
 								}
 							}
 						]
