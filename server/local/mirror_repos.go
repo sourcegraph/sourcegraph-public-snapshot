@@ -278,7 +278,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// Try adding user to waitlist.
 	if res, err := s.AddToWaitlist(ctx, &pbtypes.Void{}); err != nil {
 		return nil, err
-	} else if res.State != sourcegraph.UserMirrorsState_HasAccess {
+	} else if res.State != sourcegraph.UserMirrorsState_HasAccess && res.State != sourcegraph.UserMirrorsState_OnWaitlist {
 		gd.State = res.State
 		return gd, nil
 	}
