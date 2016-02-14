@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/gorp.v1"
-
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -66,7 +64,7 @@ func (w *waitlist) AddUser(ctx context.Context, uid int32) error {
 func (w *waitlist) getUser(ctx context.Context, uid int32) (*userWaitlistRow, error) {
 	var user userWaitlistRow
 	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM user_waitlist WHERE uid=$1 LIMIT 1", uid); err == sql.ErrNoRows {
-			return nil, &store.WaitlistedUserNotFoundError{UID: uid}
+		return nil, &store.WaitlistedUserNotFoundError{UID: uid}
 	} else if err != nil {
 		return nil, err
 	}
