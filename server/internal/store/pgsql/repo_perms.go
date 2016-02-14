@@ -106,7 +106,7 @@ func (r *repoPerms) Delete(ctx context.Context, uid int32, repo string) error {
 		return nil
 	}
 
-	res, err := dbh(ctx).Exec(`DELETE FROM reg_clients WHERE uid=$1 AND repo=$2;`, uid, repo)
+	res, err := dbh(ctx).Exec(`DELETE FROM repo_perms WHERE uid=$1 AND repo=$2;`, uid, repo)
 	if err != nil {
 		return err
 	}
