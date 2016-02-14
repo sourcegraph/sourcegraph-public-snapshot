@@ -2,6 +2,7 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 import CodeLineView from "sourcegraph/code/CodeLineView";
+import CodeLinePanelGroup from "sourcegraph/code/CodeLinePanelGroup";
 
 import classNames from "classnames";
 
@@ -82,6 +83,13 @@ class CodeListing extends Component {
 		let lines = this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((line, i) => {
 			let lineNumber = 1 + visibleLinesStart + i;
 			let selected = this.state.startLine <= lineNumber && this.state.endLine >= lineNumber;
+
+			let linePanelItems = [];
+			if (this.state.linePanels && this.state.linePanels[lineNumber]) {
+				linePanelItems.push(this.state.linePanels[lineNumber]);
+			}
+			let linePanel = linePanelItems.length > 0 ? <CodeLinePanelGroup items={linePanelItems} /> : null;
+
 			return (
 				<CodeLineView
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
@@ -89,6 +97,7 @@ class CodeListing extends Component {
 					selected={selected}
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
+					linePanel={linePanel}
 					key={visibleLinesStart + i} />
 			);
 		});

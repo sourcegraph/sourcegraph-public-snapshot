@@ -37,11 +37,12 @@ the middle of prose */
 pre code, .line-numbered-code td {
 	tab-size: 4;
 
+	padding-top: 0;
+	padding-bottom: 0;
+
 	line-height: $code-line-height;
 	font-size: $code-font-size;
 	font-family: $font-family-monospace;
-	padding-top: 0;
-	padding-bottom: 0;
 
 	a.ref, a.ann-link, a.defn-popover {
 		padding: 0 1.7px;
@@ -148,8 +149,8 @@ pre code, .line-numbered-code td {
 	}
 }
 
-.line.main-byte-range {
-	.line-content {
+.main-byte-range {
+	> .line-content {
 		background-color: $active-code-bg;
 		animation: highlight-flash 1s;
 	}

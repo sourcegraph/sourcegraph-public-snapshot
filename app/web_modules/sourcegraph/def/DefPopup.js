@@ -17,7 +17,6 @@ class DefPopup extends Component {
 			<Draggable handle="header.toolbar">
 				<div className="token-details">
 					<div className="body">
-						<div>
 							<header className="docHTML">
 								<div className="header">
 									<h1>
@@ -31,9 +30,8 @@ class DefPopup extends Component {
 									{def.Found ? <div dangerouslySetInnerHTML={def.Data.DocHTML} /> : <div>Definition of <div dangerouslySetInnerHTML={def.QualifiedName} /> is not available.</div>}
 								</section>
 							</header>
-
+							<header className="examples-header">Usage examples</header>
 							<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
-						</div>
 					</div>
 				</div>
 			</Draggable>

@@ -107,8 +107,18 @@ class CodeFileContainer extends Container {
 			return null;
 		}
 
+		let linePanels = {};
 		let selectedDefData = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
 		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
+
+		if (selectedDefData) {
+			linePanels[this.state.startLine] = (
+				<DefPopup
+					def={selectedDefData}
+					examples={this.state.examples}
+					highlightedDef={this.state.highlightedDef} />
+			);
+		}
 		return (
 			<div className="row">
 				<CodeFileToolbar
@@ -124,15 +134,9 @@ class CodeFileContainer extends Container {
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}
 							selectedDef={this.state.selectedDef}
+							linePanels={linePanels}
 							highlightedDef={this.state.highlightedDef} />
 					</div>
-				}
-
-				{selectedDefData &&
-					<DefPopup
-						def={selectedDefData}
-						examples={this.state.examples}
-						highlightedDef={this.state.highlightedDef} />
 				}
 
 				{highlightedDefData && highlightedDefData.Found && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}

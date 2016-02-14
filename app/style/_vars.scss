@@ -81,6 +81,7 @@ $file-toolbar-path-color: $warm-grey;
 
 $line-number-bg: $pale-grey;
 $line-number-text: darken($pale-grey, 30%);
+$line-content-bg: $white;
 $active-code-bg: transparentize($brand-azure, 0.90);
 $active-code-flash-bg: transparentize($brand-azure, 0.85);
 $token-focus-color: $lemon;
@@ -194,6 +195,7 @@ $zindex-modal:            z-index(modal);
 // ----------------------------------------------------------------------------
 
 $content-border: solid 1px $content-border-color;
+$line-panel-shadow: 0 1px 3px 0 transparentize($cloudy-blue, 0.72);
 
 $footer-height: 110px;
 $motd-height: 29px;

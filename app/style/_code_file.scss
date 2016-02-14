@@ -222,17 +222,13 @@
 
 .token-details {
 	@include z-index(token-details-box);
-	@include transform(scale(1));
-	position: fixed;
-	top: 150px;
-	right: 5%;
 	display: block;
-	background: #fff;
-	border: 1px solid #bbb;
-	border-radius: 3px;
-	width: $code-popup-width;
-	overflow: hidden;
-	opacity: 1;
+	padding: 14px;
+	border: $content-border;
+	border-radius: $border-radius-small;
+	background-color: #fff;
+	overflow: auto;
+	box-shadow: $line-panel-shadow;
 
 	&.token-details-review {
 		i.file-path {
@@ -282,7 +278,7 @@
 		.docHTML {
 			.header {
 				h1 {
-					padding: 10px;
+					padding-bottom: 10px;
 					font-size: 14px;
 					line-height: 21px;
 					margin: 0;
@@ -325,11 +321,10 @@
 			.doc {
 				max-height: 180px;
 				overflow-y: scroll;
-				padding: 10px;
-				border-top: 1px solid #ddd;
+				border-top: $content-border;
 
 				p {
-					margin: 0 0 10px 0;
+					margin-top: 0;
 
 					&:last-child {
 						margin-bottom: 0;
@@ -346,11 +341,24 @@
 	}
 }
 
+.examples {
+	.example-navigation {
+		.prev {
+			margin-right: 7px;
+		}
+		.all {
+			text-transform: uppercase;
+		}
+	}
+}
 .example {
+	border: $content-border;
+	margin-bottom: $padding-large-vertical;
+
 	footer {
 		padding: 4px 15px 4px 10px;
-		background-color: #fafafa;
-		color: #777;
+		background-color: $panel-default-heading-bg;
+		color: $panel-default-text;
 		font-size: 12px;
 		position: relative;
 		height: 25px;
@@ -362,10 +370,9 @@
 
 	header {
 		padding: 4px 15px 4px 10px;
-		background-color: #fafafa;
-		color: #777;
+		background-color: $panel-default-heading-bg;
+		color: $panel-default-text;
 		font-size: 12px;
-		border-top: solid 1px #e7e7e7;
 
 		.fa-spinner {
 			margin-left: 10px;
@@ -418,5 +425,13 @@
 	.line-numbered-code td {
 		clear: both;
 		font-size: 85%;
+		background-color: $line-content-bg;
 	}
+}
+
+.line-panel-group {
+	position: absolute;
+	line-height: $line-height-base;
+	font-size: $font-size-base;
+	font-family: $font-family-sans-serif;
 }

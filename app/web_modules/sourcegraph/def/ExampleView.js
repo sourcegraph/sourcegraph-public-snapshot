@@ -53,34 +53,35 @@ class ExampleView extends Component {
 		let example = this.state.displayedExample;
 		let loading = this.state.selectedIndex !== this.state.displayedIndex && this.state.count !== 0;
 		return (
-			<div className="example">
-				<header>
-					<div className="pull-right">{example && example.Repo}</div>
-					<nav>
-						<a className={`fa fa-chevron-circle-left btnNav ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}></a>
-						<a className={`fa fa-chevron-circle-right btnNav ${this.state.selectedIndex >= this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}></a>
-					</nav>
-					{example && <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}?startline=${example.StartLine}&endline=${example.EndLine}&seldef=${this.state.defURL}`} onClick={hotLink}>{example.File}:{example.StartLine}-{example.EndLine}</a>}
-					{loading && <i className="fa fa-spinner fa-spin"></i>}
-					{this.state.count === 0 && "No examples available"}
-				</header>
+			<div className="examples">
+				<div className="example">
+					<header>
+						{example && <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}?startline=${example.StartLine}&endline=${example.EndLine}&seldef=${this.state.defURL}`} onClick={hotLink}>{example.File}:{example.StartLine}-{example.EndLine}</a>}
+						{loading && <i className="fa fa-spinner fa-spin"></i>}
+						{this.state.count === 0 && "No examples available"}
+					</header>
 
-				<div className="body">
-					{example &&
-						<div style={{opacity: loading ? 0.5 : 1}}>
-							<CodeListing
-								contents={example.Contents}
-								selectedDef={this.state.defURL}
-								highlightedDef={this.state.highlightedDef} />
-						</div>
-					}
+					<div className="body">
+						{example &&
+							<div style={{opacity: loading ? 0.5 : 1}}>
+								<CodeListing
+									contents={example.Contents}
+									selectedDef={this.state.defURL}
+									highlightedDef={this.state.highlightedDef} />
+							</div>
+						}
+					</div>
+					<footer>
+						<div className="pull-right">{example && example.Repo}</div>
+					</footer>
 				</div>
-
-				<footer>
-					<a target="_blank" href={`${this.state.defURL}/.examples`} className="pull-right">
-						<i className="fa fa-eye" /> View all
-					</a>
-				</footer>
+				<nav className="example-navigation">
+					<button className={`btn btn-default prev ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}><i className="fa fa-arrow-left"></i></button>
+					<button className={`btn btn-default next ${this.state.selectedIndex >= this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}><i className="fa fa-arrow-right"></i></button>
+					<button className="btn btn-default all pull-right" target="_blank" href={`${this.state.defURL}/.examples`}>
+						See all examples
+					</button>
+				</nav>
 			</div>
 		);
 	}
