@@ -68,6 +68,9 @@ func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []in
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "ExternalAuthTokens.ListExternalUsers"); err != nil {
 		return nil, err
 	}
+	if extUIDs == nil || len(extUIDs) == 0 {
+		return []*auth.ExternalAuthToken{}, nil
+	}
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := gorp.PostgresDialect{}.BindVar(len(args))

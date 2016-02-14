@@ -116,6 +116,103 @@ func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 	}
 }
 
+func TestExternalAuthTokens_ListExternalUsers_empty(t *testing.T) {
+	t.Parallel()
+
+	var s externalAuthTokens
+	ctx, done := testContext()
+	defer done()
+
+	dbToks := []*auth.ExternalAuthToken{
+		{
+			User:     1,
+			Host:     "example.com",
+			ClientID: "c",
+			Token:    "t0",
+			ExtUID:   12345,
+		},
+		{
+			User:     2,
+			Host:     "example.com",
+			ClientID: "c",
+			Token:    "t1",
+			ExtUID:   12346,
+		},
+		{
+			User:     3,
+			Host:     "example2.com",
+			ClientID: "c",
+			Token:    "t3",
+			ExtUID:   12347,
+		},
+	}
+	s.mustSetUserToken(ctx, t, dbToks[0])
+	s.mustSetUserToken(ctx, t, dbToks[1])
+	s.mustSetUserToken(ctx, t, dbToks[2])
+
+	// fetch the tokens for external users
+	toks, err := s.ListExternalUsers(ctx, []int{}, "example.com", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(toks) != 0 {
+		t.Fatalf("got %d tokens, want 0", len(toks))
+	}
+}
+
+func TestExternalAuthTokens_ListExternalUsers_nonempty(t *testing.T) {
+	t.Parallel()
+
+	var s externalAuthTokens
+	ctx, done := testContext()
+	defer done()
+
+	dbToks := []*auth.ExternalAuthToken{
+		{
+			User:     1,
+			Host:     "example.com",
+			ClientID: "c",
+			Token:    "t0",
+			ExtUID:   12345,
+		},
+		{
+			User:     2,
+			Host:     "example.com",
+			ClientID: "c",
+			Token:    "t1",
+			ExtUID:   12346,
+		},
+		{
+			User:     3,
+			Host:     "example2.com",
+			ClientID: "c",
+			Token:    "t3",
+			ExtUID:   12347,
+		},
+	}
+	s.mustSetUserToken(ctx, t, dbToks[0])
+	s.mustSetUserToken(ctx, t, dbToks[1])
+	s.mustSetUserToken(ctx, t, dbToks[2])
+
+	// fetch the tokens for external users
+	toks, err := s.ListExternalUsers(ctx, []int{12345, 12347}, "example.com", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range dbToks {
+		normalizeExternalAuthToken(dbToks[i])
+	}
+	for i := range toks {
+		normalizeExternalAuthToken(toks[i])
+	}
+	if len(toks) != 1 {
+		t.Fatalf("got %d tokens, want 1", len(toks))
+	}
+	if !reflect.DeepEqual(dbToks[0], toks[0]) {
+		t.Errorf("got token %+v, want %+v", toks[0], dbToks[0])
+	}
+}
+
 func normalizeExternalAuthToken(tok *auth.ExternalAuthToken) {
 	tok.RefreshedAt = tok.RefreshedAt.In(time.UTC).Round(time.Second)
 	if tok.FirstAuthFailureAt != nil {
