@@ -962,7 +962,7 @@ func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, er
 }
 
 func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) {
-	defer r.trace(time.Now(), "OpenFile", name)
+	defer r.trace(time.Now(), "ReadFile", name)
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
