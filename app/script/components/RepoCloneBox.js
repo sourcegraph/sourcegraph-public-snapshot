@@ -43,7 +43,7 @@ var RepoCloneBox = React.createClass({
 		}
 
 		return (
-			<div className="clone-url-wrap input-group input-group-sm pull-right">
+			<div className="clone-url-wrap input-group input-group-sm pull-right hidden-xs">
 				<div className="input-group-btn">
 					<button className="btn btn-primary clone-url-toggle clone-type"
 						onClick={this._toggleType.bind(this, nextType, sshAvailable)}

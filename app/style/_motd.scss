@@ -1,8 +1,6 @@
 .motd {
 	width: 100%;
-	height: $motd-height;
 	text-align: center;
-	white-space: nowrap;
 	font-size: $font-size-base * 0.95;
 	background-color: $alert-warning-bg;
 	border-bottom: solid 1px darken($alert-warning-border, 5%);

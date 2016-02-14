@@ -12,7 +12,7 @@
 		<span class="tree-breadcrumb">
 		{{template "Breadcrumb" (fileToBreadcrumb .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path)}}
 		</span>
-	<ul class="nav nav-pills list-inline branch-commit-tag pull-right">
+	<ul class="nav nav-pills list-inline branch-commit-tag">
 		<li>
 			<a href="{{urlToRepoSubrouteRev "repo.rev.commits" .Repo.URI .RepoRevSpec.Rev}}">
 				<i class="octicon octicon-git-commit"></i>
