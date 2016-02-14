@@ -196,7 +196,7 @@ func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 // ListWithToken lists repos from GitHub that are visible in the given auth
 // token's scope.
-func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph.Repo, error) {
+func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph.RemoteRepo, error) {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
@@ -211,7 +211,7 @@ func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph
 		repoType = "" // import both public and private repos for PrivateMirrors.
 	}
 
-	var repos []*sourcegraph.Repo
+	var repos []*sourcegraph.RemoteRepo
 	repoOpts := &github.RepositoryListOptions{
 		Type: repoType,
 		ListOptions: github.ListOptions{
@@ -226,7 +226,31 @@ func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph
 			return nil, err
 		}
 		for _, ghrepo := range userRepos {
-			repos = append(repos, repoFromGitHub(&ghrepo))
+			remoteRepo := &sourcegraph.RemoteRepo{
+				Repo: *repoFromGitHub(&ghrepo),
+			}
+			if ghrepo.Owner != nil {
+				remoteRepo.Owner = userFromGitHub(ghrepo.Owner)
+			}
+			if ghrepo.Size != nil {
+				remoteRepo.RepoSize = int32(*ghrepo.Size)
+			}
+			if ghrepo.WatchersCount != nil {
+				remoteRepo.Watchers = int32(*ghrepo.WatchersCount)
+			}
+			if ghrepo.SubscribersCount != nil {
+				remoteRepo.Subscribers = int32(*ghrepo.SubscribersCount)
+			}
+			if ghrepo.StargazersCount != nil {
+				remoteRepo.Stars = int32(*ghrepo.StargazersCount)
+			}
+			if ghrepo.OpenIssuesCount != nil {
+				remoteRepo.OpenIssues = int32(*ghrepo.OpenIssuesCount)
+			}
+			if ghrepo.ForksCount != nil {
+				remoteRepo.Forks = int32(*ghrepo.ForksCount)
+			}
+			repos = append(repos, remoteRepo)
 		}
 		if resp.NextPage == 0 {
 			break

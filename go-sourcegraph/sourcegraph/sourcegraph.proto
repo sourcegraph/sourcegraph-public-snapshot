@@ -1022,6 +1022,38 @@ message RemoteRepo {
 
 	// Repo is a repo on an external host.
 	Repo Repo = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+	// Owner is the user/org that owns the repo.
+	User Owner = 3;
+
+	// RepoSize is the size of whole repository (including history) in kilobytes.
+	int32 RepoSize = 5;
+
+	// Watchers is the number of watchers of this repo.
+	int32 Watchers = 6;
+
+	// Subscribers is the number of subscribers of this repo.
+	int32 Subscribers = 7;
+
+	// Stars is the number of stars on this repo.
+	int32 Stars = 8;
+
+	// OpenIssues is the number of open issues on this repo.
+	int32 OpenIssues = 9;
+
+	// Forks is the number of forks of this repo.
+	int32 Forks = 10;
+}
+
+message RemoteOrgRepos {
+	// Name is the name of the remote organization.
+	string Name = 1;
+
+	// PrivateRepos is the list of private repos visible to the user.
+	repeated RemoteRepo PrivateRepos = 2;
+
+	// PublicRepos is the list of public repos visible to the user.
+	repeated RemoteRepo PublicRepos = 3;
 }
 
 // UserMirrorData is a list of GitHub repo that are visible
@@ -1033,15 +1065,13 @@ message UserMirrorData {
 	// Host is the name of the external code host.
 	string Host = 2;
 
-	// PrivateRepos is the list of private repos visible to the user.
-	repeated RemoteRepo PrivateRepos = 3;
-
-	// PublicRepos is the list of public repos visible to the user.
-	repeated RemoteRepo PublicRepos = 4;
+	// ReposByOrg is a map of GitHub orgs to their repos that are
+	// visible to the current user.
+	map<string, RemoteOrgRepos> ReposByOrg = 3;
 
 	// State is the state of the user's access to mirrored repos on
 	// this server.
-	UserMirrorsState State = 5;
+	UserMirrorsState State = 4;
 }
 
 message WaitlistState {
@@ -1469,16 +1499,35 @@ message PersonSpec {
 	int32 UID = 3;
 }
 
+// RemoteUser specifies a GitHub user that may have linked a Sourcegraph
+// user account.
+message RemoteUser {
+	// RemoteAccount specifies the GitHub user account information for the user.
+	User RemoteAccount = 1;
+
+	// LocalAccount specifies the Sourcegraph user account information for the
+	// user. If this field is nil, the remote user does not have any linked
+	// Sourcegraph account.
+	User LocalAccount = 2;
+
+	// Email specifies the primary email of the GitHub user.
+	string Email = 3;
+
+	// IsInvited specifies if a pending invite exists for the user's email (if present).
+	bool IsInvited = 4;
+}
+
+// RemoteUserList is a list of remote user accounts.
+message RemoteUserList {
+	// Users is a list of remote user accounts.
+	repeated RemoteUser Users = 1;
+}
+
 // Teammates lists all members of all GitHub organizations that a user is
 // part of. A teammate may or may not have a linked Sourcegraph account.
 message Teammates {
-	// LinkedUsers lists members of GitHub orgs that have a linked
-	// Sourcegraph account.
-	repeated User LinkedUsers = 1;
-
-	// ExternalUsers lists members of GitHub orgs that do not yet have
-	// a linked Sourcegraph account.
-	repeated User ExternalUsers = 2;
+	// UsersByOrg is a map of GitHub org name to users of that org.
+	map<string, RemoteUserList> UsersByOrg = 1;
 }
 
 message TaskSpec {

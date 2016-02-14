@@ -333,29 +333,37 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// Check if a user's remote GitHub repo already exists locally under the
 	// same URI. Allow this user to access all their private repos that are
 	// already mirrored on this Sourcegraph.
-	privateRepos := make([]*sourcegraph.RemoteRepo, 0)
-	publicRepos := make([]*sourcegraph.RemoteRepo, 0)
+	reposByOrg := make(map[string]*sourcegraph.RemoteOrgRepos)
+	defaultOrgName := "public-org"
 	var localPrivateRepos []string
 	for _, repo := range gitHubRepos {
-		remoteRepo := &sourcegraph.RemoteRepo{Repo: *repo}
 		if _, ok := existingRepos[repo.URI]; ok {
-			remoteRepo.ExistsLocally = true
+			repo.ExistsLocally = true
 			if repo.Private {
 				localPrivateRepos = append(localPrivateRepos, repo.URI)
 			}
 		}
+		orgName := defaultOrgName
+		if repo.Owner != nil {
+			orgName = repo.Owner.Login
+		}
+		if _, ok := reposByOrg[orgName]; !ok {
+			reposByOrg[orgName] = &sourcegraph.RemoteOrgRepos{
+				PrivateRepos: make([]*sourcegraph.RemoteRepo, 0),
+				PublicRepos:  make([]*sourcegraph.RemoteRepo, 0),
+			}
+		}
 		if repo.Private {
-			privateRepos = append(privateRepos, remoteRepo)
+			reposByOrg[orgName].PrivateRepos = append(reposByOrg[orgName].PrivateRepos, repo)
 		} else {
-			publicRepos = append(publicRepos, remoteRepo)
+			reposByOrg[orgName].PublicRepos = append(reposByOrg[orgName].PublicRepos, repo)
 		}
 	}
 	uid := int32(authpkg.ActorFromContext(ctx).UID)
 	if err := repoPermsStore.Update(elevatedActor(ctx), uid, localPrivateRepos); err != nil {
 		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
-	gd.PrivateRepos = privateRepos
-	gd.PublicRepos = publicRepos
+	gd.ReposByOrg = reposByOrg
 
 	return gd, nil
 }

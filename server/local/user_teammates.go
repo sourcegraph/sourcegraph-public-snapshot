@@ -40,7 +40,9 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		return nil, err
 	}
 
-	githubMembers := make(map[int32]*sourcegraph.User)
+	usersByOrg := make(map[string]*sourcegraph.RemoteUserList)
+
+	githubMembers := make(map[int32]struct{})
 	githubUIDs := make([]int, 0)
 	for _, org := range ghOrgs {
 		members, err := ghOrgsStore.ListMembers(githubCtx, sourcegraph.OrgSpec{Org: org.Login}, &sourcegraph.OrgListMembersOptions{
@@ -50,11 +52,25 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 			log15.Warn("Could not list members for GitHub org", "org", org.Login, "error", err)
 			continue
 		}
+		usersByOrg[org.Login] = &sourcegraph.RemoteUserList{
+			Users: make([]*sourcegraph.RemoteUser, len(members)),
+		}
 
-		for _, m := range members {
+		for i, m := range members {
 			if _, ok := githubMembers[m.UID]; !ok {
-				githubMembers[m.UID] = m
+				githubMembers[m.UID] = struct{}{}
 				githubUIDs = append(githubUIDs, int(m.UID))
+			}
+
+			usersByOrg[org.Login].Users[i] = &sourcegraph.RemoteUser{
+				RemoteAccount: m,
+			}
+			// Fetch the primary email of the GitHub user.
+			ghuser, _, err := client.Users.Get(m.Login)
+			if err != nil {
+				log15.Warn("Could not fetch email address of github user", "login", m.Login, "error", err)
+			} else if ghuser.Email != nil {
+				usersByOrg[org.Login].Users[i].Email = *ghuser.Email
 			}
 		}
 	}
@@ -62,9 +78,19 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 	if err != nil {
 		return nil, err
 	}
+
+	// uidMap maps a github UID to the list of UIDs of Sourcegraph user
+	// accounts that are linked to that GitHub account.
+	uidMap := make(map[int32][]int32)
 	sgUIDs := make([]int32, 0)
 	for _, tok := range linkedUserTokens {
-		sgUIDs = append(sgUIDs, int32(tok.User))
+		ghID := int32(tok.ExtUID)
+		sgID := int32(tok.User)
+		if _, ok := uidMap[ghID]; !ok {
+			uidMap[ghID] = make([]int32, 0)
+		}
+		uidMap[ghID] = append(uidMap[ghID], sgID)
+		sgUIDs = append(sgUIDs, sgID)
 	}
 
 	sgUsers, err := usersStore.List(elevatedActor(ctx), &sourcegraph.UsersListOptions{UIDs: sgUIDs})
@@ -72,19 +98,25 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		return nil, err
 	}
 
-	extUsers := make([]*sourcegraph.User, 0)
-	sgUIDMap := make(map[int32]struct{})
-	for _, uid := range sgUIDs {
-		sgUIDMap[uid] = struct{}{}
+	sgUserMap := make(map[int32]*sourcegraph.User)
+	for _, u := range sgUsers {
+		sgUserMap[u.UID] = u
 	}
-	for ghUID, ghUser := range githubMembers {
-		if _, ok := sgUIDMap[ghUID]; !ok {
-			extUsers = append(extUsers, ghUser)
+	for orgName := range usersByOrg {
+		for i := range usersByOrg[orgName].Users {
+			ghUID := usersByOrg[orgName].Users[i].RemoteAccount.UID
+			if sgUIDs, ok := uidMap[ghUID]; ok {
+				for _, id := range sgUIDs {
+					if sgUser, ok := sgUserMap[id]; ok {
+						usersByOrg[orgName].Users[i].LocalAccount = sgUser
+					}
+				}
+			}
 		}
 	}
 
-	return &sourcegraph.Teammates{
-		LinkedUsers:   sgUsers,
-		ExternalUsers: extUsers,
-	}, nil
+	// TODO: check pending invites for non-linked GitHub accounts.
+
+	shortCache(ctx)
+	return &sourcegraph.Teammates{UsersByOrg: usersByOrg}, nil
 }
