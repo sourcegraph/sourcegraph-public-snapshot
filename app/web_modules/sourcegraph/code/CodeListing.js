@@ -65,7 +65,7 @@ class CodeListing extends Component {
 		let $el = ReactDOM.findDOMNode(this);
 		let line = lineFromByte(this.state.lines, byte);
 		let $line = $el.querySelector(`[data-line="${line}"]`);
-		if ($line) return $line.offsetTop;
+		if ($line) return $line.offsetTop + $el.parentNode.querySelector(".code-file-toolbar").clientHeight;
 		throw new Error(`No element found for line ${line}`);
 	}
 
@@ -106,8 +106,6 @@ class CodeListing extends Component {
 
 		let listingClasses = classNames({
 			"line-numbered-code": true,
-			"content": true,
-			"file-content": true,
 		});
 
 		return (

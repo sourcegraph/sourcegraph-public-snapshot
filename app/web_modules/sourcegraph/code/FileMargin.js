@@ -12,12 +12,10 @@ export default class FileMargin extends Component {
 		if (!this.state.getOffsetTopForByte) return;
 		// if (!this.state.getOffsetTopForByte) throw new Error("getOffsetTopForByte not provided (should have been provided via CodeFileContainer refs)");
 
-		let $el = ReactDOM.findDOMNode(this);
-		let $contentView = $el.parentNode;
 		this._refs.forEach((c) => {
 			let $c = ReactDOM.findDOMNode(c);
 			$c.style.position = "absolute";
-			$c.style.top = `${this.state.getOffsetTopForByte(c.props.def.ByteStartPosition) - $contentView.offsetTop}px`;
+			$c.style.top = `${this.state.getOffsetTopForByte(c.props.def.ByteStartPosition)}px`;
 		});
 	}
 
@@ -47,6 +45,6 @@ FileMargin.propTypes = {
 	children: React.PropTypes.oneOfType([
 		React.PropTypes.arrayOf(React.PropTypes.element),
 		React.PropTypes.element,
-	]).isRequired,
+	]),
 	getOffsetTopForByte: React.PropTypes.func,
 };

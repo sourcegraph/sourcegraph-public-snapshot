@@ -4,34 +4,42 @@
 		"props": {
 			"children": [
 				{
-					"type": "CodeFileToolbar",
-					"props": {
-						"repo": "aRepo",
-						"rev": "aRev",
-						"tree": "aTree",
-						"file": {
-							"Entry": {
-								"ContentsString": "hello\nworld"
-							},
-							"EntrySpec": {
-								"RepoRev": {
-									"CommitID": "123abc"
-								}
-							}
-						}
-					}
-				},
-				{
 					"type": "div",
 					"props": {
 						"className": "content-view file-container",
 						"children": [
 							{
-								"type": "CodeListing",
+								"type": "div",
 								"props": {
-									"contents": "hello\nworld",
-									"lineNumbers": true,
-									"selectedDef": "someDef"
+									"className": "content file-content card",
+									"children": [
+										{
+											"type": "CodeFileToolbar",
+											"props": {
+												"repo": "aRepo",
+												"rev": "aRev",
+												"tree": "aTree",
+												"file": {
+													"Entry": {
+														"ContentsString": "hello\nworld"
+													},
+													"EntrySpec": {
+														"RepoRev": {
+															"CommitID": "123abc"
+														}
+													}
+												}
+											}
+										},
+										{
+											"type": "CodeListing",
+											"props": {
+												"contents": "hello\nworld",
+												"lineNumbers": true,
+												"selectedDef": "someDef"
+											}
+										}
+									]
 								}
 							},
 							{

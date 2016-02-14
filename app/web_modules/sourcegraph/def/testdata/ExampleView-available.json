@@ -14,20 +14,28 @@
 								"props": {
 									"children": [
 										{
-											"type": "a",
+											"type": "span",
 											"props": {
-												"href": "/someRepo/.tree/foo.go?startline=3&endline=7&seldef=/someURL",
-												"onClick": {
-													"defaultPrevented": true,
-													"dispatched": [
-														{
-															"$constructor": "GoTo",
-															"url": "[currentTarget.href]"
-														}
-													]
-												},
 												"children": [
-													"foo.go:3-7"
+													"Used in ",
+													{
+														"type": "a",
+														"props": {
+															"href": "/someRepo/.tree/foo.go?startline=3&endline=7&seldef=/someURL",
+															"onClick": {
+																"defaultPrevented": true,
+																"dispatched": [
+																	{
+																		"$constructor": "GoTo",
+																		"url": "[currentTarget.href]"
+																	}
+																]
+															},
+															"children": [
+																"foo.go:3-7"
+															]
+														}
+													}
 												]
 											}
 										}

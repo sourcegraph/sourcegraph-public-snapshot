@@ -2,52 +2,43 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "token-details card",
+			"className": "token-details",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"className": "body",
+						"className": "card",
 						"children": [
 							{
 								"type": "header",
 								"props": {
-									"className": "docHTML",
 									"children": [
 										{
-											"type": "div",
+											"type": "h1",
 											"props": {
-												"className": "header",
 												"children": [
 													{
-														"type": "h1",
+														"type": "span",
 														"props": {
+															"className": "qualified-name",
+															"dangerouslySetInnerHTML": {
+																"__html": "someName"
+															}
+														}
+													},
+													{
+														"type": "a",
+														"props": {
+															"className": "close top-action",
+															"onClick": {
+																"dispatched": [
+																	{
+																		"$constructor": "SelectDef"
+																	}
+																]
+															},
 															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "qualified-name",
-																		"dangerouslySetInnerHTML": {
-																			"__html": "someName"
-																		}
-																	}
-																},
-																{
-																	"type": "a",
-																	"props": {
-																		"className": "close top-action",
-																		"onClick": {
-																			"dispatched": [
-																				{
-																					"$constructor": "SelectDef"
-																				}
-																			]
-																		},
-																		"children": [
-																			"×"
-																		]
-																	}
-																}
+																"×"
 															]
 														}
 													}
@@ -56,16 +47,15 @@
 										}
 									]
 								}
-							},
-							{
-								"type": "header",
-								"props": {
-									"className": "examples-header",
-									"children": [
-										"Uses"
-									]
-								}
-							},
+							}
+						]
+					}
+				},
+				{
+					"type": "section",
+					"props": {
+						"className": "examples-card card",
+						"children": [
 							{
 								"type": "ExampleView",
 								"props": {

@@ -1,3 +1,5 @@
+$padding-card: 14px;
+
 // content-view refers to the general view structure where there is a
 // file or diff with sidebar cards.
 .content-view {
@@ -9,21 +11,27 @@
 		@media(min-width: $screen-md-min) and (max-width: $screen-lg-min) {
 			flex: 1 650px;
 		}
-		flex: 0.5 750px;
+		flex: 0.5 725px;
 	}
 	& > .sidebar {
 		@media(max-width: $screen-md-min) {
-			flex: 0 1 250px;
+			flex: 0 1 240px;
 		}
 		@media(min-width: $screen-md-min) and (max-width: $screen-lg-min) {
-			flex: 0 1 325px;
+			flex: 0 1 320px;
 		}
-		flex: 0.5 1 400px;
+		flex: 0.5 360px;
 		padding-left: $grid-gutter-width/2;
 		margin-right: $grid-gutter-width/2;
 		& > .card {
 			width: 100%;
-			flex: 1;
+			
 		}
+	}
+}
+
+.card {
+	header, section {
+		padding: $padding-card;
 	}
 }

@@ -101,22 +101,23 @@ class CodeFileContainer extends Container {
 
 		return (
 			<div>
-				<CodeFileToolbar
-					repo={this.state.repo}
-					rev={this.state.rev}
-					tree={this.state.tree}
-					file={this.state.file} />
 				<div className="content-view file-container">
-					{this.state.file &&
-					<CodeListing
-						ref={(e) => this.setState({_codeListing: e})}
-						contents={this.state.file.Entry.ContentsString}
-						lineNumbers={true}
-						startLine={this.state.startLine}
-						endLine={this.state.endLine}
-						selectedDef={this.state.selectedDef}
-						highlightedDef={this.state.highlightedDef} />}
-
+					<div className="content file-content card">
+						<CodeFileToolbar
+							repo={this.state.repo}
+							rev={this.state.rev}
+							tree={this.state.tree}
+							file={this.state.file} />
+						{this.state.file &&
+						<CodeListing
+							ref={(e) => this.setState({_codeListing: e})}
+							contents={this.state.file.Entry.ContentsString}
+							lineNumbers={true}
+							startLine={this.state.startLine}
+							endLine={this.state.endLine}
+							selectedDef={this.state.selectedDef}
+							highlightedDef={this.state.highlightedDef} />}
+					</div>
 					<FileMargin examples={this.state.examples} getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
 						{selectedDefData && // TODO(sqs!): remove this disabled code path
 						<DefPopup
