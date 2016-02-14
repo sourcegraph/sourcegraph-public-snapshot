@@ -68,13 +68,8 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 			// Fetch the primary email of the GitHub user.
 			ghuser, _, err := client.Users.Get(m.Login)
 			if err != nil {
-				log15.Warn("Could not fetch github user", "login", m.Login, "error", err)
-				continue
-			}
-			if ghuser.Name != nil {
-				usersByOrg[org.Login].Users[i].RemoteAccount.Name = *ghuser.Name
-			}
-			if ghuser.Email != nil {
+				log15.Warn("Could not fetch email address of github user", "login", m.Login, "error", err)
+			} else if ghuser.Email != nil {
 				usersByOrg[org.Login].Users[i].Email = *ghuser.Email
 			}
 		}
@@ -112,8 +107,6 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 			ghUID := usersByOrg[orgName].Users[i].RemoteAccount.UID
 			if sgUIDs, ok := uidMap[ghUID]; ok {
 				for _, id := range sgUIDs {
-					// TODO: make a new RemoteUser for every Sourcegraph user
-					// linked to the same GitHub account
 					if sgUser, ok := sgUserMap[id]; ok {
 						usersByOrg[orgName].Users[i].LocalAccount = sgUser
 					}
@@ -122,6 +115,8 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		}
 	}
 
-	// TODO: check for pending invites to non-linked GitHub accounts.
+	// TODO: check pending invites for non-linked GitHub accounts.
+
+	shortCache(ctx)
 	return &sourcegraph.Teammates{UsersByOrg: usersByOrg}, nil
 }
