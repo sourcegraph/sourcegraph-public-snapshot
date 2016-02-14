@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -64,7 +65,9 @@ func (w *waitlist) AddUser(ctx context.Context, uid int32) error {
 
 func (w *waitlist) getUser(ctx context.Context, uid int32) (*userWaitlistRow, error) {
 	var user userWaitlistRow
-	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM user_waitlist WHERE uid=$1 LIMIT 1", uid); err != nil {
+	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM user_waitlist WHERE uid=$1 LIMIT 1", uid); err == sql.ErrNoRows {
+			return nil, &store.WaitlistedUserNotFoundError{UID: uid}
+	} else if err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -150,7 +153,9 @@ func (w *waitlist) AddOrg(ctx context.Context, orgName string) error {
 
 func (w *waitlist) getOrg(ctx context.Context, orgName string) (*orgWaitlistRow, error) {
 	var org orgWaitlistRow
-	if err := dbh(ctx).SelectOne(&org, "SELECT * FROM org_waitlist WHERE name=$1 LIMIT 1", orgName); err != nil {
+	if err := dbh(ctx).SelectOne(&org, "SELECT * FROM org_waitlist WHERE name=$1 LIMIT 1", orgName); err == sql.ErrNoRows {
+		return nil, &store.WaitlistedOrgNotFoundError{OrgName: orgName}
+	} else if err != nil {
 		return nil, err
 	}
 	return &org, nil

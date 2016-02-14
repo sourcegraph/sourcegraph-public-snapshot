@@ -395,7 +395,7 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 
 	waitlistedUser, err := waitlistStore.GetUser(ctx, uid)
 	if err != nil {
-		if err, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
+		if _, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
 			return nil, err
 		}
 		// User is not waitlisted
