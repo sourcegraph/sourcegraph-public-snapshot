@@ -1,11 +1,11 @@
 import React from "react";
 
-import Component from "sourcegraph/Component";
+import Container from "sourcegraph/Container";
 import GitHubReposStore from "sourcegraph/dashboard/GitHubReposStore";
 import ListMenu from "sourcegraph/dashboard/ListMenu";
-import SelectableList from "sourcegraph/dashboard/SelectableList";
+import SelectableListWidget from "sourcegraph/dashboard/SelectableListWidget";
 
-class AddReposWidget extends Component {
+class AddReposWidget extends Container {
 	constructor(props) {
 		super(props);
 	}
@@ -55,7 +55,14 @@ class AddReposWidget extends Component {
 
 								</div>
 							    <div role="tabpanel" className="tab-pane" id="github-mirror">
-									<div className="list-picker">
+									<SelectableListWidget items={this.state.mirrorRepos}
+										currentCategory={this.state.currentOrg}
+										menuCategories={this.state.orgs}
+										selections={this.state.selectedRepos}
+										selectAll={this.state.selectAll}
+										menuLabel="Organizations"
+										onSubmit={(items) => console.log("submitted", items)} />
+									{/*<div className="list-picker">
 										<div className="category-menu">
 											<ListMenu label="Organizations"
 												categories={this.state.orgs}
@@ -67,7 +74,7 @@ class AddReposWidget extends Component {
 												selections={this.state.selectedRepos}
 												searchPlaceholderText="Search GitHub repositories" />
 										</div>
-									</div>
+									</div>*/}
 								</div>
 							</div>
 						</div>

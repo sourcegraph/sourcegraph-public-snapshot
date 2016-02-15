@@ -21,7 +21,7 @@
 	{{else}}
 		// This is where we would tell you you're on the whitelist.
 	{{end}}
-	window.progress.currentStep = 30; // TODO: remove
+	// window.progress.currentStep = 0; // TODO: remove
 
 	{{if (and .PrivateMirrors $.CurrentUser (not appconf.DisableIntegrations))}}
 		var mirrorData = JSON.parse({{json .MirrorData}});

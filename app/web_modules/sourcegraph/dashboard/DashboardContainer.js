@@ -7,7 +7,7 @@ import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
-import AddReposWidget from "sourcegraph/dashboard/AddReposWidget";
+import AddReposModal from "sourcegraph/dashboard/AddReposModal";
 
 class DashboardContainer extends Container {
 	constructor(props) {
@@ -46,7 +46,7 @@ class DashboardContainer extends Container {
 	render() {
 		return (
 			<div className="dashboard-container dashboard">
-				{this.state.showModal ? <AddReposWidget dismissModal={this._dismissModal} /> : null}
+				{/*{this.state.showModal ? <AddReposWidget dismissModal={this._dismissModal} /> : null}*/}
 				<div className="dash-repos">
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Your Repositories</h3>

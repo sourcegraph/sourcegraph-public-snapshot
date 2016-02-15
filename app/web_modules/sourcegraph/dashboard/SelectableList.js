@@ -100,7 +100,6 @@ SelectableList.propTypes = {
 		name: React.PropTypes.string,
 	})).isRequired,
 	// type identifies the entity type of the items which populate the list
-	type: React.PropTypes.string,
 	// selections is a object which identifies which items are currently selected {index: isSelected}
 	selections: React.PropTypes.object.isRequired,
 	// selectAll identifies if the "select all" aggregator is toggled
