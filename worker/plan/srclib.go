@@ -81,7 +81,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			Container: droneyaml.Container{
 				Image: "srclib/drone-srclib-go@sha256:1e4c5867ba7949ad8f23ee67a43a723b0b5357a9dd862fd67bd0943b8e951237",
 			},
-			Commands: srclibBuildCommands,
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
 		},
 	},
 	"JavaScript": droneyaml.BuildItem{
@@ -90,7 +91,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			Container: droneyaml.Container{
 				Image: "srclib/drone-srclib-javascript@sha256:d02d302667c4cd8efa998b82ec95643c5924d774e247a77649aa7618d45a46cf",
 			},
-			Commands: srclibBuildCommands,
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
 		},
 	},
 	"Java": droneyaml.BuildItem{
@@ -99,7 +101,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			Container: droneyaml.Container{
 				Image: "srclib/drone-srclib-java:5efb783-36f0fbf-ff3b48f",
 			},
-			Commands: srclibBuildCommands,
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
 		},
 	},
 	"Python": droneyaml.BuildItem{
@@ -108,7 +111,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			Container: droneyaml.Container{
 				Image: "srclib/drone-srclib-python@sha256:30f6405d6ced73bdf418dec5a97ba5e650d1c6967acfefebc43de2dd75792d01",
 			},
-			Commands: srclibBuildCommands,
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
 		},
 	},
 }
