@@ -5,10 +5,10 @@ import Component from "sourcegraph/Component";
 // function created to update cursor position in constructor()
 let cursorX;
 let cursorY;
-document.onmousemove = (event) => {
+document.addEventListener("mousemove", (event) => {
 	cursorX = event.clientX;
 	cursorY = event.clientY;
-};
+}, false);
 
 class DefTooltip extends Component {
 	constructor(props) {
