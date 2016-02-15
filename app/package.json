@@ -55,7 +55,6 @@
     "react-cookie": "0.2.5",
     "react-dom": "0.14.0",
     "react-draggable": "0.8.1",
-    "stickyfill": "1.1.1",
     "urijs": "1.16.1",
     "xhr": "2.2.0"
   },
