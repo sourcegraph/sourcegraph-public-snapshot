@@ -763,6 +763,12 @@ message ReposUpdateOp {
 	// Language is the new primary programming language of the
 	// repository. If empty, the language is not changed.
 	string Language = 3;
+
+	// IsPrivate is true if the repo's new visibility is private.
+	bool IsPrivate = 4;
+
+	// IsPublic is true if the repo's new visibility is public.
+	bool IsPublic = 5;
 };
 
 message ReposListCommitsOp {

@@ -958,6 +958,10 @@ type ReposUpdateOp struct {
 	// Language is the new primary programming language of the
 	// repository. If empty, the language is not changed.
 	Language string `protobuf:"bytes,3,opt,name=Language,proto3" json:"Language,omitempty"`
+	// IsPrivate is true if the repo's new visibility is private.
+	IsPrivate bool `protobuf:"varint,4,opt,name=IsPrivate,proto3" json:"IsPrivate,omitempty"`
+	// IsPublic is true if the repo's new visibility is public.
+	IsPublic bool `protobuf:"varint,5,opt,name=IsPublic,proto3" json:"IsPublic,omitempty"`
 }
 
 func (m *ReposUpdateOp) Reset()         { *m = ReposUpdateOp{} }
@@ -9366,6 +9370,26 @@ func (m *ReposUpdateOp) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Language)))
 		i += copy(data[i:], m.Language)
+	}
+	if m.IsPrivate {
+		data[i] = 0x20
+		i++
+		if m.IsPrivate {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.IsPublic {
+		data[i] = 0x28
+		i++
+		if m.IsPublic {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
 	}
 	return i, nil
 }
@@ -17992,6 +18016,12 @@ func (m *ReposUpdateOp) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
+	if m.IsPrivate {
+		n += 2
+	}
+	if m.IsPublic {
+		n += 2
+	}
 	return n
 }
 
@@ -26507,6 +26537,46 @@ func (m *ReposUpdateOp) Unmarshal(data []byte) error {
 			}
 			m.Language = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsPrivate", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsPrivate = bool(v != 0)
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsPublic", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsPublic = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
