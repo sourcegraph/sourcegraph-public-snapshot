@@ -9,6 +9,7 @@ import (
 
 type RepoPerms struct {
 	Add_           func(ctx context.Context, uid int32, repo string) error
+	Get_           func(ctx context.Context, uid int32, repo string) (bool, error)
 	Update_        func(ctx context.Context, uid int32, repos []string) error
 	Delete_        func(ctx context.Context, uid int32, repo string) error
 	ListUserRepos_ func(ctx context.Context, uid int32) ([]string, error)
@@ -19,6 +20,10 @@ type RepoPerms struct {
 
 func (s *RepoPerms) Add(ctx context.Context, uid int32, repo string) error {
 	return s.Add_(ctx, uid, repo)
+}
+
+func (s *RepoPerms) Get(ctx context.Context, uid int32, repo string) (bool, error) {
+	return s.Get_(ctx, uid, repo)
 }
 
 func (s *RepoPerms) Update(ctx context.Context, uid int32, repos []string) error {

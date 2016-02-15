@@ -12,6 +12,9 @@ type RepoPerms interface {
 	// Add adds permissions for the user to access the repo.
 	Add(ctx context.Context, uid int32, repo string) error
 
+	// Get returns permissions for the user to access the repo.
+	Get(ctx context.Context, uid int32, repo string) (bool, error)
+
 	// Update updates the list of repos visible to the user to the
 	// given slice of repo URIs. Repos that user previously had
 	// access to but are not present in the given slice, are removed.
