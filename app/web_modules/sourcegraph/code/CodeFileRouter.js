@@ -1,5 +1,5 @@
 import React from "react";
-import URI from "urijs";
+import URL from "url";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -23,15 +23,15 @@ class CodeFileRouter extends Component {
 	}
 
 	reconcileState(state, props) {
-		state.uri = URI.parse(props.location);
+		state.url = URL.parse(props.location, true);
 		state.navigate = props.navigate || null;
 
-		let pathParts = state.uri.path.substr(1).split("/.");
+		let pathParts = state.url.pathname.substr(1).split("/.");
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0];
 		state.rev = decodeURIComponent(repoParts[1] || "");
 
-		// We split the URI path based on `/.` because that usually denotes an
+		// We split the path based on `/.` because that usually denotes an
 		// operation, but in the case of the tree operation consider this path:
 		//
 		//  "/sourcegraph@master/.tree/.gitignore"
@@ -41,14 +41,14 @@ class CodeFileRouter extends Component {
 		// this case specially here.
 		if (pathParts.length >= 2 && (pathParts[1] === "tree" || pathParts[1].indexOf("tree/") === 0)) {
 			// Parse the filepath following "/.tree/".
-			let treePath = state.uri.path.substring(state.uri.path.indexOf("/.tree/") + "/.tree/".length);
+			let treePath = state.url.pathname.substring(state.url.pathname.indexOf("/.tree/") + "/.tree/".length);
 
-			// Reform the pathParts array with the corrected URI path split.
+			// Reform the pathParts array with the corrected path split.
 			pathParts = [pathParts[0], `tree/${treePath}`];
 		}
 
 		let keys = [];
-		let vars = URI.parseQuery(state.uri.query);
+		let vars = Object.assign({}, state.url.query);
 		pathParts.slice(1).forEach((part) => {
 			let p = part.indexOf("/");
 			let key = part.substr(0, p);
@@ -66,15 +66,15 @@ class CodeFileRouter extends Component {
 		state.def = vars["def"] ? `/${state.repo}${revPart}/.${keys[0]}/${vars[keys[0]]}/.def/${vars["def"]}` : null;
 	}
 
-	_navigate(path, query) {
-		let uri = Object.assign({}, this.state.uri);
-		if (path) {
-			uri.path = path;
-		}
-		if (query) {
-			uri.query = URI.buildQuery(Object.assign(URI.parseQuery(uri.query), query));
-		}
-		this.state.navigate(URI.build(uri));
+	_navigate(pathname, query) {
+		let url = {
+			protocol: this.state.url.protocol,
+			auth: this.state.url.auth,
+			host: this.state.url.host,
+			pathname: pathname || this.state.url.pathname,
+			query: Object.assign({}, this.state.url.query, query),
+		};
+		this.state.navigate(URL.format(url));
 	}
 
 	__onDispatch(action) {
@@ -99,7 +99,7 @@ class CodeFileRouter extends Component {
 			break;
 
 		case GoTo:
-			this.state.navigate(URI(action.url).absoluteTo(this.state.uri).href());
+			this.state.navigate(URL.resolve(this.state.url, action.url));
 			break;
 		}
 	}

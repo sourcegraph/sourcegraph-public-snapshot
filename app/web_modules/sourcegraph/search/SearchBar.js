@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import URI from "urijs";
+import URL from "url";
 
 import Component from "sourcegraph/Component";
 import LocationAdaptor from "sourcegraph/LocationAdaptor";
@@ -17,10 +17,10 @@ class SearchBar extends Component {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.uri = URI.parse(props.location);
+		state.url = URL.parse(props.location, true);
 		state.navigate = props.navigate || null;
 
-		let pathParts = state.uri.path.substr(1).split("/.");
+		let pathParts = state.url.pathname.substr(1).split("/.");
 		state.searchViewIsActive = (pathParts.length >= 2 && pathParts[1] === "search");
 
 		let repoParts = pathParts[0].split("@");
@@ -33,9 +33,8 @@ class SearchBar extends Component {
 			state.rev = null;
 		}
 
-		let vars = URI.parseQuery(state.uri.query);
-		state.query = vars["q"] || null;
-		state.type = vars["type"] || null;
+		state.query = state.url.query["q"] || null;
+		state.type = state.url.query["type"] || null;
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -51,7 +50,7 @@ class SearchBar extends Component {
 				), el);
 			}
 		} else if (prevState.searchViewIsActive && !nextState.searchViewIsActive) {
-			window.location.href = URI.build(nextState.uri);
+			window.location.href = URL.format(nextState.url);
 		}
 
 		if (prevState.query !== nextState.query && this.refs.queryInput) {
@@ -59,15 +58,15 @@ class SearchBar extends Component {
 		}
 	}
 
-	_navigate(path, query) {
-		let uri = Object.assign({}, this.state.uri);
-		if (path) {
-			uri.path = path;
-		}
-		if (query) {
-			uri.query = URI.buildQuery(Object.assign(URI.parseQuery(uri.query), query));
-		}
-		this.state.navigate(URI.build(uri));
+	_navigate(pathname, query) {
+		let url = {
+			protocol: this.state.url.protocol,
+			auth: this.state.url.auth,
+			host: this.state.url.host,
+			pathname: pathname || this.state.url.pathname,
+			query: Object.assign({}, this.state.url.query, query),
+		};
+		this.state.navigate(URL.format(url));
 	}
 
 	_searchPath() {

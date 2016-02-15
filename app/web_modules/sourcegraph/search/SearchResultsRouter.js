@@ -1,5 +1,5 @@
 import React from "react";
-import URI from "urijs";
+import URL from "url";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -16,29 +16,28 @@ class SearchResultsRouter extends Component {
 	}
 
 	reconcileState(state, props) {
-		state.uri = URI.parse(props.location);
+		state.url = URL.parse(props.location, true);
 		state.navigate = props.navigate || null;
 
-		let pathParts = state.uri.path.substr(1).split("/.");
+		let pathParts = state.url.pathname.substr(1).split("/.");
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0];
 		state.rev = repoParts[1] || "master";
 
-		let vars = URI.parseQuery(state.uri.query);
-		state.query = vars["q"] || null;
-		state.type = vars["type"] || "tokens";
-		state.page = parseInt(vars["page"], 10) || 1;
+		state.query = state.url.query["q"] || null;
+		state.type = state.url.query["type"] || "tokens";
+		state.page = parseInt(state.url.query["page"], 10) || 1;
 	}
 
-	_navigate(path, query) {
-		let uri = Object.assign({}, this.state.uri);
-		if (path) {
-			uri.path = path;
-		}
-		if (query) {
-			uri.query = URI.buildQuery(Object.assign(URI.parseQuery(uri.query), query));
-		}
-		this.state.navigate(URI.build(uri));
+	_navigate(pathname, query) {
+		let url = {
+			protocol: this.state.url.protocol,
+			auth: this.state.url.auth,
+			host: this.state.url.host,
+			pathname: pathname || this.state.url.pathname,
+			query: Object.assign({}, this.state.url.query, query),
+		};
+		this.state.navigate(URL.format(url));
 	}
 
 	__onDispatch(action) {
