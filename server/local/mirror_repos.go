@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -293,6 +294,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	}
 
 	repoPermsStore := store.RepoPermsFromContext(ctx)
+	reposStore := store.ReposFromContext(ctx)
 
 	ghRepos := &github.Repos{}
 	// TODO(perf) Cache this response or perform the fetch after page load to avoid
@@ -307,15 +309,25 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	}
 	gd.State = sourcegraph.UserMirrorsState_HasAccess
 
-	existingRepos := make(map[string]struct{})
+	var gitHubRepoURIs []string
+	for _, repo := range gitHubRepos {
+		if repo != nil {
+			gitHubRepoURIs = append(gitHubRepoURIs, repo.URI)
+		}
+	}
+
+	// This map contains repos visible to this GitHub user that are already
+	// mirrored on this Sourcegraph server.
+	existingRepos := make(map[string]*sourcegraph.Repo)
 	repoOpts := &sourcegraph.RepoListOptions{
 		ListOptions: sourcegraph.ListOptions{
 			PerPage: 1000,
 			Page:    1,
 		},
+		URIs: gitHubRepoURIs,
 	}
 	for {
-		repoList, err := store.ReposFromContext(ctx).List(elevatedActor(ctx), repoOpts)
+		repoList, err := reposStore.List(elevatedActor(ctx), repoOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -324,7 +336,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		}
 
 		for _, repo := range repoList {
-			existingRepos[repo.URI] = struct{}{}
+			existingRepos[repo.URI] = repo
 		}
 
 		repoOpts.ListOptions.Page += 1
@@ -335,12 +347,49 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// already mirrored on this Sourcegraph.
 	reposByOrg := make(map[string]*sourcegraph.RemoteOrgRepos)
 	defaultOrgName := "public-org"
-	var localPrivateRepos []string
+	var privateRepoURIs []string
 	for _, repo := range gitHubRepos {
-		if _, ok := existingRepos[repo.URI]; ok {
+		if localRepo, ok := existingRepos[repo.URI]; ok {
 			repo.ExistsLocally = true
-			if repo.Private {
-				localPrivateRepos = append(localPrivateRepos, repo.URI)
+			if localRepo.Private != repo.Private {
+				// This means that either the existing local mirror was created with
+				// the incorrect visibility (public vs. private) compared to the
+				// upstream GitHub repo, or the upstream repo's visibility was modified
+				// recently.
+				// Modify the repo metadata in the local db to be consistent with it's
+				// visibility on GitHub. This means that if the repo was public and is
+				// now private, all Sourcegraph users will need to visit their dashboard
+				// to force a sync with GitHub and have their repo_perms records updated
+				// in order to continue accessing this repo.
+				now := time.Now()
+				err := reposStore.Update(elevatedActor(ctx), &store.RepoUpdate{
+					ReposUpdateOp: &sourcegraph.ReposUpdateOp{
+						IsPrivate: repo.Private,
+						IsPublic:  !repo.Private,
+					},
+					UpdatedAt: &now,
+				})
+				if err != nil {
+					// Failed to update repo visibility, so skip it.
+					log15.Warn("Failed to update repo visibility level", "repo", repo.URI, "error", err)
+					continue
+				}
+
+				// If the repo is public, remove it's records from the repo_perms store
+				// which only stores permissions for private repos.
+				if !repo.Private {
+					err := repoPermsStore.DeleteRepo(elevatedActor(ctx), repo.URI)
+					if err != nil {
+						// Failed to update repo permissions, so skip it.
+						log15.Warn("Failed to update repo permissions", "repo", repo.URI, "error", err)
+						continue
+					}
+				}
+			}
+		} else if repo.Private {
+			// If repo is private and not mirrored yet, add it to pending repos.
+			if err := store.WaitlistFromContext(ctx).RecordPendingRepo(ctx, repo); err != nil {
+				log15.Warn("Failed to record pending private repo", "uri", repo.URI, "error", err)
 			}
 		}
 		orgName := defaultOrgName
@@ -355,12 +404,14 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		}
 		if repo.Private {
 			reposByOrg[orgName].PrivateRepos = append(reposByOrg[orgName].PrivateRepos, repo)
+			privateRepoURIs = append(privateRepoURIs, repo.URI)
 		} else {
 			reposByOrg[orgName].PublicRepos = append(reposByOrg[orgName].PublicRepos, repo)
 		}
 	}
+	// Update the user's permissions for visible private repos.
 	uid := int32(authpkg.ActorFromContext(ctx).UID)
-	if err := repoPermsStore.Update(elevatedActor(ctx), uid, localPrivateRepos); err != nil {
+	if err := repoPermsStore.Update(elevatedActor(ctx), uid, privateRepoURIs); err != nil {
 		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
 	gd.ReposByOrg = reposByOrg

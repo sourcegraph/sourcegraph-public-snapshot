@@ -117,20 +117,45 @@ func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Re
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
-	if _, err := s.get(elevatedActor(ctx), op.URI); err == nil {
-		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
+	if op.URI == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "repo URI must have at least one path component")
 	}
-
 	if op.Mirror {
 		if op.CloneURL == "" {
 			return nil, grpc.Errorf(codes.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
 		}
 	}
-
-	if op.URI == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "repo URI must have at least one path component")
+	if _, err := s.get(elevatedActor(ctx), op.URI); err == nil {
+		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
 	}
 
+	uid := int32(authpkg.ActorFromContext(ctx).UID)
+	if authutil.ActiveFlags.PrivateMirrors {
+		if !op.Mirror {
+			// TODO: enable creating local repos on Sourcegraph Server instances.
+			return nil, grpc.Errorf(codes.Unavailable, "creating a non-mirror repo is not enabled on this server")
+		}
+
+		if op.Private {
+			// Check that the user has permission to access this private repo.
+			// The user's permissions for private mirror repos are set in
+			// MirrorRepos.GetUserData, which is called during onboarding.
+			valid, err := store.RepoPermsFromContext(ctx).Get(ctx, uid, op.URI)
+			if err != nil {
+				return nil, err
+			}
+			if !valid {
+				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
+			}
+		}
+	} else {
+		if op.Mirror && op.Private {
+			return nil, grpc.Errorf(codes.Unavailable, "creating a private mirror repo is not enabled on this server")
+		}
+	}
+	if op.Mirror && !op.Private {
+		// Check that the repo is really public.
+	}
 	ts := pbtypes.NewTimestamp(time.Now())
 	repo := &sourcegraph.Repo{
 		Name:         pathpkg.Base(op.URI),
@@ -151,8 +176,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 	if authutil.ActiveFlags.PrivateMirrors && op.Mirror && op.Private {
 		// Allow this user to access this repo.
 		repoPermsStore := store.RepoPermsFromContext(ctx)
-		uid := int32(authpkg.ActorFromContext(ctx).UID)
-		if err := repoPermsStore.Add(ctx, uid, op.URI); err != nil && err != store.ErrRepoPermissionExists {
+		if err := repoPermsStore.Add(elevatedActor(ctx), uid, op.URI); err != nil && err != store.ErrRepoPermissionExists {
 			log15.Warn("Failed to set repo permissions for user", "repo", op.URI, "uid", uid, "error", err)
 		}
 	}
