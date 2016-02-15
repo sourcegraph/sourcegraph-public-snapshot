@@ -26,7 +26,7 @@ class DefPopup extends Component {
 				</div>
 
 				<section className="examples-card card">
-					<ExampleView defURL={def.URL} examples={this.state.examples} highlightedDef={this.state.highlightedDef} />
+					<ExampleView defURL={def.URL} examples={this.state.examples} annotations={this.state.annotations} highlightedDef={this.state.highlightedDef} />
 				</section>
 			</div>
 		);
@@ -36,6 +36,7 @@ class DefPopup extends Component {
 DefPopup.propTypes = {
 	def: React.PropTypes.object,
 	examples: React.PropTypes.object,
+	annotations: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
 };
 

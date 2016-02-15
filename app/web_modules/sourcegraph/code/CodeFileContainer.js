@@ -14,6 +14,7 @@ import FileMargin from "sourcegraph/code/FileMargin";
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
 import lineFromByte from "sourcegraph/code/lineFromByte";
+import {GoTo} from "sourcegraph/util/hotLink";
 
 class CodeFileContainer extends Container {
 	constructor(props) {
@@ -49,6 +50,8 @@ class CodeFileContainer extends Container {
 
 		// fetch file content
 		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
+		state.anns = state.tree && CodeStore.annotations.get(state.repo, state.rev, state.tree, 0, 0);
+		state.annotations = CodeStore.annotations;
 
 		state.startLine = (props.def && state.file) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
 		state.endLine = (props.def && state.file) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteEndPosition) : (props.endLine || null);
@@ -65,6 +68,7 @@ class CodeFileContainer extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
 			Dispatcher.asyncDispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
+			Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.repo, nextState.rev, nextState.tree));
 		}
 		if (nextState.selectedDef && prevState.selectedDef !== nextState.selectedDef) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.selectedDef));
@@ -100,8 +104,8 @@ class CodeFileContainer extends Container {
 		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
 
 		return (
-			<div>
-				<div className="content-view file-container">
+			<div className="file-container">
+				<div className="content-view">
 					<div className="content file-content card">
 						<CodeFileToolbar
 							repo={this.state.repo}
@@ -111,7 +115,9 @@ class CodeFileContainer extends Container {
 						{this.state.file &&
 						<CodeListing
 							ref={(e) => this.setState({_codeListing: e})}
+							startByte={0}
 							contents={this.state.file.Entry.ContentsString}
+							annotations={this.state.anns ? this.state.anns.Annotations : null}
 							lineNumbers={true}
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}
@@ -119,10 +125,11 @@ class CodeFileContainer extends Container {
 							highlightedDef={this.state.highlightedDef} />}
 					</div>
 					<FileMargin examples={this.state.examples} getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
-						{selectedDefData && // TODO(sqs!): remove this disabled code path
+						{selectedDefData &&
 						<DefPopup
 							def={selectedDefData}
 							examples={this.state.examples}
+							annotations={this.state.annotations}
 							highlightedDef={this.state.highlightedDef || null} />}
 					</FileMargin>
 				</div>
@@ -140,7 +147,7 @@ class CodeFileContainer extends Container {
 							let data = this.state.defs.get(url);
 							return (
 								<li key={i} onClick={() => {
-									Dispatcher.dispatch(new DefActions.SelectDef(url));
+									Dispatcher.dispatch(new GoTo(url));
 								}}>
 									{data ? <span dangerouslySetInnerHTML={data.QualifiedName} /> : "..."}
 								</li>

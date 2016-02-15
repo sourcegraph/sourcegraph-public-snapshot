@@ -47,6 +47,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	// Set handlers for the installed routes.
+	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
 	m.Get(apirouter.BlackHole).Handler(handler(serveBlackHole))
 	m.Get(apirouter.Build).Handler(handler(serveBuild))
 	m.Get(apirouter.Builds).Handler(handler(serveBuilds))

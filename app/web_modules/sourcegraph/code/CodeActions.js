@@ -15,6 +15,27 @@ export class FileFetched {
 	}
 }
 
+export class WantAnnotations {
+	constructor(repo, rev, path, startByte, endByte) {
+		this.repo = repo;
+		this.rev = rev;
+		this.path = path;
+		this.startByte = startByte;
+		this.endByte = endByte;
+	}
+}
+
+export class AnnotationsFetched {
+	constructor(repo, rev, path, startByte, endByte, annotations) {
+		this.repo = repo;
+		this.rev = rev;
+		this.path = path;
+		this.startByte = startByte;
+		this.endByte = endByte;
+		this.annotations = annotations;
+	}
+}
+
 export class SelectLine {
 	constructor(line) {
 		this.line = line;

@@ -57,7 +57,7 @@ func TestProtobuf_Example(t *testing.T) {
 			File: "f",
 		},
 		Contents:  "hello",
-		StartLine: 7,
+		FileRange: FileRange{StartLine: 7},
 	}
 	b, err := proto.Marshal(v)
 	if err != nil {

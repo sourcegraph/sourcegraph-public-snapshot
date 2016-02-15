@@ -5,8 +5,6 @@ import Component from "sourcegraph/Component";
 import CodeLineView from "sourcegraph/code/CodeLineView";
 import lineFromByte from "sourcegraph/code/lineFromByte";
 
-import classNames from "classnames";
-
 const tilingFactor = 50;
 
 class CodeListing extends Component {
@@ -15,6 +13,7 @@ class CodeListing extends Component {
 		this.state = {
 			firstVisibleLine: 0,
 			visibleLinesCount: tilingFactor * 3,
+			lineAnns: [],
 		};
 		this._updateVisibleLines = this._updateVisibleLines.bind(this);
 	}
@@ -32,9 +31,51 @@ class CodeListing extends Component {
 	}
 
 	reconcileState(state, props) {
-		Object.assign(state, props);
+		state.startByte = props.startByte || 0;
+		state.startLine = props.startLine || 0;
+		state.endLine = props.endLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
-		state.lines = props.contents.split("\n");
+		state.selectedDef = props.selectedDef;
+		state.highlightedDef = props.highlightedDef;
+
+		let updateAnns = false;
+
+		if (state.annotations !== props.annotations) {
+			state.annotations = props.annotations;
+			updateAnns = true;
+		}
+
+		if (state.contents !== props.contents) {
+			state.contents = props.contents;
+			state.lines = props.contents.split("\n");
+			state.lineStartBytes = this._computeLineStartBytes(state.startByte, state.lines);
+			updateAnns = true;
+		}
+
+		if (updateAnns) {
+			state.lineAnns = [];
+			(state.annotations || []).forEach((ann) => {
+				let line = state.lineStartBytes.findIndex((startByte, i) => (
+					(ann.StartByte || 0) >= startByte && ann.EndByte < startByte + state.lines[i].length + 1
+				));
+				if (line === -1) {
+					throw new Error(`No line found for ann: ${JSON.stringify(ann)}`);
+				}
+				if (!state.lineAnns[line]) {
+					state.lineAnns[line] = [];
+				}
+				state.lineAnns[line].push(ann);
+			});
+		}
+	}
+
+	_computeLineStartBytes(startByte, lines) {
+		let pos = 0;
+		return lines.map((line) => {
+			let start = pos;
+			pos += line.length + 1; // add 1 to account for newline
+			return start + (startByte || 0);
+		});
 	}
 
 	_updateVisibleLines() {
@@ -73,57 +114,26 @@ class CodeListing extends Component {
 		let visibleLinesStart = this.state.firstVisibleLine;
 		let visibleLinesEnd = visibleLinesStart + this.state.visibleLinesCount;
 
-		let offscreenCodeAbove = "";
-		this.state.lines.slice(0, visibleLinesStart).forEach((lineData) => {
-			(lineData.Tokens || []).forEach((token) => {
-				offscreenCodeAbove += token.Label || "";
-			});
-			offscreenCodeAbove += "\n";
-		});
-
-		let offscreenCodeBelow = "";
-		this.state.lines.slice(visibleLinesEnd).forEach((lineData) => {
-			(lineData.Tokens || []).forEach((token) => {
-				offscreenCodeBelow += token.Label || "";
-			});
-			offscreenCodeBelow += "\n";
-		});
-
-		let lines = this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((line, i) => {
-			let lineNumber = 1 + visibleLinesStart + i;
-			let selected = this.state.startLine <= lineNumber && this.state.endLine >= lineNumber;
-
+		let lines = this.state.lines.map((line, i) => {
+			const visible = i >= visibleLinesStart && i < visibleLinesEnd;
+			const lineNumber = 1 + i;
 			return (
 				<CodeLineView
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
+					startByte={this.state.lineStartBytes[i]}
 					contents={line}
-					selected={selected}
-					selectedDef={this.state.selectedDef}
-					highlightedDef={this.state.highlightedDef}
-					key={visibleLinesStart + i} />
+					annotations={visible ? (this.state.lineAnns[i] || null) : null}
+					selected={this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
+					selectedDef={visible ? this.state.selectedDef : null}
+					highlightedDef={visible ? this.state.highlightedDef : null}
+					key={i} />
 			);
 		});
 
-		let listingClasses = classNames({
-			"line-numbered-code": true,
-		});
-
 		return (
-			<table className={listingClasses} ref="table">
+			<table className="line-numbered-code" ref="table">
 				<tbody>
-					{offscreenCodeAbove !== "" &&
-						<tr className="line">
-							<td className="line-number"></td>
-							<td className="line-content">{offscreenCodeAbove}</td>
-						</tr>
-					}
 					{lines}
-					{offscreenCodeBelow !== "" &&
-						<tr className="line">
-							<td className="line-number"></td>
-							<td className="line-content">{offscreenCodeBelow}</td>
-						</tr>
-					}
 				</tbody>
 			</table>
 		);
@@ -131,7 +141,9 @@ class CodeListing extends Component {
 }
 
 CodeListing.propTypes = {
+	startByte: React.PropTypes.number.isRequired,
 	contents: React.PropTypes.string,
+	annotations: React.PropTypes.array,
 	lineNumbers: React.PropTypes.bool,
 	startLine: React.PropTypes.number,
 	endLine: React.PropTypes.number,

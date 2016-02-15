@@ -36,6 +36,9 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return e.Encode(makeFileList(tc.Entry))
 	}
 
+	tc.Entry.ContentsString = string(tc.Entry.Contents)
+	tc.Entry.Contents = nil
+
 	return e.Encode(payloads.CodeFile{
 		Repo:              rc.Repo,
 		RepoCommit:        vc.RepoCommit,

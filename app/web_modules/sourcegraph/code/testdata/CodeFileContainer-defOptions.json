@@ -2,11 +2,12 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"className": "file-container",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"className": "content-view file-container",
+						"className": "content-view",
 						"children": [
 							{
 								"type": "div",
@@ -34,6 +35,7 @@
 										{
 											"type": "CodeListing",
 											"props": {
+												"startByte": 0,
 												"contents": "hello\nworld",
 												"lineNumbers": true
 											}
@@ -73,7 +75,7 @@
 												"onClick": {
 													"dispatched": [
 														{
-															"$constructor": "SelectDef",
+															"$constructor": "GoTo",
 															"url": "firstDef"
 														}
 													]
@@ -90,7 +92,7 @@
 												"onClick": {
 													"dispatched": [
 														{
-															"$constructor": "SelectDef",
+															"$constructor": "GoTo",
 															"url": "secondDef"
 														}
 													]
@@ -115,6 +117,12 @@
 			"repo": "aRepo",
 			"rev": "aRev",
 			"tree": "aTree"
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"path": "aTree"
 		},
 		{
 			"$constructor": "WantDef",

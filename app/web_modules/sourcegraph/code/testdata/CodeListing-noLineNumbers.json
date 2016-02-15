@@ -13,6 +13,7 @@
 								"type": "CodeLineView",
 								"key": "0",
 								"props": {
+									"startByte": 0,
 									"contents": "hello",
 									"selected": false
 								}
@@ -21,6 +22,7 @@
 								"type": "CodeLineView",
 								"key": "1",
 								"props": {
+									"startByte": 6,
 									"contents": "world",
 									"selected": false
 								}

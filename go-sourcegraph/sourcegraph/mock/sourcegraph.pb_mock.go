@@ -1331,3 +1331,23 @@ func (s *NotifyServer) GenericEvent(v0 context.Context, v1 *sourcegraph.NotifyGe
 }
 
 var _ sourcegraph.NotifyServer = (*NotifyServer)(nil)
+
+type AnnotationsClient struct {
+	List_ func(ctx context.Context, in *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+}
+
+func (s *AnnotationsClient) List(ctx context.Context, in *sourcegraph.AnnotationsListOptions, opts ...grpc.CallOption) (*sourcegraph.AnnotationList, error) {
+	return s.List_(ctx, in)
+}
+
+var _ sourcegraph.AnnotationsClient = (*AnnotationsClient)(nil)
+
+type AnnotationsServer struct {
+	List_ func(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+}
+
+func (s *AnnotationsServer) List(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+	return s.List_(v0, v1)
+}
+
+var _ sourcegraph.AnnotationsServer = (*AnnotationsServer)(nil)

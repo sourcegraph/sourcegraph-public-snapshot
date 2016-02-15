@@ -77,6 +77,9 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 			return e.Encode(&handlerutil.URLMovedError{NewURL: d.URL})
 		}
 
+		entry.ContentsString = string(entry.Contents)
+		entry.Contents = nil
+
 		return e.Encode(&struct {
 			*payloads.CodeFile
 			Model *payloads.DefCommon

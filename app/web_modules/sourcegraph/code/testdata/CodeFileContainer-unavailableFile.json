@@ -2,11 +2,12 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"className": "file-container",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"className": "content-view file-container",
+						"className": "content-view",
 						"children": [
 							{
 								"type": "div",
@@ -45,6 +46,12 @@
 			"repo": "aRepo",
 			"rev": "aRev",
 			"tree": "aTree"
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"path": "aTree"
 		}
 	]
 }

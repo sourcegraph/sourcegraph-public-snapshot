@@ -2,6 +2,7 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
+import * as CodeActions from "sourcegraph/code/CodeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import CodeListing from "sourcegraph/code/CodeListing";
 import hotLink from "sourcegraph/util/hotLink";
@@ -14,6 +15,7 @@ class ExampleView extends Component {
 			state.selectedIndex = 0;
 			state.displayedIndex = -1;
 			state.displayedExample = null;
+			state.anns = null;
 		}
 
 		// fix selected index if not enough examples
@@ -30,12 +32,21 @@ class ExampleView extends Component {
 		}
 
 		state.highlightedDef = props.highlightedDef;
+
+		let anns = example ? props.annotations.get(example.Repo, example.CommitID, example.File, example.Range.StartByte, example.Range.EndByte) : null;
+		state.anns = anns ? anns.Annotations : null;
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.defURL !== nextState.defURL || prevState.selectedIndex !== nextState.selectedIndex) {
 			Dispatcher.asyncDispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex));
 			Dispatcher.asyncDispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex + 1)); // check if there are more examples
+		}
+		if (prevState.displayedExample !== nextState.displayedExample) {
+			let ex = nextState.displayedExample;
+			if (ex) {
+				Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(ex.Repo, ex.CommitID, ex.File, ex.Range.StartByte, ex.Range.EndByte));
+			}
 		}
 	}
 
@@ -56,7 +67,7 @@ class ExampleView extends Component {
 			<div className="examples">
 				<div className="example">
 					<header>
-						{example && <span>Used in <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}?startline=${example.StartLine}&endline=${example.EndLine}&seldef=${this.state.defURL}`} onClick={hotLink}>{example.File}:{example.StartLine}-{example.EndLine}</a></span>}
+						{example && <span>Used in <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}?startline=${example.Range.StartLine}&endline=${example.Range.EndLine}`} onClick={hotLink}>{example.File}:{example.Range.StartLine}-{example.Range.EndLine}</a></span>}
 						{loading && <i className="fa fa-spinner fa-spin"></i>}
 						{this.state.count === 0 && "No examples available"}
 					</header>
@@ -65,7 +76,9 @@ class ExampleView extends Component {
 						{example &&
 							<div style={{opacity: loading ? 0.5 : 1}}>
 								<CodeListing
+									startByte={example.Range.StartByte}
 									contents={example.Contents}
+									annotations={this.state.anns}
 									selectedDef={this.state.defURL}
 									highlightedDef={this.state.highlightedDef} />
 							</div>
@@ -78,9 +91,9 @@ class ExampleView extends Component {
 				<nav className="example-navigation">
 					<button className={`btn btn-default prev ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}><i className="fa fa-arrow-left"></i></button>
 					<button className={`btn btn-default next ${this.state.selectedIndex >= this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}><i className="fa fa-arrow-right"></i></button>
-					<button className="btn btn-default all pull-right" target="_blank" href={`${this.state.defURL}/.examples`}>
+					<a className="btn btn-default all pull-right" target="_blank" href={`${this.state.defURL}/.examples`}>
 						View all uses
-					</button>
+					</a>
 				</nav>
 			</div>
 		);
@@ -90,6 +103,7 @@ class ExampleView extends Component {
 ExampleView.propTypes = {
 	defURL: React.PropTypes.string,
 	examples: React.PropTypes.object,
+	annotations: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
 };
 

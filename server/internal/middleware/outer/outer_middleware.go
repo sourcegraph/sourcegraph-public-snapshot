@@ -33,6 +33,7 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		GitTransport:      wrappedGitTransport{ctxFunc, services},
 		MultiRepoImporter: wrappedMultiRepoImporter{ctxFunc, services},
 		Accounts:          wrappedAccounts{ctxFunc, services},
+		Annotations:       wrappedAnnotations{ctxFunc, services},
 		Auth:              wrappedAuth{ctxFunc, services},
 		Builds:            wrappedBuilds{ctxFunc, services},
 		Changesets:        wrappedChangesets{ctxFunc, services},
@@ -487,6 +488,31 @@ func (s wrappedAccounts) Delete(ctx context.Context, v1 *sourcegraph.PersonSpec)
 	}
 
 	rv, err := innerSvc.Delete(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+type wrappedAnnotations struct {
+	ctxFunc  ContextFunc
+	services svc.Services
+}
+
+func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AnnotationsOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Annotations")
+	}
+
+	rv, err := innerSvc.List(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

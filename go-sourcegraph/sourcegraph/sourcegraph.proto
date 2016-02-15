@@ -2488,12 +2488,8 @@ message Example {
 	// Contents is the file excerpt of the example.
 	string Contents = 2;
 
-	// The line that the given example starts on
-	int32 StartLine = 4;
-
-	// The line that the given example ends on
-	int32 EndLine = 5;
-
+	FileRange Range = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	
 	// Error is whether an error occurred while fetching this example.
 	bool Error = 6;
 
@@ -3230,4 +3226,46 @@ message NotifyGenericEvent {
 service Notify {
 	// GenericEvent will notify recipients of an event which happened
 	rpc GenericEvent(NotifyGenericEvent) returns (pbtypes.Void);
+}
+
+// Annotations manages annotations on files.
+service Annotations {
+	// List lists matching annotations.
+	rpc List(AnnotationsListOptions) returns (AnnotationList);
+}
+
+// An Annotation is metadata (such as a srclib ref) attached to a
+// portion of a file.
+message Annotation {
+	// URL is the location where more information about the
+	// annotation's topic may be found (e.g., for a srclib ref, it's
+	// the def's URL).
+	string URL = 1;
+
+	// StartByte is the start of the byte range.
+	uint32 StartByte = 2;
+
+	// EndByte is the end of the byte range.
+	uint32 EndByte = 3;
+
+	// Class is the HTML class name that should be applied to this
+	// region.
+	string Class = 4;
+}
+
+// AnnotationList is a list of annotations.
+message AnnotationList {
+	repeated Annotation Annotations = 1;
+}
+
+// AnnotationsListOptions specifies options for Annotations.List.
+message AnnotationsListOptions {
+	// Entry specifies the file in a specific repository at a specific
+	// version.
+	TreeEntrySpec Entry = 1 [(gogoproto.nullable) = false];
+
+	// Range specifies the range within the file that annotations
+	// should be fetched for. If it is not set, then all of the file's
+	// annotations are returned.
+	FileRange Range = 2;
 }

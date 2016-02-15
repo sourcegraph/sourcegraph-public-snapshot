@@ -14,6 +14,7 @@
 								"key": "0",
 								"props": {
 									"lineNumber": 1,
+									"startByte": 0,
 									"contents": "hello",
 									"selected": true,
 									"selectedDef": "someDef",
@@ -25,6 +26,7 @@
 								"key": "1",
 								"props": {
 									"lineNumber": 2,
+									"startByte": 6,
 									"contents": "world",
 									"selected": true,
 									"selectedDef": "someDef",

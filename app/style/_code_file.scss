@@ -233,6 +233,7 @@
 
 .token-details {
 	width: 100%;
+	@include z-index(token-popover);
 	&.token-details-review {
 		i.file-path {
 			display: inline-block;

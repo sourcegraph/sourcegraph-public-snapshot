@@ -68,8 +68,7 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 			}
 
 			examples[i].Contents = string(e.Contents)
-			examples[i].StartLine = int32(e.StartLine)
-			examples[i].EndLine = int32(e.EndLine)
+			examples[i].FileRange = *e.FileRange
 			if op.Rev != "" {
 				examples[i].Rev = op.Rev
 			}

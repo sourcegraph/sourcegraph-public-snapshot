@@ -18,6 +18,7 @@ import (
 // Services contains all services implemented in this package.
 var Services = svc.Services{
 	Accounts:          Accounts,
+	Annotations:       Annotations,
 	Auth:              Auth,
 	Builds:            Builds,
 	Changesets:        Changesets,

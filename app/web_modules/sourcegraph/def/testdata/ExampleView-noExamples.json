@@ -73,7 +73,7 @@
 								}
 							},
 							{
-								"type": "button",
+								"type": "a",
 								"props": {
 									"className": "btn btn-default all pull-right",
 									"target": "_blank",

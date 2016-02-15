@@ -7,6 +7,7 @@ import "google.golang.org/grpc"
 type Client struct {
 	// Services used to communicate with different parts of the Sourcegraph API.
 	Accounts          AccountsClient
+	Annotations       AnnotationsClient
 	Auth              AuthClient
 	Builds            BuildsClient
 	Defs              DefsClient
@@ -42,6 +43,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	// gRPC (HTTP/2)
 	c.Conn = conn
 	c.Accounts = NewAccountsClient(conn)
+	c.Annotations = NewAnnotationsClient(conn)
 	c.Auth = NewAuthClient(conn)
 	c.Builds = NewBuildsClient(conn)
 	c.Defs = NewDefsClient(conn)

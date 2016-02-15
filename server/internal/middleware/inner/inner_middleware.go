@@ -39,6 +39,8 @@ func Services() svc.Services {
 
 		Accounts: wrappedAccounts{},
 
+		Annotations: wrappedAnnotations{},
+
 		Auth: wrappedAuth{},
 
 		Builds: wrappedBuilds{},
@@ -269,6 +271,25 @@ func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSp
 	res, err = local.Services.Accounts.Delete(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
+	}
+	return
+}
+
+type wrappedAnnotations struct{}
+
+func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.AnnotationsListOptions) (res *sourcegraph.AnnotationList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Annotations", "List", param)
+	defer func() {
+		trace.After(ctx, "Annotations", "List", param, err, time.Since(start))
+	}()
+
+	target := local.Services.Annotations
+
+	res, err = target.List(ctx, param)
+
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
 	}
 	return
 }

@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	Annotations       = "annotations"
 	BlackHole         = "blackhole"
 	Build             = "build"
 	Builds            = "builds"
@@ -41,6 +42,8 @@ func New(base *mux.Router) *mux.Router {
 	}
 
 	base.StrictSlash(true)
+
+	base.Path("/annotations").Methods("GET").Name(Annotations)
 
 	base.Path("/builds").Methods("GET").Name(Builds)
 

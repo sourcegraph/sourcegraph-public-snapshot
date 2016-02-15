@@ -25,6 +25,7 @@ const (
 	_GitTransportKey      contextKey = iota
 	_MultiRepoImporterKey contextKey = iota
 	_AccountsKey          contextKey = iota
+	_AnnotationsKey       contextKey = iota
 	_AuthKey              contextKey = iota
 	_BuildsKey            contextKey = iota
 	_ChangesetsKey        contextKey = iota
@@ -54,6 +55,7 @@ type Services struct {
 	GitTransport      gitpb.GitTransportServer
 	MultiRepoImporter pb.MultiRepoImporterServer
 	Accounts          sourcegraph.AccountsServer
+	Annotations       sourcegraph.AnnotationsServer
 	Auth              sourcegraph.AuthServer
 	Builds            sourcegraph.BuildsServer
 	Changesets        sourcegraph.ChangesetsServer
@@ -91,6 +93,10 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Accounts != nil {
 		sourcegraph.RegisterAccountsServer(s, svcs.Accounts)
+	}
+
+	if svcs.Annotations != nil {
+		sourcegraph.RegisterAnnotationsServer(s, svcs.Annotations)
 	}
 
 	if svcs.Auth != nil {
@@ -196,6 +202,10 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Accounts != nil {
 		ctx = WithAccounts(ctx, s.Accounts)
+	}
+
+	if s.Annotations != nil {
+		ctx = WithAnnotations(ctx, s.Annotations)
 	}
 
 	if s.Auth != nil {
@@ -352,6 +362,29 @@ func Accounts(ctx context.Context) sourcegraph.AccountsServer {
 // AccountsOrNil returns the context's Accounts service if present, or else nil.
 func AccountsOrNil(ctx context.Context) sourcegraph.AccountsServer {
 	s, ok := ctx.Value(_AccountsKey).(sourcegraph.AccountsServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithAnnotations returns a copy of parent that uses the given Annotations service.
+func WithAnnotations(ctx context.Context, s sourcegraph.AnnotationsServer) context.Context {
+	return context.WithValue(ctx, _AnnotationsKey, s)
+}
+
+// Annotations gets the context's Annotations service. If the service is not present, it panics.
+func Annotations(ctx context.Context) sourcegraph.AnnotationsServer {
+	s, ok := ctx.Value(_AnnotationsKey).(sourcegraph.AnnotationsServer)
+	if !ok || s == nil {
+		panic("no Annotations set in context")
+	}
+	return s
+}
+
+// AnnotationsOrNil returns the context's Annotations service if present, or else nil.
+func AnnotationsOrNil(ctx context.Context) sourcegraph.AnnotationsServer {
+	s, ok := ctx.Value(_AnnotationsKey).(sourcegraph.AnnotationsServer)
 	if ok {
 		return s
 	}

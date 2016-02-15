@@ -13,6 +13,7 @@ type MockClients struct {
 	Ctx context.Context
 
 	// TODO(sqs): move this to go-sourcegraph
+	Annotations       mock.AnnotationsClient
 	Accounts          mock.AccountsClient
 	Auth              mock.AuthClient
 	Builds            mock.BuildsClient
@@ -35,6 +36,7 @@ type MockClients struct {
 
 func (c *MockClients) Client() *sourcegraph.Client {
 	return &sourcegraph.Client{
+		Annotations:       &c.Annotations,
 		Accounts:          &c.Accounts,
 		Auth:              &c.Auth,
 		Builds:            &c.Builds,

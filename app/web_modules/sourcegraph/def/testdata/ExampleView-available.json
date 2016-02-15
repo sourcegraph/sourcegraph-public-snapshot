@@ -21,7 +21,7 @@
 													{
 														"type": "a",
 														"props": {
-															"href": "/someRepo/.tree/foo.go?startline=3&endline=7&seldef=/someURL",
+															"href": "/someRepo/.tree/foo.go?startline=3&endline=7",
 															"onClick": {
 																"defaultPrevented": true,
 																"dispatched": [
@@ -121,6 +121,11 @@
 												"$constructor": "WantExample",
 												"defURL": "/someURL",
 												"index": 2
+											},
+											{
+												"$constructor": "WantAnnotations",
+												"repo": "someRepo",
+												"path": "foo.go"
 											}
 										]
 									},
@@ -135,7 +140,7 @@
 								}
 							},
 							{
-								"type": "button",
+								"type": "a",
 								"props": {
 									"className": "btn btn-default all pull-right",
 									"target": "_blank",
@@ -161,6 +166,11 @@
 			"$constructor": "WantExample",
 			"defURL": "/someURL",
 			"index": 1
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "someRepo",
+			"path": "foo.go"
 		}
 	]
 }
