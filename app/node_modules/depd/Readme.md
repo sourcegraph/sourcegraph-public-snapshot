@@ -14,9 +14,16 @@ Deprecate all the things
 
 ## Install
 
+This module is installed directly using `npm`:
+
 ```sh
 $ npm install depd
 ```
+
+This module can also be bundled with systems like
+[Browserify](http://browserify.org/) or [webpack](https://webpack.github.io/),
+though by default this module will alter it's API to no longer display or
+track deprecations.
 
 ## API
 

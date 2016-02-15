@@ -39,7 +39,7 @@
     "sinon": "1.15.4",
     "style-loader": "0.12.3",
     "webpack": "1.12.13",
-    "webpack-dev-server": "1.11.0"
+    "webpack-dev-server": "1.14.1"
   },
   "dependencies": {
     "babel-polyfill": "6.1.19",

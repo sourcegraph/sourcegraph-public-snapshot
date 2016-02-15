@@ -1,7 +1,31 @@
 var $ = require("jquery");
-var io = require("socket.io-client");
+var SockJS = require("sockjs-client");
 var stripAnsi = require('strip-ansi');
 require("./style.css");
+
+var sock = null;
+var hot = false;
+var currentHash = "";
+
+var newConnection = function(handlers) {
+	sock = new SockJS('/sockjs-node');
+
+	sock.onclose = function() {
+		handlers.close();
+
+		// Try to reconnect.
+		sock = null;
+		setTimeout(function () {
+			newConnection(handlers);
+		}, 2000);
+	};
+
+	sock.onmessage = function(e) {
+		// This assumes that all data sent via the websocket is JSON.
+		var msg = JSON.parse(e.data);
+		handlers[msg.type](msg.data);
+	};
+};
 
 $(function() {
 	var body = $("body").html(require("./page.jade")());
@@ -10,74 +34,67 @@ $(function() {
 	var $errors = $("#errors");
 	var iframe = $("#iframe");
 	var header = $(".header");
-	var hot = false;
-	var currentHash = "";
 
 	var contentPage = window.location.pathname.substr("/webpack-dev-server".length) + window.location.search;
 
-	status.text("Connecting to socket.io server...");
+	status.text("Connecting to sockjs server...");
 	$errors.hide(); iframe.hide();
 	header.css({borderColor: "#96b5b4"});
-	io = io.connect();
 
-	io.on("hot", function() {
-		hot = true;
-		iframe.attr("src", contentPage + window.location.hash);
-	});
+	var onSocketMsg = {
+		hot: function() {
+			hot = true;
+			iframe.attr("src", contentPage + window.location.hash);
+		},
+		invalid: function() {
+			okness.text("");
+			status.text("App updated. Recompiling...");
+			header.css({borderColor: "#96b5b4"});
+			$errors.hide(); if(!hot) iframe.hide();
+		},
+		hash: function(hash) {
+			currentHash = hash;
+		},
+		"still-ok": function() {
+			okness.text("");
+			status.text("App ready.");
+			header.css({borderColor: ""});
+			$errors.hide(); if(!hot) iframe.show();
+		},
+		ok: function() {
+			okness.text("");
+			$errors.hide();
+			reloadApp();
+		},
+		warnings: function(warnings) {
+			okness.text("Warnings while compiling.");
+			$errors.hide();
+			reloadApp();
+		},
+		errors: function(errors) {
+			status.text("App updated with errors. No reload!");
+			okness.text("Errors while compiling.");
+			$errors.text("\n" + stripAnsi(errors.join("\n\n\n")) + "\n\n");
+			header.css({borderColor: "#ebcb8b"});
+			$errors.show(); iframe.hide();
+		},
+		"proxy-error": function(errors) {
+			status.text("Could not proxy to content base target!");
+			okness.text("Proxy error.");
+			$errors.text("\n" + stripAnsi(errors.join("\n\n\n")) + "\n\n");
+			header.css({borderColor: "#ebcb8b"});
+			$errors.show(); iframe.hide();
+		},
+		close: function() {
+			status.text("");
+			okness.text("Disconnected.");
+			$errors.text("\n\n\n  Lost connection to webpack-dev-server.\n  Please restart the server to reestablish connection...\n\n\n\n");
+			header.css({borderColor: "#ebcb8b"});
+			$errors.show(); iframe.hide();
+		}
+	};
 
-	io.on("invalid", function() {
-		okness.text("");
-		status.text("App updated. Recompiling...");
-		header.css({borderColor: "#96b5b4"});
-		$errors.hide(); if(!hot) iframe.hide();
-	});
-
-	io.on("hash", function(hash) {
-		currentHash = hash;
-	});
-
-	io.on("still-ok", function() {
-		okness.text("");
-		status.text("App ready.");
-		header.css({borderColor: ""});
-		$errors.hide(); if(!hot) iframe.show();
-	});
-
-	io.on("ok", function() {
-		okness.text("");
-		$errors.hide();
-		reloadApp();
-	});
-
-	io.on("warnings", function(warnings) {
-		okness.text("Warnings while compiling.");
-		$errors.hide();
-		reloadApp();
-	});
-
-	io.on("errors", function(errors) {
-		status.text("App updated with errors. No reload!");
-		okness.text("Errors while compiling.");
-		$errors.text("\n" + stripAnsi(errors.join("\n\n\n")) + "\n\n");
-		header.css({borderColor: "#ebcb8b"});
-		$errors.show(); iframe.hide();
-	});
-
-	io.on("proxy-error", function(errors) {
-		status.text("Could not proxy to content base target!");
-		okness.text("Proxy error.");
-		$errors.text("\n" + stripAnsi(errors.join("\n\n\n")) + "\n\n");
-		header.css({borderColor: "#ebcb8b"});
-		$errors.show(); iframe.hide();
-	});
-
-	io.on("disconnect", function() {
-		status.text("");
-		okness.text("Disconnected.");
-		$errors.text("\n\n\n  Lost connection to webpack-dev-server.\n  Please restart the server to reestablish connection...\n\n\n\n");
-		header.css({borderColor: "#ebcb8b"});
-		$errors.show(); iframe.hide();
-	});
+	newConnection(onSocketMsg);
 
 	iframe.load(function() {
 		status.text("App ready.");

@@ -38,11 +38,12 @@ disk. If `root` is specified, only the dotfiles above the root are
 checked (i.e. the root itself can be within a dotfile when set
 to "deny").
 
-The default value is `'ignore'`.
-
   - `'allow'` No special treatment for dotfiles.
   - `'deny'` Deny a request for a dotfile and 403/`next()`.
   - `'ignore'` Pretend like the dotfile does not exist and 404/`next()`.
+
+The default value is similar to `'ignore'`, with the exception that this
+default will not ignore the files within a directory that begins with a dot.
 
 ##### etag
 

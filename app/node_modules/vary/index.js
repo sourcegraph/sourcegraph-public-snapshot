@@ -14,10 +14,17 @@ module.exports = vary;
 module.exports.append = append;
 
 /**
- * Variables.
+ * RegExp to match field-name in RFC 7230 sec 3.2
+ *
+ * field-name    = token
+ * token         = 1*tchar
+ * tchar         = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+ *               / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+ *               / DIGIT / ALPHA
+ *               ; any VCHAR, except delimiters
  */
 
-var separators = /[\(\)<>@,;:\\"\/\[\]\?=\{\}\u0020\u0009]/;
+var fieldNameRegExp = /^[!#$%&'\*\+\-\.\^_`\|~0-9A-Za-z]+$/
 
 /**
  * Append a field to a vary header.
@@ -42,10 +49,10 @@ function append(header, field) {
     ? parse(String(field))
     : field;
 
-  // assert on invalid fields
+  // assert on invalid field names
   for (var i = 0; i < fields.length; i++) {
-    if (separators.test(fields[i])) {
-      throw new TypeError('field argument contains an invalid header');
+    if (!fieldNameRegExp.test(fields[i])) {
+      throw new TypeError('field argument contains an invalid header name');
     }
   }
 

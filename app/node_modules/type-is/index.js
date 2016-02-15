@@ -182,7 +182,7 @@ function normalize(type) {
 }
 
 /**
- * Check if `exected` mime type
+ * Check if `expected` mime type
  * matches `actual` mime type with
  * wildcard and +suffix support.
  *

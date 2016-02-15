@@ -42,6 +42,8 @@ var optimist = require("optimist")
 
 	.boolean("history-api-fallback").describe("history-api-fallback", "Fallback to /index.html for Single Page Applications.")
 
+	.boolean("compress").describe("compress", "enable gzip compression")
+
 	.describe("port", "The port").default("port", 8080)
 
 	.describe("host", "The hostname/ip address the server will bind to").default("host", "localhost");
@@ -131,6 +133,9 @@ if(argv["inline"])
 
 if(argv["history-api-fallback"])
 	options.historyApiFallback = true;
+
+if(argv["compress"])
+	options.compress = true;
 
 var protocol = options.https ? "https" : "http";
 

@@ -72,11 +72,11 @@ describe('requires-port', function () {
     assume(required(8080, 'wss://www.google.com')).true();
   });
 
-  it('does not require port 22 for ftp', function () {
-    assume(required('22', 'ftp')).false();
-    assume(required(22, 'ftp')).false();
-    assume(required(22, 'ftp://')).false();
-    assume(required(22, 'ftp://www.google.com')).false();
+  it('does not require port 21 for ftp', function () {
+    assume(required('21', 'ftp')).false();
+    assume(required(21, 'ftp')).false();
+    assume(required(21, 'ftp://')).false();
+    assume(required(21, 'ftp://www.google.com')).false();
 
     assume(required('8080', 'ftp')).true();
     assume(required(8080, 'ftp')).true();

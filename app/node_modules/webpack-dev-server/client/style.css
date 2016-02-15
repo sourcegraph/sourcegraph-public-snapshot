@@ -50,6 +50,7 @@ html {
 	line-height: 1.4;
 	color: #eff1f5;
 	background: #bf616a;
+	overflow: auto;
 }
 
 #okness {

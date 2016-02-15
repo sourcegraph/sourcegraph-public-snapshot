@@ -66,7 +66,7 @@ available media types.
 ```js
 negotiator = new Negotiator(request)
 
-availableLanguages = 'en', 'es', 'fr'
+availableLanguages = ['en', 'es', 'fr']
 
 // Let's say Accept-Language header is 'en;q=0.8, es, pt'
 

@@ -1,6 +1,6 @@
 /*!
  * depd
- * Copyright(c) 2014 Douglas Christopher Wilson
+ * Copyright(c) 2014-2015 Douglas Christopher Wilson
  * MIT Licensed
  */
 
@@ -9,7 +9,7 @@
  */
 
 var callSiteToString = require('./lib/compat').callSiteToString
-var EventEmitter = require('events').EventEmitter
+var eventListenerCount = require('./lib/compat').eventListenerCount
 var relative = require('path').relative
 
 /**
@@ -23,14 +23,6 @@ module.exports = depd
  */
 
 var basePath = process.cwd()
-
-/**
- * Get listener count on event emitter.
- */
-
-/*istanbul ignore next*/
-var eventListenerCount = EventEmitter.listenerCount
-  || function (emitter, type) { return emitter.listeners(type).length }
 
 /**
  * Determine if namespace is contained in the string.

@@ -25,7 +25,7 @@ module.exports = function required(port, protocol) {
     return port !== 443;
 
     case 'ftp':
-    return port !== 22;
+    return port !== 21;
 
     case 'gopher':
     return port !== 70;
