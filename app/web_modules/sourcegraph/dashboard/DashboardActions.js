@@ -1,3 +1,5 @@
+// For the backend.
+
 export class WantAddRepos {
 	constructor(repos) {
 		this.repos = repos;
@@ -21,6 +23,8 @@ export class UsersAdded {
 		this.users = users;
 	}
 }
+
+// For AddRepos + AddUsers widgets.
 
 export class SelectRepoOrg {
 	constructor(org) {

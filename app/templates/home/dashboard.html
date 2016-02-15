@@ -9,7 +9,7 @@
 	window.users = JSON.parse({{json .Users}}) || [];
 	window.currentUser = JSON.parse({{json .CurrentUser}});
 	// mirrorData is {ReposByOrg: {org: {PrivateRepos, PublicRepos}}}
-	// Repos is {Repo: {PushedAt, URI, Description}}
+	// Repos is {Repo: {PushedAt, URI, Descriptio, ExistsLocally}}
 	window.mirrorData = JSON.parse({{json .MirrorData}});
 	// teammates is {UsersByOrg: org: Users: []}
 	// User is {RemoteAccount: {AvatarURL, Domain, Login}, LocalAccount, Email}
@@ -25,7 +25,7 @@
 			window.progress.githubLinkURL = "{{router.URLToGitHubOAuth}}";
 		{{else}}
 			if (true) { // TODO(pararth): set if being redirected from GitHub
-				window.progress.currentStep = 0;
+				window.progress.currentStep = 1;
 			} else {
 				window.progress.currentStep = 50; // done
 			}
