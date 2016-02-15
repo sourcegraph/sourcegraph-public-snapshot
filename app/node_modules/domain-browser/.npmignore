@@ -1,9 +1,12 @@
-# v1.3.23 October 11, 2014
+# 2015 September 18
 # https://github.com/bevry/base
 
 # Temp Files
-**/*.log
 **/.docpad.db
+**/out.*
+**/*.log
+**/*.cpuprofile
+**/*.heapsnapshot
 
 # Build Files
 build/
@@ -18,8 +21,10 @@ node_modules/
 .editorconfig
 .eslintrc
 .jshintrc
+.jscrc
 coffeelint.json
 .travis*
+nakefile.js
 Cakefile
 Makefile
 BACKERS.md

@@ -10,6 +10,8 @@ browsers:
     version: [6, 7, 8, 9..latest]
   - name: ie
     version: 8..latest
+  - name: microsoftedge
+    version: 20..latest
   - name: opera
     version: 11..latest
   - name: iphone

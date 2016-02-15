@@ -70,4 +70,22 @@ test('storing negative number should cast to unsigned', function (t) {
   t.end()
 })
 
-// TODO: test write negative with
+test('test that memory is copied from array-like', function (t) {
+  if (B.TYPED_ARRAY_SUPPORT) {
+    var u = new Uint8Array(4)
+    var b = new B(u)
+    b[0] = 1
+    b[1] = 2
+    b[2] = 3
+    b[3] = 4
+
+    t.equal(u[0], 0)
+    t.equal(u[1], 0)
+    t.equal(u[2], 0)
+    t.equal(u[3], 0)
+  } else {
+    t.pass('object impl: skipping test')
+  }
+
+  t.end()
+})

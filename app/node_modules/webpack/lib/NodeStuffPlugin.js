@@ -87,6 +87,13 @@ NodeStuffPlugin.prototype.apply = function(compiler) {
 		return new BasicEvaluatedExpression().setBoolean(false).setRange(expr.range);
 	});
 	compiler.parser.plugin("expression module", function() {
-		return ModuleParserHelpers.addParsedVariable(this, "module", "require(" + JSON.stringify(path.join(__dirname, "..", "buildin", "module.js")) + ")(module)");
+		var moduleJsPath = path.join(__dirname, "..", "buildin", "module.js");
+		if(this.state.module.context) {
+			moduleJsPath = path.relative(this.state.module.context, moduleJsPath);
+			if(!/^[A-Z]:/i.test(moduleJsPath)) {
+				moduleJsPath = "./" + moduleJsPath.replace(/\\/g, "/");
+			}
+		}
+		return ModuleParserHelpers.addParsedVariable(this, "module", "require(" + JSON.stringify(moduleJsPath) + ")(module)");
 	});
 };

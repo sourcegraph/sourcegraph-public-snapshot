@@ -322,12 +322,37 @@ which is included to compare against.
 | NodeBuffer#writeFloatBE | 135,763 ops/sec | ±0.65% | 96 | |
 | | | | |
 
+## Testing the project
+
+First, install the project:
+
+    npm install
+
+Then, to run tests in Node.js, run:
+
+    npm run test-node
+    
+To test locally in a browser, you can run:
+
+    npm run test-browser-local
+    
+This will print out a URL that you can then open in a browser to run the tests, using [Zuul](https://github.com/defunctzombie/zuul).
+
+To run automated browser tests using Saucelabs, ensure that your `SAUCE_USERNAME` and `SAUCE_ACCESS_KEY` environment variables are set, then run:
+
+    npm test
+    
+This is what's run in Travis, to check against various browsers. The list of browsers is kept in the `.zuul.yml` file.
+
 ## JavaScript Standard Style
 
 This module uses [JavaScript Standard Style](https://github.com/feross/standard).
 
 [![js-standard-style](https://raw.githubusercontent.com/feross/standard/master/badge.png)](https://github.com/feross/standard)
 
+To test that the code conforms to the style, `npm install` and run:
+
+    ./node_modules/.bin/standard
 
 ## credit
 

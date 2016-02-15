@@ -4,9 +4,11 @@
 */
 var ModuleDependency = require("./ModuleDependency");
 
-function ContextElementDependency(request) {
+function ContextElementDependency(request, userRequest) {
 	ModuleDependency.call(this, request);
-	this.Class = ContextElementDependency;
+	if(userRequest) {
+		this.userRequest = userRequest;
+	}
 }
 module.exports = ContextElementDependency;
 

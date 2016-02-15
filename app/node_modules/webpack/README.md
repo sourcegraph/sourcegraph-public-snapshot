@@ -11,7 +11,7 @@ dependencies
 [![Dependency Status][david-image]][david-url] [![devDependency Status][david-dev-image]][david-dev-url] [![peerDependency Status][david-peer-image]][david-peer-url]
 
 donation
-[![Gittip donate button][gittip-image]][gittip-url] [![Donate to sokra][donate-image]][donate-url]
+[![gratipay donate button][gratipay-image]][gratipay-url] [![Donate to sokra][donate-image]][donate-url]
 
 
 [documentation](https://webpack.github.io/docs/?utm_source=github&utm_medium=readme&utm_campaign=top)
@@ -254,7 +254,7 @@ MIT (http://www.opensource.org/licenses/mit-license.php)
 (In chronological order)
 
 * @google for [Google Web Toolkit (GWT)](https://code.google.com/p/google-web-toolkit), which aims to compile Java to JavaScript. It features a similar [Code Splitting](https://code.google.com/p/google-web-toolkit/wiki/CodeSplitting) as webpack.
-* @medikoo for [modules-webmake](https://github.com/medikoo/modules-webmake), which is a simlar project. webpack was born because I wanted Code Splitting for modules-webpack. Interestingly the [Code Splitting issue is still open](https://github.com/medikoo/modules-webmake/issues/7) (thanks also to @Phoscur for the discussion).
+* @medikoo for [modules-webmake](https://github.com/medikoo/modules-webmake), which is a similar project. webpack was born because I wanted Code Splitting for modules-webpack. Interestingly the [Code Splitting issue is still open](https://github.com/medikoo/modules-webmake/issues/7) (thanks also to @Phoscur for the discussion).
 * @substack for [browserify](http://browserify.org/), which is a similar project and source for many ideas.
 * @jrburke for [require.js](http://requirejs.org/), which is a similar project and source for many ideas.
 * @defunctzombie for the [browser-field spec](https://gist.github.com/defunctzombie/4339901), which makes modules available for node.js, browserify and webpack.
@@ -304,7 +304,7 @@ I'm very thankful for every dollar. If you leave your username or email, I may s
 [nodei-url]: https://nodei.co/npm/webpack
 [donate-url]: http://sokra.github.io/
 [donate-image]: https://img.shields.io/badge/donate-sokra-brightgreen.svg
-[gittip-url]: https://www.gittip.com/sokra/
-[gittip-image]: http://img.shields.io/gittip/sokra.svg
+[gratipay-url]: https://gratipay.com/webpack/
+[gratipay-image]: https://img.shields.io/gratipay/webpack.svg
 [gitter-url]: https://gitter.im/webpack/webpack
 [gitter-image]: https://img.shields.io/badge/gitter-webpack%2Fwebpack-brightgreen.svg

@@ -38,7 +38,7 @@
     "sass-loader": "2.0.1",
     "sinon": "1.15.4",
     "style-loader": "0.12.3",
-    "webpack": "1.12.2",
+    "webpack": "1.12.13",
     "webpack-dev-server": "1.11.0"
   },
   "dependencies": {

@@ -2,6 +2,8 @@
 	MIT License http://www.opensource.org/licenses/mit-license.php
 	Author Tobias Koppers @sokra
 */
+var nextIdent = 0;
+
 function CommonsChunkPlugin(options, filenameTemplate, selectedChunks, minChunks) {
 	if(options && typeof options === "object" && !Array.isArray(options)) {
 		this.chunkNames = options.name || options.names;
@@ -27,7 +29,9 @@ function CommonsChunkPlugin(options, filenameTemplate, selectedChunks, minChunks
 		this.minChunks = minChunks;
 		this.selectedChunks = selectedChunks;
 	}
+	this.ident = __filename + (nextIdent++);
 }
+
 module.exports = CommonsChunkPlugin;
 CommonsChunkPlugin.prototype.apply = function(compiler) {
 	var chunkNames = this.chunkNames;
@@ -36,26 +40,29 @@ CommonsChunkPlugin.prototype.apply = function(compiler) {
 	var selectedChunks = this.selectedChunks;
 	var async = this.async;
 	var minSize = this.minSize;
+	var ident = this.ident;
 	compiler.plugin("this-compilation", function(compilation) {
 		compilation.plugin(["optimize-chunks", "optimize-extracted-chunks"], function(chunks) {
+			// only optimize once
+			if(compilation[ident]) return;
+			compilation[ident] = true;
+
 			var commonChunks;
 			if(!chunkNames && (selectedChunks === false || async)) {
 				commonChunks = chunks;
-			} else if(Array.isArray(chunkNames)) {
-				commonChunks = chunkNames.map(function(chunkName) {
-					return chunks.filter(function(chunk) {
+			} else if(Array.isArray(chunkNames) || typeof chunkNames === "string") {
+				commonChunks = [].concat(chunkNames).map(function(chunkName) {
+					var chunk = chunks.filter(function(chunk) {
 						return chunk.name === chunkName;
 					})[0];
-				});
+					if(!chunk) {
+						chunk = this.addChunk(chunkName);
+						chunk.initial = chunk.entry = true;
+					}
+					return chunk;
+				}, this);
 			} else {
-				commonChunks = chunks.filter(function(chunk) {
-					return chunk.name === chunkNames;
-				});
-			}
-			if(commonChunks.length === 0) {
-				var chunk = this.addChunk(chunkNames);
-				chunk.initial = chunk.entry = true;
-				commonChunks = [chunk];
+				throw new Error("Invalid chunkNames argument");
 			}
 			commonChunks.forEach(function processCommonChunk(commonChunk, idx) {
 				var commonModulesCount = [];
@@ -165,6 +172,7 @@ CommonsChunkPlugin.prototype.apply = function(compiler) {
 				if(filenameTemplate)
 					commonChunk.filenameTemplate = filenameTemplate;
 			}, this);
+			this.restartApplyPlugins();
 		});
 	});
 };
