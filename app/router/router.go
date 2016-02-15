@@ -36,14 +36,13 @@ const (
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
 
-	User                           = "person"
-	UserSettingsEmails             = "person.settings.emails"
-	UserSettingsProfile            = "person.settings.profile"
-	UserSettingsProfileAvatar      = "person.settings.profile.avatar"
-	UserSettingsIntegrationsUpdate = "person.settings.integrations.update"
-	UserSettingsKeys               = "person.settings.keys"
-	UserOrgs                       = "person.orgs"
-	OrgMembers                     = "org.members"
+	User                      = "person"
+	UserSettingsEmails        = "person.settings.emails"
+	UserSettingsProfile       = "person.settings.profile"
+	UserSettingsProfileAvatar = "person.settings.profile.avatar"
+	UserSettingsKeys          = "person.settings.keys"
+	UserOrgs                  = "person.orgs"
+	OrgMembers                = "org.members"
 
 	Repo             = "repo"
 	RepoBadge        = "repo.badge"
@@ -166,10 +165,6 @@ func New(base *mux.Router) *Router {
 	user.Path("/.settings/profile/avatar").Methods("POST").Name(UserSettingsProfileAvatar)
 	user.Path("/.settings/emails").Methods("GET").Name(UserSettingsEmails)
 	user.Path("/.settings/keys").Methods("GET", "POST").Name(UserSettingsKeys)
-	if authutil.ActiveFlags.PrivateMirrors {
-		integrations := user.PathPrefix("/.settings/integrations").Subrouter()
-		integrations.Path("/{Integration}").Methods("POST").Name(UserSettingsIntegrationsUpdate)
-	}
 	if !authutil.ActiveFlags.DisableUserProfiles {
 		base.Path(userPath).Methods("GET").Name(User)
 		user.Path("/.orgs").Methods("GET").Name(UserOrgs)

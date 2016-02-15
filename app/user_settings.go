@@ -11,13 +11,11 @@ import (
 	"github.com/sourcegraph/mux"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/router_util"
@@ -231,52 +229,6 @@ func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {
 		userSettingsCommonData: *cd,
 		EmailAddrs:             emails.EmailAddrs,
 	})
-}
-
-func serveUserSettingsIntegrationsUpdate(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
-	_, _, err := userSettingsCommon(w, r)
-	if err == errUserSettingsCommonWroteResponse {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	switch mux.Vars(r)["Integration"] {
-	case "enable":
-		r.ParseForm() // required if you don't call r.FormValue()
-		repoURIs := r.Form["RepoURI[]"]
-
-		for _, repoInfo := range repoURIs {
-			tokens := strings.Split(repoInfo, ",")
-			repoURI := tokens[0]
-			private := true // defensively assume that the repo is private.
-			if len(tokens) > 1 && tokens[1] == "public" {
-				private = false
-			}
-
-			// Perform the following operations locally (non-federated) because it's a private repo.
-			_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-				URI:      repoURI,
-				VCS:      "git",
-				CloneURL: "https://" + repoURI + ".git",
-				Mirror:   true,
-				Private:  private,
-			})
-			if grpc.Code(err) == codes.AlreadyExists {
-				log15.Warn("repo already exists", "uri", repoURI)
-			} else if err != nil {
-				log15.Warn("user settings integration update failed", "uri", repoURI, "error", err)
-				return err
-			}
-
-			repoupdater.Enqueue(&sourcegraph.Repo{URI: repoURI})
-		}
-	}
-
-	http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
-	return nil
 }
 
 func serveUserSettingsKeys(w http.ResponseWriter, r *http.Request) error {

@@ -120,9 +120,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.UserSettingsProfileAvatar).Handler(internal.Handler(serveUserSettingsProfileAvatar))
 	r.Get(router.UserSettingsEmails).Handler(internal.Handler(serveUserSettingsEmails))
 	r.Get(router.UserSettingsKeys).Handler(internal.Handler(serveUserSettingsKeys))
-	if authutil.ActiveFlags.PrivateMirrors {
-		r.Get(router.UserSettingsIntegrationsUpdate).Handler(internal.Handler(serveUserSettingsIntegrationsUpdate))
-	}
 	if !authutil.ActiveFlags.DisableUserProfiles {
 		r.Get(router.User).Handler(internal.Handler(serveUser))
 		if !authutil.ActiveFlags.PrivateMirrors {
