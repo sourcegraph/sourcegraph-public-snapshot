@@ -39,12 +39,19 @@
 
 {{end}}
 
-
 {{define "commitDelta"}}
 {{$Repo := .Repo}}
 
+
 <div class="delta">
 	<script ignore-csp>window.preloadedDiffData = {{json .}}</script>
-	<div id="RepoCompareView" data-revision-header="no" class="compare-view"></div>
+	<div class="compare-view"
+		data-react="FileDiffs"
+		data-files="{{json .DeltaFiles.FileDiffs}}"
+		data-stats="{{json .DeltaFiles.Stats}}"
+		data-base-repo="{{.Delta.Base.URI}}"
+		data-base-rev="{{.Delta.Base.Rev}}"
+		data-head-repo="{{.Delta.Head.URI}}"
+		data-head-rev="{{.Delta.Head.Rev}}" />
 </div>
 {{end}}

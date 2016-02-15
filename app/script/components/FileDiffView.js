@@ -3,7 +3,7 @@ var ReactDOM = require("react-dom");
 var router = require("../routing/router");
 
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
-var DiffStatScale = require("./DiffStatScale");
+var DiffStatScale = require("sourcegraph/delta/DiffStatScale").default;
 var Hunk = require("./HunkView");
 
 var FileDiffView = React.createClass({

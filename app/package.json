@@ -44,6 +44,7 @@
     "webpack-dev-server": "1.14.1"
   },
   "dependencies": {
+    "abab": "^1.0.3",
     "babel-polyfill": "6.1.19",
     "backbone": "1.2.1",
     "classnames": "2.1.3",

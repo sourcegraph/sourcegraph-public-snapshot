@@ -1,6 +1,6 @@
 var React = require("react");
 var classNames = require("classnames");
-var DiffStatScale = require("./DiffStatScale");
+var DiffStatScale = require("sourcegraph/delta/DiffStatScale").default;
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
 
 var DiffFileList = React.createClass({

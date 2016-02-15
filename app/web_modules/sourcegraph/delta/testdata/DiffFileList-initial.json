@@ -1,0 +1,271 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "file-list",
+			"children": [
+				{
+					"type": "a",
+					"props": {
+						"className": "file-list-header",
+						"children": [
+							{
+								"type": "i",
+								"props": {
+									"className": "fa fa-icon fa-minus-square-o"
+								}
+							},
+							{
+								"type": "b",
+								"props": {
+									"children": [
+										"Files"
+									]
+								}
+							},
+							" ",
+							{
+								"type": "span",
+								"props": {
+									"className": "count",
+									"children": [
+										"( 3 )"
+									]
+								}
+							},
+							{
+								"type": "span",
+								"props": {
+									"className": "pull-right stats",
+									"children": [
+										{
+											"type": "span",
+											"props": {
+												"className": "additions-color",
+												"children": [
+													"+5"
+												]
+											}
+										},
+										{
+											"type": "span",
+											"props": {
+												"className": "deletions-color",
+												"children": [
+													"-7"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "ul",
+					"props": {
+						"className": "file-list-items",
+						"children": [
+							{
+								"type": "li",
+								"key": "ab",
+								"props": {
+									"className": "file-list-item",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"href": "#F0",
+												"children": [
+													{
+														"type": "i",
+														"props": {
+															"className": "fa change-type octicon octicon-diff-modified changes-color"
+														}
+													},
+													{
+														"type": "span",
+														"props": {
+															"children": [
+																"a ",
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-icon fa-long-arrow-right"
+																	}
+																},
+																" "
+															]
+														}
+													},
+													"b",
+													{
+														"type": "div",
+														"props": {
+															"className": "pull-right stats",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "additions-color",
+																		"children": [
+																			"+5"
+																		]
+																	}
+																},
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "deletions-color",
+																		"children": [
+																			"-7"
+																		]
+																	}
+																},
+																{
+																	"type": "DiffStatScale",
+																	"props": {
+																		"Stat": {
+																			"Added": 5,
+																			"Changed": 6,
+																			"Deleted": 7
+																		}
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "li",
+								"key": "/dev/nullb",
+								"props": {
+									"className": "file-list-item",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"href": "#F1",
+												"children": [
+													{
+														"type": "i",
+														"props": {
+															"className": "fa change-type octicon octicon-diff-added additions-color"
+														}
+													},
+													"b",
+													{
+														"type": "div",
+														"props": {
+															"className": "pull-right stats",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "additions-color",
+																		"children": [
+																			"+5"
+																		]
+																	}
+																},
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "deletions-color",
+																		"children": [
+																			"-7"
+																		]
+																	}
+																},
+																{
+																	"type": "DiffStatScale",
+																	"props": {
+																		"Stat": {
+																			"Added": 5,
+																			"Changed": 6,
+																			"Deleted": 7
+																		}
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "li",
+								"key": "a/dev/null",
+								"props": {
+									"className": "file-list-item",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"href": "#F2",
+												"children": [
+													{
+														"type": "i",
+														"props": {
+															"className": "fa change-type octicon octicon-diff-removed deletions-color"
+														}
+													},
+													"a",
+													{
+														"type": "div",
+														"props": {
+															"className": "pull-right stats",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "additions-color",
+																		"children": [
+																			"+5"
+																		]
+																	}
+																},
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "deletions-color",
+																		"children": [
+																			"-7"
+																		]
+																	}
+																},
+																{
+																	"type": "DiffStatScale",
+																	"props": {
+																		"Stat": {
+																			"Added": 5,
+																			"Changed": 6,
+																			"Deleted": 7
+																		}
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

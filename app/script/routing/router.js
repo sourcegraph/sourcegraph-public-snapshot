@@ -54,6 +54,7 @@ module.exports = {
 
 	fileURL(repo, rev, path) {
 		path = (path ? path : "");
+		path = path.replace(/^\//, "");
 		return `${module.exports.repoURL(repo, rev)}/.tree/${path}`;
 	},
 

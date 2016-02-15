@@ -8,6 +8,7 @@ var CloseChangesetButton = require("./components/CloseChangesetButton");
 var CompareView = require("./components/CompareView");
 var DeltaDefsContainer = require("./components/DeltaDefsContainer");
 var DeltaImpactContainer = require("./components/DeltaImpactContainer");
+var FileDiffs = require("sourcegraph/delta/FileDiffs").default;
 var MarkdownView = require("./components/MarkdownView");
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
@@ -97,6 +98,19 @@ document.addEventListener("DOMContentLoaded", () => {
 			el[0]
 		);
 	}
+
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=FileDiffs]"), []).map((el2) => {
+		ReactDOM.render(
+			<FileDiffs
+				files={JSON.parse(el2.dataset.files)}
+				stats={JSON.parse(el2.dataset.stats)}
+				baseRepo={el2.dataset.baseRepo}
+				baseRev={el2.dataset.baseRev}
+				headRepo={el2.dataset.headRepo}
+				headRev={el2.dataset.headRev} />,
+			el2
+		);
+	});
 
 	el = document.querySelector("[data-react=DeltaDefsContainer]");
 	if (el) {

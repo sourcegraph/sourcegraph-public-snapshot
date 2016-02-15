@@ -1,0 +1,257 @@
+{
+	"renderOutput": {
+		"type": "table",
+		"props": {
+			"className": "line-numbered-code theme-default file-diff-hunk",
+			"children": [
+				{
+					"type": "tbody",
+					"props": {
+						"children": [
+							{
+								"type": "tr",
+								"props": {
+									"className": "line hunk-header",
+									"children": [
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"children": [
+													"..."
+												]
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"children": [
+													"..."
+												]
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-content",
+												"children": [
+													"@@ -5,20 +5,20 @@ mysection"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "tr",
+								"key": "0",
+								"props": {
+									"className": "line new-line",
+									"children": [
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": ""
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": 5
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-content",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "prefix",
+															"children": [
+																"+"
+															]
+														}
+													},
+													" a"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "tr",
+								"key": "1",
+								"props": {
+									"className": "line old-line",
+									"children": [
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": 6
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": ""
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-content",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "prefix",
+															"children": [
+																"-"
+															]
+														}
+													},
+													" b"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "tr",
+								"key": "2",
+								"props": {
+									"className": "line",
+									"children": [
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": 7
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": 6
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-content",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "prefix",
+															"children": [
+																" "
+															]
+														}
+													},
+													"c"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "tr",
+								"key": "3",
+								"props": {
+									"className": "line old-line",
+									"children": [
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": 8
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": ""
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-content",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "prefix",
+															"children": [
+																"-"
+															]
+														}
+													},
+													" d"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "tr",
+								"key": "4",
+								"props": {
+									"className": "line old-line",
+									"children": [
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": 9
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"data-line": ""
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-content",
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"className": "prefix",
+															"children": [
+																"-"
+															]
+														}
+													},
+													" e"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

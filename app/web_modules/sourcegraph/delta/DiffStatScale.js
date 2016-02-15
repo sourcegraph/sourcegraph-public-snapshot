@@ -1,19 +1,14 @@
-var React = require("react");
+import React from "react";
 
-var DiffStatScale = React.createClass({
-	getDefaultProps() {
-		return {
-			Stat: {Changed: 0, Added: 0, Deleted: 0},
-			Size: 5,
-		};
-	},
-
+class DiffStatScale extends React.Component {
 	render() {
-		var ds = this.props.Stat;
-		var x;
-		var sum = ds.Added + ds.Changed + ds.Deleted;
+		if (!this.props.Stat) return null;
 
-		var sds = {
+		let ds = this.props.Stat;
+		let x;
+		let sum = ds.Added + ds.Changed + ds.Deleted;
+
+		let sds = {
 			Added: ds.Added,
 			Changed: ds.Changed,
 			Deleted: ds.Deleted,
@@ -22,8 +17,9 @@ var DiffStatScale = React.createClass({
 			ScaledDeleted: ds.Deleted,
 		};
 
-		if (sum > this.props.Size) {
-			x = this.props.Size / sum;
+		let size = this.props.Size || 5;
+		if (sum > size) {
+			x = size / sum;
 			sds.ScaledAdded = parseInt(sds.ScaledAdded * x, 10);
 			if (sds.ScaledAdded === 0 && sds.Added !== 0) {
 				sds.ScaledAdded = 1;
@@ -38,14 +34,14 @@ var DiffStatScale = React.createClass({
 			}
 		}
 
-		var filler = 0;
-		if (sds.ScaledAdded + sds.ScaledChanged + sds.ScaledDeleted < this.props.Size) {
-			filler = this.props.Size - (sds.ScaledAdded + sds.ScaledChanged + sds.ScaledDeleted);
+		let filler = 0;
+		if (sds.ScaledAdded + sds.ScaledChanged + sds.ScaledDeleted < size) {
+			filler = size - (sds.ScaledAdded + sds.ScaledChanged + sds.ScaledDeleted);
 		}
 
 		function bar(width) {
-			var s = "";
-			for (var i = 0; i < width; i++) {
+			let s = "";
+			for (let i = 0; i < width; i++) {
 				s += "\u25A0";
 			}
 			return s;
@@ -61,7 +57,14 @@ var DiffStatScale = React.createClass({
 				) : null}
 			</span>
 		);
-	},
-});
-
-module.exports = DiffStatScale;
+	}
+}
+DiffStatScale.propTypes = {
+	Stat: React.PropTypes.shape({
+		Added: React.PropTypes.number,
+		Changed: React.PropTypes.number,
+		Deleted: React.PropTypes.number,
+	}).isRequired,
+	Size: React.PropTypes.number,
+};
+export default DiffStatScale;

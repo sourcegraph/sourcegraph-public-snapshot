@@ -36,7 +36,7 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var delta *sourcegraph.Delta
-	var files *sourcegraph.DeltaFiles
+	var deltaFiles *sourcegraph.DeltaFiles
 	if baseRevSpec != nil {
 		ds := sourcegraph.DeltaSpec{Base: *baseRevSpec, Head: headRevSpec}
 
@@ -46,7 +46,7 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		var err error
-		files, err = cl.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
+		deltaFiles, err = cl.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
 			Ds:  ds,
 			Opt: &sourcegraph.DeltaListFilesOptions{Filter: r.URL.Query().Get("filter")},
 		})
@@ -58,9 +58,9 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 	tmplData := struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		Delta     *sourcegraph.Delta
-		DiffData  *sourcegraph.DeltaFiles
-		DeltaSpec sourcegraph.DeltaSpec
+		Delta      *sourcegraph.Delta
+		DeltaFiles *sourcegraph.DeltaFiles
+		DeltaSpec  sourcegraph.DeltaSpec
 
 		DeltaListDefsOpt *sourcegraph.DeltaListDefsOptions
 
@@ -73,7 +73,7 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 		RepoCommon:    *rc,
 		RepoRevCommon: *vc,
 		Delta:         delta,
-		DiffData:      files,
+		DeltaFiles:    deltaFiles,
 
 		ShowFiles: true,
 	}

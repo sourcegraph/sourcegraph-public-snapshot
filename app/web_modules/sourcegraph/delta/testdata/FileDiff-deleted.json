@@ -1,0 +1,61 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "file-diff",
+			"id": "myid",
+			"children": [
+				{
+					"type": "header",
+					"props": {
+						"children": [
+							{
+								"type": "DiffStatScale",
+								"props": {
+									"Stat": {
+										"Added": 5,
+										"Changed": 6,
+										"Deleted": 7
+									}
+								}
+							},
+							{
+								"type": "span",
+								"props": {
+									"children": [
+										"a"
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "btn-group pull-right",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"className": "button btn btn-default btn-xs",
+												"href": "/br@bv/.tree/a",
+												"children": [
+													"Original"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "Hunk",
+					"key": "0",
+					"props": {
+						"hunk": {}
+					}
+				}
+			]
+		}
+	}
+}
