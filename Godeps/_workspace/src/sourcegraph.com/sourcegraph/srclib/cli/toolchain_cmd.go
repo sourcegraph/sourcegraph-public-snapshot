@@ -261,6 +261,7 @@ var stdToolchains = toolchainMap{
 	"javascript": toolchainInstaller{"JavaScript (sourcegraph.com/sourcegraph/srclib-javascript)", installJavaScriptToolchain},
 	"java":       toolchainInstaller{"Java (sourcegraph.com/sourcegraph/srclib-java)", installJavaToolchain},
 	"basic":      toolchainInstaller{"PHP, Objective-C (sourcegraph.com/sourcegraph/srclib-basic)", installBasicToolchain},
+	"csharp":     toolchainInstaller{"C# (sourcegraph.com/sourcegraph/srclib-csharp)", installCSharpToolchain},
 }
 
 func (m toolchainMap) listKeys() string {
@@ -465,6 +466,38 @@ Refusing to install Java toolchain because %s is not installed or is not on the 
 
 	log.Println("Building Java toolchain program")
 	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func installCSharpToolchain() error {
+	const toolchain = "sourcegraph.com/sourcegraph/srclib-csharp"
+
+	requiredCmds := map[string]string{
+		"dnx": "see http://docs.asp.net/en/latest/getting-started/installing-on-linux.html for details",
+		"dnu": "see http://docs.asp.net/en/latest/getting-started/installing-on-linux.html for details",
+	}
+	for requiredCmd, instructions := range requiredCmds {
+		if _, err := exec.LookPath(requiredCmd); isExecErrNotFound(err) {
+			return fmt.Errorf("no `%s` found in PATH; to install, %s", requiredCmd, instructions)
+		}
+	}
+
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+		return err
+	}
+
+	log.Println("Downloading C# toolchain in", srclibpathDir)
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+		return err
+	}
+
+	nugetdir := filepath.Join(srclibpathDir, "Srclib.Nuget")
+	log.Println("Downloading toolchain dependencies in", nugetdir)
+	if err := execCmdInDir("dnu", "restore", nugetdir); err != nil {
 		return err
 	}
 

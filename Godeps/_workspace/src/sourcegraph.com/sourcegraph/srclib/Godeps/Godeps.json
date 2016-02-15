@@ -98,7 +98,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/tools/godoc/vfs",
-			"Rev": "b7f0150d16f143e2d871156fa142dd6fa372ffdf"
+			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
 			"ImportPath": "google.golang.org/grpc",

@@ -906,7 +906,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Rev": "03ca5cf3d961bdf2ca1521c91dd3181964ede13d"
+			"Comment": "v0.2.1-4-g6e4c64a",
+			"Rev": "6e4c64a5d8ce1e7b6b7f7a23587e3827af6f42ce"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",

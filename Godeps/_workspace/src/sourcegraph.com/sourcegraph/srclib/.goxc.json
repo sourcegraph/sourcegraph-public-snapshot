@@ -12,7 +12,7 @@
 		"LdFlagsXVars": {
 			"Version": "sourcegraph.com/sourcegraph/srclib/cli.Version"
 		},
-		"ExtraArgs": "-a"
+		"ExtraArgs": ["-a"]
 	},
 	"Env": [
 		"CGO_ENABLED=0"
