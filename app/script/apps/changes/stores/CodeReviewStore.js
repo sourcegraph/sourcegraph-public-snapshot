@@ -88,7 +88,6 @@ var CodeReviewStore = FluxStore({
 		if (d.Files) {
 			this.get("changes").load(d.Files);
 		}
-		this.get("changes").set("overThreshold", d.OverThreshold);
 
 		var reviews = new ReviewCollection((d.Reviews || []), {
 			changesetId: d.Changeset.ID,
@@ -105,7 +104,6 @@ var CodeReviewStore = FluxStore({
 			FileFilter: d.FileFilter,
 			ReviewGuidelines: d.ReviewGuidelines,
 			JiraIssues: d.JiraIssues,
-			OverThreshold: d.OverThreshold,
 			loading: false,
 			reviews: reviews,
 			events: events,

@@ -39,7 +39,6 @@ var CodeReviewChangesModel = Backbone.Model.extend({
 			delta: data.Delta,
 			fileDiffs: fdiffs,
 			stats: data.Stats,
-			overThreshold: Boolean(data.OverThreshold),
 		});
 	},
 

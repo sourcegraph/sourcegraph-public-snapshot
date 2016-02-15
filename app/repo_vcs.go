@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/mux"
-	"sourcegraph.com/sourcegraph/go-diff/diff"
 
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
@@ -66,9 +65,8 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 		DeltaListDefsOpt *sourcegraph.DeltaListDefsOptions
 
 		// TODO(beyang): additional hacks like the one above
-		ShowFiles     bool
-		Filter        string
-		OverThreshold bool
+		ShowFiles bool
+		Filter    string
 
 		tmpl.Common
 	}{
@@ -82,15 +80,8 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 	if delta != nil {
 		tmplData.DeltaSpec = delta.DeltaSpec()
 	}
-	if files != nil {
-		tmplData.OverThreshold = diffSizeIsOverThreshold(files.DiffStat())
-	}
 
 	return tmpl.Exec(r, w, "repo/commit.html", http.StatusOK, nil, &tmplData)
-}
-
-func diffSizeIsOverThreshold(st diff.Stat) bool {
-	return st.Added+st.Changed+st.Deleted > 5000
 }
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {

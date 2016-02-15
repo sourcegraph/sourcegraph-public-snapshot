@@ -70,38 +70,19 @@ var CodeReviewChanges = React.createClass({
 
 		return (
 			<div className="changeset-changes">
-				{this.state.changes.overThreshold &&
-					<table className="over-threshold-warning">
-						<tbody>
-							<tr>
-								<td className="icon">
-									<i className="fa fa-icon fa-warning" />
-								</td>
-								<td className="text">
-									The requested diff is larger than usual and is surpressed. We recommend viewing it on a file-by-file basis.
-									To do this, click on any of the files below. <br />
-									<b>Tip:</b> You may also view groups of files by using just a prefix of the paths you wish to see.
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				}
-
 				<DiffFileList {...this.props}
 					model={this.state.changes.fileDiffs}
 					onFileClick={this.props.onFileClick}
 					stats={this.state.changes.stats} />
 
-				{!this.state.changes.overThreshold ? (
-					this.state.changes.fileDiffs.map(fd => (
-						<FileDiff {...this.props}
-							allowComments={true}
-							key={fd.cid}
-							Delta={this.state.changes.delta}
-							urlBase={this.props.urlBase}
-							model={fd} />
-					))
-				) : null}
+				{this.state.changes.fileDiffs.map(fd => (
+					<FileDiff {...this.props}
+						allowComments={true}
+						key={fd.cid}
+						Delta={this.state.changes.delta}
+						urlBase={this.props.urlBase}
+						model={fd} />
+				))}
 			</div>
 		);
 	},

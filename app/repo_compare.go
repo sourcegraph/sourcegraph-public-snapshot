@@ -39,15 +39,13 @@ func serveRepoCompare(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "repo/compare.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		DiffData      *sourcegraph.DeltaFiles
-		DeltaSpec     sourcegraph.DeltaSpec
-		tmpl.Common   `json:"-"`
-		OverThreshold bool
+		DiffData    *sourcegraph.DeltaFiles
+		DeltaSpec   sourcegraph.DeltaSpec
+		tmpl.Common `json:"-"`
 	}{
 		RepoCommon:    *rc,
 		RepoRevCommon: *vc,
 		DiffData:      files,
 		DeltaSpec:     ds,
-		OverThreshold: diffSizeIsOverThreshold(files.DiffStat()),
 	})
 }

@@ -100,9 +100,7 @@ var DiffStore = FluxStore({
 	},
 
 	/**
-	 * @description Triggered when a file is clicked in the file diff list. Depending
-	 * on whether the diff is over threshold or not, the view might scroll to the file
-	 * or it might open a link to view that file independently.
+	 * @description Triggered when a file is clicked in the file diff list.
 	 * @param {Object} action - payload action data
 	 * @returns {void}
 	 * @private
@@ -125,10 +123,6 @@ var DiffStore = FluxStore({
 		);
 
 		this.set(action.data, {silent: true}); // silent doesn't trigger view update
-
-		if (this.get("OverThreshold")) {
-			this.set("filter", {}, {silent: true});
-		}
 
 		this.set("fileDiffs", this.fileDiffs);
 	},

@@ -111,23 +111,16 @@ module.exports.expandHunk = function expandHunk(hunk, isDirectionUp, evt) {
 
 /**
  * @description Action called when a user selects a file in the differential.
- * Based on whether the differential is over threshold (surpressed) or not,
- * the browser is either redirect to a single-view of the file or scrolled down
- * to bring the file into view.
  * @param {FileDiffModel} fd - The file to be navigated to.
  * @param {Event} evt - The (click) event.
  * @returns {void}
  */
 module.exports.selectFile = function selectFile(fd, evt) {
-	var overThreshold = CodeReviewStore.get("OverThreshold");
-
-	if (!overThreshold) {
-		evt.preventDefault();
-		AppDispatcher.handleViewAction({
-			type: globals.Actions.CR_SELECT_FILE,
-			file: fd,
-		});
-	}
+	evt.preventDefault();
+	AppDispatcher.handleViewAction({
+		type: globals.Actions.CR_SELECT_FILE,
+		file: fd,
+	});
 };
 
 /**

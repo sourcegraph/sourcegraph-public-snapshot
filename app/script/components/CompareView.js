@@ -78,18 +78,6 @@ var CompareView = React.createClass({
 	},
 
 	_onFileClick(fd, evt) {
-		var baseName = fd.get("OrigName");
-		baseName = baseName === "/dev/null" ? undefined : baseName;
-		var headName = fd.get("NewName");
-		headName = headName === "/dev/null" ? undefined : headName;
-		var delta = this.state.DeltaSpec;
-		var url = router.compareURL(this.state.RepoRevSpec.URI, delta.Base.Rev, delta.Head.Rev, headName||baseName);
-
-		if (this.state.OverThreshold) {
-			window.location = url;
-			return;
-		}
-
 		DiffActions.selectFile(fd, evt);
 	},
 
@@ -152,32 +140,18 @@ var CompareView = React.createClass({
 						onCancel={()=>this.setState({proposingChange: false})} />
 				) : null}
 
-				{this.state.OverThreshold &&
-					<table className="over-threshold-warning">
-						<tbody>
-							<td className="icon">
-								<i className="fa fa-icon fa-warning" />
-							</td>
-							<td className="text">
-								The requested diff is larger than usual and is surpressed. We recommend viewing it on a file-by-file basis.
-								To do this, click on any of the files below. <br /><b>Tip:</b> You may also view smaller groups of files using the <span className="backtick">filter</span> query parameter.
-							</td>
-						</tbody>
-					</table>
-				}
-
 				<DiffFileList
 					model={this.state.fileDiffs}
 					stats={this.state.DiffData.Stats}
 					onFileClick={this._onFileClick} />
 
-				{!this.state.OverThreshold ? displayedDiffs.map(fd => (
+				{displayedDiffs.map(fd => (
 					<FileDiff
 						key={fd.cid}
 						Delta={this.state.DiffData.Delta}
 						model={fd}
 						onExpandHunk={this._onExpandHunk} />
-				)) : null}
+				))}
 			</div>
 		);
 	},

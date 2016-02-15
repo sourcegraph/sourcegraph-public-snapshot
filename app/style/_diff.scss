@@ -60,38 +60,6 @@ pre.diff {
 	font-weight: bold;
 }
 
-.over-threshold-warning {
-	width: 100%;
-
-	td {
-		padding: 25px 30px;
-
-		&.icon {
-			width: 40px;
-		}
-
-		&.text {
-			padding-left: 0;
-			text-align: left;
-		}
-	}
-
-	.fa-warning {
-		color: #dd9b00;
-		font-size: 24px;
-		float: left;
-		vertical-align: middle;
-	}
-
-	vertical-align: middle;
-	color: #555;
-	margin-top: 20px;
-	border: 1px solid $content-primary-border;
-	background: $content-primary-bg;
-	border-radius: 3px;
-	padding: 20px 25px;
-}
-
 div.file-list {
 	.file-list-header {
 		display: block;

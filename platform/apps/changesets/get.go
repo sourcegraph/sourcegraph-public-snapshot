@@ -275,19 +275,6 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		notifications.Service.MarkRead(ctx, appID, notif.RepoSpec{URI: rc.Repo.URI}, uint64(id))
 	}
 
-	// If the source code contents of the diff are very large, then we
-	// won't display file diffs, no point in sending them to the
-	// client JSON-encoded. In fact, for large diffs this can mean the
-	// difference between 317KB vs 16MB+ for the page!
-	var overThreshold bool
-	if st := files.DiffStat(); st.Added+st.Changed+st.Deleted > 5000 {
-		overThreshold = true
-		for _, fd := range files.FileDiffs {
-			fd.FileDiffHunks = nil
-			fd.FileDiff.Hunks = nil
-		}
-	}
-
 	return executeTemplate(w, r, "changeset.html", &struct {
 		TmplCommon
 		handlerutil.RepoCommon
@@ -297,14 +284,12 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		FileFilter       string
 		ReviewGuidelines pbtypes.HTML
 		JiraIssues       map[string]string
-		OverThreshold    bool // too large to display on one page
 	}{
 		RepoCommon:       *rc,
 		RepoRevCommon:    *vc,
 		FileFilter:       v["Filter"],
 		ReviewGuidelines: guide,
 		JiraIssues:       jiraIssues,
-		OverThreshold:    overThreshold,
 
 		Changeset: payloads.Changeset{
 			Changeset: cs,
