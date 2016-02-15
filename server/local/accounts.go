@@ -323,7 +323,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify email or login")
 	}
 
-	token, err := accountsStore.RequestPasswordReset(ctx, user)
+	token, err := accountsStore.RequestPasswordReset(elevatedActor(ctx), user)
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +362,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) (*pbtypes.Void, error) {
 	accountsStore := store.AccountsFromContext(ctx)
-	err := accountsStore.ResetPassword(ctx, newPass)
+	err := accountsStore.ResetPassword(elevatedActor(ctx), newPass)
 	if err != nil {
 		return nil, err
 	}
