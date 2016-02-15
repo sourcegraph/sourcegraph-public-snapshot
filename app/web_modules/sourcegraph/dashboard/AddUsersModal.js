@@ -2,16 +2,16 @@ import React from "react";
 import update from "react/lib/update";
 
 import Container from "sourcegraph/Container";
-import GitHubReposStore from "sourcegraph/dashboard/GitHubReposStore";
+import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
 import SelectableListWidget from "sourcegraph/dashboard/SelectableListWidget";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 
-class AddReposWidget extends Container {
+class AddUsersModal extends Container {
 	constructor(props) {
 		super(props);
 		this.state = {
-			repoName: "",
+			email: "",
 		};
 		this._handleTextInput = this._handleTextInput.bind(this);
 		this._handleCreate = this._handleCreate.bind(this);
@@ -20,37 +20,36 @@ class AddReposWidget extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.mirrorRepos = GitHubReposStore.mirrorRepos;
-		state.selectedRepos = GitHubReposStore.selectedRepos;
-		state.currentOrg = GitHubReposStore.currentOrg;
-		state.orgs = GitHubReposStore.orgs;
-		state.selectAll = GitHubReposStore.selectAll;
+		state.mirrorUsers = GitHubUsersStore.mirrorUsers;
+		state.selectedUsers = GitHubUsersStore.selectedUsers;
+		state.currentOrg = GitHubUsersStore.currentOrg;
+		state.orgs = GitHubUsersStore.orgs;
+		state.selectAll = GitHubUsersStore.selectAll;
 	}
 
 	_handleTextInput(e) {
 		this.setState(update(this.state, {
-			repoName: {$set: e.target.value},
+			email: {$set: e.target.value},
 		}));
 	}
 
 	_handleCreate() {
 		// TODO:
-		// Dispatcher.dispatch(new DashboardActions.WantAddRepos());
+		// Dispatcher.dispatch(new DashboardActions.WantAddUsers());
 		this.state.dismissModal();
 	}
 
-	_handleAddMirrors(repos) {
+	_handleAddMirrors(users) {
 		// TODO:
-		// Dispatcher.dispatch(new DashboardActions.WantAddRepos());
+		// Dispatcher.dispatch(new DashboardActions.WantAddUsers());
 		this.state.dismissModal();
 	}
 
-	stores() { return [GitHubReposStore]; }
+	stores() { return [GitHubUsersStore]; }
 
 	render() {
-		console.log("and re-rendering add repos widget");
 		return (
-			<div className="modal add-repos-widget"
+			<div className="modal add-users-widget"
 				style={{display: "block"}}
 				tabIndex="-1"
 				role="dialog" >
@@ -64,25 +63,25 @@ class AddReposWidget extends Container {
 								onClick={this.state.dismissModal}>
 								<span aria-hidden="true">&times;</span>
 							</button>
-							<h4 className="modal-title">Add a new Repository</h4>
+							<h4 className="modal-title">Invite People to join Sourcegraph</h4>
 						</div>
 						<div className="modal-body">
 							<ul className="nav nav-tabs" role="tablist">
 								<li role="presentation" className="active">
-									<a href="#new-repo" role="tab" data-toggle="tab">Create New</a>
+									<a href="#email-invite" role="tab" data-toggle="tab">Invite by Email</a>
 								</li>
 								<li role="presentation">
-									<a href="#github-mirror" role="tab" data-toggle="tab">Import from GitHub</a>
+									<a href="#github-invite" role="tab" data-toggle="tab">Invite from GitHub</a>
 								</li>
 							</ul>
 
 							<div className="tab-content">
-								<div role="tabpanel" className="tab-pane active" id="new-repo">
+								<div role="tabpanel" className="tab-pane active" id="email-invite">
 									<div className="widget-body">
 										<p className="add-repo-label">REPO NAME:</p>
 										<input className="form-control"
 											type="text"
-											value={this.state.repoName}
+											value={this.state.email}
 											placeholder="Type Name here"
 											onChange={this._handleTextInput}/>
 									</div>
@@ -93,18 +92,18 @@ class AddReposWidget extends Container {
 										</button>
 									</div>
 								</div>
-								<div role="tabpanel" className="tab-pane" id="github-mirror">
-									<SelectableListWidget items={this.state.mirrorRepos}
+								<div role="tabpanel" className="tab-pane" id="github-invite">
+									<SelectableListWidget items={this.state.mirrorUsers}
 										currentCategory={this.state.currentOrg}
 										menuCategories={this.state.orgs}
-										onMenuClick={(org) => Dispatcher.dispatch(new DashboardActions.SelectRepoOrg(org))}
-										onSelect={(repoKey, select) => Dispatcher.dispatch(new DashboardActions.SelectRepo(repoKey, select))}
-										onSelectAll={(repos, selectAll) => Dispatcher.dispatch(new DashboardActions.SelectRepos(repos, selectAll))}
-										selections={this.state.selectedRepos}
+										onMenuClick={(org) => Dispatcher.dispatch(new DashboardActions.SelectUserOrg(org))}
+										onSelect={(userKey, select) => Dispatcher.dispatch(new DashboardActions.SelectUser(userKey, select))}
+										onSelectAll={(users, selectAll) => Dispatcher.dispatch(new DashboardActions.SelectUsers(users, selectAll))}
+										selections={this.state.selectedUsers}
 										selectAll={this.state.selectAll}
 										menuLabel="Organizations"
-										searchPlaceholderText="Search GitHub repositories"
-										onSubmit={(items) => console.log("submitted", items)} />
+										searchPlaceholderText="Search GitHub contacts"
+										onSubmit={this._handleAddMirrors} />
 								</div>
 							</div>
 						</div>
@@ -115,10 +114,10 @@ class AddReposWidget extends Container {
 	}
 }
 
-AddReposWidget.propTypes = {
+AddUsersModal.propTypes = {
 	dismissModal: React.PropTypes.func.isRequired,
-	allowStandaloneRepos: React.PropTypes.bool.isRequired,
+	allowStandaloneUsers: React.PropTypes.bool.isRequired,
 	allowGitHubMirrors: React.PropTypes.bool.isRequired,
 };
 
-export default AddReposWidget;
+export default AddUsersModal;

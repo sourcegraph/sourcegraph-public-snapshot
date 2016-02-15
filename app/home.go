@@ -10,6 +10,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -24,6 +25,7 @@ type dashboardData struct {
 	OnWaitlist     bool
 	MirrorData     *sourcegraph.UserMirrorData
 	Teammates      *sourcegraph.Teammates
+	IsRoot         bool
 
 	// This flag is set if the user has returned to the dashboard after
 	// being redirected from GitHub OAuth2 login page.
@@ -112,6 +114,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		PrivateMirrors: privateMirrors,
 		MirrorData:     mirrorData,
 		Teammates:      teammates,
+		IsRoot:         fed.Config.IsRoot,
 	})
 }
 

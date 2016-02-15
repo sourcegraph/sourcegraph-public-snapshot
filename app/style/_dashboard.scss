@@ -1,8 +1,11 @@
 .dashboard {
-	display: -webkit-flex;
-	display: flex;
-	-webkit-flex-wrap: wrap;
-  	flex-wrap: wrap;
+
+	.dashboard-container {
+		display: -webkit-flex;
+		display: flex;
+		-webkit-flex-wrap: wrap;
+		flex-wrap: wrap;
+	}
 
 	.dash-repos {
 		flex: 6;
@@ -95,19 +98,31 @@
 			}
 		}
 
-
 		h4 {
-			margin: 0;
+			margin: 15px;
 			.repo-attr-icon {
 				margin-right: 3px;
 			}
 		}
-		p.description, p.updated {
-			margin: 7px 0 0 0;
+		p.description {
+			margin-left: 10px;
+			font-size: 16px;
+			font-face: Circular-Book;
+			color: #969896;
 		}
 		p.updated {
+			margin-left: 10px;
 			font-size: $font-size-small;
 			color: $text-muted;
+			text-transform: uppercase;
+			font-size: 12px;
+			font-face: Circular-Bold;
+			letter-spacing: 1px;
+			color: #bfc2d0;
+		}
+
+		.hover-pointer {
+			cursor: pointer;
 		}
 	}
 
@@ -179,6 +194,211 @@
 		h5 {
 			display: inline-block;
 			float: left;
+		}
+	}
+
+	.selectable-list-widget {
+
+		.widget-body {
+			display: -webkit-flex;
+			display: flex;
+			-webkit-flex-wrap: wrap;
+			flex-wrap: wrap;
+
+			.category-menu {
+				-webkit-flex: 1;
+				flex: 1;
+				text-transform: uppercase;
+				margin-left: 10px;
+				margin-right: 20px;
+				margin-top: 2px;
+				text-align: left;
+				font-size: 12px;
+				letter-spacing: 0.6px;
+				font-face: Circular-Bold;
+				a {
+					text-decoration: none;
+					cursor: pointer;
+				}
+
+				.category-menu-label {
+					color: #4d5a64;
+				}
+
+				.category-label {
+					margin-left: 7px;
+					margin-bottom: 15px;
+
+					a {
+						color: #7794ae;
+					}
+				}
+
+				a.category-active {
+					color: #0fb6f2;
+					border-bottom: solid 2px #0fb6f2;
+				}
+			}
+
+			.list-control {
+				-webkit-flex: 4;
+				flex: 4;
+			}
+		}
+	}
+
+	.selectable-list {
+		margin-bottom: 0px;
+		border: 1px solid rgba(172,177,214,0.3);
+
+		input[type="checkbox"] {
+	    	display:none;
+		}
+		input[type="checkbox"] {
+	    	display: inline-block;
+			width: 16px;
+			height: 16px;
+			color: #0dceb7;
+		}
+
+		input[type="checkbox"] + label span {
+			display: inline-block;
+			width: 16px;
+			height: 16px;
+			color: #0dceb7;
+		    margin:-1px 4px 0 0;
+		    vertical-align:middle;
+		    cursor:pointer;
+		}
+
+		.header {
+			background-color: initial;
+			font-size: 13px;
+			color: #bbbbbb;
+			// padding-top: 5px;
+
+			.search-bar {
+				display: -webkit-flex;
+				display: flex;
+				border: none !important;
+			    border-color: transparent !important;
+
+				.search-icon {
+					-webkit-flex: 1;
+					flex: 1;
+					padding: 7px;
+				}
+
+				.search-input {
+					-webkit-flex: 15;
+					flex: 15;
+					border: none !important;
+					border-color: transparent !important;
+				}
+			}
+
+			.table-controls {
+				display: -webkit-flex;
+				display: flex;
+				height: 34px;
+
+				border-top: 1px solid rgba(172,177,214,0.3);
+				border-bottom: 1px solid rgba(172,177,214,0.3);
+				background-color: #fcfcfc;
+
+				.select-all {
+					-webkit-flex: 1;
+					flex: 1;
+					padding: 7px;
+				}
+				.name {
+					-webkit-flex: 15;
+					flex: 15;
+					padding: 9px;
+					text-align: left;
+					margin-right: 25px;
+				}
+			}
+		}
+		.body {
+			height: 273px;
+			background-color: #fcfcfc;
+			display: block;
+
+			.table-row {
+				display: -webkit-flex;
+				display: flex;
+
+				.select {
+					-webkit-flex: 1;
+					flex: 1;
+					padding: 7px;
+				}
+				.name {
+					-webkit-flex: 15;
+					flex: 15;
+					padding: 7px;
+					text-align: left;
+					border-bottom: 1px solid rgba(172,177,214,0.3);
+				}
+			}
+		}
+
+		.list-group {
+			height: 100%;
+			margin-bottom: 0px;
+			overflow: auto;
+		}
+
+		.list-group-item {
+			border: none;
+			border-bottom: 1px solid rgba(172,177,214,0.3);
+			margin-bottom: 0px;
+			margin-left: auto;
+			margin-right: auto;
+			width: 95%;
+		}
+
+		.repo-name {
+			margin-left: 10px;
+		}
+
+	}
+
+	.add-repos-widget {
+
+		.widget-body {
+			padding-left: 25px;
+		}
+
+		.add-repo-label {
+			margin-top: 20px;
+		}
+
+		input {
+			height: 48px;
+			font-size: 14px;
+			font-face: Circular-Book;
+		}
+
+		.selectable-list-widget {
+			margin-top: 25px;
+		}
+	}
+
+	.widget-footer {
+		width: 80%;
+		margin: auto;
+		margin-top: 39px;
+		font-face: Circular-Bold;
+
+		button {
+			font-size: 13px;
+			letter-spacing: 1px;
+			text-transform: uppercase;
+			border-radius: 2px;
+			color: #ffffff;
+			height: 48px;
 		}
 	}
 }

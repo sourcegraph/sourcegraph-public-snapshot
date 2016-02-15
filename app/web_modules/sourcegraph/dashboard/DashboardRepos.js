@@ -2,6 +2,7 @@ import React from "react";
 import update from "react/lib/update";
 
 import Component from "sourcegraph/Component";
+import moment from "moment";
 
 class DashboardRepos extends Component {
 	constructor(props) {
@@ -73,15 +74,16 @@ class DashboardRepos extends Component {
 				<div className="repos-list panel-body">
 					<div className="list-group">
 						{this.state.repos.filter(this._showRepo).map((repo, i) => (
-							<div className="list-group-item" key={i}>
+							<div className="list-group-item hover-pointer" key={i}
+								onClick={() => window.location.href = repo.HTMLURL}>
 								<div className="repo-header">
 									<div className="repo-icon">
 									</div>
-									<h4>{repo.URI || "missing URI"}</h4>
+									<h4>{repo.URI}</h4>
 								</div>
 								<div className="repo-body">
-									<p className="repo-description">{repo.description || "missing description"}</p>
-									<p className="repo-last-updated">{repo.lastUpdated || "missing last updated"}</p>
+									<p className="description">{repo.Description}</p>
+									<p className="updated">{`Updated ${moment(repo.UpdatedAt).fromNow()}`}</p>
 								</div>
 							</div>
 						))}

@@ -37,8 +37,6 @@ class SelectableList extends Component {
 	}
 
 	render() {
-		console.log("rendering the component!");
-		console.log(this.state.selections);
 		return (
 			<div className="selectable-list">
 				<div className="header">

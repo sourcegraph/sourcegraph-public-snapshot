@@ -262,4 +262,8 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"buildvar":        func() buildvar.Vars { return buildvar.All },
 	"updateAvailable": updateAvailable,
+
+	"isMothership": func(appurl *url.URL) bool {
+		return appurl.String() == "https://sourcegraph.com"
+	},
 }

@@ -144,12 +144,17 @@ class OnboardingContainer extends Container {
 
 		return (
 			<div className="onboarding-container">
-				<div className="onboarding-overlay">
-					<div className="panel panel-default">
-						<div className={`panel-heading panel-heading-${this.state.progress.currentStep}`}>
-							<ProgressBar numSteps={this.state.progress.numSteps} currentStep={this.state.progress.currentStep}/>
+				<div className="modal"
+					tabIndex="-1">
+					<div className="modal-dialog">
+						<div className="modal-content">
+							<div className={`modal-header modal-header-${this.state.progress.currentStep}`}>
+								<ProgressBar numSteps={this.state.progress.numSteps} currentStep={this.state.progress.currentStep}/>
+							</div>
+							<div className="modal-body">
+								{panelBody}
+							</div>
 						</div>
-						<div className="panel-body">{panelBody}</div>
 					</div>
 				</div>
 			</div>

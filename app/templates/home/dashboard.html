@@ -24,8 +24,8 @@
 			window.progress.currentStep = 0;
 			window.progress.githubLinkURL = "{{router.URLToGitHubOAuth}}";
 		{{else}}
-			if (true) { // TODO: set if being redirected from GitHub
-				window.progress.currentStep = 2;
+			if (true) { // TODO(pararth): set if being redirected from GitHub
+				window.progress.currentStep = 1;
 			} else {
 				window.progress.currentStep = 50; // done
 			}
@@ -33,6 +33,7 @@
 	{{else}}
 		window.progress.currentStep = 50; // done
 	{{end}}
+	window.progress.currentStep = 1;
 
 	if (window.mirrorData && window.mirrorData.State === 4) {
 		var counter = 0; // assign unique key to each repo for UI widgets
@@ -92,9 +93,11 @@
 
 	window.mirrorRepos = window.mirrorRepos || [];
 	window.mirrorUsers = window.mirrorUsers || [];
+	window.isMothership = JSON.parse({{json (isMothership .AppURL)}});
+	window.allowMirrors = JSON.parse({{json .PrivateMirrors}});
 </script>
 
-<div>
+<div class="dashboard">
 	<div id="DashboardContainer"></div>
 	<div id="OnboardingContainer"></div>
 </div>

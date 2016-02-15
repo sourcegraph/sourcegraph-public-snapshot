@@ -22,15 +22,15 @@ class SelectableListWidget extends Component {
 	render() {
 		const selected = this._getSelections();
 		return (
-			<div className="selectable-list-widget list-picker">
-				<div className="list-picker">
+			<div className="selectable-list-widget">
+				<div className="widget-body">
 					<div className="category-menu">
 						<ListMenu label={this.state.menuLabel}
 							categories={this.state.menuCategories}
 							onMenuClick={this.state.onMenuClick}
 							current={this.state.currentCategory} />
 					</div>
-					<div className="list">
+					<div className="list-control">
 						<SelectableList items={this.state.items.filter(item => item.org === this.state.currentCategory)}
 							selectAll={this.state.selectAll}
 							selections={this.state.selections}
@@ -39,7 +39,7 @@ class SelectableListWidget extends Component {
 							searchPlaceholderText={this.state.searchPlaceholderText || "search"} />
 					</div>
 				</div>
-				<div className="footer submit-form">
+				<div className="widget-footer">
 					<button className="btn btn-block btn-primary btn-lg"
 						onClick={() => this.state.onSubmit(selected)}>
 						{`add${selected.length > 0 ? ` (${selected.length})` : ""}`}

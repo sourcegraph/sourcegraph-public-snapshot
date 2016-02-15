@@ -19,7 +19,7 @@ export class GitHubUsersStore extends Store {
 		if (this.mirrorUsers) this.mirrorUsers.forEach(user => selectedUsers[user.key] = false);
 		this.selectedUsers = deepFreeze(selectedUsers);
 
-		// Store the state of which organizations mirrored repos can come from.
+		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.
 		let orgs = {};
 		if (this.mirrorUsers) this.mirrorUsers.forEach(user => orgs[user.org] = 1);
@@ -42,7 +42,7 @@ export class GitHubUsersStore extends Store {
 		case DashboardActions.SelectUsers:
 			{
 				let updateQuery = {};
-				action.repos.forEach(user => updateQuery[user.key] = {$set: action.selectAll});
+				action.users.forEach(user => updateQuery[user.key] = {$set: action.selectAll});
 				this.selectedUsers = update(this.selectedUsers, updateQuery);
 				this.selectAll = action.selectAll;
 				break;

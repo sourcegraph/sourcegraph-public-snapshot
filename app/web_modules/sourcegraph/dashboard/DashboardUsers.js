@@ -24,7 +24,8 @@ class UserList extends Component {
 			<div className="panel panel-default">
 				<div className="panel-heading">
 					<h5>Team</h5>
-					<button className="btn btn-primary btn-block add-user-btn">
+					<button className="btn btn-primary btn-block add-user-btn"
+						onClick={this.state.openUsersModal}>
 						<i className="fa fa-user-plus"></i>
 					</button>
 				</div>
@@ -46,6 +47,7 @@ class UserList extends Component {
 
 UserList.propTypes = {
 	users: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+	openUsersModal: React.PropTypes.func.isRequired,
 };
 
 export default UserList;

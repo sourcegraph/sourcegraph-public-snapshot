@@ -7,7 +7,7 @@
 	<div class="col-md-6 col-md-offset-3">
 		<div class="panel panel-default">
 			<div class="panel-body">
-				<p class="get-started-header">Get started with<br>Sourcegraph {{if .IsRoot}}Cloud{{else}}Server{{end}}</p>
+				<p class="get-started-header">Get started with<br>Sourcegraph {{if isMothership .AppURL}}Cloud{{else}}Server{{end}}</p>
 				<div class="form-container">
 					<form method="post" action="{{urlToWithReturnTo "sign-up" .ReturnTo}}" class="sign-up">
 						<p class="help-block">{{.SignupForm.FormError}}</p>
@@ -37,7 +37,7 @@
 						{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
 					</form>
 					<p class="small-block">
-						{{if .IsRoot}}
+						{{if isMothership .AppURL}}
 						By creating an account you agree to our <a href="https://sourcegraph.com/privacy">privacy policy</a> and <a href="https://sourcegraph.com/terms">terms</a>.
 						{{else if .FirstUser}}
 						{{template "dataCollectionMessage"}}
@@ -47,7 +47,7 @@
 				</div>
 			</div>
 			<div class="panel-footer">
-				{{if .IsRoot}}
+				{{if isMothership .AppURL}}
 				<span>Want to install Sourcegraph on your own server?</span>
 				<a href="https://src.sourcegraph.com/sourcegraph/.docs">Get Sourcegraph Server</a>
 				{{else}}

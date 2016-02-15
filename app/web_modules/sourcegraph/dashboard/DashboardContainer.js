@@ -9,15 +9,19 @@ import OnboardingStore from "sourcegraph/dashboard/OnboardingStore";
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import AddReposModal from "sourcegraph/dashboard/AddReposModal";
+import AddUsersModal from "sourcegraph/dashboard/AddUsersModal";
 
 class DashboardContainer extends Container {
 	constructor(props) {
 		super(props);
 		this.state = {
-			showModal: false,
+			showReposModal: false,
+			showUsersModal: false,
 		};
-		this._openModal = this._openModal.bind(this);
-		this._dismissModal = this._dismissModal.bind(this);
+		this._openReposModal = this._openReposModal.bind(this);
+		this._dismissReposModal = this._dismissReposModal.bind(this);
+		this._openUsersModal = this._openUsersModal.bind(this);
+		this._dismissUsersModal = this._dismissUsersModal.bind(this);
 	}
 
 	componentDidMount() {
@@ -32,33 +36,50 @@ class DashboardContainer extends Container {
 		Object.assign(state, props);
 		state.repos = DashboardStore.repos;
 		state.users = DashboardStore.users;
-		state.isOnboarding = true;
+		state.allowStandaloneRepos = !DashboardStore.isMothership;
+		state.allowGitHubMirrors = DashboardStore.allowMirrors;
 	}
 
 	stores() { return [DashboardStore, OnboardingStore]; }
 
-	_openModal() {
+	_openReposModal() {
 		this.setState(update(this.state, {
-			showModal: {$set: true},
+			showReposModal: {$set: true},
 		}));
 	}
 
-	_dismissModal() {
+	_dismissReposModal() {
 		this.setState(update(this.state, {
-			showModal: {$set: false},
+			showReposModal: {$set: false},
+		}));
+	}
+
+	_openUsersModal() {
+		this.setState(update(this.state, {
+			showUsersModal: {$set: true},
+		}));
+	}
+
+	_dismissUsersModal() {
+		this.setState(update(this.state, {
+			showUsersModal: {$set: false},
 		}));
 	}
 
 	render() {
-		if (this.state.isOnboarding) return null;
 		return (
-			<div className="dashboard-container dashboard">
-				{this.state.showModal ? <AddReposModal dismissModal={this._dismissModal} /> : null}
+			<div className="dashboard-container">
+				{this.state.showReposModal ? <AddReposModal
+					dismissModal={this._dismissReposModal}
+					allowStandaloneRepos={this.state.allowStandaloneRepos}
+					allowGitHubMirrors={this.state.allowGitHubMirrors} /> : null}
+				{this.state.showUsersModal ? <AddUsersModal
+					dismissModal={this._dismissUsersModal} /> : null}
 				<div className="dash-repos">
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Your Repositories</h3>
 						<button className="btn btn-primary btn-block add-repo-btn"
-							onClick={this._openModal}>
+							onClick={this._openReposModal}>
 							<div className="plus-btn">
 								<span className="plus">+</span>
 							</div>
@@ -70,7 +91,7 @@ class DashboardContainer extends Container {
 					</div>
 				</div>
 				<div className="dash-users">
-					<DashboardUsers users={this.state.users} />
+					<DashboardUsers users={this.state.users} openUsersModal={this._openUsersModal} />
 				</div>
 			</div>
 		);

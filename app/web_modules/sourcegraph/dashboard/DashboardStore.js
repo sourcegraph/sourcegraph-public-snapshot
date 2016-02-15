@@ -11,7 +11,8 @@ export class DashboardStore extends Store {
 		super(dispatcher);
 		this.repos = deepFreeze(window.repos);
 		this.users = deepFreeze(window.users);
-		this.mirrorRepos = deepFreeze(window.mirrorRepos);
+		this.isMothership = deepFreeze(window.isMothership);
+		this.allowMirrors = Boolean(window.allowMirrors);
 	}
 
 	__onDispatch(action) {
