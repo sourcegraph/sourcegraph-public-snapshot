@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
@@ -58,8 +59,6 @@ func NewHandler(r *mux.Router) http.Handler {
 	r.Get(ui_router.DefExamples).Handler(handler(serveDefExamples))
 
 	r.Get(ui_router.RepoCreate).Handler(handler(serveRepoCreate))
-	r.Get(ui_router.RepoMirror).Handler(handler(serveRepoMirror))
-
 	r.Get(ui_router.RepoCommits).Handler(handler(serveRepoCommits))
 
 	r.Get(ui_router.SearchTokens).Handler(handler(serveTokenSearch))
@@ -71,8 +70,12 @@ func NewHandler(r *mux.Router) http.Handler {
 		r.Get(ui_router.UserContentUpload).Handler(handler(serveUserContentUpload))
 	}
 
+	if authutil.ActiveFlags.PrivateMirrors {
+		r.Get(ui_router.RepoMirror).Handler(handler(serveRepoMirror))
+		r.Get(ui_router.UserInviteBulk).Handler(handler(serveUserInviteBulk))
+	}
+
 	r.Get(ui_router.UserInvite).Handler(handler(serveUserInvite))
-	r.Get(ui_router.UserInviteBulk).Handler(handler(serveUserInviteBulk))
 	r.Get(ui_router.UserKeys).Handler(handler(serveUserKeys))
 
 	return handlerutil.WithMiddleware(r, mw...)
