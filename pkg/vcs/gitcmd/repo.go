@@ -1,12 +1,10 @@
 package gitcmd
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,7 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/alecthomas/binary"
@@ -341,20 +338,6 @@ func (r *Repository) showRef(arg string) ([][2]string, error) {
 		refs[i] = [2]string{string(id), string(name)}
 	}
 	return refs, nil
-}
-
-func exitStatus(err error) int {
-	if err != nil {
-		if exiterr, ok := err.(*exec.ExitError); ok {
-			// There is no platform independent way to retrieve
-			// the exit code, but the following will work on Unix
-			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-				return status.ExitStatus()
-			}
-		}
-		return 0
-	}
-	return 0
 }
 
 // getCommit returns the commit with the given id. The caller must be holding r.editLock.
@@ -832,112 +815,7 @@ func (r *Repository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository, b 
 func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
 	defer r.trace(time.Now(), "Search", at, opt)
 
-	if err := checkSpecArgSafety(string(at)); err != nil {
-		return nil, err
-	}
-
-	var queryType string
-	switch opt.QueryType {
-	case vcs.FixedQuery:
-		queryType = "--fixed-strings"
-	default:
-		return nil, fmt.Errorf("unrecognized QueryType: %q", opt.QueryType)
-	}
-
-	cmd := exec.Command("git", "grep", "--null", "--line-number", "-I", "--no-color", "--context", strconv.Itoa(int(opt.ContextLines)), queryType, "-e", opt.Query, string(at))
-	cmd.Dir = r.Dir
-	cmd.Stderr = os.Stderr
-	out, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	defer out.Close()
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
-
-	errc := make(chan error)
-	var res []*vcs.SearchResult
-	go func() {
-		rd := bufio.NewReader(out)
-		var r *vcs.SearchResult
-		addResult := func(rr *vcs.SearchResult) bool {
-			if rr != nil {
-				if opt.Offset == 0 {
-					res = append(res, rr)
-				} else {
-					opt.Offset--
-				}
-				r = nil
-			}
-			// Return true if no more need to be added.
-			return len(res) == int(opt.N)
-		}
-		for {
-			line, err := rd.ReadBytes('\n')
-			if err == io.EOF {
-				// git-grep output ends with a newline, so if we hit EOF, there's nothing left to
-				// read
-				break
-			} else if err != nil {
-				errc <- err
-				return
-			}
-			// line is guaranteed to be '\n' terminated according to the contract of ReadBytes
-			line = line[0 : len(line)-1]
-
-			if bytes.Equal(line, []byte("--")) {
-				// Match separator.
-				if addResult(r) {
-					break
-				}
-			} else {
-				// Match line looks like: "HEAD:filename\x00lineno\x00matchline\n".
-				fileEnd := bytes.Index(line, []byte{'\x00'})
-				file := string(line[len(at)+1 : fileEnd])
-				lineNoStart, lineNoEnd := fileEnd+1, fileEnd+1+bytes.Index(line[fileEnd+1:], []byte{'\x00'})
-				lineNo, err := strconv.Atoi(string(line[lineNoStart:lineNoEnd]))
-				if err != nil {
-					panic("bad line number on line: " + string(line) + ": " + err.Error())
-				}
-				if r == nil || r.File != file {
-					if r != nil {
-						if addResult(r) {
-							break
-						}
-					}
-					r = &vcs.SearchResult{File: file, StartLine: uint32(lineNo)}
-				}
-				r.EndLine = uint32(lineNo)
-				if r.Match != nil {
-					r.Match = append(r.Match, '\n')
-				}
-				r.Match = append(r.Match, line[lineNoEnd+1:]...)
-			}
-		}
-		addResult(r)
-
-		if err := cmd.Process.Kill(); err != nil {
-			if runtime.GOOS != "windows" {
-				errc <- err
-				return
-			}
-		}
-		if err := cmd.Wait(); err != nil {
-			if c := exitStatus(err); c != -1 && c != 1 {
-				// -1 exit code = killed (by cmd.Process.Kill() call
-				// above), 1 exit code means grep had no match (but we
-				// don't translate that to a Go error)
-				errc <- fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
-				return
-			}
-		}
-		errc <- nil
-	}()
-
-	err = <-errc
-	cmd.Process.Kill()
-	return res, err
+	return gitserver.Search(r.Dir, at, opt)
 }
 
 func (r *Repository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
