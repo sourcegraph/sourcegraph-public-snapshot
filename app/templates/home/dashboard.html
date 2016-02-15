@@ -9,7 +9,7 @@
 	window.users = JSON.parse({{json .Users}}) || [];
 	window.currentUser = JSON.parse({{json .CurrentUser}});
 	// mirrorData is {ReposByOrg: {org: {PrivateRepos, PublicRepos}}}
-	// Repos is {Repo: {PushedAt, URI, Descriptio, ExistsLocally}}
+	// Repos is {Repo: {PushedAt, URI, Description, ExistsLocally}}
 	window.mirrorData = JSON.parse({{json .MirrorData}});
 	// teammates is {UsersByOrg: org: Users: []}
 	// User is {RemoteAccount: {AvatarURL, Domain, Login}, LocalAccount, Email}
@@ -33,66 +33,8 @@
 	{{else}}
 		window.progress.currentStep = 50; // done
 	{{end}}
-	// window.progress.currentStep = 1; // TODO(rothfels): remove
+	window.progress.currentStep = 2; // TODO(rothfels): remove
 
-	if (window.mirrorData && window.mirrorData.State === 4) {
-		var counter = 0; // assign unique key to each repo for UI widgets
-		var arrays = Object.keys(window.mirrorData.ReposByOrg).map(function(org) {
-			var construct = function(isPrivate) {
-				return function(rawRepo) {
-					var uriParts = rawRepo.Repo.URI.split("/");
-					return {
-						name: uriParts[0] === "github.com" ? uriParts.slice(1).join("/") : rawRepo.Repo.URI,
-						key: counter++,
-						URI: rawRepo.Repo.URI,
-						updatedAt: new Date(rawRepo.Repo.UpdatedAt),
-						description: rawRepo.Repo.Description,
-						org: org,
-						isPrivate: isPrivate,
-						existsLocally: Boolean(rawRepo.Repo.ExistsLocally),
-					}
-				}
-			}
-
-			var privateRepos = window.mirrorData.ReposByOrg[org].PrivateRepos;
-			var publicRepos = window.mirrorData.ReposByOrg[org].PublicRepos;
-			var result = [];
-			if (window.mirrorData.ReposByOrg[org].PrivateRepos) {
-				result = result.concat(window.mirrorData.ReposByOrg[org].PrivateRepos.map(construct(true)));
-			}
-			if (window.mirrorData.ReposByOrg[org].PublicRepos) {
-				result = result.concat(window.mirrorData.ReposByOrg[org].PublicRepos.map(construct(false)));
-			}
-			return result;
-		});
-
-		// flatten everything
-		window.mirrorRepos = [].concat.apply([], arrays);
-	}
-
-	if (window.teammates && window.mirrorData.State === 4) {
-		var counter = 0; // assign unique key to each repo for UI widgets
-		var arrays = Object.keys(window.teammates.UsersByOrg).map(function(org) {
-			var construct = function(rawUser) {
-				var existsLocally = Boolean(rawUser.LocalAccount)
-				return {
-					key: counter++,
-					name: "Cindy Lopez",//existsLocally ? rawUser.LocalAccount.AvatarURL : rawUser.RemoteAccount.Name,
-					avatarURL: existsLocally ? rawUser.LocalAccount.AvatarURL : rawUser.RemoteAccount.AvatarURL,
-					org: org,
-					existsLocally: existsLocally,
-				}
-			}
-
-			return window.teammates.UsersByOrg[org].Users.map(construct);
-		});
-
-		// flatten everything
-		window.mirrorUsers = [].concat.apply([], arrays);
-	}
-
-	window.mirrorRepos = window.mirrorRepos || [];
-	window.mirrorUsers = window.mirrorUsers || [];
 	window.isMothership = JSON.parse({{json (isMothership .AppURL)}});
 	window.allowMirrors = JSON.parse({{json .PrivateMirrors}});
 </script>

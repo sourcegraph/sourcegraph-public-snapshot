@@ -20,11 +20,13 @@ class AddReposWidget extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.mirrorRepos = GitHubReposStore.mirrorRepos;
 		state.selectedRepos = GitHubReposStore.selectedRepos;
 		state.currentOrg = GitHubReposStore.currentOrg;
 		state.orgs = GitHubReposStore.orgs;
 		state.selectAll = GitHubReposStore.selectAll;
+		state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
+			.filter(repo => repo.Repo.Private)
+			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI}));
 	}
 
 	_handleTextInput(e) {
@@ -94,12 +96,12 @@ class AddReposWidget extends Container {
 									</div>
 								</div>
 								<div role="tabpanel" className="tab-pane" id="github-mirror">
-									<SelectableListWidget items={this.state.mirrorRepos}
+									<SelectableListWidget items={this.state.items}
 										currentCategory={this.state.currentOrg}
 										menuCategories={this.state.orgs}
 										onMenuClick={(org) => Dispatcher.dispatch(new DashboardActions.SelectRepoOrg(org))}
-										onSelect={(repoKey, select) => Dispatcher.dispatch(new DashboardActions.SelectRepo(repoKey, select))}
-										onSelectAll={(repos, selectAll) => Dispatcher.dispatch(new DashboardActions.SelectRepos(repos, selectAll))}
+										onSelect={(repoURI, select) => Dispatcher.dispatch(new DashboardActions.SelectRepo(repoURI, select))}
+										onSelectAll={(items, selectAll) => Dispatcher.dispatch(new DashboardActions.SelectRepos(items.map(item => item.key), selectAll))}
 										selections={this.state.selectedRepos}
 										selectAll={this.state.selectAll}
 										menuLabel="Organizations"

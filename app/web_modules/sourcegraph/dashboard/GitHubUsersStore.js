@@ -10,21 +10,23 @@ export class GitHubUsersStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
 		// The users which are available to invite.
-		this.mirrorUsers = deepFreeze(window.mirrorUsers);
+		this.usersByOrg = deepFreeze({
+			users: window.teammates ? window.teammates.UsersByOrg : {},
+			get(org) {
+				let orgUsers = this.users[org];
+				return orgUsers ? orgUsers.Users : [];
+			},
+		});
+
+		// Store the state of which organizations mirrored users can come from.
+		// The currentOrg is a filter for widget components.
+		this.orgs = window.teammates ? Object.keys(window.teammates.UsersByOrg) : {};
+		this.currentOrg = this.orgs.length > 0 ? this.orgs[0] : null;
 
 		// Store the state of which users are currently selected (e.g. to add).
 		// This is for widget components.
 		this.selectAll = false;
-		let selectedUsers = {};
-		if (this.mirrorUsers) this.mirrorUsers.forEach(user => selectedUsers[user.key] = false);
-		this.selectedUsers = deepFreeze(selectedUsers);
-
-		// Store the state of which organizations mirrored users can come from.
-		// The currentOrg is a filter for widget components.
-		let orgs = {};
-		if (this.mirrorUsers) this.mirrorUsers.forEach(user => orgs[user.org] = 1);
-		this.orgs = Object.keys(orgs);
-		this.currentOrg = this.orgs.length > 0 ? this.orgs[0] : null;
+		this.selectedUsers = deepFreeze({});
 	}
 
 	__onDispatch(action) {
@@ -42,16 +44,17 @@ export class GitHubUsersStore extends Store {
 		case DashboardActions.SelectUsers:
 			{
 				let updateQuery = {};
-				action.users.forEach(user => updateQuery[user.key] = {$set: action.selectAll});
+				action.users.forEach(login => updateQuery[login] = {$set: action.selectAll});
 				this.selectedUsers = update(this.selectedUsers, updateQuery);
 				this.selectAll = action.selectAll;
+				console.log(this.selectedUsers);
 				break;
 			}
 
 		case DashboardActions.SelectUser:
 			{
 				let updateQuery = {};
-				updateQuery[action.userKey] = {$set: action.select};
+				updateQuery[action.login] = {$set: action.select};
 				this.selectedUsers = update(this.selectedUsers, updateQuery);
 				console.log(this.selectedUsers);
 				break;

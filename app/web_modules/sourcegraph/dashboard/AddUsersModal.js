@@ -20,11 +20,14 @@ class AddUsersModal extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.mirrorUsers = GitHubUsersStore.mirrorUsers;
 		state.selectedUsers = GitHubUsersStore.selectedUsers;
 		state.currentOrg = GitHubUsersStore.currentOrg;
 		state.orgs = GitHubUsersStore.orgs;
 		state.selectAll = GitHubUsersStore.selectAll;
+		state.items = GitHubUsersStore.usersByOrg.get(state.currentOrg).map((user) => ({
+			name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
+			key: user.RemoteAccount.Login,
+		}));
 	}
 
 	_handleTextInput(e) {

@@ -46,8 +46,8 @@ export class SelectRepos {
 }
 
 export class SelectRepo {
-	constructor(repoKey, select) {
-		this.repoKey = repoKey;
+	constructor(repoURI, select) {
+		this.repoURI = repoURI;
 		this.select = select;
 	}
 }
@@ -60,8 +60,8 @@ export class SelectUsers {
 }
 
 export class SelectUser {
-	constructor(userKey, select) {
-		this.userKey = userKey;
+	constructor(login, select) {
+		this.login = login;
 		this.select = select;
 	}
 }

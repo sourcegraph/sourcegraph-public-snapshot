@@ -31,7 +31,7 @@ class SelectableListWidget extends Component {
 							current={this.state.currentCategory} />
 					</div>
 					<div className="list-control">
-						<SelectableList items={this.state.items.filter(item => item.org === this.state.currentCategory)}
+						<SelectableList items={this.state.items}
 							selectAll={this.state.selectAll}
 							selections={this.state.selections}
 							onSelect={this.state.onSelect}
@@ -52,9 +52,8 @@ class SelectableListWidget extends Component {
 
 SelectableListWidget.propTypes = {
 	items: React.PropTypes.arrayOf(React.PropTypes.shape({
-		org: React.PropTypes.string,
 		name: React.PropTypes.string,
-		key: React.PropTypes.number,
+		key: React.PropTypes.string,
 	})).isRequired,
 	currentCategory: React.PropTypes.string,
 	menuCategories: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,

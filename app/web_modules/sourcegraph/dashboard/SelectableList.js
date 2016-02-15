@@ -83,8 +83,8 @@ class SelectableList extends Component {
 
 SelectableList.propTypes = {
 	items: React.PropTypes.arrayOf(React.PropTypes.shape({
-		key: React.PropTypes.number,
 		name: React.PropTypes.string,
+		key: React.PropTypes.string,
 	})).isRequired,
 	// type identifies the entity type of the items which populate the list
 	// selections is a object which identifies which items are currently selected {key: isSelected}

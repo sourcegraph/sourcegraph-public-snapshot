@@ -37,19 +37,24 @@ class OnboardingContainer extends Container {
 		state.currentUser = OnboardingStore.currentUser;
 		switch (state.progress.currentStep) {
 		case 2:
-			state.items = GitHubReposStore.mirrorRepos;
+			state.currentOrg = GitHubReposStore.currentOrg;
 			state.orgs = GitHubReposStore.orgs;
 			state.selectAll = GitHubReposStore.selectAll;
 			state.selections = GitHubReposStore.selectedRepos;
-			state.currentOrg = GitHubReposStore.currentOrg;
+			state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
+				.filter(repo => repo.Repo.Private)
+				.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI}));
 			break;
 
 		case 3:
-			state.items = GitHubUsersStore.mirrorUsers;
+			state.currentOrg = GitHubUsersStore.currentOrg;
 			state.orgs = GitHubUsersStore.orgs;
 			state.selectAll = GitHubUsersStore.selectAll;
 			state.selections = GitHubUsersStore.selectedUsers;
-			state.currentOrg = GitHubUsersStore.currentOrg;
+			state.items = GitHubUsersStore.usersByOrg.get(state.currentOrg).map((user) => ({
+				name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
+				key: user.RemoteAccount.Login,
+			}));
 			break;
 
 		default:
@@ -86,10 +91,10 @@ class OnboardingContainer extends Container {
 	_handleSelectAll(items, selectAll) {
 		switch (this.state.progress.currentStep) {
 		case 2:
-			Dispatcher.dispatch(new DashboardActions.SelectRepos(items, selectAll));
+			Dispatcher.dispatch(new DashboardActions.SelectRepos(items.map(item => item.key), selectAll));
 			break;
 		case 3:
-			Dispatcher.dispatch(new DashboardActions.SelectUsers(items, selectAll));
+			Dispatcher.dispatch(new DashboardActions.SelectUsers(items.map(item => item.key), selectAll));
 			break;
 		default:
 			break;
