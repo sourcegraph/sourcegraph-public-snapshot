@@ -2,8 +2,22 @@ var webpack = require("webpack");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var glob = require("glob");
 var URL = require("url");
-require("sass-loader"); // bail on load error
 require("lintspaces-loader");
+
+try {
+	require("node-sass");
+} catch (error) {
+	console.log("ERROR: node-sass not properly installed. Run 'make dep' to fix.");
+	process.exit(1);
+}
+
+if (process.platform === "darwin") {
+	try {
+		require("fsevents");
+	} catch (error) {
+		console.log("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'make dep' to fix.");
+	}
+}
 
 var plugins = [
 	new webpack.DefinePlugin({
