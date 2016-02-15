@@ -94,7 +94,7 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/.repo-create").
 		Methods("GET", "POST").
-		Name(RepoCommits)
+		Name(RepoCreate)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").
