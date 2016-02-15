@@ -48,7 +48,7 @@ func TestDeltasService_ListFiles(t *testing.T) {
 		return fdiffs, nil, nil
 	}
 
-	dfs, err := s.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{Ds: ds, Opt: &sourcegraph.DeltaListFilesOptions{Formatted: false}})
+	dfs, err := s.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{Ds: ds})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 		return fdiffs, nil, nil
 	}
 
-	dfs, err := s.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{Ds: ds, Opt: &sourcegraph.DeltaListFilesOptions{Formatted: false}})
+	dfs, err := s.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{Ds: ds})
 	if err != nil {
 		t.Fatal(err)
 	}

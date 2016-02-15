@@ -3,18 +3,6 @@ var globals = require("../globals");
 var notify = require("../components/notify");
 var router = require("../routing/router");
 
-/**
- * @description Action creator discarded when popover data is received from the server.
- * @param {Object} data - Raw popover data.
- * @returns {void}
- */
-module.exports.receivedPopover = function(data) {
-	AppDispatcher.handleServerAction({
-		type: globals.Actions.DIFF_RECEIVED_POPOVER,
-		data: data,
-	});
-};
-
 module.exports.receivedChangesetCreate = function(data) {
 	AppDispatcher.handleServerAction({
 		type: globals.Actions.DIFF_PROPOSE_CHANGE_SUCCESS,
@@ -68,48 +56,4 @@ module.exports.receivedHunkBottom = function(model, data) {
 
 module.exports.failedReceiveExpansion = function() {
 	// noop TODO(gbbr): return line count from VCSStore on error
-};
-
-/**
- * @description Action creator discarded when an example is received as a server response.
- * @param {Object} msg - Example data. Contains keys 'example' and 'page'.
- * @returns {void}
- */
-module.exports.receivedExample = function(msg) {
-	AppDispatcher.handleServerAction({
-		type: globals.Actions.DIFF_RECEIVED_EXAMPLE,
-		data: msg.example,
-		page: msg.page,
-	});
-};
-
-/**
- * @description This action creator dispatches the action that the server request
- * for an example has failed.
- * @param {jQuery.jqXHR} xhr - Request object.
- * @param {string} status - Status
- * @returns {void}
- */
-module.exports.receivedExampleFailed = function(xhr, status) {
-	// Noop. Fail silently.
-};
-
-module.exports.receivedPopoverFailed = function(data) {
-	// Noop. Fail silently.
-};
-
-/**
- * @description Action creator discarded when popup data is received as a server response.
- * @param {Object} data - Raw popup data.
- * @returns {void}
- */
-module.exports.receivedPopup = function(data) {
-	AppDispatcher.handleServerAction({
-		type: globals.Actions.DIFF_RECEIVED_POPUP,
-		data: data,
-	});
-};
-
-module.exports.receivedPopupFailed = function(data) {
-	// Noop. Fail silently.
 };

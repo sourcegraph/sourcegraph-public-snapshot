@@ -28,13 +28,10 @@ func serveRepoCompare(w http.ResponseWriter, r *http.Request) error {
 	head := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: v["Head"]}
 
 	ds := sourcegraph.DeltaSpec{Base: vc.RepoRevSpec, Head: head}
-	opt := sourcegraph.DeltaListFilesOptions{
-		Formatted: false,
-		Tokenized: true,
-		Filter:    r.URL.Query().Get("filter"),
-	}
-
-	files, err := cl.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{Ds: ds, Opt: &opt})
+	files, err := cl.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
+		Ds:  ds,
+		Opt: &sourcegraph.DeltaListFilesOptions{Filter: r.URL.Query().Get("filter")},
+	})
 	if err != nil {
 		return err
 	}
@@ -51,6 +48,6 @@ func serveRepoCompare(w http.ResponseWriter, r *http.Request) error {
 		RepoRevCommon: *vc,
 		DiffData:      files,
 		DeltaSpec:     ds,
-		OverThreshold: files.OverThreshold,
+		OverThreshold: diffSizeIsOverThreshold(files.DiffStat()),
 	})
 }

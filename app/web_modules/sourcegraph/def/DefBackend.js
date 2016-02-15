@@ -34,7 +34,7 @@ const DefBackend = {
 				let example = DefStore.examples.get(action.defURL, action.index);
 				if (example === null && action.index < DefStore.examples.getCount(action.defURL)) {
 					DefBackend.xhr({
-						uri: `/.ui${action.defURL}/.examples?TokenizedSource=true&PerPage=1&Page=${action.index + 1}`,
+						uri: `/.ui${action.defURL}/.examples?PerPage=1&Page=${action.index + 1}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {

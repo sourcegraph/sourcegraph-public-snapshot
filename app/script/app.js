@@ -24,11 +24,8 @@ require("./mirror-repos");
 require("./dispatchers/AppDispatcher");
 
 // Stores
-require("./stores/models/CodeModel");
 require("./stores/models/CodeLineModel");
-require("./stores/models/CodeTokenModel");
 require("./stores/collections/CodeLineCollection");
-require("./stores/collections/CodeTokenCollection");
 
 // Views
 require("./componentInjection");

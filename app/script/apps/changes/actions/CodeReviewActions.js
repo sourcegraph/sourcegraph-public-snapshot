@@ -20,30 +20,6 @@ module.exports.loadData = function(data) {
 };
 
 /**
- * @description Dispatches the action that a token is focused. It also initiates
- * requests to fetch data for the popover.
- * @param {CodeTokenModel} token - The token that was hovered.
- * @param {Event} evt - The (mouseover) event.
- * @param {FileDiffModel} fileDiff - The FileDiff that the token is part of.
- * @returns {void}
- */
-module.exports.focusToken = function focusToken(token, evt, fileDiff) {
-	AppDispatcher.handleViewAction({
-		type: globals.Actions.CR_FOCUS_TOKEN,
-		file: fileDiff,
-		token: token,
-		event: evt,
-	});
-
-	CodeUtil
-		.fetchPopover(token.get("url")[0])
-		.then(
-			CodeReviewServerActions.receivedPopover,
-			CodeReviewServerActions.receivedPopoverFailed
-		);
-};
-
-/**
  * @description Dispatches the action that a request to change the title has been
  * submitted. It also initiates a request to persist the data to the server.
  * @param {Object} changeset - sourcegraph.Changeset
@@ -61,23 +37,6 @@ module.exports.submitTitle = function(changeset, newTitle) {
 			CodeReviewServerActions.statusUpdated,
 			CodeReviewServerActions.statusUpdateFailed
 		);
-};
-
-/**
- * @description Aborts any exisiting popover request and dispatches the token
- * blur action.
- * @param {CodeTokenModel} token - The token that was hovered.
- * @param {Event} evt - The (mouseover) event.
- * @param {FileDiffModel} fileDiff - The FileDiff that the token is part of.
- * @returns {void}
- */
-module.exports.blurTokens = function blurTokens(token, evt, fileDiff) {
-	AppDispatcher.handleViewAction({
-		type: globals.Actions.CR_BLUR_TOKENS,
-		file: fileDiff,
-	});
-
-	CodeUtil.abortPopoverXhr();
 };
 
 /**
@@ -151,59 +110,6 @@ module.exports.expandHunk = function expandHunk(hunk, isDirectionUp, evt) {
 };
 
 /**
- * @description Dispatches the action that a token was selected in the view. It
- * also initiates the requests for receiving popup information and examples.
- * @param {CodeTokenModel} token - The token that was hovered.
- * @param {Event} evt - The (mouseover) event.
- * @param {FileDiffModel} fileDiff - The FileDiff that the token is part of.
- * @returns {void}
- */
-module.exports.selectToken = function selectToken(token, evt, fileDiff) {
-	AppDispatcher.handleViewAction({
-		type: globals.Actions.CR_SELECT_TOKEN,
-		token: token,
-		event: evt,
-	});
-
-	var url = token.get("url")[0];
-
-	CodeUtil
-		.fetchPopup(url)
-		.then(
-			CodeReviewServerActions.receivedPopup,
-			CodeReviewServerActions.receivedPopupFailed
-		);
-
-	CodeUtil
-		.fetchExample(url, 1)
-		.then(
-			CodeReviewServerActions.receivedExample,
-			CodeReviewServerActions.receivedExampleFailed
-		);
-};
-
-/**
- * @description Dispatches the action that an example was requested. It also
- * initiates the requests for receiving this example.
- * @param {string} url - DefKey of the definition to fetch the example for.
- * @param {number} page - The page number offset for the example.
- * @returns {void}
- */
-module.exports.selectExample = function selectExample(url, page) {
-	AppDispatcher.handleViewAction({
-		type: globals.Actions.DIFF_FETCH_EXAMPLE,
-		params: page,
-	});
-
-	CodeUtil
-		.fetchExample(url, page)
-		.then(
-			CodeReviewServerActions.receivedExample,
-			CodeReviewServerActions.receivedExampleFailed
-		);
-};
-
-/**
  * @description Action called when a user selects a file in the differential.
  * Based on whether the differential is over threshold (surpressed) or not,
  * the browser is either redirect to a single-view of the file or scrolled down
@@ -213,7 +119,7 @@ module.exports.selectExample = function selectExample(url, page) {
  * @returns {void}
  */
 module.exports.selectFile = function selectFile(fd, evt) {
-	var overThreshold = CodeReviewStore.get("changes").get("overThreshold");
+	var overThreshold = CodeReviewStore.get("OverThreshold");
 
 	if (!overThreshold) {
 		evt.preventDefault();
@@ -340,17 +246,6 @@ module.exports.mergeChangeset = function(opt, evt) {
 			CodeReviewServerActions.mergeSuccess,
 			CodeReviewServerActions.mergeFailed
 		);
-};
-
-/**
- * @description Dispatches the action that the user requested the closing of the
- * popup
- * @returns {void}
- */
-module.exports.closePopup = function() {
-	AppDispatcher.handleViewAction({
-		type: globals.Actions.CR_DESELECT_TOKENS,
-	});
 };
 
 /**

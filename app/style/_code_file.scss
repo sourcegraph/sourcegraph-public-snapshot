@@ -96,16 +96,11 @@
 	}
 }
 
+.line-numbered-code .line .line-content {
+	width: 100%;
+}
 
 .FileView {
-	.scroll-container {
-		width: 100%;
-		position: absolute;
-		top: 155px;
-		bottom: 0;
-		overflow-y: scroll;
-	}
-
 	a.ref {
 		&:hover {
 			text-decoration: none;
@@ -113,19 +108,6 @@
 	}
 
 	.code-view-react {
-		.pale {
-			opacity: 0.5;
-		}
-
-		.file-loader {
-			font-size: 48px;
-			position: relative;
-			left: 50%;
-			top: 100px;
-			margin-left: -24px;
-			color: #CCC;
-		}
-
 		.line-number {
 			cursor: pointer;
 		}
@@ -275,10 +257,6 @@
 		font-size: 11px;
 	}
 
-	.line-numbered-code.pale {
-		opacity: 0.5;
-	}
-
 	.body {
 		header.toolbar {
 			cursor: move;
@@ -358,13 +336,6 @@
 					}
 				}
 			}
-		}
-
-		.noExamples {
-			padding: 10px 0 15px 13px;
-			display: block;
-			color: #999;
-			border-top: solid 1px #e7e7e7;
 		}
 
 		.error {

@@ -6,7 +6,6 @@ import CodeLineView from "sourcegraph/code/CodeLineView";
 import classNames from "classnames";
 
 const tilingFactor = 500;
-const emptyArray = [];
 
 class CodeListing extends Component {
 	constructor(props) {
@@ -33,6 +32,7 @@ class CodeListing extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.lineNumbers = Boolean(props.lineNumbers);
+		state.lines = props.contents.split("\n");
 	}
 
 	_updateVisibleLines() {
@@ -79,13 +79,13 @@ class CodeListing extends Component {
 			offscreenCodeBelow += "\n";
 		});
 
-		let lines = this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((lineData, i) => {
+		let lines = this.state.lines.slice(visibleLinesStart, visibleLinesEnd).map((line, i) => {
 			let lineNumber = 1 + visibleLinesStart + i;
 			let selected = this.state.startLine <= lineNumber && this.state.endLine >= lineNumber;
 			return (
 				<CodeLineView
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
-					tokens={lineData.Tokens || emptyArray}
+					contents={line}
 					selected={selected}
 					selectedDef={this.state.selectedDef}
 					highlightedDef={this.state.highlightedDef}
@@ -120,7 +120,7 @@ class CodeListing extends Component {
 }
 
 CodeListing.propTypes = {
-	lines: React.PropTypes.array,
+	contents: React.PropTypes.string,
 	lineNumbers: React.PropTypes.bool,
 	startLine: React.PropTypes.number,
 	endLine: React.PropTypes.number,

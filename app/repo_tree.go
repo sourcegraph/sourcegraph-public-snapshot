@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory/filelang"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
@@ -42,8 +43,6 @@ type repoTreeTemplate struct {
 // about the requested tree entry.
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	opt := sourcegraph.RepoTreeGetOptions{
-		TokenizedSource: !doc.IsFormattableDocFile(mux.Vars(r)["Path"]) || router.IsRaw(r.URL),
-
 		GetFileOptions: sourcegraph.GetFileOptions{
 			RecurseSingleSubfolderLimit: 200,
 		},
@@ -100,11 +99,8 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		treeURL := router.Rel.URLToRepoTreeEntrySpec(tc.EntrySpec).String()
 		http.Redirect(w, r, treeURL, http.StatusFound)
 		return nil
-	case tc.Entry.SourceCode != nil:
-		fullWidth = true
-		eventsutil.LogBrowseCode(ctx, "file", tc, rc)
-		templateFile = "repo/tree/file.html"
-	default:
+
+	case isDocFile(tc.EntrySpec.Path) && !router.IsRaw(r.URL):
 		if tc.Entry.Contents == nil {
 			panic("Entry.Contents is nil")
 		}
@@ -115,7 +111,15 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		docs = string(formatted)
 		eventsutil.LogBrowseCode(ctx, "doc", tc, rc)
 		templateFile = "repo/tree/doc.html"
+
+	default:
+		fullWidth = true
+		eventsutil.LogBrowseCode(ctx, "file", tc, rc)
+		templateFile = "repo/tree/file.html"
 	}
+
+	tc.Entry.ContentsString = string(tc.Entry.Contents)
+	tc.Entry.Contents = nil
 
 	return tmpl.Exec(r, w, templateFile, http.StatusOK, nil, &repoTreeTemplate{
 		Common:          tmpl.Common{FullWidth: fullWidth},
@@ -126,6 +130,11 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		Documentation:   docs,
 		EntryPath:       tc.EntrySpec.Path,
 	})
+}
+
+func isDocFile(filename string) bool {
+	langs := filelang.Langs.ByFilename(filename)
+	return len(langs) > 0 && langs[0].Type == "prose"
 }
 
 // FileToBreadcrumb returns the file link without line number

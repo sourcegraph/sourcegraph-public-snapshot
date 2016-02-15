@@ -24,16 +24,7 @@
 					"props": {
 						"className": "line-content",
 						"children": [
-							{
-								"type": "span",
-								"key": "0",
-								"props": {
-									"className": "",
-									"children": [
-										"foo"
-									]
-								}
-							}
+							"hello\nworld"
 						]
 					}
 				}

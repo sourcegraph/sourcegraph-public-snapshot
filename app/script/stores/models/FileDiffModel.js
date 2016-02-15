@@ -40,40 +40,6 @@ var FileDiffModel = Backbone.Model.extend({
 	},
 
 	/**
-	 * @description Highlights all tokens identified by the given URL in this file diff.
-	 * @param {string} url - Token ID
-	 * @returns {void}
-	 */
-	highlightToken(url) {
-		this.get("Hunks").forEach(hunk => hunk.tokens.highlight(url));
-	},
-
-	/**
-	 * @description Blurs all tokens in this file diff.
-	 * @returns {void}
-	 */
-	blurTokens() {
-		this.get("Hunks").forEach(hunk => hunk.tokens.clearHighlighted());
-	},
-
-	/**
-	 * @description Selects all tokens identified by the given URL in this file diff.
-	 * @param {string} url - Token ID
-	 * @returns {void}
-	 */
-	selectToken(url) {
-		this.get("Hunks").forEach(hunk => hunk.tokens.select(url));
-	},
-
-	/**
-	 * @description Blurs all tokens in this file diff.
-	 * @returns {void}
-	 */
-	clearSelected() {
-		this.get("Hunks").forEach(hunk => hunk.tokens.clearSelected());
-	},
-
-	/**
 	 * @description Merges the hunks at the given indexes by removing their headers and
 	 * their context expansion controls.
 	 * @param {number} indexDst - Index of hunk to merge into.

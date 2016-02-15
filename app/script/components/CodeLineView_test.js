@@ -3,12 +3,8 @@ var expect = require("expect.js");
 
 var $ = require("jquery");
 var React = require("react");
-var TestUtils = require("react-addons-test-utils");
 var CodeLineView = require("./CodeLineView");
-var CodeTokenView = require("./CodeTokenView");
 var CodeLineModel = require("../stores/models/CodeLineModel");
-var CodeTokenModel = require("../stores/models/CodeTokenModel");
-var globals = require("../globals");
 
 describe("components/CodeLineView", () => {
 	it("should register its node with the model", () => {
@@ -34,60 +30,21 @@ describe("components/CodeLineView", () => {
 		expect(component.querySelectorAll(".line-number").length).to.be(0);
 	});
 
-	it("should render 1 whitespace if the line has no tokens", () => {
+	it("should render 1 whitespace if the line is empty", () => {
 		var model = new CodeLineModel();
 		var component = sandbox.renderComponent(<table><tbody><CodeLineView model={model} /></tbody></table>);
 
 		expect(component.querySelector(".line-content").textContent).to.be(" ");
 	});
 
-	it("should render plain text (STRING) tokens correctly", () => {
-		var token = new CodeTokenModel({
-			html: "abc",
-			type: globals.TokenType.STRING,
-		});
-
-		var model = new CodeLineModel({tokens: [token]});
+	it("should render plain text correctly", () => {
+		var model = new CodeLineModel({contents: "hello"});
 		var component = sandbox.renderComponent(<table><tbody><CodeLineView model={model} /></tbody></table>);
 
 		var td = component.querySelector(".line-content");
 
 		expect($(td).children().length).to.be(1);
-		expect($(td).children("span")[0].innerHTML).to.be("abc");
-	});
-
-	it("should render code highlighted tokens (SPAN) correctly", () => {
-		var token = new CodeTokenModel({
-			html: "abc",
-			cid: 1,
-			type: globals.TokenType.SPAN,
-			syntax: "pln",
-		});
-
-		var model = new CodeLineModel({tokens: [token]});
-		var component = sandbox.renderComponent(<table><tbody><CodeLineView model={model} /></tbody></table>);
-
-		expect($(component.querySelector(".pln")).html()).to.be("abc");
-	});
-
-	it("should rendered token component for everything else and pass down parent props (assumed linked, ie: REF & DEF)", () => {
-		var ref = new CodeTokenModel({type: globals.TokenType.REF});
-		var def = new CodeTokenModel({type: globals.TokenType.DEF});
-
-		var model = new CodeLineModel({tokens: [ref, def]});
-		var table = document.createElement("table");
-		var tbody = document.createElement("tbody");
-		table.appendChild(tbody);
-		var component = sandbox.renderComponent(<CodeLineView someprop={1} model={model} />, tbody);
-
-		var children = TestUtils.scryRenderedComponentsWithType(component, CodeTokenView);
-		expect(children.length).to.be(2);
-
-		expect(children[0].props.model).to.be(ref);
-		expect(children[1].props.model).to.be(def);
-
-		expect(children[0].props.someprop).to.be(1);
-		expect(children[1].props.someprop).to.be(1);
+		expect($(td).children("span")[0].innerHTML).to.be("hello");
 	});
 
 	it("should apply main-byte-range class when line model is highlighted", () => {

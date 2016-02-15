@@ -17,7 +17,7 @@ import testdataDefOptions from "sourcegraph/code/testdata/CodeFileContainer-defO
 
 describe("CodeFileContainer", () => {
 	let exampleFile = {
-		Entry: {SourceCode: {Lines: ["someLine"]}},
+		Entry: {ContentsString: "hello\nworld"},
 		EntrySpec: {RepoRev: {CommitID: "123abc"}},
 	};
 

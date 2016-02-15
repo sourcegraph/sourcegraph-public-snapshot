@@ -195,12 +195,9 @@ var CodeReview = React.createClass({
 					) : null}
 
 					<Changes
-						onTokenFocus={CodeReviewActions.focusToken}
 						onCommentSubmit={CodeReviewActions.saveDraft}
 						onCommentEdit={CodeReviewActions.updateDraft}
 						onCommentDelete={CodeReviewActions.deleteDraft}
-						onTokenBlur={CodeReviewActions.blurTokens}
-						onTokenClick={CodeReviewActions.selectToken}
 						onExpandHunk={CodeReviewActions.expandHunk}
 						onFileClick={CodeReviewActions.selectFile}
 						model={this.state.changes}

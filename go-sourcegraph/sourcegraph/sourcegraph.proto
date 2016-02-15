@@ -2214,17 +2214,8 @@ message DefListClientsOptions {
 
 // DefListExamplesOptions specifies options for DefsService.ListExamples.
 message DefListExamplesOptions {
-	bool Formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-
 	// Filter by a specific Repo URI
 	string Repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// TokenizedSource requests that the source code be returned as a tokenized data
-	// structure rather than an (annotated) string.
-	//
-	// This is useful when the client wants to take full control of rendering and
-	// manipulating the contents.
-	bool TokenizedSource = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
@@ -2387,7 +2378,7 @@ message DeltaDefs {
 // information about its hunks.
 message FileDiff {
 	diff.FileDiff FileDiff = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	repeated Hunk FileDiffHunks = 2;
+	repeated diff.Hunk FileDiffHunks = 2;
 	// PreImage is the CommitID at which this file was before the change occurred.
 	string PreImage = 3 [(gogoproto.jsontag) = ",omitempty"];
 	// PostImage is the CommitID at which this file was after the change occurred.
@@ -2400,38 +2391,11 @@ message FileDiff {
 	bool Filtered = 6 [(gogoproto.jsontag) = ",omitempty"];
 }
 
-// Hunk holds data about a hunk in a diff.
-message Hunk {
-	diff.Hunk Hunk = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-
-	// LinePrefixes holds a string where each character's index corresponds
-	// to a line in the BodySource, and its value reflects whether the line
-	// is an addition, deletion, or change ('+', '-', ' ').
-	string LinePrefixes = 2;
-
-	// BaseSource holds the source code for the original hunk, having all
-	// lines starting from the original line down to the end of the hunk.
-	SourceCode BaseSource = 3;
-
-	// HeadSource contains the source code for the new hunk, holding
-	// all consecutive lines from the start to the end.
-	SourceCode HeadSource = 4;
-
-	// BodySource contains the source code for the Hunk body and is a mix
-	// of both additions and deletions.
-	SourceCode BodySource = 5;
-}
-
 // DeltaFiles describes files added/changed/deleted in a delta.
 message DeltaFiles {
 	repeated FileDiff FileDiffs = 1;
 	Delta Delta = 2;
 	diff.Stat Stats = 3 [(gogoproto.nullable) = false];
-
-	// OverThreshold will be true when the source code contents of the diff
-	// have not been tokenized and linked. This occurs when the 'MaxSize'
-	// limit in DeltaListFilesOptions has been met.
-	bool OverThreshold = 4;
 }
 
 // DeltaFilter specifies criteria by which to filter results from DeltaListXxx
@@ -2461,10 +2425,6 @@ message DeltaListDefsOptions {
 
 // DeltaListFilesOptions specifies options for ListFiles.
 message DeltaListFilesOptions {
-	// Formatted is whether the files should have their contents code-formatted
-	// (syntax-highlighted and reference-linked) if they contain code.
-	bool Formatted = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-
 	// Filter filters the list of returned files to those whose name matches
 	// Filter. There is no difference in the returned data except that the
 	// returned DeltaFiles.FileDiffs will not contain any hunks and will have
@@ -2474,20 +2434,6 @@ message DeltaListFilesOptions {
 	// Ignore specifies a list of '/'-separated path globs to omit from the
 	// returned results.
 	repeated string Ignore = 6  [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// Tokenized, when set, will tokenize the whole source code
-	// contained in the diff, returning 3 versions for each hunk: Head
-	// revision, Base revision and Hunk body. For more information,
-	// see sourcegraph.Hunk.
-	bool Tokenized = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// MaxSize stores the maximum number of bytes that will be accepted for tokenizing
-	// the diff. If the size of the diff exceeds this value, the returned structure
-	// will not contain the linked and tokenized source code.
-	// This option is useful when one wishes to present the data in a browser and it
-	// may be too large for that. DeltaFiles structure size can be up to 4 times the
-	// size of the raw diff when tokenized and linked.
-	int32 MaxSize = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	DeltaFilter DeltaFilter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
@@ -2539,13 +2485,8 @@ message DeltasListAffectedClientsOp {
 message Example {
 	graph.Ref Ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
-	// SrcHTML is the formatted HTML source code of the example, with links to
-	// definitions.
-	string SrcHTML = 2;
-
-	// SourceCode contains the parsed source for this example, if requested via
-	// DefListExamplesOptions.
-	SourceCode SourceCode = 3;
+	// Contents is the file excerpt of the example.
+	string Contents = 2;
 
 	// The line that the given example starts on
 	int32 StartLine = 4;
@@ -2559,22 +2500,6 @@ message Example {
 	// If the example has been requested by revision name (ie. branch, tag), this
 	// value will be set.
 	string Rev = 7 [(gogoproto.jsontag) = ",omitempty"];
-}
-
-// FormatResult contains information about and warnings from the formatting
-// operation (if Formatted is true in the options).
-message FormatResult {
-	// TooManyRefs indicates that the file being formatted exceeded the maximum number
-	// of refs that are linked. Only the first NumRefs refs are linked.
-	bool TooManyRefs = 1;
-
-	// NumRefs is the number of refs that were linked in this file. If the total number
-	// of refs in the file exceeds the (server-defined) limit, NumRefs is capped at the
-	// limit.
-	int32 NumRefs = 2;
-
-	// LineStartByteOffsets is the byte offset of each line's first byte.
-	repeated int32 LineStartByteOffsets = 3;
 }
 
 message MarkdownData {
@@ -2603,22 +2528,6 @@ message Ref {
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
 message RepoTreeGetOptions {
-	// Formatted is whether the specified entry, if it's a file, should have its
-	// Contents code-formatted using HTML.
-	bool Formatted = 1;
-
-	// HighlightStrings is a list of fixed strings that should be wrapped in a <span
-	// class="highlight"> in the returned HTML. It only takes effect if Formatted is
-	// true.
-	repeated string HighlightStrings = 2;
-
-	// TokenizedSource requests that the source code be returned as a tokenized data
-	// structure rather than an (annotated) string.
-	//
-	// This is useful when the client wants to take full control of rendering and
-	// manipulating the contents.
-	bool TokenizedSource = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
-
 	bool ContentsAsString = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	GetFileOptions GetFileOptions = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -2657,7 +2566,6 @@ message GetFileOptions {
 
 message RepoTreeSearchOptions {
 	vcs.SearchOptions SearchOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	bool Formatted = 2;
 }
 
 // A RepoTreeSearchResult is a tree search result that includes the repo and rev it
@@ -2702,74 +2610,11 @@ message TextSearchOptions {
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
-// SourceCode contains a snippet of code with linked and classed tokens, along with
-// other information about the contents.
-//
-// This data structure is useful when one desires to take full control of rendering
-// and manipulating the contents of the requested TreeEntry or snippet, rather than
-// dealing with an (annotated) string or parsing text. To obtain this structure in
-// the TreeEntry, TokenizedSource must be set to "true" in the RepoTreeGetOptions.
-message SourceCode {
-	// Lines contains all the lines of the contained code snippet.
-	repeated SourceCodeLine Lines = 1;
-
-	int32 NumRefs = 2;
-	bool TooManyRefs = 3;
-}
-
-// SourceCodeLine contains all tokens on this line along with other information
-// such as byte offsets in original source.
-message SourceCodeLine {
-	// StartByte and EndByte are the start and end offsets in bytes, in the original
-	// file.
-	int32 StartByte = 1;
-
-	int32 EndByte = 2;
-
-	// Tokens contains any tokens that may be on this line, including whitespace. New
-	// lines ('\n') are not present.
-	repeated SourceCodeToken Tokens = 3;
-}
-
-// SourceCodeToken contains information about a code token.
-message SourceCodeToken {
-	// Start and end byte offsets in original file.
-	int32 StartByte = 1 [(gogoproto.jsontag) = "-"];
-
-	int32 EndByte = 2 [(gogoproto.jsontag) = "-"];
-
-	// If the token is a reference URL contains the DefKey-based URLs for all the
-	// definitions at this position.
-	repeated string URL = 3 [(gogoproto.jsontag) = ",omitempty"];
-
-	// IsDef specifies whether the token is a definition.
-	bool IsDef = 4 [(gogoproto.jsontag) = ",omitempty"];
-
-	// Class specifies the token type as per
-	// [google-code-prettify](https://code.google.com/p/google-code-prettify/).
-	// All tokens except Whitespace will have this field.
-	string Class = 5 [(gogoproto.jsontag) = ",omitempty"];
-
-	// ExtraClasses may additionally contain other classes for this token, such as
-	// for example highlighting in a diff.
-	string ExtraClasses = 6 [(gogoproto.jsontag) = ",omitempty"];
-
-	// Label is non-whitespace HTML encoded source code.
-	string Label = 7;
-}
-
-// TreeEntry is a file or directory in a repository, with additional feedback from
-// the formatting operation (if Formatted is true in the options).
+// TreeEntry is a file or directory in a repository.
 message TreeEntry {
 	BasicTreeEntry BasicTreeEntry = 1 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	FileRange FileRange = 2 [(gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	string ContentsString = 3;
-
-	// SourceCode is set when TokenizedSource is enabled in RepoTreeGetOptions.
-	SourceCode SourceCode = 4;
-
-	// FormatResult is only set if this TreeEntry is a file.
-	FormatResult FormatResult = 5;
 }
 
 message BasicTreeEntry {

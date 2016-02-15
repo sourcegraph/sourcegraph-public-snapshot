@@ -26,28 +26,6 @@ module.exports.receivedReviewChangesFailed = function(data) {
 };
 
 /**
- * @description Action triggered by server when receiving popopver data.
- * @param {string} data - HTML
- * @returns {void}
- */
-module.exports.receivedPopover = function(data) {
-	AppDispatcher.handleServerAction({
-		type: globals.Actions.CR_RECEIVED_POPOVER,
-		data: data,
-	});
-};
-
-/**
- * @description Action called by server if the request for popover
- * data fails. Currently a no-op because we do not wish to take action.
- * @param {*} data - Server response.
- * @returns {void}
- */
-module.exports.receivedPopoverFailed = function(data) {
-	// noop - no need to disturb user
-};
-
-/**
  * @description Triggered when the request for context to a hunk has
  * been successful.
  * @param {HunkModel} hunk - The hunk that the context is for.
@@ -78,44 +56,6 @@ module.exports.receivedHunkContextFailed = function() {
 	// noop - currently we don't know if this means reaching an end of
 	// file or an error because we don't know the total number of lines
 	// in a file.
-};
-
-/**
- * @description Called when the request for popup data is successful.
- * @param {Object} data - Popup data.
- * @returns {void}
- */
-module.exports.receivedPopup = function(data) {
-	AppDispatcher.handleServerAction({
-		type: globals.Actions.CR_RECEIVED_POPUP,
-		data: data,
-	});
-};
-
-/**
- * @description Action called by server if the request for popup
- * data fails.
- * @returns {void}
- */
-module.exports.receivedPopupFailed = function() {
-	// noop - no need to disturb user
-};
-
-module.exports.receivedExample = function(data) {
-	AppDispatcher.handleServerAction({
-		type: globals.Actions.CR_RECEIVED_EXAMPLE,
-		data: data.example,
-		page: data.page,
-	});
-};
-
-/**
- * @description Action called by server if the request for example
- * data fails.
- * @returns {void}
- */
-module.exports.receivedExampleFailed = function() {
-	// noop - no need to disturb user
 };
 
 /**

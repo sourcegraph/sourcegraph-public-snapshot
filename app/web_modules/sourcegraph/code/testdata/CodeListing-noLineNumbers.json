@@ -13,7 +13,15 @@
 								"type": "CodeLineView",
 								"key": "0",
 								"props": {
-									"tokens": [],
+									"contents": "hello",
+									"selected": false
+								}
+							},
+							{
+								"type": "CodeLineView",
+								"key": "1",
+								"props": {
+									"contents": "world",
 									"selected": false
 								}
 							}

@@ -176,7 +176,6 @@ module.exports = {
 	 */
 	fetchExample(url, page, fallbackRepoURI) {
 		var data = {
-			TokenizedSource: true,
 			PerPage: 1,
 			Page: page,
 			FallbackRepoURI: fallbackRepoURI,

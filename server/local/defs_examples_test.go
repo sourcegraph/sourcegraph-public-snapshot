@@ -33,7 +33,6 @@ func TestDefsService_ListExamples(t *testing.T) {
 
 	exs, err := s.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
 		Def: sourcegraph.DefSpec{CommitID: "c", Repo: "r", Path: "p"},
-		Opt: &sourcegraph.DefListExamplesOptions{Formatted: true},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -70,7 +69,6 @@ func TestDefsService_ListExamples_HandleTreeEntryError(t *testing.T) {
 
 	exs, err := s.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
 		Def: sourcegraph.DefSpec{CommitID: "c", Repo: "r", Path: "p"},
-		Opt: &sourcegraph.DefListExamplesOptions{Formatted: true},
 	})
 	if err != nil {
 		t.Fatal(err)

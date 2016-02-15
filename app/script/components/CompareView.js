@@ -6,11 +6,9 @@ var DiffStore = require("../stores/DiffStore");
 var DiffActions = require("../actions/DiffActions");
 var CurrentUser = require("../CurrentUser");
 
-var DiffPopup = require("./DiffPopupView");
 var DiffFileList = require("./DiffFileList");
 var DiffProposeChangeForm = require("./DiffProposeChangeForm");
 var FileDiff = require("./FileDiffView");
-var TokenPopover = require("./TokenPopoverView");
 var RepoBuildIndicator = require("./RepoBuildIndicator");
 var RepoRevSwitcher = require("./RepoRevSwitcher");
 
@@ -47,17 +45,6 @@ var CompareView = React.createClass({
 		} else {
 			DiffActions.expandHunkDown(hunk, evt);
 		}
-	},
-
-	/*
-	 * @description Callback when tokens in the compare view are focused.
-	 * @param {object} fd - FileDiff that contains the token
-	 * @param {CodeTokenModel} token - Focused token
-	 * @param {Event} evt - action event
-	 * @private
-	 */
-	_onFileDiffTokenFocus(fd, token, evt) {
-		DiffActions.focusToken(token, evt, fd);
 	},
 
 	/*
@@ -184,20 +171,11 @@ var CompareView = React.createClass({
 					stats={this.state.DiffData.Stats}
 					onFileClick={this._onFileClick} />
 
-				<TokenPopover model={this.state.popoverModel} />
-
-				<DiffPopup
-					model={this.state.popupModel}
-					onClose={DiffActions.closePopup} />
-
 				{!this.state.OverThreshold ? displayedDiffs.map(fd => (
 					<FileDiff
 						key={fd.cid}
 						Delta={this.state.DiffData.Delta}
 						model={fd}
-						onTokenFocus={this._onFileDiffTokenFocus.bind(this, fd)}
-						onTokenBlur={DiffActions.blurTokens.bind(this, fd)}
-						onTokenClick={DiffActions.selectToken}
 						onExpandHunk={this._onExpandHunk} />
 				)) : null}
 			</div>

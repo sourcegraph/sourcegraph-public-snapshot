@@ -3,8 +3,6 @@ var Backbone = require("backbone");
 var AppDispatcher = require("../dispatchers/AppDispatcher");
 var FluxStore = require("./FluxStore");
 var FileDiffModel = require("./models/FileDiffModel");
-var TokenPopoverModel = require("./models/TokenPopoverModel");
-var DiffPopupModel = require("./models/DiffPopupModel");
 
 /**
  * @description The DiffStore holds a collection of FileDiffs and manages the state
@@ -13,18 +11,6 @@ var DiffPopupModel = require("./models/DiffPopupModel");
 var DiffStore = FluxStore({
 
 	defaults: {
-		/**
-		 * @description Holds the popover state for the compare view.
-		 * @type {TokenPopoverModel}
-		 */
-		popoverModel: new TokenPopoverModel(),
-
-		/**
-		 * @description Holds the popup model state.
-		 * @type {TokenPopupModel}
-		 */
-		popupModel: new DiffPopupModel(),
-
 		/**
 		 * @description Holds the open/closed state of the file diff list.
 		 * @type {bool}
@@ -45,14 +31,6 @@ var DiffStore = FluxStore({
 
 	actions: {
 		DIFF_LOAD_DATA: "_onLoadData",
-		DIFF_FOCUS_TOKEN: "_onFocusToken",
-		DIFF_BLUR_TOKENS: "_onBlurTokens",
-		DIFF_RECEIVED_POPOVER: "_onReceivedPopover",
-		DIFF_SELECT_TOKEN: "_onSelectToken",
-		DIFF_DESELECT_TOKENS: "_onClosedPopup",
-		DIFF_RECEIVED_POPUP: "_onReceivedPopup",
-		DIFF_FETCH_EXAMPLE: "_onFetchExample",
-		DIFF_RECEIVED_EXAMPLE: "_onReceivedExample",
 		DIFF_SELECT_FILE: "_onSelectFile",
 		DIFF_RECEIVED_HUNK_TOP: "_onReceiveHunkTop",
 		DIFF_RECEIVED_HUNK_BOTTOM: "_onReceiveHunkBottom",
@@ -131,110 +109,6 @@ var DiffStore = FluxStore({
 	 */
 	_onSelectFile(action) {
 		this.trigger("scrollTop", action.file.getAbsolutePosition().top);
-	},
-
-	/**
-	 * @description Triggered when a new example is requested from the server.
-	 * @param {Object} action - payload action data
-	 * @returns {void}
-	 * @private
-	 */
-	_onFetchExample(action) {
-		this.get("popupModel").setLoading(true);
-	},
-
-	/**
-	 * @description Triggered when a new example is received from the server.
-	 * @param {Object} action - payload action data
-	 * @returns {void}
-	 * @private
-	 */
-	_onReceivedExample(action) {
-		var pm = this.get("popupModel");
-		pm.setLoading(false);
-		pm.showExample(action.data, action.page);
-	},
-
-	/**
-	 * @description Triggered when data to populate a popup is received from the server.
-	 * @param {Object} action - payload action data
-	 * @returns {void}
-	 * @private
-	 */
-	_onReceivedPopup(action) {
-		this.get("popupModel").show(action.data);
-	},
-
-	/**
-	 * @description Triggered when the action for a token selection is dispatched.
-	 * @param {Object} action - payload action data
-	 * @returns {void}
-	 * @private
-	 */
-	_onSelectToken(action) {
-		this.get("popupModel").destroyExample();
-		this.get("popupModel").set({closed: true});
-		this.get("popoverModel").set({visible: false});
-		this.fileDiffs.forEach(fd => fd.selectToken(action.token.get("url")[0]));
-	},
-
-	/**
-	 * @description Action called when the user closes a popup.
-	 * @returns {void}
-	 * @private
-	 */
-	_onClosedPopup() {
-		this.get("popupModel").destroyExample();
-		this.fileDiffs.forEach(fd => fd.clearSelected());
-	},
-
-	/**
-	 * @description Action called when popover data is received from the server.
-	 * @param {Object} action - payload action data
-	 * @returns {void}
-	 * @private
-	 */
-	_onReceivedPopover(action) {
-		this.get("popoverModel").set({
-			visible: true,
-			body: action.data,
-		});
-	},
-
-	/**
-	 * @description Action called when any token in the compare view is focused.
-	 * @param {Object} action - payload action data
-	 * @returns {void}
-	 * @private
-	 */
-	_onFocusToken(action) {
-		this.get("popupModel").highlightTokens(action.token.get("url")[0]);
-
-		if (typeof action.file !== "undefined") {
-			action.file.highlightToken(action.token.get("url")[0]);
-		} else {
-			this.fileDiffs.forEach(fd => fd.highlightToken(action.token.get("url")[0]));
-		}
-
-		this.get("popoverModel").positionAt(action.event);
-	},
-
-	/**
-	 * @description Action called when any token in the compare view loses focus.
-	 * @param {Object} action - payload action data
-	 * @returns {void}
-	 * @private
-	 */
-	_onBlurTokens(action) {
-		this.get("popupModel").clearHighlightedTokens();
-
-		if (typeof action.file !== "undefined") {
-			action.file.blurTokens();
-		} else {
-			this.fileDiffs.forEach(fd => fd.blurTokens());
-		}
-
-		this.get("popoverModel").set({visible: false});
 	},
 
 	/**

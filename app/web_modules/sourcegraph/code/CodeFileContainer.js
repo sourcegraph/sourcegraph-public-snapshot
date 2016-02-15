@@ -13,15 +13,17 @@ import DefTooltip from "sourcegraph/def/DefTooltip";
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
 
-function lineFromByte(file, byte) {
-	if (!file || !byte) { return null; }
-	let lines = file.Entry.SourceCode.Lines;
+function lineFromByte(contents, bytePos) {
+	let lines = contents.split("\n");
+	let pos = 0;
 	for (let i = 0; i < lines.length; i++) {
-		if (lines[i].StartByte <= byte && byte <= lines[i].EndByte) {
-			return i + 1;
+		let endPos = pos + lines[i].length + 1; // add 1 to account for newline (stripped by split)
+		if (bytePos >= pos && bytePos < endPos) {
+			return i + 1; // line numbers start with 1
 		}
+		pos = endPos;
 	}
-	return null;
+	throw new Error(`Byte ${bytePos} is out of bounds (file length: ${contents.length})`);
 }
 
 class CodeFileContainer extends Container {
@@ -59,8 +61,8 @@ class CodeFileContainer extends Container {
 		// fetch file content
 		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
 
-		state.startLine = props.def ? lineFromByte(state.file, defData && defData.ByteStartPosition) : (props.startLine || null);
-		state.endLine = props.def ? lineFromByte(state.file, defData && defData.ByteEndPosition) : (props.endLine || null);
+		state.startLine = (props.def && state.file) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
+		state.endLine = (props.def && state.file) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteEndPosition) : (props.endLine || null);
 
 		state.defs = DefStore.defs;
 		state.examples = DefStore.examples;
@@ -117,7 +119,7 @@ class CodeFileContainer extends Container {
 				{this.state.file &&
 					<div className="code-view-react">
 						<CodeListing
-							lines={this.state.file.Entry.SourceCode.Lines}
+							contents={this.state.file.Entry.ContentsString}
 							lineNumbers={true}
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}

@@ -53,15 +53,8 @@ var CodeReviewStore = FluxStore({
 	actions: {
 		CR_LOAD_DATA: "_onLoadData",
 		CR_RECEIVED_CHANGES: "_onLoadData",
-		CR_RECEIVED_POPOVER: "_onReceivePopover",
-		CR_FOCUS_TOKEN: "_onFocusToken",
-		CR_BLUR_TOKENS: "_onBlurTokens",
-		CR_SELECT_TOKEN: "_onSelectToken",
-		CR_DESELECT_TOKENS: "_onDeselectToken",
 		CR_RECEIVED_HUNK_CONTEXT: "_onReceivedHunkContext",
 		CR_SELECT_FILE: "_onSelectFile",
-		CR_RECEIVED_POPUP: "_onReceivedPopup",
-		CR_RECEIVED_EXAMPLE: "_onReceivedExample",
 		CR_RECEIVED_CHANGED_STATUS: "_onReceivedStatusChange",
 		CR_SAVE_DRAFT: "_onSaveDraft",
 		CR_UPDATE_DRAFT: "_onUpdateDraft",
@@ -95,6 +88,7 @@ var CodeReviewStore = FluxStore({
 		if (d.Files) {
 			this.get("changes").load(d.Files);
 		}
+		this.get("changes").set("overThreshold", d.OverThreshold);
 
 		var reviews = new ReviewCollection((d.Reviews || []), {
 			changesetId: d.Changeset.ID,
@@ -111,60 +105,11 @@ var CodeReviewStore = FluxStore({
 			FileFilter: d.FileFilter,
 			ReviewGuidelines: d.ReviewGuidelines,
 			JiraIssues: d.JiraIssues,
+			OverThreshold: d.OverThreshold,
 			loading: false,
 			reviews: reviews,
 			events: events,
 		});
-	},
-
-	/**
-	 * @description Triggered when new data is received for a popover.
-	 * @param {Object} action - The action's payload.
-	 * @returns {void}
-	 * @private
-	 */
-	_onReceivePopover(action) {
-		this.get("changes").updatePopover(action.data);
-	},
-
-	/**
-	 * @description Triggered when the action for focusing a token is dispatched.
-	 * @param {Object} action - The action's payload.
-	 * @returns {void}
-	 * @private
-	 */
-	_onFocusToken(action) {
-		this.get("changes").focusToken(action.token, action.event, action.file);
-	},
-
-	/**
-	 * @description Triggered when the action for bluring a token is dispatched.
-	 * @param {Object} action - The action's payload.
-	 * @returns {void}
-	 * @private
-	 */
-	_onBlurTokens(action) {
-		this.get("changes").blurTokens(action.token, action.event, action.file);
-	},
-
-	/**
-	 * @description Triggered when the action for selecting a token is dispatched.
-	 * @param {Object} action - The action's payload.
-	 * @returns {void}
-	 * @private
-	 */
-	_onSelectToken(action) {
-		this.get("changes").selectToken(action.token, action.event, action.file);
-	},
-
-	/**
-	 * @description Triggered when the action for deselecting a token is dispatched.
-	 * @param {Object} action - The action's payload.
-	 * @returns {void}
-	 * @private
-	 */
-	_onDeselectToken(action) {
-		this.get("changes").deselectTokens();
 	},
 
 	/**
@@ -214,16 +159,6 @@ var CodeReviewStore = FluxStore({
 	},
 
 	/**
-	 * @description Triggered when data for a popup is received from the server.
-	 * @param {Object} action - The action's payload.
-	 * @returns {void}
-	 * @private
-	 */
-	_onReceivedPopup(action) {
-		this.get("changes").showPopup(action.data);
-	},
-
-	/**
 	 * @description Triggered when data from the server is received as a follow
 	 * up for a status change request (Open, Close, etc)
 	 * @param {Object} action - The action's payload.
@@ -236,16 +171,6 @@ var CodeReviewStore = FluxStore({
 			this.set("Changeset", action.data.After);
 			notify.info("Changeset status updated");
 		}
-	},
-
-	/**
-	 * @description Triggered when a usage example is received from the server.
-	 * @param {Object} action - The action's payload.
-	 * @returns {void}
-	 * @private
-	 */
-	_onReceivedExample(action) {
-		this.get("changes").showExample(action.data, action.page);
 	},
 
 	/**

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
+	"sourcegraph.com/sourcegraph/go-diff/diff"
 
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
@@ -46,20 +46,12 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
-		par := parallel.NewRun(3)
-		par.Do(func() (err error) {
-			opt := sourcegraph.DeltasListFilesOp{
-				Ds: ds,
-				Opt: &sourcegraph.DeltaListFilesOptions{
-					Formatted: false,
-					Tokenized: true,
-					Filter:    r.URL.Query().Get("filter"),
-				},
-			}
-			files, err = cl.Deltas.ListFiles(ctx, &opt)
-			return
+		var err error
+		files, err = cl.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
+			Ds:  ds,
+			Opt: &sourcegraph.DeltaListFilesOptions{Filter: r.URL.Query().Get("filter")},
 		})
-		if err := par.Wait(); err != nil {
+		if err != nil {
 			return err
 		}
 	}
@@ -91,10 +83,14 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 		tmplData.DeltaSpec = delta.DeltaSpec()
 	}
 	if files != nil {
-		tmplData.OverThreshold = files.OverThreshold
+		tmplData.OverThreshold = diffSizeIsOverThreshold(files.DiffStat())
 	}
 
 	return tmpl.Exec(r, w, "repo/commit.html", http.StatusOK, nil, &tmplData)
+}
+
+func diffSizeIsOverThreshold(st diff.Stat) bool {
+	return st.Added+st.Changed+st.Deleted > 5000
 }
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {

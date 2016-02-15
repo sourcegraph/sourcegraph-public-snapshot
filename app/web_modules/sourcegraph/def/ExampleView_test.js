@@ -22,7 +22,7 @@ describe("ExampleView", () => {
 		autotest(testdataAvailable, `${__dirname}/testdata/ExampleView-available.json`,
 			<ExampleView
 				defURL="/someURL"
-				examples={{get(defURL, index) { return {Repo: "someRepo", File: "foo.go", StartLine: 3, EndLine: 7, SourceCode: {Lines: [{test: "aLine"}]}}; }, getCount(defURL) { return 10; }}}
+				examples={{get(defURL, index) { return {Repo: "someRepo", File: "foo.go", StartLine: 3, EndLine: 7, Contents: "hello\nworld"}; }, getCount(defURL) { return 10; }}}
 				highlightedDef="/otherURL" />
 		);
 	});

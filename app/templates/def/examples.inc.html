@@ -12,7 +12,7 @@
 								<div class="pull-right">{{template "RepoLink" (repoLink .Repo)}}</div>
 								{{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File (toInt .StartLine) (toInt .EndLine) $defURL)}}
 							</header>
-							<pre class="code theme-default"><code>{{sanitizeFormattedCode .SrcHTML}}</code></pre>
+							<pre class="code theme-default"><code>{{sanitizeFormattedCode .Contents}}</code></pre>
 						</div>
 						<br>
 					{{else}}

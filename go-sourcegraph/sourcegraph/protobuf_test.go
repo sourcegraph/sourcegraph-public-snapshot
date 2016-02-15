@@ -56,8 +56,8 @@ func TestProtobuf_Example(t *testing.T) {
 		Ref: graph.Ref{
 			File: "f",
 		},
-		SourceCode: &SourceCode{NumRefs: 123},
-		StartLine:  7,
+		Contents:  "hello",
+		StartLine: 7,
 	}
 	b, err := proto.Marshal(v)
 	if err != nil {

@@ -66,9 +66,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		// This is not a request for definition data only (ie. for the pop-up),
 		// but also for the file containing it (ie. navigating to a definition in a
 		// different file).
-		entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &sourcegraph.RepoTreeGetOptions{
-			TokenizedSource: true,
-		}})
+		entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &sourcegraph.RepoTreeGetOptions{}})
 
 		if err != nil {
 			return err

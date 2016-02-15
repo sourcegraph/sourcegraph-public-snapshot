@@ -1,10 +1,10 @@
 var expect = require("expect.js");
 
-var CodeTokenCollection = require("./CodeLineCollection");
+var CodeLineCollection = require("./CodeLineCollection");
 
 describe("stores/collections/CodeLineCollection", () => {
 	function getLineCollection() {
-		return new CodeTokenCollection([
+		return new CodeLineCollection([
 			{number: 1, start: 0, end: 50, highlight: false},
 			{number: 2, start: 51, end: 100, highlight: false},
 			{number: 3, start: 101, end: 150, highlight: false},

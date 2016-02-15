@@ -1,8 +1,5 @@
 var Backbone = require("backbone");
-var globals = require("../../globals");
 
-var CodeTokenCollection = require("../collections/CodeTokenCollection");
-var CodeTokenModel = require("../models/CodeTokenModel");
 var CodeLineModel = require("../models/CodeLineModel");
 
 var HunkModel = Backbone.Model.extend({
@@ -35,12 +32,6 @@ var HunkModel = Backbone.Model.extend({
 		commentsAt: [],
 	},
 
-	/**
-	 * @description Holds all tokens that are refs (or defs) shown in this hunk's code.
-	 * @type {CodeTokenCollection|null}
-	 */
-	tokens: null,
-
 	initialize(args, opts) {
 		if (typeof opts === "undefined" || !opts.parse) {
 			console.warn("FileDiffModel should take parse: true if handed data from server");
@@ -56,24 +47,6 @@ var HunkModel = Backbone.Model.extend({
 	},
 
 	/**
-	 * @description Registers all tokens within the collection of this hunk and returns an array
-	 * of CodeTokenModels.
-	 * @param {Array<Object>} tokens - Raw token data
-	 * @returns {Array<CodeTokenModel>} Array of tokens.
-	 * @private
-	 */
-	_registerTokens(tokens) {
-		return Array.isArray(tokens) && tokens.length ? tokens.map(token => {
-			var t = new CodeTokenModel(token, {parse: true});
-			var type = t.get("type");
-			if (type === globals.TokenType.REF || type === globals.TokenType.DEF) {
-				this.tokens.put(t);
-			}
-			return t;
-		}) : [];
-	},
-
-	/**
 	 * @description Creates an array of CodeLineModels to be presented as context for a hunk.
 	 * @param {Array<Object>} lines - Raw line data
 	 * @param {number} baseStart - Starting line number for base revision.
@@ -84,7 +57,7 @@ var HunkModel = Backbone.Model.extend({
 	_newContextLines(lines, baseStart, headStart) {
 		return lines.map((line, i) =>
 			new CodeLineModel({
-				tokens: this._registerTokens(line.Tokens),
+				contents: line,
 				prefix: " ",
 				extraClass: "gray",
 				lineNumberBase: baseStart + i,
@@ -113,7 +86,7 @@ var HunkModel = Backbone.Model.extend({
 			Section: "",
 			NewLines: this.get("NewLines") + totalLines + 1,
 			OrigLines: this.get("OrigLines") + totalLines + 1,
-			Lines: this._newContextLines(data.Entry.SourceCode.Lines, origStartLine, newStartLine).concat(this.get("Lines")),
+			Lines: this._newContextLines(atob(data.Entry.Contents).split("\n"), origStartLine, newStartLine).concat(this.get("Lines")),
 		});
 	},
 
@@ -133,7 +106,7 @@ var HunkModel = Backbone.Model.extend({
 			LinePrefixes: this.get("LinePrefixes") + Array(totalLines + 1).join(" "),
 			NewLines: this.get("NewLines") + totalLines + 1,
 			OrigLines: this.get("OrigLines") + totalLines + 1,
-			Lines: this.get("Lines").concat(this._newContextLines(data.Entry.SourceCode.Lines, origStartLine, newStartLine)),
+			Lines: this.get("Lines").concat(this._newContextLines(atob(data.Entry.Contents).split("\n"), origStartLine, newStartLine)),
 		});
 	},
 
@@ -160,23 +133,15 @@ var HunkModel = Backbone.Model.extend({
 	 * @returns {void}
 	 */
 	parse(hunk) {
-		// sanity checks
-		if (!hunk.BodySource) return null;
-		if (hunk.LinePrefixes.length > hunk.BodySource.Lines.length) {
-			console.error("LinePrefixes > BodySource.Lines in:", hunk);
-			throw new Error("LinePrefixes entries length different from Body LOC");
-		}
-
-		this.tokens = new CodeTokenCollection();
-		this.lines = null; // TODO(gbbr): Line collection
-
 		var baseLineCount = hunk.OrigStartLine;
 		var headLineCount = hunk.NewStartLine;
 		var currentLabelBase = baseLineCount||"";
 		var currentLabelHead = headLineCount||"";
 
-		this.lines = hunk.LinePrefixes.split("").map((p, i) => {
-			switch (p) {
+		this.lines = atob(hunk.Body).split("\n").map((line, i) => {
+			if (line === "") return null;
+
+			switch (line[0]) {
 			case "+":
 				if (i > 0) {
 					currentLabelHead = ++headLineCount;
@@ -203,13 +168,13 @@ var HunkModel = Backbone.Model.extend({
 			}
 
 			return new CodeLineModel({
-				tokens: this._registerTokens(hunk.BodySource.Lines[i].Tokens),
-				prefix: hunk.LinePrefixes[i],
+				contents: line.slice(1),
+				prefix: line[0],
 				lineNumberBase: currentLabelBase,
 				lineNumberHead: currentLabelHead,
 				fileDiff: hunk.parent,
 			});
-		});
+		}).filter((v) => v);
 
 		return {
 			LinePrefixes: hunk.LinePrefixes,

@@ -69,7 +69,7 @@ class ExampleView extends Component {
 					{example &&
 						<div style={{opacity: loading ? 0.5 : 1}}>
 							<CodeListing
-								lines={example.SourceCode.Lines}
+								contents={example.Contents}
 								selectedDef={this.state.defURL}
 								highlightedDef={this.state.highlightedDef} />
 						</div>

@@ -10,22 +10,6 @@ var ReviewCollection = require("../apps/changes/stores/collections/ReviewCollect
 var HunkView = React.createClass({
 
 	propTypes: {
-		// Token event callback.
-		// The function to be called on click. It will receive as arguments the
-		// CodeTokenModel that was clicked and the event. Default is automatically
-		// prevented.
-		onTokenClick: React.PropTypes.func,
-
-		// Token event callback.
-		// The function to be called on 'mouseenter'. It will receive as arguments the
-		// CodeTokenModel and the event. Default is automatically prevented.
-		onTokenFocus: React.PropTypes.func,
-
-		// Token event callback.
-		// The function to be called on 'mouseleave'. It will receive as arguments the
-		// CodeTokenModel and the event. Default is automatically prevented.
-		onTokenBlur: React.PropTypes.func,
-
 		// Function is called when the expand hunk is pressed in either direction.
 		// It will call the function using parameters: hunk, direction and event.
 		onExpandHunk: React.PropTypes.func,

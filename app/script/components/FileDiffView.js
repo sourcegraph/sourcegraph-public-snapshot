@@ -9,22 +9,6 @@ var Hunk = require("./HunkView");
 var FileDiffView = React.createClass({
 
 	propTypes: {
-		// Token event callback.
-		// The function to be called on click. It will receive as arguments the
-		// CodeTokenModel that was clicked and the event. Default is automatically
-		// prevented.
-		onTokenClick: React.PropTypes.func,
-
-		// Token event callback.
-		// The function to be called on 'mouseenter'. It will receive as arguments the
-		// CodeTokenModel, event and file diff. Default is automatically prevented.
-		onTokenFocus: React.PropTypes.func,
-
-		// Token event callback.
-		// The function to be called on 'mouseleave'. It will receive as arguments the
-		// CodeTokenModel, event and file diff. Default is automatically prevented.
-		onTokenBlur: React.PropTypes.func,
-
 		// Function is called when the expand hunk is pressed in either direction.
 		// It will call the function using parameters: hunk, direction and event.
 		onExpandHunk: React.PropTypes.func,
@@ -49,24 +33,6 @@ var FileDiffView = React.createClass({
 
 	componentDidMount() {
 		if (this.isMounted) this.props.model.__node = require("jquery")(ReactDOM.findDOMNode(this));
-	},
-
-	_onTokenFocus(token, evt) {
-		if (typeof this.props.onTokenFocus === "function") {
-			this.props.onTokenFocus(token, evt, this.props.model);
-		}
-	},
-
-	_onTokenBlur(token, evt) {
-		if (typeof this.props.onTokenBlur === "function") {
-			this.props.onTokenBlur(token, evt, this.props.model);
-		}
-	},
-
-	_onTokenClick(token, evt) {
-		if (typeof this.props.onTokenClick === "function") {
-			this.props.onTokenClick(token, evt, this.props.model);
-		}
 	},
 
 	_onCommentSubmit(hunk, line, body, evt) {
@@ -118,9 +84,6 @@ var FileDiffView = React.createClass({
 				{this.state.Hunks.map(
 					hunk => <Hunk
 						{...this.props}
-						onTokenFocus={this._onTokenFocus}
-						onTokenBlur={this._onTokenBlur}
-						onTokenClick={this._onTokenClick}
 						onCommentSubmit={this._onCommentSubmit}
 						onCommentDelete={this._onCommentDelete}
 						onCommentEdit={this._onCommentEdit}

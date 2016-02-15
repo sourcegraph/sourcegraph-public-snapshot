@@ -1,12 +1,8 @@
 var React = require("react");
 var $ = require("jquery");
 
-var CodeReviewActions = require("../actions/CodeReviewActions");
-
 var FileDiff = require("../../../components/FileDiffView");
 var DiffFileList = require("../../../components/DiffFileList");
-var TokenPopover = require("../../../components/TokenPopoverView");
-var CodeReviewPopup = require("./CodeReviewPopup");
 
 /**
  * @description This component holds the view of the tabs that shows the differential
@@ -15,22 +11,6 @@ var CodeReviewPopup = require("./CodeReviewPopup");
 var CodeReviewChanges = React.createClass({
 
 	propTypes: {
-		// Token event callback.
-		// The function to be called on click. It will receive as arguments the
-		// CodeTokenModel that was clicked and the event. Default is automatically
-		// prevented.
-		onTokenClick: React.PropTypes.func,
-
-		// Token event callback.
-		// The function to be called on 'mouseenter'. It will receive as arguments the
-		// CodeTokenModel and the event. Default is automatically prevented.
-		onTokenFocus: React.PropTypes.func,
-
-		// Token event callback.
-		// The function to be called on 'mouseleave'. It will receive as arguments the
-		// CodeTokenModel and the event. Default is automatically prevented.
-		onTokenBlur: React.PropTypes.func,
-
 		// Function is called when the expand hunk is pressed in either direction.
 		// It will call the function using parameters: hunk, direction and event.
 		onExpandHunk: React.PropTypes.func,
@@ -93,14 +73,16 @@ var CodeReviewChanges = React.createClass({
 				{this.state.changes.overThreshold &&
 					<table className="over-threshold-warning">
 						<tbody>
-							<td className="icon">
-								<i className="fa fa-icon fa-warning" />
-							</td>
-							<td className="text">
-								The requested diff is larger than usual and is surpressed. We recommend viewing it on a file-by-file basis.
-								To do this, click on any of the files below. <br />
-								<b>Tip:</b> You may also view groups of files by using just a prefix of the paths you wish to see.
-							</td>
+							<tr>
+								<td className="icon">
+									<i className="fa fa-icon fa-warning" />
+								</td>
+								<td className="text">
+									The requested diff is larger than usual and is surpressed. We recommend viewing it on a file-by-file basis.
+									To do this, click on any of the files below. <br />
+									<b>Tip:</b> You may also view groups of files by using just a prefix of the paths you wish to see.
+								</td>
+							</tr>
 						</tbody>
 					</table>
 				}
@@ -111,22 +93,14 @@ var CodeReviewChanges = React.createClass({
 					stats={this.state.changes.stats} />
 
 				{!this.state.changes.overThreshold ? (
-					<div>
-						<TokenPopover model={this.state.changes.popoverModel} />
-						<CodeReviewPopup {...this.props}
-							model={this.state.changes.popupModel}
-							onChangePage={CodeReviewActions.selectExample}
-							onClose={CodeReviewActions.closePopup} />
-
-						{this.state.changes.fileDiffs.map(fd => (
-							<FileDiff {...this.props}
-								allowComments={true}
-								key={fd.cid}
-								Delta={this.state.changes.delta}
-								urlBase={this.props.urlBase}
-								model={fd} />
-						))}
-					</div>
+					this.state.changes.fileDiffs.map(fd => (
+						<FileDiff {...this.props}
+							allowComments={true}
+							key={fd.cid}
+							Delta={this.state.changes.delta}
+							urlBase={this.props.urlBase}
+							model={fd} />
+					))
 				) : null}
 			</div>
 		);

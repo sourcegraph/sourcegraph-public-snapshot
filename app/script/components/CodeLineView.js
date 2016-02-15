@@ -1,10 +1,8 @@
 var React = require("react");
 var ReactDOM = require("react-dom");
-var globals = require("../globals");
 var $ = require("jquery");
 var classNames = require("classnames");
 
-var CodeToken = require("./CodeTokenView");
 var CodeLineModel = require("../stores/models/CodeLineModel");
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
 
@@ -15,29 +13,16 @@ var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
 var CodeLineView = React.createClass({
 
 	// The properties of this element are not applied directly. They are passed down
-	// from the containing CodeView.
+	// from the parent.
 	propTypes: {
 		// The loading property is passed down from the CodeView.
 		loading: React.PropTypes.bool,
 
-		// The model of the token to be displayed.
+		// The model of the line to be displayed.
 		model: React.PropTypes.instanceOf(CodeLineModel).isRequired,
 
 		// Whether to display line numbers.
 		lineNumbers: React.PropTypes.bool,
-
-		// The function to be called on click. It will receive as arguments the
-		// CodeTokenModel that was clicked and the event. Default is automatically
-		// prevented.
-		onTokenClick: React.PropTypes.func,
-
-		// The function to be called on 'mouseenter'. It will receive as arguments the
-		// CodeTokenModel and the event. Default is automatically prevented.
-		onTokenFocus: React.PropTypes.func,
-
-		// The function to be called on 'mouseleave'. It will receive as arguments the
-		// CodeTokenModel and the event. Default is automatically prevented.
-		onTokenBlur: React.PropTypes.func,
 
 		// onComment is a function that will be triggered if the comment button is visible
 		// and clicked.
@@ -93,19 +78,7 @@ var CodeLineView = React.createClass({
 						<span className="prefix">{this.state.prefix}</span>
 					) : null}
 
-					{this.state.tokens.length ? this.state.tokens.map(token => {
-						var xClass = token.get("extraClass") || "";
-						switch (token.get("type")) {
-						case globals.TokenType.STRING:
-							return <span key={token.cid} className={xClass}>{token.get("html")}</span>;
-
-						case globals.TokenType.SPAN:
-							return <span key={token.cid} className={`${token.get("syntax")} ${xClass}`}>{token.get("html")}</span>;
-
-						default:
-							return <CodeToken {...this.props} key={token.cid} model={token} />;
-						}
-					}) : " "}
+					{this.state.contents || " "}
 				</td>
 			</tr>
 		);

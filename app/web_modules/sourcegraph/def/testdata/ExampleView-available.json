@@ -86,11 +86,7 @@
 										{
 											"type": "CodeListing",
 											"props": {
-												"lines": [
-													{
-														"test": "aLine"
-													}
-												],
+												"contents": "hello\nworld",
 												"selectedDef": "/someURL",
 												"highlightedDef": "/otherURL"
 											}

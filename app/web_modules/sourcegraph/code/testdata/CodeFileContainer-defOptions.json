@@ -12,11 +12,7 @@
 						"tree": "aTree",
 						"file": {
 							"Entry": {
-								"SourceCode": {
-									"Lines": [
-										"someLine"
-									]
-								}
+								"ContentsString": "hello\nworld"
 							},
 							"EntrySpec": {
 								"RepoRev": {
@@ -34,9 +30,7 @@
 							{
 								"type": "CodeListing",
 								"props": {
-									"lines": [
-										"someLine"
-									],
+									"contents": "hello\nworld",
 									"lineNumbers": true
 								}
 							}

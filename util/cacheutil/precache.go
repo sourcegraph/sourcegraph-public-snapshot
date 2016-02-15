@@ -28,7 +28,7 @@ func PrecacheTreeEntry(cl *sourcegraph.Client, ctx context.Context, entry *sourc
 			RepoRev: entrySpec.RepoRev,
 			Path:    filepath.Join(entrySpec.Path, child.Name),
 		}
-		opt := &sourcegraph.RepoTreeGetOptions{TokenizedSource: true}
+		opt := &sourcegraph.RepoTreeGetOptions{}
 
 		go func() {
 			log15.Info("prefetching tree entry", "path", childSpec.Path)

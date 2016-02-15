@@ -1,10 +1,6 @@
 package local
 
 import (
-	"bytes"
-	"fmt"
-	"reflect"
-	"strings"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
@@ -301,99 +297,5 @@ func checkDeltaDefs(t *testing.T, dd *sourcegraph.DeltaDefs, wantDiffStat diff.S
 	}
 	if dd.DiffStat != wantDiffStat {
 		t.Errorf("got diffstat %+v, want %+v", dd.DiffStat, wantDiffStat)
-	}
-}
-
-func TestChunkDiffOps(t *testing.T) {
-	baseEntrySpec := sourcegraph.TreeEntrySpec{
-		Path: "basefile",
-		RepoRev: sourcegraph.RepoRevSpec{
-			RepoSpec: sourcegraph.RepoSpec{URI: "github.com/baseowner/foo"},
-			Rev:      "baserev", CommitID: "basecommit",
-		},
-	}
-	headEntrySpec := sourcegraph.TreeEntrySpec{
-		Path: "headfile",
-		RepoRev: sourcegraph.RepoRevSpec{
-			RepoSpec: sourcegraph.RepoSpec{URI: "github.com/headowner/foo"},
-			Rev:      "headrev", CommitID: "headcommit",
-		},
-	}
-
-	tests := map[string]struct {
-		hunk *sourcegraph.Hunk
-		want []*repoTreeGetOp
-	}{
-		"basic": {
-			hunk: &sourcegraph.Hunk{Hunk: diff.Hunk{
-				Body: []byte(`
- a
--b
-+c
-+d
- e
-+f
- g
--h
-`),
-			}},
-			want: []*repoTreeGetOp{
-				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 0, EndLine: 1}}}},
-				{headEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 1, EndLine: 2}}}},
-				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 2, EndLine: 2}}}},
-				{headEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 4, EndLine: 4}}}},
-				{baseEntrySpec, sourcegraph.RepoTreeGetOptions{Formatted: true, GetFileOptions: sourcegraph.GetFileOptions{FileRange: sourcegraph.FileRange{StartLine: 3, EndLine: 4}}}},
-			},
-		},
-	}
-	for label, test := range tests {
-		test.hunk.Body = bytes.TrimPrefix(test.hunk.Body, []byte{'\n'})
-		ops := chunkDiffOps(baseEntrySpec, headEntrySpec, test.hunk)
-		if !reflect.DeepEqual(ops, test.want) {
-			t.Errorf("%s: got ops != want\n\ngot ops =======\n%+v\n\nwant ops =======\n%+v", label, diffOpString(ops), diffOpString(test.want))
-			continue
-		}
-	}
-}
-
-func diffOpString(ops []*repoTreeGetOp) string {
-	var s []string
-	for _, op := range ops {
-		s = append(s, fmt.Sprintf("entrySpec = %+v\n  opt = %+v\n\n", op.file, op.opt.GetFileOptions.FileRange))
-	}
-	return strings.Join(s, "\n")
-}
-
-func TestSetHunkLines(t *testing.T) {
-	tests := map[string]struct {
-		origBody string
-		fmtBody  string
-		want     string
-	}{
-		"basic": {
-			origBody: `+added
--deleted
- same
-+added`,
-			fmtBody: `ADDED
-DELETED
-SAME
-ADDED`,
-			want: `+ADDED
--DELETED
- SAME
-+ADDED`,
-		},
-	}
-	for label, test := range tests {
-		got, err := setHunkLines([]byte(test.origBody), []byte(test.fmtBody))
-		if err != nil {
-			t.Errorf("%s: setHunkLines: %s", label, err)
-			continue
-		}
-		if string(got) != test.want {
-			t.Errorf("%s: got != want\n\ngot =======\n%s\n\nwant =======\n%s", label, got, test.want)
-			continue
-		}
 	}
 }

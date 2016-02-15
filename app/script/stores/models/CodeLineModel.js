@@ -1,8 +1,7 @@
 var Backbone = require("backbone");
 
 /*
- * @description CodeLineModel holds information about a line, including the tokens
- * that are contained within it.
+ * @description CodeLineModel holds information about a line, including its contents.
  */
 var CodeLineModel = Backbone.Model.extend({
 
@@ -26,10 +25,10 @@ var CodeLineModel = Backbone.Model.extend({
 		number: 0,
 
 		/**
-		 * @description The tokens contained on this line.
-		 * @type {CodeTokenCollection}
+		 * @description The line contents.
+		 * @type {string}
 		 */
-		tokens: [],
+		contents: null,
 	},
 
 	/**

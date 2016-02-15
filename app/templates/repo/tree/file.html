@@ -30,7 +30,7 @@
 		</p>
 	</noscript>
 	{{end}}
-	{{if .Entry}}{{if .Entry.SourceCode}}
+	{{if .Entry}}{{if .Entry.ContentsString}}
 		<script ignore-csp>
 			window.preloadedCodeViewFile = {
 				"url": "{{urlToRepoTreeEntry .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path}}",
