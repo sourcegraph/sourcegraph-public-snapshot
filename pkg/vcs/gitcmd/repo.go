@@ -525,7 +525,7 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 	if err != nil {
 		return nil, err
 	}
-	cacheKey := r.GitRootDir() + "\x00" + string(base) + "\x00" + string(head) + "\x00" + string(optData)
+	cacheKey := r.GitRootDir() + "|" + string(base) + "|" + string(head) + "|" + string(optData)
 	if diff, found := diffCache.Get(cacheKey); found {
 		return diff.(*vcs.Diff), nil
 	}
@@ -1002,7 +1002,7 @@ var readFileBytesCache = synclru.New(lru.New(1000))
 
 func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, error) {
 	ensureAbsCommit(commit)
-	cacheKey := r.GitRootDir() + "\x00" + string(commit) + "\x00" + name
+	cacheKey := r.GitRootDir() + "|" + string(commit) + "|" + name
 	if data, found := readFileBytesCache.Get(cacheKey); found {
 		return data.([]byte), nil
 	}
@@ -1113,7 +1113,7 @@ var lsTreeCache = synclru.New(lru.New(10000))
 // lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
 func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	ensureAbsCommit(commit)
-	cacheKey := r.GitRootDir() + "\x00" + string(commit) + "\x00" + path + "\x00" + strconv.FormatBool(recurse)
+	cacheKey := r.GitRootDir() + "|" + string(commit) + "|" + path + "|" + strconv.FormatBool(recurse)
 	if fis, found := lsTreeCache.Get(cacheKey); found {
 		return fis.([]os.FileInfo), nil
 	}
