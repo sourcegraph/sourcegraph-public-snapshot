@@ -12,10 +12,15 @@ import ProgressBar from "sourcegraph/dashboard/ProgressBar";
 import Dispatcher from "sourcegraph/Dispatcher";
 
 import * as OnboardingActions from "sourcegraph/dashboard/OnboardingActions";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 class OnboardingContainer extends Container {
 	constructor(props) {
 		super(props);
+		this._handleMenuClick = this._handleMenuClick.bind(this);
+		this._handleItemSelect = this._handleItemSelect.bind(this);
+		this._handleSelectAll = this._handleSelectAll.bind(this);
+		this._handleWidgetSubmit = this._handleWidgetSubmit.bind(this);
 	}
 
 	componentDidMount() {
@@ -27,28 +32,80 @@ class OnboardingContainer extends Container {
 	}
 
 	reconcileState(state, props) {
-		console.log("reconciling state for onboarding container");
 		Object.assign(state, props);
 		state.progress = OnboardingStore.progress;
+		state.currentUser = OnboardingStore.currentUser;
 		switch (state.progress.currentStep) {
-			case 2:
-				state.items = GitHubReposStore.mirrorRepos;
-				state.orgs = GitHubReposStore.orgs;
-				state.selectAll = GitHubReposStore.selectAll;
-				state.selections = GitHubReposStore.selectedRepos;
-				state.currentOrg = GitHubReposStore.currentOrg;
-				break;
+		case 2:
+			state.items = GitHubReposStore.mirrorRepos;
+			state.orgs = GitHubReposStore.orgs;
+			state.selectAll = GitHubReposStore.selectAll;
+			state.selections = GitHubReposStore.selectedRepos;
+			state.currentOrg = GitHubReposStore.currentOrg;
+			break;
 
-			case 3:
-				state.items = GitHubUsersStore.mirrorRepos;
-				state.orgs = GitHubUsersStore.orgs;
-				state.selectAll = GitHubUsersStore.selectAll;
-				state.selections = GitHubUsersStore.selectedRepos;
-				state.currentOrg = GitHubUsersStore.currentOrg;
-				break;
+		case 3:
+			state.items = GitHubUsersStore.mirrorUsers;
+			state.orgs = GitHubUsersStore.orgs;
+			state.selectAll = GitHubUsersStore.selectAll;
+			state.selections = GitHubUsersStore.selectedUsers;
+			state.currentOrg = GitHubUsersStore.currentOrg;
+			break;
 
-			default:
-				break;
+		default:
+			break;
+		}
+	}
+
+	_handleMenuClick(org) {
+		switch (this.state.progress.currentStep) {
+		case 2:
+			Dispatcher.dispatch(new DashboardActions.SelectRepoOrg(org));
+			break;
+		case 3:
+			Dispatcher.dispatch(new DashboardActions.SelectUserOrg(org));
+			break;
+		default:
+			break;
+		}
+	}
+
+	_handleItemSelect(itemKey, select) {
+		switch (this.state.progress.currentStep) {
+		case 2:
+			Dispatcher.dispatch(new DashboardActions.SelectRepo(itemKey, select));
+			break;
+		case 3:
+			Dispatcher.dispatch(new DashboardActions.SelectUser(itemKey, select));
+			break;
+		default:
+			break;
+		}
+	}
+
+	_handleSelectAll(items, selectAll) {
+		switch (this.state.progress.currentStep) {
+		case 2:
+			Dispatcher.dispatch(new DashboardActions.SelectRepos(items, selectAll));
+			break;
+		case 3:
+			Dispatcher.dispatch(new DashboardActions.SelectUsers(items, selectAll));
+			break;
+		default:
+			break;
+		}
+	}
+
+	_handleWidgetSubmit(items) {
+		switch (this.state.progress.currentStep) {
+		case 2:
+			Dispatcher.dispatch(new DashboardActions.WantAddRepos(items));
+			break;
+		case 3:
+			Dispatcher.dispatch(new DashboardActions.WantAddUsers(items));
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -58,7 +115,7 @@ class OnboardingContainer extends Container {
 		if (this.state.progress.currentStep >= this.state.progress.numSteps) return null;
 
 		const panelBody = this.state.progress.currentStep <= 1 ?
-			<LinkGitHubWelcome progress={this.state.progress} /> : (
+			<LinkGitHubWelcome progress={this.state.progress} currentUser={this.state.currentUser}/> : (
 			<div>
 				<p className="header-text normal-header">
 					Select Repositories
@@ -69,17 +126,21 @@ class OnboardingContainer extends Container {
 				<SelectableListWidget items={this.state.items}
 					currentCategory={this.state.currentOrg}
 					menuCategories={this.state.orgs}
+					onMenuClick={this._handleMenuClick}
 					selections={this.state.selections}
 					selectAll={this.state.selectAll}
-					onSubmit={(items) => console.log("wooooooo it is submitted!", items)}
+					onSelect={this._handleItemSelect}
+					onSelectAll={this._handleSelectAll}
+					onSubmit={this._handleWidgetSubmit}
+					searchPlaceholderText={`Search GitHub ${this.state.progress.currentStep === 2 ? "repositories" : "contacts"}`}
 					menuLabel="organizations" />
-					<p>
-					<a onClick={(e) => {
-						e.preventDefault();
-						Dispatcher.dispatch(new OnboardingActions.AdvanceProgressStep());
-					}}>i'll do that later</a>
+					<p className="next-step">
+						<a onClick={(e) => {
+							e.preventDefault();
+							Dispatcher.dispatch(new OnboardingActions.AdvanceProgressStep());
+						}}>i'll do that later</a>
 					</p>
-			</div>)
+			</div>);
 
 		return (
 			<div className="onboarding-container">

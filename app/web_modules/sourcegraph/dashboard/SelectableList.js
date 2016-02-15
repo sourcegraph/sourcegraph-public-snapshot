@@ -2,10 +2,6 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 
-import Dispatcher from "sourcegraph/Dispatcher";
-import * as OnboardingActions from "sourcegraph/dashboard/OnboardingActions";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-
 import update from "react/lib/update";
 
 class SelectableList extends Component {
@@ -16,7 +12,6 @@ class SelectableList extends Component {
 		};
 		this._handleSearch = this._handleSearch.bind(this);
 		this._handleSelectAll = this._handleSelectAll.bind(this);
-		this._handleSelect = this._handleSelect.bind(this);
 		this._showItem = this._showItem.bind(this);
 	}
 
@@ -33,13 +28,7 @@ class SelectableList extends Component {
 
 	_handleSelectAll(e) {
 		const items = this.state.items.filter(this._showItem);
-		// Dispatcher.dispatch(new OnboardingActions.SelectItems(items, this.state.type, e.target.checked));
-		Dispatcher.dispatch(new DashboardActions.SelectRepos(items, e.target.checked));
-	}
-
-	_handleSelect(e, index) {
-		// Dispatcher.dispatch(new OnboardingActions.SelectItem(index, this.state.type, e.target.checked));
-		Dispatcher.dispatch(new DashboardActions.SelectRepo(index, e.target.checked));
+		this.state.onSelectAll(items, e.target.checked);
 	}
 
 	_showItem(item) {
@@ -51,7 +40,7 @@ class SelectableList extends Component {
 		console.log("rendering the component!");
 		console.log(this.state.selections);
 		return (
-			<div className="add-repo-list">
+			<div className="selectable-list">
 				<div className="header">
 					<div className="search-bar">
 						<i className="fa fa-search search-icon"></i>
@@ -75,13 +64,13 @@ class SelectableList extends Component {
 				<div className="body">
 					<div className="list-group">
 						{this.state.items.filter(this._showItem).map(item =>
-							<div className="table-row" key={item.index}>
+							<div className="table-row" key={item.key}>
 								<div className="select">
 									<input
 										type="checkbox"
 										name={`${this.state.formItemName}[]`}
-										checked={this.state.selections[item.index]}
-										onChange={e => this._handleSelect(e, item.index)}
+										checked={this.state.selections[item.key]}
+										onChange={e => this.state.onSelect(item.key, e.target.checked)}
 										value={item.name} />
 								</div>
 								<span className="name">{item.name}</span>
@@ -96,15 +85,17 @@ class SelectableList extends Component {
 
 SelectableList.propTypes = {
 	items: React.PropTypes.arrayOf(React.PropTypes.shape({
-		index: React.PropTypes.number,
+		key: React.PropTypes.number,
 		name: React.PropTypes.string,
 	})).isRequired,
 	// type identifies the entity type of the items which populate the list
-	// selections is a object which identifies which items are currently selected {index: isSelected}
+	// selections is a object which identifies which items are currently selected {key: isSelected}
 	selections: React.PropTypes.object.isRequired,
 	// selectAll identifies if the "select all" aggregator is toggled
 	selectAll: React.PropTypes.bool.isRequired,
 	searchPlaceholderText: React.PropTypes.string,
+	onSelect: React.PropTypes.func.isRequired,
+	onSelectAll: React.PropTypes.func.isRequired,
 };
 
 export default SelectableList;

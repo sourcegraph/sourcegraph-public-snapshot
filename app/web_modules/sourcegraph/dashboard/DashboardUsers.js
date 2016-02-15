@@ -46,6 +46,6 @@ class UserList extends Component {
 
 UserList.propTypes = {
 	users: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-}
+};
 
 export default UserList;

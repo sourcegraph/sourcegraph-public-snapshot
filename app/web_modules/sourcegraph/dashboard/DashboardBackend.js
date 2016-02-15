@@ -2,7 +2,6 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "xhr";
-import $ from "jquery"
 
 // function authHeaders() {
 // 	let hdr = {};
@@ -21,13 +20,13 @@ const DashboardBackend = {
 		switch (action.constructor) {
 		case DashboardActions.WantAddRepos:
 			{
-				console.log("want add repos!!!!!");
-				console.log(action.repos);
-				console.log(window.location.href);
-
-				let formData = new FormData();
-				action.repos.forEach(repo => formData.append("RepoURI[]", repo.URI));
-				formData.append("csrf_token", window.csrfToken);
+				// console.log("want add repos!!!!!");
+				// console.log(action.repos);
+				// console.log(window.location.href);
+				//
+				// let formData = new FormData();
+				// action.repos.forEach(repo => formData.append("RepoURI[]", repo.URI));
+				// formData.append("csrf_token", window.csrfToken);
 
 				// $.ajax({
 				// 	url: window.addRepoURL,
@@ -37,9 +36,6 @@ const DashboardBackend = {
 				// 		console.log("successful!");
 				// 	}
 				// });
-
-
-
 				// DashboardBackend.xhr.post(window.addRepoURL)
 				// console.log("about to send form data!");
 				// formData.submit(window.addRepoURL, (err, res) => {

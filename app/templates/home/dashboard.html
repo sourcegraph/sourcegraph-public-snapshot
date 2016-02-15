@@ -4,8 +4,16 @@
 {{define "Body"}}
 
 <script>
+	console.log(JSON.parse({{json .}}));
 	window.repos = JSON.parse({{json .Repos}}) || [];
 	window.users = JSON.parse({{json .Users}}) || [];
+	window.currentUser = JSON.parse({{json .CurrentUser}});
+	// mirrorData is {ReposByOrg: {org: {PrivateRepos, PublicRepos}}}
+	// Repos is {Repo: {PushedAt, URI, Description}}
+	window.mirrorData = JSON.parse({{json .MirrorData}});
+	// teammates is {UsersByOrg: org: Users: []}
+	// User is {RemoteAccount: {AvatarURL, Domain, Login}, LocalAccount, Email}
+	window.teammates = JSON.parse({{json .Teammates}});
 
 	window.progress = {
 		numSteps: 4,
@@ -16,49 +24,74 @@
 			window.progress.currentStep = 0;
 			window.progress.githubLinkURL = "{{router.URLToGitHubOAuth}}";
 		{{else}}
-			window.progress.currentStep = 1;
+			if (true) { // TODO: set if being redirected from GitHub
+				window.progress.currentStep = 2;
+			} else {
+				window.progress.currentStep = 50; // done
+			}
 		{{end}}
 	{{else}}
-		// This is where we would tell you you're on the whitelist.
+		window.progress.currentStep = 50; // done
 	{{end}}
-	// window.progress.currentStep = 0; // TODO: remove
 
-	{{if (and .PrivateMirrors $.CurrentUser (not appconf.DisableIntegrations))}}
-		var mirrorData = JSON.parse({{json .MirrorData}});
-		var counter = 0;
-		var privateRepos = mirrorData.PrivateRepos.map(function(repo) {
-			var uriParts = repo.Repo.URI.split("/");
-			return {
-				name: uriParts[0] === "github.com" ? uriParts.slice(1).join("/") : repo.Repo.URI,
-				index: counter++,
-				URI: repo.Repo.URI,
-				updatedAt: new Date(repo.Repo.UpdatedAt),
-				description: repo.Repo.Description,
-				org: uriParts[0] === "github.com" ? uriParts[1] : uriParts[0],
-				isPrivate: true,
+	if (window.mirrorData && window.mirrorData.State === 4) {
+		var counter = 0; // assign unique key to each repo for UI widgets
+		var arrays = Object.keys(window.mirrorData.ReposByOrg).map(function(org) {
+			var construct = function(isPrivate) {
+				return function(rawRepo) {
+					var uriParts = rawRepo.Repo.URI.split("/");
+					return {
+						name: uriParts[0] === "github.com" ? uriParts.slice(1).join("/") : rawRepo.Repo.URI,
+						key: counter++,
+						URI: rawRepo.Repo.URI,
+						updatedAt: new Date(rawRepo.Repo.UpdatedAt),
+						description: rawRepo.Repo.Description,
+						org: org,
+						isPrivate: isPrivate,
+						existsLocally: Boolean(rawRepo.Repo.ExistsLocally),
+					}
+				}
 			}
-		});
-		var publicRepos = mirrorData.PrivateRepos.map(function(repo) {
-			var uriParts = repo.Repo.URI.split("/");
-			return {
-				name: uriParts[0] === "github.com" ? uriParts.slice(1).join("/") : repo.Repo.URI,
-				index: counter++,
-				URI: repo.Repo.URI,
-				updatedAt: new Date(repo.Repo.UpdatedAt),
-				description: repo.Repo.Description,
-				org: uriParts[0] === "github.com" ? uriParts[1] : uriParts[0],
-				isPrivate: false,
+
+			var privateRepos = window.mirrorData.ReposByOrg[org].PrivateRepos;
+			var publicRepos = window.mirrorData.ReposByOrg[org].PublicRepos;
+			var result = [];
+			if (window.mirrorData.ReposByOrg[org].PrivateRepos) {
+				result = result.concat(window.mirrorData.ReposByOrg[org].PrivateRepos.map(construct(true)));
 			}
+			if (window.mirrorData.ReposByOrg[org].PublicRepos) {
+				result = result.concat(window.mirrorData.ReposByOrg[org].PublicRepos.map(construct(false)));
+			}
+			return result;
 		});
-		window.mirrorRepos = privateRepos.concat(publicRepos);
-	{{end}}
+
+		// flatten everything
+		window.mirrorRepos = [].concat.apply([], arrays);
+	}
+
+	if (window.teammates && window.mirrorData.State === 4) {
+		var counter = 0; // assign unique key to each repo for UI widgets
+		var arrays = Object.keys(window.teammates.UsersByOrg).map(function(org) {
+			var construct = function(rawUser) {
+				var existsLocally = Boolean(rawUser.LocalAccount)
+				return {
+					key: counter++,
+					name: "Cindy Lopez",//existsLocally ? rawUser.LocalAccount.AvatarURL : rawUser.RemoteAccount.Name,
+					avatarURL: existsLocally ? rawUser.LocalAccount.AvatarURL : rawUser.RemoteAccount.AvatarURL,
+					org: org,
+					existsLocally: existsLocally,
+				}
+			}
+
+			return window.teammates.UsersByOrg[org].Users.map(construct);
+		});
+
+		// flatten everything
+		window.mirrorUsers = [].concat.apply([], arrays);
+	}
+
 	window.mirrorRepos = window.mirrorRepos || [];
-	window.mirrorUsers = [];
-
-	window.addRepoURL = "{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}";
-	window.csrfToken = "{{.CSRFToken}}";
-
-
+	window.mirrorUsers = window.mirrorUsers || [];
 </script>
 
 <div>
@@ -66,177 +99,4 @@
 	<div id="OnboardingContainer"></div>
 </div>
 
-<div style="display:none;">
-{{if (and .PrivateMirrors .CurrentUser (or .LinkGitHub .OnWaitlist))}}
-{{else}}
-{{$hasUsers := (or .PrivateMirrors .Users)}}
-<div class="row dashboard">
-	<div class="col-md-{{if $hasUsers}}6{{else}}12{{end}}">
-		<h3>Repositories
-			{{if (and .Repos (not .PrivateMirrors))}}
-				<button class="btn btn-default" data-toggle="collapse" data-target="#addRepo"><i class="fa fa-plus"></i></button>
-			{{end}}
-		</h3>
-		{{if not .PrivateMirrors}}
-		<div {{if .Repos}}class="collapse"{{end}} id="addRepo">
-			<div class="well">
-				<form action={{router.URLToRepoCreate}} method="post">
-					<div class="form-group">
-						<label for="repo-name-input">Create a repository:</label> <input type="text" name="repo-name" id="repo-name-input" placeholder="e.g. my-project" class="form-control">
-					</div>
-					<div class="form-group">
-						<button type="submit" class="btn btn-primary">Create</button>
-					</div>
-					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-				</form>
-				<br>
-			</div>
-		</div>
-		{{end}}
-		<div class="list-group repos">
-			{{range .Repos}}
-				<a class="list-group-item" href="{{urlToRepo .URI}}">
-					<h4>{{template "RepoIcon" .}} {{template "RepoLabel" (repoLabelForOwner "" .URI)}}</h4>
-					{{with .Description}}<p class="description">{{.}}</p>{{end}}
-					{{with .PushedAt}}<p class="updated">Updated {{template "TimeAgo" .}}</p>{{end}}
-				</a>
-			{{end}}
-		</div>
-		{{if (and .PrivateMirrors $.CurrentUser)}}
-			{{with .MirrorData}}
-			<h4>GitHub repositories available for mirroring</h4>
-			{{if (or .PrivateRepos .PublicRepos)}}
-			<div class="repo-list">
-				<form action="{{urlTo "person.settings.integrations.update" "User" $.CurrentUser.Login "Integration" "enable"}}" method="POST">
-					<table class="table repo-list">
-						<tr>
-							<td align="right">
-								select all:
-							</td>
-							<td>
-								<input type="checkbox" id="check-all-repos" name="check-all-repos" value="" >
-							</td>
-						</tr>
-						{{$host := .Host}}
-						<tr>
-							<td>
-								<h4>Private</h4>
-							</td>
-							<td></td>
-						</tr>
-						{{range $repo := .PrivateRepos}}
-							{{if not $repo.ExistsLocally}}
-							<tr>
-								<td>
-									{{trimPrefix $repo.URI $host}}
-									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
-								</td>
-								<td>
-									<input type="checkbox" name="RepoURI[]" value="{{$repo.URI}},private" >
-								</td>
-							</tr>
-							{{end}}
-						{{end}}
-						<tr>
-							<td>
-								<h4>Public</h4>
-							</td>
-							<td></td>
-						</tr>
-						{{range $repo := .PublicRepos}}
-							{{if not $repo.ExistsLocally}}
-							<tr>
-								<td>
-									{{trimPrefix $repo.URI $host}}
-									<a href="https://{{$repo.URI}}" target="_blank"><i class="fa fa-github github-link"></i></a>
-								</td>
-								<td>
-									<input type="checkbox" name="RepoURI[]" value="{{$repo.URI}},public" >
-								</td>
-							</tr>
-							{{end}}
-						{{end}}
-						<tr>
-							<td></td>
-							<td>
-								<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-								<button type="submit" class="btn btn-success">Add</button>
-							</td>
-						</tr>
-					</table>
-				</form>
-			</div>
-			{{end}}
-			{{end}}
-		{{end}}
-	</div>
-	<div class="col-md-6">
-		{{if .PrivateMirrors}}
-		<h3>Teammates <button class="btn btn-default" data-toggle="collapse" data-target="#addTeammate"><i class="fa fa-plus"></i></button></h3>
-		<div class="collapse" id="addTeammate">
-			<div class="well">
-				<strong>Invite</strong> your teammates:
-				<ul id="teammate-invites-list" class="list-group">
-				</ul>
-				<form action="javascript:void(0);" class="form-inline">
-					<input name="Email" type="email" class="input-xlarge form-control" id="teammate-invite-email" placeholder="user@example.com" value="" required tabindex=1 autofocus>
-					<button type="submit" id="teammate-invite-btn" class="btn btn-md btn-sgblue" name="Invite" value="Invite" tabindex=3>Invite</button>
-					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-				</form>
-			</div>
-		</div>
-		<h4>On Sourcegraph</h4>
-		<div class="list-group">
-			{{range .Teammates.LinkedUsers}}
-				<li class="list-group-item">
-					{{if .AvatarURL}}<img src="{{.AvatarURL}}" class="avatar img-rounded" width="30" height="30" />{{end}} <strong>{{getIdentifier .Name .Login}}</strong>
-				</li>
-			{{end}}
-		</div>
-		<h4>Not Yet On Sourcegraph</h4>
-		<div class="list-group">
-			{{range .Teammates.ExternalUsers}}
-				<li class="list-group-item">
-					{{if .AvatarURL}}<img src="{{.AvatarURL}}" class="avatar img-rounded" width="30" height="30" />{{end}} <strong>{{getIdentifier .Name .Login}}</strong>
-				</li>
-			{{end}}
-		</div>
-		{{else}}
-		{{if .Users}}
-		<h3>Users <button class="btn btn-default" data-toggle="collapse" data-target="#addUser"><i class="fa fa-plus"></i></button></h3>
-		<div class="collapse" id="addUser">
-			<div class="well">
-				{{if .IsLDAP}}
-				Your teammates can log in with their LDAP credentials. {{if not .DisableExternalLinks}}<a href="https://src.sourcegraph.com/sourcegraph/.docs/config/authentication/" target="_blank">Click here</a> for instructions to configure Sourcegraph for LDAP.{{end}}
-				{{else}}
-				<strong>Create invite links</strong> for your teammates:
-				<ul id="user-invites-list" class="list-group">
-				</ul>
-				<form action="javascript:void(0);" class="form-inline">
-					<input name="Email" type="email" class="input-xlarge form-control" id="user-invite-email" placeholder="user@example.com" value="" required tabindex=1 autofocus>
-					<select name="Permission" class="input-small form-control"class="form-control" id="user-invite-perms" tabindex=2>
-						<option value="read" selected>can read</option>
-						<option value="write">can write</option>
-						<option value="admin">is admin</option>
-					</select>
-					<button type="submit" id="user-invite-btn" class="btn btn-md btn-primary" name="Invite" value="Invite" tabindex=3>Invite</button>
-					<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-				</form>
-				{{end}}
-			</div>
-		</div>
-		<div class="list-group">
-			{{range .Users}}
-				<li class="list-group-item">
-					<strong>{{getIdentifier .Name .Login}}</strong>{{if .Invite}}<div class="btn-xs btn-info pull-right">Pending Invite</div>{{end}}{{if .Admin}}<div class="btn-xs btn-success pull-right">Admin</div>{{else if .Write}}<div class="btn-xs btn-primary pull-right">Write</div>{{end}}
-				</li>
-			{{end}}
-		</div>
-		{{end}}
-		{{end}}
-	</div>
-</div>
-
-{{end}}
-</div>
 {{end}}

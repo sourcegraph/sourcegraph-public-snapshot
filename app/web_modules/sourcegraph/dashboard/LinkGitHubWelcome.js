@@ -2,9 +2,6 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 
-import ProgressBar from "sourcegraph/dashboard/ProgressBar";
-import OnboardingWidget from "sourcegraph/dashboard/OnboardingWidget";
-
 import * as OnboardingActions from "sourcegraph/dashboard/OnboardingActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 
@@ -21,7 +18,7 @@ class LinkGitHubWelcome extends Component {
 		const doGitHubLink = this.state.progress.currentStep === 0;
 		const imageURL = doGitHubLink ?
 			"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png" :
-			"http://placekitten.com/g/115/115";
+			this.state.currentUser.AvatarURL;
 
 		return (
 			<div className="github-link-welcome">
@@ -37,7 +34,7 @@ class LinkGitHubWelcome extends Component {
 				</div>
 				{doGitHubLink ?
 					<p className="header-text welcome-header">Connect with your GitHub<br />account</p> :
-					<p className="header-text welcome-header">Welcome Johnathan!</p>}
+					<p className="header-text welcome-header">Welcome {this.state.currentUser.Name.split(" ")[0]}!</p>}
 				{doGitHubLink ?
 					<p className="normal-text">In order to get you started we need to connect with your GitHub account. No worries, we won't change anything within your files.</p> :
 					<p className="normal-text">You successfully connected<br />your GitHub account.</p>}
@@ -58,6 +55,7 @@ class LinkGitHubWelcome extends Component {
 
 LinkGitHubWelcome.propTypes = {
 	progress: React.PropTypes.object.isRequired,
+	currentUser: React.PropTypes.object,
 };
 
 export default LinkGitHubWelcome;

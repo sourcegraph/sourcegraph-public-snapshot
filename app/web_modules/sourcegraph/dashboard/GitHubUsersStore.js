@@ -16,7 +16,7 @@ export class GitHubUsersStore extends Store {
 		// This is for widget components.
 		this.selectAll = false;
 		let selectedUsers = {};
-		if (this.mirrorUsers) this.mirrorUsers.forEach(user => selectedUsers[user.index] = false);
+		if (this.mirrorUsers) this.mirrorUsers.forEach(user => selectedUsers[user.key] = false);
 		this.selectedUsers = deepFreeze(selectedUsers);
 
 		// Store the state of which organizations mirrored repos can come from.
@@ -34,26 +34,24 @@ export class GitHubUsersStore extends Store {
 			// TODO: remove them from this store?
 			break;
 
-		case DashboardActions.SelectRepoOrg:
+		case DashboardActions.SelectUserOrg:
 			this.currentOrg = action.org;
 			this.selectAll = false;
 			break;
 
 		case DashboardActions.SelectUsers:
 			{
-				console.log("received the (user) dispatch!");
 				let updateQuery = {};
-				action.repos.forEach(user => updateQuery[user.index] = {$set: action.selectAll});
+				action.repos.forEach(user => updateQuery[user.key] = {$set: action.selectAll});
 				this.selectedUsers = update(this.selectedUsers, updateQuery);
 				this.selectAll = action.selectAll;
 				break;
 			}
 
-		case DashboardActions.SelectRepo:
+		case DashboardActions.SelectUser:
 			{
-				console.log("selected a single user!", action.repoIndex, action.select);
 				let updateQuery = {};
-				updateQuery[action.repoIndex] = {$set: action.select};
+				updateQuery[action.userKey] = {$set: action.select};
 				this.selectedUsers = update(this.selectedUsers, updateQuery);
 				console.log(this.selectedUsers);
 				break;

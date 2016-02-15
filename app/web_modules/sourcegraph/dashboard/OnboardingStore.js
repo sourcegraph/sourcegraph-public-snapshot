@@ -10,6 +10,7 @@ export class OnboardingStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
 		this.progress = deepFreeze(window.progress);
+		this.currentUser = deepFreeze(window.currentUser);
 	}
 
 	__onDispatch(action) {

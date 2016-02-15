@@ -16,7 +16,7 @@ export class GitHubReposStore extends Store {
 		// This is for widget components.
 		this.selectAll = false;
 		let selectedRepos = {};
-		if (this.mirrorRepos) this.mirrorRepos.forEach(repo => selectedRepos[repo.index] = false);
+		if (this.mirrorRepos) this.mirrorRepos.forEach(repo => selectedRepos[repo.key] = false);
 		this.selectedRepos = deepFreeze(selectedRepos);
 
 		// Store the state of which organizations mirrored repos can come from.
@@ -41,9 +41,8 @@ export class GitHubReposStore extends Store {
 
 		case DashboardActions.SelectRepos:
 			{
-				console.log("received the dispatch!");
 				let updateQuery = {};
-				action.repos.forEach(repo => updateQuery[repo.index] = {$set: action.selectAll});
+				action.repos.forEach(repo => updateQuery[repo.key] = {$set: action.selectAll});
 				this.selectedRepos = update(this.selectedRepos, updateQuery);
 				this.selectAll = action.selectAll;
 				break;
@@ -51,11 +50,9 @@ export class GitHubReposStore extends Store {
 
 		case DashboardActions.SelectRepo:
 			{
-				console.log("selected a single repo!", action.repoIndex, action.select);
 				let updateQuery = {};
-				updateQuery[action.repoIndex] = {$set: action.select};
+				updateQuery[action.repoKey] = {$set: action.select};
 				this.selectedRepos = update(this.selectedRepos, updateQuery);
-				console.log(this.selectedRepos);
 				break;
 			}
 

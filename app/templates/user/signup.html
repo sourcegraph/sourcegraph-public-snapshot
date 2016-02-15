@@ -32,8 +32,7 @@
 							</p>
 						</div>
 
-						{{$btnLabel := printf "CREATE %s ACCOUNT" (ifString .FirstUser "ADMIN")}}
-						<button type="submit" class="btn btn-primary btn-block" tabindex=4>{{$btnLabel}}</button>
+						<button type="submit" class="btn btn-primary btn-block" tabindex=4>CREATE ACCOUNT</button>
 						<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 						{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
 					</form>

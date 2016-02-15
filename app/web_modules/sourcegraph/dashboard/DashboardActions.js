@@ -42,8 +42,8 @@ export class SelectRepos {
 }
 
 export class SelectRepo {
-	constructor(repoIndex, select) {
-		this.repoIndex = repoIndex;
+	constructor(repoKey, select) {
+		this.repoKey = repoKey;
 		this.select = select;
 	}
 }
@@ -56,8 +56,8 @@ export class SelectUsers {
 }
 
 export class SelectUser {
-	constructor(userIndex, select) {
-		this.userIndex = userIndex;
+	constructor(userKey, select) {
+		this.userKey = userKey;
 		this.select = select;
 	}
 }
