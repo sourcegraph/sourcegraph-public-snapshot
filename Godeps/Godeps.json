@@ -789,19 +789,19 @@
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/exact",
-			"Rev": "fe74a4186116b8d7dd38a723993e0d84f8834b34"
+			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/types",
-			"Rev": "fe74a4186116b8d7dd38a723993e0d84f8834b34"
+			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/vcs",
-			"Rev": "fe74a4186116b8d7dd38a723993e0d84f8834b34"
+			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/godoc/vfs",
-			"Rev": "fe74a4186116b8d7dd38a723993e0d84f8834b34"
+			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
 			"ImportPath": "google.golang.org/api/googleapi",
