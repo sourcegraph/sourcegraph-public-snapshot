@@ -25,11 +25,19 @@ type dashboardData struct {
 	MirrorData     *sourcegraph.UserMirrorData
 	Teammates      *sourcegraph.Teammates
 
+	// This flag is set if the user has returned to the dashboard after
+	// being redirected from GitHub OAuth2 login page.
+	GitHubOnboarding bool
+
 	tmpl.Common
 }
 
 func execDashboardTmpl(w http.ResponseWriter, r *http.Request, d *dashboardData) error {
 	d.IsLDAP = authutil.ActiveFlags.IsLDAP()
+	q := r.URL.Query()
+	if q.Get("github-onboarding") == "true" {
+		d.GitHubOnboarding = true
+	}
 	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, d)
 }
 
