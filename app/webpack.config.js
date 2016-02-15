@@ -1,6 +1,7 @@
 var webpack = require("webpack");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var glob = require("glob");
+var URL = require("url");
 require("sass-loader"); // bail on load error
 require("lintspaces-loader");
 
@@ -27,9 +28,7 @@ if (process.env.NODE_ENV === "production") {
 
 var webpackDevServerPort = 8080;
 if (process.env.WEBPACK_DEV_SERVER_URL) {
-	var urijs = require("urijs");
-	var uri = urijs.parse(process.env.WEBPACK_DEV_SERVER_URL);
-	webpackDevServerPort = uri.port;
+	webpackDevServerPort = URL.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
 }
 
 module.exports = {
