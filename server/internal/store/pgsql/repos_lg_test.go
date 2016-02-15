@@ -104,7 +104,7 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	// Start our primary pgsql-backed server.
 	pgsqlServer, pgsqlCtx := testserver.NewUnstartedServer()
 	pgsqlServer.Config.ServeFlags = append(pgsqlServer.Config.ServeFlags,
-		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
+		&authutil.Flags{Source: "none", AllowAnonymousReaders: true, PrivateMirrors: true},
 	)
 	if err := pgsqlServer.Start(); err != nil {
 		t.Fatal(err)

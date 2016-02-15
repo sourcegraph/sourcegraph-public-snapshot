@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -51,6 +52,23 @@ func (r *repoPerms) Add(ctx context.Context, uid int32, repo string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *repoPerms) Get(ctx context.Context, uid int32, repo string) (bool, error) {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "RepoPerms.Get", uid); err != nil {
+		return false, err
+	}
+	if uid == 0 || repo == "" {
+		return false, nil
+	}
+
+	var perms repoPermsRow
+	if err := dbh(ctx).SelectOne(&perms, "SELECT * FROM repo_perms WHERE uid=$1 AND repo=$2", uid, repo); err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *repoPerms) Update(ctx context.Context, uid int32, repos []string) error {

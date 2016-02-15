@@ -392,6 +392,9 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
+	if op.IsPrivate && op.IsPublic {
+		return errors.New("invalid argument: both IsPrivate and IsPublic are set to true")
+	}
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
 		return err
 	}
@@ -407,6 +410,21 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 			return err
 		}
 	}
+	if op.IsPrivate || op.IsPublic {
+		// Only admin users can update a repo's visibility.
+		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Repos.Update"); err != nil {
+			return err
+		}
+		private := "t"
+		if op.IsPublic {
+			private = "f"
+		}
+		_, err := dbh(ctx).Exec(`UPDATE repo SET "private"=$1 WHERE uri=$2`, private, op.Repo.URI)
+		if err != nil {
+			return err
+		}
+	}
+
 	if op.UpdatedAt != nil {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo.URI)
 		if err != nil {

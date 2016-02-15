@@ -46,9 +46,25 @@ func TestRepoPerms_user(t *testing.T) {
 	// check user permission is not added again
 	err = s.Add(ctx, uid, repos[0])
 	if err == nil {
-		t.Fatalf("expected store.ErrRepoPermissionExists, got nil")
+		t.Errorf("expected store.ErrRepoPermissionExists, got nil")
 	} else if err != store.ErrRepoPermissionExists {
-		t.Fatalf("expected store.ErrRepoPermissionExists, got %v", err)
+		t.Errorf("expected store.ErrRepoPermissionExists, got %v", err)
+	}
+
+	// get user repo permissions
+	valid, err := s.Get(ctx, uid, repos[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !valid {
+		t.Errorf("expected uid %d to have permission, got false", uid)
+	}
+	valid, err = s.Get(ctx, uid2, repos[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if valid {
+		t.Errorf("expected uid %d to not have permission, got true", uid2)
 	}
 
 	// list user repos
