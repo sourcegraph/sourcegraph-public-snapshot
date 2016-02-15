@@ -2,9 +2,8 @@ package ui
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
-
-	"fmt"
 
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
@@ -20,7 +19,7 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	ctxActor := auth.ActorFromContext(ctx)
 	if !ctxActor.HasAdminAccess() && !authutil.ActiveFlags.PrivateMirrors {
 		// current user is not an admin of the instance
-		return fmt.Errorf("user not authenticated to complete this request")
+		return errors.New("user not authenticated to complete this request")
 	}
 
 	query := struct {
@@ -33,7 +32,7 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 
 	if query.Email == "" {
-		return fmt.Errorf("no email specified")
+		return errors.New("no email specified")
 	}
 
 	var write, admin bool
@@ -46,7 +45,7 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	case "read":
 		// no-op
 	default:
-		return fmt.Errorf("unknown permission type")
+		return errors.New("unknown permission type")
 	}
 
 	pendingInvite, err := cl.Accounts.Invite(ctx, &sourcegraph.AccountInvite{
@@ -58,4 +57,42 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return json.NewEncoder(w).Encode(pendingInvite)
+}
+
+type inviteResult struct {
+	Email      string
+	InviteLink string
+	EmailSent  bool
+	Err        error
+}
+
+func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
+	ctx := httpctx.FromRequest(r)
+	cl := handlerutil.APIClient(r)
+
+	query := struct {
+		Emails []string
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&query); err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	if len(query.Emails) == 0 {
+		return errors.New("no emails specified")
+	}
+
+	inviteResults := make([]*inviteResult, len(query.Emails))
+	for i, email := range query.Emails {
+		inviteResults[i] = &inviteResult{Email: email}
+		pendingInvite, err := cl.Accounts.Invite(ctx, &sourcegraph.AccountInvite{Email: email})
+		if err != nil {
+			inviteResults[i].Err = err
+		} else {
+			inviteResults[i].EmailSent = pendingInvite.EmailSent
+			inviteResults[i].InviteLink = pendingInvite.Link
+		}
+	}
+
+	return json.NewEncoder(w).Encode(inviteResults)
 }

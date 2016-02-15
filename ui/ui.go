@@ -57,6 +57,9 @@ func NewHandler(r *mux.Router) http.Handler {
 	r.Get(ui_router.Definition).Handler(handler(serveDef))
 	r.Get(ui_router.DefExamples).Handler(handler(serveDefExamples))
 
+	r.Get(ui_router.RepoCreate).Handler(handler(serveRepoCreate))
+	r.Get(ui_router.RepoMirror).Handler(handler(serveRepoMirror))
+
 	r.Get(ui_router.RepoCommits).Handler(handler(serveRepoCommits))
 
 	r.Get(ui_router.SearchTokens).Handler(handler(serveTokenSearch))
@@ -69,6 +72,7 @@ func NewHandler(r *mux.Router) http.Handler {
 	}
 
 	r.Get(ui_router.UserInvite).Handler(handler(serveUserInvite))
+	r.Get(ui_router.UserInviteBulk).Handler(handler(serveUserInviteBulk))
 	r.Get(ui_router.UserKeys).Handler(handler(serveUserKeys))
 
 	return handlerutil.WithMiddleware(r, mw...)
