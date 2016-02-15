@@ -25,7 +25,7 @@
 			window.progress.githubLinkURL = "{{router.URLToGitHubOAuth}}";
 		{{else}}
 			if (true) { // TODO(pararth): set if being redirected from GitHub
-				window.progress.currentStep = 1;
+				window.progress.currentStep = 0;
 			} else {
 				window.progress.currentStep = 50; // done
 			}
