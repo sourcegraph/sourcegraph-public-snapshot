@@ -1,4 +1,4 @@
-package vcs
+package vcs_test
 
 import (
 	"flag"
