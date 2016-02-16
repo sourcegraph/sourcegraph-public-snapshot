@@ -147,7 +147,8 @@ class CodeLineView extends Component {
 
 CodeLineView.propTypes = {
 	lineNumber: (props, propName, componentName) => {
-		React.PropTypes.number(props, propName, componentName);
+		let v = React.PropTypes.number(props, propName, componentName);
+		if (v) return v;
 		if (typeof props.lineNumber !== "undefined" && (typeof props.oldLineNumber !== "undefined" || typeof props.newLineNumber !== "undefined")) {
 			return new Error("If lineNumber is set, then oldLineNumber/newLineNumber (which are for diff hunks) may not be used");
 		}
@@ -161,7 +162,7 @@ CodeLineView.propTypes = {
 	// required if annotations are specified, so that the annotations can
 	// be aligned to the contents.
 	startByte: (props, propName, componentName) => {
-		if (props.annotations) React.PropTypes.number.isRequired(props, propName, componentName);
+		if (props.annotations) return React.PropTypes.number.isRequired(props, propName, componentName);
 	},
 	contents: React.PropTypes.string,
 	annotations: React.PropTypes.array,
