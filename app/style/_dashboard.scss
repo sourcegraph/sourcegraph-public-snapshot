@@ -250,10 +250,10 @@
 		border: 1px solid rgba(172,177,214,0.3);
 
 		input[type="checkbox"] {
-	    	display:none;
+			display:none;
 		}
 		input[type="checkbox"] {
-	    	display: inline-block;
+			display: inline-block;
 			width: 16px;
 			height: 16px;
 			color: #0dceb7;
@@ -264,9 +264,9 @@
 			width: 16px;
 			height: 16px;
 			color: #0dceb7;
-		    margin:-1px 4px 0 0;
-		    vertical-align:middle;
-		    cursor:pointer;
+			margin:-1px 4px 0 0;
+			vertical-align:middle;
+			cursor:pointer;
 		}
 
 		.header {
@@ -279,7 +279,7 @@
 				display: -webkit-flex;
 				display: flex;
 				border: none !important;
-			    border-color: transparent !important;
+				border-color: transparent !important;
 
 				.search-icon {
 					-webkit-flex: 1;
