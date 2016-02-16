@@ -24,16 +24,15 @@
 			window.progress.currentStep = 0;
 			window.progress.githubLinkURL = "{{router.URLToGitHubOAuth}}";
 		{{else}}
-			if (true) { // TODO(pararth): set if being redirected from GitHub
+			{{if .GitHubOnboarding}}
 				window.progress.currentStep = 1;
-			} else {
+			{{else}}
 				window.progress.currentStep = 50; // done
-			}
+			{{end}}
 		{{end}}
 	{{else}}
 		window.progress.currentStep = 50; // done
 	{{end}}
-	window.progress.currentStep = 50; // TODO(rothfels): remove
 
 	window.isMothership = JSON.parse({{json (isMothership .AppURL)}});
 	window.allowMirrors = JSON.parse({{json .PrivateMirrors}});
