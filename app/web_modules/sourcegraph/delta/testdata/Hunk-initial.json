@@ -44,208 +44,49 @@
 								}
 							},
 							{
-								"type": "tr",
+								"type": "CodeLineView",
 								"key": "0",
 								"props": {
-									"className": "line new-line",
-									"children": [
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": ""
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": 5
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-content",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "prefix",
-															"children": [
-																"+"
-															]
-														}
-													},
-													" a"
-												]
-											}
-										}
-									]
+									"className": "new-line",
+									"newLineNumber": 5,
+									"contents": "+ a"
 								}
 							},
 							{
-								"type": "tr",
+								"type": "CodeLineView",
 								"key": "1",
 								"props": {
-									"className": "line old-line",
-									"children": [
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": 6
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": ""
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-content",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "prefix",
-															"children": [
-																"-"
-															]
-														}
-													},
-													" b"
-												]
-											}
-										}
-									]
+									"className": "old-line",
+									"oldLineNumber": 6,
+									"contents": "- b"
 								}
 							},
 							{
-								"type": "tr",
+								"type": "CodeLineView",
 								"key": "2",
 								"props": {
-									"className": "line",
-									"children": [
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": 7
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": 6
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-content",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "prefix",
-															"children": [
-																" "
-															]
-														}
-													},
-													"c"
-												]
-											}
-										}
-									]
+									"className": "",
+									"oldLineNumber": 7,
+									"newLineNumber": 6,
+									"contents": " c"
 								}
 							},
 							{
-								"type": "tr",
+								"type": "CodeLineView",
 								"key": "3",
 								"props": {
-									"className": "line old-line",
-									"children": [
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": 8
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": ""
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-content",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "prefix",
-															"children": [
-																"-"
-															]
-														}
-													},
-													" d"
-												]
-											}
-										}
-									]
+									"className": "old-line",
+									"oldLineNumber": 8,
+									"contents": "- d"
 								}
 							},
 							{
-								"type": "tr",
+								"type": "CodeLineView",
 								"key": "4",
 								"props": {
-									"className": "line old-line",
-									"children": [
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": 9
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-number",
-												"data-line": ""
-											}
-										},
-										{
-											"type": "td",
-											"props": {
-												"className": "line-content",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "prefix",
-															"children": [
-																"-"
-															]
-														}
-													},
-													" e"
-												]
-											}
-										}
-									]
+									"className": "old-line",
+									"oldLineNumber": 9,
+									"contents": "- e"
 								}
 							}
 						]

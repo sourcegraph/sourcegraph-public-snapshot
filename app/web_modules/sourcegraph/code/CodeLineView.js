@@ -32,9 +32,12 @@ class CodeLineView extends Component {
 		state.highlightedDef = state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
 
 		state.lineNumber = props.lineNumber || null;
+		state.oldLineNumber = props.oldLineNumber || null;
+		state.newLineNumber = props.newLineNumber || null;
 		state.startByte = props.startByte || null;
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
+		state.className = props.className || "";
 	}
 
 	render() {
@@ -115,8 +118,10 @@ class CodeLineView extends Component {
 			contents = this.state.contents;
 		}
 
+		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
+
 		return (
-			<tr className={`line ${this.state.selected ? "main-byte-range" : ""}`}>
+			<tr className={`line ${this.state.selected ? "main-byte-range" : ""} ${this.state.className}`}>
 				{this.state.lineNumber &&
 					<td className="line-number"
 						data-line={this.state.lineNumber}
@@ -128,6 +133,9 @@ class CodeLineView extends Component {
 							Dispatcher.dispatch(new CodeActions.SelectLine(this.state.lineNumber));
 						}}>
 					</td>}
+				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}
+				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}
+
 				<td className="line-content">
 					{contents}
 					{this.state.contents === "" && <span>&nbsp;</span>}
@@ -138,13 +146,29 @@ class CodeLineView extends Component {
 }
 
 CodeLineView.propTypes = {
-	lineNumber: React.PropTypes.number,
-	startByte: React.PropTypes.number.isRequired,
+	lineNumber: (props, propName, componentName) => {
+		React.PropTypes.number(props, propName, componentName);
+		if (typeof props.lineNumber !== "undefined" && (typeof props.oldLineNumber !== "undefined" || typeof props.newLineNumber !== "undefined")) {
+			return new Error("If lineNumber is set, then oldLineNumber/newLineNumber (which are for diff hunks) may not be used");
+		}
+	},
+
+	// For diff hunks.
+	oldLineNumber: React.PropTypes.number,
+	newLineNumber: React.PropTypes.number,
+
+	// startByte is the byte position of the first byte of contents. It is
+	// required if annotations are specified, so that the annotations can
+	// be aligned to the contents.
+	startByte: (props, propName, componentName) => {
+		if (props.annotations) React.PropTypes.number.isRequired(props, propName, componentName);
+	},
 	contents: React.PropTypes.string,
 	annotations: React.PropTypes.array,
 	selected: React.PropTypes.bool,
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
+	className: React.PropTypes.string,
 };
 
 export default CodeLineView;

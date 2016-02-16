@@ -2,6 +2,7 @@ import React from "react";
 
 import {atob} from "abab";
 import classNames from "classnames";
+import CodeLineView from "sourcegraph/code/CodeLineView";
 
 class Hunk extends React.Component {
 	render() {
@@ -43,18 +44,15 @@ class Hunk extends React.Component {
 							}
 						}
 						return (
-							<tr key={i} className={classNames({
-								"line": true,
-								"new-line": prefix === "+",
-								"old-line": prefix === "-",
-							})}>
-								<td className="line-number" data-line={prefix === "+" ? "" : origLine}></td>
-								<td className="line-number" data-line={prefix === "-" ? "" : newLine}></td>
-								<td className="line-content">
-									<span className="prefix">{prefix}</span>
-									{line.slice(1)}
-								</td>
-							</tr>
+							<CodeLineView
+								key={i}
+								className={classNames({
+									"new-line": prefix === "+",
+									"old-line": prefix === "-",
+								})}
+								oldLineNumber={prefix === "+" ? null : origLine}
+								newLineNumber={prefix === "-" ? null : newLine}
+								contents={line} />
 						);
 					})}
 				</tbody>
