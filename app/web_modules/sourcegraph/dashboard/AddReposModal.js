@@ -1,32 +1,20 @@
 import React from "react";
 import update from "react/lib/update";
 
-import Container from "sourcegraph/Container";
-import GitHubReposStore from "sourcegraph/dashboard/GitHubReposStore";
-import SelectableListWidget from "sourcegraph/dashboard/SelectableListWidget";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-import Dispatcher from "sourcegraph/Dispatcher";
+import Component from "sourcegraph/Component";
+import ImportGitHubReposMenu from "sourcegraph/dashboard/ImportGitHubReposMenu";
 
-class AddReposWidget extends Container {
+class AddReposWidget extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			repoName: "",
 		};
 		this._handleTextInput = this._handleTextInput.bind(this);
-		this._handleCreate = this._handleCreate.bind(this);
-		this._handleAddMirrors = this._handleAddMirrors.bind(this);
 	}
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.selectedRepos = GitHubReposStore.selectedRepos;
-		state.currentOrg = GitHubReposStore.currentOrg;
-		state.orgs = GitHubReposStore.orgs;
-		state.selectAll = GitHubReposStore.selectAll;
-		state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
-			.filter(repo => repo.Repo.Private)
-			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI}));
 	}
 
 	_handleTextInput(e) {
@@ -40,14 +28,6 @@ class AddReposWidget extends Container {
 		// Dispatcher.dispatch(new DashboardActions.WantAddRepos());
 		this.state.dismissModal();
 	}
-
-	_handleAddMirrors(repos) {
-		// TODO:
-		// Dispatcher.dispatch(new DashboardActions.WantAddRepos());
-		this.state.dismissModal();
-	}
-
-	stores() { return [GitHubReposStore]; }
 
 	render() {
 		console.log("and re-rendering add repos widget");
@@ -96,17 +76,7 @@ class AddReposWidget extends Container {
 									</div>
 								</div>
 								<div role="tabpanel" className="tab-pane" id="github-mirror">
-									<SelectableListWidget items={this.state.items}
-										currentCategory={this.state.currentOrg}
-										menuCategories={this.state.orgs}
-										onMenuClick={(org) => Dispatcher.dispatch(new DashboardActions.SelectRepoOrg(org))}
-										onSelect={(repoURI, select) => Dispatcher.dispatch(new DashboardActions.SelectRepo(repoURI, select))}
-										onSelectAll={(items, selectAll) => Dispatcher.dispatch(new DashboardActions.SelectRepos(items.map(item => item.key), selectAll))}
-										selections={this.state.selectedRepos}
-										selectAll={this.state.selectAll}
-										menuLabel="Organizations"
-										searchPlaceholderText="Search GitHub repositories"
-										onSubmit={(items) => console.log("submitted", items)} />
+									<ImportGitHubReposMenu />
 								</div>
 							</div>
 						</div>

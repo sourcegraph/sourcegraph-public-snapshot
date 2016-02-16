@@ -1,13 +1,10 @@
 import React from "react";
 import update from "react/lib/update";
 
-import Container from "sourcegraph/Container";
-import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
-import SelectableListWidget from "sourcegraph/dashboard/SelectableListWidget";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-import Dispatcher from "sourcegraph/Dispatcher";
+import Component from "sourcegraph/Component";
+import ImportGitHubUsersMenu from "sourcegraph/dashboard/ImportGitHubUsersMenu";
 
-class AddUsersModal extends Container {
+class AddUsersModal extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -15,19 +12,10 @@ class AddUsersModal extends Container {
 		};
 		this._handleTextInput = this._handleTextInput.bind(this);
 		this._handleCreate = this._handleCreate.bind(this);
-		this._handleAddMirrors = this._handleAddMirrors.bind(this);
 	}
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.selectedUsers = GitHubUsersStore.selectedUsers;
-		state.currentOrg = GitHubUsersStore.currentOrg;
-		state.orgs = GitHubUsersStore.orgs;
-		state.selectAll = GitHubUsersStore.selectAll;
-		state.items = GitHubUsersStore.usersByOrg.get(state.currentOrg).map((user) => ({
-			name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
-			key: user.RemoteAccount.Login,
-		}));
 	}
 
 	_handleTextInput(e) {
@@ -41,14 +29,6 @@ class AddUsersModal extends Container {
 		// Dispatcher.dispatch(new DashboardActions.WantAddUsers());
 		this.state.dismissModal();
 	}
-
-	_handleAddMirrors(users) {
-		// TODO:
-		// Dispatcher.dispatch(new DashboardActions.WantAddUsers());
-		this.state.dismissModal();
-	}
-
-	stores() { return [GitHubUsersStore]; }
 
 	render() {
 		return (
@@ -96,17 +76,7 @@ class AddUsersModal extends Container {
 									</div>
 								</div>
 								<div role="tabpanel" className="tab-pane" id="github-invite">
-									<SelectableListWidget items={this.state.mirrorUsers}
-										currentCategory={this.state.currentOrg}
-										menuCategories={this.state.orgs}
-										onMenuClick={(org) => Dispatcher.dispatch(new DashboardActions.SelectUserOrg(org))}
-										onSelect={(userKey, select) => Dispatcher.dispatch(new DashboardActions.SelectUser(userKey, select))}
-										onSelectAll={(users, selectAll) => Dispatcher.dispatch(new DashboardActions.SelectUsers(users, selectAll))}
-										selections={this.state.selectedUsers}
-										selectAll={this.state.selectAll}
-										menuLabel="Organizations"
-										searchPlaceholderText="Search GitHub contacts"
-										onSubmit={this._handleAddMirrors} />
+									<ImportGitHubUsersMenu />
 								</div>
 							</div>
 						</div>
@@ -119,8 +89,6 @@ class AddUsersModal extends Container {
 
 AddUsersModal.propTypes = {
 	dismissModal: React.PropTypes.func.isRequired,
-	allowStandaloneUsers: React.PropTypes.bool.isRequired,
-	allowGitHubMirrors: React.PropTypes.bool.isRequired,
 };
 
 export default AddUsersModal;
