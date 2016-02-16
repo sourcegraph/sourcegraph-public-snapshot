@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sqs/pbtypes"
+	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/auth"
@@ -53,7 +54,11 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	currentUser := handlerutil.UserFromRequest(r)
 	var users []*userInfo
 
-	privateMirrors := currentUser != nil && authutil.ActiveFlags.PrivateMirrors
+	if authutil.ActiveFlags.PrivateMirrors && currentUser == nil {
+		return appauthutil.RedirectToLogIn(w, r)
+	}
+
+	privateMirrors := authutil.ActiveFlags.PrivateMirrors
 	var mirrorData *sourcegraph.UserMirrorData
 	var teammates *sourcegraph.Teammates
 	if privateMirrors {
