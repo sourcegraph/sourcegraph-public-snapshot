@@ -8,7 +8,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
-
+	"sourcegraph.com/sqs/pbtypes"
+	
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -94,9 +95,10 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 		repoupdater.Enqueue(&sourcegraph.Repo{URI: repoURI})
 	}
 
-	return e.Encode(&struct {
-		Success bool
-	}{
-		Success: true,
-	})
+	mirrorData, err := apiclient.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	return e.Encode(mirrorData)
 }
