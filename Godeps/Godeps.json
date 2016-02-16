@@ -6,11 +6,6 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "azul3d.org/semver.v2",
-			"Comment": "v2.0.1",
-			"Rev": "85423cb34bb5ce092d65466631f4fbfa501e192a"
-		},
-		{
 			"ImportPath": "bitbucket.org/pkg/inflect",
 			"Comment": "go.r60-12",
 			"Rev": "8961c3750a47b8c0b3e118d52513b97adf85a7e8"
@@ -38,10 +33,6 @@
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.8.7-53-g446d1c1",
 			"Rev": "446d1c146faa8ed3f4218f056fcd165f6bcfda81"
-		},
-		{
-			"ImportPath": "github.com/Unknwon/cae",
-			"Rev": "7f5e046bc8a6c3cde743c233b96ee4fd84ee6ecd"
 		},
 		{
 			"ImportPath": "github.com/alecthomas/binary",
@@ -234,18 +225,6 @@
 			"Rev": "ec0a78e0f4db229b7897be36596a8944230b857a"
 		},
 		{
-			"ImportPath": "github.com/gopherjs/gopherjs/build",
-			"Rev": "4b53e1bddba0e2f734514aeb6c02db652f4c6fe8"
-		},
-		{
-			"ImportPath": "github.com/gopherjs/gopherjs/compiler",
-			"Rev": "4b53e1bddba0e2f734514aeb6c02db652f4c6fe8"
-		},
-		{
-			"ImportPath": "github.com/gopherjs/gopherjs/third_party/importer",
-			"Rev": "4b53e1bddba0e2f734514aeb6c02db652f4c6fe8"
-		},
-		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "1be7a086a5fd6440ef16fe96baeda0c78282b980"
 		},
@@ -264,10 +243,6 @@
 		{
 			"ImportPath": "github.com/hashicorp/go-version",
 			"Rev": "2b9865f60ce11e527bd1255ba82036d465570aa3"
-		},
-		{
-			"ImportPath": "github.com/hashicorp/hcl",
-			"Rev": "e96d23138c76470c808bf6586bdaf981bbd25cae"
 		},
 		{
 			"ImportPath": "github.com/howeyc/gopass",
@@ -339,10 +314,6 @@
 			"Rev": "3dac7b4f76f6e17fb39b768b89e3783d16e237fe"
 		},
 		{
-			"ImportPath": "github.com/mattn/go-isatty",
-			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
-		},
-		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
 		},
@@ -364,16 +335,8 @@
 			"Rev": "281073eb9eb092240d33ef253c404f1cca550309"
 		},
 		{
-			"ImportPath": "github.com/neelance/sourcemap",
-			"Rev": "8994456d80d26c100207bb0c4a758e25b1b4b5db"
-		},
-		{
 			"ImportPath": "github.com/opennota/urlesc",
 			"Rev": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587"
-		},
-		{
-			"ImportPath": "github.com/pkg/sftp",
-			"Rev": "e84cc8c755ca39b7b64f510fe1fffc1b51f210a5"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
@@ -484,10 +447,6 @@
 			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
 		},
 		{
-			"ImportPath": "github.com/shurcooL/go/gopherjs_http",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
-		},
-		{
 			"ImportPath": "github.com/shurcooL/go/gzip_file_server",
 			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
 		},
@@ -502,10 +461,6 @@
 		{
 			"ImportPath": "github.com/shurcooL/go/vfs/godocfs/godocfs",
 			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
-		},
-		{
-			"ImportPath": "github.com/shurcooL/gopherjslib",
-			"Rev": "d8eec8734d3ea74418f19cd9066d54fb2fa46e44"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/highlight_diff",
@@ -529,10 +484,6 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/path/vfspath",
-			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
-		},
-		{
-			"ImportPath": "github.com/shurcooL/httpfs/union",
 			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
 		},
 		{
@@ -788,11 +739,15 @@
 			"Rev": "3eb7007b740b66a77f3c85f2660a0240b284115a"
 		},
 		{
-			"ImportPath": "golang.org/x/tools/go/exact",
+			"ImportPath": "golang.org/x/tools/go/ast/astutil",
 			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
-			"ImportPath": "golang.org/x/tools/go/types",
+			"ImportPath": "golang.org/x/tools/go/buildutil",
+			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/loader",
 			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
@@ -810,10 +765,6 @@
 		{
 			"ImportPath": "google.golang.org/api/storage/v1",
 			"Rev": "0a735f7ec81c85ce7ec31bf7a67e125ef62266ec"
-		},
-		{
-			"ImportPath": "google.golang.org/appengine",
-			"Rev": "6bde959377a90acb53366051d7d587bfd7171354"
 		},
 		{
 			"ImportPath": "google.golang.org/cloud/compute/metadata",
@@ -836,10 +787,6 @@
 			"ImportPath": "gopkg.in/fsnotify.v1",
 			"Comment": "v1.2.0",
 			"Rev": "96c060f6a6b7e0d6f75fddd10efeaca3e5d1bcb0"
-		},
-		{
-			"ImportPath": "gopkg.in/gcfg.v1",
-			"Rev": "bf6a13274e638b65158eced37fe57b04c5b1838e"
 		},
 		{
 			"ImportPath": "gopkg.in/gorp.v1",
@@ -879,10 +826,6 @@
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",
 			"Comment": "v1-331-g6042383",
 			"Rev": "dace7e122742808bf6016bdc6510649d84f2a31e"
-		},
-		{
-			"ImportPath": "sourcegraph.com/sourcegraph/grpccache",
-			"Rev": "7ff0e3658acaebb8a75bff7091a3072c73be0171"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/makex",
