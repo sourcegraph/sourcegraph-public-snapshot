@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -530,6 +532,9 @@ func (s *Changesets) List(ctx context.Context, op *sourcegraph.ChangesetListOp) 
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Changesets.List", op.Repo); err != nil {
 		return nil, err
 	}
+	if err := s.doMigration(ctx, op.Repo); err != nil {
+		log.Println("Feb 15, 2016. data migration failed:", err)
+	}
 	fs := s.storage(ctx, op.Repo)
 
 	list := sourcegraph.ChangesetList{Changesets: []*sourcegraph.Changeset{}}
@@ -763,4 +768,50 @@ func (s *Changesets) indexHas(ctx context.Context, fs platformstorage.System, ci
 
 func (s *Changesets) storage(ctx context.Context, repoPath string) platformstorage.System {
 	return platformstorage.Namespace(ctx, "changesets", repoPath)
+}
+
+// doMigration performs a data migration that is required after a bug introduced
+// in the migration steps of Feb 15, 2016. It rebuilds every changeset index.
+//
+// TODO(slimsag): remove this after Mar 15, 2016.
+func (s *Changesets) doMigration(ctx context.Context, repo string) error {
+	fs := s.storage(ctx, repo)
+	if err := fs.PutNoOverwrite("migration", "feb-15-2016", nil); err != nil {
+		if os.IsExist(err) {
+			return nil // occured already previously
+		}
+		return err
+	}
+	fmt.Println("changesets: performing one-time Feb 15, 2016 index rebuild. This will complete shortly.")
+	csID := int64(0)
+	for {
+		csID++
+		cs, err := s.Get(ctx, &sourcegraph.ChangesetGetOp{
+			Spec: sourcegraph.ChangesetSpec{
+				Repo: sourcegraph.RepoSpec{URI: repo},
+				ID:   csID,
+			},
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "file does not exist") {
+				break // completed
+			}
+			return err
+		}
+
+		isOpen := cs.ClosedAt == nil && !cs.Merged
+		if err := s.updateIndex(ctx, fs, cs, isOpen); err != nil {
+			return err
+		}
+
+		for _, reviewer := range cs.Reviewers {
+			needsReview := !reviewer.LGTM
+			if err := s.updateNeedsReviewIndex(ctx, fs, csID, reviewer.UserSpec, needsReview); err != nil {
+				return err
+			}
+		}
+		fmt.Printf("changesets: updated index for #%v\n", cs.ID)
+	}
+	fmt.Println("changesets: finished one-time index rebuild")
+	return nil
 }
