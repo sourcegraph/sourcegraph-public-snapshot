@@ -53,6 +53,8 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	var users []*userInfo
+	var repos []*sourcegraph.Repo
+	var onWaitlist bool
 
 	if authutil.ActiveFlags.PrivateMirrors && currentUser == nil {
 		return appauthutil.RedirectToLogIn(w, r)
@@ -75,14 +77,12 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 				MirrorData:     mirrorData,
 				LinkGitHub:     true,
 			})
-		case sourcegraph.UserMirrorsState_OnWaitlist:
-			return execDashboardTmpl(w, r, &dashboardData{
-				PrivateMirrors: privateMirrors,
-				MirrorData:     mirrorData,
-				OnWaitlist:     true,
-			})
 		case sourcegraph.UserMirrorsState_NotAllowed:
 			privateMirrors = false
+		}
+
+		if mirrorData.State == sourcegraph.UserMirrorsState_OnWaitlist {
+			onWaitlist = true
 		}
 	}
 	if privateMirrors {
@@ -93,30 +93,31 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		}
 	} else {
 		users = getUsers(ctx, cl)
-	}
+		var listOpts sourcegraph.ListOptions
+		if err := schemautil.Decode(&listOpts, r.URL.Query()); err != nil {
+			return err
+		}
 
-	var listOpts sourcegraph.ListOptions
-	if err := schemautil.Decode(&listOpts, r.URL.Query()); err != nil {
-		return err
-	}
+		if listOpts.PerPage == 0 {
+			listOpts.PerPage = 50
+		}
 
-	if listOpts.PerPage == 0 {
-		listOpts.PerPage = 50
-	}
-
-	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
-		Sort:        "pushed",
-		Direction:   "desc",
-		ListOptions: listOpts,
-	})
-	if err != nil {
-		return err
+		repoList, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+			Sort:        "pushed",
+			Direction:   "desc",
+			ListOptions: listOpts,
+		})
+		if err != nil {
+			return err
+		}
+		repos = repoList.Repos
 	}
 
 	return execDashboardTmpl(w, r, &dashboardData{
-		Repos:          repos.Repos,
+		Repos:          repos,
 		Users:          users,
 		PrivateMirrors: privateMirrors,
+		OnWaitlist:     onWaitlist,
 		MirrorData:     mirrorData,
 		Teammates:      teammates,
 		IsRoot:         fed.Config.IsRoot,

@@ -277,10 +277,12 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	}
 
 	// Try adding user to waitlist.
-	if res, err := s.AddToWaitlist(ctx, &pbtypes.Void{}); err != nil {
+	res, err := s.AddToWaitlist(ctx, &pbtypes.Void{})
+	if err != nil {
 		return nil, err
-	} else if res.State != sourcegraph.UserMirrorsState_HasAccess && res.State != sourcegraph.UserMirrorsState_OnWaitlist {
-		gd.State = res.State
+	}
+	gd.State = res.State
+	if gd.State != sourcegraph.UserMirrorsState_HasAccess && gd.State != sourcegraph.UserMirrorsState_OnWaitlist {
 		return gd, nil
 	}
 
@@ -307,7 +309,6 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		gd.State = sourcegraph.UserMirrorsState_InvalidToken
 		return gd, nil
 	}
-	gd.State = sourcegraph.UserMirrorsState_HasAccess
 
 	var gitHubRepoURIs []string
 	for _, repo := range gitHubRepos {
