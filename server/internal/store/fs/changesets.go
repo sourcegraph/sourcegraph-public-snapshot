@@ -770,16 +770,20 @@ func (s *Changesets) storage(ctx context.Context, repoPath string) platformstora
 	return platformstorage.Namespace(ctx, "changesets", repoPath)
 }
 
+const (
+	migrationBucket = "migration"
+	migrationKey    = "feb-15-2016"
+)
+
 // doMigration performs a data migration that is required after a bug introduced
 // in the migration steps of Feb 15, 2016. It rebuilds every changeset index.
 //
 // TODO(slimsag): remove this after Mar 15, 2016.
 func (s *Changesets) doMigration(ctx context.Context, repo string) error {
 	fs := s.storage(ctx, repo)
-	if err := fs.PutNoOverwrite("migration", "feb-15-2016", nil); err != nil {
-		if os.IsExist(err) {
-			return nil // occured already previously
-		}
+	if _, err := fs.Get(migrationBucket, migrationKey); err == nil {
+		return nil // completed
+	} else if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	csID := int64(0)
@@ -816,5 +820,5 @@ func (s *Changesets) doMigration(ctx context.Context, repo string) error {
 		log15.Info("changesets: updated index for", "repo", repo, "CS", cs.ID)
 	}
 	log15.Info("changesets: finished one-time index rebuild")
-	return nil
+	return fs.Put(migrationBucket, migrationKey, nil)
 }
