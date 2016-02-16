@@ -22,6 +22,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
+	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -137,14 +138,34 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		}
 
 		if op.Private {
+			// If this server has a waitlist in place, check that the user
+			// is off the waitlist.
+			if authutil.ActiveFlags.MirrorsWaitlist != "none" {
+				wUser, err := store.WaitlistFromContext(ctx).GetUser(ctx, uid)
+				if err != nil {
+					return nil, err
+				}
+				if wUser.GrantedAt == nil {
+					return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
+				}
+			}
+
 			// Check that the user has permission to access this private repo.
 			// The user's permissions for private mirror repos are set in
 			// MirrorRepos.GetUserData, which is called during onboarding.
-			valid, err := store.RepoPermsFromContext(ctx).Get(ctx, uid, op.URI)
+			valid, err := store.RepoPermsFromContext(ctx).Get(elevatedActor(ctx), uid, op.URI)
 			if err != nil {
 				return nil, err
 			}
 			if !valid {
+				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
+			}
+		} else {
+			// Check that the repo is really public.
+			ghRepos := github.Repos{}
+			repo, err := ghRepos.Get(github.NewContextWithUnauthedClient(ctx), op.URI)
+			if err != nil || repo.Private {
+				log15.Warn("Could not fetch public GitHub repo in Repos.Create", "uri", op.URI, "error", err)
 				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
 			}
 		}
@@ -152,9 +173,6 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		if op.Mirror && op.Private {
 			return nil, grpc.Errorf(codes.Unavailable, "creating a private mirror repo is not enabled on this server")
 		}
-	}
-	if op.Mirror && !op.Private {
-		// Check that the repo is really public.
 	}
 	ts := pbtypes.NewTimestamp(time.Now())
 	repo := &sourcegraph.Repo{
@@ -169,16 +187,8 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		CreatedAt:    &ts,
 	}
 
-	if err := store.ReposFromContext(ctx).Create(ctx, repo); err != nil {
+	if err := store.ReposFromContext(ctx).Create(elevatedActor(ctx), repo); err != nil {
 		return nil, err
-	}
-
-	if authutil.ActiveFlags.PrivateMirrors && op.Mirror && op.Private {
-		// Allow this user to access this repo.
-		repoPermsStore := store.RepoPermsFromContext(ctx)
-		if err := repoPermsStore.Add(elevatedActor(ctx), uid, op.URI); err != nil && err != store.ErrRepoPermissionExists {
-			log15.Warn("Failed to set repo permissions for user", "repo", op.URI, "uid", uid, "error", err)
-		}
 	}
 
 	if op.Mirror {
