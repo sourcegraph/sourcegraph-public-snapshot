@@ -388,7 +388,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 			}
 		} else if repo.Private {
 			// If repo is private and not mirrored yet, add it to pending repos.
-			if err := store.WaitlistFromContext(ctx).RecordPendingRepo(ctx, repo); err != nil {
+			if err := store.WaitlistFromContext(ctx).RecordPendingRepo(elevatedActor(ctx), repo); err != nil {
 				log15.Warn("Failed to record pending private repo", "uri", repo.URI, "error", err)
 			}
 		}

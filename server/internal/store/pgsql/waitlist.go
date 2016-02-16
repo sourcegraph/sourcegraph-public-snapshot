@@ -2,6 +2,7 @@ package pgsql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -274,7 +275,7 @@ func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted boo
 }
 
 func (w *waitlist) UpdateUserOrgs(ctx context.Context, uid int32, orgNames []string) error {
-	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Waitlist.UpdateUserOrgs", uid); err != nil {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.UpdateUserOrgs"); err != nil {
 		return err
 	}
 	if uid == 0 {
@@ -329,19 +330,28 @@ func (w *waitlist) RecordPendingRepo(ctx context.Context, repo *sourcegraph.Remo
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.RecordPendingRepo"); err != nil {
 		return err
 	}
+	if repo == nil {
+		return errors.New("invalid argument: nil repo")
+	}
 	currTime := time.Now()
+	var ownerName string
+	var isOrg bool
+	if repo.Owner != nil {
+		ownerName = repo.Owner.Login
+		isOrg = repo.Owner.IsOrganization
+	}
 	dbRepo := pendingReposRow{
 		URI: repo.URI,
 		CloneURL: repo.HTTPCloneURL,
-		Owner: "someone",
-		IsOrg: true,
+		Owner: ownerName,
+		IsOrg: isOrg,
 		Language: repo.Language,
-		Size: 10,
-		Forks: 10,
-		Stars: 10,
-		Watchers: 10,
-		Subscribers: 10,
-		Issues: 10,
+		Size: repo.RepoSize,
+		Forks: repo.Forks,
+		Stars: repo.Stars,
+		Watchers: repo.Watchers,
+		Subscribers: repo.Subscribers,
+		Issues: repo.OpenIssues,
 		UpdatedAt: &currTime,
 	}
 	n, err := dbh(ctx).Update(&dbRepo)
