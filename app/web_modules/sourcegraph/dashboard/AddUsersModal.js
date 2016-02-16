@@ -59,17 +59,21 @@ class AddUsersModal extends Component {
 						</div>
 						<div className="modal-body">
 							<ul className="nav nav-tabs" role="tablist">
-								<li role="presentation" className="active">
-									<a href="#email-invite" role="tab" data-toggle="tab">Invite by Email</a>
-								</li>
-								<li role="presentation">
-									<a href="#github-invite" role="tab" data-toggle="tab">Invite from GitHub</a>
-								</li>
+								{this.state.allowStandaloneUsers &&
+									<li role="presentation" className={this.state.allowStandaloneUsers ? "active" : ""}>
+										<a href="#email-invite" role="tab" data-toggle="tab">Invite by Email</a>
+									</li>
+								}
+								{this.state.allowGitHubUsers &&
+									<li role="presentation" className={!this.state.allowStandaloneUsers ? "active" : ""}>
+										<a href="#github-invite" role="tab" data-toggle="tab">Invite from GitHub</a>
+									</li>
+								}
 							</ul>
 
 							<div className="tab-content">
 								{this.state.allowStandaloneUsers &&
-									<div role="tabpanel" className="tab-pane active" id="email-invite">
+									<div role="tabpanel" className={`tab-pane ${this.state.allowStandaloneUsers ? "active" : ""}`} id="email-invite">
 										<div className="widget-body">
 											<p className="add-repo-label">EMAIL:</p>
 											<div className="form-inline invite-user-form">
@@ -95,7 +99,7 @@ class AddUsersModal extends Component {
 									</div>
 								}
 								{this.state.allowGitHubUsers &&
-									<div role="tabpanel" className="tab-pane" id="github-invite">
+									<div role="tabpanel" className={`tab-pane ${!this.state.allowStandaloneUsers ? "active" : ""}`} id="github-invite">
 										<ImportGitHubUsersMenu />
 									</div>
 								}

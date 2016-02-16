@@ -8,6 +8,10 @@ export default function(options, callback) {
 			"X-Csrf-Token": context.csrfToken,
 		},
 	};
+	if (typeof document !== "undefined" && document.head.dataset && document.head.dataset.currentUserOauth2AccessToken) {
+		let auth = `x-oauth-basic:${document.head.dataset.currentUserOauth2AccessToken}`;
+		defaultOptions.headers["authorization"] = `Basic ${btoa(auth)}`;
+	}
 	if (window.hasOwnProperty("_cacheControl")) {
 		defaultOptions.headers["Cache-Control"] = window._cacheControl;
 	}

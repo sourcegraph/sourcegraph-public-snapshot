@@ -9,11 +9,12 @@
 	window.users = JSON.parse({{json .Users}}) || [];
 	window.currentUser = JSON.parse({{json .CurrentUser}});
 	// mirrorData is {ReposByOrg: {org: {PrivateRepos, PublicRepos}}}
-	// Repos is {Repo: {PushedAt, URI, Description, ExistsLocally}}
+	// Repos is {Repo: {PushedAt, URI, Description}, ExistsLocally}
 	window.mirrorData = JSON.parse({{json .MirrorData}});
 	// teammates is {UsersByOrg: org: Users: []}
 	// User is {RemoteAccount: {AvatarURL, Domain, Login}, LocalAccount, Email}
 	window.teammates = JSON.parse({{json .Teammates}});
+	window.onWaitlist = JSON.parse({{json .OnWaitlist}}) || false;
 
 	window.progress = {
 		numSteps: 4,

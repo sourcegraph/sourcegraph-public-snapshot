@@ -52,17 +52,21 @@ class AddReposWidget extends Component {
 						</div>
 						<div className="modal-body">
 							<ul className="nav nav-tabs" role="tablist">
-								<li role="presentation" className="active">
-									<a href="#new-repo" role="tab" data-toggle="tab">Create New</a>
-								</li>
-								<li role="presentation">
-									<a href="#github-mirror" role="tab" data-toggle="tab">Import from GitHub</a>
-								</li>
+								{this.state.allowStandaloneRepos &&
+									<li role="presentation" className={this.state.allowStandaloneRepos ? "active" : ""}>
+										<a href="#new-repo" role="tab" data-toggle="tab">Create New</a>
+									</li>
+								}
+								{this.state.allowGitHubMirrors &&
+									<li role="presentation" className={!this.state.allowStandaloneRepos ? "active" : ""}>
+										<a href="#github-mirror" role="tab" data-toggle="tab">Import from GitHub</a>
+									</li>
+								}
 							</ul>
 
 							<div className="tab-content">
 								{this.state.allowStandaloneRepos &&
-									<div role="tabpanel" className="tab-pane active" id="new-repo">
+									<div role="tabpanel" className={`tab-pane ${this.state.allowStandaloneRepos ? "active" : ""}`} id="new-repo">
 										<div className="widget-body">
 											<p className="add-repo-label">REPO NAME:</p>
 											<input className="form-control"
@@ -80,7 +84,7 @@ class AddReposWidget extends Component {
 									</div>
 								}
 								{this.state.allowGitHubMirrors &&
-									<div role="tabpanel" className="tab-pane" id="github-mirror">
+									<div role="tabpanel" className={`tab-pane ${!this.state.allowStandaloneRepos ? "active" : ""}`} id="github-mirror">
 										<ImportGitHubReposMenu />
 									</div>
 								}

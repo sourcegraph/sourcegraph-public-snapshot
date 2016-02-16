@@ -15,6 +15,7 @@ class ImportGitHubReposMenu extends Container {
 			selectedRepos: {},
 			selectAll: false,
 		};
+		this._canMirror = this._canMirror.bind(this);
 		this._handleAddMirrors = this._handleAddMirrors.bind(this);
 		this._handleSelect = this._handleSelect.bind(this);
 		this._handleSelectAll = this._handleSelectAll.bind(this);
@@ -23,10 +24,19 @@ class ImportGitHubReposMenu extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.orgs = GitHubReposStore.orgs;
+		state.onWaitlist = GitHubReposStore.onWaitlist;
 		if (!state.currentOrg) state.currentOrg = GitHubReposStore.orgs[0];
 		state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
-			.filter(repo => repo.Repo.Language === "Go" || repo.Repo.Language === "Java")
-			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI}));
+			.filter(this._canMirror)
+			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI, isPrivate: repo.Repo.IsPrivate}));
+	}
+
+	_canMirror(repo) {
+		if (this.state.onWaitlist) {
+			if (repo.Repo.IsPrivate) return false;
+		}
+		if (repo.ExistsLocally) return false;
+		return repo.Repo.Language === "Go" || repo.Repo.Language === "Java";
 	}
 
 	_handleSelect(repoURI, select) {
@@ -47,11 +57,10 @@ class ImportGitHubReposMenu extends Container {
 	}
 
 	_handleAddMirrors(items) {
-		let repos = [];
-		for (let repoURI of Object.keys(this.state.selectedRepos)) {
-			// TODO(renfredxh): add support for mirroring public repos.
-			if (this.state.selectedRepos[repoURI]) repos.push({URI: repoURI, Private: true});
-		}
+		let repos = this.state.items.filter(repo => this.state.selectedRepos[repo.key]).map(repo => ({
+			URI: repo.key,
+			Private: repo.isPrivate,
+		}));
 		Dispatcher.dispatch(new DashboardActions.WantAddMirrorRepos(repos));
 	}
 
