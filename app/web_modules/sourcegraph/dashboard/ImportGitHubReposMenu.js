@@ -25,7 +25,6 @@ class ImportGitHubReposMenu extends Container {
 		state.orgs = GitHubReposStore.orgs;
 		if (!state.currentOrg) state.currentOrg = GitHubReposStore.orgs[0];
 		state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
-			.filter(repo => repo.Repo.Private)
 			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI}));
 	}
 
