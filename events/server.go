@@ -2,7 +2,8 @@ package events
 
 import (
 	"errors"
-	"fmt"
+	"io"
+	"os"
 	"reflect"
 	"runtime"
 	"sync"
@@ -40,11 +41,12 @@ func (s *eventServer) publish(id EventID, payload interface{}) {
 		go s.parallel.Do(func() error {
 			defer func() {
 				if err := recover(); err != nil {
-					const size = 64 << 10
-					buf := make([]byte, size)
-					buf = buf[:runtime.Stack(buf, false)]
-					log15.Warn("events: registered event handler panicked:", "error", err)
-					fmt.Println("events: stack trace:", string(buf))
+					log15.Error("panic in events.Publish", "error", err)
+					stack := make([]byte, 1024*1024)
+					n := runtime.Stack(stack, false)
+					stack = stack[:n]
+					io.WriteString(os.Stderr, "\nstack trace:\n")
+					os.Stderr.Write(stack)
 				}
 			}()
 			cv.Call(args)
