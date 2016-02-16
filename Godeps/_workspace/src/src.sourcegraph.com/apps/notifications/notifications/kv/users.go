@@ -15,19 +15,13 @@ func sgUser(ctx context.Context, user *sourcegraph.User) issues.User {
 	profile := *conf.AppURL(ctx)
 	profile.Path = "~" + user.Login // TODO: Perhaps tap into sourcegraph routers, so this logic is DRY.
 
-	// TODO: Need to move this logic into Sourcegraph Users service and make it more complete/robust. For now, fall back to gravatar default image in case if no user avatar.
-	avatarURL := template.URL(user.AvatarURL)
-	if avatarURL == "" {
-		avatarURL = "https://secure.gravatar.com/avatar?d=mm&f=y&s=96"
-	}
-
 	return issues.User{
 		UserSpec: issues.UserSpec{
 			ID:     uint64(user.UID),
 			Domain: user.Domain, // TODO: If blank, set it to "sourcegraph.com"?
 		},
 		Login:     user.Login,
-		AvatarURL: avatarURL,
+		AvatarURL: template.URL(user.AvatarURLOfSize(48 * 2)),
 		HTMLURL:   template.URL(profile.String()),
 	}
 }

@@ -9,9 +9,10 @@
 </html>
 
 {{define "issue"}}
-	<h1>{{.Issue.Title}} <span class="gray">#{{.Issue.ID}}</span></h1>
-	<div id="issue-state-badge" style="margin-bottom: 20px;">{{template "issue-state-badge" .Issue}}</div>
-	{{if .Issue.Reference}}{{template "reference" .Issue}}{{end}}
+	{{$issue := .Issue}}
+	<h1>{{$issue.Title}} <span class="gray">#{{$issue.ID}}</span></h1>
+	<div id="issue-state-badge" style="margin-bottom: 20px;">{{template "issue-state-badge" $issue}}</div>
+	{{if $issue.Reference}}{{template "reference" $issue}}{{end}}
 	{{range .Items}}
 		{{template "issue-item" .}}
 	{{end}}
