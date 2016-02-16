@@ -264,6 +264,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"updateAvailable": updateAvailable,
 
 	"isMothership": func(appurl *url.URL) bool {
-		return appurl.String() == "https://sourcegraph.com"
+		return appconf.Flags.IsSourcegraphCloud || appurl.String() == "https://sourcegraph.com"
 	},
 }

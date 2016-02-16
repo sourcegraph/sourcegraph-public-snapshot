@@ -74,6 +74,8 @@ var Flags struct {
 	DisableGitNotify bool `long:"app.disable-git-notify" description:"disable git notifications"`
 
 	WebpackDevServerURL string `long:"app.webpack-dev-server" description:"serve frontend assets (JS, CSS, etc.) from this Webpack dev server" value-name:"URL"`
+
+	IsSourcegraphCloud bool `long:"app.sourcegraph-cloud" description:"run this server as a Sourcegraph Cloud server"`
 }
 
 func init() {

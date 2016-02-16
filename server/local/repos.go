@@ -130,7 +130,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
 	}
 
-	uid := int32(authpkg.ActorFromContext(ctx).UID)
+	actor := authpkg.ActorFromContext(ctx)
 	if authutil.ActiveFlags.PrivateMirrors {
 		if !op.Mirror {
 			// TODO: enable creating local repos on Sourcegraph Server instances.
@@ -140,20 +140,14 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		if op.Private {
 			// If this server has a waitlist in place, check that the user
 			// is off the waitlist.
-			if authutil.ActiveFlags.MirrorsWaitlist != "none" {
-				wUser, err := store.WaitlistFromContext(ctx).GetUser(ctx, uid)
-				if err != nil {
-					return nil, err
-				}
-				if wUser.GrantedAt == nil {
-					return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-				}
+			if !actor.PrivateMirrors {
+				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
 			}
 
 			// Check that the user has permission to access this private repo.
 			// The user's permissions for private mirror repos are set in
 			// MirrorRepos.GetUserData, which is called during onboarding.
-			valid, err := store.RepoPermsFromContext(ctx).Get(elevatedActor(ctx), uid, op.URI)
+			valid, err := store.RepoPermsFromContext(ctx).Get(elevatedActor(ctx), int32(actor.UID), op.URI)
 			if err != nil {
 				return nil, err
 			}
@@ -197,7 +191,6 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 
 	eventsutil.LogAddRepo(ctx, op.CloneURL, op.Language, op.Mirror, op.Private)
 
-	actor := authpkg.ActorFromContext(ctx)
 	accesscontrol.SetMirrorRepoPerms(ctx, &actor)
 	ctx = authpkg.WithActor(ctx, actor)
 
