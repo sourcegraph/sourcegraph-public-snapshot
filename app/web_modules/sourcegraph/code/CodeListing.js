@@ -106,7 +106,7 @@ class CodeListing extends Component {
 		let $el = ReactDOM.findDOMNode(this);
 		let line = lineFromByte(this.state.lines, byte);
 		let $line = $el.querySelector(`[data-line="${line}"]`);
-		if ($line) return $line.offsetTop + $el.parentNode.querySelector(".code-file-toolbar").clientHeight;
+		if ($line) return $line.offsetTop - $el.parentNode.querySelector(".code-file-toolbar").offsetTop;
 		throw new Error(`No element found for line ${line}`);
 	}
 
