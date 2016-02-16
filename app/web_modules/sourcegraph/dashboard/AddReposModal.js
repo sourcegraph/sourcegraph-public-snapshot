@@ -32,7 +32,6 @@ class AddReposWidget extends Component {
 	}
 
 	render() {
-		console.log("and re-rendering add repos widget");
 		return (
 			<div className="modal add-repos-widget"
 				style={{display: "block"}}

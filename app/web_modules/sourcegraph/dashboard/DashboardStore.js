@@ -1,3 +1,5 @@
+import update from "react/lib/update";
+
 import {Store} from "flux/utils";
 
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -18,10 +20,12 @@ export class DashboardStore extends Store {
 	__onDispatch(action) {
 		switch (action.constructor) {
 
-		case DashboardActions.ReposAdded:
+		case DashboardActions.RepoCreated:
+			this.repos = action.repos;
 			break;
 
-		case DashboardActions.UsersAdded:
+		case DashboardActions.UserInvited:
+			this.users = update(this.users, {$push: [action.user]});
 			break;
 
 		default:

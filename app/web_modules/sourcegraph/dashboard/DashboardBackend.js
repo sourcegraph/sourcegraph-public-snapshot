@@ -14,10 +14,16 @@ const DashboardBackend = {
 				json: {},
 			}, function(err, resp, body) {
 				if (err) {
+					// TODO: some proper error handling
 					console.error(err);
 					return;
 				}
-				// TODO dispath repo created action here.
+				if (resp.statusCode !== 200) {
+					// TODO: some proper error handling
+					console.log(resp);
+					return;
+				}
+				Dispatcher.dispatch(new DashboardActions.RepoCreated(body));
 			});
 			break;
 		case DashboardActions.WantAddMirrorRepos:
@@ -30,7 +36,13 @@ const DashboardBackend = {
 				},
 			}, function(err, resp, body) {
 				if (err) {
+					// TODO: some proper error handling
 					console.error(err);
+					return;
+				}
+				if (resp.statusCode !== 200) {
+					// TODO: some proper error handling
+					console.log(resp);
 					return;
 				}
 				Dispatcher.dispatch(new DashboardActions.MirrorReposAdded(body));
@@ -49,8 +61,17 @@ const DashboardBackend = {
 					console.error(err);
 					return;
 				}
-				// TODO: proper modal.
-				console.log(body, resp);
+				if (resp.statusCode !== 200) {
+					// TODO: some proper error handling
+					console.log(resp);
+					return;
+				}
+				Dispatcher.dispatch(new DashboardActions.UserInvited({
+					Name: action.email,
+					Admin: action.permission === "admin",
+					Write: action.permission === "write",
+				}));
+				// TODO: proper modal....but soon we're sending emails anyway.
 				alert(`Invite link: ${body.Link}`);
 			});
 			break;
@@ -64,6 +85,11 @@ const DashboardBackend = {
 			}, function(err, resp, body) {
 				if (err) {
 					console.error(err);
+					return;
+				}
+				if (resp.statusCode !== 200) {
+					// TODO: some proper error handling
+					console.log(resp);
 					return;
 				}
 				Dispatcher.dispatch(new DashboardActions.UsersInvited(body));
