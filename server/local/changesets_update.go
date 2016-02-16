@@ -74,8 +74,6 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty argument")
 	}
 
-	changesetsStore := store.ChangesetsFromContext(ctx)
-
 	// Get ChangesetUpdateOps for the affected changesets.
 	updates, err := s.getAffected(ctx, op)
 	if err != nil {
@@ -85,11 +83,10 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 	// Execute all changeset updates.
 	var res sourcegraph.ChangesetEventList
 	for _, updateOp := range updates {
-		if e, err := changesetsStore.Update(ctx, updateOp); err != nil {
+		if e, err := s.Update(ctx, updateOp.Op); err != nil {
 			log15.Error("Changesets.UpdateAffected: cannot update changeset", "repo", updateOp.Op.Repo, "id", updateOp.Op.ID, "error", err)
 		} else if *e != (sourcegraph.ChangesetEvent{}) {
 			res.Events = append(res.Events, e)
-			publishChangesetUpdate(ctx, updateOp.Op)
 		}
 	}
 
