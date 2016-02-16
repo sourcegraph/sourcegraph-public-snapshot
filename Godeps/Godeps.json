@@ -67,6 +67,10 @@
 			"Rev": "d0e59c22a56e8dadfed24f74f452cea5a52722d2"
 		},
 		{
+			"ImportPath": "github.com/ryanuber/go-glob",
+			"Rev": "0067a9abd927e50aed5190662702f81231413ae0"
+		},
+		{
 			"ImportPath": "github.com/blevesearch/bleve",
 			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
 		},
