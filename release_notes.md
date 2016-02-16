@@ -1,5 +1,8 @@
 # dev
 
+- Changesets now supports a `.srcignore` file which will suppress the diffs of
+  specific files (e.g. auto-generated ones) for less noisy and easier reviews.
+  See [the docs](https://src.sourcegraph.com/sourcegraph/.docs/features/ignoring_generated_files) for more info.
 - Modified the schema for the `ext_auth_tokens` db table. Postgres backed Sourcegraph instances must
   update their database by running the migration commands in `dbutil2/MIGRATE.md` under `2016 Feb 12`.
 - Added the config option `--private-mirrors`/`PrivateMirrors` to enable the feature for mirroring
