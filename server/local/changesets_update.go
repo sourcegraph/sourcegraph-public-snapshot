@@ -87,7 +87,7 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 	for _, updateOp := range updates {
 		if e, err := changesetsStore.Update(ctx, updateOp); err != nil {
 			log15.Error("Changesets.UpdateAffected: cannot update changeset", "repo", updateOp.Op.Repo, "id", updateOp.Op.ID, "error", err)
-		} else if e != nil {
+		} else if *e != (sourcegraph.ChangesetEvent{}) {
 			res.Events = append(res.Events, e)
 			publishChangesetUpdate(ctx, updateOp.Op)
 		}
