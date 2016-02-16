@@ -246,11 +246,12 @@ func (r *FileDiffReader) readOneFileHeader(prefix []byte) (filename string, time
 	r.line++
 	line = line[len(prefix):]
 
-	parts := bytes.SplitN(line, []byte("\t"), 2)
-	filename = string(parts[0])
+	trimmedLine := strings.TrimSpace(string(line)) // filenames that contain spaces may be terminated by a tab
+	parts := strings.SplitN(trimmedLine, "\t", 2)
+	filename = parts[0]
 	if len(parts) == 2 {
 		// Timestamp is optional, but this header has it.
-		ts, err := time.Parse(diffTimeFormat, string(parts[1]))
+		ts, err := time.Parse(diffTimeFormat, parts[1])
 		if err != nil {
 			return "", nil, err
 		}

@@ -164,7 +164,7 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	}
 
 	var headVCSRepo vcs.Repository
-	sameRepo := ds.Base.RepoSpec != ds.Head.RepoSpec
+	sameRepo := ds.Base.RepoSpec == ds.Head.RepoSpec
 	if sameRepo {
 		headVCSRepo = baseVCSRepo
 	} else {
