@@ -72,7 +72,7 @@ func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI stri
 		return nil
 	}
 
-	err := grpc.Errorf(codes.PermissionDenied, "repo not available (%s): user does not have access", method)
+	err := grpc.Errorf(codes.Unauthenticated, "repo not available (%s): user does not have access", method)
 	if actor.UID == 0 || !actor.PrivateMirrors || actor.RepoPerms == nil {
 		return err
 	}
