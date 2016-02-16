@@ -96,9 +96,7 @@ func (f *ClientConfig) configure() (func(context.Context) context.Context, error
 	c = &appdash.ChunkedCollector{
 		Collector:   c,
 		MinInterval: 500 * time.Millisecond,
-		OnFlush: func() {
-			flushDurationGauge.Inc()
-		},
+		OnFlush:     flushDurationGauge.Inc(),
 	}
 
 	traceutil.DefaultCollector = c
