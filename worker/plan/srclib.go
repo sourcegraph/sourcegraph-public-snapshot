@@ -99,7 +99,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Java (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-java:5efb783-36f0fbf-ff3b48f",
+				Image: "srclib/drone-srclib-java:ff79de9-6e4c64a-1e6121e",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
