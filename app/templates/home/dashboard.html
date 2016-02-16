@@ -29,7 +29,7 @@
 		window.progress.currentStep = 50; // done
 	{{end}}
 
-	window.isMothership = JSON.parse({{json (isMothership .AppURL)}});
+	window.isMothership = JSON.parse({{json isMothership}});
 	window.allowMirrors = JSON.parse({{json .PrivateMirrors}});
 </script>
 
