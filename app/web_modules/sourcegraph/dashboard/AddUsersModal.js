@@ -36,7 +36,7 @@ class AddUsersModal extends Component {
 
 	_handleInvite() {
 		Dispatcher.dispatch(new DashboardActions.WantInviteUser(this.state.email, this.state.permission));
-		this.state.dismissModal();
+		Dispatcher.dispatch(new DashboardActions.DismissUsersModal());
 	}
 
 	render() {
@@ -52,7 +52,7 @@ class AddUsersModal extends Component {
 								className="close"
 								data-dismiss="modal"
 								aria-label="Close"
-								onClick={this.state.dismissModal}>
+								onClick={() => Dispatcher.dispatch(new DashboardActions.DismissUsersModal())}>
 								<span aria-hidden="true">&times;</span>
 							</button>
 							<h4 className="modal-title">Invite People to join Sourcegraph</h4>
@@ -113,7 +113,6 @@ class AddUsersModal extends Component {
 }
 
 AddUsersModal.propTypes = {
-	dismissModal: React.PropTypes.func.isRequired,
 	allowStandaloneUsers: React.PropTypes.bool.isRequired,
 	allowGitHubUsers: React.PropTypes.bool.isRequired,
 };

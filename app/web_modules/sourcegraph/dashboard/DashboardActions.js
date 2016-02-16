@@ -78,3 +78,23 @@ export class SelectUser {
 		this.select = select;
 	}
 }
+
+export class DismissUsersModal {
+	constructor() {
+	}
+}
+
+export class DismissReposModal {
+	constructor() {
+	}
+}
+
+export class OpenAddUsersModal {
+	constructor() {
+	}
+}
+
+export class OpenAddReposModal {
+	constructor() {
+	}
+}

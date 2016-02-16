@@ -18,6 +18,9 @@ export class DashboardStore extends Store {
 	__onDispatch(action) {
 		switch (action.constructor) {
 
+		case DashboardActions.MirrorReposAdded:
+			break;
+
 		case DashboardActions.ReposAdded:
 			break;
 

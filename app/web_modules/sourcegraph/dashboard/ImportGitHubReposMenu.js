@@ -62,6 +62,7 @@ class ImportGitHubReposMenu extends Container {
 			Private: repo.isPrivate,
 		}));
 		Dispatcher.dispatch(new DashboardActions.WantAddMirrorRepos(repos));
+		Dispatcher.dispatch(new DashboardActions.DismissReposModal());
 	}
 
 	stores() { return [GitHubReposStore]; }

@@ -1,6 +1,8 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 class UserList extends Component {
 	constructor(props) {
@@ -19,13 +21,19 @@ class UserList extends Component {
 
 	}
 
+	_getUserPermissionString(user) {
+		if (user.Admin) return "Admin";
+		if (user.Write) return "Write";
+		return "Read";
+	}
+
 	render() {
 		return (
 			<div className="panel panel-default">
 				<div className="panel-heading">
 					<h5>Team</h5>
 					<button className="btn btn-primary add-user-btn"
-						onClick={this.state.openUsersModal}>
+						onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddUsersModal())} >
 						<i className="fa fa-user-plus"></i>
 					</button>
 				</div>
@@ -33,9 +41,11 @@ class UserList extends Component {
 					<div className="list-group">
 						{this.state.users.map((user, i) => (
 							<div className="list-group-item" key={i}>
-								<img className="avatar-sm" src="http://placekitten.com/g/24/24" />
-								<span className="user-name">Pete Nichols</span>
-								<a className="user-permissions" onClick={this._selectUpdateUser(1)}>Admin</a>
+								<img className="avatar-sm" src={user.AvatarURL} />
+								<span className="user-name">{user.Name || user.Login}{user.IsInvited ? " (invited)" : ""}</span>
+								{this.state.allowStandaloneUsers &&
+									<a className="user-permissions">{this._getUserPermissionString(user)}</a>
+								}
 							</div>
 						))}
 					</div>
@@ -47,7 +57,7 @@ class UserList extends Component {
 
 UserList.propTypes = {
 	users: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	openUsersModal: React.PropTypes.func.isRequired,
+	allowStandaloneUsers: React.PropTypes.bool.isRequired,
 };
 
 export default UserList;

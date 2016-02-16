@@ -28,7 +28,7 @@ class AddReposWidget extends Component {
 
 	_handleCreate() {
 		Dispatcher.dispatch(new DashboardActions.WantCreateRepo(this.state.repoName));
-		this.state.dismissModal();
+		Dispatcher.dispatch(new DashboardActions.DismissReposModal());
 	}
 
 	render() {
@@ -45,7 +45,7 @@ class AddReposWidget extends Component {
 								className="close"
 								data-dismiss="modal"
 								aria-label="Close"
-								onClick={this.state.dismissModal}>
+								onClick={() => Dispatcher.dispatch(new DashboardActions.DismissReposModal())}>
 								<span aria-hidden="true">&times;</span>
 							</button>
 							<h4 className="modal-title">Add a new Repository</h4>
@@ -98,7 +98,6 @@ class AddReposWidget extends Component {
 }
 
 AddReposWidget.propTypes = {
-	dismissModal: React.PropTypes.func.isRequired,
 	allowStandaloneRepos: React.PropTypes.bool.isRequired,
 	allowGitHubMirrors: React.PropTypes.bool.isRequired,
 };

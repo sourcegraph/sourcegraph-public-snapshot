@@ -14,7 +14,6 @@ export class GitHubUsersStore extends Store {
 				let allUsers = Object.keys(this.users).reduce(
 					(users, org) => users.concat(this.users[org].Users), []
 				);
-				console.log(allUsers, login);
 				for (let user of allUsers) {
 					if (user.RemoteAccount.Login === login) return user;
 				}
@@ -24,7 +23,22 @@ export class GitHubUsersStore extends Store {
 				let orgUsers = this.users[org];
 				return orgUsers ? orgUsers.Users : [];
 			},
+			getAdded() {
+				// TODO(rothfels): this is gross and should be cleaned up...but is necessary to show mirrored repos on the dashboard.
+				// We should probably build the map from org => user in this store and just have the server return a flat list.
+				let allUsers = (Object.values(this.users) || []).map(orgUsers => orgUsers.Users);
+				allUsers = [].concat.apply([], allUsers);
+				return allUsers
+					.filter(user => user.LocalAccount || user.IsInvited)
+					.map(user => {
+						if (user.LocalAccount) return user.LocalAccount;
+						user.RemoteAccount.IsInvited = true;
+						return user.RemoteAccount;
+					});
+			},
 		});
+
+		console.log(this.users.getAdded());
 
 		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.

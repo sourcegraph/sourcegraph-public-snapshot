@@ -75,7 +75,7 @@ class DashboardRepos extends Component {
 					<div className="list-group">
 						{this.state.repos.filter(this._showRepo).map((repo, i) => (
 							<div className="list-group-item hover-pointer" key={i}
-								onClick={() => window.location.href = repo.HTMLURL}>
+								onClick={() => window.location.href = `/${repo.URI}`}>
 								<div className="repo-header">
 									<div className="repo-icon">
 									</div>

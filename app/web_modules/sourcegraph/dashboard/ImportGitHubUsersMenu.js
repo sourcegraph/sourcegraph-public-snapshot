@@ -24,10 +24,12 @@ class ImportGitHubUsersMenu extends Container {
 		Object.assign(state, props);
 		state.orgs = GitHubUsersStore.orgs;
 		if (!state.currentOrg) state.currentOrg = GitHubUsersStore.orgs[0];
-		state.items = GitHubUsersStore.users.getByOrg(state.currentOrg).map((user) => ({
-			name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
-			key: user.RemoteAccount.Login,
-		}));
+		state.items = GitHubUsersStore.users.getByOrg(state.currentOrg)
+			.filter(user => Boolean(user.Email))
+			.map((user) => ({
+				name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
+				key: user.RemoteAccount.Login,
+			}));
 	}
 
 	_handleSelect(login, select) {
@@ -52,7 +54,6 @@ class ImportGitHubUsersMenu extends Container {
 		for (let login of Object.keys(this.state.selectedUsers)) {
 			if (this.state.selectedUsers[login]) {
 				let user = GitHubUsersStore.users.get(login);
-				// TODO pre-filter list if users doesn't have email.
 				if (user && user.Email) emails.push(user.Email);
 			}
 		}
@@ -61,6 +62,7 @@ class ImportGitHubUsersMenu extends Container {
 		} else {
 			console.log("No emails for selected users");
 		}
+		Dispatcher.dispatch(new DashboardActions.DismissUsersModal());
 	}
 
 	stores() { return [GitHubUsersStore]; }
