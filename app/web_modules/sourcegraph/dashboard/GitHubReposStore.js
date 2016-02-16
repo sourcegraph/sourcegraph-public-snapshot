@@ -15,7 +15,11 @@ export class GitHubReposStore extends Store {
 		});
 
 		// Store the state of which organizations mirrored repos can come from.
-		this.orgs = window.mirrorData ? Object.keys(window.mirrorData.ReposByOrg) : {};
+		if (!(window.mirrorData && window.mirrorData.ReposByOrg)) {
+			this.orgs = {};
+		} else {
+			this.orgs = Object.keys(window.mirrorData.ReposByOrg);
+		}
 	}
 
 	__onDispatch(action) {
