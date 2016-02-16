@@ -53,12 +53,11 @@ class ImportGitHubUsersMenu extends Container {
 			if (this.state.selectedUsers[login]) {
 				let user = GitHubUsersStore.users.get(login);
 				// TODO pre-filter list if users doesn't have email.
-				console.log(user);
 				if (user && user.Email) emails.push(user.Email);
 			}
 		}
 		if (emails.length > 0) {
-			Dispatcher.dispatch(new DashboardActions.WantAddUsers(emails));
+			Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
 		} else {
 			console.log("No emails for selected users");
 		}

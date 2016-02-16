@@ -52,7 +52,7 @@ class ImportGitHubReposMenu extends Container {
 			// TODO(renfredxh): add support for mirroring public repos.
 			if (this.state.selectedRepos[repoURI]) repos.push({URI: repoURI, Private: true});
 		}
-		Dispatcher.dispatch(new DashboardActions.WantAddRepos(repos));
+		Dispatcher.dispatch(new DashboardActions.WantAddMirrorRepos(repos));
 	}
 
 	stores() { return [GitHubReposStore]; }

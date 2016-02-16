@@ -12,7 +12,7 @@ export class WantAddMirrorRepos {
 	}
 }
 
-export class ReposAdded {
+export class MirrorReposAdded {
 	constructor(repos) {
 		this.repos = repos;
 	}
@@ -31,7 +31,7 @@ export class WantInviteUsers {
 	}
 }
 
-export class UsersAdded {
+export class UsersInvited {
 	constructor(users) {
 		this.users = users;
 	}

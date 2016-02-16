@@ -32,7 +32,7 @@ const DashboardBackend = {
 					console.error(err);
 					return;
 				}
-				// TODO dispath repo added action here.
+				Dispatcher.dispatch(new DashboardActions.MirrorReposAdded(action.repos));
 			});
 			break;
 		case DashboardActions.WantInviteUser:
@@ -66,6 +66,7 @@ const DashboardBackend = {
 					return;
 				}
 				// TODO dispath user invited action here.
+				Dispatcher.dispatch(new DashboardActions.UsersInvited(action.emails));
 			});
 			break;
 		}

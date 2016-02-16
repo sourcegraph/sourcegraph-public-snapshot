@@ -33,6 +33,7 @@
 	{{else}}
 		window.progress.currentStep = 50; // done
 	{{end}}
+	window.progress.currentStep = 1; // TODO(rothfels): remove
 
 	window.isMothership = JSON.parse({{json (isMothership .AppURL)}});
 	window.allowMirrors = JSON.parse({{json .PrivateMirrors}});
