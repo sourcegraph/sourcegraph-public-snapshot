@@ -17,9 +17,12 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 
 	ctxActor := auth.ActorFromContext(ctx)
-	if !ctxActor.HasAdminAccess() && !authutil.ActiveFlags.PrivateMirrors {
+	if !ctxActor.HasAdminAccess() {
 		// current user is not an admin of the instance
 		return errors.New("user not authenticated to complete this request")
+	}
+	if authutil.ActiveFlags.PrivateMirrors {
+		return errors.New("this endpoint is disabled on the server. use invite-bulk instead.")
 	}
 
 	query := struct {
@@ -56,6 +59,7 @@ func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
 	return json.NewEncoder(w).Encode(pendingInvite)
 }
 
@@ -69,6 +73,13 @@ type inviteResult struct {
 func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 	cl := handlerutil.APIClient(r)
+	currentUser := handlerutil.UserFromRequest(r)
+	if currentUser == nil {
+		return errors.New("user not authenticated to complete this request")
+	}
+	if !authutil.ActiveFlags.PrivateMirrors {
+		return errors.New("this endpoint is disabled on the server. use invite-bulk instead.")
+	}
 
 	query := struct {
 		Emails []string
@@ -94,5 +105,10 @@ func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	return json.NewEncoder(w).Encode(inviteResults)
+	teammates, err := cl.Users.ListTeammates(ctx, currentUser)
+	if err != nil {
+		return err
+	}
+
+	return json.NewEncoder(w).Encode(teammates)
 }

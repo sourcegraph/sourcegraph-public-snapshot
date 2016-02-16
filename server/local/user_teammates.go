@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -115,6 +116,16 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 	for _, u := range sgUsers {
 		sgUserMap[u.UID] = u
 	}
+
+	// Fetch pending invites.
+	invitesMap := make(map[string]struct{})
+	inviteList, err := svc.Accounts(ctx).ListInvites(elevatedActor(ctx), &pbtypes.Void{})
+	if err == nil {
+		for _, invite := range inviteList.Invites {
+			invitesMap[invite.Email] = struct{}{}
+		}
+	}
+
 	for orgName := range usersByOrg {
 		for i := range usersByOrg[orgName].Users {
 			ghUID := usersByOrg[orgName].Users[i].RemoteAccount.UID
@@ -127,9 +138,16 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 					}
 				}
 			}
+
+			// Check if there is a pending invite for this user.
+			ghEmail := usersByOrg[orgName].Users[i].Email
+			if ghEmail != "" {
+				if _, ok := invitesMap[ghEmail]; ok {
+					usersByOrg[orgName].Users[i].IsInvited = true
+				}
+			}
 		}
 	}
 
-	// TODO: check for pending invites to non-linked GitHub accounts.
 	return &sourcegraph.Teammates{UsersByOrg: usersByOrg}, nil
 }

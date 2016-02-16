@@ -164,7 +164,13 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 		}
 	}
 
+	senderUID := int32(authpkg.ActorFromContext(ctx).UID)
+	var senderEmail string
 	usersStore := store.UsersFromContext(ctx)
+	emails, err := usersStore.ListEmails(ctx, sourcegraph.UserSpec{UID: senderUID})
+	if err == nil && len(emails) > 0 {
+		senderEmail = emails[0].Email
+	}
 
 	user, _ := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: invite.Email})
 	if user != nil {
@@ -186,7 +192,8 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 	var emailSent bool
 	if notif.EmailIsConfigured() {
 		_, err = sendEmail("invite-user", "", invite.Email, "You've been invited to Sourcegraph", nil,
-			[]gochimp.Var{gochimp.Var{Name: "INVITE_LINK", Content: u.String()}})
+			[]gochimp.Var{gochimp.Var{Name: "INVITE_LINK", Content: u.String()},
+				gochimp.Var{Name: "SENDER_EMAIL", Content: senderEmail}})
 		if err == nil {
 			emailSent = true
 		} else if err != errEmailNotConfigured {

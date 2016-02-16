@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sqs/pbtypes"
-	
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -42,11 +42,16 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return e.Encode(&struct {
-		Success bool
-	}{
-		Success: true,
+	repoList, err := apiclient.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		Sort:        "pushed",
+		Direction:   "desc",
+		ListOptions: sourcegraph.ListOptions{PerPage: 100},
 	})
+	if err != nil {
+		return err
+	}
+
+	return e.Encode(repoList.Repos)
 }
 
 type repoInfo struct {
