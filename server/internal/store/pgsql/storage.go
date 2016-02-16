@@ -164,7 +164,7 @@ func (s *storage) Delete(ctx context.Context, opt *sourcegraph.StorageKey) (*pbt
 		return &pbtypes.Void{}, err
 	}
 
-	if opt.Bucket.Name != "" {
+	if opt.Key == "" {
 		// Delete the entire bucket.
 		_, err := dbh(ctx).Exec("DELETE FROM appdata WHERE name = $1", bucket)
 		return &pbtypes.Void{}, err
