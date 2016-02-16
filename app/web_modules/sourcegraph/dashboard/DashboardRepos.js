@@ -57,6 +57,11 @@ class DashboardRepos extends Component {
 			</button>
 		);
 
+		const repoSort = (a, b) => {
+			if (moment(a.UpdatedAt).isBefore(moment(b.UpdatedAt))) return 1;
+			return -1;
+		};
+
 		return (
 			<div className="panel panel-default">
 				<div className="panel-heading">
@@ -73,7 +78,7 @@ class DashboardRepos extends Component {
 				</div>
 				<div className="repos-list panel-body">
 					<div className="list-group">
-						{this.state.repos.filter(this._showRepo).map((repo, i) => (
+						{this.state.repos.filter(this._showRepo).sort(repoSort).map((repo, i) => (
 							<div className="list-group-item hover-pointer" key={i}
 								onClick={() => window.location.href = `/${repo.URI}`}>
 								<div className="repo-header">

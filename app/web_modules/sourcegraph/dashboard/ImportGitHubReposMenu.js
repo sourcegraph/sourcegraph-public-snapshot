@@ -28,12 +28,12 @@ class ImportGitHubReposMenu extends Container {
 		if (!state.currentOrg) state.currentOrg = GitHubReposStore.orgs[0];
 		state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
 			.filter(this._canMirror)
-			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI, isPrivate: repo.Repo.IsPrivate}));
+			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI, isPrivate: Boolean(repo.Repo.Private)}));
 	}
 
 	_canMirror(repo) {
 		if (this.state.onWaitlist) {
-			if (repo.Repo.IsPrivate) return false;
+			if (repo.Repo.Private) return false;
 		}
 		if (repo.ExistsLocally) return false;
 		return repo.Repo.Language === "Go" || repo.Repo.Language === "Java";

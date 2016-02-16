@@ -26,6 +26,7 @@ class ImportGitHubUsersMenu extends Container {
 		if (!state.currentOrg) state.currentOrg = GitHubUsersStore.orgs[0];
 		state.items = GitHubUsersStore.users.getByOrg(state.currentOrg)
 			.filter(user => Boolean(user.Email))
+			.filter(user => !user.LocalAccount && !user.IsInvited)
 			.map((user) => ({
 				name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
 				key: user.RemoteAccount.Login,

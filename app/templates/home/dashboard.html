@@ -4,7 +4,6 @@
 {{define "Body"}}
 
 <script ignore-csp>
-	console.log(JSON.parse({{json .}}));
 	window.repos = JSON.parse({{json .Repos}}) || [];
 	window.users = JSON.parse({{json .Users}}) || [];
 	window.currentUser = JSON.parse({{json .CurrentUser}});

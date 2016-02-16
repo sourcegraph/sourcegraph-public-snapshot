@@ -13,8 +13,8 @@ export class WantAddMirrorRepos {
 }
 
 export class MirrorReposAdded {
-	constructor(repos) {
-		this.repos = repos;
+	constructor(mirrorData) {
+		this.mirrorData = mirrorData;
 	}
 }
 
@@ -32,8 +32,8 @@ export class WantInviteUsers {
 }
 
 export class UsersInvited {
-	constructor(users) {
-		this.users = users;
+	constructor(teammates) {
+		this.teammates = teammates;
 	}
 }
 

@@ -1,3 +1,5 @@
+import update from "react/lib/update";
+
 import {Store} from "flux/utils";
 
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -7,18 +9,7 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class GitHubReposStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
-		// Annotate repos with IsPrivate flag.
-		if (window.mirrorData) {
-			Object.keys(window.mirrorData.ReposByOrg).forEach(org => {
-				(window.mirrorData.ReposByOrg[org].PublicRepos || []).forEach(repo => {
-					repo.Repo.IsPrivate = false;
-				});
-				(window.mirrorData.ReposByOrg[org].PrivateRepos || []).forEach(repo => {
-					repo.Repo.IsPrivate = true;
-				});
-			});
-			this.onWaitlist = window.onWaitlist;
-		}
+		this.onWaitlist = window.onWaitlist;
 		this.reposByOrg = deepFreeze({
 			repos: window.mirrorData ? window.mirrorData.ReposByOrg : {},
 			get(org) {
@@ -45,9 +36,10 @@ export class GitHubReposStore extends Store {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DashboardActions.MirrorReposAdded:
-			// Set ExistsLocaly for the repos which have been added.
+			this.reposByOrg = update(this.reposByOrg, {
+				repos: {$set: action.mirrorData ? action.mirrorData.ReposByOrg : {}},
+			});
 			break;
-
 
 		default:
 			return; // don't emit change

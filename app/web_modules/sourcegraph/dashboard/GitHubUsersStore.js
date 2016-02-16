@@ -4,6 +4,7 @@ import {Store} from "flux/utils";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 export class GitHubUsersStore extends Store {
 	constructor(dispatcher) {
@@ -46,6 +47,11 @@ export class GitHubUsersStore extends Store {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
+		case DashboardActions.UsersInvited:
+			this.users = update(this.users, {
+				users: {$set: action.teammates ? action.teammates.UsersByOrg : {}},
+			});
+			break;
 		default:
 			return; // don't emit change
 		}
