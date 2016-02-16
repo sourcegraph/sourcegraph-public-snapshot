@@ -3,7 +3,7 @@
 
 {{define "Body"}}
 
-<script>
+<script ignore-csp>
 	console.log(JSON.parse({{json .}}));
 	window.repos = JSON.parse({{json .Repos}}) || [];
 	window.users = JSON.parse({{json .Users}}) || [];
