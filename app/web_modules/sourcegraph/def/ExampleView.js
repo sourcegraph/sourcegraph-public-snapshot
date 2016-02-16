@@ -34,7 +34,11 @@ class ExampleView extends Component {
 		state.highlightedDef = props.highlightedDef;
 
 		let anns = example ? props.annotations.get(example.Repo, example.CommitID, example.File, example.Range.StartByte, example.Range.EndByte) : null;
-		state.anns = anns ? anns.Annotations : null;
+		state.anns = anns ? anns.Annotations.map((ann) => (
+			// Adjust the annotation start/end so that they are relative to
+			// the beginning of this code excerpt, not the full file.
+			Object.assign({}, ann, {StartByte: ann.StartByte - example.Range.StartByte, EndByte: ann.EndByte - example.Range.StartByte})
+		)): null;
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -76,7 +80,6 @@ class ExampleView extends Component {
 						{example &&
 							<div style={{opacity: loading ? 0.5 : 1}}>
 								<CodeListing
-									startByte={example.Range.StartByte}
 									contents={example.Contents}
 									annotations={this.state.anns}
 									selectedDef={this.state.defURL}

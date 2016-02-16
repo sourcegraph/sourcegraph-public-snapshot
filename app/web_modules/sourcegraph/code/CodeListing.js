@@ -31,7 +31,6 @@ class CodeListing extends Component {
 	}
 
 	reconcileState(state, props) {
-		state.startByte = props.startByte || 0;
 		state.startLine = props.startLine || 0;
 		state.endLine = props.endLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
@@ -48,7 +47,7 @@ class CodeListing extends Component {
 		if (state.contents !== props.contents) {
 			state.contents = props.contents;
 			state.lines = props.contents.split("\n");
-			state.lineStartBytes = this._computeLineStartBytes(state.startByte, state.lines);
+			state.lineStartBytes = this._computeLineStartBytes(state.lines);
 			updateAnns = true;
 		}
 
@@ -69,12 +68,12 @@ class CodeListing extends Component {
 		}
 	}
 
-	_computeLineStartBytes(startByte, lines) {
+	_computeLineStartBytes(lines) {
 		let pos = 0;
 		return lines.map((line) => {
 			let start = pos;
 			pos += line.length + 1; // add 1 to account for newline
-			return start + (startByte || 0);
+			return start;
 		});
 	}
 
@@ -141,7 +140,6 @@ class CodeListing extends Component {
 }
 
 CodeListing.propTypes = {
-	startByte: React.PropTypes.number.isRequired,
 	contents: React.PropTypes.string,
 	annotations: React.PropTypes.array,
 	lineNumbers: React.PropTypes.bool,

@@ -97,6 +97,9 @@
 
 .line-numbered-code {
 	width: 100%;
+	.line-content {
+		width: 100%;
+	}
 	.line-number {
 		padding: 0 7px;
 	}

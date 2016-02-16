@@ -3422,7 +3422,8 @@ func (*Annotation) ProtoMessage()    {}
 
 // AnnotationList is a list of annotations.
 type AnnotationList struct {
-	Annotations []*Annotation `protobuf:"bytes,1,rep,name=Annotations" json:"Annotations,omitempty"`
+	Annotations    []*Annotation `protobuf:"bytes,1,rep,name=Annotations" json:"Annotations,omitempty"`
+	LineStartBytes []uint32      `protobuf:"varint,2,rep,name=LineStartBytes" json:"LineStartBytes,omitempty"`
 }
 
 func (m *AnnotationList) Reset()         { *m = AnnotationList{} }
@@ -16803,6 +16804,13 @@ func (m *AnnotationList) MarshalTo(data []byte) (int, error) {
 			i += n
 		}
 	}
+	if len(m.LineStartBytes) > 0 {
+		for _, num := range m.LineStartBytes {
+			data[i] = 0x10
+			i++
+			i = encodeVarintSourcegraph(data, i, uint64(num))
+		}
+	}
 	return i, nil
 }
 
@@ -20578,6 +20586,11 @@ func (m *AnnotationList) Size() (n int) {
 		for _, e := range m.Annotations {
 			l = e.Size()
 			n += 1 + l + sovSourcegraph(uint64(l))
+		}
+	}
+	if len(m.LineStartBytes) > 0 {
+		for _, e := range m.LineStartBytes {
+			n += 1 + sovSourcegraph(uint64(e))
 		}
 	}
 	return n
@@ -50042,6 +50055,26 @@ func (m *AnnotationsListOptions) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LineStartBytes", wireType)
+			}
+			var v uint32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.LineStartBytes = append(m.LineStartBytes, v)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

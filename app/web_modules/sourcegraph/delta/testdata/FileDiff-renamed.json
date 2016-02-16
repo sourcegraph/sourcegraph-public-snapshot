@@ -77,10 +77,33 @@
 					"type": "Hunk",
 					"key": "0",
 					"props": {
-						"hunk": {}
+						"hunk": {
+							"Body": "a\nb"
+						},
+						"baseRepo": "br",
+						"baseRev": "bv",
+						"basePath": "a",
+						"headRepo": "hr",
+						"headRev": "hv",
+						"headPath": "b",
+						"annotations": []
 					}
 				}
 			]
 		}
-	}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "br",
+			"rev": "bv",
+			"path": "a"
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "hr",
+			"rev": "hv",
+			"path": "b"
+		}
+	]
 }

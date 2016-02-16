@@ -2,10 +2,7 @@ import React from "react";
 
 import classNames from "classnames";
 import DiffStatScale from "sourcegraph/delta/DiffStatScale";
-
-function isDevNull(path) {
-	return path === "/dev/null";
-}
+import {isDevNull} from "sourcegraph/delta/util";
 
 class DiffFileList extends React.Component {
 	constructor(props) {

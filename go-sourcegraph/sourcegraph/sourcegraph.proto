@@ -3256,6 +3256,7 @@ message Annotation {
 // AnnotationList is a list of annotations.
 message AnnotationList {
 	repeated Annotation Annotations = 1;
+	repeated uint32 LineStartBytes = 2;
 }
 
 // AnnotationsListOptions specifies options for Annotations.List.

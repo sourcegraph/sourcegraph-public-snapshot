@@ -1,10 +1,20 @@
 import React from "react";
 
-import Component from "sourcegraph/Component";
+import CodeStore from "sourcegraph/code/CodeStore";
+import Container from "sourcegraph/Container";
 import DiffFileList from "sourcegraph/delta/DiffFileList";
 import FileDiff from "sourcegraph/delta/FileDiff";
 
-class FileDiffs extends Component {
+class FileDiffs extends Container {
+	reconcileState(state, props) {
+		Object.assign(state, props);
+		state.annotations = CodeStore.annotations;
+	}
+
+	stores() {
+		return [CodeStore];
+	}
+
 	render() {
 		return (
 			<div>
@@ -17,7 +27,8 @@ class FileDiffs extends Component {
 						baseRepo={this.props.baseRepo}
 						baseRev={this.props.baseRev}
 						headRepo={this.props.headRepo}
-						headRev={this.props.headRev} />
+						headRev={this.props.headRev}
+						annotations={this.state.annotations} />
 				))}
 			</div>
 		);

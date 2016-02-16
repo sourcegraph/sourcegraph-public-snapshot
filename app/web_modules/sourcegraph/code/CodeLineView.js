@@ -38,6 +38,7 @@ class CodeLineView extends Component {
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
+		state.directLinks = Boolean(props.directLinks);
 	}
 
 	render() {
@@ -95,7 +96,7 @@ class CodeLineView extends Component {
 							onMouseOver={() => Dispatcher.dispatch(new DefActions.HighlightDef(ann.URL))}
 							onMouseOut={() => Dispatcher.dispatch(new DefActions.HighlightDef(null))}
 							onClick={(ev) => {
-								if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+								if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
 								ev.preventDefault();
 								if (extraURLs) {
 									Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs([ann.URL].concat(extraURLs), ev.view.scrollX + ev.clientX, ev.view.scrollY + ev.clientY)); // dispatch async so that the menu is not immediately closed by click handler on document
@@ -170,6 +171,10 @@ CodeLineView.propTypes = {
 	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 	className: React.PropTypes.string,
+
+	// directLinks, if true, makes clicks on annotation links go directly to the
+	// destination instead of using GoTo and pushState.
+	directLinks: React.PropTypes.bool,
 };
 
 export default CodeLineView;

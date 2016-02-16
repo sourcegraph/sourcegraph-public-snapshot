@@ -3,18 +3,18 @@ import React from "react";
 import {atob} from "abab";
 import classNames from "classnames";
 import CodeLineView from "sourcegraph/code/CodeLineView";
+import fileLines from "sourcegraph/util/fileLines";
 
 class Hunk extends React.Component {
 	render() {
 		let hunk = this.props.hunk;
 
-		let lines = atob(hunk.Body).split("\n");
-		if (lines.length > 0 && lines[lines.length - 1] === "") {
-			lines.pop();
-		}
+		let lines = fileLines(atob(hunk.Body));
 
 		let origLine = hunk.OrigStartLine;
 		let newLine = hunk.NewStartLine;
+
+		let lineStartByte = 0;
 
 		return (
 			<table className="line-numbered-code theme-default file-diff-hunk">
@@ -28,6 +28,9 @@ class Hunk extends React.Component {
 					</tr>
 
 					{lines.map((line, i) => {
+						let thisLineStartByte = lineStartByte;
+						lineStartByte += line.length + 1; // account for 1-char newline
+
 						const prefix = line[0];
 						if (i > 0) {
 							switch (prefix) {
@@ -43,6 +46,11 @@ class Hunk extends React.Component {
 								break;
 							}
 						}
+
+						let anns = this.props.annotations ? this.props.annotations.filter((ann) => (
+							ann.StartByte >= thisLineStartByte && ann.EndByte <= thisLineStartByte + line.length
+						)) : null;
+
 						return (
 							<CodeLineView
 								key={i}
@@ -52,7 +60,10 @@ class Hunk extends React.Component {
 								})}
 								oldLineNumber={prefix === "+" ? null : origLine}
 								newLineNumber={prefix === "-" ? null : newLine}
-								contents={line} />
+								contents={line}
+								startByte={thisLineStartByte}
+								annotations={anns}
+								directLinks={true} />
 						);
 					})}
 				</tbody>
@@ -62,5 +73,6 @@ class Hunk extends React.Component {
 }
 Hunk.propTypes = {
 	hunk: React.PropTypes.object.isRequired,
+	annotations: React.PropTypes.array,
 };
 export default Hunk;

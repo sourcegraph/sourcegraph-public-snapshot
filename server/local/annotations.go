@@ -25,6 +25,18 @@ var Annotations sourcegraph.AnnotationsServer = &annotations{}
 type annotations struct{}
 
 func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: opt.Entry,
+		Opt: &sourcegraph.RepoTreeGetOptions{
+			GetFileOptions: sourcegraph.GetFileOptions{
+				FileRange: *opt.Range,
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	var (
 		mu      sync.Mutex
 		allAnns []*sourcegraph.Annotation
@@ -35,7 +47,7 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 		mu.Unlock()
 	}
 
-	funcs := []func(context.Context, *sourcegraph.AnnotationsListOptions) ([]*sourcegraph.Annotation, error){
+	funcs := []func(context.Context, *sourcegraph.AnnotationsListOptions, *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error){
 		s.listSyntaxHighlights,
 		s.listRefs,
 	}
@@ -43,7 +55,7 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 	for _, f := range funcs {
 		f2 := f
 		par.Do(func() error {
-			anns, err := f2(ctx, opt)
+			anns, err := f2(ctx, opt, entry)
 			if err != nil {
 				return err
 			}
@@ -57,24 +69,15 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 
 	sort.Sort(sortableAnnotations(allAnns))
 
-	return &sourcegraph.AnnotationList{Annotations: allAnns}, nil
+	return &sourcegraph.AnnotationList{
+		Annotations:    allAnns,
+		LineStartBytes: computeLineStartBytes(entry.Contents),
+	}, nil
 }
 
-func (s *annotations) listSyntaxHighlights(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) ([]*sourcegraph.Annotation, error) {
+func (s *annotations) listSyntaxHighlights(ctx context.Context, opt *sourcegraph.AnnotationsListOptions, entry *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error) {
 	if opt.Range == nil {
 		opt.Range = &sourcegraph.FileRange{}
-	}
-
-	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: opt.Entry,
-		Opt: &sourcegraph.RepoTreeGetOptions{
-			GetFileOptions: sourcegraph.GetFileOptions{
-				FileRange: *opt.Range,
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	var c syntaxhighlight.TokenCollectorAnnotator
@@ -95,7 +98,7 @@ func (s *annotations) listSyntaxHighlights(ctx context.Context, opt *sourcegraph
 	return anns, nil
 }
 
-func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) ([]*sourcegraph.Annotation, error) {
+func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.AnnotationsListOptions, entry *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.listRefs", opt.Entry.RepoRev.URI); err != nil {
 		return nil, err
 	}
@@ -156,4 +159,17 @@ func (a sortableAnnotations) Less(i, j int) bool {
 	return a[i].StartByte < a[j].StartByte ||
 		(a[i].StartByte == a[j].StartByte && (a[i].EndByte < a[j].EndByte ||
 			(a[i].EndByte == a[j].EndByte && a[i].URL != "")))
+}
+
+func computeLineStartBytes(data []byte) []uint32 {
+	if len(data) == 0 {
+		return []uint32{}
+	}
+	pos := []uint32{0}
+	for i, b := range data {
+		if b == '\n' {
+			pos = append(pos, uint32(i+1))
+		}
+	}
+	return pos
 }
