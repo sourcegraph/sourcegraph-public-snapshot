@@ -40,8 +40,16 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		return nil, err
 	}
 
-	usersByOrg := make(map[string]*sourcegraph.RemoteUserList)
+	// Record the user's GitHub orgs
+	var ghOrgNames []string
+	for _, org := range ghOrgs {
+		ghOrgNames = append(ghOrgNames, org.Login)
+	}
+	if err := store.WaitlistFromContext(ctx).UpdateUserOrgs(ctx, user.UID, ghOrgNames); err != nil {
+		log15.Warn("Could not record user's GitHub orgs", "uid", user.UID, "error", err)
+	}
 
+	usersByOrg := make(map[string]*sourcegraph.RemoteUserList)
 	githubMembers := make(map[int32]struct{})
 	githubUIDs := make([]int, 0)
 	for _, org := range ghOrgs {

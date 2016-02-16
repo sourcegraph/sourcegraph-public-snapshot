@@ -402,6 +402,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 				PublicRepos:  make([]*sourcegraph.RemoteRepo, 0),
 			}
 		}
+
 		if repo.Private {
 			reposByOrg[orgName].PrivateRepos = append(reposByOrg[orgName].PrivateRepos, repo)
 			privateRepoURIs = append(privateRepoURIs, repo.URI)

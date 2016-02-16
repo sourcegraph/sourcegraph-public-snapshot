@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -25,6 +26,27 @@ type orgWaitlistRow struct {
 	GrantedAt *time.Time `db:"granted_at"`
 }
 
+type userOrgRow struct {
+	UID     int32      `db:"uid"`
+	OrgName string     `db:"org"`
+	AddedAt *time.Time `db:"added_at"`
+}
+
+type pendingReposRow struct {
+	URI         string     `db:"uri"`
+	CloneURL string `db:"clone_url"`
+	Owner       string     `db:"owner"`
+	IsOrg       bool       `db:"is_org"`
+	Language    string     `db:"language"`
+	Size        int32      `db:"size"`
+	Forks       int32      `db:"forks"`
+	Stars       int32      `db:"stars"`
+	Watchers    int32      `db:"watchers"`
+	Subscribers int32      `db:"subscribers"`
+	Issues      int32      `db:"issues"`
+	UpdatedAt   *time.Time `db:"updated_at"`
+}
+
 func init() {
 	Schema.Map.AddTableWithName(userWaitlistRow{}, "user_waitlist").SetKeys(false, "UID")
 	Schema.CreateSQL = append(Schema.CreateSQL,
@@ -36,6 +58,16 @@ func init() {
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE org_waitlist ALTER COLUMN added_at TYPE timestamp with time zone USING added_at::timestamp with time zone;`,
 		`ALTER TABLE org_waitlist ALTER COLUMN granted_at TYPE timestamp with time zone USING granted_at::timestamp with time zone;`,
+	)
+
+	Schema.Map.AddTableWithName(userOrgRow{}, "user_github_orgs").SetKeys(false, "UID", "OrgName")
+	Schema.CreateSQL = append(Schema.CreateSQL,
+		`ALTER TABLE user_github_orgs ALTER COLUMN added_at TYPE timestamp with time zone USING added_at::timestamp with time zone;`,
+	)
+
+	Schema.Map.AddTableWithName(pendingReposRow{}, "pending_repos").SetKeys(false, "URI")
+	Schema.CreateSQL = append(Schema.CreateSQL,
+		`ALTER TABLE pending_repos ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 	)
 }
 
@@ -239,4 +271,86 @@ func (w *waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted boo
 		}
 	}
 	return waitlistedOrgs, nil
+}
+
+func (w *waitlist) UpdateUserOrgs(ctx context.Context, uid int32, orgNames []string) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Waitlist.UpdateUserOrgs", uid); err != nil {
+		return err
+	}
+	if uid == 0 {
+		return nil
+	}
+
+	currTime := time.Now()
+	// Insert all user orgs
+	for _, org := range orgNames {
+		dbUserOrg := &userOrgRow{
+			UID:     uid,
+			OrgName: org,
+			AddedAt: &currTime,
+		}
+
+		err := dbh(ctx).Insert(dbUserOrg)
+		if err != nil && !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
+			return err
+		}
+	}
+
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
+	}
+
+	uidSQL := "uid=" + arg(uid)
+	orgSQL := "true"
+	if orgNames != nil && len(orgNames) > 0 {
+		orgNameVars := make([]string, len(orgNames))
+		for i, o := range orgNames {
+			orgNameVars[i] = arg(o)
+		}
+		orgSQL = "org NOT IN (" + strings.Join(orgNameVars, ",") + ")"
+	}
+
+	// Remove extra orgs
+	sql := fmt.Sprintf(`DELETE FROM user_github_orgs WHERE %s AND %s`, uidSQL, orgSQL)
+	res, err := dbh(ctx).Exec(sql, args...)
+	if err != nil {
+		return err
+	}
+	if _, err := res.RowsAffected(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (w *waitlist) RecordPendingRepo(ctx context.Context, repo *sourcegraph.RemoteRepo) error {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.RecordPendingRepo"); err != nil {
+		return err
+	}
+	currTime := time.Now()
+	dbRepo := pendingReposRow{
+		URI: repo.URI,
+		CloneURL: repo.HTTPCloneURL,
+		Owner: "someone",
+		IsOrg: true,
+		Language: repo.Language,
+		Size: 10,
+		Forks: 10,
+		Stars: 10,
+		Watchers: 10,
+		Subscribers: 10,
+		Issues: 10,
+		UpdatedAt: &currTime,
+	}
+	n, err := dbh(ctx).Update(&dbRepo)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		// No pending repo row yet exists, so we must insert it.
+		return dbh(ctx).Insert(&dbRepo)
+	}
+	return nil
 }

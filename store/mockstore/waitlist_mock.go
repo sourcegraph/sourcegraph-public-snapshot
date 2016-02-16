@@ -9,14 +9,16 @@ import (
 )
 
 type Waitlist struct {
-	AddUser_   func(ctx context.Context, uid int32) error
-	GetUser_   func(ctx context.Context, uid int32) (*sourcegraph.WaitlistedUser, error)
-	GrantUser_ func(ctx context.Context, uid int32) error
-	ListUsers_ func(ctx context.Context, onlyWaitlisted bool) ([]*sourcegraph.WaitlistedUser, error)
-	AddOrg_    func(ctx context.Context, orgName string) error
-	GetOrg_    func(ctx context.Context, orgName string) (*sourcegraph.WaitlistedOrg, error)
-	GrantOrg_  func(ctx context.Context, orgName string) error
-	ListOrgs_  func(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error)
+	AddUser_           func(ctx context.Context, uid int32) error
+	GetUser_           func(ctx context.Context, uid int32) (*sourcegraph.WaitlistedUser, error)
+	GrantUser_         func(ctx context.Context, uid int32) error
+	ListUsers_         func(ctx context.Context, onlyWaitlisted bool) ([]*sourcegraph.WaitlistedUser, error)
+	AddOrg_            func(ctx context.Context, orgName string) error
+	GetOrg_            func(ctx context.Context, orgName string) (*sourcegraph.WaitlistedOrg, error)
+	GrantOrg_          func(ctx context.Context, orgName string) error
+	ListOrgs_          func(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error)
+	UpdateUserOrgs_    func(ctx context.Context, uid int32, orgNames []string) error
+	RecordPendingRepo_ func(ctx context.Context, repo *sourcegraph.RemoteRepo) error
 }
 
 func (s *Waitlist) AddUser(ctx context.Context, uid int32) error { return s.AddUser_(ctx, uid) }
@@ -43,6 +45,14 @@ func (s *Waitlist) GrantOrg(ctx context.Context, orgName string) error {
 
 func (s *Waitlist) ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error) {
 	return s.ListOrgs_(ctx, onlyWaitlisted, onlyGranted, filterNames)
+}
+
+func (s *Waitlist) UpdateUserOrgs(ctx context.Context, uid int32, orgNames []string) error {
+	return s.UpdateUserOrgs_(ctx, uid, orgNames)
+}
+
+func (s *Waitlist) RecordPendingRepo(ctx context.Context, repo *sourcegraph.RemoteRepo) error {
+	return s.RecordPendingRepo_(ctx, repo)
 }
 
 var _ store.Waitlist = (*Waitlist)(nil)
