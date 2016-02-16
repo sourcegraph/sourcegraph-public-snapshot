@@ -95,8 +95,15 @@
 	}
 }
 
-.line-numbered-code .line .line-content {
+.line-numbered-code {
 	width: 100%;
+	.line-number {
+		padding: 0 7px;
+	}
+}
+
+.file-diff-hunk .line-number {
+	width: 50px;
 }
 
 .file-container {
@@ -123,12 +130,6 @@
 
 		td {
 			vertical-align: top;
-		}
-		.line .line-number {
-			padding: 0 7px 0 11px;
-		}
-		.line .line-content {
-			width: 100%;
 		}
 	}
 
