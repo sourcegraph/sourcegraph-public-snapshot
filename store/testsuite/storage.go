@@ -189,10 +189,6 @@ func TestStorage_PutNoOverwriteConcurrent(ctx context.Context, t *testing.T, s s
 // Storage_Delete tests that Storage.Delete works.
 func Storage_Delete(ctx context.Context, t *testing.T, s store.Storage) {
 	storageBucket := randomBucket()
-	storageKey := &sourcegraph.StorageKey{
-		Bucket: storageBucket,
-		Key:    storageKeyName,
-	}
 
 	// Ensure delete on non-existant bucket is no-op.
 	_, err := s.Delete(ctx, &sourcegraph.StorageKey{
@@ -203,33 +199,72 @@ func Storage_Delete(ctx context.Context, t *testing.T, s store.Storage) {
 	}
 
 	// Ensure delete on non-existant key is no-op.
-	_, err = s.Delete(ctx, storageKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Put the first object in.
-	_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
-		Key:   *storageKey,
-		Value: storageValue,
+	_, err = s.Delete(ctx, &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    randomKey(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Delete the object.
-	_, err = s.Delete(ctx, storageKey)
+	// Put three objects in.
+	keys := []string{randomKey(), randomKey(), randomKey()}
+	for _, key := range keys {
+		_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
+			Key: sourcegraph.StorageKey{
+				Bucket: storageBucket,
+				Key:    key,
+			},
+			Value: storageValue,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Delete the first object.
+	first := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    keys[0],
+	}
+	_, err = s.Delete(ctx, first)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Check that it no longer exists.
-	exists, err := s.Exists(ctx, storageKey)
+	exists, err := s.Exists(ctx, first)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if exists.Exists {
 		t.Fatal("expected deleted key to no longer exist")
+	}
+
+	// Check that two objects remain.
+	list, err := s.List(ctx, &sourcegraph.StorageKey{Bucket: storageBucket})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list.Keys) != 2 {
+		t.Fatal("expect 2 keys, found", len(list.Keys))
+	}
+
+	// Delete the entire bucket
+	_, err = s.Delete(ctx, &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that no objects remain.
+	list, err = s.List(ctx, &sourcegraph.StorageKey{Bucket: storageBucket})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list.Keys) != 0 {
+		t.Fatal("expect 0 keys, found", len(list.Keys))
 	}
 }
 
