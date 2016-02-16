@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
@@ -15,6 +17,17 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
 )
+
+var flushDurationGauge = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "appdash",
+	Subsystem: "process",
+	Name:      "flush_duration_seconds",
+	Help:      "Duration of executing the Appdash ChunkedCollector.Flush method.",
+})
+
+func init() {
+	prometheus.MustRegister(flushDurationGauge)
+}
 
 // initClient is called by the appdash_server.go server init func to
 // ensure correct ordering (see that func for more info).
@@ -83,6 +96,9 @@ func (f *ClientConfig) configure() (func(context.Context) context.Context, error
 	c = &appdash.ChunkedCollector{
 		Collector:   c,
 		MinInterval: 500 * time.Millisecond,
+		OnFlush: func() {
+			flushDurationGauge.Inc()
+		},
 	}
 
 	traceutil.DefaultCollector = c
