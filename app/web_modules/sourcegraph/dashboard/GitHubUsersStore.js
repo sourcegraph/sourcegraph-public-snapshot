@@ -1,3 +1,5 @@
+import update from "react/lib/update";
+
 import {Store} from "flux/utils";
 
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -32,13 +34,10 @@ export class GitHubUsersStore extends Store {
 					.filter(user => user.LocalAccount || user.IsInvited)
 					.map(user => {
 						if (user.LocalAccount) return user.LocalAccount;
-						user.RemoteAccount.IsInvited = true;
-						return user.RemoteAccount;
+						return update(user.RemoteAccount, {$merge: {IsInvited: true}});
 					});
 			},
 		});
-
-		console.log(this.users.getAdded());
 
 		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.
