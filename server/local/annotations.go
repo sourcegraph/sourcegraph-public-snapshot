@@ -4,6 +4,9 @@ import (
 	"sort"
 	"sync"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"golang.org/x/net/context"
@@ -97,9 +100,16 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		return nil, err
 	}
 
+	dataVer, err := svc.Repos(ctx).GetSrclibDataVersionForPath(ctx, &opt.Entry)
+	if grpc.Code(err) == codes.NotFound {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
 	filters := []srcstore.RefFilter{
 		srcstore.ByRepos(opt.Entry.RepoRev.URI),
-		srcstore.ByCommitIDs(opt.Entry.RepoRev.CommitID),
+		srcstore.ByCommitIDs(dataVer.CommitID),
 		srcstore.ByFiles(true, opt.Entry.Path),
 	}
 	if opt.Range != nil {
