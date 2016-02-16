@@ -798,8 +798,8 @@ func (s *Changesets) doMigration(ctx context.Context, repo string) error {
 			return err
 		}
 
-		if csID == 0 {
-			fmt.Println("changesets: performing one-time Feb 15, 2016 index rebuild. This will complete shortly.")
+		if csID == 1 {
+			log15.Info("changesets: performing one-time Feb 15, 2016 index rebuild. This will complete shortly.")
 		}
 
 		isOpen := cs.ClosedAt == nil && !cs.Merged
@@ -813,8 +813,8 @@ func (s *Changesets) doMigration(ctx context.Context, repo string) error {
 				return err
 			}
 		}
-		fmt.Printf("changesets: updated index for #%v\n", cs.ID)
+		log15.Info("changesets: updated index for", "repo", repo, "CS", cs.ID)
 	}
-	fmt.Println("changesets: finished one-time index rebuild")
+	log15.Info("changesets: finished one-time index rebuild")
 	return nil
 }
