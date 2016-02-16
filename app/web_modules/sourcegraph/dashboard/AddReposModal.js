@@ -61,25 +61,29 @@ class AddReposWidget extends Component {
 							</ul>
 
 							<div className="tab-content">
-								<div role="tabpanel" className="tab-pane active" id="new-repo">
-									<div className="widget-body">
-										<p className="add-repo-label">REPO NAME:</p>
-										<input className="form-control"
-											type="text"
-											value={this.state.repoName}
-											placeholder="Type Name here"
-											onChange={this._handleTextInput}/>
+								{this.state.allowStandaloneRepos &&
+									<div role="tabpanel" className="tab-pane active" id="new-repo">
+										<div className="widget-body">
+											<p className="add-repo-label">REPO NAME:</p>
+											<input className="form-control"
+												type="text"
+												value={this.state.repoName}
+												placeholder="Type Name here"
+												onChange={this._handleTextInput}/>
+										</div>
+										<div className="widget-footer">
+											<button className="btn btn-block btn-primary btn-lg"
+												onClick={this._handleCreate}>
+												CREATE
+											</button>
+										</div>
 									</div>
-									<div className="widget-footer">
-										<button className="btn btn-block btn-primary btn-lg"
-											onClick={this._handleCreate}>
-											CREATE
-										</button>
+								}
+								{this.state.allowGitHubMirrors &&
+									<div role="tabpanel" className="tab-pane" id="github-mirror">
+										<ImportGitHubReposMenu />
 									</div>
-								</div>
-								<div role="tabpanel" className="tab-pane" id="github-mirror">
-									<ImportGitHubReposMenu />
-								</div>
+								}
 							</div>
 						</div>
 					</div>

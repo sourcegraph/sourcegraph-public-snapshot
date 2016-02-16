@@ -68,33 +68,37 @@ class AddUsersModal extends Component {
 							</ul>
 
 							<div className="tab-content">
-								<div role="tabpanel" className="tab-pane active" id="email-invite">
-									<div className="widget-body">
-										<p className="add-repo-label">EMAIL:</p>
-										<div className="form-inline invite-user-form">
-											<input className="form-control"
-												type="text"
-												value={this.state.email}
-												placeholder="Type email here"
-												onChange={this._handleTextInput}/>
-											<select className="form-control"
-												onChange={this._handlePermissionChange}>
-												<option value="read">Can Read</option>
-												<option value="write">Can Write</option>
-												<option value="admin">Admin</option>
-											</select>
+								{this.state.allowStandaloneUsers &&
+									<div role="tabpanel" className="tab-pane active" id="email-invite">
+										<div className="widget-body">
+											<p className="add-repo-label">EMAIL:</p>
+											<div className="form-inline invite-user-form">
+												<input className="form-control"
+													type="text"
+													value={this.state.email}
+													placeholder="Type email here"
+													onChange={this._handleTextInput}/>
+												<select className="form-control"
+													onChange={this._handlePermissionChange}>
+													<option value="read">Can Read</option>
+													<option value="write">Can Write</option>
+													<option value="admin">Admin</option>
+												</select>
+											</div>
+										</div>
+										<div className="widget-footer">
+											<button className="btn btn-block btn-primary btn-lg"
+												onClick={this._handleInvite}>
+												CREATE
+											</button>
 										</div>
 									</div>
-									<div className="widget-footer">
-										<button className="btn btn-block btn-primary btn-lg"
-											onClick={this._handleInvite}>
-											CREATE
-										</button>
+								}
+								{this.state.allowGitHubUsers &&
+									<div role="tabpanel" className="tab-pane" id="github-invite">
+										<ImportGitHubUsersMenu />
 									</div>
-								</div>
-								<div role="tabpanel" className="tab-pane" id="github-invite">
-									<ImportGitHubUsersMenu />
-								</div>
+								}
 							</div>
 						</div>
 					</div>
@@ -106,6 +110,8 @@ class AddUsersModal extends Component {
 
 AddUsersModal.propTypes = {
 	dismissModal: React.PropTypes.func.isRequired,
+	allowStandaloneUsers: React.PropTypes.bool.isRequired,
+	allowGitHubUsers: React.PropTypes.bool.isRequired,
 };
 
 export default AddUsersModal;

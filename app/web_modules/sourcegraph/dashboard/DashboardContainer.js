@@ -38,6 +38,8 @@ class DashboardContainer extends Container {
 		state.users = DashboardStore.users;
 		state.allowStandaloneRepos = !DashboardStore.isMothership;
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
+		state.allowStandaloneUsers = !DashboardStore.isMothership;
+		state.allowGitHubUsers = DashboardStore.allowMirrors;
 	}
 
 	stores() { return [DashboardStore, OnboardingStore]; }
@@ -74,6 +76,8 @@ class DashboardContainer extends Container {
 					allowStandaloneRepos={this.state.allowStandaloneRepos}
 					allowGitHubMirrors={this.state.allowGitHubMirrors} /> : null}
 				{this.state.showUsersModal ? <AddUsersModal
+					allowStandaloneUsers={this.state.allowStandaloneUsers}
+					allowGitHubUsers={this.state.allowGitHubUsers}
 					dismissModal={this._dismissUsersModal} /> : null}
 				<div className="dash-repos">
 					<div className="dash-repos-header">
