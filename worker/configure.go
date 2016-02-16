@@ -2,6 +2,7 @@ package worker
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"path"
@@ -110,7 +111,19 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	if err != nil {
 		return nil, err
 	}
-	b.Payload.Netrc = append(b.Payload.Netrc, hostNetrc)
+	var update bool
+	for i, entry := range b.Payload.Netrc {
+		if entry.Machine == hostname {
+			b.Payload.Netrc[i] = hostNetrc
+			update = true
+		}
+	}
+	if update {
+		fmt.Printf("worker netrc: updated\n")
+	} else {
+		fmt.Printf("worker netrc: appended\n")
+		b.Payload.Netrc = append(b.Payload.Netrc, hostNetrc)	
+	}
 
 	// Drone other payload settings
 	b.Payload.Workspace = &plugin.Workspace{}

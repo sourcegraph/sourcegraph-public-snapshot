@@ -35,7 +35,7 @@ type userOrgRow struct {
 
 type pendingReposRow struct {
 	URI         string     `db:"uri"`
-	CloneURL string `db:"clone_url"`
+	CloneURL    string     `db:"clone_url"`
 	Owner       string     `db:"owner"`
 	IsOrg       bool       `db:"is_org"`
 	Language    string     `db:"language"`
@@ -341,18 +341,18 @@ func (w *waitlist) RecordPendingRepo(ctx context.Context, repo *sourcegraph.Remo
 		isOrg = repo.Owner.IsOrganization
 	}
 	dbRepo := pendingReposRow{
-		URI: repo.URI,
-		CloneURL: repo.HTTPCloneURL,
-		Owner: ownerName,
-		IsOrg: isOrg,
-		Language: repo.Language,
-		Size: repo.RepoSize,
-		Forks: repo.Forks,
-		Stars: repo.Stars,
-		Watchers: repo.Watchers,
+		URI:         repo.URI,
+		CloneURL:    repo.HTTPCloneURL,
+		Owner:       ownerName,
+		IsOrg:       isOrg,
+		Language:    repo.Language,
+		Size:        repo.RepoSize,
+		Forks:       repo.Forks,
+		Stars:       repo.Stars,
+		Watchers:    repo.Watchers,
 		Subscribers: repo.Subscribers,
-		Issues: repo.OpenIssues,
-		UpdatedAt: &currTime,
+		Issues:      repo.OpenIssues,
+		UpdatedAt:   &currTime,
 	}
 	n, err := dbh(ctx).Update(&dbRepo)
 	if err != nil {
