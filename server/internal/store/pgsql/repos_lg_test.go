@@ -104,7 +104,7 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	// Start our primary pgsql-backed server.
 	pgsqlServer, pgsqlCtx := testserver.NewUnstartedServer()
 	pgsqlServer.Config.ServeFlags = append(pgsqlServer.Config.ServeFlags,
-		&authutil.Flags{Source: "none", AllowAnonymousReaders: true, PrivateMirrors: true},
+		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
 	)
 	if err := pgsqlServer.Start(); err != nil {
 		t.Fatal(err)
@@ -118,7 +118,6 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 		VCS:      "git",
 		CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
 		Mirror:   true,
-		Private:  true,
 	})
 	if err != nil {
 		t.Fatal(err)

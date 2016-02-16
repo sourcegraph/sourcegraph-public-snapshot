@@ -23,6 +23,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/githubutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -172,6 +173,8 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	if err != nil {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
+
+	eventsutil.LogLinkGitHub(ctx, user)
 
 	sgUser, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: currentUser.UID})
 	if err != nil {

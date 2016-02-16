@@ -143,12 +143,6 @@ var tmplFuncs = htmpl.FuncMap{
 		}
 		return nil
 	},
-	"ifString": func(cond bool, v string) string {
-		if cond {
-			return v
-		}
-		return ""
-	},
 
 	"commitSummary":       commitSummary,
 	"commitRestOfMessage": commitRestOfMessage,
@@ -232,16 +226,6 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"isAdmin": func(ctx context.Context, method string) bool {
 		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil
-	},
-
-	"getIdentifier": func(name, login string) string {
-		if name == "" {
-			return login
-		} else if login == "" {
-			return name
-		} else {
-			return fmt.Sprintf("%s (%s)", name, login)
-		}
 	},
 
 	"activeRepoApp": func(currentURL *url.URL, repoURI, appID string) (bool, error) {

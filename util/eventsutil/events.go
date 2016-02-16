@@ -10,10 +10,10 @@ import (
 	"unicode"
 
 	"github.com/gorilla/mux"
-
+	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
-
 	"gopkg.in/inconshreveable/log15.v2"
+
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -422,6 +422,52 @@ func LogEvent(ctx context.Context, event string) {
 		UserID:          userID,
 		DeviceID:        deviceID,
 		EventProperties: eventProperties,
+	})
+}
+
+func LogLinkGitHub(ctx context.Context, ghUser *github.User) {
+	login := auth.ActorFromContext(ctx).Login
+	clientID := sourcegraphClientID
+	userID, deviceID := getUserOrDeviceID(clientID, login)
+	userAgent := UserAgentFromContext(ctx)
+
+	var ghlogin, name, company, location, email string
+	if ghUser.Name != nil {
+		name = *ghUser.Name
+	}
+	if ghUser.Login != nil {
+		ghlogin = *ghUser.Login
+	}
+	if ghUser.Location != nil {
+		location = *ghUser.Location
+	}
+	if ghUser.Company != nil {
+		company = *ghUser.Company
+	}
+	if ghUser.Email != nil {
+		email = *ghUser.Email
+	}
+	userProperties := map[string]string{
+		"GHLogin":    ghlogin,
+		"GHName":     name,
+		"GHLocation": location,
+		"GHCompany":  company,
+		"GHEmail":    email,
+	}
+
+	var eventProperties map[string]string
+	if userAgent != "" {
+		eventProperties = make(map[string]string)
+		eventProperties["UserAgent"] = userAgent
+	}
+
+	Log(&sourcegraph.Event{
+		Type:            "LinkGitHub",
+		ClientID:        clientID,
+		UserID:          userID,
+		DeviceID:        deviceID,
+		EventProperties: eventProperties,
+		UserProperties:  userProperties,
 	})
 }
 

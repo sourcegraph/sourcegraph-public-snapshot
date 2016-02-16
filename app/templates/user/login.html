@@ -13,9 +13,11 @@
 						<p class="help-block">{{.LoginForm.FormError}}</p>
 						<div class="form-group {{.LoginForm.FieldClass "Login"}}">
 							<input placeholder="Username" name="Login" type="text" class="form-control" id="login" value="{{.LoginForm.Login}}" required pattern="[\w-]+" tabindex=1 autofocus>
+							{{with .LoginForm.FieldError "Login"}}<p class="help-block">{{.}}</p>{{end}}
 						</div>
 						<div class="form-group {{.LoginForm.FieldClass "Password"}}">
 							<input placeholder="Password" name="Password" type="password" class="form-control" id="password" required tabindex=2>
+							{{with .LoginForm.FieldError "Password"}}<p class="help-block">{{.}}</p>{{end}}
 						</div>
 						<button type="submit" class="btn btn-primary btn-block" tabindex=3>LOGIN</button>
 						<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
