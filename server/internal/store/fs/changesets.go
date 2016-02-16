@@ -782,7 +782,6 @@ func (s *Changesets) doMigration(ctx context.Context, repo string) error {
 		}
 		return err
 	}
-	fmt.Println("changesets: performing one-time Feb 15, 2016 index rebuild. This will complete shortly.")
 	csID := int64(0)
 	for {
 		csID++
@@ -797,6 +796,10 @@ func (s *Changesets) doMigration(ctx context.Context, repo string) error {
 				break // completed
 			}
 			return err
+		}
+
+		if csID == 0 {
+			fmt.Println("changesets: performing one-time Feb 15, 2016 index rebuild. This will complete shortly.")
 		}
 
 		isOpen := cs.ClosedAt == nil && !cs.Merged
