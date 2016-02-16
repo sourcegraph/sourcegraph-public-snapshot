@@ -12,6 +12,7 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -57,6 +58,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 type repoInfo struct {
 	URI     string
 	Private bool
+	Language string
 }
 
 func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
@@ -78,9 +80,10 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	var numPrivate, numPublic int32
+
 	for _, repoInfo := range data.Repos {
 		repoURI := repoInfo.URI
-		private := repoInfo.Private
 
 		// Perform the following operations locally (non-federated) because it's a private repo.
 		_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
@@ -88,7 +91,8 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 			VCS:      "git",
 			CloneURL: "https://" + repoURI + ".git",
 			Mirror:   true,
-			Private:  private,
+			Private:  repoInfo.Private,
+			Language: repoInfo.Language,
 		})
 		if grpc.Code(err) == codes.AlreadyExists {
 			log15.Warn("repo already exists", "uri", repoURI)
@@ -97,8 +101,16 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
+		if repoInfo.Private {
+			numPrivate += 1
+		} else {
+			numPublic += 1
+		}
+
 		repoupdater.Enqueue(&sourcegraph.Repo{URI: repoURI})
 	}
+
+	eventsutil.LogAddMirrorRepos(ctx, numPrivate, numPublic)
 
 	mirrorData, err := apiclient.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
 	if err != nil {

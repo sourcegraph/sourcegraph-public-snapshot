@@ -8,6 +8,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -93,17 +94,23 @@ func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("no emails specified")
 	}
 
+	var numSuccess, numFail int32
+
 	inviteResults := make([]*inviteResult, len(query.Emails))
 	for i, email := range query.Emails {
 		inviteResults[i] = &inviteResult{Email: email}
 		pendingInvite, err := cl.Accounts.Invite(ctx, &sourcegraph.AccountInvite{Email: email})
 		if err != nil {
 			inviteResults[i].Err = err
+			numFail += 1
 		} else {
 			inviteResults[i].EmailSent = pendingInvite.EmailSent
 			inviteResults[i].InviteLink = pendingInvite.Link
+			numSuccess += 1
 		}
 	}
+
+	eventsutil.LogAddTeammates(ctx, numSuccess, numFail)
 
 	teammates, err := cl.Users.ListTeammates(ctx, currentUser)
 	if err != nil {
