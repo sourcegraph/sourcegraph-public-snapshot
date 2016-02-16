@@ -2,7 +2,9 @@ package events
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
+	"runtime"
 	"sync"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -36,6 +38,15 @@ func (s *eventServer) publish(id EventID, payload interface{}) {
 
 		args := []reflect.Value{idv, pv}
 		go s.parallel.Do(func() error {
+			defer func() {
+				if err := recover(); err != nil {
+					const size = 64 << 10
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					log15.Warn("events: registered event handler panicked:", "error", err)
+					fmt.Println("events: stack trace:", string(buf))
+				}
+			}()
 			cv.Call(args)
 			return nil
 		})
