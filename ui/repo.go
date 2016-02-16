@@ -56,8 +56,8 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 }
 
 type repoInfo struct {
-	URI     string
-	Private bool
+	URI      string
+	Private  bool
 	Language string
 }
 

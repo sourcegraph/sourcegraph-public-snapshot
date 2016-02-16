@@ -23,6 +23,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
@@ -114,6 +115,13 @@ func (mw *staticMiddleware) Middleware(w http.ResponseWriter, r *http.Request, n
 		mw.debugf("request for %q from dir %q\n", r.URL.Path, Flags.Dir)
 	} else {
 		mw.debugf("request for %q from repo %q\n", r.URL.Path, Flags.Repo)
+	}
+
+	// If user is logged in and visits the home page, redirect them to dashboard.
+	if r.URL.Path == "/" && handlerutil.UserFromRequest(r) != nil {
+		mw.debugf("request for %q, redirecting user to app home page\n", r.URL.Path)
+		next(w, r)
+		return
 	}
 
 	// Choose the file appropriate.
