@@ -1,6 +1,8 @@
 package accesscontrol
 
 import (
+	"strings"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
@@ -59,6 +61,15 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 
 // VerifyRepoPerms checks if a repoURI is visible to the actor in the given context.
 func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI string) error {
+	for scope := range actor.Scope {
+		if strings.HasPrefix(scope, "repo:") {
+			repo := strings.TrimPrefix(scope, "repo:")
+			if repo == repoURI {
+				return nil
+			}
+		}
+	}
+
 	// Short-circuit: If the user is unauthenticated and the scope has special access,
 	// grant access directly to avoid infinite cycles back to this function from reposStore.Get.
 	if actor.UID == 0 && VerifyScopeHasAccess(ctx, actor.Scope, method) {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,6 +22,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
+)
+
+var (
+	srcIDKey *idkey.IDKey
 )
 
 func init() {
@@ -46,8 +51,13 @@ func (c *WorkCmd) Execute(args []string) error {
 	if c.Parallel <= 0 {
 		return errors.New("-p/--parallel must be > 0")
 	}
+
+	if err := initializeIDKey(args); err != nil {
+		return err
+	}
+
 	if c.Remote {
-		if err := c.authenticateWorkerCtx(); err != nil {
+		if err := authenticateWorkerCtx(); err != nil {
 			return fmt.Errorf("authenticating remote worker failed: %s", err)
 		}
 	}
@@ -147,18 +157,23 @@ func (c *WorkCmd) Execute(args []string) error {
 	panic("unreachable")
 }
 
-func (c *WorkCmd) authenticateWorkerCtx() error {
-	idKeyData := os.Getenv("SRC_ID_KEY_DATA")
-	if idKeyData == "" {
-		return errors.New("SRC_ID_KEY_DATA is not set")
+func initializeIDKey(args []string) error {
+	var err error
+	if len(args) > 0 {
+		srcIDKeyText := []byte(args[0])
+		srcIDKey, err = idkey.New(srcIDKeyText)
+	} else {
+		srcIDKeyData := os.Getenv("SRC_ID_KEY_DATA")
+		if srcIDKeyData == "" {
+			return errors.New("SRC_ID_KEY_DATA is not available")
+		}
+		srcIDKey, err = idkey.FromString(srcIDKeyData)
 	}
+	return err
+}
 
-	k, err := idkey.FromString(idKeyData)
-	if err != nil {
-		return err
-	}
-
-	src := client.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "worker:build")}
+func authenticateWorkerCtx() error {
+	src := client.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(srcIDKey, "worker:build")}
 	tok, err := src.Token()
 	if err != nil {
 		return err
@@ -167,6 +182,11 @@ func (c *WorkCmd) authenticateWorkerCtx() error {
 	// Authenticate future requests.
 	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
+}
+
+func getScopedToken(scope string) (*oauth2.Token, error) {
+	src := sharedsecret.ShortTokenSource(srcIDKey, scope)
+	return src.Token()
 }
 
 func markBuildAsKilled(ctx context.Context, b sourcegraph.BuildSpec) error {

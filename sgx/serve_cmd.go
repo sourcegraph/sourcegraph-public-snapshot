@@ -598,11 +598,12 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
 
+	idKeyText, _ := idKey.MarshalText()
 	if c.NoWorker {
 		log15.Info("Skip starting worker process.")
 	} else {
 		go func() {
-			if err := c.WorkCmd.Execute(nil); err != nil {
+			if err := c.WorkCmd.Execute([]string{string(idKeyText)}); err != nil {
 				log.Fatal("Worker exited with error:", err)
 			}
 		}()

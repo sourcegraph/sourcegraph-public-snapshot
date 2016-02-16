@@ -18,7 +18,6 @@ import (
 	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/pkg/dockerutil"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
@@ -106,7 +105,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	// may be the same credentials as the clone netrc credentials, but
 	// that's not true in all cases (e.g., clone credentials could be
 	// for GitHub).
-	hostNetrc, err := getHostNetrcEntry(ctx, hostname)
+	hostNetrc, err := getHostNetrcEntry(ctx, hostname, build.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -244,15 +243,19 @@ func getSrclibValidateURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, 
 
 // getHostNetrcEntry creates a netrc entry that authorizes access to
 // the Sourcegraph server.
-func getHostNetrcEntry(ctx context.Context, host string) (*plugin.NetrcEntry, error) {
-	token := client.Credentials.GetAccessToken()
-	if token == "" {
+func getHostNetrcEntry(ctx context.Context, host, repoURI string) (*plugin.NetrcEntry, error) {
+	// Get an access token scoped to this repo.
+	tok, err := getScopedToken("repo:" + repoURI)
+	if err != nil {
+		return nil, err
+	}
+	if tok.AccessToken == "" {
 		return nil, errors.New("can't generate local netrc entry: token is empty")
 	}
 	return &plugin.NetrcEntry{
 		Machine:  host,
 		Login:    "x-oauth-basic",
-		Password: token,
+		Password: tok.AccessToken,
 	}, nil
 }
 
