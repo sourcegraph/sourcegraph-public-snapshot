@@ -1,7 +1,9 @@
+# Container-based Precise due to `sudo: false`
+sudo: false
 language: go
 go:
+ - 1.5
  - 1.4
- - 1.3
  - tip
 
 matrix:

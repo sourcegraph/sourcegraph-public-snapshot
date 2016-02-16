@@ -110,8 +110,16 @@ func (a *App) serveTrace(w http.ResponseWriter, r *http.Request) error {
 		return a.profile(trace, w)
 	}
 
+	// Do not show d3 timeline chart when timeline item fields are invalid.
+	// So we avoid JS code breaking due missing values.
+	var showTimelineChart bool = true
 	visData, err := a.d3timeline(trace)
-	if err != nil {
+	switch err {
+	case errTimelineItemValidation:
+		showTimelineChart = false
+	case nil:
+		break
+	default:
 		return err
 	}
 
@@ -128,13 +136,15 @@ func (a *App) serveTrace(w http.ResponseWriter, r *http.Request) error {
 
 	return a.renderTemplate(w, r, "trace.html", http.StatusOK, &struct {
 		TemplateCommon
-		Trace      *appdash.Trace
-		VisData    []timelineItem
-		ProfileURL string
+		Trace             *appdash.Trace
+		ShowTimelineChart bool
+		VisData           []timelineItem
+		ProfileURL        string
 	}{
-		Trace:      trace,
-		VisData:    visData,
-		ProfileURL: profile.String(),
+		Trace:             trace,
+		ShowTimelineChart: showTimelineChart,
+		VisData:           visData,
+		ProfileURL:        profile.String(),
 	})
 }
 

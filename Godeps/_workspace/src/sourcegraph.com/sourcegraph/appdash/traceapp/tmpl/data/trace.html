@@ -86,6 +86,14 @@
 </div>
 
 
+<div class="viewMode">
+  <button id="btnSortStartTime" class="btn btn-default">Sort By start time</button>
+  <button id="btnSortEndTime" class="btn btn-default">Sort By end time</button>
+  <button id="btnSortDuration" class="btn btn-default">Sort By duration</button>
+  <button id="btnSortLabel" class="btn btn-default">Sort By label</button>
+</div>
+
+
 <style type="text/css">
   .axis path,
   .axis line {
@@ -136,6 +144,7 @@
 <script type="text/javascript">
   (function() {
     var data = {{.VisData}};
+    var showTimelineChart = {{.ShowTimelineChart}};
     var width = $(".container").width();
 
     // em converts the input (in em units) to pixels units and returns it.
@@ -388,7 +397,14 @@
 
       var svg = d3.select(".trace-timeline").append("svg").attr("width", width)
                   .datum(visibleData).call(chart)
+                  .style("overflow", "visible")
                   .call(tip);
+
+      var filter = function(text){
+        if (text.length < 14) { return text; }
+        return text.substr(0, 13) + "...";
+      };
+      var $labels = $(".trace-timeline text.timeline-label");
 
       // Make text on each timeline element click-able. d3-timeline.js doesn't
       // seem to have a way to support this easily.
@@ -399,6 +415,7 @@
       // The last number of that is the index into our visibleData.
       $(".trace-timeline g>text").each(function() {
         var index = numFromEnd($(this).prev().attr('id'));
+        var label = $labels[index];
 
         d3.select(this)
           .on("mouseover", function() {
@@ -409,17 +426,127 @@
             window.location.href = visibleData[index].url;
           });
 
+        d3.select(label)
+          .on("mouseover", function() { timespanHover(true, chart, index); })
+          .on("mouseout", function() { timespanHover(false, chart, index); })
+          .text(filter(label.innerHTML))
+
         // When there is a contextmenu (e.g. right click) event we open the
         // context menu on the timespan rectangle.
         var datum = d3.select($(this).prev()[0]).data()[0];
-        $(this).on("contextmenu", function(e) { return ctxMenuOpen(e, datum, visibleData[index]) });
+        $([this, label]).on("contextmenu", function(e) { return ctxMenuOpen(e, datum, visibleData[index]) });
         $(this).prev().on("contextmenu", function(e) { return ctxMenuOpen(e, datum, visibleData[index]) });
       });
     }
 
-    if(data != null) {
+    if(data != null && showTimelineChart) {
       timelineHover();
     }
+
+    // save state for last sort
+    var lastSort = {
+      name: '',
+      descendingOrder: false,
+      toggleOrder: function(name){
+        if (this.name !== name) {
+          this.name = name;
+          this.descendingOrder = false;
+          return 1;
+        }
+
+        this.descendingOrder = !this.descendingOrder;
+        if (this.descendingOrder) {
+          return -1;
+        } else {
+          return 1;
+        }
+      }
+    };
+
+    // sort by starting_time
+    function toggleSortStartTime() {
+      var sortOrder = lastSort.toggleOrder('start_time');
+      data.sort(function(a, b) {
+        // validation
+        if (typeof a.times !== 'object' || typeof b.times !== 'object') return -1;
+        if (a.times.length === 0 || b.times.length === 0) return -1;
+
+        // sort
+        if (a.times[0].starting_time < b.times[0].starting_time) {
+          return sortOrder * -1;
+        } else if (a.times[0].starting_time > b.times[0].starting_time) {
+          return sortOrder;
+        } else {
+          return 0;
+        }
+      })
+      timelineHover();
+    }
+
+    // sort by ending_time
+    function toggleSortEndTime() {
+      var sortOrder = lastSort.toggleOrder('end_time');
+      data.sort(function(a, b) {
+        // validation
+        if (typeof a.times !== 'object' || typeof b.times !== 'object') return -1;
+        if (a.times.length === 0 || b.times.length === 0) return -1;
+
+        // sort
+        if (a.times[0].ending_time < b.times[0].ending_time) {
+          return sortOrder * -1;
+        } else if (a.times[0].ending_time > b.times[0].ending_time) {
+          return sortOrder;
+        } else {
+          return 0;
+        }
+      })
+      timelineHover();
+    }
+
+    // sort by duration
+    function toggleSortDuration() {
+      var sortOrder = lastSort.toggleOrder('duration');
+      data.sort(function(a, b) {
+        // validation
+        if (typeof a.times !== 'object' || typeof b.times !== 'object') return -1;
+        if (a.times.length === 0 || b.times.length === 0) return -1;
+
+        // sort
+        if (a.times[0].duration < b.times[0].duration) {
+          return sortOrder * -1;
+        } else if (a.times[0].duration > b.times[0].duration) {
+          return sortOrder;
+        } else {
+          return 0;
+        }
+      })
+      timelineHover();
+    }
+
+    // sort by label alphabetically
+    var toggleSortLabel = function(){
+      var sortOrder = lastSort.toggleOrder('label');
+      data.sort(function(a, b) {
+        // validation
+        if (typeof a.label !== 'string' || typeof b.label !== 'string') return -1;
+
+        // sort
+        if (a.label.toLowerCase() < b.label.toLowerCase()) {
+          return sortOrder * -1;
+        } else if (a.label.toLowerCase() > b.label.toLowerCase()) {
+          return sortOrder;
+        } else {
+          return 0;
+        }
+      })
+      timelineHover();
+    }
+
+    // set sort evet to buttons
+    $("#btnSortStartTime").click(toggleSortStartTime);
+    $("#btnSortEndTime").click(toggleSortEndTime);
+    $("#btnSortDuration").click(toggleSortDuration);
+    $("#btnSortLabel").click(toggleSortLabel);
   })();
 </script>
 

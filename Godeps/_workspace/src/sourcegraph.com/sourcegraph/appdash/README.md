@@ -49,8 +49,7 @@ architectural choices were made.
 
 There are 4 main components/concepts in appdash:
 
-*
-  [**Spans**](https://sourcegraph.com/sourcegraph.com/sourcegraph/appdash@master/.GoPackage/sourcegraph.com/sourcegraph/appdash/.def/SpanID):
+* [**Spans**](https://sourcegraph.com/sourcegraph.com/sourcegraph/appdash@master/.GoPackage/sourcegraph.com/sourcegraph/appdash/.def/SpanID):
   A span refers to an operation and all of its children. For example,
   an HTTP handler handles a request by calling other components in
   your system, which in turn make various API and DB calls. The HTTP
@@ -86,6 +85,10 @@ There are 4 main components/concepts in appdash:
   listens on the network for this data, and it then stores what it
   receives.
 
+
+## Language Support
+
+Appdash has clients available for Go, Python (see `python/` subdir) and Ruby (see https://github.com/bsm/appdash-rb).
 
 
 ## Acknowledgments

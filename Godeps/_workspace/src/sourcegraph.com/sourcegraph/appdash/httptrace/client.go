@@ -3,6 +3,7 @@ package httptrace
 import (
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"sourcegraph.com/sourcegraph/appdash"
@@ -122,21 +123,20 @@ type Transport struct {
 	Transport http.RoundTripper
 
 	SetName bool
+
+	// requests keeps clone request
+	reqMu    sync.Mutex
+	requests map[*http.Request]*http.Request
 }
 
 // RoundTrip implements the RoundTripper interface.
-func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	var transport http.RoundTripper
-	if t.Transport != nil {
-		transport = t.Transport
-	} else {
-		transport = http.DefaultTransport
-	}
-
+func (t *Transport) RoundTrip(original *http.Request) (*http.Response, error) {
 	// To set extra querystring params, we must make a copy of the Request so
 	// that we don't modify the Request we were given. This is required by the
 	// specification of http.RoundTripper.
-	req = cloneRequest(req)
+	req := cloneRequest(original)
+	t.setCloneRequest(original, req)
+	defer t.setCloneRequest(original, nil)
 
 	child := t.Recorder.Child()
 	if t.SetName {
@@ -148,6 +148,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	e.ClientSend = time.Now()
 
 	// Make the HTTP request.
+	transport := t.getTransport()
 	resp, err := transport.RoundTrip(req)
 
 	e.ClientRecv = time.Now()
@@ -157,7 +158,6 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		e.Response.StatusCode = -1
 	}
 	child.Event(e)
-
 	return resp, err
 }
 
@@ -173,4 +173,45 @@ func cloneRequest(r *http.Request) *http.Request {
 		r2.Header[k] = s
 	}
 	return r2
+}
+
+// setCloneRequest keeps track of the cloned based on the original request so
+// that it can be canceled in the future in CancelRequest.
+func (t *Transport) setCloneRequest(original *http.Request, clone *http.Request) {
+	t.reqMu.Lock()
+	defer t.reqMu.Unlock()
+	if t.requests == nil {
+		t.requests = make(map[*http.Request]*http.Request)
+	}
+
+	if clone != nil {
+		t.requests[original] = clone
+	} else {
+		delete(t.requests, original)
+	}
+}
+
+// getTransport returns custom transport or DefaultTransport
+func (t *Transport) getTransport() http.RoundTripper {
+	if t.Transport != nil {
+		return t.Transport
+	}
+	return http.DefaultTransport
+}
+
+// CancelRequest cancels an in-flight request by closing its connection.
+func (t *Transport) CancelRequest(req *http.Request) {
+	type canceler interface {
+		CancelRequest(*http.Request)
+	}
+
+	newReq, ok := t.requests[req]
+	if !ok {
+		return
+	}
+
+	transport := t.getTransport()
+	if ts, ok := transport.(canceler); ok {
+		ts.CancelRequest(newReq)
+	}
 }

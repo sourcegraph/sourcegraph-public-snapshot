@@ -53,6 +53,12 @@ type ChunkedCollector struct {
 	// underlying collector's Collect method.
 	MinInterval time.Duration
 
+	// OnFlush, if non-nil, will be directly invoked at the start of each Flush
+	// operation that is performed by this collector.
+	//
+	// It is primarily used for debugging purposes.
+	OnFlush func()
+
 	// The last error from the underlying Collector's Collect method,
 	// if any. It will be returned to the next caller of Collect and
 	// this field will be set to nil.
@@ -103,6 +109,10 @@ func (cc *ChunkedCollector) Collect(span SpanID, anns ...Annotation) error {
 // Flush immediately sends all pending spans to the underlying
 // collector.
 func (cc *ChunkedCollector) Flush() error {
+	if cc.OnFlush != nil {
+		cc.OnFlush()
+	}
+
 	cc.mu.Lock()
 	pendingBySpanID := cc.pendingBySpanID
 	cc.pendingBySpanID = nil

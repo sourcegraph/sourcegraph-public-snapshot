@@ -812,7 +812,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash",
-			"Rev": "8d5f11b83ef971bba76073a65c1429d97fcb4d77"
+			"Rev": "5c1f8b2d230d0e9a2eca693af33c521e65b9ac16"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash-data",
