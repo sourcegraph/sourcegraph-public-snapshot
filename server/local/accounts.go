@@ -69,6 +69,7 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		Message: fmt.Sprintf("write:%v admin:%v", write, admin),
 	})
 	eventsutil.LogCreateAccount(ctx, newAcct, admin, write, numUsers == 0, "")
+	sendAccountCreateSlackMsg(ctx, user.Login, newAcct.Email, false)
 
 	// Update the registered client's name if this is the first user account
 	// created on this server.
@@ -255,6 +256,7 @@ func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph
 	})
 
 	eventsutil.LogCreateAccount(ctx, acceptedInvite.Account, invite.Admin, invite.Write, false, acceptedInvite.Token[:5])
+	sendAccountCreateSlackMsg(ctx, userSpec.Login, invite.Email, true)
 
 	if err := invitesStore.Delete(ctx, acceptedInvite.Token); err != nil {
 		return nil, err
@@ -404,4 +406,12 @@ func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
+}
+
+func sendAccountCreateSlackMsg(ctx context.Context, login, email string, invite bool) {
+	msg := fmt.Sprintf("New user *%s* created by <%s>", login, email)
+	if invite {
+		msg += " (via an invite)"
+	}
+	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
 }

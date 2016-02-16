@@ -3,7 +3,11 @@ package ui
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
+
+	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -11,6 +15,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -111,6 +116,7 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	eventsutil.LogAddMirrorRepos(ctx, numPrivate, numPublic)
+	sendRepoMirrorSlackMsg(ctx, currentUser, numPrivate, numPublic)
 
 	mirrorData, err := apiclient.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
 	if err != nil {
@@ -118,4 +124,16 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return e.Encode(mirrorData)
+}
+
+func sendRepoMirrorSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, numPrivate, numPublic int32) {
+	var msgs []string
+	if numPrivate > 0 {
+		msgs = append(msgs, fmt.Sprintf("User *%s* mirrored %d private repos to Sourcegraph", sgUser.Login, numPrivate))
+	}
+	if numPublic > 0 {
+		msgs = append(msgs, fmt.Sprintf("User *%s* mirrored %d public repos to Sourcegraph", sgUser.Login, numPublic))
+	}
+	msg := strings.Join(msgs, "\n")
+	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
 }

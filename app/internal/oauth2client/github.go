@@ -3,10 +3,13 @@ package oauth2client
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/sourcegraph/go-github/github"
 
 	"sourcegraph.com/sqs/pbtypes"
 
@@ -22,6 +25,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/githubutil"
@@ -175,6 +179,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	eventsutil.LogLinkGitHub(ctx, user)
+	sendLinkGitHubSlackMsg(ctx, currentUser, user)
 
 	sgUser, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: currentUser.UID})
 	if err != nil {
@@ -226,4 +231,19 @@ func getOAuth2Conf(ctx context.Context) *oauth2.Config {
 		RedirectURL: conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
 		Scopes:      scopes,
 	}
+}
+
+func sendLinkGitHubSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, ghUser *github.User) {
+	var ghLogin, ghName, ghEmail string
+	if ghUser.Login != nil {
+		ghLogin = *ghUser.Login
+	}
+	if ghUser.Name != nil {
+		ghName = *ghUser.Name
+	}
+	if ghUser.Email != nil {
+		ghEmail = *ghUser.Email
+	}
+	msg := fmt.Sprintf("User *%s* linked their GitHub account: *%s* (%s <%s>)", sgUser.Login, ghLogin, ghName, ghEmail)
+	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
 }

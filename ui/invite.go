@@ -3,11 +3,15 @@ package ui
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+
+	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -111,6 +115,7 @@ func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	eventsutil.LogAddTeammates(ctx, numSuccess, numFail)
+	sendInviteBulkSlackMsg(ctx, currentUser, numSuccess, numFail)
 
 	teammates, err := cl.Users.ListTeammates(ctx, currentUser)
 	if err != nil {
@@ -118,4 +123,15 @@ func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return json.NewEncoder(w).Encode(teammates)
+}
+
+func sendInviteBulkSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, numSuccess, numFail int32) {
+	if numSuccess == 0 && numFail == 0 {
+		return
+	}
+	msg := fmt.Sprintf("User *%s* invited %d teammates to Sourcegraph", sgUser.Login, numSuccess)
+	if numFail > 0 {
+		msg += fmt.Sprintf(" (failed to send %d invites)", numFail)
+	}
+	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
 }
