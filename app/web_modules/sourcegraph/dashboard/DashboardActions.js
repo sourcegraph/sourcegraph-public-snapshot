@@ -13,8 +13,8 @@ export class ReposAdded {
 }
 
 export class WantAddUsers {
-	constructor(users) {
-		this.users = users;
+	constructor(emails) {
+		this.emails = emails;
 	}
 }
 

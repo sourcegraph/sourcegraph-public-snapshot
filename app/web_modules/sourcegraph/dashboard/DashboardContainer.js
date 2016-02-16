@@ -78,7 +78,7 @@ class DashboardContainer extends Container {
 				<div className="dash-repos">
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Your Repositories</h3>
-						<button className="btn btn-primary btn-block add-repo-btn"
+						<button className="btn btn-primary add-repo-btn"
 							onClick={this._openReposModal}>
 							<div className="plus-btn">
 								<span className="plus">+</span>

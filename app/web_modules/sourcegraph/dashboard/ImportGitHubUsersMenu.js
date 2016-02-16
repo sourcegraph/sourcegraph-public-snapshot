@@ -4,8 +4,8 @@ import update from "react/lib/update";
 import Container from "sourcegraph/Container";
 import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
 import SelectableListWidget from "sourcegraph/dashboard/SelectableListWidget";
-// import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-// import Dispatcher from "sourcegraph/Dispatcher";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import Dispatcher from "sourcegraph/Dispatcher";
 
 class ImportGitHubUsersMenu extends Container {
 	constructor(props) {
@@ -24,7 +24,7 @@ class ImportGitHubUsersMenu extends Container {
 		Object.assign(state, props);
 		state.orgs = GitHubUsersStore.orgs;
 		if (!state.currentOrg) state.currentOrg = GitHubUsersStore.orgs[0];
-		state.items = GitHubUsersStore.usersByOrg.get(state.currentOrg).map((user) => ({
+		state.items = GitHubUsersStore.users.getByOrg(state.currentOrg).map((user) => ({
 			name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
 			key: user.RemoteAccount.Login,
 		}));
@@ -48,9 +48,20 @@ class ImportGitHubUsersMenu extends Container {
 	}
 
 	_handleAddUsers(items) {
-		// TODO:
-		console.log(this.state.selectedUsers);
-		// Dispatcher.dispatch(new DashboardActions.WantAddUsers(Object.keys(this.state.selectedUsers)));
+		let emails = [];
+		for (let login of Object.keys(this.state.selectedUsers)) {
+			if (this.state.selectedUsers[login]) {
+				let user = GitHubUsersStore.users.get(login);
+				// TODO pre-filter list if users doesn't have email.
+				console.log(user);
+				if (user && user.Email) emails.push(user.Email);
+			}
+		}
+		if (emails.length > 0) {
+			Dispatcher.dispatch(new DashboardActions.WantAddUsers(emails));
+		} else {
+			console.log("No emails for selected users");
+		}
 	}
 
 	stores() { return [GitHubUsersStore]; }

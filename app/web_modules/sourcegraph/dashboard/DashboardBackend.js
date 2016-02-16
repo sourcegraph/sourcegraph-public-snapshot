@@ -1,7 +1,6 @@
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "xhr";
+import defaultXhr from "sourcegraph/util/xhr";
 
 // function authHeaders() {
 // 	let hdr = {};
@@ -14,23 +13,41 @@ import defaultXhr from "xhr";
 
 const DashboardBackend = {
 	xhr: defaultXhr,
-	dashboardStore: DashboardStore,
 
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DashboardActions.WantAddRepos:
-			{
-				console.log("got here", action.repos);
-				// Dispatcher.dispatch(new DashboardActions.ReposAdded());
-				break;
-			}
-
-		case DashboardActions.WantAddTeammates:
-			{
-				console.log("got there");
-				// Dispatcher.dispatch(new DashboardActions.UsersAdded());
-				break;
-			}
+			console.log("got here", action.repos);
+			DashboardBackend.xhr({
+				uri: `.ui/.repo-mirror`,
+				method: "POST",
+				json: {
+					Repos: action.repos,
+				},
+			}, function(err, resp, body) {
+				if (err) {
+					console.error(err);
+					return;
+				}
+				// TODO dispath repo added action here.
+			});
+			break;
+		case DashboardActions.WantAddUsers:
+			console.log("got here", action.emails);
+			DashboardBackend.xhr({
+				uri: `.ui/.invite-bulk`,
+				method: "POST",
+				json: {
+					Emails: action.emails,
+				},
+			}, function(err, resp, body) {
+				if (err) {
+					console.error(err);
+					return;
+				}
+				// TODO dispath user invited action here.
+			});
+			break;
 		}
 	},
 };

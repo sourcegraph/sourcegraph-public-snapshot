@@ -63,7 +63,10 @@ class OnboardingContainer extends Container {
 								{this.state.progress.currentStep === 3 &&
 									<div>
 										<p className="header-text normal-header">
-											Select Users
+											Invite People from GitHub
+										</p>
+										<p className="normal-text">
+											Sourcegraph is more fun with people. You can invite your GitHub Connections, or do it the old fashioned way.
 										</p>
 										<ImportGitHubUsersMenu />
 									</div>

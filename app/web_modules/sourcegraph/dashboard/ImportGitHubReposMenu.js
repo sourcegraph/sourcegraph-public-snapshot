@@ -4,8 +4,8 @@ import update from "react/lib/update";
 import Container from "sourcegraph/Container";
 import GitHubReposStore from "sourcegraph/dashboard/GitHubReposStore";
 import SelectableListWidget from "sourcegraph/dashboard/SelectableListWidget";
-// import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-// import Dispatcher from "sourcegraph/Dispatcher";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import Dispatcher from "sourcegraph/Dispatcher";
 
 class ImportGitHubReposMenu extends Container {
 	constructor(props) {
@@ -47,9 +47,12 @@ class ImportGitHubReposMenu extends Container {
 	}
 
 	_handleAddMirrors(items) {
-		// TODO:
-		console.log(this.state.selectedRepos);
-		// Dispatcher.dispatch(new DashboardActions.WantAddRepos(Object.keys(this.state.selectedRepos)));
+		let repos = [];
+		for (let repoURI of Object.keys(this.state.selectedRepos)) {
+			// TODO(renfredxh): add support for mirroring public repos.
+			if (this.state.selectedRepos[repoURI]) repos.push({URI: repoURI, Private: true});
+		}
+		Dispatcher.dispatch(new DashboardActions.WantAddRepos(repos));
 	}
 
 	stores() { return [GitHubReposStore]; }

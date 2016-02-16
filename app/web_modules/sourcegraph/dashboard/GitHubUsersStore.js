@@ -7,9 +7,20 @@ export class GitHubUsersStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
 		// The users which are available to invite.
-		this.usersByOrg = deepFreeze({
+		this.users = deepFreeze({
 			users: window.teammates ? window.teammates.UsersByOrg : {},
-			get(org) {
+			// TODO: make it easier to get a single user.
+			get(login) {
+				let allUsers = Object.keys(this.users).reduce(
+					(users, org) => users.concat(this.users[org].Users), []
+				);
+				console.log(allUsers, login);
+				for (let user of allUsers) {
+					if (user.RemoteAccount.Login === login) return user;
+				}
+				return null;
+			},
+			getByOrg(org) {
 				let orgUsers = this.users[org];
 				return orgUsers ? orgUsers.Users : [];
 			},
