@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	Schema.Map.AddTableWithName(dbRepoStatus{}, "repo_status").SetKeys(false, "Repo", "Rev")
+	Schema.Map.AddTableWithName(dbRepoStatus{}, "repo_status").SetKeys(false, "Repo", "Rev", "Context")
 	Schema.CreateSQL = append(Schema.CreateSQL,
 		`ALTER TABLE repo_status ALTER COLUMN repo TYPE citext;`,
 		`ALTER TABLE repo_status ALTER COLUMN description TYPE text;`,
