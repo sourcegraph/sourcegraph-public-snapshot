@@ -2,24 +2,27 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "sourcegraph/util/xhr";
 
-// function authHeaders() {
-// 	let hdr = {};
-// 	if (typeof document !== "undefined" && document.head.dataset && document.head.dataset.currentUserOauth2AccessToken) {
-// 		let auth = `x-oauth-basic:${document.head.dataset.currentUserOauth2AccessToken}`;
-// 		hdr.authorization = `Basic ${btoa(auth)}`;
-// 	}
-// 	return hdr;
-// }
-
 const DashboardBackend = {
 	xhr: defaultXhr,
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.WantAddRepos:
-			console.log("got here", action.repos);
+		case DashboardActions.WantCreateRepo:
 			DashboardBackend.xhr({
-				uri: `.ui/.repo-mirror`,
+				uri: `/.ui/.repo-create?RepoURI=${action.name}`,
+				method: "POST",
+				json: {},
+			}, function(err, resp, body) {
+				if (err) {
+					console.error(err);
+					return;
+				}
+				// TODO dispath repo created action here.
+			});
+			break;
+		case DashboardActions.WantAddMirrorRepos:
+			DashboardBackend.xhr({
+				uri: `/.ui/.repo-mirror`,
 				method: "POST",
 				json: {
 					Repos: action.repos,
@@ -32,10 +35,27 @@ const DashboardBackend = {
 				// TODO dispath repo added action here.
 			});
 			break;
-		case DashboardActions.WantAddUsers:
-			console.log("got here", action.emails);
+		case DashboardActions.WantInviteUser:
 			DashboardBackend.xhr({
-				uri: `.ui/.invite-bulk`,
+				uri: `/.ui/.invite`,
+				method: "POST",
+				json: {
+					Email: action.email,
+					Permission: action.permission,
+				},
+			}, function(err, resp, body) {
+				if (err) {
+					console.error(err);
+					return;
+				}
+				// TODO: proper modal.
+				console.log(body, resp);
+				alert(`Invite link: ${body.Link}`);
+			});
+			break;
+		case DashboardActions.WantInviteUsers:
+			DashboardBackend.xhr({
+				uri: `/.ui/.invite-bulk`,
 				method: "POST",
 				json: {
 					Emails: action.emails,

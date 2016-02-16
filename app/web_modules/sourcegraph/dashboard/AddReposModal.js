@@ -3,6 +3,8 @@ import update from "react/lib/update";
 
 import Component from "sourcegraph/Component";
 import ImportGitHubReposMenu from "sourcegraph/dashboard/ImportGitHubReposMenu";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import Dispatcher from "sourcegraph/Dispatcher";
 
 class AddReposWidget extends Component {
 	constructor(props) {
@@ -11,6 +13,7 @@ class AddReposWidget extends Component {
 			repoName: "",
 		};
 		this._handleTextInput = this._handleTextInput.bind(this);
+		this._handleCreate = this._handleCreate.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -24,8 +27,7 @@ class AddReposWidget extends Component {
 	}
 
 	_handleCreate() {
-		// TODO:
-		// Dispatcher.dispatch(new DashboardActions.WantAddRepos());
+		Dispatcher.dispatch(new DashboardActions.WantCreateRepo(this.state.repoName));
 		this.state.dismissModal();
 	}
 

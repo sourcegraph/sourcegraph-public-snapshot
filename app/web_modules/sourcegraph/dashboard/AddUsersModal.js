@@ -3,15 +3,19 @@ import update from "react/lib/update";
 
 import Component from "sourcegraph/Component";
 import ImportGitHubUsersMenu from "sourcegraph/dashboard/ImportGitHubUsersMenu";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import Dispatcher from "sourcegraph/Dispatcher";
 
 class AddUsersModal extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			email: "",
+			permission: "read",
 		};
 		this._handleTextInput = this._handleTextInput.bind(this);
-		this._handleCreate = this._handleCreate.bind(this);
+		this._handleInvite = this._handleInvite.bind(this);
+		this._handlePermissionChange = this._handlePermissionChange.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -24,9 +28,14 @@ class AddUsersModal extends Component {
 		}));
 	}
 
-	_handleCreate() {
-		// TODO:
-		// Dispatcher.dispatch(new DashboardActions.WantAddUsers());
+	_handlePermissionChange(e) {
+		this.setState(update(this.state, {
+			permission: {$set: e.target.value},
+		}));
+	}
+
+	_handleInvite() {
+		Dispatcher.dispatch(new DashboardActions.WantInviteUser(this.state.email, this.state.permission));
 		this.state.dismissModal();
 	}
 
@@ -61,16 +70,24 @@ class AddUsersModal extends Component {
 							<div className="tab-content">
 								<div role="tabpanel" className="tab-pane active" id="email-invite">
 									<div className="widget-body">
-										<p className="add-repo-label">REPO NAME:</p>
-										<input className="form-control"
-											type="text"
-											value={this.state.email}
-											placeholder="Type Name here"
-											onChange={this._handleTextInput}/>
+										<p className="add-repo-label">EMAIL:</p>
+										<div className="form-inline invite-user-form">
+											<input className="form-control"
+												type="text"
+												value={this.state.email}
+												placeholder="Type email here"
+												onChange={this._handleTextInput}/>
+											<select className="form-control"
+												onChange={this._handlePermissionChange}>
+												<option value="read">Can Read</option>
+												<option value="write">Can Write</option>
+												<option value="admin">Admin</option>
+											</select>
+										</div>
 									</div>
 									<div className="widget-footer">
 										<button className="btn btn-block btn-primary btn-lg"
-											onClick={this._handleCreate}>
+											onClick={this._handleInvite}>
 											CREATE
 										</button>
 									</div>

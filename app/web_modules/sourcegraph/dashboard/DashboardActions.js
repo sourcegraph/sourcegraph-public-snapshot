@@ -1,6 +1,12 @@
 // For the backend.
 
-export class WantAddRepos {
+export class WantCreateRepo {
+	constructor(name) {
+		this.name = name;
+	}
+}
+
+export class WantAddMirrorRepos {
 	constructor(repos) {
 		this.repos = repos;
 	}
@@ -12,7 +18,14 @@ export class ReposAdded {
 	}
 }
 
-export class WantAddUsers {
+export class WantInviteUser {
+	constructor(email, permission) {
+		this.email = email;
+		this.permission = permission;
+	}
+}
+
+export class WantInviteUsers {
 	constructor(emails) {
 		this.emails = emails;
 	}

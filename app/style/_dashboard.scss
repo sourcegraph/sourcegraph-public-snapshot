@@ -42,7 +42,7 @@
 				background-color: white;
 
 				width: 16px;
-				height: 16px;
+				height: 19px;
 				border-radius: 2px;
 				margin-right: 10px;
 			}
@@ -192,6 +192,7 @@
 			display: inline-block;
 			float: left;
 		}
+
 	}
 
 	.selectable-list-widget {
@@ -397,5 +398,9 @@
 			color: #ffffff;
 			height: 48px;
 		}
+	}
+
+	.invite-user-form {
+		text-align: center;
 	}
 }
