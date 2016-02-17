@@ -194,8 +194,6 @@ timezone = 'UTC'
 src psql create
 ```
 
-Add
-
 ## Code standards
 
 The Sourcegraph repository enforces some code standards via `make
