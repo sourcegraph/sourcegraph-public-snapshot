@@ -157,7 +157,7 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 
 func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
-		if authpkg.ActorFromContext(ctx).PrivateMirrors {
+		if authutil.ActiveFlags.PrivateMirrors {
 			invite.Admin = false
 			invite.Write = false
 		} else {
@@ -166,6 +166,9 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 	}
 
 	senderUID := int32(authpkg.ActorFromContext(ctx).UID)
+	if senderUID == 0 {
+		return nil, grpc.Errorf(codes.PermissionDenied, "need to be signed in to complete this operation")
+	}
 	var senderEmail string
 	usersStore := store.UsersFromContext(ctx)
 	emails, err := usersStore.ListEmails(ctx, sourcegraph.UserSpec{UID: senderUID})
@@ -409,7 +412,7 @@ func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (
 }
 
 func sendAccountCreateSlackMsg(ctx context.Context, login, email string, invite bool) {
-	msg := fmt.Sprintf("New user *%s* created by <%s>", login, email)
+	msg := fmt.Sprintf("New user *%s* signed up! (%s)", login, email)
 	if invite {
 		msg += " (via an invite)"
 	}

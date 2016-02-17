@@ -14,55 +14,59 @@ import (
 )
 
 func serveUser(w http.ResponseWriter, r *http.Request) error {
-	if r.URL.Path == "/explore" {
-		// Redirect the old /explore path to the homepage for now.
-		http.Redirect(w, r, "/", http.StatusMovedPermanently)
-		return nil
-	}
+	// Redirect to dashboard
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return nil
 
-	var opt sourcegraph.RepoListOptions
-	err := schemautil.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
+	// if r.URL.Path == "/explore" {
+	// 	// Redirect the old /explore path to the homepage for now.
+	// 	http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	// 	return nil
+	// }
 
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	// var opt sourcegraph.RepoListOptions
+	// err := schemautil.Decode(&opt, r.URL.Query())
+	// if err != nil {
+	// 	return err
+	// }
 
-	p, spec, err := getUser(ctx, r)
-	if err != nil {
-		return err
-	}
+	// apiclient := handlerutil.APIClient(r)
+	// ctx := httpctx.FromRequest(r)
 
-	opt.Owner = spec.Login
-	opt.Sort = "pushed"
-	opt.Direction = "desc"
-	if opt.PerPage == 0 {
-		opt.PerPage = 50
-	}
+	// p, spec, err := getUser(ctx, r)
+	// if err != nil {
+	// 	return err
+	// }
 
-	repos, err := apiclient.Repos.List(ctx, &opt)
-	if err != nil {
-		return err
-	}
+	// opt.Owner = spec.Login
+	// opt.Sort = "pushed"
+	// opt.Direction = "desc"
+	// if opt.PerPage == 0 {
+	// 	opt.PerPage = 50
+	// }
 
-	pg, err := paginate(opt /* TODO */, 0)
-	if err != nil {
-		return err
-	}
+	// repos, err := apiclient.Repos.List(ctx, &opt)
+	// if err != nil {
+	// 	return err
+	// }
 
-	return tmpl.Exec(r, w, "user/owned_repos.html", http.StatusOK, nil, &struct {
-		User        *sourcegraph.User
-		Repos       []*sourcegraph.Repo
-		PageLinks   []pageLink
-		RobotsIndex bool
-		tmpl.Common
-	}{
-		User:        p,
-		Repos:       repos.Repos,
-		PageLinks:   pg,
-		RobotsIndex: true,
-	})
+	// pg, err := paginate(opt /* TODO */, 0)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// return tmpl.Exec(r, w, "user/owned_repos.html", http.StatusOK, nil, &struct {
+	// 	User        *sourcegraph.User
+	// 	Repos       []*sourcegraph.Repo
+	// 	PageLinks   []pageLink
+	// 	RobotsIndex bool
+	// 	tmpl.Common
+	// }{
+	// 	User:        p,
+	// 	Repos:       repos.Repos,
+	// 	PageLinks:   pg,
+	// 	RobotsIndex: true,
+	// })
 }
 
 func serveUserOrgs(w http.ResponseWriter, r *http.Request) error {

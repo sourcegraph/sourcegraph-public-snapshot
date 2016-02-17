@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"golang.org/x/net/context"
@@ -106,6 +107,7 @@ func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
 		pendingInvite, err := cl.Accounts.Invite(ctx, &sourcegraph.AccountInvite{Email: email})
 		if err != nil {
 			inviteResults[i].Err = err
+			log.Printf("error sending invite: %v", err)
 			numFail += 1
 		} else {
 			inviteResults[i].EmailSent = pendingInvite.EmailSent

@@ -11,7 +11,7 @@ export class GitHubReposStore extends Store {
 		super(dispatcher);
 		this.onWaitlist = window.onWaitlist;
 		this.reposByOrg = deepFreeze({
-			repos: window.mirrorData ? window.mirrorData.ReposByOrg : {},
+			repos: window.mirrorData && window.mirrorData.ReposByOrg ? window.mirrorData.ReposByOrg : {},
 			get(org) {
 				let orgRepos = this.repos[org];
 				return [].concat.apply(orgRepos.PublicRepos || [], orgRepos.PrivateRepos || []);
