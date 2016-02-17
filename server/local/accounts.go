@@ -169,11 +169,18 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 	if senderUID == 0 {
 		return nil, grpc.Errorf(codes.PermissionDenied, "need to be signed in to complete this operation")
 	}
-	var senderEmail string
+
 	usersStore := store.UsersFromContext(ctx)
-	emails, err := usersStore.ListEmails(ctx, sourcegraph.UserSpec{UID: senderUID})
-	if err == nil && len(emails) > 0 {
-		senderEmail = emails[0].Email
+	senderUser, err := usersStore.Get(ctx, sourcegraph.UserSpec{UID: senderUID})
+	if err != nil {
+		return nil, grpc.Errorf(codes.PermissionDenied, "sender must be a valid user")
+	}
+
+	var senderIdentifier string
+	if senderUser.Name != "" {
+		senderIdentifier = senderUser.Name
+	} else {
+		senderIdentifier = senderUser.Login
 	}
 
 	user, _ := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: invite.Email})
@@ -197,7 +204,7 @@ func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite
 	if notif.EmailIsConfigured() {
 		_, err = sendEmail("invite-user", "", invite.Email, "You've been invited to Sourcegraph", nil,
 			[]gochimp.Var{gochimp.Var{Name: "INVITE_LINK", Content: u.String()},
-				gochimp.Var{Name: "SENDER_EMAIL", Content: senderEmail}})
+				gochimp.Var{Name: "SENDER", Content: senderIdentifier}})
 		if err == nil {
 			emailSent = true
 		} else if err != errEmailNotConfigured {
