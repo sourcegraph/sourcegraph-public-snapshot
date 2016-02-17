@@ -31,12 +31,30 @@ export class GitHubUsersStore extends Store {
 				// We should probably build the map from org => user in this store and just have the server return a flat list.
 				let allUsers = (Object.values(this.users) || []).map(orgUsers => orgUsers.Users);
 				allUsers = [].concat.apply([], allUsers);
-				return allUsers
+				allUsers = allUsers
 					.filter(user => user.LocalAccount || user.IsInvited)
 					.map(user => {
 						if (user.LocalAccount) return user.LocalAccount;
 						return update(user.RemoteAccount, {$merge: {IsInvited: true}});
 					});
+				// Deduplicate users.
+				let userMap = {};
+				allUsers.forEach(user => {
+					// The GitHub UID (for invited users) may collide with the
+					// Sourcegraph.com UID.
+					if (user.IsInvited) {
+						userMap[`invited-${user.UID}`] = user;
+					} else {
+						userMap[user.UID] = user;
+					}
+				});
+
+				// Show invited users last.
+				return Object.values(userMap).sort((a, b) => {
+					if (a.IsInvited && !b.IsInvited) return 1;
+					if (!a.IsInvited && b.IsInvited) return -1;
+					return 0;
+				});
 			},
 		});
 
