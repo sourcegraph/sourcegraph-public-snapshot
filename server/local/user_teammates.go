@@ -1,6 +1,8 @@
 package local
 
 import (
+	"sync"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"google.golang.org/grpc"
@@ -51,8 +53,6 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 	}
 
 	usersByOrg := make(map[string]*sourcegraph.RemoteUserList)
-	githubMembers := make(map[int32]struct{})
-	githubUIDs := make([]int, 0)
 	for _, org := range ghOrgs {
 		members, err := ghOrgsStore.ListMembers(githubCtx, sourcegraph.OrgSpec{Org: org.Login}, &sourcegraph.OrgListMembersOptions{
 			ListOptions: sourcegraph.ListOptions{PerPage: 1000},
@@ -65,27 +65,39 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 			Users: make([]*sourcegraph.RemoteUser, len(members)),
 		}
 
-		for i, m := range members {
-			if _, ok := githubMembers[m.UID]; !ok {
-				githubMembers[m.UID] = struct{}{}
-				githubUIDs = append(githubUIDs, int(m.UID))
+		var wg sync.WaitGroup
+		for i := range members {
+			currentOrgLogin := org.Login
+			usersByOrg[currentOrgLogin].Users[i] = &sourcegraph.RemoteUser{
+				RemoteAccount: members[i],
 			}
+			currentUser := usersByOrg[currentOrgLogin].Users[i]
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				// Fetch the primary email of the GitHub user.
+				// Use a client local to this goroutine since it is not thread-safe.
+				client := githubutil.Default.AuthedClient(extToken.Token)
+				ghuser, _, err := client.Users.Get(currentUser.RemoteAccount.Login)
+				if err != nil {
+					log15.Warn("Could not fetch github user", "login", currentUser.RemoteAccount.Login, "error", err)
+					return
+				}
+				if ghuser.Name != nil {
+					currentUser.RemoteAccount.Name = *ghuser.Name
+				}
+				if ghuser.Email != nil {
+					currentUser.Email = *ghuser.Email
+				}
+			}()
+		}
+		wg.Wait()
+	}
 
-			usersByOrg[org.Login].Users[i] = &sourcegraph.RemoteUser{
-				RemoteAccount: m,
-			}
-			// Fetch the primary email of the GitHub user.
-			ghuser, _, err := client.Users.Get(m.Login)
-			if err != nil {
-				log15.Warn("Could not fetch github user", "login", m.Login, "error", err)
-				continue
-			}
-			if ghuser.Name != nil {
-				usersByOrg[org.Login].Users[i].RemoteAccount.Name = *ghuser.Name
-			}
-			if ghuser.Email != nil {
-				usersByOrg[org.Login].Users[i].Email = *ghuser.Email
-			}
+	githubUIDs := make([]int, 0)
+	for _, org := range ghOrgs {
+		for _, user := range usersByOrg[org.Login].Users {
+			githubUIDs = append(githubUIDs, int(user.RemoteAccount.UID))
 		}
 	}
 	linkedUserTokens, err := extTokenStore.ListExternalUsers(elevatedActor(ctx), githubUIDs, githubcli.Config.Host(), githubClientID)
