@@ -58,7 +58,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	remoteOpts := vcs.RemoteOpts{}
 	// For private repos, supply auth from local auth store.
 	if r.Private {
-		token, err := s.getRepoAuthToken(ctx, op.Repo.URI)
+		token, err := s.getRepoAuthToken(elevatedActor(ctx), op.Repo.URI)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
 		}
