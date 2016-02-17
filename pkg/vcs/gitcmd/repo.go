@@ -47,19 +47,8 @@ func (r *Repository) String() string {
 	return fmt.Sprintf("git (cmd) repo at %s", r.Dir)
 }
 
-func Open(dir string) (*Repository, error) {
-	cmd := gitserver.Command("git", "rev-parse")
-	cmd.Dir = dir
-	if err := cmd.Run(); err != nil {
-		// dir does not contain ".git" and it is not a git data
-		// directory.
-		return nil, &os.PathError{
-			Op:   "Open git repo",
-			Path: dir,
-			Err:  os.ErrNotExist,
-		}
-	}
-	return &Repository{Dir: dir}, nil
+func Open(dir string) *Repository {
+	return &Repository{Dir: dir}
 }
 
 // CloneOpt configures a clone operation.
@@ -157,6 +146,9 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	cmd.Dir = r.Dir
 	stdout, stderr, err := cmd.DividedOutput()
 	if err != nil {
+		if err == vcs.ErrRepoNotExist {
+			return "", err
+		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
 			return "", vcs.ErrRevisionNotFound
 		}
@@ -317,6 +309,9 @@ func (r *Repository) showRef(arg string) ([][2]string, error) {
 	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		if err == vcs.ErrRepoNotExist {
+			return nil, err
+		}
 		// Exit status of 1 and no output means there were no
 		// results. This is not a fatal error.
 		if cmd.ExitStatus == 1 && len(out) == 0 {

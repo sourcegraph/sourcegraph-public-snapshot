@@ -1057,10 +1057,7 @@ func TestOpen(t *testing.T) {
 	t.Parallel()
 
 	dir := initGitRepository(t)
-	_, err := gitcmd.Open(dir)
-	if err != nil {
-		t.Errorf("Open(%q): %s", dir, err)
-	}
+	gitcmd.Open(dir)
 }
 
 func TestClone(t *testing.T) {
@@ -1079,8 +1076,6 @@ func TestRepository_UpdateEverything(t *testing.T) {
 	tests := []struct {
 		vcs, baseDir, headDir string
 
-		opener func(dir string) (vcs.Repository, error)
-
 		// newCmds should commit a file "newfile" in the repository
 		// root and tag the commit with "second". This is used to test
 		// that UpdateEverything picks up the new file from the
@@ -1091,7 +1086,6 @@ func TestRepository_UpdateEverything(t *testing.T) {
 	}{
 		{
 			vcs: "git", baseDir: initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty", "git tag initial"), headDir: makeTmpDir(t, "git-clone"),
-			opener:  func(dir string) (vcs.Repository, error) { return gitcmd.Open(dir) },
 			newCmds: []string{"touch newfile", "git add newfile", "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m newfile --author='a <a@a.com>' --date 2006-01-02T15:04:05Z", "git tag second"},
 			wantUpdateResult: &vcs.UpdateResult{
 				Changes: []vcs.Change{
@@ -1108,11 +1102,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 			continue
 		}
 
-		r, err := test.opener(test.headDir)
-		if err != nil {
-			t.Errorf("opener[->%s](%q): %s", reflect.TypeOf(test.opener).Out(0), test.headDir, err)
-			continue
-		}
+		r := gitcmd.Open(test.headDir)
 
 		initial, err := r.ResolveRevision("initial")
 		if err != nil {
@@ -1156,11 +1146,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		// reopen the mirror because the tags/commits changed (after
 		// UpdateEverything) and we currently have no way to reload the existing
 		// repository.
-		r, err = test.opener(test.headDir)
-		if err != nil {
-			t.Errorf("opener[->%s](%q): %s", reflect.TypeOf(test.opener).Out(0), test.headDir, err)
-			continue
-		}
+		r = gitcmd.Open(test.headDir)
 
 		// newfile should exist in the mirror now.
 		second, err := r.ResolveRevision("second")
@@ -1202,11 +1188,7 @@ func initGitRepository(t testing.TB, cmds ...string) (dir string) {
 // returns the repository.
 func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitcmd.Repository {
 	dir := initGitRepository(t, cmds...)
-	r, err := gitcmd.Open(dir)
-	if err != nil {
-		t.Fatalf("gitcmd.Open(%q) failed: %s", dir, err)
-	}
-	return r
+	return gitcmd.Open(dir)
 }
 
 func commitsEqual(a, b *vcs.Commit) bool {

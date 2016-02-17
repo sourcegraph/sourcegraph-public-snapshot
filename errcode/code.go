@@ -38,7 +38,7 @@ func HTTP(err error) int {
 		return http.StatusConflict
 	}
 
-	if strings.Contains(err.Error(), "git repository not found") {
+	if strings.Contains(err.Error(), vcs.ErrRepoNotExist.Error()) {
 		return http.StatusNotFound
 	}
 

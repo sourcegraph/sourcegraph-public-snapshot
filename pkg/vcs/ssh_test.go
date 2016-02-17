@@ -68,10 +68,7 @@ func TestRepository_Clone_ssh(t *testing.T) {
 				t.Fatalf("%s: Clone: %s", label, err)
 			}
 
-			r, err := gitcmd.Open(cloneDir)
-			if err != nil {
-				t.Fatalf("%s: Open: %s", label, err)
-			}
+			r := gitcmd.Open(cloneDir)
 
 			tags, err := r.Tags()
 			if err != nil {
@@ -146,11 +143,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 				return
 			}
 
-			r, err := gitcmd.Open(test.headDir)
-			if err != nil {
-				t.Errorf("Open(%q): %s", test.headDir, err)
-				return
-			}
+			r := gitcmd.Open(test.headDir)
 
 			// r should not have any tags yet.
 			tags, err := r.Tags()

@@ -23,10 +23,7 @@ func BenchmarkFileSystem_GitCmd(b *testing.B) {
 	}()
 
 	cmds, files := makeGitCommandsAndFiles(benchFileSystemCommits)
-	r, err := gitcmd.Open(initGitRepository(b, cmds...))
-	if err != nil {
-		b.Fatal(err)
-	}
+	r := gitcmd.Open(initGitRepository(b, cmds...))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -42,11 +39,7 @@ func BenchmarkGetCommit_GitCmd(b *testing.B) {
 
 	cmds, _ := makeGitCommandsAndFiles(benchGetCommitCommits)
 	openRepo := func() vcs.Repository {
-		r, err := gitcmd.Open(initGitRepository(b, cmds...))
-		if err != nil {
-			b.Fatal(err)
-		}
-		return r
+		return gitcmd.Open(initGitRepository(b, cmds...))
 	}
 
 	b.ResetTimer()
@@ -63,11 +56,7 @@ func BenchmarkCommits_GitCmd(b *testing.B) {
 
 	cmds, _ := makeGitCommandsAndFiles(benchCommitsCommits)
 	openRepo := func() vcs.Repository {
-		r, err := gitcmd.Open(initGitRepository(b, cmds...))
-		if err != nil {
-			b.Fatal(err)
-		}
-		return r
+		return gitcmd.Open(initGitRepository(b, cmds...))
 	}
 
 	b.ResetTimer()

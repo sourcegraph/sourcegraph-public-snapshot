@@ -320,11 +320,7 @@ func newMiddleware() (*staticMiddleware, error) {
 	mw := &staticMiddleware{}
 
 	if Flags.Repo != "" {
-		// Open the git repository.
-		repo, err := gitcmd.Open(Flags.Repo)
-		if err != nil {
-			return nil, err
-		}
+		repo := gitcmd.Open(Flags.Repo)
 		mw.debugf("serving git repository @ master branch\n")
 		commit, err := repo.ResolveRevision("master")
 		if err != nil {

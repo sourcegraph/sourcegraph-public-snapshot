@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"net/rpc"
+	"os"
 	"os/exec"
 	"syscall"
+
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 type Git struct {
@@ -17,6 +20,7 @@ type ExecArgs struct {
 }
 
 type ExecReply struct {
+	RepoExists bool
 	Error      string
 	ExitStatus int
 	Stdout     []byte
@@ -31,6 +35,11 @@ func RegisterHandler() {
 }
 
 func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
+	if _, err := os.Stat(args.Repo); os.IsNotExist(err) {
+		return nil
+	}
+	reply.RepoExists = true
+
 	cmd := exec.Command("git", args.Args...)
 	cmd.Dir = args.Repo
 	var stdoutBuf, stderrBuf bytes.Buffer
@@ -72,6 +81,9 @@ func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	var reply ExecReply
 	if err := clientSingleton.Call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:]}, &reply); err != nil {
 		return nil, nil, err
+	}
+	if !reply.RepoExists {
+		return nil, nil, vcs.ErrRepoNotExist
 	}
 	var err error
 	if reply.Error != "" {

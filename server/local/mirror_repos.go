@@ -1,7 +1,6 @@
 package local
 
 import (
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -69,15 +68,16 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	}
 
 	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, r.URI)
-	if os.IsNotExist(err) || grpc.Code(err) == codes.NotFound {
-		err = s.cloneRepo(ctx, r, remoteOpts)
-	} else if err != nil {
-		return nil, err
-	} else {
-		err = s.updateRepo(ctx, r, vcsRepo, remoteOpts)
-	}
 	if err != nil {
 		return nil, err
+	}
+	if err := s.updateRepo(ctx, r, vcsRepo, remoteOpts); err != nil {
+		if err != vcs.ErrRepoNotExist {
+			return nil, err
+		}
+		if err := s.cloneRepo(ctx, r, remoteOpts); err != nil {
+			return nil, err
+		}
 	}
 	return &pbtypes.Void{}, nil
 }

@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var ErrRepoNotExist = errors.New("repository does not exist")
+
 // A Repository is a VCS repository.
 type Repository interface {
 	GitRootDir() string

@@ -29,16 +29,8 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 		return nil, err
 	}
 	dir := absolutePathForRepo(ctx, repo)
-	if err := os.MkdirAll(filepath.Dir(dir), 0700); err != nil {
-		return nil, err
-	}
-
-	r, err := gitcmd.Open(dir)
-	if err != nil {
-		return nil, err
-	}
+	r := gitcmd.Open(dir)
 	r.AppdashRec = traceutil.Recorder(ctx)
-
 	return r, nil
 }
 
