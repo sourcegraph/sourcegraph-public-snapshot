@@ -41,9 +41,9 @@
 			font-weight: bold;
 		}
 		& > .active > a, & > li > a:hover {
-			color: $sg-blue-color;
+			color: $link-color;
 			background-color: transparent;
-			border-left: 2px solid $sg-blue-color;
+			border-left: 2px solid $link-color;
 		}
 
 		// 2nd-level nav
@@ -53,18 +53,17 @@
 				padding-top: 1px;
 				padding-bottom: 1px;
 				padding-left: 20px;
-				font-size: 12px;
 				border-left: 1px solid transparent;
 			}
 			& > li > a:hover,
 			& > li > a:focus {
-				color: $sg-blue-color;
-				border-left: 1px solid $sg-blue-color;
+				color: $link-color;
+				border-left: 1px solid $link-color;
 			}
 			& > .active {
 				& > a, & > a:hover, & > a:focus {
-					color: $sg-blue-color;
-					border-left: 2px solid $sg-blue-color;
+					color: $link-color;
+					border-left: 2px solid $link-color;
 				}
 			}
 		}
@@ -77,10 +76,9 @@
 		}
 
 		code {
-			color: #b93d6a;
+			color: #f64800; // TODO: proper syntax highlighting.
 			border-radius: 3px;
-			border: solid 1px #f0f5f5;
-			background: #fafcfc;
+			background: $code-block-bg;
 			padding: 0 4px;
 			display: inline-block;
 		}

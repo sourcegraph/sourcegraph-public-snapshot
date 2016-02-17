@@ -4,19 +4,6 @@
 // Colors
 // ----------------------------------------------------------------------------
 
-/* Deprecated */
-$row-highlight-color: #DCE7F3;
-$sg-blue-color: rgba(78, 155, 212, 1); // less-saturated version of actual sg-blue (#459def)
-$panel-head-color: #f5f5f5;
-$gray-lightest: lighten(#000, 96%);
-$light-blue: #bfc2d0;
-$code-line-fg: rgba(0,0,0,0.3);
-$inactive-code-color: darken($gray-lightest, 2%);
-$diff-added-color: #54a63e;
-$diff-changed-color: lighten(#c98d00, 4%);
-$diff-deleted-color: lighten(#c71111, 3%);
-$text-quieted: #7794ae;
-
 /* Palette */
 
 // Accents
@@ -54,6 +41,18 @@ $silver: #979daf;
 $slate-grey: #aaafbf;
 $white: #ffffff;
 
+/* Deprecated */
+$row-highlight-color: #DCE7F3;
+$sg-blue-color: rgba(78, 155, 212, 1); // less-saturated version of actual sg-blue (#459def)
+$panel-head-color: #f5f5f5;
+$gray-lightest: lighten(#000, 96%);
+$light-blue: #bfc2d0;
+$code-line-fg: rgba(0,0,0,0.3);
+$inactive-code-color: darken($gray-lightest, 2%);
+$diff-added-color: #54a63e;
+$diff-changed-color: lighten(#c98d00, 4%);
+$diff-deleted-color: lighten(#c71111, 3%);
+$text-quieted: #7794ae;
 
 /* Components */
 $content-border-color: transparentize($cloudy-blue, 0.56);
