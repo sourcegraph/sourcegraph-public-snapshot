@@ -176,7 +176,7 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 	// Send notification
 	// TODO: Unified API for notifications
 	cl.Notify.GenericEvent(ctx, n)
-	notificationCenter(ctx, n)
+	notificationCenter(ctx, payload.Changeset, n)
 }
 
 // notifyReview creates a slack notification that a changeset was reviewed. It
@@ -230,7 +230,7 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 	// Send notification
 	// TODO: Unified API for notifications
 	cl.Notify.GenericEvent(ctx, n)
-	notificationCenter(ctx, n)
+	notificationCenter(ctx, payload.Changeset, n)
 }
 
 // notifyUpdate creates a slack notification that a changeset was updated, closed or merged.
@@ -268,10 +268,10 @@ func notifyUpdate(ctx context.Context, id events.EventID, payload events.Changes
 	// Send notification
 	// TODO: Unified API for notifications
 	cl.Notify.GenericEvent(ctx, n)
-	notificationCenter(ctx, n)
+	notificationCenter(ctx, payload.Changeset, n)
 }
 
-func notificationCenter(ctx context.Context, e *sourcegraph.NotifyGenericEvent) {
+func notificationCenter(ctx context.Context, cs *sourcegraph.Changeset, e *sourcegraph.NotifyGenericEvent) {
 	if notifications.Service == nil {
 		return
 	}
@@ -289,9 +289,21 @@ func notificationCenter(ctx context.Context, e *sourcegraph.NotifyGenericEvent) 
 	notifications.Service.Notify(ctx, appID, issues.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), notif.Notification{
 		Title:     e.ObjectTitle,
 		Icon:      "git-pull-request",
+		Color:     notificationColor(cs),
 		UpdatedAt: time.Now(),
 		HTMLURL:   template.URL(e.ObjectURL),
 	})
+}
+
+func notificationColor(cs *sourcegraph.Changeset) notif.RGB {
+	switch {
+	default: // Open.
+		return notif.RGB{0x6c, 0xc6, 0x44}
+	case cs.ClosedAt != nil: // Closed.
+		return notif.RGB{0xbd, 0x2c, 0x00}
+	case cs.Merged: // Merged.
+		return notif.RGB{78, 155, 212}
+	}
 }
 
 // couldAffectChangesets returns true if the event was error-free
