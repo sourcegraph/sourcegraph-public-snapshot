@@ -18,6 +18,14 @@ import (
 )
 
 func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
+	event, err := s.update(ctx, op)
+	if event == nil {
+		return &sourcegraph.ChangesetEvent{}, err
+	}
+	return event, err
+}
+
+func (s *changesets) update(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	actor := authpkg.ActorFromContext(ctx)
 	op.Author = sourcegraph.UserSpec{
 		UID:    int32(actor.UID),
@@ -83,9 +91,9 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 	// Execute all changeset updates.
 	var res sourcegraph.ChangesetEventList
 	for _, updateOp := range updates {
-		if e, err := s.Update(ctx, updateOp.Op); err != nil {
+		if e, err := s.update(ctx, updateOp.Op); err != nil {
 			log15.Error("Changesets.UpdateAffected: cannot update changeset", "repo", updateOp.Op.Repo, "id", updateOp.Op.ID, "error", err)
-		} else if *e != (sourcegraph.ChangesetEvent{}) {
+		} else if e != nil {
 			res.Events = append(res.Events, e)
 		}
 	}

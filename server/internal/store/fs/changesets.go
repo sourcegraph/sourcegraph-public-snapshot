@@ -339,7 +339,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	// If the resulting changeset is the same as the inital one, no event
 	// has occurred.
 	if reflect.DeepEqual(after, current) {
-		return &sourcegraph.ChangesetEvent{}, nil
+		return nil, nil
 	}
 
 	// Do not ever encode full User objects. This is not the canonical storage for
