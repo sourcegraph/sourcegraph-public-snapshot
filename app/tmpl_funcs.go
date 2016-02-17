@@ -185,6 +185,13 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"assetURL": assets.URL,
 
+	"getHostName": func(appURL *url.URL) string {
+		if appURL == nil {
+			return "unknown-host"
+		}
+		return appURL.Host
+	},
+
 	"hasField": hasStructField,
 
 	"hasPrefix": strings.HasPrefix,
