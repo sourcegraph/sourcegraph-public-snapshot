@@ -74,6 +74,17 @@ class SelectableList extends Component {
 								<span className="name">{item.name}</span>
 							</div>
 						)}
+						{this.state.unselectableItems.map(item =>
+							<div className="table-row" key={item.key}>
+								<div className="select">
+									<input className="unselectable" disabled={true} type="checkbox" />
+								</div>
+								<div className="name">
+									<span>{item.name}</span>
+									<span className="unselectable-label">{item.reason}</span>
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
@@ -85,6 +96,11 @@ SelectableList.propTypes = {
 	items: React.PropTypes.arrayOf(React.PropTypes.shape({
 		name: React.PropTypes.string,
 		key: React.PropTypes.string,
+	})).isRequired,
+	unselectableItems: React.PropTypes.arrayOf(React.PropTypes.shape({
+		name: React.PropTypes.string,
+		key: React.PropTypes.string,
+		reason: React.PropTypes.string,
 	})).isRequired,
 	// type identifies the entity type of the items which populate the list
 	// selections is a object which identifies which items are currently selected {key: isSelected}

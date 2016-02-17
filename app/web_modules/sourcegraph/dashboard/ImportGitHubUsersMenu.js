@@ -25,12 +25,32 @@ class ImportGitHubUsersMenu extends Container {
 		state.orgs = GitHubUsersStore.orgs;
 		if (!state.currentOrg) state.currentOrg = GitHubUsersStore.orgs[0];
 		state.items = GitHubUsersStore.users.getByOrg(state.currentOrg)
-			.filter(user => Boolean(user.Email))
-			.filter(user => !user.LocalAccount && !user.IsInvited)
+			.filter(this._canSelect)
 			.map((user) => ({
 				name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
 				key: user.RemoteAccount.Login,
 			}));
+		state.unselectableItems = GitHubUsersStore.users.getByOrg(state.currentOrg)
+			.filter(user => !this._canSelect(user))
+			.map((user) => ({
+				name: user.RemoteAccount.Name ? `${user.RemoteAccount.Login} (${user.RemoteAccount.Name})` : user.RemoteAccount.Login,
+				key: user.RemoteAccount.Login,
+				reason: this._unselectableReason(user),
+			}));
+	}
+
+	_canSelect(user) {
+		if (!user.Email) return false;
+		if (user.LocalAccount) return false;
+		if (user.IsInvited) return false;
+		return true;
+	}
+
+	_unselectableReason(user) {
+		if (!user.Email) return "cannot find email";
+		if (user.LocalAccount) return "user account exists";
+		if (user.IsInvited) return "user already invited";
+		return ""; // unknown reason
 	}
 
 	_handleSelect(login, select) {
@@ -71,6 +91,7 @@ class ImportGitHubUsersMenu extends Container {
 	render() {
 		return (
 			<SelectableListWidget items={this.state.items}
+				unselectableItems={this.state.unselectableItems}
 				currentCategory={this.state.currentOrg}
 				menuCategories={this.state.orgs}
 				onMenuClick={(org) => this.setState({currentOrg: org, selectAll: false})}

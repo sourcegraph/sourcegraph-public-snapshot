@@ -339,6 +339,16 @@
 					text-align: left;
 					border-bottom: 1px solid rgba(172,177,214,0.3);
 				}
+				.unselectable-label {
+					float: right;
+					font-size: 10px;
+					padding-top: 4px;
+					font-style: italic;
+					color: #bbbbbb;
+				}
+				input.unselectable {
+					visibility: hidden;
+				}
 			}
 		}
 

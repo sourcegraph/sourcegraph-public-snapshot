@@ -32,6 +32,7 @@ class SelectableListWidget extends Component {
 					</div>
 					<div className="list-control">
 						<SelectableList items={this.state.items}
+							unselectableItems={this.state.unselectableItems}
 							selectAll={this.state.selectAll}
 							selections={this.state.selections}
 							onSelect={this.state.onSelect}
@@ -54,6 +55,11 @@ SelectableListWidget.propTypes = {
 	items: React.PropTypes.arrayOf(React.PropTypes.shape({
 		name: React.PropTypes.string,
 		key: React.PropTypes.string,
+	})).isRequired,
+	unselectableItems: React.PropTypes.arrayOf(React.PropTypes.shape({
+		name: React.PropTypes.string,
+		key: React.PropTypes.string,
+		reason: React.PropTypes.string,
 	})).isRequired,
 	currentCategory: React.PropTypes.string,
 	menuCategories: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
