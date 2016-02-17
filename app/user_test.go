@@ -14,6 +14,7 @@ import (
 )
 
 func TestUser(t *testing.T) {
+	t.Skip("disabled user page")
 	c, mock := apptest.New()
 
 	calledGet := mock.Users.MockGet(t, "u")
@@ -31,6 +32,7 @@ func TestUser(t *testing.T) {
 }
 
 func TestUser_NotFound(t *testing.T) {
+	t.Skip("disabled user page")
 	c, mock := apptest.New()
 
 	var calledGet bool
@@ -52,6 +54,7 @@ func TestUser_NotFound(t *testing.T) {
 }
 
 func TestUser_Disabled(t *testing.T) {
+	t.Skip("disabled user page")
 	c, mock := apptest.New()
 
 	calledGet := mock.Users.MockGet_Return(t, &sourcegraph.User{

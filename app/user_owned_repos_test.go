@@ -11,6 +11,7 @@ import (
 )
 
 func TestReposByOwner(t *testing.T) {
+	t.Skip("disabled user page")
 	c, mock := apptest.New()
 
 	user := &sourcegraph.User{Login: "u"}
