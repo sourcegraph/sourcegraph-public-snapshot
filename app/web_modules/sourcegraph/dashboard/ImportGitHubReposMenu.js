@@ -14,6 +14,8 @@ class ImportGitHubReposMenu extends Container {
 			currentOrg: null,
 			selectedRepos: {},
 			selectAll: false,
+			showLoading: false,
+
 		};
 		this._canMirror = this._canMirror.bind(this);
 		this._unselectableReason = this._unselectableReason.bind(this);
@@ -33,6 +35,7 @@ class ImportGitHubReposMenu extends Container {
 		state.unselectableItems = GitHubReposStore.reposByOrg.get(state.currentOrg)
 			.filter(repo => !this._canMirror(repo, state.onWaitlist))
 			.map((repo, i) => ({name: repo.Repo.Name, key: `${i}`, reason: this._unselectableReason(repo)}));
+		state.showLoading = GitHubReposStore.showLoading;
 	}
 
 	_canMirror(repo, onWaitlist) {
@@ -72,7 +75,6 @@ class ImportGitHubReposMenu extends Container {
 			Private: repo.isPrivate,
 		}));
 		Dispatcher.dispatch(new DashboardActions.WantAddMirrorRepos(repos));
-		Dispatcher.dispatch(new DashboardActions.DismissReposModal());
 	}
 
 	stores() { return [GitHubReposStore]; }
@@ -90,7 +92,8 @@ class ImportGitHubReposMenu extends Container {
 				selectAll={this.state.selectAll}
 				menuLabel="Organizations"
 				searchPlaceholderText="Search GitHub repositories"
-				onSubmit={this._handleAddMirrors} />
+				onSubmit={this._handleAddMirrors}
+				showLoading={this.state.showLoading} />
 		);
 	}
 }

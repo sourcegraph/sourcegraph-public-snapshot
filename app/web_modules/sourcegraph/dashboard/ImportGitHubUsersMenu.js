@@ -14,6 +14,7 @@ class ImportGitHubUsersMenu extends Container {
 			currentOrg: null,
 			selectedUsers: {},
 			selectAll: false,
+			showLoading: false,
 		};
 		this._handleAddUsers = this._handleAddUsers.bind(this);
 		this._handleSelect = this._handleSelect.bind(this);
@@ -37,6 +38,7 @@ class ImportGitHubUsersMenu extends Container {
 				key: user.RemoteAccount.Login,
 				reason: this._unselectableReason(user),
 			}));
+		state.showLoading = GitHubUsersStore.showLoading;
 	}
 
 	_canSelect(user) {
@@ -101,7 +103,8 @@ class ImportGitHubUsersMenu extends Container {
 				selectAll={this.state.selectAll}
 				onSubmit={this._handleAddUsers}
 				searchPlaceholderText={"Search GitHub contacts"}
-				menuLabel="organizations" />
+				menuLabel="organizations"
+				showLoading={this.state.showLoading} />
 		);
 	}
 }

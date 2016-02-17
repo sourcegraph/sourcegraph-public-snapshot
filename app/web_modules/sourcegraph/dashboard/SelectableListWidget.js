@@ -42,8 +42,15 @@ class SelectableListWidget extends Component {
 				</div>
 				<div className="widget-footer">
 					<button className="btn btn-block btn-primary btn-lg"
-						onClick={() => this.state.onSubmit(selected)}>
-						{`add${selected.length > 0 ? ` (${selected.length})` : ""}`}
+						onClick={() => this.state.onSubmit(selected)} disabled={this.state.showLoading}>
+						<div>
+						{this.state.showLoading &&
+							<i className="fa fa-spinner fa-spin"></i>
+						}
+						{!this.state.showLoading &&
+							(selected.length > 0 ? `add(${selected.length})` : "add")
+						}
+						</div>
 					</button>
 				</div>
 			</div>
@@ -71,6 +78,7 @@ SelectableListWidget.propTypes = {
 	menuLabel: React.PropTypes.string.isRequired,
 	onSubmit: React.PropTypes.func.isRequired,
 	searchPlaceholderText: React.PropTypes.string,
+	showLoading: React.PropTypes.bool.isRequired,
 };
 
 export default SelectableListWidget;

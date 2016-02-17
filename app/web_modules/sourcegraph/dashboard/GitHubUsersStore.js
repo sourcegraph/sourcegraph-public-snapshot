@@ -61,14 +61,20 @@ export class GitHubUsersStore extends Store {
 		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.
 		this.orgs = window.teammates ? Object.keys(window.teammates.UsersByOrg || {}) : {};
+		this.showLoading = false; // Indicates if a request to the backend to invite users is in progress
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
+		case DashboardActions.WantInviteUsers:
+			this.showLoading = true;
+			break;
+
 		case DashboardActions.UsersInvited:
 			this.users = update(this.users, {
 				users: {$set: action.teammates ? action.teammates.UsersByOrg : {}},
 			});
+			this.showLoading = false;
 			break;
 		default:
 			return; // don't emit change

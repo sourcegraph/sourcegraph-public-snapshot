@@ -31,14 +31,21 @@ export class GitHubReposStore extends Store {
 		} else {
 			this.orgs = Object.keys(window.mirrorData.ReposByOrg);
 		}
+
+		this.showLoading = false; // Indicates if a request to the backend to add mirror repos is in progress
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
+		case DashboardActions.WantAddMirrorRepos:
+			this.showLoading = true;
+			break;
+
 		case DashboardActions.MirrorReposAdded:
 			this.reposByOrg = update(this.reposByOrg, {
 				repos: {$set: action.mirrorData ? action.mirrorData.ReposByOrg : {}},
 			});
+			this.showLoading = false;
 			break;
 
 		default:
