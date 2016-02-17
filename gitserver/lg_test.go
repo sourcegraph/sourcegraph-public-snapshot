@@ -174,7 +174,7 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 	for _, it := range tests {
 		switch test := it.(type) {
 		case gitCloneTest:
-			err := testutil.CloneRepo(remoteURL(test.protocol, test.authenticated), "",
+			err := testutil.CloneRepo(t, remoteURL(test.protocol, test.authenticated), "",
 				sshKey(test.protocol, test.authenticated), test.args)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
 				t.Errorf("FAILED: %s : %v", test.String(), err)
@@ -185,7 +185,12 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 				t.Errorf("Error while updating user permissions: %s", err)
 				continue
 			}
-			err := testutil.PushRepo(ctx, remoteURL(test.protocol, test.authenticated), remoteURL(test.protocol, test.authenticated), sshKey(test.protocol, test.authenticated), map[string]string{"unique.txt": test.String()})
+			authedCloneURL, err := authutil.AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
+			if err != nil {
+				t.Errorf("Error while creating authed clone URL: %s", err)
+			}
+
+			err = testutil.PushRepo(t, ctx, remoteURL(test.protocol, test.authenticated), authedCloneURL, sshKey(test.protocol, test.authenticated), map[string]string{"unique.txt": test.String()}, false)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
 				t.Errorf("FAILED: %s : %v", test.String(), err)
 			}

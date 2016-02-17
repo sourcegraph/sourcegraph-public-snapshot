@@ -119,7 +119,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		}
 	}
 
-	eventsutil.LogHTTPGitPush(ctx)
+	eventsutil.LogGitPush(ctx)
 
 	if err := updateRepoPushedAt(ctx, op.Repo); err != nil {
 		return nil, err

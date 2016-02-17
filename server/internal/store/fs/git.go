@@ -68,9 +68,6 @@ func (r *localGitTransport) servicePack(ctx context.Context, service string, dat
 
 	case "deflate":
 		fr := flate.NewReader(rdr)
-		if err != nil {
-			return nil, nil, err
-		}
 		rdr = fr
 		defer func() {
 			if err2 := fr.Close(); err2 != nil && err == nil {

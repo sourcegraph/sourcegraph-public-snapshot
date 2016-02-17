@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -135,7 +136,7 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 		return nil, "", nil, err
 	}
 
-	if err := PushRepo(ctx, authedCloneURL, authedCloneURL, nil, files); err != nil {
+	if err := PushRepo(t, ctx, authedCloneURL, authedCloneURL, nil, files, false); err != nil {
 		return nil, "", nil, err
 	}
 
@@ -154,9 +155,11 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 // If files is specified, it is treated as a map of filenames to file contents.
 // If files is nil, a default set of some text files is used. All files are
 // committed in the same commit.
-func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey, files map[string]string) error {
+// If deleteBranch is true it will push the commits to another branch and
+// then atttempt to delete the branch.
+func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey, files map[string]string, deleteBranch bool) error {
 	if cloneURL == "" {
-		return fmt.Errorf("PushRepo can't be called with both `cloneURL` unset.")
+		return fmt.Errorf("PushRepo can't be called with `cloneURL` unset.")
 	}
 
 	// Clone the repository.
@@ -169,14 +172,7 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 	dir := filepath.Join(tmpDir, "testrepo")
 	cmd := exec.Command("git", "clone", cloneURL, dir)
 	cmd.Dir = tmpDir
-	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	prepGitCommand(cmd)
-	if key != nil {
-		// Attempting to clone over SSH.
-		if _, err := prepGitSSHCommand(cmd, tmpDir, key); err != nil {
-			return err
-		}
-	}
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
@@ -222,13 +218,38 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 			return err
 		}
 	}
-	if out, err := cmd.CombinedOutput(); err != nil {
+	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+	logCmdOutut(t, cmd, out)
+	if err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+	}
+
+	if deleteBranch {
+		env := cmd.Env
+		// Create new branch.
+		cmd = exec.Command("git", "push", pushURL, "master:tmpbranch")
+		cmd.Env = env
+		cmd.Dir = dir
+		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		logCmdOutut(t, cmd, out)
+		if err != nil {
+			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+		}
+
+		// Delete the branch.
+		cmd = exec.Command("git", "push", pushURL, ":tmpbranch")
+		cmd.Env = env
+		cmd.Dir = dir
+		out, err = executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		logCmdOutut(t, cmd, out)
+		if err != nil {
+			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+		}
 	}
 	return nil
 }
 
-func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
+func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
 	if dir == "" {
 		var err error
 		dir, err = ioutil.TempDir("", "")
@@ -240,8 +261,9 @@ func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err er
 	cmd := exec.Command("git", "clone")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Args = append(cmd.Args, cloneURL)
-	cmd.Dir = dir
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
+	cmd.Stdin = bytes.NewReader([]byte("\n"))
+	cmd.Dir = dir
 	prepGitCommand(cmd)
 	if key != nil {
 		// Attempting to clone over SSH.
@@ -249,34 +271,10 @@ func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err er
 			return err
 		}
 	}
-
-	var buf bytes.Buffer
-	cmd.Stdout = &buf
-	cmd.Stderr = &buf
-
-	defer func() {
-		err = wrapExecErr(err, cmd, buf.String())
-	}()
-
-	// Bypass password prompts by sending in a password usually.
-	in, err := cmd.StdinPipe()
+	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+	logCmdOutut(t, cmd, out)
 	if err != nil {
-		return err
-	}
-
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	if _, err := in.Write([]byte("\n")); err != nil {
-		return err
-	}
-	if err := in.Close(); err != nil {
-		return err
-	}
-
-	if err := executil.CmdWaitWithTimeout(5*time.Second, cmd); err != nil {
-		return err
+		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
 	return nil
 }
@@ -309,13 +307,8 @@ func prepGitSSHCommand(cmd *exec.Cmd, dir string, key *rsa.PrivateKey) (*exec.Cm
 	}
 
 	// Generate the necessary SSH command.
-	// NOTE: GIT_SSH_COMMAND requires git version 2.3+, so we must
-	// use GIT_SSH.
-	gitSSH := filepath.Join(sshDir, "gitssh")
-	if err := ioutil.WriteFile(gitSSH, []byte(fmt.Sprintf("#!/bin/sh\nssh -i %s -vvvv -F /dev/null -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \"$@\"\n", idFile)), 0500); err != nil {
-		return cmd, err
-	}
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SSH=%s", gitSSH))
+	// NOTE: GIT_SSH_COMMAND requires git version 2.3+.
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SSH_COMMAND=ssh -i %s -F /dev/null -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null", idFile))
 	return cmd, err
 }
 
@@ -324,7 +317,16 @@ func prepGitCommand(cmd *exec.Cmd) *exec.Cmd {
 	// Avoid using git's system/global configurations.
 	cmd.Env = append(cmd.Env, "GIT_CONFIG_NOSYSTEM=1", "HOME=/doesnotexist", "XDG_CONFIG_HOME=/doesnotexist")
 	// Debugging.
-	// cmd.Env = append(cmd.Env, "GIT_TRACE=1")
-	// cmd.Env = append(cmd.Env, "GIT_CURL_VERBOSE=1")
+	cmd.Env = append(cmd.Env, "GIT_TRACE=1")
+	cmd.Env = append(cmd.Env, "GIT_CURL_VERBOSE=1")
+	cmd.Env = append(cmd.Env, "GIT_TRACE_PACKET=1")
+	cmd.Env = append(cmd.Env, "GIT_TRACE_PACK_ACCESS=1")
 	return cmd
+}
+
+func logCmdOutut(t *testing.T, cmd *exec.Cmd, out []byte) {
+	t.Logf(">>> START - %s", strings.Join(cmd.Args, " "))
+	t.Logf("=== ENV - %v", cmd.Env)
+	t.Log(string(out))
+	t.Logf(">>> END - %s", strings.Join(cmd.Args, " "))
 }

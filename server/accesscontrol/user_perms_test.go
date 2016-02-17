@@ -17,21 +17,21 @@ func TestVerifyAccess(t *testing.T) {
 	authutil.ActiveFlags.Source = "local"
 
 	asUID := func(uid int) context.Context {
-		var user sourcegraph.User
+		var user *sourcegraph.User
 		switch uid {
 		case 1:
-			user = sourcegraph.User{
+			user = &sourcegraph.User{
 				UID:   1,
 				Write: true,
 				Admin: true,
 			}
 		case 2:
-			user = sourcegraph.User{
+			user = &sourcegraph.User{
 				UID:   2,
 				Write: true,
 			}
 		default:
-			user = sourcegraph.User{
+			user = &sourcegraph.User{
 				UID: int32(uid),
 			}
 		}

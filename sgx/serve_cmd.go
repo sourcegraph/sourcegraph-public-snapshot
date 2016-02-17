@@ -27,7 +27,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/cmux"
 	"github.com/sourcegraph/mux"
-	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -569,17 +568,13 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Start SSH git server.
 	if c.SSHAddr != "" {
-		privateSigner, err := ssh.NewSignerFromKey(idKey.Private())
-		if err != nil {
-			return err
-		}
-		// create a context with regular (non self-signed) tokens that
+		// Create a context with regular (non self-signed) tokens that
 		// are valid on the federation root server.
 		ctx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:sshgit"})
 		if err != nil {
 			return err
 		}
-		err = (&sshgit.Server{}).ListenAndStart(ctx, c.SSHAddr, privateSigner, idKey.ID)
+		err = (&sshgit.Server{}).ListenAndStart(ctx, c.SSHAddr, idKey)
 		if err != nil {
 			return err
 		}

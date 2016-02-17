@@ -1,6 +1,7 @@
 package executil
 
 import (
+	"bytes"
 	"errors"
 	"os/exec"
 	"time"
@@ -8,20 +9,28 @@ import (
 
 var ErrCmdTimeout = errors.New("command timed out")
 
-// CmdWaitWithTimeout runs cmd.Wait() with the specified timeout. If
-// the timeout elapses before cmd.Wait() returns, ErrCmdTimeout is
-// returned.
-func CmdWaitWithTimeout(timeout time.Duration, cmd *exec.Cmd) error {
-	errc := make(chan error, 1)
+// CmdCombinedOutputWithTimeout runs cmd.CombinedOutput() with the specified
+// timeout. If the timeout elapses before cmd.CombinedOutput() returns,
+// ErrCmdTimeout is returned with whatever output was gathered.
+func CmdCombinedOutputWithTimeout(timeout time.Duration, cmd *exec.Cmd) ([]byte, error) {
+	if cmd.Stdout != nil {
+		return nil, errors.New("exec: Stdout already set")
+	}
+	if cmd.Stderr != nil {
+		return nil, errors.New("exec: Stderr already set")
+	}
+	var b bytes.Buffer
+	cmd.Stdout = &b
+	cmd.Stderr = &b
+	c := make(chan error, 1)
 	go func() {
-		errc <- cmd.Wait()
+		c <- cmd.Run()
 	}()
-	var err error
 	select {
 	case <-time.After(timeout):
 		cmd.Process.Kill()
-		return ErrCmdTimeout
-	case err = <-errc:
+		return b.Bytes(), ErrCmdTimeout
+	case err := <-c:
+		return b.Bytes(), err
 	}
-	return err
 }

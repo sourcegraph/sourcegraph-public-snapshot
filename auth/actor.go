@@ -96,13 +96,16 @@ func UnmarshalScope(scope []string) map[string]bool {
 
 func MarshalScope(scopeMap map[string]bool) []string {
 	scope := make([]string, 0)
-	for s := range scopeMap {
+	for s, ok := range scopeMap {
+		if !ok {
+			continue
+		}
 		scope = append(scope, s)
 	}
 	return scope
 }
 
-func GetActorFromUser(user sourcegraph.User) Actor {
+func GetActorFromUser(user *sourcegraph.User) Actor {
 	scope := make(map[string]bool)
 	if user.Write {
 		scope["user:write"] = true

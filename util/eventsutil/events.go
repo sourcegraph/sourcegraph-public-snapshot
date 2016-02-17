@@ -270,7 +270,7 @@ func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEn
 	})
 }
 
-func LogHTTPGitPush(ctx context.Context) {
+func LogGitPush(ctx context.Context) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
 
@@ -279,23 +279,6 @@ func LogHTTPGitPush(ctx context.Context) {
 		ClientID: clientID,
 		UserID:   userID,
 		DeviceID: deviceID,
-		EventProperties: map[string]string{
-			"Protocol": "HTTP",
-		},
-	})
-}
-
-func LogSSHGitPush(clientID, login string) {
-	userID, deviceID := getUserOrDeviceID(clientID, login)
-
-	Log(&sourcegraph.Event{
-		Type:     "GitPush",
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
-		EventProperties: map[string]string{
-			"Protocol": "SSH",
-		},
 	})
 }
 

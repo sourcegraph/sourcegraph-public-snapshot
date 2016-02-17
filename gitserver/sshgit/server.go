@@ -2,7 +2,12 @@
 package sshgit
 
 import (
+	"bufio"
+	"bytes"
+	"compress/gzip"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -14,17 +19,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AaronO/go-git-http"
 	"github.com/flynn/go-shlex"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
+	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
+	"src.sourcegraph.com/sourcegraph/gitserver/pktline"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 )
 
 const (
@@ -35,22 +41,31 @@ const (
 // Server is SSH git server.
 type Server struct {
 	listener net.Listener
-	ctx      context.Context
-	clientID string
+	// ctx is the scoped context to be used for RPC requests.
+	ctx context.Context
+	key *idkey.IDKey
 
-	config    *ssh.ServerConfig
-	reposRoot string // Path to repository storage directory.
+	config *ssh.ServerConfig
+	// reposRoot is the path to the directory where repositories are stored.
+	reposRoot string
 }
 
 // ListenAndStart listens on the TCP network address addr and starts the server.
-func (s *Server) ListenAndStart(ctx context.Context, addr string, privateSigner ssh.Signer, clientID string) error {
+func (s *Server) ListenAndStart(ctx context.Context, addr string, key *idkey.IDKey) error {
+	if key == nil {
+		return errors.New("ssh git server requires non-nil key")
+	}
+	privateSigner, err := ssh.NewSignerFromKey(key.Private())
+	if err != nil {
+		return err
+	}
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
 	s.listener = l
 	s.ctx = ctx
-	s.clientID = clientID
+	s.key = key
 
 	s.config = &ssh.ServerConfig{
 		PublicKeyCallback: func(c ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
@@ -71,10 +86,20 @@ func (s *Server) ListenAndStart(ctx context.Context, addr string, privateSigner 
 				return nil, err
 			}
 
+			// Generate access token for the authenticated user,
+			// all authorization checks for git operations will be
+			// done by the RPC server based on the token's scope.
+			actor := auth.GetActorFromUser(user)
+			actor.ClientID = s.key.ID
+			tok, err := accesstoken.New(s.key, actor, map[string]string{"GrantType": "SSHPublicKey"}, 7*24*time.Hour)
+			if err != nil {
+				return nil, err
+			}
 			return &ssh.Permissions{
 				CriticalOptions: map[string]string{
-					uidKey:       fmt.Sprint(user.UID),
-					userLoginKey: user.Login,
+					uidKey:         fmt.Sprint(user.UID),
+					userLoginKey:   user.Login,
+					accessTokenKey: tok.AccessToken,
 				},
 			}, nil
 		},
@@ -142,6 +167,12 @@ func (s *Server) handleChannel(sshConn *ssh.ServerConn, newChan ssh.NewChannel) 
 			if err != nil {
 				log.Println(err)
 			}
+			// Respond back with the exit-status otherwise some
+			// git clients may incorrectly report errors.
+			_, err = ch.SendRequest("exit-status", false, ssh.Marshal(exitStatus(err)))
+			if err != nil {
+				log.Println("Error while sending exit-status:", err)
+			}
 			return
 		case "env":
 			if req.WantReply {
@@ -165,7 +196,16 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 	if err != nil || len(args) != 2 {
 		return fmt.Errorf("command %q is not a valid git command", command)
 	}
-	op := args[0]      // E.g., "git-upload-pack".
+
+	// Validate operation.
+	op := args[0] // E.g., "git-upload-pack".
+	switch op {
+	case "git-upload-pack", "git-receive-pack": // valid
+	default:
+		return fmt.Errorf("%q is not a supported git operation", op)
+	}
+	op = op[4:]
+
 	repoURI := args[1] // E.g., "/user/repo".
 	repoURI = path.Clean(repoURI)
 	if path.IsAbs(repoURI) {
@@ -176,8 +216,6 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		fmt.Fprintf(ch.Stderr(), "Specified repo %q lies outside of root.\n\n", repoURI)
 		return fmt.Errorf("specified repo %q lies outside of root", repoURI)
 	}
-	userLogin := sshConn.Permissions.CriticalOptions[userLoginKey]
-	uid := uidFromSSHConn(sshConn)
 
 	cl, err := sourcegraph.NewClientFromContext(s.ctx)
 	if err != nil {
@@ -193,99 +231,141 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 		return fmt.Errorf("error accessing repo %q: %v", repoURI, err)
 	}
 
-	user, err := cl.Users.Get(s.ctx, &sourcegraph.UserSpec{UID: uid})
-	if err != nil {
-		fmt.Fprintf(ch.Stderr(), "Could not find user with uid %v.\n\n", uid)
-		return fmt.Errorf("could not find user with uid %v: %v", uid, err)
-	}
-	actor := auth.GetActorFromUser(*user)
-	actor.ClientID = s.clientID
+	userCtx := sourcegraph.WithCredentials(s.ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: sshConn.Permissions.CriticalOptions[accessTokenKey], TokenType: "Bearer"}))
 
-	// Check if user has sufficient permissions for git write/read access to this repo.
-	switch op {
-	case "git-upload-pack":
-		// git-upload-pack uploads packs back to client. It happens when the client does
-		// git fetch or similar. Check for read access.
-		if err := accesscontrol.VerifyActorHasReadAccess(s.ctx, actor, "SSHGit.GitUploadPack", repoURI); err != nil {
-			fmt.Fprintf(ch.Stderr(), "User %q doesn't have read permissions.\n\n", userLogin)
-			return fmt.Errorf("user %q doesn't have read permissions: %v", userLogin, err)
-		}
-	case "git-receive-pack":
-		// git-receive-pack receives packs and applies them to the repository. It happens when the client does
-		// git push or similar. Check for write access.
-		if err := accesscontrol.VerifyActorHasWriteAccess(s.ctx, actor, "SSHGit.GitReceivePack", repoURI); err != nil {
-			fmt.Fprintf(ch.Stderr(), "User %q doesn't have write permissions.\n\n", userLogin)
-			return fmt.Errorf("user %q doesn't have write permissions: %v", userLogin, err)
-		}
-		// Some repos should never be written to by users directly
-		if !repo.IsSystemOfRecord() {
-			fmt.Fprintf(ch.Stderr(), "Repo %q is not writeable.\n\n", repoURI)
-			return fmt.Errorf("repo %q is not a system of record", repoURI)
-		}
-	default:
-		return fmt.Errorf("%q is not a supported git operation", op)
+	userClient, err := sourcegraph.NewClientFromContext(userCtx)
+	if err != nil {
+		return err
 	}
-	shortOp := op[4:] // "upload-pack" or "receive-pack".
+	userGitClient := gitpb.NewGitTransportClient(userClient.Conn)
 
-	// Execute the git operation.
-	cmd := exec.Command("git", shortOp, ".")
-	cmd.Dir = repoDir
-	cmd.Stdout = ch
-	cmd.Stderr = ch
-	rpcReader := &githttp.RpcReader{
-		Reader: ch,
-		Rpc:    shortOp,
-	}
-	cmd.Stdin = rpcReader
-	err = cmd.Start()
+	pkt, err := userGitClient.InfoRefs(userCtx, &gitpb.InfoRefsOp{
+		Repo:    sourcegraph.RepoSpec{URI: repo.URI},
+		Service: op,
+	})
 	if err != nil {
-		return fmt.Errorf("could not start command: %v", err)
+		return err
 	}
-	err = waitTimeout(cmd, gitTransactionTimeout)
-	cmdExitStatus := exitStatus(err)
-	if err != nil {
-		log.Printf("failed to exit cmd: %v\n", err)
-	} else {
-		payload := events.GitPayload{
-			Actor: sourcegraph.UserSpec{UID: uid},
-			Repo:  sourcegraph.RepoSpec{URI: repoURI},
+
+	// Parse the info refs response, write back to channel omitting comments.
+	scanner := bufio.NewScanner(bytes.NewReader(pkt.Data))
+	scanner.Split(pktline.SplitFunc)
+	var skipNextFlush bool
+	for scanner.Scan() {
+		if pktline.IsComment(scanner.Bytes()) {
+			// NOTE: Over HTTP, clients seem to expect a flush
+			// packet right after the HTTP-specific service
+			// announcement packet. This is not documented in the
+			// protocol specifications, but the SSH protocol doesn't
+			// operate with it so it must be filtered out.
+			skipNextFlush = true
+			continue
 		}
-		for _, e := range collapseDuplicateEvents(rpcReader.Events) {
-			payload.Event = e
-			if e.Last == emptyCommitID {
-				events.Publish(events.GitCreateBranchEvent, payload)
-			} else if e.Commit == emptyCommitID {
-				events.Publish(events.GitDeleteBranchEvent, payload)
-			} else if e.Type == githttp.PUSH || e.Type == githttp.PUSH_FORCE || e.Type == githttp.TAG {
-				events.Publish(events.GitPushEvent, payload)
+		if pktline.IsFlush(scanner.Bytes()) && skipNextFlush {
+			skipNextFlush = false
+			continue
+		}
+		_, err := ch.Write(scanner.Bytes())
+		if err != nil {
+			return err
+		}
+	}
+	if scanner.Err() != nil {
+		return scanner.Err()
+	}
+
+	// For fetch operations buffer the input from the client during several
+	// rounds of negotiations to be able to make stateless requests to the
+	// RPC service. The response from the server should be sliced each time
+	// to remove data already written to the client's channel.
+	scanner = bufio.NewScanner(ch)
+	scanner.Split(pktline.SplitFunc)
+	buf := new(bytes.Buffer)
+	written := 0
+	done := false
+	// According to git's spec: The packfile MUST NOT be sent if the only
+	// command used is 'delete'.
+	expectPACK := false
+	for !done {
+		for scanner.Scan() {
+			pl := scanner.Bytes()
+			_, err := buf.Write(pl)
+			if err != nil {
+				return err
+			}
+			if pktline.IsFlush(pl) {
+				break
+			}
+			if op == "receive-pack" {
+				if pktline.HasPrefix(pl, []byte("push-cert-end")) {
+					break
+				}
+				if pktline.IsCreate(pl) || pktline.IsUpdate(pl) {
+					expectPACK = true
+				}
+			} else {
+				if pktline.HasPrefix(pl, []byte("done")) {
+					done = true
+					break
+				}
 			}
 		}
+		if scanner.Err() != nil {
+			return scanner.Err()
+		}
+
+		if op == "receive-pack" {
+			done = true
+			if expectPACK {
+				// Read PACK from channel.
+				_, err := io.Copy(buf, ch)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		zipped, err := compress(buf.Bytes())
+		if err != nil {
+			return err
+		}
+		if op == "receive-pack" {
+			pkt, err = userGitClient.ReceivePack(userCtx, &gitpb.ReceivePackOp{
+				Repo:            sourcegraph.RepoSpec{URI: repo.URI},
+				ContentEncoding: "gzip",
+				Data:            zipped,
+			})
+		} else {
+			pkt, err = userGitClient.UploadPack(userCtx, &gitpb.UploadPackOp{
+				Repo:            sourcegraph.RepoSpec{URI: repo.URI},
+				ContentEncoding: "gzip",
+				Data:            zipped,
+			})
+		}
+		if err != nil {
+			return err
+		}
+		_, err = ch.Write(pkt.Data[written:])
+		if err != nil {
+			return err
+		}
+		written = len(pkt.Data)
 	}
-	if op == "git-receive-pack" {
-		eventsutil.LogSSHGitPush(s.clientID, userLogin)
-	}
-	_, err = ch.SendRequest("exit-status", false, ssh.Marshal(cmdExitStatus))
-	if err != nil {
-		return fmt.Errorf("ch.SendRequest: %v", err)
-	}
+
 	return nil
 }
 
-// waitTimeout waits up to timeout for cmd to finish.
-// If it doesn't finish in time, the process will be terminated.
-func waitTimeout(cmd *exec.Cmd, timeout time.Duration) error {
-	finished := make(chan struct{})
-	go func() {
-		select {
-		case <-time.After(timeout):
-			cmd.Process.Kill()
-		case <-finished:
-			// All okay.
-		}
-	}()
-	err := cmd.Wait()
-	close(finished)
-	return err
+func compress(in []byte) ([]byte, error) {
+	zipped := new(bytes.Buffer)
+	zip := gzip.NewWriter(zipped)
+	_, err := io.Copy(zip, bytes.NewReader(in))
+	if err != nil {
+		return nil, err
+	}
+	err = zip.Close()
+	if err != nil {
+		return nil, err
+	}
+	return zipped.Bytes(), nil
 }
 
 type exitStatusMsg struct {
@@ -308,8 +388,9 @@ func exitStatus(err error) exitStatusMsg {
 }
 
 const (
-	uidKey       = "sourcegraph-uid"
-	userLoginKey = "sourcegraph-user-login"
+	uidKey         = "sourcegraph-uid"
+	userLoginKey   = "sourcegraph-user-login"
+	accessTokenKey = "sourcegraph-access-token"
 )
 
 func uidFromSSHConn(sshConn *ssh.ServerConn) int32 {
