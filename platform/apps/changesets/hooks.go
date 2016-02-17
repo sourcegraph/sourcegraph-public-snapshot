@@ -95,6 +95,7 @@ func notifyChangesetEvent(ctx context.Context, id events.EventID, payload events
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log15.Error("changesetListener error", "error", err)
+		return
 	}
 	if payload.Changeset == nil {
 		cs, err := cl.Changesets.Get(ctx, &sourcegraph.ChangesetGetOp{
@@ -149,6 +150,7 @@ func notifyCreation(ctx context.Context, payload events.ChangesetPayload) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log15.Error("changesetListener: error creating client", "error", err)
+		return
 	}
 
 	// Build list of recipients
@@ -188,6 +190,7 @@ func notifyReview(ctx context.Context, payload events.ChangesetPayload) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log15.Error("changesetListener: error creating client", "error", err)
+		return
 	}
 
 	// Build list of recipients
@@ -235,6 +238,7 @@ func notifyUpdate(ctx context.Context, id events.EventID, payload events.Changes
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log15.Error("changesetListener: error creating client", "error", err)
+		return
 	}
 
 	var actionType string
