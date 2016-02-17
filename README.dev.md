@@ -163,6 +163,39 @@ responsible (or ask).
 Finally, `go-sourcegraph` also uses many codegen tools. See its
 README.md for instructions on how to install them.
 
+# Postgres
+
+It will be necessary to follow a few steps to get postgres up and running.
+
+Issue the following commands to create the necessary database and postgres user:
+
+```
+createdb sg_test
+createuser -s sg_user_test
+```
+
+Add the following lines to your .*rc:
+
+```
+export PGSSLMODE=disable
+export PGDATABASE=sg_test
+export PGUSER=sg_user_test
+```
+
+Edit the `timezone` line in your postgresql.conf to read as follows:
+
+```
+timezone = 'UTC'
+```
+
+...and finally issue the following command:
+
+```
+src psql create
+```
+
+Add
+
 ## Code standards
 
 The Sourcegraph repository enforces some code standards via `make
