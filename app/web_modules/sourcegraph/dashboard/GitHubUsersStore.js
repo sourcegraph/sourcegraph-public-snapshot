@@ -11,7 +11,7 @@ export class GitHubUsersStore extends Store {
 		super(dispatcher);
 		// The users which are available to invite.
 		this.users = deepFreeze({
-			users: window.teammates ? window.teammates.UsersByOrg : {},
+			users: window.teammates ? (window.teammates.UsersByOrg || {}) : {},
 			// TODO: make it easier to get a single user.
 			get(login) {
 				let allUsers = Object.keys(this.users).reduce(
@@ -60,7 +60,7 @@ export class GitHubUsersStore extends Store {
 
 		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.
-		this.orgs = window.teammates ? Object.keys(window.teammates.UsersByOrg) : {};
+		this.orgs = window.teammates ? Object.keys(window.teammates.UsersByOrg || {}) : {};
 	}
 
 	__onDispatch(action) {

@@ -19,6 +19,7 @@ class LinkGitHubWelcome extends Component {
 		const imageURL = doGitHubLink ?
 			"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png" :
 			this.state.currentUser.AvatarURL;
+		const username = this.state.currentUser.Name || this.state.currentUser.Login;
 
 		return (
 			<div className="github-link-welcome">
@@ -34,7 +35,7 @@ class LinkGitHubWelcome extends Component {
 				</div>
 				{doGitHubLink ?
 					<p className="header-text welcome-header">Connect with your GitHub<br />account</p> :
-					<p className="header-text welcome-header">Welcome {this.state.currentUser.Name.split(" ")[0]}!</p>}
+					<p className="header-text welcome-header">Welcome {username.split(" ")[0]}!</p>}
 				{doGitHubLink ?
 					<p className="normal-text">In order to get you started we need to connect with your GitHub account. No worries, we won't change anything within your files.</p> :
 					<p className="normal-text">You successfully connected<br />your GitHub account.</p>}

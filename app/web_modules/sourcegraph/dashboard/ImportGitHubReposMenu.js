@@ -28,15 +28,15 @@ class ImportGitHubReposMenu extends Container {
 		state.onWaitlist = GitHubReposStore.onWaitlist;
 		if (!state.currentOrg) state.currentOrg = GitHubReposStore.orgs[0];
 		state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
-			.filter(this._canMirror)
+			.filter(repo => this._canMirror(repo, state.onWaitlist))
 			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI, isPrivate: Boolean(repo.Repo.Private)}));
 		state.unselectableItems = GitHubReposStore.reposByOrg.get(state.currentOrg)
-			.filter(repo => !this._canMirror(repo))
+			.filter(repo => !this._canMirror(repo, state.onWaitlist))
 			.map((repo, i) => ({name: repo.Repo.Name, key: `${i}`, reason: this._unselectableReason(repo)}));
 	}
 
-	_canMirror(repo) {
-		if (this.state.onWaitlist) {
+	_canMirror(repo, onWaitlist) {
+		if (onWaitlist) {
 			if (repo.Repo.Private) return false;
 		}
 		if (repo.ExistsLocally) return false;
