@@ -7,13 +7,14 @@ import (
 	"sort"
 	"testing"
 
+	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/ssh"
 )
 
 func init() {
-	gitcmd.InsecureSkipCheckVerifySSH = true
+	gitserver.InsecureSkipCheckVerifySSH = true
 }
 
 func startGitShellSSHServer(t *testing.T, label string, dir string) (*ssh.Server, vcs.RemoteOpts) {

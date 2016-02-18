@@ -5,13 +5,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -67,45 +63,8 @@ func Clone(url, dir string, opt CloneOpt) error {
 		args = append(args, "--mirror")
 	}
 	args = append(args, "--", url, filepath.ToSlash(dir))
-	cmd := exec.Command("git", args...)
-
-	if opt.SSH != nil {
-		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := makeGitSSHWrapper(opt.SSH.PrivateKey)
-		defer func() {
-			if keyFile != "" {
-				if err := os.Remove(keyFile); err != nil {
-					log.Fatalf("Error removing SSH key file %s: %s.", keyFile, err)
-				}
-			}
-		}()
-		if err != nil {
-			return err
-		}
-		defer os.Remove(gitSSHWrapper)
-		if gitSSHWrapperDir != "" {
-			defer os.RemoveAll(gitSSHWrapperDir)
-		}
-		cmd.Env = []string{"GIT_SSH=" + gitSSHWrapper}
-	}
-
-	if opt.HTTPS != nil {
-		env := environ(os.Environ())
-		env.Unset("GIT_TERMINAL_PROMPT")
-
-		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.Pass)
-		if err != nil {
-			return err
-		}
-		defer os.Remove(gitPassHelper)
-		if gitPassHelperDir != "" {
-			defer os.RemoveAll(gitPassHelperDir)
-		}
-		env.Unset("GIT_ASKPASS")
-		env = append(env, "GIT_ASKPASS="+gitPassHelper)
-
-		cmd.Env = env
-	}
-
+	cmd := gitserver.Command("git", args...)
+	cmd.Opt = &opt.RemoteOpts
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("exec `git clone` failed: %s. Output was:\n\n%s", err, out)
@@ -120,15 +79,6 @@ func checkSpecArgSafety(spec string) error {
 		return errors.New("invalid git revision spec (begins with '-')")
 	}
 	return nil
-}
-
-// dividedOutput runs the command and returns its standard output and standard error.
-func dividedOutput(c *exec.Cmd) (stdout []byte, stderr []byte, err error) {
-	var outb, errb bytes.Buffer
-	c.Stdout = &outb
-	c.Stderr = &errb
-	err = c.Run()
-	return outb.Bytes(), errb.Bytes(), err
 }
 
 func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
@@ -595,46 +545,10 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 	r.editLock.Lock()
 	defer r.editLock.Unlock()
 
-	cmd := exec.Command("git", "remote", "update", "--prune")
+	cmd := gitserver.Command("git", "remote", "update", "--prune")
 	cmd.Dir = r.Dir
-
-	if opt.SSH != nil {
-		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := makeGitSSHWrapper(opt.SSH.PrivateKey)
-		defer func() {
-			if keyFile != "" {
-				if err := os.Remove(keyFile); err != nil {
-					log.Fatalf("Error removing SSH key file %s: %s.", keyFile, err)
-				}
-			}
-		}()
-		if err != nil {
-			return nil, err
-		}
-		defer os.Remove(gitSSHWrapper)
-		if gitSSHWrapperDir != "" {
-			defer os.RemoveAll(gitSSHWrapperDir)
-		}
-		cmd.Env = []string{"GIT_SSH=" + gitSSHWrapper}
-	}
-
-	if opt.HTTPS != nil {
-		env := environ(os.Environ())
-		env.Unset("GIT_TERMINAL_PROMPT")
-
-		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.Pass)
-		if err != nil {
-			return nil, err
-		}
-		defer os.Remove(gitPassHelper)
-		if gitPassHelperDir != "" {
-			defer os.RemoveAll(gitPassHelperDir)
-		}
-		env = append(env, "GIT_ASKPASS="+gitPassHelper)
-
-		cmd.Env = env
-	}
-
-	_, stderr, err := dividedOutput(cmd)
+	cmd.Opt = &opt
+	_, stderr, err := cmd.DividedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
 	}
@@ -1081,108 +995,6 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 
 	lsTreeCache.Add(cacheKey, fis)
 	return fis, nil
-}
-
-// makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the
-// private key. You should remove the sshWrapper, sshWrapperDir and
-// the keyFile after using them.
-func makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile string, err error) {
-	var otherOpt string
-	if InsecureSkipCheckVerifySSH {
-		otherOpt = "-o StrictHostKeyChecking=no"
-	}
-
-	kf, err := ioutil.TempFile("", "go-vcs-gitcmd-key")
-	if err != nil {
-		return "", "", "", err
-	}
-	keyFile = kf.Name()
-	err = util.WriteFileWithPermissions(keyFile, privKey, 0600)
-	if err != nil {
-		return "", "", keyFile, err
-	}
-
-	tmpFile, tmpFileDir, err := gitSSHWrapper(keyFile, otherOpt)
-	return tmpFile, tmpFileDir, keyFile, err
-}
-
-// makeGitPassHelper writes a GIT_ASKPASS helper that supplies password over stdout.
-// You should remove the passHelper (and tempDir if any) after using it.
-func makeGitPassHelper(pass string) (passHelper string, tempDir string, err error) {
-
-	tmpFile, dir, err := util.ScriptFile("go-vcs-gitcmd-ask")
-	if err != nil {
-		return tmpFile, dir, err
-	}
-
-	passPath := filepath.Join(dir, "password")
-	err = util.WriteFileWithPermissions(passPath, []byte(pass), 0600)
-	if err != nil {
-		return tmpFile, dir, err
-	}
-
-	var script string
-
-	// We assume passPath can be escaped with a simple wrapping of single
-	// quotes. The path is not user controlled so this assumption should
-	// not be violated.
-	if runtime.GOOS == "windows" {
-		script = "@echo off\ntype " + passPath + "\n"
-	} else {
-		script = "#!/bin/sh\ncat '" + passPath + "'\n"
-	}
-
-	err = util.WriteFileWithPermissions(tmpFile, []byte(script), 0500)
-	return tmpFile, dir, err
-}
-
-// InsecureSkipCheckVerifySSH controls whether the client verifies the
-// SSH server's certificate or host key. If InsecureSkipCheckVerifySSH
-// is true, the program is susceptible to a man-in-the-middle
-// attack. This should only be used for testing.
-var InsecureSkipCheckVerifySSH bool
-
-// environ is a slice of strings representing the environment, in the form "key=value".
-type environ []string
-
-// Unset a single environment variable.
-func (e *environ) Unset(key string) {
-	for i := range *e {
-		if strings.HasPrefix((*e)[i], key+"=") {
-			(*e)[i] = (*e)[len(*e)-1]
-			*e = (*e)[:len(*e)-1]
-			break
-		}
-	}
-}
-
-// Makes system-dependent SSH wrapper
-func gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, tempDir string, err error) {
-	// TODO(sqs): encrypt and store the key in the env so that
-	// attackers can't decrypt if they have disk access after our
-	// process dies
-
-	var script string
-
-	if runtime.GOOS == "windows" {
-		script = `
-	@echo off
-	ssh -o ControlMaster=no -o ControlPath=none ` + otherOpt + ` -i ` + filepath.ToSlash(keyFile) + ` "%@"
-`
-	} else {
-		script = `
-	#!/bin/sh
-	exec /usr/bin/ssh -o ControlMaster=no -o ControlPath=none ` + otherOpt + ` -i ` + filepath.ToSlash(keyFile) + ` "$@"
-`
-	}
-
-	sshWrapperName, tempDir, err := util.ScriptFile("go-vcs-gitcmd")
-	if err != nil {
-		return sshWrapperName, tempDir, err
-	}
-
-	err = util.WriteFileWithPermissions(sshWrapperName, []byte(script), 0500)
-	return sshWrapperName, tempDir, err
 }
 
 func ensureAbsCommit(commitID vcs.CommitID) {

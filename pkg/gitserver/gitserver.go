@@ -3,6 +3,7 @@ package gitserver
 import (
 	"bytes"
 	"errors"
+	"log"
 	"net/rpc"
 	"os"
 	"os/exec"
@@ -17,6 +18,7 @@ type Git struct {
 type ExecArgs struct {
 	Repo string
 	Args []string
+	Opt  *vcs.RemoteOpts
 }
 
 type ExecReply struct {
@@ -35,7 +37,7 @@ func RegisterHandler() {
 }
 
 func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
-	if _, err := os.Stat(args.Repo); os.IsNotExist(err) {
+	if _, err := os.Stat(args.Repo); args.Repo != "" && os.IsNotExist(err) {
 		return nil
 	}
 	reply.RepoExists = true
@@ -45,6 +47,44 @@ func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
+
+	if args.Opt != nil && args.Opt.SSH != nil {
+		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := makeGitSSHWrapper(args.Opt.SSH.PrivateKey)
+		defer func() {
+			if keyFile != "" {
+				if err := os.Remove(keyFile); err != nil {
+					log.Fatalf("Error removing SSH key file %s: %s.", keyFile, err)
+				}
+			}
+		}()
+		if err != nil {
+			return err
+		}
+		defer os.Remove(gitSSHWrapper)
+		if gitSSHWrapperDir != "" {
+			defer os.RemoveAll(gitSSHWrapperDir)
+		}
+		cmd.Env = []string{"GIT_SSH=" + gitSSHWrapper}
+	}
+
+	if args.Opt != nil && args.Opt.HTTPS != nil {
+		env := environ(os.Environ())
+		env.Unset("GIT_TERMINAL_PROMPT")
+
+		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(args.Opt.HTTPS.Pass)
+		if err != nil {
+			return err
+		}
+		defer os.Remove(gitPassHelper)
+		if gitPassHelperDir != "" {
+			defer os.RemoveAll(gitPassHelperDir)
+		}
+		env.Unset("GIT_ASKPASS")
+		env = append(env, "GIT_ASKPASS="+gitPassHelper)
+
+		cmd.Env = env
+	}
+
 	if err := cmd.Run(); err != nil {
 		reply.Error = err.Error()
 	}
@@ -65,6 +105,7 @@ func Dial(addr string) error {
 type Cmd struct {
 	Args       []string
 	Dir        string
+	Opt        *vcs.RemoteOpts
 	ExitStatus int
 }
 
@@ -79,7 +120,7 @@ func Command(name string, arg ...string) *Cmd {
 
 func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	var reply ExecReply
-	if err := clientSingleton.Call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:]}, &reply); err != nil {
+	if err := clientSingleton.Call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:], Opt: c.Opt}, &reply); err != nil {
 		return nil, nil, err
 	}
 	if !reply.RepoExists {
