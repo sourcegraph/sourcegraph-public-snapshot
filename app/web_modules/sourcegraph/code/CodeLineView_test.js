@@ -12,7 +12,7 @@ import testdataLineSelection from "sourcegraph/code/testdata/CodeLineView-select
 describe("CodeLineView", () => {
 	it("should render", () => {
 		autotest(testdataContents, `${__dirname}/testdata/CodeLineView-contents.json`,
-			<CodeLineView contents={"hello\nworld"} selectedDef="someURL" highlightedDef="secondURL" />
+			<CodeLineView contents={"hello\nworld"} highlightedDef="secondURL" />
 		);
 	});
 

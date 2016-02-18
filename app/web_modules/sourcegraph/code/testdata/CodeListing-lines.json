@@ -17,7 +17,6 @@
 									"startByte": 0,
 									"contents": "hello",
 									"selected": true,
-									"selectedDef": "someDef",
 									"highlightedDef": "otherDef"
 								}
 							},
@@ -29,7 +28,6 @@
 									"startByte": 6,
 									"contents": "world",
 									"selected": true,
-									"selectedDef": "someDef",
 									"highlightedDef": "otherDef"
 								}
 							}

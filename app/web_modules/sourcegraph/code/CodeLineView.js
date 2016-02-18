@@ -27,8 +27,7 @@ class CodeLineView extends Component {
 			}
 		}
 
-		// Filter selectedDef and highlightedDef to improve perf.
-		state.selectedDef = state.ownAnnURLs[props.selectedDef] ? props.selectedDef : null;
+		// Filter highlightedDef to improve perf.
 		state.highlightedDef = state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
 
 		state.lineNumber = props.lineNumber || null;
@@ -89,8 +88,7 @@ class CodeLineView extends Component {
 						<a
 							className={classNames(cls, {
 								"ref": true,
-								"highlight-primary": matchesURL(this.state.selectedDef),
-								"highlight-secondary": !matchesURL(this.state.selectedDef) && matchesURL(this.state.highlightedDef),
+								"highlight-primary": matchesURL(this.state.highlightedDef),
 							})}
 							href={ann.URL}
 							onMouseOver={() => Dispatcher.dispatch(new DefActions.HighlightDef(ann.URL))}
@@ -168,7 +166,6 @@ CodeLineView.propTypes = {
 	contents: React.PropTypes.string,
 	annotations: React.PropTypes.array,
 	selected: React.PropTypes.bool,
-	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 	className: React.PropTypes.string,
 

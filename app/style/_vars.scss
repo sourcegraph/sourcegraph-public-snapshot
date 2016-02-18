@@ -84,9 +84,7 @@ $line-number-text: darken($pale-grey, 30%);
 $line-content-bg: $white;
 $active-code-bg: transparentize($brand-azure, 0.90);
 $active-code-flash-bg: transparentize($brand-azure, 0.85);
-$token-focus-color: $lemon;
-$token-focus-border: darken($token-focus-color, 8%);
-$token-hover-color: transparentize($lemon, 0.56);
+$token-hover-color: transparentize($lemon, 0.25);
 $token-hover-border: darken($token-hover-color, 5%);
 
 $content-primary-bg: $duck-egg-blue;

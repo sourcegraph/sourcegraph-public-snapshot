@@ -45,20 +45,18 @@ class CodeFileContainer extends Container {
 
 		// get filename from definition data
 		let defData = props.def && DefStore.defs.get(props.def);
-		state.tree = props.def ? (defData && defData.File.Path) : props.tree;
-		state.selectedDef = props.def || props.selectedDef; // triggers WantDef for props.def
+		state.tree = (props.def && defData) ? (defData && defData.File.Path) : props.tree;
 
 		// fetch file content
 		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
 		state.anns = state.tree && CodeStore.annotations.get(state.repo, state.rev, state.tree, 0, 0);
 		state.annotations = CodeStore.annotations;
 
-		state.startLine = (props.def && state.file) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
-		state.endLine = (props.def && state.file) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteEndPosition) : (props.endLine || null);
+		state.startLine = (props.def && state.file && defData) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
 
 		state.defs = DefStore.defs;
 		state.examples = DefStore.examples;
-		state.highlightedDef = DefStore.highlightedDef;
+		state.highlightedDef = DefStore.highlightedDef || state.def;
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;
 		state.defOptionsLeft = DefStore.defOptionsLeft;
@@ -69,9 +67,6 @@ class CodeFileContainer extends Container {
 		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
 			Dispatcher.asyncDispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
 			Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.repo, nextState.rev, nextState.tree));
-		}
-		if (nextState.selectedDef && prevState.selectedDef !== nextState.selectedDef) {
-			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.selectedDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
@@ -100,8 +95,8 @@ class CodeFileContainer extends Container {
 			return null;
 		}
 
-		let selectedDefData = this.state.selectedDef && this.state.defs.get(this.state.selectedDef);
-		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
+		let defData = this.state.def && this.state.defs.get(this.state.def);
+		let highlightedDefData = this.state.highlightedDef && this.state.highlightedDef !== this.state.def && this.state.defs.get(this.state.highlightedDef);
 
 		return (
 			<div className="file-container">
@@ -121,16 +116,15 @@ class CodeFileContainer extends Container {
 							lineNumbers={true}
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}
-							selectedDef={this.state.selectedDef}
 							highlightedDef={this.state.highlightedDef} />}
 					</div>
 					<FileMargin examples={this.state.examples} getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
-						{selectedDefData &&
+						{defData &&
 						<DefPopup
-							def={selectedDefData}
+							def={defData}
 							examples={this.state.examples}
 							annotations={this.state.annotations}
-							highlightedDef={this.state.highlightedDef || null} />}
+							highlightedDef={this.state.highlightedDef} />}
 					</FileMargin>
 				</div>
 
@@ -167,7 +161,6 @@ CodeFileContainer.propTypes = {
 	def: React.PropTypes.string,
 	startLine: React.PropTypes.number,
 	endLine: React.PropTypes.number,
-	selectedDef: React.PropTypes.string,
 	example: React.PropTypes.number,
 };
 

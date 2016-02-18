@@ -24,7 +24,7 @@ describe("CodeFileContainer", () => {
 	it("should handle unavailable file", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", null));
 		autotest(testdataUnavailableFile, `${__dirname}/testdata/CodeFileContainer-unavailableFile.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef={null} />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />
 		);
 	});
 
@@ -32,18 +32,17 @@ describe("CodeFileContainer", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", null));
 		autotest(testdataUnavailableDefinition, `${__dirname}/testdata/CodeFileContainer-unavailableDefinition.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" def="someDef" />
 		);
 	});
 
 	it("should handle available file and available definition", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {Found: true, test: "defData"}));
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {Found: true, test: "otherDefData"}));
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {Found: true, File: {Path: "aTree"}}));
 		Dispatcher.directDispatch(DefStore, new DefActions.ExampleFetched("foo", {test: "exampleData"}));
 		autotest(testdataAvailableDefinition, `${__dirname}/testdata/CodeFileContainer-availableDefinition.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef="someDef" />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" def="someDef" />
 		);
 	});
 
@@ -58,7 +57,7 @@ describe("CodeFileContainer", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.SelectMultipleDefs(["firstDef", "secondDef"], 10, 20));
 		autotest(testdataDefOptions, `${__dirname}/testdata/CodeFileContainer-defOptions.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" selectedDef={null} />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" />
 		);
 	});
 });

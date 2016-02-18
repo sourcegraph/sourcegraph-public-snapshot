@@ -51,7 +51,6 @@ class CodeFileRouter extends Component {
 		state.def = null;
 		state.startLine = null;
 		state.endLine = null;
-		state.selectedDef = null;
 		if (pathParts[1].startsWith("tree/")) {
 			state.tree = pathParts[1].slice("tree/".length);
 
@@ -65,7 +64,7 @@ class CodeFileRouter extends Component {
 				}
 
 				let defMatch = state.url.hash.match(/^#def-(.+)$/);
-				state.selectedDef = defMatch ? defMatch[1] : null;
+				state.def = defMatch ? defMatch[1] : null;
 			}
 		} else {
 			state.def = state.url.pathname;
@@ -123,15 +122,6 @@ class CodeFileRouter extends Component {
 	}
 
 	render() {
-		if (this.state.def) {
-			return (
-				<CodeFileContainer
-					repo={this.state.repo}
-					rev={this.state.rev}
-					def={this.state.def} />
-			);
-		}
-
 		return (
 			<CodeFileContainer
 				repo={this.state.repo}
@@ -139,8 +129,7 @@ class CodeFileRouter extends Component {
 				tree={this.state.tree}
 				startLine={this.state.startLine}
 				endLine={this.state.endLine}
-				selectedDef={this.state.selectedDef}
-				def={null} />
+				def={this.state.def} />
 		);
 	}
 }

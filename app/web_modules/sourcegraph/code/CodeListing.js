@@ -34,7 +34,6 @@ class CodeListing extends Component {
 		state.startLine = props.startLine || 0;
 		state.endLine = props.endLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
-		state.selectedDef = props.selectedDef;
 		state.highlightedDef = props.highlightedDef;
 
 		let updateAnns = false;
@@ -90,7 +89,7 @@ class CodeListing extends Component {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.startLine && nextState.selectedDef && prevState.startLine !== nextState.startLine) {
+		if (nextState.startLine && nextState.highlightedDef && prevState.startLine !== nextState.startLine) {
 			this._scrollTo(nextState.startLine);
 		}
 	}
@@ -123,7 +122,6 @@ class CodeListing extends Component {
 					contents={line}
 					annotations={visible ? (this.state.lineAnns[i] || null) : null}
 					selected={this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
-					selectedDef={visible ? this.state.selectedDef : null}
 					highlightedDef={visible ? this.state.highlightedDef : null}
 					key={i} />
 			);
@@ -145,7 +143,6 @@ CodeListing.propTypes = {
 	lineNumbers: React.PropTypes.bool,
 	startLine: React.PropTypes.number,
 	endLine: React.PropTypes.number,
-	selectedDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
 };
 

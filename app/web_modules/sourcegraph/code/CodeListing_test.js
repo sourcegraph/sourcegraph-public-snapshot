@@ -10,13 +10,13 @@ import testdataNoLineNumbers from "sourcegraph/code/testdata/CodeListing-noLineN
 describe("CodeListing", () => {
 	it("should render lines", () => {
 		autotest(testdataLines, `${__dirname}/testdata/CodeListing-lines.json`,
-			<CodeListing contents={"hello\nworld"} lineNumbers={true} startLine={1} endLine={2} selectedDef="someDef" highlightedDef="otherDef" />
+			<CodeListing contents={"hello\nworld"} lineNumbers={true} startLine={1} endLine={2} highlightedDef="otherDef" />
 		);
 	});
 
 	it("should not render line numbers by default", () => {
 		autotest(testdataNoLineNumbers, `${__dirname}/testdata/CodeListing-noLineNumbers.json`,
-			<CodeListing contents={"hello\nworld"} selectedDef={null} highlightedDef={null} />
+			<CodeListing contents={"hello\nworld"} highlightedDef={null} />
 		);
 	});
 });

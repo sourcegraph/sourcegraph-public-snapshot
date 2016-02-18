@@ -38,7 +38,7 @@
 												"startByte": 0,
 												"contents": "hello\nworld",
 												"lineNumbers": true,
-												"selectedDef": "someDef"
+												"highlightedDef": "someDef"
 											}
 										}
 									]

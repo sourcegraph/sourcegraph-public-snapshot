@@ -82,7 +82,6 @@ class ExampleView extends Component {
 								<CodeListing
 									contents={example.Contents}
 									annotations={this.state.anns}
-									selectedDef={this.state.defURL}
 									highlightedDef={this.state.highlightedDef} />
 							</div>
 						}

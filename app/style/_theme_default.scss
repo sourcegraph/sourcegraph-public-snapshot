@@ -38,10 +38,6 @@
 	}
 
 	.highlight-primary {
-		background: $token-focus-color;
-		outline: solid 3px $token-focus-color;
-	}
-	.highlight-secondary {
 		background: $token-hover-color;
 		outline: solid 3px $token-hover-color;
 	}

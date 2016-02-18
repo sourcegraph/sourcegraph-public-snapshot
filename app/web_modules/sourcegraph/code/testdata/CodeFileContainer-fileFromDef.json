@@ -48,7 +48,8 @@
 												},
 												"annotations": {
 													"content": {}
-												}
+												},
+												"highlightedDef": "someDef"
 											}
 										}
 									]

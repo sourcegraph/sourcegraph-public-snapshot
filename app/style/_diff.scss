@@ -304,8 +304,8 @@ div.file-list {
 
 		.line-content a:hover {
 			cursor: pointer;
-			background: $token-focus-color;
-			outline: solid 3px $token-focus-color;
+			background: $token-hover-color;
+			outline: solid 3px $token-hover-color;
 		}
 
 		tr.line.hunk-header {
