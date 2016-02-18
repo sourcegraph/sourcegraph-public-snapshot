@@ -10,13 +10,13 @@
 						<div class="example">
 							<header>
 								<div class="pull-right">{{template "RepoLink" (repoLink .Repo)}}</div>
-								{{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File (toInt .StartLine) (toInt .EndLine) $defURL)}}
+								{{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File (toInt .StartLine) (toInt .EndLine))}}
 							</header>
 							<pre class="code theme-default"><code>{{sanitizeFormattedCode .Contents}}</code></pre>
 						</div>
 						<br>
 					{{else}}
-						<div class="alert alert-warning">An error occurred while showing an example from {{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File (toInt .StartLine) (toInt .EndLine) $defURL)}}.</div>
+						<div class="alert alert-warning">An error occurred while showing an example from {{template "Breadcrumb" (snippetToBreadcrumb .Repo $rev .File (toInt .StartLine) (toInt .EndLine))}}.</div>
 					{{end}}
 				</li>
 			{{end}}

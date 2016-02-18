@@ -47,32 +47,46 @@ class CodeFileRouter extends Component {
 			pathParts = [pathParts[0], `tree/${treePath}`];
 		}
 
-		let keys = [];
-		let vars = Object.assign({}, state.url.query);
-		pathParts.slice(1).forEach((part) => {
-			let p = part.indexOf("/");
-			let key = part.substr(0, p);
-			keys.push(key);
-			vars[key] = part.substr(p + 1);
-		});
+		state.tree = null;
+		state.def = null;
+		state.startLine = null;
+		state.endLine = null;
+		state.selectedDef = null;
+		if (pathParts[1].startsWith("tree/")) {
+			state.tree = pathParts[1].slice("tree/".length);
 
-		state.tree = vars["tree"] || null;
-		state.startLine = vars["startline"] ? parseInt(vars["startline"], 10) : null;
-		state.endLine = vars["endline"] ? parseInt(vars["endline"], 10) : null;
-		state.selectedDef = vars["seldef"] || null;
+			if (state.url.hash) {
+				let lineMatch = state.url.hash.match(/^#L(\d+)(?:-(\d+))?$/);
+				state.startLine = lineMatch ? parseInt(lineMatch[1], 10) : null;
+				if (lineMatch && lineMatch[2]) {
+					state.endLine = parseInt(lineMatch[2], 10);
+				} else {
+					state.endLine = state.startLine;
+				}
 
-		let revPart = state.rev ? `@${state.rev}` : "";
-
-		state.def = vars["def"] ? `/${state.repo}${revPart}/.${keys[0]}/${vars[keys[0]]}/.def/${vars["def"]}` : null;
+				let defMatch = state.url.hash.match(/^#def-(.+)$/);
+				state.selectedDef = defMatch ? defMatch[1] : null;
+			}
+		} else {
+			state.def = state.url.pathname;
+		}
 	}
 
-	_navigate(pathname, query) {
+	_navigate(pathname, startLine, endLine, def) {
+		let hash;
+		if (startLine && endLine && startLine !== endLine) {
+			hash = `L${startLine}-${endLine}`;
+		} else if (startLine) {
+			hash = `L${startLine}`;
+		} else if (def) {
+			hash = `def-${def}`;
+		}
 		let url = {
 			protocol: this.state.url.protocol,
 			auth: this.state.url.auth,
 			host: this.state.url.host,
 			pathname: pathname || this.state.url.pathname,
-			query: Object.assign({}, this.state.url.query, query),
+			hash: hash,
 		};
 		this.state.navigate(URL.format(url));
 	}
@@ -80,22 +94,20 @@ class CodeFileRouter extends Component {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case CodeActions.SelectLine:
-			this._navigate(this._filePath(), {
-				startline: action.line,
-				endline: action.line,
-			});
+			this._navigate(this._filePath(), action.line);
 			break;
 
 		case CodeActions.SelectRange:
-			this._navigate(this._filePath(), {
-				startline: Math.min(this.state.startLine || action.line, action.line),
-				endline: Math.max(this.state.endLine || action.line, action.line),
-			});
+			this._navigate(
+				this._filePath(),
+				Math.min(this.state.startLine || action.line, action.line),
+				Math.max(this.state.endLine || action.line, action.line)
+			);
 			break;
 
 		case DefActions.SelectDef:
 			// null becomes undefined
-			this._navigate(this._filePath(), {seldef: action.url || undefined}); // eslint-disable-line no-undefined
+			this._navigate(this._filePath(), null, null, action.url); // eslint-disable-line no-undefined
 			break;
 
 		case GoTo:

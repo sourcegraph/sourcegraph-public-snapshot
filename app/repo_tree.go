@@ -141,11 +141,11 @@ func FileToBreadcrumb(repoURI string, rev, path string) []*BreadcrumbLink {
 
 // FileLinesToBreadcrumb returns the file link with line number
 func FileLinesToBreadcrumb(repo string, rev, path string, startLine int) []*BreadcrumbLink {
-	return SnippetToBreadcrumb(repo, rev, path, startLine, 0, nil)
+	return SnippetToBreadcrumb(repo, rev, path, startLine, 0)
 }
 
-func SnippetToBreadcrumb(repo string, rev, path string, startLine int, endLine int, defURL *url.URL) []*BreadcrumbLink {
-	return AbsSnippetToBreadcrumb(nil, repo, rev, path, startLine, endLine, defURL, true)
+func SnippetToBreadcrumb(repo string, rev, path string, startLine int, endLine int) []*BreadcrumbLink {
+	return AbsSnippetToBreadcrumb(nil, repo, rev, path, startLine, endLine, true)
 }
 
 type BreadcrumbLink struct {
@@ -154,7 +154,7 @@ type BreadcrumbLink struct {
 }
 
 // AbsSnippetToBreadcrumb returns the breadcrumb to a specific set of lines in a file. The URLs are absolute if appURL is given.
-func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, startLine int, endLine int, defURL *url.URL, includeRepo bool) []*BreadcrumbLink {
+func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, startLine int, endLine int, includeRepo bool) []*BreadcrumbLink {
 	curPath := ""
 	if appURL != nil {
 		curPath = appURL.String()
@@ -180,13 +180,10 @@ func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, star
 			}
 
 			link.Text += fmt.Sprintf(":%d", startLine)
+			link.URL += fmt.Sprintf("#L%d", startLine)
 			if endLine != startLine {
 				link.Text += fmt.Sprintf("-%d", endLine)
-			}
-
-			link.URL += fmt.Sprintf("?startline=%d&endline=%d", startLine, endLine)
-			if defURL != nil {
-				link.URL += fmt.Sprintf("&seldef=%s", defURL)
+				link.URL += fmt.Sprintf("-%d", endLine)
 			}
 		}
 

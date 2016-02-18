@@ -26,7 +26,7 @@
 										{
 											"type": "a",
 											"props": {
-												"href": "/aRepo@aRev/.tree/app.go?startline=1&endline=10",
+												"href": "/aRepo@aRev/.tree/app.go#L1-10",
 												"children": [
 													"app.go"
 												]

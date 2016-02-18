@@ -71,7 +71,7 @@ class ExampleView extends Component {
 			<div className="examples">
 				<div className="example">
 					<header>
-						{example && <span>Used in <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}?startline=${example.Range.StartLine}&endline=${example.Range.EndLine}`} onClick={hotLink}>{example.File}:{example.Range.StartLine}-{example.Range.EndLine}</a></span>}
+						{example && <span>Used in <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}#L${example.Range.StartLine}-${example.Range.EndLine}`} onClick={hotLink}>{example.File}:{example.Range.StartLine}-{example.Range.EndLine}</a></span>}
 						{loading && <i className="fa fa-spinner fa-spin"></i>}
 						{this.state.count === 0 && "No examples available"}
 					</header>

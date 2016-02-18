@@ -60,7 +60,7 @@ module.exports = {
 
 	fileRangeURL(repo, rev, path, startline, endline) {
 		path = (path ? path : "");
-		return `${module.exports.repoURL(repo, rev)}/.tree/${path}?startline=${startline}&endline=${endline}`;
+		return `${module.exports.repoURL(repo, rev)}/.tree/${path}#L${startline}-${endline}`;
 	},
 
 	fileListURL(repo, rev) {

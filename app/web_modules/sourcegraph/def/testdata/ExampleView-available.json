@@ -21,7 +21,7 @@
 													{
 														"type": "a",
 														"props": {
-															"href": "/someRepo/.tree/foo.go?startline=3&endline=7",
+															"href": "/someRepo/.tree/foo.go#L3-7",
 															"onClick": {
 																"defaultPrevented": true,
 																"dispatched": [
