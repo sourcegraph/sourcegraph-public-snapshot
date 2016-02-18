@@ -1,14 +1,22 @@
-This file documents the style used in Sourcegraph's code.
+This file documents the style used in Sourcegraph's code and product.
 
 For all things not covered in this document, defer to
 [Go Code Review Comments](https://code.google.com/p/go-wiki/wiki/CodeReviewComments)
 and [Effective Go](http://golang.org/doc/effective_go.html).
 
-### Panics
+# English
+
+* Phrases in headers and titles are capitalized like sentences ("Add
+  repository"), not headlines ("Add Repository").
+
+
+# Code
+
+## Panics
 
 Panics are used for code pathes that should never be reached.
 
-### Options
+## Options
 
 In the general case, when a pointer to an "options" struct is an argument
 to a function (such as `Get(build BuildSpec, opt *BuildGetOptions) (*Build, Response, error)`,
@@ -16,7 +24,7 @@ that pointer may be `nil`. When the pointer is nil, the function does its defaul
 If the options struct should not be nil, either make the argument the value instead of a
 pointer or document it.
 
-### Changesets
+## Changesets
 
 When you have a CS that adds one new constant or other kind of declaration in a list that
 gofmt will automatically reindent, and if it changes the indentation, just add it in another
