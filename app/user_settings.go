@@ -128,19 +128,29 @@ func userSettingsMeRedirect(w http.ResponseWriter, r *http.Request, u *sourcegra
 }
 
 func serveUserSettingsProfile(w http.ResponseWriter, r *http.Request) error {
-	_, cd, err := userSettingsCommon(w, r)
+	apiclient := handlerutil.APIClient(r)
+	ctx := httpctx.FromRequest(r)
+	userSpec, cd, err := userSettingsCommon(w, r)
 	if err == errUserSettingsCommonWroteResponse {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
+	emails, err := apiclient.Users.ListEmails(ctx, &userSpec)
+	if err != nil || cd.User.IsOrganization {
+		if grpc.Code(err) == codes.PermissionDenied || cd.User.IsOrganization {
+			// We are not allowed to view the emails or its an org and orgs don't have emails
+			// so just show an empty list
+			emails = &sourcegraph.EmailAddrList{EmailAddrs: []*sourcegraph.EmailAddr{}}
+		} else {
+			return err
+		}
+	}
+
 	if r.Method == "POST" {
 		user := cd.User
 		user.Name = r.PostFormValue("Name")
-		user.HomepageURL = r.PostFormValue("HomepageURL")
-		user.Company = r.PostFormValue("Company")
-		user.Location = r.PostFormValue("Location")
 		if _, err := handlerutil.APIClient(r).Accounts.Update(httpctx.FromRequest(r), user); err != nil {
 			return err
 		}
@@ -152,8 +162,10 @@ func serveUserSettingsProfile(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "user/settings/profile.html", http.StatusOK, nil, &struct {
 		userSettingsCommonData
 		tmpl.Common
+		EmailAddrs []*sourcegraph.EmailAddr
 	}{
 		userSettingsCommonData: *cd,
+		EmailAddrs:             emails.EmailAddrs,
 	})
 }
 
@@ -190,45 +202,6 @@ func gravatarURL(email string) string {
 	h := md5.New()
 	io.WriteString(h, email) // md5 hash the final string.
 	return fmt.Sprintf("https://secure.gravatar.com/avatar/%x?d=mm", h.Sum(nil))
-}
-
-func serveUserSettingsEmails(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
-
-	userSpec, cd, err := userSettingsCommon(w, r)
-	if err == errUserSettingsCommonWroteResponse {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	if cd.User.IsOrganization {
-		return &errcode.HTTPErr{
-			Status: http.StatusNotFound,
-			Err:    errors.New("only users have emails"),
-		}
-	}
-
-	emails, err := apiclient.Users.ListEmails(ctx, &userSpec)
-	if err != nil {
-		if grpc.Code(err) == codes.PermissionDenied {
-			// We are not allowed to view the emails, so just show
-			// an empty list
-			emails = &sourcegraph.EmailAddrList{EmailAddrs: []*sourcegraph.EmailAddr{}}
-		} else {
-			return err
-		}
-	}
-
-	return tmpl.Exec(r, w, "user/settings/emails.html", http.StatusOK, nil, &struct {
-		userSettingsCommonData
-		EmailAddrs []*sourcegraph.EmailAddr
-		tmpl.Common
-	}{
-		userSettingsCommonData: *cd,
-		EmailAddrs:             emails.EmailAddrs,
-	})
 }
 
 func serveUserSettingsKeys(w http.ResponseWriter, r *http.Request) error {

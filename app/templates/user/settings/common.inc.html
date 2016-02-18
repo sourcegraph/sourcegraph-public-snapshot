@@ -31,11 +31,6 @@
 				</li>
 			</a>
 			{{if not .IsOrganization}}
-			<a href="{{urlToUserSubroute "person.settings.emails" .Login}}">
-				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.emails" .Login).String)}}active{{end}}">
-					Emails
-				</li>
-			</a>
 			<a href="{{urlToUserSubroute "person.settings.keys" .Login}}">
 				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.keys" .Login).String)}}active{{end}}">
 					SSH keys
