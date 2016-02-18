@@ -56,7 +56,7 @@
 		background-color: transparentize($jet-black, 0.10);
 		color: $white;
 		a {
-			color: $light-blue;
+			color: $content-primary-bg;
 			text-decoration: underline;
 		}
 	}
@@ -76,8 +76,8 @@
 		vertical-align: top;
 
 		&:hover {
-			border: solid darken($light-blue, 35%) 1px;
-			color: darken($light-blue, 25%);
+			border: solid 1px $content-primary-bg;
+			color: darken($content-primary-bg, 25%);
 		}
 	}
 
@@ -88,9 +88,9 @@
 			font-size: 14px;
 
 			&.user-reacted {
-				background-color: $light-blue;
-				color: darken($light-blue, 25%);
-				border: solid darken($light-blue, 15%) 1px;
+				background-color: $content-primary-bg;
+				color: darken($content-primary-bg, 25%);
+				border: solid 1px $content-primary-border;
 			}
 
 			.emoji {
@@ -118,7 +118,7 @@
 
 		&:hover {
 			opacity: 1;
-			border: solid darken($light-blue, 35%) 1px;
+			border: solid 1px $content-primary-border;
 			color: darken(#ffd06d, 25%);
 		}
 	}

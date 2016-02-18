@@ -112,21 +112,18 @@ h1.changeset-title {
 		font-size: 13px;
 		cursor: pointer;
 		margin-left: 3px;
-		border: 1px solid #dedede;
 		border-radius: 3px;
 
 		&.status-merged {
 			&.selected, &:hover {
-				background-color: $sg-blue-color;
-				border-color: darken($sg-blue-color, 10);
+				background-color: $brand-secondary;
 				color: $white;
 			}
 		}
 
 		&.status-open {
 			&.selected, &:hover {
-				background-color: #5cb85c;
-				border-color: #4cae4c;
+				background-color: $brand-success;
 				color: #fff;
 			}
 		}
@@ -382,8 +379,8 @@ h1.changeset-title {
 				.changeset-timeline-icon {
 					span {
 						&:before { left: 10px; }
-						background-color: lighten($sg-blue-color, 35%);
-						color: lighten($sg-blue-color, 17%);
+						background-color: lighten($brand-primary, 35%);
+						color: lighten($brand-primary, 17%);
 					}
 				}
 			}
@@ -555,8 +552,8 @@ h1.changeset-title {
 
 		color: #555;
 		margin-top: 20px;
-		border: 1px solid darken($light-blue, 6.5%);
-		background: $light-blue;
+		border: solid 1px $content-primary-border;
+		background: $content-primary-bg;
 		border-radius: 3px;
 		padding: 20px 25px;
 	}

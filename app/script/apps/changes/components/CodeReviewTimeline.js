@@ -187,7 +187,7 @@ var CodeReviewTimeline = React.createClass({
 											{this.props.changesetLoading ? <span>Loading...</span> : null}
 											<div className="pull-right">
 												<button className="btn btn-success" onClick={this._submitEdit} tabIndex="0">Submit</button>
-												<button className="btn btn-neutral" onClick={this._cancelEdit} tabIndex="0">Cancel</button>
+												<button className="btn btn-default" onClick={this._cancelEdit} tabIndex="0">Cancel</button>
 											</div>
 										</div>
 									</div>

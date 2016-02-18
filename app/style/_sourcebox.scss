@@ -48,8 +48,8 @@ $line-number-width: 40px;
 				padding: $line-number-padding;
 				color: inherit;
 				&:hover {
-					background-color: $light-blue;
-					color: darken($light-blue, 10%);
+					background-color: $content-primary-bg;
+					color: darken($content-primary-bg, 10%);
 				}
 			}
 		}

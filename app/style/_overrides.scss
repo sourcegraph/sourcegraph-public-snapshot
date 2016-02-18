@@ -58,3 +58,8 @@ hr {
 	margin-top: $font-size-base;
 	margin-bottom: $font-size-base;
 }
+
+.modal-content {
+	border: $content-border;
+	@include box-shadow($panel-box-shadow);
+}

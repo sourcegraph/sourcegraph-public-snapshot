@@ -57,7 +57,7 @@ var RepoCloneBox = React.createClass({
 				<span id="clone-url-value" className="form-control">{url}</span>
 
 				<div className="input-group-btn">
-					<button className="btn btn-neutral clone-copy" data-clipboard-target="#clone-url-value">
+					<button className="btn btn-default clone-copy" data-clipboard-target="#clone-url-value">
 						<span className="octicon octicon-clippy"></span>
 					</button>
 				</div>
