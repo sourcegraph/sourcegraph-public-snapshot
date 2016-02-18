@@ -165,9 +165,7 @@ README.md for instructions on how to install them.
 
 # Postgres
 
-It will be necessary to follow a few steps to get postgres up and running.
-
-Issue the following commands to create the necessary database and postgres user:
+Issue the following commands to create the necessary database and Postgres user:
 
 ```
 createdb sg_test
