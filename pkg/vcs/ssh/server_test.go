@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/crypto/ssh"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/internal"
+	"golang.org/x/crypto/ssh"
 )
 
 func TestServer(t *testing.T) {
@@ -29,7 +29,7 @@ exit
 `
 	}
 
-	shell, dir, err := internal.ScriptFile("govcs-ssh-shell")
+	shell, dir, err := util.ScriptFile("govcs-ssh-shell")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ exit
 		defer os.RemoveAll(dir)
 	}
 
-	err = internal.WriteFileWithPermissions(shell, []byte(shellScript), 0700)
+	err = util.WriteFileWithPermissions(shell, []byte(shellScript), 0700)
 	if err != nil {
 		t.Fatal(err)
 	}

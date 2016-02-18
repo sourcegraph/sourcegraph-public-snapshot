@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/internal"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
 )
 
 func TestRepository_Search_LongLine(t *testing.T) {
@@ -128,6 +128,6 @@ func createLongFile() (file string, line []byte, err error) {
 	if err != nil {
 		return "", longline, err
 	}
-	err = internal.WriteFileWithPermissions(tmp.Name(), longline, 0666)
+	err = util.WriteFileWithPermissions(tmp.Name(), longline, 0666)
 	return tmp.Name(), longline, err
 }

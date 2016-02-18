@@ -26,7 +26,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/pkg/synclru"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/internal"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
 )
 
@@ -861,7 +860,7 @@ func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) 
 		return nil, err
 	}
 
-	name = internal.Rel(name)
+	name = util.Rel(name)
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 	b, err := r.readFileBytes(commit, name)
@@ -915,7 +914,7 @@ func (r *Repository) Lstat(commit vcs.CommitID, path string) (os.FileInfo, error
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
 
-	path = filepath.Clean(internal.Rel(path))
+	path = filepath.Clean(util.Rel(path))
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
@@ -940,7 +939,7 @@ func (r *Repository) Stat(commit vcs.CommitID, path string) (os.FileInfo, error)
 		return nil, err
 	}
 
-	path = internal.Rel(path)
+	path = util.Rel(path)
 
 	r.editLock.RLock()
 	defer r.editLock.RUnlock()
@@ -978,7 +977,7 @@ func (r *Repository) ReadDir(commit vcs.CommitID, path string, recurse bool) ([]
 	defer r.editLock.RUnlock()
 	// Trailing slash is necessary to ls-tree under the dir (not just
 	// to list the dir's tree entry in its parent dir).
-	return r.lsTree(commit, filepath.Clean(internal.Rel(path))+"/", recurse)
+	return r.lsTree(commit, filepath.Clean(util.Rel(path))+"/", recurse)
 }
 
 var lsTreeCache = synclru.New(lru.New(10000))
@@ -1098,7 +1097,7 @@ func makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile strin
 		return "", "", "", err
 	}
 	keyFile = kf.Name()
-	err = internal.WriteFileWithPermissions(keyFile, privKey, 0600)
+	err = util.WriteFileWithPermissions(keyFile, privKey, 0600)
 	if err != nil {
 		return "", "", keyFile, err
 	}
@@ -1111,13 +1110,13 @@ func makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile strin
 // You should remove the passHelper (and tempDir if any) after using it.
 func makeGitPassHelper(pass string) (passHelper string, tempDir string, err error) {
 
-	tmpFile, dir, err := internal.ScriptFile("go-vcs-gitcmd-ask")
+	tmpFile, dir, err := util.ScriptFile("go-vcs-gitcmd-ask")
 	if err != nil {
 		return tmpFile, dir, err
 	}
 
 	passPath := filepath.Join(dir, "password")
-	err = internal.WriteFileWithPermissions(passPath, []byte(pass), 0600)
+	err = util.WriteFileWithPermissions(passPath, []byte(pass), 0600)
 	if err != nil {
 		return tmpFile, dir, err
 	}
@@ -1133,7 +1132,7 @@ func makeGitPassHelper(pass string) (passHelper string, tempDir string, err erro
 		script = "#!/bin/sh\ncat '" + passPath + "'\n"
 	}
 
-	err = internal.WriteFileWithPermissions(tmpFile, []byte(script), 0500)
+	err = util.WriteFileWithPermissions(tmpFile, []byte(script), 0500)
 	return tmpFile, dir, err
 }
 
@@ -1177,12 +1176,12 @@ func gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, temp
 `
 	}
 
-	sshWrapperName, tempDir, err := internal.ScriptFile("go-vcs-gitcmd")
+	sshWrapperName, tempDir, err := util.ScriptFile("go-vcs-gitcmd")
 	if err != nil {
 		return sshWrapperName, tempDir, err
 	}
 
-	err = internal.WriteFileWithPermissions(sshWrapperName, []byte(script), 0500)
+	err = util.WriteFileWithPermissions(sshWrapperName, []byte(script), 0500)
 	return sshWrapperName, tempDir, err
 }
 
