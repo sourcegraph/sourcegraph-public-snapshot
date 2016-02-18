@@ -7,7 +7,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/shurcooL/go/gists/gist5258650"
 	. "github.com/shurcooL/go/gists/gist5639599"
 	. "github.com/shurcooL/go/gists/gist5707298"
 	. "github.com/shurcooL/go/gists/gist6445065"
@@ -19,13 +18,13 @@ func GetParentFuncAsString() string {
 	// TODO: Use runtime.FuncForPC(runtime.Caller()).Name() to get func name if source code not found.
 	stack := string(debug.Stack())
 
-	funcName := gist5258650.GetLine(stack, 3)
+	funcName := getLine(stack, 3)
 	funcName = funcName[1:strings.Index(funcName, ": ")]
 	if dotPos := strings.LastIndex(funcName, "."); dotPos != -1 { // Trim package prefix.
 		funcName = funcName[dotPos+1:]
 	}
 
-	funcArgs := gist5258650.GetLine(stack, 5)
+	funcArgs := getLine(stack, 5)
 	funcArgs = funcArgs[strings.Index(funcArgs, ": ")+len(": "):]
 	funcArgs = funcArgs[strings.Index(funcArgs, "(") : strings.LastIndex(funcArgs, ")")+len(")")] // TODO: This may fail if there are 2+ func calls on one line.
 
@@ -38,7 +37,7 @@ func GetParentFuncArgsAsString(args ...interface{}) string {
 	// TODO: Use runtime.FuncForPC(runtime.Caller()).Name() to get func name if source code not found.
 	stack := string(debug.Stack())
 
-	funcName := gist5258650.GetLine(stack, 3)
+	funcName := getLine(stack, 3)
 	funcName = funcName[1:strings.Index(funcName, ": ")]
 	if dotPos := strings.LastIndex(funcName, "."); dotPos != -1 { // Trim package prefix.
 		funcName = funcName[dotPos+1:]
@@ -68,7 +67,7 @@ func getParent2ArgExprAllAsAst() []ast.Expr {
 	//println(stack)
 
 	// TODO: Bounds error checking, get rid of GetLine gists, etc.
-	parentName := gist5258650.GetLine(stack, 5)
+	parentName := getLine(stack, 5)
 	if strings.Index(parentName, ": ") == -1 {
 		// TODO: This happens when source file isn't present in same location as when built. See if can do anything better
 		//       via direct use of runtime package (instead of debug.Stack(), which will exclude any func names)...
@@ -79,7 +78,7 @@ func getParent2ArgExprAllAsAst() []ast.Expr {
 		parentName = parentName[dotPos+1:]
 	}
 
-	str := gist5258650.GetLine(stack, 7)
+	str := getLine(stack, 7)
 	str = str[strings.Index(str, ": ")+len(": "):]
 	p, err := ParseStmt(str)
 	if err != nil {
@@ -136,4 +135,8 @@ func GetParentArgExprAllAsString() []string {
 
 func getMySecondArgExprAsString(int, int) string {
 	return GetParentArgExprAsString(1)
+}
+
+func getLine(s string, lineIndex int) string {
+	return strings.Split(s, "\n")[lineIndex]
 }

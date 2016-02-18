@@ -423,48 +423,44 @@
 			"Rev": "ba57724c4f5117dc5ec4fabac854b2b073eac5e4"
 		},
 		{
-			"ImportPath": "github.com/shurcooL/go/gists/gist5258650",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
-		},
-		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist5639599",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist5707298",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6418290",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6418462",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6433744",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6445065",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gzip_file_server",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/osutil",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/trim",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/vfs/godocfs/godocfs",
-			"Rev": "4d829e4f99c3765122ba92c78b8f69cc0392983d"
+			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/highlight_diff",
