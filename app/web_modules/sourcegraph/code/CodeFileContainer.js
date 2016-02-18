@@ -11,6 +11,7 @@ import CodeFileToolbar from "sourcegraph/code/CodeFileToolbar";
 import DefPopup from "sourcegraph/def/DefPopup";
 import DefTooltip from "sourcegraph/def/DefTooltip";
 import IssueForm from "sourcegraph/issue/IssueForm";
+import context from "sourcegraph/context";
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
 
@@ -138,8 +139,9 @@ class CodeFileContainer extends Container {
 							endLine={this.state.endLine}
 							selectedDef={this.state.selectedDef}
 							highlightedDef={this.state.highlightedDef}
-							onLineButtonClick={this._onLineButtonClick}
-							lineSelectionForm={(this.state.creatingIssue && this.state.startLine && this.state.endLine) ? (
+							onLineButtonClick={!context.isMothership ? this._onLineButtonClick : null}
+							lineSelectionForm={
+								(this.state.creatingIssue && this.state.startLine && this.state.endLine) ? (
 								<IssueForm
 									repo={this.state.repo}
 									path={this.state.tree}
