@@ -19,7 +19,7 @@
 							<input placeholder="Password" name="Password" type="password" class="form-control" id="password" required tabindex=2>
 							{{with .LoginForm.FieldError "Password"}}<p class="help-block">{{.}}</p>{{end}}
 						</div>
-						<button type="submit" class="btn btn-primary btn-block" tabindex=3>LOGIN</button>
+						<button type="submit" class="btn btn-primary btn-block" tabindex=3>SIGN IN</button>
 						<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 					</form>
 					<p class="small-block">
@@ -29,7 +29,7 @@
 						{{.LoginForm.FieldError "Password"}} Oh no, I <a href="{{urlToWithReturnTo "forgot-password" .ReturnTo}}">forgot my password</a>
 						{{end}}
 					</p>
-					{{if (not .IsLDAP)}}<p class="redirect-block">Don't have an account yet? <a href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">Sign Up</a></p>{{end}}
+					{{if (not .IsLDAP)}}<p class="redirect-block">Don't have an account yet? <a href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">Sign up</a></p>{{end}}
 				</div>
 			</div>
 		</div>
