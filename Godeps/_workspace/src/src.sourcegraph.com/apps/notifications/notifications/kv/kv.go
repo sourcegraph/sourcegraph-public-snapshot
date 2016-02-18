@@ -65,6 +65,7 @@ func (s service) List(ctx context.Context, opt interface{}) (notifications.Notif
 			HTMLURL:   n.HTMLURL,
 			UpdatedAt: n.UpdatedAt,
 			Icon:      n.Icon.OcticonID(),
+			Color:     n.Color.RGB(),
 		})
 	}
 
@@ -113,6 +114,7 @@ func (s service) Notify(ctx context.Context, appID string, repo issues.RepoSpec,
 			HTMLURL:   op.HTMLURL,
 			UpdatedAt: op.UpdatedAt,
 			Icon:      fromOcticonID(op.Icon),
+			Color:     fromRGB(op.Color),
 		}
 		data, err := json.Marshal(n)
 		if err != nil {

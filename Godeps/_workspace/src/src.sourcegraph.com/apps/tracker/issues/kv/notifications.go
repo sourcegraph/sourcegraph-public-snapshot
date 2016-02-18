@@ -103,6 +103,7 @@ func (s service) notify(ctx context.Context, repo issues.RepoSpec, issueID uint6
 	n := notif.Notification{
 		Title:     issue.Title,
 		Icon:      notificationIcon(issue.State),
+		Color:     notificationColor(issue.State),
 		UpdatedAt: createdAt,
 		HTMLURL:   htmlURL,
 	}
@@ -137,5 +138,16 @@ func notificationIcon(state issues.State) notif.OcticonID {
 		return "issue-closed"
 	default:
 		return ""
+	}
+}
+
+func notificationColor(state issues.State) notif.RGB {
+	switch state {
+	case issues.OpenState: // Open.
+		return notif.RGB{0x6c, 0xc6, 0x44}
+	case issues.ClosedState: // Closed.
+		return notif.RGB{0xbd, 0x2c, 0x00}
+	default:
+		return notif.RGB{}
 	}
 }

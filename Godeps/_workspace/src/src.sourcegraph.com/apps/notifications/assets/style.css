@@ -35,10 +35,6 @@ div.multilist-entry:not(:nth-child(0n+2)) {
 
 .notification .octicon {
 	margin-right: 6px;
-	color: #6cc644;
-}
-.notification .octicon-issue-closed {
-	color: #bd2c00;
 }
 
 .read > * {

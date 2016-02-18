@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"fmt"
 	"html/template"
 	"time"
 
@@ -38,12 +39,23 @@ type Notification struct {
 	RepoURL   template.URL
 	Title     string
 	Icon      OcticonID
+	Color     RGB
 	UpdatedAt time.Time
 	HTMLURL   template.URL // Address of notification target.
 }
 
 // Octicon ID. E.g., "issue-opened".
 type OcticonID string
+
+// RGB represents a 24-bit color without alpha channel.
+type RGB struct {
+	R, G, B uint8
+}
+
+// Hex returns a hexadecimal color string. For example, "#ff0000" for red.
+func (c RGB) Hex() string {
+	return fmt.Sprintf("#%02x%02x%02x", c.R, c.G, c.B)
+}
 
 // Notifications implements sort.Interface.
 type Notifications []Notification

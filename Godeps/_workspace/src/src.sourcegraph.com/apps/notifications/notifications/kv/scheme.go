@@ -32,11 +32,24 @@ func (o octiconID) OcticonID() notifications.OcticonID {
 	return notifications.OcticonID(o)
 }
 
+type rgb struct {
+	R, G, B uint8
+}
+
+func fromRGB(c notifications.RGB) rgb {
+	return rgb{R: c.R, G: c.G, B: c.B}
+}
+
+func (c rgb) RGB() notifications.RGB {
+	return notifications.RGB{R: c.R, G: c.G, B: c.B}
+}
+
 // notification is an on-disk representation of notification.
 type notification struct {
 	RepoSpec  repoSpec
 	Title     string
 	Icon      octiconID
+	Color     rgb
 	UpdatedAt time.Time
 	HTMLURL   template.URL
 }
