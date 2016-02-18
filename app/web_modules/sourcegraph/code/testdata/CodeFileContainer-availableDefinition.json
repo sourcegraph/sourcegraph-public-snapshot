@@ -35,7 +35,6 @@
 										{
 											"type": "CodeListing",
 											"props": {
-												"startByte": 0,
 												"contents": "hello\nworld",
 												"lineNumbers": true,
 												"highlightedDef": "otherDef"

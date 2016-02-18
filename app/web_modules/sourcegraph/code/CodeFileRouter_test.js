@@ -69,22 +69,22 @@ describe("CodeFileRouter", () => {
 		);
 	});
 
-	it("should handle CodeActions.SelectRange", () => {
+	it("should handle CodeActions.SelectLineRange", () => {
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
-			new CodeActions.SelectRange(42),
+			new CodeActions.SelectLineRange(42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42"
 		);
 
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20",
-			new CodeActions.SelectRange(42),
+			new CodeActions.SelectLineRange(42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20-42"
 		);
 
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L50",
-			new CodeActions.SelectRange(42),
+			new CodeActions.SelectLineRange(42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42-50"
 		);
 	});

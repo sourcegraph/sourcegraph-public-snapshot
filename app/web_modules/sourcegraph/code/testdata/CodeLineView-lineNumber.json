@@ -3,6 +3,7 @@
 		"type": "tr",
 		"props": {
 			"className": "line  ",
+			"data-line": 42,
 			"children": [
 				{
 					"type": "td",

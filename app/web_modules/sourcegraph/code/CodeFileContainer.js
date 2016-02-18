@@ -56,7 +56,7 @@ class CodeFileContainer extends Container {
 
 		state.defs = DefStore.defs;
 		state.examples = DefStore.examples;
-		state.highlightedDef = DefStore.highlightedDef || state.def;
+		state.highlightedDef = DefStore.highlightedDef || state.def || null;
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;
 		state.defOptionsLeft = DefStore.defOptionsLeft;
@@ -110,12 +110,13 @@ class CodeFileContainer extends Container {
 						{this.state.file &&
 						<CodeListing
 							ref={(e) => this.setState({_codeListing: e})}
-							startByte={0}
 							contents={this.state.file.Entry.ContentsString}
 							annotations={this.state.anns ? this.state.anns.Annotations : null}
 							lineNumbers={true}
 							startLine={this.state.startLine}
+							startCol={this.state.startCol}
 							endLine={this.state.endLine}
+							endCol={this.state.endCol}
 							highlightedDef={this.state.highlightedDef} />}
 					</div>
 					<FileMargin examples={this.state.examples} getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
@@ -160,7 +161,9 @@ CodeFileContainer.propTypes = {
 	tree: React.PropTypes.string,
 	def: React.PropTypes.string,
 	startLine: React.PropTypes.number,
+	startCol: React.PropTypes.number,
 	endLine: React.PropTypes.number,
+	endCol: React.PropTypes.number,
 	example: React.PropTypes.number,
 };
 

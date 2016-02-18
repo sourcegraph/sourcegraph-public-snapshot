@@ -42,8 +42,17 @@ export class SelectLine {
 	}
 }
 
-export class SelectRange {
+export class SelectLineRange {
 	constructor(line) {
 		this.line = line;
+	}
+}
+
+export class SelectCharRange {
+	constructor(startLine, startCol, endLine, endCol) {
+		this.startLine = startLine;
+		this.startCol = startCol;
+		this.endLine = endLine;
+		this.endCol = endCol;
 	}
 }

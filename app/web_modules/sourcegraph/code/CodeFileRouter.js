@@ -9,6 +9,39 @@ import * as CodeActions from "sourcegraph/code/CodeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {GoTo} from "sourcegraph/util/hotLink";
 
+function lineCol(line, col) {
+	if (typeof col === "undefined") {
+		return line.toString();
+	}
+	return `${line}:${col}`;
+}
+
+function lineRange(startLineCol, endLineCol) {
+	if (typeof endLineCol === "undefined" || startLineCol === endLineCol) {
+		return startLineCol;
+	}
+	return `${startLineCol}-${endLineCol}`;
+}
+
+function parseLineRange(range) {
+	let lineMatch = range.match(/^(\d+)(?:-(\d+))?$/);
+	if (lineMatch) {
+		return {
+			startLine: parseInt(lineMatch[1], 10),
+			endLine: parseInt(lineMatch[2] || lineMatch[1], 10),
+		};
+	}
+	let lineColMatch = range.match(/^(\d+):(\d+)-(\d+):(\d+)$/);
+	if (lineColMatch) {
+		return {
+			startLine: parseInt(lineColMatch[1], 10),
+			startCol: parseInt(lineColMatch[2], 10),
+			endLine: parseInt(lineColMatch[3], 10),
+			endCol: parseInt(lineColMatch[4], 10),
+		};
+	}
+}
+
 // All data from window.location gets processed here and is then passed down
 // to sub-components via props. Every time window.location changes, this
 // component gets re-rendered. Sub-components should never access
@@ -55,12 +88,8 @@ class CodeFileRouter extends Component {
 			state.tree = pathParts[1].slice("tree/".length);
 
 			if (state.url.hash) {
-				let lineMatch = state.url.hash.match(/^#L(\d+)(?:-(\d+))?$/);
-				state.startLine = lineMatch ? parseInt(lineMatch[1], 10) : null;
-				if (lineMatch && lineMatch[2]) {
-					state.endLine = parseInt(lineMatch[2], 10);
-				} else {
-					state.endLine = state.startLine;
+				if (state.url.hash.startsWith("#L")) {
+					Object.assign(state, parseLineRange(state.url.hash.slice(2)));
 				}
 
 				let defMatch = state.url.hash.match(/^#def-(.+)$/);
@@ -71,14 +100,12 @@ class CodeFileRouter extends Component {
 		}
 	}
 
-	_navigate(pathname, startLine, endLine, def) {
+	_navigate(pathname, o) {
 		let hash;
-		if (startLine && endLine && startLine !== endLine) {
-			hash = `L${startLine}-${endLine}`;
-		} else if (startLine) {
-			hash = `L${startLine}`;
-		} else if (def) {
-			hash = `def-${def}`;
+		if (o.startLine) {
+			hash = `L${lineRange(lineCol(o.startLine, o.startCol), o.endLine && lineCol(o.endLine, o.endCol))}`;
+		} else if (o.def) {
+			hash = `def-${o.def}`;
 		}
 		let url = {
 			protocol: this.state.url.protocol,
@@ -93,20 +120,28 @@ class CodeFileRouter extends Component {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case CodeActions.SelectLine:
-			this._navigate(this._filePath(), action.line);
+			this._navigate(this._filePath(), {startLine: action.line});
 			break;
 
-		case CodeActions.SelectRange:
-			this._navigate(
-				this._filePath(),
-				Math.min(this.state.startLine || action.line, action.line),
-				Math.max(this.state.endLine || action.line, action.line)
-			);
+		case CodeActions.SelectLineRange:
+			this._navigate(this._filePath(), {
+				startLine: Math.min(this.state.startLine || action.line, action.line),
+				endLine: Math.max(this.state.endLine || this.state.startLine || action.line, action.line),
+			});
+			break;
+
+		case CodeActions.SelectCharRange:
+			this._navigate(this._filePath(), {
+				startLine: action.startLine,
+				startCol: action.startCol,
+				endLine: action.endLine,
+				endCol: action.endCol,
+			});
 			break;
 
 		case DefActions.SelectDef:
 			// null becomes undefined
-			this._navigate(this._filePath(), null, null, action.url); // eslint-disable-line no-undefined
+			this._navigate(this._filePath(), {def: action.url}); // eslint-disable-line no-undefined
 			break;
 
 		case GoTo:
@@ -127,8 +162,10 @@ class CodeFileRouter extends Component {
 				repo={this.state.repo}
 				rev={this.state.rev}
 				tree={this.state.tree}
-				startLine={this.state.startLine}
-				endLine={this.state.endLine}
+				startLine={this.state.startLine || null}
+				startCol={this.state.startCol || null}
+				endLine={this.state.endLine || null}
+				endCol={this.state.endCol || null}
 				def={this.state.def} />
 		);
 	}

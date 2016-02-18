@@ -2,7 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom";
 
 import Component from "sourcegraph/Component";
+import * as CodeActions from "sourcegraph/code/CodeActions";
 import CodeLineView from "sourcegraph/code/CodeLineView";
+import Dispatcher from "sourcegraph/Dispatcher";
+import debounce from "lodash/function/debounce";
+import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/code/lineFromByte";
 
 const tilingFactor = 50;
@@ -16,6 +20,10 @@ class CodeListing extends Component {
 			lineAnns: [],
 		};
 		this._updateVisibleLines = this._updateVisibleLines.bind(this);
+		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 250, {
+			leading: false,
+			trailing: true,
+		});
 	}
 
 	componentDidMount() {
@@ -24,15 +32,17 @@ class CodeListing extends Component {
 		if (this.state.startLine) {
 			this._scrollTo(this.state.startLine);
 		}
+		document.addEventListener("selectionchange", this._handleSelectionChange);
 	}
 
 	componentWillUnmount() {
 		window.removeEventListener("scroll", this._updateVisibleLines);
+		document.removeEventListener("selectionchange", this._handleSelectionChange);
 	}
 
 	reconcileState(state, props) {
-		state.startLine = props.startLine || 0;
-		state.endLine = props.endLine || 0;
+		state.startLine = props.startLine || null;
+		state.endLine = props.endLine || null;
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef;
 
@@ -45,7 +55,7 @@ class CodeListing extends Component {
 
 		if (state.contents !== props.contents) {
 			state.contents = props.contents;
-			state.lines = props.contents.split("\n");
+			state.lines = fileLines(props.contents);
 			state.lineStartBytes = this._computeLineStartBytes(state.lines);
 			updateAnns = true;
 		}
@@ -86,6 +96,55 @@ class CodeListing extends Component {
 				visibleLinesCount: visibleLinesCount,
 			});
 		}
+	}
+
+	_handleSelectionChange(ev) {
+		const sel = document.getSelection();
+		if (!sel || sel.rangeCount === 0) {
+			Dispatcher.dispatch(new CodeActions.SelectCharRange(null));
+			return;
+		}
+		const rng = sel.getRangeAt(0);
+
+		const getLineElem = (node) => {
+			if (!node) return null;
+			if (node.nodeName === "TR" && node.classList.contains("line")) {
+				return node;
+			}
+			return getLineElem(node.parentNode);
+		};
+
+		const getColInLine = (lineElem, containerElem, offsetInContainer) => {
+			// NOTE: Assumes that lineElem's annotations (<span>, <a>, etc., tags) are not nested.
+			let lineContentElem = lineElem.querySelector(".line-content");
+			let col = 0;
+			for (let i = 0; i < lineContentElem.childNodes.length; i++) {
+				let childNode = lineContentElem.childNodes[i];
+				if (childNode === containerElem || childNode.childNodes[0] === containerElem) {
+					return col + offsetInContainer;
+				}
+				col += childNode.textContent.length;
+			}
+			return 0;
+		};
+
+		let startLineElem = getLineElem(rng.startContainer);
+		let endLineElem = getLineElem(rng.endContainer);
+
+		if (!startLineElem && !endLineElem) {
+			Dispatcher.dispatch(new CodeActions.SelectCharRange(null));
+			return;
+		}
+
+		// Get start/end line + col. If the line elem isn't found, then the selection
+		// extends beyond the bounds.
+		let startLine = startLineElem ? parseInt(startLineElem.dataset.line, 10) : 1;
+		let startCol = startLineElem ? getColInLine(startLineElem, rng.startContainer, rng.startOffset) : 0;
+		let endLine = endLineElem ? parseInt(endLineElem.dataset.line, 10) : this.state.lines.length;
+		let endCol = endLineElem ? getColInLine(endLineElem, rng.endContainer, rng.endOffset) : this.state.lines[this.state.lines.length - 1].length;
+
+		// console.log("%d:%d - %d:%d", startLine, startCol, endLine, endCol);
+		Dispatcher.dispatch(new CodeActions.SelectCharRange(startLine, startCol, endLine, endCol));
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -142,7 +201,9 @@ CodeListing.propTypes = {
 	annotations: React.PropTypes.array,
 	lineNumbers: React.PropTypes.bool,
 	startLine: React.PropTypes.number,
+	startCol: React.PropTypes.number,
 	endLine: React.PropTypes.number,
+	endCol: React.PropTypes.number,
 	highlightedDef: React.PropTypes.string,
 };
 

@@ -120,13 +120,14 @@ class CodeLineView extends Component {
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
 		return (
-			<tr className={`line ${this.state.selected ? "main-byte-range" : ""} ${this.state.className}`}>
+			<tr className={`line ${this.state.selected ? "main-byte-range" : ""} ${this.state.className}`}
+				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
 					<td className="line-number"
 						data-line={this.state.lineNumber}
 						onClick={(event) => {
 							if (event.shiftKey) {
-								Dispatcher.dispatch(new CodeActions.SelectRange(this.state.lineNumber));
+								Dispatcher.dispatch(new CodeActions.SelectLineRange(this.state.lineNumber));
 								return;
 							}
 							Dispatcher.dispatch(new CodeActions.SelectLine(this.state.lineNumber));
