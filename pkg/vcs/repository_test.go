@@ -827,9 +827,9 @@ func TestRepository_FileSystem(t *testing.T) {
 		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t " + times[0] + " dir1 dir1/file1",
 		"git add dir1/file1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"echo -n infile2 > file2",
-		"touch --date=2014-05-06T19:20:21Z file2 || touch -t " + times[1] + " file2",
-		"git add file2",
+		"echo -n infile2 > 'file 2'",
+		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t " + times[1] + " 'file 2'",
+		"git add 'file 2'",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
 	}
 	tests := map[string]struct {
@@ -839,7 +839,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		"git cmd": {
 			repo:   makeGitRepositoryCmd(t, gitCommands...),
 			first:  "b6602ca96bdc0ab647278577a3c6edcb8fe18fb0",
-			second: "ace35f1597e087fe2d302ed6cb2763174e6b9660",
+			second: "c5151eceb40d5e625716589b745248e1a6c6228d",
 		},
 	}
 
@@ -905,17 +905,17 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: got file1 name %q, want 'file1'", label, name)
 		}
 
-		// file2 shouldn't exist in the 1st commit.
-		_, err = fs1.Open("file2")
+		// file 2 shouldn't exist in the 1st commit.
+		_, err = fs1.Open("file 2")
 		if !os.IsNotExist(err) {
-			t.Errorf("%s: fs1.Open(file2): got err %v, want os.IsNotExist (file2 should not exist in this commit)", label, err)
+			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
-		// file2 should exist in the 2nd commit.
+		// file 2 should exist in the 2nd commit.
 		fs2 := vcs.FileSystem(test.repo, test.second)
-		_, err = fs2.Open("file2")
+		_, err = fs2.Open("file 2")
 		if err != nil {
-			t.Errorf("%s: fs2.Open(file2): %s", label, err)
+			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
 		}
 
@@ -941,7 +941,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: got root !IsDir", label)
 		}
 
-		// root should have 2 entries: dir1 and file2.
+		// root should have 2 entries: dir1 and file 2.
 		rootEntries, err := fs2.ReadDir(".")
 		if err != nil {
 			t.Errorf("%s: fs2.ReadDir(.): %s", label, err)
@@ -954,8 +954,8 @@ func TestRepository_FileSystem(t *testing.T) {
 		if e0 := rootEntries[0]; !(e0.Name() == "dir1" && e0.Mode().IsDir()) {
 			t.Errorf("%s: got root entry 0 %q IsDir=%v, want 'dir1' IsDir=true", label, e0.Name(), e0.Mode().IsDir())
 		}
-		if e1 := rootEntries[1]; !(e1.Name() == "file2" && !e1.Mode().IsDir()) {
-			t.Errorf("%s: got root entry 1 %q IsDir=%v, want 'file2' IsDir=false", label, e1.Name(), e1.Mode().IsDir())
+		if e1 := rootEntries[1]; !(e1.Name() == "file 2" && !e1.Mode().IsDir()) {
+			t.Errorf("%s: got root entry 1 %q IsDir=%v, want 'file 2' IsDir=false", label, e1.Name(), e1.Mode().IsDir())
 		}
 
 		// dir1 should still only contain one entry: file1.

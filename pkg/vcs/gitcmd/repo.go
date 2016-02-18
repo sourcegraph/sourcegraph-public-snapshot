@@ -1026,20 +1026,24 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 			continue
 		}
 
-		parts := strings.Fields(line)
-		if len(parts) != 4 {
+		tabPos := strings.IndexByte(line, '\t')
+		if tabPos == -1 {
 			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
 		}
+		info := strings.SplitN(line[:tabPos], " ", 3)
+		name := line[tabPos+1:]
 
-		typ := parts[1]
-		oid := parts[2]
-		name := parts[3]
+		if len(info) != 3 {
+			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
+		}
+		typ := info[1]
+		oid := info[2]
 		if len(oid) != 40 {
 			return nil, fmt.Errorf("invalid `git ls-tree` oid output: %q", oid)
 		}
 
 		var sys interface{}
-		mode, err := strconv.ParseInt(parts[0], 8, 32)
+		mode, err := strconv.ParseInt(info[0], 8, 32)
 		if err != nil {
 			return nil, err
 		}
