@@ -89,6 +89,8 @@ $panel-repo-tree-padding-horizontal: 9px;
 		.btn.compare-review {
 			padding-left: 10px;
 			padding-right: 10px;
+			margin-right: 2px;
+			border: solid 1px $btn-primary-bg;
 		}
 
 		.tree-breadcrumb {

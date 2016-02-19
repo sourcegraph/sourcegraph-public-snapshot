@@ -2,6 +2,7 @@ var $ = require("jquery");
 
 document.addEventListener("DOMContentLoaded", function() {
 	$(document.body).tooltip({
+		container: "body",
 		selector: "[data-tooltip]",
 		placement(_, node) {
 			var placement = node.getAttribute("data-placement");
