@@ -86,8 +86,8 @@ pre.diff {
 	vertical-align: middle;
 	color: #555;
 	margin-top: 20px;
-	border: 1px solid darken($light-blue, 6.5%);
-	background: $light-blue;
+	border: 1px solid $content-primary-border;
+	background: $content-primary-bg;
 	border-radius: 3px;
 	padding: 20px 25px;
 }
@@ -470,7 +470,7 @@ div.file-list {
 				a {
 					color: $gray-light;
 					&:hover {
-						color: $sg-blue-color;
+						color: $link-color;
 					}
 				}
 			}

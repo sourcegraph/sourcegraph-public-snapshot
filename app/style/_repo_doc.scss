@@ -1,11 +1,11 @@
 $doc-font-size: 16px;
 
-.repo-doc-body {
+.repo-doc-body, .app-docs > .body {
 	padding: 35px;
 	font-size: $doc-font-size;
 }
 
-.repo-doc-body, .app-docs-body, .rendered-markdown {
+.repo-doc-body, .app-docs > .body, .rendered-markdown {
 	line-height: 1.6;
 
 	h1, h2 {

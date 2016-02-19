@@ -4,19 +4,6 @@
 // Colors
 // ----------------------------------------------------------------------------
 
-/* Deprecated */
-$row-highlight-color: #DCE7F3;
-$sg-blue-color: rgba(78, 155, 212, 1); // less-saturated version of actual sg-blue (#459def)
-$panel-head-color: #f5f5f5;
-$gray-lightest: lighten(#000, 96%);
-$light-blue: #bfc2d0;
-$code-line-fg: rgba(0,0,0,0.3);
-$inactive-code-color: darken($gray-lightest, 2%);
-$diff-added-color: #54a63e;
-$diff-changed-color: lighten(#c98d00, 4%);
-$diff-deleted-color: lighten(#c71111, 3%);
-$text-quieted: #7794ae;
-
 /* Palette */
 
 // Accents
@@ -54,14 +41,20 @@ $silver: #979daf;
 $slate-grey: #aaafbf;
 $white: #ffffff;
 
+/* Deprecated */
+$diff-added-color: #54a63e;
+$diff-changed-color: lighten(#c98d00, 4%);
+$diff-deleted-color: lighten(#c71111, 3%);
 
 /* Components */
 $content-border-color: transparentize($cloudy-blue, 0.56);
 $text-strong-color: $blue-grey;
+$text-quieted: $shadow-blue;
+$text-disabled: $cloudy-blue;
 
 $nav-background-color: $pale-grey;
 $nav-border-color: darken($nav-background-color, 5%);
-$nav-text-color: #979daf;
+$nav-text-color: $silver;
 $nav-brand-color: $jet-black;
 $nav-icon-badge-color: $brand-orange;
 
@@ -84,13 +77,21 @@ $file-toolbar-bg: $white;
 $file-toolbar-path-color: $warm-grey;
 
 $line-number-bg: $pale-grey;
-$line-number-text: $cloudy-blue;
+$line-number-text: darken($pale-grey, 30%);
 $active-code-bg: transparentize($brand-azure, 0.90);
 $active-code-flash-bg: transparentize($brand-azure, 0.85);
 $token-focus-color: $lemon;
 $token-focus-border: darken($token-focus-color, 8%);
 $token-hover-color: transparentize($lemon, 0.56);
 $token-hover-border: darken($token-hover-color, 5%);
+
+$content-primary-bg: $duck-egg-blue;
+$content-primary-border: lighten($brand-azure, 27%);
+$content-primary-text: $brand-azure;
+
+$select-list-bg: #fcfcfc;
+
+$panel-box-shadow: 0 5px 9px rgba(0, 0, 0, 0.05);
 
 /* Bootstrap Overrides */
 $brand-primary: $brand-azure;
@@ -112,11 +113,15 @@ $panel-default-heading-bg: $duck-egg-blue;
 $panel-default-border: $content-border-color;
 $panel-default-text: $blue-grey;
 
+$alert-info-bg: $content-primary-bg;
+$alert-info-border: $content-primary-border;
+$alert-info-text: $content-primary-text;
+
 $list-group-hover-bg: $pale-grey;
 $well-bg: $pale-grey;
 $well-border: $content-border-color;
 
-$btn-default-color: $cloudy-blue;
+$btn-default-color: $text-color;
 $btn-default-bg: $white;
 $btn-default-border: $cloudy-blue;
 $btn-primary-bg: $brand-primary;
@@ -201,5 +206,7 @@ $border-radius-small: 2px;
 $input-border-radius:       $border-radius-base;
 $input-border-radius-large: $border-radius-large;
 $input-border-radius-small: $border-radius-small;
+
+$btn-border-radius-large: $border-radius-base;
 
 $navbar-border-radius: 0;

@@ -96,7 +96,7 @@ pre code, .line-numbered-code td {
 		line-height: $code-line-height;
 		border-right: $content-border;
 
-		color: $code-line-fg;
+		color: $line-number-text;
 
 		padding: $line-number-padding;
 
@@ -119,11 +119,11 @@ pre code, .line-numbered-code td {
 			text-align: center;
 			display: none;
 			cursor: pointer;
-			background-color: $sg-blue-color;
+			background-color: $btn-primary-bg;
 			box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 
 			&:hover {
-				background-color: darken($sg-blue-color, 10%);
+				background-color: darken($btn-primary-bg, 10%);
 				opacity: 1;
 			}
 

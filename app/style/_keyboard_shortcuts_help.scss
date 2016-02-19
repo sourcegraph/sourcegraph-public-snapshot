@@ -8,11 +8,10 @@
 
 .shortcut-key {
 	display: inline-block;
-	border: solid 2px darken($gray-lighter, 8%);
+	border: solid 1px $content-primary-border;
 	font-weight: bold;
-	box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-	background-color: $gray-lightest;
-	color: $gray;
+	background-color: $content-primary-bg;
+	color: $content-primary-text;
 	padding: 2px 5px;
 	border-radius: 4px;
 	margin: 4px 1px;

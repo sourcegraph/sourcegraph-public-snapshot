@@ -31,7 +31,7 @@ span {
 	padding: $padding-base-vertical $padding-base-horizontal;
 	border-radius: $border-radius-base;
 	border: 1px solid $gray-lighter;
-	background-color: $gray-lightest;
+	background-color: $content-primary-bg;
 
 	a {
 		color: $gray;
@@ -65,8 +65,8 @@ h3.section-header {
 }
 
 .auto-description {
-	background-color: $gray-lightest;
-	border: 1px solid $gray-lighter;
+	background-color: $content-primary-bg;
+	border: 1px solid $content-primary-border;
 	padding: $padding-base-vertical $padding-base-horizontal;
 	border-radius: $border-radius-base;
 }

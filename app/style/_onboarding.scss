@@ -9,16 +9,16 @@
 		height: 77px;
 	}
 	.modal-header-0 {
-		background-color: rgba(15, 181, 242, 0.09);
+		background-color: transparentize($brand-azure, 0.91);
 	}
 	.modal-header-1 {
-		background-color: rgba(15, 181, 242, 0.09);
+		background-color: transparentize($brand-azure, 0.91);
 	}
 	.modal-header-2 {
-		background-color: rgba(96, 101, 245, 0.09);
+		background-color: transparentize($cornflower, 0.91);
 	}
 	.modal-header-3 {
-		background-color: rgba(14, 195, 211, 0.09);
+		background-color: transparentize($turquoise, 0.94);
 	}
 
 	.avatar-container {
@@ -27,24 +27,22 @@
 
 	.header-text {
 		font-size: 24px;
-		font-face: Circular-Book;
-		color: #4d5a64;
+		color: $headings-color;
 	}
+
 	.normal-text {
 		padding-left: 75px;
 		padding-right: 75px;
 		font-size: 16px;
-		font-face: Circular-Book;
 		margin-bottom: 17px;
-		color: #7794ae;;
+		color: $text-quieted;
 	}
 	.next-step {
 		margin-top: 15px;
 
 		a {
 			font-size: 13px;
-			font-face: Circular-Bold;
-			color: #7794ae;
+			color: $text-quieted;
 			text-transform: uppercase;
 			margin-top: 14px;
 			text-decoration: none;
@@ -65,7 +63,7 @@
 		.dot-container {
 			display: -webkit-flex;
 			display: flex;
-			margin-top:19px;
+			margin-top: 15px;
 			margin-left: auto;
 			margin-right: auto;
 
@@ -77,7 +75,7 @@
 				width: 18px;
 				height: 18px;
 				border-radius: 25px;
-				background-color: white;
+				background-color: $body-bg;
 				display: inline-block;
 			}
 			.smaller-dot {
@@ -97,19 +95,19 @@
 				border-radius: 5px;
 			}
 			.dot-0 {
-				border: solid 2px #0ec3d3;
-				background-color: #0ec3d3;
+				border: solid 2px $turquoise-blue;
+				background-color: $turquoise-blue;
 			}
 			.dot-1 {
-				border: solid 2px #0fb6f2;
-				background-color: #0fb6f2;
+				border: solid 2px $brand-azure;
+				background-color: $brand-azure;
 			}
 			.dot-2 {
-				border: solid 2px #6065f5;
-				background-color: #6065f5;
+				border: solid 2px $cornflower;
+				background-color: $cornflower;
 			}
 			.dot-3 {
-				border: solid 2px #6065f5;
+				border: solid 2px $cornflower;
 				background-color: #b114f7;
 			}
 			.dot-3-inner {
@@ -117,9 +115,10 @@
 				background-color: #b114f7;
 			}
 			.dot-incomplete {
-				background-color: white !important;
+				background-color: $white !important;
 			}
 		}
+
 		.dot-carat {
 			width: 0;
 			height: 0;
@@ -128,7 +127,7 @@
 			border-left: 5px solid transparent;
 			border-right: 5px solid transparent;
 
-			border-bottom: 5px solid #6065f5;
+			border-bottom: 5px solid $cornflower;
 		}
 
 		.bar {
@@ -140,7 +139,6 @@
 			margin-right: auto;
 			height: 2px;
 			width: 75%;
-			// border: solid 2px #0ec3d3;
 		}
 		.bar-0 {
 			border-image-source: -webkit-linear-gradient(right, #0fb6f2 0%, #0ec3d3 100%);
@@ -178,27 +176,33 @@
 
 	.avatar-github {
 		opacity: 0.5;
-		background-color: #0fb6f2;
+		background-color: $brand-success;
 	}
 
 	.github-link-success-icon {
 		width: 40px;
 		height: 40px;
 		background-color: #78e198;
-		border: solid 4px #ffffff;
-		// float: right;
+		border: solid 4px $white;
 		position: absolute;
 		bottom: 0px;
 		right: -8px;
 		border-radius: 50%;
-		// display: inline-block;
 
 		.check-icon {
 			color: #37a358;
 			font-size: 16px;
 			position: absolute;
 			bottom: 5px;
-			left: 9px;
+			left: 7px;
+		}
+	}
+
+	.github-link-welcome {
+		footer {
+			.btn {
+				margin: 65px auto;
+			}
 		}
 	}
 }
