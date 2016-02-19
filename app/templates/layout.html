@@ -54,22 +54,24 @@
 
 		{{appconf.ExtraHeadHTML}}
 
-		<!-- Start of sourcegraph Zendesk Widget script -->
-		<script ignore-csp>/*<![CDATA[*/window.zEmbed||function(e,t){var n,o,d,i,s,a=[],r=document.createElement("iframe");window.zEmbed=function(){a.push(arguments)},window.zE=window.zE||window.zEmbed,r.src="javascript:false",r.title="",r.role="presentation",(r.frameElement||r).style.cssText="display: none",d=document.getElementsByTagName("script"),d=d[d.length-1],d.parentNode.insertBefore(r,d),i=r.contentWindow,s=i.document;try{o=s}catch(c){n=document.domain,r.src='javascript:var d=document.open();d.domain="'+n+'";void(0);',o=s}o.open()._l=function(){var o=this.createElement("script");n&&(this.domain=n),o.id="js-iframe-async",o.src=e,this.t=+new Date,this.zendeskHost=t,this.zEQueue=a,this.body.appendChild(o)},o.write('<body onload="document._l();">'),o.close()}("https://assets.zendesk.com/embeddable_framework/main.js","sourcegraph.zendesk.com");
-		/*]]>*/</script>
-		<!-- End of sourcegraph Zendesk Widget script -->
+		{{if not appconf.DisableIntegrations}}
+			<!-- Start of sourcegraph Zendesk Widget script -->
+			<script ignore-csp>/*<![CDATA[*/window.zEmbed||function(e,t){var n,o,d,i,s,a=[],r=document.createElement("iframe");window.zEmbed=function(){a.push(arguments)},window.zE=window.zE||window.zEmbed,r.src="javascript:false",r.title="",r.role="presentation",(r.frameElement||r).style.cssText="display: none",d=document.getElementsByTagName("script"),d=d[d.length-1],d.parentNode.insertBefore(r,d),i=r.contentWindow,s=i.document;try{o=s}catch(c){n=document.domain,r.src='javascript:var d=document.open();d.domain="'+n+'";void(0);',o=s}o.open()._l=function(){var o=this.createElement("script");n&&(this.domain=n),o.id="js-iframe-async",o.src=e,this.t=+new Date,this.zendeskHost=t,this.zEQueue=a,this.body.appendChild(o)},o.write('<body onload="document._l();">'),o.close()}("https://assets.zendesk.com/embeddable_framework/main.js","sourcegraph.zendesk.com");
+			/*]]>*/</script>
+			<!-- End of sourcegraph Zendesk Widget script -->
 
-		<!-- Start of Fullstory script -->
-		<script ignore-csp>
-			window["_fs_debug"] = false;
-			window["_fs_host"] = "www.fullstory.com";
-			window["_fs_org"] = "WQW7";
-			(function(m,n,e,t,l,o,g,y){g=m[e]=function(a,b){g.q?g.q.push([a,b]):g._api(a,b);};g.q=[];o=n.createElement(t);o.async=1;o.src="https://"+_fs_host+"/s/fs.js";y=n.getElementsByTagName(t)[0];y.parentNode.insertBefore(o,y);g.identify=function(i,v){g(l,{uid:i});if(v)g(l,v)};g.setUserVars=function(v){FS(l,v)};g.identifyAccount=function(i,v){o="account";v=v||{};v.acctId=i;FS(o,v)};g.clearUserCookie=function(d,i){d=n.domain;while(1){n.cookie="fs_uid=;domain="+d+";path=/;expires="+new Date(0);i=d.indexOf(".");if(i<0)break;d=d.slice(i+1)}}})(window,document,"FS","script","user");
-			{{if .CurrentUser}}
-				FS.identify('{{.CurrentUser.Login}}@{{getHostName .AppURL}}', {});
-			{{end}}
-		</script>
-		<!-- End of Fullstory script -->
+			<!-- Start of Fullstory script -->
+			<script ignore-csp>
+				window["_fs_debug"] = false;
+				window["_fs_host"] = "www.fullstory.com";
+				window["_fs_org"] = "WQW7";
+				(function(m,n,e,t,l,o,g,y){g=m[e]=function(a,b){g.q?g.q.push([a,b]):g._api(a,b);};g.q=[];o=n.createElement(t);o.async=1;o.src="https://"+_fs_host+"/s/fs.js";y=n.getElementsByTagName(t)[0];y.parentNode.insertBefore(o,y);g.identify=function(i,v){g(l,{uid:i});if(v)g(l,v)};g.setUserVars=function(v){FS(l,v)};g.identifyAccount=function(i,v){o="account";v=v||{};v.acctId=i;FS(o,v)};g.clearUserCookie=function(d,i){d=n.domain;while(1){n.cookie="fs_uid=;domain="+d+";path=/;expires="+new Date(0);i=d.indexOf(".");if(i<0)break;d=d.slice(i+1)}}})(window,document,"FS","script","user");
+				{{if .CurrentUser}}
+					FS.identify('{{.CurrentUser.Login}}@{{getHostName .AppURL}}', {});
+				{{end}}
+			</script>
+			<!-- End of Fullstory script -->
+		{{end}}
 	</head>
 
 	{{$motd := ifTrue (not .HideMOTD) appconf.MOTD}}

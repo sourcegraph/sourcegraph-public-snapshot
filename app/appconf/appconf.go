@@ -32,7 +32,7 @@ var Flags struct {
 
 	DisableApps bool `long:"app.disable-apps" description:"if set, disable the changes and issues applications"`
 
-	DisableIntegrations bool `long:"app.disable-integrations" description:"DEPRECATED: use --private-mirrors to set up integrations with external hosts"`
+	DisableIntegrations bool `long:"app.disable-integrations" description:"disable integrations to external services like Zendesk, Fullstory"`
 
 	DisableCloneURL bool `long:"app.disable-clone-url" description:"if set, disable display of the git clone URL"`
 
