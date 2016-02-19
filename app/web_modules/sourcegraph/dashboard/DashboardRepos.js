@@ -70,7 +70,7 @@ class DashboardRepos extends Component {
 					</div>
 					<div className="search-bar">
 						<input className="form-control search-input"
-							placeholder="Search repositories"
+							placeholder="Filter repositories"
 							value={this.state.searchQuery}
 							onChange={this._handleSearch}
 							type="text" />
