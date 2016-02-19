@@ -52,7 +52,7 @@ class OnboardingContainer extends Container {
 								{this.state.progress.currentStep === 2 &&
 									<div>
 										<p className="header-text normal-header">
-											Select Repositories
+											Select Repositories to Mirror
 										</p>
 										<p className="normal-text">
 											Sourcegraph's Code Intelligence currently supports Go and Java (with more languages coming soon!)

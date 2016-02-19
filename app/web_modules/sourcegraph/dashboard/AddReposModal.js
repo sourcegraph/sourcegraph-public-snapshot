@@ -47,7 +47,7 @@ class AddReposWidget extends Component {
 								onClick={() => Dispatcher.dispatch(new DashboardActions.DismissReposModal())}>
 								<span aria-hidden="true">&times;</span>
 							</button>
-							<h4 className="modal-title">Add a new Repository</h4>
+							<h4 className="modal-title">Add Repositories</h4>
 						</div>
 						<div className="modal-body">
 							<ul className="nav nav-tabs" role="tablist">
@@ -58,7 +58,7 @@ class AddReposWidget extends Component {
 								}
 								{this.state.allowGitHubMirrors &&
 									<li role="presentation" className={!this.state.allowStandaloneRepos ? "active" : ""}>
-										<a href="#github-mirror" role="tab" data-toggle="tab">Import from GitHub</a>
+										<a href="#github-mirror" role="tab" data-toggle="tab">Mirror from GitHub</a>
 									</li>
 								}
 							</ul>

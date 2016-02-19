@@ -55,7 +55,7 @@ class AddUsersModal extends Component {
 								onClick={() => Dispatcher.dispatch(new DashboardActions.DismissUsersModal())}>
 								<span aria-hidden="true">&times;</span>
 							</button>
-							<h4 className="modal-title">Invite People to join Sourcegraph</h4>
+							<h4 className="modal-title">Invite Teammates</h4>
 						</div>
 						<div className="modal-body">
 							<ul className="nav nav-tabs" role="tablist">
