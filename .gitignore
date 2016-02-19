@@ -36,7 +36,6 @@ grapher/ruby/yard/.bundle
 npm-debug.log
 .codemod.bookmark
 .elasticbeanstalk/
-Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 
 .tmp/*.jar
 
@@ -60,7 +59,7 @@ Godeps/_workspace/src/sourcegraph.com/sourcegraph/srclib/docs/
 eb-bundle.zip
 
 *_vfsdata.go
-!/Godeps/**/*_vfsdata.go
+!/vendor/**/*_vfsdata.go
 
 /release/
 

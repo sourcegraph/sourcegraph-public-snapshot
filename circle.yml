@@ -19,8 +19,8 @@ machine:
 
 dependencies:
   pre:
-    # Use Go 1.5.
-    - cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
+    # Use Go 1.6.
+    - cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
     # Update git, curl, and libcurl ( both openssl and gnutls flavours )
     - sudo apt-get update; sudo apt-get install git curl libcurl3 libcurl3-gnutls
 
@@ -33,8 +33,6 @@ dependencies:
     - rm -rf $HOME/.go_workspace/src
     - mkdir -p $HOME/.go_workspace/src/src.sourcegraph.com
     - cp -r $PWD $REPO
-
-    - go get github.com/tools/godep
 
     - git --version
     - curl --version
@@ -49,7 +47,7 @@ dependencies:
 
 test:
   override:
-    - godep go install -v src.sourcegraph.com/sourcegraph/...
+    - go install -v $(go list src.sourcegraph.com/sourcegraph/... | grep -v /vendor/)
     - ./sh/gofmt.sh:
         pwd: $REPO
     - npm run dep:

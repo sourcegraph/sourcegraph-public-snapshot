@@ -69,13 +69,13 @@ To run tests within a directory (and recursively within its
 subdirectories):
 
 ```
-godep go test ./app/...
+go test ./app/...
 ```
 
 To run a specific package's tests:
 
 ```
-godep go test ./util/textutil
+go test ./util/textutil
 ```
 
 Learn more at [README.tests.md](README.tests.md).
@@ -85,20 +85,22 @@ Learn more at [README.tests.md](README.tests.md).
 The Sourcegraph repository uses
 [godep](https://github.com/tools/godep) to manage Go dependencies.
 
-During development, it's typically easiest to run `godep` directly to
-build binaries and run tests. For example, you'll probably run the
-following commands frequently:
+The /vendor/ folder is used by Go 1.6, so `godep` is not needed for building or running tests.
+It's only used for updating and adding/removing dependencies to /vendor/ folder.
 
 ```
 # Compile and install a new "src" to your PATH:
-godep go install ./cmd/src
+go install ./cmd/src
 
 # Run some tests
-godep go test ./app/...
+go test ./app/...
+
+# Run all tests
+go test $(go list ./... | grep -v /vendor)
 
 # Run some exectest-tagged tests (these tests invoke "src", so we must
 # first compile the latest "src" for them to invoke):
-godep go install ./cmd/src && godep go test -tags 'buildtest exectest' ./sgx
+go install ./cmd/src && go test -tags 'buildtest exectest' ./sgx
 ```
 
 Also, keep in mind that after you update dependencies, you must re-run
@@ -106,7 +108,7 @@ codegen (see the Codegen section for more info). Here's a one-liner
 for updating `go-sourcegraph` (the most commonly updated dependency):
 
 ```
-godep update src.sourcegraph.com/sourcegraph/go-sourcegraph/... && godep go generate ./...
+godep update src.sourcegraph.com/sourcegraph/go-sourcegraph/... && go generate ./...
 ```
 
 When you add a new package dependency, you need to run `godep save
@@ -119,9 +121,7 @@ errors cause clone failures.)
 
 Many people find `godep` confusing at first. It can be finnicky when
 running `godep update` and `godep save`. Ask someone if you run into
-issues with those. However, `godep go <install|test>` is quite
-simple--it just runs `GOPATH=$PWD/Godeps/_workspace:$GOPATH go
-<install|test>` (no other magic occurs).
+issues with those.
 
 ## Codegen
 
@@ -137,7 +137,7 @@ generate`. Code generation is used for a variety of tasks:
 To re-generate codegenned code, run:
 
 ```
-godep go generate ./...
+go generate ./...
 ```
 
 Note that you should always run this after you run `godep update` to

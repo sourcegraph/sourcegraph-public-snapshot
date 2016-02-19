@@ -34,15 +34,9 @@ ifndef GOBIN
 	endif
 endif
 
-# Avoid dependency on `godep` by simply specifying its GOPATH. This
-# means we don't need to install godep in CI each time (saving ~20sec
-# per test run).
 ifeq "$(SGXOS)" "windows"
-	PWD := $(shell $(CMD) "echo %cd%")
-	GODEP := GOPATH="$(PWD)/Godeps/_workspace;$(GOPATH)"
 	NPM_RUN_DEP := $(CMD) "npm run dep"
 else
-	GODEP := GOPATH=$(PWD)/Godeps/_workspace:$(GOPATH)
 	NPM_RUN_DEP := npm run dep
 endif
 
@@ -50,8 +44,8 @@ install: src
 
 src: ${GOBIN}/src
 
-${GOBIN}/src: $(shell /usr/bin/find . -type f -and -name '*.go' -not -path './Godeps/*')
-	$(GODEP) go install ./cmd/src
+${GOBIN}/src: $(shell /usr/bin/find . -type f -and -name '*.go' -not -path './vendor/*')
+	go install ./cmd/src
 
 dep: dist-dep app-dep
 
@@ -63,7 +57,7 @@ SERVEFLAGS ?=
 serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
 	@echo
-	DEBUG=t $(GODEP) rego $(GORACE) -tags="$(GOTAGS)" src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) --app.disable-support-services $(SERVEFLAGS)
+	DEBUG=t rego $(GORACE) -tags="$(GOTAGS)" src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) --app.disable-support-services $(SERVEFLAGS)
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
@@ -114,7 +108,7 @@ smoke: src
 	dropdb --if-exists src-smoke
 	createdb src-smoke
 	PGDATABASE=src-smoke $(GOBIN)/src pgsql create
-	PGDATABASE=src-smoke godep go run ./smoke/basicgit/basicgit.go
+	PGDATABASE=src-smoke go run ./smoke/basicgit/basicgit.go
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
@@ -138,7 +132,7 @@ ${GOBIN}/go-template-lint:
 	go get sourcegraph.com/sourcegraph/go-template-lint
 
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
-	$(GODEP) go install ./sgtool
+	go install ./sgtool
 
 dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/protoc-gen-dump ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
 
@@ -160,13 +154,13 @@ drop-test-dbs:
 # execute common subsets of tests).
 GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest'
 PGUSER ?= $(USER)
-TESTPKGS ?= ./...
+TESTPKGS ?= $(go list ./... | grep -v /vendor/)
 test: check
 	cd app && npm test
 	$(MAKE) go-test
 
 go-test: src
-	SG_PEM_ENCRYPTION_PASSWORD=a SG_TICKET_SIGNING_KEY=a $(GODEP) go test $(GORACE) ${GOFLAGS} ${TESTPKGS} ${TESTFLAGS}
+	SG_PEM_ENCRYPTION_PASSWORD=a SG_TICKET_SIGNING_KEY=a go test $(GORACE) ${GOFLAGS} ${TESTPKGS} ${TESTFLAGS}
 
 smtest:
 	$(MAKE) go-test GOFLAGS=""
@@ -189,8 +183,8 @@ check: generate-dep
 	bash dev/todo-security
 
 distclean:
-	$(GODEP) go clean ./...
-	rm -rf ${GOBIN}/src Godeps/_workspace/pkg
+	go clean ./...
+	rm -rf ${GOBIN}/src
 
 docker-image:
 	docker build -t sourcegraph .
