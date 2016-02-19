@@ -416,12 +416,15 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	if err != nil {
 		return nil, err
 	}
+
+	repoStatus := sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext}
+
 	_, err = svc.RepoStatuses(ctx).Create(ctx, &sourcegraph.RepoStatusesCreateOp{
 		Repo:   statusRev,
-		Status: sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext},
+		Status: repoStatus,
 	})
 	if err != nil {
-		return nil, err
+		log15.Warn("Failed to update RepoStatuses cache", "err", err, "repoStatus", repoStatus)
 	}
 
 	return inv, nil
