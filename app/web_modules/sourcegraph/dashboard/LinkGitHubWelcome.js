@@ -38,7 +38,7 @@ class LinkGitHubWelcome extends Component {
 				{doGitHubLink ?
 					<p className="normal-text">In order to get you started we need to connect with your GitHub account. No worries, we won't change anything within your files.</p> :
 					<p className="normal-text">You successfully connected<br />your GitHub account.</p>}
-				<div className="footer">
+				<footer>
 					<button className="btn btn-block btn-primary btn-lg"
 						onClick={(e) => {
 							if (doGitHubLink) {
@@ -47,7 +47,7 @@ class LinkGitHubWelcome extends Component {
 								Dispatcher.dispatch(new OnboardingActions.AdvanceProgressStep());
 							}
 						}}>{doGitHubLink ? "Grant Permission" : "Next"}</button>
-				</div>
+				</footer>
 			</div>
 		);
 	}

@@ -361,13 +361,19 @@
 		margin-top: 25px;
 		margin-bottom: 10px;
 
+	}
+
+	.widget-footer, .github-link-welcome > footer {
 		button {
+			height: 48px;
+			max-width: 370px;
 			font-size: 13px;
 			letter-spacing: 1px;
 			text-transform: uppercase;
 			border-radius: 2px;
 			color: $body-bg;
-			height: 48px;
+			margin-left: auto;
+			margin-right: auto;
 		}
 	}
 
