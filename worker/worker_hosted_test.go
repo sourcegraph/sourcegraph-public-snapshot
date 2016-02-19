@@ -8,7 +8,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 	"src.sourcegraph.com/sourcegraph/util/testutil"
@@ -88,20 +87,11 @@ build:
 func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Context, done func(), build *sourcegraph.Build, buildLog string) {
 	t.Parallel()
 
-	a, ctx := testserver.NewUnstartedServer()
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
-	)
-	if err := a.Start(); err != nil {
-		t.Fatal(err)
-	}
+	a, ctx := testserver.NewServer()
 
 	// Create and push a repo that uses the sample toolchain.
-	repo, repoDone, err := testutil.CreateRepo(t, ctx, "r/r", false)
+	repo, _, repoDone, err := testutil.CreateAndPushRepoFiles(t, ctx, "r/r", files)
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := testutil.PushRepo(ctx, repo.HTTPCloneURL, repo.HTTPCloneURL, nil, files); err != nil {
 		t.Fatal(err)
 	}
 
@@ -110,7 +100,7 @@ func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Co
 		a.Close()
 	}
 
-	buildSpec := sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r/r"}, ID: 1}
+	buildSpec := sourcegraph.BuildSpec{Repo: repo.RepoSpec(), ID: 1}
 
 	// Get log for a single task.
 	getTaskLog := func(task sourcegraph.TaskSpec) (string, error) {

@@ -63,10 +63,13 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 	}
 
 	// Clone the repo locally.
-	if err := testutil.CloneRepo(t, authedCloneURL, tmpDir, nil, nil); err != nil {
+	repoDir := filepath.Join(tmpDir, repo.Name)
+	if err := os.MkdirAll(repoDir, 0700); err != nil {
 		t.Fatal(err)
 	}
-	repoDir := filepath.Join(tmpDir, repo.Name)
+	if err := testutil.CloneRepo(authedCloneURL, repoDir, nil, nil); err != nil {
+		t.Fatal(err)
+	}
 
 	_, srclibpath, _ := testserver.SrclibSampleToolchain(false)
 	srclibCmd := func(args ...string) *exec.Cmd {
