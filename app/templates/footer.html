@@ -5,24 +5,12 @@
 			<div class="container{{if .FullWidth}}-fluid{{end}}">
 				<div class="footer-container">
 					<div class="row">
-						<div class="col-sm-6">
-							<ul class="list-unstyled">
-								<li><a href="/"><strong>Home</strong></a></li>
-								<li class="separator"></li>
-								<li><a href="https://src.sourcegraph.com/sourcegraph/.docs" target="_blank">Help &amp; documentation</a></li>
-								<li>
-									<a href="https://src.sourcegraph.com/sourcegraph/.tracker" target="_blank">File issue</a>
-									<span class="dot">&middot;</span>
-									<a href="mailto:help@sourcegraph.com">Email support</a>
-								</li>
-							</ul>
-						</div>
 						<div class="col-sm-6 info">
 							<p>
 								<span data-tooltip title="version {{buildvar.Version}} {{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}">
 									<span class="powered-by">Powered by</span>
 									<a href="https://sourcegraph.com" target="_blank">Sourcegraph</a><br>
-									<span class="powered-by small">The smarter code host for teams</span><br>
+									<span class="powered-by small">The smartest code host for teams</span><br>
 									<span class="powered-by small">version {{buildvar.Version}}</span>
 								</span>
 							</p>
@@ -31,6 +19,8 @@
 									Upgrade to v{{.}}
 								</a>
 							{{end}}
+						</div>
+						<div class="col-sm-6 info">
 						</div>
 					</div>
 				</div>
