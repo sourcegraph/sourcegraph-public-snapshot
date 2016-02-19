@@ -1,16 +1,9 @@
 .dashboard {
-
 	.dashboard-container {
-		display: -webkit-flex;
-		display: flex;
-		-webkit-flex-wrap: wrap;
-		flex-wrap: wrap;
+		margin-top: 55px;
 	}
 
 	.dash-repos {
-		flex: 6;
-		margin-top: 30px;
-		margin-right: 40px;
 		border: none;
 
 		.dash-repos-header {
@@ -19,9 +12,11 @@
 				align-items: center;
 			-webkit-justify-content: center;
 				justify-content: center;
-			border-bottom: solid 1px #e7e7e7;
+			padding-bottom: $padding-large-vertical;
+			border-bottom: $content-border;
 
 			.your-repos {
+				margin-top: 0;
 				flex: 9;
 			}
 
@@ -39,7 +34,7 @@
 
 			.plus-btn {
 				display: inline-block;
-				background-color: white;
+				background-color: $btn-primary-color;
 
 				width: 16px;
 				height: 19px;
@@ -49,7 +44,7 @@
 
 			.plus {
 				display: inline-block;
-				color: #0fb6f2;
+				color: $btn-primary-bg;
 			}
 
 			.add-repo-label {
@@ -57,29 +52,17 @@
 			}
 		}
 
-		.panel {
+		.repos-list nav {
+			@include clearfix;
 			border: none;
-			padding: 10px;
-		}
-
-		.panel-heading {
-			display: flex;
-			display: -webkit-flex;
-			-webkit-flex-wrap: wrap;
-			flex-wrap: wrap;
-			-webkit-align-items: center;
-				align-items: center;
-			-webkit-justify-content: center;
-				justify-content: center;
-			background-color: white;
-			border: none;
+			padding: 25px 0;
+			$list-button-height: 36px;
 
 			.toggles {
-				flex: 5;
+				height: $list-button-height;
+				display: inline-block;
 				margin-top: 0px;
-				margin-right: 50px;
 				min-width: 285px;
-				height: 36px;
 
 				.toggle {
 					width: 94px;
@@ -88,37 +71,38 @@
 					text-transform: uppercase;
 					font-size: 12px;
 				}
-
 			}
 
 			.search-bar {
-				flex: 5;
-				min-width: 170px;
-				padding: 15px;
+				height: $list-button-height;
+				display: block;
+				min-width: 240px;
+				margin-top: $padding-large-vertical;
+
+				@media (min-width: $screen-sm-min) {
+					float: right;
+					display: inline-block;
+					margin-top: 0;
+				}
 			}
 		}
 
 		h4 {
-			margin: 15px;
+			margin-bottom: $padding-base-vertical;
 			.repo-attr-icon {
 				margin-right: 3px;
 			}
 		}
 		p.description {
-			margin-left: 10px;
 			font-size: 16px;
-			font-face: Circular-Book;
-			color: #969896;
+			color: $text-quieted;
 		}
 		p.updated {
-			margin-left: 10px;
 			font-size: $font-size-small;
-			color: $text-muted;
+			color: $text-disabled;
 			text-transform: uppercase;
 			font-size: 12px;
-			font-face: Circular-Bold;
 			letter-spacing: 1px;
-			color: #bfc2d0;
 		}
 
 		.hover-pointer {
@@ -127,60 +111,69 @@
 	}
 
 	.dash-users {
-		flex: 2;
-		margin-top: 50px;
 		text-align: center;
-
-		.panel-heading {
-			background-color: white;
-			height: 52px;
-			h5 {
-				display: inline-block;
-			}
-		}
 
 		.add-user-btn {
 			display: inline-block;
 			float: right;
 		}
 
-		.list-group-item {
-			display: flex;
-			-webkit-align-items: center;
-				align-items: center;
-			-webkit-justify-content: center;
-				justify-content: center;
+		.panel-heading {
+			@include clearfix;
+			background-color: $body-bg;
+			h5 {
+				display: inline-block;
+				margin-top: 9px;
+				margin-bottom: 0;
+			}
+		}
 
-			height: 45px;
-			text-align: left;
+		.users-list {
+			padding-top: 0;
+			padding-bottom: 0;
 
-			margin-top: 1px; // to accomodate bottom border
-
-			border: none;
-			border-bottom: solid 1px #e7e7e7;
-
-			.avatar-sm {
-				// float: left;
-				flex: 1
+			.list-group {
+				margin-bottom: $padding-base-vertical;
 			}
 
-			.user-name {
-				// float: left;
-				margin-left: 15px;
-				margin-top: 4px;
-				flex: 5;
-			}
+			.list-group-item {
+				display: flex;
+				-webkit-align-items: center;
+					align-items: center;
+				-webkit-justify-content: center;
+					justify-content: center;
 
-			.user-permissions {
-				margin-top: 4px;
-				flex: 1;
-			}
+				height: 45px;
+				text-align: left;
+				border: none;
+				border-bottom: $content-border;
+				margin-top: 1px;
+				padding: $padding-base-vertical 0;
 
+				&:last-child {
+					border-bottom: none;
+				}
+
+				.avatar-sm {
+					flex: 1
+				}
+
+				.user-name {
+					margin-left: 15px;
+					margin-top: 4px;
+					flex: 5;
+				}
+
+				.user-permissions {
+					margin-top: 4px;
+					flex: 1;
+				}
+			}
 		}
 
 		.plus-btn {
 			display: inline-block;
-			background-color: white;
+			background-color: $btn-primary-bg;
 
 			width: 16px;
 			height: 16px;
@@ -196,45 +189,41 @@
 	}
 
 	.selectable-list-widget {
-
 		.widget-body {
 			display: -webkit-flex;
 			display: flex;
 			-webkit-flex-wrap: wrap;
 			flex-wrap: wrap;
+			padding-right: $padding-base-horizontal;
 
 			.category-menu {
 				-webkit-flex: 1;
 				flex: 1;
 				text-transform: uppercase;
 				margin-left: 10px;
-				margin-right: 20px;
+				padding-right: $padding-large-horizontal;
 				margin-top: 2px;
 				text-align: left;
 				font-size: 12px;
 				letter-spacing: 0.6px;
-				font-face: Circular-Bold;
+
 				a {
 					text-decoration: none;
+					color: $text-color;
 					cursor: pointer;
+					&:hover, &.category-active {
+						color: $link-color;
+						border-bottom: solid 2px $link-color;
+					}
 				}
 
 				.category-menu-label {
-					color: #4d5a64;
+					color: $headings-color;
 				}
 
 				.category-label {
 					margin-left: 7px;
 					margin-bottom: 15px;
-
-					a {
-						color: #7794ae;
-					}
-				}
-
-				a.category-active {
-					color: #0fb6f2;
-					border-bottom: solid 2px #0fb6f2;
 				}
 			}
 
@@ -247,33 +236,12 @@
 
 	.selectable-list {
 		margin-bottom: 0px;
-		border: 1px solid rgba(172,177,214,0.3);
-
-		input[type="checkbox"] {
-			display:none;
-		}
-		input[type="checkbox"] {
-			display: inline-block;
-			width: 16px;
-			height: 16px;
-			color: #0dceb7;
-		}
-
-		input[type="checkbox"] + label span {
-			display: inline-block;
-			width: 16px;
-			height: 16px;
-			color: #0dceb7;
-			margin:-1px 4px 0 0;
-			vertical-align:middle;
-			cursor:pointer;
-		}
+		border: $content-border;
 
 		.header {
 			background-color: initial;
 			font-size: 13px;
 			color: #bbbbbb;
-			// padding-top: 5px;
 
 			.search-bar {
 				display: -webkit-flex;
@@ -284,7 +252,8 @@
 				.search-icon {
 					-webkit-flex: 1;
 					flex: 1;
-					padding: 7px;
+					padding: 10px;
+					padding-right: 0;
 				}
 
 				.search-input {
@@ -300,9 +269,9 @@
 				display: flex;
 				height: 34px;
 
-				border-top: 1px solid rgba(172,177,214,0.3);
-				border-bottom: 1px solid rgba(172,177,214,0.3);
-				background-color: #fcfcfc;
+				border-top: $content-border;
+				border-bottom: $content-border;
+				background-color: $select-list-bg;
 
 				.select-all {
 					-webkit-flex: 1;
@@ -320,7 +289,7 @@
 		}
 		.body {
 			height: 273px;
-			background-color: #fcfcfc;
+			background-color: $select-list-bg;
 			display: block;
 
 			.table-row {
@@ -337,7 +306,10 @@
 					flex: 15;
 					padding: 7px;
 					text-align: left;
-					border-bottom: 1px solid rgba(172,177,214,0.3);
+					border-bottom: $content-border;
+					&.unselectable {
+						color: $text-disabled;
+					}
 				}
 				.unselectable-label {
 					float: right;
@@ -360,7 +332,7 @@
 
 		.list-group-item {
 			border: none;
-			border-bottom: 1px solid rgba(172,177,214,0.3);
+			border-bottom: $content-border;
 			margin-bottom: 0px;
 			margin-left: auto;
 			margin-right: auto;
@@ -374,19 +346,8 @@
 	}
 
 	.add-repos-widget, .add-users-widget {
-
-		.widget-body {
-			padding-left: 25px;
-		}
-
 		.add-repo-label {
 			margin-top: 20px;
-		}
-
-		input {
-			height: 48px;
-			font-size: 14px;
-			font-face: Circular-Book;
 		}
 
 		.selectable-list-widget {
@@ -397,15 +358,15 @@
 	.widget-footer {
 		width: 80%;
 		margin: auto;
-		margin-top: 39px;
-		font-face: Circular-Bold;
+		margin-top: 25px;
+		margin-bottom: 10px;
 
 		button {
 			font-size: 13px;
 			letter-spacing: 1px;
 			text-transform: uppercase;
 			border-radius: 2px;
-			color: #ffffff;
+			color: $body-bg;
 			height: 48px;
 		}
 	}

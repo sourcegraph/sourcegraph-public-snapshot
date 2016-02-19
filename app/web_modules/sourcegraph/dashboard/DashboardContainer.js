@@ -45,14 +45,14 @@ class DashboardContainer extends Container {
 
 	render() {
 		return (
-			<div className="dashboard-container">
+			<div className="dashboard-container row">
 				{this.state.showReposModal ? <AddReposModal
 					allowStandaloneRepos={this.state.allowStandaloneRepos}
 					allowGitHubMirrors={this.state.allowGitHubMirrors} /> : null}
 				{this.state.showUsersModal ? <AddUsersModal
 					allowStandaloneUsers={this.state.allowStandaloneUsers}
 					allowGitHubUsers={this.state.allowGitHubUsers} /> : null}
-				<div className="dash-repos">
+				<div className="dash-repos col-lg-9 col-md-8">
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Your Repositories</h3>
 						<button className="btn btn-primary add-repo-btn"
@@ -67,7 +67,7 @@ class DashboardContainer extends Container {
 						<DashboardRepos repos={this.state.repos} />
 					</div>
 				</div>
-				<div className="dash-users">
+				<div className="dash-users col-lg-3 col-md-4">
 					<DashboardUsers users={this.state.users} allowStandaloneUsers={this.state.allowStandaloneUsers} />
 				</div>
 			</div>

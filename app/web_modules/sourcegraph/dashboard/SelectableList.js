@@ -79,7 +79,7 @@ class SelectableList extends Component {
 								<div className="select">
 									<input className="unselectable" disabled={true} type="checkbox" />
 								</div>
-								<div className="name">
+								<div className="name unselectable">
 									<span>{item.name}</span>
 									<span className="unselectable-label">{item.reason}</span>
 								</div>

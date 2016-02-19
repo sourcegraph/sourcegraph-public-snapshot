@@ -63,8 +63,8 @@ class DashboardRepos extends Component {
 		};
 
 		return (
-			<div className="panel panel-default">
-				<div className="panel-heading">
+			<div className="repos-list">
+				<nav>
 					<div className="toggles">
 						<div className="btn-group">{toggles}</div>
 					</div>
@@ -75,8 +75,8 @@ class DashboardRepos extends Component {
 							onChange={this._handleSearch}
 							type="text" />
 					</div>
-				</div>
-				<div className="repos-list panel-body">
+				</nav>
+				<div className="repos">
 					<div className="list-group">
 						{this.state.repos.filter(this._showRepo).sort(repoSort).map((repo, i) => (
 							<div className="list-group-item hover-pointer" key={i}

@@ -50,6 +50,7 @@ $diff-deleted-color: lighten(#c71111, 3%);
 $content-border-color: transparentize($cloudy-blue, 0.56);
 $text-strong-color: $blue-grey;
 $text-quieted: $shadow-blue;
+$text-disabled: $cloudy-blue;
 
 $nav-background-color: $pale-grey;
 $nav-border-color: darken($nav-background-color, 5%);
@@ -87,6 +88,8 @@ $token-hover-border: darken($token-hover-color, 5%);
 $content-primary-bg: $duck-egg-blue;
 $content-primary-border: lighten($brand-azure, 27%);
 $content-primary-text: $brand-azure;
+
+$select-list-bg: #fcfcfc;
 
 $panel-box-shadow: 0 5px 9px rgba(0, 0, 0, 0.05);
 
