@@ -1,4 +1,4 @@
-# 0.13.5
+# 0.13.7
 
 - Changesets now supports a `.srcignore` file which will suppress the diffs of
   specific files (e.g. auto-generated ones) for less noisy and easier reviews.
