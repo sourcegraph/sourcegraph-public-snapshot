@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/schema"
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
@@ -100,10 +102,14 @@ func jsonContentType(fn func(w http.ResponseWriter, r *http.Request) error) func
 func serveError(w http.ResponseWriter, req *http.Request, status int, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+
+	if status < 200 || status >= 500 {
+		log15.Error("UI HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err)
+	}
+
 	msg := err.Error() + " (Code: " + strconv.Itoa(status) + ")"
 	err = json.NewEncoder(w).Encode(struct{ Error string }{msg})
 	if err != nil {
 		log.Printf("Error during encoding error response: %s", err)
 	}
-	log.Println("ui.serveError serving error:", msg)
 }

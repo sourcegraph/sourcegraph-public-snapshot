@@ -80,7 +80,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 	}
 
 	if status < 200 || status >= 500 {
-		log15.Debug("app/internal.HandleError called with unsuccessful status code", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err.Error())
+		log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err)
 	}
 
 	// Handle potential panic during execution of error template, since it may call out to

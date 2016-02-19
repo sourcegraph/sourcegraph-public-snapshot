@@ -112,6 +112,6 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 	http.Error(w, displayErrBody, status)
 	if status < 200 || status >= 500 {
-		log15.Debug("httpapi.handleError called with unsuccessful status code", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err.Error())
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err)
 	}
 }
