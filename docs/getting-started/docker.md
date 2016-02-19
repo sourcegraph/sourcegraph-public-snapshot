@@ -17,6 +17,7 @@ docker run \
   --env PGUSER=myuser \
   --env PGPASSWORD=mypassword \
   --env PGDATABASE=mydatabase \
+  --env PGSSLMODE=disable \
   sourcegraph/sourcegraph:latest \
   pgsql create
 ```
@@ -39,6 +40,7 @@ docker run \
   --env PGUSER=myuser \
   --env PGPASSWORD=mypassword \
   --env PGDATABASE=mydatabase \
+  --env PGSSLMODE=disable \
   sourcegraph/sourcegraph:latest \
   serve \
   --http-addr=:80 \

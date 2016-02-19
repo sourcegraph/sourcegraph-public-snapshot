@@ -103,6 +103,8 @@ spec:
 		  value: mypassword
 	    - name: PGDATABASE
 		  value: mydatabase
+	    - name: PGSSLMODE
+		  value: disable
 	    # add any other PG* env vars needed
       volumes:
       - name: repos
