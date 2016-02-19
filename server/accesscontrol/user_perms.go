@@ -116,7 +116,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	}
 
 	if !actor.IsAuthenticated() {
-		if VerifyScopeHasAccess(ctx, actor.Scope, method) {
+		if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			return nil
 		}
 		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
@@ -149,7 +149,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 	}
 
 	if !actor.IsAuthenticated() {
-		if VerifyScopeHasAccess(ctx, actor.Scope, method) {
+		if VerifyScopeHasAccess(ctx, actor.Scope, method, "") {
 			return nil
 		}
 		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
@@ -173,7 +173,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 // context. To avoid additional latency from expensive public key
 // operations, that check is not repeated here, but be careful
 // about refactoring that check.
-func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string) bool {
+func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method, repoURI string) bool {
 	if scopes == nil {
 		return false
 	}
@@ -185,6 +185,12 @@ func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method st
 
 		case scope == "worker:build":
 			return true
+
+		case strings.HasPrefix(scope, "repo:"):
+			repo := strings.TrimPrefix(scope, "repo:")
+			if repo == repoURI {
+				return true
+			}
 
 		case strings.HasPrefix(scope, "app:"):
 			// all apps have default write access.
