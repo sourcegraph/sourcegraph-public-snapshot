@@ -476,19 +476,19 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/filter",
-			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
+			"Rev": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/html/vfstemplate",
-			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
+			"Rev": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/path/vfspath",
-			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
+			"Rev": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/httpfs/vfsutil",
-			"Rev": "5782901d7de3a2107e252a57f5b3403213e7ec4f"
+			"Rev": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/sanitized_anchor_name",
