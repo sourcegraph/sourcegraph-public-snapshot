@@ -65,7 +65,8 @@ To run all tests:
 make test
 ```
 
-To run tests within a directory (and recrusively its subdirectories):
+To run tests within a directory (and recursively within its
+subdirectories):
 
 ```
 godep go test ./app/...
