@@ -169,7 +169,14 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 	dir := filepath.Join(tmpDir, "testrepo")
 	cmd := exec.Command("git", "clone", cloneURL, dir)
 	cmd.Dir = tmpDir
+	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	prepGitCommand(cmd)
+	if key != nil {
+		// Attempting to clone over SSH.
+		if _, err := prepGitSSHCommand(cmd, tmpDir, key); err != nil {
+			return err
+		}
+	}
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
@@ -317,7 +324,7 @@ func prepGitCommand(cmd *exec.Cmd) *exec.Cmd {
 	// Avoid using git's system/global configurations.
 	cmd.Env = append(cmd.Env, "GIT_CONFIG_NOSYSTEM=1", "HOME=/doesnotexist", "XDG_CONFIG_HOME=/doesnotexist")
 	// Debugging.
-	//cmd.Env = append(cmd.Env, "GIT_TRACE=1")
-	//cmd.Env = append(cmd.Env, "GIT_CURL_VERBOSE=1")
+	// cmd.Env = append(cmd.Env, "GIT_TRACE=1")
+	// cmd.Env = append(cmd.Env, "GIT_CURL_VERBOSE=1")
 	return cmd
 }

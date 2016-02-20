@@ -185,7 +185,7 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 				t.Errorf("Error while updating user permissions: %s", err)
 				continue
 			}
-			err := testutil.PushRepo(ctx, remoteURL(test.protocol, test.authenticated), repo.HTTPCloneURL, sshKey(test.protocol, test.authenticated), map[string]string{"unique.txt": test.String()})
+			err := testutil.PushRepo(ctx, remoteURL(test.protocol, test.authenticated), remoteURL(test.protocol, test.authenticated), sshKey(test.protocol, test.authenticated), map[string]string{"unique.txt": test.String()})
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
 				t.Errorf("FAILED: %s : %v", test.String(), err)
 			}
