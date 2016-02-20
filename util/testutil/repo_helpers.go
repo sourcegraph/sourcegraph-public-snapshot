@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
@@ -161,18 +160,18 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 	}
 
 	// Clone the repository.
-	tmpDir, err := ioutil.TempDir("", GetTempPrefix())
+	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
 
 	dir := filepath.Join(tmpDir, "testrepo")
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
-	if err := CloneRepo(cloneURL, dir, key, nil); err != nil {
-		return err
+	cmd := exec.Command("git", "clone", cloneURL, dir)
+	cmd.Dir = tmpDir
+	prepGitCommand(cmd)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
 
 	// Add files and make a commit.
@@ -194,7 +193,7 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 		}
 	}
 
-	cmd := exec.Command("git", "commit", "-m", "hello", "--author", "a <a@a.com>", "--date", "2006-01-02T15:04:05Z")
+	cmd = exec.Command("git", "commit", "-m", "hello", "--author", "a <a@a.com>", "--date", "2006-01-02T15:04:05Z")
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME=a", "GIT_COMMITTER_EMAIL=a@a.com", "GIT_COMMITTER_DATE=2006-01-02T15:04:05Z")
 	cmd.Dir = dir
 	prepGitCommand(cmd)
@@ -225,9 +224,7 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
 	if dir == "" {
 		var err error
-		// Use a non-empty prefix to avoid conflicts in concurrent calls
-		// to ioutil.TempDir.
-		dir, err = ioutil.TempDir("", GetTempPrefix())
+		dir, err = ioutil.TempDir("", "")
 		if err != nil {
 			return err
 		}
@@ -235,7 +232,7 @@ func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err er
 	}
 	cmd := exec.Command("git", "clone")
 	cmd.Args = append(cmd.Args, args...)
-	cmd.Args = append(cmd.Args, cloneURL, dir)
+	cmd.Args = append(cmd.Args, cloneURL)
 	cmd.Dir = dir
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	prepGitCommand(cmd)
@@ -323,20 +320,4 @@ func prepGitCommand(cmd *exec.Cmd) *exec.Cmd {
 	//cmd.Env = append(cmd.Env, "GIT_TRACE=1")
 	//cmd.Env = append(cmd.Env, "GIT_CURL_VERBOSE=1")
 	return cmd
-}
-
-var tempPrefixCount int32
-var tempMu sync.Mutex
-
-// GetTempPrefix returns a unique string on each call, which
-// can be used in creating temporary directories using ioutil.TempDir
-// in parallel tests.
-func GetTempPrefix() string {
-	tempMu.Lock()
-	defer tempMu.Unlock()
-
-	tempPrefixCount += 1
-	str := fmt.Sprintf("tmp-%d-", tempPrefixCount)
-	fmt.Println(str)
-	return str
 }

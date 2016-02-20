@@ -49,7 +49,7 @@ func TestSrclibPush(t *testing.T) {
 }
 
 func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegraph.Repo, asUser string) (err error) {
-	tmpDir, err := ioutil.TempDir("", testutil.GetTempPrefix())
+	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
 	}
