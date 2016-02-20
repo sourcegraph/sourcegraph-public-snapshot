@@ -39,6 +39,14 @@ func (s *gitTransport) InfoRefs(ctx context.Context, op *gitpb.InfoRefsOp) (*git
 		err = verifyRepoWriteAccess(ctx, op.Repo)
 	} else {
 		err = accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.InfoRefs", op.Repo.URI)
+		// Ignore the error if it is because the repo didn't exist. This comes
+		// about when we are implicitly mirroring repos and the metadata is
+		// not stored in the database. This is only OK for read access.
+		if err != nil {
+			if _, ok := err.(*store.RepoNotFoundError); ok {
+				err = nil
+			}
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -59,7 +67,12 @@ func (s *gitTransport) InfoRefs(ctx context.Context, op *gitpb.InfoRefsOp) (*git
 
 func (s *gitTransport) UploadPack(ctx context.Context, op *gitpb.UploadPackOp) (*gitpb.Packet, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.UploadPack", op.Repo.URI); err != nil {
-		return nil, err
+		// Ignore the error if it is because the repo didn't exist. This comes
+		// about when we are implicitly mirroring repos and the metadata is
+		// not stored in the database. This is only OK for read access.
+		if _, ok := err.(*store.RepoNotFoundError); !ok {
+			return nil, err
+		}
 	}
 
 	store := store.RepoVCSFromContext(ctx)
