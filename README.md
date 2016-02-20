@@ -1,11 +1,9 @@
-# Sourcegraph: the smarter code host for teams
+# Sourcegraph: Code Intelligence for teams
 
-Sourcegraph is a **self-hosted Git repository service** with Code
-Intelligence. It **runs on your own server** or cloud and installs in
-5 minutes.
+Sourcegraph is a **Git repository service** with Code Intelligence. It
+**runs on your own server** or cloud and installs in 5 minutes.
 
-Sourcegraph gives your team the power to build better software by
-offering:
+Sourcegraph gives your team the power to build better software with:
 
 * **Code Intelligence ([example](https://src.sourcegraph.com/sourcegraph/.GoPackage/src.sourcegraph.com/sourcegraph/util/mdutil/.def/Mentions)):** Understand code more quickly with language-aware jump-to-definition and tooltips. (Go and Java only, more languages coming soon.)
 * **Live usage examples ([example](https://src.sourcegraph.com/sourcegraph@master/.GoPackage/src.sourcegraph.com/sourcegraph/app/router/.def/Router/URLToRepo/.examples)):** See how any function, class, etc., is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
