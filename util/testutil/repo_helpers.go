@@ -125,17 +125,14 @@ func CreateAndPushRepo(t *testing.T, ctx context.Context, repoURI string) (repo 
 // must call the returned done() func when done (if err is non-nil) to free up
 // resources.
 func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, files map[string]string) (repo *sourcegraph.Repo, commitID string, done func(), err error) {
+	//var repo *sourcegraph.Repo
 	repo, done, err = CreateRepo(t, ctx, repoURI, false)
 	if err != nil {
 		return nil, "", nil, err
 	}
 
-	authedCloneURL, err := authutil.AddSystemAuthToURL(ctx, "internal:write", repo.HTTPCloneURL)
+	err = PushRepo(ctx, "", repo.HTTPCloneURL, nil, files)
 	if err != nil {
-		return nil, "", nil, err
-	}
-
-	if err := PushRepo(ctx, authedCloneURL, authedCloneURL, nil, files); err != nil {
 		return nil, "", nil, err
 	}
 
@@ -165,13 +162,17 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
-
-	dir := filepath.Join(tmpDir, "testrepo")
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	// Add system OAuth token so that clone will work.
+	authedCloneURL, err := authutil.AddSystemAuthToURL(ctx, "internal:write", cloneURL)
+	if err != nil {
 		return err
 	}
-	if err := CloneRepo(cloneURL, dir, key, nil); err != nil {
-		return err
+	dir := filepath.Join(tmpDir, "testrepo")
+	cmd := exec.Command("git", "clone", authedCloneURL, dir)
+	cmd.Dir = tmpDir
+	prepGitCommand(cmd)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
 	}
 
 	// Add files and make a commit.
@@ -193,7 +194,7 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 		}
 	}
 
-	cmd := exec.Command("git", "commit", "-m", "hello", "--author", "a <a@a.com>", "--date", "2006-01-02T15:04:05Z")
+	cmd = exec.Command("git", "commit", "-m", "hello", "--author", "a <a@a.com>", "--date", "2006-01-02T15:04:05Z")
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME=a", "GIT_COMMITTER_EMAIL=a@a.com", "GIT_COMMITTER_DATE=2006-01-02T15:04:05Z")
 	cmd.Dir = dir
 	prepGitCommand(cmd)
@@ -221,7 +222,7 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 	return nil
 }
 
-func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
+func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
 	if dir == "" {
 		var err error
 		dir, err = ioutil.TempDir("", "")
@@ -232,9 +233,9 @@ func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err er
 	}
 	cmd := exec.Command("git", "clone")
 	cmd.Args = append(cmd.Args, args...)
-	cmd.Args = append(cmd.Args, cloneURL, dir)
-	cmd.Dir = dir
+	cmd.Args = append(cmd.Args, cloneURL)
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
+	cmd.Dir = dir
 	prepGitCommand(cmd)
 	if key != nil {
 		// Attempting to clone over SSH.
@@ -277,6 +278,7 @@ func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err er
 // prepGitSSHCommand performs the necessary configurations to execute an git
 // command using the provided RSA key.
 func prepGitSSHCommand(cmd *exec.Cmd, dir string, key *rsa.PrivateKey) (*exec.Cmd, error) {
+	// Attempting to clone over SSH.
 	sshDir := filepath.Join(dir, ".ssh")
 	if err := os.Mkdir(sshDir, 0700); err != nil {
 		return cmd, err
