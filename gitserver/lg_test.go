@@ -174,7 +174,7 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 	for _, it := range tests {
 		switch test := it.(type) {
 		case gitCloneTest:
-			err := testutil.CloneRepo(t, remoteURL(test.protocol, test.authenticated), "",
+			err := testutil.CloneRepo(remoteURL(test.protocol, test.authenticated), "",
 				sshKey(test.protocol, test.authenticated), test.args)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
 				t.Errorf("FAILED: %s : %v", test.String(), err)
