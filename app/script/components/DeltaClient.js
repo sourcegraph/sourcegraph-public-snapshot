@@ -10,9 +10,9 @@ var DeltaClient = React.createClass({
 		var dc = this.props.deltaClient;
 		return (
 			<li className="list-group-item">
-			<a className="pull-left" href={dc.Login && router.personURL(dc.Login)}><img src={dc.AvatarURL} className="media-object avatar img-rounded" width="40" /></a>
+			<img src={dc.AvatarURL} className="pull-left media-object avatar img-rounded" width="40" />
 				<div className="media-body">
-					<h3><span className="affected"><a className="pull-left" href={dc.Login && router.personURL(dc.Login)}>{Person.label(dc)}</a></span> &nbsp;uses:</h3>
+					<h3><span className="affected pull-left">{Person.label(dc)}</span> &nbsp;uses:</h3>
 					<ul className="list-group defs">
 						{dc.Defs.map(function(def) {
 							var df = def.FmtStrings;

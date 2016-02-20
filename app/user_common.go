@@ -46,21 +46,3 @@ func personLabel(loginOrEmail string) string {
 	}
 	return loginOrEmail
 }
-
-func userMetaDescription(p *sourcegraph.User) string {
-	var desc string
-	if p.Name == "" {
-		desc = p.Login
-	} else {
-		desc += fmt.Sprintf("%s (%s)", p.Name, p.Login)
-	}
-	desc += " on Sourcegraph"
-	return desc
-}
-
-func userStat(p *sourcegraph.User, statType string) int {
-	// TODO(sqs): this is a stub to make templates and go code
-	// compile, it does not actually work - we need to reimplement user
-	// stats for this to work.
-	return 0
-}

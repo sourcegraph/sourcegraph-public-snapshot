@@ -111,12 +111,10 @@ func commonTemplates() error {
 		{"user/forgot_password.html"},
 		{"user/password_reset.html"},
 		{"user/new_password.html"},
-		{"user/owned_repos.html", "user/owned_repos.inc.html", "user/person.html", "user/profile.inc.html"},
-		{"user/orgs.html", "user/orgs.inc.html", "user/person.html", "user/profile.inc.html"},
-		{"user/settings/profile.html", "user/settings/common.inc.html", "user/profile.inc.html"},
-		{"user/settings/notifications.html", "user/settings/common.inc.html", "user/profile.inc.html"},
-		{"user/settings/emails.html", "user/settings/common.inc.html", "user/profile.inc.html"},
-		{"user/settings/keys.html", "user/settings/common.inc.html", "user/profile.inc.html"},
+		{"user/settings/profile.html", "user/settings/common.inc.html"},
+		{"user/settings/notifications.html", "user/settings/common.inc.html"},
+		{"user/settings/emails.html", "user/settings/common.inc.html"},
+		{"user/settings/keys.html", "user/settings/common.inc.html"},
 		{"blog/index.html", "blog/blog.html", "blog/common.inc.html"},
 		{"blog/post.html", "blog/blog.html", "blog/common.inc.html"},
 
@@ -129,7 +127,6 @@ func commonTemplates() error {
 		{"error/error.html", "error/common.html"},
 
 		{"oauth-provider/authorize.html"},
-		{"org/members.html", "org/members.inc.html", "user/person.html", "user/profile.inc.html"},
 
 		{"app_global.html"},
 	}, []string{

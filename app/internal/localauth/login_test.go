@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -69,17 +68,13 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var calledAuthGetAccessToken, calledAuthIdentify bool
+	var calledAuthGetAccessToken bool
 	mock.Auth.GetAccessToken_ = func(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
 		if !reflect.DeepEqual(*op.GetResourceOwnerPassword(), frm) {
 			t.Errorf("got form == %+v, want %+v", op, frm)
 		}
 		calledAuthGetAccessToken = true
 		return &sourcegraph.AccessTokenResponse{AccessToken: "k"}, nil
-	}
-	mock.Auth.Identify_ = func(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
-		calledAuthIdentify = true
-		return &sourcegraph.AuthInfo{UID: 123, Login: "u"}, nil
 	}
 
 	resp, err := c.PostFormNoFollowRedirects(router.Rel.URLTo(router.LogIn).String(), data)
@@ -91,7 +86,7 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 	if want := http.StatusSeeOther; resp.StatusCode != want {
 		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
 	}
-	if want, got := router.Rel.URLToUser("u").String(), resp.Header.Get("location"); got != want {
+	if want, got := "/", resp.Header.Get("location"); got != want {
 		t.Errorf("got Location %q, want %q", got, want)
 	}
 
@@ -106,9 +101,6 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 
 	if !calledAuthGetAccessToken {
 		t.Error("!calledAuthGetAccessToken")
-	}
-	if !calledAuthIdentify {
-		t.Error("!calledAuthIdentify")
 	}
 }
 

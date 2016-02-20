@@ -23,8 +23,6 @@ type Flags struct {
 
 	OAuth2AuthServer bool `long:"auth.oauth2-auth-server" description:"enable OAuth2 authentication server (allow users to authenticate via this server)"`
 
-	DisableUserProfiles bool `long:"auth.disable-user-profiles" description:"do not show user profile pages"`
-
 	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login."`
 
 	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations"`
@@ -58,8 +56,6 @@ func (f Flags) HasLogin() bool { return f.HasUserAccounts() }
 
 // HasSignup returns whether signing up is enabled.
 func (f Flags) HasSignup() bool { return f.IsLocal() }
-
-func (f Flags) HasUserProfiles() bool { return !f.DisableUserProfiles }
 
 func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.HasUserAccounts() }
 

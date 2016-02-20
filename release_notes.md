@@ -1,9 +1,16 @@
+# dev
+
+- Removed user profile pages and the `--auth.disable-user-profiles`
+  flag. User profiles are not yet implemented, and enabling user
+  profiles did not yet make sense in any scenarios. If you previously
+  were using this flag, you can omit it (because user profiles were
+  removed altogether).
+
 # 0.13.8
 
 - Added the config option `--app.disable-support-services`/`DisableSupportServices` to
   disable 3rd party support services, including Zendesk, FullStory, Google Analytics, Heap
   Analytics and Sentry.
-
 
 # 0.13.7
 

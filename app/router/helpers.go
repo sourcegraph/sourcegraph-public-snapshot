@@ -18,10 +18,6 @@ func (r *Router) URLToBlogPost(slug string) *url.URL {
 	return r.URLTo(BlogPost, "Slug", slug)
 }
 
-func (r *Router) URLToUser(userSpec string) *url.URL {
-	return r.URLToUserSubroute(User, userSpec)
-}
-
 func (r *Router) URLToUserSubroute(routeName string, userSpec string) *url.URL {
 	return r.URLTo(routeName, "User", userSpec)
 }
