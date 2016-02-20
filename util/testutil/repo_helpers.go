@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -160,7 +161,7 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 	}
 
 	// Clone the repository.
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := ioutil.TempDir("", GetTempPrefix())
 	if err != nil {
 		return err
 	}
@@ -224,7 +225,9 @@ func PushRepo(ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey
 func CloneRepo(cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
 	if dir == "" {
 		var err error
-		dir, err = ioutil.TempDir("", "")
+		// Use a non-empty prefix to avoid conflicts in concurrent calls
+		// to ioutil.TempDir.
+		dir, err = ioutil.TempDir("", GetTempPrefix())
 		if err != nil {
 			return err
 		}
@@ -320,4 +323,20 @@ func prepGitCommand(cmd *exec.Cmd) *exec.Cmd {
 	//cmd.Env = append(cmd.Env, "GIT_TRACE=1")
 	//cmd.Env = append(cmd.Env, "GIT_CURL_VERBOSE=1")
 	return cmd
+}
+
+var tempPrefixCount int32
+var tempMu sync.Mutex
+
+// GetTempPrefix returns a unique string on each call, which
+// can be used in creating temporary directories using ioutil.TempDir
+// in parallel tests.
+func GetTempPrefix() string {
+	tempMu.Lock()
+	defer tempMu.Unlock()
+
+	tempPrefixCount += 1
+	str := fmt.Sprintf("tmp-%d-", tempPrefixCount)
+	fmt.Println(str)
+	return str
 }
