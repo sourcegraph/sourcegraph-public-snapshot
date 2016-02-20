@@ -32,7 +32,7 @@ var Flags struct {
 
 	DisableApps bool `long:"app.disable-apps" description:"if set, disable the changes and issues applications"`
 
-	DisableIntegrations bool `long:"app.disable-integrations" description:"disable integrations to external services like Zendesk, Fullstory"`
+	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics, Heap analytics"`
 
 	DisableCloneURL bool `long:"app.disable-clone-url" description:"if set, disable display of the git clone URL"`
 

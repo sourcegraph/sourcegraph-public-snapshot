@@ -63,7 +63,7 @@ SERVEFLAGS ?=
 serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
 	@echo
-	DEBUG=t $(GODEP) rego $(GORACE) -tags="$(GOTAGS)" src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) --app.disable-integrations $(SERVEFLAGS)
+	DEBUG=t $(GODEP) rego $(GORACE) -tags="$(GOTAGS)" src.sourcegraph.com/sourcegraph/cmd/src $(SRCFLAGS) serve --reload --app.webpack-dev-server=$(WEBPACK_DEV_SERVER_URL) --app.disable-support-services $(SERVEFLAGS)
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
