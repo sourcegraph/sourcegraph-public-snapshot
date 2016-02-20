@@ -1,3 +1,10 @@
+# 0.13.8
+
+- Added the config option `--app.disable-support-services`/`DisableSupportServices` to
+  disable 3rd party support services, including Zendesk, FullStory, Google Analytics, Heap
+  Analytics and Sentry.
+
+
 # 0.13.7
 
 - Changesets now supports a `.srcignore` file which will suppress the diffs of
