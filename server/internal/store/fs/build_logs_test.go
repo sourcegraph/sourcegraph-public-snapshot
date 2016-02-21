@@ -48,7 +48,16 @@ func TestBuildLogs_Get_noErrorIfEmpty(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.BuildLogs_Get_noErrorIfEmpty(ctx, t, &BuildLogs{}, writeBuildLog)
+	s := &BuildLogs{}
+	writeBuildLog(ctx, t, task, "")
+
+	e, err := s.Get(ctx, task, "", time.Time{}, time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := ""; logStr(e) != want {
+		t.Errorf("got log %q, want %q", logStr(e), want)
+	}
 }
 
 func TestBuildLogs_Get_ok(t *testing.T) {
