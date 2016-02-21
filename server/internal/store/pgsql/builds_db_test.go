@@ -227,14 +227,30 @@ func TestBuilds_GetFirstInCommitOrder_returnNewest(t *testing.T) {
 	}
 }
 
+// TestBuilds_ListBuildTasks verifies the correct functioning of the
+// Builds.ListBuildTasks method.
 func TestBuilds_ListBuildTasks(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_ListBuildTasks(ctx, t, &s, s.mustCreateTasks)
+	s := builds{}
+	tasks := []*sourcegraph.BuildTask{
+		{ID: 10, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"}, // test order
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "a"},
+	}
+	s.mustCreateTasks(ctx, t, tasks)
+	ts, err := s.ListBuildTasks(ctx, tasks[0].Spec().Build, nil)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	want := []*sourcegraph.BuildTask{tasks[1], tasks[2], tasks[0]}
+	if !reflect.DeepEqual(ts, want) {
+		t.Errorf("expected %#v, got %#v", want, ts)
+	}
 }
 
 // TestBuilds_Create tests the behavior of Builds.Create and that it correctly
