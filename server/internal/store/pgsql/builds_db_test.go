@@ -15,7 +15,6 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/store/testsuite"
 	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
 
@@ -453,11 +452,19 @@ func TestBuilds_UpdateTask(t *testing.T) {
 func TestBuilds_GetTask(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_GetTask(ctx, t, &s, s.mustCreateTasks)
+	s := &builds{}
+	tasks := []*sourcegraph.BuildTask{
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "a"},
+	}
+	s.mustCreateTasks(ctx, t, tasks)
+	for _, tsk := range tasks {
+		assertTaskExists(ctx, s, tsk, t)
+	}
 }
 
 func TestBuilds_DequeueNext(t *testing.T) {
