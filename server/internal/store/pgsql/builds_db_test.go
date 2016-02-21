@@ -87,12 +87,26 @@ func TestBuilds_GetFirstInCommitOrder_secondCommitIDMatch(t *testing.T) {
 	}
 }
 
+// TestBuilds_GetFirstInCommitOrder_successfulOnly tests the behavior of
+// Builds.GetFirstInCommitOrder when successfulOnly is true and there
+// are no successful builds.
 func TestBuilds_GetFirstInCommitOrder_successfulOnly(t *testing.T) {
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_GetFirstInCommitOrder_successfulOnly(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{{ID: 1, Repo: "r", CommitID: "a", Success: false}})
+
+	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a"}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if build != nil {
+		t.Error("build != nil")
+	}
+	if want := -1; nth != want {
+		t.Errorf("got nth == %d, want %d", nth, want)
+	}
 }
 
 func TestBuilds_GetFirstInCommitOrder_noneFound(t *testing.T) {
