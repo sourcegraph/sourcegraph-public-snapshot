@@ -72,11 +72,18 @@ func TestPasswords_CheckUIDPassword_empty(t *testing.T) {
 	}
 }
 
+// TestPasswords_CheckUIDPassword_noneSet tests the behavior of
+// Passwords.CheckUIDPassword when there is no password set.
 func TestPasswords_CheckUIDPassword_noneSet(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Passwords_CheckUIDPassword_noneSet(ctx, t, &password{})
+
+	s := &password{}
+	uid := nextUID()
+	if err := s.CheckUIDPassword(ctx, uid, "p"); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestPasswords_CheckUIDPassword_noneSetForUser(t *testing.T) {
