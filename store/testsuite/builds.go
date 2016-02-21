@@ -49,34 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_GetFirstInCommitOrder_returnNewest tests the behavior of
-// Builds.GetFirstInCommitOrder when there are multiple builds for a
-// specified commit ID (it should pick the newest build).
-func Builds_GetFirstInCommitOrder_returnNewest(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	t0 := pbtypes.NewTimestamp(time.Unix(0, 0)) // oldest
-	t1 := pbtypes.NewTimestamp(time.Unix(1, 0))
-	t2 := pbtypes.NewTimestamp(time.Unix(2, 0)) // newest
-	insert(ctx, t, []*sourcegraph.Build{
-		{ID: 1, Repo: "r", CommitID: "a", StartedAt: &t0},
-		{ID: 2, Repo: "r", CommitID: "a", StartedAt: &t2}, // newest
-		{ID: 3, Repo: "r", CommitID: "a", StartedAt: &t1},
-	})
-
-	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a"}, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if build == nil {
-		t.Fatal("build == nil")
-	}
-	if build.ID != 2 {
-		t.Errorf("got ID %d, want %d", build.ID, 2)
-	}
-	if want := 0; nth != want {
-		t.Errorf("got nth == %d, want %d", nth, want)
-	}
-}
-
 // Builds_Get tests that the behavior of Builds.Get indirectly via the assertBuildExists method.
 func Builds_Get(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
 	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost"}

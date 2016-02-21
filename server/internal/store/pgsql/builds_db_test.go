@@ -4,6 +4,9 @@ package pgsql
 
 import (
 	"testing"
+	"time"
+
+	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
@@ -131,12 +134,36 @@ func TestBuilds_GetFirstInCommitOrder_noneFound(t *testing.T) {
 	}
 }
 
+// TestBuilds_GetFirstInCommitOrder_returnNewest tests the behavior of
+// Builds.GetFirstInCommitOrder when there are multiple builds for a
+// specified commit ID (it should pick the newest build).
 func TestBuilds_GetFirstInCommitOrder_returnNewest(t *testing.T) {
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_GetFirstInCommitOrder_returnNewest(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	t0 := pbtypes.NewTimestamp(time.Unix(0, 0)) // oldest
+	t1 := pbtypes.NewTimestamp(time.Unix(1, 0))
+	t2 := pbtypes.NewTimestamp(time.Unix(2, 0)) // newest
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{
+		{ID: 1, Repo: "r", CommitID: "a", StartedAt: &t0},
+		{ID: 2, Repo: "r", CommitID: "a", StartedAt: &t2}, // newest
+		{ID: 3, Repo: "r", CommitID: "a", StartedAt: &t1},
+	})
+
+	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a"}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if build == nil {
+		t.Fatal("build == nil")
+	}
+	if build.ID != 2 {
+		t.Errorf("got ID %d, want %d", build.ID, 2)
+	}
+	if want := 0; nth != want {
+		t.Errorf("got nth == %d, want %d", nth, want)
+	}
 }
 
 func TestBuilds_ListBuildTasks(t *testing.T) {
