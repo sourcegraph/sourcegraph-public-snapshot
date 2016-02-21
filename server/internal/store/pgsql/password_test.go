@@ -138,11 +138,18 @@ func TestPasswords_SetPassword_ok(t *testing.T) {
 	}
 }
 
+// TestPasswords_SetPassword_empty tests changing the password to an
+// empty password.
 func TestPasswords_SetPassword_empty(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Passwords_SetPassword_empty(ctx, t, &password{})
+
+	s := &password{}
+	uid := nextUID()
+	if err := s.SetPassword(ctx, uid, ""); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestPasswords_SetPassword_setToEmpty(t *testing.T) {

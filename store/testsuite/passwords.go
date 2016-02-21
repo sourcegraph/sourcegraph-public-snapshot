@@ -9,15 +9,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Passwords_SetPassword_empty tests changing the password to an
-// empty password.
-func Passwords_SetPassword_empty(ctx context.Context, t *testing.T, s store.Password) {
-	uid := nextUID()
-	if err := s.SetPassword(ctx, uid, ""); err == nil {
-		t.Fatal("err == nil")
-	}
-}
-
 // Passwords_SetPassword_setToEmpty tests changing the password FROM a
 // valid password to an empty password.
 func Passwords_SetPassword_setToEmpty(ctx context.Context, t *testing.T, s store.Password) {
