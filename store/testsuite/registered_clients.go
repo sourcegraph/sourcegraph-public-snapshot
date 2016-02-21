@@ -11,20 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_Create_duplicate tests the behavior of
-// RegisteredClients.Create when called with an existing (duplicate)
-// client ID.
-func RegisteredClients_Create_duplicate(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
-		t.Fatal(err)
-	}
-
-	err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b2"})
-	if want := store.ErrRegisteredClientIDExists; err != want {
-		t.Fatalf("got err == %v, want %v", err, want)
-	}
-}
-
 // RegisteredClients_Create_noID tests the behavior of
 // RegisteredClients.Create when called with an empty ID.
 func RegisteredClients_Create_noID(ctx context.Context, t *testing.T, s store.RegisteredClients) {

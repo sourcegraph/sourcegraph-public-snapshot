@@ -235,13 +235,24 @@ func TestRegisteredClients_Create_jwks_ok(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Create_duplicate tests the behavior of
+// RegisteredClients.Create when called with an existing (duplicate)
+// client ID.
 func TestRegisteredClients_Create_duplicate(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Create_duplicate(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
+		t.Fatal(err)
+	}
+
+	err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b2"})
+	if want := store.ErrRegisteredClientIDExists; err != want {
+		t.Fatalf("got err == %v, want %v", err, want)
+	}
 }
 
 func TestRegisteredClients_Create_noID(t *testing.T) {
