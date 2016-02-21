@@ -128,13 +128,26 @@ func TestRegisteredClients_GetByCredentials_badSecret(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_GetByCredentials_noSecretOrJWKS tests the behavior of
+// RegisteredClients.Get when called with no secret.
 func TestRegisteredClients_GetByCredentials_noSecretOrJWKS(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_GetByCredentials_noSecretOrJWKS(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
+		t.Fatal(err)
+	}
+
+	client, err := s.GetByCredentials(ctx, sourcegraph.RegisteredClientCredentials{ID: "a", Secret: ""})
+	if !isRegisteredClientNotFound(err) {
+		t.Fatal(err)
+	}
+	if client != nil {
+		t.Error("client != nil")
+	}
 }
 
 func TestRegisteredClients_Create_secret_ok(t *testing.T) {

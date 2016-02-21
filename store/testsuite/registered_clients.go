@@ -11,22 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_GetByCredentials_noSecret tests the behavior of
-// RegisteredClients.Get when called with no secret.
-func RegisteredClients_GetByCredentials_noSecretOrJWKS(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := s.GetByCredentials(ctx, sourcegraph.RegisteredClientCredentials{ID: "a", Secret: ""})
-	if !isRegisteredClientNotFound(err) {
-		t.Fatal(err)
-	}
-	if client != nil {
-		t.Error("client != nil")
-	}
-}
-
 // RegisteredClients_Create_secret_ok tests the behavior of
 // RegisteredClients.Create when called with correct args and a
 // ClientSecret.
