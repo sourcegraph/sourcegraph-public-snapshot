@@ -15,18 +15,6 @@ import (
 // CreateUserFunc is used by Users_Get_* tests to create test users.
 type CreateUserFunc func(sourcegraph.User) (*sourcegraph.UserSpec, error)
 
-// Users_Get_nonexistentUID tests the behavior of Users.Get when
-// called with a UID of a user that does not exist.
-func Users_Get_nonexistentUID(ctx context.Context, t *testing.T, s store.Users) {
-	user, err := s.Get(ctx, sourcegraph.UserSpec{UID: 456 /* doesn't exist */})
-	if !isUserNotFound(err) {
-		t.Fatal(err)
-	}
-	if user != nil {
-		t.Error("user != nil")
-	}
-}
-
 // Users_List_ok tests the behavior of Users.List.
 func Users_List_ok(ctx context.Context, t *testing.T, s store.Users, createUser CreateUserFunc) {
 	if _, err := createUser(sourcegraph.User{Login: "u0"}); err != nil {

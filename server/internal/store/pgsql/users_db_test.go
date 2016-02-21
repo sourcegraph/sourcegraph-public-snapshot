@@ -174,11 +174,21 @@ func TestUsers_Get_nonexistentLogin(t *testing.T) {
 	}
 }
 
+// TestUsers_Get_nonexistentUID tests the behavior of Users.Get when
+// called with a UID of a user that does not exist.
 func TestUsers_Get_nonexistentUID(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Users_Get_nonexistentUID(ctx, t, &users{})
+
+	s := &users{}
+	user, err := s.Get(ctx, sourcegraph.UserSpec{UID: 456 /* doesn't exist */})
+	if !isUserNotFound(err) {
+		t.Fatal(err)
+	}
+	if user != nil {
+		t.Error("user != nil")
+	}
 }
 
 func TestUsers_List_ok(t *testing.T) {
