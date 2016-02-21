@@ -368,13 +368,17 @@ func TestRegisteredClients_Update_secret(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Update_nonexistent tests the behavior of
+// RegisteredClients.Update when called with a nonexistent client ID.
 func TestRegisteredClients_Update_nonexistent(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Update_nonexistent(ctx, t, &registeredClients{})
+	if err := (&registeredClients{}).Update(ctx, sourcegraph.RegisteredClient{ID: "a", ClientName: "t"}); !isRegisteredClientNotFound(err) {
+		t.Fatal(err)
+	}
 }
 
 func TestRegisteredClients_Delete_ok(t *testing.T) {
