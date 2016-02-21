@@ -319,14 +319,27 @@ func TestBuilds_Update(t *testing.T) {
 	assertBuildExists(ctx, s, &want, t)
 }
 
+// TestBuilds_Update_builderConfig tests that updating BuilderConfig only updates
+// the BuilderConfig without affecting other fields.
 func TestBuilds_Update_builderConfig(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_Update_builderConfig(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
+	orig := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost", StartedAt: &t0}
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{orig})
+
+	update := sourcegraph.BuildUpdate{BuilderConfig: "test"}
+	err := s.Update(ctx, orig.Spec(), update)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	want := *orig
+	want.BuilderConfig = update.BuilderConfig
+	assertBuildExists(ctx, s, &want, t)
 }
 
 func TestBuilds_CreateTasks(t *testing.T) {
