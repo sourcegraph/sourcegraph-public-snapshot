@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
 
 // assertBuildExists verifies that a build exists in the store by using its Get method.
@@ -405,11 +406,40 @@ func TestBuilds_DequeueNext(t *testing.T) {
 func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_DequeueNext_ordered(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	t1 := pbtypes.NewTimestamp(time.Unix(100000, 0))
+	t2 := pbtypes.NewTimestamp(time.Unix(200000, 0))
+
+	b1 := &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: 10}}
+	b2 := &sourcegraph.Build{ID: 2, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	b3 := &sourcegraph.Build{ID: 3, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	bNo1 := &sourcegraph.Build{ID: 4, CommitID: strings.Repeat("A", 40), Repo: "r", BuildConfig: sourcegraph.BuildConfig{Queue: false}}
+	bNo2 := &sourcegraph.Build{ID: 5, CommitID: strings.Repeat("A", 40), Repo: "r", StartedAt: &t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{b1, b2, b3, bNo1, bNo2})
+
+	wantBuilds := []*sourcegraph.Build{
+		b1, b2, b3, nil, // in order
+	}
+
+	for i, wantBuild := range wantBuilds {
+		build, err := s.DequeueNext(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if build != nil {
+			if build.StartedAt == nil {
+				t.Errorf("got dequeued build #%d StartedAt null, want it to be set to appx. now", i+1)
+			}
+			build.StartedAt = nil // don't compare since StartedAt is set from the current time
+		}
+		if !jsonutil.JSONEqual(t, build, wantBuild) {
+			t.Errorf("dequeued build #%d\n\nGOT\n%+v\n\nWANT\n%+v", i+1, build, wantBuild)
+		}
+	}
 }
 
 func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
