@@ -242,7 +242,37 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_UpdatedAt(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.UpdatedAt != nil {
+		t.Errorf("got UpdatedAt %v, want nil", repo.UpdatedAt.Time())
+	}
+
+	// Perform any update.
+	newTime := time.Unix(123456, 0)
+	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, UpdatedAt: &newTime}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.UpdatedAt == nil {
+		t.Fatal("got UpdatedAt nil, want non-nil")
+	}
+	if want := newTime; !repo.UpdatedAt.Time().Equal(want) {
+		t.Errorf("got UpdatedAt %q, want %q", repo.UpdatedAt.Time(), want)
+	}
 }
 
 func TestRepos_Update_PushedAt(t *testing.T) {
