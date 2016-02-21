@@ -49,27 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_GetFirstInCommitOrder_firstCommitIDMatch tests the behavior
-// of Builds.GetFirstInCommitOrder when the first commit ID has
-// multiple builds (it should return the newest).
-func Builds_GetFirstInCommitOrder_firstCommitIDMatch(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	insert(ctx, t, []*sourcegraph.Build{{ID: 1, Repo: "r", CommitID: "a"}})
-
-	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a"}, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if build == nil {
-		t.Fatal("build == nil")
-	}
-	if build.ID != 1 {
-		t.Errorf("got ID %d, want %d", build.ID, 1)
-	}
-	if want := 0; nth != want {
-		t.Errorf("got nth == %d, want %d", nth, want)
-	}
-}
-
 // Builds_GetFirstInCommitOrder_secondCommitIDMatch tests the behavior
 // of Builds.GetSecondInCommitOrder when the *second* (but not second)
 // commit ID has multiple builds (it should return the newest).
