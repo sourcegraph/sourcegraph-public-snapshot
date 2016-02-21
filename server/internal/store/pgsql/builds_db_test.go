@@ -383,12 +383,25 @@ func TestBuilds_CreateTasks(t *testing.T) {
 	}
 }
 
+// TestBuilds_CreateTasks_SequentialID verifies that when creating tasks
+// with unset IDs, IDs are generated such that they are sequential in
+// the build.
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_CreateTasks_SequentialID(ctx, t, &s)
+	s := &builds{}
+	build := sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}
+
+	for i := 1; i < 4; i++ {
+		tasks, err := s.CreateTasks(ctx, []*sourcegraph.BuildTask{{Build: build}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := uint64(i); tasks[0].ID != want {
+			t.Errorf("got id == %d, want %d", tasks[0].ID, want)
+		}
+	}
 }
 
 func TestBuilds_UpdateTask(t *testing.T) {
