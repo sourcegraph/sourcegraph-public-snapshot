@@ -66,11 +66,30 @@ func TestUsers_Get_existingByUID(t *testing.T) {
 	}
 }
 
+// TestUsers_Get_existingByBoth tests the behavior of Users.Get when
+// called with both the login and UID of a user that exists (i.e., the
+// successful outcome).
 func TestUsers_Get_existingByBoth(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Users_Get_existingByBoth(ctx, t, &users{}, newCreateUserFunc(ctx))
+
+	s := &users{}
+	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.Login == "" || created.UID == 0 {
+		t.Error("violated assumption that both login and UID are set")
+	}
+
+	user, err := s.Get(ctx, *created)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if user.Spec() != *created {
+		t.Errorf("got user spec == %+v, want %+v", user.Spec(), *created)
+	}
 }
 
 func TestUsers_Get_existingByBothConflict(t *testing.T) {
