@@ -118,11 +118,40 @@ func TestRepos_List_query(t *testing.T) {
 	}
 }
 
+// TestRepos_List_URIs tests the behavior of Repos.List when called with
+// URIs.
 func TestRepos_List_URIs(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_URIs(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add some repos.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "c/d", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		uris []string
+		want []string
+	}{
+		{[]string{"a/b"}, []string{"a/b"}},
+		{[]string{"x/y"}, nil},
+		{[]string{"a/b", "c/d"}, []string{"a/b", "c/d"}},
+		{[]string{"a/b", "x/y", "c/d"}, []string{"a/b", "c/d"}},
+	}
+	for _, test := range tests {
+		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{URIs: test.uris})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%v: got repos %v, want %v", test.uris, got, test.want)
+		}
+	}
 }
 
 func TestRepos_Create(t *testing.T) {

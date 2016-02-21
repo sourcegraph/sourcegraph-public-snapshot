@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -14,37 +13,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
-
-// Repos_List_URIs tests the behavior of Repos.List when called with
-// URIs.
-func Repos_List_URIs(ctx context.Context, t *testing.T, s store.Repos) {
-	// Add some repos.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "c/d", VCS: "git"}); err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		uris []string
-		want []string
-	}{
-		{[]string{"a/b"}, []string{"a/b"}},
-		{[]string{"x/y"}, nil},
-		{[]string{"a/b", "c/d"}, []string{"a/b", "c/d"}},
-		{[]string{"a/b", "x/y", "c/d"}, []string{"a/b", "c/d"}},
-	}
-	for _, test := range tests {
-		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{URIs: test.uris})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%v: got repos %v, want %v", test.uris, got, test.want)
-		}
-	}
-}
 
 func Repos_Create(ctx context.Context, t *testing.T, s store.Repos) {
 	tm := time.Now().Round(time.Second)
