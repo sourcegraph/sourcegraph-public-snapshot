@@ -11,39 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_Create_jwks_ok tests the behavior of
-// RegisteredClients.Create when called with correct args and a
-// JWKS.
-func RegisteredClients_Create_jwks_ok(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	want := sourcegraph.RegisteredClient{
-		ID:           "a",
-		ClientURI:    "https://example.com/1",
-		JWKS:         "[]",
-		RedirectURIs: []string{"https://example.com/2"},
-		ClientName:   "t",
-		Description:  "d",
-		Meta:         map[string]string{"k1": "v1", "k2": "v2"},
-		Type:         sourcegraph.RegisteredClientType_SourcegraphServer,
-	}
-
-	if err := s.Create(ctx, want); err != nil {
-		t.Fatal(err)
-	}
-
-	created, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Don't check equality of these non-deterministic fields.
-	want.CreatedAt = pbtypes.Timestamp{}
-	want.UpdatedAt = pbtypes.Timestamp{}
-
-	if !reflect.DeepEqual(*created, want) {
-		t.Errorf("Create: got %+v, want %+v", *created, want)
-	}
-}
-
 // RegisteredClients_Create_duplicate tests the behavior of
 // RegisteredClients.Create when called with an existing (duplicate)
 // client ID.
