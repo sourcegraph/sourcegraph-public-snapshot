@@ -12,6 +12,15 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
 
+func repoURIs(repos []*sourcegraph.Repo) []string {
+	var uris []string
+	for _, repo := range repos {
+		uris = append(uris, repo.URI)
+	}
+	sort.Strings(uris)
+	return uris
+}
+
 func TestRepos_List(t *testing.T) {
 	t.Parallel()
 
@@ -70,11 +79,43 @@ func TestRepos_List_type(t *testing.T) {
 	}
 }
 
+// TestRepos_List_query tests the behavior of Repos.List when called with
+// a query.
 func TestRepos_List_query(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_query(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add some repos.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "def/ghi", Name: "ghi", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		query string
+		want  []string
+	}{
+		{"de", []string{"abc/def", "def/ghi"}},
+		{"def", []string{"abc/def", "def/ghi"}},
+		{"ABC/DEF", []string{"abc/def"}},
+		{"xyz", nil},
+	}
+	for _, test := range tests {
+		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{Query: test.query})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
+		}
+	}
 }
 
 func TestRepos_List_URIs(t *testing.T) {

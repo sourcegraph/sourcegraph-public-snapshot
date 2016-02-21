@@ -15,40 +15,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Repos_List_query tests the behavior of Repos.List when called with
-// a query.
-func Repos_List_query(ctx context.Context, t *testing.T, s store.Repos) {
-	// Add some repos.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", VCS: "git"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "def/ghi", Name: "ghi", VCS: "git"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", VCS: "git"}); err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		query string
-		want  []string
-	}{
-		{"de", []string{"abc/def", "def/ghi"}},
-		{"def", []string{"abc/def", "def/ghi"}},
-		{"ABC/DEF", []string{"abc/def"}},
-		{"xyz", nil},
-	}
-	for _, test := range tests {
-		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{Query: test.query})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
-		}
-	}
-}
-
 // Repos_List_URIs tests the behavior of Repos.List when called with
 // URIs.
 func Repos_List_URIs(ctx context.Context, t *testing.T, s store.Repos) {
