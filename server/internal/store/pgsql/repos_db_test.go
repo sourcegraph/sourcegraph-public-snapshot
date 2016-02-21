@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
@@ -203,11 +204,38 @@ func TestRepos_Create_dupe(t *testing.T) {
 	}
 }
 
+// TestRepos_Update_Description tests the behavior of Repos.Update to
+// update a repo's description.
 func TestRepos_Update_Description(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_Description(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := ""; repo.Description != want {
+		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
+
+	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "d"; repo.Description != want {
+		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
 }
 
 func TestRepos_Update_UpdatedAt(t *testing.T) {

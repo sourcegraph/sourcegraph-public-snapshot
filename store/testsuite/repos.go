@@ -12,35 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Repos_Update_Description tests the behavior of Repos.Update to
-// update a repo's description.
-func Repos_Update_Description(ctx context.Context, t *testing.T, s store.Repos) {
-	// Add a repo.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err := s.Get(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := ""; repo.Description != want {
-		t.Errorf("got description %q, want %q", repo.Description, want)
-	}
-
-	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err = s.Get(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := "d"; repo.Description != want {
-		t.Errorf("got description %q, want %q", repo.Description, want)
-	}
-}
-
 func Repos_Update_UpdatedAt(ctx context.Context, t *testing.T, s store.Repos) {
 	// Add a repo.
 	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
