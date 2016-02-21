@@ -65,12 +65,27 @@ func TestBuilds_List(t *testing.T) {
 	}
 }
 
+// TestBuilds_List_byRepoAndCommitID verifies the correct functioning of
+// the Builds.List method when filtering by a repo and commit ID.
 func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_List_byRepoAndCommitID(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	data := []*sourcegraph.Build{
+		{ID: 1, Repo: "r1", CommitID: "c1"},
+		{ID: 2, Repo: "r1", CommitID: "c2"},
+		{ID: 3, Repo: "r2", CommitID: "c1"},
+	}
+	s.mustCreateBuilds(ctx, t, data)
+	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{Repo: "r1", CommitID: "c1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := []*sourcegraph.Build{data[0]}; !reflect.DeepEqual(builds, want) {
+		t.Errorf("got %v, want %v", builds, want)
+	}
 }
 
 // TestBuilds_GetFirstInCommitOrder_firstCommitIDMatch tests the behavior
