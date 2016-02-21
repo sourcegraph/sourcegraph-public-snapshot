@@ -132,11 +132,29 @@ func TestUsers_Get_existingByBothConflict(t *testing.T) {
 	}
 }
 
+// TestUsers_Get_existingByBothOnlyOneExist tests the behavior of
+// Users.Get when called with both a login and UID, but only one of
+// those points to an existing user.
 func TestUsers_Get_existingByBothOnlyOneExist(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Users_Get_existingByBothOnlyOneExist(ctx, t, &users{}, newCreateUserFunc(ctx))
+
+	s := &users{}
+	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.Login == "" || created.UID == 0 {
+		t.Error("violated assumption that both login and UID are set")
+	}
+
+	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: 123, Login: "u"}); !isUserNotFound(err) {
+		t.Fatal(err)
+	}
+	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: created.UID, Login: "doesntexist"}); !isUserNotFound(err) {
+		t.Fatal(err)
+	}
 }
 
 func TestUsers_Get_nonexistentLogin(t *testing.T) {
