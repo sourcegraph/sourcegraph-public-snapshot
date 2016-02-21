@@ -6,6 +6,9 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
+
+	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
@@ -158,7 +161,26 @@ func TestRepos_Create(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create(ctx, t, &repos{})
+
+	s := &repos{}
+	tm := time.Now().Round(time.Second)
+	ts := pbtypes.NewTimestamp(tm)
+
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.CreatedAt == nil {
+		t.Fatal("got CreatedAt nil")
+	}
+	if want := ts.Time(); !repo.CreatedAt.Time().Equal(want) {
+		t.Errorf("got CreatedAt %q, want %q", repo.CreatedAt.Time(), want)
+	}
 }
 
 func TestRepos_Create_dupe(t *testing.T) {

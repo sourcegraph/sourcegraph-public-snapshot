@@ -14,27 +14,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-func Repos_Create(ctx context.Context, t *testing.T, s store.Repos) {
-	tm := time.Now().Round(time.Second)
-	ts := pbtypes.NewTimestamp(tm)
-
-	// Add a repo.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err := s.Get(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo.CreatedAt == nil {
-		t.Fatal("got CreatedAt nil")
-	}
-	if want := ts.Time(); !repo.CreatedAt.Time().Equal(want) {
-		t.Errorf("got CreatedAt %q, want %q", repo.CreatedAt.Time(), want)
-	}
-}
-
 func Repos_Create_dupe(ctx context.Context, t *testing.T, s store.Repos) {
 	tm := time.Now().Round(time.Second)
 	ts := pbtypes.NewTimestamp(tm)
