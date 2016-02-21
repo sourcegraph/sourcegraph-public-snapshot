@@ -7,18 +7,9 @@ import (
 	"regexp"
 	"testing"
 
-	"golang.org/x/net/context"
-
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
-
-func newGetAccountFunc(ctx context.Context) testsuite.GetAccountFunc {
-	return func(user sourcegraph.UserSpec) (*sourcegraph.User, error) {
-		return (&users{}).Get(ctx, user)
-	}
-}
 
 // TestAccounts_Create_ok tests the behavior of Accounts.Create when
 // called with correct args.
@@ -28,7 +19,11 @@ func TestAccounts_Create_ok(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	s, getAccount := &accounts{}, newGetAccountFunc(ctx)
+	s := &accounts{}
+	getAccount := func(user sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		return (&users{}).Get(ctx, user)
+	}
+
 	want := sourcegraph.User{Login: "u", Name: "n"}
 
 	created, err := s.Create(ctx, &want)
@@ -140,10 +135,16 @@ func TestAccounts_ResetPassword_ok(t *testing.T) {
 	}
 }
 
+// TestAccounts_ResetPassword_badtoken tests that we cannot reset a password without
+// the correct token.
 func TestAccounts_ResetPassword_badtoken(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Accounts_ResetPassword_badtoken(ctx, t, &accounts{})
+	s := accounts{}
+	newPass := &sourcegraph.NewPassword{Password: "a", Token: &sourcegraph.PasswordResetToken{Token: "b"}}
+	if err := s.ResetPassword(ctx, newPass); err == nil {
+		t.Errorf("Should have gotten error reseting password, got nil instead")
+	}
 }
