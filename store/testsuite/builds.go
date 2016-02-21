@@ -3,10 +3,8 @@ package testsuite
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -44,29 +42,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	if !reflect.DeepEqual(b, want) {
 		t.Errorf("expected %#v, got %#v", want, b)
 	}
-}
-
-// Builds_UpdateTask verifies the correct functioning of the Builds.UpdateTask method.
-func Builds_UpdateTask(ctx context.Context, t *testing.T, s store.Builds, insert InsertTasksFunc) {
-	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
-		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
-	}
-	insert(ctx, t, tasks)
-	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
-	err := s.UpdateTask(ctx, tasks[2].Spec(), sourcegraph.TaskUpdate{
-		EndedAt: &t0,
-		Failure: true,
-	})
-	if err != nil {
-		t.Fatalf("errored out: %s", err)
-	}
-	want := *(tasks[2])
-	want.EndedAt = &t0
-	want.Failure = true
-	assertTaskExists(ctx, s, &want, t)
 }
 
 // Builds_ListBuildTasks verifies the correct functioning of the Builds.ListBuildTasks method.

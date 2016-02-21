@@ -404,14 +404,34 @@ func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
 	}
 }
 
+// TestBuilds_UpdateTask verifies the correct functioning of the
+// Builds.UpdateTask method.
 func TestBuilds_UpdateTask(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_UpdateTask(ctx, t, &s, s.mustCreateTasks)
+	s := &builds{}
+	tasks := []*sourcegraph.BuildTask{
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
+	}
+	s.mustCreateTasks(ctx, t, tasks)
+	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
+	err := s.UpdateTask(ctx, tasks[2].Spec(), sourcegraph.TaskUpdate{
+		EndedAt: &t0,
+		Failure: true,
+	})
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	want := *(tasks[2])
+	want.EndedAt = &t0
+	want.Failure = true
+	assertTaskExists(ctx, s, &want, t)
 }
 
 func TestBuilds_GetTask(t *testing.T) {
