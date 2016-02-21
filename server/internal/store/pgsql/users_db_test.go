@@ -22,11 +22,26 @@ func newCreateUserFunc(ctx context.Context) testsuite.CreateUserFunc {
 	}
 }
 
+// TestUsers_Get_existingByLogin tests the behavior of Users.Get when
+// called with the login of a user that exists (i.e., the successful
+// outcome).
 func TestUsers_Get_existingByLogin(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Users_Get_existingByLogin(ctx, t, &users{}, newCreateUserFunc(ctx))
+
+	s := &users{}
+	if _, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"}); err != nil {
+		t.Fatal(err)
+	}
+
+	user, err := s.Get(ctx, sourcegraph.UserSpec{Login: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "u"; user.Login != want {
+		t.Errorf("got login == %q, want %q", user.Login, want)
+	}
 }
 
 func TestUsers_Get_existingByUID(t *testing.T) {
