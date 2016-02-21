@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
@@ -44,11 +45,21 @@ func TestAuthorizations_CreateAuthCode_MarkExchanged_ok(t *testing.T) {
 	}
 }
 
+// TestAuthorizations_MarkExchanged_doesntexist tests the behavior of
+// MarkExchanged when the code does not exist (and no codes exist).
 func TestAuthorizations_MarkExchanged_doesntexist(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Authorizations_MarkExchanged_doesntexist(ctx, t, &authorizations{})
+
+	s := &authorizations{}
+	xreq, err := s.MarkExchanged(ctx, &sourcegraph.AuthorizationCode{Code: "mycode", RedirectURI: "u"}, "c")
+	if want := store.ErrAuthCodeNotFound; err != want {
+		t.Fatalf("got error %v, want %v", err, want)
+	}
+	if xreq != nil {
+		t.Error("xreq != nil")
+	}
 }
 
 func TestAuthorizations_MarkExchanged_codeNotFound(t *testing.T) {

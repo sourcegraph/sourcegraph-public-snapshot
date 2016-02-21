@@ -10,18 +10,6 @@ import (
 )
 
 // Authorizations_MarkExchanged_doesntexist tests the behavior of
-// MarkExchanged when the code does not exist (and no codes exist).
-func Authorizations_MarkExchanged_doesntexist(ctx context.Context, t *testing.T, s store.Authorizations) {
-	xreq, err := s.MarkExchanged(ctx, &sourcegraph.AuthorizationCode{Code: "mycode", RedirectURI: "u"}, "c")
-	if want := store.ErrAuthCodeNotFound; err != want {
-		t.Fatalf("got error %v, want %v", err, want)
-	}
-	if xreq != nil {
-		t.Error("xreq != nil")
-	}
-}
-
-// Authorizations_MarkExchanged_doesntexist tests the behavior of
 // MarkExchanged when the code does not exist (but some codes have been added).
 func Authorizations_MarkExchanged_codeNotFound(ctx context.Context, t *testing.T, s store.Authorizations) {
 	code, err := s.CreateAuthCode(ctx, &sourcegraph.AuthorizationCodeRequest{
