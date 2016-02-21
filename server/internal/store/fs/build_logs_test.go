@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 func logStr(e *sourcegraph.LogEntries) string { return strings.Join(e.Entries, "\n") }
@@ -79,5 +78,40 @@ func TestBuildLogs_Get_MinID(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.BuildLogs_Get_MinID(ctx, t, &BuildLogs{}, writeBuildLog)
+	s := &BuildLogs{}
+	const data = "a\nb\nc\nd"
+	writeBuildLog(ctx, t, task, data)
+
+	// NOTE: These MinIDs are based on how the fs-backed BuildLogs is
+	// implemented. If we need to test other stores, we'll need to
+	// abstract out the hard-coded MinIDs here.
+	tests := []struct {
+		minID string
+		want  string
+	}{
+		{"", data},
+		{"0", data},
+		{"-1", data},
+		{"1", "b\nc\nd"},
+		{"2", "c\nd"},
+		{"3", "d"},
+		{"4", ""},
+		{"5", ""},
+		{"6", ""},
+	}
+	for _, test := range tests {
+		e, err := s.Get(ctx, task, test.minID, time.Time{}, time.Time{})
+		if err != nil {
+			t.Errorf("MinID %q: %s", test.minID, err)
+			continue
+		}
+		if logStr(e) != test.want {
+			t.Errorf("MinID %q: got log %q, want %q", test.minID, logStr(e), test.want)
+			continue
+		}
+		if want := "3"; e.MaxID != want {
+			t.Errorf("MinID %q: got MaxID %q, want %q", test.minID, e.MaxID, want)
+			continue
+		}
+	}
 }
