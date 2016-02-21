@@ -36,42 +36,6 @@ func randomBucket() *sourcegraph.StorageBucket {
 	}
 }
 
-// Storage_Exists tests that Storage.Exists works.
-func Storage_Exists(ctx context.Context, t *testing.T, s store.Storage) {
-	storageBucket := randomBucket()
-	storageKey := &sourcegraph.StorageKey{
-		Bucket: storageBucket,
-		Key:    storageKeyName,
-	}
-
-	// Check that no error is returned for non-existant object.
-	exists, err := s.Exists(ctx, storageKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if exists.Exists {
-		t.Fatal("expected Exists == false, got Exists == true")
-	}
-
-	// Put the first object in.
-	_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
-		Key:   *storageKey,
-		Value: storageValue,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Check that it exists.
-	exists, err = s.Exists(ctx, storageKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !exists.Exists {
-		t.Fatal("expected Exists == true, got Exists == false")
-	}
-}
-
 // Storage_List tests that Storage.List works.
 func Storage_List(ctx context.Context, t *testing.T, s store.Storage) {
 	storageBucket := randomBucket()

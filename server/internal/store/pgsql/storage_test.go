@@ -288,11 +288,44 @@ func TestStorage_Delete(t *testing.T) {
 	}
 }
 
+// TesStorage_Exists tests that Storage.Exists works.
 func TestStorage_Exists(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Storage_Exists(ctx, t, &storage{})
+	s := &storage{}
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
+	// Check that no error is returned for non-existant object.
+	exists, err := s.Exists(ctx, storageKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exists.Exists {
+		t.Fatal("expected Exists == false, got Exists == true")
+	}
+
+	// Put the first object in.
+	_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
+		Key:   *storageKey,
+		Value: storageValue,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that it exists.
+	exists, err = s.Exists(ctx, storageKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists.Exists {
+		t.Fatal("expected Exists == true, got Exists == false")
+	}
 }
 
 func TestStorage_List(t *testing.T) {
