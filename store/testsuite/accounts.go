@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"reflect"
 	"regexp"
 	"testing"
 
@@ -12,33 +11,6 @@ import (
 )
 
 type GetAccountFunc func(sourcegraph.UserSpec) (*sourcegraph.User, error)
-
-// Accounts_Create_ok tests the behavior of Accounts.Create when
-// called with correct args.
-func Accounts_Create_ok(ctx context.Context, t *testing.T, s store.Accounts, getAccount GetAccountFunc) {
-	want := sourcegraph.User{Login: "u", Name: "n"}
-
-	created, err := s.Create(ctx, &want)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if created.Login != want.Login {
-		t.Errorf("got Login == %q, want %q", created.Login, want.Login)
-	}
-	if created.Name != want.Name {
-		t.Errorf("got Name == %q, want %q", created.Name, want.Name)
-	}
-
-	got, err := getAccount(sourcegraph.UserSpec{Login: "u"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !reflect.DeepEqual(got, created) {
-		t.Errorf("Create: got %+v, want %+v", got, created)
-	}
-}
 
 // Accounts_Create_duplicate tests the behavior of Accounts.Create
 // when called with an existing (duplicate) client ID.
