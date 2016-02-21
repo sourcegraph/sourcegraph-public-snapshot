@@ -106,11 +106,36 @@ func TestPasswords_CheckUIDPassword_noneSetForUser(t *testing.T) {
 	}
 }
 
+// TestPasswords_SetPassword_ok tests changing the password.
 func TestPasswords_SetPassword_ok(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Passwords_SetPassword_ok(ctx, t, &password{})
+
+	s := &password{}
+	uid := nextUID()
+	if err := s.SetPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Password is p.
+	if err := s.CheckUIDPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CheckUIDPassword(ctx, uid, "p2"); err == nil {
+		t.Fatal("err == nil")
+	}
+
+	// Change to p2.
+	if err := s.SetPassword(ctx, uid, "p2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CheckUIDPassword(ctx, uid, "p2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CheckUIDPassword(ctx, uid, "p"); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestPasswords_SetPassword_empty(t *testing.T) {
