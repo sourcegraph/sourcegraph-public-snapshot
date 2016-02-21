@@ -19,16 +19,6 @@ func logStr(e *sourcegraph.LogEntries) string { return strings.Join(e.Entries, "
 
 var task = sourcegraph.TaskSpec{Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, ID: 123}, ID: 456}
 
-func BuildLogs_Get_noErrorIfNotExist(ctx context.Context, t *testing.T, s store.BuildLogs, write WriteBuildLogFunc) {
-	e, err := s.Get(ctx, task, "", time.Time{}, time.Time{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := ""; logStr(e) != want {
-		t.Errorf("got log %q, want %q", logStr(e), want)
-	}
-}
-
 func BuildLogs_Get_noErrorIfEmpty(ctx context.Context, t *testing.T, s store.BuildLogs, write WriteBuildLogFunc) {
 	write(ctx, t, task, "")
 
