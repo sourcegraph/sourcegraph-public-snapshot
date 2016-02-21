@@ -3,16 +3,37 @@
 package pgsql
 
 import (
+	"sync/atomic"
 	"testing"
 
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
+var testUID int32
+
+// nextUID returns a unique test user UID for this process. This is needed
+// since we do sets and compares on passwords for users, and if tests are
+// running in parallel the results returned will be racey.
+func nextUID() int32 {
+	return atomic.AddInt32(&testUID, 1)
+}
+
+// TestPasswords_CheckUIDPassword_valid tests the behavior of
+// Passwords.CheckUIDPassword when called with valid credentials.
 func TestPasswords_CheckUIDPassword_valid(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Passwords_CheckUIDPassword_valid(ctx, t, &password{})
+
+	s := &password{}
+	uid := nextUID()
+	if err := s.SetPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.CheckUIDPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestPasswords_CheckUIDPassword_invalid(t *testing.T) {
