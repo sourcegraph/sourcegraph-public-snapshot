@@ -5,8 +5,6 @@ package pgsql
 import (
 	"sync/atomic"
 	"testing"
-
-	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 var testUID int32
@@ -152,9 +150,29 @@ func TestPasswords_SetPassword_empty(t *testing.T) {
 	}
 }
 
+// TestPasswords_SetPassword_setToEmpty tests changing the password FROM a
+// valid password to an empty password.
 func TestPasswords_SetPassword_setToEmpty(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Passwords_SetPassword_setToEmpty(ctx, t, &password{})
+
+	s := &password{}
+	uid := nextUID()
+	if err := s.SetPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Set to empty
+	if err := s.SetPassword(ctx, uid, ""); err == nil {
+		t.Fatal("err == nil")
+	}
+
+	// Password should remain as "p".
+	if err := s.CheckUIDPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CheckUIDPassword(ctx, uid, "p2"); err == nil {
+		t.Fatal("err == nil")
+	}
 }
