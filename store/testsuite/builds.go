@@ -49,20 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_Create tests the behavior of Builds.Create and that it correctly creates the passed
-// in build.
-func Builds_Create(ctx context.Context, t *testing.T, s store.Builds) {
-	want := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
-	b, err := s.Create(ctx, want)
-	if err != nil {
-		t.Fatalf("errored out: %s", err)
-	}
-	if !reflect.DeepEqual(b, want) {
-		t.Errorf("expected (on create): %#v, got %#v", want, b)
-	}
-	assertBuildExists(ctx, s, want, t)
-}
-
 // Builds_Create_Queue verifies that passing a Build with StartedAt=nil to the Builds.Create method
 // will make it available in the queue.
 func Builds_Create_Queue(ctx context.Context, t *testing.T, s store.Builds, queueEntryExists ValidateQueueEntryFunc) {

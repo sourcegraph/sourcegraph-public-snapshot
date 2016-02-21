@@ -224,14 +224,24 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 	testsuite.Builds_ListBuildTasks(ctx, t, &s, s.mustCreateTasks)
 }
 
+// TestBuilds_Create tests the behavior of Builds.Create and that it correctly
+// creates the passed in build.
 func TestBuilds_Create(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_Create(ctx, t, &s)
+	s := &builds{}
+	want := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	b, err := s.Create(ctx, want)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	if !reflect.DeepEqual(b, want) {
+		t.Errorf("expected (on create): %#v, got %#v", want, b)
+	}
+	assertBuildExists(ctx, s, want, t)
 }
 
 func TestBuilds_Create_New(t *testing.T) {
