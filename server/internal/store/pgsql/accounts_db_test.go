@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
@@ -51,13 +52,24 @@ func TestAccounts_Create_ok(t *testing.T) {
 	}
 }
 
+// TestAccounts_Create_duplicate tests the behavior of Accounts.Create
+// when called with an existing (duplicate) client ID.
 func TestAccounts_Create_duplicate(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Accounts_Create_duplicate(ctx, t, &accounts{})
+	s := &accounts{}
+
+	if _, err := s.Create(ctx, &sourcegraph.User{Login: "u"}); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := s.Create(ctx, &sourcegraph.User{Login: "u"})
+	if _, ok := err.(*store.AccountAlreadyExistsError); !ok {
+		t.Fatalf("got err type %T, want %T", err, &store.AccountAlreadyExistsError{})
+	}
 }
 
 func TestAccounts_Create_noLogin(t *testing.T) {

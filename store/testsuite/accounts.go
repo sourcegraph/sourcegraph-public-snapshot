@@ -12,19 +12,6 @@ import (
 
 type GetAccountFunc func(sourcegraph.UserSpec) (*sourcegraph.User, error)
 
-// Accounts_Create_duplicate tests the behavior of Accounts.Create
-// when called with an existing (duplicate) client ID.
-func Accounts_Create_duplicate(ctx context.Context, t *testing.T, s store.Accounts) {
-	if _, err := s.Create(ctx, &sourcegraph.User{Login: "u"}); err != nil {
-		t.Fatal(err)
-	}
-
-	_, err := s.Create(ctx, &sourcegraph.User{Login: "u"})
-	if _, ok := err.(*store.AccountAlreadyExistsError); !ok {
-		t.Fatalf("got err type %T, want %T", err, &store.AccountAlreadyExistsError{})
-	}
-}
-
 // Accounts_Create_noLogin tests the behavior of Accounts.Create when
 // called with an empty login.
 func Accounts_Create_noLogin(ctx context.Context, t *testing.T, s store.Accounts) {
