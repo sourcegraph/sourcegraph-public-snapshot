@@ -54,11 +54,22 @@ func TestPasswords_CheckUIDPassword_invalid(t *testing.T) {
 	}
 }
 
+// TestPasswords_CheckUIDPassword_empty tests the behavior of
+// Passwords.CheckUIDPassword when called with empty credentials.
 func TestPasswords_CheckUIDPassword_empty(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Passwords_CheckUIDPassword_empty(ctx, t, &password{})
+
+	s := &password{}
+	uid := nextUID()
+	if err := s.SetPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.CheckUIDPassword(ctx, uid, ""); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestPasswords_CheckUIDPassword_noneSet(t *testing.T) {
