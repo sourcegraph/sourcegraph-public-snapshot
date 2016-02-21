@@ -255,13 +255,17 @@ func TestRegisteredClients_Create_duplicate(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Create_noID tests the behavior of
+// RegisteredClients.Create when called with an empty ID.
 func TestRegisteredClients_Create_noID(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Create_noID(ctx, t, &registeredClients{})
+	if err := (&registeredClients{}).Create(ctx, sourcegraph.RegisteredClient{ID: "", ClientSecret: "b"}); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestRegisteredClients_Create_noSecretOrJWKS(t *testing.T) {

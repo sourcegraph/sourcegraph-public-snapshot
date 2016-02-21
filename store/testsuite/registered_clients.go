@@ -11,14 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_Create_noID tests the behavior of
-// RegisteredClients.Create when called with an empty ID.
-func RegisteredClients_Create_noID(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "", ClientSecret: "b"}); err == nil {
-		t.Fatal("err == nil")
-	}
-}
-
 // RegisteredClients_Create_noSecretOrJWKS tests the behavior of
 // RegisteredClients.Create when called with an empty secret.
 func RegisteredClients_Create_noSecretOrJWKS(ctx context.Context, t *testing.T, s store.RegisteredClients) {
