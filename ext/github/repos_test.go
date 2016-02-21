@@ -10,8 +10,13 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
-	"src.sourcegraph.com/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/store"
 )
+
+func isRepoNotFound(err error) bool {
+	_, ok := err.(*store.RepoNotFoundError)
+	return ok
+}
 
 // TestRepos_Get_existing tests the behavior of Repos.Get when called on a
 // repo that exists (i.e., the successful outcome).
