@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -9,34 +8,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
-
-// Authorizations_CreateAuthCode_MarkExchanged_ok tests the behavior
-// of CreateAuthCode by ensuring a code it creates can be exchanged
-// with MarkExchanged.
-func Authorizations_CreateAuthCode_MarkExchanged_ok(ctx context.Context, t *testing.T, s store.Authorizations) {
-	req := &sourcegraph.AuthorizationCodeRequest{
-		ClientID:    "c",
-		RedirectURI: "u",
-		Scope:       []string{"a", "b"},
-		UID:         123,
-	}
-
-	code, err := s.CreateAuthCode(ctx, req, time.Hour)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(code) < 5 {
-		t.Fatalf("got code == %q, want len(code) >= 5", code)
-	}
-
-	xreq, err := s.MarkExchanged(ctx, &sourcegraph.AuthorizationCode{Code: code, RedirectURI: "u"}, "c")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(xreq, req) {
-		t.Errorf("got exchanged req %+v, want %+v", xreq, req)
-	}
-}
 
 // Authorizations_MarkExchanged_doesntexist tests the behavior of
 // MarkExchanged when the code does not exist (and no codes exist).
