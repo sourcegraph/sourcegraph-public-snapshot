@@ -5,16 +5,34 @@ package pgsql
 import (
 	"testing"
 
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
+// TestRegisteredClients_Get_existing tests the behavior of
+// RegisteredClients.Get when called on a client that exists (i.e.,
+// the successful outcome).
 func TestRegisteredClients_Get_existing(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Get_existing(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
+		t.Fatal(err)
+	}
+
+	client, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client == nil {
+		t.Error("client == nil")
+	}
+	if want := "a"; client.ID != want {
+		t.Errorf("got ID %q, want %q", client.ID, want)
+	}
 }
 
 func TestRegisteredClients_Get_nonexistent(t *testing.T) {

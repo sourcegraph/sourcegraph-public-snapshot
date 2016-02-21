@@ -11,26 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_Get_existing tests the behavior of
-// RegisteredClients.Get when called on a client that exists (i.e.,
-// the successful outcome).
-func RegisteredClients_Get_existing(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if client == nil {
-		t.Error("client == nil")
-	}
-	if want := "a"; client.ID != want {
-		t.Errorf("got ID %q, want %q", client.ID, want)
-	}
-}
-
 // RegisteredClients_Get_nonexistent tests the behavior of
 // RegisteredClients.Get when called on a client that does not exist.
 func RegisteredClients_Get_nonexistent(ctx context.Context, t *testing.T, s store.RegisteredClients) {
