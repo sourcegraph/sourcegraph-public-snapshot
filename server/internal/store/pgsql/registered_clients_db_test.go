@@ -332,13 +332,40 @@ func TestRegisteredClients_Update_ok(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Update_secret tests the behavior of
+// RegisteredClients.Update when called with an new Secret value.
 func TestRegisteredClients_Update_secret(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Update_secret(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.Update(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b!"}); err == nil {
+		t.Fatal(err)
+	}
+
+	// Get with the initial (still valid) credentials.
+	valid, err := s.GetByCredentials(ctx, sourcegraph.RegisteredClientCredentials{ID: "a", Secret: "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "a"; valid.ID != want {
+		t.Errorf("got %q, want %q", valid.ID, want)
+	}
+
+	// Fail to get with the newly update-attempted credentials.
+	invalid, err := s.GetByCredentials(ctx, sourcegraph.RegisteredClientCredentials{ID: "a", Secret: "b!"})
+	if !isRegisteredClientNotFound(err) {
+		t.Fatal(err)
+	}
+	if invalid != nil {
+		t.Error("invalid != nil")
+	}
 }
 
 func TestRegisteredClients_Update_nonexistent(t *testing.T) {
