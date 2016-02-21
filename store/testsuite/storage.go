@@ -41,33 +41,6 @@ func randomBucket() *sourcegraph.StorageBucket {
 	}
 }
 
-// Storage_PutNoOverwrite tests that Storage.PutNoOverwrite works.
-func Storage_PutNoOverwrite(ctx context.Context, t *testing.T, s store.Storage) {
-	storageBucket := randomBucket()
-	storageKey := &sourcegraph.StorageKey{
-		Bucket: storageBucket,
-		Key:    storageKeyName,
-	}
-
-	// Put the first object in.
-	_, err := s.PutNoOverwrite(ctx, &sourcegraph.StoragePutOp{
-		Key:   *storageKey,
-		Value: storageValue,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Test that overwrite returns a AlreadyExists error.
-	_, err = s.PutNoOverwrite(ctx, &sourcegraph.StoragePutOp{
-		Key:   *storageKey,
-		Value: storageValue,
-	})
-	if grpc.Code(err) != codes.AlreadyExists {
-		t.Fatalf("Expected codes.AlreadyExists, got: %+v\n", err)
-	}
-}
-
 // TestStorage_PutNoOverwriteConcurrent tests that Storage.PutNoOverwrite works.
 func TestStorage_PutNoOverwriteConcurrent(ctx context.Context, t *testing.T, s store.Storage) {
 	storageBucket := randomBucket()

@@ -126,11 +126,35 @@ func TestStorage_Put(t *testing.T) {
 	}
 }
 
+// TestStorage_PutNoOverwrite tests that Storage.PutNoOverwrite works.
 func TestStorage_PutNoOverwrite(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Storage_PutNoOverwrite(ctx, t, &storage{})
+	s := &storage{}
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
+	// Put the first object in.
+	_, err := s.PutNoOverwrite(ctx, &sourcegraph.StoragePutOp{
+		Key:   *storageKey,
+		Value: storageValue,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Test that overwrite returns a AlreadyExists error.
+	_, err = s.PutNoOverwrite(ctx, &sourcegraph.StoragePutOp{
+		Key:   *storageKey,
+		Value: storageValue,
+	})
+	if grpc.Code(err) != codes.AlreadyExists {
+		t.Fatalf("Expected codes.AlreadyExists, got: %+v\n", err)
+	}
 }
 
 func TestStorage_PutNoOverwriteConcurrent(t *testing.T) {
