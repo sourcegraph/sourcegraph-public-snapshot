@@ -36,11 +36,22 @@ func TestPasswords_CheckUIDPassword_valid(t *testing.T) {
 	}
 }
 
+// TestPasswords_CheckUIDPassword_invalid tests the behavior of
+// Passwords.CheckUIDPassword when called with invalid credentials.
 func TestPasswords_CheckUIDPassword_invalid(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Passwords_CheckUIDPassword_invalid(ctx, t, &password{})
+
+	s := &password{}
+	uid := nextUID()
+	if err := s.SetPassword(ctx, uid, "p"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.CheckUIDPassword(ctx, uid, "WRONG"); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestPasswords_CheckUIDPassword_empty(t *testing.T) {

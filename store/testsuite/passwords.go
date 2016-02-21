@@ -9,19 +9,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Passwords_CheckUIDPassword_invalid tests the behavior of
-// Passwords.CheckUIDPassword when called with invalid credentials.
-func Passwords_CheckUIDPassword_invalid(ctx context.Context, t *testing.T, s store.Password) {
-	uid := nextUID()
-	if err := s.SetPassword(ctx, uid, "p"); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := s.CheckUIDPassword(ctx, uid, "WRONG"); err == nil {
-		t.Fatal("err == nil")
-	}
-}
-
 // Passwords_CheckUIDPassword_empty tests the behavior of
 // Passwords.CheckUIDPassword when called with empty credentials.
 func Passwords_CheckUIDPassword_empty(ctx context.Context, t *testing.T, s store.Password) {
