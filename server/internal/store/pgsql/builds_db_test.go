@@ -62,12 +62,29 @@ func TestBuilds_GetFirstInCommitOrder_firstCommitIDMatch(t *testing.T) {
 	}
 }
 
+// TestBuilds_GetFirstInCommitOrder_secondCommitIDMatch tests the behavior
+// of Builds.GetSecondInCommitOrder when the *second* (but not second)
+// commit ID has multiple builds (it should return the newest).
 func TestBuilds_GetFirstInCommitOrder_secondCommitIDMatch(t *testing.T) {
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_GetFirstInCommitOrder_secondCommitIDMatch(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{{ID: 2, Repo: "r", CommitID: "b"}})
+
+	build, nth, err := s.GetFirstInCommitOrder(ctx, "r", []string{"a", "b"}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if build == nil {
+		t.Fatal("build == nil")
+	}
+	if build.ID != 2 {
+		t.Errorf("got ID %d, want %d", build.ID, 2)
+	}
+	if want := 1; nth != want {
+		t.Errorf("got nth == %d, want %d", nth, want)
+	}
 }
 
 func TestBuilds_GetFirstInCommitOrder_successfulOnly(t *testing.T) {
