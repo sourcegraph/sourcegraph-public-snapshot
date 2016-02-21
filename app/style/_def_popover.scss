@@ -32,9 +32,7 @@
 	opacity: 0;
 	&.visible {
 		opacity: 1;
-		-webkit-transition: opacity 0.1s ease-in-out;
-		-transition: opacity 0.1s ease-in-out;
+		transition: opacity 0.1s ease-in-out;
 	}
-	-webkit-transition: opacity 0.1s ease-in-out;
 	transition: opacity 0.1s ease-in-out;
 }

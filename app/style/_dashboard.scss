@@ -8,10 +8,8 @@
 
 		.dash-repos-header {
 			display: flex;
-			-webkit-align-items: center;
-				align-items: center;
-			-webkit-justify-content: center;
-				justify-content: center;
+			align-items: center;
+			justify-content: center;
 			padding-bottom: $padding-large-vertical;
 			border-bottom: $content-border;
 
@@ -22,10 +20,8 @@
 
 			.add-repo-btn {
 				flex: 1;
-				-webkit-align-items: center;
-					align-items: center;
-				-webkit-justify-content: center;
-					justify-content: center;
+				align-items: center;
+				justify-content: center;
 
 				width: 50%;
 				height: 40px;
@@ -138,10 +134,8 @@
 
 			.list-group-item {
 				display: flex;
-				-webkit-align-items: center;
-					align-items: center;
-				-webkit-justify-content: center;
-					justify-content: center;
+				align-items: center;
+				justify-content: center;
 
 				height: 45px;
 				text-align: left;
@@ -190,14 +184,11 @@
 
 	.selectable-list-widget {
 		.widget-body {
-			display: -webkit-flex;
 			display: flex;
-			-webkit-flex-wrap: wrap;
 			flex-wrap: wrap;
 			padding-right: $padding-base-horizontal;
 
 			.category-menu {
-				-webkit-flex: 1;
 				flex: 1;
 				text-transform: uppercase;
 				margin-left: 10px;
@@ -228,7 +219,6 @@
 			}
 
 			.list-control {
-				-webkit-flex: 4;
 				flex: 4;
 			}
 		}
@@ -244,20 +234,17 @@
 			color: #bbbbbb;
 
 			.search-bar {
-				display: -webkit-flex;
 				display: flex;
 				border: none !important;
 				border-color: transparent !important;
 
 				.search-icon {
-					-webkit-flex: 1;
 					flex: 1;
 					padding: 10px;
 					padding-right: 0;
 				}
 
 				.search-input {
-					-webkit-flex: 15;
 					flex: 15;
 					border: none !important;
 					border-color: transparent !important;
@@ -265,7 +252,6 @@
 			}
 
 			.table-controls {
-				display: -webkit-flex;
 				display: flex;
 				height: 34px;
 
@@ -274,12 +260,10 @@
 				background-color: $select-list-bg;
 
 				.select-all {
-					-webkit-flex: 1;
 					flex: 1;
 					padding: 7px;
 				}
 				.name {
-					-webkit-flex: 15;
 					flex: 15;
 					padding: 9px;
 					text-align: left;
@@ -293,16 +277,13 @@
 			display: block;
 
 			.table-row {
-				display: -webkit-flex;
 				display: flex;
 
 				.select {
-					-webkit-flex: 1;
 					flex: 1;
 					padding: 7px;
 				}
 				.name {
-					-webkit-flex: 15;
 					flex: 15;
 					padding: 7px;
 					text-align: left;
