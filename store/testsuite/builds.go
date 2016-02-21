@@ -49,13 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_Get tests that the behavior of Builds.Get indirectly via the assertBuildExists method.
-func Builds_Get(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost"}
-	insert(ctx, t, []*sourcegraph.Build{want})
-	assertBuildExists(ctx, s, want, t)
-}
-
 // Builds_List verifies the correct functioning of the Builds.List method.
 func Builds_List(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
 	want := []*sourcegraph.Build{

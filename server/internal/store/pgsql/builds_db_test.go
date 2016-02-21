@@ -3,23 +3,43 @@
 package pgsql
 
 import (
+	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
+// assertBuildExists verifies that a build exists in the store by using its Get method.
+func assertBuildExists(ctx context.Context, s store.Builds, want *sourcegraph.Build, t *testing.T) {
+	b, err := s.Get(ctx, want.Spec())
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	if !reflect.DeepEqual(b, want) {
+		t.Errorf("expected %#v, got %#v", want, b)
+	}
+}
+
+// TestBuilds_Get tests that the behavior of Builds.Get indirectly via the
+// assertBuildExists method.
 func TestBuilds_Get(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_Get(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{want})
+	assertBuildExists(ctx, s, want, t)
 }
 
 func TestBuilds_List(t *testing.T) {
