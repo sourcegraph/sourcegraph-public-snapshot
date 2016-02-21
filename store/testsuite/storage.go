@@ -41,43 +41,6 @@ func randomBucket() *sourcegraph.StorageBucket {
 	}
 }
 
-// Storage_Put tests that Storage.Put works.
-func Storage_Put(ctx context.Context, t *testing.T, s store.Storage) {
-	storageBucket := randomBucket()
-	storageKey := &sourcegraph.StorageKey{
-		Bucket: storageBucket,
-		Key:    storageKeyName,
-	}
-
-	// Put the first object in.
-	_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
-		Key:   *storageKey,
-		Value: storageValue,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Overwrite the value.
-	newValue := []byte("new value")
-	_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
-		Key:   *storageKey,
-		Value: newValue,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Get the object.
-	value, err := s.Get(ctx, storageKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(value.Value, newValue) {
-		t.Fatalf("got %q expected %q\n", value, newValue)
-	}
-}
-
 // Storage_PutNoOverwrite tests that Storage.PutNoOverwrite works.
 func Storage_PutNoOverwrite(ctx context.Context, t *testing.T, s store.Storage) {
 	storageBucket := randomBucket()

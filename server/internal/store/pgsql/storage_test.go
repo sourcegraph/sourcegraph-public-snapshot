@@ -85,11 +85,45 @@ func TestStorage_Get(t *testing.T) {
 	}
 }
 
+// TestStorage_Put tests that Storage.Put works.
 func TestStorage_Put(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Storage_Put(ctx, t, &storage{})
+	s := &storage{}
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
+	// Put the first object in.
+	_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
+		Key:   *storageKey,
+		Value: storageValue,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Overwrite the value.
+	newValue := []byte("new value")
+	_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
+		Key:   *storageKey,
+		Value: newValue,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Get the object.
+	value, err := s.Get(ctx, storageKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(value.Value, newValue) {
+		t.Fatalf("got %q expected %q\n", value, newValue)
+	}
 }
 
 func TestStorage_PutNoOverwrite(t *testing.T) {
