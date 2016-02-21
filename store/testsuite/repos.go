@@ -15,18 +15,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Repos_Get_nonexistent tests the behavior of Repos.Get when called
-// on a repo that does not exist.
-func Repos_Get_nonexistent(ctx context.Context, t *testing.T, s store.Repos, nonexistentRepo string) {
-	repo, err := s.Get(ctx, nonexistentRepo)
-	if !isRepoNotFound(err) {
-		t.Fatal(err)
-	}
-	if repo != nil {
-		t.Error("repo != nil")
-	}
-}
-
 // Repos_List_query tests the behavior of Repos.List when called with
 // a query.
 func Repos_List_query(ctx context.Context, t *testing.T, s store.Repos) {

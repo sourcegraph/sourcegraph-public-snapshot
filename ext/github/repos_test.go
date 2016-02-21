@@ -47,6 +47,8 @@ func TestRepos_Get_existing(t *testing.T) {
 	}
 }
 
+// TestRepos_Get_nonexistent tests the behavior of Repos.Get when called
+// on a repo that does not exist.
 func TestRepos_Get_nonexistent(t *testing.T) {
 	githubcli.Config.GitHubHost = "github.com"
 	ctx := testContext(&minimalClient{
@@ -57,5 +59,14 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 			},
 		},
 	})
-	testsuite.Repos_Get_nonexistent(ctx, t, &Repos{}, "github.com/owner/repo")
+
+	s := &Repos{}
+	nonexistentRepo := "github.com/owner/repo"
+	repo, err := s.Get(ctx, nonexistentRepo)
+	if !isRepoNotFound(err) {
+		t.Fatal(err)
+	}
+	if repo != nil {
+		t.Error("repo != nil")
+	}
 }
