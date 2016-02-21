@@ -15,34 +15,6 @@ import (
 // CreateUserFunc is used by Users_Get_* tests to create test users.
 type CreateUserFunc func(sourcegraph.User) (*sourcegraph.UserSpec, error)
 
-// Users_Get_existingByBothConflict tests the behavior of Users.Get
-// when called with both a login and UID, but when those do not both
-// refer to the same user.
-func Users_Get_existingByBothConflict(ctx context.Context, t *testing.T, s store.Users, createUser CreateUserFunc) {
-	created0, err := createUser(sourcegraph.User{Login: "u0"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if created0.Login == "" || created0.UID == 0 {
-		t.Error("violated assumption that both login and UID are set")
-	}
-
-	created1, err := createUser(sourcegraph.User{Login: "u1"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if created1.Login == "" || created1.UID == 0 {
-		t.Error("violated assumption that both login and UID are set")
-	}
-
-	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: created0.UID, Login: created1.Login}); !isUserNotFound(err) {
-		t.Fatal(err)
-	}
-	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: created1.UID, Login: created0.Login}); !isUserNotFound(err) {
-		t.Fatal(err)
-	}
-}
-
 // Users_Get_existingByBothOnlyOneExist tests the behavior of
 // Users.Get when called with both a login and UID, but only one of
 // those points to an existing user.
