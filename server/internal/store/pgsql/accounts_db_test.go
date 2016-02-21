@@ -121,12 +121,23 @@ func TestAccounts_RequestPasswordReset(t *testing.T) {
 	}
 }
 
+// TestAccounts_ResetPassword_ok tests that we can successfully reset a password.
 func TestAccounts_ResetPassword_ok(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Accounts_ResetPassword_ok(ctx, t, &accounts{})
+	s := &accounts{}
+	u := &sourcegraph.User{UID: 123}
+	token, err := s.RequestPasswordReset(ctx, u)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newPass := &sourcegraph.NewPassword{Password: "a", Token: &sourcegraph.PasswordResetToken{Token: token.Token}}
+	if err := s.ResetPassword(ctx, newPass); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestAccounts_ResetPassword_badtoken(t *testing.T) {
