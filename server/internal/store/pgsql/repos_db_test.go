@@ -187,7 +187,20 @@ func TestRepos_Create_dupe(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create_dupe(ctx, t, &repos{})
+
+	s := &repos{}
+	tm := time.Now().Round(time.Second)
+	ts := pbtypes.NewTimestamp(tm)
+
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Add another repo with the same name.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err == nil {
+		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
+	}
 }
 
 func TestRepos_Update_Description(t *testing.T) {
