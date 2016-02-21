@@ -49,19 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_Create_Queue verifies that passing a Build with StartedAt=nil to the Builds.Create method
-// will make it available in the queue.
-func Builds_Create_Queue(ctx context.Context, t *testing.T, s store.Builds, queueEntryExists ValidateQueueEntryFunc) {
-	want := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
-	_, err := s.Create(ctx, want)
-	if err != nil {
-		t.Fatalf("errored out: %s", err)
-	}
-	if !queueEntryExists(ctx, want.Spec(), t) {
-		t.Errorf("%#v not in queue", want.Spec())
-	}
-}
-
 // Builds_Create_New verifies that passing a Build with ID == 0 to Builds.Create will
 // generate an ID for it.
 func Builds_Create_New(ctx context.Context, t *testing.T, s store.Builds) {
