@@ -41,48 +41,6 @@ func randomBucket() *sourcegraph.StorageBucket {
 	}
 }
 
-// Storage_Get tests that Storage.Get works.
-func Storage_Get(ctx context.Context, t *testing.T, s store.Storage) {
-	storageBucket := randomBucket()
-	storageKey := &sourcegraph.StorageKey{
-		Bucket: storageBucket, // TODO(slimsag): Bucket should not be nullable
-		Key:    storageKeyName,
-	}
-
-	// Test that a NotFound error is returned.
-	value, err := s.Get(ctx, storageKey)
-	if grpc.Code(err) != codes.NotFound {
-		t.Fatalf("Expected codes.NotFound, got: %+v\n", err)
-	}
-
-	// Put the first object in.
-	_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
-		Key:   *storageKey,
-		Value: storageValue,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Now test that NotFound is returned for a valid bucket but an invalid key.
-	value, err = s.Get(ctx, &sourcegraph.StorageKey{
-		Bucket: storageBucket,
-		Key:    storageKeyName + "-secondary",
-	})
-	if grpc.Code(err) != codes.NotFound {
-		t.Fatalf("(2) Expected codes.NotFound, got: %+v\n", err)
-	}
-
-	// Get the object.
-	value, err = s.Get(ctx, storageKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(value.Value, storageValue) {
-		t.Fatalf("got %q expected %q\n", value, storageValue)
-	}
-}
-
 // Storage_Put tests that Storage.Put works.
 func Storage_Put(ctx context.Context, t *testing.T, s store.Storage) {
 	storageBucket := randomBucket()
