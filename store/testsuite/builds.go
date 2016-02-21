@@ -49,23 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_List verifies the correct functioning of the Builds.List method.
-func Builds_List(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	want := []*sourcegraph.Build{
-		{ID: 1, Repo: "r", CommitID: "c1"},
-		{ID: 2, Repo: "r", CommitID: "c2"},
-		{ID: 3, Repo: "r", CommitID: "c3"},
-	}
-	insert(ctx, t, want)
-	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(builds, want) {
-		t.Errorf("got %v, want %v", builds, want)
-	}
-}
-
 // Builds_List_byRepoAndCommitID verifies the correct functioning of
 // the Builds.List method when filtering by a repo and commit ID.
 func Builds_List_byRepoAndCommitID(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {

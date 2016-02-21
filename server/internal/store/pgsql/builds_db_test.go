@@ -42,14 +42,27 @@ func TestBuilds_Get(t *testing.T) {
 	assertBuildExists(ctx, s, want, t)
 }
 
+// TestBuilds_List verifies the correct functioning of the Builds.List method.
 func TestBuilds_List(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_List(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	want := []*sourcegraph.Build{
+		{ID: 1, Repo: "r", CommitID: "c1"},
+		{ID: 2, Repo: "r", CommitID: "c2"},
+		{ID: 3, Repo: "r", CommitID: "c3"},
+	}
+	s.mustCreateBuilds(ctx, t, want)
+	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(builds, want) {
+		t.Errorf("got %v, want %v", builds, want)
+	}
 }
 
 func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
