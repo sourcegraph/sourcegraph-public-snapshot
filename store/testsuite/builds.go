@@ -49,22 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-func Builds_DequeueNext(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
-	insert(ctx, t, []*sourcegraph.Build{want})
-	build, err := s.DequeueNext(ctx)
-	if err != nil {
-		t.Fatalf("errored out: %s", err)
-	}
-	if build.StartedAt == nil {
-		t.Errorf("got dequeued build StartedAt null, want it to be set to appx. now")
-	}
-	build.StartedAt = nil // don't compare since StartedAt is set from the current time
-	if !reflect.DeepEqual(build, want) {
-		t.Errorf("expected %#v, got %#v", want, build)
-	}
-}
-
 func Builds_DequeueNext_ordered(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
 	t1 := pbtypes.NewTimestamp(time.Unix(100000, 0))
 	t2 := pbtypes.NewTimestamp(time.Unix(200000, 0))

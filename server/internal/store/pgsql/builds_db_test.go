@@ -383,11 +383,23 @@ func TestBuilds_GetTask(t *testing.T) {
 func TestBuilds_DequeueNext(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_DequeueNext(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{want})
+	build, err := s.DequeueNext(ctx)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	if build.StartedAt == nil {
+		t.Errorf("got dequeued build StartedAt null, want it to be set to appx. now")
+	}
+	build.StartedAt = nil // don't compare since StartedAt is set from the current time
+	if !reflect.DeepEqual(build, want) {
+		t.Errorf("expected %#v, got %#v", want, build)
+	}
 }
 
 func TestBuilds_DequeueNext_ordered(t *testing.T) {
