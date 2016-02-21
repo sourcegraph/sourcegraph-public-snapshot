@@ -89,11 +89,31 @@ func TestAuthorizations_MarkExchanged_codeNotFound(t *testing.T) {
 	}
 }
 
+// TestAuthorizations_MarkExchanged_clientIDMismatch tests the behavior of
+// MarkExchanged when the client IDs do not match.
 func TestAuthorizations_MarkExchanged_clientIDMismatch(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Authorizations_MarkExchanged_clientIDMismatch(ctx, t, &authorizations{})
+
+	s := &authorizations{}
+	code, err := s.CreateAuthCode(ctx, &sourcegraph.AuthorizationCodeRequest{
+		ClientID:    "c",
+		RedirectURI: "u",
+		Scope:       []string{"a", "b"},
+		UID:         123,
+	}, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	xreq, err := s.MarkExchanged(ctx, &sourcegraph.AuthorizationCode{Code: code, RedirectURI: "u"}, "badClientID")
+	if want := store.ErrAuthCodeNotFound; err != want {
+		t.Fatalf("got error %v, want %v", err, want)
+	}
+	if xreq != nil {
+		t.Error("xreq != nil")
+	}
 }
 
 func TestAuthorizations_MarkExchanged_redirectURIMismatch(t *testing.T) {

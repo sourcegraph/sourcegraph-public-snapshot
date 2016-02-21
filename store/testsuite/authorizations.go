@@ -9,28 +9,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Authorizations_MarkExchanged_clientIDMismatch tests the behavior of
-// MarkExchanged when the client IDs do not match.
-func Authorizations_MarkExchanged_clientIDMismatch(ctx context.Context, t *testing.T, s store.Authorizations) {
-	code, err := s.CreateAuthCode(ctx, &sourcegraph.AuthorizationCodeRequest{
-		ClientID:    "c",
-		RedirectURI: "u",
-		Scope:       []string{"a", "b"},
-		UID:         123,
-	}, time.Hour)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	xreq, err := s.MarkExchanged(ctx, &sourcegraph.AuthorizationCode{Code: code, RedirectURI: "u"}, "badClientID")
-	if want := store.ErrAuthCodeNotFound; err != want {
-		t.Fatalf("got error %v, want %v", err, want)
-	}
-	if xreq != nil {
-		t.Error("xreq != nil")
-	}
-}
-
 // Authorizations_MarkExchanged_redirectURIMismatch tests the behavior
 // of MarkExchanged when the redirect URIs do not match.
 func Authorizations_MarkExchanged_redirectURIMismatch(ctx context.Context, t *testing.T, s store.Authorizations) {
