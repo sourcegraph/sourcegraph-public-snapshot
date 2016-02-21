@@ -2,7 +2,6 @@ package testsuite
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -33,53 +32,6 @@ func randomBucket() *sourcegraph.StorageBucket {
 		AppName: "go-test",
 		Name:    "go-test-bucket" + fmt.Sprint(time.Now().UnixNano()),
 		Repo:    "github.com/foo/bar",
-	}
-}
-
-// Storage_List tests that Storage.List works.
-func Storage_List(ctx context.Context, t *testing.T, s store.Storage) {
-	storageBucket := randomBucket()
-	storageKey := &sourcegraph.StorageKey{
-		Bucket: storageBucket,
-		Key:    storageKeyName,
-	}
-
-	// Check that no error is returned for non-existant bucket.
-	list, err := s.List(ctx, storageKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(list.Keys) != 0 {
-		t.Fatalf("expected zero keys, got %q\n", list.Keys)
-	}
-
-	// Put the objects in.
-	want := []string{
-		"a",
-		"b",
-		"c",
-		storageKeyName,
-	}
-	for _, k := range want {
-		_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
-			Key: sourcegraph.StorageKey{
-				Bucket: storageBucket,
-				Key:    k,
-			},
-			Value: storageValue,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	// Check list.
-	list, err = s.List(ctx, storageKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(want, list.Keys) {
-		t.Fatalf("expected %q, got %q\n", want, list.Keys)
 	}
 }
 

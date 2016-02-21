@@ -328,11 +328,55 @@ func TestStorage_Exists(t *testing.T) {
 	}
 }
 
+// TestStorage_List tests that Storage.List works.
 func TestStorage_List(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Storage_List(ctx, t, &storage{})
+	s := &storage{}
+	storageBucket := randomBucket()
+	storageKey := &sourcegraph.StorageKey{
+		Bucket: storageBucket,
+		Key:    storageKeyName,
+	}
+
+	// Check that no error is returned for non-existant bucket.
+	list, err := s.List(ctx, storageKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list.Keys) != 0 {
+		t.Fatalf("expected zero keys, got %q\n", list.Keys)
+	}
+
+	// Put the objects in.
+	want := []string{
+		"a",
+		"b",
+		"c",
+		storageKeyName,
+	}
+	for _, k := range want {
+		_, err = s.Put(ctx, &sourcegraph.StoragePutOp{
+			Key: sourcegraph.StorageKey{
+				Bucket: storageBucket,
+				Key:    k,
+			},
+			Value: storageValue,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Check list.
+	list, err = s.List(ctx, storageKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(want, list.Keys) {
+		t.Fatalf("expected %q, got %q\n", want, list.Keys)
+	}
 }
 
 func TestStorage_InvalidNames(t *testing.T) {
