@@ -59,13 +59,29 @@ func TestRegisteredClients_Get_nonexistent(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_GetByCredentials_ok tests the behavior of
+// RegisteredClients.Get when called with the correct credentials.
 func TestRegisteredClients_GetByCredentials_ok(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_GetByCredentials_ok(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
+		t.Fatal(err)
+	}
+
+	client, err := s.GetByCredentials(ctx, sourcegraph.RegisteredClientCredentials{ID: "a", Secret: "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client == nil {
+		t.Error("client != nil")
+	}
+	if want := "a"; client.ID != want {
+		t.Errorf("got ID %q, want %q", client.ID, want)
+	}
 }
 
 func TestRegisteredClients_GetByCredentials_badID(t *testing.T) {
