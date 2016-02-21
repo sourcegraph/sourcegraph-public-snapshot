@@ -15,28 +15,6 @@ import (
 // CreateUserFunc is used by Users_Get_* tests to create test users.
 type CreateUserFunc func(sourcegraph.User) (*sourcegraph.UserSpec, error)
 
-// Users_List_ok tests the behavior of Users.List.
-func Users_List_ok(ctx context.Context, t *testing.T, s store.Users, createUser CreateUserFunc) {
-	if _, err := createUser(sourcegraph.User{Login: "u0"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := createUser(sourcegraph.User{Login: "u1"}); err != nil {
-		t.Fatal(err)
-	}
-
-	users, err := s.List(ctx, &sourcegraph.UsersListOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := 2; len(users) != want {
-		t.Errorf("got len(users) == %d, want %d", len(users), want)
-	}
-	logins := userLogins(users)
-	if want := []string{"u0", "u1"}; !reflect.DeepEqual(logins, want) {
-		t.Errorf("got logins == %v, want %v", logins, want)
-	}
-}
-
 // Users_List_query tests the behavior of Users.List when called with
 // a query.
 func Users_List_query(ctx context.Context, t *testing.T, s store.Users, createUser CreateUserFunc) {

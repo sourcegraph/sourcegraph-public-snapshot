@@ -3,6 +3,8 @@
 package pgsql
 
 import (
+	"reflect"
+	"sort"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -26,6 +28,15 @@ func newCreateUserFunc(ctx context.Context) testsuite.CreateUserFunc {
 func isUserNotFound(err error) bool {
 	_, ok := err.(*store.UserNotFoundError)
 	return ok
+}
+
+func userLogins(users []*sourcegraph.User) []string {
+	var logins []string
+	for _, user := range users {
+		logins = append(logins, user.Login)
+	}
+	sort.Strings(logins)
+	return logins
 }
 
 // TestUsers_Get_existingByLogin tests the behavior of Users.Get when
@@ -191,11 +202,32 @@ func TestUsers_Get_nonexistentUID(t *testing.T) {
 	}
 }
 
+// TestUsers_List_ok tests the behavior of Users.List.
 func TestUsers_List_ok(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Users_List_ok(ctx, t, &users{}, newCreateUserFunc(ctx))
+
+	s := &users{}
+	createUser := newCreateUserFunc(ctx)
+	if _, err := createUser(sourcegraph.User{Login: "u0"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := createUser(sourcegraph.User{Login: "u1"}); err != nil {
+		t.Fatal(err)
+	}
+
+	users, err := s.List(ctx, &sourcegraph.UsersListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := 2; len(users) != want {
+		t.Errorf("got len(users) == %d, want %d", len(users), want)
+	}
+	logins := userLogins(users)
+	if want := []string{"u0", "u1"}; !reflect.DeepEqual(logins, want) {
+		t.Errorf("got logins == %v, want %v", logins, want)
+	}
 }
 
 func TestUsers_List_query(t *testing.T) {
