@@ -11,14 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_Create_noSecretOrJWKS tests the behavior of
-// RegisteredClients.Create when called with an empty secret.
-func RegisteredClients_Create_noSecretOrJWKS(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: ""}); err == nil {
-		t.Fatal("err == nil")
-	}
-}
-
 // RegisteredClients_Update_ok tests the behavior of
 // RegisteredClients.Update when called with correct args.
 func RegisteredClients_Update_ok(ctx context.Context, t *testing.T, s store.RegisteredClients) {

@@ -268,13 +268,17 @@ func TestRegisteredClients_Create_noID(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Create_noSecretOrJWKS tests the behavior of
+// RegisteredClients.Create when called with an empty secret.
 func TestRegisteredClients_Create_noSecretOrJWKS(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Create_noSecretOrJWKS(ctx, t, &registeredClients{})
+	if err := (&registeredClients{}).Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: ""}); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestRegisteredClients_Update_ok(t *testing.T) {
