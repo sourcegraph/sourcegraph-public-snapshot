@@ -281,13 +281,55 @@ func TestRegisteredClients_Create_noSecretOrJWKS(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Update_ok tests the behavior of
+// RegisteredClients.Update when called with correct args.
 func TestRegisteredClients_Update_ok(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Update_ok(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	want := sourcegraph.RegisteredClient{
+		ID:           "a",
+		ClientSecret: "b",
+		ClientURI:    "https://example.com/1",
+		RedirectURIs: []string{"https://example.com/2"},
+		ClientName:   "t",
+		Description:  "d",
+		Meta:         map[string]string{"k1": "v1", "k2": "v2"},
+		Type:         sourcegraph.RegisteredClientType_SourcegraphServer,
+	}
+	if err := s.Create(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+
+	want.ClientSecret = ""
+	want.ClientURI += "!"
+	want.RedirectURIs[0] += "!"
+	want.ClientName += "!"
+	want.Description += "!"
+	want.Meta["k1"] += "!"
+	want.Meta["k3"] = "v3"
+
+	if err := s.Update(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+
+	updated, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Don't check equality of these non-deterministic fields.
+	want.UpdatedAt = pbtypes.Timestamp{}
+	want.UpdatedAt = pbtypes.Timestamp{}
+	updated.UpdatedAt = pbtypes.Timestamp{}
+	updated.UpdatedAt = pbtypes.Timestamp{}
+
+	if !reflect.DeepEqual(*updated, want) {
+		t.Errorf("Update: got %+v, want %+v", *updated, want)
+	}
 }
 
 func TestRegisteredClients_Update_secret(t *testing.T) {
