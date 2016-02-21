@@ -3,7 +3,10 @@
 package pgsql
 
 import (
+	"reflect"
 	"testing"
+
+	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -150,13 +153,47 @@ func TestRegisteredClients_GetByCredentials_noSecretOrJWKS(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Create_secret_ok tests the behavior of
+// RegisteredClients.Create when called with correct args and a
+// ClientSecret.
 func TestRegisteredClients_Create_secret_ok(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Create_secret_ok(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	want := sourcegraph.RegisteredClient{
+		ID:           "a",
+		ClientSecret: "b",
+		ClientURI:    "https://example.com/1",
+		RedirectURIs: []string{"https://example.com/2"},
+		ClientName:   "t",
+		Description:  "d",
+		Meta:         map[string]string{"k1": "v1", "k2": "v2"},
+		Type:         sourcegraph.RegisteredClientType_SourcegraphServer,
+	}
+
+	if err := s.Create(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// ClientSecret field is cleared because its unhashed form is not
+	// persisted.
+	want.ClientSecret = ""
+
+	// Don't check equality of these non-deterministic fields.
+	want.CreatedAt = pbtypes.Timestamp{}
+	want.UpdatedAt = pbtypes.Timestamp{}
+
+	if !reflect.DeepEqual(*created, want) {
+		t.Errorf("Create: got %+v, want %+v", *created, want)
+	}
 }
 
 func TestRegisteredClients_Create_jwks_ok(t *testing.T) {
