@@ -11,18 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_Get_nonexistent tests the behavior of
-// RegisteredClients.Get when called on a client that does not exist.
-func RegisteredClients_Get_nonexistent(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	client, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "doesntexist"})
-	if !isRegisteredClientNotFound(err) {
-		t.Fatal(err)
-	}
-	if client != nil {
-		t.Error("client != nil")
-	}
-}
-
 // RegisteredClients_GetByCredentials_ok tests the behavior of
 // RegisteredClients.Get when called with the correct credentials.
 func RegisteredClients_GetByCredentials_ok(ctx context.Context, t *testing.T, s store.RegisteredClients) {

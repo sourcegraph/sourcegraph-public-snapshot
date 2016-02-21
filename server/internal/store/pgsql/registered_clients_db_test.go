@@ -6,8 +6,14 @@ import (
 	"testing"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
+
+func isRegisteredClientNotFound(err error) bool {
+	_, ok := err.(*store.RegisteredClientNotFoundError)
+	return ok
+}
 
 // TestRegisteredClients_Get_existing tests the behavior of
 // RegisteredClients.Get when called on a client that exists (i.e.,
@@ -35,13 +41,22 @@ func TestRegisteredClients_Get_existing(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Get_nonexistent tests the behavior of
+// RegisteredClients.Get when called on a client that does not exist.
 func TestRegisteredClients_Get_nonexistent(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Get_nonexistent(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	client, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "doesntexist"})
+	if !isRegisteredClientNotFound(err) {
+		t.Fatal(err)
+	}
+	if client != nil {
+		t.Error("client != nil")
+	}
 }
 
 func TestRegisteredClients_GetByCredentials_ok(t *testing.T) {
