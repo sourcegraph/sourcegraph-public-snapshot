@@ -46,27 +46,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_CreateTasks verifies that inserting a series of tasks via Builds.CreateTasks correctly
-// creates these tasks in the store. The existence is asserted using the assertTaskExists method.
-func Builds_CreateTasks(ctx context.Context, t *testing.T, s store.Builds, _ InsertTasksFunc) {
-	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
-		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
-	}
-	tsk, err := s.CreateTasks(ctx, tasks)
-	if err != nil {
-		t.Fatalf("errored out: %s", err)
-	}
-	if !reflect.DeepEqual(tsk, tasks) {
-		t.Errorf("created tasks do not match params. Expected %#v, got %#v", tasks, t)
-	}
-	for _, tsk := range tasks {
-		assertTaskExists(ctx, s, tsk, t)
-	}
-}
-
 // Builds_CreateTasks_SequentialID verifies that when creating tasks
 // with unset IDs, IDs are generated such that they are sequential in
 // the build.

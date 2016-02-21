@@ -30,6 +30,17 @@ func assertBuildExists(ctx context.Context, s store.Builds, want *sourcegraph.Bu
 	}
 }
 
+// assertTaskExists verifies that a build exists in the store by using its GetTask method.
+func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.BuildTask, t *testing.T) {
+	b, err := s.GetTask(ctx, want.Spec())
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	if !reflect.DeepEqual(b, want) {
+		t.Errorf("expected %#v, got %#v", want, b)
+	}
+}
+
 // TestBuilds_Get tests that the behavior of Builds.Get indirectly via the
 // assertBuildExists method.
 func TestBuilds_Get(t *testing.T) {
@@ -344,14 +355,32 @@ func TestBuilds_Update_builderConfig(t *testing.T) {
 	assertBuildExists(ctx, s, &want, t)
 }
 
+// TestBuilds_CreateTasks verifies that inserting a series of tasks via
+// Builds.CreateTasks correctly creates these tasks in the store. The existence
+// is asserted using the assertTaskExists method.
 func TestBuilds_CreateTasks(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_CreateTasks(ctx, t, &s, s.mustCreateTasks)
+	s := &builds{}
+	tasks := []*sourcegraph.BuildTask{
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
+	}
+	tsk, err := s.CreateTasks(ctx, tasks)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	if !reflect.DeepEqual(tsk, tasks) {
+		t.Errorf("created tasks do not match params. Expected %#v, got %#v", tasks, t)
+	}
+	for _, tsk := range tasks {
+		assertTaskExists(ctx, s, tsk, t)
+	}
 }
 
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
