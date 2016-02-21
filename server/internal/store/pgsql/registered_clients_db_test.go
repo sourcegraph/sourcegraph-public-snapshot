@@ -10,7 +10,6 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
 func isRegisteredClientNotFound(err error) bool {
@@ -403,11 +402,15 @@ func TestRegisteredClients_Delete_ok(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Delete_nonexistent tests the behavior of
+// RegisteredClients.Delete when called with a nonexistent client ID.
 func TestRegisteredClients_Delete_nonexistent(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Delete_nonexistent(ctx, t, &registeredClients{})
+	if err := (&registeredClients{}).Delete(ctx, sourcegraph.RegisteredClientSpec{ID: "doesntexist"}); !isRegisteredClientNotFound(err) {
+		t.Fatal(err)
+	}
 }
