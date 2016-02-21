@@ -381,13 +381,26 @@ func TestRegisteredClients_Update_nonexistent(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_Delete_ok tests the behavior of
+// RegisteredClients.Delete when called with correct args.
 func TestRegisteredClients_Delete_ok(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_Delete_ok(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.Delete(ctx, sourcegraph.RegisteredClientSpec{ID: "a"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := s.Get(ctx, sourcegraph.RegisteredClientSpec{ID: "a"}); !isRegisteredClientNotFound(err) {
+		t.Fatal(err)
+	}
 }
 
 func TestRegisteredClients_Delete_nonexistent(t *testing.T) {
