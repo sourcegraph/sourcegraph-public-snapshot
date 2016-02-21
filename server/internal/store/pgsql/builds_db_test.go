@@ -287,14 +287,36 @@ func TestBuilds_Create_SequentialID(t *testing.T) {
 	}
 }
 
+// TestBuilds_Update tests the correct functioning of the Builds.Update method
+// by inserting a build, Updating it and verifying that it exists in its new
+// form.
 func TestBuilds_Update(t *testing.T) {
 	t.Parallel()
 
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_Update(ctx, t, &s, s.mustCreateBuilds)
+	s := &builds{}
+	orig := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
+	update := sourcegraph.BuildUpdate{
+		StartedAt: &t0,
+		Host:      "sourcegraph.com",
+		Priority:  5,
+		Killed:    true,
+	}
+	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{orig})
+
+	err := s.Update(ctx, orig.Spec(), update)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	want := *orig
+	want.StartedAt = update.StartedAt
+	want.Host = update.Host
+	want.Priority = update.Priority
+	want.Killed = update.Killed
+	assertBuildExists(ctx, s, &want, t)
 }
 
 func TestBuilds_Update_builderConfig(t *testing.T) {

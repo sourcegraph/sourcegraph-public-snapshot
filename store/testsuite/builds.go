@@ -49,31 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_Update tests the correct functioning of the Builds.Update method by inserting a build,
-// Updating it and verifying that it exists in its new form.
-func Builds_Update(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
-	orig := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
-	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
-	update := sourcegraph.BuildUpdate{
-		StartedAt: &t0,
-		Host:      "sourcegraph.com",
-		Priority:  5,
-		Killed:    true,
-	}
-	insert(ctx, t, []*sourcegraph.Build{orig})
-
-	err := s.Update(ctx, orig.Spec(), update)
-	if err != nil {
-		t.Fatalf("errored out: %s", err)
-	}
-	want := *orig
-	want.StartedAt = update.StartedAt
-	want.Host = update.Host
-	want.Priority = update.Priority
-	want.Killed = update.Killed
-	assertBuildExists(ctx, s, &want, t)
-}
-
 // Builds_Update_builderConfig tests that updating BuilderConfig only updates
 // the BuilderConfig without affecting other fields.
 func Builds_Update_builderConfig(ctx context.Context, t *testing.T, s store.Builds, insert InsertBuildsFunc) {
