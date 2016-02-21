@@ -264,12 +264,27 @@ func TestBuilds_Create_New(t *testing.T) {
 	assertBuildExists(ctx, s, want, t)
 }
 
+// TestBuilds_Create_SequentialID verifies that passing a Build with
+// ID == 0 to Builds.Create will generate an ID for it that
+// is greater than all other builds' IDs.
 func TestBuilds_Create_SequentialID(t *testing.T) {
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_Create_SequentialID(ctx, t, &s)
+	s := &builds{}
+	_, err := s.Create(ctx, &sourcegraph.Build{ID: 1, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &sourcegraph.Build{Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	b, err := s.Create(ctx, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := uint64(2); b.ID != want {
+		t.Errorf("got id == %d, want %d", b.ID, want)
+	}
 }
 
 func TestBuilds_Update(t *testing.T) {
