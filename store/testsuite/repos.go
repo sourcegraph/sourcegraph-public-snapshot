@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -12,27 +11,9 @@ import (
 
 	"sourcegraph.com/sqs/pbtypes"
 
-	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
 )
-
-// Repos_Get_existing tests the behavior of Repos.Get when called on a
-// repo that exists (i.e., the successful outcome).
-func Repos_Get_existing(ctx context.Context, t *testing.T, s store.Repos, existingRepo string) {
-	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, nil)
-
-	repo, err := s.Get(ctx, existingRepo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo == nil {
-		t.Error("repo == nil")
-	}
-	if repo.URI != existingRepo {
-		t.Errorf("got URI %q, want %q", repo.URI, existingRepo)
-	}
-}
 
 // Repos_Get_nonexistent tests the behavior of Repos.Get when called
 // on a repo that does not exist.

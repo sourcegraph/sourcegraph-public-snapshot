@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/sourcegraph/go-github/github"
+	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/store/testsuite"
 )
 
+// TestRepos_Get_existing tests the behavior of Repos.Get when called on a
+// repo that exists (i.e., the successful outcome).
 func TestRepos_Get_existing(t *testing.T) {
 	githubcli.Config.GitHubHost = "github.com"
 	ctx := testContext(&minimalClient{
@@ -26,7 +30,21 @@ func TestRepos_Get_existing(t *testing.T) {
 			},
 		},
 	})
-	testsuite.Repos_Get_existing(ctx, t, &Repos{}, "github.com/owner/repo")
+
+	s := &Repos{}
+	existingRepo := "github.com/owner/repo"
+	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, nil)
+
+	repo, err := s.Get(ctx, existingRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo == nil {
+		t.Error("repo == nil")
+	}
+	if repo.URI != existingRepo {
+		t.Errorf("got URI %q, want %q", repo.URI, existingRepo)
+	}
 }
 
 func TestRepos_Get_nonexistent(t *testing.T) {
