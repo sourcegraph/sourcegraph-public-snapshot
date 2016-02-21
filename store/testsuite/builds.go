@@ -49,22 +49,6 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 	}
 }
 
-// Builds_Create_New verifies that passing a Build with ID == 0 to Builds.Create will
-// generate an ID for it.
-func Builds_Create_New(ctx context.Context, t *testing.T, s store.Builds) {
-	// no id
-	want := &sourcegraph.Build{Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
-	b, err := s.Create(ctx, want)
-	if err != nil {
-		t.Fatalf("errored out: %s", err)
-	}
-	if b.ID == 0 {
-		t.Errorf("expected (on create new) id to be other than 0, but got %d", b.ID)
-	}
-	want.ID = b.ID
-	assertBuildExists(ctx, s, want, t)
-}
-
 // Builds_Create_SequentialID verifies that passing a Build with
 // ID == 0 to Builds.Create will generate an ID for it that
 // is greater than all other builds' IDs.

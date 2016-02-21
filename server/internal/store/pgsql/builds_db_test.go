@@ -244,12 +244,24 @@ func TestBuilds_Create(t *testing.T) {
 	assertBuildExists(ctx, s, want, t)
 }
 
+// TestBuilds_Create_New verifies that passing a Build with ID == 0 to
+// Builds.Create will generate an ID for it.
 func TestBuilds_Create_New(t *testing.T) {
-	var s builds
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Builds_Create_New(ctx, t, &s)
+	s := &builds{}
+	// No ID specified.
+	want := &sourcegraph.Build{Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	b, err := s.Create(ctx, want)
+	if err != nil {
+		t.Fatalf("errored out: %s", err)
+	}
+	if b.ID == 0 {
+		t.Errorf("expected (on create new) id to be other than 0, but got %d", b.ID)
+	}
+	want.ID = b.ID
+	assertBuildExists(ctx, s, want, t)
 }
 
 func TestBuilds_Create_SequentialID(t *testing.T) {
