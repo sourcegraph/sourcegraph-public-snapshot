@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"regexp"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -11,21 +10,6 @@ import (
 )
 
 type GetAccountFunc func(sourcegraph.UserSpec) (*sourcegraph.User, error)
-
-// Accounts_RequestPasswordReset tests that we can request a password reset. It
-// is also used to set up the ResetPassword tests.
-func Accounts_RequestPasswordReset(ctx context.Context, t *testing.T, s store.Accounts) {
-	u := &sourcegraph.User{UID: 123}
-	token, err := s.RequestPasswordReset(ctx, u)
-	if err != nil {
-		t.Fatal(err)
-	}
-	p := "[0-9a-zA-Z]{44}"
-	r := regexp.MustCompile(p)
-	if !r.MatchString(token.Token) {
-		t.Errorf("token should match %s", p)
-	}
-}
 
 // Accounts_ResetPassword_ok tests that we can successfully reset a password.
 func Accounts_ResetPassword_ok(ctx context.Context, t *testing.T, s store.Accounts) {

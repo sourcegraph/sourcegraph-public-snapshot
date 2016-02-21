@@ -4,6 +4,7 @@ package pgsql
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -100,12 +101,24 @@ func TestAccounts_Create_uidAlreadySet(t *testing.T) {
 	}
 }
 
+// TestAccounts_RequestPasswordReset tests that we can request a password
+// reset. It is also used to set up the ResetPassword tests.
 func TestAccounts_RequestPasswordReset(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Accounts_RequestPasswordReset(ctx, t, &accounts{})
+	s := &accounts{}
+	u := &sourcegraph.User{UID: 123}
+	token, err := s.RequestPasswordReset(ctx, u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := "[0-9a-zA-Z]{44}"
+	r := regexp.MustCompile(p)
+	if !r.MatchString(token.Token) {
+		t.Errorf("token should match %s", p)
+	}
 }
 
 func TestAccounts_ResetPassword_ok(t *testing.T) {
