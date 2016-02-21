@@ -379,11 +379,89 @@ func TestStorage_List(t *testing.T) {
 	}
 }
 
+// TestStorage_InvalidNames tests that invalid names are not allowed by the
+// storage service.
 func TestStorage_InvalidNames(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Storage_InvalidNames(ctx, t, &storage{})
+	s := &storage{}
+	tests := []sourcegraph.StorageBucket{
+		// Invalid bucket name tests.
+		sourcegraph.StorageBucket{
+			Name:    " startswithspace",
+			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "endswithspace ",
+			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "contains space",
+			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar",
+		},
+
+		// Invalid app name tests.
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: " startswithspace",
+			Repo:    "src.sourcegraph.com/foo/bar",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "endswithspace ",
+			Repo:    "src.sourcegraph.com/foo/bar",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "contains space",
+			Repo:    "src.sourcegraph.com/foo/bar",
+		},
+
+		// Invalid repo URI tests.
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    " starts.with.space/foo/bar",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "ends.with.space/foo/bar ",
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "http://src.sourcegraph.com/foo/bar", // scheme not allowed
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar?ok=true", // query not allowed
+		},
+		sourcegraph.StorageBucket{
+			Name:    "my-bucket",
+			AppName: "my-app",
+			Repo:    "src.sourcegraph.com/foo/bar#ok", // fragment not allowed
+		},
+	}
+
+	for _, bucket := range tests {
+		_, err := s.Put(ctx, &sourcegraph.StoragePutOp{
+			Key: sourcegraph.StorageKey{
+				Bucket: &bucket,
+				Key:    storageKeyName,
+			},
+			Value: storageValue,
+		})
+		if err == nil {
+			t.Logf("Put Key.Bucket: %#q\n", bucket)
+			t.Fatal("expected error for non-compliant bucket name")
+		}
+	}
 }
 
 func TestStorage_ValidNames(t *testing.T) {
