@@ -12,22 +12,6 @@ import (
 
 type GetAccountFunc func(sourcegraph.UserSpec) (*sourcegraph.User, error)
 
-// Accounts_Create_noLogin tests the behavior of Accounts.Create when
-// called with an empty login.
-func Accounts_Create_noLogin(ctx context.Context, t *testing.T, s store.Accounts) {
-	if _, err := s.Create(ctx, &sourcegraph.User{Login: ""}); err == nil {
-		t.Fatal("err == nil")
-	}
-}
-
-// Accounts_Create_uidAlreadySet tests the behavior of Accounts.Create
-// when called with an already populated UID.
-func Accounts_Create_uidAlreadySet(ctx context.Context, t *testing.T, s store.Accounts) {
-	if _, err := s.Create(ctx, &sourcegraph.User{UID: 123, Login: "u"}); err == nil {
-		t.Fatal("err == nil")
-	}
-}
-
 // Accounts_RequestPasswordReset tests that we can request a password reset. It
 // is also used to set up the ResetPassword tests.
 func Accounts_RequestPasswordReset(ctx context.Context, t *testing.T, s store.Accounts) {

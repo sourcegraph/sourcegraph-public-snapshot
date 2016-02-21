@@ -72,22 +72,32 @@ func TestAccounts_Create_duplicate(t *testing.T) {
 	}
 }
 
+// TestAccounts_Create_noLogin tests the behavior of Accounts.Create when
+// called with an empty login.
 func TestAccounts_Create_noLogin(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Accounts_Create_noLogin(ctx, t, &accounts{})
+	s := &accounts{}
+	if _, err := s.Create(ctx, &sourcegraph.User{Login: ""}); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
+// TestAccounts_Create_uidAlreadySet tests the behavior of Accounts.Create
+// when called with an already populated UID.
 func TestAccounts_Create_uidAlreadySet(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.Accounts_Create_uidAlreadySet(ctx, t, &accounts{})
+	s := &accounts{}
+	if _, err := s.Create(ctx, &sourcegraph.User{UID: 123, Login: "u"}); err == nil {
+		t.Fatal("err == nil")
+	}
 }
 
 func TestAccounts_RequestPasswordReset(t *testing.T) {
