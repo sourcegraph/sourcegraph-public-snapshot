@@ -84,13 +84,26 @@ func TestRegisteredClients_GetByCredentials_ok(t *testing.T) {
 	}
 }
 
+// TestRegisteredClients_GetByCredentials_badID tests the behavior of
+// RegisteredClients.Get when called with a bad ID.
 func TestRegisteredClients_GetByCredentials_badID(t *testing.T) {
 	t.Parallel()
 
 	ctx, done := testContext()
 	defer done()
 
-	testsuite.RegisteredClients_GetByCredentials_badID(ctx, t, &registeredClients{})
+	s := &registeredClients{}
+	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
+		t.Fatal(err)
+	}
+
+	client, err := s.GetByCredentials(ctx, sourcegraph.RegisteredClientCredentials{ID: "WRONG", Secret: "b"})
+	if !isRegisteredClientNotFound(err) {
+		t.Fatal(err)
+	}
+	if client != nil {
+		t.Error("client != nil")
+	}
 }
 
 func TestRegisteredClients_GetByCredentials_badSecret(t *testing.T) {

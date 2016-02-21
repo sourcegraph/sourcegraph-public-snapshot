@@ -11,22 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// RegisteredClients_GetByCredentials_badID tests the behavior of
-// RegisteredClients.Get when called with a bad ID.
-func RegisteredClients_GetByCredentials_badID(ctx context.Context, t *testing.T, s store.RegisteredClients) {
-	if err := s.Create(ctx, sourcegraph.RegisteredClient{ID: "a", ClientSecret: "b"}); err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := s.GetByCredentials(ctx, sourcegraph.RegisteredClientCredentials{ID: "WRONG", Secret: "b"})
-	if !isRegisteredClientNotFound(err) {
-		t.Fatal(err)
-	}
-	if client != nil {
-		t.Error("client != nil")
-	}
-}
-
 // RegisteredClients_GetByCredentials_badSecret tests the behavior of
 // RegisteredClients.Get when called with a bad secret.
 func RegisteredClients_GetByCredentials_badSecret(ctx context.Context, t *testing.T, s store.RegisteredClients) {
