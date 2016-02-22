@@ -165,7 +165,7 @@ README.md for instructions on how to install them.
 
 # Postgres
 
-Issue the following commands to create the necessary database and Postgres user:
+Once you have Postgres [installed](http://www.postgresql.org/download/) and [started](http://www.postgresql.org/docs/9.1/static/server-start.html), issue the following commands to create the necessary database and Postgres user:
 
 ```
 createdb sg_test
@@ -180,7 +180,8 @@ export PGDATABASE=sg_test
 export PGUSER=sg_user_test
 ```
 
-Edit the `timezone` line in your postgresql.conf to read as follows:
+Edit the `timezone` line in your postgresql.conf (usually in
+`/usr/local/var/postgres`) to read as follows:
 
 ```
 timezone = 'UTC'
@@ -189,7 +190,7 @@ timezone = 'UTC'
 ...and finally issue the following command:
 
 ```
-src psql create
+src pgsql create
 ```
 
 ## Code standards
