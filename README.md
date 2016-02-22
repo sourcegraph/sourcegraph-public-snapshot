@@ -1,7 +1,8 @@
 # Sourcegraph: Code Intelligence for teams
 
 Sourcegraph is a **Git repository service** with Code Intelligence. It
-**runs on your own server** or cloud and installs in 5 minutes.
+**runs on your own server** or cloud and installs in 5 minutes, or you
+can use Sourcegraph on Sourcegraph.com for free.
 
 Sourcegraph gives your team the power to build better software with:
 

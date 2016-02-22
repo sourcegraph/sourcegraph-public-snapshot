@@ -29,6 +29,6 @@ var ContainerHost = func() (string, error) {
 		}
 	}
 
-	log15.Crit("Unable to determine Docker container host address (as seen by containers). Please report this error at https://src.sourcegraph.com/sourcegraph/.tracker and include your OS and Docker version.", "iface", iface)
+	log15.Crit("Unable to determine Docker container host address (as seen by containers). Please report this error to help@sourcegraph.com and include your OS and Docker version.", "iface", iface)
 	return "", fmt.Errorf("unable to determine Docker container host address (as seen by containers), using interface %s", iface)
 }

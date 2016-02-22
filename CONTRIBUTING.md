@@ -21,8 +21,8 @@ has some very specific qualities, so please read over our short document on
 [reporting bugs](https://src.sourcegraph.com/sourcegraph/.docs/dev/bugs)
 before you submit your bug report.
 
-[Open a new thread](https://src.sourcegraph.com/sourcegraph/.tracker) when you're ready
-to file an issue or discuss your ideas.
+[Open a new thread](https://src.sourcegraph.com/sourcegraph/.tracker/new) when you're ready
+to file an issue.
 
 ## Contribution flow
 
@@ -31,7 +31,7 @@ This is a rough outline of what a contributor's workflow looks like today:
 - Create a topic branch from where you want to base your work. This is usually master.
 - Make commits of logical units.
 - Create a patch via [`git format-patch`](https://ariejan.net/2009/10/26/how-to-create-and-apply-a-patch-with-git/)
-and send it to us [via a thread](https://src.sourcegraph.com/sourcegraph/.tracker).
+and send it to us [via email](mailto:contributing@sourcegraph.com).
 - Sign the CLA (in misc/CLA.txt) and send it to us so we may incorporate your contributions.
 - We'll open a changeset and have a conversation about the patch.
 - We'll merge the changeset if everything looks good.
