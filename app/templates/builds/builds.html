@@ -15,7 +15,7 @@
 {{if .BuildsAndCommits}}
 <table class="table builds">
 	<thead>
-		<tr><th>Repo</th><th>#</th><th>Commit</th><th>Status</th><th>Elapsed</th></tr>
+		<tr><th>Repository</th><th>#</th><th>Commit</th><th>Status</th><th>Elapsed</th></tr>
 	</thead>
 	{{range .BuildsAndCommits}}
 	{{template "BuildRow" .}}

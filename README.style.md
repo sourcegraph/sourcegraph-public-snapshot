@@ -15,6 +15,11 @@ comments, and user interface text.
   [view your repositories](#)?" Don't use "here" as link text, as in
   "Need to view your repositories? [Click here.](#)"
 
+## Terms
+
+* In UI text and documentation, always use "repository" instead of
+  "repo."
+
 ## Names
 
 Use the standard rendering of names in prose. For example:
