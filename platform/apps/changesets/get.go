@@ -334,7 +334,9 @@ const srcignore = ".srcignore"
 
 // readSrcignore reads and parses the .srcignore file from the specified
 // repository root, falling back to the global and default srcignore if needed.
-// It returns the relevant unix glob patterns from the chosen file.
+//
+// It returns the relevant "/" slash-separated glob patterns from the chosen
+// file.
 func readSrcignore(ctx context.Context, rev sourcegraph.RepoRevSpec) ([]string, error) {
 	// Check the repository for a .srcignore file.
 	sg, err := sourcegraph.NewClientFromContext(ctx)
