@@ -105,8 +105,9 @@ func fetchCommitsForBuilds(ctx context.Context, builds []*sourcegraph.Build) ([]
 				Rev:      b.CommitID,
 				CommitID: b.CommitID,
 			})
-			if err != nil && grpc.Code(err) != codes.NotFound {
-				// Tolerate not found (happens when the commit is gc'd).
+			if err != nil && !(grpc.Code(err) == codes.NotFound || grpc.Code(err) == codes.Unauthenticated) {
+				// Tolerate not found (happens when the commit is gc'd) and
+				// unauthenticated (happens when the repo is private).
 				return err
 			}
 			buildsAndCommits[i].Commit = commit
