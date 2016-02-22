@@ -6,9 +6,34 @@ and [Effective Go](http://golang.org/doc/effective_go.html).
 
 # English
 
+The same standards apply to documentation, commit messages, code
+comments, and user interface text.
+
 * Phrases in headers and titles are capitalized like sentences ("Add
   repository"), not headlines ("Add Repository").
+* Use descriptive link text, such as "Need to
+  [view your repositories](#)?" Don't use "here" as link text, as in
+  "Need to view your repositories? [Click here.](#)"
 
+## Names
+
+Use the standard rendering of names in prose. For example:
+
+* [PostgreSQL](http://www.postgresql.org/about/), not Postgres,
+  postgres, PgSQL, Postgresql, PostGres, etc. (Using something like
+  `package pgsql` in code is fine, but be consistent: don't name one
+  package `postgres` and the other `pgsql`.)
+* Sourcegraph, not sourcegraph or SourceGraph.
+* Go, not Golang.
+* GitHub, not Github.
+* OS X, not OSX.
+* gRPC, not grpc or GRPC.
+* Bitbucket, not BitBucket.
+* JIRA, not Jira.
+* Docker, not docker. (If you are referring to the `docker` CLI tool,
+  then that is not in prose.)
+
+When in doubt, Google it.
 
 # Code
 
