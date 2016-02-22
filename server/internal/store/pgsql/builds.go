@@ -234,9 +234,10 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	if opt.Repo != "" {
 		conds = append(conds, "b.repo="+arg(opt.Repo))
 	} else if authutil.ActiveFlags.PrivateMirrors {
-		// only list public repo builds on main builds page.
-		// TODO: add filtering for private repos.
-		conds = append(conds, "b.repo in (select uri from repo where not private)")
+		// if requesting user is not admin, only list public repo builds.
+		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.List"); err != nil {
+			conds = append(conds, "b.repo not in (select uri from repo where private)")
+		}
 	}
 	if opt.Queued {
 		conds = append(conds, "b.started_at IS NULL AND b.queue")
