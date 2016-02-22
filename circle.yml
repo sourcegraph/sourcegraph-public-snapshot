@@ -10,7 +10,7 @@ machine:
     PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
     LD_LIBRARY_PATH: $HOME/protobuf/lib
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
-    LONG_VERSION: $(date +%y%m%d)-$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:7}
+    LONG_VERSION: $(printf "%05d" $(git rev-list --count HEAD))_$(+%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 
     # Don't block on `git diff` invocations of `less`.
     GIT_PAGER:
@@ -84,7 +84,7 @@ deployment:
           pwd: $REPO
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=master&version=$LONG_VERSION"
+      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=master" -F "version=$LONG_VERSION"
       - echo $LONG_VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
 
   next-branch:
@@ -92,7 +92,7 @@ deployment:
     commands:
       - ./circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=next&version=$LONG_VERSION"
+      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=next" -F "version=$LONG_VERSION"
 
   release-tag:
     tag: /[0-9]+\.[0-9]+\.[0-9]+/
@@ -113,4 +113,4 @@ deployment:
       - docker push sourcegraph/sourcegraph:latest
 
       # deploy
-      - curl "http://circleci:$DEPLOY_BOT_PASSWORD@deploy-bot.sourcegraph.com/deploy?branch=release&version=$CIRCLE_TAG"
+      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=release" -F "version=$CIRCLE_TAG"
