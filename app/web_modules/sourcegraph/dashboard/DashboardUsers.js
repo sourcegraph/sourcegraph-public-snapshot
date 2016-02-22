@@ -42,7 +42,7 @@ class UserList extends Component {
 						{this.state.users.map((user, i) => (
 							<div className="list-group-item" key={i}>
 								<img className="avatar-sm" src={user.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
-								<span className="user-name">{user.Name || user.Login}{user.IsInvited ? " (invited)" : ""}</span>
+								<span className="user-name">{user.Name || user.Login}{user.IsInvited ? " (pending)" : ""}</span>
 								{this.state.allowStandaloneUsers &&
 									<a className="user-permissions">{this._getUserPermissionString(user)}</a>
 								}
