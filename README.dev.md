@@ -15,7 +15,7 @@ development environment. Here's what you need:
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
 - [PostgreSQL](http://www.postgresql.org/docs/9.5/interactive/index.html) (v9.2 or higher)
 
-If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html)
+If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
 
 ## Get the code
