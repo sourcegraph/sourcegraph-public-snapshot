@@ -6,11 +6,23 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
+
+	"sourcegraph.com/sqs/pbtypes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store/testsuite"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/jsonutil"
 )
+
+func repoURIs(repos []*sourcegraph.Repo) []string {
+	var uris []string
+	for _, repo := range repos {
+		uris = append(uris, repo.URI)
+	}
+	sort.Strings(uris)
+	return uris
+}
 
 func TestRepos_List(t *testing.T) {
 	t.Parallel()
@@ -70,51 +82,233 @@ func TestRepos_List_type(t *testing.T) {
 	}
 }
 
+// TestRepos_List_query tests the behavior of Repos.List when called with
+// a query.
 func TestRepos_List_query(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_query(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add some repos.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "def/ghi", Name: "ghi", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		query string
+		want  []string
+	}{
+		{"de", []string{"abc/def", "def/ghi"}},
+		{"def", []string{"abc/def", "def/ghi"}},
+		{"ABC/DEF", []string{"abc/def"}},
+		{"xyz", nil},
+	}
+	for _, test := range tests {
+		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{Query: test.query})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
+		}
+	}
 }
 
+// TestRepos_List_URIs tests the behavior of Repos.List when called with
+// URIs.
 func TestRepos_List_URIs(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_List_URIs(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add some repos.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "c/d", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		uris []string
+		want []string
+	}{
+		{[]string{"a/b"}, []string{"a/b"}},
+		{[]string{"x/y"}, nil},
+		{[]string{"a/b", "c/d"}, []string{"a/b", "c/d"}},
+		{[]string{"a/b", "x/y", "c/d"}, []string{"a/b", "c/d"}},
+	}
+	for _, test := range tests {
+		repos, err := s.List(ctx, &sourcegraph.RepoListOptions{URIs: test.uris})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%v: got repos %v, want %v", test.uris, got, test.want)
+		}
+	}
 }
 
 func TestRepos_Create(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create(ctx, t, &repos{})
+
+	s := &repos{}
+	tm := time.Now().Round(time.Second)
+	ts := pbtypes.NewTimestamp(tm)
+
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.CreatedAt == nil {
+		t.Fatal("got CreatedAt nil")
+	}
+	if want := ts.Time(); !repo.CreatedAt.Time().Equal(want) {
+		t.Errorf("got CreatedAt %q, want %q", repo.CreatedAt.Time(), want)
+	}
 }
 
 func TestRepos_Create_dupe(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Create_dupe(ctx, t, &repos{})
+
+	s := &repos{}
+	tm := time.Now().Round(time.Second)
+	ts := pbtypes.NewTimestamp(tm)
+
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Add another repo with the same name.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err == nil {
+		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
+	}
 }
 
+// TestRepos_Update_Description tests the behavior of Repos.Update to
+// update a repo's description.
 func TestRepos_Update_Description(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_Description(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := ""; repo.Description != want {
+		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
+
+	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "d"; repo.Description != want {
+		t.Errorf("got description %q, want %q", repo.Description, want)
+	}
 }
 
 func TestRepos_Update_UpdatedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_UpdatedAt(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.UpdatedAt != nil {
+		t.Errorf("got UpdatedAt %v, want nil", repo.UpdatedAt.Time())
+	}
+
+	// Perform any update.
+	newTime := time.Unix(123456, 0)
+	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, UpdatedAt: &newTime}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.UpdatedAt == nil {
+		t.Fatal("got UpdatedAt nil, want non-nil")
+	}
+	if want := newTime; !repo.UpdatedAt.Time().Equal(want) {
+		t.Errorf("got UpdatedAt %q, want %q", repo.UpdatedAt.Time(), want)
+	}
 }
 
 func TestRepos_Update_PushedAt(t *testing.T) {
 	t.Parallel()
 	ctx, done := testContext()
 	defer done()
-	testsuite.Repos_Update_PushedAt(ctx, t, &repos{})
+
+	s := &repos{}
+	// Add a repo.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.PushedAt != nil {
+		t.Errorf("got PushedAt %v, want nil", repo.PushedAt.Time())
+	}
+
+	newTime := time.Unix(123456, 0)
+	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, PushedAt: &newTime}); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err = s.Get(ctx, "a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.PushedAt == nil {
+		t.Fatal("got PushedAt nil, want non-nil")
+	}
+	if repo.UpdatedAt != nil {
+		t.Fatal("got UpdatedAt non-nil, want nil")
+	}
+	if want := newTime; !repo.PushedAt.Time().Equal(want) {
+		t.Errorf("got PushedAt %q, want %q", repo.PushedAt.Time(), want)
+	}
 }
