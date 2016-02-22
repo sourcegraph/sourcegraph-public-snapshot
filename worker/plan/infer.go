@@ -78,7 +78,11 @@ var langConfigs = map[string]struct {
 			Build: droneyaml.Build{
 				Container: droneyaml.Container{Image: "node:$$NODE_VERSION"},
 				Commands: []string{
-					"npm install --quiet",
+					// If the required package.json file is not in the root
+					// directory, attempt to find and navigate to it within
+					// subdirectories, excluding any node_modules directories.
+					`[ -f package.json ] || cd "$(dirname "$(find ./ -type f -name package.json -not -path '*/node_modules/*' | tail -1)")"`,
+					"[ -f package.json ] && npm install --quiet",
 				},
 				AllowFailure: true,
 			},
@@ -88,7 +92,8 @@ var langConfigs = map[string]struct {
 			Build: droneyaml.Build{
 				Container: droneyaml.Container{Image: "node:$$NODE_VERSION"},
 				Commands: []string{
-					"npm run test",
+					`[ -f package.json ] || cd "$(dirname "$(find ./ -type f -name package.json | tail -1)")"`,
+					"[ -f package.json ] && npm run test",
 				},
 				AllowFailure: true,
 			},
