@@ -45,7 +45,7 @@ Sourcegraph keeps your code on your own infrastructure.
 
 See the full [security policy](https://sourcegraph.com/security),
 [privacy policy](https://sourcegraph.com/privacy) and
-[terms of service](https://sourcegraph.com/terms) for more
+[terms of service](https://sourcegraph.com/legal) for more
 information.
 
 
