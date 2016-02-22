@@ -35,7 +35,7 @@ const (
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
 
-	UserSettingsEmails        = "person.settings.emails"
+	User                      = "person"
 	UserSettingsProfile       = "person.settings.profile"
 	UserSettingsProfileAvatar = "person.settings.profile.avatar"
 	UserSettingsKeys          = "person.settings.keys"
@@ -159,7 +159,6 @@ func New(base *mux.Router) *Router {
 	user := base.PathPrefix(userPath).Subrouter()
 	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
 	user.Path("/.settings/profile/avatar").Methods("POST").Name(UserSettingsProfileAvatar)
-	user.Path("/.settings/emails").Methods("GET").Name(UserSettingsEmails)
 	user.Path("/.settings/keys").Methods("GET", "POST").Name(UserSettingsKeys)
 
 	// attach git transport endpoints

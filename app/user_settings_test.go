@@ -27,6 +27,12 @@ func TestUserSettingsAccess(t *testing.T) {
 		return &sourcegraph.User{UID: 1, Login: "u"}, nil
 	}
 
+	var calledListEmails bool
+	mock.Users.ListEmails_ = func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
+		calledListEmails = true
+		return &sourcegraph.EmailAddrList{}, nil
+	}
+
 	var calledOrgsList bool
 	mock.Orgs.List_ = func(ctx context.Context, _ *sourcegraph.OrgsListOp) (*sourcegraph.OrgList, error) {
 		calledOrgsList = true

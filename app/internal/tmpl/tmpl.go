@@ -113,7 +113,6 @@ func commonTemplates() error {
 		{"user/new_password.html"},
 		{"user/settings/profile.html", "user/settings/common.inc.html"},
 		{"user/settings/notifications.html", "user/settings/common.inc.html"},
-		{"user/settings/emails.html", "user/settings/common.inc.html"},
 		{"user/settings/keys.html", "user/settings/common.inc.html"},
 		{"blog/index.html", "blog/blog.html", "blog/common.inc.html"},
 		{"blog/post.html", "blog/blog.html", "blog/common.inc.html"},

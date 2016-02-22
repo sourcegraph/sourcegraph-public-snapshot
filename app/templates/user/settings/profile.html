@@ -21,24 +21,24 @@
 			</div>
 			{{if not .User.IsOrganization}}
 			<div class="form-group">
-				<label for="Email">Email</label>
-				<p class="help-block"><a href="{{urlToUserSubroute "person.settings.emails" .User.Login}}">View &amp; edit email addresses</a></p>
+				{{if .EmailAddrs}}
+				<label for="Name">Email</label>
+				<ol class="list-group emails">
+					{{range .EmailAddrs}}
+						{{if not .Blacklisted}}
+							<li class="list-group-item email">
+								<span class="addr">{{.Email}}</span>
+								{{/*if not .Verified*/}}<!--<span class="label label-warning">Unverified</span>-->{{/*end*/}}
+								{{if .Primary}}<span class="label label-primary">Primary</span>{{end}}
+							</li>
+						{{end}}
+					{{end}}
+				</ol>
+				{{else}}
+				<p>You haven't added any email addresses yet.</p>
+				{{end}}
 			</div>
 			{{end}}
-			<div class="form-group">
-				<label for="HomepageURL">URL</label>
-				<input type="url" class="form-control" id="HomepageURL" name="HomepageURL" value="{{.User.HomepageURL}}" placeholder="Not set">
-			</div>
-			{{if not .User.IsOrganization}}
-			<div class="form-group">
-				<label for="Company">Company</label>
-				<input type="text" class="form-control" id="Company" name="Company" value="{{.User.Company}}" placeholder="Not set">
-			</div>
-			{{end}}
-			<div class="form-group">
-				<label for="Location">Location</label>
-				<input type="text" class="form-control" id="Location" name="Location" value="{{.User.Location}}" placeholder="Not set">
-			</div>
 			<input type="submit" value="Save" class="btn btn-primary">
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		</form>
