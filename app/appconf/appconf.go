@@ -40,8 +40,6 @@ var Flags struct {
 
 	EnableGitHubRepoShortURIAliases bool `long:"app.enable-github-repo-short-uri-aliases" description:"if set, redirect 'user/repo' URLs (with no 'github.com/') to '/github.com/user/repo'"`
 
-	EnableGitHubStyleUserPaths bool `long:"app.enable-github-style-user-paths" description:"redirect GitHub paths like '/user' to valid ones like '/~user' (disables single-path repos)"`
-
 	CustomLogo template.HTML `long:"app.custom-logo" description:"custom logo to display in the top nav bar (HTML)"`
 
 	CustomNavLayout template.HTML `long:"app.custom-nav-layout" description:"custom layout to display in place of the search form (HTML)"`

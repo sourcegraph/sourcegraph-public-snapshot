@@ -86,10 +86,6 @@ module.exports = {
 		return `/login${returnTo ? `?return-to=${returnTo}` : ""}`;
 	},
 
-	personURL(login) {
-		return `/~${login}`;
-	},
-
 	logInURL() { return "/login"; },
 	logOutURL() { return "/logout"; },
 
@@ -99,7 +95,7 @@ module.exports = {
 			"person.settings.integrations": "/.settings/integrations",
 		};
 		if (!subroutePaths[route]) throw new Error(`No such route: ${route}`);
-		return module.exports.personURL(login) + subroutePaths[route];
+		return `/~${login}${subroutePaths[route]}`;
 	},
 
 	abs(url) {

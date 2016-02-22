@@ -115,18 +115,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	// Special-case: redirect "github.com/user" URLs (with only 1 path component
-	// after github.com) to the corresponding user profile URL.
-	if strings.HasPrefix(repoSpec.URI, "github.com/") && strings.Count(repoSpec.URI, "/") == 1 {
-		i := strings.Index(repoSpec.URI, "/")
-		login := repoSpec.URI[i+1:]
-		if login == "" {
-			return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("bad repository URI")}
-		}
-		http.Redirect(w, r, router.Rel.URLToUser(login).String(), http.StatusMovedPermanently)
-		return nil
-	}
-
 	// Special-case: redirect "github.com/user/repo/..." (old URLs) to
 	// "github.com/user/repo".
 	if strings.HasPrefix(repoSpec.URI, "github.com/") && strings.Count(repoSpec.URI, "/") > 2 {
@@ -136,17 +124,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 		http.Redirect(w, r, router.Rel.URLToRepo(string(strings.Join(parts[0:3], "/"))).String(), http.StatusMovedPermanently)
 		return nil
-	}
-
-	// Special-case: Redirect "/xyz" single-path-component repo URIs
-	// to "/~xyz" for the live site. That's because people have
-	// existing links to https://sourcegraph.com/myname and we don't
-	// want to break these.
-	if appconf.Flags.EnableGitHubStyleUserPaths {
-		if strings.Count(repoSpec.URI, "/") == 0 {
-			http.Redirect(w, r, router.Rel.URLToUser(repoSpec.URI).String(), http.StatusSeeOther)
-			return nil
-		}
 	}
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
@@ -281,17 +258,6 @@ func absRepoLink(appURL *url.URL, repoURI string) *repoLinkInfo {
 
 func repoLink(repoURI string) *repoLinkInfo {
 	return absRepoLink(&url.URL{}, repoURI)
-}
-
-func repoLabelForOwner(owner string, repoURI string) []string {
-	if ownerPrefix := "github.com/" + owner + "/"; strings.HasPrefix(repoURI, ownerPrefix) {
-		repoURI = strings.TrimPrefix(repoURI, ownerPrefix)
-	} else if strings.HasPrefix(repoURI, "github.com/") {
-		repoURI = strings.TrimPrefix(repoURI, "github.com/")
-	} else if strings.HasPrefix(repoURI, "sourcegraph.com/") {
-		repoURI = strings.TrimPrefix(repoURI, "sourcegraph.com/")
-	}
-	return strings.Split(repoURI, "/")
 }
 
 func repoMetaDescription(rp *sourcegraph.Repo) string {

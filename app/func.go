@@ -5,7 +5,6 @@ import (
 	"fmt"
 	htmpl "html/template"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,29 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 )
-
-func pluralizeWord(noun string, n int) string {
-	if n == 1 {
-		return noun
-	}
-	var plnoun string
-	if noun == "All" {
-		return noun
-	} else if strings.HasSuffix(noun, "person") {
-		plnoun = noun[:len(noun)-len("person")] + "people"
-	} else if strings.HasSuffix(noun, "y") {
-		plnoun = noun[:len(noun)-1] + "ies"
-	} else if strings.HasSuffix(noun, "ss") || strings.HasSuffix(noun, "ch") {
-		plnoun = noun + "es"
-	} else {
-		plnoun = noun + "s"
-	}
-	return plnoun
-}
-
-func pluralize(noun string, n int) string {
-	return num(n) + " " + pluralizeWord(noun, n)
-}
 
 func minTime(a, b interface{}) time.Time {
 	at, bt := timeutil.TimeOrNil(a), timeutil.TimeOrNil(b)
@@ -65,19 +41,6 @@ func duration(v0, v1 interface{}) string {
 
 func roundToMsec(d time.Duration) time.Duration {
 	return (d / time.Millisecond) * time.Millisecond
-}
-
-// num abbreviates and rounds n. Examples: 150, 13.2K, 1.5K.
-func num(n int) string {
-	if n < 1000 {
-		return strconv.Itoa(n)
-	} else if n < 30000 {
-		s := fmt.Sprintf("%.1fk", float64(n)/1000)
-		return strings.Replace(s, ".0k", "k", 1)
-	} else if n < 500000 {
-		return strconv.Itoa(n/1000) + "k"
-	}
-	return fmt.Sprintf("%.1fM", float64(n)/1000000.0)
 }
 
 func maxLen(maxLen int, s string) string {

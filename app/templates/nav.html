@@ -32,8 +32,8 @@
 				{{end}}
 				{{if authFlags.HasUserAccounts}}
 				{{if .CurrentUser}}
-					<li class="current-user name{{if not authFlags.HasUserProfiles}} disabled{{end}}">
-						<a {{if authFlags.HasUserProfiles}}href="/"{{end}} class="user">
+					<li class="current-user name">
+						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}" class="user">
 							{{.CurrentUser.Login}}
 						</a>
 					</li>

@@ -6,7 +6,7 @@
 			<div class="media-body">
 				<h5 class="media-heading"><a href="{{urlToBlogPost .URL}}">{{.Title}}</a></h5>
 				{{if .Author.Login}}
-				<span class="byline">by <a href="{{urlToUser .Author.Login}}">{{.Author.Name}}</a></span>
+				<span class="byline">by {{.Author.Name}}</span>
 				<span class="date">on {{template "Date" .Date}}</span>
 				{{else}}
 				<span class="date">{{template "Date" .Date}}</span>

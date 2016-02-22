@@ -65,7 +65,7 @@
 
 {{define "UserLink"}}<!-- expects string -->
 	{{if .}}
-		<a class="user" href="{{urlToUser .}}">{{.|personLabel}}</a>
+		<span class="user">{{.|personLabel}}</span>
 	{{else}}
 		<span class="user">unknown</span>
 	{{end}}

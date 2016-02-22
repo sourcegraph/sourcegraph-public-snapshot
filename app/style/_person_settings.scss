@@ -49,15 +49,13 @@
 }
 
 .person-settings.panel {
-	form.person-profile {
-		.avatar {
-			img {
-				width: 64px;
-				height: 64px;
-			}
-			button {
-				vertical-align: top;
-			}
+	.avatar {
+		img {
+			width: 64px;
+			height: 64px;
+		}
+		button {
+			vertical-align: top;
 		}
 	}
 

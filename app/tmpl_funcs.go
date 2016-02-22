@@ -39,14 +39,11 @@ func init() {
 }
 
 var tmplFuncs = htmpl.FuncMap{
-	"personLabel":         personLabel,
-	"userMetaDescription": userMetaDescription,
-	"userStat":            userStat,
+	"personLabel": personLabel,
 
-	"repoBasename":      repoBasename,
-	"repoLink":          repoLink,
-	"absRepoLink":       absRepoLink,
-	"repoLabelForOwner": repoLabelForOwner,
+	"repoBasename": repoBasename,
+	"repoLink":     repoLink,
+	"absRepoLink":  absRepoLink,
 
 	"repoMetaDescription": repoMetaDescription,
 
@@ -60,8 +57,7 @@ var tmplFuncs = htmpl.FuncMap{
 	"buildClass":  buildClass,
 	"buildStatus": buildStatus,
 
-	"pluralize": pluralize,
-	"add":       func(a, b int) int { return a + b },
+	"add": func(a, b int) int { return a + b },
 	"min": func(a, b int) int {
 		if a < b {
 			return a
@@ -87,7 +83,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"urlTo":                      router.Rel.URLTo,
 	"urlToBlogPost":              router.Rel.URLToBlogPost,
 	"urlToBlogAtomFeed":          router.Rel.URLToBlogAtomFeed,
-	"urlToUser":                  router.Rel.URLToUser,
 	"urlToUserSubroute":          router.Rel.URLToUserSubroute,
 	"urlToRepo":                  router.Rel.URLToRepo,
 	"urlToRepoRev":               router.Rel.URLToRepoRev,

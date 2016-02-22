@@ -7,7 +7,7 @@
 			<h1>{{nl2br .Meta.Title}}</h1>
 			{{if .Meta.Author.Login}}
 			<div class="byline">
-				By <a href="{{urlToUser .Meta.Author.Login}}">{{.Meta.Author.Name}}</a>
+				By {{.Meta.Author.Name}}
 				<span class="date">&mdash; {{template "DateTime" .Meta.Date}}</span>
 			</div>
 			{{end}}

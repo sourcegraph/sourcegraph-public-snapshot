@@ -15,7 +15,6 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/app/internal/markdown"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/conf/feature"
 	"src.sourcegraph.com/sourcegraph/gitserver"
@@ -120,13 +119,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.UserSettingsProfileAvatar).Handler(internal.Handler(serveUserSettingsProfileAvatar))
 	r.Get(router.UserSettingsEmails).Handler(internal.Handler(serveUserSettingsEmails))
 	r.Get(router.UserSettingsKeys).Handler(internal.Handler(serveUserSettingsKeys))
-	if !authutil.ActiveFlags.DisableUserProfiles {
-		r.Get(router.User).Handler(internal.Handler(serveUser))
-		if !authutil.ActiveFlags.PrivateMirrors {
-			r.Get(router.UserOrgs).Handler(internal.Handler(serveUserOrgs))
-			r.Get(router.OrgMembers).Handler(internal.Handler(serveOrgMembers))
-		}
-	}
 
 	r.Get(router.Repo).Handler(internal.Handler(serveRepo))
 	r.Get(router.RepoBuild).Handler(internal.Handler(serveRepoBuild))

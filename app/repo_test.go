@@ -107,18 +107,3 @@ func TestRepo_NotFound(t *testing.T) {
 		t.Error("!calledGet")
 	}
 }
-
-func TestRepo_GitHubProfileRedirect(t *testing.T) {
-	c, _ := apptest.New()
-
-	resp, err := c.GetNoFollowRedirects("/github.com/u")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := http.StatusMovedPermanently; resp.StatusCode != want {
-		t.Errorf("got status %d, want %d", resp.StatusCode, want)
-	}
-	if got, want := resp.Header.Get("location"), "/~u"; got != want {
-		t.Errorf("got Location == %q, want %q", got, want)
-	}
-}

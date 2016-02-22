@@ -212,33 +212,6 @@ func TestMatch(t *testing.T) {
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "mycommitid", "Path": "my/file", "Format": "json"},
 		},
 
-		// User
-		{
-			path:          "/~alice",
-			wantRouteName: User,
-			wantVars:      map[string]string{"User": "alice"},
-		},
-		{
-			path:          "/~alice@example.com",
-			wantRouteName: User,
-			wantVars:      map[string]string{"User": "alice@example.com"},
-		},
-		{
-			path:          "/~123$",
-			wantRouteName: User,
-			wantVars:      map[string]string{"User": "123$"},
-		},
-		{
-			path:          "/~123$@example.com",
-			wantRouteName: User,
-			wantVars:      map[string]string{"User": "123$@example.com"},
-		},
-		{
-			path:          "/~alice@-x-yJAANTud-iAVVw",
-			wantRouteName: User,
-			wantVars:      map[string]string{"User": "alice@-x-yJAANTud-iAVVw"},
-		},
-
 		// Blog
 		{
 			path:          "/blog",

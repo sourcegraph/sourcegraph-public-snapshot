@@ -31,7 +31,6 @@ type TmplCommon struct {
 
 var funcMap = template.FuncMap{
 	"timeAgo":        timeutil.TimeAgo,
-	"urlToUser":      urlToUser,
 	"urlToChangeset": urlToChangeset,
 	"urlToCompare":   urlToCompare,
 	"json":           toJSON,
@@ -99,10 +98,4 @@ func urlToChangeset(ctx context.Context, id int64) string {
 func urlToCompare(ctx context.Context) string {
 	// TODO(x): Relative path and compare view usage like this is bad.
 	return fmt.Sprintf("%s/../.compare/master", pctx.BaseURI(ctx))
-}
-
-// urlToUser returns the route to a user's home page.
-func urlToUser(user string) string {
-	// TODO(x): Use a less hard-coded way.
-	return "/~" + user
 }

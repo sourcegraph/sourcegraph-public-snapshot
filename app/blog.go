@@ -289,9 +289,6 @@ func serveBlogIndexAtom(w http.ResponseWriter, r *http.Request) error {
 				Body: string(sanitizeHTML(body)),
 			},
 		}
-		if len(p.Author.Login) > 0 {
-			entry.Author.URI = conf.AppURL(ctx).ResolveReference(router.Rel.URLToUser(p.Author.Login)).String()
-		}
 		feed.Entry[i] = entry
 	}
 
