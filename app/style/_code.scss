@@ -52,7 +52,6 @@ pre code, .line-numbered-code td {
 
 	span.match {
 		background: $token-hover-color;
-		-webkit-filter: brightness(0.9) contrast(1.55);
 		color: $text-color !important;
 	}
 
@@ -100,11 +99,6 @@ pre code, .line-numbered-code td {
 
 		padding: $line-number-padding;
 
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		-khtml-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
 		user-select: none;
 		&:before { content: attr(data-line); }
 
@@ -177,7 +171,6 @@ pre code, .line-numbered-code td {
 			&:hover {
 				background: $token-hover-color;
 				box-shadow: inset 0px 0px 0px 1px $token-hover-border;
-				-webkit-filter: brightness(0.9) contrast(1.55);
 			}
 		}
 	}
@@ -194,18 +187,10 @@ pre code, .line-numbered-code td {
 .line.main-byte-range {
 	.line-content {
 		background-color: $active-code-bg;
-		-webkit-animation: highlight-flash 1s;
-		-moz-animation: highlight-flash 1s;
 		animation: highlight-flash 1s;
 	}
 }
 
-@-webkit-keyframes highlight-flash {
-	5% { background-color: $active-code-flash-bg; }
-}
-@-moz-keyframes highlight-flash {
-	5% { background-color: $active-code-flash-bg; }
-}
 @keyframes highlight-flash {
 	5% { background-color: $active-code-flash-bg; }
 }

@@ -1,5 +1,6 @@
 var webpack = require("webpack");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
+var autoprefixer = require("autoprefixer");
 var glob = require("glob");
 var URL = require("url");
 require("lintspaces-loader");
@@ -98,7 +99,8 @@ module.exports = {
 				test: /\.scss$/,
 				loader: ExtractTextPlugin.extract("style-loader",
 					"css-loader?sourceMap!" +
-					"sass-loader?sourceMap&sourceMapContents"),
+					"postcss-loader!" +
+					"sass-loader?sourceMap&sourceMapContents!"),
 			},
 		],
 	},
@@ -109,6 +111,8 @@ module.exports = {
 	},
 
 	plugins: plugins,
+
+	postcss: [autoprefixer({remove: false})],
 
 	devServer: {
 		port: webpackDevServerPort,
