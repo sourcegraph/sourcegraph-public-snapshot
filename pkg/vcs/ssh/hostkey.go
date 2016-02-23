@@ -105,7 +105,7 @@ func ReadStandardKnownHostsFiles() (KnownHosts, error) {
 	// User known_hosts
 	homeDir := env.CurrentUserHomeDir()
 	if homeDir != "" {
-		kh1, err := ReadKnownHostsFile(filepath.Join(homeDir, ".ssh/known_hosts"))
+		kh1, err := ReadKnownHostsFile(filepath.Join(homeDir, ".ssh", "known_hosts"))
 		if err != nil && !os.IsNotExist(err) {
 			return nil, err
 		}
