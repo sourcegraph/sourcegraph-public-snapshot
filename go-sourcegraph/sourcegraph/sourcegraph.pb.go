@@ -966,6 +966,8 @@ type ReposUpdateOp struct {
 	IsPrivate bool `protobuf:"varint,4,opt,name=IsPrivate,proto3" json:"IsPrivate,omitempty"`
 	// IsPublic is true if the repo's new visibility is public.
 	IsPublic bool `protobuf:"varint,5,opt,name=IsPublic,proto3" json:"IsPublic,omitempty"`
+	// DefaultBranch is the repo's new default branch.
+	DefaultBranch string `protobuf:"bytes,6,opt,name=DefaultBranch,proto3" json:"DefaultBranch,omitempty"`
 }
 
 func (m *ReposUpdateOp) Reset()         { *m = ReposUpdateOp{} }
@@ -9445,6 +9447,12 @@ func (m *ReposUpdateOp) MarshalTo(data []byte) (int, error) {
 			data[i] = 0
 		}
 		i++
+	}
+	if len(m.DefaultBranch) > 0 {
+		data[i] = 0x32
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.DefaultBranch)))
+		i += copy(data[i:], m.DefaultBranch)
 	}
 	return i, nil
 }
@@ -18261,6 +18269,10 @@ func (m *ReposUpdateOp) Size() (n int) {
 	if m.IsPublic {
 		n += 2
 	}
+	l = len(m.DefaultBranch)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
 	return n
 }
 
@@ -26893,6 +26905,35 @@ func (m *ReposUpdateOp) Unmarshal(data []byte) error {
 				}
 			}
 			m.IsPublic = bool(v != 0)
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DefaultBranch", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DefaultBranch = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
