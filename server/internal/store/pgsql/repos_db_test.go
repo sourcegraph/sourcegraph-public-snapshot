@@ -91,13 +91,13 @@ func TestRepos_List_query(t *testing.T) {
 
 	s := &repos{}
 	// Add some repos.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "abc/def", Name: "def", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "def/ghi", Name: "ghi", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "def/ghi", Name: "ghi", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "jkl/mno/pqr", Name: "pqr", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -130,10 +130,10 @@ func TestRepos_List_URIs(t *testing.T) {
 
 	s := &repos{}
 	// Add some repos.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "c/d", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "c/d", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -167,7 +167,7 @@ func TestRepos_Create(t *testing.T) {
 	ts := pbtypes.NewTimestamp(tm)
 
 	// Add a repo.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -193,12 +193,12 @@ func TestRepos_Create_dupe(t *testing.T) {
 	ts := pbtypes.NewTimestamp(tm)
 
 	// Add a repo.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
 	// Add another repo with the same name.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git"}); err == nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &ts, VCS: "git", DefaultBranch: "master"}); err == nil {
 		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
 	}
 }
@@ -212,7 +212,7 @@ func TestRepos_Update_Description(t *testing.T) {
 
 	s := &repos{}
 	// Add a repo.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -244,7 +244,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 
 	s := &repos{}
 	// Add a repo.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -281,7 +281,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 
 	s := &repos{}
 	// Add a repo.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git"}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", VCS: "git", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
