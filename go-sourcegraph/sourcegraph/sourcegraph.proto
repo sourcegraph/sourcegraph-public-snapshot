@@ -2534,7 +2534,7 @@ message DeltaListFilesOptions {
 	// Filtered set to true.
 	string Filter = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// Ignore specifies a list of (/ -separated) path globs to omit from the
+	// Ignore specifies a list of '/'-separated path globs to omit from the
 	// returned results.
 	repeated string Ignore = 6  [(gogoproto.moretags) = "url:\",omitempty\""];
 

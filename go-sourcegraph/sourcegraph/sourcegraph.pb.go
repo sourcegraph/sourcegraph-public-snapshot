@@ -2807,7 +2807,7 @@ type DeltaListFilesOptions struct {
 	// returned DeltaFiles.FileDiffs will not contain any hunks and will have
 	// Filtered set to true.
 	Filter string `protobuf:"bytes,2,opt,name=Filter,proto3" json:"Filter,omitempty" url:",omitempty"`
-	// Ignore specifies a list of (/ -separated) path globs to omit from the
+	// Ignore specifies a list of '/'-separated path globs to omit from the
 	// returned results.
 	Ignore []string `protobuf:"bytes,6,rep,name=Ignore" json:"Ignore,omitempty" url:",omitempty"`
 	// Tokenized, when set, will tokenize the whole source code

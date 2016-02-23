@@ -35,7 +35,7 @@ Godeps/*
 
 # Syntax
 
-The file paths are always / -separated ones, and the syntax simply causes `*` to
+The file paths are always '/'-separated ones, and the syntax simply causes `*` to
 match any sequence of characters. For example:
 
 | Pattern      | Description                                           |
