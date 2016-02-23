@@ -13,6 +13,7 @@ var FileDiff = require("./FileDiffView");
 var TokenPopover = require("./TokenPopoverView");
 var RepoBuildIndicator = require("./RepoBuildIndicator");
 var RepoRevSwitcher = require("./RepoRevSwitcher");
+
 /*
  * @description CompareView displays a series of file diffs.
  */
