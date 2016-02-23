@@ -372,9 +372,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	}
 
 	if newRepo.DefaultBranch == "" {
-		// TODO(sqs): set this in a layer above, not here (e.g., in
-		// the NewRepo protobuf type).
-		newRepo.DefaultBranch = "master"
+		return errors.New("invalid argument: no default branch provided")
 	}
 
 	// Create the filesystem repo where the git data lives. (The repo
@@ -406,6 +404,12 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	}
 	if op.Language != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
+		if err != nil {
+			return err
+		}
+	}
+	if op.DefaultBranch != "" {
+		_, err := dbh(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
 		if err != nil {
 			return err
 		}

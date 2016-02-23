@@ -10,6 +10,7 @@ import (
 	"github.com/AaronO/go-git-http"
 	"github.com/prometheus/client_golang/prometheus"
 
+	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -55,16 +56,19 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	// probably, esp. on NFS.
 
 	remoteOpts := vcs.RemoteOpts{}
+	var gh *gogithub.Client
 	// For private repos, supply auth from local auth store.
 	if r.Private {
 		token, err := s.getRepoAuthToken(elevatedActor(ctx), op.Repo.URI)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
 		}
-
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
 			Pass: token,
 		}
+		gh = githubutil.Default.AuthedClient(token)
+	} else {
+		gh = githubutil.Default.UnauthedClient()
 	}
 
 	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, r.URI)
@@ -79,6 +83,28 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 			return nil, err
 		}
 	}
+
+	// Update any of the repo's metadata that has changed on GitHub.
+	ctx = github.NewContextWithClient(ctx, gh)
+	ghRepos := github.Repos{}
+	ghRepo, err := ghRepos.Get(ctx, r.URI)
+	if err != nil {
+		return nil, err
+	}
+	err = store.ReposFromContext(ctx).Update(ctx, &store.RepoUpdate{
+		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
+			Repo: sourcegraph.RepoSpec{
+				URI: op.Repo.URI,
+			},
+			DefaultBranch: ghRepo.DefaultBranch,
+			Language:      ghRepo.Language,
+			Description:   ghRepo.Description,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &pbtypes.Void{}, nil
 }
 
