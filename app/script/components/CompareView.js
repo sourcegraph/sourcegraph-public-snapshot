@@ -13,7 +13,6 @@ var FileDiff = require("./FileDiffView");
 var TokenPopover = require("./TokenPopoverView");
 var RepoBuildIndicator = require("./RepoBuildIndicator");
 var RepoRevSwitcher = require("./RepoRevSwitcher");
-
 /*
  * @description CompareView displays a series of file diffs.
  */
@@ -142,7 +141,7 @@ var CompareView = React.createClass({
 							CommitID={this.state.DiffData.Delta.HeadCommit.ID}
 							btnSize="btn-xs" />
 
-						{this.state.fileDiffs.length && !this.state.proposingChange && (
+						{!window._isMothership && this.state.fileDiffs.length && !this.state.proposingChange && (
 							<a href="#" className={`btn btn-primary pull-right${(CurrentUser !== null && CurrentUser.Write === false) ? " disabled" : ""}`} onClick={this._openProposeChangeForm}>
 								<span>Propose this change</span>
 							</a>
