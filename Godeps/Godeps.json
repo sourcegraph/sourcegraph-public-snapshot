@@ -833,11 +833,11 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/prototools/tmpl",
-			"Rev": "94dbe95219e0e11be5ae0d144fe066fd4b7bfa78"
+			"Rev": "98c62fcf1cc50e6a79ba27b9a112e6f6eda0bac1"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/prototools/util",
-			"Rev": "94dbe95219e0e11be5ae0d144fe066fd4b7bfa78"
+			"Rev": "98c62fcf1cc50e6a79ba27b9a112e6f6eda0bac1"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/rwvfs",

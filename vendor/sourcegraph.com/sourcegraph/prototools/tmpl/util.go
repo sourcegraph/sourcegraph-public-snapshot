@@ -296,7 +296,9 @@ func (f *tmplFuncs) resolvePkgPath(pkg string) string {
 func (f *tmplFuncs) location(x interface{}) *descriptor.SourceCodeInfo_Location {
 	// Validate that we got a sane type from the template.
 	pkgPath := reflect.Indirect(reflect.ValueOf(x)).Type().PkgPath()
-	if pkgPath != "" && pkgPath != "github.com/golang/protobuf/protoc-gen-go/descriptor" {
+	if pkgPath != "" && pkgPath != "github.com/golang/protobuf/protoc-gen-go/descriptor" &&
+		!strings.HasSuffix(pkgPath, "/vendor/github.com/golang/protobuf/protoc-gen-go/descriptor") {
+
 		panic("expected descriptor type; got " + fmt.Sprintf("%q", pkgPath))
 	}
 
