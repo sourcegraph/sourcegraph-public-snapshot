@@ -20,7 +20,7 @@ class DefPopup extends Component {
 					<div className="body">
 						<header className="toolbar">
 							{def.Found &&
-								<a className="btn btn-toolbar btn-default go-to-def" href={def.URL} onClick={hotLink}>Go to definition</a>
+								<a className="btn btn-toolbar btn-default go-to-def" href={def.URL} onClick={(def.Data && def.Data.Kind !== "package") && hotLink}>Go to definition</a>
 							}
 
 							<a className="close top-action" onClick={() => {
