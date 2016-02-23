@@ -92,16 +92,16 @@ func jiraOnChangesetUpdate(ctx context.Context, cs *sourcegraph.Changeset) {
 	}
 }
 
+var jiraIssuesPattern *regexp.Regexp = regexp.MustCompile("JIRA Issues:(.*)")
+var jiraIssuePattern *regexp.Regexp = regexp.MustCompile("\\b[A-Z]+-[1-9]+\\b")
+
 // parseJIRAIssues parses any IDs corresponding to a JIRA issue out of a string.
 func parseJIRAIssues(body string) []string {
-	re := regexp.MustCompile("JIRA Issues:(.*)")
-	issuesLine := re.FindStringSubmatch(body)
+	issuesLine := jiraIssuesPattern.FindStringSubmatch(body)
 	if len(issuesLine) < 1 {
 		return nil
 	}
-
-	re = regexp.MustCompile("\\b[A-Z]+-[1-9]+\\b")
-	return re.FindAllString(issuesLine[0], -1)
+	return jiraIssuePattern.FindAllString(issuesLine[0], -1)
 }
 
 // postJIRARemoteLink posts a new remote link to a specified JIRA issue.

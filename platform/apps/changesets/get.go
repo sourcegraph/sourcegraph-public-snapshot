@@ -256,6 +256,11 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	// Generate JIRA issue links
 	var jiraIssues map[string]string
 	if flags.JiraURL != "" {
+		jiraURL, err := url.Parse(flags.JiraURL)
+		if err != nil {
+			return err
+		}
+
 		jiraIssues = make(map[string]string)
 		ids := make([]string, 0)
 		for _, commit := range commitList.Commits {
@@ -263,11 +268,6 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 		}
 		if cs.Description != "" {
 			ids = append(ids, parseJIRAIssues(cs.Description)...)
-		}
-
-		jiraURL, err := url.Parse(flags.JiraURL)
-		if err != nil {
-			return err
 		}
 		for _, id := range ids {
 			jiraIssues[id] = fmt.Sprintf("%s://%s/browse/%s", jiraURL.Scheme, jiraURL.Host, id)
