@@ -2,15 +2,11 @@ package plan
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
 	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 )
-
-var dontInferTestSteps, _ = strconv.ParseBool(os.Getenv("SRC_DONT_INFER_TEST_STEPS"))
 
 // inferConfig consults a repo's inventory (of programming languages
 // used) and generates a .drone.yml file that will build the
@@ -28,9 +24,6 @@ func inferConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, er
 		}
 
 		config.Build = append(config.Build, c.build)
-		if !dontInferTestSteps {
-			config.Build = append(config.Build, c.test)
-		}
 		for key, vals := range c.matrix {
 			matrix[key] = append(matrix[key], vals...)
 		}
@@ -45,7 +38,6 @@ func inferConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, er
 
 var langConfigs = map[string]struct {
 	build  droneyaml.BuildItem
-	test   droneyaml.BuildItem
 	matrix map[string][]string
 }{
 	"Go": {
@@ -56,16 +48,6 @@ var langConfigs = map[string]struct {
 				Commands: []string{
 					"go get -t ./...",
 					"go build ./...",
-				},
-				AllowFailure: true,
-			},
-		},
-		test: droneyaml.BuildItem{
-			Key: "Go $$GO_VERSION test",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "golang:$$GO_VERSION"},
-				Commands: []string{
-					"go test -v ./...",
 				},
 				AllowFailure: true,
 			},
@@ -87,17 +69,6 @@ var langConfigs = map[string]struct {
 				AllowFailure: true,
 			},
 		},
-		test: droneyaml.BuildItem{
-			Key: "JavaScript test (node v$$NODE_VERSION)",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "node:$$NODE_VERSION"},
-				Commands: []string{
-					`[ -f package.json ] || cd "$(dirname "$(find ./ -type f -name package.json | tail -1)")"`,
-					"[ -f package.json ] && npm run test",
-				},
-				AllowFailure: true,
-			},
-		},
 		matrix: map[string][]string{"NODE_VERSION": []string{"4"}},
 	},
 	"Java": {
@@ -108,17 +79,6 @@ var langConfigs = map[string]struct {
 				Commands: []string{
 					"[ -f pom.xml ] && mvn --quiet package",
 					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew build) || gradle build)",
-				},
-				AllowFailure: true,
-			},
-		},
-		test: droneyaml.BuildItem{
-			Key: "Java test (Java $$JAVA_VERSION)",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "srclib/drone-srclib-java:ff79de9-6e4c64a-1e6121e"},
-				Commands: []string{
-					"[ -f pom.xml ] && mvn --quiet test",
-					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew test) || gradle test)",
 				},
 				AllowFailure: true,
 			},
