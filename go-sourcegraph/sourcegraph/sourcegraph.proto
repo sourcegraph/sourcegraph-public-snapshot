@@ -769,6 +769,9 @@ message ReposUpdateOp {
 
 	// IsPublic is true if the repo's new visibility is public.
 	bool IsPublic = 5;
+
+	// DefaultBranch is the repo's new default branch.
+	string DefaultBranch = 6;
 };
 
 message ReposListCommitsOp {
