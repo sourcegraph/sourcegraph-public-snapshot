@@ -63,11 +63,9 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		if err != nil {
 			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
 		}
-
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
 			Pass: token,
 		}
-
 		gh = githubutil.Default.AuthedClient(token)
 	} else {
 		gh = githubutil.Default.UnauthedClient()

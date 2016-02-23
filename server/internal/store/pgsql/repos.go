@@ -372,9 +372,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	}
 
 	if newRepo.DefaultBranch == "" {
-		// TODO(sqs): set this in a layer above, not here (e.g., in
-		// the NewRepo protobuf type).
-		newRepo.DefaultBranch = "master"
+		return errors.New("invalid argument: no default branch provided")
 	}
 
 	// Create the filesystem repo where the git data lives. (The repo
