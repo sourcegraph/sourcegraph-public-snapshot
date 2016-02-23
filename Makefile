@@ -141,7 +141,7 @@ dist: dist-dep app-dep
 generate: generate-dep
 	./dev/go-generate-all
 
-generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint
+generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint ${GOBIN}/protoc-gen-dump
 
 db-reset: src
 	src pgsql reset
