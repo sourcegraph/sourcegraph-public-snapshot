@@ -71,19 +71,6 @@ var langConfigs = map[string]struct {
 		},
 		matrix: map[string][]string{"NODE_VERSION": []string{"4"}},
 	},
-	"Java": {
-		build: droneyaml.BuildItem{
-			Key: "Java build (Java $$JAVA_VERSION)",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "srclib/drone-srclib-java:ff79de9-6e4c64a-1e6121e"},
-				Commands: []string{
-					"[ -f pom.xml ] && mvn --quiet package",
-					"[ -f build.gradle ] && (([ -f gradlew ] && ./gradlew build) || gradle build)",
-				},
-				AllowFailure: true,
-			},
-		},
-		matrix: map[string][]string{"JAVA_VERSION": []string{"8"}},
-	},
+	"Java":   {},
 	"Python": {},
 }
