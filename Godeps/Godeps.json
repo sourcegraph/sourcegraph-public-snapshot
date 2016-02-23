@@ -820,7 +820,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-diff/diff",
-			"Rev": "0586387989b163093ea75e24f33d038aca16f9c6"
+			"Rev": "ba62c45756c8c9174b21de6bc8c558ba6a7643bd"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/go-flags",

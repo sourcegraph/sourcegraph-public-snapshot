@@ -55,12 +55,19 @@ func (r *MultiFileDiffReader) ReadFile() (*FileDiff, error) {
 
 	d, err := fr.ReadAllHeaders()
 	if err != nil {
-		if e0, ok := err.(*ParseError); ok {
-			if e0.Err == ErrNoFileHeader || e0.Err == ErrExtendedHeadersEOF {
+		switch e := err.(type) {
+		case *ParseError:
+			if e.Err == ErrNoFileHeader || e.Err == ErrExtendedHeadersEOF {
 				return nil, io.EOF
 			}
+
+		case OverflowError:
+			r.nextFileFirstLine = []byte(e)
+			return d, nil
+
+		default:
+			return nil, err
 		}
-		return nil, err
 	}
 
 	// Before reading hunks, check to see if there are any. If there
@@ -171,7 +178,7 @@ func (r *FileDiffReader) ReadAllHeaders() (*FileDiff, error) {
 
 	fd.Extended, err = r.ReadExtendedHeaders()
 	if err != nil {
-		return nil, err
+		return fd, err
 	}
 
 	var origTime, newTime *time.Time
@@ -261,13 +268,20 @@ func (r *FileDiffReader) readOneFileHeader(prefix []byte) (filename string, time
 	return filename, timestamp, err
 }
 
-var i = 0
+// OverflowError is returned when we have overflowed into the start
+// of the next file while reading extended headers.
+type OverflowError string
+
+func (e OverflowError) Error() string {
+	return fmt.Sprintf("overflowed into next file: %s", e)
+}
 
 // ReadExtendedHeaders reads the extended header lines, if any, from a
 // unified diff file (e.g., git's "diff --git a/foo.go b/foo.go", "new
 // mode <mode>", "rename from <path>", etc.).
 func (r *FileDiffReader) ReadExtendedHeaders() ([]string, error) {
 	var xheaders []string
+	firstLine := true
 	for {
 		var line []byte
 		if r.fileHeaderLine == nil {
@@ -283,6 +297,13 @@ func (r *FileDiffReader) ReadExtendedHeaders() ([]string, error) {
 			r.fileHeaderLine = nil
 		}
 
+		if bytes.HasPrefix(line, []byte("diff --git")) {
+			if firstLine {
+				firstLine = false
+			} else {
+				return xheaders, OverflowError(line)
+			}
+		}
 		if bytes.HasPrefix(line, []byte("--- ")) {
 			// We've reached the file header.
 			r.fileHeaderLine = line // pass to readOneFileHeader (see fileHeaderLine field doc)
