@@ -410,6 +410,12 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 			return err
 		}
 	}
+	if op.DefaultBranch != "" {
+		_, err := dbh(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
+		if err != nil {
+			return err
+		}
+	}
 	if op.IsPrivate || op.IsPublic {
 		// Only admin users can update a repo's visibility.
 		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Repos.Update"); err != nil {
