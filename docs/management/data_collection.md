@@ -11,18 +11,10 @@ As a sign of our commitment to security and transparency, we have made
 [Sourcegraph's source code](https://src.sourcegraph.com/sourcegraph)
 publicly available.
 
-
 # Information we collect
 
-We believe that you should be able to host your code securely on your
-own infrastructure *and* enjoy the benefits of a cloud service: easy
-setup, seamless access to open-source code, continuous product
-enhancements, and data-driven intelligence. Sourcegraph collects
-limited information to provide these benefits while keeping you in
-full control of your code.
-
 We collect the following types of information to make Sourcegraph
-better.
+better:
 
 * **Information you give us:** For example, when you sign up for an
   account on Sourcegraph.com or set up a new Sourcegraph server, we
@@ -41,13 +33,10 @@ better.
   you to
   [inspect the code for this functionality](https://src.sourcegraph.com/sourcegraph@master/.tree/util/statsutil/basic_stats.go).
 
-Sourcegraph keeps your code on your own infrastructure.
-
 See the full [security policy](https://sourcegraph.com/security),
 [privacy policy](https://sourcegraph.com/privacy) and
 [terms of service](https://sourcegraph.com/legal) for more
 information.
-
 
 # Choices
 
@@ -55,5 +44,3 @@ For companies whose policies prohibit the use of cloud services,
 Sourcegraph Enterprise can operate without any external network
 access. [Contact us](mailto:help@sourcegraph.com) for more
 information.
-
-
