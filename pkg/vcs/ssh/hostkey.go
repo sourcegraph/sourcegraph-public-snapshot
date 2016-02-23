@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -32,6 +31,8 @@ import (
 	"crypto/sha1"
 
 	"golang.org/x/crypto/ssh"
+
+	"src.sourcegraph.com/sourcegraph/env"
 )
 
 const (
@@ -102,12 +103,9 @@ func ReadStandardKnownHostsFiles() (KnownHosts, error) {
 	}
 
 	// User known_hosts
-	u, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-	if u.HomeDir != "" {
-		kh1, err := ReadKnownHostsFile(filepath.Join(u.HomeDir, ".ssh/known_hosts"))
+	homeDir := env.CurrentUserHomeDir()
+	if homeDir != "" {
+		kh1, err := ReadKnownHostsFile(filepath.Join(homeDir, ".ssh/known_hosts"))
 		if err != nil && !os.IsNotExist(err) {
 			return nil, err
 		}
