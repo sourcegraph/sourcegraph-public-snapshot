@@ -139,5 +139,5 @@ func parseHex(h []byte) (uint16, error) {
 	case n != 2:
 		return 0, errors.New("short output")
 	}
-	return uint16(b[0])<<8 + uint16(b[1]), nil
+	return uint16(b[0])<<8 | uint16(b[1]), nil
 }

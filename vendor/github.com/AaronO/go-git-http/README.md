@@ -1,6 +1,8 @@
 go-git-http
 ===========
 
+[![Build Status](https://travis-ci.org/AaronO/go-git-http.svg)](https://travis-ci.org/AaronO/go-git-http)
+
 A Smart Git Http server library in Go (golang)
 
 ### Example
