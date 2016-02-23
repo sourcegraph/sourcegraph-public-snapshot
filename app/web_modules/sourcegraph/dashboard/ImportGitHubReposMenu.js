@@ -15,10 +15,8 @@ class ImportGitHubReposMenu extends Container {
 			selectedRepos: {},
 			selectAll: false,
 			showLoading: false,
-
 		};
 		this._canMirror = this._canMirror.bind(this);
-		this._unselectableReason = this._unselectableReason.bind(this);
 		this._handleAddMirrors = this._handleAddMirrors.bind(this);
 		this._handleSelect = this._handleSelect.bind(this);
 		this._handleSelectAll = this._handleSelectAll.bind(this);
@@ -34,7 +32,12 @@ class ImportGitHubReposMenu extends Container {
 			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI, isPrivate: Boolean(repo.Repo.Private)}));
 		state.unselectableItems = GitHubReposStore.reposByOrg.get(state.currentOrg)
 			.filter(repo => !this._canMirror(repo, state.onWaitlist))
-			.map((repo, i) => ({name: repo.Repo.Name, key: `${i}`, reason: this._unselectableReason(repo)}));
+			.map((repo, i) => ({name: repo.Repo.Name, key: `${i}`, reason: (() => {
+				if (state.onWaitlist && repo.Repo.Private) return "private repositories coming soon";
+				if (repo.ExistsLocally) return "already mirrored";
+				return `${repo.Repo.Language || ""} coming soon`;
+			})(),
+			}));
 		state.showLoading = GitHubReposStore.showLoading;
 	}
 
@@ -44,12 +47,6 @@ class ImportGitHubReposMenu extends Container {
 		}
 		if (repo.ExistsLocally) return false;
 		return repo.Repo.Language === "Go" || repo.Repo.Language === "Java";
-	}
-
-	_unselectableReason(repo) {
-		if (this.state.onWaitlist && repo.Repo.Private) return "private repos coming soon";
-		if (repo.ExistsLocally) return "already mirrored";
-		return `${repo.Repo.Language || ""} coming soon`;
 	}
 
 	_handleSelect(repoURI, select) {
