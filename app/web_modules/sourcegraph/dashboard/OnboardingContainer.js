@@ -15,20 +15,30 @@ import * as OnboardingActions from "sourcegraph/dashboard/OnboardingActions";
 class OnboardingContainer extends Container {
 	constructor(props) {
 		super(props);
+		this._dismissOnboardingModals = this._dismissOnboardingModals.bind(this);
 	}
 
 	componentDidMount() {
 		super.componentDidMount();
+		document.addEventListener("keydown", this._dismissOnboardingModals, false);
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
+		document.removeEventListener("keydown", this._dismissOnboardingModals, false);
 	}
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.progress = OnboardingStore.progress;
 		state.currentUser = OnboardingStore.currentUser;
+	}
+
+	_dismissOnboardingModals(event) {
+		// keyCode 27 is the escape key
+		if (event.keyCode === 27) {
+			Dispatcher.dispatch(new OnboardingActions.AdvanceProgressToStep(50));
+		}
 	}
 
 	stores() { return [OnboardingStore]; }

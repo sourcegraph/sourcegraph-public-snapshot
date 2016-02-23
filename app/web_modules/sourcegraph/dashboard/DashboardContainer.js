@@ -19,14 +19,17 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 class DashboardContainer extends Container {
 	constructor(props) {
 		super(props);
+		this._dismissModals = this._dismissModals.bind(this);
 	}
 
 	componentDidMount() {
 		super.componentDidMount();
+		document.addEventListener("keydown", this._dismissModals, false);
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
+		document.removeEventListener("keydown", this._dismissModals, false);
 	}
 
 	reconcileState(state, props) {
@@ -39,6 +42,14 @@ class DashboardContainer extends Container {
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
 		state.allowStandaloneUsers = !DashboardStore.isMothership;
 		state.allowGitHubUsers = DashboardStore.allowMirrors;
+	}
+
+	_dismissModals(event) {
+		// keyCode 27 is the escape key
+		if (event.keyCode === 27) {
+			Dispatcher.dispatch(new DashboardActions.DismissReposModal());
+			Dispatcher.dispatch(new DashboardActions.DismissUsersModal());
+		}
 	}
 
 	stores() { return [DashboardStore, ModalStore, GitHubReposStore, GitHubUsersStore, OnboardingStore]; }

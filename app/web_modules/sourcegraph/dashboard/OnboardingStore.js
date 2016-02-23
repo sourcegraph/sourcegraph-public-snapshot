@@ -22,6 +22,11 @@ export class OnboardingStore extends Store {
 				currentStep: {$set: this.progress.currentStep + 1},
 			});
 			break;
+		case OnboardingActions.AdvanceProgressToStep:
+			this.progress = update(this.progress, {
+				currentStep: {$set: action.step},
+			});
+			break;
 		case DashboardActions.MirrorReposAdded:
 			if (this.progress.currentStep === 2) {
 				this.progress = update(this.progress, {
