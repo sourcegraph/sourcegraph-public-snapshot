@@ -12,8 +12,8 @@ comments, and user interface text.
 * Phrases in headers and titles are capitalized like sentences ("Add
   repository"), not headlines ("Add Repository").
 * Use descriptive link text, such as "Need to
-  [view your repositories](#)?" Don't use "here" as link text, as in
-  "Need to view your repositories? [Click here.](#)"
+  [view your repositories](https://src.sourcegraph.com/sourcegraph@master/.tree/README.style.md#)?" Don't use "here" as link text, as in
+  "Need to view your repositories? [Click here.](https://src.sourcegraph.com/sourcegraph@master/.tree/README.style.md#)"
 
 ## Terms
 
