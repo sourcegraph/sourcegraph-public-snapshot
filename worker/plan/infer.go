@@ -46,13 +46,13 @@ var langConfigs = map[string]struct {
 			Build: droneyaml.Build{
 				Container: droneyaml.Container{Image: "golang:$$GO_VERSION"},
 				Commands: []string{
-					"go get -t ./...",
-					"go build ./...",
+					"go get -t $(go list ./... | grep -v /vendor/)",
+					"go build $(go list ./... | grep -v /vendor/)",
 				},
 				AllowFailure: true,
 			},
 		},
-		matrix: map[string][]string{"GO_VERSION": []string{"1.5"}},
+		matrix: map[string][]string{"GO_VERSION": []string{"1.6"}},
 	},
 	"JavaScript": {
 		build: droneyaml.BuildItem{
