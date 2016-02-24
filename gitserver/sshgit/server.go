@@ -323,6 +323,16 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 					return err
 				}
 			}
+		} else if pktline.IsFlush(buf.Bytes()) {
+			// From git protocol specs: "After reference and
+			// capabilities discovery, the client can decide to
+			// terminate the connection by sending a flush-pkt,
+			// telling the server it can now gracefully terminate,
+			// and disconnect, when it does not need any pack data.
+			// This can happen with the ls-remote command, and also
+			// can happen when the client already is up-to-date.
+			// Otherwise, it enters the negotiation phase."
+			return nil
 		}
 		zipped, err := compress(buf.Bytes())
 		if err != nil {
@@ -335,19 +345,6 @@ func (s *Server) execGitCommand(sshConn *ssh.ServerConn, ch ssh.Channel, req *ss
 				Data:            zipped,
 			})
 		} else {
-			if pktline.IsFlush(buf.Bytes()) {
-				// From git protocol specs: "After reference
-				// and capabilities discovery, the client can
-				// decide to terminate the connection by
-				// sending a flush-pkt, telling the server it
-				// can now gracefully terminate, and
-				// disconnect, when it does not need any pack
-				// data. This can happen with the ls-remote
-				// command, and also can happen when the client
-				// already is up-to-date. Otherwise, it enters
-				// the negotiation phase."
-				return nil
-			}
 			pkt, err = userGitClient.UploadPack(userCtx, &gitpb.UploadPackOp{
 				Repo:            sourcegraph.RepoSpec{URI: repo.URI},
 				ContentEncoding: "gzip",
