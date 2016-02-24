@@ -66,7 +66,7 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 	if err := testutil.CloneRepo(t, authedCloneURL, tmpDir, nil, nil, false); err != nil {
 		t.Fatal(err)
 	}
-	repoDir := filepath.Join(tmpDir, repo.Name)
+	repoDir := filepath.Join(tmpDir, "testrepo")
 
 	_, srclibpath, _ := testserver.SrclibSampleToolchain(false)
 	srclibCmd := func(args ...string) *exec.Cmd {
