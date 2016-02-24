@@ -7,6 +7,7 @@
 			data-heap-analytics-id="{{heapAnalyticsID}}"
 			{{if publicRavenDSN}}data-public-raven-dsn="{{publicRavenDSN}}"{{end}}
 		{{end}}
+		{{/* Using data attributes is deprecated. Use the script tag below to add data to context.js. */}}
 		{{if deployedGitCommitID}}data-deployed-git-commit-id="{{deployedGitCommitID}}"{{end}}
 		data-current-route="{{.CurrentRoute}}"
 		data-template-name="{{.TemplateName}}"
@@ -32,6 +33,7 @@
 
 		{{/* Insert this inline script before any resources to allow parallel resource fetches. */}}
 		<script ignore-csp type="text/javascript">
+			{{/* Do not access these directly via the window object, import them using context.js. */}}
 			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
 			window._csrfToken = "{{.CSRFToken}}";
 			window._currentUser = JSON.parse({{.CurrentUser|json}});

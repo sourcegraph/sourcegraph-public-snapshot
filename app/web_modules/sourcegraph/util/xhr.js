@@ -12,8 +12,8 @@ export default function(options, callback) {
 		let auth = `x-oauth-basic:${document.head.dataset.currentUserOauth2AccessToken}`;
 		defaultOptions.headers["authorization"] = `Basic ${btoa(auth)}`;
 	}
-	if (window.hasOwnProperty("_cacheControl")) {
-		defaultOptions.headers["Cache-Control"] = window._cacheControl;
+	if (context.cacheControl) {
+		defaultOptions.headers["Cache-Control"] = context.cacheControl;
 	}
 	defaultXhr(Object.assign(defaultOptions, options), callback);
 }
