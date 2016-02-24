@@ -63,44 +63,27 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 	}
 
 	// Try to compute merge-base.
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.BaseRepo.URI)
+	vcsBaseRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.BaseRepo.URI)
 	if err != nil {
 		return d, err
 	}
-	var (
-		ok bool
-		id vcs.CommitID
-	)
+	var id vcs.CommitID
 	if d.BaseRepo.URI == d.HeadRepo.URI {
-		type MergeBaser interface {
-			MergeBase(a, b vcs.CommitID) (vcs.CommitID, error)
-		}
-		var mBaser MergeBaser
-		mBaser, ok = vcsrepo.(MergeBaser)
-		if ok {
-			id, err = mBaser.MergeBase(vcs.CommitID(d.BaseCommit.ID), vcs.CommitID(d.HeadCommit.ID))
-			if err != nil {
-				return d, err
-			}
+		id, err = vcsBaseRepo.MergeBase(vcs.CommitID(d.BaseCommit.ID), vcs.CommitID(d.HeadCommit.ID))
+		if err != nil {
+			return d, err
 		}
 	} else {
-		type CrossRepoMergeBaser interface {
-			CrossRepoMergeBase(a vcs.CommitID, headRepo vcs.Repository, b vcs.CommitID) (vcs.CommitID, error)
+		vscHeadRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.HeadRepo.URI)
+		if err != nil {
+			return d, err
 		}
-		var crmBaser CrossRepoMergeBaser
-		crmBaser, ok = vcsrepo.(CrossRepoMergeBaser)
-		if ok {
-			hrp, err := store.RepoVCSFromContext(ctx).Open(ctx, d.HeadRepo.URI)
-			if err != nil {
-				return d, err
-			}
-			id, err = crmBaser.CrossRepoMergeBase(vcs.CommitID(d.BaseCommit.ID), hrp, vcs.CommitID(d.HeadCommit.ID))
-			if err != nil {
-				return d, err
-			}
+		id, err = vcsBaseRepo.CrossRepoMergeBase(vcs.CommitID(d.BaseCommit.ID), vscHeadRepo, vcs.CommitID(d.HeadCommit.ID))
+		if err != nil {
+			return d, err
 		}
 	}
-	if ok && d.BaseCommit.ID != id {
+	if d.BaseCommit.ID != id {
 		ds2 := *ds
 		// There is most likely a merge conflict here, so we update the
 		// delta to contain the actual merge base used in this diff A...B
