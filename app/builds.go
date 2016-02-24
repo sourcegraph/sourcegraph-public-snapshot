@@ -51,7 +51,7 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 		sourcegraph.BuildListOptions
 	}
 	tabs := []tab{
-		{"All", sourcegraph.BuildListOptions{Sort: "bid", Direction: "desc"}},
+		{"All", sourcegraph.BuildListOptions{Sort: "updated_at", Direction: "desc"}},
 		{"Priority Queue", sourcegraph.BuildListOptions{Queued: true, Sort: "priority", Direction: "desc"}},
 		{"Active", sourcegraph.BuildListOptions{Active: true, Sort: "updated_at", Direction: "desc"}},
 		{"Ended", sourcegraph.BuildListOptions{Ended: true, Sort: "updated_at", Direction: "desc"}},
