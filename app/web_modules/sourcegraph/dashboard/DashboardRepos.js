@@ -69,11 +69,14 @@ class DashboardRepos extends Component {
 						<div className="btn-group">{toggles}</div>
 					</div>
 					<div className="search-bar">
-						<input className="form-control search-input"
-							placeholder="Filter repositories"
-							value={this.state.searchQuery}
-							onChange={this._handleSearch}
-							type="text" />
+						<div className="input-group">
+							<input className="form-control search-input"
+								placeholder="Find a repository..."
+								value={this.state.searchQuery}
+								onChange={this._handleSearch}
+								type="text" />
+							<span className="input-group-addon search-addon"><i className="fa fa-search search-icon"></i></span>
+						</div>
 					</div>
 				</nav>
 				<div className="repos">

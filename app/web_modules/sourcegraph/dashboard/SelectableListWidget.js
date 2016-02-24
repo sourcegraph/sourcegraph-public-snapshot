@@ -48,7 +48,7 @@ class SelectableListWidget extends Component {
 							<i className="fa fa-spinner fa-spin"></i>
 						}
 						{!this.state.showLoading &&
-							(selected.length > 0 ? `add(${selected.length})` : "add")
+							(selected.length > 0 ? `add (${selected.length}) ${selected.length === 1 ? "repository" : "repositories"}` : "add repositories")
 						}
 						</div>
 					</button>
