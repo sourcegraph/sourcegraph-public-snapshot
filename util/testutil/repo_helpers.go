@@ -249,7 +249,10 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, key *
 	return nil
 }
 
-func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string) (err error) {
+// CloneRepo tests cloning from the clone URL.
+// If emptyFetch is true it performs a fetch right after a clone to test a fetch
+// that does not go through the pack negotiation phase of the protocol.
+func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string, emptyFetch bool) (err error) {
 	if dir == "" {
 		var err error
 		dir, err = ioutil.TempDir("", "")
@@ -260,7 +263,7 @@ func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 	}
 	cmd := exec.Command("git", "clone")
 	cmd.Args = append(cmd.Args, args...)
-	cmd.Args = append(cmd.Args, cloneURL)
+	cmd.Args = append(cmd.Args, cloneURL, "testrepo")
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	cmd.Stdin = bytes.NewReader([]byte("\n"))
 	cmd.Dir = dir
@@ -275,6 +278,18 @@ func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 	logCmdOutut(t, cmd, out)
 	if err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+	}
+	if emptyFetch {
+		env := cmd.Env
+		cmd := exec.Command("git", "fetch")
+		cmd.Env = env
+		cmd.Stdin = bytes.NewReader([]byte("\n"))
+		cmd.Dir = filepath.Join(dir, "testrepo")
+		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		logCmdOutut(t, cmd, out)
+		if err != nil {
+			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
+		}
 	}
 	return nil
 }
