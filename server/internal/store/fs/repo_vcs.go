@@ -72,6 +72,5 @@ func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, inf
 }
 
 func (s *RepoVCS) OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error) {
-	dir := absolutePathForRepo(ctx, repo)
-	return &localGitTransport{dir: dir}, nil
+	return s.Open(ctx, repo)
 }

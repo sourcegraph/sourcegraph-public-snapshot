@@ -1,4 +1,4 @@
-package fs
+package gitcmd
 
 import (
 	"bytes"
@@ -18,12 +18,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// localGitTransport is a git repository hosted on the local disk.
-type localGitTransport struct {
-	dir string
-}
-
-func (r *localGitTransport) InfoRefs(ctx context.Context, service string) ([]byte, error) {
+func (r *Repository) InfoRefs(ctx context.Context, service string) ([]byte, error) {
 	if service != "upload-pack" && service != "receive-pack" {
 		return nil, fmt.Errorf("unrecognized git service: %q", service)
 	}
@@ -33,7 +28,7 @@ func (r *localGitTransport) InfoRefs(ctx context.Context, service string) ([]byt
 	buf.Write(packetFlush())
 
 	cmd := exec.Command("git", service, "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Dir = r.dir
+	cmd.Dir = r.Dir
 
 	cmd.Stdout, cmd.Stderr = &buf, os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -42,15 +37,15 @@ func (r *localGitTransport) InfoRefs(ctx context.Context, service string) ([]byt
 	return buf.Bytes(), nil
 }
 
-func (r *localGitTransport) ReceivePack(ctx context.Context, data []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {
+func (r *Repository) ReceivePack(ctx context.Context, data []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {
 	return r.servicePack(ctx, "receive-pack", data, opt)
 }
 
-func (r *localGitTransport) UploadPack(ctx context.Context, data []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {
+func (r *Repository) UploadPack(ctx context.Context, data []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {
 	return r.servicePack(ctx, "upload-pack", data, opt)
 }
 
-func (r *localGitTransport) servicePack(ctx context.Context, service string, data []byte, opt gitproto.TransportOpt) (out []byte, events []githttp.Event, err error) {
+func (r *Repository) servicePack(ctx context.Context, service string, data []byte, opt gitproto.TransportOpt) (out []byte, events []githttp.Event, err error) {
 	rdr := io.Reader(bytes.NewReader(data))
 
 	switch opt.ContentEncoding {
@@ -96,7 +91,7 @@ func (r *localGitTransport) servicePack(ctx context.Context, service string, dat
 
 	var outw, errw bytes.Buffer
 	cmd := exec.Command("git", service, "--stateless-rpc", ".")
-	cmd.Dir = r.dir
+	cmd.Dir = r.Dir
 	cmd.Stdin = rpcReader
 	cmd.Stdout = &outw
 	cmd.Stderr = &errw
