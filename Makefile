@@ -153,7 +153,7 @@ drop-test-dbs:
 # execute common subsets of tests).
 GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest'
 PGUSER ?= $(USER)
-TESTPKGS ?= $(go list ./... | grep -v /vendor/)
+TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check
 	cd app && npm test
 	$(MAKE) go-test
