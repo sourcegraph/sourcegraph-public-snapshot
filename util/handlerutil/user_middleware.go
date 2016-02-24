@@ -23,6 +23,7 @@ type contextKey int
 const (
 	userKey contextKey = iota
 	fullUserKey
+	emailAddrsKey
 )
 
 // UserMiddleware fetches the user object and stores it in the context
@@ -34,10 +35,11 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 
 	cred := sourcegraph.CredentialsFromContext(ctx)
 	if cred != nil && UserFromRequest(r) == nil && fetchUserForCredentials(cred) {
-		if authInfo, user := identifyUser(ctx, w); authInfo != nil {
+		if authInfo, user, emails := identifyUser(ctx, w); authInfo != nil {
 			// This code should be kept in sync with ClearUser and WithUser.
 			ctx = withUser(ctx, authInfo.UserSpec())
 			ctx = withFullUser(ctx, user)
+			ctx = withEmails(ctx, emails)
 			ctx = auth.WithActor(ctx, auth.Actor{
 				UID:      int(authInfo.UID),
 				Login:    authInfo.Login,
@@ -60,6 +62,7 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 func ClearUser(ctx context.Context) context.Context {
 	ctx = withUser(ctx, nil)
 	ctx = withFullUser(ctx, nil)
+	ctx = withEmails(ctx, nil)
 	ctx = auth.WithActor(ctx, auth.Actor{})
 	ctx = sourcegraph.WithCredentials(ctx, nil)
 	return ctx
@@ -83,12 +86,12 @@ func WithUser(ctx context.Context, user sourcegraph.UserSpec) context.Context {
 	return ctx
 }
 
-func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.AuthInfo, *sourcegraph.User) {
+func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.AuthInfo, *sourcegraph.User, *sourcegraph.EmailAddrList) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
 		appauth.DeleteSessionCookie(w)
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// Call to Identify will be authenticated with the
@@ -97,14 +100,14 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.Auth
 	if err != nil {
 		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
 		appauth.DeleteSessionCookie(w)
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	if authInfo.UID == 0 {
 		// The cookie was probably created by another server; delete it.
 		log.Printf("warning: credentials don't identify a user on this server (continuing, deleting cookie)")
 		appauth.DeleteSessionCookie(w)
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// Fetch full user.
@@ -114,10 +117,24 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.Auth
 			log.Printf("warning: fetching full user failed: %s (continuing, deleting cookie)", err)
 			appauth.DeleteSessionCookie(w)
 		}
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	return authInfo, user
+	// Fetch user emails.
+	userSpec := user.Spec()
+	emails, err := cl.Users.ListEmails(ctx, &userSpec)
+	if err != nil {
+		if grpc.Code(err) == codes.PermissionDenied || user.IsOrganization {
+			// We are not allowed to view the emails or its an org and orgs don't have emails
+			// so just show an empty list.
+			emails = &sourcegraph.EmailAddrList{EmailAddrs: []*sourcegraph.EmailAddr{}}
+		} else {
+			log.Printf("warning: fetching user emails failed: %s (continuing, deleting cookie)", err)
+			return nil, nil, nil
+		}
+	}
+
+	return authInfo, user, emails
 }
 
 // fetchUserForCredentials is whether UserMiddleware should try to
@@ -167,8 +184,25 @@ func FullUserFromContext(ctx context.Context) *sourcegraph.User {
 	return user
 }
 
+// EmailsFromRequest returns the request's context's email list for the user user (if any).
+func EmailsFromRequest(r *http.Request) *sourcegraph.EmailAddrList {
+	return EmailsFromContext(httpctx.FromRequest(r))
+}
+
+// EmailsFromContext returns the context's email list for the user user (if any).
+func EmailsFromContext(ctx context.Context) *sourcegraph.EmailAddrList {
+	emails, _ := ctx.Value(emailAddrsKey).(*sourcegraph.EmailAddrList)
+	return emails
+}
+
 // withFullUser returns a copy of the context with the full user added to it
 // (and available via FullUserFromContext).
 func withFullUser(ctx context.Context, user *sourcegraph.User) context.Context {
 	return context.WithValue(ctx, fullUserKey, user)
+}
+
+// withEmails returns a copy of the context with the emails added to it
+// (and available via UserEmailsFromContext).
+func withEmails(ctx context.Context, emails *sourcegraph.EmailAddrList) context.Context {
+	return context.WithValue(ctx, emailAddrsKey, emails)
 }
