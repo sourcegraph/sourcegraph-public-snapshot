@@ -1,6 +1,6 @@
 {
 	"ImportPath": "src.sourcegraph.com/sourcegraph",
-	"GoVersion": "go1.5.3",
+	"GoVersion": "go1.6",
 	"Packages": [
 		"src.sourcegraph.com/sourcegraph",
 		"src.sourcegraph.com/sourcegraph/app",
