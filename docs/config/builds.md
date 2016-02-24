@@ -60,7 +60,7 @@ no-worker = true
 
 # Contact Us
 
-Have a problem? We'd love to help! Please [contact us](mailto:help@sourcegraph.com) and provide:
+Have a problem? We'd love to help! Please [contact us](mailto:support@sourcegraph.com) and provide:
 
 1. As much information as you can that may relate to the issue:
   - was it a single build that failed, or all of them

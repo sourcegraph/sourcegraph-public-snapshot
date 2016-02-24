@@ -17,7 +17,7 @@ its designated employees to Sourcegraph, and to grant copyright and
 patent licenses thereto.
 
 If you have not already done so, please complete and sign, then scan
-and email a PDF file of this Agreement to help@sourcegraph.com. If
+and email a PDF file of this Agreement to support@sourcegraph.com. If
 necessary, send an original signed Agreement to Sourcegraph, Inc. 121
 2nd St Ste 200, San Francisco, CA 94105, U.S.A. Please read this
 document carefully before signing and keep a copy for your records.
@@ -147,7 +147,7 @@ Title:           __________________________________
 
 Corporation:     __________________________________
 
- 
+
 
 Schedule A
 

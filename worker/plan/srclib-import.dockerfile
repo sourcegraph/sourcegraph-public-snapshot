@@ -6,6 +6,6 @@
 # URL: https://hub.docker.com/r/sourcegraph/srclib-import/
 
 FROM alpine:3.2
-MAINTAINER Sourcegraph Team <help@sourcegraph.com>
+MAINTAINER Sourcegraph Team <support@sourcegraph.com>
 
 RUN apk add -q -U ca-certificates zip curl && rm -rf /var/cache/apk/*

@@ -42,5 +42,5 @@ information.
 
 For companies whose policies prohibit the use of cloud services,
 Sourcegraph Enterprise can operate without any external network
-access. [Contact us](mailto:help@sourcegraph.com) for more
+access. [Contact us](mailto:support@sourcegraph.com) for more
 information.

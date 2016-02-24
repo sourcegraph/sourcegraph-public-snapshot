@@ -48,4 +48,4 @@ func (a *App) handleError(w http.ResponseWriter, r *http.Request, status int, er
 // this is the plain-text backup.
 var errPublicFacingErrorMessage = errors.New(`Sorry, there’s been a problem.
 
-If this issue persists, please email us at help@sourcegraph.com.`)
+If this issue persists, please email us at support@sourcegraph.com.`)

@@ -11,7 +11,7 @@ developers to make getting your contribution into Sourcegraph easier.
 
 ## Contacting us
 
-- Email: [help@sourcegraph.com](mailto:help@sourcegraph.com)
+- Email: [support@sourcegraph.com](mailto:support@sourcegraph.com)
 - Open a public thread: see below
 
 ## Reporting bugs and creating issues
@@ -21,7 +21,7 @@ has some very specific qualities, so please read over our short document on
 [reporting bugs](https://src.sourcegraph.com/sourcegraph/.docs/dev/bugs)
 before you submit your bug report.
 
-[Open a new thread](https://src.sourcegraph.com/sourcegraph/.tracker/new) when you're ready
+[Contact support](mailto:support@sourcegraph.com) when you're ready
 to file an issue.
 
 ## Contribution flow

@@ -7,7 +7,7 @@ description = "Use Sourcegraph for enterprise"
 If you are running Sourcegraph within a large enterprise, you may
 be interested in some of the following features.
 
-Looking for something else? [Let us know!](mailto:help@sourcegraph.com)
+Looking for something else? [Let us know!](mailto:support@sourcegraph.com)
 
 # Centralized LDAP
 
@@ -31,7 +31,7 @@ Sourcegraph runs on Sourcegraph.com for hundreds of thousands of repositories an
 tens of thousands of users. It can be configured to use multiple storage systems including
 key/value stores and SQL databases.
 
-[Contact us](mailto:help@sourcegraph.com) if you have questions or need technical assistance.
+[Contact us](mailto:support@sourcegraph.com) if you have questions or need technical assistance.
 
 ## Horizontal scaling
 
@@ -72,4 +72,4 @@ limit, you must pay a licensing fee.
 
 Sourcegraph Server (not Enterprise) is free to use for teams of any size.
 
-Have questions? [Contact us.](mailto:help@sourcegraph.com)
+Have questions? [Contact us.](mailto:support@sourcegraph.com)
