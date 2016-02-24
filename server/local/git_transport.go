@@ -11,7 +11,6 @@ import (
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -24,13 +23,7 @@ import (
 // Commit) field to signify that a branch was created (or deleted).
 const emptyGitCommitID = "0000000000000000000000000000000000000000"
 
-var GitTransport gitpb.GitTransportServer = &gitTransport{}
-
-type gitTransport struct{}
-
-var _ gitpb.GitTransportServer = (*gitTransport)(nil)
-
-func (s *gitTransport) InfoRefs(ctx context.Context, op *gitpb.InfoRefsOp) (*gitpb.Packet, error) {
+func (s *repos) InfoRefs(ctx context.Context, op *sourcegraph.InfoRefsOp) (*sourcegraph.Packet, error) {
 	// This service is read-only, but can be followed by a write
 	// action. If we only deny access once writing it leads to a confusing user
 	// experience
@@ -62,10 +55,10 @@ func (s *gitTransport) InfoRefs(ctx context.Context, op *gitpb.InfoRefsOp) (*git
 	if err != nil {
 		return nil, err
 	}
-	return &gitpb.Packet{Data: data}, nil
+	return &sourcegraph.Packet{Data: data}, nil
 }
 
-func (s *gitTransport) UploadPack(ctx context.Context, op *gitpb.UploadPackOp) (*gitpb.Packet, error) {
+func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.UploadPack", op.Repo.URI); err != nil {
 		// Ignore the error if it is because the repo didn't exist. This comes
 		// about when we are implicitly mirroring repos and the metadata is
@@ -85,10 +78,10 @@ func (s *gitTransport) UploadPack(ctx context.Context, op *gitpb.UploadPackOp) (
 	if err != nil {
 		return nil, err
 	}
-	return &gitpb.Packet{Data: data}, nil
+	return &sourcegraph.Packet{Data: data}, nil
 }
 
-func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp) (*gitpb.Packet, error) {
+func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error) {
 	if err := verifyRepoWriteAccess(ctx, op.Repo); err != nil {
 		return nil, err
 	}
@@ -125,7 +118,7 @@ func (s *gitTransport) ReceivePack(ctx context.Context, op *gitpb.ReceivePackOp)
 		return nil, err
 	}
 
-	return &gitpb.Packet{Data: data}, nil
+	return &sourcegraph.Packet{Data: data}, nil
 }
 
 func verifyRepoWriteAccess(ctx context.Context, repoSpec sourcegraph.RepoSpec) error {

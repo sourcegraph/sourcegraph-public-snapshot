@@ -18,7 +18,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
@@ -29,10 +28,10 @@ import (
 // (as it often is for git transport ops).
 func prepareArg(server, method string, arg interface{}) interface{} {
 	switch arg := arg.(type) {
-	case *gitpb.ReceivePackOp:
-		return &gitpb.ReceivePackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
-	case *gitpb.UploadPackOp:
-		return &gitpb.UploadPackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
+	case *sourcegraph.ReceivePackOp:
+		return &sourcegraph.ReceivePackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
+	case *sourcegraph.UploadPackOp:
+		return &sourcegraph.UploadPackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
 	}
 	return arg
 }

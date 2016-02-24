@@ -23,7 +23,6 @@ var Services = svc.Services{
 	Builds:            Builds,
 	Defs:              Defs,
 	Deltas:            Deltas,
-	GitTransport:      GitTransport,
 	GraphUplink:       GraphUplink,
 	Meta:              Meta,
 	MirrorRepos:       MirrorRepos,

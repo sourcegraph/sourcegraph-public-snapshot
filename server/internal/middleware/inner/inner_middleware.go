@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -31,8 +30,6 @@ import (
 // Services returns the local services wrapped with auth, etc.
 func Services() svc.Services {
 	return svc.Services{
-
-		GitTransport: wrappedGitTransport{},
 
 		MultiRepoImporter: wrappedMultiRepoImporter{},
 
@@ -72,47 +69,6 @@ func Services() svc.Services {
 
 		Users: wrappedUsers{},
 	}
-}
-
-type wrappedGitTransport struct{}
-
-func (s wrappedGitTransport) InfoRefs(ctx context.Context, param *gitpb.InfoRefsOp) (res *gitpb.Packet, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "GitTransport", "InfoRefs", param)
-	defer func() {
-		trace.After(ctx, "GitTransport", "InfoRefs", param, err, time.Since(start))
-	}()
-	res, err = local.Services.GitTransport.InfoRefs(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "GitTransport.InfoRefs returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedGitTransport) ReceivePack(ctx context.Context, param *gitpb.ReceivePackOp) (res *gitpb.Packet, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "GitTransport", "ReceivePack", param)
-	defer func() {
-		trace.After(ctx, "GitTransport", "ReceivePack", param, err, time.Since(start))
-	}()
-	res, err = local.Services.GitTransport.ReceivePack(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "GitTransport.ReceivePack returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.UploadPackOp) (res *gitpb.Packet, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "GitTransport", "UploadPack", param)
-	defer func() {
-		trace.After(ctx, "GitTransport", "UploadPack", param, err, time.Since(start))
-	}()
-	res, err = local.Services.GitTransport.UploadPack(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "GitTransport.UploadPack returned nil, nil")
-	}
-	return
 }
 
 type wrappedMultiRepoImporter struct{}
@@ -1068,6 +1024,45 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 	res, err = local.Services.Repos.GetInventory(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
+	}
+	return
+}
+
+func (s wrappedRepos) InfoRefs(ctx context.Context, param *sourcegraph.InfoRefsOp) (res *sourcegraph.Packet, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "InfoRefs", param)
+	defer func() {
+		trace.After(ctx, "Repos", "InfoRefs", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Repos.InfoRefs(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.InfoRefs returned nil, nil")
+	}
+	return
+}
+
+func (s wrappedRepos) ReceivePack(ctx context.Context, param *sourcegraph.ReceivePackOp) (res *sourcegraph.Packet, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "ReceivePack", param)
+	defer func() {
+		trace.After(ctx, "Repos", "ReceivePack", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Repos.ReceivePack(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ReceivePack returned nil, nil")
+	}
+	return
+}
+
+func (s wrappedRepos) UploadPack(ctx context.Context, param *sourcegraph.UploadPackOp) (res *sourcegraph.Packet, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "UploadPack", param)
+	defer func() {
+		trace.After(ctx, "Repos", "UploadPack", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Repos.UploadPack(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
 	}
 	return
 }

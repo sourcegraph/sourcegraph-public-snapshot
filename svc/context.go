@@ -15,14 +15,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 type contextKey int
 
 const (
-	_GitTransportKey      contextKey = iota
 	_MultiRepoImporterKey contextKey = iota
 	_AccountsKey          contextKey = iota
 	_AnnotationsKey       contextKey = iota
@@ -46,7 +44,6 @@ const (
 
 // Services contains fields for all existing services.
 type Services struct {
-	GitTransport      gitpb.GitTransportServer
 	MultiRepoImporter pb.MultiRepoImporterServer
 	Accounts          sourcegraph.AccountsServer
 	Annotations       sourcegraph.AnnotationsServer
@@ -70,10 +67,6 @@ type Services struct {
 
 // RegisterAll calls all of the the RegisterXxxServer funcs.
 func RegisterAll(s *grpc.Server, svcs Services) {
-
-	if svcs.GitTransport != nil {
-		gitpb.RegisterGitTransportServer(s, svcs.GitTransport)
-	}
 
 	if svcs.MultiRepoImporter != nil {
 		pb.RegisterMultiRepoImporterServer(s, svcs.MultiRepoImporter)
@@ -156,10 +149,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 // WithServices returns a copy of parent with the given services. If a service's field value is nil, its previous value is inherited from parent in the new context.
 func WithServices(ctx context.Context, s Services) context.Context {
 
-	if s.GitTransport != nil {
-		ctx = WithGitTransport(ctx, s.GitTransport)
-	}
-
 	if s.MultiRepoImporter != nil {
 		ctx = WithMultiRepoImporter(ctx, s.MultiRepoImporter)
 	}
@@ -237,29 +226,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 	}
 
 	return ctx
-}
-
-// WithGitTransport returns a copy of parent that uses the given GitTransport service.
-func WithGitTransport(ctx context.Context, s gitpb.GitTransportServer) context.Context {
-	return context.WithValue(ctx, _GitTransportKey, s)
-}
-
-// GitTransport gets the context's GitTransport service. If the service is not present, it panics.
-func GitTransport(ctx context.Context) gitpb.GitTransportServer {
-	s, ok := ctx.Value(_GitTransportKey).(gitpb.GitTransportServer)
-	if !ok || s == nil {
-		panic("no GitTransport set in context")
-	}
-	return s
-}
-
-// GitTransportOrNil returns the context's GitTransport service if present, or else nil.
-func GitTransportOrNil(ctx context.Context) gitpb.GitTransportServer {
-	s, ok := ctx.Value(_GitTransportKey).(gitpb.GitTransportServer)
-	if ok {
-		return s
-	}
-	return nil
 }
 
 // WithMultiRepoImporter returns a copy of parent that uses the given MultiRepoImporter service.

@@ -12,7 +12,6 @@ func main() {
 	svcs := []string{
 		"../../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
 		"../../../../vendor/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
-		"../../../../gitserver/gitpb/git_transport.pb.go",
 	}
 	gen.Generate("inner_middleware.go", tmpl, svcs, nil, "")
 }
@@ -39,7 +38,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/trace"

@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
@@ -77,7 +76,7 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	pkt, err := c.InfoRefs(ctx, &gitpb.InfoRefsOp{
+	pkt, err := c.InfoRefs(ctx, &sourcegraph.InfoRefsOp{
 		Repo:    repo,
 		Service: service,
 	})
@@ -108,7 +107,7 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	pkt, err := c.ReceivePack(ctx, &gitpb.ReceivePackOp{
+	pkt, err := c.ReceivePack(ctx, &sourcegraph.ReceivePackOp{
 		Repo:            repo,
 		ContentEncoding: r.Header.Get("content-encoding"),
 		Data:            body,
@@ -140,7 +139,7 @@ func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	pkt, err := c.UploadPack(ctx, &gitpb.UploadPackOp{
+	pkt, err := c.UploadPack(ctx, &sourcegraph.UploadPackOp{
 		Repo:            repo,
 		ContentEncoding: r.Header.Get("content-encoding"),
 		Data:            body,

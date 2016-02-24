@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -29,7 +28,6 @@ import (
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.
 func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 	s := svc.Services{
-		GitTransport:      wrappedGitTransport{ctxFunc, services},
 		MultiRepoImporter: wrappedMultiRepoImporter{ctxFunc, services},
 		Accounts:          wrappedAccounts{ctxFunc, services},
 		Annotations:       wrappedAnnotations{ctxFunc, services},
@@ -51,101 +49,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Users:             wrappedUsers{ctxFunc, services},
 	}
 	return s
-}
-
-type wrappedGitTransport struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedGitTransport) InfoRefs(ctx context.Context, v1 *gitpb.InfoRefsOp) (returnedResult *gitpb.Packet, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in GitTransport.InfoRefs: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.GitTransportOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "GitTransport")
-	}
-
-	rv, err := innerSvc.InfoRefs(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedGitTransport) ReceivePack(ctx context.Context, v1 *gitpb.ReceivePackOp) (returnedResult *gitpb.Packet, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in GitTransport.ReceivePack: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.GitTransportOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "GitTransport")
-	}
-
-	rv, err := innerSvc.ReceivePack(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedGitTransport) UploadPack(ctx context.Context, v1 *gitpb.UploadPackOp) (returnedResult *gitpb.Packet, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in GitTransport.UploadPack: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.GitTransportOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "GitTransport")
-	}
-
-	rv, err := innerSvc.UploadPack(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
 }
 
 type wrappedMultiRepoImporter struct {
@@ -2356,6 +2259,96 @@ func (s wrappedRepos) GetInventory(ctx context.Context, v1 *sourcegraph.RepoRevS
 	}
 
 	rv, err := innerSvc.GetInventory(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+func (s wrappedRepos) InfoRefs(ctx context.Context, v1 *sourcegraph.InfoRefsOp) (returnedResult *sourcegraph.Packet, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.InfoRefs: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+
+	rv, err := innerSvc.InfoRefs(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+func (s wrappedRepos) ReceivePack(ctx context.Context, v1 *sourcegraph.ReceivePackOp) (returnedResult *sourcegraph.Packet, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.ReceivePack: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+
+	rv, err := innerSvc.ReceivePack(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+func (s wrappedRepos) UploadPack(ctx context.Context, v1 *sourcegraph.UploadPackOp) (returnedResult *sourcegraph.Packet, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.UploadPack: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+
+	rv, err := innerSvc.UploadPack(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

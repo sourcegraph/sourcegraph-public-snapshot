@@ -5,7 +5,6 @@ import (
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/conf"
-	gitmock "src.sourcegraph.com/sourcegraph/gitserver/gitpb/mock"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/store/mockstore"
@@ -35,7 +34,6 @@ type mockServers struct {
 	Builds       mock.BuildsServer
 	Defs         mock.DefsServer
 	Deltas       mock.DeltasServer
-	GitTransport gitmock.GitTransportServer
 	MirrorRepos  mock.MirrorReposServer
 	Orgs         mock.OrgsServer
 	People       mock.PeopleServer
@@ -53,7 +51,6 @@ func (s *mockServers) servers() svc.Services {
 		Builds:       &s.Builds,
 		Defs:         &s.Defs,
 		Deltas:       &s.Deltas,
-		GitTransport: &s.GitTransport,
 		MirrorRepos:  &s.MirrorRepos,
 		Orgs:         &s.Orgs,
 		People:       &s.People,
