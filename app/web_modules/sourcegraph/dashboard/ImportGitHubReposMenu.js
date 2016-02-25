@@ -27,10 +27,10 @@ class ImportGitHubReposMenu extends Container {
 		state.orgs = GitHubReposStore.orgs;
 		state.onWaitlist = GitHubReposStore.onWaitlist;
 		if (!state.currentOrg) state.currentOrg = GitHubReposStore.orgs[0];
-		state.items = GitHubReposStore.reposByOrg.get(state.currentOrg)
+		state.items = GitHubReposStore.remoteRepos.get(state.currentOrg)
 			.filter(repo => this._canMirror(repo, state.onWaitlist))
 			.map(repo => ({name: repo.Repo.Name, key: repo.Repo.URI, isPrivate: Boolean(repo.Repo.Private)}));
-		state.unselectableItems = GitHubReposStore.reposByOrg.get(state.currentOrg)
+		state.unselectableItems = GitHubReposStore.remoteRepos.get(state.currentOrg)
 			.filter(repo => !this._canMirror(repo, state.onWaitlist))
 			.map((repo, i) => ({name: repo.Repo.Name, key: `${i}`, reason: (() => {
 				if (state.onWaitlist && repo.Repo.Private) return "private repositories coming soon";
@@ -39,6 +39,7 @@ class ImportGitHubReposMenu extends Container {
 			})(),
 			}));
 		state.showLoading = GitHubReposStore.showLoading;
+		state.allItems = GitHubReposStore.remoteRepos.repos;
 	}
 
 	_canMirror(repo, onWaitlist) {
@@ -80,6 +81,7 @@ class ImportGitHubReposMenu extends Container {
 		return (
 			<SelectableListWidget items={this.state.items}
 				unselectableItems={this.state.unselectableItems}
+				allItems={this.state.allItems}
 				currentCategory={this.state.currentOrg}
 				menuCategories={this.state.orgs}
 				onMenuClick={(org) => this.setState({currentOrg: org, selectAll: false})}

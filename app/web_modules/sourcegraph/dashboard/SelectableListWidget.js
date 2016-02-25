@@ -9,6 +9,7 @@ class SelectableListWidget extends Component {
 	constructor(props) {
 		super(props);
 		this._getSelections = this._getSelections.bind(this);
+		this._getCategoryNumbers = this._getCategoryNumbers.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -19,6 +20,14 @@ class SelectableListWidget extends Component {
 		return this.state.items.filter(item => this.state.selections[item.key]);
 	}
 
+	_getCategoryNumbers(selected) {
+		let categoryNumbers = {};
+		for (let cat of this.state.menuCategories) {
+			categoryNumbers[categoryNumbers[cat]] = 0;
+		}
+		selected.map(repo => { categoryNumbers[repo.Owner.Login] += 1; });
+		return categoryNumbers;
+	}
 	render() {
 		const selected = this._getSelections();
 		return (
@@ -28,7 +37,8 @@ class SelectableListWidget extends Component {
 						<ListMenu label={this.state.menuLabel}
 							categories={this.state.menuCategories}
 							onMenuClick={this.state.onMenuClick}
-							current={this.state.currentCategory} />
+							current={this.state.currentCategory}
+							categoryNumbers={this._getCategoryNumbers(selected)} />
 					</div>
 					<div className="list-control">
 						<SelectableList items={this.state.items}
@@ -68,6 +78,7 @@ SelectableListWidget.propTypes = {
 		key: React.PropTypes.string,
 		reason: React.PropTypes.string,
 	})).isRequired,
+	allItems: React.PropTypes.arrayOf(React.PropTypes.object),
 	currentCategory: React.PropTypes.string,
 	menuCategories: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 	onMenuClick: React.PropTypes.func.isRequired,

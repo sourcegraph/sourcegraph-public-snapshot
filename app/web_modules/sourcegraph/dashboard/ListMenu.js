@@ -39,6 +39,7 @@ ListMenu.propTypes = {
 	categories: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 	current: React.PropTypes.string,
 	onMenuClick: React.PropTypes.func.isRequired,
+	categoryNumbers: React.PropTypes.object.isRequired,
 };
 
 export default ListMenu;
