@@ -72,13 +72,26 @@
 			.search-bar {
 				height: $list-button-height;
 				display: block;
-				min-width: 240px;
+				width: 240px;
 				margin-top: $padding-large-vertical;
 
 				@media (min-width: $screen-sm-min) {
 					float: right;
 					display: inline-block;
 					margin-top: 0;
+				}
+
+				.search-addon {
+					background-color: white;
+					color: #7794ae;
+				}
+
+				.search-input {
+					border-right: none;
+					transition: none;
+					&:focus + .search-addon {
+						border-color: $input-border-focus;
+					}
 				}
 			}
 		}

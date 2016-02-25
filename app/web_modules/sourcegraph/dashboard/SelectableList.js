@@ -22,8 +22,7 @@ class SelectableList extends Component {
 	_handleSearch(e) {
 		this.setState(update(this.state, {
 			searchQuery: {$set: e.target.value},
-			selectAll: {$set: false},
-		}));
+		}), () => { this.state.onSelectAll(this.state.items.filter(this._showItem), false); });
 	}
 
 	_handleSelectAll(e) {
@@ -56,7 +55,7 @@ class SelectableList extends Component {
 								checked={this.state.selectAll}
 								onChange={this._handleSelectAll} />
 						</div>
-						<span className="name">NAME</span>
+						<span className="name">All</span>
 					</div>
 				</div>
 				<div className="body">
@@ -74,7 +73,7 @@ class SelectableList extends Component {
 								<span className="name">{item.name}</span>
 							</div>
 						)}
-						{this.state.unselectableItems.map(item =>
+						{this.state.unselectableItems.filter(this._showItem).map(item =>
 							<div className="table-row" key={item.key}>
 								<div className="select">
 									<input className="unselectable" disabled={true} type="checkbox" />

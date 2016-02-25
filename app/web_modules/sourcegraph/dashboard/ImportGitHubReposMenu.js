@@ -88,7 +88,7 @@ class ImportGitHubReposMenu extends Container {
 				selections={this.state.selectedRepos}
 				selectAll={this.state.selectAll}
 				menuLabel="Organizations"
-				searchPlaceholderText="Search GitHub repositories"
+				searchPlaceholderText="Find a repository..."
 				onSubmit={this._handleAddMirrors}
 				showLoading={this.state.showLoading} />
 		);

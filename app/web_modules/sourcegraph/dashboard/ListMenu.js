@@ -14,7 +14,7 @@ class ListMenu extends Component {
 	render() {
 		return (
 			<div>
-				<p className="category-menu-label"><strong>{this.state.label}:</strong></p>
+				<p className="category-menu-label"><strong>{this.state.label}</strong></p>
 				<div>
 					{this.state.categories.map((category, i) =>
 						<div className="category-label"
