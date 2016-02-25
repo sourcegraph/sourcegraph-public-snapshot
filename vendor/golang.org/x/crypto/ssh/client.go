@@ -82,11 +82,11 @@ func NewClientConn(c net.Conn, addr string, config *ClientConfig) (Conn, <-chan 
 // clientHandshake performs the client side key exchange. See RFC 4253 Section
 // 7.
 func (c *connection) clientHandshake(dialAddress string, config *ClientConfig) error {
-	c.clientVersion = []byte(packageVersion)
 	if config.ClientVersion != "" {
 		c.clientVersion = []byte(config.ClientVersion)
+	} else {
+		c.clientVersion = []byte(packageVersion)
 	}
-
 	var err error
 	c.serverVersion, err = exchangeVersions(c.sshConn.conn, c.clientVersion)
 	if err != nil {
@@ -105,6 +105,10 @@ func (c *connection) clientHandshake(dialAddress string, config *ClientConfig) e
 	} else if packet[0] != msgNewKeys {
 		return unexpectedMessageError(msgNewKeys, packet[0])
 	}
+
+	// We just did the key change, so the session ID is established.
+	c.sessionID = c.transport.getSessionID()
+
 	return c.clientAuthenticate(config)
 }
 
@@ -199,4 +203,11 @@ type ClientConfig struct {
 	// ClientVersion contains the version identification string that will
 	// be used for the connection. If empty, a reasonable default is used.
 	ClientVersion string
+
+	// HostKeyAlgorithms lists the key types that the client will
+	// accept from the server as host key, in order of
+	// preference. If empty, a reasonable default is used. Any
+	// string returned from PublicKey.Type method may be used, or
+	// any of the CertAlgoXxxx and KeyAlgoXxxx constants.
+	HostKeyAlgorithms []string
 }
