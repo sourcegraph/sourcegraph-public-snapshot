@@ -78,7 +78,9 @@ func importWithSrcDir(path string, srcDir string, mode build.ImportMode, install
 
 	switch path {
 	case "runtime":
-		pkg.GoFiles = []string{"error.go", fmt.Sprintf("zgoos_%s.go", buildContext.GOOS), "zversion.go"}
+		pkg.GoFiles = []string{"error.go"}
+	case "runtime/internal/sys":
+		pkg.GoFiles = []string{fmt.Sprintf("zgoos_%s.go", buildContext.GOOS), "zversion.go"}
 	case "runtime/pprof":
 		pkg.GoFiles = nil
 	case "crypto/rand":
@@ -316,7 +318,7 @@ func NewSession(options *Options) *Session {
 		options:  options,
 		Packages: make(map[string]*PackageData),
 	}
-	s.Types = map[string]*types.Package{"unsafe": types.Unsafe}
+	s.Types = make(map[string]*types.Package)
 	if options.Watch {
 		if out, err := exec.Command("ulimit", "-n").Output(); err == nil {
 			if n, err := strconv.Atoi(strings.TrimSpace(string(out))); err == nil && n < 1024 {

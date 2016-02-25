@@ -554,35 +554,43 @@
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/build",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/compiler",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/compiler/analysis",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/compiler/astutil",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/compiler/filter",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/compiler/prelude",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/compiler/typesutil",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gopherjs/gopherjs/third_party/importer",
-			"Rev": "0faf2ef97c0ada75462340a914f01fec80521216"
+			"Comment": "go1.5-6-gf8510c9",
+			"Rev": "f8510c9aef19750ec5a1178b33932a7f9defd197"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -825,51 +833,51 @@
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist5639599",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist5707298",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6418290",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6418462",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6433744",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gists/gist6445065",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gopherjs_http",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/gzip_file_server",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/osutil",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/trim",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/go/vfs/godocfs/godocfs",
-			"Rev": "46791a3234934d9bc4f17ccff49c86bfe8a9cfa2"
+			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/gopherjslib",
-			"Rev": "d8eec8734d3ea74418f19cd9066d54fb2fa46e44"
+			"Rev": "f855ed7bcd82b53f720f6bf4a0c9b562e89276f6"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/highlight_diff",

@@ -1,42 +1,42 @@
 /*
-Package gopherjslib provides Porcelain for gopherjs compilation without resorting to the shell.
+Package gopherjslib provides helpers for in-process GopherJS compilation.
 
-All of them take the optional *Options argument. It can be
-used to set a different GOROOT or GOPATH directory or	to enable minification.
+All of them take the optional *Options argument. It can be used to set
+a different GOROOT or GOPATH directory or to enable minification.
 
-Example compiling go code:
+Example compiling Go code:
 
-  import "github.com/go-on/gopherjslib"
+	import "github.com/shurcooL/gopherjslib"
 
-  ...
+	...
 
-  code := strings.NewReader(`
-    package main
-    import "github.com/gopherjs/gopherjs/js"
-    func main() { println(js.Global.Get("window")) }
-  `)
+	code := strings.NewReader(`
+		package main
+		import "github.com/gopherjs/gopherjs/js"
+		func main() { println(js.Global.Get("window")) }
+	`)
 
-  var out bytes.Buffer
+	var out bytes.Buffer
 
-  err := gopherjslib.Build(code, &out, nil) // <- default options
+	err := gopherjslib.Build(code, &out, nil) // <- default options
 
 Example compiling multiple files:
 
-  var out bytes.Buffer
+	var out bytes.Buffer
 
-  builder := gopherjslib.NewBuilder(&out, nil)
+	builder := gopherjslib.NewBuilder(&out, nil)
 
-  fileA := strings.NewReader(`
-    package main
-    import "github.com/gopherjs/gopherjs/js"
-    func a() { println(js.Global.Get("window")) }
-  `)
+	fileA := strings.NewReader(`
+		package main
+		import "github.com/gopherjs/gopherjs/js"
+		func a() { println(js.Global.Get("window")) }
+	`)
 
-  builder.Add("a.go", fileA)
+	builder.Add("a.go", fileA)
 
-  // and so on for each file,then
+	// And so on for each file, then:
 
-  err = builder.Build()
+	err = builder.Build()
 */
 package gopherjslib
 
@@ -53,8 +53,8 @@ import (
 	"github.com/gopherjs/gopherjs/compiler"
 )
 
-// Options is the subset of build.Options, that is exposed to the user of jslib
-// and is totally optional.
+// Options is the subset of build.Options, that is exposed to the user of gopherjslib
+// and is optional.
 type Options struct {
 	GOROOT string // defaults to build.Default.GOROOT
 	GOPATH string // defaults to build.Default.GOPATH
@@ -194,12 +194,16 @@ func (b *builder) Build() error {
 
 	s := build.NewSession(b.options)
 
-	archive, err := compiler.Compile(b.pkgName, files, fileSet, s.ImportContext, b.options.Minify)
+	importContext := &compiler.ImportContext{
+		Packages: s.Types,
+		Import:   s.BuildImportPath,
+	}
+	archive, err := compiler.Compile(b.pkgName, files, fileSet, importContext, b.options.Minify)
 	if err != nil {
 		return ErrorCompiling(err.Error())
 	}
 
-	deps, err := compiler.ImportDependencies(archive, s.ImportContext.Import)
+	deps, err := compiler.ImportDependencies(archive, s.BuildImportPath)
 	if err != nil {
 		return ErrorImportingDependencies(err.Error())
 	}
