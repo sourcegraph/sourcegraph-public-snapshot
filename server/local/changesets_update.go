@@ -33,8 +33,10 @@ func (s *changesets) update(ctx context.Context, op *store.ChangesetUpdateOp) (*
 		Domain: actor.Domain,
 	}
 
-	if err := (&users{}).resolveUserSpec(ctx, &opt.Author); err != nil {
-		return nil, err
+	if opt.Author.UID != 0 {
+		if err := (&users{}).resolveUserSpec(ctx, &opt.Author); err != nil {
+			return nil, err
+		}
 	}
 
 	// Get user to ensure we have a UID for comparison and storage (in case
