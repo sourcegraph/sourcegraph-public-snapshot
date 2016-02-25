@@ -567,7 +567,7 @@ func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 WITH
 to_dequeue AS (
   SELECT * FROM repo_build
-  WHERE (started_at IS NULL or killed) AND queue AND (NOT purged)
+  WHERE (started_at IS NULL OR (killed AND created_at >= now() - interval '1hour')) AND queue AND (NOT purged)
   ORDER BY priority desc, greatest(started_at, ended_at, created_at) ASC NULLS LAST
   LIMIT 1
   FOR UPDATE
