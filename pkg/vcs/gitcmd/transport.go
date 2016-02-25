@@ -6,13 +6,13 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
+	"io/ioutil"
 
 	"strconv"
 	"strings"
 
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
+	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"
@@ -23,17 +23,17 @@ func (r *Repository) InfoRefs(ctx context.Context, service string) ([]byte, erro
 		return nil, fmt.Errorf("unrecognized git service: %q", service)
 	}
 
+	cmd := gitserver.Command("git", service, "--stateless-rpc", "--advertise-refs", ".")
+	cmd.Dir = r.Dir
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
 	var buf bytes.Buffer
 	buf.Write(packetWrite("# service=git-" + service + "\n"))
 	buf.Write(packetFlush())
-
-	cmd := exec.Command("git", service, "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Dir = r.Dir
-
-	cmd.Stdout, cmd.Stderr = &buf, os.Stderr
-	if err := cmd.Run(); err != nil {
-		return nil, err
-	}
+	buf.Write(out)
 	return buf.Bytes(), nil
 }
 
@@ -89,22 +89,19 @@ func (r *Repository) servicePack(ctx context.Context, service string, data []byt
 		return nil, nil, fmt.Errorf("unrecognized git service: %q", service)
 	}
 
-	var outw, errw bytes.Buffer
-	cmd := exec.Command("git", service, "--stateless-rpc", ".")
+	cmd := gitserver.Command("git", service, "--stateless-rpc", ".")
 	cmd.Dir = r.Dir
-	cmd.Stdin = rpcReader
-	cmd.Stdout = &outw
-	cmd.Stderr = &errw
-
-	if err := cmd.Start(); err != nil {
-		return nil, nil, err
+	cmd.Input, err = ioutil.ReadAll(rpcReader)
+	if err != nil {
+		return nil, nil, fmt.Errorf("rpc reader error: %s", err)
 	}
 
-	// Wait till command has completed
-	if err := cmd.Wait(); err != nil && !strings.Contains(errw.String(), "The remote end hung up unexpectedly") {
-		return nil, nil, fmt.Errorf("git-%s failed (%s); output was:\n%s", service, err, errw.String())
+	stdout, stderr, err := cmd.DividedOutput()
+	if err != nil && !bytes.Contains(stderr, []byte("The remote end hung up unexpectedly")) { // TODO remove hidden error
+		return nil, nil, fmt.Errorf("git-%s failed (%s); output was:\n%s", service, err, string(stderr))
 	}
-	return outw.Bytes(), rpcReader.Events, nil
+
+	return stdout, rpcReader.Events, nil
 }
 
 func packetFlush() []byte {

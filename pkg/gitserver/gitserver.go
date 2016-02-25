@@ -16,9 +16,10 @@ type Git struct {
 }
 
 type ExecArgs struct {
-	Repo string
-	Args []string
-	Opt  *vcs.RemoteOpts
+	Repo  string
+	Args  []string
+	Opt   *vcs.RemoteOpts
+	Stdin []byte
 }
 
 type ExecReply struct {
@@ -44,6 +45,7 @@ func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
 
 	cmd := exec.Command("git", args.Args...)
 	cmd.Dir = args.Repo
+	cmd.Stdin = bytes.NewReader(args.Stdin)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
@@ -106,6 +108,7 @@ type Cmd struct {
 	Args       []string
 	Dir        string
 	Opt        *vcs.RemoteOpts
+	Input      []byte
 	ExitStatus int
 }
 
@@ -120,7 +123,7 @@ func Command(name string, arg ...string) *Cmd {
 
 func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	var reply ExecReply
-	if err := clientSingleton.Call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:], Opt: c.Opt}, &reply); err != nil {
+	if err := clientSingleton.Call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input}, &reply); err != nil {
 		return nil, nil, err
 	}
 	if !reply.RepoExists {
