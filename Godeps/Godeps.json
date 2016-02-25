@@ -71,7 +71,6 @@
 		"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph",
 		"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock",
 		"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec",
-		"src.sourcegraph.com/sourcegraph/gogeneratedeps",
 		"src.sourcegraph.com/sourcegraph/httpapi",
 		"src.sourcegraph.com/sourcegraph/httpapi/auth",
 		"src.sourcegraph.com/sourcegraph/httpapi/router",
