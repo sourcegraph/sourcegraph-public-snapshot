@@ -5,19 +5,30 @@ import Component from "sourcegraph/Component";
 // function created to update cursor position in constructor()
 let cursorX;
 let cursorY;
-document.addEventListener("mousemove", (event) => {
-	cursorX = event.clientX;
-	cursorY = event.clientY;
-}, false);
+if (typeof document !== "undefined") {
+	// TODO(autotest) support document object.
+	document.addEventListener("mousemove", (event) => {
+		cursorX = event.clientX;
+		cursorY = event.clientY;
+	}, false);
+}
 
 class DefTooltip extends Component {
 	constructor(props) {
 		super(props);
 		this._updatePosition = this._updatePosition.bind(this);
-		this.state = {
-			top: cursorY + 15,
-			left: Math.min(cursorX + 15, window.innerWidth - 380),
-		};
+		// TODO(autotest) support document object.
+		if (typeof window !== "undefined") {
+			this.state = {
+				top: cursorY + 15,
+				left: Math.min(cursorX + 15, window.innerWidth - 380),
+			};
+		} else {
+			this.state = {
+				top: cursorY + 15,
+				left: Math.min(cursorX + 15, 0),
+			};
+		}
 	}
 
 	componentDidMount() {

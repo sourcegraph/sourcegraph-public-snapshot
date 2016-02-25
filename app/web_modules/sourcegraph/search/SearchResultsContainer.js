@@ -26,7 +26,9 @@ let resultTypes = [
 	new ResultType("text", "Text", "code", 10, TextSearchResults),
 ];
 
-let searchFrames = window.searchFrames || {};
+let searchFrames = {};
+// TODO(autotest) support document object.
+if (typeof window !== "undefined") searchFrames = window.searchFrames || {};
 Object.getOwnPropertyNames(searchFrames).forEach((key) => {
 	let frame = searchFrames[key];
 	resultTypes.push(new ResultType(frame.ID, frame.Name, frame.Icon, frame.PerPage, SearchFrameResults));
