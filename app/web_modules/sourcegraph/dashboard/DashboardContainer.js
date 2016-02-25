@@ -34,7 +34,7 @@ class DashboardContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getMirrored());
+		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getAll());
 		state.users = (DashboardStore.users || []).concat(GitHubUsersStore.users.getAdded());
 		state.showReposModal = ModalStore.showReposModal;
 		state.showUsersModal = ModalStore.showUsersModal;

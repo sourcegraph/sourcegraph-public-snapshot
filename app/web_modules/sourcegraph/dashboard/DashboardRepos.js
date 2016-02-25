@@ -85,9 +85,8 @@ class DashboardRepos extends Component {
 							<div className="list-group-item hover-pointer" key={i}
 								onClick={() => window.location.href = `/${repo.URI}`}>
 								<div className="repo-header">
-									<div className="repo-icon">
-									</div>
-									<h4>{repo.URI}</h4>
+
+									<h4><i className="icon-github-private"></i>{repo.URI}</h4>
 								</div>
 								<div className="repo-body">
 									<p className="description">{repo.Description}</p>
