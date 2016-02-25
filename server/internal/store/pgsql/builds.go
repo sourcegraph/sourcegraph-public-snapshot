@@ -567,13 +567,13 @@ func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
 WITH
 to_dequeue AS (
   SELECT * FROM repo_build
-  WHERE started_at IS NULL AND queue AND (NOT purged)
+  WHERE (started_at IS NULL or killed) AND queue AND (NOT purged)
   ORDER BY priority desc, greatest(started_at, ended_at, created_at) ASC NULLS LAST
   LIMIT 1
   FOR UPDATE
 )
 UPDATE repo_build
-SET started_at = clock_timestamp()
+SET started_at = clock_timestamp(), ended_at = null, heartbeat_at = null, success = 'f', failure = 'f'
 FROM to_dequeue
 WHERE repo_build.repo = to_dequeue.repo AND repo_build.id = to_dequeue.id
 RETURNING repo_build.*;
