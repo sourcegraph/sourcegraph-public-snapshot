@@ -246,148 +246,6 @@
 			"Rev": "d0e59c22a56e8dadfed24f74f452cea5a52722d2"
 		},
 		{
-			"ImportPath": "github.com/blevesearch/bleve",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/analyzers/keyword_analyzer",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/analyzers/standard_analyzer",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/byte_array_converters/json",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/datetime_parsers/datetime_optional",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/datetime_parsers/flexible_go",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/language/en",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/token_filters/lower_case_filter",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/token_filters/porter",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/token_filters/stop_tokens_filter",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/tokenizers/single_token",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/analysis/tokenizers/unicode",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/document",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/index",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/index/firestorm",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/index/store",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/index/store/boltdb",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/index/store/gtreap",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/index/upside_down",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/numeric_util",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/registry",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/collectors",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/facets",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/highlight",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/highlight/fragment_formatters/html",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/highlight/fragmenters/simple",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/highlight/highlighters/html",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/highlight/highlighters/simple",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/scorers",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/bleve/search/searchers",
-			"Rev": "2b947e8c142d4dc81a2b2c71778706fe8379e551"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/go-porterstemmer",
-			"Comment": "v1.0.1-9-g23a2c8e",
-			"Rev": "23a2c8e5cf1f380f27722c6d2ae8896431dc7d0e"
-		},
-		{
-			"ImportPath": "github.com/blevesearch/segment",
-			"Rev": "db70c57796cc8c310613541dfade3dce627d09c7"
-		},
-		{
-			"ImportPath": "github.com/boltdb/bolt",
-			"Comment": "v1.1.0-40-g34a0fa5",
-			"Rev": "34a0fa5307f7562980fb8e7ff4723f7987edf49b"
-		},
-		{
 			"ImportPath": "github.com/bradfitz/iter",
 			"Rev": "454541ec3da2a73fc34fd049b19ee5777bf19345"
 		},
@@ -888,10 +746,6 @@
 			"Rev": "562bf7c1e73e56cf3c10c2506b1e29fccc63d1c9"
 		},
 		{
-			"ImportPath": "github.com/shurcooL/htmlg",
-			"Rev": "dbbd8098613c3706dfe5ecdf8eeec907f01ee273"
-		},
-		{
 			"ImportPath": "github.com/shurcooL/httpfs/filter",
 			"Rev": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e"
 		},
@@ -1098,21 +952,12 @@
 			"Rev": "eebdfd0eb1ce4783c8fbe22b305eef7cda0b6c7e"
 		},
 		{
-			"ImportPath": "github.com/steveyen/gtreap",
-			"Rev": "0abe01ef9be25c4aedc174758ec2d917314d6d70"
-		},
-		{
 			"ImportPath": "github.com/termie/go-shutil",
 			"Rev": "bcacb06fecaeec8dc42af03c87c6949f4a05c74c"
 		},
 		{
 			"ImportPath": "github.com/whilp/git-urls",
 			"Rev": "e4bd4b1ee3861df27451acebbe81d7a5d67991fe"
-		},
-		{
-			"ImportPath": "github.com/willf/bitset",
-			"Comment": "v1.0.0-21-g40860d6",
-			"Rev": "40860d631a7cda5964b942da95bf80dd788e770f"
 		},
 		{
 			"ImportPath": "github.com/yosssi/ace",
@@ -1632,27 +1477,7 @@
 			"Rev": "2fd5b122cd3779e3f2cee055198add213ed5b94e"
 		},
 		{
-			"ImportPath": "src.sourcegraph.com/apps/tracker",
-			"Rev": "0298714f15c64954844d710a49ed9715824bc643"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/apps/tracker/common",
-			"Rev": "0298714f15c64954844d710a49ed9715824bc643"
-		},
-		{
 			"ImportPath": "src.sourcegraph.com/apps/tracker/issues",
-			"Rev": "0298714f15c64954844d710a49ed9715824bc643"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/apps/tracker/issues/kv",
-			"Rev": "0298714f15c64954844d710a49ed9715824bc643"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/apps/tracker/router",
-			"Rev": "0298714f15c64954844d710a49ed9715824bc643"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/apps/tracker/sgapp",
 			"Rev": "0298714f15c64954844d710a49ed9715824bc643"
 		},
 		{
