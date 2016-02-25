@@ -43,7 +43,7 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 
 	get := func(repo **sourcegraph.Repo, repoRevSpec *sourcegraph.RepoRevSpec, commit **vcs.Commit) error {
 		var err error
-		*repo, err = svc.Repos(ctx).Get(ctx, &ds.Base.RepoSpec)
+		*repo, err = svc.Repos(ctx).Get(ctx, &repoRevSpec.RepoSpec)
 		if err != nil {
 			return err
 		}
