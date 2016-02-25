@@ -18,38 +18,39 @@ import (
 )
 
 func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	event, err := s.update(ctx, op)
+	event, err := s.update(ctx, &store.ChangesetUpdateOp{Op: op})
 	if event == nil {
 		return &sourcegraph.ChangesetEvent{}, err
 	}
 	return event, err
 }
 
-func (s *changesets) update(ctx context.Context, op *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
+func (s *changesets) update(ctx context.Context, op *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	actor := authpkg.ActorFromContext(ctx)
-	op.Author = sourcegraph.UserSpec{
+	opt := op.Op
+	opt.Author = sourcegraph.UserSpec{
 		UID:    int32(actor.UID),
 		Domain: actor.Domain,
 	}
 
-	if err := (&users{}).resolveUserSpec(ctx, &op.Author); err != nil {
+	if err := (&users{}).resolveUserSpec(ctx, &opt.Author); err != nil {
 		return nil, err
 	}
 
 	// Get user to ensure we have a UID for comparison and storage (in case
 	// caller specifies just login).
-	if op.AddReviewer != nil {
-		if err := (&users{}).ensureUIDPopulated(ctx, op.AddReviewer); err != nil {
+	if opt.AddReviewer != nil {
+		if err := (&users{}).ensureUIDPopulated(ctx, opt.AddReviewer); err != nil {
 			return nil, err
 		}
 	}
-	if op.RemoveReviewer != nil {
-		if err := (&users{}).ensureUIDPopulated(ctx, op.RemoveReviewer); err != nil {
+	if opt.RemoveReviewer != nil {
+		if err := (&users{}).ensureUIDPopulated(ctx, opt.RemoveReviewer); err != nil {
 			return nil, err
 		}
 	}
 
-	event, err := store.ChangesetsFromContext(ctx).Update(ctx, &store.ChangesetUpdateOp{Op: op})
+	event, err := store.ChangesetsFromContext(ctx).Update(ctx, op)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (s *changesets) update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 		*dest = user
 		return nil
 	}
-	if op.FullReviewerUsers && event != nil && event.After != nil {
+	if opt.FullReviewerUsers && event != nil && event.After != nil {
 		for _, reviewer := range event.After.Reviewers {
 			if err := fetchFullUser(ctx, &reviewer.UserSpec, &reviewer.FullUser); err != nil {
 				return nil, err
@@ -73,7 +74,7 @@ func (s *changesets) update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 		}
 	}
 
-	publishChangesetUpdate(ctx, op)
+	publishChangesetUpdate(ctx, opt)
 	return event, nil
 }
 
@@ -91,7 +92,7 @@ func (s *changesets) UpdateAffected(ctx context.Context, op *sourcegraph.Changes
 	// Execute all changeset updates.
 	var res sourcegraph.ChangesetEventList
 	for _, updateOp := range updates {
-		if e, err := s.update(ctx, updateOp.Op); err != nil {
+		if e, err := s.update(ctx, updateOp); err != nil {
 			log15.Error("Changesets.UpdateAffected: cannot update changeset", "repo", updateOp.Op.Repo, "id", updateOp.Op.ID, "error", err)
 		} else if e != nil {
 			res.Events = append(res.Events, e)
