@@ -3,11 +3,11 @@ package local
 import (
 	"log"
 
-	"google.golang.org/grpc/codes"
-
 	"strings"
 
+	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"src.sourcegraph.com/sourcegraph/emailaddrs"
 	"src.sourcegraph.com/sourcegraph/errcode"
@@ -55,10 +55,10 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 		return nil
 	}
 
-	if err := get(&d.BaseRepo, &d.Base, &d.BaseCommit); err != nil {
-		return d, err
-	}
-	if err := get(&d.HeadRepo, &d.Head, &d.HeadCommit); err != nil {
+	par := parallel.NewRun(2)
+	par.Do(func() error { return get(&d.BaseRepo, &d.Base, &d.BaseCommit) })
+	par.Do(func() error { return get(&d.HeadRepo, &d.Head, &d.HeadCommit) })
+	if err := par.Wait(); err != nil {
 		return d, err
 	}
 
@@ -74,11 +74,11 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 			return d, err
 		}
 	} else {
-		vscHeadRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.HeadRepo.URI)
+		vcsHeadRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.HeadRepo.URI)
 		if err != nil {
 			return d, err
 		}
-		id, err = vcsBaseRepo.CrossRepoMergeBase(vcs.CommitID(d.BaseCommit.ID), vscHeadRepo, vcs.CommitID(d.HeadCommit.ID))
+		id, err = vcsBaseRepo.CrossRepoMergeBase(vcs.CommitID(d.BaseCommit.ID), vcsHeadRepo, vcs.CommitID(d.HeadCommit.ID))
 		if err != nil {
 			return d, err
 		}

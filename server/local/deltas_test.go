@@ -3,6 +3,7 @@ package local
 import (
 	"errors"
 	"reflect"
+	"sync"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -24,19 +25,23 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 
 	wantErr := errors.New("foo")
 
+	var calledGetLock sync.Mutex
 	var calledGet int
 	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mock.servers.Builds.MockGetRepoBuild(t, &sourcegraph.Build{})
 	mock.servers.Repos.Get_ = func(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+		calledGetLock.Lock()
 		calledGet++
-		if calledGet == 2 {
+		calledGetLock.Unlock()
+		if repoSpec != nil && repoSpec.URI == "head" {
 			return nil, wantErr
 		}
 		return &sourcegraph.Repo{URI: "x", DefaultBranch: "b"}, nil
 	}
-
-	delta, err := s.Get(ctx, &sourcegraph.DeltaSpec{})
-	if err != wantErr {
+	ds := new(sourcegraph.DeltaSpec)
+	ds.Head.URI = "head"
+	delta, err := s.Get(ctx, ds)
+	if err.Error() != wantErr.Error() {
 		t.Errorf("got error %v, want %v", err, wantErr)
 	}
 	if delta == nil || delta.BaseRepo == nil {
