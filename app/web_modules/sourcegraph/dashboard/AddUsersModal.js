@@ -2,7 +2,6 @@ import React from "react";
 import update from "react/lib/update";
 
 import Component from "sourcegraph/Component";
-import ImportGitHubUsersMenu from "sourcegraph/dashboard/ImportGitHubUsersMenu";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 
@@ -96,11 +95,6 @@ class AddUsersModal extends Component {
 												CREATE
 											</button>
 										</div>
-									</div>
-								}
-								{this.state.allowGitHubUsers &&
-									<div role="tabpanel" className={`tab-pane ${!this.state.allowStandaloneUsers ? "active" : ""}`} id="github-invite">
-										<ImportGitHubUsersMenu />
 									</div>
 								}
 							</div>

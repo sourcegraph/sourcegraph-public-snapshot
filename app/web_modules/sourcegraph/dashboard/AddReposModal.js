@@ -2,7 +2,6 @@ import React from "react";
 import update from "react/lib/update";
 
 import Component from "sourcegraph/Component";
-import ImportGitHubReposMenu from "sourcegraph/dashboard/ImportGitHubReposMenu";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 
@@ -80,11 +79,6 @@ class AddReposWidget extends Component {
 												CREATE
 											</button>
 										</div>
-									</div>
-								}
-								{this.state.allowGitHubMirrors &&
-									<div role="tabpanel" className={`tab-pane ${!this.state.allowStandaloneRepos ? "active" : ""}`} id="github-mirror">
-										<ImportGitHubReposMenu />
 									</div>
 								}
 							</div>
