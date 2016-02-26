@@ -10,6 +10,7 @@ class UserList extends Component {
 		this._canAdd = this._canAdd.bind(this);
 		this._reasonCannotAdd = this._reasonCannotAdd.bind(this);
 		this._handleInviteAllUsers = this._handleInviteAllUsers.bind(this);
+		this._handleInviteUser = this._handleInviteUser.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -38,24 +39,33 @@ class UserList extends Component {
 	}
 
 	_reasonCannotAdd(user) {
+		if (user.hasOwnProperty("LocalAccount")) return `User has joined`;
 		if (user.IsInvited) return `User has been invited`;
 		if (!user.Email) return `User does not have a public Email`;
 	}
 
 	_handleInviteUser(user) {
-
+		let email = [];
+		email.push(user.Email);
+		Dispatcher.dispatch(new DashboardActions.WantInviteUsers(email));
 	}
 
 	_handleInviteAllUsers() {
 		let emails = [];
-		this.state.users.filter(user => user.hasOwnProperty("Email") && !user.IsInvited).map(user => emails.push(user.Email));
-		console.log(emails);
+		this.state.users.filter(user => user.hasOwnProperty("Email") && !user.IsInvited && !user.hasOwnProperty("LocalAccount")).map(user => emails.push(user.Email));
 		if (emails.length > 0) {
 			Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
 
 		} else {
 			console.log("No emails for selected users");
 		}
+	}
+
+	_handleServer(user) {
+		if (this.state.allowStandaloneUsers) {
+			return user;
+		}
+		return user.RemoteAccount;
 	}
 
 	render() {
@@ -80,7 +90,7 @@ class UserList extends Component {
 					<h5>Team</h5>
 					{this.state.allowGitHubUsers && !this.state.onboarding.linkGitHub &&
 						<button className="btn btn-default add-user-btn" data-tooltip="top" title="Invite all teammates"
-							onClick={() => this._handleAddAllUsers()} >
+							onClick={() => this._handleInviteAllUsers()} >
 							<i className="fa fa-users"></i>
 						</button>
 					}
@@ -94,15 +104,12 @@ class UserList extends Component {
 				<div className="users-list panel-body">
 					{this.state.users.length === 0 ? <div className="well empty-well">{emptyStateLabel}</div> : <div className="list-group">
 						{this.state.users.sort(userSort).map((user, i) => (
-							<div className="list-group-item" key={i}>
-								{!this._canAdd(user) &&
-									<span className="disabled-reason"></span>
-								}
-								<img className="avatar-sm" src={user.RemoteAccount.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
-								<span className="user-name">{user.RemoteAccount.Name || user.RemoteAccount.Login}{user.RemoteAccount.IsInvited ? " (pending)" : ""}</span>
+							<div className="list-group-item" key={i} title={this._reasonCannotAdd(user)}>
+								<img className="avatar-sm" src={(this._handleServer(user)).AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
+								<span className="user-name">{(this._handleServer(user)).Name || (this._handleServer(user)).Login}{(this._handleServer(user)).IsInvited ? " (pending)" : ""}</span>
 								{this._canAdd(user) &&
 									<i className="fa fa-plus-square-o add-user-icon"
-										onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddUsersModal())} >
+										onClick={() => this._handleInviteUser(user)} >
 									</i>
 								}
 								{this.state.allowStandaloneUsers &&

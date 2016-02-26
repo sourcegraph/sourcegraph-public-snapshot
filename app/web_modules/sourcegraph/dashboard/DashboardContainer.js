@@ -34,7 +34,11 @@ class DashboardContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getDashboard());
+<<<<<<< ed10249bc302d1122f6601ff74f821f9b75ea99a
 		state.users = (DashboardStore.users || []);//.concat(GitHubUsersStore.users.getAdded());
+=======
+		state.users = (DashboardStore.users || []).concat(GitHubUsersStore.users.getUnique());
+>>>>>>> users passed in from github are now unique, added reposByOrg and usersByOrg
 		state.currentUser = DashboardStore.currentUser;
 		state.onboarding = DashboardStore.onboarding;
 		state.onWaitlist = DashboardStore.onWaitlist;
@@ -45,6 +49,8 @@ class DashboardContainer extends Container {
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
 		state.allowStandaloneUsers = !DashboardStore.isMothership;
 		state.allowGitHubUsers = DashboardStore.allowMirrors;
+		state.usersByOrg = GitHubUsersStore.getByOrg;
+		state.reposByOrg = GitHubReposStore.reposByOrg;
 	}
 
 	_dismissModals(event) {

@@ -26,12 +26,14 @@ export class GitHubReposStore extends Store {
 		// Store the state of which organizations mirrored repos can come from by finding unique orgs
 		if (!(window.mirrorData && window.mirrorData.RemoteRepos)) {
 			this.orgs = {};
+			this.reposByOrg = {};
 		} else {
 			let u = {};
 			this.remoteRepos.repos.forEach(repo => u[repo.Owner.Login] = 1);
 			this.orgs = Object.keys(u);
+			this.reposByOrg = {};
+			this.remoteRepos.repos.map(repo => this.reposByOrg.hasOwnProperty(repo.Owner.Login) ? this.reposByOrg[repo.Owner.Login].push(repo) : this.reposByOrg[repo.Owner.Login] = [].concat.apply(repo || []));
 		}
-
 		this.showLoading = false; // Indicates if a request to the backend to add mirror repos is in progress
 	}
 
