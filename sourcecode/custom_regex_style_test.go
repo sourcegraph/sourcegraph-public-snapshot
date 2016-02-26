@@ -24,7 +24,7 @@ func TestCustomRegexStyle(t *testing.T) {
 	defer uiconf.Flags.DefQualifiedNameBold.UnmarshalFlag("")
 
 	var (
-		in   = template.HTML(`(Change).<wbr><span class="name">URL</span>  html/<wbr>template.<wbr>URL`)
+		in   = template.HTML(`(Change).<wbr/><span class="name">URL</span>  html/<wbr/>template.<wbr/>URL`)
 		want = template.HTML(`(Change).<span class="def-qualified-name-bold">URL</span> html/template.<span class="def-qualified-name-bold">URL</span>`)
 	)
 

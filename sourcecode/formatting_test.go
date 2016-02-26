@@ -14,11 +14,11 @@ func Test_HtmlEscapeStringWithCodeBreaks(t *testing.T) {
 		in  string
 		out string
 	}{{
-		"foo.bar:baz", "foo.<wbr>bar:<wbr>baz",
+		"foo.bar:baz", "foo.<wbr/>bar:<wbr/>baz",
 	}, {
 		"foo", "foo",
 	}, {
-		"foo:bar.baz(=>Int):blah.blah.Whatever[A]", "foo:<wbr>bar.<wbr>baz(=&gt;Int):<wbr>blah.<wbr>blah.<wbr>Whatever[A]",
+		"foo:bar.baz(=>Int):blah.blah.Whatever[A]", "foo:<wbr/>bar.<wbr/>baz(=&gt;Int):<wbr/>blah.<wbr/>blah.<wbr/>Whatever[A]",
 	}, {
 		"foo<bar>", "foo&lt;bar&gt;",
 	}}
