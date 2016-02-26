@@ -184,7 +184,7 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 
 	// If this server has a waitlist in place, check that the user
 	// is off the waitlist.
-	if ghrepo.Private && !authpkg.ActorFromContext(ctx).PrivateMirrors {
+	if ghrepo.Private && !authpkg.ActorFromContext(ctx).PrivateReposAllowed {
 		return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
 	}
 

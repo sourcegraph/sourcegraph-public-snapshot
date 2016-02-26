@@ -1841,9 +1841,9 @@ message AuthInfo {
 	// user (if any).
 	repeated string Scopes = 7;
 
-	// PrivateMirrors is set if the user (if any) has access to the private
-	// mirrors feature on this server.
-	bool PrivateMirrors = 8;
+	// PrivateReposAllowed is set if the user (if any) has access to
+	// the private repo mirrors feature on this server.
+	bool PrivateReposAllowed = 8;
 
 	// MirrorsWaitlist is set if the user (if any) is on the waitlist for
 	// access to private mirrors feature on this server.

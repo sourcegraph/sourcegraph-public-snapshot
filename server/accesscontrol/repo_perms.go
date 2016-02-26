@@ -1,8 +1,6 @@
 package accesscontrol
 
 import (
-	"errors"
-
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/auth"
@@ -34,10 +32,8 @@ func SetWaitlistStatus(ctx context.Context, actor *auth.Actor) {
 		}
 	}
 
-	actor.PrivateMirrors = true
+	actor.PrivateReposAllowed = true
 }
-
-var errNotPrivateRepo = errors.New("not a private repo")
 
 // elevatedActor returns an actor with admin access to the stores.
 //
