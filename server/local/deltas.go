@@ -49,11 +49,19 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 			return hit, nil
 		}
 	}
-	d := &sourcegraph.Delta{
-		Base: ds.Base,
-		Head: ds.Head,
+
+	d, err := s.fillDelta(ctx, &sourcegraph.Delta{Base: ds.Base, Head: ds.Head})
+	if err != nil {
+		return d, err
 	}
 
+	if s.cache != nil {
+		s.cache.Add(ds, d)
+	}
+	return d, nil
+}
+
+func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegraph.Delta, error) {
 	getRepo := func(repoSpec *sourcegraph.RepoSpec, repo **sourcegraph.Repo) error {
 		var err error
 		*repo, err = svc.Repos(ctx).Get(ctx, repoSpec)
@@ -67,12 +75,18 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 	}
 
 	par := parallel.NewRun(4)
-	par.Do(func() error { return getRepo(&d.Base.RepoSpec, &d.BaseRepo) })
-	if d.BaseRepo.URI != d.HeadRepo.URI {
+	if d.BaseRepo == nil {
+		par.Do(func() error { return getRepo(&d.Base.RepoSpec, &d.BaseRepo) })
+	}
+	if d.HeadRepo == nil && d.Base.RepoSpec.URI != d.Head.RepoSpec.URI {
 		par.Do(func() error { return getRepo(&d.Head.RepoSpec, &d.HeadRepo) })
 	}
-	par.Do(func() error { return getCommit(&d.Base, &d.BaseCommit) })
-	par.Do(func() error { return getCommit(&d.Head, &d.HeadCommit) })
+	if d.BaseCommit == nil {
+		par.Do(func() error { return getCommit(&d.Base, &d.BaseCommit) })
+	}
+	if d.HeadCommit == nil {
+		par.Do(func() error { return getCommit(&d.Head, &d.HeadCommit) })
+	}
 	if err := par.Wait(); err != nil {
 		return d, err
 	}
@@ -94,21 +108,18 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 	}
 
 	if d.BaseCommit.ID != id {
-		ds2 := *ds
 		// There is most likely a merge conflict here, so we update the
 		// delta to contain the actual merge base used in this diff A...B
-		ds2.Base.CommitID = string(id)
-		if strings.HasPrefix(ds.Base.CommitID, ds.Base.Rev) {
+		d.Base.CommitID = string(id)
+		if strings.HasPrefix(d.Base.CommitID, d.Base.Rev) {
 			// If the Revision is not a branch, but the commit ID, clear it.
-			ds2.Base.Rev = ""
+			d.Base.Rev = ""
 		}
-		d, err = s.Get(ctx, &ds2)
+		d.BaseCommit = nil
+		d, err = s.fillDelta(ctx, d)
 		if err != nil {
 			return d, err
 		}
-	}
-	if s.cache != nil {
-		s.cache.Add(ds, d)
 	}
 	return d, nil
 }
