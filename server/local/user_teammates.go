@@ -52,6 +52,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		log15.Warn("Could not record user's GitHub orgs", "uid", user.UID, "error", err)
 	}
 
+	numUsers := 0
 	userList := make([]*sourcegraph.RemoteUser, 0)
 	for _, org := range ghOrgs {
 		members, err := ghOrgsStore.ListMembers(githubCtx, sourcegraph.OrgSpec{Org: org.Login}, &sourcegraph.OrgListMembersOptions{
@@ -69,7 +70,8 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 				RemoteAccount: members[i],
 				Organization:  currentOrgLogin,
 			})
-			currentUser := userList[i]
+			currentUser := userList[numUsers]
+			numUsers = numUsers + 1
 
 			wg.Add(1)
 			go func() {
