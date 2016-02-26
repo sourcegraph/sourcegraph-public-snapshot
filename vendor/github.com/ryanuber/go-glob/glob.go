@@ -19,11 +19,6 @@ func Glob(pattern, subj string) bool {
 		return true
 	}
 
-	// Empty subject can only match a glob sequence.
-	if subj == "" {
-		return globSequence(pattern)
-	}
-
 	parts := strings.Split(pattern, GLOB)
 
 	if len(parts) == 1 {
@@ -35,41 +30,22 @@ func Glob(pattern, subj string) bool {
 	trailingGlob := strings.HasSuffix(pattern, GLOB)
 	end := len(parts) - 1
 
-	for i, part := range parts {
-		switch i {
-		case 0:
-			if leadingGlob {
-				continue
-			}
-			if !strings.HasPrefix(subj, part) {
-				return false
-			}
-		case end:
-			if len(subj) > 0 {
-				return trailingGlob || strings.HasSuffix(subj, part)
-			}
-		default:
-			if !strings.Contains(subj, part) {
-				return false
-			}
+	// Check the first section. Requires special handling.
+	if !leadingGlob && !strings.HasPrefix(subj, parts[0]) {
+		return false
+	}
+
+	// Go over the middle parts and ensure they match.
+	for i := 1; i < end; i++ {
+		if !strings.Contains(subj, parts[i]) {
+			return false
 		}
 
 		// Trim evaluated text from subj as we loop over the pattern.
-		idx := strings.Index(subj, part) + len(part)
+		idx := strings.Index(subj, parts[i]) + len(parts[i])
 		subj = subj[idx:]
 	}
 
-	// All parts of the pattern matched
-	return true
-}
-
-// globSequence reports if pattern consits of glob characters only.
-// I.e., it returns true for "", "*", "**", "***", etc., and false for all other patterns.
-func globSequence(pattern string) bool {
-	for i := 0; i < len(pattern); i++ {
-		if pattern[i] != '*' {
-			return false
-		}
-	}
-	return true
+	// Reached the last section. Requires special handling.
+	return trailingGlob || strings.HasSuffix(subj, parts[end])
 }
