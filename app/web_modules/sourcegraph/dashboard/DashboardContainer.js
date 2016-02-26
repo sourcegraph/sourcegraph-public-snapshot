@@ -37,6 +37,7 @@ class DashboardContainer extends Container {
 		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getDashboard());
 		state.users = (DashboardStore.users || []).concat(GitHubUsersStore.users.getAdded());
 		state.onWaitlist = DashboardStore.onWaitlist;
+		state.isMothership = DashboardStore.isMothership;
 		state.showReposModal = ModalStore.showReposModal;
 		state.showUsersModal = ModalStore.showUsersModal;
 		state.allowStandaloneRepos = !DashboardStore.isMothership;
@@ -67,13 +68,15 @@ class DashboardContainer extends Container {
 				<div className="dash-repos col-lg-9 col-md-8">
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Your Repositories</h3>
-						<button className="btn btn-primary add-repo-btn"
-							onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddReposModal())}>
-							<div className="plus-btn">
-								<span className="plus">+</span>
-							</div>
-							<span className="add-repo-label">Add New</span>
-						</button>
+						{!this.state.isMothership &&
+							<button className="btn btn-primary add-repo-btn"
+								onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddReposModal())}>
+								<div className="plus-btn">
+									<span className="plus">+</span>
+								</div>
+								<span className="add-repo-label">Add New</span>
+							</button>
+						}
 					</div>
 					<div>
 						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist} />
