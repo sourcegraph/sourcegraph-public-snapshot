@@ -12,7 +12,7 @@
 	window.onWaitlist = JSON.parse({{json .OnWaitlist}}) || false;
 
 	window.progress = {
-		numSteps: 4,
+		numSteps: 2,
 	};
 	{{if (or (and .PrivateMirrors .CurrentUser) .LinkGitHub)}}
 		{{if .LinkGitHub}}

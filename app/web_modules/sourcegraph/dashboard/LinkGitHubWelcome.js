@@ -34,10 +34,10 @@ class LinkGitHubWelcome extends Component {
 					</div>
 				</div>
 				{doGitHubLink ?
-					<p className="header-text welcome-header">Connect with your GitHub<br />account</p> :
+					<p className="header-text welcome-header">Connect your GitHub<br />account</p> :
 					<p className="header-text welcome-header">Welcome {username.split(" ")[0]}!</p>}
 				{doGitHubLink ?
-					<p className="normal-text">In order to get you started we need to connect with your GitHub account. No worries, we won't change anything within your files.</p> :
+					<p className="normal-text">In order to get you started we need to connect with your GitHub account. We'll determine which repositories you can use on Sourcegraph.</p> :
 					<p className="normal-text">You successfully connected<br />your GitHub account.</p>}
 				<footer>
 					<button className="btn btn-block btn-primary btn-lg"
@@ -45,9 +45,9 @@ class LinkGitHubWelcome extends Component {
 							if (doGitHubLink) {
 								window.location.href = this.state.progress.githubLinkURL;
 							} else {
-								Dispatcher.dispatch(new OnboardingActions.AdvanceProgressStep());
+								Dispatcher.dispatch(new OnboardingActions.AdvanceProgressStep(50));
 							}
-						}}>{doGitHubLink ? "Grant Permission" : "Next"}</button>
+						}}>{doGitHubLink ? "Grant Permission" : "Let's Go!"}</button>
 				</footer>
 			</div>
 		);
