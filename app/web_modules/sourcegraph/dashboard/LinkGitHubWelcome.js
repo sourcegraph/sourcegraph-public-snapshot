@@ -36,8 +36,7 @@ class LinkGitHubWelcome extends Component {
 				{doGitHubLink ?
 					<p className="header-text welcome-header">Connect your GitHub<br />account</p> :
 					<p className="header-text welcome-header">Welcome {username.split(" ")[0]}!</p>}
-				{doGitHubLink ?
-					<p className="normal-text">In order to get you started we need to connect with your GitHub account. We'll determine which repositories you can use on Sourcegraph.</p> :
+				{!doGitHubLink &&
 					<p className="normal-text">You successfully connected<br />your GitHub account.</p>}
 				<footer>
 					<button className="btn btn-block btn-primary btn-lg"
