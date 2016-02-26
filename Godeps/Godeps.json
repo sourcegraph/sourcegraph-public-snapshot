@@ -792,7 +792,7 @@
 		},
 		{
 			"ImportPath": "github.com/ryanuber/go-glob",
-			"Rev": "0067a9abd927e50aed5190662702f81231413ae0"
+			"Rev": "ed71f1a04f8dd98d26e272ec23d5ff2f987d4e0b"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",

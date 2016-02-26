@@ -19,6 +19,11 @@ func Glob(pattern, subj string) bool {
 		return true
 	}
 
+	// Empty subject can only match a glob sequence.
+	if subj == "" {
+		return globSequence(pattern)
+	}
+
 	parts := strings.Split(pattern, GLOB)
 
 	if len(parts) == 1 {
@@ -55,5 +60,16 @@ func Glob(pattern, subj string) bool {
 	}
 
 	// All parts of the pattern matched
+	return true
+}
+
+// globSequence reports if pattern consits of glob characters only.
+// I.e., it returns true for "", "*", "**", "***", etc., and false for all other patterns.
+func globSequence(pattern string) bool {
+	for i := 0; i < len(pattern); i++ {
+		if pattern[i] != '*' {
+			return false
+		}
+	}
 	return true
 }
