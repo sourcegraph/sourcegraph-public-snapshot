@@ -19,6 +19,7 @@ class DashboardRepos extends Component {
 		this._showRepo = this._showRepo.bind(this);
 		this._canMirror = this._canMirror.bind(this);
 		this._disabledReason = this._disabledReason.bind(this);
+		this._repoSort = this._repoSort.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -65,6 +66,20 @@ class DashboardRepos extends Component {
 		return `${repo.Language || ""} coming soon`;
 	}
 
+	_repoTime(repo) {
+		return repo.UpdatedAt || repo.PushedAt || repo.CreatedAt;
+	}
+
+	_repoSort(a, b) {
+		if (this.state.allowGitHubMirrors) {
+			if (!this._canMirror(a) && this._canMirror(b)) return 1;
+			if (this._canMirror(a) && !this._canMirror(b)) return -1;
+		}
+		if (moment(this._repoTime(a)).isBefore(moment(this._repoTime(b)))) return 1;
+		if (moment(this._repoTime(a)).isAfter(moment(this._repoTime(b)))) return -1;
+		return -1;
+	}
+
 	render() {
 		const toggles = [null, "private", "public"].map((filterValue, i) =>
 			<button key={i}
@@ -73,13 +88,6 @@ class DashboardRepos extends Component {
 				<span className="toggle-label">{filterValue ? filterValue : "all"}</span>
 			</button>
 		);
-
-		const repoSort = (a, b) => {
-			if (!this._canMirror(a) && this._canMirror(b)) return 1;
-			if (this._canMirror(a) && !this._canMirror(b)) return -1;
-			if (moment(a.UpdatedAt).isBefore(moment(b.UpdatedAt))) return 1;
-			return -1;
-		};
 
 		const clickHandler = (repo) => {
 			if (repo.ExistsLocally) return _ => window.location.href = `/${repo.URI}`;
@@ -120,7 +128,7 @@ class DashboardRepos extends Component {
 				</nav>
 				<div className="repos">
 					{this.state.repos.length === 0 ? <div className="well">{emptyStateLabel}</div> : <div className="list-group">
-						{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(repoSort).map((repo, i) => (
+						{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(this._repoSort).map((repo, i) => (
 							<div className={repoRowClass(repo)} key={i}
 								onClick={clickHandler(repo)}>
 								<div className="repo-header">
@@ -134,7 +142,7 @@ class DashboardRepos extends Component {
 								</div>
 								<div className="repo-body">
 									<p className="description">{repo.Description}</p>
-									<p className="updated">{`Updated ${moment(repo.UpdatedAt).fromNow()}`}</p>
+									<p className="updated">{`Updated ${moment(this._repoTime(repo)).fromNow()}`}</p>
 								</div>
 							</div>
 						))}
