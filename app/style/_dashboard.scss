@@ -96,21 +96,43 @@
 			}
 		}
 
+		.list-group {
+			max-height: 800px;
+			overflow: auto;
+		}
+
+		.disabled {
+			background-color: $pale-grey;
+		}
+
+		.disabled-reason {
+			font-style: italic;
+			color: $text-disabled;
+			font-size: $font-size-small;
+		}
+
 		h4 {
 			margin-bottom: $padding-base-vertical;
+			color: $text-header;
+			font-size: 20px;
+			font-weight: 400;
+
 			.repo-attr-icon {
-				margin-right: 3px;
+				margin-right: 10px;
+				color: $cloudy-blue;
 			}
 		}
 		p.description {
+			font-weight: 400;
 			font-size: 16px;
-			color: $text-quieted;
+			color: $text-light;
+			margin-bottom: 15px;
 		}
 		p.updated {
+			font-weight: 700;
 			font-size: $font-size-small;
 			color: $text-disabled;
 			text-transform: uppercase;
-			font-size: 12px;
 			letter-spacing: 1px;
 		}
 
@@ -125,6 +147,11 @@
 		.add-user-btn {
 			display: inline-block;
 			float: right;
+		}
+
+		.list-group {
+			max-height: 877px;
+			overflow: auto;
 		}
 
 		.panel-heading {

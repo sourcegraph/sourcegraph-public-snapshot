@@ -27,7 +27,6 @@ const DashboardBackend = {
 			});
 			break;
 		case DashboardActions.WantAddMirrorRepos:
-			console.log("want add mirror repos", action.repos);
 			DashboardBackend.xhr({
 				uri: `/.ui/.repo-mirror`,
 				method: "POST",
@@ -46,6 +45,28 @@ const DashboardBackend = {
 					return;
 				}
 				Dispatcher.dispatch(new DashboardActions.MirrorReposAdded(body));
+			});
+			break;
+		case DashboardActions.WantAddMirrorRepo:
+			console.log("want add mirror repo", action.repo);
+			DashboardBackend.xhr({
+				uri: `/.ui/.repo-mirror`,
+				method: "POST",
+				json: {
+					Repos: [action.repo],
+				},
+			}, function(err, resp, body) {
+				if (err) {
+					// TODO: some proper error handling
+					console.error(err);
+					return;
+				}
+				if (resp.statusCode !== 200) {
+					// TODO: some proper error handling
+					console.log(resp);
+					return;
+				}
+				Dispatcher.dispatch(new DashboardActions.MirrorRepoAdded(action.repo, body));
 			});
 			break;
 		case DashboardActions.WantInviteUser:

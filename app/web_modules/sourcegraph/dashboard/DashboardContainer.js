@@ -34,8 +34,9 @@ class DashboardContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getAll());
+		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getDashboard());
 		state.users = (DashboardStore.users || []).concat(GitHubUsersStore.users.getAdded());
+		state.onWaitlist = DashboardStore.onWaitlist;
 		state.showReposModal = ModalStore.showReposModal;
 		state.showUsersModal = ModalStore.showUsersModal;
 		state.allowStandaloneRepos = !DashboardStore.isMothership;
@@ -75,7 +76,7 @@ class DashboardContainer extends Container {
 						</button>
 					</div>
 					<div>
-						<DashboardRepos repos={this.state.repos} />
+						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist} />
 					</div>
 				</div>
 				<div className="dash-users col-lg-3 col-md-4">

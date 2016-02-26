@@ -1,8 +1,11 @@
 import React from "react";
 import update from "react/lib/update";
+import classNames from "classnames";
 
 import Component from "sourcegraph/Component";
+import Dispatcher from "sourcegraph/Dispatcher";
 import moment from "moment";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 class DashboardRepos extends Component {
 	constructor(props) {
@@ -14,6 +17,8 @@ class DashboardRepos extends Component {
 		this._handleSearch = this._handleSearch.bind(this);
 		this._selectFilter = this._selectFilter.bind(this);
 		this._showRepo = this._showRepo.bind(this);
+		this._canMirror = this._canMirror.bind(this);
+		this._disabledReason = this._disabledReason.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -48,6 +53,18 @@ class DashboardRepos extends Component {
 		return true; // no filter; return all
 	}
 
+	_canMirror(repo) {
+		if (this.state.onWaitlist) {
+			if (repo.Private) return false;
+		}
+		return repo.Language === "Go" || repo.Language === "Java";
+	}
+
+	_disabledReason(repo) {
+		if (this.state.onWaitlist && repo.Private) return "private repositories coming soon";
+		return `${repo.Language || ""} coming soon`;
+	}
+
 	render() {
 		const toggles = [null, "private", "public"].map((filterValue, i) =>
 			<button key={i}
@@ -58,9 +75,27 @@ class DashboardRepos extends Component {
 		);
 
 		const repoSort = (a, b) => {
+			if (!this._canMirror(a) && this._canMirror(b)) return 1;
+			if (this._canMirror(a) && !this._canMirror(b)) return -1;
 			if (moment(a.UpdatedAt).isBefore(moment(b.UpdatedAt))) return 1;
 			return -1;
 		};
+
+		const clickHandler = (repo) => {
+			if (repo.ExistsLocally) return _ => window.location.href = `/${repo.URI}`;
+			if (!this._canMirror(repo)) return _ => null;
+			return _ => {
+				Dispatcher.dispatch(new DashboardActions.WantAddMirrorRepo({
+					URI: repo.URI,
+					Private: Boolean(repo.Private),
+				}));
+			};
+		};
+
+		const repoRowClass = (repo) => classNames("list-group-item", {
+			"hover-pointer": this._canMirror(repo) || repo.ExistsLocally,
+			"disabled": !repo.ExistsLocally && !this._canMirror(repo),
+		});
 
 		return (
 			<div className="repos-list">
@@ -82,11 +117,16 @@ class DashboardRepos extends Component {
 				<div className="repos">
 					<div className="list-group">
 						{this.state.repos.filter(this._showRepo).sort(repoSort).map((repo, i) => (
-							<div className="list-group-item hover-pointer" key={i}
-								onClick={() => window.location.href = `/${repo.URI}`}>
+							<div className={repoRowClass(repo)} key={i}
+								onClick={clickHandler(repo)}>
 								<div className="repo-header">
-
-									<h4><i className="icon-github-private"></i>{repo.URI}</h4>
+									<h4>
+										<i className={`repo-attr-icon icon-${repo.Private ? "private" : "public"}`}></i>
+										{repo.URI}
+									</h4>
+									{!this._canMirror(repo) &&
+										<span className="disabled-reason">{this._disabledReason(repo)}</span>
+									}
 								</div>
 								<div className="repo-body">
 									<p className="description">{repo.Description}</p>
@@ -103,6 +143,7 @@ class DashboardRepos extends Component {
 
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+	onWaitlist: React.PropTypes.bool.isRequired,
 };
 
 export default DashboardRepos;

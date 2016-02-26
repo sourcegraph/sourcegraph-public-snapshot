@@ -31,6 +31,7 @@ $blue-grey: #5c768d;
 $dark-blue-grey: #344a66;
 $shadow-blue: #7794ae;
 $warm-grey: #787878;
+$light-grey: #969896;
 
 // UI
 $cloudy-blue: #bfc2d0;
@@ -48,8 +49,10 @@ $diff-deleted-color: lighten(#c71111, 3%);
 
 /* Components */
 $content-border-color: transparentize($cloudy-blue, 0.56);
+$text-header: $jet-black;
 $text-strong-color: $blue-grey;
 $text-quieted: $shadow-blue;
+$text-light: $light-grey;
 $text-disabled: $cloudy-blue;
 
 $nav-background-color: $pale-grey;

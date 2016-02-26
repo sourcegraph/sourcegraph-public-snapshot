@@ -18,12 +18,8 @@ export class GitHubReposStore extends Store {
 			getMirrored() {
 				return this.repos.filter(repo => repo.ExistsLocally).map(repo => repo.Repo);
 			},
-			getAll() {
-				// TODO(rothfels): this is gross and should be cleaned up...but is necessary to show mirrored repos on the dashboard.
-				// We should probably build the map from org => repo in this store and just have the server return a flat list.
-				let allRepos = (Object.values(this.repos) || []).map(orgRepos => (orgRepos.PublicRepos || []).concat(orgRepos.PrivateRepos || []));
-				allRepos = [].concat.apply([], allRepos);
-				return allRepos.map(repo => repo.Repo);
+			getDashboard() {
+				return this.repos.map(repo => update(repo.Repo, {$merge: {ExistsLocally: repo.ExistsLocally}}));
 			},
 		});
 
@@ -52,6 +48,8 @@ export class GitHubReposStore extends Store {
 			break;
 
 		case DashboardActions.MirrorReposAdded:
+		case DashboardActions.MirrorRepoAdded:
+			console.log("got a response!");
 			this.remoteRepos = update(this.remoteRepos, {
 				repos: {$set: action.mirrorData ? action.mirrorData.RemoteRepos : {}},
 			});

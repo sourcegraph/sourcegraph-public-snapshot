@@ -24,6 +24,19 @@ export class MirrorReposAdded {
 	}
 }
 
+export class WantAddMirrorRepo {
+	constructor(repo) {
+		this.repo = repo;
+	}
+}
+
+export class MirrorRepoAdded {
+	constructor(repo, mirrorData) {
+		this.repo = repo;
+		this.mirrorData = mirrorData;
+	}
+}
+
 export class WantInviteUser {
 	constructor(email, permission) {
 		this.email = email;
