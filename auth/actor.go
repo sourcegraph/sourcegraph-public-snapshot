@@ -33,10 +33,6 @@ type Actor struct {
 	// PrivateReposAllowed is true if the actor corresponds to a user
 	// that has access to the private repos (and mirrors) feature.
 	PrivateReposAllowed bool `json:",omitempty"`
-
-	// MirrorsWaitlist is true if the actor corresponds to a user that
-	// is on the waitlist for access to the private mirrors feature.
-	MirrorsWaitlist bool `json:",omitempty"`
 }
 
 func (a Actor) String() string {

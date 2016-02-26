@@ -2165,9 +2165,6 @@ type AuthInfo struct {
 	// PrivateReposAllowed is set if the user (if any) has access to
 	// the private repo mirrors feature on this server.
 	PrivateReposAllowed bool `protobuf:"varint,8,opt,name=PrivateReposAllowed,proto3" json:"PrivateReposAllowed,omitempty"`
-	// MirrorsWaitlist is set if the user (if any) is on the waitlist for
-	// access to private mirrors feature on this server.
-	MirrorsWaitlist bool `protobuf:"varint,9,opt,name=MirrorsWaitlist,proto3" json:"MirrorsWaitlist,omitempty"`
 }
 
 func (m *AuthInfo) Reset()         { *m = AuthInfo{} }
@@ -11243,16 +11240,6 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 		}
 		i++
 	}
-	if m.MirrorsWaitlist {
-		data[i] = 0x48
-		i++
-		if m.MirrorsWaitlist {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
 	return i, nil
 }
 
@@ -15891,9 +15878,6 @@ func (m *AuthInfo) Size() (n int) {
 		}
 	}
 	if m.PrivateReposAllowed {
-		n += 2
-	}
-	if m.MirrorsWaitlist {
 		n += 2
 	}
 	return n
@@ -31769,26 +31753,6 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 				}
 			}
 			m.PrivateReposAllowed = bool(v != 0)
-		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MirrorsWaitlist", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.MirrorsWaitlist = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

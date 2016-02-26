@@ -1844,10 +1844,6 @@ message AuthInfo {
 	// PrivateReposAllowed is set if the user (if any) has access to
 	// the private repo mirrors feature on this server.
 	bool PrivateReposAllowed = 8;
-
-	// MirrorsWaitlist is set if the user (if any) is on the waitlist for
-	// access to private mirrors feature on this server.
-	bool MirrorsWaitlist = 9;
 }
 
 // ExternalTokenRequest specifies a request for a stored auth token

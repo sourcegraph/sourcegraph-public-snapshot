@@ -8,9 +8,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// SetWaitlistStatus checks if the PrivateMirrors feature is enabled
-// and the actor corresponds to a logged-in user, and sets the
-// appropriate waitlist state for the actor.
+// SetWaitlistStatus stores whether the PrivateReposAllowed feature is
+// enabled for the actor.
 func SetWaitlistStatus(ctx context.Context, actor *auth.Actor) {
 	if !authutil.ActiveFlags.PrivateMirrors || actor == nil || actor.UID == 0 {
 		return
@@ -26,8 +25,7 @@ func SetWaitlistStatus(ctx context.Context, actor *auth.Actor) {
 		}
 
 		if waitlistedUser.GrantedAt == nil {
-			// User is on the waitlist.
-			actor.MirrorsWaitlist = true
+			// User is on the waitlist. Don't set PrivateReposAllowed.
 			return
 		}
 	}
