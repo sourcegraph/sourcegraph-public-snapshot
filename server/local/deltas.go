@@ -54,23 +54,23 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 		Head: ds.Head,
 	}
 
-	get := func(repo **sourcegraph.Repo, repoRevSpec *sourcegraph.RepoRevSpec, commit **vcs.Commit) error {
+	getRepo := func(repoSpec *sourcegraph.RepoSpec, repo **sourcegraph.Repo) error {
 		var err error
-		*repo, err = svc.Repos(ctx).Get(ctx, &repoRevSpec.RepoSpec)
-		if err != nil {
-			return err
-		}
+		*repo, err = svc.Repos(ctx).Get(ctx, repoSpec)
+		return err
+	}
+	getCommit := func(repoRevSpec *sourcegraph.RepoRevSpec, commit **vcs.Commit) error {
+		var err error
 		*commit, err = svc.Repos(ctx).GetCommit(ctx, repoRevSpec)
-		if err != nil {
-			return err
-		}
 		repoRevSpec.CommitID = string((*commit).ID)
-		return nil
+		return err
 	}
 
-	par := parallel.NewRun(2)
-	par.Do(func() error { return get(&d.BaseRepo, &d.Base, &d.BaseCommit) })
-	par.Do(func() error { return get(&d.HeadRepo, &d.Head, &d.HeadCommit) })
+	par := parallel.NewRun(4)
+	par.Do(func() error { return getRepo(&d.Base.RepoSpec, &d.BaseRepo) })
+	par.Do(func() error { return getCommit(&d.Base, &d.BaseCommit) })
+	par.Do(func() error { return getRepo(&d.Head.RepoSpec, &d.HeadRepo) })
+	par.Do(func() error { return getCommit(&d.Head, &d.HeadCommit) })
 	if err := par.Wait(); err != nil {
 		return d, err
 	}
