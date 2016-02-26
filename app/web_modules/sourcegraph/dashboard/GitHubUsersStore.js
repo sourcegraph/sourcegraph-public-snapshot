@@ -11,7 +11,7 @@ export class GitHubUsersStore extends Store {
 		super(dispatcher);
 		// The users which are available to invite.
 		this.users = deepFreeze({
-			users: window.teammates ? (window.teammates.Users || {}) : {},
+			users: window.teammates ? (window.teammates.Users || {}) : [],
 			// TODO: make it easier to get a single user.
 			get(login) {
 				let allUsers = Object.keys(this.users).reduce(
@@ -31,6 +31,7 @@ export class GitHubUsersStore extends Store {
 				// We should probably build the map from org => user in this store and just have the server return a flat list.
 				// let allUsers = (Object.values(this.users) || []).map(orgUsers => orgUsers.Users);
 				// allUsers = [].concat.apply([], allUsers);
+				console.log(this.users);
 				let allUsers = this.users
 					.filter(user => user.LocalAccount || user.IsInvited)
 					.map(user => {
