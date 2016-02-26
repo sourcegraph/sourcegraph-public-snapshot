@@ -85,7 +85,7 @@
 															"className": "doc",
 															"children": [
 																{
-																	"type": "span",
+																	"type": "div",
 																	"props": {
 																		"dangerouslySetInnerHTML": "someDoc"
 																	}

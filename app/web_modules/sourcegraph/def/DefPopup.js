@@ -34,7 +34,7 @@ class DefPopup extends Component {
 									<h1 className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 								</div>
 								<section className="doc">
-									{def.Found ? <span dangerouslySetInnerHTML={def.Data.DocHTML} /> : <span>Definition of <span dangerouslySetInnerHTML={def.QualifiedName} /> is not available.</span>}
+									{def.Found ? <div dangerouslySetInnerHTML={def.Data.DocHTML} /> : <div>Definition of <div dangerouslySetInnerHTML={def.QualifiedName} /> is not available.</div>}
 								</section>
 							</section>
 

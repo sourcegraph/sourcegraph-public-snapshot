@@ -65,23 +65,18 @@
 														"props": {
 															"className": "doc",
 															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			"Definition of ",
-																			{
-																				"type": "span",
-																				"props": {
-																					"dangerouslySetInnerHTML": {
-																						"__html": "someName"
-																					}
-																				}
-																			},
-																			" is not available."
-																		]
-																	}
-																}
+																[
+																	"Definition of ",
+																	{
+																		"type": "div",
+																		"props": {
+																			"dangerouslySetInnerHTML": {
+																				"__html": "someName"
+																			}
+																		}
+																	},
+																	" is not available."
+																]
 															]
 														}
 													}
