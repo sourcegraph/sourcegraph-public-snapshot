@@ -112,7 +112,9 @@ class DashboardContainer extends Container {
 					</div>
 				</div>
 				<div className="dash-users col-lg-3 col-md-4">
-					<DashboardUsers users={this.state.users} allowStandaloneUsers={this.state.allowStandaloneUsers} />
+					<DashboardUsers users={this.state.users}
+						allowStandaloneUsers={this.state.allowStandaloneUsers}
+						isMothership={this.state.isMothership} />
 				</div>
 			</div>
 		);
