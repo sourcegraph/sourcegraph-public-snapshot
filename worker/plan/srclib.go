@@ -79,7 +79,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Go (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-go@sha256:edefde4cda16855479359a10f91e04dece67f8fec89bbc574e8ff281c62f60eb",
+				Image: "srclib/drone-srclib-go@sha256:8956f82d878b12212189e28ac09b94114734a869afb44ee95504e2c4264e62f5",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
