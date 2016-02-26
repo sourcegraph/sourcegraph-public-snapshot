@@ -3,6 +3,57 @@
 		margin-top: 55px;
 	}
 
+	.link-github-alert {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+
+		.link-github-label {
+			flex: 6;
+			margin-right: 30px;
+		}
+
+		.link-github-button {
+			flex: 2;
+			text-transform: uppercase;
+		}
+
+		.avatar-container {
+			position: relative;
+			width: 40px;
+			height: 40px;
+			display: inline-block;
+			margin-right: 20px;
+		}
+
+		.avatar-github {
+			opacity: 0.5;
+			background-color: $brand-success;
+		}
+
+		.github-link-success-icon {
+			width: 24px;
+			height: 24px;
+			background-color: #78e198;
+			border: solid 4px $white;
+			position: absolute;
+			bottom: -7px;
+			right: -10px;
+			border-radius: 50%;
+
+			.check-icon {
+				color: #37a358;
+				position: absolute;
+				bottom: 0px;
+				left: 3px;
+
+				i {
+					font-size: 10px;
+				}
+			}
+		}
+	}
+
 	.dash-repos {
 		border: none;
 

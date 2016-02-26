@@ -13,6 +13,8 @@ export class DashboardStore extends Store {
 		super(dispatcher);
 		this.repos = deepFreeze(window.repos);
 		this.users = deepFreeze(window.users);
+		this.currentUser = deepFreeze(window.currentUser);
+		this.onboarding = deepFreeze(window.onboarding);
 		this.isMothership = deepFreeze(window.isMothership);
 		this.onWaitlist = deepFreeze(window.onWaitlist);
 		this.allowMirrors = Boolean(window.allowMirrors);
@@ -26,7 +28,6 @@ export class DashboardStore extends Store {
 			break;
 
 		case DashboardActions.MirrorRepoAdded:
-			console.log("and in dashboard!!!!!!!", action.repo);
 			window.location.href = `/${action.repo.URI}`;
 			break;
 
