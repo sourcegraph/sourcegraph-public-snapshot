@@ -6,16 +6,11 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class OnboardingStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
-		this.showReposModal = false;
 		this.showUsersModal = false;
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-
-		case DashboardActions.DismissReposModal:
-			this.showReposModal = false;
-			break;
 
 		case DashboardActions.DismissUsersModal:
 			this.showUsersModal = false;
@@ -23,14 +18,6 @@ export class OnboardingStore extends Store {
 
 		case DashboardActions.OpenAddUsersModal:
 			this.showUsersModal = true;
-			break;
-
-		case DashboardActions.OpenAddReposModal:
-			this.showReposModal = true;
-			break;
-
-		case DashboardActions.MirrorReposAdded:
-			this.showReposModal = false;
 			break;
 
 		default:

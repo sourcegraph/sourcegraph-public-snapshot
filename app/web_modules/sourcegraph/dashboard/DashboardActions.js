@@ -67,17 +67,7 @@ export class DismissUsersModal {
 	}
 }
 
-export class DismissReposModal {
-	constructor() {
-	}
-}
-
 export class OpenAddUsersModal {
-	constructor() {
-	}
-}
-
-export class OpenAddReposModal {
 	constructor() {
 	}
 }

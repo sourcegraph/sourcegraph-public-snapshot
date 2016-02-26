@@ -108,12 +108,24 @@ $font-assets-path: "/.assets/font";
 	-moz-osx-font-smoothing: grayscale;
 }
 
-.icon-github-private:before {
-	content: "\61";
-}
 .icon-private:before {
 	content: "\62";
 }
 .icon-public:before {
 	content: "\63";
+}
+.icon-ic-plus-box:before {
+	content: "\65";
+}
+.icon-ic-code:before {
+	content: "\61";
+}
+.icon-ic-docs:before {
+	content: "\64";
+}
+.icon-ic-changes:before {
+	content: "\66";
+}
+.icon-ic-builds:before {
+	content: "\67";
 }

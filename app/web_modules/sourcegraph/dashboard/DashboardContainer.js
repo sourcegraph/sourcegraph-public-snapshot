@@ -10,7 +10,6 @@ import ModalStore from "sourcegraph/dashboard/ModalStore";
 
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
-import AddReposModal from "sourcegraph/dashboard/AddReposModal";
 import AddUsersModal from "sourcegraph/dashboard/AddUsersModal";
 
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -19,6 +18,11 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 class DashboardContainer extends Container {
 	constructor(props) {
 		super(props);
+		this.state = {
+			repoName: "", // for the repo create input
+		};
+		this._handleRepoTextInput = this._handleRepoTextInput.bind(this);
+		this._handleCreateRepo = this._handleCreateRepo.bind(this);
 		this._dismissModals = this._dismissModals.bind(this);
 		this._dismissWelcome = this._dismissWelcome.bind(this);
 	}
@@ -46,7 +50,6 @@ class DashboardContainer extends Container {
 		state.onboarding = DashboardStore.onboarding;
 		state.onWaitlist = DashboardStore.onWaitlist;
 		state.isMothership = DashboardStore.isMothership;
-		state.showReposModal = ModalStore.showReposModal;
 		state.showUsersModal = ModalStore.showUsersModal;
 		state.allowStandaloneRepos = !DashboardStore.isMothership;
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
@@ -54,6 +57,17 @@ class DashboardContainer extends Container {
 		state.allowGitHubUsers = DashboardStore.allowMirrors;
 		state.usersByOrg = GitHubUsersStore.getByOrg;
 		state.reposByOrg = GitHubReposStore.reposByOrg;
+	}
+
+	_handleRepoTextInput(e) {
+		this.setState(update(this.state, {
+			repoName: {$set: e.target.value},
+		}));
+	}
+
+	_handleCreateRepo() {
+		Dispatcher.dispatch(new DashboardActions.WantCreateRepo(this.state.repoName));
+		this.setState({showCreateRepoWell: false});
 	}
 
 	_dismissModals(event) {
@@ -80,9 +94,6 @@ class DashboardContainer extends Container {
 
 		return (
 			<div className="dashboard-container row">
-				{this.state.showReposModal ? <AddReposModal
-					allowStandaloneRepos={this.state.allowStandaloneRepos}
-					allowGitHubMirrors={this.state.allowGitHubMirrors} /> : null}
 				{this.state.showUsersModal ? <AddUsersModal
 					allowStandaloneUsers={this.state.allowStandaloneUsers}
 					allowGitHubUsers={this.state.allowGitHubUsers} /> : null}
@@ -109,17 +120,29 @@ class DashboardContainer extends Container {
 						</div>
 					}
 					<div className="dash-repos-header">
-						<h3 className="your-repos">Your Repositories</h3>
+						<h3 className="your-repos">Your repositories</h3>
 						{!this.state.allowGitHubMirrors && (this.state.currentUser.Admin || this.state.currentUser.Write) &&
 							<button className="btn btn-primary add-repo-btn"
-								onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddReposModal())}>
-								<div className="plus-btn">
-									<span className="plus">+</span>
-								</div>
-								<span className="add-repo-label">Add New</span>
+								onClick={_ => this.setState({showCreateRepoWell: !this.state.showCreateRepoWell})}>
+								<i className="icon-ic-plus-box" />
+								<span className="add-repo-label">ADD NEW</span>
 							</button>
 						}
 					</div>
+					{this.state.showCreateRepoWell && <div className="well add-repo-well">
+						<div className="form-inline">
+							<div className="form-group">
+								<input className="form-control create-repo-input"
+									placeholder="Repository name"
+									type="text"
+									value={this.state.repoName}
+									onKeyPress={(e) => { if ((e.keyCode || e.which) === 13) this._handleCreateRepo(); }}
+									onChange={this._handleRepoTextInput} />
+							</div>
+							<button className="btn btn-primary create-repo-btn"
+								onClick={this._handleCreateRepo}>CREATE</button>
+						</div>
+					</div>}
 					<div>
 						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist} allowGitHubMirrors={this.state.allowGitHubMirrors} />
 					</div>

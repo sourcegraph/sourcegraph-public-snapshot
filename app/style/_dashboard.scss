@@ -1,4 +1,11 @@
 .dashboard {
+
+	.btn {
+		text-transform: uppercase;
+		font-weight: 500;
+		letter-spacing: 1px;
+	}
+
 	.dashboard-container {
 		margin-top: 55px;
 	}
@@ -89,14 +96,25 @@
 				margin-right: 10px;
 			}
 
-			.plus {
-				display: inline-block;
-				color: $btn-primary-bg;
+			.icon-ic-plus-box {
+				margin-right: 10px;
 			}
 
 			.add-repo-label {
 				display: inline-block;
 			}
+		}
+
+		.add-repo-well {
+			margin-top: 10px;
+		}
+
+		.create-repo-input {
+			min-width: 300px;
+		}
+
+		.create-repo-btn {
+			margin-left: 15px;
 		}
 
 		.repos-list nav {
