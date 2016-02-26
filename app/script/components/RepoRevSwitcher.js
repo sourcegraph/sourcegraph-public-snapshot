@@ -157,11 +157,11 @@ var RepoRevSwitcher = React.createClass({
 				<button type="button" className="button btn btn-default dropdown-toggle" data-toggle="dropdown" onClick={this._onToggleDropdown}>
 					<i className="octicon octicon-git-branch"></i> {this.props.label ? <span className="label">{this.props.label}</span> : null} {abbrevRev(this.props.rev)} <span className="caret"></span>
 				</button>
-				<ul className={this.props.alignRight ? "dropdown-menu dropdown-menu-right" : "dropdown-menu"} role="menu">
-					<li className="search-section">
+				<div className={this.props.alignRight ? "dropdown-menu dropdown-menu-right" : "dropdown-menu"} role="menu">
+					<div className="search-section">
 						<input ref="itemSearch" type="text" className="form-control" placeholder="Find branch or tag" onChange={this._onUpdateSearchPattern}/>
-					</li>
-					<li role="presentation" className="divider"></li>
+					</div>
+					<div role="presentation" className="divider"></div>
 					<ul className="list-section">
 						<li role="presentation" className="dropdown-header">Branches</li>
 						{branches}
@@ -169,7 +169,7 @@ var RepoRevSwitcher = React.createClass({
 						<li role="presentation" className="dropdown-header">Tags</li>
 						{tags}
 					</ul>
-				</ul>
+				</div>
 			</div>
 		);
 	},
