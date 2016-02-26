@@ -59,7 +59,7 @@ class UserList extends Component {
 	}
 
 	render() {
-		const emptyStateLabel = this.state.allowGitHubUsers ? "Link your GitHub account to invite teammates" : "No teammates";
+		const emptyStateLabel = this.state.allowGitHubUsers ? "Link your GitHub account to add teammates." : "No teammates.";
 
 		const userSort = (a, b) => {
 			if (a.hasOwnProperty("LocalAccount")) {
@@ -78,11 +78,13 @@ class UserList extends Component {
 			<div className="panel panel-default">
 				<div className="panel-heading">
 					<h5>Team</h5>
-					<button className="btn btn-primary add-user-btn" data-tooltip="top" title="Invite All Teammates"
-						onClick={() => this._handleAddAllUsers()} >
-						<i className="fa fa-users"></i>
-					</button>
-					{!this.state.isMothership &&
+					{this.state.allowGitHubUsers && !this.state.onboarding.linkGitHub &&
+						<button className="btn btn-default add-user-btn" data-tooltip="top" title="Invite all teammates"
+							onClick={() => this._handleAddAllUsers()} >
+							<i className="fa fa-users"></i>
+						</button>
+					}
+					{!this.state.allowGitHubUsers &&
 						<button className="btn btn-primary add-user-btn"
 							onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddUsersModal())} >
 							<i className="fa fa-user-plus"></i>
@@ -90,7 +92,7 @@ class UserList extends Component {
 					}
 				</div>
 				<div className="users-list panel-body">
-					{this.state.users.length === 0 ? <div className="well">{emptyStateLabel}</div> : <div className="list-group">
+					{this.state.users.length === 0 ? <div className="well empty-well">{emptyStateLabel}</div> : <div className="list-group">
 						{this.state.users.sort(userSort).map((user, i) => (
 							<div className="list-group-item" key={i}>
 								{!this._canAdd(user) &&
@@ -99,10 +101,9 @@ class UserList extends Component {
 								<img className="avatar-sm" src={user.RemoteAccount.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
 								<span className="user-name">{user.RemoteAccount.Name || user.RemoteAccount.Login}{user.RemoteAccount.IsInvited ? " (pending)" : ""}</span>
 								{this._canAdd(user) &&
-								<button className="btn btn-default"
-									onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddUsersModal())} >
-									<i className="fa fa-plus-square-o"></i>
-								</button>
+									<i className="fa fa-plus-square-o add-user-icon"
+										onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddUsersModal())} >
+									</i>
 								}
 								{this.state.allowStandaloneUsers &&
 									<a className="user-permissions">{this._getUserPermissionString(user)}</a>
@@ -118,6 +119,7 @@ class UserList extends Component {
 
 UserList.propTypes = {
 	users: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+	onboarding: React.PropTypes.object.isRequired,
 	allowStandaloneUsers: React.PropTypes.bool.isRequired,
 	isMothership: React.PropTypes.bool.isRequired,
 	allowGitHubUsers: React.PropTypes.bool.isRequired,

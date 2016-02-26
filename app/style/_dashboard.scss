@@ -190,6 +190,10 @@
 	.dash-users {
 		text-align: center;
 
+		.empty-well {
+			margin-top: 20px;
+		}
+
 		.add-user-btn {
 			display: inline-block;
 			float: right;
@@ -231,6 +235,12 @@
 
 				.avatar-sm {
 					flex: 1
+				}
+
+				.add-user-icon {
+					cursor: pointer;
+					font-size: 20px;
+					opacity: .8;
 				}
 
 				.user-name {
