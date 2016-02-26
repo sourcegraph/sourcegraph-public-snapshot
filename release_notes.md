@@ -16,18 +16,18 @@
 
 - Changesets now supports a `.srcignore` file which will suppress the diffs of
   specific files (e.g. auto-generated ones) for less noisy and easier reviews.
-  See [the docs](https://src.sourcegraph.com/sourcegraph/.docs/features/ignoring_generated_files) for more info.
+  See [the docs](https://src.sourcegraph.com/sourcegraph/.docs/features/ignoring_generated_files/) for more info.
 - Modified the schema for the `ext_auth_tokens` db table. Postgres backed Sourcegraph instances must
   update their database by running the migration commands in `dbutil2/MIGRATE.md` under `2016 Feb 12`.
 - Added the config option `--private-mirrors`/`PrivateMirrors` to enable the feature for mirroring
   private GitHub repos on the Sourcegraph server by linking your GitHub account to Sourcegraph via
   OAuth2. This feature is only implemented for pgsql-backed Sourcegraph servers. Detailed instructions
-  for setting this up on local Sourcegraph servers are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub)
+  for setting this up on local Sourcegraph servers are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub/)
 - Removed the feature for mirroring private repos via a GitHub personal access token. Users who
   mirrored private repos on their Sourcegraph server using this feature must switch to using the
   `--private-mirrors` feature. All users on the Sourcegraph server will need to link their GitHub
   account to Sourcegraph in order to view private repository data on Sourcegraph. Detailed migration
-  steps are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub)
+  steps are available here: [GitHub Integration](https://src.sourcegraph.com/sourcegraph/.docs/integrations/GitHub/)
 - Added the config option `--mirrors-waitlist=[none|open]`/`MirrorsWaitlist`, which enables restricting
   access to the PrivateMirrors feature via a waitlist. The default is no waitlist (`none`).
 - Removed support for storing most types of data (users, changesets,
@@ -35,14 +35,14 @@
   on the filesystem, but all other data now must be stored in
   PostgreSQL. See docs/config/storage.md for PostgreSQL configuration
   instructions.
-  
+
   To migrate from FS storage to PostgreSQL, first run `src pgsql
   create` (with the `PG*` environment variables set for connecting to
   the desired PostgreSQL server). Then run `src internal-store-migrate
   --sgpath $SGPATH -x` on the server, with `$SGPATH` being the
   `$SGPATH` used by the server and with the `PG*` environment
   variables set.
-  
+
   Users (including emails and password hashes), repositories,
   changesets, and tracker threads will be migrated. Outstanding user
   invitations and user SSH keys will not be migrated and must be
@@ -103,7 +103,7 @@ is not (yet) listening.
   context) in Changesets has been fixed.
 - Users may now commit a `.sourcegraph-merge-template` file to their repository
   root which will be used to generate the merge commit message when merging a
-  changeset via the web UI or src CLI. See [the docs](https://src.sourcegraph.com/sourcegraph/.docs/features/custom_merge_template)
+  changeset via the web UI or src CLI. See [the docs](https://src.sourcegraph.com/sourcegraph/.docs/features/custom_merge_template/)
   for more info.
 - Merging a changeset via the web UI or CLI with the squash option on a
   Sourcegraph-hosted or GitHub mirror repository will now correctly mark the
