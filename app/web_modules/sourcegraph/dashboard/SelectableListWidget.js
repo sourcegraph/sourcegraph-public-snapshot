@@ -17,10 +17,12 @@ class SelectableListWidget extends Component {
 	}
 
 	_getSelections() {
-		return this.state.items.filter(item => this.state.selections[item.key]);
+		console.log(this.state.allItems);
+		return this.state.allItems.filter(item => this.state.selections[item.key]);
 	}
 
 	_getCategoryNumbers(selected) {
+		console.log(this.state.menuCategories);
 		let categoryNumbers = {};
 		for (let cat of this.state.menuCategories) {
 			categoryNumbers[categoryNumbers[cat]] = 0;

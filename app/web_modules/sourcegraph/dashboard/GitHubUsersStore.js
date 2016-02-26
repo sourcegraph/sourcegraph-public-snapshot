@@ -11,7 +11,7 @@ export class GitHubUsersStore extends Store {
 		super(dispatcher);
 		// The users which are available to invite.
 		this.users = deepFreeze({
-			users: window.teammates ? (window.teammates.UsersByOrg || {}) : {},
+			users: window.teammates ? (window.teammates.Users || {}) : {},
 			// TODO: make it easier to get a single user.
 			get(login) {
 				let allUsers = Object.keys(this.users).reduce(
@@ -29,9 +29,9 @@ export class GitHubUsersStore extends Store {
 			getAdded() {
 				// TODO(rothfels): this is gross and should be cleaned up...but is necessary to show mirrored repos on the dashboard.
 				// We should probably build the map from org => user in this store and just have the server return a flat list.
-				let allUsers = (Object.values(this.users) || []).map(orgUsers => orgUsers.Users);
-				allUsers = [].concat.apply([], allUsers);
-				allUsers = allUsers
+				// let allUsers = (Object.values(this.users) || []).map(orgUsers => orgUsers.Users);
+				// allUsers = [].concat.apply([], allUsers);
+				let allUsers = this.users
 					.filter(user => user.LocalAccount || user.IsInvited)
 					.map(user => {
 						if (user.LocalAccount) return user.LocalAccount;
@@ -48,7 +48,6 @@ export class GitHubUsersStore extends Store {
 						userMap[user.UID] = user;
 					}
 				});
-
 				// Show invited users last.
 				return Object.values(userMap).sort((a, b) => {
 					if (a.IsInvited && !b.IsInvited) return 1;
@@ -60,8 +59,16 @@ export class GitHubUsersStore extends Store {
 
 		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.
-		this.orgs = window.teammates ? Object.keys(window.teammates.UsersByOrg || {}) : {};
+		if (!window.teammates) {
+			this.orgs = {};
+			this.getByOrg = {};
+		} else {
+			this.orgs = window.teammates.Organizations;
+			this.getByOrg = {};
+			// this.users.users.map(user => this.getByOrg[user.Organization] = [].concat.apply(this.getByOrg[user.Organization], user));
+		}
 		this.showLoading = false; // Indicates if a request to the backend to invite users is in progress
+
 	}
 
 	__onDispatch(action) {

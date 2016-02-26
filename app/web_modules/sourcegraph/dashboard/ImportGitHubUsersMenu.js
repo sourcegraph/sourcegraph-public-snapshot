@@ -39,6 +39,7 @@ class ImportGitHubUsersMenu extends Container {
 				reason: this._unselectableReason(user),
 			}));
 		state.showLoading = GitHubUsersStore.showLoading;
+		state.allItems = GitHubUsersStore.users.users;
 	}
 
 	_canSelect(user) {
@@ -94,6 +95,7 @@ class ImportGitHubUsersMenu extends Container {
 		return (
 			<SelectableListWidget items={this.state.items}
 				unselectableItems={this.state.unselectableItems}
+				allItems={this.state.allItems}
 				currentCategory={this.state.currentOrg}
 				menuCategories={this.state.orgs}
 				onMenuClick={(org) => this.setState({currentOrg: org, selectAll: false})}

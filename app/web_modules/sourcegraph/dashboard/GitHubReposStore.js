@@ -28,14 +28,8 @@ export class GitHubReposStore extends Store {
 			this.orgs = {};
 		} else {
 			let u = {};
-			let a = [];
-			for (let repo of this.remoteRepos.repos) {
-				if (!u.hasOwnProperty(repo.Owner.Login)) {
-					u[repo.Owner.Login] = 1;
-					a.push(repo.Owner.Login);
-				}
-			}
-			this.orgs = a;
+			this.remoteRepos.repos.forEach(repo => u[repo.Owner.Login] = 1);
+			this.orgs = Object.keys(u);
 		}
 
 		this.showLoading = false; // Indicates if a request to the backend to add mirror repos is in progress

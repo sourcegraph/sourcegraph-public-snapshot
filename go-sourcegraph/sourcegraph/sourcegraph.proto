@@ -1512,19 +1512,19 @@ message RemoteUser {
 
 	// IsInvited specifies if a pending invite exists for the user's email (if present).
 	bool IsInvited = 4;
-}
 
-// RemoteUserList is a list of remote user accounts.
-message RemoteUserList {
-	// Users is a list of remote user accounts.
-	repeated RemoteUser Users = 1;
+	// Organization specifies which organization this user is part of
+	string Organization = 5;
 }
 
 // Teammates lists all members of all GitHub organizations that a user is
 // part of. A teammate may or may not have a linked Sourcegraph account.
 message Teammates {
-	// UsersByOrg is a map of GitHub org name to users of that org.
-	map<string, RemoteUserList> UsersByOrg = 1;
+	// Users is a list of all github users that are on a organization with the user
+	repeated RemoteUser Users = 1;
+
+	// Organizations is a list of organizations the user is a part of
+	repeated string Organizations = 2;
 }
 
 message TaskSpec {
