@@ -7,7 +7,7 @@
 	{{if .Build.Tag}}
 		<a class="tag" href="{{urlToRepoCommit .Build.Repo .Build.Tag}}">{{.Build.Tag}}</a>
 	{{end}}
-	<a href="{{urlToRepoCommit .Build.Repo .Build.CommitID}}"><tt>{{truncateCommitID .Build.CommitID}}</tt></a>
+	<a href="{{urlToRepoCommit .Build.Repo .Build.CommitID}}"><code>{{truncateCommitID .Build.CommitID}}</code></a>
 	{{with .Commit}}
 		<span class="commit-message">{{.Message|truncate 60}}</span>
 	{{end}}

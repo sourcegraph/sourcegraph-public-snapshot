@@ -29,7 +29,7 @@ class Commit extends Component {
 						<span className="date">authored <TimeAgo time={this.state.commit.Author.Date} /></span>
 						{this.state.commit.Committer ? <span className="date">, committed <TimeAgo time={this.state.commit.Committer.Date} /></span> : null}
 						<a href={`/${this.state.commit.RepoURI}/.commits/${this.state.commit.ID}`}>
-							<tt className="commit-id pull-right">{this.state.commit.ID.substring(0, 6)}</tt>
+							<code className="commit-id pull-right">{this.state.commit.ID.substring(0, 6)}</code>
 						</a>
 					</p>
 				</div>

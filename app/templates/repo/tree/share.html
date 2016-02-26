@@ -4,7 +4,7 @@
 
 {{define "RepoBody"}}
 
-<h2>Embed sourcebox from <tt>{{trimPrefix .EntrySpec.Path "/"}}</tt></h2>
+<h2>Embed sourcebox from <code>{{trimPrefix .EntrySpec.Path "/"}}</code></h2>
 <p>Paste the following HTML code to embed a portion of this file's code (with links and mouseover tooltips) in any web page or blog.</p>
 <p><strong>Want to embed a different line range?</strong> <a href="{{urlToRepoTreeEntry .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.CommitID .EntrySpec.Path}}">Go back to the file</a> and select the line range you want, then click Embed.</p>
 <textarea class="code" rows="4" cols="60">&lt;script type="text/javascript" src="{{absURL .AppURL .SourceboxURL}}"&gt&lt/script&gt;</textarea>

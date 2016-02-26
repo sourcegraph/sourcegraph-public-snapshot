@@ -19,7 +19,7 @@
 									"className": "title",
 									"children": [
 										{
-											"type": "tt",
+											"type": "code",
 											"props": {
 												"dangerouslySetInnerHTML": {
 													"__html": "someName"

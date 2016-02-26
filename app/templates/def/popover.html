@@ -1,6 +1,6 @@
 {{define "ROOT"}}
 <div class="popover-data">
-	<div class="title"><tt>{{.Def.Fmt.DefKeyword}} {{overrideStyleViaRegexpFlags (defQualifiedNameAndType .Def "scope")}}</tt></div>
+	<div class="title"><code>{{.Def.Fmt.DefKeyword}} {{overrideStyleViaRegexpFlags (defQualifiedNameAndType .Def "scope")}}</code></div>
 	<div class="content">
 		{{if .Def.DocHTML}}<p class="doc">{{(textFromHTML .Def.DocHTML.HTML)|truncate 200}}</p>{{end}}
 		{{if not (eq .CurrentRepo .Def.Repo)}}

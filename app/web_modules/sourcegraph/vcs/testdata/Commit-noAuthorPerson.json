@@ -67,7 +67,7 @@
 												"href": "/undefined/.commits/abc",
 												"children": [
 													{
-														"type": "tt",
+														"type": "code",
 														"props": {
 															"className": "commit-id pull-right",
 															"children": [

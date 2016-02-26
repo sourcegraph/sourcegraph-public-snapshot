@@ -55,7 +55,7 @@ class DefTooltip extends Component {
 		return (
 			<div className="token-popover" style={{left: this.state.left, top: this.state.top}}>
 				<div className="popover-data">
-					<div className="title"><tt dangerouslySetInnerHTML={def.QualifiedName}></tt></div>
+					<div className="title"><code dangerouslySetInnerHTML={def.QualifiedName}></code></div>
 					<div className="content">
 						<div className="doc" style={{maxHeight: 100, overflowY: "scroll"}} dangerouslySetInnerHTML={def.Data && def.Data.DocHTML}></div>
 						<span className="repo">{def.Data.Repo}</span>
