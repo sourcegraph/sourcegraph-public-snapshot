@@ -38,7 +38,7 @@ export class GitHubUsersStore extends Store {
 
 		case DashboardActions.UsersInvited:
 			this.users = update(this.users, {
-				users: {$merge: {IsInvited: true}},
+				users: {$set: action.teammates ? action.teammates.Users : {}},
 			});
 			this.showLoading = false;
 			break;
