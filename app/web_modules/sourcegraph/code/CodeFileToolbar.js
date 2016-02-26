@@ -5,11 +5,6 @@ import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIX
 import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
 
 class CodeFileToolbar extends Component {
-	componentDidMount() {
-		// FIXME: jQuery is deprecated.
-		window.jQuery(this.refs.toolbar).fixedsticky();
-	}
-
 	reconcileState(state, props) {
 		Object.assign(state, props);
 	}

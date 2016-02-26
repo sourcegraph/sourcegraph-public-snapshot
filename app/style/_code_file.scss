@@ -184,8 +184,6 @@
 }
 
 .code-file-toolbar {
-	@include z-index(navbar);
-	top: 0; // For fixed-sticky.
 	height: 50px;
 	background-color: $file-toolbar-bg;
 	width: 100%;

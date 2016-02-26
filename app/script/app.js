@@ -3,7 +3,6 @@
 require("babel-polyfill");
 
 window.jQuery = window.$ = require("jquery");
-require("fixed-sticky");
 
 require("jquery.hotkeys/jquery.hotkeys");
 require("bootstrap-sass/assets/javascripts/bootstrap/tab.js");

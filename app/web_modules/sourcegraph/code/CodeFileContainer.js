@@ -41,9 +41,6 @@ class CodeFileContainer extends Container {
 		super.componentDidMount();
 		document.addEventListener("click", this._onClick);
 		document.addEventListener("keydown", this._onKeyDown);
-
-		// FIXME: jQuery is deprecated.
-		window.jQuery(this.refs.toolbar).fixedsticky();
 	}
 
 	componentWillUnmount() {
