@@ -20,11 +20,13 @@ class DashboardContainer extends Container {
 	constructor(props) {
 		super(props);
 		this._dismissModals = this._dismissModals.bind(this);
+		this._dismissWelcome = this._dismissWelcome.bind(this);
 	}
 
 	componentDidMount() {
 		super.componentDidMount();
 		document.addEventListener("keydown", this._dismissModals, false);
+		if (this.state.onboarding.linkGitHubRedirect) setTimeout(this._dismissWelcome, 3000);
 	}
 
 	componentWillUnmount() {
@@ -62,6 +64,10 @@ class DashboardContainer extends Container {
 		}
 	}
 
+	_dismissWelcome() {
+		this.setState({dismissWelcome: true});
+	}
+
 	stores() { return [DashboardStore, ModalStore, GitHubReposStore, GitHubUsersStore]; }
 
 	render() {
@@ -81,7 +87,7 @@ class DashboardContainer extends Container {
 					allowStandaloneUsers={this.state.allowStandaloneUsers}
 					allowGitHubUsers={this.state.allowGitHubUsers} /> : null}
 				<div className="dash-repos col-lg-9 col-md-8">
-					{(this.state.onboarding.linkGitHub || this.state.onboarding.linkGitHubRedirect) &&
+					{(this.state.onboarding.linkGitHub || (this.state.onboarding.linkGitHubRedirect && !this.state.dismissWelcome)) &&
 						<div className="well link-github-well">
 							<div className="avatar-container">
 								<div className="avatar-md">
