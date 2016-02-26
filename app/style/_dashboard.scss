@@ -96,11 +96,6 @@
 			}
 		}
 
-		.list-group {
-			max-height: 800px;
-			overflow: auto;
-		}
-
 		.disabled {
 			background-color: $pale-grey;
 		}
@@ -147,11 +142,6 @@
 		.add-user-btn {
 			display: inline-block;
 			float: right;
-		}
-
-		.list-group {
-			max-height: 877px;
-			overflow: auto;
 		}
 
 		.panel-heading {
