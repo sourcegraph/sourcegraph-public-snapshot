@@ -112,7 +112,7 @@ const DashboardBackend = {
 					console.log(resp);
 					return;
 				}
-				Dispatcher.dispatch(new DashboardActions.UsersInvited(body));
+				// Dispatcher.dispatch(new DashboardActions.UsersInvited(body));
 			});
 			break;
 		}
