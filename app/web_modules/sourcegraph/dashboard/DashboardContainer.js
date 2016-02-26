@@ -1,4 +1,5 @@
 import React from "react";
+import update from "react/lib/update";
 
 import Container from "sourcegraph/Container";
 import "./DashboardBackend"; // for side effects
@@ -33,12 +34,12 @@ class DashboardContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getDashboard());
-<<<<<<< ed10249bc302d1122f6601ff74f821f9b75ea99a
-		state.users = (DashboardStore.users || []);//.concat(GitHubUsersStore.users.getAdded());
-=======
-		state.users = (DashboardStore.users || []).concat(GitHubUsersStore.users.getUnique());
->>>>>>> users passed in from github are now unique, added reposByOrg and usersByOrg
+		state.repos = (DashboardStore.repos || [])
+			.map(repo => update(repo, {$merge: {ExistsLocally: true}}))
+			.concat(GitHubReposStore.remoteRepos.getDashboard());
+		state.users = (DashboardStore.users || [])
+			.map(user => ({LocalAccount: user}))
+			.concat(GitHubUsersStore.users.getUnique());
 		state.currentUser = DashboardStore.currentUser;
 		state.onboarding = DashboardStore.onboarding;
 		state.onWaitlist = DashboardStore.onWaitlist;
@@ -103,7 +104,7 @@ class DashboardContainer extends Container {
 					}
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Your Repositories</h3>
-						{!this.state.isMothership &&
+						{!this.state.allowGitHubMirrors && (this.state.currentUser.Admin || this.state.currentUser.Write) &&
 							<button className="btn btn-primary add-repo-btn"
 								onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddReposModal())}>
 								<div className="plus-btn">
@@ -119,9 +120,9 @@ class DashboardContainer extends Container {
 				</div>
 				<div className="dash-users col-lg-3 col-md-4">
 					<DashboardUsers users={this.state.users}
+						currentUser={this.state.currentUser}
 						onboarding={this.state.onboarding}
 						allowStandaloneUsers={this.state.allowStandaloneUsers}
-						isMothership={this.state.isMothership}
 						allowGitHubUsers={this.state.allowGitHubUsers} />
 				</div>
 			</div>

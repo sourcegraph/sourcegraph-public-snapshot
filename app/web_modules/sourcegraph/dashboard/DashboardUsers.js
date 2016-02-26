@@ -8,8 +8,15 @@ import classNames from "classnames";
 class UserList extends Component {
 	constructor(props) {
 		super(props);
+		this._isCurrentUser = this._isCurrentUser.bind(this);
+		this._existsLocally = this._existsLocally.bind(this);
+		this._isInvited = this._isInvited.bind(this);
+		this._hasEmail = this._hasEmail.bind(this);
+		this._avatarURL = this._avatarURL.bind(this);
+		this._name = this._name.bind(this);
 		this._handleInviteAllUsers = this._handleInviteAllUsers.bind(this);
 		this._handleInviteUser = this._handleInviteUser.bind(this);
+		this._userSort = this._userSort.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -17,9 +24,13 @@ class UserList extends Component {
 	}
 
 	_getUserPermissionString(user) {
-		if (user.Admin) return "Admin";
-		if (user.Write) return "Write";
+		if (user.LocalAccount.Admin) return "Admin";
+		if (user.LocalAccount.Write) return "Write";
 		return "Read";
+	}
+
+	_isCurrentUser(user) {
+		return this._existsLocally(user) && user.LocalAccount.UID === this.state.currentUser.UID;
 	}
 
 	_existsLocally(user) {
@@ -35,23 +46,17 @@ class UserList extends Component {
 	}
 
 	_avatarURL(user) {
-		if (this._existsLocally(user)) {
-			return user.LocalAccount.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-		}
-		return user.RemoteAccount.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
+		if (this._existsLocally(user)) return user.LocalAccount.AvatarURL;
+		return user.RemoteAccount.AvatarURL;
 	}
 
 	_name(user) {
-		if (this._existsLocally(user)) {
-			return user.LocalAccount.Name || user.LocalAccount.Login;
-		}
+		if (this._existsLocally(user)) return user.LocalAccount.Name || user.LocalAccount.Login;
 		return user.RemoteAccount.Name || user.RemoteAccount.Login;
 	}
 
 	_handleInviteUser(user) {
-		let email = [];
-		email.push(user.Email);
-		Dispatcher.dispatch(new DashboardActions.WantInviteUsers(email));
+		Dispatcher.dispatch(new DashboardActions.WantInviteUsers([user.Email]));
 	}
 
 	_handleInviteAllUsers() {
@@ -61,22 +66,25 @@ class UserList extends Component {
 		if (emails.length > 0) Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
 	}
 
+	_userSort(a, b) {
+		if (this._isCurrentUser(a)) return -1;
+		if (this._isCurrentUser(b)) return 1;
+		if (this._existsLocally(a) && !this._existsLocally(b)) return -1;
+		if (!this._existsLocally(a) && this._existsLocally(b)) return 1;
+		if (this._isInvited(a) && !this._isInvited(b)) return -1;
+		if (!this._isInvited(a) && this._isInvited(b)) return 1;
+		if (this._hasEmail(a) && !this._hasEmail(b)) return -1;
+		if (!this._hasEmail(a) && this._hasEmail(b)) return 1;
+		return this._name(a) < this._name(b) ? -1 : 1;
+	}
 
 	render() {
 		const emptyStateLabel = this.state.allowGitHubUsers ?
 			"Link your GitHub account to add teammates." : "No teammates.";
 
-		const userSort = (a, b) => {
-			if (this._existsLocally(a) && a.LocalAccount.UID === window.currentUser.UID) return -1;
-			if (this._existsLocally(b) && b.LocalAccount.UID === window.currentUser.UID) return 1;
-			if (this._existsLocally(a) && !this._existsLocally(b)) return -1;
-			if (!this._existsLocally(a) && this._existsLocally(b)) return 1;
-			if (this._isInvited(a) && !this._isInvited(b)) return -1;
-			if (!this._isInvited(a) && this._isInvited(b)) return 1;
-			if (this._hasEmail(a) && !this._hasEmail(b)) return -1;
-			if (!this._hasEmail(a) && this._hasEmail(b)) return 1;
-			return this._name(a) < this._name(b) ? -1 : 1;
-		};
+		if (this.state.allowStandaloneUsers && !this.state.currentUser.Admin) {
+			return <div />;
+		}
 
 		return (
 			<div className="panel panel-default">
@@ -97,9 +105,9 @@ class UserList extends Component {
 				</div>
 				<div className="users-list panel-body">
 					{this.state.users.length === 0 ? <div className="well empty-well">{emptyStateLabel}</div> : <div className="list-group">
-						{this.state.users.sort(userSort).map((user, i) => (
+						{this.state.users.sort(this._userSort).map((user, i) => (
 							<div className="list-group-item" key={i}>
-								<img className="avatar-sm" src={this._avatarURL(user)} />
+								<img className="avatar-sm" src={this._avatarURL(user) || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
 								<span className="user-name">
 									{this._name(user)}{this._isInvited(user) ? " (pending)" : ""}
 								</span>
@@ -123,9 +131,9 @@ class UserList extends Component {
 
 UserList.propTypes = {
 	users: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+	currentUser: React.PropTypes.object.isRequired,
 	onboarding: React.PropTypes.object.isRequired,
 	allowStandaloneUsers: React.PropTypes.bool.isRequired,
-	isMothership: React.PropTypes.bool.isRequired,
 	allowGitHubUsers: React.PropTypes.bool.isRequired,
 };
 

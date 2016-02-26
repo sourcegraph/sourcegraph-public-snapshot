@@ -94,17 +94,19 @@ class DashboardRepos extends Component {
 
 		const repoRowClass = (repo) => classNames("list-group-item", {
 			"hover-pointer": this._canMirror(repo) || repo.ExistsLocally,
-			"disabled": !repo.ExistsLocally && !this._canMirror(repo),
+			"disabled": !repo.ExistsLocally && (this.state.allowGitHubMirrors && !this._canMirror(repo)),
 		});
 
 		const emptyStateLabel = this.state.allowGitHubMirrors ? "Link your GitHub account to add repositories." : "No repositories.";
 
+		const filteredRepos = this.state.repos.filter(this._showRepo);
+
 		return (
 			<div className="repos-list">
 				<nav>
-					<div className="toggles">
+					{this.state.allowGitHubMirrors && <div className="toggles">
 						<div className="btn-group">{toggles}</div>
-					</div>
+					</div>}
 					<div className="search-bar">
 						<div className="input-group">
 							<input className="form-control search-input"
@@ -118,7 +120,7 @@ class DashboardRepos extends Component {
 				</nav>
 				<div className="repos">
 					{this.state.repos.length === 0 ? <div className="well">{emptyStateLabel}</div> : <div className="list-group">
-						{this.state.repos.filter(this._showRepo).sort(repoSort).map((repo, i) => (
+						{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(repoSort).map((repo, i) => (
 							<div className={repoRowClass(repo)} key={i}
 								onClick={clickHandler(repo)}>
 								<div className="repo-header">
@@ -126,7 +128,7 @@ class DashboardRepos extends Component {
 										<i className={`repo-attr-icon icon-${repo.Private ? "private" : "public"}`}></i>
 										{repo.URI}
 									</h4>
-									{!this._canMirror(repo) &&
+									{this.state.allowGitHubMirrors && !this._canMirror(repo) &&
 										<span className="disabled-reason">{this._disabledReason(repo)}</span>
 									}
 								</div>
