@@ -1458,27 +1458,23 @@
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications",
-			"Rev": "2fd5b122cd3779e3f2cee055198add213ed5b94e"
+			"Rev": "54724dfb91c02f7de2171729135fbb2887b06672"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications/common",
-			"Rev": "2fd5b122cd3779e3f2cee055198add213ed5b94e"
+			"Rev": "54724dfb91c02f7de2171729135fbb2887b06672"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications/notifications",
-			"Rev": "2fd5b122cd3779e3f2cee055198add213ed5b94e"
+			"Rev": "54724dfb91c02f7de2171729135fbb2887b06672"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications/notifications/kv",
-			"Rev": "2fd5b122cd3779e3f2cee055198add213ed5b94e"
+			"Rev": "54724dfb91c02f7de2171729135fbb2887b06672"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications/sgapp",
-			"Rev": "2fd5b122cd3779e3f2cee055198add213ed5b94e"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/apps/tracker/issues",
-			"Rev": "0298714f15c64954844d710a49ed9715824bc643"
+			"Rev": "54724dfb91c02f7de2171729135fbb2887b06672"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/apps/updater",
