@@ -85,7 +85,6 @@ class DashboardContainer extends Container {
 	stores() { return [DashboardStore, ModalStore, GitHubReposStore, GitHubUsersStore]; }
 
 	render() {
-
 		const username = this.state.currentUser.Name || this.state.currentUser.Login;
 		const linkGitHubAvatar = this.state.onboarding.linkGitHub ?
 			"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png" :
@@ -144,7 +143,9 @@ class DashboardContainer extends Container {
 						</div>
 					</div>}
 					<div>
-						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist} allowGitHubMirrors={this.state.allowGitHubMirrors} />
+						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist}
+							allowGitHubMirrors={this.state.allowGitHubMirrors}
+							linkGitHub={this.state.onboarding.linkGitHub} />
 					</div>
 				</div>
 				<div className="dash-users col-lg-3 col-md-4">

@@ -95,6 +95,15 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		wg.Wait()
 	}
 
+	if numUsers == 0 {
+		currentUser, _ := usersStore.Get(ctx, *user)
+		userList = append(userList, &sourcegraph.RemoteUser{
+			RemoteAccount: currentUser,
+			Organization:  currentUser.Login,
+		})
+		numUsers += 1
+	}
+
 	githubUIDs := make([]int, 0)
 	for _, user := range userList {
 		githubUIDs = append(githubUIDs, int(user.RemoteAccount.UID))

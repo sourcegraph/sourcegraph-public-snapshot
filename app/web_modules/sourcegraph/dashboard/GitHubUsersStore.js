@@ -11,7 +11,7 @@ export class GitHubUsersStore extends Store {
 		super(dispatcher);
 		// The users which are available to invite.
 		this.users = deepFreeze({
-			users: window.teammates ? (window.teammates.Users || {}) : [],
+			users: window.teammates ? (window.teammates.Users || []) : [],
 			getUnique() {
 				let seen = {};
 				return this.users.filter(user => seen.hasOwnProperty(user.RemoteAccount.UID) ? false : (seen[user.RemoteAccount.UID] = true));
