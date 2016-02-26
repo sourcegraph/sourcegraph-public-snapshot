@@ -48,7 +48,6 @@ const DashboardBackend = {
 			});
 			break;
 		case DashboardActions.WantAddMirrorRepo:
-			console.log("want add mirror repo", action.repo);
 			DashboardBackend.xhr({
 				uri: `/.ui/.repo-mirror`,
 				method: "POST",

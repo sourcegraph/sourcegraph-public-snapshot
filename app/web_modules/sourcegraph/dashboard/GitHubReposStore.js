@@ -49,7 +49,6 @@ export class GitHubReposStore extends Store {
 
 		case DashboardActions.MirrorReposAdded:
 		case DashboardActions.MirrorRepoAdded:
-			console.log("got a response!");
 			this.remoteRepos = update(this.remoteRepos, {
 				repos: {$set: action.mirrorData ? action.mirrorData.RemoteRepos : {}},
 			});
