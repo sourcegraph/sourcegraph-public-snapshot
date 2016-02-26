@@ -158,6 +158,7 @@ $blockquote-font-size: $font-size-base;
 // ----------------------------------------------------------------------------
 
 $z-index:            (
+	dropdown:          4000,
 	loading-indicator: 3100,
 	token-popover:     3020,
 	modal:             3010,
@@ -169,7 +170,6 @@ $z-index:            (
 	navbar:            2000,
 	alert:             1040,
 	popover:           1020,
-	dropdown:          1000,
 	context-menu:      100,
 );
 
