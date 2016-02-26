@@ -35,7 +35,7 @@ class DashboardContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.remoteRepos.getDashboard());
-		state.users = (DashboardStore.users || []).concat(GitHubUsersStore.users.getAdded());
+		state.users = (DashboardStore.users || []).concat(GitHubUsersStore.users.users);
 		state.onWaitlist = DashboardStore.onWaitlist;
 		state.isMothership = DashboardStore.isMothership;
 		state.showReposModal = ModalStore.showReposModal;

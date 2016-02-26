@@ -27,7 +27,24 @@ class UserList extends Component {
 		return "Read";
 	}
 
+	_canAdd(user) {
+		if (user.LocalAccount) return false;
+		if (user.Email) return true;
+		return false;
+	}
+
+	_reasonCannotAdd(user) {
+		if (!user.Email) return `User does not have a public Email`
+	}
+
 	render() {
+		const userSort = (a, b) => {
+			if (!this._canMirror(a) && this._canMirror(b)) return 1;
+			if (this._canMirror(a) && !this._canMirror(b)) return -1;
+			if (moment(a.UpdatedAt).isBefore(moment(b.UpdatedAt))) return 1;
+			return -1;
+		};
+
 		return (
 			<div className="panel panel-default">
 				<div className="panel-heading">
@@ -41,8 +58,8 @@ class UserList extends Component {
 					<div className="list-group">
 						{this.state.users.map((user, i) => (
 							<div className="list-group-item" key={i}>
-								<img className="avatar-sm" src={user.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
-								<span className="user-name">{user.Name || user.Login}{user.IsInvited ? " (pending)" : ""}</span>
+								<img className="avatar-sm" src={user.RemoteAccount.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
+								<span className="user-name">{user.RemoteAccount.Name || user.RemoteAccount.Login}{user.RemoteAccount.IsInvited ? " (pending)" : ""}</span>
 								{this.state.allowStandaloneUsers &&
 									<a className="user-permissions">{this._getUserPermissionString(user)}</a>
 								}
