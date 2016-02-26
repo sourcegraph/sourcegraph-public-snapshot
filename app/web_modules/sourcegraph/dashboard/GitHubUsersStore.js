@@ -20,12 +20,11 @@ export class GitHubUsersStore extends Store {
 
 		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.
+		this.getByOrg = {};
 		if (!window.teammates) {
 			this.orgs = {};
-			this.getByOrg = {};
 		} else {
 			this.orgs = window.teammates.Organizations;
-			this.getByOrg = {};
 			this.users.users.map(user => this.getByOrg.hasOwnProperty(user.Organization) ? this.getByOrg[user.Organization].push(user) : this.getByOrg[user.Organization] = [].concat.apply(user || []));
 		}
 		this.showLoading = false; // Indicates if a request to the backend to invite users is in progress
