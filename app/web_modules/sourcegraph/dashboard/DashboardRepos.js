@@ -97,6 +97,8 @@ class DashboardRepos extends Component {
 			"disabled": !repo.ExistsLocally && !this._canMirror(repo),
 		});
 
+		const emptyStateLabel = this.state.allowGitHubMirrors ? "Link your GitHub account to add repositories." : "No repositories.";
+
 		return (
 			<div className="repos-list">
 				<nav>
@@ -115,7 +117,7 @@ class DashboardRepos extends Component {
 					</div>
 				</nav>
 				<div className="repos">
-					<div className="list-group">
+					{this.state.repos.length === 0 ? <div className="well">{emptyStateLabel}</div> : <div className="list-group">
 						{this.state.repos.filter(this._showRepo).sort(repoSort).map((repo, i) => (
 							<div className={repoRowClass(repo)} key={i}
 								onClick={clickHandler(repo)}>
@@ -134,7 +136,7 @@ class DashboardRepos extends Component {
 								</div>
 							</div>
 						))}
-					</div>
+					</div>}
 				</div>
 			</div>
 		);
@@ -144,6 +146,7 @@ class DashboardRepos extends Component {
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
 	onWaitlist: React.PropTypes.bool.isRequired,
+	allowGitHubMirrors: React.PropTypes.bool.isRequired,
 };
 
 export default DashboardRepos;

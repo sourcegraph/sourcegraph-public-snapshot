@@ -75,7 +75,7 @@ class DashboardContainer extends Container {
 					allowGitHubUsers={this.state.allowGitHubUsers} /> : null}
 				<div className="dash-repos col-lg-9 col-md-8">
 					{(this.state.onboarding.linkGitHub || this.state.onboarding.linkGitHubRedirect) &&
-						<div className="alert alert-info link-github-alert">
+						<div className="well link-github-well">
 							<div className="avatar-container">
 								<div className="avatar-md">
 									<img className={`avatar-md ${this.state.onboarding.linkGitHub ? "avatar-github" : ""}`} src={linkGitHubAvatar} />
@@ -108,7 +108,7 @@ class DashboardContainer extends Container {
 						}
 					</div>
 					<div>
-						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist} />
+						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist} allowGitHubMirrors={this.state.allowGitHubMirrors} />
 					</div>
 				</div>
 				<div className="dash-users col-lg-3 col-md-4">
