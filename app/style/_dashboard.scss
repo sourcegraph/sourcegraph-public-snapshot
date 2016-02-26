@@ -243,6 +243,11 @@
 					opacity: .8;
 				}
 
+				.add-user-icon-disabled {
+					cursor: not-allowed !important;
+					opacity: .3;
+				}
+
 				.user-name {
 					margin-left: 15px;
 					margin-top: 4px;

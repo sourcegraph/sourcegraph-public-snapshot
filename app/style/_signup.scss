@@ -35,17 +35,18 @@
 	.panel-footer {
 		background-color: #f6fafd;
 		height: 81px;
+		display: flex;
 
 		span {
 			margin-left: 5px;
 			margin-top: 18px;
-			float: left
+			flex: 2;
 		}
 
 		a {
 			margin-right: 5px;
 			margin-top: 18px;
-			float: right;
+			flex: 1;
 		}
 	}
 

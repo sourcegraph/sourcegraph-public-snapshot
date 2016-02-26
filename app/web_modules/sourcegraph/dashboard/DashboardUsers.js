@@ -3,12 +3,11 @@ import React from "react";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import classNames from "classnames";
 
 class UserList extends Component {
 	constructor(props) {
 		super(props);
-		this._canAdd = this._canAdd.bind(this);
-		this._reasonCannotAdd = this._reasonCannotAdd.bind(this);
 		this._handleInviteAllUsers = this._handleInviteAllUsers.bind(this);
 		this._handleInviteUser = this._handleInviteUser.bind(this);
 	}
@@ -17,31 +16,36 @@ class UserList extends Component {
 		Object.assign(state, props);
 	}
 
-	_selectUpdateUser() {
-
-	}
-
-	_updateUserPermissions() {
-
-	}
-
 	_getUserPermissionString(user) {
 		if (user.Admin) return "Admin";
 		if (user.Write) return "Write";
 		return "Read";
 	}
 
-	_canAdd(user) {
-		if (user.hasOwnProperty("LocalAccount")) return false;
-		if (!user.hasOwnProperty("Email")) return false;
-		if (user.hasOwnProperty("IsInvited") && user.IsInvited) return false;
-		return true;
+	_existsLocally(user) {
+		return Boolean(user.LocalAccount);
 	}
 
-	_reasonCannotAdd(user) {
-		if (user.hasOwnProperty("LocalAccount")) return `User has joined`;
-		if (user.IsInvited) return `User has been invited`;
-		if (!user.Email) return `User does not have a public Email`;
+	_isInvited(user) {
+		return Boolean(user.IsInvited);
+	}
+
+	_hasEmail(user) {
+		return Boolean(user.Email);
+	}
+
+	_avatarURL(user) {
+		if (this._existsLocally(user)) {
+			return user.LocalAccount.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
+		}
+		return user.RemoteAccount.AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
+	}
+
+	_name(user) {
+		if (this._existsLocally(user)) {
+			return user.LocalAccount.Name || user.LocalAccount.Login;
+		}
+		return user.RemoteAccount.Name || user.RemoteAccount.Login;
 	}
 
 	_handleInviteUser(user) {
@@ -51,37 +55,27 @@ class UserList extends Component {
 	}
 
 	_handleInviteAllUsers() {
-		let emails = [];
-		this.state.users.filter(user => user.hasOwnProperty("Email") && !user.IsInvited && !user.hasOwnProperty("LocalAccount")).map(user => emails.push(user.Email));
-		if (emails.length > 0) {
-			Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
-
-		} else {
-			console.log("No emails for selected users");
-		}
+		const emails = this.state.users
+			.filter(user => this._hasEmail(user) && !this._isInvited(user) && !this._existsLocally(user))
+			.map(user => user.Email);
+		if (emails.length > 0) Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
 	}
 
-	_handleServer(user) {
-		if (this.state.allowStandaloneUsers) {
-			return user;
-		}
-		return user.RemoteAccount;
-	}
 
 	render() {
-		const emptyStateLabel = this.state.allowGitHubUsers ? "Link your GitHub account to add teammates." : "No teammates.";
+		const emptyStateLabel = this.state.allowGitHubUsers ?
+			"Link your GitHub account to add teammates." : "No teammates.";
 
 		const userSort = (a, b) => {
-			if (a.hasOwnProperty("LocalAccount")) {
-				if (a.LocalAccount.UID === window.currentUser.UID) return -100;
-			}
-			if (b.hasOwnProperty("LocalAccount")) {
-				if (b.LocalAccount.UID === window.currentUser.UID) return 100;
-			}
-			if (a.hasOwnProperty("LocalAccount") && !b.hasOwnProperty("LocalAccount")) return -1;
-			if (!this._canAdd(a) && this._canAdd(b)) return 1;
-			if (this._canAdd(a) && !this._canAdd(b)) return -1;
-			return -1;
+			if (this._existsLocally(a) && a.LocalAccount.UID === window.currentUser.UID) return -1;
+			if (this._existsLocally(b) && b.LocalAccount.UID === window.currentUser.UID) return 1;
+			if (this._existsLocally(a) && !this._existsLocally(b)) return -1;
+			if (!this._existsLocally(a) && this._existsLocally(b)) return 1;
+			if (this._isInvited(a) && !this._isInvited(b)) return -1;
+			if (!this._isInvited(a) && this._isInvited(b)) return 1;
+			if (this._hasEmail(a) && !this._hasEmail(b)) return -1;
+			if (!this._hasEmail(a) && this._hasEmail(b)) return 1;
+			return this._name(a) < this._name(b) ? -1 : 1;
 		};
 
 		return (
@@ -104,13 +98,16 @@ class UserList extends Component {
 				<div className="users-list panel-body">
 					{this.state.users.length === 0 ? <div className="well empty-well">{emptyStateLabel}</div> : <div className="list-group">
 						{this.state.users.sort(userSort).map((user, i) => (
-							<div className="list-group-item" key={i} title={this._reasonCannotAdd(user)}>
-								<img className="avatar-sm" src={(this._handleServer(user)).AvatarURL || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
-								<span className="user-name">{(this._handleServer(user)).Name || (this._handleServer(user)).Login}{(this._handleServer(user)).IsInvited ? " (pending)" : ""}</span>
-								{this._canAdd(user) &&
-									<i className="fa fa-plus-square-o add-user-icon"
-										onClick={() => this._handleInviteUser(user)} >
-									</i>
+							<div className="list-group-item" key={i}>
+								<img className="avatar-sm" src={this._avatarURL(user)} />
+								<span className="user-name">
+									{this._name(user)}{this._isInvited(user) ? " (pending)" : ""}
+								</span>
+								{!this._existsLocally(user) && !this._isInvited(user) &&
+									<i className={classNames("fa fa-plus-square-o add-user-icon", {"add-user-icon-disabled": !this._hasEmail(user)})}
+										onClick={() => this._handleInviteUser(user)}
+										data-tooltip={!this._hasEmail(user) ? "top" : null}
+										title={!this._hasEmail(user) ? "No public email" : null} />
 								}
 								{this.state.allowStandaloneUsers &&
 									<a className="user-permissions">{this._getUserPermissionString(user)}</a>
