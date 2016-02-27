@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 )
 
 // Matcher matches a connection based on its content.
-type Matcher func(r io.Reader) (ok bool)
+type Matcher func(io.Reader) bool
 
 // ErrorHandler handles an error and returns whether
 // the mux should continue serving the listener.
-type ErrorHandler func(err error) (ok bool)
+type ErrorHandler func(error) bool
+
+var _ net.Error = ErrNotMatched{}
 
 // ErrNotMatched is returned whenever a connection is not matched by any of
 // the matchers registered in the multiplexer.
@@ -24,8 +27,11 @@ func (e ErrNotMatched) Error() string {
 		e.c.RemoteAddr())
 }
 
+// Temporary implements the net.Error interface.
 func (e ErrNotMatched) Temporary() bool { return true }
-func (e ErrNotMatched) Timeout() bool   { return false }
+
+// Timeout implements the net.Error interface.
+func (e ErrNotMatched) Timeout() bool { return false }
 
 type errListenerClosed string
 
@@ -33,19 +39,17 @@ func (e errListenerClosed) Error() string   { return string(e) }
 func (e errListenerClosed) Temporary() bool { return false }
 func (e errListenerClosed) Timeout() bool   { return false }
 
-var (
-	ErrListenerClosed = errListenerClosed("mux: listener closed")
-)
+// ErrListenerClosed is returned from muxListener.Accept when the underlying
+// listener is closed.
+var ErrListenerClosed = errListenerClosed("mux: listener closed")
 
 // New instantiates a new connection multiplexer.
 func New(l net.Listener) CMux {
-	// if !flag.Parsed() {
-	// 	flag.Parse()
-	// }
 	return &cMux{
 		root:   l,
 		bufLen: 1024,
-		errh:   func(err error) bool { return true },
+		errh:   func(_ error) bool { return true },
+		donec:  make(chan struct{}),
 	}
 }
 
@@ -55,12 +59,12 @@ type CMux interface {
 	// the connections matched by at least one of the matcher.
 	//
 	// The order used to call Match determines the priority of matchers.
-	Match(matchers ...Matcher) net.Listener
+	Match(...Matcher) net.Listener
 	// Serve starts multiplexing the listener. Serve blocks and perhaps
 	// should be invoked concurrently within a go routine.
 	Serve() error
 	// HandleError registers an error handler that handles listener errors.
-	HandleError(h ErrorHandler)
+	HandleError(ErrorHandler)
 }
 
 type matchersListener struct {
@@ -72,23 +76,32 @@ type cMux struct {
 	root   net.Listener
 	bufLen int
 	errh   ErrorHandler
+	donec  chan struct{}
 	sls    []matchersListener
 }
 
-func (m *cMux) Match(matchers ...Matcher) (l net.Listener) {
+func (m *cMux) Match(matchers ...Matcher) net.Listener {
 	ml := muxListener{
 		Listener: m.root,
 		connc:    make(chan net.Conn, m.bufLen),
-		donec:    make(chan struct{}),
 	}
 	m.sls = append(m.sls, matchersListener{ss: matchers, l: ml})
 	return ml
 }
 
 func (m *cMux) Serve() error {
+	var wg sync.WaitGroup
+
 	defer func() {
+		close(m.donec)
+		wg.Wait()
+
 		for _, sl := range m.sls {
-			close(sl.l.donec)
+			close(sl.l.connc)
+			// Drain the connections enqueued for the listener.
+			for c := range sl.l.connc {
+				_ = c.Close()
+			}
 		}
 	}()
 
@@ -101,35 +114,34 @@ func (m *cMux) Serve() error {
 			continue
 		}
 
-		go m.serve(c)
+		wg.Add(1)
+		go m.serve(c, m.donec, &wg)
 	}
 }
 
-func (m *cMux) serve(c net.Conn) {
+func (m *cMux) serve(c net.Conn, donec <-chan struct{}, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	muc := newMuxConn(c)
-	matched := false
 	for _, sl := range m.sls {
 		for _, s := range sl.ss {
-			matched = s(muc.sniffer())
+			matched := s(muc.sniffer())
 			muc.reset()
 			if matched {
 				select {
-				// TODO(soheil): threre is a possiblity of having unclosed connection.
 				case sl.l.connc <- muc:
-				case <-sl.l.donec:
-					c.Close()
+				case <-donec:
+					_ = c.Close()
 				}
 				return
 			}
 		}
 	}
 
-	if !matched {
-		c.Close()
-		err := ErrNotMatched{c: c}
-		if !m.handleErr(err) {
-			m.root.Close()
-		}
+	_ = c.Close()
+	err := ErrNotMatched{c: c}
+	if !m.handleErr(err) {
+		_ = m.root.Close()
 	}
 }
 
@@ -152,10 +164,9 @@ func (m *cMux) handleErr(err error) bool {
 type muxListener struct {
 	net.Listener
 	connc chan net.Conn
-	donec chan struct{}
 }
 
-func (l muxListener) Accept() (c net.Conn, err error) {
+func (l muxListener) Accept() (net.Conn, error) {
 	c, ok := <-l.connc
 	if !ok {
 		return nil, ErrListenerClosed
@@ -163,6 +174,7 @@ func (l muxListener) Accept() (c net.Conn, err error) {
 	return c, nil
 }
 
+// MuxConn wraps a net.Conn and provides transparent sniffing of connection data.
 type MuxConn struct {
 	net.Conn
 	buf buffer
@@ -174,13 +186,26 @@ func newMuxConn(c net.Conn) *MuxConn {
 	}
 }
 
-func (m *MuxConn) Read(b []byte) (n int, err error) {
-	if n, err = m.buf.Read(b); err == nil {
-		return
+// From the io.Reader documentation:
+//
+// When Read encounters an error or end-of-file condition after
+// successfully reading n > 0 bytes, it returns the number of
+// bytes read.  It may return the (non-nil) error from the same call
+// or return the error (and n == 0) from a subsequent call.
+// An instance of this general case is that a Reader returning
+// a non-zero number of bytes at the end of the input stream may
+// return either err == EOF or err == nil.  The next Read should
+// return 0, EOF.
+//
+// This function implements the latter behaviour, returning the
+// (non-nil) error from the same call.
+func (m *MuxConn) Read(p []byte) (int, error) {
+	n1, err := m.buf.Read(p)
+	if err != io.EOF {
+		return n1, err
 	}
-
-	n, err = m.Conn.Read(b)
-	return
+	n2, err := m.Conn.Read(p[n1:])
+	return n1 + n2, err
 }
 
 func (m *MuxConn) sniffer() io.Reader {

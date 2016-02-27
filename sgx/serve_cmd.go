@@ -25,7 +25,7 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/cmux"
+	"github.com/soheilhy/cmux"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"

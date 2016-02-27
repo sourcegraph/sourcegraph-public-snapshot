@@ -84,7 +84,7 @@ func splitPrefix(bss [][]byte) (prefix []byte, rest [][]byte) {
 	}
 
 	if len(bss) == 1 {
-		return bss[0], [][]byte{[]byte{}}
+		return bss[0], [][]byte{{}}
 	}
 
 	for i := 0; ; i++ {

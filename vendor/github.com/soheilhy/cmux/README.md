@@ -57,8 +57,9 @@ is negligible.
 *TODO(soheil)*: Add benchmarks.
 
 ## Limitations
-* *TLS*: Since `cmux` sits in between the actual listener and the mux'ed
-listeners, TLS handshake is not handled inside the actual servers.
+* *TLS*: `net/http` uses a type assertion to identify TLS connections; since
+cmux's lookahead-implementing connection wraps the underlying TLS connection,
+this type assertion fails.
 Because of that, you can serve HTTPS using cmux but `http.Request.TLS`
 would not be set in your handlers.
 

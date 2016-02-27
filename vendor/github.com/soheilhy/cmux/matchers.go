@@ -2,7 +2,6 @@ package cmux
 
 import (
 	"bufio"
-	"bytes"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -21,9 +20,7 @@ func Any() Matcher {
 // starts with any of the strings in strs.
 func PrefixMatcher(strs ...string) Matcher {
 	pt := newPatriciaTreeString(strs...)
-	return func(r io.Reader) bool {
-		return pt.matchPrefix(r)
-	}
+	return pt.matchPrefix
 }
 
 var defaultHTTPMethods = []string{
@@ -46,9 +43,7 @@ func HTTP1Fast(extMethods ...string) Matcher {
 	return PrefixMatcher(append(defaultHTTPMethods, extMethods...)...)
 }
 
-const (
-	maxHTTPRead = 4096
-)
+const maxHTTPRead = 4096
 
 // HTTP1 parses the first line or upto 4096 bytes of the request to see if
 // the conection contains an HTTP request.
@@ -81,16 +76,10 @@ func parseRequestLine(line string) (method, uri, proto string, ok bool) {
 	return line[:s1], line[s1+1 : s2], line[s2+1:], true
 }
 
-var (
-	http2Preface = []byte(http2.ClientPreface)
-)
-
 // HTTP2 parses the frame header of the first frame to detect whether the
 // connection is an HTTP2 connection.
 func HTTP2() Matcher {
-	return func(r io.Reader) bool {
-		return hasHTTP2Preface(r)
-	}
+	return hasHTTP2Preface
 }
 
 // HTTP1HeaderField returns a matcher matching the header fields of the first
@@ -109,15 +98,13 @@ func HTTP2HeaderField(name, value string) Matcher {
 	}
 }
 
-func hasHTTP2Preface(r io.Reader) (ok bool) {
-	b := make([]byte, len(http2Preface))
-	n, err := r.Read(b)
-	if err != nil {
+func hasHTTP2Preface(r io.Reader) bool {
+	var b [len(http2.ClientPreface)]byte
+	if _, err := io.ReadFull(r, b[:]); err != nil {
 		return false
 	}
 
-	b = b[:n]
-	return bytes.Equal(b, http2Preface)
+	return string(b[:]) == http2.ClientPreface
 }
 
 func matchHTTP1Field(r io.Reader, name, value string) (matched bool) {
@@ -148,7 +135,9 @@ func matchHTTP2Field(r io.Reader, name, value string) (matched bool) {
 
 		switch f := f.(type) {
 		case *http2.HeadersFrame:
-			hdec.Write(f.HeaderBlockFragment())
+			if _, err := hdec.Write(f.HeaderBlockFragment()); err != nil {
+				return false
+			}
 			if matched {
 				return true
 			}
