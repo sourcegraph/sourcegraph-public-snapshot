@@ -1376,7 +1376,7 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash",
-			"Rev": "5c1f8b2d230d0e9a2eca693af33c521e65b9ac16"
+			"Rev": "bfa328279449436f93cbcd0d6d708449fa4318cb"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash-data",
@@ -1384,23 +1384,23 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash/httptrace",
-			"Rev": "5c1f8b2d230d0e9a2eca693af33c521e65b9ac16"
+			"Rev": "bfa328279449436f93cbcd0d6d708449fa4318cb"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash/internal/wire",
-			"Rev": "5c1f8b2d230d0e9a2eca693af33c521e65b9ac16"
+			"Rev": "bfa328279449436f93cbcd0d6d708449fa4318cb"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash/sqltrace",
-			"Rev": "5c1f8b2d230d0e9a2eca693af33c521e65b9ac16"
+			"Rev": "bfa328279449436f93cbcd0d6d708449fa4318cb"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash/traceapp",
-			"Rev": "5c1f8b2d230d0e9a2eca693af33c521e65b9ac16"
+			"Rev": "bfa328279449436f93cbcd0d6d708449fa4318cb"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
-			"Rev": "5c1f8b2d230d0e9a2eca693af33c521e65b9ac16"
+			"Rev": "bfa328279449436f93cbcd0d6d708449fa4318cb"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/csp",
