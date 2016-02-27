@@ -1142,31 +1142,31 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
+			"Rev": "6acef71eb69611914f7a30939ea9f6e194c78172"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",
-			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
+			"Rev": "6acef71eb69611914f7a30939ea9f6e194c78172"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html/atom",
-			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
+			"Rev": "6acef71eb69611914f7a30939ea9f6e194c78172"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2",
-			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
+			"Rev": "6acef71eb69611914f7a30939ea9f6e194c78172"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2/hpack",
-			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
+			"Rev": "6acef71eb69611914f7a30939ea9f6e194c78172"
 		},
 		{
 			"ImportPath": "golang.org/x/net/internal/timeseries",
-			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
+			"Rev": "6acef71eb69611914f7a30939ea9f6e194c78172"
 		},
 		{
 			"ImportPath": "golang.org/x/net/trace",
-			"Rev": "0e6d34ef942cfc38ae0cf6a660e349c3a3d08b93"
+			"Rev": "6acef71eb69611914f7a30939ea9f6e194c78172"
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
