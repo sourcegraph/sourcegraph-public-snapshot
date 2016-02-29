@@ -162,7 +162,7 @@ var CodeReviewControlPanel = React.createClass({
 							var fullUser = reviewer.FullUser;
 							var classes = null;
 							var styles = {};
-							if (reviewer.AvatarURL) {
+							if (fullUser.AvatarURL) {
 								styles["backgroundImage"] = `url(${fullUser.AvatarURL})`;
 								classes = classnames({reviewer: true, avatar: true});
 							} else {
