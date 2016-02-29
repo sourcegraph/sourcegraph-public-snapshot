@@ -140,13 +140,21 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	}
 	ds = delta.DeltaSpec()
 
-	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, delta.BaseRepo.URI)
+	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, delta.Base.RepoSpec.URI)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if ds.Base.RepoSpec != ds.Head.RepoSpec {
-		return nil, nil, errors.New("base and head repo must be identical")
+	var headVCSRepo vcs.Repository
+	sameRepo := ds.Base.RepoSpec == ds.Head.RepoSpec
+	if sameRepo {
+		headVCSRepo = baseVCSRepo
+	} else {
+		var err error
+		headVCSRepo, err = store.RepoVCSFromContext(ctx).Open(ctx, delta.Head.RepoSpec.URI)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	var vcsDiff *vcs.Diff

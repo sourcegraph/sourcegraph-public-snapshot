@@ -20,7 +20,7 @@ import (
 )
 
 var Deltas sourcegraph.DeltasServer = &deltas{
-	cache: newDeltasCache(1e4), // ~1.5KB per gob encoded delta
+	cache: newDeltasCache(1e4), // ~1KB per gob encoded delta
 }
 
 type deltas struct {
@@ -62,25 +62,17 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 }
 
 func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegraph.Delta, error) {
-	getRepo := func(repoSpec *sourcegraph.RepoSpec, repo **sourcegraph.Repo) error {
-		var err error
-		*repo, err = svc.Repos(ctx).Get(ctx, repoSpec)
-		return err
-	}
 	getCommit := func(repoRevSpec *sourcegraph.RepoRevSpec, commit **vcs.Commit) error {
 		var err error
 		*commit, err = svc.Repos(ctx).GetCommit(ctx, repoRevSpec)
+		if err != nil {
+			return err
+		}
 		repoRevSpec.CommitID = string((*commit).ID)
-		return err
+		return nil
 	}
 
 	par := parallel.NewRun(4)
-	if d.BaseRepo == nil {
-		par.Do(func() error { return getRepo(&d.Base.RepoSpec, &d.BaseRepo) })
-	}
-	if d.HeadRepo == nil && d.Base.RepoSpec.URI != d.Head.RepoSpec.URI {
-		par.Do(func() error { return getRepo(&d.Head.RepoSpec, &d.HeadRepo) })
-	}
 	if d.BaseCommit == nil {
 		par.Do(func() error { return getCommit(&d.Base, &d.BaseCommit) })
 	}
@@ -92,7 +84,7 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 	}
 
 	// Try to compute merge-base.
-	vcsBaseRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.BaseRepo.URI)
+	vcsBaseRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.Base.RepoSpec.URI)
 	if err != nil {
 		return d, err
 	}

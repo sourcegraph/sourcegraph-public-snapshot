@@ -1558,8 +1558,6 @@ message Delta {
 	RepoRevSpec Head = 2 [(gogoproto.nullable) = false];
 	vcs.Commit BaseCommit = 3;
 	vcs.Commit HeadCommit = 4;
-	Repo BaseRepo = 5;
-	Repo HeadRepo = 6;
 }
 
 // FileDiff holds data about a diff, and additionally stores extended

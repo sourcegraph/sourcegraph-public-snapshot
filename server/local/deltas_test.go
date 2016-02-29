@@ -8,10 +8,11 @@ import (
 	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 // Test that DeltasService.Get returns partial info even if a call
-// fails (e.g., it returns the base repo even if the head repo doesn't
+// fails (e.g., it returns the base commit even if the head commit doesn't
 // exist).
 func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 	var s deltas
@@ -23,14 +24,14 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 	var calledGet int
 	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mock.servers.Builds.MockGetRepoBuild(t, &sourcegraph.Build{})
-	mock.servers.Repos.Get_ = func(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	mock.servers.Repos.GetCommit_ = func(ctx context.Context, repoRevSpec *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 		calledGetLock.Lock()
 		calledGet++
 		calledGetLock.Unlock()
-		if repoSpec != nil && repoSpec.URI == "head" {
+		if repoRevSpec != nil && repoRevSpec.URI == "head" {
 			return nil, wantErr
 		}
-		return &sourcegraph.Repo{URI: "x", DefaultBranch: "b"}, nil
+		return &vcs.Commit{}, nil
 	}
 	ds := new(sourcegraph.DeltaSpec)
 	ds.Head.URI = "head"
@@ -38,8 +39,8 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 	if err.Error() != wantErr.Error() {
 		t.Errorf("got error %v, want %v", err, wantErr)
 	}
-	if delta == nil || delta.BaseRepo == nil {
-		t.Errorf("delta.BaseRepo==nil, want non-nil (partial result despite error)")
+	if delta == nil || delta.BaseCommit == nil {
+		t.Errorf("delta.BaseCommit==nil, want non-nil (partial result despite error)")
 	}
 	if want := 2; calledGet != want {
 		t.Errorf("called get %d times, want %d times", calledGet, want)
