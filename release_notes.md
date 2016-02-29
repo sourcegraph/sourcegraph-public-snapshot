@@ -1,5 +1,6 @@
 # dev
 
+- Removed the Tracker app and inline code discussions.
 - Removed user profile pages and the `--auth.disable-user-profiles`
   flag. User profiles are not yet implemented, and enabling user
   profiles did not yet make sense in any scenarios. If you previously
