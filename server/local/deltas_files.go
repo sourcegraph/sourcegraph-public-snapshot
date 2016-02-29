@@ -61,10 +61,14 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		}
 		return (&repos{}).resolveRepoRev(ctx, repoRev)
 	}
-	if err := resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Base); err != nil {
-		return nil, err
-	}
-	if err := resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Head); err != nil {
+	par := parallel.NewRun(2)
+	par.Do(func() error {
+		return resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Base)
+	})
+	par.Do(func() error {
+		return resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Head)
+	})
+	if err := par.Wait(); err != nil {
 		return nil, err
 	}
 
