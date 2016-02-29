@@ -1,10 +1,12 @@
 package gitserver
 
 import (
+	"compress/flate"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/mux"
@@ -119,7 +121,7 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := readBody(r.Body, r.Header.Get("content-encoding"))
 	if err != nil {
 		return err
 	}
@@ -129,9 +131,9 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	pkt, err := c.ReceivePack(ctx, &sourcegraph.ReceivePackOp{
-		Repo:            repo,
-		ContentEncoding: r.Header.Get("content-encoding"),
-		Data:            body,
+		Repo: repo,
+		// ContentEncoding: r.Header.Get("content-encoding"),
+		Data: body,
 	})
 	if err != nil {
 		return err
@@ -151,7 +153,7 @@ func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := readBody(r.Body, r.Header.Get("content-encoding"))
 	if err != nil {
 		return err
 	}
@@ -161,9 +163,8 @@ func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	pkt, err := c.UploadPack(ctx, &sourcegraph.UploadPackOp{
-		Repo:            repo,
-		ContentEncoding: r.Header.Get("content-encoding"),
-		Data:            body,
+		Repo: repo,
+		Data: body,
 	})
 	if err != nil {
 		return err
@@ -181,12 +182,25 @@ func noCache(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", "no-cache, max-age=0, must-revalidate")
 }
 
-func packetWrite(str string) []byte {
-	s := strconv.FormatInt(int64(len(str)+4), 16)
+func readBody(body io.Reader, encoding string) ([]byte, error) {
+	switch encoding {
+	case "gzip":
+		gr, err := gzip.NewReader(body)
+		if err != nil {
+			return nil, err
+		}
+		defer gr.Close()
+		return ioutil.ReadAll(gr)
 
-	if len(s)%4 != 0 {
-		s = strings.Repeat("0", 4-len(s)%4) + s
+	case "deflate":
+		fr := flate.NewReader(body)
+		defer fr.Close()
+		return ioutil.ReadAll(fr)
+
+	case "":
+		return ioutil.ReadAll(body)
+
+	default:
+		return nil, fmt.Errorf("unrecognized git content encoding: %q", encoding)
 	}
-
-	return []byte(s + str)
 }

@@ -328,14 +328,12 @@ service Repos {
 
 message ReceivePackOp {
 	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	string content_encoding = 2; // gzip, flate, or empty
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }
 
 message UploadPackOp {
 	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	string content_encoding = 2; // gzip, flate, or empty
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }

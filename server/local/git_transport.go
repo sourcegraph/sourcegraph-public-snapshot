@@ -39,7 +39,7 @@ func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*
 		return nil, err
 	}
 
-	data, _, err := t.UploadPack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding, AdvertiseRefs: op.AdvertiseRefs})
+	data, _, err := t.UploadPack(ctx, op.Data, gitproto.TransportOpt{AdvertiseRefs: op.AdvertiseRefs})
 	if err != nil {
 		return nil, err
 	}
@@ -56,15 +56,14 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 		return nil, err
 	}
 
-	data, gitEvents, err := t.ReceivePack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding, AdvertiseRefs: op.AdvertiseRefs})
+	data, gitEvents, err := t.ReceivePack(ctx, op.Data, gitproto.TransportOpt{AdvertiseRefs: op.AdvertiseRefs})
 	if err != nil {
 		return nil, err
 	}
 	gitEvents = collapseDuplicateEvents(gitEvents)
 	payload := events.GitPayload{
-		Actor:           authpkg.UserSpecFromContext(ctx),
-		Repo:            op.Repo,
-		ContentEncoding: op.ContentEncoding,
+		Actor: authpkg.UserSpecFromContext(ctx),
+		Repo:  op.Repo,
 	}
 	for _, e := range gitEvents {
 		payload.Event = e

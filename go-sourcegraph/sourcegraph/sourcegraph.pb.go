@@ -517,10 +517,9 @@ func (m *RepoList) String() string { return proto.CompactTextString(m) }
 func (*RepoList) ProtoMessage()    {}
 
 type ReceivePackOp struct {
-	Repo            RepoSpec `protobuf:"bytes,1,opt,name=repo" json:"repo"`
-	ContentEncoding string   `protobuf:"bytes,2,opt,name=content_encoding,proto3" json:"content_encoding,omitempty"`
-	Data            []byte   `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	AdvertiseRefs   bool     `protobuf:"varint,4,opt,name=advertiseRefs,proto3" json:"advertiseRefs,omitempty"`
+	Repo          RepoSpec `protobuf:"bytes,1,opt,name=repo" json:"repo"`
+	Data          []byte   `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	AdvertiseRefs bool     `protobuf:"varint,4,opt,name=advertiseRefs,proto3" json:"advertiseRefs,omitempty"`
 }
 
 func (m *ReceivePackOp) Reset()         { *m = ReceivePackOp{} }
@@ -528,10 +527,9 @@ func (m *ReceivePackOp) String() string { return proto.CompactTextString(m) }
 func (*ReceivePackOp) ProtoMessage()    {}
 
 type UploadPackOp struct {
-	Repo            RepoSpec `protobuf:"bytes,1,opt,name=repo" json:"repo"`
-	ContentEncoding string   `protobuf:"bytes,2,opt,name=content_encoding,proto3" json:"content_encoding,omitempty"`
-	Data            []byte   `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	AdvertiseRefs   bool     `protobuf:"varint,4,opt,name=advertiseRefs,proto3" json:"advertiseRefs,omitempty"`
+	Repo          RepoSpec `protobuf:"bytes,1,opt,name=repo" json:"repo"`
+	Data          []byte   `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	AdvertiseRefs bool     `protobuf:"varint,4,opt,name=advertiseRefs,proto3" json:"advertiseRefs,omitempty"`
 }
 
 func (m *UploadPackOp) Reset()         { *m = UploadPackOp{} }
@@ -6417,12 +6415,6 @@ func (m *ReceivePackOp) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n11
-	if len(m.ContentEncoding) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ContentEncoding)))
-		i += copy(data[i:], m.ContentEncoding)
-	}
 	if m.Data != nil {
 		if len(m.Data) > 0 {
 			data[i] = 0x1a
@@ -6467,12 +6459,6 @@ func (m *UploadPackOp) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n12
-	if len(m.ContentEncoding) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ContentEncoding)))
-		i += copy(data[i:], m.ContentEncoding)
-	}
 	if m.Data != nil {
 		if len(m.Data) > 0 {
 			data[i] = 0x1a
@@ -12940,10 +12926,6 @@ func (m *ReceivePackOp) Size() (n int) {
 	_ = l
 	l = m.Repo.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
-	l = len(m.ContentEncoding)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
 	if m.Data != nil {
 		l = len(m.Data)
 		if l > 0 {
@@ -12961,10 +12943,6 @@ func (m *UploadPackOp) Size() (n int) {
 	_ = l
 	l = m.Repo.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
-	l = len(m.ContentEncoding)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
 	if m.Data != nil {
 		l = len(m.Data)
 		if l > 0 {
@@ -17743,35 +17721,6 @@ func (m *ReceivePackOp) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ContentEncoding", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ContentEncoding = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
@@ -17899,35 +17848,6 @@ func (m *UploadPackOp) Unmarshal(data []byte) error {
 			if err := m.Repo.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ContentEncoding", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ContentEncoding = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {

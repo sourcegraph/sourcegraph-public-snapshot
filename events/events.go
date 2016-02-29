@@ -12,11 +12,10 @@ const GitCreateBranchEvent EventID = "git.create"
 const GitDeleteBranchEvent EventID = "git.delete"
 
 type GitPayload struct {
-	Actor           sourcegraph.UserSpec
-	Repo            sourcegraph.RepoSpec
-	ContentEncoding string
-	IgnoreBuild     bool
-	Event           githttp.Event
+	Actor       sourcegraph.UserSpec
+	Repo        sourcegraph.RepoSpec
+	IgnoreBuild bool
+	Event       githttp.Event
 }
 
 const ClientRegisterEvent EventID = "client.register"

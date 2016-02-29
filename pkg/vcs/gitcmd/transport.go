@@ -2,8 +2,6 @@ package gitcmd
 
 import (
 	"bytes"
-	"compress/flate"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,35 +23,6 @@ func (r *Repository) UploadPack(ctx context.Context, data []byte, opt gitproto.T
 
 func (r *Repository) servicePack(ctx context.Context, service string, data []byte, opt gitproto.TransportOpt) (out []byte, events []githttp.Event, err error) {
 	rdr := io.Reader(bytes.NewReader(data))
-
-	switch opt.ContentEncoding {
-	case "gzip":
-		gr, err := gzip.NewReader(rdr)
-		if err != nil {
-			return nil, nil, err
-		}
-		rdr = gr
-		defer func() {
-			if err2 := gr.Close(); err2 != nil && err == nil {
-				err = err2
-			}
-		}()
-
-	case "deflate":
-		fr := flate.NewReader(rdr)
-		rdr = fr
-		defer func() {
-			if err2 := fr.Close(); err2 != nil && err == nil {
-				err = err2
-			}
-		}()
-
-	case "":
-		// noop
-
-	default:
-		return nil, nil, fmt.Errorf("unrecognized git content encoding: %q", opt.ContentEncoding)
-	}
 
 	rpcReader := &githttp.RpcReader{
 		Reader: rdr,
