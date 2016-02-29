@@ -79,7 +79,7 @@ func (r *Repository) servicePack(ctx context.Context, service string, data []byt
 	}
 
 	stdout, stderr, err := cmd.DividedOutput()
-	if err != nil && !bytes.Contains(stderr, []byte("The remote end hung up unexpectedly")) { // TODO remove hidden error
+	if err != nil && !bytes.Contains(stderr, []byte("The remote end hung up unexpectedly")) { // this error occurs on "git clone [...] --depth=1" even with normal git-http-backend
 		return nil, nil, fmt.Errorf("git-%s failed (%s); output was:\n%s", service, err, string(stderr))
 	}
 
