@@ -40,7 +40,7 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 	// then they will need to be re-resolved in each call to
 	// RepoTree.Get that we issue, which will seriously degrade
 	// performance.
-	resolveAndCacheRepoRevAndBranchExistence := func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (context.Context, error) {
+	resolveAndCacheRepoRevAndBranchExistence := func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
 		if repoRev.Resolved() {
 			// The repo rev appears resolved already -- but it might have been
 			// deleted, thus making any URLs we would emit for Rev instead of CommitID
@@ -56,17 +56,15 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 				// deleted.
 				repoRev.Rev = repoRev.CommitID
 			} else if err != nil {
-				return nil, err
+				return err
 			}
 		}
-		return ctx, (&repos{}).resolveRepoRev(ctx, repoRev)
+		return (&repos{}).resolveRepoRev(ctx, repoRev)
 	}
-	ctx, err := resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Base)
-	if err != nil {
+	if err := resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Base); err != nil {
 		return nil, err
 	}
-	ctx, err = resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Head)
-	if err != nil {
+	if err := resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Head); err != nil {
 		return nil, err
 	}
 
