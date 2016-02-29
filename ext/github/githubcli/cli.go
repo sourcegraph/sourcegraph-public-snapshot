@@ -1,6 +1,7 @@
 package githubcli
 
 import (
+	"log"
 	"net/url"
 
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
@@ -58,6 +59,9 @@ var Config GitHubFlags
 
 func init() {
 	cli.PostInit = append(cli.PostInit, func() {
-		cli.Serve.AddGroup("GitHub", "GitHub", &Config)
+		_, err := cli.Serve.AddGroup("GitHub", "GitHub", &Config)
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 }
