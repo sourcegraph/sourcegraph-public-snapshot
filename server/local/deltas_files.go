@@ -264,10 +264,14 @@ func getPrePostImage(headers []string) (pre, post string) {
 
 type deltasListFileCache struct {
 	*synclru.Cache
+
+	// maxEntrySize is the maximum size of an entry after gob encoding in
+	// bytes that could be added to the cache.
+	maxEntrySize int
 }
 
-func newDeltasListFilesCache(maxEntries int) *deltasListFileCache {
-	return &deltasListFileCache{synclru.New(lru.New(maxEntries))}
+func newDeltasListFilesCache(maxEntries, maxEntrySize int) *deltasListFileCache {
+	return &deltasListFileCache{synclru.New(lru.New(maxEntries)), maxEntrySize}
 }
 
 func deltasListFileCacheKey(op *sourcegraph.DeltasListFilesOp) (string, error) {
@@ -279,11 +283,13 @@ func deltasListFileCacheKey(op *sourcegraph.DeltasListFilesOp) (string, error) {
 }
 
 func (c *deltasListFileCache) Add(op *sourcegraph.DeltasListFilesOp, files *sourcegraph.DeltaFiles) {
-	// TODO: limit by size what is added to the cache.
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
 	if err := enc.Encode(files); err != nil {
 		log.Println("error while encoding delta files:", err.Error())
+		return
+	}
+	if c.maxEntrySize > 0 && c.maxEntrySize > buf.Len() {
 		return
 	}
 	key, err := deltasListFileCacheKey(op)

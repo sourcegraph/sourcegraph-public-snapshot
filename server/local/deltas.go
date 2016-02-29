@@ -20,8 +20,8 @@ import (
 )
 
 var Deltas sourcegraph.DeltasServer = &deltas{
-	cache:          newDeltasCache(1e4),         // ~1KB per gob encoded delta
-	listFilesCache: newDeltasListFilesCache(50), // TODO determine max cacheable size
+	cache:          newDeltasCache(1e4), // ~1KB per gob encoded delta
+	listFilesCache: newDeltasListFilesCache(1e4, 1e4),
 }
 
 type deltas struct {
