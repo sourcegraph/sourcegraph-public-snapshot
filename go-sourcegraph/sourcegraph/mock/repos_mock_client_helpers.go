@@ -12,6 +12,7 @@
 package mock
 
 import (
+	"sync"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -116,9 +117,12 @@ func (s *ReposClient) MockListCommits(t *testing.T, wantCommitIDs ...vcs.CommitI
 }
 
 func (s *ReposClient) MockGetCommit_ByID_NoCheck(t *testing.T, commitID vcs.CommitID) (called *bool) {
+	var once sync.Once
 	called = new(bool)
 	s.GetCommit_ = func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
-		*called = true
+		once.Do(func() {
+			*called = true
+		})
 		return &vcs.Commit{ID: commitID}, nil
 	}
 	return
