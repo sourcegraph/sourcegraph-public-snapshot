@@ -1,12 +1,15 @@
 package local
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/golang/groupcache/lru"
+	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/ryanuber/go-glob"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -18,8 +21,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
-
-var deltasListFilesCache = synclru.New(lru.New(50))
 
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	ds := op.Ds
@@ -84,12 +85,11 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 	// private data!
 	op.Ds = ds
 	op.Opt = opt
-	cacheKey, err := json.Marshal(op)
-	if err != nil {
-		return nil, err
-	}
-	if res, found := deltasListFilesCache.Get(string(cacheKey)); found {
-		return res.(*sourcegraph.DeltaFiles), nil
+
+	if s.listFilesCache != nil {
+		if res, found := s.listFilesCache.Get(op); found {
+			return res, nil
+		}
 	}
 
 	fdiffs, delta, err := s.diff(ctx, ds)
@@ -125,7 +125,16 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		return nil, err
 	}
 
-	deltasListFilesCache.Add(string(cacheKey), files)
+	if opt.Formatted {
+		// Parse and code-format file diffs.
+		if err := formatFileDiffs(ctx, ds, files.FileDiffs); err != nil {
+			return nil, err
+		}
+	}
+
+	if s.listFilesCache != nil {
+		s.listFilesCache.Add(op, files)
+	}
 	return files, nil
 }
 
@@ -251,4 +260,59 @@ func getPrePostImage(headers []string) (pre, post string) {
 		}
 	}
 	return "", ""
+}
+
+type deltasListFileCache struct {
+	*synclru.Cache
+}
+
+func newDeltasListFilesCache(maxEntries int) *deltasListFileCache {
+	return &deltasListFileCache{synclru.New(lru.New(maxEntries))}
+}
+
+func deltasListFileCacheKey(op *sourcegraph.DeltasListFilesOp) (string, error) {
+	key, err := json.Marshal(op)
+	if err != nil {
+		return "", err
+	}
+	return string(key), nil
+}
+
+func (c *deltasListFileCache) Add(op *sourcegraph.DeltasListFilesOp, files *sourcegraph.DeltaFiles) {
+	// TODO: limit by size what is added to the cache.
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+	if err := enc.Encode(files); err != nil {
+		log.Println("error while encoding delta files:", err.Error())
+		return
+	}
+	key, err := deltasListFileCacheKey(op)
+	if err != nil {
+		log.Println("error while generating delta files key:", err.Error())
+		return
+	}
+	c.Cache.Add(key, buf.Bytes())
+}
+
+func (c *deltasListFileCache) Get(op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, bool) {
+	key, err := deltasListFileCacheKey(op)
+	if err != nil {
+		log.Println("error while generating delta files key:", err.Error())
+		return nil, false
+	}
+	obj, ok := c.Cache.Get(key)
+	if !ok {
+		return nil, false
+	}
+	filesBytes, isBytes := obj.([]byte)
+	if !isBytes {
+		return nil, false
+	}
+	var copy *sourcegraph.DeltaFiles
+	dec := gob.NewDecoder(bytes.NewReader(filesBytes))
+	if err := dec.Decode(&copy); err != nil {
+		log.Println("error while decoding delta files:", err.Error())
+		return nil, false
+	}
+	return copy, true
 }

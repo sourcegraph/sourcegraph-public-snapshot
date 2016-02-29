@@ -14,7 +14,6 @@ import (
 func TestDeltasService_ListFiles(t *testing.T) {
 	var s deltas
 	ctx, _ := testContext()
-	deltasListFilesCache.Clear()
 
 	ds := sourcegraph.DeltaSpec{
 		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, Rev: "baserev", CommitID: "basecommit"},
@@ -67,7 +66,6 @@ func TestDeltasService_ListFiles(t *testing.T) {
 func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 	var s deltas
 	ctx, _ := testContext()
-	deltasListFilesCache.Clear()
 
 	ds := sourcegraph.DeltaSpec{
 		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, Rev: "baserev", CommitID: "basecommit"},
