@@ -23,41 +23,6 @@ import (
 // Commit) field to signify that a branch was created (or deleted).
 const emptyGitCommitID = "0000000000000000000000000000000000000000"
 
-func (s *repos) InfoRefs(ctx context.Context, op *sourcegraph.InfoRefsOp) (*sourcegraph.Packet, error) {
-	// This service is read-only, but can be followed by a write
-	// action. If we only deny access once writing it leads to a confusing user
-	// experience
-	var err error
-	if op.Service == gitproto.ReceivePack {
-		err = verifyRepoWriteAccess(ctx, op.Repo)
-	} else {
-		err = accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.InfoRefs", op.Repo.URI)
-		// Ignore the error if it is because the repo didn't exist. This comes
-		// about when we are implicitly mirroring repos and the metadata is
-		// not stored in the database. This is only OK for read access.
-		if err != nil {
-			if _, ok := err.(*store.RepoNotFoundError); ok {
-				err = nil
-			}
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	store := store.RepoVCSFromContext(ctx)
-	t, err := store.OpenGitTransport(ctx, op.Repo.URI)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := t.InfoRefs(ctx, op.Service)
-	if err != nil {
-		return nil, err
-	}
-	return &sourcegraph.Packet{Data: data}, nil
-}
-
 func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.UploadPack", op.Repo.URI); err != nil {
 		// Ignore the error if it is because the repo didn't exist. This comes
@@ -74,7 +39,7 @@ func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*
 		return nil, err
 	}
 
-	data, _, err := t.UploadPack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding})
+	data, _, err := t.UploadPack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding, AdvertiseRefs: op.AdvertiseRefs})
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +56,7 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 		return nil, err
 	}
 
-	data, gitEvents, err := t.ReceivePack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding})
+	data, gitEvents, err := t.ReceivePack(ctx, op.Data, gitproto.TransportOpt{ContentEncoding: op.ContentEncoding, AdvertiseRefs: op.AdvertiseRefs})
 	if err != nil {
 		return nil, err
 	}

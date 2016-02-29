@@ -29,9 +29,9 @@ import (
 func prepareArg(server, method string, arg interface{}) interface{} {
 	switch arg := arg.(type) {
 	case *sourcegraph.ReceivePackOp:
-		return &sourcegraph.ReceivePackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
+		return &sourcegraph.ReceivePackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED"), AdvertiseRefs: arg.AdvertiseRefs}
 	case *sourcegraph.UploadPackOp:
-		return &sourcegraph.UploadPackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED")}
+		return &sourcegraph.UploadPackOp{Repo: arg.Repo, ContentEncoding: arg.ContentEncoding, Data: []byte("OMITTED"), AdvertiseRefs: arg.AdvertiseRefs}
 	}
 	return arg
 }

@@ -322,26 +322,22 @@ service Repos {
 	// repository's files.
 	rpc GetInventory(RepoRevSpec) returns (inventory.Inventory);
 	
-	rpc InfoRefs(InfoRefsOp) returns (Packet);
 	rpc ReceivePack(ReceivePackOp) returns (Packet);
 	rpc UploadPack(UploadPackOp) returns (Packet);
-}
-
-message InfoRefsOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
-	string service = 2;
 }
 
 message ReceivePackOp {
 	RepoSpec repo = 1 [(gogoproto.nullable) = false];
 	string content_encoding = 2; // gzip, flate, or empty
 	bytes data = 3;
+	bool advertiseRefs = 4;
 }
 
 message UploadPackOp {
 	RepoSpec repo = 1 [(gogoproto.nullable) = false];
 	string content_encoding = 2; // gzip, flate, or empty
 	bytes data = 3;
+	bool advertiseRefs = 4;
 }
 
 message Packet {

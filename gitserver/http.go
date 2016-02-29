@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/mux"
@@ -76,16 +77,36 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	pkt, err := c.InfoRefs(ctx, &sourcegraph.InfoRefsOp{
-		Repo:    repo,
-		Service: service,
-	})
-	if err != nil {
-		return err
+
+	var pkt *sourcegraph.Packet
+	switch service {
+	case "receive-pack":
+		var err error
+		pkt, err = c.ReceivePack(ctx, &sourcegraph.ReceivePackOp{
+			Repo:          repo,
+			AdvertiseRefs: true,
+		})
+		if err != nil {
+			return err
+		}
+	case "upload-pack":
+		var err error
+		pkt, err = c.UploadPack(ctx, &sourcegraph.UploadPackOp{
+			Repo:          repo,
+			AdvertiseRefs: true,
+		})
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unrecognized git service: %q", service)
 	}
 
 	w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-advertisement", service))
 	noCache(w)
+	if _, err := fmt.Fprintf(w, "%04x# service=git-%s\n0000", 19+len(service), service); err != nil {
+		return err
+	}
 	_, err = w.Write(pkt.Data)
 	return err
 }
@@ -158,4 +179,14 @@ func noCache(w http.ResponseWriter) {
 	w.Header().Set("Expires", "Fri, 01 Jan 1980 00:00:00 GMT")
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Cache-Control", "no-cache, max-age=0, must-revalidate")
+}
+
+func packetWrite(str string) []byte {
+	s := strconv.FormatInt(int64(len(str)+4), 16)
+
+	if len(s)%4 != 0 {
+		s = strings.Repeat("0", 4-len(s)%4) + s
+	}
+
+	return []byte(s + str)
 }

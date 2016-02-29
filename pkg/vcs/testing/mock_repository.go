@@ -40,7 +40,6 @@ type MockRepository struct {
 
 	Search_ func(vcs.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
 
-	InfoRefs_    func(ctx context.Context, service string) ([]byte, error)
 	ReceivePack_ func(ctx context.Context, body []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error)
 	UploadPack_  func(ctx context.Context, body []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error)
 }
@@ -117,10 +116,6 @@ func (r MockRepository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult,
 
 func (r MockRepository) Search(commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
 	return r.Search_(commit, opt)
-}
-
-func (r MockRepository) InfoRefs(ctx context.Context, service string) ([]byte, error) {
-	return r.InfoRefs_(ctx, service)
 }
 
 func (r MockRepository) ReceivePack(ctx context.Context, body []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {

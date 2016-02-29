@@ -19,9 +19,6 @@ type Transporter interface {
 // Transport represents a git repository with all the functions to
 // support the "smart" transfer protocol.
 type Transport interface {
-	// InfoRefs returns the output of git-info-refs.
-	InfoRefs(ctx context.Context, service string) ([]byte, error)
-
 	// ReceivePack returns the output of git-receive-pack, reading
 	// from body.
 	ReceivePack(ctx context.Context, body []byte, opt TransportOpt) ([]byte, []githttp.Event, error)
@@ -33,4 +30,5 @@ type Transport interface {
 
 type TransportOpt struct {
 	ContentEncoding string
+	AdvertiseRefs   bool
 }

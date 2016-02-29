@@ -8,34 +8,12 @@ import (
 	"io"
 	"io/ioutil"
 
-	"strconv"
-	"strings"
-
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
 	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"
 )
-
-func (r *Repository) InfoRefs(ctx context.Context, service string) ([]byte, error) {
-	if service != "upload-pack" && service != "receive-pack" {
-		return nil, fmt.Errorf("unrecognized git service: %q", service)
-	}
-
-	cmd := gitserver.Command("git", service, "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Dir = r.Dir
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-
-	var buf bytes.Buffer
-	buf.Write(packetWrite("# service=git-" + service + "\n"))
-	buf.Write(packetFlush())
-	buf.Write(out)
-	return buf.Bytes(), nil
-}
 
 func (r *Repository) ReceivePack(ctx context.Context, data []byte, opt gitproto.TransportOpt) ([]byte, []githttp.Event, error) {
 	return r.servicePack(ctx, "receive-pack", data, opt)
@@ -89,7 +67,11 @@ func (r *Repository) servicePack(ctx context.Context, service string, data []byt
 		return nil, nil, fmt.Errorf("unrecognized git service: %q", service)
 	}
 
-	cmd := gitserver.Command("git", service, "--stateless-rpc", ".")
+	args := []string{service, "--stateless-rpc"}
+	if opt.AdvertiseRefs {
+		args = append(args, "--advertise-refs")
+	}
+	cmd := gitserver.Command("git", append(args, ".")...)
 	cmd.Dir = r.Dir
 	cmd.Input, err = ioutil.ReadAll(rpcReader)
 	if err != nil {
@@ -102,18 +84,4 @@ func (r *Repository) servicePack(ctx context.Context, service string, data []byt
 	}
 
 	return stdout, rpcReader.Events, nil
-}
-
-func packetFlush() []byte {
-	return []byte("0000")
-}
-
-func packetWrite(str string) []byte {
-	s := strconv.FormatInt(int64(len(str)+4), 16)
-
-	if len(s)%4 != 0 {
-		s = strings.Repeat("0", 4-len(s)%4) + s
-	}
-
-	return []byte(s + str)
 }

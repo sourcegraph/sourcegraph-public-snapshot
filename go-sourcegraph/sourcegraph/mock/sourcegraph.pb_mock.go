@@ -59,7 +59,6 @@ type ReposClient struct {
 	GetSrclibDataVersionForPath_ func(ctx context.Context, in *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(ctx context.Context, in *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	InfoRefs_                    func(ctx context.Context, in *sourcegraph.InfoRefsOp) (*sourcegraph.Packet, error)
 	ReceivePack_                 func(ctx context.Context, in *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error)
 	UploadPack_                  func(ctx context.Context, in *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error)
 }
@@ -132,10 +131,6 @@ func (s *ReposClient) GetInventory(ctx context.Context, in *sourcegraph.RepoRevS
 	return s.GetInventory_(ctx, in)
 }
 
-func (s *ReposClient) InfoRefs(ctx context.Context, in *sourcegraph.InfoRefsOp, opts ...grpc.CallOption) (*sourcegraph.Packet, error) {
-	return s.InfoRefs_(ctx, in)
-}
-
 func (s *ReposClient) ReceivePack(ctx context.Context, in *sourcegraph.ReceivePackOp, opts ...grpc.CallOption) (*sourcegraph.Packet, error) {
 	return s.ReceivePack_(ctx, in)
 }
@@ -164,7 +159,6 @@ type ReposServer struct {
 	GetSrclibDataVersionForPath_ func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
 	ConfigureApp_                func(v0 context.Context, v1 *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error)
 	GetInventory_                func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	InfoRefs_                    func(v0 context.Context, v1 *sourcegraph.InfoRefsOp) (*sourcegraph.Packet, error)
 	ReceivePack_                 func(v0 context.Context, v1 *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error)
 	UploadPack_                  func(v0 context.Context, v1 *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error)
 }
@@ -235,10 +229,6 @@ func (s *ReposServer) ConfigureApp(v0 context.Context, v1 *sourcegraph.RepoConfi
 
 func (s *ReposServer) GetInventory(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
 	return s.GetInventory_(v0, v1)
-}
-
-func (s *ReposServer) InfoRefs(v0 context.Context, v1 *sourcegraph.InfoRefsOp) (*sourcegraph.Packet, error) {
-	return s.InfoRefs_(v0, v1)
 }
 
 func (s *ReposServer) ReceivePack(v0 context.Context, v1 *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error) {

@@ -1028,19 +1028,6 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 	return
 }
 
-func (s wrappedRepos) InfoRefs(ctx context.Context, param *sourcegraph.InfoRefsOp) (res *sourcegraph.Packet, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "InfoRefs", param)
-	defer func() {
-		trace.After(ctx, "Repos", "InfoRefs", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Repos.InfoRefs(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.InfoRefs returned nil, nil")
-	}
-	return
-}
-
 func (s wrappedRepos) ReceivePack(ctx context.Context, param *sourcegraph.ReceivePackOp) (res *sourcegraph.Packet, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ReceivePack", param)
