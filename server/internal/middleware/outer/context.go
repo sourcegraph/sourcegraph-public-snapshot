@@ -44,6 +44,15 @@ func initContext(ctx context.Context, ctxFunc ContextFunc, services svc.Services
 		return nil, err
 	}
 
+	// Run ctx funcs that (may) require use of values we just stored
+	// in the ctx.
+	for _, f := range serverctx.LastFuncs {
+		ctx, err = f(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return ctx, nil
 }
 
