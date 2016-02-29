@@ -85,7 +85,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	}
 
 	// Update any of the repo's metadata that has changed on GitHub.
-	ctx = github.NewContextWithClient(ctx, gh)
+	ctx = github.NewContextWithClient(ctx, gh, r.Private)
 	ghRepos := github.Repos{}
 	ghRepo, err := ghRepos.Get(ctx, r.URI)
 	if err != nil {

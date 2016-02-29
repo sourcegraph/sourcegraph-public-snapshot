@@ -163,14 +163,14 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 			if err != nil {
 				return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.URI, err)
 			}
-			ghRepo, err = ghRepos.Get(github.NewContextWithClient(ctx, githubutil.Default.AuthedClient(token)), op.URI)
+			ghRepo, err = ghRepos.Get(github.NewContextWithClient(ctx, githubutil.Default.AuthedClient(token), true), op.URI)
 			if err != nil {
 				return nil, grpc.Errorf(codes.Unavailable, "could not fetch private GitHub repo %v: %v", op.URI, err)
 			}
 		} else {
 			var err error
 			// Check that the repo is really public.
-			ghRepo, err = ghRepos.Get(github.NewContextWithUnauthedClient(ctx), op.URI)
+			ghRepo, err = ghRepos.Get(github.NewContextWithClient(ctx, githubutil.Default.UnauthedClient(), false), op.URI)
 			if err != nil || ghRepo.Private {
 				log15.Warn("Could not fetch public GitHub repo in Repos.Create", "uri", op.URI, "error", err)
 				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")

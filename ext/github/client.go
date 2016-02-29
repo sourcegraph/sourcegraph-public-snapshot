@@ -7,12 +7,16 @@ import "github.com/sourcegraph/go-github/github"
 type minimalClient struct {
 	repos githubRepos
 	orgs  githubOrgs
+
+	isAuthedUser bool // whether the client is using a GitHub user's auth token
 }
 
-func newMinimalClient(client *github.Client) *minimalClient {
+func newMinimalClient(client *github.Client, isAuthedUser bool) *minimalClient {
 	return &minimalClient{
 		repos: client.Repositories,
 		orgs:  client.Organizations,
+
+		isAuthedUser: isAuthedUser,
 	}
 }
 
