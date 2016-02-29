@@ -4,6 +4,7 @@ var CodeView = require("./CodeView");
 var ModelPropWatcherMixin = require("./mixins/ModelPropWatcherMixin");
 var ExamplesModel = require("../stores/models/ExamplesModel");
 var classNames = require("classnames");
+var repoLink = require("sourcegraph/util/repoLink").default;
 
 var ExampleView = React.createClass({
 
@@ -155,33 +156,4 @@ function SnippetToBreadcrumb(repo, rev, path, startLine, endLine, defURL, cb) {
 	}
 
 	return breadcrumb;
-}
-
-// repoLink is swiped from app/repo.go
-function repoLink(repoURI) {
-	var collection = [],
-		parts = repoURI.split("/");
-
-	parts[0] = parts[0].toLowerCase();
-
-	if ((parts[0] === "github.com" || parts[0] === "sourcegraph.com") && parts.length === 3) {
-		var user = parts[1],
-			repo = parts[2];
-
-		collection.push(
-			<a key={user} className="owner" href={`/${user}`}>{user}</a>,
-			<span key="separator" className="sep">/</span>,
-			<a className="name" key={repoURI+repo} href={router.repoURL(repoURI)} title={repoURI}>{repo}</a>
-		);
-	} else {
-		for (var i = 0; i < parts.length; i++) {
-			if (i === parts.length - 1) {
-				collection.push(<a className="name" key={repoURI+parts[i]} href={router.repoURL(repoURI)} title={repoURI}>{parts[i]}</a>);
-			} else {
-				collection.push(<a className="part" key={parts[i]}>{parts[i]}</a>);
-			}
-		}
-	}
-
-	return <span className="repo-link">{collection}</span>;
 }

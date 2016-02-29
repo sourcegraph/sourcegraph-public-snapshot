@@ -3,9 +3,8 @@ import update from "react/lib/update";
 import classNames from "classnames";
 
 import Component from "sourcegraph/Component";
-import Dispatcher from "sourcegraph/Dispatcher";
 import moment from "moment";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import repoLink from "sourcegraph/util/repoLink";
 
 class DashboardRepos extends Component {
 	constructor(props) {
@@ -90,17 +89,6 @@ class DashboardRepos extends Component {
 			</button>
 		);
 
-		const clickHandler = (repo) => {
-			if (repo.ExistsLocally) return _ => window.location.href = `/${repo.URI}`;
-			if (!this._canMirror(repo)) return _ => null;
-			return _ => {
-				Dispatcher.dispatch(new DashboardActions.WantAddMirrorRepo({
-					URI: repo.URI,
-					Private: Boolean(repo.Private),
-				}));
-			};
-		};
-
 		const repoRowClass = (repo) => classNames("list-group-item", {
 			"hover-pointer": this._canMirror(repo) || repo.ExistsLocally,
 			"disabled": !repo.ExistsLocally && (this.state.allowGitHubMirrors && !this._canMirror(repo)),
@@ -130,12 +118,11 @@ class DashboardRepos extends Component {
 				<div className="repos">
 					{this.state.repos.length === 0 ? <div className="well">{emptyStateLabel}</div> : <div className="list-group">
 						{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(this._repoSort).map((repo, i) => (
-							<div className={repoRowClass(repo)} key={i}
-								onClick={clickHandler(repo)}>
+							<div className={repoRowClass(repo)} key={i}>
 								<div className="repo-header">
 									<h4>
 										<i className={`repo-attr-icon icon-${repo.Private ? "private" : "public"}`}></i>
-										{repo.URI}
+										{repoLink(repo.URI)}
 									</h4>
 									{this.state.allowGitHubMirrors && !this._canMirror(repo) &&
 										<span className="disabled-reason">{this._disabledReason(repo)}</span>
@@ -157,7 +144,6 @@ class DashboardRepos extends Component {
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
 	onWaitlist: React.PropTypes.bool.isRequired,
-	allowGitHubMirrors: React.PropTypes.bool.isRequired,
 	linkGitHub: React.PropTypes.bool.isRequired,
 };
 
