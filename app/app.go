@@ -93,6 +93,7 @@ func NewHandler(r *router.Router) http.Handler {
 		r.Get(router.Liveblog).Handler(liveblogHandler)
 	}
 
+	r.Get(router.Coverage).Handler(internal.Handler(serveCoverage))
 	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
 	r.Get(router.Download).Handler(internal.Handler(serveDownload))
 	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))

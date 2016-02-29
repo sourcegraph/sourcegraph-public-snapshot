@@ -22,6 +22,8 @@ const (
 
 	Builds = "builds"
 
+	Coverage = "coverage"
+
 	Home = "home"
 
 	RegisterClient = "register-client"
@@ -124,6 +126,7 @@ func New(base *mux.Router) *Router {
 	base.Path("/blog/{Slug:.*}").Methods("GET").Name(BlogPost)
 
 	base.Path("/.builds").Methods("GET").Name(Builds)
+	base.Path("/.coverage").Methods("GET").Name(Coverage)
 
 	base.Path("/.download/install.sh").Methods("GET").Name(DownloadInstall)
 	base.Path("/.download/{Suffix:.*}").Methods("GET").Name(Download)
