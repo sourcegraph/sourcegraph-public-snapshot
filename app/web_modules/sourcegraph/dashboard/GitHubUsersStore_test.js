@@ -4,6 +4,9 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
+afterEach(GitHubUsersStore.reset.bind(GitHubUsersStore));
+beforeEach(GitHubUsersStore.reset.bind(GitHubUsersStore));
+
 describe("DefStore", () => {
 	it("should handle Want Add Mirror Repos", () => {
 		Dispatcher.directDispatch(GitHubUsersStore, new DashboardActions.WantInviteUsers());

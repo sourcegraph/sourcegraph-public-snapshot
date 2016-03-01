@@ -4,6 +4,9 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
+afterEach(DashboardStore.reset.bind(DashboardStore));
+beforeEach(DashboardStore.reset.bind(DashboardStore));
+
 describe("DashboardStore", () => {
 	it("should handle Repo Created", () => {
 		Dispatcher.directDispatch(DashboardStore, new DashboardActions.RepoCreated("repos"));

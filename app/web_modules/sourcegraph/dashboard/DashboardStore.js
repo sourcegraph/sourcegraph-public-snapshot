@@ -11,6 +11,10 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class DashboardStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		if (typeof window !== "undefined") { // TODO(autotest) support document object.
 			this.repos = deepFreeze(window.repos);
 			this.users = deepFreeze(window.users);

@@ -4,6 +4,9 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import GitHubReposStore from "sourcegraph/dashboard/GitHubReposStore";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
+afterEach(GitHubReposStore.reset.bind(GitHubReposStore));
+beforeEach(GitHubReposStore.reset.bind(GitHubReposStore));
+
 describe("GitHubReposStore", () => {
 	it("should handle Want Add Mirror Repos", () => {
 		Dispatcher.directDispatch(GitHubReposStore, new DashboardActions.WantAddMirrorRepos());

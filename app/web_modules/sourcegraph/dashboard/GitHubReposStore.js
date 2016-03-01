@@ -9,7 +9,11 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class GitHubReposStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
-		if (typeof window !== "undefined") { // TODO(autotest) support document object.
+		this.reset();
+	}
+
+	reset() {
+			if (typeof window !== "undefined") { // TODO(autotest) support document object.
 			this.onWaitlist = window.onWaitlist;
 			this.remoteRepos = deepFreeze({
 				repos: window.mirrorData && window.mirrorData.RemoteRepos ? window.mirrorData.RemoteRepos : [],
