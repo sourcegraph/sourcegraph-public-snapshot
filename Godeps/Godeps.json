@@ -180,11 +180,6 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "azul3d.org/semver.v2",
-			"Comment": "v2.0.1",
-			"Rev": "85423cb34bb5ce092d65466631f4fbfa501e192a"
-		},
-		{
 			"ImportPath": "bitbucket.org/pkg/inflect",
 			"Comment": "go.r60-12",
 			"Rev": "8961c3750a47b8c0b3e118d52513b97adf85a7e8"
@@ -244,10 +239,6 @@
 		{
 			"ImportPath": "github.com/bitly/go-hostpool",
 			"Rev": "d0e59c22a56e8dadfed24f74f452cea5a52722d2"
-		},
-		{
-			"ImportPath": "github.com/bradfitz/iter",
-			"Rev": "454541ec3da2a73fc34fd049b19ee5777bf19345"
 		},
 		{
 			"ImportPath": "github.com/cpuguy83/go-md2man/md2man",
@@ -402,10 +393,6 @@
 			"Rev": "efd7476481382c195beb33acd8ec2f1527167fb4"
 		},
 		{
-			"ImportPath": "github.com/google/go-github/github",
-			"Rev": "b8b4ac742977310ff6e75140a403a38dab109977"
-		},
-		{
 			"ImportPath": "github.com/google/go-querystring/query",
 			"Rev": "ec0a78e0f4db229b7897be36596a8944230b857a"
 		},
@@ -481,10 +468,6 @@
 			"ImportPath": "github.com/justinas/nosurf",
 			"Comment": "0.1-50-g45adcfc",
 			"Rev": "45adcfcaf70610a5934db447ffe0ea9d13462c9e"
-		},
-		{
-			"ImportPath": "github.com/kardianos/govendor/vendorfile",
-			"Rev": "ab829da66886fbfc2994297b7d2c8501a6c2f865"
 		},
 		{
 			"ImportPath": "github.com/kardianos/osext",
@@ -665,22 +648,6 @@
 			"Rev": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7"
 		},
 		{
-			"ImportPath": "github.com/shurcooL/Go-Package-Store/pkg",
-			"Rev": "27ecb193332cbf8c56cca3d5348ceb94efd71a08"
-		},
-		{
-			"ImportPath": "github.com/shurcooL/Go-Package-Store/presenter",
-			"Rev": "27ecb193332cbf8c56cca3d5348ceb94efd71a08"
-		},
-		{
-			"ImportPath": "github.com/shurcooL/Go-Package-Store/presenter/github",
-			"Rev": "27ecb193332cbf8c56cca3d5348ceb94efd71a08"
-		},
-		{
-			"ImportPath": "github.com/shurcooL/Go-Package-Store/repo",
-			"Rev": "27ecb193332cbf8c56cca3d5348ceb94efd71a08"
-		},
-		{
 			"ImportPath": "github.com/shurcooL/github_flavored_markdown",
 			"Rev": "b3921bea4a899100a4fd522dd940b819af56e437"
 		},
@@ -722,14 +689,6 @@
 			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
 		{
-			"ImportPath": "github.com/shurcooL/go/osutil",
-			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
-		},
-		{
-			"ImportPath": "github.com/shurcooL/go/trim",
-			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
-		},
-		{
 			"ImportPath": "github.com/shurcooL/go/vfs/godocfs/godocfs",
 			"Rev": "63a73a4c0e73b3ff6787385a066483dbe90add26"
 		},
@@ -768,10 +727,6 @@
 		{
 			"ImportPath": "github.com/shurcooL/sanitized_anchor_name",
 			"Rev": "9a8b7d4e8f347bfa230879db9d7d4e4d9e19f962"
-		},
-		{
-			"ImportPath": "github.com/shurcooL/vcsstate",
-			"Rev": "20a6595affd14b7449f1dce9df5a17557480df6b"
 		},
 		{
 			"ImportPath": "github.com/shurcooL/vfsgen",
@@ -1066,10 +1021,6 @@
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/types/typeutil",
-			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
-		},
-		{
-			"ImportPath": "golang.org/x/tools/go/vcs",
 			"Rev": "5a22c00969ca85e2a020645ccaf02fffa89d95ca"
 		},
 		{
@@ -1475,14 +1426,6 @@
 		{
 			"ImportPath": "src.sourcegraph.com/apps/notifications/sgapp",
 			"Rev": "54724dfb91c02f7de2171729135fbb2887b06672"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/apps/updater",
-			"Rev": "ec9cba386681aeb5cbe307a85cb115b853b46a33"
-		},
-		{
-			"ImportPath": "src.sourcegraph.com/apps/updater/sgapp",
-			"Rev": "ec9cba386681aeb5cbe307a85cb115b853b46a33"
 		},
 		{
 			"ImportPath": "src.sourcegraph.com/syntaxhighlight",
