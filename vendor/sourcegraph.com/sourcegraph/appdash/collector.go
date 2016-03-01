@@ -53,17 +53,21 @@ type ChunkedCollector struct {
 	// Collector is the underlying collector that spans are sent to.
 	Collector
 
-	// MinInterval is the minimum time period between calls to the
-	// underlying collector's Collect method.
+	// MinInterval is the minimum time period between calls to the underlying
+	// collector's Collect method. I.e., after MinInterval Flush is automatically
+	// called.
 	MinInterval time.Duration
 
 	// FlushTimeout is the maximum amount of time that a Flush operation can take.
 	// If the operation exceeds this duration, the pending queue of collections is
-	// entirely dropped (traces may be missing data) and Flush return ErrTimedOut.
+	// entirely dropped (traces may be missing data) and Flush returns
+	// ErrFlushTimeout. If the underlying Collect call should block for a long
+	// period of time, rather than just being slow, the flush timeout will not
+	// have an affect.
 	//
-	// If FlushTimeout is zero, the flush operation can take any amount of time (this
-	// could lead to memory usage climbing if the underlying collector does not
-	// have enough throughput).
+	// If FlushTimeout is zero, the flush operation can take any amount of time
+	// (this could lead to memory usage climbing if the underlying collector does
+	// not have enough throughput).
 	FlushTimeout time.Duration
 
 	// OnFlush, if non-nil, will be directly invoked at the start of each Flush
@@ -138,7 +142,7 @@ func (cc *ChunkedCollector) Flush() error {
 		if err := cc.Collector.Collect(spanID, p...); err != nil {
 			errs = append(errs, err)
 		}
-		if cc.FlushTimeout != time.Duration(0) && time.Since(start) > cc.FlushTimeout {
+		if cc.FlushTimeout != 0 && time.Since(start) > cc.FlushTimeout {
 			errs = append(errs, ErrFlushTimeout)
 			break
 		}
