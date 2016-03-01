@@ -117,7 +117,7 @@ class DashboardContainer extends Container {
 						</div>
 					}
 					<div className="dash-repos-header">
-						<h3 className="your-repos">Your repositories</h3>
+						<h3 className="your-repos">Repositories</h3>
 						{!this.state.allowGitHubMirrors && (this.state.currentUser.Admin || this.state.currentUser.Write) &&
 							<button className="btn btn-primary add-repo-btn"
 								onClick={_ => this.setState({showCreateRepoWell: !this.state.showCreateRepoWell})}>

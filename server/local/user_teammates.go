@@ -71,7 +71,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 				Organization:  currentOrgLogin,
 			})
 			currentUser := userList[numUsers]
-			numUsers = numUsers + 1
+			numUsers += 1
 
 			wg.Add(1)
 			go func() {

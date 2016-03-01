@@ -54,7 +54,7 @@ class AddUsersModal extends Component {
 								onClick={() => Dispatcher.dispatch(new DashboardActions.DismissUsersModal())}>
 								<span aria-hidden="true">&times;</span>
 							</button>
-							<h4 className="modal-title">Invite Teammates</h4>
+							<h4 className="modal-title">Invite teammates</h4>
 						</div>
 						<div className="modal-body">
 							<ul className="nav nav-tabs" role="tablist">
@@ -79,12 +79,12 @@ class AddUsersModal extends Component {
 												<input className="form-control"
 													type="text"
 													value={this.state.email}
-													placeholder="Type email here"
+													placeholder="Email Address"
 													onChange={this._handleTextInput}/>
 												<select className="form-control"
 													onChange={this._handlePermissionChange}>
-													<option value="read">Can Read</option>
-													<option value="write">Can Write</option>
+													<option value="read">Can read</option>
+													<option value="write">Can write</option>
 													<option value="admin">Admin</option>
 												</select>
 											</div>
