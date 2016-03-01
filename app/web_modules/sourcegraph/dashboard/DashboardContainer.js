@@ -51,9 +51,9 @@ class DashboardContainer extends Container {
 		state.onWaitlist = DashboardStore.onWaitlist;
 		state.isMothership = DashboardStore.isMothership;
 		state.showUsersModal = ModalStore.showUsersModal;
-		state.allowStandaloneRepos = !DashboardStore.isMothership;
+		state.allowStandaloneRepos = !DashboardStore.allowMirrors;
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
-		state.allowStandaloneUsers = !DashboardStore.isMothership;
+		state.allowStandaloneUsers = !DashboardStore.allowMirrors;
 		state.allowGitHubUsers = DashboardStore.allowMirrors;
 	}
 
