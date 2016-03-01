@@ -42,6 +42,10 @@ func newCollectPacket(s SpanID, as Annotations) *wire.CollectPacket {
 	}
 }
 
+// ErrFlushTimeout is the error returns by ChunkedCollector.Flush when the flush
+// operation exceeded the optional ChunkedCollector.FlushTimeout duration.
+var ErrFlushTimeout = errors.New("flush timeout: flush took too long / queue dropped")
+
 // A ChunkedCollector groups annotations together that have the same
 // span and calls its underlying collector's Collect method with the
 // chunked data periodically (instead of immediately).
@@ -52,6 +56,15 @@ type ChunkedCollector struct {
 	// MinInterval is the minimum time period between calls to the
 	// underlying collector's Collect method.
 	MinInterval time.Duration
+
+	// FlushTimeout is the maximum amount of time that a Flush operation can take.
+	// If the operation exceeds this duration, the pending queue of collections is
+	// entirely dropped (traces may be missing data) and Flush return ErrTimedOut.
+	//
+	// If FlushTimeout is zero, the flush operation can take any amount of time (this
+	// could lead to memory usage climbing if the underlying collector does not
+	// have enough throughput).
+	FlushTimeout time.Duration
 
 	// OnFlush, if non-nil, will be directly invoked at the start of each Flush
 	// operation that is performed by this collector.
@@ -109,6 +122,8 @@ func (cc *ChunkedCollector) Collect(span SpanID, anns ...Annotation) error {
 // Flush immediately sends all pending spans to the underlying
 // collector.
 func (cc *ChunkedCollector) Flush() error {
+	start := time.Now()
+
 	cc.mu.Lock()
 	pendingBySpanID := cc.pendingBySpanID
 	cc.pendingBySpanID = nil
@@ -122,6 +137,10 @@ func (cc *ChunkedCollector) Flush() error {
 	for spanID, p := range pendingBySpanID {
 		if err := cc.Collector.Collect(spanID, p...); err != nil {
 			errs = append(errs, err)
+		}
+		if cc.FlushTimeout != time.Duration(0) && time.Since(start) > cc.FlushTimeout {
+			errs = append(errs, ErrFlushTimeout)
+			break
 		}
 	}
 
