@@ -108,6 +108,7 @@ func (f *ClientConfig) configure() (func(context.Context) context.Context, error
 			flushDurationGauge.Inc()
 			flushQueueSizeGauge.Set(float64(queueSize))
 		},
+		FlushTimeout: 50 * time.Millisecond,
 	}
 
 	traceutil.DefaultCollector = c
