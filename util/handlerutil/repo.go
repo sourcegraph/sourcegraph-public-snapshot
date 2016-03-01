@@ -2,6 +2,7 @@ package handlerutil
 
 import (
 	"bytes"
+	"fmt"
 	"go/doc"
 	"html/template"
 	"net/http"
@@ -372,6 +373,40 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	def, err := cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: opt})
 	if err != nil {
 		return dc, rc, vc, err
+	}
+
+	// Now that we have the def, we can check if its file has been
+	// changed AFTER the resolved srclib-last-version. If so, then we
+	// can't actually display this def, because we'd only be able to
+	// show it on an older version of the file (which would mean that
+	// users would see file data from an older commit when looking at
+	// a newer commit's def--that is BAD).
+	//
+	// Right now, the best course of action is to 404. This is a
+	// fairly rare case that should be remedied as soon as the next
+	// build completes. The alternative would be to display a warning
+	// saying "this file is N commits behind the requested commit,"
+	// but that adds a lot of complexity to the code and to the UI (as
+	// we have seen in the past). If a user's looking at a file that
+	// was changed since the last srclib version, they also see an
+	// unannotated file, so this is consistent with that behavior as
+	// well.
+	defResolvedRev, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
+		RepoRev: sourcegraph.RepoRevSpec{
+			RepoSpec: vc.RepoRevSpec.RepoSpec,
+			Rev:      vc.RepoRevSpec.Rev,
+			CommitID: vc.RepoRevSpec.Rev, // use originally requested rev, not already resolved last-srclib-version
+		},
+		Path: def.File,
+	})
+	if err != nil {
+		return dc, rc, vc, err
+	}
+	if defResolvedRev.CommitID != resolvedRev.CommitID {
+		return dc, rc, vc, &errcode.HTTPErr{
+			Status: http.StatusNotFound,
+			Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, def.File, resolvedRev.CommitID, vc.RepoRevSpec.Rev),
+		}
 	}
 
 	// this can not be moved to svc/local, because HTML sanitation needs to
