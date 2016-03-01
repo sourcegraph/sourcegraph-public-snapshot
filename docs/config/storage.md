@@ -10,10 +10,10 @@ attachments in issues) are stored on the filesystem.
 
 # Initializing PostgreSQL
 
-After installing PostgreSQL, setup up a `sourcegraph` user and database:
+After installing PostgreSQL, set up up a `sourcegraph` user and database:
 
 ```
-# Linux only: sudo su - postgres
+sudo su - postgres # this line only needed for Linux
 createuser --superuser sourcegraph
 sql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
@@ -27,7 +27,7 @@ with `timezone =` to the following:
 timezone = 'UTC'
 ```
 
-Finally, restart your database server (e.g. `sudo /etc/init.d/posgresql restart`).
+Finally, restart your database server (e.g. `sudo service postgresql restart`).
 
 # Configuring PostgreSQL
 

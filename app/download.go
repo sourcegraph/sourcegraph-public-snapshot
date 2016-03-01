@@ -122,7 +122,7 @@ cloud_pre() {
 	sudo -u postgres createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 	export PGSQL_VERSION="$(eval "psql -V | egrep -o '[0-9]{1,}\.[0-9]{1,}'")" # Major.Minor version
 	sed -i "s|^timezone =.*|timezone = 'UTC'|" /etc/postgresql/$PGSQL_VERSION/main/postgresql.conf
-	sudo /etc/init.d/postgresql restart # make config changes take effect
+	sudo service postgresql restart # make config changes take effect
 }
 
 cloud_post() {
