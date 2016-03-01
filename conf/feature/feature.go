@@ -17,8 +17,6 @@ var Features = struct {
 
 	// Currently disabled due to performance issues.
 	TreeEntryCommits bool
-
-	RepoUpdater bool // Repo Updater app.
 }{
 	Discussions:        false,
 	NotificationCenter: true,

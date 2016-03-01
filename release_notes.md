@@ -1,5 +1,6 @@
 # dev
 
+- Removed the Repo Updater app (hidden behind SG_FEATURE_REPOUPDATER flag).
 - Removed the Tracker app and inline code discussions. To export
   Tracker threads and comments, run the following PostgreSQL query:
   `select convert_from(decode(unnest(avals(objects)::text[]),
