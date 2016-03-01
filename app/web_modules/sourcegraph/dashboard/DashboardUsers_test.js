@@ -5,7 +5,7 @@ import moment from "moment";
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 
 import testdataData from "sourcegraph/dashboard/testdata/DashboardUsers-data.json";
-import testdataInvited from "sourcegraph/dashboard/testdata/DashboardUsers-InvitedUsers.json";
+import testdataInvited from "sourcegraph/dashboard/testdata/DashboardUsers-invitedUsers.json";
 import testdataNotInvited from "sourcegraph/dashboard/testdata/DashboardUsers-notInvited.json";
 
 describe("DashboardUsers", () => {

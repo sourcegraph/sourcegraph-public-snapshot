@@ -19,7 +19,7 @@
 											"props": {
 												"className": "your-repos",
 												"children": [
-													"Your repositories"
+													"Repositories"
 												]
 											}
 										}
