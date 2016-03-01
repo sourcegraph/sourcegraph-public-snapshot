@@ -1,17 +1,11 @@
 import update from "react/lib/update";
 
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 export class GitHubUsersStore extends Store {
-	constructor(dispatcher) {
-		super(dispatcher);
-		this.reset();
-	}
-
 	reset() {
 		// The users which are available to invite.
 		this.users = deepFreeze({

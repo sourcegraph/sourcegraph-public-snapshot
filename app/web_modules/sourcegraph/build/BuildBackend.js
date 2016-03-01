@@ -14,13 +14,12 @@ function authHeaders() {
 
 const BuildBackend = {
 	xhr: defaultXhr,
-	buildStore: BuildStore,
 
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case BuildActions.WantBuild:
 			{
-				let build = BuildBackend.buildStore.builds.get(action.repo, action.buildID);
+				let build = BuildStore.builds.get(action.repo, action.buildID);
 				if (build === null || action.force) {
 					BuildBackend.xhr({
 						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}`,
@@ -41,7 +40,7 @@ const BuildBackend = {
 			{
 				// Only fetch log lines newer than those we've already fetched.
 				let minID = 0;
-				let log = BuildBackend.buildStore.logs.get(action.repo, action.buildID, action.taskID);
+				let log = BuildStore.logs.get(action.repo, action.buildID, action.taskID);
 				if (log !== null) {
 					minID = log.maxID;
 				}
@@ -73,7 +72,7 @@ const BuildBackend = {
 
 		case BuildActions.WantTasks:
 			{
-				let tasks = BuildBackend.buildStore.tasks.get(action.repo, action.buildID);
+				let tasks = BuildStore.tasks.get(action.repo, action.buildID);
 				if (tasks === null || action.force) {
 					BuildBackend.xhr({
 						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks?PerPage=1000`,

@@ -1,5 +1,4 @@
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as OnboardingActions from "sourcegraph/dashboard/OnboardingActions";
@@ -8,11 +7,6 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import update from "react/lib/update";
 
 export class OnboardingStore extends Store {
-	constructor(dispatcher) {
-		super(dispatcher);
-		this.reset();
-	}
-
 	reset() {
 		this.progress = deepFreeze(window.progress);
 		this.currentUser = deepFreeze(window.currentUser);

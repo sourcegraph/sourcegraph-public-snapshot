@@ -4,9 +4,6 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import DefStore from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 
-afterEach(DefStore.reset.bind(DefStore));
-beforeEach(DefStore.reset.bind(DefStore));
-
 describe("DefStore", () => {
 	it("should handle DefFetched", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("/someURL", "someData"));

@@ -4,9 +4,6 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
-afterEach(SearchResultsStore.reset.bind(SearchResultsStore));
-beforeEach(SearchResultsStore.reset.bind(SearchResultsStore));
-
 describe("SearchResultsStore", () => {
 	it("should handle ResultsFetched", () => {
 		Dispatcher.directDispatch(SearchResultsStore, new SearchActions.ResultsFetched("aRepo", "aRev", "aQuery", "aType", 1, "someResults"));

@@ -1,5 +1,4 @@
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
@@ -9,11 +8,6 @@ function keyFor(repo, rev, path) {
 }
 
 export class TreeStore extends Store {
-	constructor(dispatcher) {
-		super(dispatcher);
-		this.reset();
-	}
-
 	reset() {
 		this.commits = deepFreeze({
 			content: {},
