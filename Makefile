@@ -100,7 +100,7 @@ serve-metrics-dev:
 	prometheus -storage.local.path ${PROMETHEUS_STORAGE} --config.file dev/prometheus.yml
 
 serve-dep:
-	go get sourcegraph.com/sqs/rego
+	go install ./vendor/sourcegraph.com/sqs/rego
 
 # This ulimit check is for the large number of open files from rego; we need
 # this here even though the `src` sysreq package also checks for ulimit (for
