@@ -11,6 +11,10 @@ function keyFor(repo, rev, tree) {
 export class CodeStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.files = deepFreeze({
 			content: {},
 			get(repo, rev, tree) {

@@ -9,6 +9,10 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class GitHubReposStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.onWaitlist = window.onWaitlist;
 		this.reposByOrg = deepFreeze({
 			repos: window.mirrorData && window.mirrorData.ReposByOrg ? window.mirrorData.ReposByOrg : {},

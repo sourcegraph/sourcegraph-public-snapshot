@@ -24,16 +24,6 @@
 						"examples": {
 							"content": {},
 							"counts": {}
-						},
-						"highlightedDef": "otherDef"
-					}
-				},
-				{
-					"type": "DefTooltip",
-					"props": {
-						"def": {
-							"Found": true,
-							"test": "otherDefData"
 						}
 					}
 				}
@@ -50,10 +40,6 @@
 		{
 			"$constructor": "WantDef",
 			"url": "someDef"
-		},
-		{
-			"$constructor": "WantDef",
-			"url": "otherDef"
 		}
 	]
 }

@@ -11,6 +11,10 @@ function keyFor(repo, rev, path) {
 export class TreeStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.commits = deepFreeze({
 			content: {},
 			get(repo, rev, path) {

@@ -9,6 +9,10 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class GitHubUsersStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		// The users which are available to invite.
 		this.users = deepFreeze({
 			users: window.teammates ? (window.teammates.UsersByOrg || {}) : {},

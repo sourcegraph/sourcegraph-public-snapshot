@@ -6,6 +6,10 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class OnboardingStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.showReposModal = false;
 		this.showUsersModal = false;
 	}

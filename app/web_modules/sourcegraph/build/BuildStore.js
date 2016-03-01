@@ -15,6 +15,10 @@ function keyFor(repo, build, task) {
 export class BuildStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.builds = deepFreeze({
 			content: {},
 			get(repo, build) {

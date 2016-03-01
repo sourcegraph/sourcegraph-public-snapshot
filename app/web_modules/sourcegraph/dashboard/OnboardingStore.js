@@ -10,6 +10,10 @@ import update from "react/lib/update";
 export class OnboardingStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.progress = deepFreeze(window.progress);
 		this.currentUser = deepFreeze(window.currentUser);
 	}

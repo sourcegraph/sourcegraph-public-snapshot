@@ -11,6 +11,10 @@ function keyFor(repo, rev, query, type, page) {
 export class SearchResultsStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.results = deepFreeze({
 			content: {},
 			get(repo, rev, query, type, page) {

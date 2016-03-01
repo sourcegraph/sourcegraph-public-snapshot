@@ -11,6 +11,10 @@ function exampleKeyFor(defURL, index) {
 export class DefStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
+		this.reset();
+	}
+
+	reset() {
 		this.defs = deepFreeze({
 			content: {},
 			get(url) {
