@@ -17,12 +17,11 @@ import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/apps/notifications/common"
 	"src.sourcegraph.com/apps/notifications/notifications"
-	"src.sourcegraph.com/apps/tracker/issues"
 )
 
 type Options struct {
 	Context   func(req *http.Request) context.Context
-	RepoSpec  func(req *http.Request) issues.RepoSpec
+	RepoSpec  func(req *http.Request) notifications.RepoSpec
 	BaseURI   func(req *http.Request) string
 	CSRFToken func(req *http.Request) string
 	Verbatim  func(w http.ResponseWriter)
@@ -128,7 +127,7 @@ func baseState(req *http.Request) (BaseState, error) {
 }
 
 type repoNotifications struct {
-	Repo          issues.RepoSpec
+	Repo          notifications.RepoSpec
 	RepoURL       template.URL
 	Notifications notifications.Notifications
 
@@ -148,9 +147,9 @@ func (s state) RepoNotifications() ([]repoNotifications, error) {
 		return nil, err
 	}
 
-	rnm := make(map[issues.RepoSpec]*repoNotifications)
+	rnm := make(map[notifications.RepoSpec]*repoNotifications)
 	for _, n := range ns {
-		var r issues.RepoSpec = n.RepoSpec
+		var r notifications.RepoSpec = n.RepoSpec
 		switch rnp := rnm[r]; rnp {
 		case nil:
 			rn := repoNotifications{

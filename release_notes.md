@@ -1,5 +1,9 @@
 # dev
 
+- Removed the Tracker app and inline code discussions. To export
+  Tracker threads and comments, run the following PostgreSQL query:
+  `select convert_from(decode(unnest(avals(objects)::text[]),
+  'base64'), 'utf-8') from appdata where name like '%-tracker-%';`
 - Removed user profile pages and the `--auth.disable-user-profiles`
   flag. User profiles are not yet implemented, and enabling user
   profiles did not yet make sense in any scenarios. If you previously

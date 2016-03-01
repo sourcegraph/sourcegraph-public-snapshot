@@ -19,9 +19,7 @@
 									],
 									"selected": true,
 									"selectedDef": "someDef",
-									"highlightedDef": "otherDef",
-									"lineButton": false,
-									"alwaysShowLineButton": false
+									"highlightedDef": "otherDef"
 								}
 							},
 							{
@@ -32,9 +30,7 @@
 									"tokens": [],
 									"selected": true,
 									"selectedDef": "someDef",
-									"highlightedDef": "otherDef",
-									"lineButton": false,
-									"alwaysShowLineButton": true
+									"highlightedDef": "otherDef"
 								}
 							},
 							{
@@ -47,9 +43,7 @@
 									],
 									"selected": false,
 									"selectedDef": "someDef",
-									"highlightedDef": "otherDef",
-									"lineButton": false,
-									"alwaysShowLineButton": false
+									"highlightedDef": "otherDef"
 								}
 							},
 							{
@@ -60,9 +54,7 @@
 									"tokens": [],
 									"selected": false,
 									"selectedDef": "someDef",
-									"highlightedDef": "otherDef",
-									"lineButton": false,
-									"alwaysShowLineButton": false
+									"highlightedDef": "otherDef"
 								}
 							}
 						]
