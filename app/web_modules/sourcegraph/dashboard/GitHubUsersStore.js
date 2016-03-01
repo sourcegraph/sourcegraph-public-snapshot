@@ -37,20 +37,14 @@ export class GitHubUsersStore extends Store {
 			this.orgs = window.teammates.Organizations;
 			this.users.users.map(user => this.getByOrg.hasOwnProperty(user.Organization) ? this.getByOrg[user.Organization].push(user) : this.getByOrg[user.Organization] = [].concat.apply(user || []));
 		}
-		this.showLoading = false; // Indicates if a request to the backend to invite users is in progress
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.WantInviteUsers:
-			this.showLoading = true;
-			break;
-
 		case DashboardActions.UsersInvited:
 			this.users = update(this.users, {
 				users: {$set: action.teammates ? action.teammates.Users : {}},
 			});
-			this.showLoading = false;
 			break;
 
 		default:

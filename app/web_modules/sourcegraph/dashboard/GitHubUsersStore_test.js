@@ -8,14 +8,8 @@ afterEach(GitHubUsersStore.reset.bind(GitHubUsersStore));
 beforeEach(GitHubUsersStore.reset.bind(GitHubUsersStore));
 
 describe("DefStore", () => {
-	it("should handle Want Add Mirror Repos", () => {
-		Dispatcher.directDispatch(GitHubUsersStore, new DashboardActions.WantInviteUsers());
-		expect(GitHubUsersStore.showLoading).to.be(true);
-	});
-
 	it("should handle Mirror Repo Added", () => {
 		Dispatcher.directDispatch(GitHubUsersStore, new DashboardActions.UsersInvited({Users: "hello"}));
 		expect(GitHubUsersStore.users.users).to.be("hello");
-		expect(GitHubUsersStore.showLoading).to.be(false);
 	});
 });

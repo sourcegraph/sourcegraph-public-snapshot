@@ -13,7 +13,7 @@ export class GitHubReposStore extends Store {
 	}
 
 	reset() {
-			if (typeof window !== "undefined") { // TODO(autotest) support document object.
+		if (typeof window !== "undefined") { // TODO(autotest) support document object.
 			this.onWaitlist = window.onWaitlist;
 			this.remoteRepos = deepFreeze({
 				repos: window.mirrorData && window.mirrorData.RemoteRepos ? window.mirrorData.RemoteRepos : [],
