@@ -299,9 +299,9 @@ func notificationColor(cs *sourcegraph.Changeset) notif.RGB {
 	switch {
 	default: // Open.
 		return notif.RGB{0x6c, 0xc6, 0x44}
-	case cs.ClosedAt != nil: // Closed.
+	case cs.ClosedAt != nil && !cs.Merged: // Closed.
 		return notif.RGB{0xbd, 0x2c, 0x00}
-	case cs.Merged: // Merged.
+	case cs.ClosedAt != nil && cs.Merged: // Merged.
 		return notif.RGB{78, 155, 212}
 	}
 }
