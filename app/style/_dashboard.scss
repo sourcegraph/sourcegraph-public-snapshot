@@ -84,6 +84,7 @@
 				width: 50%;
 				height: 40px;
 				text-align: center;
+				min-width: 118px;
 			}
 
 			.plus-btn {
@@ -183,7 +184,7 @@
 
 			.repo-attr-icon {
 				margin-right: 10px;
-				color: $cloudy-blue;
+				color: $repo-attr-color;
 			}
 		}
 		p.description {
@@ -330,5 +331,6 @@
 
 	.invite-user-form {
 		text-align: center;
+		margin: 30px;
 	}
 }

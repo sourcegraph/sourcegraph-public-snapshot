@@ -74,9 +74,8 @@ class AddUsersModal extends Component {
 								{this.state.allowStandaloneUsers &&
 									<div role="tabpanel" className={`tab-pane ${this.state.allowStandaloneUsers ? "active" : ""}`} id="email-invite">
 										<div className="widget-body">
-											<p className="add-repo-label">EMAIL:</p>
 											<div className="form-inline invite-user-form">
-												<input className="form-control"
+												<input className="email form-control"
 													type="text"
 													value={this.state.email}
 													placeholder="Email Address"
@@ -92,7 +91,7 @@ class AddUsersModal extends Component {
 										<div className="widget-footer">
 											<button className="btn btn-block btn-primary btn-lg"
 												onClick={this._handleInvite}>
-												CREATE
+												CREATE INVITATION
 											</button>
 										</div>
 									</div>

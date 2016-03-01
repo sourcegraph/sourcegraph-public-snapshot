@@ -118,7 +118,7 @@ class UserList extends Component {
 										title={!this._hasEmail(user) ? "No public email" : null} />
 								}
 								{this.state.allowStandaloneUsers &&
-									<a className="user-permissions">{this._getUserPermissionString(user)}</a>
+									<span className="user-permissions">{this._getUserPermissionString(user)}</span>
 								}
 							</div>
 						))}

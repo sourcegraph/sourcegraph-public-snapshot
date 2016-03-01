@@ -122,7 +122,8 @@ class DashboardContainer extends Container {
 							<button className="btn btn-primary add-repo-btn"
 								onClick={_ => this.setState({showCreateRepoWell: !this.state.showCreateRepoWell})}>
 								<i className="icon-ic-plus-box" />
-								<span className="add-repo-label">ADD NEW</span>
+								{!this.state.showCreateRepoWell && <span className="add-repo-label">ADD NEW</span>}
+								{this.state.showCreateRepoWell && <span className="add-repo-label">CANCEL</span>}
 							</button>
 						}
 					</div>

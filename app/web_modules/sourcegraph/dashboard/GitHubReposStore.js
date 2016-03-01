@@ -46,21 +46,15 @@ export class GitHubReposStore extends Store {
 			this.reposByOrg = {};
 			this.remoteRepos.repos.map(repo => this.reposByOrg.hasOwnProperty(repo.Owner.Login) ? this.reposByOrg[repo.Owner.Login].push(repo) : this.reposByOrg[repo.Owner.Login] = [].concat.apply(repo || []));
 		}
-		this.showLoading = false; // Indicates if a request to the backend to add mirror repos is in progress
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.WantAddMirrorRepos:
-			this.showLoading = true;
-			break;
-
 		case DashboardActions.MirrorReposAdded:
 		case DashboardActions.MirrorRepoAdded:
 			this.remoteRepos = update(this.remoteRepos, {
 				repos: {$set: action.mirrorData ? action.mirrorData.RemoteRepos : {}},
 			});
-			this.showLoading = false;
 			break;
 
 		default:
