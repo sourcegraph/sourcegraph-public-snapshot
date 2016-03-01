@@ -1,0 +1,118 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "modal add-users-widget",
+			"style": {
+				"display": "block"
+			},
+			"tabIndex": "-1",
+			"role": "dialog",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "modal-dialog",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "modal-content",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "modal-header",
+												"children": [
+													{
+														"type": "button",
+														"props": {
+															"type": "button",
+															"className": "close",
+															"data-dismiss": "modal",
+															"aria-label": "Close",
+															"onClick": {
+																"dispatched": [
+																	{
+																		"$constructor": "DismissUsersModal"
+																	}
+																]
+															},
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"aria-hidden": "true",
+																		"children": [
+																			"×"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "h4",
+														"props": {
+															"className": "modal-title",
+															"children": [
+																"Invite Teammates"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "modal-body",
+												"children": [
+													{
+														"type": "ul",
+														"props": {
+															"className": "nav nav-tabs",
+															"role": "tablist",
+															"children": [
+																{
+																	"type": "li",
+																	"props": {
+																		"role": "presentation",
+																		"className": "active",
+																		"children": [
+																			{
+																				"type": "a",
+																				"props": {
+																					"href": "#github-invite",
+																					"role": "tab",
+																					"data-toggle": "tab",
+																					"children": [
+																						"Invite from GitHub"
+																					]
+																				}
+																			}
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "div",
+														"props": {
+															"className": "tab-content"
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

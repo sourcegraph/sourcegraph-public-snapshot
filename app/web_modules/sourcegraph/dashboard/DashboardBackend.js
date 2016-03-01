@@ -92,7 +92,9 @@ const DashboardBackend = {
 					Write: action.permission === "write",
 				}));
 				// TODO: proper modal....but soon we're sending emails anyway.
-				alert(`Invite link: ${body.Link}`);
+				if (typeof alert === "function") { // TODO(autotest) support document object.
+					alert(`Invite link: ${body.Link}`);
+				}
 			});
 			break;
 		case DashboardActions.WantInviteUsers:

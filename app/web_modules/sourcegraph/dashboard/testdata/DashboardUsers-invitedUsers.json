@@ -1,0 +1,138 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "panel panel-default",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "panel-heading",
+						"children": [
+							{
+								"type": "h5",
+								"props": {
+									"children": [
+										"Team"
+									]
+								}
+							},
+							{
+								"type": "button",
+								"props": {
+									"className": "btn btn-primary add-user-btn",
+									"onClick": {
+										"dispatched": [
+											{
+												"$constructor": "OpenAddUsersModal"
+											}
+										]
+									},
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"className": "fa fa-user-plus"
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "users-list panel-body",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "list-group",
+									"children": [
+										{
+											"type": "div",
+											"key": "0",
+											"props": {
+												"className": "list-group-item",
+												"children": [
+													{
+														"type": "img",
+														"props": {
+															"className": "avatar-sm",
+															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
+														}
+													},
+													{
+														"type": "span",
+														"props": {
+															"className": "user-name",
+															"children": [
+																"xyz1 (pending)"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"key": "1",
+											"props": {
+												"className": "list-group-item",
+												"children": [
+													{
+														"type": "img",
+														"props": {
+															"className": "avatar-sm",
+															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
+														}
+													},
+													{
+														"type": "span",
+														"props": {
+															"className": "user-name",
+															"children": [
+																"xyz2 (pending)"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"key": "2",
+											"props": {
+												"className": "list-group-item",
+												"children": [
+													{
+														"type": "img",
+														"props": {
+															"className": "avatar-sm",
+															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
+														}
+													},
+													{
+														"type": "span",
+														"props": {
+															"className": "user-name",
+															"children": [
+																"xyz3 (pending)"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

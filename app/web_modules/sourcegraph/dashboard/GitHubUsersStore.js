@@ -10,18 +10,24 @@ export class GitHubUsersStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
 		// The users which are available to invite.
-		this.users = deepFreeze({
-			users: window.teammates ? (window.teammates.Users || []) : [],
-			getUnique() {
-				let seen = {};
-				return this.users.filter(user => seen.hasOwnProperty(user.RemoteAccount.UID) ? false : (seen[user.RemoteAccount.UID] = true));
-			},
-		});
-
+		if (typeof window !== "undefined") { // TODO(autotest) support document object.
+			this.users = deepFreeze({
+				users: window.teammates ? (window.teammates.Users || []) : [],
+				getUnique() {
+					let seen = {};
+					return this.users.filter(user => seen.hasOwnProperty(user.RemoteAccount.UID) ? false : (seen[user.RemoteAccount.UID] = true));
+				},
+			});
+		} else {
+			this.users = deepFreeze({
+				users: [],
+				getUnique() { return []; },
+			});
+		}
 		// Store the state of which organizations mirrored users can come from.
 		// The currentOrg is a filter for widget components.
 		this.getByOrg = {};
-		if (!window.teammates) {
+		if (typeof window === "undefined" || !window.teammates) { // TODO support document object.
 			this.orgs = {};
 		} else {
 			this.orgs = window.teammates.Organizations;

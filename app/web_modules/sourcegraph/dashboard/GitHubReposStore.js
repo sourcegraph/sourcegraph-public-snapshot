@@ -9,22 +9,30 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class GitHubReposStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
-		this.onWaitlist = window.onWaitlist;
-		this.remoteRepos = deepFreeze({
-			repos: window.mirrorData && window.mirrorData.RemoteRepos ? window.mirrorData.RemoteRepos : [],
-			get(org) {
-				return this.repos.filter(repo => repo.Owner.Login === org);
-			},
-			getMirrored() {
-				return this.repos.filter(repo => repo.ExistsLocally).map(repo => repo.Repo);
-			},
-			getDashboard() {
-				return this.repos.map(repo => update(repo.Repo, {$merge: {ExistsLocally: repo.ExistsLocally}}));
-			},
-		});
+		if (typeof window !== "undefined") { // TODO(autotest) support document object.
+			this.onWaitlist = window.onWaitlist;
+			this.remoteRepos = deepFreeze({
+				repos: window.mirrorData && window.mirrorData.RemoteRepos ? window.mirrorData.RemoteRepos : [],
+				get(org) {
+					return this.repos.filter(repo => repo.Owner.Login === org);
+				},
+				getMirrored() {
+					return this.repos.filter(repo => repo.ExistsLocally).map(repo => repo.Repo);
+				},
+				getDashboard() {
+					return this.repos.map(repo => update(repo.Repo, {$merge: {ExistsLocally: repo.ExistsLocally}}));
+				},
+			});
+		} else {
+			this.onWaitlist = false;
+			this.remoteRepos = deepFreeze({
+				repos: [],
+				getDashboard() { return []; },
+			});
+		}
 
 		// Store the state of which organizations mirrored repos can come from by finding unique orgs
-		if (!(window.mirrorData && window.mirrorData.RemoteRepos)) {
+		if (typeof window === "undefined" || !(window.mirrorData && window.mirrorData.RemoteRepos)) {
 			this.orgs = {};
 			this.reposByOrg = {};
 		} else {

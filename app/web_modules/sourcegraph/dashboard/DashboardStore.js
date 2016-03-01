@@ -11,13 +11,23 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 export class DashboardStore extends Store {
 	constructor(dispatcher) {
 		super(dispatcher);
-		this.repos = deepFreeze(window.repos);
-		this.users = deepFreeze(window.users);
-		this.currentUser = deepFreeze(window.currentUser);
-		this.onboarding = deepFreeze(window.onboarding);
-		this.isMothership = deepFreeze(window.isMothership);
-		this.onWaitlist = deepFreeze(window.onWaitlist);
-		this.allowMirrors = Boolean(window.allowMirrors);
+		if (typeof window !== "undefined") { // TODO(autotest) support document object.
+			this.repos = deepFreeze(window.repos);
+			this.users = deepFreeze(window.users);
+			this.currentUser = deepFreeze(window.currentUser);
+			this.onboarding = deepFreeze(window.onboarding);
+			this.isMothership = deepFreeze(window.isMothership);
+			this.onWaitlist = deepFreeze(window.onWaitlist);
+			this.allowMirrors = Boolean(window.allowMirrors);
+		} else {
+			this.repos = [];
+			this.users = [];
+			this.currentUser = {Name: "abc xyz"};
+			this.onboarding = {};
+			this.isMothership = true;
+			this.onWaitlist = true;
+			this.allowMirrors = true;
+		}
 	}
 
 	__onDispatch(action) {

@@ -55,8 +55,6 @@ class DashboardContainer extends Container {
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
 		state.allowStandaloneUsers = !DashboardStore.isMothership;
 		state.allowGitHubUsers = DashboardStore.allowMirrors;
-		state.usersByOrg = GitHubUsersStore.getByOrg;
-		state.reposByOrg = GitHubReposStore.reposByOrg;
 	}
 
 	_handleRepoTextInput(e) {
@@ -143,7 +141,8 @@ class DashboardContainer extends Container {
 						</div>
 					</div>}
 					<div>
-						<DashboardRepos repos={this.state.repos} onWaitlist={this.state.onWaitlist}
+						<DashboardRepos repos={this.state.repos}
+							onWaitlist={this.state.onWaitlist}
 							allowGitHubMirrors={this.state.allowGitHubMirrors}
 							linkGitHub={this.state.onboarding.linkGitHub} />
 					</div>
