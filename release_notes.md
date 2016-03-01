@@ -37,8 +37,7 @@
 - Removed support for storing most types of data (users, changesets,
   tracker threads, etc.) on the filesystem. Git data is still stored
   on the filesystem, but all other data now must be stored in
-  PostgreSQL. See docs/config/storage.md for PostgreSQL configuration
-  instructions.
+  PostgreSQL. See [PostgreSQL initialization and configuration instructions](https://src.sourcegraph.com/sourcegraph/.docs/config/storage/).
 
   To migrate from FS storage to PostgreSQL, first run `src pgsql
   create` (with the `PG*` environment variables set for connecting to
