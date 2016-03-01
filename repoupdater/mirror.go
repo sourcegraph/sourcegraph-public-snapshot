@@ -3,6 +3,8 @@ package repoupdater
 import (
 	"time"
 
+	"github.com/jpillora/backoff"
+
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
@@ -28,12 +30,19 @@ func (r *mirrorRepoUpdater) Scopes() []string {
 
 func (r *mirrorRepoUpdater) Start(ctx context.Context) {
 	go func() {
+		b := &backoff.Backoff{
+			Max:    time.Minute,
+			Jitter: true,
+		}
 		for {
 			err := r.mirrorRepos(ctx)
 			if err != nil {
-				log15.Error("Mirrored repos updater failed", "error", err)
-				break
+				d := b.Duration()
+				log15.Error("Mirrored repos updater failed, sleeping before next try", "error", err, "sleep", d)
+				time.Sleep(d)
+				continue
 			}
+			b.Reset()
 		}
 	}()
 }
@@ -51,13 +60,19 @@ func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	hasMirror := false
 	for _, repo := range repos.Repos {
 		if repo.Mirror {
 			// Sleep a tiny bit longer than MirrorUpdateRate to avoid our
 			// enqueue being no-op / hitting "was recently updated".
 			time.Sleep(appconf.Flags.MirrorRepoUpdateRate + (200 * time.Millisecond))
 			Enqueue(repo)
+			hasMirror = true
 		}
+	}
+	if !hasMirror {
+		// If we don't have a mirror, lets sleep to prevent us spamming Repos.List
+		time.Sleep(time.Minute)
 	}
 	return nil
 }
