@@ -8,6 +8,26 @@ Sourcegraph stores most data in a
 build log files, srclib data, and uploaded user content (e.g., image
 attachments in issues) are stored on the filesystem.
 
+# Initializing PostgreSQL
+
+After installing PostgreSQL, setup up a `sourcegraph` user and database:
+
+```
+# Linux only: sudo su - postgres
+createuser --superuser sourcegraph
+sql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
+createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+```
+
+Then update your `postgresql.conf` default timezone to UTC. Determine the location
+of your `postgresql.conf` by running `psql -c 'show config_file;'`. Update the line beginning
+with `timezone =` to the following:
+
+```
+timezone = 'UTC'
+```
+
+Finally, restart your database server (e.g. `sudo /etc/init.d/posgresql restart`).
 
 # Configuring PostgreSQL
 
@@ -19,8 +39,8 @@ for example:
 ```
 PGHOST=pgsql.example.com
 PGPORT=5432
-PGUSER=pguser
-PGPASSWORD=pgpass
+PGUSER=sourcegraph
+PGPASSWORD=sourcegraph
 PGDATABASE=sourcegraph
 PGSSLMODE=disable
 ```
@@ -29,15 +49,11 @@ To test the environment's credentials, run `psql` (the PostgreSQL CLI
 client) with the `PG*` environment variables set. If you see a
 database prompt, then the environment's credentials are valid.
 
-If you installed Sourcegraph using the standard installation script on
-Ubuntu Linux, these values live in `/etc/sourcegraph/config.env`.
-
-## Initialization and management
+# Sourcegraph database management
 
 Prior to running Sourcegraph for the first time you will need to run `src pgsql create` which will initialize the database and tables.
 
 The `src pgsql` command provides subcommands to drop, reset and truncate the database. See `src pgsql -h` for more information.
-
 
 # srclib code analysis data
 
