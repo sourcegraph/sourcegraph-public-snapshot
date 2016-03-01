@@ -465,6 +465,10 @@
 			"Rev": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
 		},
 		{
+			"ImportPath": "github.com/jpillora/backoff",
+			"Rev": "f85df8d02bdf497eea1b176c7a52bac31ec62aac"
+		},
+		{
 			"ImportPath": "github.com/justinas/nosurf",
 			"Comment": "0.1-50-g45adcfc",
 			"Rev": "45adcfcaf70610a5934db447ffe0ea9d13462c9e"
