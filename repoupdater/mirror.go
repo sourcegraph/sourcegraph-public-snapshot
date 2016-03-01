@@ -1,6 +1,8 @@
 package repoupdater
 
 import (
+	"time"
+
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
@@ -26,24 +28,36 @@ func (r *mirrorRepoUpdater) Scopes() []string {
 
 func (r *mirrorRepoUpdater) Start(ctx context.Context) {
 	go func() {
-		apiclient, err := sourcegraph.NewClientFromContext(ctx)
-		if err != nil {
-			log15.Error("mirrorRepoUpdater: could not create client", "error", err)
-			return
-		}
-		repos, err := apiclient.Repos.List(ctx, &sourcegraph.RepoListOptions{
-			ListOptions: sourcegraph.ListOptions{
-				PerPage: 100000,
-			},
-		})
-		if err != nil {
-			log15.Error("mirrorRepoUpdater: could not list repos", "error", err)
-			return
-		}
-		for _, repo := range repos.Repos {
-			if repo.Mirror {
-				RepoUpdater.enqueue(repo)
+		for {
+			err := r.mirrorRepos(ctx)
+			if err != nil {
+				log15.Error("Mirrored repos updater failed", "error", err)
+				break
 			}
 		}
 	}()
+}
+
+func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: 100000,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	for _, repo := range repos.Repos {
+		if repo.Mirror {
+			// Sleep a tiny bit longer than MirrorUpdateRate to avoid our
+			// enqueue being no-op / hitting "was recently updated".
+			time.Sleep(appconf.Flags.MirrorRepoUpdateRate + (200 * time.Millisecond))
+			Enqueue(repo)
+		}
+	}
+	return nil
 }

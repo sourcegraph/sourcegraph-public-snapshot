@@ -55,10 +55,6 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 
 	// Skip if recently updated.
 	if _, recent := ru.recent[repo.RepoSpec()]; recent {
-		// Enqueue the repo again at a later time if desired.
-		if !appconf.Flags.DisableMirrorRepoBackgroundUpdate {
-			go ru.enqueueLater(repo)
-		}
 		return
 	}
 
@@ -67,11 +63,6 @@ func (ru *repoUpdater) enqueue(repo *sourcegraph.Repo) {
 		ru.recent[repo.RepoSpec()] = now
 	default:
 		// Skip since queue is full.
-	}
-
-	// Enqueue the repo again at a later time if desired.
-	if !appconf.Flags.DisableMirrorRepoBackgroundUpdate {
-		go ru.enqueueLater(repo)
 	}
 }
 
@@ -93,12 +84,4 @@ func (ru *repoUpdater) run(ctx context.Context) {
 			continue
 		}
 	}
-}
-
-// enqueueLater is called to enqueue the repo automatically at a later time.
-func (ru *repoUpdater) enqueueLater(repo *sourcegraph.Repo) {
-	// Sleep a tiny bit longer than MirrorUpdateRate to avoid our
-	// enqueue being no-op / hitting "was recently updated".
-	time.Sleep(appconf.Flags.MirrorRepoUpdateRate + (200 * time.Millisecond))
-	ru.enqueue(repo)
 }
