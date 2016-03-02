@@ -55,11 +55,11 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 	vc = &RepoRevCommon{}
 	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
 
-	apiclient := APIClient(r)
+	cl := APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
 	var commit0 *vcs.Commit
-	vc.RepoRevSpec, commit0, err = GetRepoRev(r, apiclient.Repos, rc.Repo)
+	vc.RepoRevSpec, commit0, err = GetRepoRev(r, cl.Repos, rc.Repo)
 	if IsRepoNoVCSDataError(err) {
 		if rc.Repo.Mirror {
 			// Trigger cloning/updating this repo from its remote
@@ -69,7 +69,7 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 			// clone process.
 			ctx, cancel := context.WithTimeout(ctx, time.Second*1)
 			defer cancel()
-			if _, err = apiclient.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: vc.RepoRevSpec.RepoSpec}); err != nil {
+			if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: vc.RepoRevSpec.RepoSpec}); err != nil {
 				if ctx.Err() == context.DeadlineExceeded {
 					// If deadline exceeded, fall through to NoVCSDataError return below.
 				} else {
@@ -107,17 +107,17 @@ func IsRepoNoVCSDataError(err error) bool {
 // GetRepoCommon returns the repository and RepoSpec based on the request URL.
 // Callers should ideally handle the custom error type URLMovedError.
 func GetRepoCommon(r *http.Request) (rc *RepoCommon, err error) {
-	apiclient := APIClient(r)
+	cl := APIClient(r)
 
 	rc = &RepoCommon{}
-	rc.Repo, _, err = GetRepo(r, apiclient.Repos)
+	rc.Repo, _, err = GetRepo(r, cl.Repos)
 	if err != nil {
 		return
 	}
 
 	ctx := httpctx.FromRequest(r)
 	repoSpec := rc.Repo.RepoSpec()
-	rc.RepoConfig, err = apiclient.Repos.GetConfig(ctx, &repoSpec)
+	rc.RepoConfig, err = cl.Repos.GetConfig(ctx, &repoSpec)
 	return
 }
 

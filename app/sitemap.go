@@ -19,7 +19,7 @@ import (
 
 func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
 	// get top repos
@@ -29,7 +29,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 		maxRepos = 350
 	)
 	for page := 1; page < maxPages && time.Since(start) < time.Second*20 || len(si.Sitemaps) < maxRepos; page++ {
-		repos, err := apiclient.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			NoFork:    true,
 			Sort:      "updated",
 			Type:      "public",
@@ -82,7 +82,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 
 func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
@@ -116,13 +116,13 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 	})
 
 	// Add defs if there is a valid srclib version.
-	dataVer, err := apiclient.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
 	}
 	if dataVer != nil {
 		seenDefs := map[graph.DefKey]bool{}
-		defs, err := apiclient.Defs.List(ctx, &sourcegraph.DefListOptions{
+		defs, err := cl.Defs.List(ctx, &sourcegraph.DefListOptions{
 			RepoRevs:    []string{rc.Repo.URI + "@" + dataVer.CommitID},
 			Exported:    true,
 			IncludeTest: false,

@@ -17,7 +17,7 @@ import (
 )
 
 func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
@@ -26,7 +26,7 @@ func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	repoSpec := rc.Repo.RepoSpec()
-	badges, err := apiclient.RepoBadges.ListBadges(ctx, &repoSpec)
+	badges, err := cl.RepoBadges.ListBadges(ctx, &repoSpec)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
 
 func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -52,7 +52,7 @@ func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	repoSpec := rc.Repo.RepoSpec()
-	counters, err := apiclient.RepoBadges.ListCounters(ctx, &repoSpec)
+	counters, err := cl.RepoBadges.ListCounters(ctx, &repoSpec)
 	if err != nil {
 		return err
 	}
@@ -69,9 +69,9 @@ func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
-	_, _, _, err := handlerutil.GetRepoAndRev(r, s.Repos)
+	_, _, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
 	if err != nil {
 		return err
 	}
@@ -131,19 +131,19 @@ func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
 // looking at the counter images on the stats/counters page).
 func serveRepoCounter(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	if _, err := s.Repos.Get(ctx, &repoSpec); err != nil {
+	if _, err := cl.Repos.Get(ctx, &repoSpec); err != nil {
 		return err
 	}
 
 	if _, noRecord := r.URL.Query()["no-record"]; !noRecord {
-		if _, err := s.RepoBadges.RecordHit(ctx, &repoSpec); err != nil {
+		if _, err := cl.RepoBadges.RecordHit(ctx, &repoSpec); err != nil {
 			return err
 		}
 	}
@@ -153,7 +153,7 @@ func serveRepoCounter(w http.ResponseWriter, r *http.Request) error {
 
 func doServeRepoCounter(w http.ResponseWriter, r *http.Request, repo sourcegraph.RepoSpec) error {
 	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	v := mux.Vars(r)
 	counter := v["Counter"]
@@ -173,7 +173,7 @@ func doServeRepoCounter(w http.ResponseWriter, r *http.Request, repo sourcegraph
 		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("bad counter name")}
 	}
 
-	count, err := s.RepoBadges.CountHits(ctx, &sourcegraph.RepoBadgesCountHitsOp{
+	count, err := cl.RepoBadges.CountHits(ctx, &sourcegraph.RepoBadgesCountHitsOp{
 		Repo:  repo,
 		Since: since,
 	})

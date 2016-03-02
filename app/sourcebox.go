@@ -23,7 +23,7 @@ import (
 )
 
 func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
 	dc, _, vc, err := handlerutil.GetDefCommon(r, nil)
@@ -44,7 +44,7 @@ func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 		},
 	}
 
-	entry, err := apiclient.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
+	entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 	if err != nil {
 		return err
 	}

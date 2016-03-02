@@ -10,7 +10,7 @@ import (
 
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	var opt sourcegraph.RepoListBranchesOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -18,12 +18,12 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(r, s.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(r, cl.Repos)
 	if err != nil {
 		return err
 	}
 
-	branches, err := s.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repoSpec, Opt: &opt})
+	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repoSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 
 func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	var opt sourcegraph.RepoListTagsOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -40,12 +40,12 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(r, s.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(r, cl.Repos)
 	if err != nil {
 		return err
 	}
 
-	tags, err := s.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repoSpec, Opt: &opt})
+	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repoSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}

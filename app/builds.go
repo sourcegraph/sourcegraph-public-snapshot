@@ -37,11 +37,11 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
 	opt = defaultBuildListOptions(opt)
-	builds, err := apiclient.Builds.List(ctx, &opt)
+	builds, err := cl.Builds.List(ctx, &opt)
 	if err != nil {
 		return err
 	}

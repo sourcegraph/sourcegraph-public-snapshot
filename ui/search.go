@@ -21,7 +21,7 @@ import (
 )
 
 func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 	e := json.NewEncoder(w)
 
@@ -38,13 +38,13 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 
 	defList := &sourcegraph.DefList{}
 
-	resolvedRev, dataVer, err := handlerutil.ResolveSrclibDataVersion(ctx, apiclient, sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev})
+	resolvedRev, dataVer, err := handlerutil.ResolveSrclibDataVersion(ctx, cl, sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev})
 	if err == nil {
 		opt.RepoRev = resolvedRev
 
 		// Only search if there is a srclib data version (otherwise
 		// there will be no token results).
-		defList, err = apiclient.Search.SearchTokens(ctx, &opt)
+		defList, err = cl.Search.SearchTokens(ctx, &opt)
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 	e := json.NewEncoder(w)
 
@@ -87,13 +87,13 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, apiclient.Repos)
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
 	if err != nil {
 		return err
 	}
 	opt.RepoRev = repoRev
 
-	vcsEntryList, err := apiclient.Search.SearchText(ctx, &opt)
+	vcsEntryList, err := cl.Search.SearchText(ctx, &opt)
 	if err != nil {
 		return err
 	}

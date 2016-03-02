@@ -11,7 +11,7 @@ import (
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	var opt sourcegraph.DefGetOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -24,7 +24,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	def, err := s.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: &opt})
+	def, err := cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -33,9 +33,9 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 func getDefSpec(r *http.Request) (defSpec sourcegraph.DefSpec, err error) {
 	v := mux.Vars(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
-	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, s.Repos)
+	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
 	if err != nil {
 		return sourcegraph.DefSpec{}, err
 	}
@@ -58,7 +58,7 @@ func getDefSpec(r *http.Request) (defSpec sourcegraph.DefSpec, err error) {
 
 func serveDefs(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	var opt sourcegraph.DefListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -75,7 +75,7 @@ func serveDefs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	defs, err := s.Defs.List(ctx, &opt)
+	defs, err := cl.Defs.List(ctx, &opt)
 	if err != nil {
 		return err
 	}

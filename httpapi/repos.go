@@ -11,9 +11,9 @@ import (
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
-	repo, _, err := handlerutil.GetRepo(r, s.Repos)
+	repo, _, err := handlerutil.GetRepo(r, cl.Repos)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	var opt sourcegraph.RepoListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -40,7 +40,7 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repos, err := s.Repos.List(ctx, &opt)
+	repos, err := cl.Repos.List(ctx, &opt)
 	if err != nil {
 		return err
 	}

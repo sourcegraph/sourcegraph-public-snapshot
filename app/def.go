@@ -55,7 +55,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	opt.Formatted = true
 
 	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 
 	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {
@@ -63,7 +63,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Get actual list of examples
-	examples, err := apiclient.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
+	examples, err := cl.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
 		Def: dc.Def.DefSpec(),
 		Rev: vc.RepoRevSpec.Rev,
 		Opt: &opt,

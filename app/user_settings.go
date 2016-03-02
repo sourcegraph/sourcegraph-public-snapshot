@@ -44,7 +44,7 @@ var errUserSettingsCommonWroteResponse = errors.New("userSettingsCommon already 
 // 		return err
 // 	}
 func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.UserSpec, *userSettingsCommonData, error) {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
 	currentUser := handlerutil.UserFromRequest(r)
@@ -71,7 +71,7 @@ func userSettingsCommon(w http.ResponseWriter, r *http.Request) (sourcegraph.Use
 	// The settings panel should have sections for the user AND for
 	// each of the orgs that the user can admin. This list is
 	// orgsAndSelf.
-	orgs, err := apiclient.Orgs.List(ctx, &sourcegraph.OrgsListOp{Member: sourcegraph.UserSpec{UID: int32(currentUser.UID)}, ListOptions: sourcegraph.ListOptions{PerPage: 100}})
+	orgs, err := cl.Orgs.List(ctx, &sourcegraph.OrgsListOp{Member: sourcegraph.UserSpec{UID: int32(currentUser.UID)}, ListOptions: sourcegraph.ListOptions{PerPage: 100}})
 	if errcode.GRPC(err) == codes.Unimplemented {
 		orgs = &sourcegraph.OrgList{} // ignore error
 	} else if err != nil {
@@ -128,7 +128,7 @@ func userSettingsMeRedirect(w http.ResponseWriter, r *http.Request, u *sourcegra
 }
 
 func serveUserSettingsProfile(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 	userSpec, cd, err := userSettingsCommon(w, r)
 	if err == errUserSettingsCommonWroteResponse {
@@ -137,7 +137,7 @@ func serveUserSettingsProfile(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	emails, err := apiclient.Users.ListEmails(ctx, &userSpec)
+	emails, err := cl.Users.ListEmails(ctx, &userSpec)
 	if err != nil || cd.User.IsOrganization {
 		if grpc.Code(err) == codes.PermissionDenied || cd.User.IsOrganization {
 			// We are not allowed to view the emails or its an org and orgs don't have emails
@@ -170,7 +170,7 @@ func serveUserSettingsProfile(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveUserSettingsProfileAvatar(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 
 	_, cd, err := userSettingsCommon(w, r)
@@ -184,7 +184,7 @@ func serveUserSettingsProfileAvatar(w http.ResponseWriter, r *http.Request) erro
 	email := r.PostFormValue("GravatarEmail")
 	user.AvatarURL = gravatarURL(email)
 
-	_, err = apiclient.Accounts.Update(ctx, user)
+	_, err = cl.Accounts.Update(ctx, user)
 	if err != nil {
 		return err
 	}

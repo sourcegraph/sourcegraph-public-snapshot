@@ -13,7 +13,7 @@ import (
 )
 
 func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
+	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
 	e := json.NewEncoder(w)
 
@@ -39,7 +39,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 			Name: data.Name,
 		}
 
-		_, err = apiclient.UserKeys.AddKey(ctx, &key)
+		_, err = cl.UserKeys.AddKey(ctx, &key)
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// Delete the key.
-		_, err := apiclient.UserKeys.DeleteKey(ctx, &sourcegraph.SSHPublicKey{
+		_, err := cl.UserKeys.DeleteKey(ctx, &sourcegraph.SSHPublicKey{
 			ID: ev.ID,
 		})
 		if err != nil {
@@ -65,7 +65,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Then return the current key list.
-	keys, err := apiclient.UserKeys.ListKeys(ctx, &pbtypes.Void{})
+	keys, err := cl.UserKeys.ListKeys(ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
