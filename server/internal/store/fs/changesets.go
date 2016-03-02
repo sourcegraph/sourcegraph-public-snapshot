@@ -243,7 +243,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		// Check they aren't already a reviewer.
 		already := false
 		for _, reviewer := range after.Reviewers {
-			if reviewer.UserSpec.Domain == addSpec.Domain && reviewer.UserSpec.UID == addSpec.UID {
+			if reviewer.UserSpec.UID == addSpec.UID {
 				already = true
 				break
 			}
@@ -272,7 +272,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	// Remove a reviewer from the CS.
 	if remove := op.RemoveReviewer; remove != nil {
 		for i, reviewer := range after.Reviewers {
-			if reviewer.UserSpec.Domain == remove.Domain && reviewer.UserSpec.UID == remove.UID {
+			if reviewer.UserSpec.UID == remove.UID {
 				// Delete from slice.
 				after.Reviewers = append(after.Reviewers[:i], after.Reviewers[i+1:]...)
 
@@ -292,7 +292,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 	if op.LGTM || op.NotLGTM {
 		updated := false
 		for _, reviewer := range after.Reviewers {
-			if reviewer.UserSpec.Domain == op.Author.Domain && reviewer.UserSpec.UID == op.Author.UID {
+			if reviewer.UserSpec.UID == op.Author.UID {
 				reviewer.LGTM = op.LGTM
 				updated = true
 

@@ -237,9 +237,8 @@ func (c *changesetListCmd) Execute(args []string) error {
 				return err
 			}
 			op.NeedsReview = &sourcegraph.UserSpec{
-				UID:    authInfo.UID,
-				Login:  authInfo.Login,
-				Domain: authInfo.Domain,
+				UID:   authInfo.UID,
+				Login: authInfo.Login,
 			}
 		}
 
@@ -358,9 +357,8 @@ func (c *changesetCreateCmd) Execute(args []string) error {
 			Title:       title,
 			Description: description,
 			Author: sourcegraph.UserSpec{
-				UID:    authInfo.UID,
-				Login:  authInfo.Login,
-				Domain: authInfo.Domain,
+				UID:   authInfo.UID,
+				Login: authInfo.Login,
 			},
 			DeltaSpec: &sourcegraph.DeltaSpec{
 				Base: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: c.Base},
@@ -623,9 +621,8 @@ func (c *changesetReviewCmd) Execute(args []string) error {
 		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
 	}
 	author := sourcegraph.UserSpec{
-		UID:    authInfo.UID,
-		Login:  authInfo.Login,
-		Domain: authInfo.Domain,
+		UID:   authInfo.UID,
+		Login: authInfo.Login,
 	}
 
 	if c.LGTM {
@@ -687,9 +684,8 @@ func (c *changesetReviewersAddCmd) Execute(args []string) error {
 		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
 	}
 	author := sourcegraph.UserSpec{
-		UID:    authInfo.UID,
-		Login:  authInfo.Login,
-		Domain: authInfo.Domain,
+		UID:   authInfo.UID,
+		Login: authInfo.Login,
 	}
 
 	for _, reviewer := range c.Args.Reviewer {
@@ -738,9 +734,8 @@ func (c *changesetReviewersRemoveCmd) Execute(args []string) error {
 		return grpc.Errorf(codes.Unauthenticated, "You need to authenticate with a user account which has write permission")
 	}
 	author := sourcegraph.UserSpec{
-		UID:    authInfo.UID,
-		Login:  authInfo.Login,
-		Domain: authInfo.Domain,
+		UID:   authInfo.UID,
+		Login: authInfo.Login,
 	}
 
 	for _, reviewer := range c.Args.Reviewer {
