@@ -36,9 +36,9 @@ func UnmarshalMetricFamilies(r io.Reader) MetricFamilies {
 	return mfs
 }
 
-// SnapshotMetricFamilies takes a snapshot of all currently registered
+// snapshotMetricFamilies takes a snapshot of all currently registered
 // prometheus MetricFamilies
-func SnapshotMetricFamilies() MetricFamilies {
+func snapshotMetricFamilies() MetricFamilies {
 	handler := prometheus.UninstrumentedHandler()
 	recorder := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "", nil)

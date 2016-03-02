@@ -1,6 +1,7 @@
 package metricutil
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"runtime"
@@ -90,6 +91,8 @@ func (w *Worker) Flush() error {
 		if err != nil {
 			return err
 		}
+
+		// Send events.
 		_, err = cl.GraphUplink.PushEvents(w.forwardDestCtx, eventList)
 		if err != nil {
 			log15.Error("GraphUplink.PushEvents failed", "error", err)
@@ -97,6 +100,27 @@ func (w *Worker) Flush() error {
 			w.forwardDestAvailable = false
 			return err
 		}
+
+		// Send metrics.
+		buf := &bytes.Buffer{}
+		mfs := snapshotMetricFamilies()
+		if err := mfs.Marshal(buf); err != nil {
+			log15.Error("Error marshaling metric families", "error", err)
+			return err
+		}
+		log15.Debug("GraphUplink sending metrics snapshot", "forwardURL", config.ForwardURL, "numMetrics", len(mfs))
+		snapshot := sourcegraph.MetricsSnapshot{
+			Type:          sourcegraph.TelemetryType_PrometheusDelimited0dot0dot4,
+			TelemetryData: buf.Bytes(),
+		}
+		if _, err := cl.GraphUplink.Push(w.forwardDestCtx, &snapshot); err != nil {
+			log15.Error("GraphUplink push failed", "error", err)
+			// Force the connection to be re-established on the next flush.
+			w.forwardDestAvailable = false
+			return err
+		}
+
+		log15.Debug("Forwarded metrics and events", "forwardURL", config.ForwardURL, "numMetrics", len(mfs), "numEvents", len(eventList.Events))
 	}
 	// Flush successful
 	w.Position = 0
@@ -167,14 +191,13 @@ func (l *logger) Uploader(ctx context.Context, flushInterval time.Duration) {
 
 var activeLogger *logger
 
-// StartEventLogger sets up a buffered channel for posting events to, and workers that consume
+// startEventLogger sets up a buffered channel for posting events to, and workers that consume
 // event messages from that channel.
 // channelCapacity is the max number of events that the channel will hold. Newer events will be
 // dropped when the channel is full.
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
-
 // maximum number of buffered events after which the worker will flush the buffer upstream.
-func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
+func startEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
 	activeLogger = &logger{
 		Channel: make(chan *sourcegraph.UserEvent, channelCapacity),
 	}
