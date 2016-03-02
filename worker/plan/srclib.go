@@ -167,8 +167,10 @@ func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
 				}),
 			},
 			Commands: []string{
+				"echo Generating srclib validate stats",
+				"srclib validate > /tmp/srclib-validate.json",
 				"echo Publishing srclib validate stats",
-				`srclib validate | /usr/bin/curl \
+				`cat /tmp/srclib-validate.json | /usr/bin/curl \
 				--silent --show-error \
 				--netrc \
 				--max-time 300 \
