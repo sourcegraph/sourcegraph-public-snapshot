@@ -58,5 +58,18 @@ func TestSrclibValidate(t *testing.T) {
 		t.Fatal("Repos.Get should have been called and was not")
 	}
 
-	// TODO(poler) mocks for prometheus?
+	// empty Body should fail
+	body.Reset()
+	req, err = http.NewRequest("PUT", validateEndpoint, &body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err = c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	} else if resp.StatusCode != http.StatusBadRequest {
+		t.Fatal("Expected failure due to empty body")
+	}
 }

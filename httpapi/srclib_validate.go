@@ -53,7 +53,9 @@ func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 	var val Validate
 	err = dec.Decode(&val)
 	if err != nil {
-		return err
+		log15.Error("Got bad input for srclib.validate", "error", err)
+		http.Error(w, "error decoding JSON POST body: "+err.Error(), http.StatusBadRequest)
+		return nil
 	}
 	log15.Debug("srclib validate output", "repoRev", repoRev, "output", val)
 
