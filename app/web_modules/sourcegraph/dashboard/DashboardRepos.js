@@ -26,7 +26,7 @@ class DashboardRepos extends Component {
 	}
 
 	_handleSearch(e) {
-		if (typeof e.targer === "undefined") return; // TODO(autotest): support DOM events
+		if (typeof e.target === "undefined") return; // TODO(autotest): support DOM events
 		this.setState(update(this.state, {
 			searchQuery: {$set: e.target.value},
 		}));

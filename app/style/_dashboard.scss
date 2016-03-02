@@ -157,6 +157,7 @@
 				}
 
 				.search-input {
+					margin: 0px;
 					border-right: none;
 					transition: none;
 					&:focus + .search-addon {
