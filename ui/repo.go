@@ -87,7 +87,6 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 	for _, repoInfo := range data.Repos {
 		repoURI := repoInfo.URI
 
-		// Perform the following operations locally (non-federated) because it's a private repo.
 		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 			URI:      repoURI,
 			VCS:      "git",

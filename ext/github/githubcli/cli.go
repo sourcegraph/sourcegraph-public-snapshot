@@ -6,7 +6,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
-// Flags defines settings (in the form of CLI flags) for federation.
+// Flags defines settings (in the form of CLI flags) related to
+// GitHub.
 type GitHubFlags struct {
 	// GitHubHost is the hostname of the GitHub instance to mirror repos
 	// from. This can point to a GitHub Enterprise instance.

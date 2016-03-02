@@ -608,9 +608,6 @@ type Repo struct {
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	URI string `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
-	// Origin is populated for repos fetched via federation or
-	// discovery. It is the hostname of the host that owns the repo.
-	Origin string `protobuf:"bytes,21,opt,name=Origin,proto3" json:"Origin,omitempty"`
 	// Name is the base name (the final path component) of the repository, typically
 	// the name of the directory that the repository would be cloned into. (For
 	// example, for git://example.com/foo.git, the name is "foo".)
@@ -8582,14 +8579,6 @@ func (m *Repo) MarshalTo(data []byte) (int, error) {
 			return 0, err
 		}
 		i += n21
-	}
-	if len(m.Origin) > 0 {
-		data[i] = 0xaa
-		i++
-		data[i] = 0x1
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Origin)))
-		i += copy(data[i:], m.Origin)
 	}
 	if len(m.HTMLURL) > 0 {
 		data[i] = 0xb2
@@ -17809,10 +17798,6 @@ func (m *Repo) Size() (n int) {
 		l = m.GitHub.Size()
 		n += 2 + l + sovSourcegraph(uint64(l))
 	}
-	l = len(m.Origin)
-	if l > 0 {
-		n += 2 + l + sovSourcegraph(uint64(l))
-	}
 	l = len(m.HTMLURL)
 	if l > 0 {
 		n += 2 + l + sovSourcegraph(uint64(l))
@@ -24079,35 +24064,6 @@ func (m *Repo) Unmarshal(data []byte) error {
 			if err := m.GitHub.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		case 21:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Origin", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Origin = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 22:
 			if wireType != 2 {

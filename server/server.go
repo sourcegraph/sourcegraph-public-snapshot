@@ -22,9 +22,9 @@ func NewServer(svcs svc.Services, opts ...grpc.ServerOption) *grpc.Server {
 func Config(ctxFunc func(context.Context) context.Context) svc.Services {
 	// Construct the inner services. The inner services are the
 	// services as they appear in the context of service method
-	// implementations. Below we wrap them with federation,
-	// metadata, config, etc., handlers that only need to be run
-	// once per external request.
+	// implementations. Below we wrap them with metadata, config,
+	// etc., handlers that only need to be run once per external
+	// request.
 	services := inner.Services()
 
 	// Wrap in middleware for context initialization. This is the
