@@ -14,7 +14,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 type dashboardData struct {
@@ -49,8 +48,7 @@ func execDashboardTmpl(w http.ResponseWriter, r *http.Request, d *dashboardData)
 }
 
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	var users []*userInfo
 	var repos []*sourcegraph.Repo

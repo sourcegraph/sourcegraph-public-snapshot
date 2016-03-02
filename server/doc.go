@@ -69,11 +69,11 @@ There are 2 ways that stores perform authorization:
 2. Stores that persist local state/data MUST perform their own
    authorization checking and MUST NOT return data (directly or via
    side channel, to the extent possible) that the actor is not
-   authorized to see. Stores SHOULD use the authzchecked wrappers to
-   check authorization before their methods are invoked. When the
-   behavior of a method implicitly depends on the actor's
-   authorization (e.g., Repos.List returns private repos for the actor
-   only), they MUST implement their own authorization logic.
+   authorized to see. Stores SHOULD check authorization when their
+	 methods are invoked. When the behavior of a method implicitly
+	 depends on the actor's authorization (e.g., Repos.List returns
+	 private repos for the actor only), they MUST implement their own
+	 authorization logic.
 
 Here are 4 examples to illustrate various cases:
 

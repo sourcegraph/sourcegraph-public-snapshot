@@ -83,8 +83,7 @@ func serveSignupForm(w http.ResponseWriter, r *http.Request, form signupForm) er
 		return err
 	}
 
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	numUsers, err := cl.Users.Count(ctx, &pbtypes.Void{})
 	if err != nil {
@@ -106,8 +105,7 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var form signupForm
 	if err := r.ParseForm(); err != nil {

@@ -10,8 +10,6 @@ import CodeListing from "sourcegraph/code/CodeListing";
 import CodeFileToolbar from "sourcegraph/code/CodeFileToolbar";
 import DefPopup from "sourcegraph/def/DefPopup";
 import DefTooltip from "sourcegraph/def/DefTooltip";
-import IssueForm from "sourcegraph/issue/IssueForm";
-import context from "sourcegraph/context";
 import "sourcegraph/code/CodeBackend";
 import "sourcegraph/def/DefBackend";
 
@@ -29,12 +27,9 @@ function lineFromByte(file, byte) {
 class CodeFileContainer extends Container {
 	constructor(props) {
 		super(props);
-		this.state = {
-			creatingIssue: false,
-		};
+		this.state = {};
 		this._onClick = this._onClick.bind(this);
 		this._onKeyDown = this._onKeyDown.bind(this);
-		this._onLineButtonClick = this._onLineButtonClick.bind(this);
 	}
 
 	componentDidMount() {
@@ -105,14 +100,6 @@ class CodeFileContainer extends Container {
 		}
 	}
 
-	_onLineButtonClick(lineNumber, selected) {
-		this.setState({creatingIssue: true}, () => {
-			if (!selected) {
-				Dispatcher.dispatch(new CodeActions.SelectLine(lineNumber));
-			}
-		});
-	}
-
 	render() {
 		if (!this.state.tree) {
 			return null;
@@ -135,22 +122,7 @@ class CodeFileContainer extends Container {
 							startLine={this.state.startLine}
 							endLine={this.state.endLine}
 							selectedDef={this.state.selectedDef}
-							highlightedDef={this.state.highlightedDef}
-							onLineButtonClick={!context.isMothership ? this._onLineButtonClick : null}
-							lineSelectionForm={
-								(this.state.creatingIssue && this.state.startLine && this.state.endLine) ? (
-								<IssueForm
-									repo={this.state.repo}
-									path={this.state.tree}
-									commitID={this.state.file.EntrySpec.RepoRev.CommitID}
-									startLine={this.state.startLine}
-									endLine={this.state.endLine}
-									onCancel={() => { this.setState({creatingIssue: false}); }}
-									onSubmit={(url) => {
-										this.setState({creatingIssue: false});
-										window.location.href = url;
-									}} />
-							) : null} />
+							highlightedDef={this.state.highlightedDef} />
 					</div>
 				}
 

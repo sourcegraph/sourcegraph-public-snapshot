@@ -14,7 +14,7 @@ import (
 )
 
 func getUser(ctx context.Context, r *http.Request) (*sourcegraph.User, *sourcegraph.UserSpec, error) {
-	apiclient := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 	v := mux.Vars(r)
 
 	spec, err := sourcegraph.ParseUserSpec(v["User"])
@@ -22,7 +22,7 @@ func getUser(ctx context.Context, r *http.Request) (*sourcegraph.User, *sourcegr
 		return nil, nil, err
 	}
 
-	p, err := apiclient.Users.Get(ctx, &spec)
+	p, err := cl.Users.Get(ctx, &spec)
 	if err != nil {
 		return nil, nil, err
 	}

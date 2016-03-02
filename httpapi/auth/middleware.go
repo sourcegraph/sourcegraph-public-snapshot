@@ -21,10 +21,10 @@ const oauthBasicUsername = "x-oauth-basic"
 func PasswordMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	username, password, ok := r.BasicAuth()
 	if ok && username != oauthBasicUsername {
-		ctx := httpctx.FromRequest(r)
+		ctx, cl := handlerutil.Client(r)
 
 		// Request access token based on username and password.
-		tok, err := handlerutil.APIClient(r).Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
+		tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
 			AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
 				ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
 			},

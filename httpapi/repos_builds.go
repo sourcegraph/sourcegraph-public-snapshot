@@ -5,22 +5,22 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
-	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, s.Repos)
+	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	build, err := s.Builds.GetRepoBuild(ctx, &repoRevSpec)
+	build, err := cl.Builds.GetRepoBuild(ctx, &repoRevSpec)
 	if err != nil {
 		return err
 	}
@@ -33,8 +33,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var op sourcegraph.BuildsCreateOp
 	err := json.NewDecoder(r.Body).Decode(&op)
@@ -42,13 +41,13 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(r, s.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
 	op.Repo = repoSpec
-	build, err := s.Builds.Create(ctx, &op)
+	build, err := cl.Builds.Create(ctx, &op)
 	if err != nil {
 		return err
 	}

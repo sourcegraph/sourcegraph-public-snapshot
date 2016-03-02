@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/sourcegraph/mux"
 
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
@@ -12,14 +13,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -105,10 +104,9 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -121,7 +119,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	if listCommitsOpt.PerPage == 0 {
 		listCommitsOpt.PerPage = 10
 	}
-	commits0, err := apiclient.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{Repo: rc.Repo.RepoSpec(), Opt: &listCommitsOpt})
+	commits0, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{Repo: rc.Repo.RepoSpec(), Opt: &listCommitsOpt})
 	if err != nil {
 		return err
 	}
@@ -131,7 +129,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	commitDays, err := handlerutil.AugmentAndGroupCommitsByDay(r, commits0.Commits, rc.Repo.URI)
+	commitDays, err := handlerutil.AugmentAndGroupCommitsByDay(ctx, commits0.Commits, rc.Repo.URI)
 	if err != nil {
 		return err
 	}
@@ -157,17 +155,16 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
 	opt.IncludeCommit = true
 
-	branches, err := apiclient.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: rc.Repo.RepoSpec(), Opt: &opt})
+	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: rc.Repo.RepoSpec(), Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -196,15 +193,14 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	tags, err := apiclient.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: rc.Repo.RepoSpec(), Opt: &opt})
+	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: rc.Repo.RepoSpec(), Opt: &opt})
 	if err != nil {
 		return err
 	}

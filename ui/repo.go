@@ -19,12 +19,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	opt := struct {
@@ -39,7 +37,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("Must provide a repository name")
 	}
 
-	_, err = apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+	_, err = cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 		URI: opt.RepoURI,
 		VCS: "git",
 	})
@@ -48,7 +46,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repoList, err := apiclient.Repos.List(ctx, &sourcegraph.RepoListOptions{
+	repoList, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
 		Sort:        "pushed",
 		Direction:   "desc",
 		ListOptions: sourcegraph.ListOptions{PerPage: 100},
@@ -67,8 +65,7 @@ type repoInfo struct {
 }
 
 func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	if currentUser == nil {
 		return errors.New("Must be authenticated to mirror repos")
@@ -91,7 +88,7 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 		repoURI := repoInfo.URI
 
 		// Perform the following operations locally (non-federated) because it's a private repo.
-		_, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 			URI:      repoURI,
 			VCS:      "git",
 			CloneURL: "https://" + repoURI + ".git",
@@ -118,7 +115,7 @@ func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
 	eventsutil.LogAddMirrorRepos(ctx, numPrivate, numPublic)
 	sendRepoMirrorSlackMsg(ctx, currentUser, numPrivate, numPublic)
 
-	mirrorData, err := apiclient.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
+	mirrorData, err := cl.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}

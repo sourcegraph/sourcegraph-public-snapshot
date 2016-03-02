@@ -135,11 +135,11 @@ func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo", repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", repo.URI); err != nil {
 		return err
 	}
 
-	err := store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &store.CloneInfo{
+	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.URI, true, true, &store.CloneInfo{
 		VCS:        repo.VCS,
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
@@ -152,14 +152,14 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	// branch. This isn't needed for the fs backend because it initializes an
 	// empty repository first and then proceeds to just updateRepo, thus skipping
 	// this clone phase entirely.
-	commit, err := svc.Repos(ctx).GetCommit(ctx, &sourcegraph.RepoRevSpec{
+	commit, err := svc.Repos(ctx).GetCommit(elevatedActor(ctx), &sourcegraph.RepoRevSpec{
 		RepoSpec: repo.RepoSpec(),
 		Rev:      repo.DefaultBranch,
 	})
 	if err != nil {
 		return err
 	}
-	_, err = svc.Builds(ctx).Create(ctx, &sourcegraph.BuildsCreateOp{
+	_, err = svc.Builds(ctx).Create(elevatedActor(ctx), &sourcegraph.BuildsCreateOp{
 		Repo:     repo.RepoSpec(),
 		CommitID: string(commit.ID),
 		Branch:   repo.DefaultBranch,

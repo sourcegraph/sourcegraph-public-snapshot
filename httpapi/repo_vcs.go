@@ -3,14 +3,14 @@ package httpapi
 import (
 	"net/http"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListBranchesOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -18,12 +18,12 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(r, s.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	branches, err := s.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repoSpec, Opt: &opt})
+	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repoSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -31,8 +31,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListTagsOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -40,12 +39,12 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(r, s.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	tags, err := s.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repoSpec, Opt: &opt})
+	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repoSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}

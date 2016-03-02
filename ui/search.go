@@ -17,12 +17,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TokenSearchOptions
@@ -38,13 +36,13 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 
 	defList := &sourcegraph.DefList{}
 
-	resolvedRev, dataVer, err := handlerutil.ResolveSrclibDataVersion(ctx, apiclient, sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev})
+	resolvedRev, dataVer, err := handlerutil.ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev})
 	if err == nil {
 		opt.RepoRev = resolvedRev
 
 		// Only search if there is a srclib data version (otherwise
 		// there will be no token results).
-		defList, err = apiclient.Search.SearchTokens(ctx, &opt)
+		defList, err = cl.Search.SearchTokens(ctx, &opt)
 		if err != nil {
 			return err
 		}
@@ -77,8 +75,7 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TextSearchOptions
@@ -87,13 +84,13 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, apiclient.Repos)
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 	opt.RepoRev = repoRev
 
-	vcsEntryList, err := apiclient.Search.SearchText(ctx, &opt)
+	vcsEntryList, err := cl.Search.SearchText(ctx, &opt)
 	if err != nil {
 		return err
 	}

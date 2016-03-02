@@ -5,7 +5,7 @@ import DefBackend from "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";
 
 describe("DefBackend", () => {
-	describe("should handle WantDef", () => {
+	it("should handle WantDef", () => {
 		DefBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be("/.ui/someURL");
 			expect(options.headers).to.eql({"X-Definition-Data-Only": "yes"});

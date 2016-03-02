@@ -4,23 +4,23 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // serveDef creates a new response for the code view that contains information
 // about a definition. Additionally, it may also contain information about the
 // tree entry that contains that definition.
 func serveDef(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	dc, rc, vc, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
+	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return err
 	}
@@ -54,16 +54,15 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	}
 	opt.Formatted = true
 
-	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
-	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
 
 	// Get actual list of examples
-	examples, err := apiclient.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
+	examples, err := cl.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
 		Def: dc.Def.DefSpec(),
 		Rev: vc.RepoRevSpec.Rev,
 		Opt: &opt,
@@ -118,7 +117,8 @@ func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	dc, _, _, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
+	ctx, _ := handlerutil.Client(r)
+	dc, _, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		// TODO(gbbr): Set up custom responses for each scenario.
 		// All of the below errors will cause full page HTML pages or redirects, if

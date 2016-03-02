@@ -14,16 +14,12 @@ import (
 var Features = struct {
 	Discussions        bool
 	NotificationCenter bool
-	// Note: Tracker search is in beta, and will not work on Sourcegraph clusters
-	// with more than one instance.
-	TrackerSearch bool
+
 	// Currently disabled due to performance issues.
 	TreeEntryCommits bool
-	RepoUpdater      bool // Repo Updater app.
 }{
 	Discussions:        false,
 	NotificationCenter: true,
-	TrackerSearch:      false,
 	TreeEntryCommits:   false,
 }
 

@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 func serveRepoFileFinder(w http.ResponseWriter, r *http.Request) error {
 	e := json.NewEncoder(w)
 
-	res, err := handlerutil.GetRepoTreeListCommon(r)
+	ctx, _ := handlerutil.Client(r)
+	res, err := handlerutil.GetRepoTreeListCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

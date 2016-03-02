@@ -20,12 +20,16 @@
 	<h3>Mac OS X</h3>
 	<pre><code>curl -O -L https://sourcegraph.com/.download/latest/darwin-amd64/src.gz
 gunzip src.gz
-chmod +x src
+chmod +x src</code></pre>
+	<p>Run through the steps to <a href="https://src.sourcegraph.com/sourcegraph/.docs/config/storage/">initialize and configure PostgreSQL</a>. Then:</p>
+<pre><code>./src pgsql create
 ./src serve</code></pre>
 	<h3>Linux</h3>
 	<pre><code>curl -O -L https://sourcegraph.com/.download/latest/linux-amd64/src.gz
 gunzip src.gz
-chmod +x src
+chmod +x src</code></pre>
+	<p>Run through the steps to <a href="https://src.sourcegraph.com/sourcegraph/.docs/config/storage/">initialize and configure PostgreSQL</a>. Then:</p>
+	<pre><code>./src pgsql create
 ./src serve</code></pre>
 	<h3>Cloud providers</h3>
 	<ul>

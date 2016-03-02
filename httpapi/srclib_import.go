@@ -10,6 +10,8 @@ import (
 	"os"
 	pathpkg "path"
 
+	"github.com/sourcegraph/mux"
+
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
 
@@ -19,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 var newSrclibStoreClient = pb.Client // mockable for testing
@@ -39,10 +40,9 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		return nil
 	}
 
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

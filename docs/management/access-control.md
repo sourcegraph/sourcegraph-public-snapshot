@@ -36,7 +36,7 @@ to `src serve`, or set this in your config file `/etc/sourcegraph/config.ini`:
 	AllowAnonymousReaders = true
 
 However, anonymous readers cannot post issues. To enable anyone to create or comment on
-tracker threads on your Sourcegraph server, you must allow anyone to create a read-only
+changesets on your Sourcegraph server, you must allow anyone to create a read-only
 account on your server, by setting the flag `--auth.allow-all-logins` on the CLI, or by
 adding to your config file:
 

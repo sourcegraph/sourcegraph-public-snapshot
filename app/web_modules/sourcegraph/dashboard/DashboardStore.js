@@ -1,12 +1,9 @@
 import update from "react/lib/update";
 
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-
-// import update from "react/lib/update"
 
 export class DashboardStore extends Store {
 	constructor(dispatcher) {

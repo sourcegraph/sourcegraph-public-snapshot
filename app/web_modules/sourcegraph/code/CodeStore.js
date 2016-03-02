@@ -1,5 +1,4 @@
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as CodeActions from "sourcegraph/code/CodeActions";
@@ -9,8 +8,7 @@ function keyFor(repo, rev, tree) {
 }
 
 export class CodeStore extends Store {
-	constructor(dispatcher) {
-		super(dispatcher);
+	reset() {
 		this.files = deepFreeze({
 			content: {},
 			get(repo, rev, tree) {

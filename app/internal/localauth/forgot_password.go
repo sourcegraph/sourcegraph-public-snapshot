@@ -16,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {
@@ -52,8 +51,7 @@ func serveForgotPasswordForm(w http.ResponseWriter, r *http.Request, form userFo
 }
 
 func serveForgotPasswordSubmit(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var form userForm
 	if err := r.ParseForm(); err != nil {
@@ -119,8 +117,7 @@ func serveNewPassword(w http.ResponseWriter, r *http.Request, form passwordForm)
 }
 
 func serveNewPasswordSubmit(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 	if err := r.ParseForm(); err != nil {
 		return fmt.Errorf("parse form error: %s", err)
 	}

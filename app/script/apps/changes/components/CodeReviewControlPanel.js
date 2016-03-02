@@ -126,11 +126,13 @@ var CodeReviewControlPanel = React.createClass({
 		// Determine whether or not the current user is LGTM'd by looking through
 		// the reviewers.
 		var isLGTM = false;
-		reviewers.map(function(r) {
-			if (r.UserSpec.Login === CurrentUser.Login) {
-				isLGTM = r.LGTM;
-			}
-		});
+		if (CurrentUser !== null) {
+			reviewers.map(function(r) {
+				if (CurrentUser !== null && r.UserSpec.Login === CurrentUser.Login) {
+					isLGTM = r.LGTM;
+				}
+			});
+		}
 
 		var addPersonMenu = null;
 		if (this.state.showAddPersonMenu) {
@@ -160,7 +162,7 @@ var CodeReviewControlPanel = React.createClass({
 							var fullUser = reviewer.FullUser;
 							var classes = null;
 							var styles = {};
-							if (reviewer.AvatarURL) {
+							if (fullUser.AvatarURL) {
 								styles["backgroundImage"] = `url(${fullUser.AvatarURL})`;
 								classes = classnames({reviewer: true, avatar: true});
 							} else {

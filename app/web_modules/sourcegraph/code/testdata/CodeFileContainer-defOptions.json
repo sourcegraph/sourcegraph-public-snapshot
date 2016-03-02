@@ -37,26 +37,7 @@
 									"lines": [
 										"someLine"
 									],
-									"lineNumbers": true,
-									"highlightedDef": "otherDef",
-									"onLineButtonClick": {
-										"dispatched": [
-											{
-												"$constructor": "SelectLine",
-												"line": {
-													"currentTarget": {
-														"href": "[currentTarget.href]"
-													},
-													"view": {
-														"scrollX": 11,
-														"scrollY": 22
-													},
-													"clientX": 10,
-													"clientY": 20
-												}
-											}
-										]
-									}
+									"lineNumbers": true
 								}
 							}
 						]
@@ -124,10 +105,6 @@
 			"repo": "aRepo",
 			"rev": "aRev",
 			"tree": "aTree"
-		},
-		{
-			"$constructor": "WantDef",
-			"url": "otherDef"
 		},
 		{
 			"$constructor": "WantDef",

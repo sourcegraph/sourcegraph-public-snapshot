@@ -6,11 +6,9 @@ import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import GitHubReposStore from "sourcegraph/dashboard/GitHubReposStore";
 import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
-import ModalStore from "sourcegraph/dashboard/ModalStore";
 
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
-import AddUsersModal from "sourcegraph/dashboard/AddUsersModal";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
@@ -50,7 +48,6 @@ class DashboardContainer extends Container {
 		state.onboarding = DashboardStore.onboarding;
 		state.onWaitlist = DashboardStore.onWaitlist;
 		state.isMothership = DashboardStore.isMothership;
-		state.showUsersModal = ModalStore.showUsersModal;
 		state.allowStandaloneRepos = !DashboardStore.allowMirrors;
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
 		state.allowStandaloneUsers = !DashboardStore.allowMirrors;
@@ -80,7 +77,7 @@ class DashboardContainer extends Container {
 		this.setState({dismissWelcome: true});
 	}
 
-	stores() { return [DashboardStore, ModalStore, GitHubReposStore, GitHubUsersStore]; }
+	stores() { return [DashboardStore, GitHubReposStore, GitHubUsersStore]; }
 
 	render() {
 		const username = this.state.currentUser.Name || this.state.currentUser.Login;
@@ -91,9 +88,6 @@ class DashboardContainer extends Container {
 
 		return (
 			<div className="dashboard-container row">
-				{this.state.showUsersModal ? <AddUsersModal
-					allowStandaloneUsers={this.state.allowStandaloneUsers}
-					allowGitHubUsers={this.state.allowGitHubUsers} /> : null}
 				<div className="dash-repos col-lg-9 col-md-8">
 					{(this.state.onboarding.linkGitHub || (this.state.onboarding.linkGitHubRedirect && !this.state.dismissWelcome)) &&
 						<div className="well link-github-well">

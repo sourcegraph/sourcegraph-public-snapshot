@@ -25,8 +25,16 @@ var flushDurationGauge = prometheus.NewCounter(prometheus.CounterOpts{
 	Help:      "Duration of executing the Appdash ChunkedCollector.Flush method.",
 })
 
+var flushQueueSizeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "appdash",
+	Subsystem: "process",
+	Name:      "flush_queue_size",
+	Help:      "Size of the Appdash ChunkedCollector.Flush queue (number of collections to occur).",
+})
+
 func init() {
 	prometheus.MustRegister(flushDurationGauge)
+	prometheus.MustRegister(flushQueueSizeGauge)
 }
 
 // initClient is called by the appdash_server.go server init func to
@@ -96,7 +104,10 @@ func (f *ClientConfig) configure() (func(context.Context) context.Context, error
 	c = &appdash.ChunkedCollector{
 		Collector:   c,
 		MinInterval: 500 * time.Millisecond,
-		OnFlush:     flushDurationGauge.Inc,
+		OnFlush: func(queueSize int) {
+			flushDurationGauge.Inc()
+			flushQueueSizeGauge.Set(float64(queueSize))
+		},
 	}
 
 	traceutil.DefaultCollector = c

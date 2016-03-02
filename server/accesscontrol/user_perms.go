@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 )
@@ -77,7 +76,10 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 	}
 
 	if authutil.ActiveFlags.PrivateMirrors && repo != "" {
-		return VerifyRepoPerms(ctx, actor, method, repo)
+		err := verifyPrivateRepoPerms(ctx, actor, method, repo)
+		if err != errNotPrivateRepo {
+			return err
+		}
 	}
 
 	if authutil.ActiveFlags.AllowAnonymousReaders {
@@ -111,7 +113,10 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		if method == "Repos.Create" && actor.PrivateMirrors {
 			return nil
 		} else if repo != "" {
-			return VerifyRepoPerms(ctx, actor, method, repo)
+			err := verifyPrivateRepoPerms(ctx, actor, method, repo)
+			if err != errNotPrivateRepo {
+				return err
+			}
 		}
 	}
 
@@ -201,12 +206,15 @@ func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method, r
 	return false
 }
 
-// Check if we always allow write access to a method for an authenticated
-// user.
+// inAuthenticatedWriteWhitelist reports if we always allow write access
+// for method to any authenticated user.
 func inAuthenticatedWriteWhitelist(method string) bool {
 	switch method {
-	case "MirrorRepos.CloneRepo":
+	case "MirrorRepos.cloneRepo":
+		// This is used for read-only users to be able to trigger mirror clones
+		// of public repositories, effectively "enabling" that repository.
 		return true
+	default:
+		return false
 	}
-	return false
 }

@@ -118,7 +118,11 @@ cloud_pre() {
 	# Install PostgreSQL
 	apt-get install -y postgresql postgresql-contrib
 	sudo -u postgres createuser --superuser sourcegraph # superuser needed for 'CREATE EXTENSION'
+	sudo -u postgres psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 	sudo -u postgres createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+	export PGSQL_VERSION="$(eval "psql -V | egrep -o '[0-9]{1,}\.[0-9]{1,}'")" # Major.Minor version
+	sed -i "s|^timezone =.*|timezone = 'UTC'|" /etc/postgresql/$PGSQL_VERSION/main/postgresql.conf
+	sudo service postgresql restart # make config changes take effect
 }
 
 cloud_post() {
@@ -133,11 +137,16 @@ cloud_post() {
 	fi
 
 	sed -i 's|^;app-url =.*|app-url = http://'$SRC_HOSTNAME'|' /etc/sourcegraph/config.ini
-  echo '[serve]
+	echo '[serve]
 http-addr = :80' >> /etc/sourcegraph/config.ini
+	echo 'export PGUSER=sourcegraph
+export PGPASSWORD=sourcegraph
+export PGDATABASE=sourcegraph
+export PGHOST=localhost
+export PGSSLMODE=disable' >> /etc/sourcegraph/config.env
 
 	# initialize PostgreSQL database
-	sudo -u sourcegraph src pgsql create
+	sudo su -c "source /etc/sourcegraph/config.env && src pgsql create" sourcegraph
 
 	restart src || start src || echo ok
 	# TODO: set up self-signed TLS certs
