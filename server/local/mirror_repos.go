@@ -135,7 +135,7 @@ func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo", repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", repo.URI); err != nil {
 		return err
 	}
 

@@ -210,7 +210,7 @@ func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method, r
 // for method to any authenticated user.
 func inAuthenticatedWriteWhitelist(method string) bool {
 	switch method {
-	case "MirrorRepos.CloneRepo":
+	case "MirrorRepos.cloneRepo":
 		// This is used for read-only users to be able to trigger mirror clones
 		// of public repositories, effectively "enabling" that repository.
 		return true
