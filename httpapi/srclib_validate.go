@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -38,8 +37,8 @@ func init() {
 func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 
 	if strings.ToLower(r.Header.Get("content-type")) != "application/json" {
-		w.WriteHeader(http.StatusBadRequest)
-		return errors.New("requires Content-Type: application/json")
+		http.Error(w, "requires Content-Type: application/json", http.StatusBadRequest)
+		return nil
 	}
 
 	ctx, _ := handlerutil.Client(r)
@@ -56,8 +55,7 @@ func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
-	log15.Debug("Srclib Validate Output", "repoRev", repoRev, "srclib validate output", val)
+	log15.Debug("srclib validate output", "repoRev", repoRev, "output", val)
 
 	trackedRepo := util.GetTrackedRepo(r.URL.Path)
 

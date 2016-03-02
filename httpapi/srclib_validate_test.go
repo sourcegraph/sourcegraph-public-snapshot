@@ -38,10 +38,10 @@ func TestSrclibValidate(t *testing.T) {
 	}
 
 	// valid JSON should succeed
-	var buf1 bytes.Buffer
-	json.NewEncoder(&buf1).Encode(Validate{Warnings: []BuildWarning{BuildWarning{Directory: "/foo/bar", Warning: "bippity boppity boo"}}})
+	var body bytes.Buffer
+	json.NewEncoder(&body).Encode(Validate{Warnings: []BuildWarning{BuildWarning{Directory: "/foo/bar", Warning: "bippity boppity boo"}}})
 
-	req, err = http.NewRequest("PUT", validateEndpoint, &buf1)
+	req, err = http.NewRequest("PUT", validateEndpoint, &body)
 	if err != nil {
 		t.Fatal(err)
 	}
