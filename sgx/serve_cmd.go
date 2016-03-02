@@ -958,18 +958,6 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 			continue
 		}
 
-		_, err = cl.RegisteredClients.Get(rctx, &sourcegraph.RegisteredClientSpec{
-			ID: idKey.ID,
-		})
-		if err == nil {
-			log15.Debug("Client already registered with root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
-			return
-		} else if grpc.Code(err) != codes.NotFound {
-			log15.Debug("Could not fetch client from root", "error", err)
-			time.Sleep(5 * time.Minute)
-			continue
-		}
-
 		clientName := fmt.Sprintf("Client #%s", shortClientID)
 		_, err = cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
 			ID:         idKey.ID,
@@ -977,7 +965,9 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 			ClientURI:  appURL.String(),
 			JWKS:       string(jwks),
 		})
-		if err != nil {
+		if grpc.Code(err) == codes.AlreadyExists {
+			return
+		} else if err != nil {
 			log15.Warn("Could not register client with root", "error", err)
 			time.Sleep(10 * time.Minute)
 			continue
