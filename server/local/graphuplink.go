@@ -62,7 +62,7 @@ func (s *graphUplink) PushEvents(ctx context.Context, eventList *sourcegraph.Use
 	}
 	log15.Debug("GraphUplink events push", "actorID", actorID, "numEvents", len(eventList.Events))
 
-	go metricutil.ForwardEvents(ctx, eventList)
+	go metricutil.StoreEvents(ctx, eventList)
 
 	return &pbtypes.Void{}, nil
 }
