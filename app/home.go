@@ -11,7 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
@@ -118,7 +117,6 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		OnWaitlist:     onWaitlist,
 		MirrorData:     mirrorData,
 		Teammates:      teammates,
-		IsRoot:         fed.Config.IsRoot,
 	})
 }
 

@@ -3070,16 +3070,6 @@ message ServerConfig {
 	// (e.g., "https://sourcegraph.com").
 	string AppURL = 2;
 
-	// FederationRootURL is the --fed.root-url CLI flag's value. It is
-	// the URL of the federation root server, or blank if this server
-	// is itself a federation root (in which case IsFederationRoot is
-	// true).
-	string FederationRootURL = 5;
-
-	// IsFederationRoot is whether this server is itself a federation
-	// root. If true, then FederationRootURL is empty.
-	bool IsFederationRoot = 6;
-
 	// IDKey is the server's identity key (ID key).
 	string IDKey = 7;
 
