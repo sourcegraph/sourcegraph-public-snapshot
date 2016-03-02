@@ -21,7 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
@@ -154,7 +154,7 @@ var tmplFuncs = htmpl.FuncMap{
 	"assetURL": assets.URL,
 
 	"getClientIDOrHostName": func(ctx context.Context, appURL *url.URL) string {
-		clientID := oauth2client.ClientIDFromContext(ctx)
+		clientID := idkey.FromContext(ctx).ID
 		if clientID != "" {
 			// return a shortened clientID, to match the clientID logged
 			// in eventsutil/events.go:getShortClientID.

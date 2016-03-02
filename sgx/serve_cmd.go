@@ -44,7 +44,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/idkeystore"
 	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
-	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/fed"
@@ -386,9 +385,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 		ctx = idkey.NewContext(ctx, idKey)
 		return ctx
-	})
-	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
-		return oauth2client.WithClientID(ctx, idKey.ID)
 	})
 	sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
 	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {

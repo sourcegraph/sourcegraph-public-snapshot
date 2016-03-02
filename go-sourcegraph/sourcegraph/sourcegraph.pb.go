@@ -2123,10 +2123,7 @@ type AccessTokenRequest struct {
 	//	*AccessTokenRequest_ResourceOwnerPassword
 	//	*AccessTokenRequest_BearerJWT
 	AuthorizationGrant isAccessTokenRequest_AuthorizationGrant `protobuf_oneof:"authorization_grant"`
-	// TokenURL is the token endpoint URL on the OAuth2 authorization
-	// server that the client is requesting an access token from.
-	TokenURL string   `protobuf:"bytes,9,opt,name=TokenURL,proto3" json:"TokenURL,omitempty"`
-	Scope    []string `protobuf:"bytes,17,rep,name=Scope" json:"Scope,omitempty"`
+	Scope              []string                                `protobuf:"bytes,17,rep,name=Scope" json:"Scope,omitempty"`
 }
 
 func (m *AccessTokenRequest) Reset()         { *m = AccessTokenRequest{} }
@@ -12902,12 +12899,6 @@ func (m *AccessTokenRequest) MarshalTo(data []byte) (int, error) {
 		}
 		i += nn116
 	}
-	if len(m.TokenURL) > 0 {
-		data[i] = 0x4a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.TokenURL)))
-		i += copy(data[i:], m.TokenURL)
-	}
 	if len(m.Scope) > 0 {
 		for _, s := range m.Scope {
 			data[i] = 0x8a
@@ -19355,10 +19346,6 @@ func (m *AccessTokenRequest) Size() (n int) {
 	_ = l
 	if m.AuthorizationGrant != nil {
 		n += m.AuthorizationGrant.Size()
-	}
-	l = len(m.TokenURL)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	if len(m.Scope) > 0 {
 		for _, s := range m.Scope {
@@ -37822,35 +37809,6 @@ func (m *AccessTokenRequest) Unmarshal(data []byte) error {
 				return err
 			}
 			m.AuthorizationGrant = &AccessTokenRequest_BearerJWT{v}
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TokenURL", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.TokenURL = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 17:
 			if wireType != 2 {

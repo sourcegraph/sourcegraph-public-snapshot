@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/httptestutil"
@@ -30,6 +31,7 @@ func New() (*httptestutil.Client, *httptestutil.MockClients) {
 	c, mock := httptestutil.NewTest(mux)
 	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "http", Host: "example.com", Path: "/"}, nil)
 	mock.Ctx = sourcegraph.WithGRPCEndpoint(mock.Ctx, &url.URL{Scheme: "http", Host: "grpc.example.com", Path: "/"})
+	mock.Ctx = idkey.NewContext(mock.Ctx, &idkey.IDKey{ID: "k"})
 
 	// Convenience mocks.
 	mock.Meta.Config_ = func(context.Context, *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
