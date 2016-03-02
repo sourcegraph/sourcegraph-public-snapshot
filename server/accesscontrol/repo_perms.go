@@ -1,12 +1,12 @@
 package accesscontrol
 
 import (
-	"gopkg.in/inconshreveable/log15.v2"
+	"errors"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
+	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -57,8 +57,17 @@ func SetMirrorRepoPerms(ctx context.Context, actor *auth.Actor) {
 	actor.RepoPerms = &repoPerms{visibleRepos: visibleRepos}
 }
 
-// VerifyRepoPerms checks if a repoURI is visible to the actor in the given context.
-func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI string) error {
+var errNotPrivateRepo = errors.New("not a private repo")
+
+// verifyPrivateRepoPerms checks if repoURI is a private repo that is visible to the actor in the given context.
+//
+// It can return one of three categories of results:
+//  - nil error - private repo, actor has access, short circuit (don't require more VerifyActorHas{Read,Write}Access checks).
+//  - errNotPrivateRepo - public repo, no short circut decision here, defer to rest of VerifyActorHas{Read,Write}Access checks.
+//  - any other non-nil error - private repo or other situation, no access, short circuit (don't require more VerifyActorHas{Read,Write}Access checks).
+//
+// TODO: Refactor this so it's more integrated with VerifyActorHas{Read,Write}Access.
+func verifyPrivateRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI string) error {
 	// Short-circuit: If the user is unauthenticated and the scope has special access,
 	// grant access directly to avoid infinite cycles back to this function from reposStore.Get.
 	if actor.UID == 0 && VerifyScopeHasAccess(ctx, actor.Scope, method, repoURI) {
@@ -69,7 +78,7 @@ func VerifyRepoPerms(ctx context.Context, actor auth.Actor, method, repoURI stri
 	if r, err := store.ReposFromContext(ctx).Get(elevatedActor(ctx), repoURI); err != nil {
 		return err
 	} else if !r.Private {
-		return nil
+		return errNotPrivateRepo
 	}
 
 	err := grpc.Errorf(codes.Unauthenticated, "repo not available (%s): user does not have access", method)

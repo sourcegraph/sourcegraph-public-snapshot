@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 )
@@ -77,7 +76,10 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 	}
 
 	if authutil.ActiveFlags.PrivateMirrors && repo != "" {
-		return VerifyRepoPerms(ctx, actor, method, repo)
+		err := verifyPrivateRepoPerms(ctx, actor, method, repo)
+		if err != errNotPrivateRepo {
+			return err
+		}
 	}
 
 	if authutil.ActiveFlags.AllowAnonymousReaders {
@@ -111,7 +113,10 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		if method == "Repos.Create" && actor.PrivateMirrors {
 			return nil
 		} else if repo != "" {
-			return VerifyRepoPerms(ctx, actor, method, repo)
+			err := verifyPrivateRepoPerms(ctx, actor, method, repo)
+			if err != errNotPrivateRepo {
+				return err
+			}
 		}
 	}
 
