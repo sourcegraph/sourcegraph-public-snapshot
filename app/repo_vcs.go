@@ -16,7 +16,10 @@ import (
 )
 
 func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
@@ -104,7 +107,10 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
@@ -155,7 +161,10 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
 
 	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
@@ -193,7 +202,10 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
 
 	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {

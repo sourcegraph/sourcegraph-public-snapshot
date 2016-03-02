@@ -41,6 +41,11 @@ type repoTreeTemplate struct {
 // serveRepoTree creates a new response for the code view that contains information
 // about the requested tree entry.
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
+	ctx, _, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
+
 	opt := sourcegraph.RepoTreeGetOptions{
 		TokenizedSource: !doc.IsFormattableDocFile(mux.Vars(r)["Path"]) || router.IsRaw(r.URL),
 
@@ -48,7 +53,6 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 			RecurseSingleSubfolderLimit: 200,
 		},
 	}
-	ctx, _ := handlerutil.Client(r)
 	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
