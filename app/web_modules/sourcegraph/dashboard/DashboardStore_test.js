@@ -1,4 +1,4 @@
-	import expect from "expect.js";
+import expect from "expect.js";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";

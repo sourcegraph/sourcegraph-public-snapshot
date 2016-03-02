@@ -1,7 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
-import moment from "moment";
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 
 import testdataData from "sourcegraph/dashboard/testdata/DashboardUsers-data.json";
@@ -13,7 +12,13 @@ describe("DashboardUsers", () => {
 		let remoteAccount = {Name: "RemoteName", AvatarURL: "asdf"};
 		let localAccount = {Name: "Local Loco", AvatarURL: "zxcv", UID: "1"};
 		autotest(testdataData, `${__dirname}/testdata/DashboardUsers-data.json`,
-			<DashboardUsers users={[{Email:"abc", IsInvited: true, RemoteAccount: remoteAccount, LocalAccount: localAccount}]}
+			<DashboardUsers
+				users={[{
+					Email: "abc",
+					IsInvited: true,
+					RemoteAccount: remoteAccount,
+					LocalAccount: localAccount,
+				}]}
 				currentUser={{UID: "1", Admin: false}}
 				onboarding={{LinkGitHub: false}}
 				allowStandaloneUsers={false}

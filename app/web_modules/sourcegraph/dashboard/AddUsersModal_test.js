@@ -1,7 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
-import moment from "moment";
 import AddUsersModal from "sourcegraph/dashboard/AddUsersModal";
 
 import testdataData from "sourcegraph/dashboard/testdata/AddUsersModal-data.json";

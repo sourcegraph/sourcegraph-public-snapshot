@@ -9,7 +9,7 @@ beforeEach(GitHubReposStore.reset.bind(GitHubReposStore));
 
 describe("GitHubReposStore", () => {
 	it("should handle Mirror Repo Added", () => {
-		Dispatcher.directDispatch(GitHubReposStore, new DashboardActions.MirrorRepoAdded( "repo", {RemoteRepos: "hello"}));
+		Dispatcher.directDispatch(GitHubReposStore, new DashboardActions.MirrorRepoAdded("repo", {RemoteRepos: "hello"}));
 		expect(GitHubReposStore.remoteRepos.repos).to.be("hello");
 	});
 });
