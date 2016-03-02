@@ -8,7 +8,6 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
@@ -28,7 +27,6 @@ func PasswordMiddleware(w http.ResponseWriter, r *http.Request, next http.Handle
 			AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
 				ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: username, Password: password},
 			},
-			TokenURL: oauth2client.TokenURL(),
 		})
 		if err != nil {
 			log.Printf("PasswordMiddleware: error getting resource owner password access token for user %q: %s.", username, err)

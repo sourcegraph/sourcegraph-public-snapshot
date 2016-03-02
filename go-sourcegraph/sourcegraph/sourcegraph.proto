@@ -2087,10 +2087,6 @@ message AccessTokenRequest {
 		BearerJWT BearerJWT = 3;
 	}
 
-	// TokenURL is the token endpoint URL on the OAuth2 authorization
-	// server that the client is requesting an access token from.
-	string TokenURL = 9;
-
 	repeated string Scope = 17;
 }
 
