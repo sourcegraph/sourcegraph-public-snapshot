@@ -135,17 +135,6 @@
 											"key": "0",
 											"props": {
 												"className": "list-group-item hover-pointer",
-												"onClick": {
-													"dispatched": [
-														{
-															"$constructor": "WantAddMirrorRepo",
-															"repo": {
-																"URI": "someURL",
-																"Private": false
-															}
-														}
-													]
-												},
 												"children": [
 													{
 														"type": "div",
@@ -162,7 +151,26 @@
 																					"className": "repo-attr-icon icon-public"
 																				}
 																			},
-																			"someURL"
+																			{
+																				"type": "span",
+																				"props": {
+																					"className": "repo-link",
+																					"children": [
+																						{
+																							"type": "a",
+																							"key": "name0",
+																							"props": {
+																								"className": "name",
+																								"href": "/someURL",
+																								"title": "someURL",
+																								"children": [
+																									"someurl"
+																								]
+																							}
+																						}
+																					]
+																				}
+																			}
 																		]
 																	}
 																}
