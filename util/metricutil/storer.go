@@ -13,9 +13,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-var ActiveForwarder *elastigo.BulkIndexer
+var storage *elastigo.BulkIndexer
 
-func StartEventForwarder(ctx context.Context) {
+func StartEventStorer(ctx context.Context) {
 	url := os.Getenv("SG_ELASTICSEARCH_URL")
 	if url == "" {
 		log15.Debug("EventForwarder failed to locate elasticsearch endpoint")
@@ -25,15 +25,15 @@ func StartEventForwarder(ctx context.Context) {
 	conn := elastigo.NewConn()
 	conn.SetFromUrl(url)
 
-	ActiveForwarder = conn.NewBulkIndexerErrors(10, 60)
-	if ActiveForwarder == nil {
+	storage = conn.NewBulkIndexerErrors(10, 60)
+	if storage == nil {
 		log15.Error("EventForwarder could not connect to elasticsearch")
 		return
 	}
-	ActiveForwarder.Start()
+	storage.Start()
 
 	go func() {
-		for errBuf := range ActiveForwarder.ErrorChannel {
+		for errBuf := range storage.ErrorChannel {
 			log15.Error("EventForwarder recieved error", "error", errBuf.Err)
 		}
 	}()
@@ -41,15 +41,15 @@ func StartEventForwarder(ctx context.Context) {
 	log15.Debug("EventForwarder initialized")
 }
 
-func ForwardEvents(ctx context.Context, eventList *sourcegraph.UserEventList) {
+func StoreEvents(ctx context.Context, eventList *sourcegraph.UserEventList) {
 	indexName := getIndexNameWithSuffix()
-	if ActiveForwarder != nil {
+	if storage != nil {
 		for _, event := range eventList.Events {
 			indexNameWithPrefix := indexName
 			if event.Version == "dev" {
 				indexNameWithPrefix = "dev-" + indexNameWithPrefix
 			}
-			if err := ActiveForwarder.Index(indexNameWithPrefix, "user_event", "", "", "", nil, event); err != nil {
+			if err := storage.Index(indexNameWithPrefix, "user_event", "", "", "", nil, event); err != nil {
 				log15.Error("EventForwarder failed to push event", "event", event, "error", err)
 			}
 		}
