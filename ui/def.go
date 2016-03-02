@@ -17,7 +17,11 @@ import (
 )
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
+
 	e := json.NewEncoder(w)
 
 	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)

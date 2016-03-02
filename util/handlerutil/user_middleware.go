@@ -18,14 +18,6 @@ import (
 // This file contains getters and middleware setters for data that
 // should be in the context during HTTP handler execution.
 
-type contextKey int
-
-const (
-	userKey contextKey = iota
-	fullUserKey
-	emailAddrsKey
-)
-
 // UserMiddleware fetches the user object and stores it in the context
 // for downstream HTTP handlers. The CookieMiddleware must already
 // have run (or something else that calls sourcegraph.WithCredentials

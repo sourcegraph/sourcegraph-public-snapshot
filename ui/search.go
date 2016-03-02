@@ -18,12 +18,15 @@ import (
 )
 
 func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
+
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TokenSearchOptions
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
-	if err != nil {
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
@@ -73,12 +76,15 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
+
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TextSearchOptions
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
-	if err != nil {
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 

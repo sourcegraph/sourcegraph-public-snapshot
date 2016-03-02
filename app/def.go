@@ -16,7 +16,10 @@ import (
 // about a definition. Additionally, it may also contain information about the
 // tree entry that contains that definition.
 func serveDef(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
 
 	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
@@ -48,7 +51,10 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ctx, cl := handlerutil.Client(r)
+	ctx, cl, _, err := handlerutil.RepoClient(r)
+	if err != nil {
+		return err
+	}
 
 	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
