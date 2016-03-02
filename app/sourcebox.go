@@ -25,7 +25,7 @@ import (
 func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	dc, _, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, _, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		// Avoid writing a full response, or else the sourcebox will mess with the surrounding page it's embedded in.
 		http.Error(w, "", errcode.HTTP(err))
@@ -58,7 +58,8 @@ func serveSourceboxFile(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	opt.TokenizedSource = true
-	tc, _, _, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	ctx, _ := handlerutil.Client(r)
+	tc, _, _, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
 	}

@@ -18,7 +18,7 @@ import (
 func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
 func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -66,9 +66,9 @@ func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
-	_, cl := handlerutil.Client(r)
+	ctx, _ := handlerutil.Client(r)
 
-	_, _, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+	_, _, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

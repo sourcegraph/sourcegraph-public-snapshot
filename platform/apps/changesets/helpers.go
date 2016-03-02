@@ -60,7 +60,7 @@ func GetRepoAndRevCommon(r *http.Request) (rc *handlerutil.RepoCommon, vc *handl
 	}
 	vc = &handlerutil.RepoRevCommon{RepoRevSpec: rrs}
 	var commits []*payloads.AugmentedCommit
-	commits, err = handlerutil.AugmentCommits(r, spec.URI, []*vcs.Commit{commit})
+	commits, err = handlerutil.AugmentCommits(ctx, spec.URI, []*vcs.Commit{commit})
 	if err != nil {
 		return nil, nil, err
 	}

@@ -48,7 +48,8 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 			RecurseSingleSubfolderLimit: 200,
 		},
 	}
-	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	ctx, _ := handlerutil.Client(r)
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
 	}

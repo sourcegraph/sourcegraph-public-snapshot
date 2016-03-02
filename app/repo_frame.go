@@ -69,7 +69,8 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo, repoConf *sourcegraph.Repo
 }
 
 func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	ctx, _ := handlerutil.Client(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -89,8 +90,6 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 	// prevent shared mutable state (e.g., modifying http.Requests) to
 	// prevent inter-app interference
 	rCopy := copyRequest(r)
-
-	ctx := httpctx.FromRequest(r)
 
 	framectx, err := pctx.WithRepoFrameInfo(ctx, r)
 	if err != nil {

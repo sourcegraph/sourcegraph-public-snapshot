@@ -10,6 +10,8 @@ import (
 	"os"
 	pathpkg "path"
 
+	"github.com/sourcegraph/mux"
+
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
 
@@ -40,7 +42,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 
 	ctx, cl := handlerutil.Client(r)
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

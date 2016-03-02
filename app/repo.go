@@ -75,7 +75,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,8 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	ctx, _ := handlerutil.Client(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

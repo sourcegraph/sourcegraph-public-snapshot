@@ -5,14 +5,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	_, cl := handlerutil.Client(r)
+	ctx, _ := handlerutil.Client(r)
 
-	repo, _, err := handlerutil.GetRepo(r, cl.Repos)
+	repo, _, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

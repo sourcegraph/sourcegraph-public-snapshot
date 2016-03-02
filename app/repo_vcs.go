@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/sourcegraph/mux"
 
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 
@@ -17,7 +18,7 @@ import (
 func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -105,7 +106,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 
 	ctx, cl := handlerutil.Client(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -128,7 +129,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	commitDays, err := handlerutil.AugmentAndGroupCommitsByDay(r, commits0.Commits, rc.Repo.URI)
+	commitDays, err := handlerutil.AugmentAndGroupCommitsByDay(ctx, commits0.Commits, rc.Repo.URI)
 	if err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -194,7 +195,7 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

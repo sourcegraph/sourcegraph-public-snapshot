@@ -36,7 +36,7 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 
 	defList := &sourcegraph.DefList{}
 
-	resolvedRev, dataVer, err := handlerutil.ResolveSrclibDataVersion(ctx, cl, sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev})
+	resolvedRev, dataVer, err := handlerutil.ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: opt.RepoRev})
 	if err == nil {
 		opt.RepoRev = resolvedRev
 
@@ -84,7 +84,7 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

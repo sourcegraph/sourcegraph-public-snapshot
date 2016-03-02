@@ -31,9 +31,9 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 func getDefSpec(r *http.Request) (defSpec sourcegraph.DefSpec, err error) {
 	v := mux.Vars(r)
-	_, cl := handlerutil.Client(r)
+	ctx, _ := handlerutil.Client(r)
 
-	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return sourcegraph.DefSpec{}, err
 	}

@@ -3,6 +3,8 @@ package httpapi
 import (
 	"net/http"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
@@ -16,7 +18,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(r, cl.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -37,7 +39,7 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(r, cl.Repos)
+	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

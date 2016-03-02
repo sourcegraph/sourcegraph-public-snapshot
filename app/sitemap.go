@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/mux"
 	"github.com/sourcegraph/sitemap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -81,7 +82,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

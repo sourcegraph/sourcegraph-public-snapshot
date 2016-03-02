@@ -238,7 +238,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	}
 	sort.Sort(byDate(commitList.Commits))
 	// Augment commits with data from People
-	augmentedCommits, err := handlerutil.AugmentCommits(r, delta.HeadRepo.URI, commitList.Commits)
+	augmentedCommits, err := handlerutil.AugmentCommits(ctx, delta.HeadRepo.URI, commitList.Commits)
 	if err != nil {
 		return err
 	}

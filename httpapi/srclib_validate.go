@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/mux"
 
 	"src.sourcegraph.com/sourcegraph/util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -41,9 +42,9 @@ func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("requires Content-Type: application/json")
 	}
 
-	_, cl := handlerutil.Client(r)
+	ctx, _ := handlerutil.Client(r)
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

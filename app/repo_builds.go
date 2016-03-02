@@ -27,7 +27,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	var commit *payloads.AugmentedCommit
 	if commit0 != nil {
 		var commits []*payloads.AugmentedCommit
-		commits, err = handlerutil.AugmentCommits(r, rc.Repo.URI, []*vcs.Commit{commit0})
+		commits, err = handlerutil.AugmentCommits(ctx, rc.Repo.URI, []*vcs.Commit{commit0})
 		if err != nil {
 			return err
 		}
@@ -141,7 +141,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

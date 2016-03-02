@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -18,7 +20,7 @@ import (
 func serveDef(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	dc, rc, vc, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
+	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return err
 	}
@@ -54,7 +56,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 
 	ctx, cl := handlerutil.Client(r)
 
-	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
@@ -115,7 +117,8 @@ func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	dc, _, _, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
+	ctx, _ := handlerutil.Client(r)
+	dc, _, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		// TODO(gbbr): Set up custom responses for each scenario.
 		// All of the below errors will cause full page HTML pages or redirects, if
