@@ -1834,9 +1834,6 @@ type User struct {
 	UID int32 `protobuf:"varint,1,opt,name=UID,proto3" json:"UID,omitempty"`
 	// Login is the user's username.
 	Login string `protobuf:"bytes,2,opt,name=Login,proto3" json:"Login,omitempty"`
-	// Domain is the host that the user originates from. If empty, it
-	// is assumed to be the domain of the server.
-	Domain string `protobuf:"bytes,3,opt,name=Domain,proto3" json:"Domain,omitempty"`
 	// Name is the (possibly empty) full name of the user.
 	Name string `protobuf:"bytes,4,opt,name=Name,proto3" json:"Name,omitempty"`
 	// IsOrganization is whether this user represents an organization.
@@ -1851,11 +1848,9 @@ type User struct {
 	HomepageURL string `protobuf:"bytes,9,opt,name=HomepageURL,proto3" json:"HomepageURL,omitempty"`
 	// Disabled is whether the user account is disabled.
 	Disabled bool `protobuf:"varint,10,opt,name=Disabled,proto3" json:"Disabled,omitempty"`
-	// Admin is whether the user is a site admin for the site named by
-	// the Domain field.
+	// Admin is whether the user is a site admin for the site.
 	Admin bool `protobuf:"varint,12,opt,name=Admin,proto3" json:"Admin,omitempty"`
-	// Write is whether the user has write access for the site named by
-	// the Domain field.
+	// Write is whether the user has write access for the site.
 	Write bool `protobuf:"varint,13,opt,name=Write,proto3" json:"Write,omitempty"`
 	// RegisteredAt is the date that the user registered. If the user has not
 	// registered (i.e., we have processed their repos but they haven't signed into
@@ -1874,9 +1869,6 @@ type UserSpec struct {
 	Login string `protobuf:"bytes,1,opt,name=Login,proto3" json:"Login,omitempty"`
 	// UID is a user's UID.
 	UID int32 `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
-	// Domain is the host that the user originates from. If empty, it
-	// is assumed to be the domain of the server.
-	Domain string `protobuf:"bytes,3,opt,name=Domain,proto3" json:"Domain,omitempty"`
 }
 
 func (m *UserSpec) Reset()         { *m = UserSpec{} }
@@ -2281,10 +2273,6 @@ type AuthInfo struct {
 	ClientID string `protobuf:"bytes,1,opt,name=ClientID,proto3" json:"ClientID,omitempty"`
 	// UID is the UID of the currently authenticated user (if any).
 	UID int32 `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
-	// Domain is the domain of the currently authenticated user (if
-	// any), or blank if the user account was registered on the
-	// current server.
-	Domain string `protobuf:"bytes,3,opt,name=Domain,proto3" json:"Domain,omitempty"`
 	// Login is the login of the currently authenticated user (if any).
 	Login string `protobuf:"bytes,4,opt,name=Login,proto3" json:"Login,omitempty"`
 	// Write is set if the user (if any) has write access on this server.
@@ -12107,12 +12095,6 @@ func (m *User) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Login)))
 		i += copy(data[i:], m.Login)
 	}
-	if len(m.Domain) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Domain)))
-		i += copy(data[i:], m.Domain)
-	}
 	if len(m.Name) > 0 {
 		data[i] = 0x22
 		i++
@@ -12221,12 +12203,6 @@ func (m *UserSpec) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x10
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.UID))
-	}
-	if len(m.Domain) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Domain)))
-		i += copy(data[i:], m.Domain)
 	}
 	return i, nil
 }
@@ -13075,12 +13051,6 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x10
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.UID))
-	}
-	if len(m.Domain) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Domain)))
-		i += copy(data[i:], m.Domain)
 	}
 	if len(m.Login) > 0 {
 		data[i] = 0x22
@@ -19038,10 +19008,6 @@ func (m *User) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	l = len(m.Domain)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
@@ -19090,10 +19056,6 @@ func (m *UserSpec) Size() (n int) {
 	}
 	if m.UID != 0 {
 		n += 1 + sovSourcegraph(uint64(m.UID))
-	}
-	l = len(m.Domain)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	return n
 }
@@ -19470,10 +19432,6 @@ func (m *AuthInfo) Size() (n int) {
 	}
 	if m.UID != 0 {
 		n += 1 + sovSourcegraph(uint64(m.UID))
-	}
-	l = len(m.Domain)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	l = len(m.Login)
 	if l > 0 {
@@ -35190,35 +35148,6 @@ func (m *User) Unmarshal(data []byte) error {
 			}
 			m.Login = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Domain", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Domain = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
@@ -35575,35 +35504,6 @@ func (m *UserSpec) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Domain", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Domain = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
@@ -38264,35 +38164,6 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Domain", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Domain = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Login", wireType)

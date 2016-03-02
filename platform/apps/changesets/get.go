@@ -70,9 +70,8 @@ func serveList(w http.ResponseWriter, r *http.Request) error {
 	if q.Assigned {
 		a := authpkg.ActorFromContext(ctx)
 		op.NeedsReview = &sourcegraph.UserSpec{
-			Domain: a.Domain,
-			Login:  a.Login,
-			UID:    int32(a.UID),
+			Login: a.Login,
+			UID:   int32(a.UID),
 		}
 	}
 

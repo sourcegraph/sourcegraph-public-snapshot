@@ -274,10 +274,10 @@ func notificationCenter(ctx context.Context, cs *sourcegraph.Changeset, e *sourc
 	if notifications.Service == nil {
 		return
 	}
-	subscribers := []notif.UserSpec{notif.UserSpec{ID: uint64(e.Actor.UID), Domain: e.Actor.Domain}}
+	subscribers := []notif.UserSpec{notif.UserSpec{ID: uint64(e.Actor.UID)}}
 	if e.Recipients != nil {
 		for _, u := range e.Recipients {
-			subscribers = append(subscribers, notif.UserSpec{ID: uint64(u.UID), Domain: u.Domain})
+			subscribers = append(subscribers, notif.UserSpec{ID: uint64(u.UID)})
 		}
 	}
 	// HACK(keegancsmith) Notification API expects the user to be set in
