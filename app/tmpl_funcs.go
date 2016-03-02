@@ -171,8 +171,6 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"hasField": hasStructField,
 
-	"hasPrefix": strings.HasPrefix,
-
 	"ifTemplate":                ifTemplate,
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 	"heapAnalyticsID":           func() string { return appconf.Flags.HeapAnalyticsID },

@@ -24,13 +24,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/federated"
 	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner/trace"
 	"src.sourcegraph.com/sourcegraph/server/local"
 	"src.sourcegraph.com/sourcegraph/svc"
 )
 
-// Services returns the local services wrapped with auth, federation, etc.
+// Services returns the local services wrapped with auth, etc.
 func Services() svc.Services {
 	return svc.Services{
 
@@ -94,11 +93,7 @@ func (s wrappedGitTransport) InfoRefs(ctx context.Context, param *gitpb.InfoRefs
 	defer func() {
 		trace.After(ctx, "GitTransport", "InfoRefs", param, err, time.Since(start))
 	}()
-
-	target := local.Services.GitTransport
-
-	res, err = target.InfoRefs(ctx, param)
-
+	res, err = local.Services.GitTransport.InfoRefs(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "GitTransport.InfoRefs returned nil, nil")
 	}
@@ -111,11 +106,7 @@ func (s wrappedGitTransport) ReceivePack(ctx context.Context, param *gitpb.Recei
 	defer func() {
 		trace.After(ctx, "GitTransport", "ReceivePack", param, err, time.Since(start))
 	}()
-
-	target := local.Services.GitTransport
-
-	res, err = target.ReceivePack(ctx, param)
-
+	res, err = local.Services.GitTransport.ReceivePack(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "GitTransport.ReceivePack returned nil, nil")
 	}
@@ -128,11 +119,7 @@ func (s wrappedGitTransport) UploadPack(ctx context.Context, param *gitpb.Upload
 	defer func() {
 		trace.After(ctx, "GitTransport", "UploadPack", param, err, time.Since(start))
 	}()
-
-	target := local.Services.GitTransport
-
-	res, err = target.UploadPack(ctx, param)
-
+	res, err = local.Services.GitTransport.UploadPack(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "GitTransport.UploadPack returned nil, nil")
 	}
@@ -147,11 +134,7 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 	defer func() {
 		trace.After(ctx, "MultiRepoImporter", "Import", param, err, time.Since(start))
 	}()
-
-	target := local.Services.MultiRepoImporter
-
-	res, err = target.Import(ctx, param)
-
+	res, err = local.Services.MultiRepoImporter.Import(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Import returned nil, nil")
 	}
@@ -164,11 +147,7 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 	defer func() {
 		trace.After(ctx, "MultiRepoImporter", "Index", param, err, time.Since(start))
 	}()
-
-	target := local.Services.MultiRepoImporter
-
-	res, err = target.Index(ctx, param)
-
+	res, err = local.Services.MultiRepoImporter.Index(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.Index returned nil, nil")
 	}
@@ -183,11 +162,7 @@ func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccou
 	defer func() {
 		trace.After(ctx, "Accounts", "Create", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.Create(ctx, param)
-
+	res, err = local.Services.Accounts.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Create returned nil, nil")
 	}
@@ -200,11 +175,7 @@ func (s wrappedAccounts) RequestPasswordReset(ctx context.Context, param *source
 	defer func() {
 		trace.After(ctx, "Accounts", "RequestPasswordReset", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.RequestPasswordReset(ctx, param)
-
+	res, err = local.Services.Accounts.RequestPasswordReset(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.RequestPasswordReset returned nil, nil")
 	}
@@ -217,11 +188,7 @@ func (s wrappedAccounts) ResetPassword(ctx context.Context, param *sourcegraph.N
 	defer func() {
 		trace.After(ctx, "Accounts", "ResetPassword", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.ResetPassword(ctx, param)
-
+	res, err = local.Services.Accounts.ResetPassword(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.ResetPassword returned nil, nil")
 	}
@@ -234,11 +201,7 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 	defer func() {
 		trace.After(ctx, "Accounts", "Update", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.Update(ctx, param)
-
+	res, err = local.Services.Accounts.Update(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Update returned nil, nil")
 	}
@@ -251,11 +214,7 @@ func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountI
 	defer func() {
 		trace.After(ctx, "Accounts", "Invite", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.Invite(ctx, param)
-
+	res, err = local.Services.Accounts.Invite(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Invite returned nil, nil")
 	}
@@ -268,11 +227,7 @@ func (s wrappedAccounts) AcceptInvite(ctx context.Context, param *sourcegraph.Ac
 	defer func() {
 		trace.After(ctx, "Accounts", "AcceptInvite", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.AcceptInvite(ctx, param)
-
+	res, err = local.Services.Accounts.AcceptInvite(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.AcceptInvite returned nil, nil")
 	}
@@ -285,11 +240,7 @@ func (s wrappedAccounts) ListInvites(ctx context.Context, param *pbtypes.Void) (
 	defer func() {
 		trace.After(ctx, "Accounts", "ListInvites", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.ListInvites(ctx, param)
-
+	res, err = local.Services.Accounts.ListInvites(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.ListInvites returned nil, nil")
 	}
@@ -302,11 +253,7 @@ func (s wrappedAccounts) DeleteInvite(ctx context.Context, param *sourcegraph.In
 	defer func() {
 		trace.After(ctx, "Accounts", "DeleteInvite", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.DeleteInvite(ctx, param)
-
+	res, err = local.Services.Accounts.DeleteInvite(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.DeleteInvite returned nil, nil")
 	}
@@ -319,11 +266,7 @@ func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSp
 	defer func() {
 		trace.After(ctx, "Accounts", "Delete", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Accounts
-
-	res, err = target.Delete(ctx, param)
-
+	res, err = local.Services.Accounts.Delete(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Accounts.Delete returned nil, nil")
 	}
@@ -338,11 +281,7 @@ func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, param *sourcegrap
 	defer func() {
 		trace.After(ctx, "Auth", "GetAuthorizationCode", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Auth
-
-	res, err = target.GetAuthorizationCode(ctx, param)
-
+	res, err = local.Services.Auth.GetAuthorizationCode(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.GetAuthorizationCode returned nil, nil")
 	}
@@ -355,11 +294,7 @@ func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.Acce
 	defer func() {
 		trace.After(ctx, "Auth", "GetAccessToken", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Auth
-
-	res, err = target.GetAccessToken(ctx, param)
-
+	res, err = local.Services.Auth.GetAccessToken(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.GetAccessToken returned nil, nil")
 	}
@@ -372,11 +307,7 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 	defer func() {
 		trace.After(ctx, "Auth", "Identify", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Auth
-
-	res, err = target.Identify(ctx, param)
-
+	res, err = local.Services.Auth.Identify(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.Identify returned nil, nil")
 	}
@@ -389,11 +320,7 @@ func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.Ex
 	defer func() {
 		trace.After(ctx, "Auth", "GetExternalToken", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Auth
-
-	res, err = target.GetExternalToken(ctx, param)
-
+	res, err = local.Services.Auth.GetExternalToken(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.GetExternalToken returned nil, nil")
 	}
@@ -406,11 +333,7 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.Ex
 	defer func() {
 		trace.After(ctx, "Auth", "SetExternalToken", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Auth
-
-	res, err = target.SetExternalToken(ctx, param)
-
+	res, err = local.Services.Auth.SetExternalToken(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
 	}
@@ -425,21 +348,7 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 	defer func() {
 		trace.After(ctx, "Builds", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Builds.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.Get returned nil, nil")
 	}
@@ -452,21 +361,7 @@ func (s wrappedBuilds) GetRepoBuild(ctx context.Context, param *sourcegraph.Repo
 	defer func() {
 		trace.After(ctx, "Builds", "GetRepoBuild", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetRepoBuild(ctx, param)
-
+	res, err = local.Services.Builds.GetRepoBuild(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.GetRepoBuild returned nil, nil")
 	}
@@ -479,9 +374,7 @@ func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOpt
 	defer func() {
 		trace.After(ctx, "Builds", "List", param, err, time.Since(start))
 	}()
-
-	res, err = federated.CustomBuildsList(ctx, param, local.Services.Builds)
-
+	res, err = local.Services.Builds.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.List returned nil, nil")
 	}
@@ -494,21 +387,7 @@ func (s wrappedBuilds) Create(ctx context.Context, param *sourcegraph.BuildsCrea
 	defer func() {
 		trace.After(ctx, "Builds", "Create", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Create(ctx, param)
-
+	res, err = local.Services.Builds.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.Create returned nil, nil")
 	}
@@ -521,21 +400,7 @@ func (s wrappedBuilds) Update(ctx context.Context, param *sourcegraph.BuildsUpda
 	defer func() {
 		trace.After(ctx, "Builds", "Update", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Update(ctx, param)
-
+	res, err = local.Services.Builds.Update(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.Update returned nil, nil")
 	}
@@ -548,21 +413,7 @@ func (s wrappedBuilds) ListBuildTasks(ctx context.Context, param *sourcegraph.Bu
 	defer func() {
 		trace.After(ctx, "Builds", "ListBuildTasks", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListBuildTasks(ctx, param)
-
+	res, err = local.Services.Builds.ListBuildTasks(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.ListBuildTasks returned nil, nil")
 	}
@@ -575,21 +426,7 @@ func (s wrappedBuilds) CreateTasks(ctx context.Context, param *sourcegraph.Build
 	defer func() {
 		trace.After(ctx, "Builds", "CreateTasks", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Build.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.CreateTasks(ctx, param)
-
+	res, err = local.Services.Builds.CreateTasks(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.CreateTasks returned nil, nil")
 	}
@@ -602,21 +439,7 @@ func (s wrappedBuilds) UpdateTask(ctx context.Context, param *sourcegraph.Builds
 	defer func() {
 		trace.After(ctx, "Builds", "UpdateTask", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Task.Build.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.UpdateTask(ctx, param)
-
+	res, err = local.Services.Builds.UpdateTask(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.UpdateTask returned nil, nil")
 	}
@@ -629,21 +452,7 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 	defer func() {
 		trace.After(ctx, "Builds", "GetTaskLog", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Task.Build.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Builds(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetTaskLog(ctx, param)
-
+	res, err = local.Services.Builds.GetTaskLog(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.GetTaskLog returned nil, nil")
 	}
@@ -656,11 +465,7 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 	defer func() {
 		trace.After(ctx, "Builds", "DequeueNext", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Builds
-
-	res, err = target.DequeueNext(ctx, param)
-
+	res, err = local.Services.Builds.DequeueNext(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
 	}
@@ -675,11 +480,7 @@ func (s wrappedChangesets) Create(ctx context.Context, param *sourcegraph.Change
 	defer func() {
 		trace.After(ctx, "Changesets", "Create", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.Create(ctx, param)
-
+	res, err = local.Services.Changesets.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.Create returned nil, nil")
 	}
@@ -692,11 +493,7 @@ func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.Changeset
 	defer func() {
 		trace.After(ctx, "Changesets", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Changesets.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.Get returned nil, nil")
 	}
@@ -709,11 +506,7 @@ func (s wrappedChangesets) List(ctx context.Context, param *sourcegraph.Changese
 	defer func() {
 		trace.After(ctx, "Changesets", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.Changesets.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.List returned nil, nil")
 	}
@@ -726,11 +519,7 @@ func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.Change
 	defer func() {
 		trace.After(ctx, "Changesets", "Update", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.Update(ctx, param)
-
+	res, err = local.Services.Changesets.Update(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.Update returned nil, nil")
 	}
@@ -743,11 +532,7 @@ func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.Changes
 	defer func() {
 		trace.After(ctx, "Changesets", "Merge", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.Merge(ctx, param)
-
+	res, err = local.Services.Changesets.Merge(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.Merge returned nil, nil")
 	}
@@ -760,11 +545,7 @@ func (s wrappedChangesets) UpdateAffected(ctx context.Context, param *sourcegrap
 	defer func() {
 		trace.After(ctx, "Changesets", "UpdateAffected", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.UpdateAffected(ctx, param)
-
+	res, err = local.Services.Changesets.UpdateAffected(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.UpdateAffected returned nil, nil")
 	}
@@ -777,11 +558,7 @@ func (s wrappedChangesets) CreateReview(ctx context.Context, param *sourcegraph.
 	defer func() {
 		trace.After(ctx, "Changesets", "CreateReview", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.CreateReview(ctx, param)
-
+	res, err = local.Services.Changesets.CreateReview(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.CreateReview returned nil, nil")
 	}
@@ -794,11 +571,7 @@ func (s wrappedChangesets) ListReviews(ctx context.Context, param *sourcegraph.C
 	defer func() {
 		trace.After(ctx, "Changesets", "ListReviews", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.ListReviews(ctx, param)
-
+	res, err = local.Services.Changesets.ListReviews(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.ListReviews returned nil, nil")
 	}
@@ -811,11 +584,7 @@ func (s wrappedChangesets) ListEvents(ctx context.Context, param *sourcegraph.Ch
 	defer func() {
 		trace.After(ctx, "Changesets", "ListEvents", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Changesets
-
-	res, err = target.ListEvents(ctx, param)
-
+	res, err = local.Services.Changesets.ListEvents(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Changesets.ListEvents returned nil, nil")
 	}
@@ -830,21 +599,7 @@ func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res
 	defer func() {
 		trace.After(ctx, "Defs", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Defs
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Defs(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Defs.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.Get returned nil, nil")
 	}
@@ -857,9 +612,7 @@ func (s wrappedDefs) List(ctx context.Context, param *sourcegraph.DefListOptions
 	defer func() {
 		trace.After(ctx, "Defs", "List", param, err, time.Since(start))
 	}()
-
-	res, err = federated.CustomDefsList(ctx, param, local.Services.Defs)
-
+	res, err = local.Services.Defs.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.List returned nil, nil")
 	}
@@ -872,21 +625,7 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 	defer func() {
 		trace.After(ctx, "Defs", "ListRefs", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Defs
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Defs(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListRefs(ctx, param)
-
+	res, err = local.Services.Defs.ListRefs(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListRefs returned nil, nil")
 	}
@@ -899,21 +638,7 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 	defer func() {
 		trace.After(ctx, "Defs", "ListExamples", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Defs
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Defs(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListExamples(ctx, param)
-
+	res, err = local.Services.Defs.ListExamples(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
 	}
@@ -926,21 +651,7 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 	defer func() {
 		trace.After(ctx, "Defs", "ListAuthors", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Defs
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Defs(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListAuthors(ctx, param)
-
+	res, err = local.Services.Defs.ListAuthors(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
 	}
@@ -953,21 +664,7 @@ func (s wrappedDefs) ListClients(ctx context.Context, param *sourcegraph.DefsLis
 	defer func() {
 		trace.After(ctx, "Defs", "ListClients", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Defs
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Def.Repo)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Defs(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListClients(ctx, param)
-
+	res, err = local.Services.Defs.ListClients(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Defs.ListClients returned nil, nil")
 	}
@@ -982,21 +679,7 @@ func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (r
 	defer func() {
 		trace.After(ctx, "Deltas", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Deltas
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Base.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Deltas(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Deltas.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.Get returned nil, nil")
 	}
@@ -1009,21 +692,7 @@ func (s wrappedDeltas) ListUnits(ctx context.Context, param *sourcegraph.DeltasL
 	defer func() {
 		trace.After(ctx, "Deltas", "ListUnits", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Deltas
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Deltas(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListUnits(ctx, param)
-
+	res, err = local.Services.Deltas.ListUnits(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListUnits returned nil, nil")
 	}
@@ -1036,21 +705,7 @@ func (s wrappedDeltas) ListDefs(ctx context.Context, param *sourcegraph.DeltasLi
 	defer func() {
 		trace.After(ctx, "Deltas", "ListDefs", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Deltas
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Deltas(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListDefs(ctx, param)
-
+	res, err = local.Services.Deltas.ListDefs(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListDefs returned nil, nil")
 	}
@@ -1063,21 +718,7 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 	defer func() {
 		trace.After(ctx, "Deltas", "ListFiles", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Deltas
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Deltas(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListFiles(ctx, param)
-
+	res, err = local.Services.Deltas.ListFiles(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
 	}
@@ -1090,21 +731,7 @@ func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, param *sourcegra
 	defer func() {
 		trace.After(ctx, "Deltas", "ListAffectedAuthors", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Deltas
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Deltas(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListAffectedAuthors(ctx, param)
-
+	res, err = local.Services.Deltas.ListAffectedAuthors(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListAffectedAuthors returned nil, nil")
 	}
@@ -1117,21 +744,7 @@ func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegra
 	defer func() {
 		trace.After(ctx, "Deltas", "ListAffectedClients", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Deltas
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Ds.Base.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Deltas(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListAffectedClients(ctx, param)
-
+	res, err = local.Services.Deltas.ListAffectedClients(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListAffectedClients returned nil, nil")
 	}
@@ -1146,11 +759,7 @@ func (s wrappedGraphUplink) Push(ctx context.Context, param *sourcegraph.Metrics
 	defer func() {
 		trace.After(ctx, "GraphUplink", "Push", param, err, time.Since(start))
 	}()
-
-	target := local.Services.GraphUplink
-
-	res, err = target.Push(ctx, param)
-
+	res, err = local.Services.GraphUplink.Push(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "GraphUplink.Push returned nil, nil")
 	}
@@ -1163,11 +772,7 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.U
 	defer func() {
 		trace.After(ctx, "GraphUplink", "PushEvents", param, err, time.Since(start))
 	}()
-
-	target := local.Services.GraphUplink
-
-	res, err = target.PushEvents(ctx, param)
-
+	res, err = local.Services.GraphUplink.PushEvents(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "GraphUplink.PushEvents returned nil, nil")
 	}
@@ -1182,11 +787,7 @@ func (s wrappedMarkdown) Render(ctx context.Context, param *sourcegraph.Markdown
 	defer func() {
 		trace.After(ctx, "Markdown", "Render", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Markdown
-
-	res, err = target.Render(ctx, param)
-
+	res, err = local.Services.Markdown.Render(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Markdown.Render returned nil, nil")
 	}
@@ -1201,11 +802,7 @@ func (s wrappedMeta) Status(ctx context.Context, param *pbtypes.Void) (res *sour
 	defer func() {
 		trace.After(ctx, "Meta", "Status", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Meta
-
-	res, err = target.Status(ctx, param)
-
+	res, err = local.Services.Meta.Status(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Meta.Status returned nil, nil")
 	}
@@ -1218,11 +815,7 @@ func (s wrappedMeta) Config(ctx context.Context, param *pbtypes.Void) (res *sour
 	defer func() {
 		trace.After(ctx, "Meta", "Config", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Meta
-
-	res, err = target.Config(ctx, param)
-
+	res, err = local.Services.Meta.Config(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Meta.Config returned nil, nil")
 	}
@@ -1237,21 +830,7 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 	defer func() {
 		trace.After(ctx, "MirrorRepos", "RefreshVCS", param, err, time.Since(start))
 	}()
-
-	target := local.Services.MirrorRepos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.MirrorRepos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.RefreshVCS(ctx, param)
-
+	res, err = local.Services.MirrorRepos.RefreshVCS(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MirrorRepos.RefreshVCS returned nil, nil")
 	}
@@ -1264,11 +843,7 @@ func (s wrappedMirrorRepos) GetUserData(ctx context.Context, param *pbtypes.Void
 	defer func() {
 		trace.After(ctx, "MirrorRepos", "GetUserData", param, err, time.Since(start))
 	}()
-
-	target := local.Services.MirrorRepos
-
-	res, err = target.GetUserData(ctx, param)
-
+	res, err = local.Services.MirrorRepos.GetUserData(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MirrorRepos.GetUserData returned nil, nil")
 	}
@@ -1281,11 +856,7 @@ func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, param *pbtypes.Vo
 	defer func() {
 		trace.After(ctx, "MirrorRepos", "AddToWaitlist", param, err, time.Since(start))
 	}()
-
-	target := local.Services.MirrorRepos
-
-	res, err = target.AddToWaitlist(ctx, param)
-
+	res, err = local.Services.MirrorRepos.AddToWaitlist(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MirrorRepos.AddToWaitlist returned nil, nil")
 	}
@@ -1300,11 +871,7 @@ func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.Noti
 	defer func() {
 		trace.After(ctx, "Notify", "GenericEvent", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Notify
-
-	res, err = target.GenericEvent(ctx, param)
-
+	res, err = local.Services.Notify.GenericEvent(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Notify.GenericEvent returned nil, nil")
 	}
@@ -1319,11 +886,7 @@ func (s wrappedOrgs) Get(ctx context.Context, param *sourcegraph.OrgSpec) (res *
 	defer func() {
 		trace.After(ctx, "Orgs", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Orgs
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Orgs.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Orgs.Get returned nil, nil")
 	}
@@ -1336,11 +899,7 @@ func (s wrappedOrgs) List(ctx context.Context, param *sourcegraph.OrgsListOp) (r
 	defer func() {
 		trace.After(ctx, "Orgs", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Orgs
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.Orgs.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Orgs.List returned nil, nil")
 	}
@@ -1353,11 +912,7 @@ func (s wrappedOrgs) ListMembers(ctx context.Context, param *sourcegraph.OrgsLis
 	defer func() {
 		trace.After(ctx, "Orgs", "ListMembers", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Orgs
-
-	res, err = target.ListMembers(ctx, param)
-
+	res, err = local.Services.Orgs.ListMembers(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Orgs.ListMembers returned nil, nil")
 	}
@@ -1372,11 +927,7 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 	defer func() {
 		trace.After(ctx, "People", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.People
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.People.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
 	}
@@ -1391,11 +942,7 @@ func (s wrappedRegisteredClients) Get(ctx context.Context, param *sourcegraph.Re
 	defer func() {
 		trace.After(ctx, "RegisteredClients", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RegisteredClients
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.RegisteredClients.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RegisteredClients.Get returned nil, nil")
 	}
@@ -1408,11 +955,7 @@ func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes
 	defer func() {
 		trace.After(ctx, "RegisteredClients", "GetCurrent", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RegisteredClients
-
-	res, err = target.GetCurrent(ctx, param)
-
+	res, err = local.Services.RegisteredClients.GetCurrent(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RegisteredClients.GetCurrent returned nil, nil")
 	}
@@ -1425,11 +968,7 @@ func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph
 	defer func() {
 		trace.After(ctx, "RegisteredClients", "Create", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RegisteredClients
-
-	res, err = target.Create(ctx, param)
-
+	res, err = local.Services.RegisteredClients.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RegisteredClients.Create returned nil, nil")
 	}
@@ -1442,11 +981,7 @@ func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph
 	defer func() {
 		trace.After(ctx, "RegisteredClients", "Update", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RegisteredClients
-
-	res, err = target.Update(ctx, param)
-
+	res, err = local.Services.RegisteredClients.Update(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RegisteredClients.Update returned nil, nil")
 	}
@@ -1459,11 +994,7 @@ func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph
 	defer func() {
 		trace.After(ctx, "RegisteredClients", "Delete", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RegisteredClients
-
-	res, err = target.Delete(ctx, param)
-
+	res, err = local.Services.RegisteredClients.Delete(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RegisteredClients.Delete returned nil, nil")
 	}
@@ -1476,11 +1007,7 @@ func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.R
 	defer func() {
 		trace.After(ctx, "RegisteredClients", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RegisteredClients
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.RegisteredClients.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RegisteredClients.List returned nil, nil")
 	}
@@ -1495,21 +1022,7 @@ func (s wrappedRepoBadges) ListBadges(ctx context.Context, param *sourcegraph.Re
 	defer func() {
 		trace.After(ctx, "RepoBadges", "ListBadges", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoBadges
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoBadges(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListBadges(ctx, param)
-
+	res, err = local.Services.RepoBadges.ListBadges(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoBadges.ListBadges returned nil, nil")
 	}
@@ -1522,21 +1035,7 @@ func (s wrappedRepoBadges) ListCounters(ctx context.Context, param *sourcegraph.
 	defer func() {
 		trace.After(ctx, "RepoBadges", "ListCounters", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoBadges
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoBadges(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListCounters(ctx, param)
-
+	res, err = local.Services.RepoBadges.ListCounters(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoBadges.ListCounters returned nil, nil")
 	}
@@ -1549,21 +1048,7 @@ func (s wrappedRepoBadges) RecordHit(ctx context.Context, param *sourcegraph.Rep
 	defer func() {
 		trace.After(ctx, "RepoBadges", "RecordHit", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoBadges
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoBadges(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.RecordHit(ctx, param)
-
+	res, err = local.Services.RepoBadges.RecordHit(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoBadges.RecordHit returned nil, nil")
 	}
@@ -1576,21 +1061,7 @@ func (s wrappedRepoBadges) CountHits(ctx context.Context, param *sourcegraph.Rep
 	defer func() {
 		trace.After(ctx, "RepoBadges", "CountHits", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoBadges
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoBadges(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.CountHits(ctx, param)
-
+	res, err = local.Services.RepoBadges.CountHits(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoBadges.CountHits returned nil, nil")
 	}
@@ -1605,21 +1076,7 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 	defer func() {
 		trace.After(ctx, "RepoStatuses", "GetCombined", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoStatuses
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoStatuses(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetCombined(ctx, param)
-
+	res, err = local.Services.RepoStatuses.GetCombined(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCombined returned nil, nil")
 	}
@@ -1632,21 +1089,7 @@ func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.Repo
 	defer func() {
 		trace.After(ctx, "RepoStatuses", "Create", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoStatuses
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoStatuses(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Create(ctx, param)
-
+	res, err = local.Services.RepoStatuses.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoStatuses.Create returned nil, nil")
 	}
@@ -1661,21 +1104,7 @@ func (s wrappedRepoTree) Get(ctx context.Context, param *sourcegraph.RepoTreeGet
 	defer func() {
 		trace.After(ctx, "RepoTree", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoTree
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Entry.RepoRev.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoTree(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.RepoTree.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoTree.Get returned nil, nil")
 	}
@@ -1688,21 +1117,7 @@ func (s wrappedRepoTree) Search(ctx context.Context, param *sourcegraph.RepoTree
 	defer func() {
 		trace.After(ctx, "RepoTree", "Search", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoTree
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Rev.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoTree(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Search(ctx, param)
-
+	res, err = local.Services.RepoTree.Search(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoTree.Search returned nil, nil")
 	}
@@ -1715,21 +1130,7 @@ func (s wrappedRepoTree) List(ctx context.Context, param *sourcegraph.RepoTreeLi
 	defer func() {
 		trace.After(ctx, "RepoTree", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.RepoTree
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Rev.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.RepoTree(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.RepoTree.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RepoTree.List returned nil, nil")
 	}
@@ -1744,9 +1145,7 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 	defer func() {
 		trace.After(ctx, "Repos", "Get", param, err, time.Since(start))
 	}()
-
-	res, err = federated.CustomReposGet(ctx, param, local.Services.Repos)
-
+	res, err = local.Services.Repos.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Get returned nil, nil")
 	}
@@ -1759,11 +1158,7 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 	defer func() {
 		trace.After(ctx, "Repos", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.Repos.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
 	}
@@ -1776,9 +1171,7 @@ func (s wrappedRepos) Create(ctx context.Context, param *sourcegraph.ReposCreate
 	defer func() {
 		trace.After(ctx, "Repos", "Create", param, err, time.Since(start))
 	}()
-
-	res, err = federated.CustomReposCreate(ctx, param, local.Services.Repos)
-
+	res, err = local.Services.Repos.Create(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Create returned nil, nil")
 	}
@@ -1791,21 +1184,7 @@ func (s wrappedRepos) Update(ctx context.Context, param *sourcegraph.ReposUpdate
 	defer func() {
 		trace.After(ctx, "Repos", "Update", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Update(ctx, param)
-
+	res, err = local.Services.Repos.Update(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Update returned nil, nil")
 	}
@@ -1818,21 +1197,7 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 	defer func() {
 		trace.After(ctx, "Repos", "Delete", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Delete(ctx, param)
-
+	res, err = local.Services.Repos.Delete(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.Delete returned nil, nil")
 	}
@@ -1845,21 +1210,7 @@ func (s wrappedRepos) GetReadme(ctx context.Context, param *sourcegraph.RepoRevS
 	defer func() {
 		trace.After(ctx, "Repos", "GetReadme", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetReadme(ctx, param)
-
+	res, err = local.Services.Repos.GetReadme(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetReadme returned nil, nil")
 	}
@@ -1872,21 +1223,7 @@ func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec
 	defer func() {
 		trace.After(ctx, "Repos", "GetConfig", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetConfig(ctx, param)
-
+	res, err = local.Services.Repos.GetConfig(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetConfig returned nil, nil")
 	}
@@ -1899,21 +1236,7 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 	defer func() {
 		trace.After(ctx, "Repos", "GetCommit", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetCommit(ctx, param)
-
+	res, err = local.Services.Repos.GetCommit(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetCommit returned nil, nil")
 	}
@@ -1926,21 +1249,7 @@ func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposL
 	defer func() {
 		trace.After(ctx, "Repos", "ListCommits", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListCommits(ctx, param)
-
+	res, err = local.Services.Repos.ListCommits(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListCommits returned nil, nil")
 	}
@@ -1953,21 +1262,7 @@ func (s wrappedRepos) ListBranches(ctx context.Context, param *sourcegraph.Repos
 	defer func() {
 		trace.After(ctx, "Repos", "ListBranches", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListBranches(ctx, param)
-
+	res, err = local.Services.Repos.ListBranches(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListBranches returned nil, nil")
 	}
@@ -1980,21 +1275,7 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 	defer func() {
 		trace.After(ctx, "Repos", "ListTags", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListTags(ctx, param)
-
+	res, err = local.Services.Repos.ListTags(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListTags returned nil, nil")
 	}
@@ -2007,21 +1288,7 @@ func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.Rep
 	defer func() {
 		trace.After(ctx, "Repos", "ListCommitters", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ListCommitters(ctx, param)
-
+	res, err = local.Services.Repos.ListCommitters(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ListCommitters returned nil, nil")
 	}
@@ -2034,21 +1301,7 @@ func (s wrappedRepos) GetSrclibDataVersionForPath(ctx context.Context, param *so
 	defer func() {
 		trace.After(ctx, "Repos", "GetSrclibDataVersionForPath", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetSrclibDataVersionForPath(ctx, param)
-
+	res, err = local.Services.Repos.GetSrclibDataVersionForPath(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetSrclibDataVersionForPath returned nil, nil")
 	}
@@ -2061,21 +1314,7 @@ func (s wrappedRepos) ConfigureApp(ctx context.Context, param *sourcegraph.RepoC
 	defer func() {
 		trace.After(ctx, "Repos", "ConfigureApp", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.Repo.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.ConfigureApp(ctx, param)
-
+	res, err = local.Services.Repos.ConfigureApp(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.ConfigureApp returned nil, nil")
 	}
@@ -2088,21 +1327,7 @@ func (s wrappedRepos) GetInventory(ctx context.Context, param *sourcegraph.RepoR
 	defer func() {
 		trace.After(ctx, "Repos", "GetInventory", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Repos
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Repos(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.GetInventory(ctx, param)
-
+	res, err = local.Services.Repos.GetInventory(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.GetInventory returned nil, nil")
 	}
@@ -2117,21 +1342,7 @@ func (s wrappedSearch) SearchTokens(ctx context.Context, param *sourcegraph.Toke
 	defer func() {
 		trace.After(ctx, "Search", "SearchTokens", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Search
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Search(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.SearchTokens(ctx, param)
-
+	res, err = local.Services.Search.SearchTokens(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Search.SearchTokens returned nil, nil")
 	}
@@ -2144,21 +1355,7 @@ func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSe
 	defer func() {
 		trace.After(ctx, "Search", "SearchText", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Search
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.RepoRev.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Search(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.SearchText(ctx, param)
-
+	res, err = local.Services.Search.SearchText(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Search.SearchText returned nil, nil")
 	}
@@ -2173,11 +1370,7 @@ func (s wrappedStorage) Get(ctx context.Context, param *sourcegraph.StorageKey) 
 	defer func() {
 		trace.After(ctx, "Storage", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Storage
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Storage.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.Get returned nil, nil")
 	}
@@ -2190,11 +1383,7 @@ func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp
 	defer func() {
 		trace.After(ctx, "Storage", "Put", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Storage
-
-	res, err = target.Put(ctx, param)
-
+	res, err = local.Services.Storage.Put(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.Put returned nil, nil")
 	}
@@ -2207,11 +1396,7 @@ func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.S
 	defer func() {
 		trace.After(ctx, "Storage", "PutNoOverwrite", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Storage
-
-	res, err = target.PutNoOverwrite(ctx, param)
-
+	res, err = local.Services.Storage.PutNoOverwrite(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.PutNoOverwrite returned nil, nil")
 	}
@@ -2224,11 +1409,7 @@ func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKe
 	defer func() {
 		trace.After(ctx, "Storage", "Delete", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Storage
-
-	res, err = target.Delete(ctx, param)
-
+	res, err = local.Services.Storage.Delete(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.Delete returned nil, nil")
 	}
@@ -2241,11 +1422,7 @@ func (s wrappedStorage) Exists(ctx context.Context, param *sourcegraph.StorageKe
 	defer func() {
 		trace.After(ctx, "Storage", "Exists", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Storage
-
-	res, err = target.Exists(ctx, param)
-
+	res, err = local.Services.Storage.Exists(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.Exists returned nil, nil")
 	}
@@ -2258,11 +1435,7 @@ func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey)
 	defer func() {
 		trace.After(ctx, "Storage", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Storage
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.Storage.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.List returned nil, nil")
 	}
@@ -2277,21 +1450,7 @@ func (s wrappedUnits) Get(ctx context.Context, param *sourcegraph.UnitSpec) (res
 	defer func() {
 		trace.After(ctx, "Units", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Units
-
-	var fedCtx context.Context
-	fedCtx, err = federated.RepoContext(ctx, &param.URI)
-	if err != nil {
-		return
-	}
-	if fedCtx != nil {
-		target = svc.Units(fedCtx)
-		ctx = fedCtx
-	}
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Units.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Units.Get returned nil, nil")
 	}
@@ -2304,11 +1463,7 @@ func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptio
 	defer func() {
 		trace.After(ctx, "Units", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Units
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.Units.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Units.List returned nil, nil")
 	}
@@ -2323,11 +1478,7 @@ func (s wrappedUserKeys) AddKey(ctx context.Context, param *sourcegraph.SSHPubli
 	defer func() {
 		trace.After(ctx, "UserKeys", "AddKey", param, err, time.Since(start))
 	}()
-
-	target := local.Services.UserKeys
-
-	res, err = target.AddKey(ctx, param)
-
+	res, err = local.Services.UserKeys.AddKey(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "UserKeys.AddKey returned nil, nil")
 	}
@@ -2340,11 +1491,7 @@ func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHP
 	defer func() {
 		trace.After(ctx, "UserKeys", "LookupUser", param, err, time.Since(start))
 	}()
-
-	target := local.Services.UserKeys
-
-	res, err = target.LookupUser(ctx, param)
-
+	res, err = local.Services.UserKeys.LookupUser(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "UserKeys.LookupUser returned nil, nil")
 	}
@@ -2357,11 +1504,7 @@ func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *sourcegraph.SSHPu
 	defer func() {
 		trace.After(ctx, "UserKeys", "DeleteKey", param, err, time.Since(start))
 	}()
-
-	target := local.Services.UserKeys
-
-	res, err = target.DeleteKey(ctx, param)
-
+	res, err = local.Services.UserKeys.DeleteKey(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "UserKeys.DeleteKey returned nil, nil")
 	}
@@ -2374,11 +1517,7 @@ func (s wrappedUserKeys) ListKeys(ctx context.Context, param *pbtypes.Void) (res
 	defer func() {
 		trace.After(ctx, "UserKeys", "ListKeys", param, err, time.Since(start))
 	}()
-
-	target := local.Services.UserKeys
-
-	res, err = target.ListKeys(ctx, param)
-
+	res, err = local.Services.UserKeys.ListKeys(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "UserKeys.ListKeys returned nil, nil")
 	}
@@ -2391,11 +1530,7 @@ func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, param *pbtypes.Void)
 	defer func() {
 		trace.After(ctx, "UserKeys", "DeleteAllKeys", param, err, time.Since(start))
 	}()
-
-	target := local.Services.UserKeys
-
-	res, err = target.DeleteAllKeys(ctx, param)
-
+	res, err = local.Services.UserKeys.DeleteAllKeys(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "UserKeys.DeleteAllKeys returned nil, nil")
 	}
@@ -2410,11 +1545,7 @@ func (s wrappedUsers) Get(ctx context.Context, param *sourcegraph.UserSpec) (res
 	defer func() {
 		trace.After(ctx, "Users", "Get", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Users
-
-	res, err = target.Get(ctx, param)
-
+	res, err = local.Services.Users.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.Get returned nil, nil")
 	}
@@ -2427,11 +1558,7 @@ func (s wrappedUsers) GetWithEmail(ctx context.Context, param *sourcegraph.Email
 	defer func() {
 		trace.After(ctx, "Users", "GetWithEmail", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Users
-
-	res, err = target.GetWithEmail(ctx, param)
-
+	res, err = local.Services.Users.GetWithEmail(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.GetWithEmail returned nil, nil")
 	}
@@ -2444,11 +1571,7 @@ func (s wrappedUsers) ListEmails(ctx context.Context, param *sourcegraph.UserSpe
 	defer func() {
 		trace.After(ctx, "Users", "ListEmails", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Users
-
-	res, err = target.ListEmails(ctx, param)
-
+	res, err = local.Services.Users.ListEmails(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.ListEmails returned nil, nil")
 	}
@@ -2461,11 +1584,7 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	defer func() {
 		trace.After(ctx, "Users", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Users
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.Users.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.List returned nil, nil")
 	}
@@ -2478,11 +1597,7 @@ func (s wrappedUsers) ListTeammates(ctx context.Context, param *sourcegraph.User
 	defer func() {
 		trace.After(ctx, "Users", "ListTeammates", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Users
-
-	res, err = target.ListTeammates(ctx, param)
-
+	res, err = local.Services.Users.ListTeammates(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.ListTeammates returned nil, nil")
 	}
@@ -2495,11 +1610,7 @@ func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sour
 	defer func() {
 		trace.After(ctx, "Users", "Count", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Users
-
-	res, err = target.Count(ctx, param)
-
+	res, err = local.Services.Users.Count(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Users.Count returned nil, nil")
 	}

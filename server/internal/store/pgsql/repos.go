@@ -44,7 +44,6 @@ func init() {
 // dbRepo DB-maps a sourcegraph.Repo object.
 type dbRepo struct {
 	URI           string
-	Origin        string
 	Name          string
 	Description   string
 	VCS           string
@@ -66,7 +65,6 @@ type dbRepo struct {
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
 		URI:           r.URI,
-		Origin:        r.Origin,
 		Name:          r.Name,
 		Description:   r.Description,
 		VCS:           r.VCS,
@@ -100,7 +98,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.URI = r2.URI
-	r.Origin = r2.Origin
 	r.Name = r2.Name
 	r.Description = r2.Description
 	r.VCS = r2.VCS

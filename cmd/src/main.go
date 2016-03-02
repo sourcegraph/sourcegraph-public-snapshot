@@ -19,7 +19,6 @@ import (
 
 	// External services
 	_ "src.sourcegraph.com/sourcegraph/ext/github"
-	_ "src.sourcegraph.com/sourcegraph/ext/github/discover"
 	_ "src.sourcegraph.com/sourcegraph/ext/papertrail"
 
 	// Misc.
