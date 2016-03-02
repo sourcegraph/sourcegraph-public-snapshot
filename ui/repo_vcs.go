@@ -8,12 +8,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	repo, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {

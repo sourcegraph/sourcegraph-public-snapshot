@@ -9,12 +9,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveBuild(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	buildSpec, err := getBuildSpec(r)
 	if err != nil {
@@ -30,8 +28,7 @@ func serveBuild(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	buildSpec, err := getBuildSpec(r)
 	if err != nil {
@@ -55,8 +52,7 @@ func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveBuilds(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	// Delete the "_" cache-busting query param that jQuery adds when
 	// the "cache" $.ajaxSettings entry is false. We use this to

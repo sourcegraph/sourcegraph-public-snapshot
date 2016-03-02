@@ -16,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
@@ -26,8 +25,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -66,8 +64,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -98,8 +95,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -143,8 +139,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -174,8 +169,7 @@ func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.BuildGetLogOptions
 	if err := schemautil.Decode(&opt, r.URL.Query()); err != nil {
@@ -219,8 +213,7 @@ func getBuildSpec(r *http.Request) (sourcegraph.BuildSpec, error) {
 }
 
 func getRepoBuild(r *http.Request, repo *sourcegraph.Repo) (*sourcegraph.Build, sourcegraph.BuildSpec, error) {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	buildSpec, err := getBuildSpec(r)
 	if err != nil {

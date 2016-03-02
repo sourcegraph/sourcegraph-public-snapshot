@@ -7,11 +7,10 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
+	_, cl := handlerutil.Client(r)
 
 	repo, _, err := handlerutil.GetRepo(r, cl.Repos)
 	if err != nil {
@@ -31,8 +30,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -62,8 +60,7 @@ func getRepoLastBuildTime(r *http.Request, repoSpec sourcegraph.RepoSpec, commit
 		return time.Time{}, errors.New("refusing (for performance reasons) to get the last build time for non-canonical repository commit ID")
 	}
 
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	builds, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
 		Repo:        repoSpec.URI,

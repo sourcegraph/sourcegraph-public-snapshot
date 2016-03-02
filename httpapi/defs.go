@@ -6,12 +6,10 @@ import (
 	"github.com/sourcegraph/mux"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefGetOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -33,7 +31,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 func getDefSpec(r *http.Request) (defSpec sourcegraph.DefSpec, err error) {
 	v := mux.Vars(r)
-	cl := handlerutil.APIClient(r)
+	_, cl := handlerutil.Client(r)
 
 	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
 	if err != nil {
@@ -57,8 +55,7 @@ func getDefSpec(r *http.Request) (defSpec sourcegraph.DefSpec, err error) {
 }
 
 func serveDefs(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())

@@ -8,12 +8,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
 	if err != nil {
@@ -33,8 +31,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var op sourcegraph.BuildsCreateOp
 	err := json.NewDecoder(r.Body).Decode(&op)

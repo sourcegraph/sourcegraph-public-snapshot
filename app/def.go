@@ -10,15 +10,13 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // serveDef creates a new response for the code view that contains information
 // about a definition. Additionally, it may also contain information about the
 // tree entry that contains that definition.
 func serveDef(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	dc, rc, vc, err := handlerutil.GetDefCommon(r, &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
@@ -54,8 +52,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	}
 	opt.Formatted = true
 
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {

@@ -74,8 +74,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	go cacheutil.PrecacheTreeEntry(cl, ctx, tc.Entry, tc.EntrySpec)
 
 	eventsutil.LogBrowseCode(ctx, "dir", tc, rc)

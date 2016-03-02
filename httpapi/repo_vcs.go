@@ -5,12 +5,10 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListBranchesOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -31,8 +29,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListTagsOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())

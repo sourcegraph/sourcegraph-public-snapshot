@@ -7,7 +7,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 
 	"github.com/sourcegraph/mux"
 )
@@ -15,8 +14,7 @@ import (
 // serveRepoCompare handles both routes RepoCompare and RepoCompareAll and
 // differentiates by checking the suffix in r.URL
 func serveRepoCompare(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {

@@ -13,12 +13,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -43,8 +41,7 @@ func serveRepoBadges(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -69,7 +66,7 @@ func serveRepoCounters(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
+	_, cl := handlerutil.Client(r)
 
 	_, _, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
 	if err != nil {
@@ -130,8 +127,7 @@ func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
 // we don't want to increment the counters when someone is just
 // looking at the counter images on the stats/counters page).
 func serveRepoCounter(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {
@@ -152,8 +148,7 @@ func serveRepoCounter(w http.ResponseWriter, r *http.Request) error {
 }
 
 func doServeRepoCounter(w http.ResponseWriter, r *http.Request, repo sourcegraph.RepoSpec) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	v := mux.Vars(r)
 	counter := v["Counter"]

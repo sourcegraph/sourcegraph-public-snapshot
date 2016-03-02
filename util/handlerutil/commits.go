@@ -7,14 +7,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // AugmentCommits fills in fields on this package's commit type for
 // presentation in the app.
 func AugmentCommits(r *http.Request, repoURI string, commits []*vcs.Commit) ([]*payloads.AugmentedCommit, error) {
-	ctx := httpctx.FromRequest(r)
-	cl := APIClient(r)
+	ctx, cl := Client(r)
 
 	people := map[string]*sourcegraph.Person{}
 	for _, commit0 := range commits {

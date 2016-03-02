@@ -12,12 +12,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
@@ -105,8 +103,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {
@@ -157,8 +154,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -196,8 +192,7 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {

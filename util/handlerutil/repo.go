@@ -55,8 +55,7 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 	vc = &RepoRevCommon{}
 	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
 
-	cl := APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := Client(r)
 
 	var commit0 *vcs.Commit
 	vc.RepoRevSpec, commit0, err = GetRepoRev(r, cl.Repos, rc.Repo)
@@ -107,7 +106,7 @@ func IsRepoNoVCSDataError(err error) bool {
 // GetRepoCommon returns the repository and RepoSpec based on the request URL.
 // Callers should ideally handle the custom error type URLMovedError.
 func GetRepoCommon(r *http.Request) (rc *RepoCommon, err error) {
-	cl := APIClient(r)
+	ctx, cl := Client(r)
 
 	rc = &RepoCommon{}
 	rc.Repo, _, err = GetRepo(r, cl.Repos)
@@ -115,7 +114,6 @@ func GetRepoCommon(r *http.Request) (rc *RepoCommon, err error) {
 		return
 	}
 
-	ctx := httpctx.FromRequest(r)
 	repoSpec := rc.Repo.RepoSpec()
 	rc.RepoConfig, err = cl.Repos.GetConfig(ctx, &repoSpec)
 	return
@@ -261,8 +259,7 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 		return tc, rc, vc, err
 	}
 
-	cl := APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := Client(r)
 
 	tc = &TreeEntryCommon{}
 	tc.EntrySpec = sourcegraph.TreeEntrySpec{
@@ -325,8 +322,7 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 		return dc, rc, vc, err
 	}
 
-	cl := APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := Client(r)
 
 	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, cl, sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
 	if err != nil {
@@ -389,6 +385,6 @@ func GetRepoTreeListCommon(r *http.Request) (*sourcegraph.RepoTreeListResult, er
 		return nil, err
 	}
 
-	cl := APIClient(r)
-	return cl.RepoTree.List(httpctx.FromRequest(r), &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
+	ctx, cl := Client(r)
+	return cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
 }

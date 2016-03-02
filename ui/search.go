@@ -17,12 +17,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TokenSearchOptions
@@ -77,8 +75,7 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TextSearchOptions

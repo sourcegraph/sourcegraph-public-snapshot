@@ -27,7 +27,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {
@@ -47,9 +46,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("Must provide a repository name")
 	}
 
-	ctx := httpctx.FromRequest(r)
-
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	if _, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI}); grpc.Code(err) != codes.NotFound {
 		switch err {
@@ -76,8 +73,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, err := handlerutil.GetRepoCommon(r)
 	if err != nil {
@@ -97,8 +93,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {

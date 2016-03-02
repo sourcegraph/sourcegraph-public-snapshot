@@ -11,7 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {
@@ -26,8 +25,7 @@ func serveMarkdown(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Use Markdown service to render the markdown.
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	resp, err := cl.Markdown.Render(ctx, &sourcegraph.MarkdownRenderOp{
 		Markdown: data,
 		Opt: sourcegraph.MarkdownOpt{

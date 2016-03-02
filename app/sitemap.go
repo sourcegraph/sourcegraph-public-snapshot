@@ -14,13 +14,11 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	// get top repos
 	var si sitemap.Index
@@ -81,8 +79,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
 	if err != nil {

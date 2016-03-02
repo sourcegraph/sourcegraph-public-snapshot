@@ -23,8 +23,7 @@ import (
 )
 
 func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	dc, _, vc, err := handlerutil.GetDefCommon(r, nil)
 	if err != nil {

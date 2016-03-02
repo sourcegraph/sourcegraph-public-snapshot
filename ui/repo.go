@@ -19,12 +19,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	opt := struct {
@@ -67,8 +65,7 @@ type repoInfo struct {
 }
 
 func serveRepoMirror(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	if currentUser == nil {
 		return errors.New("Must be authenticated to mirror repos")

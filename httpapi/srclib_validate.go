@@ -41,7 +41,7 @@ func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("requires Content-Type: application/json")
 	}
 
-	cl := handlerutil.APIClient(r)
+	_, cl := handlerutil.Client(r)
 
 	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
 	if err != nil {
