@@ -17,6 +17,20 @@ class AddUsersModal extends Component {
 		this._handlePermissionChange = this._handlePermissionChange.bind(this);
 	}
 
+	componentDidMount() {
+		document.addEventListener("keydown", event => {
+			if (event.keyCode === 13) { // 13 is the Enter key's keyCode
+				this._handleInvite();
+			} }, false);
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener("keydown", event => {
+			if (event.keyCode === 13) { // 13 is the Enter key's keyCode
+				this._handleInvite();
+			} }, false);
+	}
+
 	reconcileState(state, props) {
 		Object.assign(state, props);
 	}
