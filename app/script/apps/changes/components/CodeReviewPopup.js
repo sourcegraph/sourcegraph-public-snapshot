@@ -24,7 +24,7 @@ var CodeReviewPopup = React.createClass({
 			return doc;
 		}
 		// This is OK because DocHTML is sanitized by the app (not
-		// untrusted federation root server) where the Def (Data) comes
+		// potentially untrusted server) where the Def (Data) comes
 		// from. This happens in util/handlerutil/repo.go by GetDefCommon.
 		doc.body = <section className="doc" dangerouslySetInnerHTML={this.state.Data.DocHTML} />;
 		return doc;

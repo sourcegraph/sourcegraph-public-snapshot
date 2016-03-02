@@ -46,7 +46,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/gitserver/sshgit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/httpapi"
@@ -186,6 +185,8 @@ type ServeCmd struct {
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
 	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup"`
+
+	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -371,16 +372,8 @@ func (c *ServeCmd) Execute(args []string) error {
 	log15.Debug("Sourcegraph server", "ID", idKey.ID)
 	// Uncomment to add ID key prefix to log messages.
 	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
-	var idKeyToken oauth2.TokenSource
-	if !fed.Config.IsRoot {
-		tokenURL := fed.Config.RootURL().ResolveReference(app_router.Rel.URLTo(app_router.OAuth2ServerToken))
-		idKeyToken = idKey.TokenSource(context.Background(), tokenURL.String())
-	}
 
 	sharedCtxFuncs = append(sharedCtxFuncs, func(ctx context.Context) context.Context {
-		if !fed.Config.IsRoot {
-			ctx = sourcegraph.WithCredentials(ctx, idKeyToken)
-		}
 		ctx = idkey.NewContext(ctx, idKey)
 		return ctx
 	})
@@ -553,8 +546,7 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Start SSH git server.
 	if c.SSHAddr != "" {
-		// Create a context with regular (non self-signed) tokens that
-		// are valid on the federation root server.
+		// Create a context with regular (non self-signed) tokens.
 		ctx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:sshgit"})
 		if err != nil {
 			return err
@@ -597,8 +589,12 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 	}
 
-	// Register client with fed root instance.
-	go c.registerClientWithRoot(appURL, idKey)
+	// Register client.
+	go func() {
+		if err := c.registerClient(appURL, idKey); err != nil {
+			log15.Warn("Failed to register (or check registration) with server", "error", err, "registerURL", c.RegisterURL)
+		}
+	}()
 
 	// Refresh commit list periodically
 	go c.repoStatusCommitLogCacheRefresher()
@@ -930,11 +926,16 @@ func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc
 
 // webpackDevServerHandler sets a CORS header if you are running with Webpack in local dev.
 
-// registerClientWithRoot registers a local Sourcegraph instance as a client
-// of its root instance.
-func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
-	if fed.Config.IsRoot {
-		return
+// registerClient registers this Sourcegraph server as a client
+// of another server.
+func (c *ServeCmd) registerClient(appURL *url.URL, idKey *idkey.IDKey) error {
+	if c.RegisterURL == "" {
+		return nil
+	}
+
+	registerURL, err := url.Parse(c.RegisterURL)
+	if err != nil {
+		return err
 	}
 
 	shortClientID := idKey.ID
@@ -942,40 +943,33 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 		shortClientID = shortClientID[:5]
 	}
 
-	// JWKS
 	jwks, err := idKey.MarshalJWKSPublicKey()
 	if err != nil {
-		log.Fatalf("Could not marshal JWKS for client: %v", err)
+		return err
 	}
 
-	rctx := fed.Config.NewRemoteContext(context.Background())
+	rctx := sourcegraph.WithGRPCEndpoint(context.Background(), registerURL)
 
-	for {
-		cl, err := sourcegraph.NewClientFromContext(rctx)
-		if err != nil {
-			log15.Error("Could not create client while registering client instance with root", "error", err)
-			time.Sleep(30 * time.Second)
-			continue
-		}
-
-		clientName := fmt.Sprintf("Client #%s", shortClientID)
-		_, err = cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
-			ID:         idKey.ID,
-			ClientName: clientName,
-			ClientURI:  appURL.String(),
-			JWKS:       string(jwks),
-		})
-		if grpc.Code(err) == codes.AlreadyExists {
-			return
-		} else if err != nil {
-			log15.Warn("Could not register client with root", "error", err)
-			time.Sleep(10 * time.Minute)
-			continue
-		}
-		eventsutil.LogRegisterServer(clientName)
-		log15.Debug("Registered as client of root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
-		return
+	cl, err := sourcegraph.NewClientFromContext(rctx)
+	if err != nil {
+		return err
 	}
+
+	regClient, err := cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
+		ID:         idKey.ID,
+		ClientName: fmt.Sprintf("Client #%s", shortClientID),
+		ClientURI:  appURL.String(),
+		JWKS:       string(jwks),
+	})
+	if grpc.Code(err) == codes.AlreadyExists {
+		log15.Debug("Client is already registered", "registerURL", registerURL, "client", idKey.ID)
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("registering client with %s: %s", registerURL, err)
+	}
+	eventsutil.LogRegisterServer(regClient.ClientName)
+	log15.Debug("Registered as client", "registerURL", registerURL, "client", idKey.ID)
+	return nil
 }
 
 // repoStatusCommitLogCacheRefresher periodically refreshes the commit log cache

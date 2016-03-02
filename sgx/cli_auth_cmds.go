@@ -14,7 +14,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/auth/userauth"
 	"src.sourcegraph.com/sourcegraph/auth/usercreds"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
@@ -67,8 +66,7 @@ func getSavedToken(endpointURL *url.URL) string {
 	ctx := sourcegraph.WithCredentials(client.Ctx,
 		oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: accessToken}),
 	)
-	ctx = fed.NewRemoteContext(ctx, endpointURL)
-	cl, err := sourcegraph.NewClientFromContext(ctx)
+	cl, err := sourcegraph.NewClientFromContext(sourcegraph.WithGRPCEndpoint(ctx, endpointURL))
 	if err != nil {
 		log15.Error("Failed to verify saved auth credentials for %s", "endpointURL", endpointURL, "error", err)
 		return ""

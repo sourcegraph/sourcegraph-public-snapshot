@@ -14,15 +14,6 @@ Looking for something else? [Let us know!](mailto:support@sourcegraph.com)
 To have Sourcegraph authenticate users via your directory server,
 follow the [LDAP configuration instructions]({{< relref "config/authentication.md" >}}).
 
-# Standalone operation
-
-To airgap your Sourcegraph server from Sourcegraph.com, add the following to your `config.ini`:
-
-```
-[serve]
-fed.is-root = true
-```
-
 [Read more about Sourcegraph data collection.]({{< relref "management/data_collection.md" >}})
 
 # High scalability and availability

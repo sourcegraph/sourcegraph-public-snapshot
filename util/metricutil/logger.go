@@ -95,7 +95,7 @@ func (w *Worker) Flush() error {
 		// Send events.
 		_, err = cl.GraphUplink.PushEvents(w.forwardDestCtx, eventList)
 		if err != nil {
-			log15.Error("GraphUplink.PushEvents failed", "error", err)
+			log15.Error("GraphUplink.PushEvents failed", "error", err, "forwardURL", config.ForwardURL)
 			// Force the connection to be re-established on the next flush.
 			w.forwardDestAvailable = false
 			return err
@@ -114,7 +114,7 @@ func (w *Worker) Flush() error {
 			TelemetryData: buf.Bytes(),
 		}
 		if _, err := cl.GraphUplink.Push(w.forwardDestCtx, &snapshot); err != nil {
-			log15.Error("GraphUplink push failed", "error", err)
+			log15.Error("GraphUplink push failed", "error", err, "forwardURL", config.ForwardURL)
 			// Force the connection to be re-established on the next flush.
 			w.forwardDestAvailable = false
 			return err

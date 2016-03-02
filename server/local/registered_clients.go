@@ -13,7 +13,6 @@ import (
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -40,11 +39,7 @@ func (s *registeredClients) Get(ctx context.Context, client *sourcegraph.Registe
 		panic(msg)
 	}
 
-	store, err := registeredClientsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return store.Get(ctx, *client)
+	return store.RegisteredClientsFromContext(ctx).Get(ctx, *client)
 }
 
 func (s *registeredClients) GetCurrent(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.RegisteredClient, error) {
@@ -56,19 +51,10 @@ func (s *registeredClients) GetCurrent(ctx context.Context, _ *pbtypes.Void) (*s
 		return nil, grpc.Errorf(codes.NotFound, "RegisteredClients.GetCurrent: current credentials represent the server itself, which is not a registered client of itself")
 	}
 
-	store, err := registeredClientsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return store.Get(ctx, sourcegraph.RegisteredClientSpec{ID: actor.ClientID})
+	return store.RegisteredClientsFromContext(ctx).Get(ctx, sourcegraph.RegisteredClientSpec{ID: actor.ClientID})
 }
 
 func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.RegisteredClient) (*sourcegraph.RegisteredClient, error) {
-	clientStore, err := registeredClientsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	if err := checkRedirectURIs(client); err != nil {
 		return nil, err
 	}
@@ -118,7 +104,7 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 	client.CreatedAt = pbtypes.NewTimestamp(time.Now())
 	client.UpdatedAt = client.CreatedAt
 
-	if err := clientStore.Create(ctx, *client); err != nil {
+	if err := store.RegisteredClientsFromContext(ctx).Create(ctx, *client); err != nil {
 		return nil, err
 	}
 
@@ -140,11 +126,6 @@ func (s *registeredClients) Create(ctx context.Context, client *sourcegraph.Regi
 }
 
 func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.RegisteredClient) (*pbtypes.Void, error) {
-	store, err := registeredClientsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	if err := checkRedirectURIs(client); err != nil {
 		return nil, err
 	}
@@ -155,7 +136,7 @@ func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.Regi
 
 	client.UpdatedAt = pbtypes.NewTimestamp(time.Now())
 
-	if err := store.Update(ctx, *client); err != nil {
+	if err := store.RegisteredClientsFromContext(ctx).Update(ctx, *client); err != nil {
 		return nil, err
 	}
 
@@ -176,32 +157,14 @@ func (s *registeredClients) Update(ctx context.Context, client *sourcegraph.Regi
 }
 
 func (s *registeredClients) Delete(ctx context.Context, client *sourcegraph.RegisteredClientSpec) (*pbtypes.Void, error) {
-	store, err := registeredClientsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := store.Delete(ctx, *client); err != nil {
+	if err := store.RegisteredClientsFromContext(ctx).Delete(ctx, *client); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
 }
 
 func (s *registeredClients) List(ctx context.Context, opt *sourcegraph.RegisteredClientListOptions) (*sourcegraph.RegisteredClientList, error) {
-	store, err := registeredClientsOrError(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return store.List(ctx, *opt)
-}
-
-func registeredClientsOrError(ctx context.Context) (store.RegisteredClients, error) {
-	s := store.RegisteredClientsFromContext(ctx)
-	if !fed.Config.AllowsClientRegistration() {
-		return nil, grpc.Errorf(codes.Unimplemented, "server is not a federation root and therefore does not allow client registration")
-	}
-	return s, nil
+	return store.RegisteredClientsFromContext(ctx).List(ctx, *opt)
 }
 
 func checkRedirectURIs(client *sourcegraph.RegisteredClient) error {
