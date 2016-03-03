@@ -37,6 +37,13 @@
 		letter-spacing: 1px;
 	}
 
+	.add-repo-btn, .add-user-btn {
+		text-align: center;
+		border: none;
+		box-shadow: none;
+		width: 40px;
+	}
+
 	.dashboard-container {
 		margin-top: 55px;
 	}
@@ -107,15 +114,6 @@
 				flex: 9;
 			}
 
-			.add-repo-btn {
-				flex: 1;
-				align-items: center;
-				justify-content: center;
-
-				width: 50%;
-				text-align: center;
-			}
-
 			.plus-btn {
 				display: inline-block;
 				background-color: $btn-primary-color;
@@ -124,14 +122,6 @@
 				height: 19px;
 				border-radius: 2px;
 				margin-right: 10px;
-			}
-
-			.sg-icon-plus-box {
-				margin-right: 10px;
-			}
-
-			.add-repo-label {
-				display: inline-block;
 			}
 		}
 
@@ -233,38 +223,34 @@
 	}
 
 	.dash-users {
-		text-align: center;
-
 		.empty-well {
 			margin-top: 20px;
 		}
 
 		.add-user-well {
-			margin-top: 50px;
+			margin-top: 18px;
+			text-align: center;
 		}
 
 		.user-permissions {
 			text-align: left;
 		}
 
-		.add-user-btn {
-			display: inline-block;
-			min-width: 125px;
-			float: right;
-		}
-
-		.button-icon {
-			margin-right: 10px;
-		}
-
 		.panel-heading {
 			@include clearfix;
 			background-color: $body-bg;
+			padding: 4px 15px;
 			h5 {
-				display: inline-block;
-				margin-top: 13px;
+				flex: 7;
+				font-size: 18px;
+				margin-top: 0;
 				margin-bottom: 0;
 			}
+		}
+
+		.panel-heading-content {
+			display: flex;
+			align-items: center;
 		}
 
 		.users-list {
@@ -280,7 +266,7 @@
 				align-items: center;
 				justify-content: center;
 
-				height: 45px;
+				min-height: 45px;
 				text-align: left;
 				border: none;
 				border-bottom: $content-border;
@@ -309,11 +295,15 @@
 				.user-name {
 					margin-left: 15px;
 					margin-top: 4px;
-					flex: 5;
+					flex: 7;
+					overflow-wrap: break-word;
+					overflow: auto;
+					margin-right: 10px;
 				}
 
 				.user-permissions {
 					margin-top: 4px;
+					color: $text-light;
 					flex: 1;
 				}
 			}

@@ -126,17 +126,21 @@ class UserList extends Component {
 		return (
 			<div className="panel panel-default">
 				<div className="panel-heading">
+					<div className="panel-heading-content">
 					<h5>Team</h5>
 					{!this.state.onboarding.linkGitHub &&
-						<button className="btn btn-primary add-user-btn" onClick={() => this._handleAddButton()} >
+						<button className="btn btn-default add-user-btn"
+							onClick={() => this._handleAddButton()}
+							data-tooltip={this.state.allowGitHubUsers ? true : null}
+							title={this.state.allowGitHubUsers ? "Invite all teammates" : null} >
 							<i className={classNames("fa button-icon", {
-								"fa-users": this.state.allowGitHubUsers,
-								"fa-user-plus": !this.state.allowGitHubUsers,
+								"fa-users": this.state.allowGitHubUsers && !this.state.showCreateUserWell,
+								"fa-user-plus": !this.state.allowGitHubUsers && !this.state.showCreateUserWell,
+								"sg-icon-close": this.state.showCreateUserWell,
 							})}></i>
-							{!this.state.allowGitHubUsers && (!this.state.showCreateUserWell ? "ADD NEW" : "CANCEL")}
-							{this.state.allowGitHubUsers && "INVITE ALL"}
 						</button>
 					}
+					</div>
 					{this.state.showCreateUserWell && <div className="add-user-well">
 						<div className="well">
 							<div className="form-group">
@@ -176,7 +180,7 @@ class UserList extends Component {
 							<button type="submit" className={classNames("btn btn-primary create-repo-btn", {
 								disabled: !this._emailValid(),
 							})}
-								onClick={this._handleAddUser}>SEND INVITATION</button>
+								onClick={this._handleAddUser}>Invite</button>
 						</div>
 					</div>}
 				</div>
@@ -184,8 +188,8 @@ class UserList extends Component {
 					{this.state.users.length === 0 ? <div className="well empty-well">{emptyStateLabel}</div> : <div className="list-group">
 						{this.state.users.sort(this._userSort).map((user, i) => (
 							<div className="list-group-item" key={i}>
-								<img className="avatar-sm" src={this._avatarURL(user) || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
-								<span className="user-name">{this._name(user)}</span>
+								<img className="avatar avatar-sm" src={this._avatarURL(user) || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
+								<div className="user-name">{this._name(user)}</div>
 								{!this._existsLocally(user) && !this._isInvited(user) &&
 									<i className={classNames("fa fa-plus-square-o add-user-icon", {"add-user-icon-disabled": !this._hasEmail(user)})}
 										onClick={() => this._handleInviteUser(user)}
