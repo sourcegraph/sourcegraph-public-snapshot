@@ -4,7 +4,7 @@ import router from "../../../script/routing/router";
 
 
 // repoLink is swiped from app/repo.go.
-function repoLink(repoURI) {
+function repoLink(repoURI, disableLink) {
 	let collection = [],
 		parts = repoURI.split("/");
 
@@ -15,7 +15,11 @@ function repoLink(repoURI) {
 			continue;
 		}
 		if (i === parts.length - 1) {
-			collection.push(<a className="name" key={`name${i}`} href={router.repoURL(repoURI)} title={repoURI}>{parts[i]}</a>);
+			if (disableLink) {
+				collection.push(<span className="name" key={`name${i}`} title={repoURI}>{parts[i]}</span>);
+			} else {
+				collection.push(<a className="name" key={`name${i}`} href={router.repoURL(repoURI)} title={repoURI}>{parts[i]}</a>);
+			}
 		} else {
 			collection.push(<span className="part" key={`part${i}`}>{parts[i]}</span>);
 		}

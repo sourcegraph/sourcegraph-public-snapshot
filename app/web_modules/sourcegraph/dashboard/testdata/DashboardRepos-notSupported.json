@@ -157,11 +157,10 @@
 																					"className": "repo-link",
 																					"children": [
 																						{
-																							"type": "a",
+																							"type": "span",
 																							"key": "name0",
 																							"props": {
 																								"className": "name",
-																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
 																									"someurl"
@@ -242,11 +241,10 @@
 																					"className": "repo-link",
 																					"children": [
 																						{
-																							"type": "a",
+																							"type": "span",
 																							"key": "name0",
 																							"props": {
 																								"className": "name",
-																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
 																									"someurl"
@@ -327,11 +325,10 @@
 																					"className": "repo-link",
 																					"children": [
 																						{
-																							"type": "a",
+																							"type": "span",
 																							"key": "name0",
 																							"props": {
 																								"className": "name",
-																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
 																									"someurl"

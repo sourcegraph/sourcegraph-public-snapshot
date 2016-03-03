@@ -89,8 +89,10 @@ class DashboardRepos extends Component {
 			</button>
 		);
 
+		const repoDisabled = (repo) => !repo.ExistsLocally && (this.state.allowGitHubMirrors && !this._canMirror(repo));
+
 		const repoRowClass = (repo) => classNames("list-group-item", {
-			"repo-disabled": !repo.ExistsLocally && (this.state.allowGitHubMirrors && !this._canMirror(repo)),
+			"repo-disabled": repoDisabled(repo),
 		});
 
 		const emptyStateLabel = this.state.allowGitHubMirrors && this.state.linkGitHub ? "Link your GitHub account to add repositories." : "No repositories.";
@@ -121,7 +123,7 @@ class DashboardRepos extends Component {
 								<div className="repo-header">
 									<h4>
 										<i className={`sg-icon repo-attr-icon sg-icon-${repo.Private ? "private" : "public"}`}></i>
-										{repoLink(repo.URI)}
+										{repoLink(repo.URI, repoDisabled(repo))}
 									</h4>
 									{this.state.allowGitHubMirrors && !this._canMirror(repo) &&
 										<span className="disabled-reason">{this._disabledReason(repo)}</span>
