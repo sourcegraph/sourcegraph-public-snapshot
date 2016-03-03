@@ -5,7 +5,7 @@ import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import classNames from "classnames";
-import validator from "validator";
+import emailValidator from "email-validator";
 
 class UserList extends Component {
 	constructor(props) {
@@ -77,7 +77,7 @@ class UserList extends Component {
 	}
 
 	_handleAddUser() {
-		if (!validator.isEmail(this.state.userEmail)) return;
+		if (!emailValidator.validate(this.state.userEmail)) return;
 		Dispatcher.dispatch(new DashboardActions.WantInviteUser(this.state.userEmail, this.state.userPermission));
 		this.setState({showCreateUserWell: false, userEmail: "", userPermission: "read"});
 	}
@@ -134,7 +134,7 @@ class UserList extends Component {
 					{this.state.showCreateUserWell && <div className="add-user-well">
 						<div className="well">
 							<div className={classNames("form-group", {
-								"has-error": this.state.userEmail !== "" && !validator.isEmail(this.state.userEmail),
+								"has-error": this.state.userEmail !== "" && !emailValidator.validate(this.state.userEmail),
 							})}>
 								<input className="form-control create-repo-input"
 									placeholder="Email"
@@ -169,7 +169,7 @@ class UserList extends Component {
 								</div>
 							</div>
 							<button type="submit" className={classNames("btn btn-primary create-repo-btn", {
-								disabled: !validator.isEmail(this.state.userEmail),
+								disabled: !emailValidator.validate(this.state.userEmail),
 							})}
 								onClick={this._handleAddUser}>SEND INVITATION</button>
 						</div>
