@@ -1,4 +1,5 @@
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import * as AlertActions from "sourcegraph/alerts/AlertActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "sourcegraph/util/xhr";
 
@@ -91,10 +92,8 @@ const DashboardBackend = {
 					Admin: action.permission === "admin",
 					Write: action.permission === "write",
 				}));
-				// TODO: proper modal....but soon we're sending emails anyway.
-				if (typeof alert === "function") { // TODO(autotest) support document object.
-					alert(`Invite link: ${body.Link}`);
-				}
+				Dispatcher.dispatch(new AlertActions.AddAlert(false,
+					`Please send <a href="${body.Link}">this invitation link</a> to <strong>${action.email}</strong>.`));
 			});
 			break;
 		case DashboardActions.WantInviteUsers:

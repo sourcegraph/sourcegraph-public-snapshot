@@ -8,6 +8,18 @@
 		height: 40px;
 	}
 
+	.alert-content {
+		color: $alert-default-text;
+		font-size: 16px;
+
+		.alert-dismiss {
+			color: $btn-dismiss;
+			cursor: pointer;
+			margin-left: 10px;
+			margin-right: 15px;
+		}
+	}
+
 	.btn {
 		text-transform: uppercase;
 		font-weight: 500;

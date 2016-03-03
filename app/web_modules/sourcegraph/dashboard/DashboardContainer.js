@@ -13,6 +13,8 @@ import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
+import AlertContainer from "sourcegraph/alerts/AlertContainer";
+
 import classNames from "classnames";
 
 class DashboardContainer extends Container {
@@ -80,6 +82,7 @@ class DashboardContainer extends Container {
 
 		return (
 			<div className="dashboard-container row">
+				<AlertContainer />
 				<div className="dash-repos col-lg-9 col-md-8">
 					{(this.state.onboarding.linkGitHub || (this.state.onboarding.linkGitHubRedirect && !this.state.dismissWelcome)) &&
 						<div className="well link-github-well">

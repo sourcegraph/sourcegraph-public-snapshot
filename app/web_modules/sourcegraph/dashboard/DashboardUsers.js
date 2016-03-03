@@ -140,7 +140,7 @@ class UserList extends Component {
 									placeholder="Email"
 									type="email"
 									value={this.state.userEmail}
-									onKeyPress={(e) => { if ((e.keyCode || e.which) === 13) this._handleCreateRepo(); }}
+									onKeyPress={(e) => { if ((e.keyCode || e.which) === 13) this._handleAddUser(); }}
 									onChange={this._handleUserEmailTextInput} />
 							</div>
 							<div className="form-group user-permissions">
