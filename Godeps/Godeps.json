@@ -1445,6 +1445,11 @@
 			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
+			"ImportPath": "sourcegraph.com/sourcegraph/srclib/cvg",
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
+		},
+		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
 			"Rev": "f0be0c1b846b3ea4d8971693f436452236879df3"
 		},
