@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/srclib/cli"
+	"sourcegraph.com/sourcegraph/srclib/cvg"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -16,7 +16,7 @@ import (
 
 type Coverage struct {
 	Repo string
-	Cov  cli.Coverage
+	Cov  cvg.Coverage
 
 	FileScoreClass  string
 	RefScoreClass   string
@@ -89,12 +89,12 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 	cov.Repo = repo
 	for _, status := range cstatus.Statuses {
 		if status.Context == "coverage" {
-			var cvg cli.Coverage
-			err := json.Unmarshal([]byte(status.Description), &cvg)
+			var c cvg.Coverage
+			err := json.Unmarshal([]byte(status.Description), &c)
 			if err != nil {
 				return nil, err
 			}
-			cov.Cov = cvg
+			cov.Cov = c
 			break
 		}
 	}

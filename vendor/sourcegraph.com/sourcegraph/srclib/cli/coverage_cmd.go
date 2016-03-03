@@ -14,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-flags"
 
 	"sourcegraph.com/sourcegraph/srclib/config"
+	"sourcegraph.com/sourcegraph/srclib/cvg"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/grapher"
 	"sourcegraph.com/sourcegraph/srclib/plan"
@@ -30,13 +31,6 @@ func init() {
 			log.Fatal(err)
 		}
 	})
-}
-
-type Coverage struct {
-	FileScore      float32  // % files successfully processed
-	RefScore       float32  // % internal refs that resolve to a def
-	TokDensity     float32  // average number of refs/defs per LoC
-	UncoveredFiles []string // files for which srclib data was not successfully generated (best-effort guess)
 }
 
 type codeFileDatum struct {
@@ -80,7 +74,7 @@ func init() {
 	}
 }
 
-func coverage(repo *Repo) (*Coverage, error) {
+func coverage(repo *Repo) (*cvg.Coverage, error) {
 	lineSep := []byte{'\n'}
 	codeFileData := make(map[string]*codeFileDatum)
 	log.Printf(repo.RootDir)
@@ -182,7 +176,7 @@ func coverage(repo *Repo) (*Coverage, error) {
 		}
 	}
 
-	return &Coverage{
+	return &cvg.Coverage{
 		FileScore:      float32(numIndexedFiles) / float32(len(codeFileData)),
 		RefScore:       float32(numRefsValid) / float32(numRefs),
 		TokDensity:     float32(numDefs+numRefs) / float32(loc),

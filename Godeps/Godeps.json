@@ -1441,8 +1441,8 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -1482,93 +1482,93 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/ann",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/buildstore",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/cli",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/config",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/dep",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/flagutil",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/gendata",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/graph",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/grapher",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/plan",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/scan",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/store",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/store/pb",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/store/pbio",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/store/phtable",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/toolchain",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/unit",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib/util",
-			"Comment": "v0.2.3",
-			"Rev": "a142be7a0560ab5e6a5c07bb16ea3498012717b7"
+			"Comment": "v0.2.3-1-g056526a",
+			"Rev": "056526a2ff75bb811d41f36df7add6b2ef464f0e"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/surf",

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/srclib/cli"
+	"sourcegraph.com/sourcegraph/srclib/cvg"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -33,7 +33,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var cov cli.Coverage
+	var cov cvg.Coverage
 	if err := json.NewDecoder(r.Body).Decode(&cov); err != nil {
 		return err
 	}
