@@ -46,6 +46,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/gitserver/sshgit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/httpapi"
@@ -929,7 +930,20 @@ func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc
 // registerClient registers this Sourcegraph server as a client
 // of another server.
 func (c *ServeCmd) registerClient(appURL *url.URL, idKey *idkey.IDKey) error {
+	// Check deprecated --fed.is-root flag for backwards compatibility with old configs.
+	// TODO(pararth): remove this once the config is replaced.
+	if fed.Config.DeprecatedIsRoot {
+		log15.Warn("The --fed.is-root option is DEPRECATED. If you were using it to disable client registration to sourcegraph.com, switch to using --register-url='' instead. Otherwise, you can remove it, as it is a no-op.")
+		c.RegisterURL = ""
+	}
+
 	if c.RegisterURL == "" {
+		return nil
+	}
+
+	// Short-circuit if RegisterURL is set to this server's own app URL.
+	if c.RegisterURL == c.AppURL {
+		log15.Warn("RegisterURL is set to this server's own app URL, skipping client registration.")
 		return nil
 	}
 
