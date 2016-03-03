@@ -1,7 +1,7 @@
 .dashboard {
 
 	/* These styles are temporary, until we implement our UI kit standard styles. */
-	button {
+	button, .btn-placeholder-padding {
 		height: 40px;
 	}
 	input:not([type='radio']), .input-group {
@@ -24,8 +24,6 @@
 		font-size: 16px;
 
 		.alert-dismiss {
-			color: $btn-dismiss;
-			cursor: pointer;
 			margin-left: 10px;
 			margin-right: 15px;
 		}
@@ -37,11 +35,14 @@
 		letter-spacing: 1px;
 	}
 
-	.add-repo-btn, .add-user-btn {
-		text-align: center;
-		border: none;
-		box-shadow: none;
-		width: 40px;
+	.btn-icon {
+		font-size: 16px;
+		cursor: pointer;
+		color: $shadow-blue;
+
+		&:hover {
+			color: $brand-azure;
+		}
 	}
 
 	.dashboard-container {
@@ -241,7 +242,7 @@
 			background-color: $body-bg;
 			padding: 4px 15px;
 			h5 {
-				flex: 7;
+				flex: 6;
 				font-size: 18px;
 				margin-top: 0;
 				margin-bottom: 0;
@@ -251,6 +252,7 @@
 		.panel-heading-content {
 			display: flex;
 			align-items: center;
+			height: 40px;
 		}
 
 		.users-list {
@@ -281,21 +283,19 @@
 					flex: 1
 				}
 
-				.add-user-icon {
-					cursor: pointer;
-					font-size: 20px;
-					opacity: .8;
-				}
-
 				.add-user-icon-disabled {
 					cursor: not-allowed !important;
 					opacity: .3;
+
+					&:hover {
+						color: $shadow-blue;
+					}
 				}
 
 				.user-name {
 					margin-left: 15px;
 					margin-top: 4px;
-					flex: 7;
+					flex: 6;
 					overflow-wrap: break-word;
 					overflow: auto;
 					margin-right: 10px;

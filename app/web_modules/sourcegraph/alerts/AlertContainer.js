@@ -23,7 +23,7 @@ class AlertContainer extends Container {
 				{this.state.alerts.map((alert, i) =>
 					<div className="alert alert-info" key={i}>
 						<div className="alert-content">
-							<i className="fa fa-times alert-dismiss"
+							<i className="sg-icon sg-icon-close btn-icon alert-dismiss"
 								onClick={_ => Dispatcher.dispatch(new AlertActions.RemoveAlert(alert.id))}></i>
 							<span dangerouslySetInnerHTML={{__html: alert.html}} />
 						</div>

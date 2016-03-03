@@ -127,19 +127,16 @@ class UserList extends Component {
 			<div className="panel panel-default">
 				<div className="panel-heading">
 					<div className="panel-heading-content">
-					<h5>Team</h5>
-					{!this.state.onboarding.linkGitHub &&
-						<button className="btn btn-default add-user-btn"
-							onClick={() => this._handleAddButton()}
-							data-tooltip={this.state.allowGitHubUsers ? true : null}
-							title={this.state.allowGitHubUsers ? "Invite all teammates" : null} >
-							<i className={classNames("fa button-icon", {
-								"fa-users": this.state.allowGitHubUsers && !this.state.showCreateUserWell,
-								"fa-user-plus": !this.state.allowGitHubUsers && !this.state.showCreateUserWell,
+						<h5>Team</h5>
+						{!this.state.onboarding.linkGitHub &&
+							<i className={classNames("btn-icon", {
+								"sg-icon-plus-box": !this.state.showCreateUserWell,
 								"sg-icon-close": this.state.showCreateUserWell,
-							})}></i>
-						</button>
-					}
+							})}
+								onClick={() => this._handleAddButton()}
+								data-tooltip={this.state.allowGitHubUsers ? true : null}
+								title={this.state.allowGitHubUsers ? "Invite all teammates" : null} />
+						}
 					</div>
 					{this.state.showCreateUserWell && <div className="add-user-well">
 						<div className="well">
@@ -191,7 +188,7 @@ class UserList extends Component {
 								<img className="avatar avatar-sm" src={this._avatarURL(user) || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
 								<div className="user-name">{this._name(user)}</div>
 								{!this._existsLocally(user) && !this._isInvited(user) &&
-									<i className={classNames("fa fa-plus-square-o add-user-icon", {"add-user-icon-disabled": !this._hasEmail(user)})}
+									<i className={classNames("sg-icon sg-icon-plus-box btn-icon", {"add-user-icon-disabled": !this._hasEmail(user)})}
 										onClick={() => this._handleInviteUser(user)}
 										data-tooltip={!this._hasEmail(user) ? "top" : null}
 										title={!this._hasEmail(user) ? "No public email" : null} />

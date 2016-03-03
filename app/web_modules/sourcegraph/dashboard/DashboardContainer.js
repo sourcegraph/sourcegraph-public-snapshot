@@ -108,13 +108,11 @@ class DashboardContainer extends Container {
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Repositories</h3>
 						{!this.state.allowGitHubMirrors && (this.state.currentUser.Admin || this.state.currentUser.Write) &&
-							<button className="btn add-repo-btn btn-default"
-								onClick={_ => this.setState({showCreateRepoWell: !this.state.showCreateRepoWell})}>
-								<i className={classNames("sg-icon", {
-									"sg-icon-plus-box": !this.state.showCreateRepoWell,
-									"sg-icon-close": this.state.showCreateRepoWell,
-								})} />
-							</button>
+							<i className={classNames("btn-icon sg-icon", {
+								"sg-icon-plus-box": !this.state.showCreateRepoWell,
+								"sg-icon-close": this.state.showCreateRepoWell,
+							})}
+								onClick={_ => this.setState({showCreateRepoWell: !this.state.showCreateRepoWell})} />
 						}
 					</div>
 					{this.state.showCreateRepoWell && <div className="well add-repo-well">
