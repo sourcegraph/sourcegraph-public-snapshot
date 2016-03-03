@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/csp"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
+	"src.sourcegraph.com/sourcegraph/app/coverage"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	_ "src.sourcegraph.com/sourcegraph/app/internal/markdown"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
@@ -94,7 +95,6 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
-	r.Get(router.Coverage).Handler(internal.Handler(serveCoverage))
 	r.Get(router.Download).Handler(internal.Handler(serveDownload))
 	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))
 	r.Get(router.RepoCreate).Handler(internal.Handler(serveRepoCreate))
@@ -158,6 +158,8 @@ func NewHandler(r *router.Router) http.Handler {
 	if feature.Features.NotificationCenter {
 		r.Get(router.AppGlobalNotificationCenter).Handler(internal.Handler(serveAppGlobalNotificationCenter))
 	}
+
+	coverage.AddRoutes(r)
 
 	return handlerutil.WithMiddleware(m, mw...)
 }
