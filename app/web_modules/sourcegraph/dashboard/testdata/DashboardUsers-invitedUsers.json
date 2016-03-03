@@ -21,20 +21,14 @@
 								"type": "button",
 								"props": {
 									"className": "btn btn-primary add-user-btn",
-									"onClick": {
-										"dispatched": [
-											{
-												"$constructor": "OpenAddUsersModal"
-											}
-										]
-									},
 									"children": [
 										{
 											"type": "i",
 											"props": {
-												"className": "fa fa-user-plus"
+												"className": "fa button-icon fa-user-plus"
 											}
-										}
+										},
+										"ADD NEW"
 									]
 								}
 							}
@@ -69,7 +63,7 @@
 														"props": {
 															"className": "user-name",
 															"children": [
-																"xyz1 (pending)"
+																"xyz1"
 															]
 														}
 													}
@@ -94,7 +88,7 @@
 														"props": {
 															"className": "user-name",
 															"children": [
-																"xyz2 (pending)"
+																"xyz2"
 															]
 														}
 													}
@@ -119,7 +113,7 @@
 														"props": {
 															"className": "user-name",
 															"children": [
-																"xyz3 (pending)"
+																"xyz3"
 															]
 														}
 													}

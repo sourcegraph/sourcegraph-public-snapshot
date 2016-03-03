@@ -24,7 +24,12 @@
 									"onClick": {
 										"dispatched": [
 											{
-												"$constructor": "OpenAddUsersModal"
+												"$constructor": "WantInviteUsers",
+												"emails": [
+													"abc1",
+													"abc2",
+													"abc3"
+												]
 											}
 										]
 									},
@@ -32,9 +37,10 @@
 										{
 											"type": "i",
 											"props": {
-												"className": "fa fa-user-plus"
+												"className": "fa button-icon fa-user-plus"
 											}
-										}
+										},
+										"ADD NEW"
 									]
 								}
 							}

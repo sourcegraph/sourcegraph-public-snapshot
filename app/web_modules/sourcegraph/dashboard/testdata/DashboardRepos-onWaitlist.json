@@ -134,7 +134,7 @@
 											"type": "div",
 											"key": "0",
 											"props": {
-												"className": "list-group-item disabled",
+												"className": "list-group-item repo-disabled",
 												"children": [
 													{
 														"type": "div",
@@ -148,7 +148,7 @@
 																			{
 																				"type": "i",
 																				"props": {
-																					"className": "repo-attr-icon icon-public"
+																					"className": "sg-icon repo-attr-icon sg-icon-public"
 																				}
 																			},
 																			{
@@ -219,7 +219,7 @@
 											"type": "div",
 											"key": "1",
 											"props": {
-												"className": "list-group-item disabled",
+												"className": "list-group-item repo-disabled",
 												"children": [
 													{
 														"type": "div",
@@ -233,7 +233,7 @@
 																			{
 																				"type": "i",
 																				"props": {
-																					"className": "repo-attr-icon icon-public"
+																					"className": "sg-icon repo-attr-icon sg-icon-public"
 																				}
 																			},
 																			{
@@ -304,7 +304,7 @@
 											"type": "div",
 											"key": "2",
 											"props": {
-												"className": "list-group-item disabled",
+												"className": "list-group-item repo-disabled",
 												"children": [
 													{
 														"type": "div",
@@ -318,7 +318,7 @@
 																			{
 																				"type": "i",
 																				"props": {
-																					"className": "repo-attr-icon icon-public"
+																					"className": "sg-icon repo-attr-icon sg-icon-public"
 																				}
 																			},
 																			{

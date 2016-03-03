@@ -148,7 +148,7 @@
 																			{
 																				"type": "i",
 																				"props": {
-																					"className": "repo-attr-icon icon-public"
+																					"className": "sg-icon repo-attr-icon sg-icon-public"
 																				}
 																			},
 																			{
