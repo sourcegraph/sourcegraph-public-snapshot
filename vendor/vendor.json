@@ -18,6 +18,12 @@
 			"revisionTime": "2015-05-01T06:40:42-04:00"
 		},
 		{
+			"origin": "src.sourcegraph.com/sourcegraph/vendor/github.com/NYTimes/gziphandler",
+			"path": "github.com/NYTimes/gziphandler",
+			"revision": "a88790d49798560db24af70fb6a10a66e2549a72",
+			"revisionTime": "2016-02-07T20:52:08-05:00"
+		},
+		{
 			"path": "github.com/PuerkitoBio/goquery",
 			"revision": "269246d9e7d42d74e1cf929336d128d2ef53e7a5",
 			"revisionTime": "2015-03-28T09:30:56-04:00"

@@ -23,6 +23,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/soheilhy/cmux"
@@ -389,10 +390,10 @@ func (c *ServeCmd) Execute(args []string) error {
 		router.KeepContext = true
 		return router
 	}
-	sm.Handle("/.api/", httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/")))))
-	sm.Handle("/.ui/", app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/"))))))
+	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/"))))))
+	sm.Handle("/.ui/", gziphandler.GzipHandler(app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")))))))
+	sm.Handle("/", gziphandler.GzipHandler(app.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter())))))
 	sm.Handle(assets.URLPathPrefix+"/", http.StripPrefix(assets.URLPathPrefix, assets.NewHandler(newRouter())))
-	sm.Handle("/", app.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter()))))
 
 	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {
 		return errors.New("HTTPS listen address (--https-addr) must be specified if TLS cert and key are set")
