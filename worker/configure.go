@@ -146,12 +146,12 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	}
 	b.SrclibImportURL = srclibImportURL
 
-	// SrclibValidateURL
-	srclibValidateURL, err := getSrclibValidateURL(ctx, repoRev, *containerAppURL)
+	// SrclibCoverageURL
+	srclibCoverageURL, err := getSrclibCoverageURL(ctx, repoRev, *containerAppURL)
 	if err != nil {
 		return nil, err
 	}
-	b.SrclibValidateURL = srclibValidateURL
+	b.SrclibCoverageURL = srclibCoverageURL
 
 	// Inventory
 	b.Inventory = func(ctx context.Context) (*inventory.Inventory, error) {
@@ -231,14 +231,14 @@ func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, co
 	return containerAppURL.ResolveReference(srclibImportURL), nil
 }
 
-func getSrclibValidateURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
-	srclibValidateURL, err := httpapirouter.URL(httpapirouter.SrclibValidate, repoRev.RouteVars())
+func getSrclibCoverageURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
+	srclibCoverageURL, err := httpapirouter.URL(httpapirouter.SrclibCoverage, repoRev.RouteVars())
 	if err != nil {
 		return nil, err
 	}
-	srclibValidateURL.Path = "/.api" + srclibValidateURL.Path
+	srclibCoverageURL.Path = "/.api" + srclibCoverageURL.Path
 
-	return containerAppURL.ResolveReference(srclibValidateURL), nil
+	return containerAppURL.ResolveReference(srclibCoverageURL), nil
 }
 
 // getHostNetrcEntry creates a netrc entry that authorizes access to

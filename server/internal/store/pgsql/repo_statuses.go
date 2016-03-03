@@ -107,8 +107,18 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 
 	var dbRepoStatus dbRepoStatus
 	dbRepoStatus.fromRepoStatus(&repoRev, status)
-	if dbRepoStatus.CreatedAt.IsZero() {
+	if dbRepoStatus.CreatedAt.Unix() == 0 {
 		dbRepoStatus.CreatedAt = time.Now()
 	}
-	return dbh(ctx).Insert(&dbRepoStatus)
+
+	// Upsert the status. Note that this is correct, because repo
+	// statuses cannot be deleted. It is more robust to write it this
+	// way than with inline SQL (which would have to be manually
+	// updated if the fields of RepoStatus changed).
+	err := dbh(ctx).Insert(&dbRepoStatus)
+	if err != nil {
+		_, err := dbh(ctx).Update(&dbRepoStatus)
+		return err
+	}
+	return err
 }

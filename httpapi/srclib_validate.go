@@ -1,18 +1,6 @@
 package httpapi
 
-import (
-	"encoding/json"
-	"errors"
-	"net/http"
-	"strings"
-
-	"github.com/prometheus/client_golang/prometheus"
-
-	"src.sourcegraph.com/sourcegraph/util"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-
-	"gopkg.in/inconshreveable/log15.v2"
-)
+import "github.com/prometheus/client_golang/prometheus"
 
 type Validate struct {
 	Warnings []BuildWarning
@@ -34,42 +22,42 @@ func init() {
 	prometheus.MustRegister(validateCounter)
 }
 
-func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
+// func serveSrclibValidate(w http.ResponseWriter, r *http.Request) error {
 
-	if strings.ToLower(r.Header.Get("content-type")) != "application/json" {
-		w.WriteHeader(http.StatusBadRequest)
-		return errors.New("requires Content-Type: application/json")
-	}
+// 	if strings.ToLower(r.Header.Get("content-type")) != "application/json" {
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return errors.New("requires Content-Type: application/json")
+// 	}
 
-	cl := handlerutil.APIClient(r)
+// 	cl := handlerutil.APIClient(r)
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
-	if err != nil {
-		return err
-	}
+// 	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	dec := json.NewDecoder(r.Body)
+// 	dec := json.NewDecoder(r.Body)
 
-	var val Validate
-	err = dec.Decode(&val)
-	if err != nil {
-		return err
-	}
+// 	var val Validate
+// 	err = dec.Decode(&val)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	log15.Debug("Srclib Validate Output", "repoRev", repoRev, "srclib validate output", val)
+// 	log15.Debug("Srclib Validate Output", "repoRev", repoRev, "srclib validate output", val)
 
-	trackedRepo := util.GetTrackedRepo(r.URL.Path)
+// 	trackedRepo := util.GetTrackedRepo(r.URL.Path)
 
-	var counter prometheus.Counter
-	if len(val.Warnings) == 0 {
-		counter, err = validateCounter.GetMetricWithLabelValues("success", trackedRepo)
-	} else {
-		counter, err = validateCounter.GetMetricWithLabelValues("failure", trackedRepo)
-	}
-	if err != nil {
-		return err
-	}
-	counter.Inc()
+// 	var counter prometheus.Counter
+// 	if len(val.Warnings) == 0 {
+// 		counter, err = validateCounter.GetMetricWithLabelValues("success", trackedRepo)
+// 	} else {
+// 		counter, err = validateCounter.GetMetricWithLabelValues("failure", trackedRepo)
+// 	}
+// 	if err != nil {
+// 		return err
+// 	}
+// 	counter.Inc()
 
-	return nil
-}
+// 	return nil
+// }

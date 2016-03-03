@@ -1360,6 +1360,9 @@ message BuildUpdate {
 	bool Killed = 8;
 	int32 Priority = 9;
 	string BuilderConfig = 10;
+	float FileScore = 11;
+	float RefScore = 12;
+	float TokDensity = 13;
 }
 
 message BuildList {

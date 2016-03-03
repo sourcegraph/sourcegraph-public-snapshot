@@ -45,9 +45,9 @@ type Builder struct {
 	// import. If not set, no srclib import is performed.
 	SrclibImportURL *url.URL
 
-	// SrclibValidateURL is the URL to POST the output of
-	// 'srclib validate' to.
-	SrclibValidateURL *url.URL
+	// SrclibCoverageURL is the URL to POST the output of
+	// 'srclib coverage' to.
+	SrclibCoverageURL *url.URL
 
 	// Inventory performs a repo inventory (or returns an existing
 	// cached copy of the inventory), to determine which languages,
@@ -224,7 +224,7 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 		{
 			label: planLabel,
 			fn: func(ctx context.Context, state TaskState) error {
-				finalConfig, axes, err = plan.Create(b.Payload.Yaml, b.DroneYMLFileExists, inv, b.SrclibImportURL, b.SrclibValidateURL)
+				finalConfig, axes, err = plan.Create(b.Payload.Yaml, b.DroneYMLFileExists, inv, b.SrclibImportURL, b.SrclibCoverageURL)
 				if err != nil {
 					return err
 				}

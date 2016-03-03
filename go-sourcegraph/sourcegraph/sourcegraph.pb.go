@@ -1581,6 +1581,9 @@ type BuildUpdate struct {
 	Killed        bool               `protobuf:"varint,8,opt,name=Killed,proto3" json:"Killed,omitempty"`
 	Priority      int32              `protobuf:"varint,9,opt,name=Priority,proto3" json:"Priority,omitempty"`
 	BuilderConfig string             `protobuf:"bytes,10,opt,name=BuilderConfig,proto3" json:"BuilderConfig,omitempty"`
+	FileScore     float32            `protobuf:"fixed32,11,opt,name=FileScore,proto3" json:"FileScore,omitempty"`
+	RefScore      float32            `protobuf:"fixed32,12,opt,name=RefScore,proto3" json:"RefScore,omitempty"`
+	TokDensity    float32            `protobuf:"fixed32,13,opt,name=TokDensity,proto3" json:"TokDensity,omitempty"`
 }
 
 func (m *BuildUpdate) Reset()         { *m = BuildUpdate{} }
@@ -11386,6 +11389,21 @@ func (m *BuildUpdate) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.BuilderConfig)))
 		i += copy(data[i:], m.BuilderConfig)
 	}
+	if m.FileScore != 0 {
+		data[i] = 0x5d
+		i++
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.FileScore)))
+	}
+	if m.RefScore != 0 {
+		data[i] = 0x65
+		i++
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.RefScore)))
+	}
+	if m.TokDensity != 0 {
+		data[i] = 0x6d
+		i++
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.TokDensity)))
+	}
 	return i, nil
 }
 
@@ -19009,6 +19027,15 @@ func (m *BuildUpdate) Size() (n int) {
 	l = len(m.BuilderConfig)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if m.FileScore != 0 {
+		n += 5
+	}
+	if m.RefScore != 0 {
+		n += 5
+	}
+	if m.TokDensity != 0 {
+		n += 5
 	}
 	return n
 }
@@ -32956,6 +32983,48 @@ func (m *BuildUpdate) Unmarshal(data []byte) error {
 			}
 			m.BuilderConfig = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 11:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FileScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += 4
+			v = uint32(data[iNdEx-4])
+			v |= uint32(data[iNdEx-3]) << 8
+			v |= uint32(data[iNdEx-2]) << 16
+			v |= uint32(data[iNdEx-1]) << 24
+			m.FileScore = float32(math.Float32frombits(v))
+		case 12:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RefScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += 4
+			v = uint32(data[iNdEx-4])
+			v |= uint32(data[iNdEx-3]) << 8
+			v |= uint32(data[iNdEx-2]) << 16
+			v |= uint32(data[iNdEx-1]) << 24
+			m.RefScore = float32(math.Float32frombits(v))
+		case 13:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokDensity", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += 4
+			v = uint32(data[iNdEx-4])
+			v |= uint32(data[iNdEx-3]) << 8
+			v |= uint32(data[iNdEx-2]) << 16
+			v |= uint32(data[iNdEx-1]) << 24
+			m.TokDensity = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

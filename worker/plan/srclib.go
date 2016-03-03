@@ -12,7 +12,7 @@ import (
 
 // configureSrclib modifies the Drone config to run srclib analysis
 // during the CI build.
-func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []matrix.Axis, srclibImportURL, srclibValidateURL *url.URL) error {
+func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []matrix.Axis, srclibImportURL, srclibCoverageURL *url.URL) error {
 	var srclibExplicitlyConfigured bool
 	for _, step := range config.Build {
 		// Rough heuristic for now: does the Docker image name contain
@@ -60,8 +60,8 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 		}
 	}
 
-	if srclibValidateURL != nil && usingSrclib {
-		if err := insertSrclibBuild(config, axes, srclibValidateStep(srclibValidateURL)); err != nil {
+	if srclibCoverageURL != nil && usingSrclib {
+		if err := insertSrclibBuild(config, axes, srclibCoverageStep(srclibCoverageURL)); err != nil {
 			return err
 		}
 	}
@@ -137,7 +137,7 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 				`files=$(find .srclib-cache/ -type f | head -n 1); if [ -z "$files" ]; then echo No srclib data files found to import; exit 0; fi`,
 				`cd .srclib-cache/* && /usr/bin/zip -q --no-dir-entries -r - . | \
 			 /usr/bin/curl \
-				--silent --show-error \
+			    --show-error \
 				--fail \
 				--netrc \
 				--connect-timeout 3 \
@@ -149,26 +149,27 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 				-H 'Content-Type: application/x-zip-compressed' \
 				-H 'Content-Transfer-Encoding: binary' \
 				--data-binary @- \
-				$SOURCEGRAPH_IMPORT_URL`,
+				$SOURCEGRAPH_IMPORT_URL > build.out`,
+				"cat build.out",
 				"echo Done importing",
 			},
 		},
 	}
 }
 
-func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
+func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 	return droneyaml.BuildItem{
-		Key: "srclib validate",
+		Key: "srclib coverage",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image: "srclib/drone-srclib-go",
 				Environment: droneyaml.MapEqualSlice([]string{
-					"SOURCEGRAPH_VALIDATE_URL=" + validateURL.String(),
+					"SOURCEGRAPH_COVERAGE_URL=" + coverageURL.String(),
 				}),
 			},
 			Commands: []string{
-				"echo Publishing srclib validate stats",
-				`srclib validate | /usr/bin/curl \
+				"echo Publishing srclib coverage stats",
+				`srclib coverage | /usr/bin/curl \
 				--silent --show-error \
 				--netrc \
 				--max-time 300 \
@@ -179,7 +180,7 @@ func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
 				-H 'Content-Type: application/json' \
 				-H 'Content-Transfer-Encoding: binary' \
 				--data-binary @- \
-				$SOURCEGRAPH_VALIDATE_URL`,
+				$SOURCEGRAPH_COVERAGE_URL`,
 				"echo Done publishing",
 			},
 			AllowFailure: false,
