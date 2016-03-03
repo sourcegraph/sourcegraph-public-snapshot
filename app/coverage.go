@@ -28,9 +28,20 @@ type langCoverage struct {
 	RepoCov []*Coverage
 }
 
+// serveCoverage serves a dashboard summarizing Sourcegraph's coverage of the top repositories in
+// each language. By default, it shows the top 5 repositories in each language. You can also specify
+// the optional `lang` URL parameter to show coverage for the top 100 repositories in a given
+// language.
 func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	cl := handlerutil.APIClient(r)
 	ctx := httpctx.FromRequest(r)
+
+	l := r.URL.Query().Get("lang")
+	langs, repoLimit := langs, 5
+	if l != "" {
+		langs = []string{l}
+		repoLimit = 0
+	}
 
 	var data struct {
 		Langs []*langCoverage
@@ -39,6 +50,9 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 
 	for _, lang := range langs {
 		repos := langRepos[lang]
+		if repoLimit > 0 {
+			repos = repos[:repoLimit]
+		}
 
 		langCov := &langCoverage{Lang: lang}
 		for _, repo := range repos {
