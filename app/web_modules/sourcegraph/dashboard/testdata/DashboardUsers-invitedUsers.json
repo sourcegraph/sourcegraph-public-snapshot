@@ -10,25 +10,24 @@
 						"className": "panel-heading",
 						"children": [
 							{
-								"type": "h5",
+								"type": "div",
 								"props": {
+									"className": "panel-heading-content",
 									"children": [
-										"Team"
-									]
-								}
-							},
-							{
-								"type": "button",
-								"props": {
-									"className": "btn btn-primary add-user-btn",
-									"children": [
+										{
+											"type": "h5",
+											"props": {
+												"children": [
+													"Team"
+												]
+											}
+										},
 										{
 											"type": "i",
 											"props": {
-												"className": "fa button-icon fa-user-plus"
+												"className": "btn-icon sg-icon-plus-box"
 											}
-										},
-										"ADD NEW"
+										}
 									]
 								}
 							}
@@ -54,12 +53,12 @@
 													{
 														"type": "img",
 														"props": {
-															"className": "avatar-sm",
+															"className": "avatar avatar-sm",
 															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
 														}
 													},
 													{
-														"type": "span",
+														"type": "div",
 														"props": {
 															"className": "user-name",
 															"children": [
@@ -79,12 +78,12 @@
 													{
 														"type": "img",
 														"props": {
-															"className": "avatar-sm",
+															"className": "avatar avatar-sm",
 															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
 														}
 													},
 													{
-														"type": "span",
+														"type": "div",
 														"props": {
 															"className": "user-name",
 															"children": [
@@ -104,12 +103,12 @@
 													{
 														"type": "img",
 														"props": {
-															"className": "avatar-sm",
+															"className": "avatar avatar-sm",
 															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
 														}
 													},
 													{
-														"type": "span",
+														"type": "div",
 														"props": {
 															"className": "user-name",
 															"children": [

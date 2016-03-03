@@ -10,37 +10,36 @@
 						"className": "panel-heading",
 						"children": [
 							{
-								"type": "h5",
+								"type": "div",
 								"props": {
+									"className": "panel-heading-content",
 									"children": [
-										"Team"
-									]
-								}
-							},
-							{
-								"type": "button",
-								"props": {
-									"className": "btn btn-primary add-user-btn",
-									"onClick": {
-										"dispatched": [
-											{
-												"$constructor": "WantInviteUsers",
-												"emails": [
-													"abc1",
-													"abc2",
-													"abc3"
+										{
+											"type": "h5",
+											"props": {
+												"children": [
+													"Team"
 												]
 											}
-										]
-									},
-									"children": [
+										},
 										{
 											"type": "i",
 											"props": {
-												"className": "fa button-icon fa-user-plus"
+												"className": "btn-icon sg-icon-plus-box",
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "WantInviteUsers",
+															"emails": [
+																"abc1",
+																"abc2",
+																"abc3"
+															]
+														}
+													]
+												}
 											}
-										},
-										"ADD NEW"
+										}
 									]
 								}
 							}
@@ -66,12 +65,12 @@
 													{
 														"type": "img",
 														"props": {
-															"className": "avatar-sm",
+															"className": "avatar avatar-sm",
 															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
 														}
 													},
 													{
-														"type": "span",
+														"type": "div",
 														"props": {
 															"className": "user-name",
 															"children": [
@@ -82,7 +81,7 @@
 													{
 														"type": "i",
 														"props": {
-															"className": "fa fa-plus-square-o add-user-icon",
+															"className": "sg-icon sg-icon-plus-box btn-icon",
 															"onClick": {
 																"dispatched": [
 																	{
@@ -107,12 +106,12 @@
 													{
 														"type": "img",
 														"props": {
-															"className": "avatar-sm",
+															"className": "avatar avatar-sm",
 															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
 														}
 													},
 													{
-														"type": "span",
+														"type": "div",
 														"props": {
 															"className": "user-name",
 															"children": [
@@ -123,7 +122,7 @@
 													{
 														"type": "i",
 														"props": {
-															"className": "fa fa-plus-square-o add-user-icon",
+															"className": "sg-icon sg-icon-plus-box btn-icon",
 															"onClick": {
 																"dispatched": [
 																	{
@@ -148,12 +147,12 @@
 													{
 														"type": "img",
 														"props": {
-															"className": "avatar-sm",
+															"className": "avatar avatar-sm",
 															"src": "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"
 														}
 													},
 													{
-														"type": "span",
+														"type": "div",
 														"props": {
 															"className": "user-name",
 															"children": [
@@ -164,7 +163,7 @@
 													{
 														"type": "i",
 														"props": {
-															"className": "fa fa-plus-square-o add-user-icon",
+															"className": "sg-icon sg-icon-plus-box btn-icon",
 															"onClick": {
 																"dispatched": [
 																	{

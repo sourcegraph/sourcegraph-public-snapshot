@@ -3,6 +3,7 @@ import expect from "expect.js";
 import Dispatcher from "sourcegraph/Dispatcher";
 import DashboardBackend from "sourcegraph/dashboard/DashboardBackend";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import * as AlertActions from "sourcegraph/alerts/AlertActions";
 
 describe("DashboardBackend", () => {
 	it("should handle WantCreateRepo", () => {
@@ -66,7 +67,10 @@ describe("DashboardBackend", () => {
 			Name: action.email,
 			Admin: true,
 			Write: false,
-		})]);
+		}), new AlertActions.AddAlert(
+			false,
+			`Please send <a href="hello">this invitation link</a> to <strong>123@abc.com</strong>.`
+		)]);
 	});
 });
 

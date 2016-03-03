@@ -5,6 +5,10 @@
 			"className": "dashboard-container row",
 			"children": [
 				{
+					"type": "AlertContainer",
+					"props": {}
+				},
+				{
 					"type": "div",
 					"props": {
 						"className": "dash-repos col-lg-9 col-md-8",
