@@ -32,7 +32,6 @@ func init() {
 }
 
 var cacheDir = ".srclib-cache"
-var gitDir = ".git"
 var unitFile = "GoPackage.unit.json"
 var depFile = "GoPackage.depresolve.json"
 var graphFile = "GoPackage.graph.json"
@@ -114,7 +113,9 @@ walkLoop:
 		pth := walker.Path()
 
 		fi, err := os.Stat(pth)
-		if !fi.IsDir() {
+		if err != nil {
+			return err
+		} else if !fi.IsDir() {
 			continue
 		}
 

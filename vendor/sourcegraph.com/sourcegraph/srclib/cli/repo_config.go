@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 
 	"sourcegraph.com/sourcegraph/srclib/util"
 )
@@ -83,18 +82,4 @@ func getRootDir(dir string) (rootDir string, vcsType string, err error) {
 		}
 	}
 	return "", "", nil
-}
-
-func exitStatus(err error) (uint32, error) {
-	if err != nil {
-		if exiterr, ok := err.(*exec.ExitError); ok {
-			// There is no platform independent way to retrieve
-			// the exit code, but the following will work on Unix
-			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-				return uint32(status.ExitStatus()), nil
-			}
-		}
-		return 0, err
-	}
-	return 0, nil
 }

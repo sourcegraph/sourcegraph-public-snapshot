@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -85,16 +84,13 @@ func (c *TestCmd) Execute(args []string) error {
 			trees = append(trees, string(tree))
 		}
 	} else {
-		entries, err := ioutil.ReadDir("testdata/case")
-		if err != nil {
-			return err
-		}
-		for _, e := range entries {
-			if strings.HasPrefix(e.Name(), "_") {
-				continue
+		filepath.Walk("testdata/case", func(path string, info os.FileInfo, err error) error {
+			if _, err := os.Stat(filepath.Join(path, ".git")); err == nil {
+				trees = append(trees, path)
+				return filepath.SkipDir
 			}
-			trees = append(trees, filepath.Join("testdata/case", e.Name()))
-		}
+			return nil
+		})
 	}
 
 	if GlobalOpt.Verbose {
@@ -102,11 +98,13 @@ func (c *TestCmd) Execute(args []string) error {
 	}
 
 	for _, tree := range trees {
+		casepath, _ := filepath.Rel("testdata/case", tree)
+
 		if GlobalOpt.Verbose {
 			log.Printf("Testing tree %v...", tree)
 		}
-		expectedDir := filepath.Join(tree, "../../expected", filepath.Base(tree))
-		actualDir := filepath.Join(tree, "../../actual", filepath.Base(tree))
+		expectedDir := filepath.Join("testdata/expected", casepath)
+		actualDir := filepath.Join("testdata/actual", casepath)
 		if err := testTree(tree, expectedDir, actualDir, c.GenerateExpected); err != nil {
 			return fmt.Errorf("testing tree %q: %s", tree, err)
 		}
