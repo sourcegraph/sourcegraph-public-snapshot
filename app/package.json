@@ -57,6 +57,7 @@
     "react-cookie": "0.2.5",
     "react-dom": "0.14.0",
     "url": "0.10.3",
+		"utf8": "2.1.1",
     "xhr": "2.2.0"
   },
   "scripts": {
