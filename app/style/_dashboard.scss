@@ -1,5 +1,13 @@
 .dashboard {
 
+	/* These styles are temporary, until we implement our UI kit standard styles. */
+	button {
+		height: 40px;
+	}
+	input:not([type='radio']), .input-group {
+		height: 40px;
+	}
+
 	.btn {
 		text-transform: uppercase;
 		font-weight: 500;
@@ -82,7 +90,6 @@
 				justify-content: center;
 
 				width: 50%;
-				height: 40px;
 				text-align: center;
 				min-width: 118px;
 			}
@@ -201,10 +208,6 @@
 			text-transform: uppercase;
 			letter-spacing: 1px;
 		}
-
-		.hover-pointer {
-			cursor: pointer;
-		}
 	}
 
 	.dash-users {
@@ -214,9 +217,21 @@
 			margin-top: 20px;
 		}
 
+		.add-user-well {
+			margin-top: 50px;
+		}
+
+		.user-permissions {
+			text-align: left;
+		}
+
 		.add-user-btn {
 			display: inline-block;
 			float: right;
+		}
+
+		.button-icon {
+			margin-right: 10px;
 		}
 
 		.panel-heading {
@@ -224,7 +239,7 @@
 			background-color: $body-bg;
 			h5 {
 				display: inline-block;
-				margin-top: 9px;
+				margin-top: 13px;
 				margin-bottom: 0;
 			}
 		}

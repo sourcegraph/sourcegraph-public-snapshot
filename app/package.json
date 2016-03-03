@@ -57,6 +57,7 @@
     "react-dom": "0.14.0",
     "react-draggable": "0.8.1",
     "url": "0.10.3",
+    "validator": "^5.1.0",
     "xhr": "2.2.0"
   },
   "scripts": {

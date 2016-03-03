@@ -61,13 +61,3 @@ export class UsersInvited {
 		this.teammates = teammates;
 	}
 }
-
-export class DismissUsersModal {
-	constructor() {
-	}
-}
-
-export class OpenAddUsersModal {
-	constructor() {
-	}
-}

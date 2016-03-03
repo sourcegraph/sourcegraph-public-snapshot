@@ -1,20 +1,29 @@
 import React from "react";
+import update from "react/lib/update";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import classNames from "classnames";
+import validator from "validator";
 
 class UserList extends Component {
 	constructor(props) {
 		super(props);
+		this.state = {
+			userEmail: "", // for the user create input
+			userPermission: "read", // for the user create input
+		};
 		this._isCurrentUser = this._isCurrentUser.bind(this);
 		this._existsLocally = this._existsLocally.bind(this);
 		this._isInvited = this._isInvited.bind(this);
 		this._hasEmail = this._hasEmail.bind(this);
 		this._avatarURL = this._avatarURL.bind(this);
 		this._name = this._name.bind(this);
-		this._handleInviteAllUsers = this._handleInviteAllUsers.bind(this);
+		this._handleUserEmailTextInput = this._handleUserEmailTextInput.bind(this);
+		this._handleUserPermissionInput = this._handleUserPermissionInput.bind(this);
+		this._handleAddButton = this._handleAddButton.bind(this);
+		this._handleAddUser = this._handleAddUser.bind(this);
 		this._handleInviteUser = this._handleInviteUser.bind(this);
 		this._userSort = this._userSort.bind(this);
 	}
@@ -55,15 +64,38 @@ class UserList extends Component {
 		return user.RemoteAccount.Name || user.RemoteAccount.Login;
 	}
 
-	_handleInviteUser(user) {
-		Dispatcher.dispatch(new DashboardActions.WantInviteUsers([user.Email]));
+	_handleUserEmailTextInput(e) {
+		this.setState(update(this.state, {
+			userEmail: {$set: e.target.value},
+		}));
 	}
 
-	_handleInviteAllUsers() {
-		const emails = this.state.users
-			.filter(user => this._hasEmail(user) && !this._isInvited(user) && !this._existsLocally(user))
-			.map(user => user.Email);
-		if (emails.length > 0) Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
+	_handleUserPermissionInput(e) {
+		this.setState(update(this.state, {
+			userPermission: {$set: e.target.value},
+		}));
+	}
+
+	_handleAddUser() {
+		if (!validator.isEmail(this.state.userEmail)) return;
+		Dispatcher.dispatch(new DashboardActions.WantInviteUser(this.state.userEmail, this.state.userPermission));
+		this.setState({showCreateUserWell: false});
+	}
+
+	_handleInviteUser(user) {
+		Dispatcher.dispatch(new DashboardActions.WantInviteUsers([user.Email]));
+		this.setState({showCreateUserWell: false});
+	}
+
+	_handleAddButton() {
+		if (this.state.allowStandaloneUsers) {
+			this.setState({showCreateUserWell: !this.state.showCreateUserWell});
+		} else {
+			const emails = this.state.users
+				.filter(user => this._hasEmail(user) && !this._isInvited(user) && !this._existsLocally(user))
+				.map(user => user.Email);
+			if (emails.length > 0) Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
+		}
 	}
 
 	_userSort(a, b) {
@@ -90,18 +122,59 @@ class UserList extends Component {
 			<div className="panel panel-default">
 				<div className="panel-heading">
 					<h5>Team</h5>
-					{this.state.allowGitHubUsers && !this.state.onboarding.linkGitHub &&
-						<button className="btn btn-default add-user-btn" data-tooltip="top" title="Invite all teammates"
-							onClick={() => this._handleInviteAllUsers()} >
-							<i className="fa fa-users"></i>
+					{!this.state.onboarding.linkGitHub &&
+						<button className="btn btn-primary add-user-btn" onClick={() => this._handleAddButton()} >
+							<i className={classNames("fa button-icon", {
+								"fa-users": this.state.allowGitHubUsers,
+								"fa-user-plus": !this.state.allowGitHubUsers,
+							})}></i>
+							{!this.state.allowGitHubUsers && (!this.state.showCreateUserWell ? "ADD NEW" : "CANCEL")}
+							{this.state.allowGitHubUsers && "INVITE ALL"}
 						</button>
 					}
-					{!this.state.allowGitHubUsers &&
-						<button className="btn btn-primary add-user-btn"
-							onClick={() => Dispatcher.dispatch(new DashboardActions.OpenAddUsersModal())} >
-							<i className="fa fa-user-plus"></i>
-						</button>
-					}
+					{this.state.showCreateUserWell && <div className="add-user-well">
+						<div className="well">
+							<div className={classNames("form-group", {
+								"has-error": this.state.userEmail !== "" && !validator.isEmail(this.state.userEmail),
+							})}>
+								<input className="form-control create-repo-input"
+									placeholder="Email"
+									type="email"
+									value={this.state.userEmail}
+									onKeyPress={(e) => { if ((e.keyCode || e.which) === 13) this._handleCreateRepo(); }}
+									onChange={this._handleUserEmailTextInput} />
+							</div>
+							<div className="form-group user-permissions">
+								<div className="radio">
+									<label>
+									<input type="radio"
+										value="read"
+										onChange={this._handleUserPermissionInput}
+										checked={this.state.userPermission === "read"}/>Read
+									</label>
+								</div>
+								<div className="radio">
+									<label><input type="radio"
+										value="write"
+										onChange={this._handleUserPermissionInput}
+										checked={this.state.userPermission === "write"} />Write
+									</label>
+								</div>
+								<div className="radio">
+									<label>
+									<input type="radio"
+										value="admin"
+										onChange={this._handleUserPermissionInput}
+										checked={this.state.userPermission === "admin"} />Admin
+									</label>
+								</div>
+							</div>
+							<button type="submit" className={classNames("btn btn-primary create-repo-btn", {
+								disabled: !validator.isEmail(this.state.userEmail),
+							})}
+								onClick={this._handleAddUser}>SEND INVITATION</button>
+						</div>
+					</div>}
 				</div>
 				<div className="users-list panel-body">
 					{this.state.users.length === 0 ? <div className="well empty-well">{emptyStateLabel}</div> : <div className="list-group">

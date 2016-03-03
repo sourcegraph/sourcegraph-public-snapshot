@@ -21,19 +21,16 @@ class DashboardContainer extends Container {
 		};
 		this._handleRepoTextInput = this._handleRepoTextInput.bind(this);
 		this._handleCreateRepo = this._handleCreateRepo.bind(this);
-		this._dismissModals = this._dismissModals.bind(this);
 		this._dismissWelcome = this._dismissWelcome.bind(this);
 	}
 
 	componentDidMount() {
 		super.componentDidMount();
-		document.addEventListener("keydown", this._dismissModals, false);
 		if (this.state.onboarding.linkGitHubRedirect) setTimeout(this._dismissWelcome, 3000);
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
-		document.removeEventListener("keydown", this._dismissModals, false);
 	}
 
 	reconcileState(state, props) {
@@ -63,14 +60,6 @@ class DashboardContainer extends Container {
 	_handleCreateRepo() {
 		Dispatcher.dispatch(new DashboardActions.WantCreateRepo(this.state.repoName));
 		this.setState({showCreateRepoWell: false});
-	}
-
-	_dismissModals(event) {
-		// keyCode 27 is the escape key
-		if (event.keyCode === 27) {
-			Dispatcher.dispatch(new DashboardActions.DismissReposModal());
-			Dispatcher.dispatch(new DashboardActions.DismissUsersModal());
-		}
 	}
 
 	_dismissWelcome() {

@@ -134,7 +134,7 @@
 											"type": "div",
 											"key": "0",
 											"props": {
-												"className": "list-group-item hover-pointer",
+												"className": "list-group-item",
 												"children": [
 													{
 														"type": "div",
