@@ -137,8 +137,8 @@ func (mw *staticMiddleware) Middleware(w http.ResponseWriter, r *http.Request, n
 	// by chooseFile.
 	r.URL.Path = p
 
-	// If it's an html or template file we serve it as a Go html template.
-	if ext := path.Ext(p); ext == ".tmpl" || ext == ".html" {
+	// If it's a template file we serve it as a Go html template.
+	if ext := path.Ext(p); ext == ".tmpl" {
 		mw.serveTemplateHandler.ServeHTTP(w, r)
 		return
 	}
