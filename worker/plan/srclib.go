@@ -119,7 +119,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "TypeScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-typescript:8644e04-056526a-5e3eceb", 
+				Image: "srclib/drone-srclib-typescript:8644e04-056526a-5e3eceb",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,

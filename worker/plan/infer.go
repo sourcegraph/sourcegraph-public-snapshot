@@ -71,7 +71,7 @@ var langConfigs = map[string]struct {
 		},
 		matrix: map[string][]string{"NODE_VERSION": []string{"4"}},
 	},
-	"Java":   {},
-	"Python": {},
+	"Java":       {},
+	"Python":     {},
 	"TypeScript": {},
 }
