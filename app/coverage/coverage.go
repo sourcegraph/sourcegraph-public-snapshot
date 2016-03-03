@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/rogpeppe/rog-go/parallel"
+
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
+
+	"sync"
 
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 	"src.sourcegraph.com/sourcegraph/app/internal"
@@ -56,7 +60,14 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		langs = []string{l}
 		langRepos[l] = langRepos_[l]
 	} else {
-		langs, langRepos = langs_, langRepos_
+		langs = langs_
+		for _, lang := range langs {
+			repos := langRepos_[lang][:5]
+			if len(repos) > 5 {
+				repos = repos[:5]
+			}
+			langRepos[lang] = repos
+		}
 	}
 
 	var data struct {
@@ -64,17 +75,34 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		tmpl.Common
 	}
 
+	p := parallel.NewRun(10)
+	var dlMu sync.Mutex
+
 	for _, lang := range langs {
+		lang := lang
+
 		repos := langRepos[lang]
 		langCov := &langCoverage{Lang: lang}
-		for _, repo := range repos {
-			cov, err := getCoverage(cl, ctx, repo)
-			if err != nil {
-				return err
-			}
-			langCov.RepoCov = append(langCov.RepoCov, cov)
-		}
 		data.Langs = append(data.Langs, langCov)
+		for _, repo := range repos {
+			repo := repo
+
+			p.Do(func() error {
+				cov, err := getCoverage(cl, ctx, repo)
+				if err != nil {
+					return err
+				}
+				{
+					dlMu.Lock()
+					defer dlMu.Unlock()
+					langCov.RepoCov = append(langCov.RepoCov, cov)
+				}
+				return nil
+			})
+		}
+	}
+	if err := p.Wait(); err != nil {
+		return err
 	}
 
 	return tmpl.Exec(r, w, "coverage/coverage.html", http.StatusOK, nil, &data)
