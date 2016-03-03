@@ -79,12 +79,11 @@ class UserList extends Component {
 	_handleAddUser() {
 		if (!validator.isEmail(this.state.userEmail)) return;
 		Dispatcher.dispatch(new DashboardActions.WantInviteUser(this.state.userEmail, this.state.userPermission));
-		this.setState({showCreateUserWell: false});
+		this.setState({showCreateUserWell: false, userEmail: "", userPermission: "read"});
 	}
 
 	_handleInviteUser(user) {
 		Dispatcher.dispatch(new DashboardActions.WantInviteUsers([user.Email]));
-		this.setState({showCreateUserWell: false});
 	}
 
 	_handleAddButton() {
@@ -181,9 +180,7 @@ class UserList extends Component {
 						{this.state.users.sort(this._userSort).map((user, i) => (
 							<div className="list-group-item" key={i}>
 								<img className="avatar-sm" src={this._avatarURL(user) || "https://secure.gravatar.com/avatar?d=mm&f=y&s=128"} />
-								<span className="user-name">
-									{this._name(user)}{this._isInvited(user) ? " (pending)" : ""}
-								</span>
+								<span className="user-name">{this._name(user)}</span>
 								{!this._existsLocally(user) && !this._isInvited(user) &&
 									<i className={classNames("fa fa-plus-square-o add-user-icon", {"add-user-icon-disabled": !this._hasEmail(user)})}
 										onClick={() => this._handleInviteUser(user)}

@@ -90,7 +90,7 @@ class DashboardRepos extends Component {
 		);
 
 		const repoRowClass = (repo) => classNames("list-group-item", {
-			disabled: !repo.ExistsLocally && (this.state.allowGitHubMirrors && !this._canMirror(repo)),
+			"repo-disabled": !repo.ExistsLocally && (this.state.allowGitHubMirrors && !this._canMirror(repo)),
 		});
 
 		const emptyStateLabel = this.state.allowGitHubMirrors && this.state.linkGitHub ? "Link your GitHub account to add repositories." : "No repositories.";

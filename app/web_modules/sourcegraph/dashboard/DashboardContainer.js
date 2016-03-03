@@ -13,6 +13,8 @@ import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
+import classNames from "classnames";
+
 class DashboardContainer extends Container {
 	constructor(props) {
 		super(props);
@@ -58,8 +60,9 @@ class DashboardContainer extends Container {
 	}
 
 	_handleCreateRepo() {
+		if (this.state.repoName === "") return;
 		Dispatcher.dispatch(new DashboardActions.WantCreateRepo(this.state.repoName));
-		this.setState({showCreateRepoWell: false});
+		this.setState({showCreateRepoWell: false, repoName: ""});
 	}
 
 	_dismissWelcome() {
@@ -112,7 +115,9 @@ class DashboardContainer extends Container {
 					</div>
 					{this.state.showCreateRepoWell && <div className="well add-repo-well">
 						<div className="form-inline">
-							<div className="form-group">
+							<div className={classNames("form-group", {
+								"has-error": false, // TODO: add repo name validation
+							})}>
 								<input className="form-control create-repo-input"
 									placeholder="Repository name"
 									type="text"
@@ -120,7 +125,9 @@ class DashboardContainer extends Container {
 									onKeyPress={(e) => { if ((e.keyCode || e.which) === 13) this._handleCreateRepo(); }}
 									onChange={this._handleRepoTextInput} />
 							</div>
-							<button className="btn btn-primary create-repo-btn"
+							<button className={classNames("btn btn-primary create-repo-btn", {
+								disabled: this.state.repoName === "",
+							})}
 								onClick={this._handleCreateRepo}>CREATE</button>
 						</div>
 					</div>}
