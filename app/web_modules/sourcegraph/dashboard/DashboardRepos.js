@@ -120,7 +120,7 @@ class DashboardRepos extends Component {
 							<div className={repoRowClass(repo)} key={i}>
 								<div className="repo-header">
 									<h4>
-										<i className={`repo-attr-icon icon-${repo.Private ? "private" : "public"}`}></i>
+										<i className={`sg-icon repo-attr-icon sg-icon-${repo.Private ? "private" : "public"}`}></i>
 										{repoLink(repo.URI)}
 									</h4>
 									{this.state.allowGitHubMirrors && !this._canMirror(repo) &&

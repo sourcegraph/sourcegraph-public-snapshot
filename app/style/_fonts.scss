@@ -95,8 +95,8 @@ $font-assets-path: "/.assets/font";
 	-moz-osx-font-smoothing: grayscale;
 }
 
-[class^="icon-"]:before,
-[class*=" icon-"]:before {
+[class^="sg-icon-"]:before,
+[class*=" sg-icon-"]:before {
 	font-family: "sourcegraph-icons" !important;
 	font-style: normal !important;
 	font-weight: normal !important;
@@ -108,24 +108,17 @@ $font-assets-path: "/.assets/font";
 	-moz-osx-font-smoothing: grayscale;
 }
 
-.icon-private:before {
+.sg-icon {
+	vertical-align: middle;
+}
+
+.sg-icon-private:before {
 	content: "\62";
 }
-.icon-public:before {
+.sg-icon-public:before {
 	content: "\63";
 }
-.icon-ic-plus-box:before {
+.sg-icon-plus-box:before {
 	content: "\65";
 }
-.icon-ic-code:before {
-	content: "\61";
-}
-.icon-ic-docs:before {
-	content: "\64";
-}
-.icon-ic-changes:before {
-	content: "\66";
-}
-.icon-ic-builds:before {
-	content: "\67";
-}
+
