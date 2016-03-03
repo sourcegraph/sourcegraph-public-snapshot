@@ -38,10 +38,10 @@ func TestSrclibValidate(t *testing.T) {
 	}
 
 	// valid JSON should succeed
-	var buf1 bytes.Buffer
-	json.NewEncoder(&buf1).Encode(Validate{Warnings: []BuildWarning{BuildWarning{Directory: "/foo/bar", Warning: "bippity boppity boo"}}})
+	var body bytes.Buffer
+	json.NewEncoder(&body).Encode(Validate{Warnings: []BuildWarning{BuildWarning{Directory: "/foo/bar", Warning: "bippity boppity boo"}}})
 
-	req, err = http.NewRequest("PUT", validateEndpoint, &buf1)
+	req, err = http.NewRequest("PUT", validateEndpoint, &body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,5 +58,18 @@ func TestSrclibValidate(t *testing.T) {
 		t.Fatal("Repos.Get should have been called and was not")
 	}
 
-	// TODO(poler) mocks for prometheus?
+	// empty Body should fail
+	body.Reset()
+	req, err = http.NewRequest("PUT", validateEndpoint, &body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err = c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	} else if resp.StatusCode != http.StatusBadRequest {
+		t.Fatal("Expected failure due to empty body")
+	}
 }

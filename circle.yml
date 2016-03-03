@@ -47,7 +47,6 @@ dependencies:
 
 test:
   override:
-    - go install -v $(go list src.sourcegraph.com/sourcegraph/... | grep -v /vendor/)
     - ./sh/gofmt.sh:
         pwd: $REPO
     - npm run dep:

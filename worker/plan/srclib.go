@@ -115,6 +115,16 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
+	"TypeScript": droneyaml.BuildItem{
+		Key: "TypeScript (indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: "srclib/drone-srclib-typescript:8644e04-056526a-5e3eceb",
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
 }
 
 var srclibBuildCommands = []string{"srclib config", "srclib make"}
@@ -167,8 +177,10 @@ func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
 				}),
 			},
 			Commands: []string{
+				"echo Generating srclib validate stats",
+				"srclib validate > /tmp/srclib-validate.json",
 				"echo Publishing srclib validate stats",
-				`srclib validate | /usr/bin/curl \
+				`cat /tmp/srclib-validate.json | /usr/bin/curl \
 				--silent --show-error \
 				--netrc \
 				--max-time 300 \
@@ -182,7 +194,7 @@ func srclibValidateStep(validateURL *url.URL) droneyaml.BuildItem {
 				$SOURCEGRAPH_VALIDATE_URL`,
 				"echo Done publishing",
 			},
-			AllowFailure: false,
+			AllowFailure: true, // This step failing is not critical to user operations, so do not block the build
 		},
 	}
 }
