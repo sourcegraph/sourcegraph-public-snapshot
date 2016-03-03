@@ -100,9 +100,6 @@
 	.line-content {
 		width: 100%;
 	}
-	.line-number {
-		padding: 0 7px;
-	}
 }
 
 .file-diff-hunk .line-number {
@@ -230,9 +227,8 @@
 .card {
 	display: block;
 	border: $content-border;
-	border-radius: $border-radius-small;
+	border-radius: $border-radius-base;
 	background-color: #fff;
-	box-shadow: $line-panel-shadow;
 }
 
 .token-details {
@@ -376,8 +372,4 @@
 	line-height: $line-height-base;
 	font-size: $font-size-base;
 	font-family: $font-family-sans-serif;
-}
-
-.route-def, .route-repo-tree {
-	background-color: $well-bg;
 }

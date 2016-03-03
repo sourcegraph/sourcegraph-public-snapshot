@@ -29,6 +29,7 @@ $lemon: #ffe37e;
 // Content
 $blue-grey: #5c768d;
 $dark-blue-grey: #344a66;
+$muted-grey: #bfbfc7;
 $shadow-blue: #7794ae;
 $warm-grey: #787878;
 $light-grey: #969896;
@@ -80,7 +81,7 @@ $file-toolbar-bg: $white;
 $file-toolbar-path-color: $warm-grey;
 
 $line-number-bg: $pale-grey;
-$line-number-text: darken($pale-grey, 30%);
+$line-number-text: $muted-grey;
 $line-content-bg: $white;
 $active-code-bg: transparentize($brand-azure, 0.90);
 $active-code-flash-bg: transparentize($brand-azure, 0.85);
@@ -204,7 +205,7 @@ $navbar-height: 50px;
 $code-line-height: 1.35em;
 $code-font-size: 13px;
 $code-popup-width: 600px;
-$line-number-padding: 0 9px 0 2px;
+$line-number-padding: 0 8px 0 8px;
 
 /* Bootstrap Overrides */
 $border-radius-base:  3px;
