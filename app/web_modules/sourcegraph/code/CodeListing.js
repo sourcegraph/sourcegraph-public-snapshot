@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import utf8 from "utf8";
 
 import Component from "sourcegraph/Component";
 import * as CodeActions from "sourcegraph/code/CodeActions";
@@ -81,7 +82,8 @@ class CodeListing extends Component {
 		let pos = 0;
 		return lines.map((line) => {
 			let start = pos;
-			pos += line.length + 1; // add 1 to account for newline
+			// Encode the line using utf8 to account for multi-byte unicode characters.
+			pos += utf8.encode(line).length + 1; // add 1 to account for newline
 			return start;
 		});
 	}
