@@ -1,0 +1,30 @@
+{{define "Head"}}<title>Coverage - Sourcegraph</title>
+<meta name="robots" content="noindex">
+{{end}}
+
+{{define "Body"}}
+<h1>Coverage</h1>
+
+<table class="table coverage">
+  <tr>
+    <th></th>
+    <th>File score</th>
+    <th>Ref score</th>
+    <th>Token density</th>
+    <th>Uncovered files</th>
+  </tr>
+  {{range .Langs}}
+	  <tr><th colspan="5">{{.Lang}}</th></tr>
+    {{range .RepoCov}}
+    <tr>
+			<td>{{.Repo}}</td>
+      <td class="{{.FileScoreClass}}">{{.Cov.FileScore}}</td>
+      <td class="{{.RefScoreClass}}">{{.Cov.RefScore}}</td>
+      <td class="{{.TokDensityClass}}">{{.Cov.TokDensity}}</td>
+		  <td>{{len .Cov.UncoveredFiles}}</td>
+		</tr>
+		{{end}}
+  {{end}}
+</table>
+
+{{end}}

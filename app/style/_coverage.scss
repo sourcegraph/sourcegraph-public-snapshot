@@ -1,0 +1,8 @@
+table.coverage {
+		.success {
+				background-color: lighten($brand-success, 30%);
+		}
+		.fail {
+				background-color: lighten($brand-danger, 30%);
+		}
+}

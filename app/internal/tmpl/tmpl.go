@@ -123,6 +123,7 @@ func commonTemplates() error {
 		{"home/dashboard.html"},
 
 		{"builds/builds.html", "builds/build.inc.html"},
+		{"coverage/coverage.html"},
 		{"error/error.html", "error/common.html"},
 
 		{"oauth-provider/authorize.html"},

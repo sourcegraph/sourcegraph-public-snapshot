@@ -46,6 +46,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	var statusUpdate sourcegraph.RepoStatusesCreateOp
 	statusUpdate.Repo = repoRev
 	statusUpdate.Status = sourcegraph.RepoStatus{
+		Context:     "coverage",
 		Description: string(covJSON),
 	}
 	if _, err = cl.RepoStatuses.Create(ctx, &statusUpdate); err != nil {
