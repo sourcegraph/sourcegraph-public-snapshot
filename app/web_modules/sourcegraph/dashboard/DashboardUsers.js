@@ -5,7 +5,6 @@ import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import classNames from "classnames";
-import emailValidator from "email-validator";
 
 class UserList extends Component {
 	constructor(props) {
@@ -77,7 +76,7 @@ class UserList extends Component {
 	}
 
 	_handleAddUser() {
-		if (!emailValidator.validate(this.state.userEmail)) return;
+		if (!this._emailValid()) return;
 		Dispatcher.dispatch(new DashboardActions.WantInviteUser(this.state.userEmail, this.state.userPermission));
 		this.setState({showCreateUserWell: false, userEmail: "", userPermission: "read"});
 	}
@@ -109,6 +108,13 @@ class UserList extends Component {
 		return this._name(a) < this._name(b) ? -1 : 1;
 	}
 
+	_emailValid() {
+		if (this.state.userEmail === "") return false;
+		const input = document && document.getElementById("email-input");
+		if (input) return input.checkValidity();
+		return false;
+	}
+
 	render() {
 		const emptyStateLabel = this.state.allowGitHubUsers ?
 			"Link your GitHub account to add teammates." : "No teammates.";
@@ -133,11 +139,10 @@ class UserList extends Component {
 					}
 					{this.state.showCreateUserWell && <div className="add-user-well">
 						<div className="well">
-							<div className={classNames("form-group", {
-								"has-error": this.state.userEmail !== "" && !emailValidator.validate(this.state.userEmail),
-							})}>
+							<div className="form-group">
 								<input className="form-control create-repo-input"
 									placeholder="Email"
+									id="email-input"
 									type="email"
 									value={this.state.userEmail}
 									onKeyPress={(e) => { if ((e.keyCode || e.which) === 13) this._handleAddUser(); }}
@@ -169,7 +174,7 @@ class UserList extends Component {
 								</div>
 							</div>
 							<button type="submit" className={classNames("btn btn-primary create-repo-btn", {
-								disabled: !emailValidator.validate(this.state.userEmail),
+								disabled: !this._emailValid(),
 							})}
 								onClick={this._handleAddUser}>SEND INVITATION</button>
 						</div>

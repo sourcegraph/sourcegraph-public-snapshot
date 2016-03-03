@@ -8,6 +8,17 @@
 		height: 40px;
 	}
 
+	input {
+		transition: none;
+		&:focus {
+			border-color: $input-border-focus;
+			box-shadow: none;
+		}
+		&:invalid {
+			border-color: $brand-danger;
+		}
+	}
+
 	.alert-content {
 		color: $alert-default-text;
 		font-size: 16px;
