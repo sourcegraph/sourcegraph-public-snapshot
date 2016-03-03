@@ -68,7 +68,7 @@ class CodeListing extends Component {
 					(ann.StartByte || 0) >= startByte && ann.EndByte < startByte + state.lines[i].length + 1
 				));
 				if (line === -1) {
-					throw new Error(`No line found for ann: ${JSON.stringify(ann)}`);
+					console.error(`No line found for ann: ${JSON.stringify(ann)}`);
 				}
 				if (!state.lineAnns[line]) {
 					state.lineAnns[line] = [];
