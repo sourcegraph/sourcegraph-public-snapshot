@@ -22,7 +22,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
@@ -322,6 +321,6 @@ func newMiddleware() (*staticMiddleware, error) {
 	mw.serveTemplateHandler = internal.Handler(mw.serveTemplate)
 	mw.httpfs = httpfs.New(mw.vfs)
 
-	mw.fileServer = httputil.Gzip(http.FileServer(mw.httpfs), nil)
+	mw.fileServer = http.FileServer(mw.httpfs)
 	return mw, mw.reloadContent(true)
 }
