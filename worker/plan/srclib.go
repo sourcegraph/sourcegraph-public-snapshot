@@ -162,7 +162,7 @@ func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 		Key: "srclib coverage",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-go",
+				Image: "srclib/drone-srclib-go@sha256:af069725ea5fe4e8e657f16f06d772e4f4e7ae3fc74fdac34f1961277b208149",
 				Environment: droneyaml.MapEqualSlice([]string{
 					"SOURCEGRAPH_COVERAGE_URL=" + coverageURL.String(),
 				}),
