@@ -18,7 +18,7 @@ var storage *elastigo.BulkIndexer
 func startEventStorer(ctx context.Context) {
 	url := os.Getenv("SG_ELASTICSEARCH_URL")
 	if url == "" {
-		log15.Debug("EventStorer failed to locate elasticsearch endpoint")
+		log15.Debug("EventForwarder failed to locate elasticsearch endpoint")
 		return
 	}
 
@@ -27,18 +27,18 @@ func startEventStorer(ctx context.Context) {
 
 	storage = conn.NewBulkIndexerErrors(10, 60)
 	if storage == nil {
-		log15.Error("EventStorer could not connect to elasticsearch")
+		log15.Error("EventForwarder could not connect to elasticsearch")
 		return
 	}
 	storage.Start()
 
 	go func() {
 		for errBuf := range storage.ErrorChannel {
-			log15.Error("EventStorer recieved error", "error", errBuf.Err)
+			log15.Error("EventForwarder recieved error", "error", errBuf.Err)
 		}
 	}()
 
-	log15.Debug("EventStorer initialized")
+	log15.Debug("EventForwarder initialized")
 }
 
 func StoreEvents(ctx context.Context, eventList *sourcegraph.UserEventList) {
@@ -50,7 +50,7 @@ func StoreEvents(ctx context.Context, eventList *sourcegraph.UserEventList) {
 				indexNameWithPrefix = "dev-" + indexNameWithPrefix
 			}
 			if err := storage.Index(indexNameWithPrefix, "user_event", "", "", "", nil, event); err != nil {
-				log15.Error("EventStorer failed to push event", "event", event, "error", err)
+				log15.Error("EventForwarder failed to push event", "event", event, "error", err)
 			}
 		}
 	}
