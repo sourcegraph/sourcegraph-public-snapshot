@@ -336,7 +336,7 @@ func (s *Changesets) Update(ctx context.Context, opt *store.ChangesetUpdateOp) (
 		after.DeltaSpec.Base.CommitID = opt.Base
 	}
 
-	// If the resulting changeset is the same as the inital one, no event
+	// If the resulting changeset is the same as the initial one, no event
 	// has occurred.
 	if reflect.DeepEqual(after, current) {
 		return nil, nil

@@ -209,7 +209,7 @@ func TestStorage_Delete(t *testing.T) {
 	s := &storage{}
 	storageBucket := randomBucket()
 
-	// Ensure delete on non-existant bucket is no-op.
+	// Ensure delete on non-existent bucket is no-op.
 	_, err := s.Delete(ctx, &sourcegraph.StorageKey{
 		Bucket: storageBucket,
 	})
@@ -217,7 +217,7 @@ func TestStorage_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Ensure delete on non-existant key is no-op.
+	// Ensure delete on non-existent key is no-op.
 	_, err = s.Delete(ctx, &sourcegraph.StorageKey{
 		Bucket: storageBucket,
 		Key:    randomKey(),
@@ -299,7 +299,7 @@ func TestStorage_Exists(t *testing.T) {
 		Key:    storageKeyName,
 	}
 
-	// Check that no error is returned for non-existant object.
+	// Check that no error is returned for non-existent object.
 	exists, err := s.Exists(ctx, storageKey)
 	if err != nil {
 		t.Fatal(err)
@@ -339,7 +339,7 @@ func TestStorage_List(t *testing.T) {
 		Key:    storageKeyName,
 	}
 
-	// Check that no error is returned for non-existant bucket.
+	// Check that no error is returned for non-existent bucket.
 	list, err := s.List(ctx, storageKey)
 	if err != nil {
 		t.Fatal(err)

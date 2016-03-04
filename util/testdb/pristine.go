@@ -80,7 +80,7 @@ var (
 	// Only drop or create once per process, since truncation should
 	// handle clearing out everything.
 	//
-	// TODO(sqs): truncating doesnt get non-dbmapped tables, such as
+	// TODO(sqs): truncating doesn't get non-dbmapped tables, such as
 	// the simple queues.
 	dropped []bool
 	created []bool

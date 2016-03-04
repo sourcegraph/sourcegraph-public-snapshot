@@ -28,7 +28,7 @@ func TestEventsDispatch(t *testing.T) {
 	}
 	s.publish(miltonWoofEvent, struct{}{})
 
-	// If this recieve results in a deadlock error, the callback is not being
+	// If this receive results in a deadlock error, the callback is not being
 	// executed as expected.
 	<-called
 }

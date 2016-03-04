@@ -318,7 +318,7 @@ func couldAffectChangesets(id events.EventID, p events.GitPayload) bool {
 	return true
 }
 
-// commitsValid returns true if all commits in the paramters are exactly 40
+// commitsValid returns true if all commits in the parameters are exactly 40
 // characters long.
 func commitsValid(commits ...string) bool {
 	for _, c := range commits {

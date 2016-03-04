@@ -123,7 +123,7 @@ func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
 }
 
 // serveRepoCounter wraps doRepoCounter and skips tracking the API
-// call if it was initiated from the repo stats/counters page (beacuse
+// call if it was initiated from the repo stats/counters page (because
 // we don't want to increment the counters when someone is just
 // looking at the counter images on the stats/counters page).
 func serveRepoCounter(w http.ResponseWriter, r *http.Request) error {

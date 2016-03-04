@@ -140,7 +140,7 @@ func (s *changesets) getAffected(ctx context.Context, op *sourcegraph.ChangesetU
 
 	// For changesets with affected HEAD:
 	// - If the branch was deleted, close changesets.
-	// - If the branch was comitted into, update the changeset to reflect the new HEAD.
+	// - If the branch was committed into, update the changeset to reflect the new HEAD.
 	for _, cs := range havingHead.Changesets {
 		updateOp := store.ChangesetUpdateOp{
 			Op: &sourcegraph.ChangesetUpdateOp{

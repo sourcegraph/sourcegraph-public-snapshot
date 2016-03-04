@@ -9,8 +9,8 @@ import (
 
 // System represents the storage system. It is a simple key / value store.
 //
-// Conceptually, buckets keys are similiar to directories, keys are similiar to
-// files, and values are similiar to the contents of a file.
+// Conceptually, buckets keys are similar to directories, keys are similar to
+// files, and values are similar to the contents of a file.
 type System interface {
 	// Get reads the value of <bucket>/<key>.
 	//

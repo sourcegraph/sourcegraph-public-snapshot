@@ -58,7 +58,7 @@ var httpwrapperConfig = &httpwrapper.ServerConfig{
 //
 // Error must never panic. If it has to execute something that may panic
 // (for example, call out into an external code), then it must use recover
-// to catch potential panics. If Error panics, the panic will propogate upstream.
+// to catch potential panics. If Error panics, the panic will propagate upstream.
 type HandlerWithErrorReturn struct {
 	Handler func(http.ResponseWriter, *http.Request) error       // the underlying handler
 	Error   func(http.ResponseWriter, *http.Request, int, error) // called to send an error response (e.g., an error page), it must not panic
