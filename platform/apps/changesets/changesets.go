@@ -1,10 +1,14 @@
 package changesets
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/schema"
+	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/platform"
 )
 
@@ -44,6 +48,11 @@ func init() {
 func handlerWithError(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := h(w, r); err != nil {
+			// Display internal grpc error descriptions with full text (so it's not escaped).
+			if errs, ok := err.(parallel.Errors); ok && grpc.Code(errs[0]) == codes.Internal {
+				err = fmt.Errorf("internal error:\n\n%s", grpc.ErrorDesc(errs[0]))
+			}
+
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})

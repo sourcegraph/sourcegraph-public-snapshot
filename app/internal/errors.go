@@ -96,6 +96,11 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		}
 	}()
 
+	// Display internal grpc error descriptions with full text (so it's not escaped).
+	if grpc.Code(err) == codes.Internal {
+		err = fmt.Errorf("internal error:\n\n%s", grpc.ErrorDesc(err))
+	}
+
 	errHeader := http.Header{"cache-control": []string{"no-cache"}}
 	err2 := tmpl.Exec(req, resp, "error/error.html", status, errHeader, &struct {
 		StatusCode int

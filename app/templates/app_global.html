@@ -3,7 +3,8 @@
 
 {{define "Body"}}
 	{{with .AppError}}
-		<strong>App Error:</strong> {{.}}
+		<h1>App Error</h1>
+		<pre>{{.}}</pre>
 	{{else}}
 		{{.AppHTML}}
 	{{end}}

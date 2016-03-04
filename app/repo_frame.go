@@ -133,6 +133,9 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		return grpc.Errorf(codes.Unauthenticated, "platform app returned unauthorized and no authenticated user in current context")
 	} else {
 		appError = errors.New(body)
+		if !handlerutil.DebugMode(r) {
+			appError = errPlatformAppPublicFacingFatalError
+		}
 	}
 	appSubtitle := rr.Header().Get(platform.HTTPHeaderTitle)
 
@@ -159,6 +162,10 @@ func serveRepoFrame(w http.ResponseWriter, r *http.Request) error {
 		RobotsIndex: true,
 	})
 }
+
+// errPlatformAppPublicFacingFatalError is the public facing error message to display for platform app
+// fatal errors when not in debug mode (to hide potentially sensitive information in original error message).
+var errPlatformAppPublicFacingFatalError = errors.New(`Sorry, there’s been a problem with this app.`)
 
 // copyHeader copies whitelisted headers.
 //
