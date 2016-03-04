@@ -24,8 +24,8 @@ describe("DashboardRepos", () => {
 	it("should render repos", () => {
 		let repos = [
 			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment(), Language: "C++"},
-			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(1, 'seconds'), Language: "C"},
-			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(2, 'seconds'), Language: "Python"}];
+			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(1, "seconds"), Language: "C"},
+			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(2, "seconds"), Language: "Python"}];
 		autotest(testdataNotSupported, `${__dirname}/testdata/DashboardRepos-notSupported.json`,
 			<DashboardRepos
 				repos={repos}
@@ -40,8 +40,8 @@ describe("DashboardRepos", () => {
 	it("should render repos on waitlist", () => {
 		let repos = [
 			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment(), Language: "C++"},
-			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(1, 'seconds'), Language: "C"},
-			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(2, 'seconds'), Language: "Python"}];
+			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(1, "seconds"), Language: "C"},
+			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(2, "seconds"), Language: "Python"}];
 		autotest(testdataOnWaitlist, `${__dirname}/testdata/DashboardRepos-onWaitlist.json`,
 			<DashboardRepos
 				repos={repos}

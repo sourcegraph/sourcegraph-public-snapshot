@@ -45,7 +45,7 @@ class DashboardContainer extends Container {
 		state.users = (DashboardStore.users || [])
 			.map(user => ({LocalAccount: user}))
 			.concat(GitHubUsersStore.users.getUnique());
-		state.currentUser = DashboardStore.currentUser;
+		state.currentUser = DashboardStore.currentUser || {}; // empty if anonymous user
 		state.onboarding = DashboardStore.onboarding;
 		state.onWaitlist = DashboardStore.onWaitlist;
 		state.isMothership = DashboardStore.isMothership;
@@ -74,10 +74,10 @@ class DashboardContainer extends Container {
 	stores() { return [DashboardStore, GitHubReposStore, GitHubUsersStore]; }
 
 	render() {
-		const username = this.state.currentUser.Name || this.state.currentUser.Login;
+		const username = this.state.currentUser.Name || this.state.currentUser.Login || "";
 		const linkGitHubAvatar = this.state.onboarding.linkGitHub ?
 			"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png" :
-			this.state.currentUser.AvatarURL;
+			(this.state.currentUser.AvatarURL || "");
 		const welcomeLabel = this.state.onboarding.linkGitHub ? "Link your GitHub account to get started." : `Welcome ${username.split(" ")[0]}!`;
 
 		return (
