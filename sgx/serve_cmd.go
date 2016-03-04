@@ -152,7 +152,8 @@ Starts an HTTP server serving the app and API.`,
 }
 
 // ServeCmdPrivate holds the parameters containing private data about the
-// instance. These fields will not be forwarded with the other metrics.
+// instance. These fields will not be sent to the federation root server
+// for diagnostic purposes.
 type ServeCmdPrivate struct {
 	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
 	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
@@ -394,7 +395,7 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	if fed.Config.IsRoot {
 		// Listen for events and flush them to elasticsearch
-		metricutil.StartEventStorer(clientCtx)
+		metricutil.StartEventForwarder(clientCtx)
 		metricutil.StartEventLogger(clientCtx, 10*4096, 1024, 5*time.Minute)
 	} else if c.GraphUplinkPeriod != 0 {
 		// Listen for events and periodically push them upstream
