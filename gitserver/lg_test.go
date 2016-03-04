@@ -18,6 +18,8 @@ import (
 )
 
 func TestGitServerWithAnonymousReaders(t *testing.T) {
+	t.Skip("flaky")
+
 	var tests = []interface{}{
 		// Clone test.
 		gitCloneTest{false, false, "http", []string{}, false},
@@ -53,6 +55,8 @@ func TestGitServerWithAnonymousReaders(t *testing.T) {
 }
 
 func TestGitServerWithAuth(t *testing.T) {
+	t.Skip("flaky")
+
 	var tests = []interface{}{
 		// Clone test.
 		gitCloneTest{true, false, "http", []string{}, false},
