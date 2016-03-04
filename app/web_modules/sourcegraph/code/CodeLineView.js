@@ -5,7 +5,6 @@ import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as CodeActions from "sourcegraph/code/CodeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {GoTo} from "sourcegraph/util/hotLink";
 
 class CodeLineView extends Component {
 	constructor(props) {
@@ -29,6 +28,7 @@ class CodeLineView extends Component {
 
 		// Filter highlightedDef to improve perf.
 		state.highlightedDef = state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
+		state.activeDef = state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
 
 		state.lineNumber = props.lineNumber || null;
 		state.oldLineNumber = props.oldLineNumber || null;
@@ -89,6 +89,7 @@ class CodeLineView extends Component {
 							className={classNames(cls, {
 								"ref": true,
 								"highlight-primary": matchesURL(this.state.highlightedDef),
+								"active-def": matchesURL(this.state.activeDef),
 							})}
 							href={ann.URL}
 							onMouseOver={() => Dispatcher.dispatch(new DefActions.HighlightDef(ann.URL))}

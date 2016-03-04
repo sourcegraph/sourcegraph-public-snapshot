@@ -46,6 +46,7 @@ class CodeListing extends Component {
 		state.endLine = props.endLine || null;
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef;
+		state.activeDef = props.activeDef || null;
 
 		let updateAnns = false;
 
@@ -184,6 +185,7 @@ class CodeListing extends Component {
 					annotations={visible ? (this.state.lineAnns[i] || null) : null}
 					selected={this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={visible ? this.state.highlightedDef : null}
+					activeDef={visible ? this.state.activeDef : null}
 					key={i} />
 			);
 		});
@@ -207,6 +209,7 @@ CodeListing.propTypes = {
 	endLine: React.PropTypes.number,
 	endCol: React.PropTypes.number,
 	highlightedDef: React.PropTypes.string,
+	activeDef: React.PropTypes.string,
 };
 
 export default CodeListing;

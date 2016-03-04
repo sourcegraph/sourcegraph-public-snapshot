@@ -117,7 +117,8 @@ class CodeFileContainer extends Container {
 							startCol={this.state.startCol}
 							endLine={this.state.endLine}
 							endCol={this.state.endCol}
-							highlightedDef={this.state.highlightedDef} />}
+							highlightedDef={this.state.highlightedDef}
+							activeDef={this.state.def} />}
 					</div>
 					<FileMargin examples={this.state.examples} getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
 						{defData &&
