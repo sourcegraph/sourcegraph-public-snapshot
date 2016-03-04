@@ -10,6 +10,8 @@ func TestUserSpec(t *testing.T) {
 	}{
 		{"a", UserSpec{Login: "a"}, false},
 		{"1$", UserSpec{UID: 1}, false},
+		{"a@a.com", UserSpec{Login: "a", Domain: "a.com"}, false},
+		{"1$@a.com", UserSpec{UID: 1, Domain: "a.com"}, false},
 	}
 
 	for _, test := range tests {

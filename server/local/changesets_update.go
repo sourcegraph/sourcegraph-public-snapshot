@@ -28,7 +28,10 @@ func (s *changesets) Update(ctx context.Context, op *sourcegraph.ChangesetUpdate
 func (s *changesets) update(ctx context.Context, op *store.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
 	actor := authpkg.ActorFromContext(ctx)
 	opt := op.Op
-	opt.Author = sourcegraph.UserSpec{UID: int32(actor.UID)}
+	opt.Author = sourcegraph.UserSpec{
+		UID:    int32(actor.UID),
+		Domain: actor.Domain,
+	}
 
 	// TODO: UID being 0 can only happen during tests, in the future refactor tests to avoid the need for this.
 	if opt.Author.UID != 0 {

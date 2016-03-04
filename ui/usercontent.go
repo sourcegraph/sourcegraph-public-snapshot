@@ -29,7 +29,7 @@ func serveUserContentUpload(w http.ResponseWriter, req *http.Request) error {
 
 	actor := auth.ActorFromContext(httpctx.FromRequest(req))
 	if !actor.HasWriteAccess() {
-		return fmt.Errorf("actor (uid=%v) doesn't have write access", actor.UID)
+		return fmt.Errorf("actor (uid=%v, domain=%v) doesn't have write access", actor.UID, actor.Domain)
 	}
 
 	if usercontent.Store == nil {

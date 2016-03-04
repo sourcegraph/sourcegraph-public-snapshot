@@ -12,6 +12,11 @@ type Actor struct {
 	// TODO: Make UID an int32.
 	UID int `json:",omitempty"`
 
+	// Domain is the Sourcegraph server hostname that owns the user
+	// account of the user that this actor represents (if any). A
+	// blank Domain means that the user lives on the current server.
+	Domain string `json:",omitempty"`
+
 	// Login is the login of the currently authenticated user, if
 	// any. It is provided as a convenience and is not guaranteed to
 	// be correct (e.g., the user's login can change during the course
@@ -47,7 +52,7 @@ type Actor struct {
 }
 
 func (a Actor) String() string {
-	return fmt.Sprintf("Actor UID %d (clientID=%v scope=%v)", a.UID, a.ClientID, a.Scope)
+	return fmt.Sprintf("Actor UID %d (domain=%v clientID=%v scope=%v)", a.UID, a.Domain, a.ClientID, a.Scope)
 }
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.
@@ -109,8 +114,9 @@ func GetActorFromUser(user *sourcegraph.User) Actor {
 		scope["user:admin"] = true
 	}
 	return Actor{
-		UID:   int(user.UID),
-		Login: user.Login,
-		Scope: scope,
+		UID:    int(user.UID),
+		Login:  user.Login,
+		Domain: user.Domain,
+		Scope:  scope,
 	}
 }

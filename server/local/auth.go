@@ -260,6 +260,7 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 		ClientID: a.ClientID,
 		UID:      int32(a.UID),
 		Login:    a.Login,
+		Domain:   a.Domain,
 
 		Write:  a.HasWriteAccess(),
 		Admin:  a.HasAdminAccess(),
@@ -354,7 +355,8 @@ func linkLDAPUserAccount(ctx context.Context, ldapuser *ldap.LDAPUser) (*sourceg
 		Password: randstring.NewLen(20),
 	})
 	return &sourcegraph.User{
-		UID:   userSpec.UID,
-		Login: userSpec.Login,
+		UID:    userSpec.UID,
+		Login:  userSpec.Login,
+		Domain: userSpec.Domain,
 	}, err
 }

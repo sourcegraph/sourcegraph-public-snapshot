@@ -36,6 +36,7 @@ func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expire
 	if actor.Login != "" {
 		tok.Claims["Login"] = actor.Login
 	}
+	AddDomain(tok, actor.Domain)
 	if actor.ClientID != "" {
 		tok.Claims["ClientID"] = actor.ClientID
 	}
@@ -245,6 +246,7 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 	}
 
 	a.Login, _ = tok.Claims["Login"].(string)
+	a.Domain, _ = tok.Claims["Domain"].(string)
 	a.ClientID, _ = tok.Claims["ClientID"].(string)
 
 	scopeStr, _ := tok.Claims["Scope"].(string)
@@ -252,4 +254,9 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 	a.Scope = auth.UnmarshalScope(scopes)
 
 	return &a, nil
+}
+
+// AddDomain adds a domain claim to the JWT.
+func AddDomain(tok *jwt.Token, domain string) {
+	tok.Claims["Domain"] = domain
 }

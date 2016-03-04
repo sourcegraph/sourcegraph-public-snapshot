@@ -38,7 +38,7 @@ func (s *changesets) Create(ctx context.Context, op *sourcegraph.ChangesetCreate
 			reviewer.UserSpec = reviewerUser.Spec()
 
 			// If callee isn't that user, clear the LGTM status.
-			if reviewer.UserSpec.UID != int32(actor.UID) {
+			if reviewer.UserSpec.Domain != actor.Domain || reviewer.UserSpec.UID != int32(actor.UID) {
 				reviewer.LGTM = false
 			}
 		}

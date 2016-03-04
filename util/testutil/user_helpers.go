@@ -22,7 +22,7 @@ func CreateAccount(t *testing.T, ctx context.Context, login string) (*sourcegrap
 	if err != nil {
 		return nil, err
 	}
-	t.Logf("created account %q (UID %d)", user.Login, user.UID)
+	t.Logf("created account %q (domain %q, UID %d)", user.Login, user.Domain, user.UID)
 
 	return user, nil
 }

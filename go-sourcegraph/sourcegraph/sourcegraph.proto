@@ -1546,6 +1546,10 @@ message User {
 	// Login is the user's username.
 	string Login = 2;
 
+	// Domain is the host that the user originates from. If empty, it
+	// is assumed to be the domain of the server.
+	string Domain = 3;
+
 	// Name is the (possibly empty) full name of the user.
 	string Name = 4;
 
@@ -1567,10 +1571,12 @@ message User {
 	// Disabled is whether the user account is disabled.
 	bool Disabled = 10;
 
-	// Admin is whether the user is a site admin for the site.
+	// Admin is whether the user is a site admin for the site named by
+	// the Domain field.
 	bool Admin = 12;
 
-	// Write is whether the user has write access for the site.
+	// Write is whether the user has write access for the site named by
+	// the Domain field.
 	bool Write = 13;
 
 	// RegisteredAt is the date that the user registered. If the user has not
@@ -1587,6 +1593,10 @@ message UserSpec {
 
 	// UID is a user's UID.
 	int32 UID = 2;
+
+	// Domain is the host that the user originates from. If empty, it
+	// is assumed to be the domain of the server.
+	string Domain = 3;
 }
 
 // UsersListOptions specifies options for the UsersService.List method.
@@ -2116,6 +2126,11 @@ message AuthInfo {
 
 	// UID is the UID of the currently authenticated user (if any).
 	int32 UID = 2;
+
+	// Domain is the domain of the currently authenticated user (if
+	// any), or blank if the user account was registered on the
+	// current server.
+	string Domain = 3;
 
 	// Login is the login of the currently authenticated user (if any).
 	string Login = 4;
