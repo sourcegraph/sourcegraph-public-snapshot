@@ -114,7 +114,6 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 	if err != nil {
 		if handlerutil.IsRepoNoVCSDataError(err) {
 			log15.Warn("getCoverage: no VCS data found, attempting to clone", "repo", repo)
-			cl.Repos.Get(ctx, &repoSpec) // trigger clone if repository doesn't exist
 			return &Coverage{Repo: repo, FileScoreClass: "fail", RefScoreClass: "fail", TokDensityClass: "fail"}, nil
 		}
 		return nil, err
