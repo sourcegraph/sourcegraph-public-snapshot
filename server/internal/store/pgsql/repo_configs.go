@@ -59,7 +59,7 @@ func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 }
 
 func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Update", repo); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoConfigs.Update", repo); err != nil {
 		return err
 	}
 	var dbConf dbRepoConfig
