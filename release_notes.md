@@ -1,6 +1,9 @@
 # dev
 
 - Removed the Repo Updater app (hidden behind SG_FEATURE_REPOUPDATER flag).
+- Removed `--graphuplink` flag. Data uplink period is fixed to 10 minutes.
+- To configure a different server to forward metrics and events data to,
+  use `--metrics.forward=URL` (or leave it empty to not forward metrics).
 - Removed the `--fed.root-url` flag. To configure a different server
   to register with, use `--register=URL` (or leave it empty to run
   standalone).
