@@ -44,7 +44,6 @@ func init() {
 // dbRepo DB-maps a sourcegraph.Repo object.
 type dbRepo struct {
 	URI           string
-	Origin        string // DEPRECATED: will be removed in a future commit
 	Name          string
 	Description   string
 	VCS           string
