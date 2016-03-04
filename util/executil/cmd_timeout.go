@@ -23,8 +23,11 @@ func CmdCombinedOutputWithTimeout(timeout time.Duration, cmd *exec.Cmd) ([]byte,
 	cmd.Stdout = &b
 	cmd.Stderr = &b
 	c := make(chan error, 1)
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
 	go func() {
-		c <- cmd.Run()
+		c <- cmd.Wait()
 	}()
 	select {
 	case <-time.After(timeout):
