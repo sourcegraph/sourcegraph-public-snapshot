@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -98,6 +99,11 @@ func updateNumRepos(cl *sourcegraph.Client, ctx context.Context) {
 		return
 	}
 	numReposGauge.Set(float64(len(reposList.Repos)))
+
+	if fed.Config.IsRoot {
+		// don't compute committer stats on the mothership.
+		return
+	}
 }
 
 func updateNumBuilds(cl *sourcegraph.Client, ctx context.Context) {
