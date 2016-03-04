@@ -46,8 +46,9 @@ func init() {
 			log.Fatal("At most one of the --metrics.forward and --metrics.store and CLI flags may be specified.")
 		}
 
-		if fed.Config.DeprecatedIsRoot {
-			log15.Warn("The --fed.is-root option is DEPRECATED. If you were using it to disable sending metrics to an external server, switch to using --metrics.forward='' instead. Otherwise, you can remove it, as it is a no-op.")
+		if fed.Config.IsRoot && config.ForwardURL != "" {
+			// Preserve existing behavior where setting --fed.is-root
+			// disabled metrics forwarding.
 			config.ForwardURL = ""
 		}
 

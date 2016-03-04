@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
 	"src.sourcegraph.com/sourcegraph/util/testutil"
@@ -115,7 +116,7 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 	// Start test server.
 	server, ctx := testserver.NewUnstartedServer()
 	server.Config.Serve.NoWorker = true
-	server.Config.ServeFlags = append(server.Config.ServeFlags, authFlags)
+	server.Config.ServeFlags = append(server.Config.ServeFlags, &fed.Flags{IsRoot: true}, authFlags)
 	if err := server.Start(); err != nil {
 		t.Fatal("Unable to start the test server:", err)
 	}

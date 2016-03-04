@@ -26,7 +26,7 @@ var DiffPopup = React.createClass({
 		}
 
 		// This is also OK because DocHTML is sanitized by the app (not
-		// potentially untrusted server) where the Def (Data) comes
+		// untrusted federation root server) where the Def (Data) comes
 		// from. This happens in util/handlerutil/repo.go by GetDefCommon.
 		doc.body = <section className="doc" dangerouslySetInnerHTML={this.state.Data.DocHTML} />;
 		return doc;

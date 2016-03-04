@@ -3314,6 +3314,14 @@ type ServerConfig struct {
 	// AppURL is the base URL of the user-facing web application
 	// (e.g., "https://sourcegraph.com").
 	AppURL string `protobuf:"bytes,2,opt,name=AppURL,proto3" json:"AppURL,omitempty"`
+	// FederationRootURL is the --fed.root-url CLI flag's value. It is
+	// the URL of the federation root server, or blank if this server
+	// is itself a federation root (in which case IsFederationRoot is
+	// true).
+	FederationRootURL string `protobuf:"bytes,5,opt,name=FederationRootURL,proto3" json:"FederationRootURL,omitempty"`
+	// IsFederationRoot is whether this server is itself a federation
+	// root. If true, then FederationRootURL is empty.
+	IsFederationRoot bool `protobuf:"varint,6,opt,name=IsFederationRoot,proto3" json:"IsFederationRoot,omitempty"`
 	// IDKey is the server's identity key (ID key).
 	IDKey string `protobuf:"bytes,7,opt,name=IDKey,proto3" json:"IDKey,omitempty"`
 	// AllowAnonymousReaders is whether anonymous (unauthenticated)
@@ -16579,6 +16587,22 @@ func (m *ServerConfig) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.AppURL)))
 		i += copy(data[i:], m.AppURL)
 	}
+	if len(m.FederationRootURL) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.FederationRootURL)))
+		i += copy(data[i:], m.FederationRootURL)
+	}
+	if m.IsFederationRoot {
+		data[i] = 0x30
+		i++
+		if m.IsFederationRoot {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
 	if len(m.IDKey) > 0 {
 		data[i] = 0x3a
 		i++
@@ -20877,6 +20901,13 @@ func (m *ServerConfig) Size() (n int) {
 	l = len(m.AppURL)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.FederationRootURL)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if m.IsFederationRoot {
+		n += 2
 	}
 	l = len(m.IDKey)
 	if l > 0 {
@@ -48858,6 +48889,55 @@ func (m *ServerConfig) Unmarshal(data []byte) error {
 			}
 			m.AppURL = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FederationRootURL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FederationRootURL = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsFederationRoot", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsFederationRoot = bool(v != 0)
 		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IDKey", wireType)

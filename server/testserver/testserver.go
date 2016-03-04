@@ -366,7 +366,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// Other config
 	s.Config.Serve.NoInitialOnboarding = true
-	s.Config.Serve.RegisterURL = ""
 
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)

@@ -39,7 +39,7 @@ var TokenPopoverView = React.createClass({
 				}}
 				// This is OK because the body of the popover is a template
 				// (def/popover.html), whose contents are sanitized by the app
-				// (not potentially untrusted server) This happens in
+				// (not untrusted federation root server) This happens in
 				// util/handlerutil/repo.go by GetDefCommon primarily, but
 				// also in app/def.go by serveDefPopover at a higher level.
 				dangerouslySetInnerHTML={this.state.body} />

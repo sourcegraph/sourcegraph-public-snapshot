@@ -61,7 +61,7 @@ serve-dev: serve-dep
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
-	$(MAKE) serve-dev SERVEFLAGS="--auth.source=local --auth.allow-anon-readers --http-addr=:13080 --ssh-addr=:13022 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
+	$(MAKE) serve-dev SERVEFLAGS="--fed.is-root --auth.source=local --auth.allow-anon-readers --http-addr=:13080 --ssh-addr=:13022 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
 
 BD_SGPATH = $(HOME)/.sourcegraph
 serve-beyang-dev:
@@ -89,6 +89,7 @@ serve-beyang-dev:
 --local.clcache 10s \
 --local.clcachesize 2000 \
 --num-workers 0 \
+--fed.is-root \
 $(SERVEFLAGS)"
 
 PROMETHEUS_STORAGE ?= $(shell eval `src config` && echo $${SGPATH}/prometheus)

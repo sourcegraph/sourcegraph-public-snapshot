@@ -1,12 +1,6 @@
 # dev
 
 - Removed the Repo Updater app (hidden behind SG_FEATURE_REPOUPDATER flag).
-- Removed the `--fed.root-url` flag. To configure a different server
-  to register with, use `--register=URL` (or leave it empty to run
-  standalone).
-- Removed the `--fed.is-root` flag. All servers now can act as "root"
-  servers (the distinction was unnecessary). See the deprecation
-  warning for more information.
 - Removed the `--auth.oauth2-auth-server` flag and made the OAuth2
   authorization server Web flow always enabled. OAuth2 client
   registration is still limited to only federation root servers, so
