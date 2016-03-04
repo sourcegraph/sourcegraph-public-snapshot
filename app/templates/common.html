@@ -81,6 +81,17 @@
 	{{else}}
 		<span title="Repository" data-tooltip data-placement="bottom" class="octicon octicon-repo repo-attr-icon"></span>
 	{{end}}
+
+	{{/* Label repos that have a remote origin. */}}
+	{{if hasPrefix .Origin "GitHub "}}
+		<a target="_blank" href="{{.GitHubHTMLURL}}"
+			data-tooltip title="{{.Origin}}" data-placement="bottom" class="repo-attr-icon">
+			<i class="fa fa-github"></i>
+		</a>
+	{{else if .Origin}}
+		<i class="fa fa-globe repo-attr-icon"
+			data-tooltip title="Origin: {{.Origin}}" data-placement="bottom"></i>
+	{{end}}
 {{end}}
 
 {{define "RepoLabel"}}<!-- expects []string --><!--
