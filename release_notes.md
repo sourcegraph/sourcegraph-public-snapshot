@@ -1,10 +1,6 @@
 # dev
 
 - Removed the Repo Updater app (hidden behind SG_FEATURE_REPOUPDATER flag).
-- Removed the `--auth.oauth2-auth-server` flag and made the OAuth2
-  authorization server Web flow always enabled. OAuth2 client
-  registration is still limited to only federation root servers, so
-  most Sourcegraph Server installations are unaffected.
 - Removed the Tracker app and inline code discussions. To export
   Tracker threads and comments, run the following PostgreSQL query:
   `select convert_from(decode(unnest(avals(objects)::text[]),

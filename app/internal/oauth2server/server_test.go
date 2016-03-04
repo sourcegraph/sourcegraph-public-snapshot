@@ -20,8 +20,31 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
+func TestOAuth2ServerAuthorize_notEnabled(t *testing.T) {
+	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: false}
+	defer func() {
+		authutil.ActiveFlags = authutil.Flags{}
+	}()
+
+	c, mock := apptest.New()
+
+	mock.Users.Get_ = func(ctx context.Context, in *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		return &sourcegraph.User{}, nil
+	}
+
+	mock.Ctx = handlerutil.WithUser(mock.Ctx, sourcegraph.UserSpec{UID: 1})
+	resp, err := c.Get(router.Rel.URLTo(router.OAuth2ServerAuthorize).String())
+	if err != nil {
+		t.Fatalf("Get: %s", err)
+	}
+
+	if want := http.StatusNotFound; resp.StatusCode != want {
+		t.Errorf("got status %d, want %d", resp.StatusCode, want)
+	}
+}
+
 func TestOAuth2ServerAuthorize_notLoggedIn(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local", AllowAllLogins: true}
+	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true, AllowAllLogins: true}
 	defer func() {
 		authutil.ActiveFlags = authutil.Flags{}
 	}()
@@ -48,7 +71,7 @@ func TestOAuth2ServerAuthorize_notLoggedIn(t *testing.T) {
 }
 
 func TestOAuth2ServerAuthorize(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local", AllowAllLogins: true}
+	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true, AllowAllLogins: true}
 	defer func() {
 		authutil.ActiveFlags = authutil.Flags{}
 	}()
@@ -125,7 +148,7 @@ func readOAuth2ServerAuthorizePage(resp *http.Response) (*oauthProviderAuthorize
 }
 
 func TestOAuth2ServerAuthorize_newClientID(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local", AllowAllLogins: true}
+	authutil.ActiveFlags = authutil.Flags{Source: "local", OAuth2AuthServer: true, AllowAllLogins: true}
 	defer func() {
 		authutil.ActiveFlags = authutil.Flags{}
 	}()
