@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
@@ -77,13 +76,6 @@ type Flags struct {
 }
 
 func (f *Flags) parseURL() error {
-	// Check deprecated --fed.is-root flag for backwards compatibility with old configs.
-	// TODO(pararth): remove this once the config is replaced.
-	if fed.Config.DeprecatedIsRoot {
-		log15.Warn("The --fed.is-root option is DEPRECATED. If you were using it to disable repo federation, switch to using --repo-fallback='' instead. Otherwise, you can remove it, as it is a no-op.")
-		f.RepoFallbackURLStr = ""
-	}
-
 	if f.RepoFallbackURLStr == "" {
 		f.RepoFallbackURL = nil
 	} else {
