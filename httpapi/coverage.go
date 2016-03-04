@@ -3,9 +3,10 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
-	"gorilla/mux2"
 	"net/http"
 	"strings"
+
+	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 
