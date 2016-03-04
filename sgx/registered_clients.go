@@ -46,16 +46,6 @@ func init() {
 	}
 	c.Aliases = []string{"ls"}
 
-	c, err = g.AddCommand("get",
-		"get a registered API client",
-		"The get subcommand shows information about a single registered API client.",
-		&regClientsGetCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	c.Aliases = []string{"ls"}
-
 	_, err = g.AddCommand("current",
 		"gets info about the currently authenticated registered API client",
 		"The current subcommand gets info about the currently authenticated registered API client.",
@@ -115,25 +105,6 @@ func (c *regClientsListCmd) Execute(args []string) error {
 			break
 		}
 		opt.Page++
-	}
-	return nil
-}
-
-type regClientsGetCmd struct {
-	Args struct {
-		ID []string
-	} `positional-args:"yes"`
-}
-
-func (c *regClientsGetCmd) Execute(args []string) error {
-	cl := client.Client()
-
-	for _, id := range c.Args.ID {
-		regClient, err := cl.RegisteredClients.Get(client.Ctx, &sourcegraph.RegisteredClientSpec{ID: id})
-		if err != nil {
-			return err
-		}
-		printRegisteredClient(regClient)
 	}
 	return nil
 }
