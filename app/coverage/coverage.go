@@ -62,7 +62,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	} else {
 		langs = langs_
 		for _, lang := range langs {
-			repos := langRepos_[lang][:5]
+			repos := langRepos_[lang]
 			if len(repos) > 5 {
 				repos = repos[:5]
 			}
