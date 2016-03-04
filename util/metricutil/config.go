@@ -42,13 +42,13 @@ func init() {
 	})
 
 	cli.ServeInit = append(cli.ServeInit, func() {
+		if config.ForwardURL != "" && config.StoreURL != "" {
+			log.Fatal("At most one of the --metrics.forward and --metrics.store and CLI flags may be specified.")
+		}
+
 		if fed.Config.DeprecatedIsRoot {
 			log15.Warn("The --fed.is-root option is DEPRECATED. If you were using it to disable sending metrics to an external server, switch to using --metrics.forward='' instead. Otherwise, you can remove it, as it is a no-op.")
 			config.ForwardURL = ""
-		}
-
-		if config.ForwardURL != "" && config.StoreURL != "" {
-			log.Fatal("At most one of the --metrics.forward and --metrics.store and CLI flags may be specified.")
 		}
 
 		if config.DeprecatedGraphUplinkPeriod != 0 {
