@@ -15,7 +15,7 @@ import (
 
 var storage *elastigo.BulkIndexer
 
-func startEventStorer(ctx context.Context) {
+func StartEventStorer(ctx context.Context) {
 	url := os.Getenv("SG_ELASTICSEARCH_URL")
 	if url == "" {
 		log15.Debug("EventForwarder failed to locate elasticsearch endpoint")

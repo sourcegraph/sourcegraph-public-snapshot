@@ -174,7 +174,8 @@ type ServeCmd struct {
 
 	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
 
-	NoWorker bool `long:"no-worker" description:"do not start background worker"`
+	NoWorker          bool          `long:"no-worker" description:"do not start background worker"`
+	GraphUplinkPeriod time.Duration `long:"graphuplink" default:"10m" description:"how often to communicate back to the mothership; if 0, then no periodic communication occurs"`
 
 	// Flags containing sensitive information must be added to this struct.
 	ServeCmdPrivate
@@ -391,8 +392,15 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	clientCtx := clientCtxFunc(context.Background())
 
-	// Periodically forward and/or save metrics.
-	metricutil.Start(clientCtx, 10*4096, 256, 5*time.Minute)
+	if fed.Config.IsRoot {
+		// Listen for events and flush them to elasticsearch
+		metricutil.StartEventStorer(clientCtx)
+		metricutil.StartEventLogger(clientCtx, 10*4096, 1024, 5*time.Minute)
+	} else if c.GraphUplinkPeriod != 0 {
+		// Listen for events and periodically push them upstream
+		metricutil.StartEventLogger(clientCtx, 10*4096, 256, 10*time.Minute)
+	}
+
 	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
 		Type:     "notif",
 		ClientID: idKey.ID,
@@ -402,9 +410,11 @@ func (c *ServeCmd) Execute(args []string) error {
 	})
 	metricutil.LogConfig(clientCtx, idKey.ID, c.safeConfigFlags())
 
-	// Listen for events and periodically push them to analytics gateway.
-	eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
-	eventsutil.LogStartServer()
+	if c.GraphUplinkPeriod != 0 {
+		// Listen for events and periodically push them to analytics gateway.
+		eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
+		eventsutil.LogStartServer()
+	}
 
 	c.runGitServer()
 
@@ -605,7 +615,15 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
-	go statsutil.ComputeUsageStats(client.Ctx, 10*time.Minute)
+	statsInterval := c.GraphUplinkPeriod
+	if statsInterval < 10*time.Minute {
+		statsInterval = 10 * time.Minute
+	}
+
+	go statsutil.ComputeUsageStats(client.Ctx, statsInterval)
+
+	// Occasionally send metrics and usage stats upstream via GraphUplink
+	go c.graphUplink(clientCtx)
 
 	// Prepare for initial onboarding.
 	if createdIDKey && !c.NoInitialOnboarding {
@@ -1039,6 +1057,37 @@ Outer:
 			cacheutil.PrecacheRoot(repo.URI)
 		}
 		time.Sleep(localcli.Flags.CommitLogCachePeriod)
+	}
+}
+
+func (c *ServeCmd) graphUplink(ctx context.Context) {
+	if c.GraphUplinkPeriod == 0 || fed.Config.IsRoot {
+		return
+	}
+
+	rctx := fed.Config.NewRemoteContext(ctx)
+
+	for {
+		time.Sleep(c.GraphUplinkPeriod)
+		cl, err := sourcegraph.NewClientFromContext(rctx)
+		if err != nil {
+			log15.Error("GraphUplink push failed", "error", err)
+			continue
+		}
+
+		buf := &bytes.Buffer{}
+		mfs := metricutil.SnapshotMetricFamilies()
+		mfs.Marshal(buf)
+
+		log15.Debug("GraphUplink sending metrics snapshot", "mothership", fed.Config.RootURL(), "numMetrics", len(mfs))
+		snapshot := sourcegraph.MetricsSnapshot{
+			Type:          sourcegraph.TelemetryType_PrometheusDelimited0dot0dot4,
+			TelemetryData: buf.Bytes(),
+		}
+		_, err = cl.GraphUplink.Push(rctx, &snapshot)
+		if err != nil {
+			log15.Error("GraphUplink push failed", "error", err)
+		}
 	}
 }
 

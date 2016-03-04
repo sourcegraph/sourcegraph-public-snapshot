@@ -18,7 +18,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
-	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
 const AnalyticsAPIEndpoint = "https://analytics.sgdev.org/events"
@@ -167,10 +166,6 @@ var ActiveLogger *Logger
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
 // maximum number of buffered events after which the worker will flush the buffer upstream.
 func StartEventLogger(ctx context.Context, clientID string, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
-	if !metricutil.EnableForwarding() {
-		return
-	}
-
 	// Save this server's client ID for use in all Log calls.
 	sourcegraphClientID = clientID
 
