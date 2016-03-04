@@ -52,7 +52,8 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("must be admin to access coverage dashboard")
 	}
 
-	langs, langRepos := make([]string, 0), make(map[string][]string)
+	var langs []string
+	langRepos := make(map[string][]string)
 	if specificRepo := r.URL.Query().Get("repo"); specificRepo != "" {
 		langs = []string{"Repository coverage"}
 		langRepos["Repository coverage"] = []string{specificRepo}
@@ -60,7 +61,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		langs = []string{l}
 		langRepos[l] = langRepos_[l]
 	} else {
-		langs = langs_
+		langs = append(langs, langs_...)
 		for _, lang := range langs {
 			repos := langRepos_[lang]
 			if len(repos) > 5 {
