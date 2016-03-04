@@ -31,6 +31,8 @@ var tmpl = template.Must(template.New("").Delims("<<<", ">>>").Parse(`// GENERAT
 package outer
 
 import (
+	"runtime"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -61,7 +63,17 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 
   <<<$service := .>>>
 	<<<range .Methods>>>
-		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 *<<<.ParamType>>>) (*<<<.ResultType>>>, error) {
+		func (s wrapped<<<$service.Name>>>) <<<.Name>>>(ctx context.Context, v1 *<<<.ParamType>>>) (returnedResult *<<<.ResultType>>>, returnedError error) {
+			defer func() {
+				if err := recover(); err != nil {
+					const size = 64 << 10
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					returnedError = grpc.Errorf(codes.Internal, "panic in <<<$service.Name>>>.<<<.Name>>>: %v\n\n%s", err, buf)
+					returnedResult = nil
+				}
+			}()
+
 			var err error
 			ctx, err = initContext(ctx, s.ctxFunc, s.services)
 			if err != nil {
