@@ -13,11 +13,14 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/conf"
+	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -67,6 +70,29 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	})
 	eventsutil.LogCreateAccount(ctx, newAcct, admin, write, numUsers == 0, "")
 	sendAccountCreateSlackMsg(ctx, user.Login, newAcct.Email, false)
+
+	// Update the registered client's name if this is the first user account
+	// created on this server.
+	if numUsers == 0 && !fed.Config.IsRoot {
+		rctx := fed.Config.NewRemoteContext(ctx)
+		rcl, err := sourcegraph.NewClientFromContext(rctx)
+		if err != nil {
+			return nil, err
+		}
+		clientID := idkey.FromContext(ctx).ID
+
+		if rc, err := rcl.RegisteredClients.Get(rctx, &sourcegraph.RegisteredClientSpec{ID: clientID}); err != nil {
+			log15.Debug("Could not get registered client", "id", clientID, "error", err)
+		} else {
+			rc.ClientName = newAcct.Email
+			_, err := rcl.RegisteredClients.Update(rctx, rc)
+			if err != nil {
+				log15.Debug("Could not update registered client", "id", clientID, "error", err)
+			} else {
+				eventsutil.LogRegisterServer(rc.ClientName)
+			}
+		}
+	}
 
 	return user, err
 }
