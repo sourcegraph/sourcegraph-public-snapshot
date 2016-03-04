@@ -1,5 +1,4 @@
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as SearchActions from "sourcegraph/search/SearchActions";
@@ -9,8 +8,7 @@ function keyFor(repo, rev, query, type, page) {
 }
 
 export class SearchResultsStore extends Store {
-	constructor(dispatcher) {
-		super(dispatcher);
+	reset() {
 		this.results = deepFreeze({
 			content: {},
 			get(repo, rev, query, type, page) {

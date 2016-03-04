@@ -1,5 +1,10 @@
 # dev
 
+- Removed the Repo Updater app (hidden behind SG_FEATURE_REPOUPDATER flag).
+- Removed the Tracker app and inline code discussions. To export
+  Tracker threads and comments, run the following PostgreSQL query:
+  `select convert_from(decode(unnest(avals(objects)::text[]),
+  'base64'), 'utf-8') from appdata where name like '%-tracker-%';`
 - Removed user profile pages and the `--auth.disable-user-profiles`
   flag. User profiles are not yet implemented, and enabling user
   profiles did not yet make sense in any scenarios. If you previously
@@ -33,8 +38,7 @@
 - Removed support for storing most types of data (users, changesets,
   tracker threads, etc.) on the filesystem. Git data is still stored
   on the filesystem, but all other data now must be stored in
-  PostgreSQL. See docs/config/storage.md for PostgreSQL configuration
-  instructions.
+  PostgreSQL. See [PostgreSQL initialization and configuration instructions](https://src.sourcegraph.com/sourcegraph/.docs/config/storage/).
 
   To migrate from FS storage to PostgreSQL, first run `src pgsql
   create` (with the `PG*` environment variables set for connecting to

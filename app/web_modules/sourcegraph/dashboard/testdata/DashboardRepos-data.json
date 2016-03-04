@@ -1,0 +1,218 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "repos-list",
+			"children": [
+				{
+					"type": "nav",
+					"props": {
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "toggles",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "btn-group",
+												"children": [
+													{
+														"type": "button",
+														"key": "0",
+														"props": {
+															"className": "btn btn-block toggle btn-primary",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "toggle-label",
+																		"children": [
+																			"all"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "button",
+														"key": "1",
+														"props": {
+															"className": "btn btn-block toggle btn-default",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "toggle-label",
+																		"children": [
+																			"private"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "button",
+														"key": "2",
+														"props": {
+															"className": "btn btn-block toggle btn-default",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "toggle-label",
+																		"children": [
+																			"public"
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "search-bar",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "input-group",
+												"children": [
+													{
+														"type": "input",
+														"props": {
+															"className": "form-control search-input",
+															"placeholder": "Find a repository...",
+															"value": "",
+															"type": "text"
+														}
+													},
+													{
+														"type": "span",
+														"props": {
+															"className": "input-group-addon search-addon",
+															"children": [
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-search search-icon"
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "repos",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "list-group",
+									"children": [
+										{
+											"type": "div",
+											"key": "0",
+											"props": {
+												"className": "list-group-item",
+												"children": [
+													{
+														"type": "div",
+														"props": {
+															"className": "repo-header",
+															"children": [
+																{
+																	"type": "h4",
+																	"props": {
+																		"children": [
+																			{
+																				"type": "i",
+																				"props": {
+																					"className": "sg-icon repo-attr-icon sg-icon-public"
+																				}
+																			},
+																			{
+																				"type": "span",
+																				"props": {
+																					"className": "repo-link",
+																					"children": [
+																						{
+																							"type": "a",
+																							"key": "name0",
+																							"props": {
+																								"className": "name",
+																								"href": "/someURL",
+																								"title": "someURL",
+																								"children": [
+																									"someurl"
+																								]
+																							}
+																						}
+																					]
+																				}
+																			}
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "div",
+														"props": {
+															"className": "repo-body",
+															"children": [
+																{
+																	"type": "p",
+																	"props": {
+																		"className": "description",
+																		"children": [
+																			"someDescription"
+																		]
+																	}
+																},
+																{
+																	"type": "p",
+																	"props": {
+																		"className": "updated",
+																		"children": [
+																			"Updated a few seconds ago"
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

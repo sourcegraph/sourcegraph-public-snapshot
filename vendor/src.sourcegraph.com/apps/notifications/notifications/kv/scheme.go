@@ -5,20 +5,19 @@ import (
 	"time"
 
 	"src.sourcegraph.com/apps/notifications/notifications"
-	"src.sourcegraph.com/apps/tracker/issues"
 )
 
-// repoSpec is an on-disk representation of issues.RepoSpec.
+// repoSpec is an on-disk representation of notifications.RepoSpec.
 type repoSpec struct {
 	URI string
 }
 
-func fromRepoSpec(rs issues.RepoSpec) repoSpec {
+func fromRepoSpec(rs notifications.RepoSpec) repoSpec {
 	return repoSpec{URI: rs.URI}
 }
 
-func (rs repoSpec) RepoSpec() issues.RepoSpec {
-	return issues.RepoSpec{URI: rs.URI}
+func (rs repoSpec) RepoSpec() notifications.RepoSpec {
+	return notifications.RepoSpec{URI: rs.URI}
 }
 
 // octiconID is an on-disk representation of notifications.OcticonID.
@@ -58,6 +57,6 @@ func subscribersBucket(appID string, threadID uint64) string {
 	return "subscribers" + "-" + appID + "-" + formatUint64(threadID)
 }
 
-func notificationKey(repo issues.RepoSpec, appID string, threadID uint64) string {
+func notificationKey(repo notifications.RepoSpec, appID string, threadID uint64) string {
 	return repo.URI + "-" + appID + "-" + formatUint64(threadID)
 }

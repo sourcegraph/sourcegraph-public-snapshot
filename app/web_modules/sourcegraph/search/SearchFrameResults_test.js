@@ -15,17 +15,13 @@ describe("SearchFrameResults", () => {
 			<SearchFrameResults resultData={{Error: "foo"}} repo="aRepo" rev="aRev" query="aQuery" page={1} label="aSearchFrame" />
 		);
 	});
-});
 
-describe("SearchFrameResults", () => {
 	it("should render no results properly", () => {
 		autotest(testdataNoResults, `${__dirname}/testdata/SearchFrameResults-noResults.json`,
 			<SearchFrameResults resultData={{HTML: "<div>foo</div>", Total: 0}} repo="aRepo" rev="aRev" query="aQuery" page={1} label="aSearchFrame"/>
 		);
 	});
-});
 
-describe("SearchFrameResults", () => {
 	it("should render results properly", () => {
 		autotest(testdataResultsGiven, `${__dirname}/testdata/SearchFrameResults-resultsGiven.json`,
 			<SearchFrameResults resultData={{HTML: "<div>foo</div>", Total: 9}} repo="aRepo" rev="aRev" query="aQuery" page={1} label="aSearchFrame"/>

@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/apps/tracker/issues"
+	notif "src.sourcegraph.com/apps/notifications/notifications"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -238,7 +238,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 	}
 	sort.Sort(byDate(commitList.Commits))
 	// Augment commits with data from People
-	augmentedCommits, err := handlerutil.AugmentCommits(r, delta.HeadRepo.URI, commitList.Commits)
+	augmentedCommits, err := handlerutil.AugmentCommits(ctx, delta.HeadRepo.URI, commitList.Commits)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func serveChangeset(w http.ResponseWriter, r *http.Request) error {
 
 	// Mark the changeset as read
 	if notifications.Service != nil {
-		notifications.Service.MarkRead(ctx, appID, issues.RepoSpec{URI: rc.Repo.URI}, uint64(id))
+		notifications.Service.MarkRead(ctx, appID, notif.RepoSpec{URI: rc.Repo.URI}, uint64(id))
 	}
 
 	// If the source code contents of the diff have not been tokenized and linked

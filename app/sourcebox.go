@@ -23,10 +23,9 @@ import (
 )
 
 func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	dc, _, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, _, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		// Avoid writing a full response, or else the sourcebox will mess with the surrounding page it's embedded in.
 		http.Error(w, "", errcode.HTTP(err))
@@ -44,7 +43,7 @@ func serveSourceboxDef(w http.ResponseWriter, r *http.Request) error {
 		},
 	}
 
-	entry, err := apiclient.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
+	entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,8 @@ func serveSourceboxFile(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	opt.TokenizedSource = true
-	tc, _, _, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	ctx, _ := handlerutil.Client(r)
+	tc, _, _, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
 	}

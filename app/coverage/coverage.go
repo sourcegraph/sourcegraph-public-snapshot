@@ -19,7 +19,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 type Coverage struct {
@@ -45,8 +44,7 @@ func AddRoutes(r *router.Router) {
 // the optional `lang` URL parameter to show coverage for the top 100 repositories in a given
 // language.
 func serveCoverage(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	if !auth.ActorFromContext(ctx).HasAdminAccess() {
 		return fmt.Errorf("must be admin to access coverage dashboard")

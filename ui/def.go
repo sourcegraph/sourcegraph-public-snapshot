@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
@@ -12,15 +14,13 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
-	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
+	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		if urlErr, ok := err.(*handlerutil.URLMovedError); ok {
 			return e.Encode(urlErr)

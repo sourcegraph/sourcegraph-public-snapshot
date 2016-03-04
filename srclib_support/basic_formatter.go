@@ -6,10 +6,12 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
-// Registers def formatter for defs made by basic formatter (PHP, ObjC)
+// Registers def formatter for defs made by basic toolchains (PHP, ObjC) and
+// TypeScript toolchain
 func init() {
 	graph.RegisterMakeDefFormatter("basic-php", newBasicFormatter("PHP"))
 	graph.RegisterMakeDefFormatter("basic-objc", newBasicFormatter("Objective-C"))
+	graph.RegisterMakeDefFormatter("TypeScriptModule", newBasicFormatter("TypeScript"))
 }
 
 // DefData should be kept in sync with the def 'Data' field emitted by the

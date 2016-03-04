@@ -10,7 +10,6 @@
 // is and should stay disabled in production environments.
 //
 // WARNING: Integration tests may not be run in parallel or concurrently. Currently
-// only sequential execution is allowed due to altering the global state when overwriting
-// handlerutil.APIClient and handlerutil.Service. Concurrent execution might result in
-// unexpected behavior.
+// only sequential execution is allowed due to altering the global state.
+// Concurrent execution might result in unexpected behavior.
 package ui

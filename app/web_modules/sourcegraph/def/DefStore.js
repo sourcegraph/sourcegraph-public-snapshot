@@ -1,5 +1,4 @@
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -9,8 +8,7 @@ function exampleKeyFor(defURL, index) {
 }
 
 export class DefStore extends Store {
-	constructor(dispatcher) {
-		super(dispatcher);
+	reset() {
 		this.defs = deepFreeze({
 			content: {},
 			get(url) {

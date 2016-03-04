@@ -11,22 +11,20 @@
 	window.teammates = JSON.parse({{json .Teammates}});
 	window.onWaitlist = JSON.parse({{json .OnWaitlist}}) || false;
 
-	window.progress = {
-		numSteps: 4,
+	window.onboarding = {
+		linkGitHub: false, // user needs to link GitHub account
+		linkGitHubURL: null, // URL for GitHub OAuth
+		linkGitHubRedirect: false, // user is beind redirected to the dashboard from GitHub
 	};
 	{{if (or (and .PrivateMirrors .CurrentUser) .LinkGitHub)}}
 		{{if .LinkGitHub}}
-			window.progress.currentStep = 0;
-			window.progress.githubLinkURL = "{{router.URLToGitHubOAuth}}";
+			window.onboarding.linkGitHub = true;
+			window.onboarding.linkGitHubURL = "{{router.URLToGitHubOAuth}}";
 		{{else}}
 			{{if .GitHubOnboarding}}
-				window.progress.currentStep = 1;
-			{{else}}
-				window.progress.currentStep = 50; // done
+				window.onboarding.linkGitHubRedirect = true;
 			{{end}}
 		{{end}}
-	{{else}}
-		window.progress.currentStep = 50; // done
 	{{end}}
 
 	window.isMothership = JSON.parse({{json isMothership}});
@@ -35,7 +33,6 @@
 
 <div class="dashboard">
 	<div id="DashboardContainer"></div>
-	<div id="OnboardingContainer"></div>
 </div>
 
 {{end}}

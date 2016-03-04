@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -16,7 +18,8 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	e := json.NewEncoder(w)
-	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, opt)
+	ctx, _ := handlerutil.Client(r)
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), opt)
 	if err != nil {
 		if urlErr, ok := err.(*handlerutil.URLMovedError); ok {
 			return e.Encode(urlErr)

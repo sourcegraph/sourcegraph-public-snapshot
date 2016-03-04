@@ -48,7 +48,8 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 			RecurseSingleSubfolderLimit: 200,
 		},
 	}
-	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	ctx, _ := handlerutil.Client(r)
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
 	}
@@ -74,9 +75,8 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
-	go cacheutil.PrecacheTreeEntry(apiclient, ctx, tc.Entry, tc.EntrySpec)
+	ctx, cl := handlerutil.Client(r)
+	go cacheutil.PrecacheTreeEntry(cl, ctx, tc.Entry, tc.EntrySpec)
 
 	eventsutil.LogBrowseCode(ctx, "dir", tc, rc)
 	return tmpl.Exec(r, w, "repo/tree/dir.html", http.StatusOK, nil, &repoTreeTemplate{

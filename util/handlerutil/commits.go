@@ -1,20 +1,22 @@
 package handlerutil
 
 import (
-	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // AugmentCommits fills in fields on this package's commit type for
 // presentation in the app.
-func AugmentCommits(r *http.Request, repoURI string, commits []*vcs.Commit) ([]*payloads.AugmentedCommit, error) {
-	ctx := httpctx.FromRequest(r)
-	cl := APIClient(r)
+func AugmentCommits(ctx context.Context, repoURI string, commits []*vcs.Commit) ([]*payloads.AugmentedCommit, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	people := map[string]*sourcegraph.Person{}
 	for _, commit0 := range commits {
@@ -84,7 +86,7 @@ type DayOfAugmentedCommits struct {
 // GroupCommitsByDay over the list of commits. It only performs the
 // work of coalescing results from those two functions; all actual
 // work is performed by them.
-func AugmentAndGroupCommitsByDay(r *http.Request, commits []*vcs.Commit, repoURI string) ([]*DayOfAugmentedCommits, error) {
+func AugmentAndGroupCommitsByDay(ctx context.Context, commits []*vcs.Commit, repoURI string) ([]*DayOfAugmentedCommits, error) {
 	days := GroupCommitsByDay(commits)
 	augDays := make([]*DayOfAugmentedCommits, len(days))
 	for i, day := range days {
@@ -92,7 +94,7 @@ func AugmentAndGroupCommitsByDay(r *http.Request, commits []*vcs.Commit, repoURI
 			Start:   day.Start,
 			Commits: make([]*payloads.AugmentedCommit, len(day.Commits)),
 		}
-		augCommits, err := AugmentCommits(r, repoURI, day.Commits)
+		augCommits, err := AugmentCommits(ctx, repoURI, day.Commits)
 		if err != nil {
 			return nil, err
 		}

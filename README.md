@@ -9,7 +9,6 @@ Sourcegraph gives your team the power to build better software with:
 * **Code Intelligence:** Understand code more quickly with language-aware jump-to-definition and tooltips. (Go and Java only, more languages coming soon.)
 * **Live usage examples:** See how any function, class, etc., is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
 * **Better code reviews:** Review changesets more effectively with drafts and Code Intelligence context in diffs---and an easy branch-based pull request model.
-* **Code-linked issue tracking:** Ask questions, suggest improvements, and explain design decisions inline in your code.
 * **Smart search:** Find code quickly by function name, full text, etc.
 * **Deep integrations:** Works great standalone or with GitHub, GitHub Enterprise, JIRA, and more.
 * **Hackable source code:** [Sourcegraph's source code](https://src.sourcegraph.com/sourcegraph) is publicly available under the [Fair Source License](https://fair.io).

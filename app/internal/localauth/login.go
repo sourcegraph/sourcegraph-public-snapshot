@@ -68,8 +68,7 @@ func serveLogIn(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveLoginForm(w http.ResponseWriter, r *http.Request, form loginForm) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	numUsers, err := cl.Users.Count(ctx, &pbtypes.Void{})
 	if err != nil {
@@ -94,8 +93,7 @@ func serveLoginForm(w http.ResponseWriter, r *http.Request, form loginForm) erro
 }
 
 func serveLoginSubmit(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var form loginForm
 	if err := r.ParseForm(); err != nil {

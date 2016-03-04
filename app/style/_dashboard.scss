@@ -1,6 +1,103 @@
 .dashboard {
+
+	/* These styles are temporary, until we implement our UI kit standard styles. */
+	button, .btn-placeholder-padding {
+		height: 40px;
+	}
+	input:not([type='radio']), .input-group {
+		height: 40px;
+	}
+
+	input {
+		transition: none;
+		&:focus {
+			border-color: $input-border-focus;
+			box-shadow: none;
+		}
+		&:invalid {
+			border-color: $brand-danger;
+		}
+	}
+
+	.alert-content {
+		color: $alert-default-text;
+		font-size: 16px;
+
+		.alert-dismiss {
+			margin-left: 10px;
+			margin-right: 15px;
+		}
+	}
+
+	.btn {
+		text-transform: uppercase;
+		font-weight: 500;
+		letter-spacing: 1px;
+	}
+
+	.btn-icon {
+		font-size: 16px;
+		cursor: pointer;
+		color: $shadow-blue;
+
+		&:hover {
+			color: $brand-azure;
+		}
+	}
+
 	.dashboard-container {
 		margin-top: 55px;
+	}
+
+	.link-github-well {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+
+		.link-github-label {
+			flex: 6;
+			margin-right: 30px;
+		}
+
+		.link-github-button {
+			flex: 2;
+			text-transform: uppercase;
+		}
+
+		.avatar-container {
+			position: relative;
+			width: 40px;
+			height: 40px;
+			display: inline-block;
+			margin-right: 20px;
+		}
+
+		.avatar-github {
+			opacity: 0.5;
+			background-color: $brand-success;
+		}
+
+		.github-link-success-icon {
+			width: 24px;
+			height: 24px;
+			background-color: #78e198;
+			border: solid 4px $white;
+			position: absolute;
+			bottom: -7px;
+			right: -10px;
+			border-radius: 50%;
+
+			.check-icon {
+				color: #37a358;
+				position: absolute;
+				bottom: 0px;
+				left: 3px;
+
+				i {
+					font-size: 10px;
+				}
+			}
+		}
 	}
 
 	.dash-repos {
@@ -18,16 +115,6 @@
 				flex: 9;
 			}
 
-			.add-repo-btn {
-				flex: 1;
-				align-items: center;
-				justify-content: center;
-
-				width: 50%;
-				height: 40px;
-				text-align: center;
-			}
-
 			.plus-btn {
 				display: inline-block;
 				background-color: $btn-primary-color;
@@ -37,15 +124,18 @@
 				border-radius: 2px;
 				margin-right: 10px;
 			}
+		}
 
-			.plus {
-				display: inline-block;
-				color: $btn-primary-bg;
-			}
+		.add-repo-well {
+			margin-top: 10px;
+		}
 
-			.add-repo-label {
-				display: inline-block;
-			}
+		.create-repo-input {
+			min-width: 300px;
+		}
+
+		.create-repo-btn {
+			margin-left: 15px;
 		}
 
 		.repos-list nav {
@@ -87,6 +177,7 @@
 				}
 
 				.search-input {
+					margin: 0px;
 					border-right: none;
 					transition: none;
 					&:focus + .search-addon {
@@ -96,45 +187,72 @@
 			}
 		}
 
+		.repo-disabled {
+			background-color: $pale-grey;
+		}
+
+		.disabled-reason {
+			font-style: italic;
+			color: $text-disabled;
+			font-size: $font-size-small;
+		}
+
 		h4 {
 			margin-bottom: $padding-base-vertical;
+			color: $text-header;
+			font-size: 20px;
+			font-weight: 400;
+
 			.repo-attr-icon {
-				margin-right: 3px;
+				margin-right: 10px;
+				color: $repo-attr-color;
 			}
 		}
 		p.description {
+			font-weight: 400;
 			font-size: 16px;
-			color: $text-quieted;
+			color: $text-light;
+			margin-bottom: 15px;
 		}
 		p.updated {
+			font-weight: 700;
 			font-size: $font-size-small;
 			color: $text-disabled;
 			text-transform: uppercase;
-			font-size: 12px;
 			letter-spacing: 1px;
-		}
-
-		.hover-pointer {
-			cursor: pointer;
 		}
 	}
 
 	.dash-users {
-		text-align: center;
+		.empty-well {
+			margin-top: 20px;
+		}
 
-		.add-user-btn {
-			display: inline-block;
-			float: right;
+		.add-user-well {
+			margin-top: 18px;
+			text-align: center;
+		}
+
+		.user-permissions {
+			text-align: left;
 		}
 
 		.panel-heading {
 			@include clearfix;
 			background-color: $body-bg;
+			padding: 4px 15px;
 			h5 {
-				display: inline-block;
-				margin-top: 9px;
+				flex: 6;
+				font-size: 18px;
+				margin-top: 0;
 				margin-bottom: 0;
 			}
+		}
+
+		.panel-heading-content {
+			display: flex;
+			align-items: center;
+			height: 40px;
 		}
 
 		.users-list {
@@ -150,7 +268,7 @@
 				align-items: center;
 				justify-content: center;
 
-				height: 45px;
+				min-height: 45px;
 				text-align: left;
 				border: none;
 				border-bottom: $content-border;
@@ -165,14 +283,27 @@
 					flex: 1
 				}
 
+				.add-user-icon-disabled {
+					cursor: not-allowed !important;
+					opacity: .3;
+
+					&:hover {
+						color: $shadow-blue;
+					}
+				}
+
 				.user-name {
 					margin-left: 15px;
 					margin-top: 4px;
-					flex: 5;
+					flex: 6;
+					overflow-wrap: break-word;
+					overflow: auto;
+					margin-right: 10px;
 				}
 
 				.user-permissions {
 					margin-top: 4px;
+					color: $text-light;
 					flex: 1;
 				}
 			}
@@ -191,150 +322,6 @@
 		h5 {
 			display: inline-block;
 			float: left;
-		}
-
-	}
-
-	.selectable-list-widget {
-		.widget-body {
-			display: flex;
-			flex-wrap: wrap;
-			padding-right: $padding-base-horizontal;
-
-			.category-menu {
-				flex: 1;
-				text-transform: uppercase;
-				margin-left: 10px;
-				padding-right: $padding-large-horizontal;
-				margin-top: 2px;
-				text-align: left;
-				font-size: 12px;
-				letter-spacing: 0.6px;
-
-				a {
-					text-decoration: none;
-					color: $text-color;
-					cursor: pointer;
-					&:hover, &.category-active {
-						color: $link-color;
-						border-bottom: solid 2px $link-color;
-					}
-				}
-
-				.category-menu-label {
-					color: $headings-color;
-				}
-
-				.category-label {
-					margin-left: 7px;
-					margin-bottom: 15px;
-				}
-			}
-
-			.list-control {
-				flex: 4;
-			}
-		}
-	}
-
-	.selectable-list {
-		margin-bottom: 0px;
-		border: $content-border;
-
-		.header {
-			background-color: initial;
-			font-size: 13px;
-			color: #bbbbbb;
-
-			.search-bar {
-				display: flex;
-				border: none !important;
-				border-color: transparent !important;
-
-				.search-icon {
-					flex: 1;
-					padding: 10px;
-					padding-right: 0;
-				}
-
-				.search-input {
-					flex: 15;
-					border: none !important;
-					border-color: transparent !important;
-				}
-			}
-
-			.table-controls {
-				display: flex;
-				height: 34px;
-
-				border-top: $content-border;
-				border-bottom: $content-border;
-				background-color: $select-list-bg;
-
-				.select-all {
-					flex: 1;
-					padding: 7px;
-				}
-				.name {
-					flex: 15;
-					padding: 9px;
-					text-align: left;
-					margin-right: 25px;
-				}
-			}
-		}
-		.body {
-			height: 273px;
-			background-color: $select-list-bg;
-			display: block;
-
-			.table-row {
-				display: flex;
-
-				.select {
-					flex: 1;
-					padding: 7px;
-				}
-				.name {
-					flex: 15;
-					padding: 7px;
-					text-align: left;
-					border-bottom: $content-border;
-					&.unselectable {
-						color: $text-disabled;
-					}
-				}
-				.unselectable-label {
-					float: right;
-					font-size: 10px;
-					padding-top: 4px;
-					font-style: italic;
-					color: #bbbbbb;
-				}
-				input.unselectable {
-					visibility: hidden;
-				}
-			}
-		}
-
-		.list-group {
-			height: 100%;
-			margin-bottom: 0px;
-			overflow: auto;
-		}
-
-		.list-group-item {
-			border: none;
-			border-bottom: $content-border;
-			margin-bottom: 0px;
-			margin-left: auto;
-			margin-right: auto;
-			width: 95%;
-		}
-
-		.repo-name {
-			margin-left: 10px;
 		}
 
 	}
@@ -373,5 +360,6 @@
 
 	.invite-user-form {
 		text-align: center;
+		margin: 30px;
 	}
 }

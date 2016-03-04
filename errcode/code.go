@@ -65,8 +65,6 @@ func HTTP(err error) int {
 
 	if os.IsNotExist(err) {
 		return http.StatusNotFound
-	} else if os.IsNotExist(err) {
-		return http.StatusNotFound
 	} else if os.IsPermission(err) {
 		return http.StatusForbidden
 	} else if discover.IsNotFound(err) {

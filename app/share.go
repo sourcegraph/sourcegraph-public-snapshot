@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
@@ -11,7 +13,8 @@ import (
 )
 
 func serveDefShare(w http.ResponseWriter, r *http.Request) error {
-	dc, rc, vc, err := handlerutil.GetDefCommon(r, nil)
+	ctx, _ := handlerutil.Client(r)
+	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
@@ -29,7 +32,8 @@ func serveDefShare(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeShare(w http.ResponseWriter, r *http.Request) error {
-	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(r, nil)
+	ctx, _ := handlerutil.Client(r)
+	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}

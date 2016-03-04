@@ -2,12 +2,8 @@ import expect from "expect.js";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 import BuildBackend from "sourcegraph/build/BuildBackend";
-import {BuildStore} from "sourcegraph/build/BuildStore";
+import BuildStore from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-
-beforeEach(() => {
-	BuildBackend.buildStore = new BuildStore(Dispatcher);
-});
 
 describe("BuildBackend", () => {
 	it("should handle WantBuild", () => {
@@ -25,9 +21,7 @@ describe("BuildBackend", () => {
 			Dispatcher.directDispatch(BuildBackend, new BuildActions.WantBuild(action.repo, action.buildID));
 		})).to.eql([new BuildActions.BuildFetched(action.repo, action.buildID, {ID: 123})]);
 	});
-});
 
-describe("BuildBackend", () => {
 	it("should handle WantLog", () => {
 		let action = {
 			repo: "aRepo",
@@ -53,7 +47,7 @@ describe("BuildBackend", () => {
 		};
 
 		// Mock the previous fetch as having returned a maxID of 12.
-		BuildBackend.buildStore = {logs: {get() { return {maxID: 12, log: "a\n"}; }}};
+		BuildStore.logs = {get() { return {maxID: 12, log: "a\n"}; }};
 
 		// Trigger "second" fetch, which should reuse MaxID from
 		// initial fetch as MinID of this fetch.
@@ -67,9 +61,7 @@ describe("BuildBackend", () => {
 			Dispatcher.directDispatch(BuildBackend, new BuildActions.WantLog(action.repo, action.buildID, action.taskID));
 		})).to.eql([new BuildActions.LogFetched(action.repo, action.buildID, action.taskID, 12, 34, "c")]);
 	});
-});
 
-describe("BuildBackend", () => {
 	it("should handle WantTasks", () => {
 		let action = {
 			repo: "aRepo",

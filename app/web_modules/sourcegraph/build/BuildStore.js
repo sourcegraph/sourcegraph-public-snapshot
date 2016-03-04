@@ -1,5 +1,4 @@
-import {Store} from "flux/utils";
-
+import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as BuildActions from "sourcegraph/build/BuildActions";
@@ -13,8 +12,7 @@ function keyFor(repo, build, task) {
 }
 
 export class BuildStore extends Store {
-	constructor(dispatcher) {
-		super(dispatcher);
+	reset() {
 		this.builds = deepFreeze({
 			content: {},
 			get(repo, build) {

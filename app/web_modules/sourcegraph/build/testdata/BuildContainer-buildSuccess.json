@@ -20,20 +20,6 @@
 										"ID": "abc"
 									}
 								}
-							},
-							{
-								"type": "BuildNav",
-								"props": {
-									"build": {
-										"ID": 456,
-										"Success": true
-									},
-									"tasks": [
-										{
-											"ID": 456
-										}
-									]
-								}
 							}
 						]
 					}
@@ -48,19 +34,6 @@
 								"props": {
 									"commit": {
 										"ID": "abc"
-									}
-								}
-							},
-							{
-								"type": "BuildTasks",
-								"props": {
-									"tasks": [
-										{
-											"ID": 456
-										}
-									],
-									"logs": {
-										"content": {}
 									}
 								}
 							}

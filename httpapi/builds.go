@@ -9,19 +9,17 @@ import (
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveBuild(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	buildSpec, err := getBuildSpec(r)
 	if err != nil {
 		return err
 	}
 
-	build, err := s.Builds.Get(ctx, buildSpec)
+	build, err := cl.Builds.Get(ctx, buildSpec)
 	if err != nil {
 		return err
 	}
@@ -30,8 +28,7 @@ func serveBuild(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	buildSpec, err := getBuildSpec(r)
 	if err != nil {
@@ -43,7 +40,7 @@ func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tasks, err := s.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{
+	tasks, err := cl.Builds.ListBuildTasks(ctx, &sourcegraph.BuildsListBuildTasksOp{
 		Build: *buildSpec,
 		Opt:   &opt,
 	})
@@ -55,8 +52,7 @@ func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveBuilds(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	// Delete the "_" cache-busting query param that jQuery adds when
 	// the "cache" $.ajaxSettings entry is false. We use this to
@@ -73,7 +69,7 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	builds, err := s.Builds.List(ctx, &opt)
+	builds, err := cl.Builds.List(ctx, &opt)
 	if err != nil {
 		return err
 	}

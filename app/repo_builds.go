@@ -16,7 +16,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
@@ -26,10 +25,9 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -37,7 +35,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 	// Set defaults for Builds.List call options.
 	buildslistOpt := defaultBuildListOptions(opt)
 	buildslistOpt.Repo = rc.Repo.URI
-	builds, err := apiclient.Builds.List(ctx, &buildslistOpt)
+	builds, err := cl.Builds.List(ctx, &buildslistOpt)
 	if err != nil {
 		return err
 	}
@@ -66,10 +64,9 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -88,7 +85,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	}
 	op.Repo = rc.Repo.RepoSpec()
 
-	build, err := apiclient.Builds.Create(ctx, &op)
+	build, err := cl.Builds.Create(ctx, &op)
 	if err != nil {
 		return err
 	}
@@ -98,10 +95,9 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -111,7 +107,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	commit0, err := apiclient.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{RepoSpec: rc.Repo.RepoSpec(), Rev: build.CommitID, CommitID: build.CommitID})
+	commit0, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{RepoSpec: rc.Repo.RepoSpec(), Rev: build.CommitID, CommitID: build.CommitID})
 	if handlerutil.IsRepoNoVCSDataError(err) {
 		// Commit remains nil, will not be displayed in template.
 	} else if err != nil {
@@ -120,7 +116,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	var commit *payloads.AugmentedCommit
 	if commit0 != nil {
 		var commits []*payloads.AugmentedCommit
-		commits, err = handlerutil.AugmentCommits(r, rc.Repo.URI, []*vcs.Commit{commit0})
+		commits, err = handlerutil.AugmentCommits(ctx, rc.Repo.URI, []*vcs.Commit{commit0})
 		if err != nil {
 			return err
 		}
@@ -143,10 +139,9 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -165,7 +160,7 @@ func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if _, err := apiclient.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{Build: buildSpec, Info: buildUpdate}); err != nil {
+	if _, err := cl.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{Build: buildSpec, Info: buildUpdate}); err != nil {
 		return err
 	}
 
@@ -174,15 +169,14 @@ func serveRepoBuildUpdate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.BuildGetLogOptions
 	if err := schemautil.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -197,7 +191,7 @@ func serveRepoBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	entries, err := apiclient.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{Task: taskSpec, Opt: &opt})
+	entries, err := cl.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{Task: taskSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -219,15 +213,14 @@ func getBuildSpec(r *http.Request) (sourcegraph.BuildSpec, error) {
 }
 
 func getRepoBuild(r *http.Request, repo *sourcegraph.Repo) (*sourcegraph.Build, sourcegraph.BuildSpec, error) {
-	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	buildSpec, err := getBuildSpec(r)
 	if err != nil {
 		return nil, sourcegraph.BuildSpec{}, err
 	}
 
-	build, err := apiclient.Builds.Get(ctx, &buildSpec)
+	build, err := cl.Builds.Get(ctx, &buildSpec)
 	if err != nil {
 		return nil, buildSpec, err
 	}

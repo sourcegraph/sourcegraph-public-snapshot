@@ -115,6 +115,16 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
+	"TypeScript": droneyaml.BuildItem{
+		Key: "TypeScript (indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: "srclib/drone-srclib-typescript:8644e04-056526a-5e3eceb",
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
 }
 
 var srclibBuildCommands = []string{"srclib config", "srclib make"}
@@ -168,8 +178,10 @@ func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 				}),
 			},
 			Commands: []string{
+				"echo Generating srclib coverage stats",
+				"srclib coverage > /tmp/srclib-coverage.json",
 				"echo Publishing srclib coverage stats",
-				`srclib coverage | /usr/bin/curl \
+				`cat /tmp/srclib-coverage.json | /usr/bin/curl \
 				--silent --show-error \
 				--netrc \
 				--max-time 300 \
@@ -183,7 +195,7 @@ func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 				$SOURCEGRAPH_COVERAGE_URL`,
 				"echo Done publishing",
 			},
-			AllowFailure: false,
+			AllowFailure: true, // This step failing is not critical to user operations, so do not block the build
 		},
 	}
 }

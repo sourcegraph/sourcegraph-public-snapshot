@@ -3,6 +3,8 @@ package httpapi
 import (
 	"net/http"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
@@ -14,7 +16,8 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tc, _, _, err := handlerutil.GetTreeEntryCommon(r, &opt)
+	ctx, _ := handlerutil.Client(r)
+	tc, _, _, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"gorilla/mux2"
 	"net/http"
 	"strings"
 
@@ -10,7 +11,6 @@ import (
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 type coverage struct {
@@ -25,10 +25,9 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("requires Content-Type: application/json")
 	}
 
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(r, cl.Repos)
+	_, repoRev, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

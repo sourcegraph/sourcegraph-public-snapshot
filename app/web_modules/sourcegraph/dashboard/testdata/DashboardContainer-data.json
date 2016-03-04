@@ -1,0 +1,67 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "dashboard-container row",
+			"children": [
+				{
+					"type": "AlertContainer",
+					"props": {}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "dash-repos col-lg-9 col-md-8",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "dash-repos-header",
+									"children": [
+										{
+											"type": "h3",
+											"props": {
+												"className": "your-repos",
+												"children": [
+													"Repositories"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "DashboardRepos",
+								"props": {
+									"repos": [],
+									"onWaitlist": true,
+									"allowGitHubMirrors": true
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "dash-users col-lg-3 col-md-4",
+						"children": [
+							{
+								"type": "UserList",
+								"props": {
+									"users": [],
+									"currentUser": {
+										"Name": "abc xyz"
+									},
+									"onboarding": {},
+									"allowStandaloneUsers": false,
+									"allowGitHubUsers": true
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

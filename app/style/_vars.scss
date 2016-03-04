@@ -31,6 +31,7 @@ $blue-grey: #5c768d;
 $dark-blue-grey: #344a66;
 $shadow-blue: #7794ae;
 $warm-grey: #787878;
+$light-grey: #969896;
 
 // UI
 $cloudy-blue: #bfc2d0;
@@ -48,8 +49,10 @@ $diff-deleted-color: lighten(#c71111, 3%);
 
 /* Components */
 $content-border-color: transparentize($cloudy-blue, 0.56);
+$text-header: $jet-black;
 $text-strong-color: $blue-grey;
 $text-quieted: $shadow-blue;
+$text-light: $light-grey;
 $text-disabled: $cloudy-blue;
 
 $nav-background-color: $pale-grey;
@@ -93,6 +96,8 @@ $select-list-bg: #fcfcfc;
 
 $panel-box-shadow: 0 5px 9px rgba(0, 0, 0, 0.05);
 
+$repo-attr-color: $cloudy-blue;
+
 /* Bootstrap Overrides */
 $brand-primary: $brand-azure;
 $brand-secondary: $brand-violet;
@@ -116,6 +121,7 @@ $panel-default-text: $blue-grey;
 $alert-info-bg: $content-primary-bg;
 $alert-info-border: $content-primary-border;
 $alert-info-text: $content-primary-text;
+$alert-default-text: $dark-blue-grey;
 
 $list-group-hover-bg: $pale-grey;
 $well-bg: $pale-grey;
@@ -126,6 +132,7 @@ $btn-default-bg: $white;
 $btn-default-border: $cloudy-blue;
 $btn-primary-bg: $brand-primary;
 $btn-secondary-bg: $brand-secondary;
+$btn-dismiss: $cloudy-blue;
 
 $input-border: transparentize($cloudy-blue, 0.56);
 $input-color: $dark-blue-grey;

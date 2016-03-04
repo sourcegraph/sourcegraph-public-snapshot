@@ -27,7 +27,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {
@@ -47,11 +46,9 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("Must provide a repository name")
 	}
 
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
-	apiclient := handlerutil.APIClient(r)
-
-	if _, err := apiclient.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI}); grpc.Code(err) != codes.NotFound {
+	if _, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI}); grpc.Code(err) != codes.NotFound {
 		switch err {
 		case nil:
 			log15.Warn("repo already exists", "repoURI", repoURI)
@@ -62,7 +59,7 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	repo, err := apiclient.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+	repo, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 		URI: repoURI,
 		VCS: "git",
 	})
@@ -76,10 +73,9 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
-	rc, err := handlerutil.GetRepoCommon(r)
+	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -88,7 +84,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		Repo: rc.Repo.RepoSpec(),
 	}
 
-	if _, err := apiclient.MirrorRepos.RefreshVCS(ctx, op); err != nil {
+	if _, err := cl.MirrorRepos.RefreshVCS(ctx, op); err != nil {
 		return err
 	}
 
@@ -97,8 +93,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	apiclient := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {
@@ -126,7 +121,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -138,7 +133,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		treeEntrySpec = sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: "."}
 		run := parallel.NewRun(2)
 		run.Do(func() (err error) {
-			readme, err = apiclient.Repos.GetReadme(ctx, &vc.RepoRevSpec)
+			readme, err = cl.Repos.GetReadme(ctx, &vc.RepoRevSpec)
 			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 				// Lack of a readme is not a fatal error.
 				err = nil
@@ -150,10 +145,10 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 			opt := sourcegraph.RepoTreeGetOptions{GetFileOptions: sourcegraph.GetFileOptions{
 				RecurseSingleSubfolderLimit: 200,
 			}}
-			tree, err = apiclient.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})
+			tree, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})
 			if err == nil {
 				tree_ := *tree
-				go cacheutil.PrecacheTreeEntry(apiclient, ctx, &tree_, treeEntrySpec)
+				go cacheutil.PrecacheTreeEntry(cl, ctx, &tree_, treeEntrySpec)
 			}
 
 			return
@@ -205,7 +200,8 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(r)
+	ctx, _ := handlerutil.Client(r)
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

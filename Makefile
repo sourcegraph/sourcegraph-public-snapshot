@@ -101,6 +101,12 @@ serve-metrics-dev:
 
 serve-dep:
 	go get sourcegraph.com/sqs/rego
+
+# This ulimit check is for the large number of open files from rego; we need
+# this here even though the `src` sysreq package also checks for ulimit (for
+# the app itself).
+	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
+
 	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" npm start &)) || echo Serving bundled assets, not using Webpack.
 
 smoke: src
@@ -174,7 +180,7 @@ compile-test:
 
 
 check: generate-dep
-	cd app && node ./node_modules/.bin/eslint --max-warnings=0 script node_modules
+	cd app && node ./node_modules/.bin/eslint --max-warnings=0 script web_modules
 	cd app && node ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
 	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines

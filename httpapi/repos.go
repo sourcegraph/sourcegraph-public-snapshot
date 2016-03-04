@@ -5,15 +5,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/mux"
+
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	s := handlerutil.APIClient(r)
+	ctx, _ := handlerutil.Client(r)
 
-	repo, _, err := handlerutil.GetRepo(r, s.Repos)
+	repo, _, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -31,8 +32,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	s := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.RepoListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -40,7 +40,7 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repos, err := s.Repos.List(ctx, &opt)
+	repos, err := cl.Repos.List(ctx, &opt)
 	if err != nil {
 		return err
 	}
@@ -62,8 +62,7 @@ func getRepoLastBuildTime(r *http.Request, repoSpec sourcegraph.RepoSpec, commit
 		return time.Time{}, errors.New("refusing (for performance reasons) to get the last build time for non-canonical repository commit ID")
 	}
 
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	builds, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
 		Repo:        repoSpec.URI,

@@ -15,12 +15,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/notif"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveUserInvite(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 
 	ctxActor := auth.ActorFromContext(ctx)
 	if !ctxActor.HasAdminAccess() {
@@ -77,8 +75,7 @@ type inviteResult struct {
 }
 
 func serveUserInviteBulk(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-	cl := handlerutil.APIClient(r)
+	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	if currentUser == nil {
 		return errors.New("user not authenticated to complete this request")

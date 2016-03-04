@@ -9,12 +9,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	currentUser := handlerutil.UserFromRequest(r)
@@ -39,7 +37,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 			Name: data.Name,
 		}
 
-		_, err = apiclient.UserKeys.AddKey(ctx, &key)
+		_, err = cl.UserKeys.AddKey(ctx, &key)
 		if err != nil {
 			return err
 		}
@@ -56,7 +54,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// Delete the key.
-		_, err := apiclient.UserKeys.DeleteKey(ctx, &sourcegraph.SSHPublicKey{
+		_, err := cl.UserKeys.DeleteKey(ctx, &sourcegraph.SSHPublicKey{
 			ID: ev.ID,
 		})
 		if err != nil {
@@ -65,7 +63,7 @@ func serveUserKeys(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Then return the current key list.
-	keys, err := apiclient.UserKeys.ListKeys(ctx, &pbtypes.Void{})
+	keys, err := cl.UserKeys.ListKeys(ctx, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}

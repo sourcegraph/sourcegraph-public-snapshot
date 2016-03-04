@@ -668,9 +668,30 @@ h1.changeset-title {
 		.line-number {
 			position: relative;
 			overflow: visible;
+			cursor: auto;
 
 			.btn-inline {
+				width: 16px;
+				height: 16px;
+				position: absolute;
+				right: -9px;
+				top: 1px;
+				border-radius: 3px;
+				color: #fff;
+				text-align: center;
 				display: none;
+				cursor: pointer;
+				background-color: $btn-primary-bg;
+				box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+
+				&:hover {
+					background-color: darken($btn-primary-bg, 10%);
+					opacity: 1;
+				}
+
+				span {
+					font-size: 14px;
+				}
 			}
 		}
 	}

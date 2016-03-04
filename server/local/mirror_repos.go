@@ -135,11 +135,11 @@ func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.CloneRepo", repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", repo.URI); err != nil {
 		return err
 	}
 
-	err := store.RepoVCSFromContext(ctx).Clone(ctx, repo.URI, true, true, &store.CloneInfo{
+	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.URI, true, true, &store.CloneInfo{
 		VCS:        repo.VCS,
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
@@ -152,14 +152,14 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	// branch. This isn't needed for the fs backend because it initializes an
 	// empty repository first and then proceeds to just updateRepo, thus skipping
 	// this clone phase entirely.
-	commit, err := svc.Repos(ctx).GetCommit(ctx, &sourcegraph.RepoRevSpec{
+	commit, err := svc.Repos(ctx).GetCommit(elevatedActor(ctx), &sourcegraph.RepoRevSpec{
 		RepoSpec: repo.RepoSpec(),
 		Rev:      repo.DefaultBranch,
 	})
 	if err != nil {
 		return err
 	}
-	_, err = svc.Builds(ctx).Create(ctx, &sourcegraph.BuildsCreateOp{
+	_, err = svc.Builds(ctx).Create(elevatedActor(ctx), &sourcegraph.BuildsCreateOp{
 		Repo:     repo.RepoSpec(),
 		CommitID: string(commit.ID),
 		Branch:   repo.DefaultBranch,
@@ -372,8 +372,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// Check if a user's remote GitHub repo already exists locally under the
 	// same URI. Allow this user to access all their private repos that are
 	// already mirrored on this Sourcegraph.
-	reposByOrg := make(map[string]*sourcegraph.RemoteOrgRepos)
-	defaultOrgName := "public-org"
+	remoteRepos := make([]*sourcegraph.RemoteRepo, 0)
 	var privateRepoURIs []string
 	for _, repo := range gitHubRepos {
 		if localRepo, ok := existingRepos[repo.URI]; ok {
@@ -419,30 +418,17 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 				log15.Warn("Failed to record pending private repo", "uri", repo.URI, "error", err)
 			}
 		}
-		orgName := defaultOrgName
-		if repo.Owner != nil {
-			orgName = repo.Owner.Login
-		}
-		if _, ok := reposByOrg[orgName]; !ok {
-			reposByOrg[orgName] = &sourcegraph.RemoteOrgRepos{
-				PrivateRepos: make([]*sourcegraph.RemoteRepo, 0),
-				PublicRepos:  make([]*sourcegraph.RemoteRepo, 0),
-			}
-		}
-
 		if repo.Private {
-			reposByOrg[orgName].PrivateRepos = append(reposByOrg[orgName].PrivateRepos, repo)
 			privateRepoURIs = append(privateRepoURIs, repo.URI)
-		} else {
-			reposByOrg[orgName].PublicRepos = append(reposByOrg[orgName].PublicRepos, repo)
 		}
+		remoteRepos = append(remoteRepos, repo)
 	}
 	// Update the user's permissions for visible private repos.
 	uid := int32(authpkg.ActorFromContext(ctx).UID)
 	if err := repoPermsStore.Update(elevatedActor(ctx), uid, privateRepoURIs); err != nil {
 		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
-	gd.ReposByOrg = reposByOrg
+	gd.RemoteRepos = remoteRepos
 
 	return gd, nil
 }

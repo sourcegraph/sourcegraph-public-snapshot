@@ -23,7 +23,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {
@@ -32,8 +31,7 @@ func init() {
 }
 
 func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	if !authutil.ActiveFlags.OAuth2AuthServer {
 		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("oauth2 auth server disabled")}
@@ -128,8 +126,7 @@ func serveOAuth2ServerAuthorize(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveOAuth2ServerToken(w http.ResponseWriter, r *http.Request) error {
-	cl := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	if !authutil.ActiveFlags.OAuth2AuthServer {
 		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("oauth2 auth server disabled")}

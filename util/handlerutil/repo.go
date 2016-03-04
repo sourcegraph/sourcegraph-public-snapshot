@@ -21,7 +21,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/htmlutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/router_util"
 )
 
@@ -43,11 +42,11 @@ type RepoRevCommon struct {
 }
 
 // GetRepoAndRevCommon returns the repository and RepoRevSpec based on
-// the request URL. It may also return custom error types
+// the route vars. It may also return custom error types
 // URLMovedError, NoVCSDataError, which callers should ideally check
 // for.
-func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, err error) {
-	rc, err = GetRepoCommon(r)
+func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon, vc *RepoRevCommon, err error) {
+	rc, err = GetRepoCommon(ctx, vars)
 	if err != nil {
 		return
 	}
@@ -55,11 +54,13 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 	vc = &RepoRevCommon{}
 	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
 
-	apiclient := APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return
+	}
 
 	var commit0 *vcs.Commit
-	vc.RepoRevSpec, commit0, err = GetRepoRev(r, apiclient.Repos, rc.Repo)
+	vc.RepoRevSpec, commit0, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
 	if IsRepoNoVCSDataError(err) {
 		if rc.Repo.Mirror {
 			// Trigger cloning/updating this repo from its remote
@@ -69,7 +70,7 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 			// clone process.
 			ctx, cancel := context.WithTimeout(ctx, time.Second*1)
 			defer cancel()
-			if _, err = apiclient.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: vc.RepoRevSpec.RepoSpec}); err != nil {
+			if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: vc.RepoRevSpec.RepoSpec}); err != nil {
 				if ctx.Err() == context.DeadlineExceeded {
 					// If deadline exceeded, fall through to NoVCSDataError return below.
 				} else {
@@ -78,7 +79,7 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 			}
 		}
 		if err != nil {
-			if _, ok := mux.Vars(r)["Rev"]; ok {
+			if _, ok := vars["Rev"]; ok {
 				return nil, nil, vcs.ErrRevisionNotFound
 			}
 			return nil, nil, &NoVCSDataError{rc}
@@ -89,7 +90,7 @@ func GetRepoAndRevCommon(r *http.Request) (rc *RepoCommon, vc *RepoRevCommon, er
 
 	if commit0 != nil {
 		var augCommits []*payloads.AugmentedCommit
-		augCommits, err = AugmentCommits(r, rc.Repo.URI, []*vcs.Commit{commit0})
+		augCommits, err = AugmentCommits(ctx, rc.Repo.URI, []*vcs.Commit{commit0})
 		if err != nil {
 			return
 		}
@@ -104,34 +105,42 @@ func IsRepoNoVCSDataError(err error) bool {
 		strings.Contains(err.Error(), "has no default branch"))
 }
 
-// GetRepoCommon returns the repository and RepoSpec based on the request URL.
-// Callers should ideally handle the custom error type URLMovedError.
-func GetRepoCommon(r *http.Request) (rc *RepoCommon, err error) {
-	apiclient := APIClient(r)
+// GetRepoCommon returns the repository and RepoSpec based on the
+// route vars. Callers should ideally handle the custom error type
+// URLMovedError.
+func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon, err error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	rc = &RepoCommon{}
-	rc.Repo, _, err = GetRepo(r, apiclient.Repos)
+	rc.Repo, _, err = GetRepo(ctx, vars)
 	if err != nil {
 		return
 	}
 
-	ctx := httpctx.FromRequest(r)
 	repoSpec := rc.Repo.RepoSpec()
-	rc.RepoConfig, err = apiclient.Repos.GetConfig(ctx, &repoSpec)
+	rc.RepoConfig, err = cl.Repos.GetConfig(ctx, &repoSpec)
 	return
 }
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
 // RepoSpec route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
-func GetRepo(r *http.Request, reposSvc sourcegraph.ReposClient) (repo *sourcegraph.Repo, repoSpec sourcegraph.RepoSpec, err error) {
-	origRepoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoSpec sourcegraph.RepoSpec, err error) {
+	origRepoSpec, err := sourcegraph.UnmarshalRepoSpec(vars)
+	if err != nil {
+		return nil, sourcegraph.RepoSpec{}, err
+	}
+
+	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, sourcegraph.RepoSpec{}, err
 	}
 
 	repoSpec = origRepoSpec
-	repo, err = reposSvc.Get(httpctx.FromRequest(r), &repoSpec)
+	repo, err = cl.Repos.Get(ctx, &repoSpec)
 	if err != nil {
 		return nil, origRepoSpec, err
 	}
@@ -145,25 +154,30 @@ func GetRepo(r *http.Request, reposSvc sourcegraph.ReposClient) (repo *sourcegra
 	return repo, repoSpec, nil
 }
 
-// GetRepoRev resolves the RepoRevSpec and commit (from the reposSvc)
-// specified in the URL's RepoRevSpec route param. The provided repo's
-// DefaultBranch is used in case no revspec is present in the URL.
-func GetRepoRev(r *http.Request, reposSvc sourcegraph.ReposClient, repo *sourcegraph.Repo) (sourcegraph.RepoRevSpec, *vcs.Commit, error) {
-	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+// getRepoRev resolves the RepoRevSpec and commit specified in the
+// route vars. The provided defaultBranch is used if no rev is
+// specified in the URL.
+func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) (sourcegraph.RepoRevSpec, *vcs.Commit, error) {
+	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(vars)
 	if err != nil {
-		return sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec()}, nil, err
+		return sourcegraph.RepoRevSpec{}, nil, err
 	}
 
-	commit, err := reposSvc.GetCommit(httpctx.FromRequest(r), &repoRev)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return sourcegraph.RepoRevSpec{}, nil, err
+	}
+
+	commit, err := cl.Repos.GetCommit(ctx, &repoRev)
 	if err != nil {
 		return repoRev, nil, err
 	}
 	repoRev.CommitID = string(commit.ID)
 
 	if repoRev.Rev == "" {
-		repoRev.Rev = repo.DefaultBranch
+		repoRev.Rev = defaultRev
 
-		if repo.DefaultBranch == "" {
+		if defaultRev == "" {
 			log15.Warn("GetRepoRev: no rev specified and repo has no default branch", "repo", repoRev.URI)
 		}
 	}
@@ -181,12 +195,12 @@ func GetRepoRev(r *http.Request, reposSvc sourcegraph.ReposClient, repo *sourceg
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
 // also return custom error URLMovedError to allow special handling of this case,
 // such as for example redirecting the user.
-func GetRepoAndRev(r *http.Request, reposSvc sourcegraph.ReposClient) (repo *sourcegraph.Repo, repoRevSpec sourcegraph.RepoRevSpec, commit *vcs.Commit, err error) {
-	repo, repoRevSpec.RepoSpec, err = GetRepo(r, reposSvc)
+func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoRevSpec sourcegraph.RepoRevSpec, commit *vcs.Commit, err error) {
+	repo, repoRevSpec.RepoSpec, err = GetRepo(ctx, vars)
 	if err != nil {
 		return repo, repoRevSpec, nil, err
 	}
-	repoRevSpec, commit, err = GetRepoRev(r, reposSvc, repo)
+	repoRevSpec, commit, err = getRepoRev(ctx, vars, repo.DefaultBranch)
 	return repo, repoRevSpec, commit, err
 }
 
@@ -239,7 +253,12 @@ func FlattenNameHTML(e *sourcegraph.BasicTreeEntry) template.HTML {
 // ResolveSrclibDataVersion calls Repos.GetSrclibDataVersionForPath on
 // the given entry spec. If a srclib data version exists,
 // entry.RepoRev.CommitID is set to the version's commit ID.
-func ResolveSrclibDataVersion(ctx context.Context, cl *sourcegraph.Client, entry sourcegraph.TreeEntrySpec) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
+func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySpec) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return sourcegraph.RepoRevSpec{}, nil, err
+	}
+
 	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &entry)
 	if err == nil {
 		entry.RepoRev.CommitID = dataVer.CommitID
@@ -252,25 +271,27 @@ func ResolveSrclibDataVersion(ctx context.Context, cl *sourcegraph.Client, entry
 // information about the repository, the revision and build based on
 // the request and the passed options.  It may also return custom
 // errors URLMovedError, or NoVCSDataError.
-func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (tc *TreeEntryCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
+func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.RepoTreeGetOptions) (tc *TreeEntryCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
 	if opt == nil {
 		opt = new(sourcegraph.RepoTreeGetOptions)
 	}
-	rc, vc, err = GetRepoAndRevCommon(r)
+	rc, vc, err = GetRepoAndRevCommon(ctx, vars)
 	if err != nil {
 		return tc, rc, vc, err
 	}
 
-	cl := APIClient(r)
-	ctx := httpctx.FromRequest(r)
-
 	tc = &TreeEntryCommon{}
 	tc.EntrySpec = sourcegraph.TreeEntrySpec{
 		RepoRev: vc.RepoRevSpec,
-		Path:    mux.Vars(r)["Path"],
+		Path:    vars["Path"],
 	}
 
-	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, cl, tc.EntrySpec); err == nil {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return
+	}
+
+	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, tc.EntrySpec); err == nil {
 		tc.EntrySpec.RepoRev = resolvedRev
 		tc.SrclibDataVersion = dataVer
 	} else if err != nil && grpc.Code(err) != codes.NotFound {
@@ -293,18 +314,19 @@ func GetTreeEntryCommon(r *http.Request, opt *sourcegraph.RepoTreeGetOptions) (t
 	return
 }
 
-// GetDefCommon returns common information about a definition, based on the request.
-// It additionally returns common repository and revision information. It may
-// also return custom errors URLMovedError, or NoVCSDataError.
+// GetDefCommon returns common information about a definition, based
+// on the route vars.  It additionally returns common repository and
+// revision information. It may also return custom errors
+// URLMovedError, or NoVCSDataError.
 //
-// dc.Def.DefKey will be set to the def specification based on the request when getting actual def fails.
-func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads.DefCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
-	v := mux.Vars(r)
+// dc.Def.DefKey will be set to the def specification based on the
+// request when getting actual def fails.
+func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *payloads.DefCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
 	defSpec := sourcegraph.DefSpec{
-		Repo:     v["Repo"],
-		Unit:     v["Unit"],
-		UnitType: v["UnitType"],
-		Path:     router_util.EscapePath(v["Path"]),
+		Repo:     vars["Repo"],
+		Unit:     vars["Unit"],
+		UnitType: vars["UnitType"],
+		Path:     router_util.EscapePath(vars["Path"]),
 	}
 	// If we fail to get a def, return the best known information to the caller.
 	dc = &payloads.DefCommon{
@@ -320,15 +342,17 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 		},
 	}
 
-	rc, vc, err = GetRepoAndRevCommon(r)
+	rc, vc, err = GetRepoAndRevCommon(ctx, vars)
 	if err != nil {
 		return dc, rc, vc, err
 	}
 
-	cl := APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return
+	}
 
-	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, cl, sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
 	if err != nil {
 		return dc, rc, vc, err
 	}
@@ -383,12 +407,15 @@ func GetDefCommon(r *http.Request, opt *sourcegraph.DefGetOptions) (dc *payloads
 	return dc, rc, vc, nil
 }
 
-func GetRepoTreeListCommon(r *http.Request) (*sourcegraph.RepoTreeListResult, error) {
-	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+func GetRepoTreeListCommon(ctx context.Context, vars map[string]string) (*sourcegraph.RepoTreeListResult, error) {
+	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(vars)
 	if err != nil {
 		return nil, err
 	}
 
-	cl := APIClient(r)
-	return cl.RepoTree.List(httpctx.FromRequest(r), &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
 }

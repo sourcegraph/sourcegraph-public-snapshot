@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/apps/notifications/notifications"
-	"src.sourcegraph.com/apps/tracker/issues"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -87,7 +86,7 @@ func (s service) Count(ctx context.Context, opt interface{}) (uint64, error) {
 	return uint64(len(notifications)), nil
 }
 
-func (s service) Notify(ctx context.Context, appID string, repo issues.RepoSpec, threadID uint64, op notifications.Notification) error {
+func (s service) Notify(ctx context.Context, appID string, repo notifications.RepoSpec, threadID uint64, op notifications.Notification) error {
 	currentUser := putil.UserFromContext(ctx)
 
 	userKV := storage.Namespace(s.appCtx, s.appName, "")
@@ -131,7 +130,7 @@ func (s service) Notify(ctx context.Context, appID string, repo issues.RepoSpec,
 	return nil
 }
 
-func (s service) Subscribe(ctx context.Context, appID string, repo issues.RepoSpec, threadID uint64, subscribers []issues.UserSpec) error {
+func (s service) Subscribe(ctx context.Context, appID string, repo notifications.RepoSpec, threadID uint64, subscribers []notifications.UserSpec) error {
 	currentUser := putil.UserFromContext(ctx)
 	if currentUser == nil {
 		return os.ErrPermission
@@ -149,7 +148,7 @@ func (s service) Subscribe(ctx context.Context, appID string, repo issues.RepoSp
 	return nil
 }
 
-func (s service) MarkRead(ctx context.Context, appID string, repo issues.RepoSpec, threadID uint64) error {
+func (s service) MarkRead(ctx context.Context, appID string, repo notifications.RepoSpec, threadID uint64) error {
 	currentUser := putil.UserFromContext(ctx)
 	if currentUser == nil {
 		return os.ErrPermission
@@ -167,7 +166,7 @@ func (s service) MarkRead(ctx context.Context, appID string, repo issues.RepoSpe
 }
 
 // TODO: Factor this out into platform Users service.
-func (service) CurrentUser(ctx context.Context) (*issues.User, error) {
+func (service) CurrentUser(ctx context.Context) (*notifications.User, error) {
 	userSpec := putil.UserFromContext(ctx)
 	if userSpec == nil {
 		// Not authenticated, no current user.

@@ -67,3 +67,61 @@ $font-assets-path: "/.assets/font";
 	font-weight: 800;
 	src: url($font-assets-path + "/circular/circular-black-italic.ttf") format("truetype");
 }
+
+@charset "UTF-8";
+
+@font-face {
+	font-family: "sourcegraph-icons";
+	src:url($font-assets-path + "/sourcegraph-icons/sourcegraph-icons.eot");
+	src:url($font-assets-path + "/sourcegraph-icons/sourcegraph-icons.eot?#iefix") format("embedded-opentype"),
+		url($font-assets-path + "/sourcegraph-icons/sourcegraph-icons.woff") format("woff"),
+		url($font-assets-path + "/sourcegraph-icons/sourcegraph-icons.ttf") format("truetype"),
+		url($font-assets-path + "/sourcegraph-icons/sourcegraph-icons.svg#sourcegraph-icons") format("svg");
+	font-weight: normal;
+	font-style: normal;
+
+}
+
+[data-icon]:before {
+	font-family: "sourcegraph-icons" !important;
+	content: attr(data-icon);
+	font-style: normal !important;
+	font-weight: normal !important;
+	font-variant: normal !important;
+	text-transform: none !important;
+	speak: none;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+[class^="sg-icon-"]:before,
+[class*=" sg-icon-"]:before {
+	font-family: "sourcegraph-icons" !important;
+	font-style: normal !important;
+	font-weight: normal !important;
+	font-variant: normal !important;
+	text-transform: none !important;
+	speak: none;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.sg-icon {
+	vertical-align: middle;
+	line-height: 0;
+}
+
+.sg-icon-private:before {
+	content: "\62";
+}
+.sg-icon-public:before {
+	content: "\63";
+}
+.sg-icon-plus-box:before {
+	content: "\65";
+}
+.sg-icon-close:before {
+	content: "\61";
+}

@@ -13,7 +13,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // defaultBuildListOptions takes the provided BuildListOptions, and returns a copy with
@@ -37,11 +36,10 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	apiclient := handlerutil.APIClient(r)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	opt = defaultBuildListOptions(opt)
-	builds, err := apiclient.Builds.List(ctx, &opt)
+	builds, err := cl.Builds.List(ctx, &opt)
 	if err != nil {
 		return err
 	}
@@ -51,7 +49,7 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 		sourcegraph.BuildListOptions
 	}
 	tabs := []tab{
-		{"All", sourcegraph.BuildListOptions{Sort: "bid", Direction: "desc"}},
+		{"All", sourcegraph.BuildListOptions{Sort: "updated_at", Direction: "desc"}},
 		{"Priority Queue", sourcegraph.BuildListOptions{Queued: true, Sort: "priority", Direction: "desc"}},
 		{"Active", sourcegraph.BuildListOptions{Active: true, Sort: "updated_at", Direction: "desc"}},
 		{"Ended", sourcegraph.BuildListOptions{Ended: true, Sort: "updated_at", Direction: "desc"}},

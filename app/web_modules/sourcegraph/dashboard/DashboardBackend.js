@@ -1,4 +1,5 @@
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import * as AlertActions from "sourcegraph/alerts/AlertActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "sourcegraph/util/xhr";
 
@@ -27,7 +28,6 @@ const DashboardBackend = {
 			});
 			break;
 		case DashboardActions.WantAddMirrorRepos:
-			console.log("want add mirror repos", action.repos);
 			DashboardBackend.xhr({
 				uri: `/.ui/.repo-mirror`,
 				method: "POST",
@@ -46,6 +46,27 @@ const DashboardBackend = {
 					return;
 				}
 				Dispatcher.dispatch(new DashboardActions.MirrorReposAdded(body));
+			});
+			break;
+		case DashboardActions.WantAddMirrorRepo:
+			DashboardBackend.xhr({
+				uri: `/.ui/.repo-mirror`,
+				method: "POST",
+				json: {
+					Repos: [action.repo],
+				},
+			}, function(err, resp, body) {
+				if (err) {
+					// TODO: some proper error handling
+					console.error(err);
+					return;
+				}
+				if (resp.statusCode !== 200) {
+					// TODO: some proper error handling
+					console.log(resp);
+					return;
+				}
+				Dispatcher.dispatch(new DashboardActions.MirrorRepoAdded(action.repo, body));
 			});
 			break;
 		case DashboardActions.WantInviteUser:
@@ -71,8 +92,8 @@ const DashboardBackend = {
 					Admin: action.permission === "admin",
 					Write: action.permission === "write",
 				}));
-				// TODO: proper modal....but soon we're sending emails anyway.
-				alert(`Invite link: ${body.Link}`);
+				Dispatcher.dispatch(new AlertActions.AddAlert(false,
+					`Please send <a href="${body.Link}">this invitation link</a> to <strong>${action.email}</strong>.`));
 			});
 			break;
 		case DashboardActions.WantInviteUsers:

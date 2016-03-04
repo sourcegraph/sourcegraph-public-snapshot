@@ -12,7 +12,6 @@ import (
 
 	githttp "github.com/AaronO/go-git-http"
 	notif "src.sourcegraph.com/apps/notifications/notifications"
-	"src.sourcegraph.com/apps/tracker/issues"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/platform/notifications"
 
@@ -275,18 +274,18 @@ func notificationCenter(ctx context.Context, cs *sourcegraph.Changeset, e *sourc
 	if notifications.Service == nil {
 		return
 	}
-	subscribers := []issues.UserSpec{issues.UserSpec{ID: uint64(e.Actor.UID), Domain: e.Actor.Domain}}
+	subscribers := []notif.UserSpec{notif.UserSpec{ID: uint64(e.Actor.UID), Domain: e.Actor.Domain}}
 	if e.Recipients != nil {
 		for _, u := range e.Recipients {
-			subscribers = append(subscribers, issues.UserSpec{ID: uint64(u.UID), Domain: u.Domain})
+			subscribers = append(subscribers, notif.UserSpec{ID: uint64(u.UID), Domain: u.Domain})
 		}
 	}
 	// HACK(keegancsmith) Notification API expects the user to be set in
 	// the context like we have in HTTP requests. This context is from the
 	// event bus. Fake it
 	ctx = handlerutil.WithUser(ctx, *e.Actor)
-	notifications.Service.Subscribe(ctx, appID, issues.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), subscribers)
-	notifications.Service.Notify(ctx, appID, issues.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), notif.Notification{
+	notifications.Service.Subscribe(ctx, appID, notif.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), subscribers)
+	notifications.Service.Notify(ctx, appID, notif.RepoSpec{URI: e.ObjectRepo}, uint64(e.ObjectID), notif.Notification{
 		Title:     e.ObjectTitle,
 		Icon:      "git-pull-request",
 		Color:     notificationColor(cs),
@@ -299,9 +298,9 @@ func notificationColor(cs *sourcegraph.Changeset) notif.RGB {
 	switch {
 	default: // Open.
 		return notif.RGB{0x6c, 0xc6, 0x44}
-	case cs.ClosedAt != nil: // Closed.
+	case cs.ClosedAt != nil && !cs.Merged: // Closed.
 		return notif.RGB{0xbd, 0x2c, 0x00}
-	case cs.Merged: // Merged.
+	case cs.Merged:
 		return notif.RGB{78, 155, 212}
 	}
 }

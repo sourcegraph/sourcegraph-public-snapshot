@@ -3,7 +3,6 @@ var React = require("react");
 var ReactDOM = require("react-dom");
 
 var DashboardContainer = require("sourcegraph/dashboard/DashboardContainer").default;
-var OnboardingContainer = require("sourcegraph/dashboard/OnboardingContainer").default;
 var BuildContainer = require("sourcegraph/build/BuildContainer").default;
 var CloseChangesetButton = require("./components/CloseChangesetButton");
 var CompareView = require("./components/CompareView");
@@ -35,14 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (el.length > 0) {
 		ReactDOM.render(
 			<DashboardContainer />,
-			el[0]
-		);
-	}
-
-	el = $("#OnboardingContainer");
-	if (el.length > 0) {
-		ReactDOM.render(
-			<OnboardingContainer />,
 			el[0]
 		);
 	}
