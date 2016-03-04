@@ -99,7 +99,7 @@ func repoTemplates() error {
 	})
 }
 
-// commonTemplates returns all common templates such as user pages, blog, search,
+// commonTemplates returns all common templates such as user pages, search,
 // etc. if successful.
 func commonTemplates() error {
 	return parseHTMLTemplates([][]string{
@@ -112,11 +112,6 @@ func commonTemplates() error {
 		{"user/settings/profile.html", "user/settings/common.inc.html"},
 		{"user/settings/notifications.html", "user/settings/common.inc.html"},
 		{"user/settings/keys.html", "user/settings/common.inc.html"},
-		{"blog/index.html", "blog/blog.html", "blog/common.inc.html"},
-		{"blog/post.html", "blog/blog.html", "blog/common.inc.html"},
-
-		{"liveblog/index.html", "liveblog/layout.html", "liveblog/common.inc.html"},
-		{"liveblog/post.html", "liveblog/layout.html", "liveblog/common.inc.html"},
 
 		{"home/dashboard.html"},
 

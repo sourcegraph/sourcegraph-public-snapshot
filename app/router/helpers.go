@@ -10,14 +10,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-func (r *Router) URLToBlogAtomFeed() *url.URL {
-	return r.URLTo(BlogIndexAtom, "Format", ".atom")
-}
-
-func (r *Router) URLToBlogPost(slug string) *url.URL {
-	return r.URLTo(BlogPost, "Slug", slug)
-}
-
 func (r *Router) URLToUserSubroute(routeName string, userSpec string) *url.URL {
 	return r.URLTo(routeName, "User", userSpec)
 }

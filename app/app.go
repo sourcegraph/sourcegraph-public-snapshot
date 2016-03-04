@@ -86,14 +86,6 @@ func NewHandler(r *router.Router) http.Handler {
 	// Add git transport routes
 	gitserver.AddHandlers(&r.Router)
 
-	// Set handlers for the installed routes.
-	if appconf.Flags.Blog {
-		r.Get(router.BlogIndex).Handler(internal.Handler(serveBlogIndex))
-		r.Get(router.BlogIndexAtom).Handler(internal.Handler(serveBlogIndexAtom))
-		r.Get(router.BlogPost).Handler(internal.Handler(serveBlogPost))
-		r.Get(router.Liveblog).Handler(liveblogHandler)
-	}
-
 	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
 	r.Get(router.Download).Handler(internal.Handler(serveDownload))
 	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))

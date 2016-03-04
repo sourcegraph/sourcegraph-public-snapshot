@@ -27,9 +27,6 @@
 		<div class="collapse navbar-collapse" id="top-nav-collapse">
 
 			<ul class="nav navbar-nav navbar-right">
-				{{if appconf.Blog}}
-					<li><a href="{{urlTo "blog"}}">Blog</a></li>
-				{{end}}
 				{{if authFlags.HasUserAccounts}}
 				{{if .CurrentUser}}
 					<li class="current-user name">

@@ -15,12 +15,6 @@ import (
 )
 
 const (
-	BlogIndex     = "blog"
-	BlogIndexAtom = "blog[.atom]"
-	BlogPost      = "blog.post"
-
-	Liveblog = "liveblog"
-
 	Builds = "builds"
 
 	Home = "home"
@@ -111,12 +105,6 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/").Methods("GET").Name(Home)
 	base.Path("/register-client").Methods("GET", "POST").Name(RegisterClient)
-
-	base.PathPrefix("/blog/live").Name(Liveblog)
-
-	base.Path(`/blog`).Methods("GET").Name(BlogIndex)
-	base.Path(`/blog{Format:\.atom}`).Methods("GET").Name(BlogIndexAtom)
-	base.Path("/blog/{Slug:.*}").Methods("GET").Name(BlogPost)
 
 	base.Path("/.builds").Methods("GET").Name(Builds)
 

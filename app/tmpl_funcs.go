@@ -76,8 +76,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"uiBuild":            func() bool { return !appconf.Flags.NoUIBuild },
 
 	"urlTo":                router.Rel.URLTo,
-	"urlToBlogPost":        router.Rel.URLToBlogPost,
-	"urlToBlogAtomFeed":    router.Rel.URLToBlogAtomFeed,
 	"urlToUserSubroute":    router.Rel.URLToUserSubroute,
 	"urlToRepo":            router.Rel.URLToRepo,
 	"urlToRepoRev":         router.Rel.URLToRepoRev,

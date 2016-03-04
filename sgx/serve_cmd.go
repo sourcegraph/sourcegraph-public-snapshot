@@ -88,7 +88,7 @@ Starts an HTTP server serving the app and API.
           --ssh-addr=                            SSH address to listen on, if not blank (:3022)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
-          --reload                               reload templates, blog posts, etc. on each request (dev mode)
+          --reload                               reload templates, etc. on each request (dev mode)
           --no-worker                            do not start background worker
           --tls-cert=                            certificate file (for TLS)
           --tls-key=                             key file (for TLS)

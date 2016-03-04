@@ -188,22 +188,6 @@ func TestMatch(t *testing.T) {
 			wantRouteName: DefExamples,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
 		},
-
-		// Blog
-		{
-			path:          "/blog",
-			wantRouteName: BlogIndex,
-		},
-		{
-			path:          "/blog.atom",
-			wantRouteName: BlogIndexAtom,
-			wantVars:      map[string]string{"Format": ".atom"},
-		},
-		{
-			path:          "/blog/foo-bar",
-			wantRouteName: BlogPost,
-			wantVars:      map[string]string{"Slug": "foo-bar"},
-		},
 	}
 	for _, test := range tests {
 		var routeMatch mux.RouteMatch

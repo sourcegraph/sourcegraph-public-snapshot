@@ -57,8 +57,6 @@ var Flags struct {
 
 	CheckForUpdates time.Duration `long:"app.check-for-updates" description:"rate at which to check for updates and display a notification (not download/install) (0 to disable)" default:"30m"`
 
-	Blog bool `long:"app.blog" description:"Enable the Sourcegraph blog, must also set $SG_TUMBLR_API_KEY"`
-
 	DisableExternalLinks bool `long:"app.disable-external-links" description:"Disable links to external websites"`
 
 	ReloadAssets bool `long:"reload" description:"(development mode only) reload app templates and other assets on each request"`
