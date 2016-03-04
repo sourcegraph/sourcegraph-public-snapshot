@@ -101,7 +101,7 @@ deployment:
           pwd: $REPO
 
       # build and upload binary releases
-      - sgtool release $CIRCLE_TAG --skip-package:
+      - sgtool release $CIRCLE_TAG:
           pwd: $REPO
 
       # push to Docker Hub
@@ -110,6 +110,3 @@ deployment:
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$CIRCLE_TAG sourcegraph/sourcegraph:latest
       - docker push sourcegraph/sourcegraph:$CIRCLE_TAG
       - docker push sourcegraph/sourcegraph:latest
-
-      # deploy
-      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=release" -F "version=$CIRCLE_TAG"
