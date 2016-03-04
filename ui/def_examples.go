@@ -11,16 +11,14 @@ import (
 )
 
 func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
+	ctx, cl := handlerutil.Client(r)
 
 	query := struct {
 		sourcegraph.DefListExamplesOptions
 		FallbackRepoURI string
 	}{}
-	if err := schemaDecoder.Decode(&query, r.URL.Query()); err != nil {
+	err := schemaDecoder.Decode(&query, r.URL.Query())
+	if err != nil {
 		return err
 	}
 

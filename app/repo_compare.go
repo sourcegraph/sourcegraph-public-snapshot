@@ -14,10 +14,7 @@ import (
 // serveRepoCompare handles both routes RepoCompare and RepoCompareAll and
 // differentiates by checking the suffix in r.URL
 func serveRepoCompare(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
+	ctx, cl := handlerutil.Client(r)
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {

@@ -34,7 +34,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/sgx"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	appdashcli "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
 	"src.sourcegraph.com/sourcegraph/worker"
 )
@@ -368,7 +367,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	// Other config
 	s.Config.Serve.NoInitialOnboarding = true
 	s.Config.Serve.RegisterURL = ""
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &handlerutil.Flags{RepoFallbackURLStr: ""})
 
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)

@@ -30,10 +30,6 @@ import (
 type RepoCommon struct {
 	Repo       *sourcegraph.Repo
 	RepoConfig *sourcegraph.RepoConfig
-
-	// RemoteRepo is whether the repo was fetched using the fallback
-	// endpoint. No apps should be shown for remote repos.
-	RemoteRepo bool
 }
 
 // RepoRevCommon holds all of the commit-specific information
@@ -55,13 +51,13 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 		return
 	}
 
-	ctx, cl, _, err := repoClient(ctx, rc.Repo.RepoSpec())
+	vc = &RepoRevCommon{}
+	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
+
+	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return
 	}
-
-	vc = &RepoRevCommon{}
-	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
 
 	var commit0 *vcs.Commit
 	vc.RepoRevSpec, commit0, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
@@ -124,12 +120,6 @@ func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon,
 		return
 	}
 
-	_, _, fallback, err := repoClient(ctx, rc.Repo.RepoSpec())
-	if err != nil {
-		return
-	}
-	rc.RemoteRepo = fallback
-
 	repoSpec := rc.Repo.RepoSpec()
 	rc.RepoConfig, err = cl.Repos.GetConfig(ctx, &repoSpec)
 	return
@@ -144,9 +134,9 @@ func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Rep
 		return nil, sourcegraph.RepoSpec{}, err
 	}
 
-	ctx, cl, _, err := repoClient(ctx, origRepoSpec)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		return
+		return nil, sourcegraph.RepoSpec{}, err
 	}
 
 	repoSpec = origRepoSpec
@@ -210,12 +200,6 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegra
 	if err != nil {
 		return repo, repoRevSpec, nil, err
 	}
-
-	ctx, _, _, err = repoClient(ctx, repoRevSpec.RepoSpec)
-	if err != nil {
-		return
-	}
-
 	repoRevSpec, commit, err = getRepoRev(ctx, vars, repo.DefaultBranch)
 	return repo, repoRevSpec, commit, err
 }
@@ -270,7 +254,7 @@ func FlattenNameHTML(e *sourcegraph.BasicTreeEntry) template.HTML {
 // the given entry spec. If a srclib data version exists,
 // entry.RepoRev.CommitID is set to the version's commit ID.
 func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySpec) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
-	ctx, cl, _, err := repoClient(ctx, entry.RepoRev.RepoSpec)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return sourcegraph.RepoRevSpec{}, nil, err
 	}
@@ -296,15 +280,15 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 		return tc, rc, vc, err
 	}
 
-	ctx, cl, _, err := repoClient(ctx, rc.Repo.RepoSpec())
-	if err != nil {
-		return
-	}
-
 	tc = &TreeEntryCommon{}
 	tc.EntrySpec = sourcegraph.TreeEntrySpec{
 		RepoRev: vc.RepoRevSpec,
 		Path:    vars["Path"],
+	}
+
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return
 	}
 
 	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, tc.EntrySpec); err == nil {
@@ -363,7 +347,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		return dc, rc, vc, err
 	}
 
-	ctx, cl, _, err := repoClient(ctx, rc.Repo.RepoSpec())
+	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return
 	}

@@ -12,17 +12,13 @@ import (
 )
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	ctx, _, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
-
 	opt := &sourcegraph.RepoTreeGetOptions{TokenizedSource: true}
 	if err := schemaDecoder.Decode(opt, r.URL.Query()); err != nil {
 		return err
 	}
 
 	e := json.NewEncoder(w)
+	ctx, _ := handlerutil.Client(r)
 	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), opt)
 	if err != nil {
 		if urlErr, ok := err.(*handlerutil.URLMovedError); ok {

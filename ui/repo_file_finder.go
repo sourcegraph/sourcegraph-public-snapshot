@@ -10,13 +10,9 @@ import (
 )
 
 func serveRepoFileFinder(w http.ResponseWriter, r *http.Request) error {
-	ctx, _, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
-
 	e := json.NewEncoder(w)
 
+	ctx, _ := handlerutil.Client(r)
 	res, err := handlerutil.GetRepoTreeListCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
