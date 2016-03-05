@@ -1,6 +1,7 @@
 package local
 
 import (
+	"crypto/rand"
 	"html"
 	"reflect"
 	"testing"
@@ -112,5 +113,72 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 
 	if !calledDiff {
 		t.Error("!calledDiff")
+	}
+}
+
+func TestDeltasListFilesCacheKeyDeterministic(t *testing.T) {
+	op := new(sourcegraph.DeltasListFilesOp)
+	op.Ds.Base.URI = "base"
+	op.Ds.Base.Rev = "base-rev"
+	op.Ds.Base.CommitID = "base-commit"
+	op.Ds.Head.URI = "head"
+	op.Ds.Head.Rev = "head-rev"
+	op.Ds.Head.CommitID = "head-commit"
+	op.Opt = new(sourcegraph.DeltaListFilesOptions)
+	op.Opt.Filter = "filter"
+	op.Opt.Ignore = []string{"not", "this"}
+	op.Opt.MaxSize = 1
+	k, err := deltasListFileCacheKey(op)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100; i++ {
+		x, err := deltasListFileCacheKey(op)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if k != x {
+			t.Errorf("Deltas list files cache key is not determinstic got %q, expected %q", x, k)
+		}
+	}
+}
+
+func TestDeltaListFilesCache(t *testing.T) {
+	cache := newDeltasListFilesCache(1, 10*1024)
+	files := new(sourcegraph.DeltaFiles)
+	files.Stats.Changed = 1111
+
+	op := new(sourcegraph.DeltasListFilesOp)
+	op.Ds.Base.URI = "theop"
+	cache.Add(op, files)
+	hit, ok := cache.Get(op)
+	if !ok {
+		t.Fatal("Delta files not cached")
+	}
+	if hit.Stats.Changed != 1111 {
+		t.Errorf("Delta files cached entry does not match, got %d lines changed", hit.Stats.Changed)
+	}
+
+	// Test eviction.
+	other := new(sourcegraph.DeltasListFilesOp)
+	other.Ds.Base.URI = "theother"
+	cache.Add(other, files)
+	_, ok = cache.Get(op)
+	if ok {
+		t.Error("Delta files should not be cached")
+	}
+
+	// Test over max entry size.
+	fluff := make([]byte, 10*1024)
+	_, err := rand.Read(fluff)
+	if err != nil {
+		t.Fatal(err)
+	}
+	large := new(sourcegraph.DeltaFiles)
+	large.FileDiffs = []*sourcegraph.FileDiff{&sourcegraph.FileDiff{PreImage: string(fluff)}}
+	cache.Add(op, large)
+	_, ok = cache.Get(op)
+	if ok {
+		t.Error("Delta files over the maximum entry size should not be cached")
 	}
 }

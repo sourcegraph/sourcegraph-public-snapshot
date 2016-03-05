@@ -21,7 +21,7 @@ import (
 
 var Deltas sourcegraph.DeltasServer = &deltas{
 	cache:          newDeltasCache(1e4), // ~1KB per gob encoded delta
-	listFilesCache: newDeltasListFilesCache(1e4, 1e4),
+	listFilesCache: newDeltasListFilesCache(1e4, 10*1024),
 }
 
 type deltas struct {
@@ -29,11 +29,11 @@ type deltas struct {
 	// main method body. It allows mocking (deltas).diff in tests.
 	mockDiffFunc func(context.Context, sourcegraph.DeltaSpec) ([]*diff.FileDiff, *sourcegraph.Delta, error)
 
-	// cache caches get delta requests, does not cache results from
+	// cache caches get delta requests, it does not cache results from
 	// requests that return a non-nil error.
 	cache *deltasCache
 
-	// listFilesCache caches requests to list delta files, does not cache
+	// listFilesCache caches requests to list delta files, it does not cache
 	// results from requests that return a non-nil error or diffs larger
 	// than a certain size.
 	listFilesCache *deltasListFileCache

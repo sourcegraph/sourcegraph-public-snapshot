@@ -289,7 +289,7 @@ func (c *deltasListFileCache) Add(op *sourcegraph.DeltasListFilesOp, files *sour
 		log.Println("error while encoding delta files:", err.Error())
 		return
 	}
-	if c.maxEntrySize > 0 && c.maxEntrySize > buf.Len() {
+	if c.maxEntrySize > 0 && buf.Len() > c.maxEntrySize {
 		return
 	}
 	key, err := deltasListFileCacheKey(op)
