@@ -3,7 +3,6 @@ import update from "react/lib/update";
 import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 export class GitHubReposStore extends Store {
 	constructor(dispatcher) {
@@ -49,13 +48,6 @@ export class GitHubReposStore extends Store {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.MirrorReposAdded:
-		case DashboardActions.MirrorRepoAdded:
-			this.remoteRepos = update(this.remoteRepos, {
-				repos: {$set: action.mirrorData ? action.mirrorData.RemoteRepos : {}},
-			});
-			break;
-
 		default:
 			return; // don't emit change
 		}
