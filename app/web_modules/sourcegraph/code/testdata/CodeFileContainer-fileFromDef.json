@@ -28,10 +28,6 @@
 							{
 								"type": "FileMargin",
 								"props": {
-									"examples": {
-										"content": {},
-										"counts": {}
-									},
 									"children": [
 										{
 											"type": "DefPopup",
@@ -40,6 +36,9 @@
 													"Found": true,
 													"File": {
 														"Path": "somePath"
+													},
+													"Data": {
+														"Kind": "someKind"
 													}
 												},
 												"examples": {
@@ -48,8 +47,7 @@
 												},
 												"annotations": {
 													"content": {}
-												},
-												"highlightedDef": "someDef"
+												}
 											}
 										}
 									]

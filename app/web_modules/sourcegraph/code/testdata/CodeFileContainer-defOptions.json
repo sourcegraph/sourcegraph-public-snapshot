@@ -44,12 +44,7 @@
 							},
 							{
 								"type": "FileMargin",
-								"props": {
-									"examples": {
-										"content": {},
-										"counts": {}
-									}
-								}
+								"props": {}
 							}
 						]
 					}

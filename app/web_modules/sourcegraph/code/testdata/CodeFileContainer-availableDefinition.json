@@ -37,7 +37,8 @@
 											"props": {
 												"contents": "hello\nworld",
 												"lineNumbers": true,
-												"highlightedDef": "otherDef"
+												"highlightedDef": "otherDef",
+												"activeDef": "someDef"
 											}
 										}
 									]
@@ -45,12 +46,7 @@
 							},
 							{
 								"type": "FileMargin",
-								"props": {
-									"examples": {
-										"content": {},
-										"counts": {}
-									}
-								}
+								"props": {}
 							}
 						]
 					}
@@ -81,6 +77,10 @@
 			"repo": "aRepo",
 			"rev": "aRev",
 			"path": "aTree"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "someDef"
 		},
 		{
 			"$constructor": "WantDef",

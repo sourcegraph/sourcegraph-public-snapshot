@@ -37,7 +37,7 @@
 											"props": {
 												"contents": "hello\nworld",
 												"lineNumbers": true,
-												"highlightedDef": "someDef"
+												"activeDef": "someDef"
 											}
 										}
 									]
@@ -45,12 +45,7 @@
 							},
 							{
 								"type": "FileMargin",
-								"props": {
-									"examples": {
-										"content": {},
-										"counts": {}
-									}
-								}
+								"props": {}
 							}
 						]
 					}

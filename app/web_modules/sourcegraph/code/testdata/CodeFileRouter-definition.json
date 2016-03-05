@@ -4,7 +4,7 @@
 		"props": {
 			"repo": "github.com/gorilla/mux",
 			"rev": "master",
-			"def": "/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
+			"activeDef": "/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
 		}
 	}
 }

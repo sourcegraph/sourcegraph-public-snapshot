@@ -32,7 +32,7 @@ describe("CodeFileContainer", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", null));
 		autotest(testdataUnavailableDefinition, `${__dirname}/testdata/CodeFileContainer-unavailableDefinition.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" def="someDef" />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" activeDef="someDef" />
 		);
 	});
 
@@ -42,14 +42,14 @@ describe("CodeFileContainer", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {Found: true, File: {Path: "aTree"}}));
 		Dispatcher.directDispatch(DefStore, new DefActions.ExampleFetched("foo", {test: "exampleData"}));
 		autotest(testdataAvailableDefinition, `${__dirname}/testdata/CodeFileContainer-availableDefinition.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" def="someDef" />
+			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" activeDef="someDef" />
 		);
 	});
 
 	it("should get filename from definition", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {Found: true, File: {Path: "somePath"}}));
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {Found: true, File: {Path: "somePath"}, Data: {Kind: "someKind"}}));
 		autotest(testdataFileFromDef, `${__dirname}/testdata/CodeFileContainer-fileFromDef.json`,
-			<CodeFileContainer repo="aRepo" rev="aRev" def="someDef" />
+			<CodeFileContainer repo="aRepo" rev="aRev" activeDef="someDef" />
 		);
 	});
 

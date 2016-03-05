@@ -51,7 +51,7 @@ describe("CodeFileRouter", () => {
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
 			new DefActions.SelectDef("someURL"),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#def-someURL"
+			"http://localhost:3080/someURL"
 		);
 	});
 

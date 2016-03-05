@@ -4,8 +4,7 @@
 		"props": {
 			"repo": "github.com/gorilla/mux",
 			"rev": "master",
-			"tree": "mux.go",
-			"def": "someDef"
+			"tree": "mux.go"
 		}
 	}
 }

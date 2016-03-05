@@ -2,59 +2,36 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "token-details",
+			"className": "token-details card",
 			"children": [
 				{
-					"type": "div",
+					"type": "section",
 					"props": {
-						"className": "card",
 						"children": [
 							{
-								"type": "header",
+								"type": "p",
 								"props": {
-									"children": [
-										{
-											"type": "h1",
-											"props": {
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "qualified-name",
-															"dangerouslySetInnerHTML": {
-																"__html": "someName"
-															}
-														}
-													},
-													{
-														"type": "a",
-														"props": {
-															"className": "close top-action",
-															"onClick": {
-																"dispatched": [
-																	{
-																		"$constructor": "SelectDef"
-																	}
-																]
-															},
-															"children": [
-																"×"
-															]
-														}
-													}
-												]
-											}
-										}
-									]
+									"className": "qualified-name",
+									"dangerouslySetInnerHTML": {
+										"__html": "someName"
+									}
 								}
 							}
 						]
 					}
 				},
 				{
+					"type": "header",
+					"props": {
+						"children": [
+							"Usage Examples"
+						]
+					}
+				},
+				{
 					"type": "section",
 					"props": {
-						"className": "examples-card card",
+						"className": "examples-card",
 						"children": [
 							{
 								"type": "ExampleView",

@@ -77,7 +77,7 @@ class ExampleView extends Component {
 					</header>
 
 					<div className="body">
-						{example &&
+						{example && example.Contents &&
 							<div style={{opacity: loading ? 0.5 : 1}}>
 								<CodeListing
 									contents={example.Contents}
