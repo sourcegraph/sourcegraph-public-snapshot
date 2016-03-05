@@ -37,13 +37,6 @@ type Actor struct {
 	// MirrorsWaitlist is true if the actor corresponds to a user that
 	// is on the waitlist for access to the private mirrors feature.
 	MirrorsWaitlist bool `json:",omitempty"`
-
-	// RepoPerms holds the private repo permissions for this user on this
-	// server. This field is set in the `server/accesscontrol` package.
-	// The field type is private to that package to ensure that any other
-	// part of the code base cannot accidentally modify the permissions
-	// information for an actor.
-	RepoPerms interface{} `json:",omitempty"`
 }
 
 func (a Actor) String() string {

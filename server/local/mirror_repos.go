@@ -305,48 +305,19 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		return gd, nil
 	}
 
-	var gitHubRepoURIs []string
-	for _, repo := range gitHubRepos {
-		if repo != nil {
-			gitHubRepoURIs = append(gitHubRepoURIs, "github.com/"+repo.Owner+"/"+repo.Name)
-		}
-	}
-
-	// This map contains repos visible to this GitHub user that are already
-	// mirrored on this Sourcegraph server.
-	existingRepos := make(map[string]*sourcegraph.Repo)
-	repoOpts := &sourcegraph.RepoListOptions{
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: 1000,
-			Page:    1,
-		},
-		URIs: gitHubRepoURIs,
-	}
-	for {
-		repoList, err := store.ReposFromContext(ctx).List(elevatedActor(ctx), repoOpts)
-		if err != nil {
-			return nil, err
-		}
-		if len(repoList) == 0 {
-			break
-		}
-
-		for _, repo := range repoList {
-			existingRepos[repo.URI] = repo
-		}
-
-		repoOpts.ListOptions.Page += 1
-	}
-
-	// Check if a user's remote GitHub repo already exists locally under the
-	// same URI. Allow this user to access all their private repos that are
-	// already mirrored on this Sourcegraph.
 	for _, repo := range gitHubRepos {
 		uri := "github.com/" + repo.Owner + "/" + repo.Name
-		if localRepo, ok := existingRepos[uri]; ok {
+
+		// Check if a user's remote GitHub repo already exists locally under the
+		// same URI. Allow this user to access all their private repos that are
+		// already mirrored on this Sourcegraph.
+		localRepo, err := (&repos{}).Get(ctx, &sourcegraph.RepoSpec{URI: uri})
+		if err == nil {
 			gd.Repos = append(gd.Repos, localRepo)
-		} else {
+		} else if grpc.Code(err) == codes.NotFound {
 			gd.RemoteRepos = append(gd.RemoteRepos, repo)
+		} else {
+			return nil, err
 		}
 	}
 

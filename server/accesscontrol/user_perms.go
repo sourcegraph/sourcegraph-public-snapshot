@@ -75,13 +75,6 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		return nil
 	}
 
-	if authutil.ActiveFlags.PrivateMirrors && repo != "" {
-		err := verifyPrivateRepoPerms(ctx, actor, method, repo)
-		if err != errNotPrivateRepo {
-			return err
-		}
-	}
-
 	if authutil.ActiveFlags.AllowAnonymousReaders {
 		return nil
 	}
@@ -107,17 +100,6 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil
-	}
-
-	if authutil.ActiveFlags.PrivateMirrors {
-		if method == "Repos.Create" && actor.PrivateMirrors {
-			return nil
-		} else if repo != "" {
-			err := verifyPrivateRepoPerms(ctx, actor, method, repo)
-			if err != errNotPrivateRepo {
-				return err
-			}
-		}
 	}
 
 	if !actor.IsAuthenticated() {

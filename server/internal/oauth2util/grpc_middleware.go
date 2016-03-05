@@ -71,7 +71,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		}
 	}
 
-	accesscontrol.SetMirrorRepoPerms(ctx, actor)
+	accesscontrol.SetWaitlistStatus(ctx, actor)
 
 	// Make future calls use this access token.
 	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tokStr}))

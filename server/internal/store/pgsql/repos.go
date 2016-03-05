@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -140,13 +140,19 @@ type repos struct{}
 var _ store.Repos = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", uri); err != nil {
-		return nil, err
-	}
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
+
+	// Access controls for GitHub repos are handled by making a call
+	// in the request path to the GitHub API as the actor, not by us.
+	if !strings.HasPrefix(uri, "github.com/") {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", uri); err != nil {
+			return nil, err
+		}
+	}
+
 	setCloneURLField(ctx, repo)
 	return repo, nil
 }
@@ -182,10 +188,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	// Fetch the list of private repositories visible to the current user.
-	privateURIs := accesscontrol.GetActorPrivateRepos(ctx, authpkg.ActorFromContext(ctx), "Repos.List")
-
-	sql, args, err := s.listSQL(opt, privateURIs)
+	sql, args, err := s.listSQL(opt)
 	if err != nil {
 		if err == errOptionsSpecifyEmptyResult {
 			err = nil
@@ -229,7 +232,7 @@ func setCloneURLField(ctx context.Context, repo *sourcegraph.Repo) {
 	}
 }
 
-func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) (string, []interface{}, error) {
+func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -288,23 +291,9 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 			return "", nil, errOptionsSpecifyEmptyResult
 		}
 
-		// If PrivateMirrors is enabled and private repositories are part of the request,
-		// only pick repositories that are either public or visible to the current user.
-		// NOTE: if privateURIs == nil, then either PrivateMirrors is not enabled, or the
-		// actor has access to all private repos on this server.
-		if privateURIs != nil && opt.Type != "public" {
-			filterPrivateSQL := "false"
-			if opt.Type != "private" {
-				filterPrivateSQL = "NOT private"
-			}
-			if len(privateURIs) > 0 {
-				privateURIBindVars := make([]string, len(privateURIs))
-				for i, uri := range privateURIs {
-					privateURIBindVars[i] = arg(uri)
-				}
-				filterPrivateSQL += " OR uri IN (" + strings.Join(privateURIBindVars, ",") + ")"
-			}
-			conds = append(conds, filterPrivateSQL)
+		// If PrivateMirrors is enabled, don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
+		if authutil.ActiveFlags.PrivateMirrors {
+			conds = append(conds, "uri NOT LIKE 'github.com/%'")
 		}
 
 		if conds != nil {
