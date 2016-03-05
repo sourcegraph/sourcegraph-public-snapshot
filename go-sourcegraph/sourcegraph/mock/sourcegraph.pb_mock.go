@@ -462,46 +462,6 @@ func (s *MirrorReposServer) AddToWaitlist(v0 context.Context, v1 *pbtypes.Void) 
 
 var _ sourcegraph.MirrorReposServer = (*MirrorReposServer)(nil)
 
-type MirroredRepoSSHKeysClient struct {
-	Create_ func(ctx context.Context, in *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error)
-	Get_    func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error)
-	Delete_ func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-}
-
-func (s *MirroredRepoSSHKeysClient) Create(ctx context.Context, in *sourcegraph.MirroredRepoSSHKeysCreateOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.Create_(ctx, in)
-}
-
-func (s *MirroredRepoSSHKeysClient) Get(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.SSHPrivateKey, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *MirroredRepoSSHKeysClient) Delete(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.Delete_(ctx, in)
-}
-
-var _ sourcegraph.MirroredRepoSSHKeysClient = (*MirroredRepoSSHKeysClient)(nil)
-
-type MirroredRepoSSHKeysServer struct {
-	Create_ func(v0 context.Context, v1 *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error)
-	Get_    func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error)
-	Delete_ func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-}
-
-func (s *MirroredRepoSSHKeysServer) Create(v0 context.Context, v1 *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
-	return s.Create_(v0, v1)
-}
-
-func (s *MirroredRepoSSHKeysServer) Get(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *MirroredRepoSSHKeysServer) Delete(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return s.Delete_(v0, v1)
-}
-
-var _ sourcegraph.MirroredRepoSSHKeysServer = (*MirroredRepoSSHKeysServer)(nil)
-
 type BuildsClient struct {
 	Get_            func(ctx context.Context, in *sourcegraph.BuildSpec) (*sourcegraph.Build, error)
 	GetRepoBuild_   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error)

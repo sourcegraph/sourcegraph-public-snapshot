@@ -58,8 +58,6 @@ func Services() svc.Services {
 
 		MirrorRepos: wrappedMirrorRepos{},
 
-		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{},
-
 		Notify: wrappedNotify{},
 
 		Orgs: wrappedOrgs{},
@@ -1290,59 +1288,6 @@ func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, param *pbtypes.Vo
 
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "MirrorRepos.AddToWaitlist returned nil, nil")
-	}
-	return
-}
-
-type wrappedMirroredRepoSSHKeys struct{}
-
-func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, param *sourcegraph.MirroredRepoSSHKeysCreateOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "MirroredRepoSSHKeys", "Create", param)
-	defer func() {
-		trace.After(ctx, "MirroredRepoSSHKeys", "Create", param, err, time.Since(start))
-	}()
-
-	target := local.Services.MirroredRepoSSHKeys
-
-	res, err = target.Create(ctx, param)
-
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MirroredRepoSSHKeys.Create returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.SSHPrivateKey, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "MirroredRepoSSHKeys", "Get", param)
-	defer func() {
-		trace.After(ctx, "MirroredRepoSSHKeys", "Get", param, err, time.Since(start))
-	}()
-
-	target := local.Services.MirroredRepoSSHKeys
-
-	res, err = target.Get(ctx, param)
-
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MirroredRepoSSHKeys.Get returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "MirroredRepoSSHKeys", "Delete", param)
-	defer func() {
-		trace.After(ctx, "MirroredRepoSSHKeys", "Delete", param, err, time.Since(start))
-	}()
-
-	target := local.Services.MirroredRepoSSHKeys
-
-	res, err = target.Delete(ctx, param)
-
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MirroredRepoSSHKeys.Delete returned nil, nil")
 	}
 	return
 }

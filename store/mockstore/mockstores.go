@@ -18,61 +18,51 @@ import (
 
 // Stores has a field for each store interface with the concrete mock type (to obviate the need for tedious type assertions in test code).
 type Stores struct {
-	Accounts                        Accounts
-	Authorizations                  Authorizations
-	BuildLogs                       BuildLogs
-	Builds                          Builds
-	Changesets                      Changesets
-	Directory                       Directory
-	ExternalAuthTokens              ExternalAuthTokens
-	Graph                           srcstore.MockMultiRepoStore
-	Invites                         Invites
-	MirroredRepoSSHKeys             MirroredRepoSSHKeys
-	Orgs                            Orgs
-	Password                        Password
-	RegisteredClients               RegisteredClients
-	RepoConfigs                     RepoConfigs
-	RepoCounters                    RepoCounters
-	RepoOrigin                      RepoOrigin
-	RepoOriginWithAuthorizedSSHKeys RepoOriginWithAuthorizedSSHKeys
-	RepoOriginWithCommitStatuses    RepoOriginWithCommitStatuses
-	RepoOriginWithPushHooks         RepoOriginWithPushHooks
-	RepoPerms                       RepoPerms
-	RepoStatuses                    RepoStatuses
-	RepoVCS                         RepoVCS
-	Repos                           Repos
-	Storage                         Storage
-	Users                           Users
-	Waitlist                        Waitlist
+	Accounts           Accounts
+	Authorizations     Authorizations
+	BuildLogs          BuildLogs
+	Builds             Builds
+	Changesets         Changesets
+	Directory          Directory
+	ExternalAuthTokens ExternalAuthTokens
+	Graph              srcstore.MockMultiRepoStore
+	Invites            Invites
+	Orgs               Orgs
+	Password           Password
+	RegisteredClients  RegisteredClients
+	RepoConfigs        RepoConfigs
+	RepoCounters       RepoCounters
+	RepoPerms          RepoPerms
+	RepoStatuses       RepoStatuses
+	RepoVCS            RepoVCS
+	Repos              Repos
+	Storage            Storage
+	Users              Users
+	Waitlist           Waitlist
 }
 
 func (s *Stores) Stores() store.Stores {
 	return store.Stores{
-		Accounts:                        &s.Accounts,
-		Authorizations:                  &s.Authorizations,
-		BuildLogs:                       &s.BuildLogs,
-		Builds:                          &s.Builds,
-		Changesets:                      &s.Changesets,
-		Directory:                       &s.Directory,
-		ExternalAuthTokens:              &s.ExternalAuthTokens,
-		Graph:                           &s.Graph,
-		Invites:                         &s.Invites,
-		MirroredRepoSSHKeys:             &s.MirroredRepoSSHKeys,
-		Orgs:                            &s.Orgs,
-		Password:                        &s.Password,
-		RegisteredClients:               &s.RegisteredClients,
-		RepoConfigs:                     &s.RepoConfigs,
-		RepoCounters:                    &s.RepoCounters,
-		RepoOrigin:                      &s.RepoOrigin,
-		RepoOriginWithAuthorizedSSHKeys: &s.RepoOriginWithAuthorizedSSHKeys,
-		RepoOriginWithCommitStatuses:    &s.RepoOriginWithCommitStatuses,
-		RepoOriginWithPushHooks:         &s.RepoOriginWithPushHooks,
-		RepoPerms:                       &s.RepoPerms,
-		RepoStatuses:                    &s.RepoStatuses,
-		RepoVCS:                         &s.RepoVCS,
-		Repos:                           &s.Repos,
-		Storage:                         &s.Storage,
-		Users:                           &s.Users,
-		Waitlist:                        &s.Waitlist,
+		Accounts:           &s.Accounts,
+		Authorizations:     &s.Authorizations,
+		BuildLogs:          &s.BuildLogs,
+		Builds:             &s.Builds,
+		Changesets:         &s.Changesets,
+		Directory:          &s.Directory,
+		ExternalAuthTokens: &s.ExternalAuthTokens,
+		Graph:              &s.Graph,
+		Invites:            &s.Invites,
+		Orgs:               &s.Orgs,
+		Password:           &s.Password,
+		RegisteredClients:  &s.RegisteredClients,
+		RepoConfigs:        &s.RepoConfigs,
+		RepoCounters:       &s.RepoCounters,
+		RepoPerms:          &s.RepoPerms,
+		RepoStatuses:       &s.RepoStatuses,
+		RepoVCS:            &s.RepoVCS,
+		Repos:              &s.Repos,
+		Storage:            &s.Storage,
+		Users:              &s.Users,
+		Waitlist:           &s.Waitlist,
 	}
 }

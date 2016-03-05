@@ -18,32 +18,27 @@ import (
 
 // Stores has a field for each store interface.
 type Stores struct {
-	Accounts                        Accounts
-	Authorizations                  Authorizations
-	BuildLogs                       BuildLogs
-	Builds                          Builds
-	Changesets                      Changesets
-	Directory                       Directory
-	ExternalAuthTokens              ExternalAuthTokens
-	Graph                           srcstore.MultiRepoStoreImporterIndexer
-	Invites                         Invites
-	MirroredRepoSSHKeys             MirroredRepoSSHKeys
-	Orgs                            Orgs
-	Password                        Password
-	RegisteredClients               RegisteredClients
-	RepoConfigs                     RepoConfigs
-	RepoCounters                    RepoCounters
-	RepoOrigin                      RepoOrigin
-	RepoOriginWithAuthorizedSSHKeys RepoOriginWithAuthorizedSSHKeys
-	RepoOriginWithCommitStatuses    RepoOriginWithCommitStatuses
-	RepoOriginWithPushHooks         RepoOriginWithPushHooks
-	RepoPerms                       RepoPerms
-	RepoStatuses                    RepoStatuses
-	RepoVCS                         RepoVCS
-	Repos                           Repos
-	Storage                         Storage
-	Users                           Users
-	Waitlist                        Waitlist
+	Accounts           Accounts
+	Authorizations     Authorizations
+	BuildLogs          BuildLogs
+	Builds             Builds
+	Changesets         Changesets
+	Directory          Directory
+	ExternalAuthTokens ExternalAuthTokens
+	Graph              srcstore.MultiRepoStoreImporterIndexer
+	Invites            Invites
+	Orgs               Orgs
+	Password           Password
+	RegisteredClients  RegisteredClients
+	RepoConfigs        RepoConfigs
+	RepoCounters       RepoCounters
+	RepoPerms          RepoPerms
+	RepoStatuses       RepoStatuses
+	RepoVCS            RepoVCS
+	Repos              Repos
+	Storage            Storage
+	Users              Users
+	Waitlist           Waitlist
 }
 
 type contextKey int
@@ -58,16 +53,11 @@ const (
 	_ExternalAuthTokensKey
 	_GraphKey
 	_InvitesKey
-	_MirroredRepoSSHKeysKey
 	_OrgsKey
 	_PasswordKey
 	_RegisteredClientsKey
 	_RepoConfigsKey
 	_RepoCountersKey
-	_RepoOriginKey
-	_RepoOriginWithAuthorizedSSHKeysKey
-	_RepoOriginWithCommitStatusesKey
-	_RepoOriginWithPushHooksKey
 	_RepoPermsKey
 	_RepoStatusesKey
 	_RepoVCSKey
@@ -106,9 +96,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.Invites != nil {
 		ctx = WithInvites(ctx, s.Invites)
 	}
-	if s.MirroredRepoSSHKeys != nil {
-		ctx = WithMirroredRepoSSHKeys(ctx, s.MirroredRepoSSHKeys)
-	}
 	if s.Orgs != nil {
 		ctx = WithOrgs(ctx, s.Orgs)
 	}
@@ -123,18 +110,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.RepoCounters != nil {
 		ctx = WithRepoCounters(ctx, s.RepoCounters)
-	}
-	if s.RepoOrigin != nil {
-		ctx = WithRepoOrigin(ctx, s.RepoOrigin)
-	}
-	if s.RepoOriginWithAuthorizedSSHKeys != nil {
-		ctx = WithRepoOriginWithAuthorizedSSHKeys(ctx, s.RepoOriginWithAuthorizedSSHKeys)
-	}
-	if s.RepoOriginWithCommitStatuses != nil {
-		ctx = WithRepoOriginWithCommitStatuses(ctx, s.RepoOriginWithCommitStatuses)
-	}
-	if s.RepoOriginWithPushHooks != nil {
-		ctx = WithRepoOriginWithPushHooks(ctx, s.RepoOriginWithPushHooks)
 	}
 	if s.RepoPerms != nil {
 		ctx = WithRepoPerms(ctx, s.RepoPerms)
@@ -286,20 +261,6 @@ func InvitesFromContext(ctx context.Context) Invites {
 	return s
 }
 
-// WithMirroredRepoSSHKeys returns a copy of parent with the given MirroredRepoSSHKeys store.
-func WithMirroredRepoSSHKeys(parent context.Context, s MirroredRepoSSHKeys) context.Context {
-	return context.WithValue(parent, _MirroredRepoSSHKeysKey, s)
-}
-
-// MirroredRepoSSHKeysFromContext gets the context's MirroredRepoSSHKeys store. If the store is not present, it panics.
-func MirroredRepoSSHKeysFromContext(ctx context.Context) MirroredRepoSSHKeys {
-	s, ok := ctx.Value(_MirroredRepoSSHKeysKey).(MirroredRepoSSHKeys)
-	if !ok || s == nil {
-		panic("no MirroredRepoSSHKeys set in context")
-	}
-	return s
-}
-
 // WithOrgs returns a copy of parent with the given Orgs store.
 func WithOrgs(parent context.Context, s Orgs) context.Context {
 	return context.WithValue(parent, _OrgsKey, s)
@@ -366,62 +327,6 @@ func RepoCountersFromContext(ctx context.Context) RepoCounters {
 	s, ok := ctx.Value(_RepoCountersKey).(RepoCounters)
 	if !ok || s == nil {
 		panic("no RepoCounters set in context")
-	}
-	return s
-}
-
-// WithRepoOrigin returns a copy of parent with the given RepoOrigin store.
-func WithRepoOrigin(parent context.Context, s RepoOrigin) context.Context {
-	return context.WithValue(parent, _RepoOriginKey, s)
-}
-
-// RepoOriginFromContext gets the context's RepoOrigin store. If the store is not present, it panics.
-func RepoOriginFromContext(ctx context.Context) RepoOrigin {
-	s, ok := ctx.Value(_RepoOriginKey).(RepoOrigin)
-	if !ok || s == nil {
-		panic("no RepoOrigin set in context")
-	}
-	return s
-}
-
-// WithRepoOriginWithAuthorizedSSHKeys returns a copy of parent with the given RepoOriginWithAuthorizedSSHKeys store.
-func WithRepoOriginWithAuthorizedSSHKeys(parent context.Context, s RepoOriginWithAuthorizedSSHKeys) context.Context {
-	return context.WithValue(parent, _RepoOriginWithAuthorizedSSHKeysKey, s)
-}
-
-// RepoOriginWithAuthorizedSSHKeysFromContext gets the context's RepoOriginWithAuthorizedSSHKeys store. If the store is not present, it panics.
-func RepoOriginWithAuthorizedSSHKeysFromContext(ctx context.Context) RepoOriginWithAuthorizedSSHKeys {
-	s, ok := ctx.Value(_RepoOriginWithAuthorizedSSHKeysKey).(RepoOriginWithAuthorizedSSHKeys)
-	if !ok || s == nil {
-		panic("no RepoOriginWithAuthorizedSSHKeys set in context")
-	}
-	return s
-}
-
-// WithRepoOriginWithCommitStatuses returns a copy of parent with the given RepoOriginWithCommitStatuses store.
-func WithRepoOriginWithCommitStatuses(parent context.Context, s RepoOriginWithCommitStatuses) context.Context {
-	return context.WithValue(parent, _RepoOriginWithCommitStatusesKey, s)
-}
-
-// RepoOriginWithCommitStatusesFromContext gets the context's RepoOriginWithCommitStatuses store. If the store is not present, it panics.
-func RepoOriginWithCommitStatusesFromContext(ctx context.Context) RepoOriginWithCommitStatuses {
-	s, ok := ctx.Value(_RepoOriginWithCommitStatusesKey).(RepoOriginWithCommitStatuses)
-	if !ok || s == nil {
-		panic("no RepoOriginWithCommitStatuses set in context")
-	}
-	return s
-}
-
-// WithRepoOriginWithPushHooks returns a copy of parent with the given RepoOriginWithPushHooks store.
-func WithRepoOriginWithPushHooks(parent context.Context, s RepoOriginWithPushHooks) context.Context {
-	return context.WithValue(parent, _RepoOriginWithPushHooksKey, s)
-}
-
-// RepoOriginWithPushHooksFromContext gets the context's RepoOriginWithPushHooks store. If the store is not present, it panics.
-func RepoOriginWithPushHooksFromContext(ctx context.Context) RepoOriginWithPushHooks {
-	s, ok := ctx.Value(_RepoOriginWithPushHooksKey).(RepoOriginWithPushHooks)
-	if !ok || s == nil {
-		panic("no RepoOriginWithPushHooks set in context")
 	}
 	return s
 }
